@@ -5,6 +5,7 @@ import {
   shouldAttemptAutoRecovery,
   tryAutoRecovery,
 } from "./auto-recovery";
+import { resetGlobalRecoveryCounters } from "./recovery-limit";
 
 describe("auto-recovery", () => {
   beforeEach(() => {
@@ -21,6 +22,7 @@ describe("auto-recovery", () => {
       },
     });
     resetAutoRecoveryCounters();
+    resetGlobalRecoveryCounters();
     resetAutoRecoveryStateForTests();
   });
 

@@ -3,6 +3,7 @@ import { RedirectLoopGuard } from "@/components/redirect-loop-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { enforceProductionDomain } from "@/lib/domain-gate";
+import { isProductionEnvironment } from "@/lib/runtime-crash-policy";
 import { initializeFirebase, type FirebaseInitResult } from "@/lib/firebase";
 import { beginFirebaseOAuthRedirectResolution } from "@/lib/firebase-oauth-redirect";
 import { patchBootDiagnostics } from "@/lib/boot-store";
@@ -44,9 +45,16 @@ function FirebaseInitGate({ children }: Props) {
   if (init.status === "fail") {
     return (
       <AppFallbackUi
-        title="Firebase failed to start"
-        message={init.error ?? "Firebase could not initialize."}
-        onReload={() => window.location.reload()}
+        message={
+          isProductionEnvironment()
+            ? "We're having trouble loading this screen.\nPlease try again."
+            : (init.error ?? "Firebase could not initialize.")
+        }
+        onTryAgain={() => window.location.reload()}
+        onGoHome={() => {
+          const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+          window.location.assign(`${base}/dashboard`.replace(/\/{2,}/g, "/"));
+        }}
       />
     );
   }

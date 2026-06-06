@@ -1,8 +1,12 @@
 /**
- * Development-only safeguards that warn before React hits "Maximum update depth exceeded".
+ * Safeguards that warn (dev) or recover (prod) before React hits
+ * "Maximum update depth exceeded".
  */
 
 import { devLog } from "@/lib/dev-log";
+import { logError } from "@/lib/crash-logger";
+import { canAttemptAutoRecovery, navigateToSafeRoute } from "@/lib/crash-recovery";
+import { isInfiniteRenderError } from "@/lib/runtime-crash-policy";
 
 const RENDER_WARN_THRESHOLD = 40;
 const REDIRECT_WARN_THRESHOLD = 6;
@@ -26,6 +30,14 @@ export function trackRender(label: string): void {
       `[amynest:render-loop-guard] "${label}" rendered ${next.renders} times — possible infinite loop`,
     );
     devLog("[render-loop-guard]", label, next.renders);
+
+    if (!import.meta.env.DEV && next.renders >= RENDER_WARN_THRESHOLD * 2) {
+      const synthetic = new Error("Maximum update depth exceeded (render-loop-guard)");
+      if (isInfiniteRenderError(synthetic) && canAttemptAutoRecovery()) {
+        logError(synthetic, `render-loop:${label}`);
+        navigateToSafeRoute();
+      }
+    }
   }
 }
 

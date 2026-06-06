@@ -11,9 +11,12 @@ export function ApiRetryShell({
 }: Props) {
   return (
     <AppFallbackUi
-      title="Connection problem"
       message={message}
-      onReload={onRetry}
+      onTryAgain={onRetry}
+      onGoHome={() => {
+        const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+        window.location.assign(`${base}/dashboard`.replace(/\/{2,}/g, "/"));
+      }}
     />
   );
 }

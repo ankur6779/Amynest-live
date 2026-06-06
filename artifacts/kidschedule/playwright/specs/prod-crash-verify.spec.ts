@@ -78,16 +78,28 @@ test("production: no crash overlay after sign-in and navigation", async ({ page 
       const crashOverlay = await page.locator("#amynest-crash-overlay").count();
       const crashText = await page.getByText(/APP CRASH DETECTED/i).count();
       const reactCrash = await page.getByText(/React Crash/i).count();
+      const stackLeak = await page.getByText(/Maximum update depth exceeded/i).count();
+      const componentStackLeak = await page.getByText(/componentStack|ProtectedPage/i).count();
 
       agentLog({
         location: "prod-crash-verify.spec.ts:route",
         message: crashOverlay > 0 || crashText > 0 ? "crash UI visible" : "route ok",
         hypothesisId: "H1-H2",
-        data: { route, crashOverlay, crashText, reactCrash, url: page.url() },
+        data: {
+          route,
+          crashOverlay,
+          crashText,
+          reactCrash,
+          stackLeak,
+          componentStackLeak,
+          url: page.url(),
+        },
       });
 
       expect(crashOverlay, `Crash overlay on ${route}`).toBe(0);
       expect(crashText, `Crash text on ${route}`).toBe(0);
+      expect(stackLeak, `Stack leak on ${route}`).toBe(0);
+      expect(componentStackLeak, `Component stack leak on ${route}`).toBe(0);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       pageErrors.push(`NAV ${route}: ${msg}`);

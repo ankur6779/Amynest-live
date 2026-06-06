@@ -3,15 +3,19 @@
  */
 
 import { logClientError } from "@/lib/log-client-error";
+import { persistCrashEventToBackend } from "@/lib/persist-crash-event";
 
 export type CrashReport = {
+  errorId: string;
   fingerprint: string;
   kind: string;
   message: string;
   stack?: string;
   component?: string;
+  componentStack?: string;
   route?: string;
   userId?: string | null;
+  childId?: string | null;
   sessionId?: string;
   browser?: string;
   os?: string;
@@ -66,6 +70,22 @@ function readAppVersion(): string | undefined {
   );
 }
 
+/** User-visible reference — never includes stack traces. Format: ERR-YYYYMMDD-XXXXXX */
+export function generateErrorReferenceId(): string {
+  const d = new Date();
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `ERR-${y}${m}${day}-${suffix}`;
+}
+
+function readChildIdFromRoute(route?: string): string | null {
+  if (!route) return null;
+  const m = route.match(/\/children\/([^/]+)/);
+  return m?.[1] ?? null;
+}
+
 /** Stable hash for grouping identical crashes in dashboards. */
 export function fingerprintCrash(
   message: string,
@@ -92,7 +112,10 @@ export function buildCrashReport(input: {
   message: string;
   stack?: string;
   component?: string;
+  componentStack?: string;
   userId?: string | null;
+  childId?: string | null;
+  errorId?: string;
   meta?: Record<string, unknown>;
 }): CrashReport {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
@@ -100,15 +123,19 @@ export function buildCrashReport(input: {
   const message = input.message.slice(0, 4000);
   const stack = input.stack?.slice(0, 8000);
   const fingerprint = fingerprintCrash(message, input.component, stack);
+  const childId = input.childId ?? readChildIdFromRoute(route);
 
   return {
+    errorId: input.errorId ?? generateErrorReferenceId(),
     fingerprint,
     kind: input.kind,
     message,
     stack,
     component: input.component,
+    componentStack: input.componentStack?.slice(0, 8000),
     route,
     userId: input.userId ?? null,
+    childId,
     sessionId: readSessionId(),
     browser: detectBrowser(ua),
     os: detectOs(ua),
@@ -124,12 +151,16 @@ export async function reportCrash(input: {
   message: string;
   stack?: string;
   component?: string;
+  componentStack?: string;
   userId?: string | null;
+  childId?: string | null;
+  errorId?: string;
   meta?: Record<string, unknown>;
 }): Promise<CrashReport> {
   const report = buildCrashReport(input);
 
   console.error("[amynest:crash]", {
+    errorId: report.errorId,
     fingerprint: report.fingerprint,
     kind: report.kind,
     component: report.component,
@@ -149,20 +180,26 @@ export async function reportCrash(input: {
 
   void logClientError({
     label: input.component ?? report.kind,
-    message: `[${report.fingerprint}] ${report.message}`,
+    message: `[${report.errorId}] ${report.message}`,
     stack: report.stack,
     meta: {
+      errorId: report.errorId,
       fingerprint: report.fingerprint,
       kind: report.kind,
       route: report.route,
+      componentStack: report.componentStack,
       sessionId: report.sessionId,
       browser: report.browser,
       os: report.os,
       appVersion: report.appVersion,
       userId: report.userId,
+      childId: report.childId,
+      timestamp: report.timestamp,
       ...report.meta,
     },
   });
+
+  void persistCrashEventToBackend(report);
 
   return report;
 }

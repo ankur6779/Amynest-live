@@ -1,0 +1,53 @@
+# Pre-deploy crash intelligence + release intelligence gates.
+name: Crash & Release Gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  gates:
+    name: Crash launch + release intelligence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Crash intelligence unit tests
+        run: |
+          cd artifacts/api-server
+          node --import tsx/esm --test \
+            src/services/crash-intelligence/__tests__/crash-intelligence.test.ts \
+            src/services/crash-intelligence/__tests__/fix-candidate-engine.test.ts \
+            src/services/release-intelligence/__tests__/release-intelligence.test.ts
+
+      - name: Release intelligence (vs main)
+        run: pnpm release:intelligence -- --base origin/main
+        continue-on-error: true
+
+      - name: Crash launch gate
+        run: pnpm check:crash-launch-gate
+
+      - name: Upload release review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-review
+          path: artifacts/release-review/
+          if-no-files-found: ignore

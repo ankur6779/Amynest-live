@@ -29,9 +29,12 @@ export function RedirectLoopGuard({ children }: { children: ReactNode }) {
   if (loopBroken) {
     return (
       <AppFallbackUi
-        title="Navigation loop detected"
-        message="AmyNest stopped redirecting to prevent a blank screen. Tap retry to reload."
-        onReload={() => window.location.reload()}
+        message="We're having trouble loading this screen.\nPlease try again."
+        onTryAgain={() => window.location.reload()}
+        onGoHome={() => {
+          const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+          window.location.assign(`${base}/dashboard`.replace(/\/{2,}/g, "/"));
+        }}
       />
     );
   }

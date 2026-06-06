@@ -347,11 +347,12 @@
             var root = document.getElementById("root");
             if (!root) return;
             root.className = "amynest-boot-failed";
-            var safe = String(message || "AmyNest could not start.").replace(/</g, "&lt;");
             root.innerHTML =
-              '<div style="max-width:420px"><p style="font-weight:600;margin:0 0 12px;font-size:18px">Something broke</p>' +
-              '<p style="opacity:0.85;margin:0 0 16px;font-size:14px;line-height:1.5">' + safe + '</p>' +
-              '<button type="button" onclick="location.reload()" style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer">Reload AmyNest</button></div>';
+              '<div style="max-width:420px"><p style="font-weight:700;margin:0 0 12px;font-size:22px">Something went wrong</p>' +
+              '<p style="opacity:0.85;margin:0 0 20px;font-size:15px;line-height:1.55">We\'re having trouble loading this screen.<br>Please try again.</p>' +
+              '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
+              '<button type="button" onclick="location.reload()" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>' +
+              '<button type="button" onclick="location.assign(\'/dashboard\')" style="padding:14px 28px;border-radius:999px;border:1px solid rgba(233,213,255,0.35);background:transparent;color:#e9d5ff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Go Home</button></div></div>';
           } catch (_e3) {}
         };
 
@@ -374,8 +375,12 @@
               splash.classList.add("splash-hide");
               setTimeout(function () { splash.remove(); }, 200);
             }
+            var host = location.hostname || "";
             var showDebug = /[?&]crashdebug=1/.test(location.search || "") ||
-              /localhost|127\.0\.0\.1/.test(location.hostname || "");
+              /localhost|127\.0\.0\.1/.test(host) ||
+              /\.local$/.test(host) ||
+              host.indexOf("preview") >= 0 ||
+              host.indexOf("staging") >= 0;
             if (!showDebug) {
               var safeEl = document.getElementById("amynest-safe-recovery-overlay");
               if (!safeEl) {
@@ -390,9 +395,12 @@
               }
               safeEl.innerHTML =
                 '<div style="max-width:420px">' +
-                '<p style="margin:0 0 8px;font-size:20px;font-weight:700">Something went wrong. Recovering…</p>' +
-                '<p style="margin:0;opacity:0.85;font-size:14px">Please wait a moment.</p>' +
-                "</div>";
+                '<p style="margin:0 0 8px;font-size:22px;font-weight:700">Something went wrong</p>' +
+                '<p style="margin:0 0 20px;opacity:0.85;font-size:15px;line-height:1.55">We\'re having trouble loading this screen.<br>Please try again.</p>' +
+                '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
+                '<button type="button" onclick="location.reload()" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>' +
+                '<button type="button" onclick="if(location.pathname.indexOf(\'/dashboard\')>=0){location.reload()}else{location.assign(\'/dashboard\')}" style="padding:14px 28px;border-radius:999px;border:1px solid rgba(233,213,255,0.35);background:transparent;color:#e9d5ff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Go Home</button>' +
+                '</div></div>';
               if (window.__amynestTryAutoRecovery) {
                 try { window.__amynestTryAutoRecovery("pre-react.safe", "overlay"); } catch (_rec) {}
               }

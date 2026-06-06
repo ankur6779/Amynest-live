@@ -1,7 +1,10 @@
 import "./boot-phase";
 import { Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { setAppQueryClient } from "@/lib/app-query-client";
+import { createSelfHealingQueryClient } from "@/lib/self-healing/query-recovery";
+import { installSelfHealingRuntime } from "@/lib/self-healing/install";
 import App from "./App";
 import "./index.css";
 import "./i18n";
@@ -70,8 +73,10 @@ window.addEventListener("unhandledrejection", (e) => {
   }
 });
 
-/** Single app-wide React Query client — must wrap all useQuery / useMutation hooks. */
-const queryClient = new QueryClient();
+/** Self-healing React Query client — auto-retry, invalidate, refetch (Level 4). */
+const queryClient = createSelfHealingQueryClient();
+setAppQueryClient(queryClient);
+installSelfHealingRuntime();
 
 /* Sync guards only — must not await network, cache, Firebase, or AppCore. */
 installViteChunkRecovery();
@@ -149,10 +154,7 @@ function bootstrap(): void {
     }
     const rootEl = document.getElementById("root");
     if (rootEl) {
-      renderCriticalFallbackHtml(
-        rootEl,
-        err instanceof Error ? err.message : "AmyNest could not start.",
-      );
+      renderCriticalFallbackHtml(rootEl);
     }
   } finally {
     startSplashDismissal();

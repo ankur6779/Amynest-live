@@ -50,15 +50,19 @@ export async function logClientError(payload: ClientErrorPayload): Promise<void>
     const urls = [getApiUrl("/api/logs"), getApiUrl("/api/log-client-error")];
     for (const url of urls) {
       try {
-        await fetch(url, {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8_000);
+        const response = await fetch(url, {
           method: "POST",
           headers,
           body: JSON.stringify(body),
           keepalive: true,
+          signal: controller.signal,
         });
-        break;
+        clearTimeout(timeout);
+        if (response.ok || response.status === 204) break;
       } catch {
-        /* try alias */
+        /* try alias — network/DNS/timeout must never surface to users */
       }
     }
   } catch {

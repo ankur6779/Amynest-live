@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { countChildFormRender, logChildFormEffect } from "@/lib/child-form-debug";
 
 function parseIsoDate(iso: string): { year: number; month: number; day: number } | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
@@ -61,6 +62,7 @@ export function ChildDobPicker({
   className,
   selectStyle,
 }: ChildDobPickerProps) {
+  countChildFormRender("ChildDobPicker render");
   const maxIso = max ?? new Date().toISOString().split("T")[0];
   const maxParts = parseIsoDate(maxIso)!;
 
@@ -77,6 +79,7 @@ export function ChildDobPicker({
 
   // Sync controlled value → local selects (never emits to parent).
   useEffect(() => {
+    logChildFormEffect("ChildDobPicker sync-value", { value });
     const parsed = parseIsoDate(value);
     if (!parsed) return;
     applyingExternalRef.current = true;

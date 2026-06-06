@@ -31,8 +31,9 @@ export class PhonicsErrorBoundary extends Component<Props, State> {
     void logClientError({
       label: "Phonics",
       message: error.message,
-      stack: [error.stack, info.componentStack].filter(Boolean).join("\n"),
+      stack: error.stack,
       meta: {
+        componentStack: info.componentStack,
         manifestVersion: validation.manifestVersion,
         libraryVersion: validation.libraryVersion,
         assetCount: validation.assetCount,

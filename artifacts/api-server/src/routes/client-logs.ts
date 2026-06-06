@@ -5,6 +5,8 @@ import { logger } from "../lib/logger";
 import { recordChatPlatformPromptHiddenFailure } from "../services/chatPlatformRemoteConfig";
 import { ingestChatPlatformHealthEvent } from "../services/chatPlatformHealthStore";
 import { persistInfantProductAnalyticsEvent } from "../services/infantAnalyticsIngestService";
+import { safePersistCrashEvent } from "../services/crash-intelligence/ingest-service.js";
+import { parseCrashEventFromClientLog } from "../services/crash-intelligence/ingest-parsers.js";
 
 const router: IRouter = Router();
 
@@ -134,6 +136,18 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
         : logger.info.bind(logger);
 
   logFn({ kind: "client_log", ...entry }, `[client:${parsed.data.type}] ${parsed.data.message}`);
+
+  if (logType === "crash") {
+    const crashPayload = parseCrashEventFromClientLog({
+      message: entry.message,
+      route: entry.route,
+      userId: entry.userId,
+      meta,
+    });
+    if (crashPayload) {
+      void safePersistCrashEvent(crashPayload);
+    }
+  }
 
   if (logType === "infant_parenting" && userId) {
     const eventName =

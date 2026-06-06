@@ -1,52 +1,36 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import { infantFormNormalizationPatches } from "@/lib/child-form-hydration";
 
 /**
  * Regression: infant profile edits must not call setValue when values are already
  * normalized — unconditional setValue + form.watch caused "Maximum update depth"
- * on /children/:id (see commit 4086c81c).
+ * on /children/:id (commits 4086c81c, 38ebddca).
  */
 describe("child form infant normalization", () => {
   it("skips educationStage setValue when already at_home", () => {
-    const setValue = vi.fn();
-    const getValues = vi.fn((field: string) => {
-      if (field === "educationStage") return "at_home";
-      if (field === "scheduleKnown") return false;
-      return undefined;
-    });
-
-    const isInfant = true;
-    if (isInfant) {
-      if (getValues("educationStage") !== "at_home") {
-        setValue("educationStage", "at_home", { shouldDirty: false });
-      }
-      if (getValues("scheduleKnown") !== false) {
-        setValue("scheduleKnown", false, { shouldDirty: false });
-      }
-    }
-
-    expect(setValue).not.toHaveBeenCalled();
+    expect(
+      infantFormNormalizationPatches(true, {
+        educationStage: "at_home",
+        scheduleKnown: false,
+      }),
+    ).toBeNull();
   });
 
   it("sets educationStage only when infant profile still has school stage", () => {
-    const setValue = vi.fn();
-    const getValues = vi.fn((field: string) => {
-      if (field === "educationStage") return "school";
-      if (field === "scheduleKnown") return true;
-      return undefined;
-    });
+    expect(
+      infantFormNormalizationPatches(true, {
+        educationStage: "school",
+        scheduleKnown: true,
+      }),
+    ).toEqual({ educationStage: "at_home", scheduleKnown: false });
+  });
 
-    const isInfant = true;
-    if (isInfant) {
-      if (getValues("educationStage") !== "at_home") {
-        setValue("educationStage", "at_home", { shouldDirty: false });
-      }
-      if (getValues("scheduleKnown") !== false) {
-        setValue("scheduleKnown", false, { shouldDirty: false });
-      }
-    }
-
-    expect(setValue).toHaveBeenCalledTimes(2);
-    expect(setValue).toHaveBeenCalledWith("educationStage", "at_home", { shouldDirty: false });
-    expect(setValue).toHaveBeenCalledWith("scheduleKnown", false, { shouldDirty: false });
+  it("does not patch non-infant profiles", () => {
+    expect(
+      infantFormNormalizationPatches(false, {
+        educationStage: "school",
+        scheduleKnown: true,
+      }),
+    ).toBeNull();
   });
 });

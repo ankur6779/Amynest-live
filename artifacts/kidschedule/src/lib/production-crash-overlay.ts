@@ -8,8 +8,11 @@ import {
   shouldAttemptAutoRecovery,
   tryAutoRecovery,
 } from "@/lib/auto-recovery";
+import { generateErrorReferenceId } from "@/lib/crash-report";
+import { canAttemptAutoRecovery, navigateToSafeRoute } from "@/lib/crash-recovery";
 import {
   isBenignRuntimeError,
+  isInfiniteRenderError,
   shouldShowProductionCrashOverlay,
 } from "@/lib/runtime-crash-policy";
 
@@ -23,6 +26,7 @@ export type ProductionCrashPayload = {
   href?: string;
   route?: string;
   detail?: string;
+  errorId?: string;
   at?: string;
 };
 
@@ -49,10 +53,44 @@ function dismissSplash(): void {
   }
 }
 
+function homePath(): string {
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  return `${base}/dashboard`.replace(/\/{2,}/g, "/");
+}
+
+function silentLogCrash(payload: ProductionCrashPayload): void {
+  void import("@/lib/crash-report").then(({ reportCrash }) =>
+    reportCrash({
+      kind: payload.kind,
+      message: payload.message,
+      stack: payload.stack,
+      component: payload.detail,
+      errorId: payload.errorId,
+      meta: {
+        source: payload.source,
+        line: payload.line,
+        col: payload.col,
+        href: payload.href,
+        route: payload.route,
+      },
+    }),
+  );
+}
+
 /** User-safe full-screen recovery — no stack traces or internal details. */
-export function showUserSafeRecoveryOverlay(message = "Something went wrong. Recovering…"): void {
+export function showUserSafeRecoveryOverlay(options?: {
+  message?: string;
+  errorReferenceId?: string;
+  showActions?: boolean;
+}): void {
   if (typeof document === "undefined") return;
   dismissSplash();
+
+  const message =
+    options?.message ??
+    "We're having trouble loading this screen.\nPlease try again.";
+  const errorId = options?.errorReferenceId;
+  const showActions = options?.showActions ?? true;
 
   let el = document.getElementById(SAFE_OVERLAY_ID);
   if (!el) {
@@ -75,19 +113,38 @@ export function showUserSafeRecoveryOverlay(message = "Something went wrong. Rec
     (document.body ?? document.documentElement).appendChild(el);
   }
 
+  const safeMessage = escapeHtml(message).replace(/\\n/g, "<br>");
+  const refHtml = errorId
+    ? `<p style="margin:20px 0 0;font-size:12px;opacity:0.55;font-family:ui-monospace,monospace">Reference: ${escapeHtml(errorId)}</p>`
+    : "";
+  const actionsHtml = showActions
+    ? `<div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:20px">` +
+      `<button type="button" id="amynest-safe-retry" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>` +
+      `<button type="button" id="amynest-safe-home" style="padding:14px 28px;border-radius:999px;border:1px solid rgba(233,213,255,0.35);background:transparent;color:#e9d5ff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Go Home</button>` +
+      `</div>`
+    : `<p style="margin:12px 0 0;opacity:0.85;font-size:14px">Please wait a moment.</p>`;
+
   el.innerHTML =
     '<div style="max-width:420px">' +
-    `<p style="margin:0 0 8px;font-size:20px;font-weight:700">${escapeHtml(message)}</p>` +
-    '<p style="margin:0;opacity:0.85;font-size:14px">Please wait a moment.</p>' +
+    `<p style="margin:0 0 8px;font-size:22px;font-weight:700">Something went wrong</p>` +
+    `<p style="margin:0;opacity:0.85;font-size:15px;line-height:1.55">${safeMessage}</p>` +
+    actionsHtml +
+    refHtml +
     "</div>";
-}
 
-function messageFromPayload(payload: ProductionCrashPayload | string | unknown): string {
-  if (typeof payload === "string") return payload;
-  if (payload && typeof payload === "object" && "message" in payload) {
-    return String((payload as ProductionCrashPayload).message ?? "");
+  if (showActions) {
+    document.getElementById("amynest-safe-retry")?.addEventListener("click", () => {
+      location.reload();
+    });
+    document.getElementById("amynest-safe-home")?.addEventListener("click", () => {
+      const target = homePath();
+      if (location.pathname === target || location.pathname.endsWith("/dashboard")) {
+        location.reload();
+      } else {
+        location.assign(target);
+      }
+    });
   }
-  return String(payload ?? "");
 }
 
 function formatPayload(payload: ProductionCrashPayload | string | unknown): string {
@@ -146,24 +203,66 @@ function errFromPayload(payload: ProductionCrashPayload | string | unknown): unk
   return payload;
 }
 
+function normalizePayload(
+  payload: ProductionCrashPayload | string | unknown,
+): ProductionCrashPayload {
+  if (typeof payload === "string") {
+    return {
+      kind: "unknown",
+      message: payload,
+      errorId: generateErrorReferenceId(),
+      at: new Date().toISOString(),
+    };
+  }
+  if (payload && typeof payload === "object" && "message" in payload) {
+    const p = payload as ProductionCrashPayload;
+    return {
+      ...p,
+      errorId: p.errorId ?? generateErrorReferenceId(),
+      at: p.at ?? new Date().toISOString(),
+      href: p.href ?? (typeof window !== "undefined" ? window.location.href : undefined),
+      route: p.route ?? (typeof window !== "undefined" ? window.location.pathname : undefined),
+    };
+  }
+  return {
+    kind: "unknown",
+    message: String(payload ?? "unknown error"),
+    errorId: generateErrorReferenceId(),
+    at: new Date().toISOString(),
+  };
+}
+
 /** Full-screen crash overlay — safe to call before React boots. */
 export function showProductionCrashOverlay(payload: ProductionCrashPayload | string | unknown): void {
   if (typeof document === "undefined") return;
 
-  const kind =
-    payload && typeof payload === "object" && "kind" in payload
-      ? String((payload as ProductionCrashPayload).kind)
-      : "unknown";
-  const err = errFromPayload(payload);
+  const normalized = normalizePayload(payload);
+  const kind = normalized.kind;
+  const err = errFromPayload(normalized);
   const showDebugOverlay = shouldShowProductionCrashOverlay(err, kind);
 
-  persistLastCrash(payload);
+  persistLastCrash(normalized);
+  silentLogCrash(normalized);
+
+  if (isInfiniteRenderError(err)) {
+    if (canAttemptAutoRecovery()) {
+      navigateToSafeRoute();
+    } else {
+      showUserSafeRecoveryOverlay({
+        errorReferenceId: normalized.errorId,
+        showActions: true,
+      });
+    }
+    return;
+  }
 
   if (!showDebugOverlay) {
-    if (shouldAttemptAutoRecovery(err)) {
-      tryAutoRecovery(kind);
-    }
-    showUserSafeRecoveryOverlay();
+    const willAutoRecover =
+      canAttemptAutoRecovery() && shouldAttemptAutoRecovery(err) && tryAutoRecovery(kind);
+    showUserSafeRecoveryOverlay({
+      errorReferenceId: normalized.errorId,
+      showActions: !willAutoRecover,
+    });
     return;
   }
 
@@ -174,7 +273,7 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
       __amynestShowCrashOverlay?: typeof showProductionCrashOverlay;
       __amynestRefreshDiagPanel?: () => void;
     };
-    w.__amynestLastCrash = typeof payload === "string" ? payload : (payload as ProductionCrashPayload);
+    w.__amynestLastCrash = normalized;
     w.__amynestShowCrashOverlay = showProductionCrashOverlay;
     if (w.__amynestDiagOnly) {
       w.__amynestRefreshDiagPanel?.();
@@ -186,7 +285,7 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
 
   dismissSplash();
 
-  const bodyText = formatPayload(payload);
+  const bodyText = formatPayload(normalized);
 
   let el = document.getElementById(OVERLAY_ID);
   if (!el) {
@@ -222,6 +321,7 @@ function payloadFromError(err: unknown, kind: string, extra?: Partial<Production
       kind,
       message: err.message,
       stack: err.stack,
+      errorId: generateErrorReferenceId(),
       at: new Date().toISOString(),
       href: typeof window !== "undefined" ? window.location.href : undefined,
       route: typeof window !== "undefined" ? window.location.pathname : undefined,
@@ -234,6 +334,7 @@ function payloadFromError(err: unknown, kind: string, extra?: Partial<Production
       kind,
       message: e.message ?? String(err),
       stack: e.stack,
+      errorId: generateErrorReferenceId(),
       at: new Date().toISOString(),
       href: typeof window !== "undefined" ? window.location.href : undefined,
       route: typeof window !== "undefined" ? window.location.pathname : undefined,
@@ -243,6 +344,7 @@ function payloadFromError(err: unknown, kind: string, extra?: Partial<Production
   return {
     kind,
     message: String(err ?? "unknown error"),
+    errorId: generateErrorReferenceId(),
     at: new Date().toISOString(),
     href: typeof window !== "undefined" ? window.location.href : undefined,
     route: typeof window !== "undefined" ? window.location.pathname : undefined,
@@ -295,6 +397,7 @@ export function showReactCrashOverlay(error: Error, label?: string, componentSta
       .filter(Boolean)
       .join("\n"),
     detail: label,
+    errorId: generateErrorReferenceId(),
     at: new Date().toISOString(),
     href: typeof window !== "undefined" ? window.location.href : undefined,
     route: typeof window !== "undefined" ? window.location.pathname : undefined,

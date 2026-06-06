@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SelfHealingOpsPanel } from "@/components/admin/self-healing-ops-panel";
 
 type DashboardStatus = "healthy" | "degraded" | "failing";
 
@@ -442,6 +443,8 @@ export default function AdminDashboardPage() {
                 sub={`${data.totalRequests} events`}
               />
             </div>
+
+            <SelfHealingOpsPanel />
 
             {startupStats && (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">

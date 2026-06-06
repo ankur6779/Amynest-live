@@ -45,6 +45,12 @@ const RECOVERABLE_PATTERNS = [
   "Loading chunk",
 ] as const;
 
+const INFINITE_RENDER_PATTERNS = [
+  "Maximum update depth exceeded",
+  "Too many re-renders",
+  "Maximum call stack size exceeded",
+] as const;
+
 function messageFromUnknown(err: unknown): string {
   if (err instanceof Error) return `${err.name}: ${err.message}`;
   if (err && typeof err === "object" && "message" in err) {
@@ -58,6 +64,23 @@ function errorName(err: unknown): string {
     return String((err as { name?: string }).name ?? "");
   }
   return "";
+}
+
+function isLocalDevHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+}
+
+/** Preview / staging hosts where developer crash UI is allowed. */
+function isPreviewHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return (
+    host.includes("preview") ||
+    host.includes("staging") ||
+    host.endsWith(".onrender.com") && !host.startsWith("www.")
+  );
 }
 
 /** Benign — should be logged, not shown as a full-screen fatal crash. */
@@ -74,35 +97,37 @@ export function isRecoverableRuntimeError(err: unknown): boolean {
   return RECOVERABLE_PATTERNS.some((p) => msg.includes(p));
 }
 
-/** Full-screen debug overlay — off in production unless explicitly enabled. */
-export function isCrashDebugOverlayEnabled(): boolean {
-  if (import.meta.env.DEV) return true;
+/** Infinite render loops — log and navigate away; never show crash UI. */
+export function isInfiniteRenderError(err: unknown): boolean {
+  const msg = messageFromUnknown(err);
+  if (!msg) return false;
+  return INFINITE_RENDER_PATTERNS.some((p) => msg.includes(p));
+}
+
+/** True when end users must never see technical crash details. */
+export function isProductionEnvironment(): boolean {
+  if (import.meta.env.DEV) return false;
+  if (isLocalDevHost()) return false;
+  if (isPreviewHost()) return false;
   try {
-    if (typeof window !== "undefined") {
-      if (/[?&]crashdebug=1/.test(window.location.search)) return true;
+    if (typeof window !== "undefined" && /[?&]crashdebug=1/.test(window.location.search)) {
+      return false;
     }
   } catch {
     /* ignore */
   }
-  return import.meta.env.VITE_CRASH_DEBUG_OVERLAY === "true";
+  if (import.meta.env.VITE_CRASH_DEBUG_OVERLAY === "true") return false;
+  return true;
+}
+
+/** Full-screen debug overlay — off in production unless explicitly enabled. */
+export function isCrashDebugOverlayEnabled(): boolean {
+  return !isProductionEnvironment();
 }
 
 /** Whether the DOM crash overlay should appear for this error. */
-export function shouldShowProductionCrashOverlay(err: unknown, kind?: string): boolean {
-  if (kind === "bootstrap" || kind === "boot-timeout") return true;
+export function shouldShowProductionCrashOverlay(err: unknown, _kind?: string): boolean {
   if (isBenignRuntimeError(err)) return false;
-  if (
-    kind === "react.render" ||
-    kind === "react.recovery" ||
-    kind === "recoverable.error" ||
-    kind === "recoverable.rejection" ||
-    kind === "pre-react.error" ||
-    kind === "pre-react.rejection" ||
-    kind === "window.error" ||
-    kind === "unhandledrejection"
-  ) {
-    return isCrashDebugOverlayEnabled();
-  }
-  if (isRecoverableRuntimeError(err) && !isCrashDebugOverlayEnabled()) return false;
+  if (isInfiniteRenderError(err)) return false;
   return isCrashDebugOverlayEnabled();
 }

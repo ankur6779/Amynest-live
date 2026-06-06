@@ -7,11 +7,9 @@ export default function RouteFailedPage() {
 
   return (
     <AppFallbackUi
-      title="Page failed to load"
-      message="This page could not be opened. Go home or reload the app."
-      onReload={() => {
-        navigate("/");
-      }}
+      message="We're having trouble loading this screen.\nPlease try again."
+      onTryAgain={() => window.location.reload()}
+      onGoHome={() => navigate("/dashboard")}
     />
   );
 }

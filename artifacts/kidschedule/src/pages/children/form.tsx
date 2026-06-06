@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "wouter";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey, useListChildren } from "@workspace/api-client-react";
@@ -38,6 +38,17 @@ import {
   hydrateChildEducationFormValues,
   profileFormStageFlags,
 } from "@/lib/education-stage-display";
+import { countChildFormRender, logChildFormEffect } from "@/lib/child-form-debug";
+import { isFeatureMitigated } from "@/lib/self-healing/feature-mitigation";
+import { recordSelfHealingAction } from "@/lib/self-healing/action-log";
+import {
+  buildChildEducationPatchKey,
+  buildChildHydrationKey,
+  childFormResetValuesEqual,
+  educationFieldsEqual,
+  infantFormNormalizationPatches,
+  type ChildFormResetSlice,
+} from "@/lib/child-form-hydration";
 interface Babysitter {
   id: number;
   name: string;
@@ -195,6 +206,7 @@ function ChildForm() {
   const [sleepPattern, setSleepPattern] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const childHydrationKeyRef = useRef<string | null>(null);
+  const childEducationPatchKeyRef = useRef<string | null>(null);
   const isEditing = !!params.id && params.id !== "new";
   const childId = isEditing ? parseInt(params.id as string) : 0;
   const {
@@ -244,10 +256,19 @@ function ChildForm() {
     }
   });
   const [parentCountry, setParentCountry] = useState("IN");
-  const watchDob = form.watch("dob");
-  const watchEducationStage = form.watch("educationStage") as EducationStageCode | undefined;
-  const watchScheduleKnown = form.watch("scheduleKnown");
-  const travelMode = form.watch("travelMode");
+  const [watchDob, watchEducationStage, watchScheduleKnown, travelMode, watchName, watchChildClass] =
+    useWatch({
+      control: form.control,
+      name: ["dob", "educationStage", "scheduleKnown", "travelMode", "name", "childClass"],
+    }) as [
+      string,
+      EducationStageCode | undefined,
+      boolean | undefined,
+      string | undefined,
+      string,
+      string | undefined,
+    ];
+  countChildFormRender("ChildForm render");
   const hasDob = Boolean(watchDob);
   const calculatedAge = watchDob ? calculateAge(watchDob) : null;
   const ageYears = calculatedAge?.years ?? 0;
@@ -301,15 +322,24 @@ function ChildForm() {
   );
 
   useEffect(() => {
-    if (!isInfant) return;
-    if (form.getValues("educationStage") !== "at_home") {
-      form.setValue("educationStage", "at_home", { shouldDirty: false });
+    logChildFormEffect("infant-normalize", { isInfant, watchDob });
+    if (isFeatureMitigated("child-form-infant-normalize")) {
+      recordSelfHealingAction("child-form:stable-hydration-only");
+      return;
     }
-    if (form.getValues("scheduleKnown") !== false) {
+    if (!isInfant) return;
+    const patches = infantFormNormalizationPatches(isInfant, {
+      educationStage: form.getValues("educationStage"),
+      scheduleKnown: form.getValues("scheduleKnown"),
+    });
+    if (patches?.educationStage) {
+      form.setValue("educationStage", patches.educationStage, { shouldDirty: false });
+    }
+    if (patches?.scheduleKnown === false) {
       form.setValue("scheduleKnown", false, { shouldDirty: false });
     }
     setFixedActivities((prev) => (prev.length === 0 ? prev : []));
-  }, [form, isInfant, watchDob]);
+  }, [isInfant, watchDob, form]);
   useEffect(() => {
     authFetch("/api/babysitters").then(r => r.ok ? r.json() : []).then((data: Babysitter[]) => setBabysitters(data)).catch(() => {});
     authFetch("/api/parent-profile")
@@ -322,60 +352,108 @@ function ChildForm() {
       .catch(() => {});
   }, [authFetch]);
   useEffect(() => {
-    if (child && isEditing) {
-      const dobValue = (child as any).dob ?? "";
-      // Stable key only — avoid re-reset when react-query refetches the same child
-      // (updatedAt/name churn was re-triggering form.reset ↔ picker loops on /children/:id).
-      const hydrationKey = `${child.id}:${dobValue}:${parentCountry}`;
-      if (childHydrationKeyRef.current === hydrationKey) return;
-      childHydrationKeyRef.current = hydrationKey;
+    if (!child || !isEditing) return;
 
-      const edu = hydrateChildEducationFormValues(
-        {
-          educationStage: (child as { educationStage?: string }).educationStage,
-          isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
-          childClass: child.childClass,
-          age: child.age,
-          ageMonths: child.ageMonths,
-          scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
-        },
-        parentCountry,
-      );
-      form.reset({
-        name: child.name,
-        dob: dobValue,
-        educationStage: edu.educationStage,
-        scheduleKnown: edu.scheduleKnown,
-        childClass: edu.childClass,
-        wakeUpTime: child.wakeUpTime ?? "07:00",
-        sleepTime: child.sleepTime ?? "21:00",
-        schoolStartTime: child.schoolStartTime ?? "08:00",
-        schoolEndTime: child.schoolEndTime ?? "15:00",
-        schoolDays: (child as any).schoolDays as number[] | null | undefined ?? [1, 2, 3, 4, 5],
-        travelMode: child.travelMode as "van" | "car" | "walk" | "other" ?? "car",
-        travelModeOther: child.travelModeOther ?? "",
-        foodType: child.foodType as "veg" | "non_veg" ?? "veg",
-        goals: child.goals ?? "",
-        babysitterId: child.babysitterId ?? undefined
-      });
-      if ((child as any).photoUrl) setPhotoPreview((child as any).photoUrl);
-      const dt = (child as any).dietType ?? "vegetarian";
-      const fs = (child as any).foodStyle ?? "indian";
-      const sc = (child as any).subCuisine ?? "";
-      const rawAllergies: string = (child as any).allergies ?? "";
-      const chips = ALLERGY_CHIPS.map(c => c.value).filter(v => rawAllergies.split(",").map((s: string) => s.trim()).includes(v));
-      const textPart = rawAllergies.split(",").map((s: string) => s.trim()).filter(s => s && !ALLERGY_CHIPS.some(c => c.value === s)).join(", ");
-      setDietType(dt);
-      setFoodStyle(fs);
-      setSubCuisine(sc);
-      setAllergyChips(chips);
-      setAllergyText(textPart);
-      setFoodPrefInherited(!!(child as any).foodPrefInherited);
-      setCustomizeOpen(!!(child as any).foodPrefCustomized);
-      setFixedActivities(normalizeFixedActivities((child as any).fixedActivities));
-      setFeedingType((child as any).feedingType ?? null);
-      setSleepPattern((child as any).sleepPattern ?? null);
+    const dobValue = (child as { dob?: string | null }).dob ?? "";
+    const hydrationKey = buildChildHydrationKey(child.id, dobValue, parentCountry);
+    const educationPatchKey = buildChildEducationPatchKey(child.id, dobValue);
+
+    logChildFormEffect("child-hydrate", {
+      hydrationKey,
+      educationPatchKey,
+      prevHydrationKey: childHydrationKeyRef.current,
+    });
+
+    if (childHydrationKeyRef.current === hydrationKey) return;
+
+    const edu = hydrateChildEducationFormValues(
+      {
+        educationStage: (child as { educationStage?: string }).educationStage,
+        isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+        childClass: child.childClass,
+        age: child.age,
+        ageMonths: child.ageMonths,
+        scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+      },
+      parentCountry,
+    );
+
+    const nextValues: ChildFormResetSlice = {
+      name: child.name,
+      dob: dobValue,
+      educationStage: edu.educationStage,
+      scheduleKnown: edu.scheduleKnown,
+      childClass: edu.childClass,
+      wakeUpTime: child.wakeUpTime ?? "07:00",
+      sleepTime: child.sleepTime ?? "21:00",
+      schoolStartTime: child.schoolStartTime ?? "08:00",
+      schoolEndTime: child.schoolEndTime ?? "15:00",
+      schoolDays: (child as { schoolDays?: number[] | null }).schoolDays ?? [1, 2, 3, 4, 5],
+      travelMode: (child.travelMode as ChildFormResetSlice["travelMode"]) ?? "car",
+      travelModeOther: child.travelModeOther ?? "",
+      foodType: (child.foodType as ChildFormResetSlice["foodType"]) ?? "veg",
+      goals: child.goals ?? "",
+      babysitterId: child.babysitterId ?? undefined,
+    };
+
+    const countryOnlyPatch =
+      childEducationPatchKeyRef.current === educationPatchKey &&
+      childHydrationKeyRef.current !== null &&
+      childHydrationKeyRef.current !== hydrationKey;
+
+    childHydrationKeyRef.current = hydrationKey;
+    childEducationPatchKeyRef.current = educationPatchKey;
+
+    if (countryOnlyPatch) {
+      const currentEdu = {
+        educationStage: form.getValues("educationStage"),
+        scheduleKnown: form.getValues("scheduleKnown"),
+        childClass: form.getValues("childClass"),
+      };
+      if (!educationFieldsEqual(currentEdu, nextValues)) {
+        if (currentEdu.educationStage !== nextValues.educationStage) {
+          form.setValue("educationStage", nextValues.educationStage, { shouldDirty: false });
+        }
+        if (currentEdu.scheduleKnown !== nextValues.scheduleKnown) {
+          form.setValue("scheduleKnown", nextValues.scheduleKnown, { shouldDirty: false });
+        }
+        if ((currentEdu.childClass ?? "") !== (nextValues.childClass ?? "")) {
+          form.setValue("childClass", nextValues.childClass, { shouldDirty: false });
+        }
+      }
+      return;
     }
+
+    const currentValues = form.getValues();
+    if (!childFormResetValuesEqual(currentValues, nextValues)) {
+      form.reset(nextValues);
+    }
+
+    if ((child as { photoUrl?: string }).photoUrl) {
+      setPhotoPreview((child as { photoUrl?: string }).photoUrl ?? null);
+    }
+    const dt = (child as { dietType?: string }).dietType ?? "vegetarian";
+    const fs = (child as { foodStyle?: string }).foodStyle ?? "indian";
+    const sc = (child as { subCuisine?: string }).subCuisine ?? "";
+    const rawAllergies: string = (child as { allergies?: string }).allergies ?? "";
+    const chips = ALLERGY_CHIPS.map((c) => c.value).filter((v) =>
+      rawAllergies.split(",").map((s: string) => s.trim()).includes(v),
+    );
+    const textPart = rawAllergies
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter((s) => s && !ALLERGY_CHIPS.some((c) => c.value === s))
+      .join(", ");
+    setDietType(dt);
+    setFoodStyle(fs);
+    setSubCuisine(sc);
+    setAllergyChips(chips);
+    setAllergyText(textPart);
+    setFoodPrefInherited(!!(child as { foodPrefInherited?: boolean }).foodPrefInherited);
+    setCustomizeOpen(!!(child as { foodPrefCustomized?: boolean }).foodPrefCustomized);
+    setFixedActivities(normalizeFixedActivities((child as { fixedActivities?: unknown }).fixedActivities));
+    setFeedingType((child as { feedingType?: string | null }).feedingType ?? null);
+    setSleepPattern((child as { sleepPattern?: string | null }).sleepPattern ?? null);
   }, [child, form, isEditing, parentCountry]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -708,7 +786,7 @@ function ChildForm() {
                   </p>
                   <p className="font-bold text-foreground mb-3">
                     {t("pages.children.form.education_stage_question", {
-                      name: form.watch("name") || t("pages.children.form.your_child"),
+                      name: watchName || t("pages.children.form.your_child"),
                     })}
                   </p>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -750,7 +828,7 @@ function ChildForm() {
                         onClick={() => form.setValue("childClass", grade, { shouldDirty: true })}
                         className={cn(
                           "py-2.5 px-3 rounded-xl font-bold border-2 text-sm transition-all",
-                          form.watch("childClass") === grade
+                          watchChildClass === grade
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-muted/50 border-transparent hover:border-primary/40",
                         )}
@@ -1010,7 +1088,7 @@ function ChildForm() {
                     {customizeOpen && (
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs text-primary font-medium">{t("pages.children.form.personalized_for_child", { name: form.watch("name") || "this child" })}</span>
+                        <span className="text-xs text-primary font-medium">{t("pages.children.form.personalized_for_child", { name: watchName || "this child" })}</span>
                       </div>
                     )}
                     <div className="space-y-2">
@@ -1131,7 +1209,7 @@ function ChildForm() {
                     activities={fixedActivities.filter(
                       (e) => e.activity && e.days.length > 0 && e.start && e.end,
                     )}
-                    childName={form.watch("name")}
+                    childName={watchName}
                   />
                 )}
                 <FixedActivitiesEditor value={fixedActivities} onChange={setFixedActivities} />
@@ -1147,7 +1225,7 @@ function ChildForm() {
                     {t("pages.children.form.what_are_you_working_on_e_g_math_practice_swimming_on_tuesda")}
                   </FormDescription>
                   <FormControl>
-                    <Textarea placeholder={isInfant ? "e.g. Tummy time, sensory play, sleep training" : `${form.watch("name") || "Your child"} is working on... (leave blank for default routine)`} className="min-h-[90px] rounded-xl bg-muted/50 border-transparent focus-visible:bg-background resize-none" {...field} />
+                    <Textarea placeholder={isInfant ? "e.g. Tummy time, sensory play, sleep training" : `${watchName || "Your child"} is working on... (leave blank for default routine)`} className="min-h-[90px] rounded-xl bg-muted/50 border-transparent focus-visible:bg-background resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>;

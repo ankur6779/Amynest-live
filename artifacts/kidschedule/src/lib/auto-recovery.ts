@@ -1,5 +1,9 @@
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
+import {
+  canAttemptAutoRecovery as canAttemptGlobalRecovery,
+  recordGlobalRecoveryAttempt,
+} from "@/lib/recovery-limit";
 import { isBenignRuntimeError } from "@/lib/runtime-crash-policy";
 
 const RECOVERY_TS_KEY = "amynest:auto-recovery:ts";
@@ -41,6 +45,7 @@ export function resetAutoRecoveryCounters(): void {
  */
 export function tryAutoRecovery(reason?: string): boolean {
   if (typeof window === "undefined") return false;
+  if (!canAttemptGlobalRecovery()) return false;
   if (reloadInFlight) return true;
 
   const onboardingStep =
@@ -76,6 +81,7 @@ export function tryAutoRecovery(reason?: string): boolean {
     /* ignore */
   }
 
+  recordGlobalRecoveryAttempt();
   reloadInFlight = true;
   markCacheRecoveryPending();
   void handleRecoveryReload();
