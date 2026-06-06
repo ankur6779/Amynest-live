@@ -5,6 +5,7 @@ import { db, userAiMessagesTable } from "@workspace/db";
 import { GetRecipeBody, GetRecipeResponse, AskAssistantBody, AskAssistantResponse } from "@workspace/api-zod";
 import { recipeFor } from "../lib/meal-recipes.js";
 import { getParentingAdvice } from "../lib/parenting-faq.js";
+import { assistantAiUsageGate } from "../middlewares/assistantAiUsageGate.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
@@ -143,8 +144,8 @@ router.delete("/ai/messages", async (req, res): Promise<void> => {
   }
 });
 
-// AI-powered parenting assistant — uses OpenAI, rate-limited server-side via aiUsageGate (free=10/day)
-router.post("/ai/assistant-ai", aiUsageGate, async (req, res): Promise<void> => {
+// AI-powered parenting assistant — infant context: 3/day; otherwise 10/day (see assistantAiUsageGate)
+router.post("/ai/assistant-ai", assistantAiUsageGate, async (req, res): Promise<void> => {
   const parsed = AskAssistantBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -241,7 +242,7 @@ LENGTH
 });
 
 // Short-form parenting tip rewrite — strict 30-word output, low cost
-router.post("/ai/rewrite-tip", async (req, res): Promise<void> => {
+router.post("/ai/rewrite-tip", aiUsageGate, async (req, res): Promise<void> => {
   const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 400) : "";
   const childName = typeof req.body?.childName === "string" ? req.body.childName.slice(0, 60) : "";
 

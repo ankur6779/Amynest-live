@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
-import { featureGate } from "../middlewares/featureGate.js";
+import { applyFeatureGate, featureGate } from "../middlewares/featureGate.js";
 import { suggestMeals, type MealRegion } from "../lib/meal-suggestions";
 import { logger } from "../lib/logger.js";
 import { db } from "@workspace/db";
@@ -212,6 +212,12 @@ router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
     res.json({ meals: cached.meals, cached: true });
     return;
   }
+
+  let gateAllowed = false;
+  await applyFeatureGate(req, res, "ai_query", () => {
+    gateAllowed = true;
+  });
+  if (!gateAllowed) return;
 
   await submitRouteAiJob({
     routeName: "meals/generate",
@@ -482,6 +488,12 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   }
 
   const prompt = buildAiGeneratePrompt({ query, region, audience, childAge, totalAgeMonths: childAgeMonths, dietType, allergies, foodStyle, subCuisine, country });
+
+  let gateAllowed = false;
+  await applyFeatureGate(req, res, "ai_query", () => {
+    gateAllowed = true;
+  });
+  if (!gateAllowed) return;
 
   try {
     await submitRouteAiJob({

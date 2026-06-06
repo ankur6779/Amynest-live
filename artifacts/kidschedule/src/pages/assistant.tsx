@@ -25,6 +25,13 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { readResolvedApiJson } from "@/lib/poll-result";
 import { TAB_TOPICS, type AssistantTabId } from "@/lib/assistant-tab-topics";
+import { FF_INFANT_PREMIUM } from "@/lib/infant-feature-flags";
+import { mapFeatureToPaywallReason } from "@/lib/subscription-gate";
+import type { PaywallReason } from "@/contexts/paywall-context";
+
+function childTotalMonths(child: { age?: number | null; ageMonths?: number | null }): number {
+  return (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
+}
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -81,12 +88,7 @@ export default function AssistantPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dailyLimit = entitlements?.limits.aiQueriesPerDay ?? 10;
-  const remainingRaw = entitlements?.usage.aiQueriesRemaining;
-  const remaining = isPremium ? Infinity : Math.max(0, remainingRaw ?? dailyLimit);
-  const limitReached = !isPremium && remaining <= 0;
-
-  const { data: childrenData } = useQuery<Array<{ name?: string; age?: number | null }>>({
+  const { data: childrenData } = useQuery<Array<{ name?: string; age?: number | null; ageMonths?: number | null }>>({
     queryKey: ["children-for-assistant"],
     queryFn: async () => {
       const r = await authFetch("/api/children");
@@ -95,6 +97,20 @@ export default function AssistantPage() {
     staleTime: 60_000,
   });
   const primaryChild = Array.isArray(childrenData) && childrenData.length > 0 ? childrenData[0] : null;
+  const primaryChildTotalMonths = primaryChild ? childTotalMonths(primaryChild) : null;
+  const isInfantAmyContext =
+    FF_INFANT_PREMIUM &&
+    primaryChildTotalMonths !== null &&
+    primaryChildTotalMonths < 24;
+
+  const dailyLimit = isInfantAmyContext
+    ? (entitlements?.limits.infantAiQueriesPerDay ?? 3)
+    : (entitlements?.limits.aiQueriesPerDay ?? 10);
+  const remainingRaw = isInfantAmyContext
+    ? entitlements?.usage.infantAiQueriesRemaining
+    : entitlements?.usage.aiQueriesRemaining;
+  const remaining = isPremium ? Infinity : Math.max(0, remainingRaw ?? dailyLimit);
+  const limitReached = !isPremium && remaining <= 0;
 
   interface DailyBriefing {
     greeting?: string;
@@ -133,13 +149,25 @@ export default function AssistantPage() {
           question: text,
           language: i18nInstance.language || "en",
           history,
+          childId: primaryChild?.id ?? undefined,
           childName: primaryChild?.name ?? undefined,
           childAge: typeof primaryChild?.age === "number" ? primaryChild.age : undefined,
+          childAgeMonths:
+            primaryChildTotalMonths !== null ? primaryChildTotalMonths : undefined,
         }),
       });
       if (res.status === 402) {
         refreshSubscription();
-        window.dispatchEvent(new CustomEvent("amynest:open-paywall", { detail: { reason: "ai_quota" } }));
+        let paywallReason: PaywallReason = "ai_quota";
+        try {
+          const errBody = (await res.json()) as { feature?: string };
+          paywallReason = mapFeatureToPaywallReason(errBody?.feature);
+        } catch {
+          paywallReason = isInfantAmyContext ? "infant_ai_quota" : "ai_quota";
+        }
+        window.dispatchEvent(
+          new CustomEvent("amynest:open-paywall", { detail: { reason: paywallReason } }),
+        );
         return;
       }
       if (!res.ok) throw new Error("api_error");
@@ -151,7 +179,19 @@ export default function AssistantPage() {
     } finally {
       setLoading(false);
     }
-  }, [authFetch, input, loading, messages, primaryChild?.age, primaryChild?.name, refreshSubscription, t, toast]);
+  }, [
+    authFetch,
+    input,
+    isInfantAmyContext,
+    loading,
+    messages,
+    primaryChild?.age,
+    primaryChild?.name,
+    primaryChildTotalMonths,
+    refreshSubscription,
+    t,
+    toast,
+  ]);
 
   const clearChat = async () => {
     setMessages([]);
@@ -191,7 +231,11 @@ export default function AssistantPage() {
         content: (
           <div className="flex justify-center px-1">
             <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
-              <p>{t("ai.system_limit_message")}</p>
+              <p>
+                {isInfantAmyContext
+                  ? t("ai.infant_system_limit_message", "You've used today's 3 free baby questions. Upgrade for unlimited Amy guidance.")
+                  : t("ai.system_limit_message")}
+              </p>
               <Link href="/pricing" className="mt-2 inline-block">
                 <Button size="sm" className="gap-1.5 rounded-full" data-testid="button-upgrade-system">
                   <Zap className="h-3.5 w-3.5" />

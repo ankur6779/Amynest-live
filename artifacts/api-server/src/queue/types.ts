@@ -9,6 +9,8 @@ export type AiJobType =
   | "meals.ai_generate"
   | "meals.week_plan"
   | "meals.family_portions"
+  | "infant.sleep_coach"
+  | "infant.feeding_plan"
   | "routines.generate"
   | "routines.enrich_meals"
   | "spelling.ai_generate"

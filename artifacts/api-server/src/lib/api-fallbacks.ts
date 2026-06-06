@@ -22,6 +22,8 @@ export function buildFreeEntitlements(): EntitlementSummary {
     usage: {
       aiQueriesToday: 0,
       aiQueriesRemaining: FREE_LIMITS.aiQueriesPerDay,
+      infantAiQueriesToday: 0,
+      infantAiQueriesRemaining: FREE_LIMITS.infantAiQueriesPerDay,
       features: {} as EntitlementSummary["usage"]["features"],
     },
   };
