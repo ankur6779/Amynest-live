@@ -233,7 +233,7 @@ export function WakeWindowSystem({
     toast
   } = useToast();
   const spec = useMemo(() => getWakeSpec(ageMonths), [ageMonths]);
-  const { log, persistLocal } = useSleepLog(childId, childName);
+  const { log, setLog, persistLocal } = useSleepLog(childId, childName);
   const [now, setNow] = useState(Date.now());
 
   // Refresh "now" every 30s so countdown stays live
