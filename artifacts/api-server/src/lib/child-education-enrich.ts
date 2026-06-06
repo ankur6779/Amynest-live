@@ -1,6 +1,6 @@
 import {
   deriveSchoolFieldsFromStage,
-  resolveEducationStage,
+  resolveEducationStageForPersist,
   validateAgeStage,
   type EducationStageCode,
 } from "@workspace/education-stages";
@@ -34,7 +34,7 @@ export function enrichChildEducationFields<T extends ChildEducationInput>(
 } {
   const country = opts?.country ?? body.country ?? null;
   const months = body.ageMonths ?? 0;
-  const stage = resolveEducationStage(
+  const stage = resolveEducationStageForPersist(
     body.educationStage,
     body.isSchoolGoing,
     body.childClass,

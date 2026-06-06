@@ -28,6 +28,7 @@ export {
   inferEducationStageFromLegacy,
   learningEnvironmentLabel,
   resolveEducationStage,
+  resolveEducationStageForPersist,
   validateAgeStage,
 } from "./derive";
 

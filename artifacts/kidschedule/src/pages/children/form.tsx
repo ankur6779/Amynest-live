@@ -27,6 +27,7 @@ import { FixedActivitiesWeeklyInsights } from "@/components/routines/fixed-activ
 import { normalizeFixedActivities } from "@/lib/fixed-activities";
 import type { FixedActivityDraft } from "@/lib/fixed-activities";
 import {
+  approxDobFromAge,
   deriveSchoolFieldsFromStage,
   getClassOptionsForCountry,
   getEducationStagesForChild,
@@ -57,7 +58,7 @@ interface Babysitter {
 const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
 const childSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  dob: z.string().min(1, "Date of birth is required"),
+  dob: z.string().optional(),
   educationStage: z.string().optional(),
   scheduleKnown: z.boolean().optional(),
   childClass: z.string().optional(),
@@ -208,6 +209,7 @@ function ChildForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const childHydrationKeyRef = useRef<string | null>(null);
   const childEducationPatchKeyRef = useRef<string | null>(null);
+  const legacyAgeRef = useRef<{ years: number; months: number } | null>(null);
   const isEditing = !!params.id && params.id !== "new";
   const childId = isEditing ? parseInt(params.id as string) : 0;
   const {
@@ -270,15 +272,17 @@ function ChildForm() {
       string | undefined,
     ];
   countChildFormRender("ChildForm render");
-  const hasDob = Boolean(watchDob);
-  const calculatedAge = watchDob ? calculateAge(watchDob) : null;
-  const ageYears = calculatedAge?.years ?? 0;
-  const ageMonthsPart = calculatedAge?.months ?? 0;
-  const totalMonths = calculatedAge ? getTotalMonths(ageYears, ageMonthsPart) : 0;
-  const isInfant = hasDob && totalMonths < 12;
-  const ageGroupInfo = calculatedAge ? getAgeGroupInfo(totalMonths) : null;
+  const hasDob = Boolean(watchDob?.trim());
+  const calculatedAge = hasDob ? calculateAge(watchDob) : null;
+  const effectiveAge = calculatedAge ?? legacyAgeRef.current;
+  const hasAgeContext = hasDob || legacyAgeRef.current != null;
+  const ageYears = effectiveAge?.years ?? 0;
+  const ageMonthsPart = effectiveAge?.months ?? 0;
+  const totalMonths = effectiveAge ? getTotalMonths(ageYears, ageMonthsPart) : 0;
+  const isInfant = hasAgeContext && totalMonths < 12;
+  const ageGroupInfo = effectiveAge ? getAgeGroupInfo(totalMonths) : null;
   const stageOptions = useMemo(() => {
-    if (!hasDob || isInfant || !calculatedAge) return [];
+    if (!hasAgeContext || isInfant || !effectiveAge) return [];
     const options = getEducationStagesForChild(
       parentCountry,
       ageYears,
@@ -296,7 +300,7 @@ function ChildForm() {
       ];
     }
     return options;
-  }, [hasDob, isInfant, parentCountry, ageYears, ageMonthsPart, watchEducationStage]);
+  }, [hasAgeContext, isInfant, parentCountry, ageYears, ageMonthsPart, watchEducationStage, effectiveAge]);
   const stageFlags = profileFormStageFlags(watchEducationStage, totalMonths);
   const showScheduleFields = stageFlags.showScheduleSection && watchScheduleKnown === true;
 
@@ -311,15 +315,15 @@ function ChildForm() {
         schoolEndTime: form.getValues("schoolEndTime"),
         schoolDays: form.getValues("schoolDays"),
         country: parentCountry,
-        years: calculatedAge?.years ?? 0,
-        months: calculatedAge?.months ?? 0,
+        years: effectiveAge?.years ?? 0,
+        months: effectiveAge?.months ?? 0,
       });
       form.setValue("childClass", derived.childClass ?? "", { shouldDirty: true });
       if (stage !== "school") {
         form.setValue("scheduleKnown", false, { shouldDirty: true });
       }
     },
-    [calculatedAge, form, parentCountry],
+    [effectiveAge, form, parentCountry],
   );
 
   useEffect(() => {
@@ -355,7 +359,12 @@ function ChildForm() {
   useEffect(() => {
     if (!child || !isEditing) return;
 
-    const dobValue = (child as { dob?: string | null }).dob ?? "";
+    const dobValue = child.dob?.trim() ?? "";
+    if (!dobValue && (child.age > 0 || (child.ageMonths ?? 0) > 0)) {
+      legacyAgeRef.current = { years: child.age, months: child.ageMonths ?? 0 };
+    } else {
+      legacyAgeRef.current = null;
+    }
     const hydrationKey = buildChildHydrationKey(child.id, dobValue, parentCountry);
     const educationPatchKey = buildChildEducationPatchKey(child.id, dobValue);
 
@@ -369,12 +378,12 @@ function ChildForm() {
 
     const edu = hydrateChildEducationFormValues(
       {
-        educationStage: (child as { educationStage?: string }).educationStage,
-        isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+        educationStage: child.educationStage,
+        isSchoolGoing: child.isSchoolGoing,
         childClass: child.childClass,
         age: child.age,
         ageMonths: child.ageMonths,
-        scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+        scheduleKnown: child.scheduleKnown,
       },
       parentCountry,
     );
@@ -485,12 +494,27 @@ function ChildForm() {
     reader.readAsDataURL(file);
   };
   const onSubmit = (data: ChildFormValues) => {
-    const age = calculatedAge ?? {
+    const age = effectiveAge ?? {
       years: 0,
-      months: 0
+      months: 0,
     };
+    if (!hasAgeContext || (age.years === 0 && age.months === 0)) {
+      toast({
+        title: t("toasts.children.profile_add_failed"),
+        description: t("pages.children.form.date_of_birth"),
+        variant: "destructive",
+      });
+      return;
+    }
+    let dob = data.dob?.trim() ?? "";
+    let dobIsEstimated = false;
+    if (!dob) {
+      dob = approxDobFromAge(age.years, age.months);
+      dobIsEstimated = true;
+    }
+    const submitIsInfant = getTotalMonths(age.years, age.months) < 12;
     const educationStage = (
-      isInfant
+      submitIsInfant
         ? "at_home"
         : (data.educationStage as EducationStageCode | undefined)
     ) as EducationStageCode;
@@ -507,7 +531,8 @@ function ChildForm() {
     });
     const payload = {
       name: data.name,
-      dob: data.dob,
+      dob,
+      dobIsEstimated,
       age: age.years,
       ageMonths: age.months,
       educationStage: derived.educationStage,
@@ -522,20 +547,20 @@ function ChildForm() {
       schoolDays: derived.schoolDays,
       travelMode: derived.isSchoolGoing ? data.travelMode ?? "car" : "car",
       travelModeOther: derived.isSchoolGoing && data.travelMode === "other" ? data.travelModeOther : undefined,
-      foodType: isInfant ? "veg" : deriveFoodType(dietType),
-      dietType: isInfant ? null : dietType || null,
-      foodStyle: isInfant ? null : foodStyle || null,
-      subCuisine: isInfant ? null : subCuisine || null,
-      allergies: isInfant ? null : [...allergyChips, allergyText].filter(Boolean).join(", ") || null,
-      foodPrefInherited: isInfant ? false : !customizeOpen && foodPrefInherited,
-      foodPrefCustomized: isInfant ? false : customizeOpen,
-      feedingType: isInfant ? feedingType : null,
-      sleepPattern: isInfant ? sleepPattern : null,
-      goals: data.goals?.trim() || (isInfant ? "Infant care & development" : "General daily routine"),
+      foodType: submitIsInfant ? "veg" : deriveFoodType(dietType),
+      dietType: submitIsInfant ? null : dietType || null,
+      foodStyle: submitIsInfant ? null : foodStyle || null,
+      subCuisine: submitIsInfant ? null : subCuisine || null,
+      allergies: submitIsInfant ? null : [...allergyChips, allergyText].filter(Boolean).join(", ") || null,
+      foodPrefInherited: submitIsInfant ? false : !customizeOpen && foodPrefInherited,
+      foodPrefCustomized: submitIsInfant ? false : customizeOpen,
+      feedingType: submitIsInfant ? feedingType : null,
+      sleepPattern: submitIsInfant ? sleepPattern : null,
+      goals: data.goals?.trim() || (submitIsInfant ? "Infant care & development" : "General daily routine"),
       babysitterId: data.babysitterId || undefined,
       photoUrl: photoPreview || undefined,
       fixedActivities:
-        !isInfant &&
+        !submitIsInfant &&
         fixedActivities.filter(
           (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
         ).length > 0
@@ -685,7 +710,7 @@ function ChildForm() {
                   ? t("pages.children.form.edit_subtitle")
                   : t("pages.children.form.add_subtitle")}
               </p>
-              {calculatedAge && watchDob && ageGroupInfo && (
+              {effectiveAge && ageGroupInfo && (
                 <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">
                   {ageGroupInfo.emoji} {ageGroupInfo.label}
                 </span>
@@ -768,13 +793,17 @@ function ChildForm() {
               }} />
 
                 {/* Auto-calculated age display */}
-                {calculatedAge && watchDob && <div className="mt-3 flex items-center gap-3 flex-wrap">
+                {effectiveAge && <div className="mt-3 flex items-center gap-3 flex-wrap">
                     <div className="bg-muted/50 border border-border rounded-2xl px-4 py-2.5 flex items-center gap-2.5">
                       <span className="text-xl">{ageGroupInfo?.emoji}</span>
                       <div>
-                        <p className="text-xs text-muted-foreground font-medium">{t("pages.children.form.calculated_age")}</p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          {hasDob
+                            ? t("pages.children.form.calculated_age")
+                            : t("pages.children.index.age_years_estimated", { years: String(effectiveAge.years) })}
+                        </p>
                         <p className="font-bold text-foreground text-sm">
-                          {formatAge(calculatedAge.years, calculatedAge.months)}
+                          {formatAge(effectiveAge.years, effectiveAge.months)}
                         </p>
                       </div>
                     </div>
@@ -796,7 +825,7 @@ function ChildForm() {
                 </div>}
 
               {/* ── Education stage (non-infant only) ── */}
-              {hasDob && !isInfant && <div className="border-t border-border/40 pt-8">
+              {hasAgeContext && !isInfant && <div className="border-t border-border/40 pt-8">
                   <p className={`${sectionLabelClass} mb-3 flex items-center gap-2`}>
                     <School className="h-3.5 w-3.5" />
                     {t("pages.children.form.step_3_education_stage")}
@@ -831,7 +860,7 @@ function ChildForm() {
                 </div>}
 
               {/* ── Class / grade (formal school only) ── */}
-              {hasDob && !isInfant && stageFlags.showClass && (
+              {hasAgeContext && !isInfant && stageFlags.showClass && (
                 <div className="border-t border-border/40 pt-8">
                   <p className={`${sectionLabelClass} mb-3 flex items-center gap-2`}>
                     <GraduationCap className="h-3.5 w-3.5" />
@@ -858,7 +887,7 @@ function ChildForm() {
               )}
 
               {/* ── School schedule (formal school, age 6+) ── */}
-              {hasDob && !isInfant && stageFlags.showScheduleSection && (
+              {hasAgeContext && !isInfant && stageFlags.showScheduleSection && (
                 <div className="space-y-4 border-t border-border/40 pt-8">
                   <p className={sectionLabelClass}>
                     {t("pages.children.form.school_schedule_section")}
@@ -889,7 +918,7 @@ function ChildForm() {
                 </div>
               )}
 
-              {hasDob && !isInfant && showScheduleFields && (
+              {hasAgeContext && !isInfant && showScheduleFields && (
                 <>
                   <div>
                     <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">
@@ -1013,7 +1042,7 @@ function ChildForm() {
               )}
 
               {/* ── INFANT CARE (infants only) ── */}
-              {hasDob && isInfant && <div className="space-y-5 border-t border-border/40 pt-8">
+              {hasAgeContext && isInfant && <div className="space-y-5 border-t border-border/40 pt-8">
                   <div>
                     <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.infant_feeding")}</p>
                     <p className="text-xs text-muted-foreground mb-3">
@@ -1060,7 +1089,7 @@ function ChildForm() {
                 </div>}
 
               {/* ── WAKE / SLEEP ── */}
-              {hasDob && <div className="border-t border-border/40 pt-8">
+              {hasAgeContext && <div className="border-t border-border/40 pt-8">
                 <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.daily_schedule")}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="wakeUpTime" render={({
@@ -1085,7 +1114,7 @@ function ChildForm() {
               </div>}
 
               {/* ── FOOD PREFERENCE (non-infant only) ── */}
-              {hasDob && !isInfant && <div className="border-t border-border/40 pt-8">
+              {hasAgeContext && !isInfant && <div className="border-t border-border/40 pt-8">
                 <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.food_preference")}</p>
                 {foodPrefInherited && !customizeOpen ? (
                   <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3 gap-3">
@@ -1180,7 +1209,7 @@ function ChildForm() {
               </div>}
 
               {/* ── BABYSITTER ── */}
-              {hasDob && babysitters.length > 0 && <div className="border-t border-border/40 pt-8">
+              {hasAgeContext && babysitters.length > 0 && <div className="border-t border-border/40 pt-8">
                   <p className={`${sectionLabelClass} mb-3`}>
                     <Baby className="h-3.5 w-3.5 inline mr-1" />{t("pages.children.form.babysitter")}
                   </p>
@@ -1209,7 +1238,7 @@ function ChildForm() {
                 </div>}
 
               {/* ── RECURRING ACTIVITIES (non-infant only) ── */}
-              {hasDob && !isInfant && <div className="space-y-3 border-t border-border/40 pt-8">
+              {hasAgeContext && !isInfant && <div className="space-y-3 border-t border-border/40 pt-8">
                 <p className={sectionLabelClass}>
                   {t("pages.routines.fixed.profile_section")}
                 </p>
@@ -1228,7 +1257,7 @@ function ChildForm() {
               </div>}
 
               {/* ── GOALS ── */}
-              {hasDob && <div className="border-t border-border/40 pt-8">
+              {hasAgeContext && <div className="border-t border-border/40 pt-8">
               <FormField control={form.control} name="goals" render={({
               field
             }) => {
@@ -1247,7 +1276,7 @@ function ChildForm() {
 
               {/* ── ACTION BUTTONS ── */}
               <div className="sticky bottom-3 z-10 flex gap-3 rounded-3xl border border-border/50 bg-background/95 p-3 pt-4 shadow-lg backdrop-blur-md">
-                <Button type="submit" disabled={isSaving || !watchDob || (!isInfant && !watchEducationStage)} className="flex-1 rounded-full h-12 font-bold shadow-md">
+                <Button type="submit" disabled={isSaving || !hasAgeContext || (!isInfant && !watchEducationStage)} className="flex-1 rounded-full h-12 font-bold shadow-md">
                   {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("pages.children.form.saving")}</> : <><Save className="h-4 w-4 mr-2" />{isEditing ? t("pages.children.form.update_profile") : t("pages.children.form.add_child_cta")}</>}
                 </Button>
 
@@ -1275,7 +1304,7 @@ function ChildForm() {
               </div>
 
               {!watchDob && <p className="text-center text-xs text-muted-foreground">{t("pages.children.form.enter_your_child_s_date_of_birth_to_continue")}</p>}
-              {!isInfant && watchDob && !watchEducationStage && (
+              {!isInfant && hasAgeContext && !watchEducationStage && (
                 <p className="text-center text-xs text-primary font-medium">
                   {t("pages.children.form.please_select_education_stage")}
                 </p>

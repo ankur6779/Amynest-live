@@ -5,7 +5,7 @@ import {
   inferEducationStageFromLegacy,
   requiresClassSelection,
   requiresScheduleQuestion,
-  resolveEducationStage,
+  resolveEducationStageForPersist,
   type EducationStageCode,
 } from "@workspace/education-stages";
 
@@ -27,7 +27,7 @@ export function resolveChildEducationStage(child: {
   ageMonths?: number;
   country?: string | null;
 }): EducationStageCode {
-  return resolveEducationStage(
+  return resolveEducationStageForPersist(
     child.educationStage,
     child.isSchoolGoing,
     child.childClass,
@@ -66,7 +66,7 @@ export function hydrateChildEducationFormValues(
   childClass: string;
   scheduleKnown: boolean;
 } {
-  const stage = resolveEducationStage(
+  const stage = resolveEducationStageForPersist(
     child.educationStage,
     child.isSchoolGoing,
     child.childClass,
