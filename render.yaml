@@ -54,7 +54,7 @@ services:
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    autoDeployTrigger: commit
+    autoDeployTrigger: off
     dockerfilePath: ./docker/backend/Dockerfile
     dockerContext: .
     healthCheckPath: /health
@@ -134,7 +134,7 @@ services:
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    autoDeployTrigger: commit
+    autoDeployTrigger: off
     dockerfilePath: ./docker/worker/Dockerfile
     dockerContext: .
     envVars:
@@ -190,7 +190,7 @@ services:
     runtime: static
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    autoDeployTrigger: commit
+    autoDeployTrigger: off
     buildCommand: bash scripts/render-frontend-build.sh
     staticPublishPath: ./artifacts/kidschedule/dist/public
     routes:

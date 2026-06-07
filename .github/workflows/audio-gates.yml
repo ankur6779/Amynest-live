@@ -11,18 +11,9 @@ on:
       - "scripts/check-speech-coach-engine-freeze.ts"
       - "scripts/check-static-audio*.ts"
       - "scripts/check-audio-release-certification.ts"
-  push:
-    branches: [main]
-    paths:
-      - "artifacts/kidschedule/**"
-      - "lib/speech-coach/**"
-      - "lib/static-audio/**"
-      - "lib/phonics-sounds/**"
-      - "scripts/check-amy-voice-usage.ts"
-      - "scripts/check-speech-coach-engine-freeze.ts"
-      - "scripts/check-static-audio*.ts"
-      - "scripts/check-audio-release-certification.ts"
   workflow_dispatch:
+  workflow_call:
+  workflow_call:
 
 jobs:
   amy-voice:

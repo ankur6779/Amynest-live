@@ -1,26 +1,9 @@
-# Deploy Hetzner AI worker on main when worker-related code changes.
-#
-# Secrets (GitHub → Settings → Secrets → Actions):
-#   HETZNER_SSH_PRIVATE_KEY — deploy key (no passphrase), public key on server
-#   HETZNER_HOST            — e.g. 167.233.39.146
-#
-# Env vars stay on the server at /opt/amynest/worker.env (initial manual deploy).
-# Re-run scripts/hetzner/deploy-worker.sh locally when secrets change.
+# DEPRECATED entry point — use "Production deploy (gated)" on main pushes.
+# Kept for manual emergency deploy only (bypasses CI gates — use with care).
 
 name: Deploy Hetzner AI worker
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'artifacts/api-server/**'
-      - 'docker/worker/**'
-      - 'lib/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - 'pnpm-workspace.yaml'
-      - 'scripts/hetzner/**'
-      - '.github/workflows/deploy-hetzner-worker.yml'
   workflow_dispatch:
 
 concurrency:
@@ -29,13 +12,12 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy Hetzner worker
+    name: Deploy Hetzner worker (manual)
     runs-on: ubuntu-latest
     if: github.repository == 'ankur6779/Amynest-live'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup SSH
         env:

@@ -1,17 +1,9 @@
-# Deploy AmyNest production on every push to main.
-#
-# Render auto-deploy is configured via render.yaml (autoDeployTrigger: commit).
-# This workflow is a backup: it triggers deploys via the Render API when
-# RENDER_API_KEY is set in GitHub repo secrets.
-#
-# Add the secret: GitHub repo → Settings → Secrets → Actions → RENDER_API_KEY
-# (Create at https://dashboard.render.com/u/settings#api-keys)
+# DEPRECATED entry point — use "Production deploy (gated)" on main pushes.
+# Kept for manual emergency deploy only (bypasses CI gates — use with care).
 
 name: Deploy Render (production)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -20,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Trigger Render deploys
+    name: Trigger Render deploys (manual)
     runs-on: ubuntu-latest
     if: github.repository == 'ankur6779/Amynest-live'
 
@@ -33,7 +25,7 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           if [ -z "$RENDER_API_KEY" ]; then
-            echo "RENDER_API_KEY not configured — relying on Render auto-deploy (render.yaml autoDeployTrigger: commit)."
-            exit 0
+            echo "RENDER_API_KEY not configured."
+            exit 1
           fi
           bash scripts/trigger-render-deploy.sh "${{ github.sha }}"

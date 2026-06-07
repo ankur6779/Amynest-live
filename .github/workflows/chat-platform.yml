@@ -6,14 +6,8 @@ on:
       - "artifacts/kidschedule/**"
       - "scripts/check-chat-platform*.ts"
       - "android/**"
-  push:
-    branches: [main]
-    paths:
-      - "artifacts/kidschedule/**"
-      - "scripts/check-chat-platform*.ts"
-      - "android/**"
-  # Real-device certification is manual before Play release — not every main push.
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   chat-platform:

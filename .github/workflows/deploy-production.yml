@@ -1,0 +1,102 @@
+# Production deploy — runs all CI gates first; Render/Hetzner deploy only when green.
+#
+# Render autoDeployTrigger is off in render.yaml; this workflow is the sole main-branch
+# deploy path (plus workflow_dispatch on legacy deploy-* workflows for emergencies).
+
+name: Production deploy (gated)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production-main
+  cancel-in-progress: false
+
+jobs:
+  crash-release-gates:
+    uses: ./.github/workflows/crash-release-gates.yml
+    secrets: inherit
+
+  audio-gates:
+    uses: ./.github/workflows/audio-gates.yml
+    secrets: inherit
+
+  chat-platform-gates:
+    uses: ./.github/workflows/chat-platform.yml
+    secrets: inherit
+
+  deploy-render:
+    name: Trigger Render deploys
+    runs-on: ubuntu-latest
+    needs: [crash-release-gates, audio-gates, chat-platform-gates]
+    if: |
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      github.repository == 'ankur6779/Amynest-live'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger production deploys
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "RENDER_API_KEY not configured — cannot deploy (Render autoDeploy is off)."
+            exit 1
+          fi
+          bash scripts/trigger-render-deploy.sh "${{ github.sha }}"
+
+  deploy-hetzner-worker:
+    name: Deploy Hetzner AI worker
+    runs-on: ubuntu-latest
+    needs: [crash-release-gates, audio-gates, chat-platform-gates]
+    if: |
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      github.repository == 'ankur6779/Amynest-live'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            worker:
+              - 'artifacts/api-server/**'
+              - 'docker/worker/**'
+              - 'lib/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'scripts/hetzner/**'
+              - '.github/workflows/deploy-production.yml'
+
+      - name: Skip — no worker-related changes
+        if: steps.changes.outputs.worker != 'true'
+        run: echo "No worker paths changed; skipping Hetzner deploy."
+
+      - name: Setup SSH
+        if: steps.changes.outputs.worker == 'true'
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+        run: |
+          if [ -z "$HETZNER_SSH_KEY" ] || [ -z "$HETZNER_HOST" ]; then
+            echo "HETZNER_SSH_PRIVATE_KEY or HETZNER_HOST not configured."
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          host="$(printf '%s' "$HETZNER_HOST" | tr -d '[:space:]')"
+          ssh-keyscan -H "$host" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o ConnectTimeout=15 "root@${host}" echo "SSH preflight OK"
+
+      - name: Deploy via SSH
+        if: steps.changes.outputs.worker == 'true'
+        env:
+          HETZNER_SSH_KEY_FILE: /home/runner/.ssh/hetzner_deploy
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+        run: bash scripts/hetzner/deploy-worker-remote.sh
