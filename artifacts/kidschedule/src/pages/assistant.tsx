@@ -41,6 +41,13 @@ interface Message {
 
 type WebMode = AssistantTabId;
 
+const ASSISTANT_AI_TIMEOUT_MS = 45_000;
+const ASSISTANT_POLL_OPTIONS = {
+  maxAttempts: 30,
+  intervalMs: 2000,
+  requestTimeoutMs: 20_000,
+};
+
 const WEB_MODES: { id: WebMode; labelKey: string; placeholderKey: string; icon: LucideIcon }[] = [
   { id: "parenting", labelKey: "ai.mode_parenting", placeholderKey: "ai.web_placeholder_parenting", icon: Heart },
   { id: "teach", labelKey: "ai.mode_teach", placeholderKey: "ai.web_placeholder_teach", icon: GraduationCap },
@@ -145,20 +152,24 @@ export default function AssistantPage() {
     try {
       const { default: i18nInstance } = await import("@/i18n");
       const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
-      const res = await authFetch("/api/ai/assistant-ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: text,
-          language: i18nInstance.language || "en",
-          history,
-          childId: primaryChild?.id ?? undefined,
-          childName: primaryChild?.name ?? undefined,
-          childAge: typeof primaryChild?.age === "number" ? primaryChild.age : undefined,
-          childAgeMonths:
-            primaryChildTotalMonths !== null ? primaryChildTotalMonths : undefined,
-        }),
-      });
+      const res = await authFetch(
+        "/api/ai/assistant-ai",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: text,
+            language: i18nInstance.language || "en",
+            history,
+            childId: primaryChild?.id ?? undefined,
+            childName: primaryChild?.name ?? undefined,
+            childAge: typeof primaryChild?.age === "number" ? primaryChild.age : undefined,
+            childAgeMonths:
+              primaryChildTotalMonths !== null ? primaryChildTotalMonths : undefined,
+          }),
+        },
+        ASSISTANT_AI_TIMEOUT_MS,
+      );
       if (res.status === 402) {
         refreshSubscription();
         let paywallReason: PaywallReason = "ai_quota";
@@ -168,14 +179,27 @@ export default function AssistantPage() {
         } catch {
           paywallReason = isInfantAmyContext ? "infant_ai_quota" : "ai_quota";
         }
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "system",
+            content: isInfantAmyContext
+              ? t("ai.infant_system_limit_message", "You've used today's 3 free baby questions. Upgrade for unlimited Amy guidance.")
+              : t("ai.system_limit_message"),
+          },
+        ]);
         window.dispatchEvent(
           new CustomEvent("amynest:open-paywall", { detail: { reason: paywallReason } }),
         );
         return;
       }
-      if (!res.ok) throw new Error("api_error");
-      const data = await readResolvedApiJson<{ answer?: string }>(res, authFetch);
-      setMessages((prev) => [...prev, { role: "assistant", content: data?.answer ?? "" }]);
+      if (!res.ok) throw new Error(`api_error_${res.status}`);
+      const data = await readResolvedApiJson<{ answer?: string }>(res, authFetch, {
+        poll: ASSISTANT_POLL_OPTIONS,
+      });
+      const answer = data?.answer?.trim();
+      if (!answer) throw new Error("empty_answer");
+      setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
     } catch {
       toast({ title: t("ai.error_response"), variant: "destructive" });

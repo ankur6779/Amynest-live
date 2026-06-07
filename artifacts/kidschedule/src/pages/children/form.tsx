@@ -4,7 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -595,21 +595,35 @@ function ChildForm() {
       createMutation.mutate({
         data: payload
       }, {
-        onSuccess: () => {
+        onSuccess: (created) => {
           toast({
             title: t("toasts.children.profile_added")
           });
+          queryClient.setQueryData(getListChildrenQueryKey(), (old) => {
+            const prev = Array.isArray(old) ? old : [];
+            if (created?.id && !prev.some((child) => child.id === created.id)) {
+              return [...prev, created];
+            }
+            return prev;
+          });
+          void queryClient.invalidateQueries({ queryKey: getListChildrenQueryKey() });
+          void queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           setLocation("/dashboard");
         },
-        onError: (err: any) => {
-          if (err?.status === 402 && err?.data?.error === "child_limit_reached") {
+        onError: (err: unknown) => {
+          const apiErr = err as { status?: number; data?: { error?: string }; message?: string };
+          if (apiErr?.status === 402 && apiErr?.data?.error === "child_limit_reached") {
             setShowUpgradePrompt(true);
-          } else {
-            toast({
-              title: t("toasts.children.profile_add_failed"),
-              variant: "destructive"
-            });
+            return;
           }
+          toast({
+            title: t("toasts.children.profile_add_failed"),
+            description:
+              typeof apiErr?.message === "string" && apiErr.message.length > 0
+                ? apiErr.message
+                : undefined,
+            variant: "destructive"
+          });
         }
       });
     }

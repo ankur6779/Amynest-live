@@ -137,6 +137,18 @@ export function persistChildrenList(children: DashboardChildRow[]): void {
   persistWithSync(() => writeJson(CHILDREN_KEY, children));
 }
 
+/** Drop dashboard/session payloads (e.g. after sign-out or account deletion). */
+export function clearDashboardCaches(): void {
+  if (typeof localStorage === "undefined") return;
+  for (const key of [SUMMARY_KEY, STATS_KEY, CHILDREN_KEY, SUBSCRIPTION_KEY, SYNCED_AT_KEY]) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* private mode */
+    }
+  }
+}
+
 export function readCachedSubscription(): SubscriptionResponse | undefined {
   const cached = readJson<SubscriptionResponse>(SUBSCRIPTION_KEY);
   if (!cached?.entitlements?.limits) return undefined;
@@ -201,7 +213,17 @@ export async function fetchChildrenListResilient(
   try {
     const data = await fetchJson<DashboardChildRow[]>(authFetch, "/api/children");
     const rows = Array.isArray(data) ? data : [];
-    persistChildrenList(rows);
+    if (rows.length === 0) {
+      if (typeof localStorage !== "undefined") {
+        try {
+          localStorage.removeItem(CHILDREN_KEY);
+        } catch {
+          /* private mode */
+        }
+      }
+    } else {
+      persistChildrenList(rows);
+    }
     return rows;
   } catch (err) {
     console.warn("[dashboard] children fetch failed", err);

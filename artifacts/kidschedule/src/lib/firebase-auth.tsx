@@ -113,6 +113,8 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
+    const { clearUserSessionCaches } = await import("@/lib/user-session-cache");
+    clearUserSessionCaches();
     try {
       await fbSignOut(getFirebaseAuth());
     } catch (err) {

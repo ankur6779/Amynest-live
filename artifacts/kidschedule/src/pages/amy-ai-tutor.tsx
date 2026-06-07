@@ -158,35 +158,39 @@ export default function AmyAiTutorPage() {
     setLoading(true);
 
     try {
-      const res = await authFetch("/api/ai-tutor/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          childId: primaryChild?.id,
-          mode,
-          subject,
-          topic: topic.trim() || undefined,
-          message: text,
-          learningContext: learningProgress.aiTutorContext
-            ? {
-                weakSkills: [
-                  ...learningProgress.aiTutorContext.weakSkills,
-                  ...(learningProgress.phase3?.memory.strugglingSkills ?? []),
-                ].slice(0, 20),
-                recentMistakes: learningProgress.aiTutorContext.recentMistakes,
-                learningLevel: learningProgress.aiTutorContext.learningLevel,
-                unlockedSkills: [
-                  ...learningProgress.aiTutorContext.unlockedSkills,
-                  ...(learningProgress.phase3?.memory.masteredSkills ?? []),
-                ].slice(0, 30),
-                masteryScore: learningProgress.aiTutorContext.masteryScore,
-                currentPhase: learningProgress.aiTutorContext.currentPhase,
-                journeyDay: learningProgress.aiTutorContext.journeyDay,
-                proactiveInsights: learningProgress.phase3?.tutorLines.map((l) => l.text),
-              }
-            : undefined,
-        }),
-      });
+      const res = await authFetch(
+        "/api/ai-tutor/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            childId: primaryChild?.id,
+            mode,
+            subject,
+            topic: topic.trim() || undefined,
+            message: text,
+            learningContext: learningProgress.aiTutorContext
+              ? {
+                  weakSkills: [
+                    ...learningProgress.aiTutorContext.weakSkills,
+                    ...(learningProgress.phase3?.memory.strugglingSkills ?? []),
+                  ].slice(0, 20),
+                  recentMistakes: learningProgress.aiTutorContext.recentMistakes,
+                  learningLevel: learningProgress.aiTutorContext.learningLevel,
+                  unlockedSkills: [
+                    ...learningProgress.aiTutorContext.unlockedSkills,
+                    ...(learningProgress.phase3?.memory.masteredSkills ?? []),
+                  ].slice(0, 30),
+                  masteryScore: learningProgress.aiTutorContext.masteryScore,
+                  currentPhase: learningProgress.aiTutorContext.currentPhase,
+                  journeyDay: learningProgress.aiTutorContext.journeyDay,
+                  proactiveInsights: learningProgress.phase3?.tutorLines.map((l) => l.text),
+                }
+              : undefined,
+          }),
+        },
+        45_000,
+      );
       if (res.status === 402) {
         refreshSubscription();
         window.dispatchEvent(
@@ -195,7 +199,9 @@ export default function AmyAiTutorPage() {
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await readResolvedApiJson<{ reply: TutorReply }>(res, authFetch);
+      const data = await readResolvedApiJson<{ reply: TutorReply }>(res, authFetch, {
+        poll: { maxAttempts: 30, intervalMs: 2000, requestTimeoutMs: 20_000 },
+      });
       if (!data?.reply || typeof data.reply.content !== "string") {
         throw new Error("invalid_reply_shape");
       }

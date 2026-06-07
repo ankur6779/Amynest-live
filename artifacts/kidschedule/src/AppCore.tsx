@@ -1,8 +1,8 @@
 import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import { lazyPage } from "@/lib/safe-import";
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
 import { OAuthRedirectHandler } from "@/components/oauth-redirect-handler";
 import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
@@ -182,6 +182,14 @@ function HomeRedirect() {
   const { isSignedIn, isLoaded, authStatus, userId } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
   const authFetch = useAuthFetch();
+  const setupDone = isSetupComplete(effectiveSetupStatus(data));
+  const { data: childrenList, isFetched: childrenFetched } = useListChildren({
+    query: {
+      queryKey: getListChildrenQueryKey(),
+      enabled: isSignedIn && isLoaded && setupDone,
+      staleTime: 30_000,
+    },
+  });
 
   useEffect(() => {
     if (!isSignedIn || !isLoaded) return;
@@ -233,14 +241,25 @@ function HomeRedirect() {
     return <RouteLoadingShell />;
   }
 
-  const status = effectiveSetupStatus(data);
-  return isSetupComplete(status) ? <Redirect to="/dashboard" /> : <Redirect to="/onboarding" />;
+  if (setupDone) {
+    if (!childrenFetched) return <RouteLoadingShell />;
+    if ((childrenList?.length ?? 0) > 0) return <Redirect to="/dashboard" />;
+  }
+  return <Redirect to="/onboarding" />;
 }
 
 /** If setup is already done, leave /onboarding (users often land here from an old redirect). */
 function OnboardingRouteGuard() {
   const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
+  const setupDone = isSetupComplete(effectiveSetupStatus(data));
+  const { data: childrenList, isFetched: childrenFetched } = useListChildren({
+    query: {
+      queryKey: getListChildrenQueryKey(),
+      enabled: isSignedIn && setupDone,
+      staleTime: 30_000,
+    },
+  });
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
 
@@ -255,7 +274,9 @@ function OnboardingRouteGuard() {
       />
     );
   }
-  if (isSetupComplete(effectiveSetupStatus(data))) return <Redirect to="/dashboard" />;
+  if (setupDone && childrenFetched && (childrenList?.length ?? 0) > 0) {
+    return <Redirect to="/dashboard" />;
+  }
   return (
     <AppErrorBoundary label="Onboarding">
       <OnboardingPage />
@@ -278,6 +299,25 @@ function NotifyPromptRouteGuard() {
   );
 }
 
+const CHILD_OPTIONAL_ROUTE_PREFIXES = [
+  "/parent-profile",
+  "/profile",
+  "/pricing",
+  "/notification-settings",
+  "/notification-diagnostics",
+  "/children",
+  "/referrals",
+  "/feedback",
+  "/support",
+  "/billing-dispute",
+];
+
+function isChildOptionalRoute(path: string): boolean {
+  return CHILD_OPTIONAL_ROUTE_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+}
+
 function ProtectedRoute({
   component: Component,
   routeLabel,
@@ -288,6 +328,16 @@ function ProtectedRoute({
 }) {
   const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
+  const [location] = useLocation();
+  const setupStatus = effectiveSetupStatus(data);
+  const setupDone = isSetupComplete(setupStatus);
+  const { data: childrenList, isFetched: childrenFetched } = useListChildren({
+    query: {
+      queryKey: getListChildrenQueryKey(),
+      enabled: isSignedIn && setupDone,
+      staleTime: 30_000,
+    },
+  });
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
   const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
@@ -303,7 +353,14 @@ function ProtectedRoute({
   if (isError) {
     return <ApiRetryShell onRetry={() => void refetch()} />;
   }
-  if (!isSetupComplete(effectiveSetupStatus(data))) return <Redirect to="/onboarding" />;
+  if (!setupDone) return <Redirect to="/onboarding" />;
+  if (
+    childrenFetched &&
+    (!childrenList || childrenList.length === 0) &&
+    !isChildOptionalRoute(location)
+  ) {
+    return <Redirect to="/onboarding" />;
+  }
   return (
     <AppErrorBoundary label="Layout">
       <Layout>
@@ -511,7 +568,19 @@ function QueryClientCacheInvalidator() {
         prevUserIdRef.current !== undefined &&
         prevUserIdRef.current !== userId
       ) {
+        void import("@/lib/user-session-cache").then(({ clearUserSessionCaches, persistStoredSessionUid }) => {
+          clearUserSessionCaches();
+          persistStoredSessionUid(userId);
+        });
         queryClient.clear();
+      } else if (prevUserIdRef.current === undefined && userId) {
+        void import("@/lib/user-session-cache").then(({ readStoredSessionUid, clearUserSessionCaches, persistStoredSessionUid }) => {
+          const storedUid = readStoredSessionUid();
+          if (storedUid && storedUid !== userId) {
+            clearUserSessionCaches();
+          }
+          persistStoredSessionUid(userId);
+        });
       }
       prevUserIdRef.current = userId;
     });

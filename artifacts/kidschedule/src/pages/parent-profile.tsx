@@ -302,6 +302,8 @@ export default function ParentProfilePage() {
     try {
       const res = await authFetch("/api/account", { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
+      const { clearUserSessionCaches } = await import("@/lib/user-session-cache");
+      clearUserSessionCaches();
       qc.clear();
       await signOut({ redirectUrl: "/" });
     } catch {

@@ -6,25 +6,33 @@ import { trackAddSecondChildIntent } from "@/lib/onboarding-analytics";
 import { isAddChildBlocked } from "@/lib/add-child-gate";
 
 export function useAddChildGate() {
-  const { isPremium } = useSubscription();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { openPaywall } = usePaywall();
-  const { data: children, isLoading } = useListChildren({
+  const { data: children, isLoading, isPlaceholderData } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
   });
-  const existingCount = children?.length ?? 0;
-  const blocked = !isLoading && isAddChildBlocked(isPremium, existingCount);
+  const existingCount = isPlaceholderData ? 0 : (children?.length ?? 0);
+  const gateReady = !isLoading && !subscriptionLoading;
+  const blocked = gateReady && isAddChildBlocked(isPremium, existingCount);
 
   const tryAddChild = useCallback(
     (source?: string): boolean => {
-      if (!isLoading && isAddChildBlocked(isPremium, existingCount)) {
+      if (!gateReady) return true;
+      if (isAddChildBlocked(isPremium, existingCount)) {
         openPaywall("child_limit");
         trackAddSecondChildIntent(source ?? "add-child-gate", existingCount);
         return false;
       }
       return true;
     },
-    [existingCount, isLoading, isPremium, openPaywall],
+    [existingCount, gateReady, isPremium, openPaywall],
   );
 
-  return { blocked, existingCount, isPremium, isLoading, tryAddChild };
+  return {
+    blocked,
+    existingCount,
+    isPremium,
+    isLoading: isLoading || subscriptionLoading,
+    tryAddChild,
+  };
 }
