@@ -184,32 +184,69 @@ function StarsBurst({ show }: { show: boolean }) {
   );
 }
 
+/** Big, responsive hero size (~half the viewport, capped for tablets/desktop). */
+function useHeroSize() {
+  const [size, setSize] = useState(280);
+  useEffect(() => {
+    const calc = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      // ~62% of the narrower axis, clamped so it stays "half-page" but tidy.
+      const s = Math.min(vw * 0.62, vh * 0.42, 360);
+      setSize(Math.max(220, Math.round(s)));
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+  return size;
+}
+
 function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
   const listening = state === "listening";
   const speaking = state === "ai_speaking" || state === "feedback" || state === "next_task";
   const thinking = state === "processing";
+  const avatar = useHeroSize();
+  const glass = Math.round(avatar * 1.18);
+  const glow = Math.round(avatar * 1.5);
+
   return (
-    <div className="relative flex min-h-[320px] items-center justify-center">
+    <div
+      className="relative flex items-center justify-center"
+      style={{ minHeight: glass + 48 }}
+    >
       <StarsBurst show={success} />
       <div
         className={[
-          "absolute h-72 w-72 rounded-full blur-3xl transition-all duration-500",
+          "absolute rounded-full blur-3xl transition-all duration-500",
           listening ? "bg-cyan-400/30" : speaking ? "bg-fuchsia-500/35" : "bg-violet-500/20",
         ].join(" ")}
+        style={{ width: glow, height: glow }}
       />
-      {listening && <div className="absolute h-56 w-56 animate-ping rounded-full border border-cyan-300/50" />}
+      {listening && (
+        <div
+          className="absolute animate-ping rounded-full border border-cyan-300/50"
+          style={{ width: glass, height: glass }}
+        />
+      )}
       <div
         className={[
-          "relative grid h-52 w-52 place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-500",
+          "relative grid place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-500",
           speaking ? "scale-105 border-fuchsia-300/70 shadow-fuchsia-500/40" : "",
           listening ? "scale-110 border-cyan-300/80 shadow-cyan-500/40" : "",
           thinking ? "border-amber-300/80 shadow-amber-500/40" : "",
         ].join(" ")}
+        style={{ width: glass, height: glass }}
       >
-        {thinking && <Loader2 className="absolute h-56 w-56 animate-spin text-amber-200/50" />}
+        {thinking && (
+          <Loader2
+            className="absolute animate-spin text-amber-200/50"
+            style={{ width: glass, height: glass }}
+          />
+        )}
         <AmyAvatar
           tier="hero"
-          size={132}
+          size={avatar}
           ring
           bounce={success || speaking}
           state={success ? "celebrating" : coachStateToAmy3D(state)}

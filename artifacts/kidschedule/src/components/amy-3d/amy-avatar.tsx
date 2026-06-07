@@ -21,6 +21,14 @@ const Amy3DStage = lazy(() =>
   safeImport(() => import("@/components/amy-3d/amy-3d-stage")),
 );
 
+// The only rigged model available today (amy.glb) is a generic Tripo head that
+// is OFF-BRAND vs the premium purple-cap Amy. To keep ONE consistent Amy face
+// everywhere (header, hero, onboarding, branding), we render the premium
+// animated portrait on hero too and keep the live-3D path parked behind this
+// flag. Flip to true once an on-brand rigged amy.glb is dropped in — the whole
+// runtime animation system (blink/gaze/lip-sync) re-activates automatically.
+const ENABLE_LIVE_3D = false;
+
 export interface AmyAvatarProps {
   /** Visual mood of the head. Defaults to "idle". */
   state?: Amy3DState;
@@ -76,7 +84,7 @@ export function AmyAvatar({
   // Otherwise show the premium animated image portrait (never the old sphere).
   const portrait = <AmyPortrait state={state} size={size} className={className} />;
 
-  if (modelAvailable && canRenderLive3D()) {
+  if (ENABLE_LIVE_3D && modelAvailable && canRenderLive3D()) {
     return (
       <Amy3DErrorBoundary fallback={portrait}>
         <Suspense fallback={portrait}>

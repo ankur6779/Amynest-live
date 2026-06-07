@@ -37,8 +37,17 @@ export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProp
         ? "rgba(168,85,247,0.7)"
         : "rgba(139,92,246,0.55)";
 
-  const breatheDuration = speaking ? 0.45 : celebrating ? 0.6 : 4.2;
-  const haloDuration = speaking ? 0.9 : 3.2;
+  const breatheDuration = speaking ? 0.45 : celebrating ? 0.6 : 3.6;
+  const haloDuration = speaking ? 0.9 : 2.8;
+
+  // Even under prefers-reduced-motion we keep a very gentle, slow life so the
+  // companion never looks like a frozen sticker — just calmer & smaller.
+  const floatY = reduced ? size * 0.012 : size * 0.035;
+  const tiltDeg = reduced ? 1.2 : celebrating ? 4 : 3;
+  const breatheScale = reduced ? 1.008 : celebrating ? 1.03 : 1.02;
+  const floatDur = reduced ? 6 : 3.6;
+  const tiltDur = reduced ? 9 : celebrating ? 0.8 : 5;
+  const haloDur = reduced ? 5 : haloDuration;
 
   return (
     <div
@@ -53,14 +62,10 @@ export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProp
           inset: 0,
           borderRadius: "9999px",
           pointerEvents: "none",
-          boxShadow: `0 0 ${size * 0.18}px ${glow}, 0 0 ${size * 0.34}px ${glow}`,
+          boxShadow: `0 0 ${size * 0.18}px ${glow}, 0 0 ${size * 0.36}px ${glow}`,
         }}
-        animate={reduced ? undefined : { opacity: [0.55, 0.95, 0.55], scale: [1, 1.04, 1] }}
-        transition={
-          reduced
-            ? undefined
-            : { duration: haloDuration, repeat: Infinity, ease: "easeInOut" }
-        }
+        animate={{ opacity: [0.5, 0.95, 0.5], scale: [1, 1.05, 1] }}
+        transition={{ duration: haloDur, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Amy render — float + breathing + head tilt */}
@@ -72,28 +77,16 @@ export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProp
           overflow: "hidden",
           willChange: "transform",
         }}
-        animate={
-          reduced
-            ? undefined
-            : {
-                y: [0, -size * 0.02, 0],
-                rotate: celebrating ? [-4, 4, -4] : [-3, 3, -3],
-                scale: [1, 1.01, 1],
-              }
-        }
-        transition={
-          reduced
-            ? undefined
-            : {
-                y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-                rotate: {
-                  duration: celebrating ? 0.8 : 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                },
-                scale: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
-              }
-        }
+        animate={{
+          y: [0, -floatY, 0],
+          rotate: [-tiltDeg, tiltDeg, -tiltDeg],
+          scale: [1, breatheScale, 1],
+        }}
+        transition={{
+          y: { duration: floatDur, repeat: Infinity, ease: "easeInOut" },
+          rotate: { duration: tiltDur, repeat: Infinity, ease: "easeInOut" },
+          scale: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
+        }}
       >
         <img
           src={AMY_PORTRAIT_SRC}
