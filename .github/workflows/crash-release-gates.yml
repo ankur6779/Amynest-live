@@ -12,6 +12,10 @@ jobs:
   gates:
     name: Crash launch + release intelligence
     runs-on: ubuntu-latest
+    env:
+      # GitHub secret: Render Postgres External Database URL (not internal).
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PG_POOL_MAX: "3"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,6 +30,10 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Verify production DB (crash_events read)
+        if: env.DATABASE_URL != ''
+        run: node scripts/test-db-connection.mjs
 
       - name: Crash intelligence unit tests
         run: |

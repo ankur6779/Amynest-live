@@ -20,9 +20,12 @@ import type { FingerprintAggregate } from "../artifacts/api-server/src/services/
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadLiveAggregates(): Promise<FingerprintAggregate[]> {
-  if (!process.env.DATABASE_URL) return [];
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) return [];
 
   try {
+    const { normalizeDatabaseUrl } = await import("@workspace/db/database-url");
+    process.env.DATABASE_URL = normalizeDatabaseUrl(raw);
     const { aggregateCrashFingerprints } = await import(
       "../artifacts/api-server/src/services/crash-intelligence/aggregation-service.js"
     );
