@@ -14,7 +14,7 @@ export function resolveSleepLibraryEntry(id: string): SleepLibraryItem | undefin
       category: "poem",
       ageGroups: [poem.ageGroup],
       primaryAgeGroup: poem.ageGroup,
-      icon: poem.icon === "Heart" ? "HeartIcon" : poem.icon,
+      icon: poem.icon === "Heart" ? "HeartIcon" : poem.icon as SleepLibraryItem["icon"],
       durationSec: 30,
       offlineSuitability: "bundled",
       calmingIntensity: poem.mood === "Sleep" ? 1 : 2,

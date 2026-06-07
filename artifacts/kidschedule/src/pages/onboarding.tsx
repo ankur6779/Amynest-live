@@ -1425,7 +1425,7 @@ export default function OnboardingPage() {
     const parentAmy = oauthName
       ? t("screens.onboarding.parent_name_confirm_question", { name: oauthName })
       : t("screens.onboarding.parent_intro");
-    userReplies(userReply, "parent-name", prependAcknowledgement(parentAmy, ack));
+    userReplies(userReply, "parent-name", prependAcknowledgement(parentAmy, ack ?? null));
     setParentNameEditing(false);
   }
 

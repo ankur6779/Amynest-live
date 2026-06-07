@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Trophy, AlertTriangle, Flag, Megaphone, Clock } from "lucide-react";
+import { ChevronDown, Trophy, AlertTriangle, Flag, Megaphone, Clock, type LucideIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTranslation } from "react-i18next";
 import type { HubActiveCampaign, HubGoalCoachState, HubTimelineHighlight } from "./types";
@@ -8,7 +8,7 @@ import type { HubDashboardSection } from "./types";
 interface CollapsibleInsightSectionProps {
   sectionId: HubDashboardSection;
   title: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   count: number;
   defaultOpen?: boolean;
   onExpand?: (section: HubDashboardSection) => void;

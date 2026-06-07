@@ -18,6 +18,7 @@ import {
   Lightbulb,
   HelpCircle,
   Loader2,
+  type LucideIcon,
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +41,7 @@ interface Message {
 
 type WebMode = AssistantTabId;
 
-const WEB_MODES: { id: WebMode; labelKey: string; placeholderKey: string; icon: React.ElementType }[] = [
+const WEB_MODES: { id: WebMode; labelKey: string; placeholderKey: string; icon: LucideIcon }[] = [
   { id: "parenting", labelKey: "ai.mode_parenting", placeholderKey: "ai.web_placeholder_parenting", icon: Heart },
   { id: "teach", labelKey: "ai.mode_teach", placeholderKey: "ai.web_placeholder_teach", icon: GraduationCap },
   { id: "practice", labelKey: "ai.mode_practice", placeholderKey: "ai.web_placeholder_practice", icon: CheckSquare },
@@ -88,7 +89,9 @@ export default function AssistantPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { data: childrenData } = useQuery<Array<{ name?: string; age?: number | null; ageMonths?: number | null }>>({
+  const { data: childrenData } = useQuery<
+    Array<{ id?: number; name?: string; age?: number | null; ageMonths?: number | null }>
+  >({
     queryKey: ["children-for-assistant"],
     queryFn: async () => {
       const r = await authFetch("/api/children");

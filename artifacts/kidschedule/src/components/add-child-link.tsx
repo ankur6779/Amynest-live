@@ -1,4 +1,4 @@
-import { type MouseEventHandler, type ReactNode } from "react";
+import { type FocusEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import { AppLink } from "@/components/app-link";
 import { useAddChildGate } from "@/hooks/use-add-child-gate";
 
@@ -12,7 +12,7 @@ type AddChildLinkProps = {
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   onPointerDown?: MouseEventHandler<HTMLAnchorElement>;
   onMouseEnter?: MouseEventHandler<HTMLAnchorElement>;
-  onFocus?: MouseEventHandler<HTMLAnchorElement>;
+  onFocus?: FocusEventHandler<HTMLAnchorElement>;
   "data-testid"?: string;
   "data-tour"?: string;
 };

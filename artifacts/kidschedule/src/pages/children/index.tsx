@@ -69,7 +69,7 @@ export default function ChildrenList() {
                             {formatChildAgeWithEstimate(
                               child.age,
                               child.ageMonths ?? 0,
-                              child.dobIsEstimated,
+                              child.dobIsEstimated ?? undefined,
                               t,
                             )}
                           </span>

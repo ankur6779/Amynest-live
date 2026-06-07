@@ -46,4 +46,9 @@ if [ -n "$TRACKED_CHANGES" ] || [ -n "$UNTRACKED_FILES" ]; then
   exit 1
 fi
 
-echo "Codegen output is up to date. Proceeding with commit."
+echo "Codegen output is up to date."
+
+echo "Running kidschedule TypeScript check..."
+pnpm --filter @workspace/kidschedule run typecheck
+
+echo "Pre-commit checks passed. Proceeding with commit."

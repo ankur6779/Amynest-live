@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey, type BehaviorStat, type Child } from "@workspace/api-client-react";
 import { Redirect, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
@@ -33,6 +33,7 @@ import {
   readCachedBehaviorStats,
   readCachedChildrenList,
   readCachedDashboardSummary,
+  type DashboardSummary as CachedDashboardSummary,
 } from "@/lib/dashboard-data-cache";
 import { useDashboardShellReady } from "@/hooks/use-dashboard-shell-ready";
 import { Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
@@ -963,8 +964,8 @@ export default function Dashboard() {
   } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
-      queryFn: () => fetchChildrenListResilient(authFetch),
-      placeholderData: () => readCachedChildrenList() ?? [],
+      queryFn: () => fetchChildrenListResilient(authFetch) as unknown as Promise<Child[]>,
+      placeholderData: () => (readCachedChildrenList() ?? []) as unknown as Child[],
       refetchInterval: POLL_INTERVAL_MS,
       refetchOnWindowFocus: true,
       retry: 1,
@@ -980,8 +981,8 @@ export default function Dashboard() {
   } = useGetBehaviorStats({
     query: {
       queryKey: getGetBehaviorStatsQueryKey(),
-      queryFn: () => fetchBehaviorStatsResilient(authFetch),
-      placeholderData: () => readCachedBehaviorStats() ?? [],
+      queryFn: () => fetchBehaviorStatsResilient(authFetch) as unknown as Promise<BehaviorStat[]>,
+      placeholderData: () => (readCachedBehaviorStats() ?? []) as unknown as BehaviorStat[],
       refetchInterval: POLL_INTERVAL_MS,
       refetchOnWindowFocus: true,
       retry: 1,
@@ -1075,7 +1076,7 @@ export default function Dashboard() {
       });
   }, [authReady, isSignedIn, authFetch]);
 
-  const summaryUsesFallback = summary?.fallback === true;
+  const summaryUsesFallback = (summary as CachedDashboardSummary | undefined)?.fallback === true;
   const showAvailabilityBanner =
     shellReady &&
     !fetchingSummary &&
@@ -1133,7 +1134,7 @@ export default function Dashboard() {
       setLocation("/routines/generate");
     }
   }
-  const summaryFallback = summary?.fallback === true;
+  const summaryFallback = (summary as CachedDashboardSummary | undefined)?.fallback === true;
   const noChildren =
     !fetchingSummary &&
     !fetchingChildren &&

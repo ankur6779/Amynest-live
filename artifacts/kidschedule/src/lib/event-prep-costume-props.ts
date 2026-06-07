@@ -57,7 +57,6 @@ export function buildCostumeProps(
     id: "main",
     emoji: mainEmoji,
     label: costumeLabel,
-    kind: "main",
     ...DEFAULT_SLOTS[0],
   });
   slotIdx = 1;

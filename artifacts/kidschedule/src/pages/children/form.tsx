@@ -433,8 +433,8 @@ function ChildForm() {
     }
 
     const currentValues = form.getValues();
-    if (!childFormResetValuesEqual(currentValues, nextValues)) {
-      form.reset(nextValues);
+    if (!childFormResetValuesEqual(currentValues as ChildFormResetSlice, nextValues)) {
+      form.reset(nextValues as Parameters<typeof form.reset>[0]);
     }
 
     if ((child as { photoUrl?: string }).photoUrl) {
@@ -780,7 +780,7 @@ function ChildForm() {
                     <FormDescription>{t("pages.children.form.we_use_this_to_auto_detect_the_age_group_and_customize_the_r")}</FormDescription>
                     <FormControl>
                       <ChildDobPicker
-                        value={field.value}
+                        value={field.value ?? ""}
                         max={todayStr}
                         onChange={field.onChange}
                         className="w-full"

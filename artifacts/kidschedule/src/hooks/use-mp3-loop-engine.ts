@@ -86,8 +86,8 @@ export function useMp3LoopEngine(): Mp3LoopEngine {
 
       const played = await audioManager.play(
         audio,
-        { proxyUrl: trimmed, source: "infant_sleep_mp3", channel: "ambient", interrupt: true },
-        { channel: "ambient", interrupt: true },
+        { proxyUrl: trimmed, source: "infant_sleep_mp3", channel: "ui", interrupt: true },
+        { channel: "ui", interrupt: true },
       );
       if (!played) {
         teardown();

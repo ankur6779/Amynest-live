@@ -178,9 +178,19 @@ export function EventPrepHomeView({
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
-              {visibleEvents.map((event) => (
-                <SchoolEventCard key={event.id} event={event} onOpen={() => onEventOpen(event.id)} />
-              ))}
+              {visibleEvents.map((event) => {
+                const upcomingMatch = upcoming.find((u) => u.event.id === event.id);
+                return (
+                  <SchoolEventCard
+                    key={event.id}
+                    event={event}
+                    nextDate={upcomingMatch?.nextDate ?? event.dateLabel}
+                    daysUntil={upcomingMatch?.daysUntil ?? 0}
+                    t={t}
+                    onOpen={() => onEventOpen(event.id)}
+                  />
+                );
+              })}
             </div>
           )}
         </>

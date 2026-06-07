@@ -45,7 +45,7 @@ export function InfantWeeklySleepReport({
   const [error, setError] = useState<string | null>(null);
 
   async function loadReport() {
-    if (!entitlements.isPremium) {
+    if (!entitlements?.isPremium) {
       openPaywall("infant_sleep_coach");
       return;
     }

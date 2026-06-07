@@ -1,4 +1,4 @@
-import { type MouseEventHandler, type ReactNode } from "react";
+import { type FocusEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import {
@@ -25,7 +25,7 @@ type AppLinkProps = {
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   onPointerDown?: MouseEventHandler<HTMLAnchorElement>;
   onMouseEnter?: MouseEventHandler<HTMLAnchorElement>;
-  onFocus?: MouseEventHandler<HTMLAnchorElement>;
+  onFocus?: FocusEventHandler<HTMLAnchorElement>;
   "data-testid"?: string;
   "data-tour"?: string;
 };

@@ -24,6 +24,8 @@ export type SleepIconName =
   | "HeartIcon"
   | "Bird"
   | "Sprout"
+  | "Flower2"
+  | "Sun"
   | "BookOpen";
 
 export type LoopRecommendation = "always" | "recommended" | "optional" | "single-play";

@@ -1,4 +1,4 @@
-import { BookOpen, CalendarCheck } from "lucide-react";
+import { BookOpen, CalendarCheck, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HubMetricCard, HubRoutedAction } from "./types";
 
@@ -43,7 +43,7 @@ function MetricPill({
   onTap,
   variant,
 }: {
-  icon: React.ElementType;
+  icon: LucideIcon;
   label: string;
   card: HubMetricCard;
   onTap?: (action: HubRoutedAction, label: string) => void;

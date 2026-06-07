@@ -777,7 +777,7 @@ export function InfantHub({
         open={openSections.has("infant-sounds")}
         onOpenChange={(v) => setSectionOpen("infant-sounds", v)}
       >
-        <WhiteNoiseLullaby ageMonths={ageMonths} childId={childId} />
+        <WhiteNoiseLullaby ageMonths={ageMonths} childId={String(childId)} />
       </IHSection>
 
       <IHSection

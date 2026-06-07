@@ -18,7 +18,7 @@ export type ChildFormResetSlice = InfantFormSlice & {
   schoolDays: number[];
   travelMode: string;
   travelModeOther: string;
-  foodType: string;
+  foodType: "veg" | "non_veg";
   goals: string;
   babysitterId?: number;
 };

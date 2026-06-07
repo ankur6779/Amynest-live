@@ -27,10 +27,29 @@ jobs:
     uses: ./.github/workflows/chat-platform.yml
     secrets: inherit
 
+  typecheck-gate:
+    name: TypeScript gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (libs + artifacts + scripts)
+        run: pnpm run typecheck
+
   deploy-render:
     name: Trigger Render deploys
     runs-on: ubuntu-latest
-    needs: [crash-release-gates, audio-gates, chat-platform-gates]
+    needs: [crash-release-gates, audio-gates, chat-platform-gates, typecheck-gate]
     if: |
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
@@ -51,7 +70,7 @@ jobs:
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker
     runs-on: ubuntu-latest
-    needs: [crash-release-gates, audio-gates, chat-platform-gates]
+    needs: [crash-release-gates, audio-gates, chat-platform-gates, typecheck-gate]
     if: |
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&

@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import { Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert, Loader2, RefreshCw, History, Lightbulb } from "lucide-react";
+import { Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert, Loader2, RefreshCw, History, Lightbulb, CloudMoon } from "lucide-react";
 import { SleepNapReminders } from "@/components/sleep-predict-reminders";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
