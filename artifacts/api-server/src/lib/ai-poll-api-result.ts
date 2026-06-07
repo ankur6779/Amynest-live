@@ -27,6 +27,13 @@ export async function shapePollApiResult(
       const { buildRoutineGeneratePollResponse } = await import("../routes/routines.js");
       return buildRoutineGeneratePollResponse(rawResult, wrapped?.pollContext);
     }
+    case "meals/ai-generate": {
+      const { buildMealsAiGenerateApiBody } = await import("./meals-ai-generate-response.js");
+      return buildMealsAiGenerateApiBody(
+        rawResult,
+        (wrapped?.pollContext ?? {}) as import("./meals-ai-generate-response.js").MealsAiGeneratePollContext,
+      );
+    }
     default:
       return rawResult;
   }

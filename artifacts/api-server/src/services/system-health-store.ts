@@ -42,6 +42,9 @@ export type SystemHealthSnapshot = {
   metrics: SystemMetrics;
   incidents: SystemIncident[];
   services?: import("./service-crash-store.js").ServiceCrashSnapshot;
+  bullmq?: {
+    failedJobs: import("../queue/failed-job-diagnostics.js").FailedAiJobDiagnostic[];
+  };
   predictive?: {
     ops: import("./predictive-ops-store.js").PredictiveOpsState;
     trends: import("./predictive-trend-store.js").MetricsHistory;
@@ -240,11 +243,14 @@ export async function getSystemHealthSnapshot(now = Date.now()): Promise<SystemH
   const { getServiceCrashSnapshot } = await import("./service-crash-store.js");
   const { getPredictiveOpsState, getPredictedIncidents } = await import("./predictive-ops-store.js");
   const { getMetricsHistory } = await import("./predictive-trend-store.js");
+  const { getRecentFailedAiJobDiagnostics } = await import("../queue/failed-job-diagnostics.js");
+  const failedJobs = await getRecentFailedAiJobDiagnostics(5);
   return {
     health,
     metrics,
     incidents: getSystemIncidents(),
     services: getServiceCrashSnapshot(now),
+    bullmq: { failedJobs },
     predictive: {
       ops: getPredictiveOpsState(),
       trends: getMetricsHistory(now),

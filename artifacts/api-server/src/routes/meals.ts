@@ -15,6 +15,7 @@ import {
   assessMealAgeSafety,
 } from "../lib/meal-safety.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { buildMealsAiGenerateApiBody } from "../lib/meals-ai-generate-response.js";
 
 const router: IRouter = Router();
 
@@ -504,6 +505,14 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   });
   if (!gateAllowed) return;
 
+  const pollContext = {
+    childAgeMonths: childAgeMonths ?? undefined,
+    allergies,
+    dietType,
+    region,
+    audience,
+  };
+
   try {
     await submitRouteAiJob({
       routeName: "meals/ai-generate",
@@ -517,71 +526,11 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
         allergies,
         dietType,
       },
-      waitMs: 30_000,
+      pollContext,
+      waitMs: 0,
       buildSyncBody: (result) => {
-        const ai = result as { meals: Array<Record<string, unknown>>; amyMessage: string; ageBand?: string };
-        const SAFE_TAGS = new Set(["quick","healthy","veg","non-veg","protein","sweet","spicy","light","heavy","kids","tiffin"]);
-        const meals = ai.meals.slice(0, 6).flatMap((o, idx) => {
-          const title = String(o.title ?? "").slice(0, 80) || "Meal";
-          const emoji = typeof o.emoji === "string" && o.emoji.trim()
-            ? o.emoji.trim().slice(0, 4)
-            : DEFAULT_EMOJIS[idx % DEFAULT_EMOJIS.length];
-          const ingredients = (Array.isArray(o.ingredients) ? o.ingredients : []).slice(0, 8).map(String);
-          const steps = (Array.isArray(o.steps) ? o.steps : []).slice(0, 6).map(String);
-          const prepMinutes = Number(o.prepMinutes) || 15;
-          const calories = Math.min(1200, Math.max(50, Number(o.calories) || 200));
-          const tags = (Array.isArray(o.tags) ? o.tags : [])
-            .slice(0, 4)
-            .map((t) => String(t).toLowerCase().trim().slice(0, 20))
-            .filter((t) => SAFE_TAGS.has(t));
-          const isVegMeal = o.isVeg === true || tags.includes("veg");
-          const bgGradient = AI_GENERATE_GRADIENTS[idx % AI_GENERATE_GRADIENTS.length] as [string, string];
-
-          if (childAgeMonths != null) {
-            const verdict = assessMealAgeSafety({ title, ingredients }, childAgeMonths);
-            if (!verdict.allowed) {
-              logger.warn(
-                { title, childAgeMonths, reason: verdict.reason },
-                "[meals/ai-generate] blocked unsafe meal",
-              );
-              return [];
-            }
-          } else {
-            logger.warn({ title }, "[meals/ai-generate] skipped meal — child age unknown");
-            return [];
-          }
-
-          const enrichment = childAgeMonths != null
-            ? validateAndEnrichMeal(
-                { title, ingredients, tags, isVeg: isVegMeal },
-                childAgeMonths,
-                allergies,
-                dietType,
-              )
-            : { safetyBadges: [] as string[], whyThisMeal: "", safetyWarning: undefined };
-          return [{
-            id: slugify(title) + "-" + idx,
-            title,
-            emoji,
-            bgGradient,
-            region,
-            category: audience,
-            ingredients,
-            steps,
-            calories,
-            tags,
-            prepMinutes,
-            audioText: `${title}. Ingredients: ${ingredients.join(", ")}.`,
-            isVeg: isVegMeal,
-            matchedIngredients: [] as string[],
-            missingIngredients: [] as string[],
-            safetyBadges: enrichment.safetyBadges,
-            whyThisMeal: enrichment.whyThisMeal,
-            ...(enrichment.safetyWarning ? { safetyWarning: enrichment.safetyWarning } : {}),
-          }];
-        });
         res.set("Cache-Control", "no-store");
-        return { meals, amyMessage: ai.amyMessage, ...(ai.ageBand ? { ageBand: ai.ageBand } : {}) };
+        return buildMealsAiGenerateApiBody(result, pollContext);
       },
       res,
     });

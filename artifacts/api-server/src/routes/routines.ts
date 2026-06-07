@@ -9,6 +9,10 @@ import {
   FREE_LIMITS,
 } from "../services/subscriptionService";
 import { routineGenerateGate } from "../middlewares/featureGate.js";
+import {
+  acquireRoutineGenerateSlot,
+  releaseRoutineGenerateSlot,
+} from "../lib/routine-generate-semaphore.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import { enqueueForUser } from "../lib/per-user-queue.js";
@@ -1482,6 +1486,17 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
     return;
   }
 
+  const slot = await acquireRoutineGenerateSlot();
+  if (!slot.acquired) {
+    res.status(429).json({
+      error: "server_busy",
+      message: "Routine generation capacity temporarily exhausted.",
+      retryAfterSeconds: slot.retryAfterSeconds,
+    });
+    return;
+  }
+
+  try {
   const childRow = await getChildByIdForUser(parsed.data.childId, userId);
   if (!childRow) {
     res.status(404).json({ error: "Child not found" });
@@ -1721,6 +1736,9 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
     }),
     ...generationTransparencyPayload("fallback"),
   });
+  } finally {
+    await releaseRoutineGenerateSlot();
+  }
 });
 
 // AI-powered routine generation — uses OpenAI; rate-limited on frontend
