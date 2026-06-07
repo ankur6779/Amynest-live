@@ -1,6 +1,7 @@
 import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLink } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { SmartRouteFallback } from "@/components/smart-route-fallback";
@@ -760,12 +761,12 @@ function ChildSelectorPanel({
             {safeChildList.length === 1 ? t("parent_hub.headers.current_child") : t("parent_hub.headers.select_child")}
           </span>
         </div>
-        <AppLink href="/children/new">
+        <AddChildLink source="parent-hub-child-selector">
           <button className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
             <UserPlus className="h-3.5 w-3.5" />
             {t("parent_hub.headers.add_child")}
           </button>
-        </AppLink>
+        </AddChildLink>
       </div>
 
       {/* Child cards */}
@@ -1035,11 +1036,11 @@ function ParentingHubPage() {
             <p className="text-sm text-muted-foreground">
               {t("parent_hub.empty.body")}
             </p>
-            <AppLink href="/children/new">
+            <AddChildLink source="parent-hub-empty">
               <button className="mt-2 px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">
                 {t("parent_hub.empty.cta")}
               </button>
-            </AppLink>
+            </AddChildLink>
           </CardContent>
         </Card>
       </div>;

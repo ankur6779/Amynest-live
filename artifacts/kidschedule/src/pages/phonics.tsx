@@ -3,6 +3,7 @@ import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, Loader2, Play, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppLink, useAppNavigate } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
@@ -125,9 +126,9 @@ export default function PhonicsPage() {
                   ? "Phonics Learning supports ages 1–6. Select or add a child in that range."
                   : "Phonics Learning is personalised by age, so create a child profile first."}
               </p>
-              <AppLink href="/children/new" source="phonics-add-child">
+              <AddChildLink source="phonics-add-child">
                 <Button className="w-full rounded-2xl">Add Child</Button>
-              </AppLink>
+              </AddChildLink>
             </CardContent>
           </Card>
         </main>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, Link, useSearch } from "wouter";
+import { AddChildLink } from "@/components/add-child-link";
 import { useListChildren, getListChildrenQueryKey, useGenerateRoutine, useCreateRoutine, getListRoutinesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -2298,7 +2299,7 @@ export default function RoutineGenerate() {
                       <div className="animate-pulse bg-muted h-24 rounded-2xl" />
                       <div className="animate-pulse bg-muted h-24 rounded-2xl" />
                     </div> : children?.length === 0 ? <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-xl w-full border border-destructive/20">
-                      {t("pages.routines.generate.please_add_child_profiles_first")} <Link href="/children/new" className="underline font-bold">{t("pages.routines.generate.add_a_child")}</Link>
+                      {t("pages.routines.generate.please_add_child_profiles_first")} <AddChildLink source="routine-generate-empty" className="underline font-bold">{t("pages.routines.generate.add_a_child")}</AddChildLink>
                     </p> : <div className="space-y-3">
                       {children?.map(child => {
                 const settings = familyChildSettings[child.id] ?? {

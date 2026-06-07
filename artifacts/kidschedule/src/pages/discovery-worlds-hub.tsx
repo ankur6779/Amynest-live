@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Sparkles, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
-import { AppLink, useAppNavigate } from "@/components/app-link";
+import { useAppNavigate } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { LearningMap } from "@/components/discovery-world/learning-map";
 import { HubDailyAdventureTeaser } from "@/components/discovery-world/discovery-daily-adventure";
@@ -159,10 +160,10 @@ export default function DiscoveryWorldsHubPage() {
           <div className="mt-6 space-y-4">
             <DiscoveryEmptyState variant="noChild" />
             <Button asChild className="rounded-full px-6">
-              <AppLink href="/children/new">
+              <AddChildLink source="discovery-worlds-hub-empty">
                 <UserPlus className="mr-2 h-4 w-4" aria-hidden />
                 Add child
-              </AppLink>
+              </AddChildLink>
             </Button>
           </div>
         )}

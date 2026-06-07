@@ -3,7 +3,8 @@ import { ArrowLeft, UserPlus } from "lucide-react";
 import { useParams } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { getDiscoveryWorldDefinition } from "@workspace/discovery-worlds";
-import { AppLink, useAppNavigate } from "@/components/app-link";
+import { useAppNavigate } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { Button } from "@/components/ui/button";
 import { LockedBlock } from "@/components/locked-block";
 import { DiscoveryWorldExperience } from "@/components/discovery-world/discovery-world-experience";
@@ -93,10 +94,10 @@ export default function DiscoveryWorldLivePage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-6">
         <DiscoveryEmptyState variant="noChild" className="max-w-md w-full" />
         <Button asChild className="rounded-full px-6">
-          <AppLink href="/children/new">
+          <AddChildLink source="discovery-world-live-empty">
             <UserPlus className="mr-2 h-4 w-4" aria-hidden />
             Add child
-          </AppLink>
+          </AddChildLink>
         </Button>
       </div>
     );

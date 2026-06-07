@@ -1,6 +1,7 @@
 // audit-block-ignore-start -- immersive Speech Coach uses intentional neon dark UI accents.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLink } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { getAuth } from "firebase/auth";
 import {
   ArrowLeft,
@@ -936,9 +937,9 @@ export default function LiveSpeechCoachPage() {
             <AmyIcon size={56} ring bounce />
             <h1 className="font-quicksand text-xl font-black">Amy Speech Coach</h1>
             <p className="text-sm text-white/65">Add a child profile to start live speech practice sessions.</p>
-            <AppLink href="/children/new" replace source="live-speech-no-child">
+            <AddChildLink replace source="live-speech-no-child">
               <Button className="rounded-full">Add Child Profile</Button>
-            </AppLink>
+            </AddChildLink>
             <AppLink href="/speech-coach" replace source="live-speech-back-home">
               <Button variant="ghost" className="rounded-full text-white/70">Back to Speech Coach</Button>
             </AppLink>

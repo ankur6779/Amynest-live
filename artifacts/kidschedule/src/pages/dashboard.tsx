@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Redirect, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { Calendar, Users, Star, ArrowRight, TrendingUp, Clock, CheckCircle2, Sparkles, Brain, Heart, Target, ChevronRight, MapPin } from "lucide-react";
 import {
   DashboardCoachingCard,
@@ -546,8 +547,7 @@ function ChildrenChipBar({
           </button>
         );
       })}
-      <AppLink
-        href="/children/new"
+      <AddChildLink
         source={children.length === 1 ? "dashboard-add-second-child" : "dashboard-add-child"}
         className="shrink-0 rounded-full border border-dashed border-white/20 px-3 py-1.5 text-xs font-bold text-white/60 hover:border-violet-400/40 hover:text-white/80 transition-colors"
         onClick={() => {
@@ -557,7 +557,7 @@ function ChildrenChipBar({
         }}
       >
         + {children.length === 1 ? t("dashboard.add_second_child") : t("dashboard.add_child")}
-      </AppLink>
+      </AddChildLink>
       <AppLink href="/children" source="dashboard-manage-children" className="shrink-0 text-[11px] font-bold text-violet-300 hover:underline ml-auto">
         {t("dashboard.manage")}
       </AppLink>

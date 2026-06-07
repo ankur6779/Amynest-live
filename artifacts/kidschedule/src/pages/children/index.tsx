@@ -1,5 +1,6 @@
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import { AddChildLink } from "@/components/add-child-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Plus, ChevronRight, Clock, Target, Calendar } from "lucide-react";
@@ -41,10 +42,10 @@ export default function ChildrenList() {
           <p className="text-muted-foreground mt-1">{t("pages.children.index.manage_profiles_and_goals")}</p>
         </div>
         <Button asChild className="rounded-full shadow-sm hover-elevate">
-          <Link href="/children/new">
+          <AddChildLink source="children-list-header">
             <Plus className="mr-2 h-4 w-4" />
             {t("pages.children.index.add_child")}
-          </Link>
+          </AddChildLink>
         </Button>
       </header>
 
@@ -146,10 +147,10 @@ export default function ChildrenList() {
             {t("pages.children.index.add_your_children_to_start_generating_personalized_routines_")}
           </p>
           <Button asChild size="lg" className="rounded-full shadow-sm hover-elevate">
-            <Link href="/children/new">
+            <AddChildLink source="children-list-empty">
               <Plus className="mr-2 h-5 w-5" />
               {t("pages.children.index.add_your_first_child")}
-            </Link>
+            </AddChildLink>
           </Button>
         </div>}
     </div>;

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { AddChildLink } from "@/components/add-child-link";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -171,9 +172,9 @@ export default function InsightsPage() {
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl">👶</div>
               <h2 className="font-bold text-lg">{t("screens.insights.no_children_title")}</h2>
               <p className="text-sm text-muted-foreground">{t("screens.insights.no_children_text")}</p>
-              <Link href="/children/new">
+              <AddChildLink source="insights-empty">
                 <button className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">{t("screens.insights.add_child")}</button>
-              </Link>
+              </AddChildLink>
             </CardContent>
           </Card>
         )}

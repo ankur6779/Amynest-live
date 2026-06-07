@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
-import { AppLink, useAppNavigate } from "@/components/app-link";
+import { useAppNavigate } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
@@ -80,10 +81,10 @@ export default function AnimalWorldPage() {
                 Create a child profile to explore animal sounds together.
               </p>
               <Button asChild className="rounded-full">
-                <AppLink href="/children/new">
+                <AddChildLink source="animal-world-empty">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add child
-                </AppLink>
+                </AddChildLink>
               </Button>
             </CardContent>
           </Card>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { useTranslation } from "react-i18next";
 import { getAuth } from "firebase/auth";
 import {
@@ -1591,9 +1592,9 @@ export default function SpeechCoachPage() {
           <CardContent className="p-4 text-sm text-muted-foreground">
             {t("parent_hub.empty.body")}
             <div className="mt-3">
-              <Link href="/children/new">
+              <AddChildLink source="speech-coach-empty">
                 <Button size="sm">{t("parent_hub.empty.cta")}</Button>
-              </Link>
+              </AddChildLink>
             </div>
           </CardContent>
         </Card>

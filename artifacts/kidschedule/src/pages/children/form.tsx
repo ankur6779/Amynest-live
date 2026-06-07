@@ -4,7 +4,7 @@ import { useLocation, useParams } from "wouter";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey, useListChildren } from "@workspace/api-client-react";
+import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useAddChildGate } from "@/hooks/use-add-child-gate";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ChildDobPicker } from "@/components/child-dob-picker";
 import { ChildGoalsCard } from "@/components/intelligence/child-goals-card";
@@ -222,18 +223,15 @@ function ChildForm() {
     }
   });
 
-  // Check existing children count to show upgrade warning upfront
-  const {
-    data: existingChildren
-  } = useListChildren({
-    query: {
-      enabled: !isEditing,
-      queryKey: getListChildrenQueryKey()
+  const { blocked, existingCount, isLoading: addChildGateLoading, tryAddChild } = useAddChildGate();
+  const isAtFreeLimit = !isEditing && blocked;
+
+  useEffect(() => {
+    if (!isEditing && !addChildGateLoading && blocked) {
+      tryAddChild("child-form-direct");
+      setLocation("/children");
     }
-  });
-  const existingCount = existingChildren?.length ?? 0;
-  const FREE_CHILD_LIMIT = 1;
-  const isAtFreeLimit = !isEditing && existingCount >= FREE_CHILD_LIMIT;
+  }, [isEditing, addChildGateLoading, blocked, tryAddChild, setLocation]);
   const createMutation = useCreateChild();
   const updateMutation = useUpdateChild();
   const deleteMutation = useDeleteChild();

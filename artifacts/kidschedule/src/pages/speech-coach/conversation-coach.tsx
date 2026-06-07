@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, ArrowRight, Loader2, Mic, PhoneOff, Sparkles, Star, Trophy, Volume2 } from "lucide-react";
 import { AppLink } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { AmyIcon } from "@/components/amy-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -927,9 +928,9 @@ export default function ConversationCoachPage() {
             <AmyIcon size={56} ring bounce />
             <h1 className="font-quicksand text-xl font-black">Live Talk with Amy</h1>
             <p className="text-sm text-white/65">Add a child profile to start talking with Amy.</p>
-            <AppLink href="/children/new" replace source="conversation-coach-no-child">
+            <AddChildLink replace source="conversation-coach-no-child">
               <Button className="rounded-full">Add Child Profile</Button>
-            </AppLink>
+            </AddChildLink>
             <AppLink href="/speech-coach" replace source="conversation-coach-back-home">
               <Button variant="ghost" className="rounded-full text-white/70">Back to Speech Coach</Button>
             </AppLink>

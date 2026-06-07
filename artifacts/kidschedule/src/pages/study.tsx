@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { AppLink, useAppNavigate } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
@@ -496,7 +497,7 @@ function EmptyChildren() {
         <h3 className="font-quicksand text-xl font-bold text-foreground mb-2">{t("screens.study.no_children_title")}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t("screens.study.no_children_body")}</p>
         <Button asChild className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-400 hover:to-violet-500">
-          <AppLink href="/children/new" source="study-add-child">{t("screens.study.add_child")}</AppLink>
+          <AddChildLink source="study-add-child">{t("screens.study.add_child")}</AddChildLink>
         </Button>
       </div>
     </div>

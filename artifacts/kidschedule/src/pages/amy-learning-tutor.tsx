@@ -3,6 +3,7 @@ import { ChatThread, type InteractionEvent, type ThreadMessage } from "@/compone
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { AddChildLink } from "@/components/add-child-link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, ArrowRight, Sparkles } from "lucide-react";
@@ -360,9 +361,9 @@ export default function AmyLearningTutorPage() {
       {!primaryChild?.id ? (
         <div className="mx-4 rounded-2xl border border-border bg-muted/40 p-6 text-center md:mx-0">
           <p className="text-sm text-muted-foreground">{t("pages.amy_learning_tutor.no_child_body")}</p>
-          <Link href="/children/new">
+          <AddChildLink source="amy-learning-tutor-empty">
             <Button className="mt-4 rounded-full">{t("pages.amy_learning_tutor.add_child")}</Button>
-          </Link>
+          </AddChildLink>
         </div>
       ) : (
         <ChatThread

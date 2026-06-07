@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { useAppNavigate } from "@/components/app-link";
+import { useAddChildGate } from "@/hooks/use-add-child-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
@@ -37,6 +38,7 @@ export function HubModulePageShell({
   children: (ctx: { child: HubChild; totalAgeMonths: number }) => ReactNode;
 }) {
   const { navigate, back } = useAppNavigate();
+  const { tryAddChild } = useAddChildGate();
   const { locked, journeySoft, onEngage } = useHubModuleGate(featureId);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
@@ -106,7 +108,14 @@ export function HubModulePageShell({
               <p className="text-sm text-muted-foreground">
                 {emptyMessage ?? "Add a child profile to get started."}
               </p>
-              <Button className="w-full rounded-2xl" onClick={() => navigate("/children/new", { source: "hub-module-add-child" })}>
+              <Button
+                className="w-full rounded-2xl"
+                onClick={() => {
+                  if (tryAddChild("hub-module-add-child")) {
+                    navigate("/children/new", { source: "hub-module-add-child" });
+                  }
+                }}
+              >
                 Add Child
               </Button>
             </CardContent>

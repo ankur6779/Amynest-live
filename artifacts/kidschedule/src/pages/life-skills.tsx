@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { AppLink, useAppNavigate } from "@/components/app-link";
+import { useAppNavigate } from "@/components/app-link";
+import { AddChildLink } from "@/components/add-child-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useTranslation } from "react-i18next";
 import { useListChildren } from "@workspace/api-client-react";
@@ -49,9 +50,9 @@ export default function LifeSkillsPage() {
           <CardContent className="p-4 text-sm text-muted-foreground">
             {t("pages.life_skills_page.empty_message")}
             <div className="mt-3">
-              <AppLink href="/children/new" source="life-skills-add-child">
+              <AddChildLink source="life-skills-add-child">
                 <Button size="sm">{t("pages.life_skills_page.add_a_child")}</Button>
-              </AppLink>
+              </AddChildLink>
             </div>
           </CardContent>
         </Card>
