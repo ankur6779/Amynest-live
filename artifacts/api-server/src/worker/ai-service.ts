@@ -4,7 +4,7 @@ import { parseEnvMs } from "../lib/env.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
 import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import type { AiJobQueuePayload } from "../queue/index.js";
-import { patchJobRecord, saveJobRecord } from "../queue/job-results.js";
+import { getJobRecord, patchJobRecord, saveJobRecord } from "../queue/job-results.js";
 import type { AiJobRecord } from "../queue/types.js";
 
 const JOB_TIMEOUT_MS = parseEnvMs("AI_JOB_TIMEOUT_MS", AI_CHAT_TIMEOUT_MS);
@@ -22,13 +22,15 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
     "AI worker job start",
   );
 
+  const existing = await getJobRecord(jobId);
   const processing: AiJobRecord = {
     id: jobId,
     type,
     userId,
     status: "processing",
-    createdAt: started,
+    createdAt: existing?.createdAt ?? started,
     updatedAt: started,
+    payload: existing?.payload ?? payload,
   };
   await saveJobRecord(processing);
 

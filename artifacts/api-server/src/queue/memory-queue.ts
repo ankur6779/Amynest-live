@@ -57,7 +57,7 @@ export function enqueueMemoryJob(
     };
   }
 
-  const job = createJob(type, userId);
+  const job = createJob(type, userId, payload);
   pending.push(job.id);
   payloadByJob.set(job.id, payload);
 

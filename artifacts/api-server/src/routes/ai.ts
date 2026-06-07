@@ -8,6 +8,7 @@ import { getParentingAdvice } from "../lib/parenting-faq.js";
 import { assistantAiUsageGate } from "../middlewares/assistantAiUsageGate.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
+import { wrapJobInput } from "../queue/ai-job-payload.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 
 const router: IRouter = Router();
@@ -15,6 +16,17 @@ const router: IRouter = Router();
 // Cap how many messages we keep / return per user — keeps storage and tokens bounded
 const MAX_HISTORY_PER_USER = 200;
 const RETURN_HISTORY_LIMIT = 100;
+
+/** Persist assistant exchange after sync or async poll completion. */
+export async function persistAssistantExchange(
+  userId: string,
+  question: string,
+  answer: string,
+): Promise<void> {
+  await persistMessage(userId, "user", question);
+  await persistMessage(userId, "assistant", answer);
+  await trimUserHistory(userId);
+}
 
 async function persistMessage(
   userId: string,
@@ -223,20 +235,24 @@ LENGTH
     res,
     userId: userId ?? "anonymous",
     type: "openai.chat",
-    payload,
+    payload: wrapJobInput("ai/assistant-ai", payload, {
+      question,
+      childName,
+      childAge,
+      userId: userId ?? undefined,
+    }),
     buildSyncBody: (result) => {
       const answer = resolveAnswer(result as { content: string | null; timedOut?: boolean });
       if (userId) {
-        void persistMessage(userId, "user", question);
-        void persistMessage(userId, "assistant", answer);
-        void trimUserHistory(userId);
+        void persistAssistantExchange(userId, question, answer);
       }
       return AskAssistantResponse.parse({ answer });
     },
     buildAsyncBody: (jobId) => ({
       jobId,
       status: "processing",
-      pollUrl: `/api/ai/jobs/${jobId}`,
+      pollUrl: `/api/result/${jobId}`,
+      legacyPollUrl: `/api/ai/jobs/${jobId}`,
     }),
   });
 });

@@ -1,15 +1,41 @@
 import { getApiUrl } from "@/lib/api";
+import { waitForIdToken } from "@/lib/auth-token";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import { getFirebaseAuth } from "@/lib/firebase";
 
-async function infantFetch<T>(
+async function infantAuthHeaders(extra?: HeadersInit): Promise<Headers> {
+  const headers = new Headers(extra);
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const token = await waitForIdToken(async () => {
+    const user = getFirebaseAuth().currentUser;
+    if (!user) return null;
+    return user.getIdToken();
+  });
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return headers;
+}
+
+/** Authenticated infant hub API fetch (Bearer + timeout). */
+export async function infantFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(getApiUrl(path), {
+  const headers = await infantAuthHeaders(init?.headers);
+  const res = await fetchWithTimeout(getApiUrl(path), {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...init?.headers },
     ...init,
+    headers,
   });
-  if (!res.ok) throw new Error(`infant_api_${res.status}`);
+  if (!res.ok) {
+    throw new Error(
+      res.status === 401 ? "auth-unauthorized" : `infant_api_${res.status}`,
+    );
+  }
   return res.json() as Promise<T>;
 }
 

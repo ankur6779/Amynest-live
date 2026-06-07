@@ -18,7 +18,11 @@ function prune(): void {
   }
 }
 
-export function createJob(type: AiJobType, userId: string): AiJobRecord {
+export function createJob(
+  type: AiJobType,
+  userId: string,
+  payload?: unknown,
+): AiJobRecord {
   prune();
   const now = Date.now();
   const job: AiJobRecord = {
@@ -28,6 +32,7 @@ export function createJob(type: AiJobType, userId: string): AiJobRecord {
     status: "queued",
     createdAt: now,
     updatedAt: now,
+    payload,
   };
   jobs.set(job.id, job);
   return job;
@@ -45,7 +50,12 @@ export function getJob(jobId: string): AiJobRecord | undefined {
 
 export function updateJob(
   jobId: string,
-  patch: Partial<Pick<AiJobRecord, "status" | "result" | "error" | "timedOut">>,
+  patch: Partial<
+    Pick<
+      AiJobRecord,
+      "status" | "result" | "apiResult" | "sideEffectsApplied" | "error" | "timedOut"
+    >
+  >,
 ): AiJobRecord | undefined {
   const job = jobs.get(jobId);
   if (!job) return undefined;

@@ -14,6 +14,7 @@ import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import { checkAiRateLimit } from "../utils/ai-rate-limit.js";
 import { parseEnvMs } from "./env.js";
 import { logger } from "./logger.js";
+import { resolveSyncApiBody } from "./ai-job-finalize.js";
 
 export { isTerminalStatus as isTerminal };
 
@@ -79,7 +80,13 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
   if (isInProcessQueueMode()) {
     try {
       const result = await runAiJobHandler(opts.type, opts.payload);
-      opts.res.json(opts.buildSyncBody(result));
+      const body = await resolveSyncApiBody({
+        rawResult: result,
+        payload: opts.payload,
+        userId: opts.userId,
+        buildSyncBody: opts.buildSyncBody,
+      });
+      opts.res.json(body);
       return;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -105,7 +112,13 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
           opts.payload,
           AI_CHAT_TIMEOUT_MS,
         );
-        opts.res.json(opts.buildSyncBody(result));
+        const body = await resolveSyncApiBody({
+          rawResult: result,
+          payload: opts.payload,
+          userId: opts.userId,
+          buildSyncBody: opts.buildSyncBody,
+        });
+        opts.res.json(body);
         return;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -126,7 +139,14 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     ? await waitForJobResult(jobId, waitMs)
     : await waitForJob(jobId, waitMs);
   if (finished && isTerminalStatus(finished.status) && finished.status === "completed") {
-    opts.res.json(opts.buildSyncBody(finished.result));
+    const body = await resolveSyncApiBody({
+      rawResult: finished.result,
+      payload: opts.payload,
+      userId: opts.userId,
+      jobId,
+      buildSyncBody: opts.buildSyncBody,
+    });
+    opts.res.json(body);
     return;
   }
 

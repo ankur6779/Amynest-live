@@ -154,6 +154,24 @@ async function getCachedPlan(
   }
 }
 
+/** Cache + analytics after sync or BullMQ poll completion. */
+export async function persistInfantSleepCoachPlan(
+  userId: string,
+  childId: number,
+  input: unknown,
+  plan: InfantSleepCoachPlan,
+): Promise<void> {
+  await setCachedPlan(userId, childId, input, plan);
+  const ageMonths = (input as { childAgeMonths?: number } | null)?.childAgeMonths;
+  void persistInfantProductAnalyticsEvent({
+    userId,
+    childId,
+    childAgeMonths: ageMonths,
+    event: "infant_sleep_coach_generated",
+    properties: { source: "coach_plan" },
+  }).catch(() => undefined);
+}
+
 async function setCachedPlan(
   userId: string,
   childId: number,
@@ -282,17 +300,16 @@ router.post(
       type: "infant.sleep_coach",
       userId,
       input: { context, userId, childId: parsed.data.childId },
-      waitMs: 35_000,
+      pollContext: {
+        userId,
+        childId: parsed.data.childId,
+        context,
+        ageMonths,
+      },
+      waitMs: 0,
       buildSyncBody: (result) => {
         const plan = (result as { plan: InfantSleepCoachPlan }).plan;
-        void setCachedPlan(userId, parsed.data.childId, context, plan);
-        void persistInfantProductAnalyticsEvent({
-          userId,
-          childId: parsed.data.childId,
-          childAgeMonths: ageMonths,
-          event: "infant_sleep_coach_generated",
-          properties: { source: "coach_plan" },
-        }).catch(() => undefined);
+        void persistInfantSleepCoachPlan(userId, parsed.data.childId, context, plan);
         res.set("Cache-Control", "private, max-age=3600");
         res.set("X-Cache", "MISS");
         return {

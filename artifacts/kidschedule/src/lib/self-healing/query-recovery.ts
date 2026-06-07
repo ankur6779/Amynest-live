@@ -50,6 +50,11 @@ export function createSelfHealingQueryClient(): QueryClient {
     if (event?.type !== "updated") return;
     const query = event.query;
     if (query.state.status !== "error" || query.state.fetchStatus !== "idle") return;
+    const errMsg =
+      query.state.error instanceof Error
+        ? query.state.error.message
+        : String(query.state.error ?? "");
+    if (errMsg.includes("auth-unauthorized")) return;
     const key = queryKeyLabel(query);
     recordSelfHealingAction(`query_error:${key}`);
     void recoverQuery(client, query);

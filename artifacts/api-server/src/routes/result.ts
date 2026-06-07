@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
 import { buildJobPollResponse, getJobForPoll, isTerminal } from "../lib/ai-queue-http.js";
+import { resolvePollApiBody } from "../lib/ai-job-finalize.js";
 
 const router: IRouter = Router();
 
@@ -31,6 +32,9 @@ router.get("/result/:jobId", async (req, res): Promise<void> => {
   }
 
   const body = buildJobPollResponse(polled.job);
+  if (polled.job.status === "completed" && body.result !== undefined) {
+    body.result = await resolvePollApiBody(polled.job);
+  }
   if (!isTerminal(polled.job.status)) {
     res.status(202).json({ ...body, status: "processing" });
     return;

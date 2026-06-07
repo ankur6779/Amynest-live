@@ -39,8 +39,14 @@ export interface AiJobRecord {
   status: AiJobStatus;
   createdAt: number;
   updatedAt: number;
-  /** Small JSON-serializable payload only — never raw audio buffers. */
+  /** Enqueued request payload — used for poll-time API shaping only. */
+  payload?: unknown;
+  /** Worker domain output (raw). */
   result?: unknown;
+  /** Finalized client JSON — same contract as inline buildSyncBody. */
+  apiResult?: unknown;
+  /** afterFinalize ran (cache, analytics, persistence). */
+  sideEffectsApplied?: boolean;
   error?: string;
   timedOut?: boolean;
 }

@@ -69,6 +69,7 @@ export async function enqueueBullMqJob(
     status: "queued",
     createdAt: now,
     updatedAt: now,
+    payload,
   };
 
   try {

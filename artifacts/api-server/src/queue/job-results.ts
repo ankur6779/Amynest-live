@@ -34,7 +34,12 @@ export async function getJobRecord(jobId: string): Promise<AiJobRecord | undefin
 
 export async function patchJobRecord(
   jobId: string,
-  patch: Partial<Pick<AiJobRecord, "status" | "result" | "error" | "timedOut">>,
+  patch: Partial<
+    Pick<
+      AiJobRecord,
+      "status" | "result" | "apiResult" | "sideEffectsApplied" | "error" | "timedOut"
+    >
+  >,
 ): Promise<AiJobRecord | undefined> {
   const existing = await getJobRecord(jobId);
   if (!existing) return undefined;

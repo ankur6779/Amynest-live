@@ -526,7 +526,14 @@ export function InfantHub({
   const insight = useMemo(() => getAmyInsight(ageMonths, active), [ageMonths, active]);
   const currentTip = tips.length > 0 ? tips[tipIndex % tips.length] : null;
   const ageLabel = formatAge(Math.floor(ageMonths / 12), ageMonths % 12);
-  const { data: activation, isLoading: activationLoading } = useInfantActivation(childId);
+  const {
+    data: activation,
+    isPending: activationPending,
+    isFetching: activationFetching,
+    isError: activationError,
+  } = useInfantActivation(childId);
+  const activationLoading =
+    activationPending && activationFetching && !activationError;
   const showActivationUi = shouldShowInfantActivationUi(activation, childId);
   const [openSections, setOpenSections] = useState<Set<string>>(
     () => new Set(INFANT_HUB_DEFAULT_OPEN),

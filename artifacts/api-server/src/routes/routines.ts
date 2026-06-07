@@ -1985,83 +1985,56 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     childId: String(child.id),
   };
 
+  const routinePollContext: RoutineGeneratePollContext = {
+    cacheKey,
+    userId,
+    effWakeUp,
+    childSleepTime: child.sleepTime,
+    childName: child.name,
+    ageGroup,
+    totalAgeMonths,
+    ppCountry: (pp as Record<string, unknown> | null)?.country as string | undefined,
+    aiSchoolDay,
+    isWeekendDay,
+    mood: mood ?? "normal",
+    aiEnvContext,
+    region,
+    parsedDate: parsed.data.date,
+    childId: parsed.data.childId,
+    effectiveAge,
+    effSchoolStart,
+    effSchoolEnd,
+    hasSchool,
+    aiEffectiveWeather,
+    specialPlans,
+    fridgeItems,
+    foodType,
+    caregiver,
+    childGoals: child.goals,
+    travelMode: child.travelMode,
+    childClass: (child as any).childClass ?? undefined,
+    aiUserCustomRecipes,
+    schoolMealMode: schoolMealMode ?? null,
+    effAllergies,
+    effFoodStyle,
+    effSubCuisine,
+    fixedActivities,
+    previousDayContext,
+    childIntelParentGoals: childIntel.parentGoals,
+    childIntelEnergyProfile: childIntel.energyProfile,
+    childIsSchoolGoing: child.isSchoolGoing,
+    childSchoolDays: (child as any).schoolDays,
+  };
+
   try {
     await submitRouteAiJob({
       routeName: "routines/generate-ai",
       type: "routines.generate",
       userId,
       input: routineGenInput,
+      pollContext: routinePollContext,
       waitMs: AI_ROUTINE_GENERATION_TIMEOUT_MS,
-      buildSyncBody: (generated) => {
-        const gen = generated as {
-          title: string;
-          items: RoutineItem[];
-          adaptations: string[];
-          fixedActivities?: Parameters<typeof toFixedActivitiesResult>[0];
-        };
-        assertNonEmptyRoutine(gen, "generateAiRoutine");
-        const aiEnriched = applyEnvironmentalEnrichments(
-          (gen.items ?? []) as EnrichableItem[],
-          aiEnvContext,
-          { region: region as string | null | undefined },
-        );
-
-        // P0-1 / P0-3: final safety gate on the EXACT items we are about to
-        // return. AQI was already enforced inside the pipeline, so validate
-        // trust only here. A trust failure throws and drops into the
-        // rule-based fallback below (a repaired routine), never exposing the
-        // failing AI output.
-        const aiSafety = enforceRoutineSafety(
-          aiEnriched.items as unknown as RoutineScheduleItem[],
-          {
-            wakeMins: timeToMins(normalizeTo24h(effWakeUp)),
-            sleepMins: timeToMins(normalizeTo24h(child.sleepTime)),
-            ageGroup,
-            ageInMonths: totalAgeMonths,
-            country: (pp as Record<string, unknown> | null)?.country as
-              | string
-              | undefined,
-            skipAqiEnforcement: true,
-          },
-        );
-        if (!aiSafety.valid) {
-          console.error(
-            "[generate-ai] AI routine failed trust validation, using rule-based fallback",
-            aiSafety.errors,
-          );
-          throw new Error("ai_routine_failed_trust_validation");
-        }
-        const aiExplCtx: ParentExplanationContext = {
-          hasSchool: aiSchoolDay,
-          isWeekendDay,
-          mood: mood ?? "normal",
-        };
-        const body = GenerateRoutineResponse.parse({
-          ...gen,
-          items: aiEnriched.items as unknown as typeof gen.items,
-          adaptations: finalizeParentAdaptations(
-            [
-              ...(gen.adaptations ?? []),
-              ...aiEnriched.extraAdaptations,
-              ...(aiEnriched.hydrationSummary
-                ? [`hydration:${aiEnriched.hydrationSummary}`]
-                : []),
-            ],
-            aiExplCtx,
-          ),
-          fixedActivitiesResult: gen.fixedActivities?.fixedActivitiesApplied
-            ? toFixedActivitiesResult(gen.fixedActivities, child.name)
-            : null,
-        });
-        const successPayload = {
-          ...body,
-          success: true,
-          fallback: false,
-          ...generationTransparencyPayload("ai"),
-        };
-        setCachedRoutine(cacheKey, successPayload);
-        return successPayload;
-      },
+      buildSyncBody: (generated) => buildRoutineAiSuccessPayload(generated, routinePollContext),
       res,
     });
     return;
@@ -2070,147 +2043,23 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     if (err instanceof Error && err.stack) {
       console.error("[generate-ai] stack:", err.stack);
     }
-    // Fallback to rule-based if AI fails
-    const fallbackSchoolDay = isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool);
-    const { resolved: fallbackInputs, debug: fallbackInputDebug } = resolveRoutineGenerationInputs({
-      wakeUpTime: effWakeUp,
-      sleepTime: child.sleepTime,
-      schoolStartTime: effSchoolStart,
-      schoolEndTime: effSchoolEnd,
-      hasSchool: fallbackSchoolDay,
-      weatherOutdoor: aiEffectiveWeather,
-      mood: mood ?? "normal",
-      specialPlans,
-      fridgeItems,
-    });
-
-    const generated = generateRuleBasedRoutine({
-      childName: child.name,
-      ageGroup,
-      totalAgeMonths,
-      wakeUpTime: fallbackInputs.wakeUpTime,
-      sleepTime: fallbackInputs.sleepTime,
-      schoolStartTime: fallbackInputs.schoolStartTime,
-      schoolEndTime: fallbackInputs.schoolEndTime,
-      travelMode: child.travelMode,
-      hasSchool: fallbackInputs.hasSchool,
-      mood: fallbackInputs.mood,
-      foodType,
-      region: region as any,
-      goals: child.goals,
-      specialPlans: fallbackInputs.specialPlans || specialPlans,
-      fridgeItems: fallbackInputs.fridgeItems || fridgeItems,
-      caregiver,
-      weatherOutdoor: fallbackInputs.weatherOutdoor,
-      childClass: (child as any).childClass ?? undefined,
-      date: parsed.data.date,
-      customRecipes: aiUserCustomRecipes,
-    });
-    // Even on rule-based fallback, surface "why this routine" adaptations so
-    // the UI's explanation card stays populated.
-    const adaptations = buildAdaptations({
-      parentGoals: childIntel.parentGoals,
-      energyProfile: childIntel.energyProfile,
-      previousDayContext,
-      hasSchool: fallbackSchoolDay,
-      isWeekendDay,
-    });
-    const filteredFallbackItems = schoolMealMode === "disabled" && fallbackSchoolDay
-      ? (generated.items ?? []).filter((it: any) => (it.category ?? "").toLowerCase() !== "tiffin")
-      : (generated.items ?? []);
-    const curved = applyEnergyCurveToItems(
-      filteredFallbackItems as unknown as AnalyticsRoutineItem[],
-      childIntel.energyProfile,
-    );
-    const fallbackEnriched = applyEnvironmentalEnrichments(
-      curved.items as unknown as EnrichableItem[],
-      aiEnvContext,
-      { region: region as string | null | undefined },
-    );
-    const fallbackEnhancedItems = enrichItemsBeforePipeline(
-      fallbackEnriched.items as unknown as AiRoutineItem[],
-      buildActivityEnhancerContext({
-        age: effectiveAge,
-        country: (pp as Record<string, unknown> | null)?.country as string | undefined,
-        goals: child.goals,
-        parentGoals: childIntel.parentGoals,
-      }),
-    );
-
-    const fallbackPiped = runIntelligencePipelineOnItems({
-      items: fallbackEnhancedItems,
-      resolvedInputs: fallbackInputs,
-      specialPlans: fallbackInputs.specialPlans || specialPlans,
-      fixedActivities,
-      ageGroup,
-      totalAgeMonths,
-      date: parsed.data.date,
-      childId: String(child.id),
-      childName: child.name,
-      region,
-      country: (pp as Record<string, unknown> | undefined)?.country as string | undefined,
-      foodType,
-      isWeekendDay,
-      environmentalContext: aiEnvContext,
-      fridgeItems: fallbackInputs.fridgeItems || fridgeItems,
-      previousDayContext,
-      schoolMealMode: schoolMealMode ?? null,
-      diet: foodType,
-      caregiver,
-      allergies: effAllergies,
-      goals: child.goals ?? null,
-      foodStyle: effFoodStyle,
-      subCuisine: effSubCuisine,
-    });
-    // P0-3: the fallback is the last safety net. If it cannot produce a
-    // trust-valid routine, fail closed rather than expose an unsafe one.
-    if (!fallbackPiped.validated) {
+    try {
+      const fallbackPayload = buildRoutineRuleFallbackPayload(routinePollContext);
+      console.info("[generate-ai] fallback success", {
+        childId: parsed.data.childId,
+        itemCount: (fallbackPayload.items as unknown[] | undefined)?.length,
+      });
+      res.json(fallbackPayload);
+    } catch (fallbackErr) {
       console.error("[generate-ai] fallback routine failed trust validation", {
         childId: parsed.data.childId,
-        errors: fallbackPiped.validationErrors,
+        err: fallbackErr,
       });
       res.status(422).json({
         error: "routine_validation_failed",
         message: "We couldn't build a safe routine right now. Please try again.",
-        validationErrors: fallbackPiped.validationErrors,
       });
-      return;
     }
-
-    const fallbackExplCtx = parentExplanationCtx(fallbackInputs, isWeekendDay);
-    const fallbackBody = GenerateRoutineResponse.parse({
-      ...generated,
-      items: fallbackPiped.items as unknown as typeof generated.items,
-      adaptations: finalizeParentAdaptations(
-        [
-          ...adaptations,
-          ...curved.adaptations,
-          ...(aiEnvContext?.explanations ?? []),
-          ...fallbackEnriched.extraAdaptations,
-          ...(fallbackEnriched.hydrationSummary
-            ? [`hydration:${fallbackEnriched.hydrationSummary}`]
-            : []),
-          ...fallbackPiped.pipelineAdaptations,
-        ],
-        fallbackExplCtx,
-      ),
-      fixedActivitiesResult: fallbackPiped.fixedActivities.fixedActivitiesApplied
-        ? toFixedActivitiesResult(fallbackPiped.fixedActivities, child.name)
-        : null,
-    });
-    assertNonEmptyRoutine(fallbackBody, "rule-based fallback");
-    console.info("[generate-ai] fallback success", {
-      childId: parsed.data.childId,
-      itemCount: fallbackBody.items.length,
-    });
-    const fallbackPayload = {
-      ...fallbackBody,
-      success: false,
-      fallback: true,
-      ...generationTransparencyPayload("fallback"),
-    };
-    setCachedRoutine(cacheKey, fallbackPayload);
-    res.json(fallbackPayload);
   }
   });
 });
@@ -2828,5 +2677,264 @@ router.post("/routines/:id/partial-regenerate", async (req, res): Promise<void> 
 
   res.json({ items: updatedItems });
 });
+
+/** Serializable snapshot for BullMQ poll — mirrors generate-ai handler locals. */
+export type RoutineGeneratePollContext = {
+  cacheKey: string;
+  userId: string;
+  effWakeUp: string;
+  childSleepTime: string;
+  childName: string;
+  ageGroup: AgeGroup;
+  totalAgeMonths: number;
+  ppCountry?: string;
+  aiSchoolDay: boolean;
+  isWeekendDay: boolean;
+  mood: string;
+  aiEnvContext: EnvironmentalContext | null;
+  region: string | null | undefined;
+  parsedDate: string;
+  childId: number;
+  effectiveAge: number;
+  effSchoolStart: string;
+  effSchoolEnd: string;
+  hasSchool: boolean | undefined;
+  aiEffectiveWeather: WeatherOutdoor;
+  specialPlans?: string;
+  fridgeItems?: string;
+  foodType: string;
+  caregiver: CaregiverKey;
+  childGoals?: string | null;
+  travelMode?: string | null;
+  childClass?: string;
+  aiUserCustomRecipes?: CustomRecipeEntry[];
+  schoolMealMode?: string | null;
+  effAllergies?: string | null;
+  effFoodStyle?: string | null;
+  effSubCuisine?: string | null;
+  fixedActivities?: FixedActivityInput[];
+  previousDayContext?: {
+    sleepQuality?: "good" | "poor" | "average";
+    moodScore?: "happy" | "tired" | "cranky" | "normal";
+    activityCompletion?: number;
+  };
+  childIntelParentGoals: readonly ParentGoalCode[];
+  childIntelEnergyProfile: EnergyProfile | null;
+  childIsSchoolGoing: boolean | null | undefined;
+  childSchoolDays: number[] | null | undefined;
+};
+
+function buildRoutineAiSuccessPayload(
+  generated: unknown,
+  ctx: RoutineGeneratePollContext,
+): Record<string, unknown> {
+  const gen = generated as {
+    title: string;
+    items: RoutineItem[];
+    adaptations: string[];
+    fixedActivities?: Parameters<typeof toFixedActivitiesResult>[0];
+  };
+  assertNonEmptyRoutine(gen, "generateAiRoutine");
+  const aiEnriched = applyEnvironmentalEnrichments(
+    (gen.items ?? []) as EnrichableItem[],
+    ctx.aiEnvContext,
+    { region: ctx.region as string | null | undefined },
+  );
+  const aiSafety = enforceRoutineSafety(
+    aiEnriched.items as unknown as RoutineScheduleItem[],
+    {
+      wakeMins: timeToMins(normalizeTo24h(ctx.effWakeUp)),
+      sleepMins: timeToMins(normalizeTo24h(ctx.childSleepTime)),
+      ageGroup: ctx.ageGroup,
+      ageInMonths: ctx.totalAgeMonths,
+      country: ctx.ppCountry,
+      skipAqiEnforcement: true,
+    },
+  );
+  if (!aiSafety.valid) {
+    throw new Error("ai_routine_failed_trust_validation");
+  }
+  const aiExplCtx: ParentExplanationContext = {
+    hasSchool: ctx.aiSchoolDay,
+    isWeekendDay: ctx.isWeekendDay,
+    mood: ctx.mood ?? "normal",
+  };
+  const body = GenerateRoutineResponse.parse({
+    ...gen,
+    items: aiEnriched.items as unknown as typeof gen.items,
+    adaptations: finalizeParentAdaptations(
+      [
+        ...(gen.adaptations ?? []),
+        ...aiEnriched.extraAdaptations,
+        ...(aiEnriched.hydrationSummary
+          ? [`hydration:${aiEnriched.hydrationSummary}`]
+          : []),
+      ],
+      aiExplCtx,
+    ),
+    fixedActivitiesResult: gen.fixedActivities?.fixedActivitiesApplied
+      ? toFixedActivitiesResult(gen.fixedActivities, ctx.childName)
+      : null,
+  });
+  const successPayload = {
+    ...body,
+    success: true,
+    fallback: false,
+    ...generationTransparencyPayload("ai"),
+  };
+  setCachedRoutine(ctx.cacheKey, successPayload);
+  return successPayload;
+}
+
+function buildRoutineRuleFallbackPayload(ctx: RoutineGeneratePollContext): Record<string, unknown> {
+  const fallbackSchoolDay = isSchoolDay(
+    ctx.parsedDate,
+    ctx.childIsSchoolGoing,
+    ctx.childSchoolDays,
+    ctx.hasSchool,
+  );
+  const { resolved: fallbackInputs } = resolveRoutineGenerationInputs({
+    wakeUpTime: ctx.effWakeUp,
+    sleepTime: ctx.childSleepTime,
+    schoolStartTime: ctx.effSchoolStart,
+    schoolEndTime: ctx.effSchoolEnd,
+    hasSchool: fallbackSchoolDay,
+    weatherOutdoor: ctx.aiEffectiveWeather,
+    mood: ctx.mood ?? "normal",
+    specialPlans: ctx.specialPlans,
+    fridgeItems: ctx.fridgeItems,
+  });
+
+  const generated = generateRuleBasedRoutine({
+    childName: ctx.childName,
+    ageGroup: ctx.ageGroup,
+    totalAgeMonths: ctx.totalAgeMonths,
+    wakeUpTime: fallbackInputs.wakeUpTime,
+    sleepTime: fallbackInputs.sleepTime,
+    schoolStartTime: fallbackInputs.schoolStartTime,
+    schoolEndTime: fallbackInputs.schoolEndTime,
+    travelMode: ctx.travelMode ?? "car",
+    hasSchool: fallbackInputs.hasSchool,
+    mood: fallbackInputs.mood,
+    foodType: ctx.foodType,
+    region: ctx.region as Region,
+    goals: ctx.childGoals,
+    specialPlans: fallbackInputs.specialPlans || ctx.specialPlans || "",
+    fridgeItems: fallbackInputs.fridgeItems || ctx.fridgeItems || "",
+    caregiver: ctx.caregiver,
+    weatherOutdoor: fallbackInputs.weatherOutdoor,
+    childClass: ctx.childClass,
+    date: ctx.parsedDate,
+    customRecipes: ctx.aiUserCustomRecipes,
+  });
+
+  const adaptations = buildAdaptations({
+    parentGoals: ctx.childIntelParentGoals,
+    energyProfile: ctx.childIntelEnergyProfile,
+    previousDayContext: ctx.previousDayContext,
+    hasSchool: fallbackSchoolDay,
+    isWeekendDay: ctx.isWeekendDay,
+  });
+  const filteredFallbackItems =
+    ctx.schoolMealMode === "disabled" && fallbackSchoolDay
+      ? (generated.items ?? []).filter((it: { category?: string }) => (it.category ?? "").toLowerCase() !== "tiffin")
+      : (generated.items ?? []);
+  const curved = applyEnergyCurveToItems(
+    filteredFallbackItems as unknown as AnalyticsRoutineItem[],
+    ctx.childIntelEnergyProfile,
+  );
+  const fallbackEnriched = applyEnvironmentalEnrichments(
+    curved.items as unknown as EnrichableItem[],
+    ctx.aiEnvContext,
+    { region: ctx.region as string | null | undefined },
+  );
+  const fallbackEnhancedItems = enrichItemsBeforePipeline(
+    fallbackEnriched.items as unknown as AiRoutineItem[],
+    buildActivityEnhancerContext({
+      age: ctx.effectiveAge,
+      country: ctx.ppCountry,
+      goals: ctx.childGoals,
+      parentGoals: ctx.childIntelParentGoals,
+    }),
+  );
+
+  const fallbackPiped = runIntelligencePipelineOnItems({
+    items: fallbackEnhancedItems,
+    resolvedInputs: fallbackInputs,
+    specialPlans: fallbackInputs.specialPlans || ctx.specialPlans || "",
+    fixedActivities: ctx.fixedActivities,
+    ageGroup: ctx.ageGroup,
+    totalAgeMonths: ctx.totalAgeMonths,
+    date: ctx.parsedDate,
+    childId: String(ctx.childId),
+    childName: ctx.childName,
+    region: ctx.region,
+    country: ctx.ppCountry,
+    foodType: ctx.foodType,
+    isWeekendDay: ctx.isWeekendDay,
+    environmentalContext: ctx.aiEnvContext,
+    fridgeItems: fallbackInputs.fridgeItems || ctx.fridgeItems || "",
+    previousDayContext: ctx.previousDayContext,
+    schoolMealMode: ctx.schoolMealMode ?? null,
+    diet: ctx.foodType,
+    caregiver: ctx.caregiver,
+    allergies: ctx.effAllergies ?? null,
+    goals: ctx.childGoals ?? null,
+    foodStyle: ctx.effFoodStyle ?? null,
+    subCuisine: ctx.effSubCuisine ?? null,
+  });
+
+  if (!fallbackPiped.validated) {
+    throw new Error("routine_validation_failed");
+  }
+
+  const fallbackExplCtx = parentExplanationCtx(fallbackInputs, ctx.isWeekendDay);
+  const fallbackBody = GenerateRoutineResponse.parse({
+    ...generated,
+    items: fallbackPiped.items as unknown as typeof generated.items,
+    adaptations: finalizeParentAdaptations(
+      [
+        ...adaptations,
+        ...curved.adaptations,
+        ...(ctx.aiEnvContext?.explanations ?? []),
+        ...fallbackEnriched.extraAdaptations,
+        ...(fallbackEnriched.hydrationSummary
+          ? [`hydration:${fallbackEnriched.hydrationSummary}`]
+          : []),
+        ...fallbackPiped.pipelineAdaptations,
+      ],
+      fallbackExplCtx,
+    ),
+    fixedActivitiesResult: fallbackPiped.fixedActivities.fixedActivitiesApplied
+      ? toFixedActivitiesResult(fallbackPiped.fixedActivities, ctx.childName)
+      : null,
+  });
+  assertNonEmptyRoutine(fallbackBody, "rule-based fallback");
+  const fallbackPayload = {
+    ...fallbackBody,
+    success: false,
+    fallback: true,
+    ...generationTransparencyPayload("fallback"),
+  };
+  setCachedRoutine(ctx.cacheKey, fallbackPayload);
+  return fallbackPayload;
+}
+
+/** BullMQ poll: same post-processing + rule-based fallback as inline generate-ai. */
+export function buildRoutineGeneratePollResponse(
+  generated: unknown,
+  pollContext: unknown,
+): Record<string, unknown> {
+  const ctx = pollContext as RoutineGeneratePollContext;
+  if (!ctx?.cacheKey) {
+    throw new Error("routine_poll_context_missing");
+  }
+  try {
+    return buildRoutineAiSuccessPayload(generated, ctx);
+  } catch (err) {
+    console.error("[generate-ai poll] AI path failed, using rule-based fallback", err);
+    return buildRoutineRuleFallbackPayload(ctx);
+  }
+}
 
 export default router;
