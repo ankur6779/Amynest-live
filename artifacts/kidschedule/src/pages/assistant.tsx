@@ -395,7 +395,7 @@ export default function AssistantPage() {
         }
         scrollDeps={[messages, loading, historyLoaded, mode, input]}
         scrollToLatestLabel={t("ai.scroll_latest", { defaultValue: "Latest" })}
-        className="bg-background"
+        className="min-h-0 flex-1 bg-background"
         messagesClassName="max-w-3xl space-y-3"
         footerClassName="border-t border-border/50 bg-background px-0 py-3"
         textareaRef={textareaRef}

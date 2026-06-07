@@ -12,6 +12,7 @@ export function resolveRouteNameFromPayload(payload: unknown): string | null {
   if (input && typeof input === "object" && "namespace" in input) {
     const ns = (input as { namespace?: string }).namespace;
     if (ns === "amy-assistant") return "ai/assistant-ai";
+    if (typeof ns === "string" && ns.startsWith("ai-tutor:")) return "ai/ai-tutor";
   }
   return null;
 }

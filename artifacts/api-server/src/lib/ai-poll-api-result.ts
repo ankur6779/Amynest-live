@@ -21,6 +21,11 @@ export async function shapePollApiResult(
       return shapeSpeechTranscribePoll(rawResult);
     case "ai/assistant-ai":
       return shapeAssistantPoll(rawResult, wrapped?.pollContext, skipSideEffects);
+    case "ai/ai-tutor": {
+      const { finalizeAiTutorChatResult } = await import("../routes/ai-tutor.js");
+      const ctx = (wrapped?.pollContext ?? {}) as import("../routes/ai-tutor.js").AiTutorPollContext;
+      return finalizeAiTutorChatResult(rawResult, ctx, { skipSideEffects });
+    }
     case "infant-sleep/coach-plan":
       return shapeInfantSleepCoachPoll(rawResult, wrapped?.pollContext, skipSideEffects);
     case "infant-feeding/plan":
@@ -59,6 +64,7 @@ function inferLegacyRouteName(job: AiJobRecord): string | null {
     if (unwrapped.routeName === "ai/assistant-ai") return "ai/assistant-ai";
     const ns = (unwrapped.input as { namespace?: string } | undefined)?.namespace;
     if (ns === "amy-assistant") return "ai/assistant-ai";
+    if (typeof ns === "string" && ns.startsWith("ai-tutor:")) return "ai/ai-tutor";
   }
   return null;
 }

@@ -194,7 +194,11 @@ export class AppErrorBoundary extends Component<Props, State> {
     }
 
     return (
-      <div key={this.state.remountKey} data-error-boundary={this.props.label ?? "app"}>
+      <div
+        key={this.state.remountKey}
+        data-error-boundary={this.props.label ?? "app"}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         {this.props.children}
       </div>
     );

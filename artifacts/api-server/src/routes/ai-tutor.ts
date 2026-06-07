@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
+import { wrapJobInput } from "../queue/ai-job-payload.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import { incrementFeatureUsage } from "../services/subscriptionService.js";
 import { getLearningProgressStatus } from "../services/learningProgressService.js";
@@ -279,6 +280,90 @@ function fallbackReply(args: {
   };
 }
 
+export type AiTutorPollContext = {
+  mode: TutorMode;
+  ageBand: AgeBand;
+  topic: string;
+  message: string;
+  cacheKey: string;
+  userId: string;
+};
+
+/** Shared sync + async poll finalizer for Amy AI Tutor chat replies. */
+export function finalizeAiTutorChatResult(
+  result: unknown,
+  ctx: AiTutorPollContext,
+  opts?: { skipSideEffects?: boolean },
+): { reply: TutorJson; cached: false; ageBand: AgeBand; mode: TutorMode } {
+  let usedFallback = false;
+  let reply: TutorJson;
+  const raw = (result as { content: string | null; timedOut?: boolean }).content ?? "";
+  if (!raw || (result as { timedOut?: boolean }).timedOut) {
+    reply = fallbackReply({
+      mode: ctx.mode,
+      ageBand: ctx.ageBand,
+      topic: ctx.topic,
+      message: ctx.message,
+    });
+    usedFallback = true;
+  } else {
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(raw);
+    } catch {
+      logger.warn(`ai-tutor: model returned non-JSON, using fallback (raw=${raw.slice(0, 200)})`);
+      parsedJson = null;
+    }
+    const validated = TutorJsonSchema.safeParse(parsedJson);
+    if (!validated.success) {
+      reply = fallbackReply({
+        mode: ctx.mode,
+        ageBand: ctx.ageBand,
+        topic: ctx.topic,
+        message: ctx.message,
+      });
+      usedFallback = true;
+    } else {
+      reply = validated.data;
+      reply.type = ctx.mode;
+    }
+  }
+
+  reply = guardTutorReply(reply, { mode: ctx.mode, ageBand: ctx.ageBand });
+
+  if (!opts?.skipSideEffects) {
+    if (usedFallback) {
+      void incrementFeatureUsage(ctx.userId, "ai_query", -1).catch((err) => {
+        logger.warn(
+          `ai-tutor refund failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+    } else {
+      void db
+        .insert(aiCacheTable)
+        .values({
+          cacheKey: ctx.cacheKey,
+          namespace: NAMESPACE,
+          input: {
+            mode: ctx.mode,
+            ageBand: ctx.ageBand,
+            topic: ctx.topic,
+            message: ctx.message,
+          },
+          response: reply,
+        })
+        .onConflictDoNothing({ target: aiCacheTable.cacheKey })
+        .catch((err) => {
+          logger.warn(
+            `ai-tutor cache write failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
+    }
+  }
+
+  return { reply, cached: false, ageBand: ctx.ageBand, mode: ctx.mode };
+}
+
 // ─── POST /api/ai-tutor/chat ──────────────────────────────────────────────
 
 router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
@@ -341,6 +426,15 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
     message: body.message,
   });
 
+  const tutorPollContext: AiTutorPollContext = {
+    mode: body.mode,
+    ageBand,
+    topic,
+    message: body.message,
+    cacheKey: key,
+    userId,
+  };
+
   // ── L1: ai_cache lookup ────────────────────────────────────────────────
   try {
     const cached = await db
@@ -391,75 +485,19 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
     json: true,
   };
 
-  const buildTutorFromAiResult = (result: unknown) => {
-    let usedFallback = false;
-    let reply: TutorJson;
-    const raw = (result as { content: string | null; timedOut?: boolean }).content ?? "";
-    if (!raw || (result as { timedOut?: boolean }).timedOut) {
-      reply = fallbackReply({ mode: body.mode, ageBand, topic, message: body.message });
-      usedFallback = true;
-    } else {
-      let parsedJson: unknown;
-      try {
-        parsedJson = JSON.parse(raw);
-      } catch {
-        logger.warn(`ai-tutor: model returned non-JSON, using fallback (raw=${raw.slice(0, 200)})`);
-        parsedJson = null;
-      }
-      const validated = TutorJsonSchema.safeParse(parsedJson);
-      if (!validated.success) {
-        reply = fallbackReply({ mode: body.mode, ageBand, topic, message: body.message });
-        usedFallback = true;
-      } else {
-        reply = validated.data;
-        reply.type = body.mode;
-      }
-    }
-
-    reply = guardTutorReply(reply, { mode: body.mode, ageBand });
-
-    if (usedFallback) {
-      void incrementFeatureUsage(userId, "ai_query", -1).catch((err) => {
-        logger.warn(
-          `ai-tutor refund failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
-    } else {
-      void db
-        .insert(aiCacheTable)
-        .values({
-          cacheKey: key,
-          namespace: NAMESPACE,
-          input: {
-            mode: body.mode,
-            ageBand,
-            subject: body.subject,
-            topic,
-            message: body.message,
-          },
-          response: reply,
-        })
-        .onConflictDoNothing({ target: aiCacheTable.cacheKey })
-        .catch((err) => {
-          logger.warn(
-            `ai-tutor cache write failed: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        });
-    }
-
-    return { reply, cached: false, ageBand, mode: body.mode };
-  };
+  const buildTutorFromAiResult = (result: unknown) =>
+    finalizeAiTutorChatResult(result, tutorPollContext);
 
   await submitAiJobAndRespond({
     res,
     userId,
     type: "openai.chat_json",
-    payload: openAiPayload,
+    payload: wrapJobInput("ai/ai-tutor", openAiPayload, tutorPollContext),
     buildSyncBody: (result) => buildTutorFromAiResult(result),
     buildAsyncBody: (jobId) => ({
       jobId,
       status: "processing",
-      pollUrl: `/api/ai/jobs/${jobId}`,
+      pollUrl: `/api/result/${jobId}`,
       ageBand,
       mode: body.mode,
     }),

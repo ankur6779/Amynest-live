@@ -56,6 +56,37 @@ describe("shapePollApiResult P0 contracts", () => {
     assert.equal((shaped as { answer: string }).answer, "Try a calm wind-down.");
   });
 
+  it("ai/ai-tutor maps JSON content to reply envelope", async () => {
+    const pollContext = {
+      mode: "teach" as const,
+      ageBand: "5-7" as const,
+      topic: "addition",
+      message: "Teach me addition",
+      cacheKey: "abc123",
+      userId: "user-1",
+    };
+    const shaped = await shapePollApiResult(
+      job({
+        type: "openai.chat_json",
+        payload: wrapJobInput("ai/ai-tutor", { namespace: "ai-tutor:abc123" }, pollContext),
+      }),
+      {
+        content: JSON.stringify({
+          type: "teach",
+          content: "Addition means putting numbers together.",
+          examples: ["2 + 2 = 4"],
+          question: null,
+          options: [],
+          answer: null,
+        }),
+      },
+      { skipSideEffects: true },
+    ) as { reply: { content: string }; mode: string; ageBand: string };
+    assert.equal(shaped.reply.content, "Addition means putting numbers together.");
+    assert.equal(shaped.mode, "teach");
+    assert.equal(shaped.ageBand, "5-7");
+  });
+
   it("infant-sleep/coach-plan returns ok plan envelope", async () => {
     const plan = { title: "Sleep plan", nights: [] };
     const shaped = await shapePollApiResult(
