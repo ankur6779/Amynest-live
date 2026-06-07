@@ -75,12 +75,24 @@ export function worldsLibraryLocalMirrorWebPath(gcsObjectPath: string): string {
   return `${WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX}/${trimmed}`;
 }
 
+/**
+ * Pathname of an http(s) URL without relying on the ambient `URL` global,
+ * so this stays type-safe across every tsconfig (no DOM/Node lib required)
+ * and runs in both browser and Node.
+ */
+function httpUrlPathname(httpUrl: string): string {
+  const afterScheme = httpUrl.replace(/^https?:\/\//i, "");
+  const slashIndex = afterScheme.indexOf("/");
+  if (slashIndex === -1) return "/";
+  return afterScheme.slice(slashIndex).split(/[?#]/)[0];
+}
+
 /** Extract GCS object path from a worlds-library proxy URL or local mirror path. */
 export function extractWorldsLibraryObjectPath(urlOrPath: string): string | null {
   const trimmed = (urlOrPath ?? "").trim();
   if (!trimmed) return null;
   try {
-    const path = trimmed.startsWith("http") ? new URL(trimmed).pathname : trimmed;
+    const path = trimmed.startsWith("http") ? httpUrlPathname(trimmed) : trimmed;
     const proxyPrefix = "/api/worlds-library/";
     if (path.startsWith(proxyPrefix)) {
       return decodeURIComponent(path.slice(proxyPrefix.length)).replace(/^\/+/, "");

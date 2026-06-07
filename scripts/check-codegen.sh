@@ -9,6 +9,11 @@ GENERATED_DIRS="lib/api-client-react/src/generated lib/api-zod/src/generated"
 
 echo "Checking codegen output is up to date..."
 
+# Clear incremental tsc build cache so the commit-time typecheck matches CI's
+# clean build. Incremental `tsc --build` can FALSE-PASS on a stale .tsbuildinfo,
+# letting type errors slip into a push where CI then blocks the deploy.
+find lib -name "*.tsbuildinfo" -delete 2>/dev/null || true
+
 pnpm run codegen
 
 # Check for modified tracked files

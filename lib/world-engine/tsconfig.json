@@ -5,8 +5,7 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",
-    "rootDir": "src",
-    "lib": ["es2022", "dom"]
+    "rootDir": "src"
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
