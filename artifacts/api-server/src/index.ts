@@ -331,6 +331,35 @@ async function startServer(): Promise<void> {
   }
 
   beginBootPhase("http_listen");
+
+  if (isModuleEnabled("redis")) {
+    beginBootPhase("queue_bootstrap");
+    try {
+      const { isWorkerEnabled } = await import("./queue/mode.js");
+      const { bootstrapApiQueue, markApiQueueBootstrapComplete } = await import(
+        "./queue/bootstrap.js"
+      );
+      if (isWorkerEnabled()) {
+        await bootstrapApiQueue();
+      } else {
+        markApiQueueBootstrapComplete();
+      }
+      endBootPhase("queue_bootstrap");
+    } catch (err) {
+      failBootPhase("queue_bootstrap", err);
+      logger.error(
+        {
+          evt: "queue.bootstrap_prelisten_failed",
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "Queue bootstrap failed before listen — AI enqueue will return 503",
+      );
+    }
+  } else {
+    const { markApiQueueBootstrapComplete } = await import("./queue/bootstrap.js");
+    markApiQueueBootstrapComplete();
+  }
+
   const app = await loadApp();
   const server = app.listen(port);
 

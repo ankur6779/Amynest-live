@@ -1,4 +1,4 @@
-import { pgTable, text, integer, serial, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, timestamp, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -21,7 +21,9 @@ export const routinesTable = pgTable("routines", {
   //   "Placed learning at 09:00 (peak focus window)"
   adaptations: jsonb("adaptations").$type<string[]>().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => ({
+  childDateUq: uniqueIndex("routines_child_date_uq").on(t.childId, t.date),
+}));
 
 export const insertRoutineSchema = createInsertSchema(routinesTable).omit({ id: true, createdAt: true });
 export type InsertRoutine = z.infer<typeof insertRoutineSchema>;

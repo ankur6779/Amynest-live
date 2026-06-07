@@ -167,6 +167,15 @@ router.post("/learning/load-more", async (req, res): Promise<void> => {
   });
 
   if (!result.ok) {
+    if (result.status === "processing") {
+      res.status(202).json({
+        jobId: result.jobId,
+        status: "processing",
+        pollUrl: result.pollUrl,
+        section: result.section,
+      });
+      return;
+    }
     if (result.status === 402) {
       res.status(402).json({
         error: "feature_locked",

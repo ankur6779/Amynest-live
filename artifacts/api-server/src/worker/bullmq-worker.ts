@@ -10,6 +10,11 @@ import { processAiJob } from "./ai-service.js";
 const CONCURRENCY = Number(process.env.AI_MAX_CONCURRENT_JOBS ?? "5");
 
 let worker: Worker<AiJobQueuePayload> | undefined;
+let workerRunning = false;
+
+export function isBullMqWorkerRegistered(): boolean {
+  return workerRunning && worker !== undefined;
+}
 
 export function startBullMqWorker(): Worker<AiJobQueuePayload> {
   if (!isRedisQueueEnabled()) {
@@ -25,6 +30,7 @@ export function startBullMqWorker(): Worker<AiJobQueuePayload> {
       concurrency: CONCURRENCY,
     },
   );
+  workerRunning = true;
 
   worker.on("completed", (job) => {
     logger.info({ evt: "bullmq.completed", jobId: job.id }, "BullMQ job completed");
@@ -56,6 +62,7 @@ export function startBullMqWorker(): Worker<AiJobQueuePayload> {
 
 export async function stopBullMqWorker(): Promise<void> {
   if (worker) {
+    workerRunning = false;
     await worker.close();
     worker = undefined;
   }

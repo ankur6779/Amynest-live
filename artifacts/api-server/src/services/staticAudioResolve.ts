@@ -11,11 +11,7 @@ import {
   recordRegistryMiss,
   upsertRegistryRow,
 } from "./staticAudioRegistry.js";
-import { generateAndPersistStaticPhrase } from "./staticAudioGeneration.js";
-import {
-  enqueueStaticAudioGeneration,
-  isStaticAudioWorkerPreferred,
-} from "./staticAudioGenerationQueue.js";
+import { enqueueStaticAudioGeneration } from "./staticAudioGenerationQueue.js";
 import {
   readStaticAudioFromGcs,
   readStaticAudioFromSecondaryGcs,
@@ -23,7 +19,6 @@ import {
 } from "./ttsAudioStore.js";
 import {
   recordDbFallbackServe,
-  recordOnDemandGeneration,
   recordPlaceholderServe,
 } from "./staticAudioMetrics.js";
 import { logger } from "../lib/logger.js";
@@ -33,7 +28,6 @@ export type StaticResolveSource =
   | "gcs"
   | "secondary_gcs"
   | "postgres"
-  | "sync_generated"
   | "placeholder";
 
 export type StaticResolveResult = {
@@ -97,15 +91,7 @@ export async function resolveStaticAudioBuffer(hash: string): Promise<StaticReso
   const mode = (indexed?.mode ?? row?.mode ?? "default") as "default" | "phonics";
 
   if (text?.trim()) {
-    if (!isStaticAudioWorkerPreferred()) {
-      const generated = await generateAndPersistStaticPhrase(text, mode, "on_demand_sync");
-      if (generated?.byteLength) {
-        recordOnDemandGeneration();
-        return { buffer: generated, source: "sync_generated" };
-      }
-    } else {
-      enqueueStaticAudioGeneration(text, mode, hash);
-    }
+    enqueueStaticAudioGeneration(text, mode, hash);
   } else {
     void recordRegistryMiss(hash);
   }

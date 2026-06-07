@@ -122,6 +122,11 @@ export async function generateTts(
       },
       getTtsRequestTimeoutMs(),
     );
+    if (res.status !== 202 && !res.ok) {
+      recordApiBackoffFailure();
+      const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+      return { success: false, ok: false, error: errBody.error ?? `generate_failed_${res.status}` };
+    }
     const data = await readResolvedApiJson<{
       ok?: boolean;
       url?: string;
@@ -129,8 +134,8 @@ export async function generateTts(
       cacheKey?: string;
       cached?: boolean;
       error?: string;
-    }>(res, authFetch).catch(() => null);
-    if (!res.ok || !data?.ok) {
+    }>(res, authFetch, { poll: { maxAttempts: 25, intervalMs: 1500 } }).catch(() => null);
+    if (!data?.ok) {
       recordApiBackoffFailure();
       return { success: false, ok: false, error: data?.error ?? `generate_failed_${res.status}` };
     }

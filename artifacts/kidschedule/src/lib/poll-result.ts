@@ -15,6 +15,16 @@ export type ResolveAiApiOptions = {
   poll?: PollResultOptions;
 };
 
+export class PollTerminalError extends Error {
+  readonly terminalStatus: "failed" | "timed_out" | "cancelled";
+
+  constructor(terminalStatus: "failed" | "timed_out" | "cancelled", message: string) {
+    super(message);
+    this.name = "PollTerminalError";
+    this.terminalStatus = terminalStatus;
+  }
+}
+
 export function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -28,7 +38,7 @@ export function hasAsyncJobId(data: unknown): data is { jobId: string } {
   );
 }
 
-/** Poll GET /api/result/:jobId until completed or failed (default max ~40s). */
+/** Poll GET /api/result/:jobId until a terminal job state (default max ~40s). */
 export async function pollResult(
   jobId: string,
   authFetch: AuthFetchFn,
@@ -47,16 +57,32 @@ export async function pollResult(
         result?: unknown;
         error?: string;
       };
+
       if (data.status === "completed") return data.result;
+
       if (data.status === "failed") {
-        throw new Error(data.error ?? "AI job failed");
+        throw new PollTerminalError("failed", data.error ?? "AI job failed");
+      }
+      if (data.status === "timed_out") {
+        throw new PollTerminalError("timed_out", data.error ?? "AI job timed out");
+      }
+      if (data.status === "cancelled") {
+        throw new PollTerminalError("cancelled", data.error ?? "AI job cancelled");
+      }
+
+      if (res.status === 404) {
+        throw new PollTerminalError("failed", data.error ?? "job_not_found");
+      }
+      if (res.status === 403) {
+        throw new PollTerminalError("failed", data.error ?? "forbidden");
       }
     } catch (err) {
+      if (err instanceof PollTerminalError) throw err;
       // Transient network/timeout on a single poll — keep trying until budget is exhausted.
       if (i === maxAttempts - 1) throw err;
     }
   }
-  throw new Error("Timeout");
+  throw new PollTerminalError("timed_out", "Timeout");
 }
 
 /**

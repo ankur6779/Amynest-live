@@ -8,9 +8,11 @@ import type { InfantFeedingPlan } from "./infant-feeding-prompts.js";
 export async function shapePollApiResult(
   job: AiJobRecord,
   rawResult: unknown,
+  opts?: { skipSideEffects?: boolean },
 ): Promise<unknown> {
   if (rawResult === undefined || rawResult === null) return rawResult;
 
+  const skipSideEffects = opts?.skipSideEffects === true;
   const wrapped = job.payload ? unwrapJobPayload(job.payload) : null;
   const routeName = wrapped?.routeName ?? inferLegacyRouteName(job);
 
@@ -18,11 +20,11 @@ export async function shapePollApiResult(
     case "speech/transcribe":
       return shapeSpeechTranscribePoll(rawResult);
     case "ai/assistant-ai":
-      return shapeAssistantPoll(rawResult, wrapped?.pollContext);
+      return shapeAssistantPoll(rawResult, wrapped?.pollContext, skipSideEffects);
     case "infant-sleep/coach-plan":
-      return shapeInfantSleepCoachPoll(rawResult, wrapped?.pollContext);
+      return shapeInfantSleepCoachPoll(rawResult, wrapped?.pollContext, skipSideEffects);
     case "infant-feeding/plan":
-      return shapeInfantFeedingPlanPoll(rawResult, wrapped?.pollContext);
+      return shapeInfantFeedingPlanPoll(rawResult, wrapped?.pollContext, skipSideEffects);
     case "routines/generate-ai": {
       const { buildRoutineGeneratePollResponse } = await import("../routes/routines.js");
       return buildRoutineGeneratePollResponse(rawResult, wrapped?.pollContext);
@@ -33,6 +35,18 @@ export async function shapePollApiResult(
         rawResult,
         (wrapped?.pollContext ?? {}) as import("./meals-ai-generate-response.js").MealsAiGeneratePollContext,
       );
+    }
+    case "tts/generate":
+    case "tts/synthesize":
+      return shapeTtsGeneratePoll(rawResult);
+    case "learning-load-more/smart-study":
+    case "learning-load-more/olympiad":
+    case "learning-load-more/spelling":
+    case "learning-load-more/smart-math-tricks":
+    case "learning-load-more/phonics":
+    case "learning-load-more/life-skills": {
+      const { finalizeLearningLoadMorePoll } = await import("../services/learningLoadMoreService.js");
+      return finalizeLearningLoadMorePoll(rawResult, wrapped?.pollContext, { skipSideEffects });
     }
     default:
       return rawResult;
@@ -59,7 +73,11 @@ function shapeSpeechTranscribePoll(raw: unknown): { transcript: string } {
   return { transcript: text };
 }
 
-function shapeAssistantPoll(raw: unknown, pollContext: unknown): { answer: string } {
+function shapeAssistantPoll(
+  raw: unknown,
+  pollContext: unknown,
+  skipSideEffects: boolean,
+): { answer: string } {
   const ctx = (pollContext ?? {}) as {
     question?: string;
     childName?: string;
@@ -70,7 +88,7 @@ function shapeAssistantPoll(raw: unknown, pollContext: unknown): { answer: strin
   const answer = content
     ? content
     : getParentingAdvice(ctx.question ?? "", ctx.childName, ctx.childAge);
-  if (ctx.userId && ctx.question) {
+  if (!skipSideEffects && ctx.userId && ctx.question) {
     void import("../routes/ai.js")
       .then(({ persistAssistantExchange }) =>
         persistAssistantExchange(ctx.userId!, ctx.question!, answer),
@@ -80,7 +98,11 @@ function shapeAssistantPoll(raw: unknown, pollContext: unknown): { answer: strin
   return { answer };
 }
 
-function shapeInfantSleepCoachPoll(raw: unknown, pollContext: unknown): Record<string, unknown> {
+function shapeInfantSleepCoachPoll(
+  raw: unknown,
+  pollContext: unknown,
+  skipSideEffects: boolean,
+): Record<string, unknown> {
   const ctx = (pollContext ?? {}) as {
     userId?: string;
     childId?: number;
@@ -88,7 +110,7 @@ function shapeInfantSleepCoachPoll(raw: unknown, pollContext: unknown): Record<s
     ageMonths?: number;
   };
   const plan = (raw as { plan?: unknown }).plan;
-  if (ctx.userId && ctx.childId && plan) {
+  if (!skipSideEffects && ctx.userId && ctx.childId && plan) {
     void import("../routes/infant-sleep-coach.js")
       .then(({ persistInfantSleepCoachPlan }) =>
         persistInfantSleepCoachPlan(
@@ -108,7 +130,11 @@ function shapeInfantSleepCoachPoll(raw: unknown, pollContext: unknown): Record<s
   };
 }
 
-function shapeInfantFeedingPlanPoll(raw: unknown, pollContext: unknown): Record<string, unknown> {
+function shapeInfantFeedingPlanPoll(
+  raw: unknown,
+  pollContext: unknown,
+  skipSideEffects: boolean,
+): Record<string, unknown> {
   const ctx = (pollContext ?? {}) as {
     userId?: string;
     childId?: number;
@@ -116,7 +142,7 @@ function shapeInfantFeedingPlanPoll(raw: unknown, pollContext: unknown): Record<
     ageMonths?: number;
   };
   const plan = (raw as { plan?: unknown }).plan;
-  if (ctx.userId && ctx.childId && plan) {
+  if (!skipSideEffects && ctx.userId && ctx.childId && plan) {
     void import("../routes/infant-feeding-plan.js")
       .then(({ persistInfantFeedingPlan }) =>
         persistInfantFeedingPlan(
@@ -134,5 +160,34 @@ function shapeInfantFeedingPlanPoll(raw: unknown, pollContext: unknown): Record<
     plan,
     generatedAt: new Date().toISOString(),
     cached: false,
+  };
+}
+
+function shapeTtsGeneratePoll(raw: unknown): {
+  ok: true;
+  url?: string;
+  audioUrl?: string;
+  cacheKey?: string;
+  cached?: boolean;
+  success?: boolean;
+  charCount?: number;
+  contentType?: string;
+} {
+  const body = raw as {
+    cacheKey?: string;
+    audioUrl?: string;
+    cached?: boolean;
+    charCount?: number;
+    contentType?: string;
+  };
+  return {
+    ok: true,
+    success: true,
+    url: body.audioUrl,
+    audioUrl: body.audioUrl,
+    cacheKey: body.cacheKey,
+    cached: body.cached,
+    charCount: body.charCount,
+    contentType: body.contentType ?? "audio/mpeg",
   };
 }

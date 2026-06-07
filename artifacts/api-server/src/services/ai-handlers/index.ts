@@ -141,6 +141,28 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       return runSpeechTranscribe(input as Parameters<typeof runSpeechTranscribe>[0]);
     }
 
+    case "static-audio.generate": {
+      const { runStaticAudioGenerate } = await import("../domain-ai/static-audio-runners.js");
+      return runStaticAudioGenerate(input as Parameters<typeof runStaticAudioGenerate>[0]);
+    }
+
+    case "smart-math-tricks.ai_generate": {
+      const { runSmartMathTricksAiGenerate } = await import("../domain-ai/smart-math-tricks-runners.js");
+      return runSmartMathTricksAiGenerate(
+        input as Parameters<typeof runSmartMathTricksAiGenerate>[0],
+      );
+    }
+
+    case "phonics.load_more_words": {
+      const { runPhonicsLoadMoreWords } = await import("../domain-ai/life-skills-runners.js");
+      return runPhonicsLoadMoreWords(input as Parameters<typeof runPhonicsLoadMoreWords>[0]);
+    }
+
+    case "life-skills.ai_generate": {
+      const { runLifeSkillsAiGenerate } = await import("../domain-ai/life-skills-runners.js");
+      return runLifeSkillsAiGenerate(input as Parameters<typeof runLifeSkillsAiGenerate>[0]);
+    }
+
     default:
       throw new Error(`unknown_job_type:${type}`);
   }

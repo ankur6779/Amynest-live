@@ -9,12 +9,11 @@ import { waitForJob } from "../queue/ai-job-store.js";
 import { getJobForApi, waitForJobResult, isTerminalStatus } from "../queue/index.js";
 import { isProductionDeployment } from "../queue/mode.js";
 import type { AiJobType } from "../queue/types.js";
-import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
-import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import { checkAiRateLimitAsync } from "../utils/ai-rate-limit.js";
 import { parseEnvMs } from "./env.js";
 import { logger } from "./logger.js";
 import { resolveSyncApiBody } from "./ai-job-finalize.js";
+import { sendStaticAudioAlert } from "../services/staticAudioAlerts.js";
 
 export { isTerminalStatus as isTerminal };
 
@@ -44,19 +43,29 @@ export interface SubmitAiJobOptions {
   rateLimitKey?: string;
 }
 
-async function runAiJobWithTimeout(
-  type: AiJobType,
-  payload: unknown,
-  timeoutMs: number,
-): Promise<unknown> {
-  const timeout = new Promise<"timeout">((resolve) =>
-    setTimeout(() => resolve("timeout"), timeoutMs),
+async function respondQueueUnavailable(
+  opts: SubmitAiJobOptions,
+  code?: string,
+): Promise<void> {
+  logger.error(
+    { evt: "ai_queue.unavailable", type: opts.type, userId: opts.userId, code },
+    "AI queue unavailable — refusing inline execution on API tier",
   );
-  const result = await Promise.race([runAiJobHandler(type, payload), timeout]);
-  if (result === "timeout") {
-    throw new Error("AI job timed out");
+  if (isProductionDeployment()) {
+    void sendStaticAudioAlert("ai_queue_unavailable", {
+      type: opts.type,
+      userId: opts.userId,
+      code,
+    });
   }
-  return result;
+  opts.res.status(503).json({
+    error: code === "job_records_disabled" ? "job_records_disabled" : "ai_queue_unavailable",
+    message:
+      code === "job_records_disabled"
+        ? "AI job tracking is temporarily disabled. Please try again shortly."
+        : "AI processing is temporarily unavailable. Please try again shortly.",
+    code,
+  });
 }
 
 /**
@@ -76,8 +85,12 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     return;
   }
 
-  // Inline/memory: handler applies its own OpenAI timeout; avoid a second race that can fire at ~1ms when env ms is NaN.
   if (isInProcessQueueMode()) {
+    if (isProductionDeployment()) {
+      await respondQueueUnavailable(opts);
+      return;
+    }
+    const { runAiJobHandler } = await import("../services/ai-job-handlers.js");
     try {
       const result = await runAiJobHandler(opts.type, opts.payload);
       const body = await resolveSyncApiBody({
@@ -106,25 +119,8 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
   if (!enqueued.jobId) {
     const queueUnavailable = (enqueued.retryAfterMs ?? 0) === 0;
     if (queueUnavailable) {
-      try {
-        const result = await runAiJobWithTimeout(
-          opts.type,
-          opts.payload,
-          AI_CHAT_TIMEOUT_MS,
-        );
-        const body = await resolveSyncApiBody({
-          rawResult: result,
-          payload: opts.payload,
-          userId: opts.userId,
-          buildSyncBody: opts.buildSyncBody,
-        });
-        opts.res.json(body);
-        return;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        opts.res.status(502).json({ error: "ai_job_failed", message: message.slice(0, 300) });
-        return;
-      }
+      await respondQueueUnavailable(opts, enqueued.error);
+      return;
     }
     opts.res.status(429).json({
       error: "ai_queue_busy",

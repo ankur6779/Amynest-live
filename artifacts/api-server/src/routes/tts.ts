@@ -4,7 +4,6 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { TTS_MAX_INPUT_CHARS, readCachedAudio } from "../services/ttsCacheService";
 import { isValidTtsPublicUrl, MIN_TTS_BYTES } from "../services/ttsAudioStore";
-import { generateOpenAiTts } from "../services/ttsGenerate.js";
 import {
   AMY_MODEL_ID_DEFAULT as ELEVEN_MODEL_DEFAULT,
   AMY_MODEL_ID_FLASH,
@@ -138,7 +137,7 @@ function resolvePhrase(parsed: z.infer<typeof generateSchema>): string {
 }
 
 /**
- * POST /api/tts/generate — single OpenAI TTS pipeline (cache-first).
+ * POST /api/tts/generate — OpenAI TTS via BullMQ worker (cache-first).
  */
 router.post("/tts/generate", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -163,63 +162,56 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
   const phonemeKey = parsed.data.phoneme?.trim() ?? "";
   const cvcWord = parsed.data.word?.trim().toLowerCase() ?? "";
   const blendWord = parsed.data.blend?.trim().toLowerCase() ?? "";
+  const clientVoice = parsed.data.voice?.trim();
+  const mode = parsed.data.mode ?? "default";
+  const category = parsed.data.category ?? "words";
 
   const startedAt = Date.now();
-  try {
-    const clientVoice = parsed.data.voice?.trim();
-    const result = await generateOpenAiTts({
+  await submitRouteAiJob({
+    res,
+    userId,
+    type: "tts.synthesize",
+    routeName: "tts/generate",
+    waitMs: 0,
+    input: {
       text: phrase,
-      voice: clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice(),
-      speed: parsed.data.speed,
-      mode: parsed.data.mode ?? "default",
-      category: parsed.data.category ?? "words",
-      letterKey: letterKey || undefined,
-      phonemeKey: phonemeKey || undefined,
-      cvcWord: cvcWord || undefined,
-      blendWord: blendWord || undefined,
-    }, { userId, route: "tts/generate" });
-    if (!result || !isValidTtsPublicUrl(result.url)) {
+      options: {
+        voiceId: clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice(),
+        speed: parsed.data.speed,
+        mode,
+        category,
+        letterKey: letterKey || undefined,
+        phonemeKey: phonemeKey || undefined,
+        cvcWord: cvcWord || undefined,
+        blendWord: blendWord || undefined,
+      },
+    },
+    pollContext: { route: "tts/generate", startedAt },
+    buildSyncBody: (result) => {
+      const r = result as {
+        cacheKey?: string;
+        audioUrl?: string;
+        cached?: boolean;
+      };
       recordApiHealthSample({
         route: "generate",
-        success: false,
+        success: true,
         latencyMs: Date.now() - startedAt,
-        errorType: "tts_failed",
       });
-      res.status(502).json({ error: "tts_failed" });
-      return;
-    }
-    recordApiHealthSample({
-      route: "generate",
-      success: true,
-      latencyMs: Date.now() - startedAt,
-    });
-    res.json({
-      ok: true,
-      url: result.url,
-      audioUrl: result.url,
-      cacheKey: result.cacheKey,
-      cached: result.cached,
-    });
-  } catch (err) {
-    if (isTtsRateLimitedError(err)) {
-      res.status(429).json(ttsRateLimitResponseBody(err));
-      return;
-    }
-    recordApiHealthSample({
-      route: "generate",
-      success: false,
-      latencyMs: Date.now() - startedAt,
-      errorType: err instanceof Error ? err.message : "tts_failed",
-    });
-    logger.error(
-      {
-        evt: "tts.generate_failed",
-        message: err instanceof Error ? err.message : String(err),
-      },
-      "tts generate failed",
-    );
-    res.status(502).json({ error: "tts_failed" });
-  }
+      return {
+        ok: true,
+        url: r.audioUrl,
+        audioUrl: r.audioUrl,
+        cacheKey: r.cacheKey,
+        cached: r.cached,
+      };
+    },
+    buildAsyncBody: (jobId) => ({
+      jobId,
+      status: "processing",
+      pollUrl: `/api/result/${jobId}`,
+    }),
+  });
 });
 
 const elevenLabsFallbackSchema = z.object({
@@ -329,55 +321,53 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
 
   const phrase = resolvePhrase(body);
   const startedAt = Date.now();
-  try {
-    const result = await generateOpenAiTts({
+
+  await submitRouteAiJob({
+    res,
+    userId,
+    type: "tts.synthesize",
+    routeName: "tts/synthesize",
+    waitMs: 0,
+    input: {
       text: phrase,
-      voice: body.voice,
-      mode,
-      category: body.category,
-      phonemeKey: parsed.data.phoneme,
-      cvcWord: parsed.data.word,
-      blendWord: parsed.data.blend,
-    }, { userId, route: "tts/synthesize" });
-    if (!result || !isValidTtsPublicUrl(result.url)) {
+      options: {
+        voiceId: body.voice,
+        mode,
+        category: body.category,
+        phonemeKey: parsed.data.phoneme,
+        cvcWord: parsed.data.word,
+        blendWord: parsed.data.blend,
+      },
+    },
+    pollContext: { route: "tts/synthesize", startedAt },
+    buildSyncBody: (result) => {
+      const r = result as {
+        cacheKey?: string;
+        audioUrl?: string;
+        cached?: boolean;
+        charCount?: number;
+      };
       recordApiHealthSample({
         route: "synthesize",
-        success: false,
+        success: true,
         latencyMs: Date.now() - startedAt,
-        errorType: "tts_failed",
       });
-      res.status(200).json({ success: false, ok: false, error: "tts_failed" });
-      return;
-    }
-    recordApiHealthSample({
-      route: "synthesize",
-      success: true,
-      latencyMs: Date.now() - startedAt,
-    });
-    res.json({
-      ok: true,
-      success: true,
-      cacheKey: result.cacheKey,
-      audioUrl: result.url,
-      cached: result.cached,
-      charCount: phrase.length,
-      contentType: "audio/mpeg",
-    });
-  } catch (err) {
-    if (isTtsRateLimitedError(err)) {
-      res.status(429).json(ttsRateLimitResponseBody(err));
-      return;
-    }
-    const code = err instanceof Error ? err.message : "tts_failed";
-    recordApiHealthSample({
-      route: "synthesize",
-      success: false,
-      latencyMs: Date.now() - startedAt,
-      errorType: code,
-    });
-    logger.error({ evt: "tts.synthesize_failed", userId, code }, "tts synthesize failed");
-    res.status(200).json({ success: false, ok: false, error: code });
-  }
+      return {
+        ok: true,
+        success: true,
+        cacheKey: r.cacheKey,
+        audioUrl: r.audioUrl,
+        cached: r.cached,
+        charCount: phrase.length,
+        contentType: "audio/mpeg",
+      };
+    },
+    buildAsyncBody: (jobId) => ({
+      jobId,
+      status: "processing",
+      pollUrl: `/api/result/${jobId}`,
+    }),
+  });
 });
 
 /**

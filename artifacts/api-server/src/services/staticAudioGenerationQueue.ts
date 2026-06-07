@@ -1,18 +1,10 @@
 import type { StaticAudioMode } from "@workspace/static-audio";
 import { logger } from "../lib/logger.js";
-import { generateAndPersistStaticPhrase } from "./staticAudioGeneration.js";
+import { enqueueAiJob } from "../queue/ai-job-queue.js";
+import { wrapJobInput } from "../queue/ai-job-payload.js";
 import { recordGenerationQueueDepth } from "./staticAudioMetrics.js";
 
-type QueuedPhrase = {
-  text: string;
-  mode: StaticAudioMode;
-  hash?: string;
-  priority: number;
-};
-
-const pending = new Map<string, QueuedPhrase>();
-let processing = false;
-
+/** @deprecated Use BullMQ worker — kept for callers that gate enqueue behavior. */
 export function isStaticAudioWorkerPreferred(): boolean {
   if (process.env.STATIC_AUDIO_WORKER_ENABLED === "false") return false;
   if (process.env.WORKER_AVAILABLE === "false") return false;
@@ -25,57 +17,41 @@ export function enqueueStaticAudioGeneration(
   hash?: string,
   priority = 25,
 ): void {
-  const key = `${mode}:${text.trim().toLowerCase()}`;
-  const existing = pending.get(key);
-  if (existing && existing.priority >= priority) return;
-  pending.set(key, {
-    text: text.trim(),
-    mode,
-    hash,
-    priority: existing ? Math.max(existing.priority, priority) : priority,
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  void enqueueAiJob(
+    "static-audio.generate",
+    "system",
+    wrapJobInput("static-audio/generate", {
+      text: trimmed,
+      mode,
+      hash,
+      priority,
+      source: "missing_report",
+    }),
+  ).then((enqueued) => {
+    if (!enqueued.jobId) {
+      logger.error(
+        {
+          evt: "static_audio.enqueue_failed",
+          mode,
+          hash,
+          retryAfterMs: enqueued.retryAfterMs,
+        },
+        "static audio generation enqueue failed",
+      );
+      return;
+    }
+    recordGenerationQueueDepth(1);
+    logger.info(
+      { evt: "static_audio.enqueued", jobId: enqueued.jobId, mode, hash, priority },
+      "static audio generation enqueued",
+    );
   });
-  recordGenerationQueueDepth(pending.size);
-  void drainQueue();
 }
 
-function pickHighestPriorityJob(): [string, QueuedPhrase] | null {
-  let bestKey: string | null = null;
-  let best: QueuedPhrase | null = null;
-  for (const [key, job] of pending) {
-    if (!best || job.priority > best.priority) {
-      best = job;
-      bestKey = key;
-    }
-  }
-  if (!bestKey || !best) return null;
-  pending.delete(bestKey);
-  return [bestKey, best];
-}
-
-async function drainQueue(): Promise<void> {
-  if (processing) return;
-  processing = true;
-  try {
-    while (pending.size > 0) {
-      const next = pickHighestPriorityJob();
-      if (!next) break;
-      const [, job] = next;
-      recordGenerationQueueDepth(pending.size);
-      try {
-        await generateAndPersistStaticPhrase(job.text, job.mode, "missing_report");
-      } catch (err) {
-        logger.error(
-          { evt: "static_audio.queue_job_failed", err: String(err), priority: job.priority },
-          "static audio queue job failed",
-        );
-      }
-    }
-  } finally {
-    processing = false;
-  }
-}
-
-/** Cron hook — process reported missing phrases. */
+/** Cron hook — no in-process drain; worker consumes BullMQ jobs. */
 export async function runStaticAudioGenerationCron(): Promise<void> {
-  await drainQueue();
+  /* no-op: generation runs on amynest-ai-worker via static-audio.generate */
 }

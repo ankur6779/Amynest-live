@@ -3,7 +3,9 @@ import {
   getQueueMode,
   isBullMqActive,
   isQueueProcessingEnabled,
+  isWorkerEnabled,
 } from "./mode.js";
+import { isApiQueueBootstrapComplete } from "./bootstrap.js";
 import {
   enqueueMemoryJob,
   getMemoryQueueStats,
@@ -25,6 +27,15 @@ export async function enqueueAiJob(
   userId: string,
   payload: unknown,
 ): Promise<EnqueueResult> {
+  if (isWorkerEnabled() && !isApiQueueBootstrapComplete()) {
+    return {
+      jobId: "",
+      status: "failed",
+      deferred: true,
+      retryAfterMs: 0,
+      error: "queue_bootstrap_pending",
+    };
+  }
   if (!isQueueProcessingEnabled()) {
     return {
       jobId: "",

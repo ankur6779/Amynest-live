@@ -17,7 +17,6 @@ import {
   type PhonicsProgressRow,
 } from "@workspace/db";
 import { readCachedAudio } from "../services/ttsCacheService.js";
-import { generateOpenAiTts } from "../services/ttsGenerate.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import {
   AGE_GROUP_LABEL,
@@ -1314,48 +1313,16 @@ phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<
   }
 
   const audioText = getPhonicsAudioText(raw);
-  if (audioText && PHONEME_PROMPTS[raw]) {
+  if (audioText) {
     const hash = getStaticAudioObjectKey(audioText, "phonics");
     res.redirect(302, `/api/static-audio/${hash}.mp3`);
     return;
   }
 
-  try {
-    const generated = await generateOpenAiTts({
-      text: audioText,
-      mode: "phonics",
-      category: "phonics",
-      letterKey: raw,
-    });
-    if (!generated) {
-      res.status(502).json({ error: "audio_unavailable" });
-      return;
-    }
-    const cached = await readCachedAudio(generated.cacheKey);
-    if (!cached?.buffer?.byteLength) {
-      res.status(500).json({ error: "audio_unavailable" });
-      return;
-    }
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Content-Length", String(cached.buffer.byteLength));
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.status(200).end(cached.buffer);
-  } catch (err) {
-    const code = err instanceof Error ? err.message : "phonics_sound_failed";
-    logger.error(
-      { evt: "phonics.sound_failed", letter: raw, code },
-      "phonics phoneme synthesis failed",
-    );
-    // Public endpoint — keep the error vocabulary tiny so we never leak
-    // internal codes like `tts_missing_api_key` or `tts_upstream_502`. The
-    // detailed code is preserved in the structured log above.
-    if (code === "invalid_letter") {
-      res.status(400).json({ error: "invalid_letter" });
-    } else {
-      res.status(502).json({ error: "audio_unavailable" });
-    }
-  }
+  logger.warn({ evt: "phonics.sound_placeholder", letter: raw }, "phonics sound missing corpus text");
+  const { getPlaceholderMp3 } = await import("../services/staticAudioPlaceholder.js");
+  const { serveStaticAudioBuffer } = await import("../services/staticAudioServe.js");
+  serveStaticAudioBuffer(req, res, raw, getPlaceholderMp3(), "memory");
 });
 
 // ─── Phonics curriculum engine ───────────────────────────────────────────────

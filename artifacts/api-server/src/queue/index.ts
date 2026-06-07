@@ -13,6 +13,7 @@ import {
   saveJobRecord,
   tryAcquireUserSlot,
   releaseUserSlot,
+  JobRecordPersistenceError,
 } from "./job-results.js";
 import type { AiJobRecord } from "./types.js";
 
@@ -74,6 +75,25 @@ export async function enqueueBullMqJob(
 
   try {
     await saveJobRecord(record);
+  } catch (err) {
+    await releaseUserSlot(uid);
+    if (err instanceof JobRecordPersistenceError) {
+      logger.error(
+        { evt: "ai_job.records_blocked", code: err.code, type, userId: uid },
+        "BullMQ enqueue blocked — job records not persistable",
+      );
+      return {
+        jobId: "",
+        status: "failed",
+        deferred: true,
+        retryAfterMs: 0,
+        error: err.code,
+      };
+    }
+    throw err;
+  }
+
+  try {
     const queue = getAiJobsQueue();
     await queue.add(
       "process",
@@ -123,4 +143,6 @@ export {
   patchJobRecord,
   waitForJobResult,
   isTerminalStatus,
+  isJobRecordPersistenceBlocked,
+  JobRecordPersistenceError,
 } from "./job-results.js";

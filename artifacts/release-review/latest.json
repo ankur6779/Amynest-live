@@ -1,9 +1,18 @@
 {
-  "verdict": "PASS",
-  "releaseRiskScore": 0,
-  "version": "main",
-  "generatedAt": "2026-06-06T18:31:20.646Z",
+  "verdict": "HIGH_RISK",
+  "releaseRiskScore": 87,
+  "version": "test-child-form",
+  "generatedAt": "2026-06-07T09:22:25.971Z",
   "recommendedBlockers": [],
-  "impactedFingerprints": [],
-  "highRiskAreas": []
+  "impactedFingerprints": [
+    "ChildForm|MaximumDepth|InfantEffect",
+    "ChildForm|MaximumDepth|ChildForm"
+  ],
+  "highRiskAreas": [
+    "ChildForm|MaximumDepth|InfantEffect (ChildForm)",
+    "ChildForm|MaximumDepth|ChildForm (ChildForm)",
+    "Route /children/:id (4 historic P0 incidents)",
+    "Route /children/new (1 historic P0 incidents)",
+    "artifacts/kidschedule/src/pages/children/form.tsx (risk 87, CRITICAL)"
+  ]
 }

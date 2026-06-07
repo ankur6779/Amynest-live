@@ -4,7 +4,22 @@ import { isCacheDisabled } from "../services/admin-ops-store.js";
 
 const JOB_KEY_PREFIX = "job:";
 const USER_ACTIVE_PREFIX = "ai:user:";
+const FINALIZE_LOCK_PREFIX = "job:finalize:";
 const TTL_SEC = Number(process.env.AI_JOB_RESULT_TTL_SEC ?? "600");
+
+export class JobRecordPersistenceError extends Error {
+  readonly code: "job_records_disabled" | "redis_unavailable";
+
+  constructor(code: "job_records_disabled" | "redis_unavailable", message: string) {
+    super(message);
+    this.name = "JobRecordPersistenceError";
+    this.code = code;
+  }
+}
+
+export function isJobRecordPersistenceBlocked(): boolean {
+  return isCacheDisabled();
+}
 
 function jobKey(jobId: string): string {
   return `${JOB_KEY_PREFIX}${jobId}`;
@@ -15,7 +30,15 @@ function userActiveKey(userId: string): string {
 }
 
 export async function saveJobRecord(record: AiJobRecord): Promise<void> {
-  if (!isRedisQueueEnabled() || isCacheDisabled()) return;
+  if (!isRedisQueueEnabled()) {
+    throw new JobRecordPersistenceError("redis_unavailable", "REDIS_URL is not configured");
+  }
+  if (isCacheDisabled()) {
+    throw new JobRecordPersistenceError(
+      "job_records_disabled",
+      "Job record persistence is disabled (cacheDisabled admin flag)",
+    );
+  }
   const redis = getRedisConnection();
   await redis.set(jobKey(record.id), JSON.stringify(record), "EX", TTL_SEC);
 }
@@ -32,6 +55,64 @@ export async function getJobRecord(jobId: string): Promise<AiJobRecord | undefin
   }
 }
 
+async function maybeRefundLoadMoreQuota(job: AiJobRecord): Promise<void> {
+  try {
+    const { refundLoadMoreQuotaFromJob } = await import(
+      "../services/learningLoadMoreService.js"
+    );
+    await refundLoadMoreQuotaFromJob(job);
+  } catch (err) {
+    const { logger } = await import("../lib/logger.js");
+    logger.warn(
+      {
+        evt: "load_more.quota_refund_failed",
+        jobId: job.id,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "load-more quota refund failed",
+    );
+  }
+}
+
+async function readJobRecord(jobId: string): Promise<AiJobRecord | undefined> {
+  if (isRedisQueueEnabled()) {
+    return getJobRecord(jobId);
+  }
+  const { getJob } = await import("./ai-job-store.js");
+  return getJob(jobId);
+}
+
+async function writeJobRecord(record: AiJobRecord): Promise<void> {
+  if (isRedisQueueEnabled()) {
+    await saveJobRecord(record);
+    return;
+  }
+  const { updateJob } = await import("./ai-job-store.js");
+  updateJob(record.id, record);
+}
+
+/** Single-flight lock so concurrent poll GETs do not double-apply side effects. */
+export async function tryAcquirePollFinalizeLock(jobId: string): Promise<boolean> {
+  if (!isRedisQueueEnabled()) return true;
+  const redis = getRedisConnection();
+  const ok = await redis.set(`${FINALIZE_LOCK_PREFIX}${jobId}`, "1", "EX", 120, "NX");
+  return ok === "OK";
+}
+
+/** Wait for another poll request to finish finalize + apiResult cache. */
+export async function waitForPollApiResult(
+  jobId: string,
+  timeoutMs: number,
+): Promise<AiJobRecord | undefined> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const job = await readJobRecord(jobId);
+    if (job?.apiResult !== undefined) return job;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return readJobRecord(jobId);
+}
+
 export async function patchJobRecord(
   jobId: string,
   patch: Partial<
@@ -41,20 +122,23 @@ export async function patchJobRecord(
     >
   >,
 ): Promise<AiJobRecord | undefined> {
-  const existing = await getJobRecord(jobId);
+  const existing = await readJobRecord(jobId);
   if (!existing) return undefined;
   const updated: AiJobRecord = {
     ...existing,
     ...patch,
     updatedAt: Date.now(),
   };
-  await saveJobRecord(updated);
+  await writeJobRecord(updated);
   if (
     updated.status === "completed" ||
     updated.status === "failed" ||
     updated.status === "timed_out"
   ) {
     await releaseUserSlot(updated.userId);
+    if (updated.status === "failed" || updated.status === "timed_out") {
+      void maybeRefundLoadMoreQuota(updated);
+    }
   }
   return updated;
 }

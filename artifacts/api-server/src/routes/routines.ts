@@ -2268,22 +2268,84 @@ router.post("/routines", async (req, res): Promise<void> => {
     }
   }
 
-  // If override flag is set, delete any existing routine for this child+date first
+  // If override flag is set, replace any existing routine for this child+date.
   if (parsed.data.override) {
-    await db.delete(routinesTable).where(
-      and(eq(routinesTable.childId, parsed.data.childId), eq(routinesTable.date, parsed.data.date))
+    const [routine] = await db
+      .insert(routinesTable)
+      .values({
+        childId: parsed.data.childId,
+        date: parsed.data.date,
+        title: parsed.data.title,
+        items: parsed.data.items,
+        adaptations: parsed.data.adaptations ?? [],
+        customized: false,
+      })
+      .onConflictDoUpdate({
+        target: [routinesTable.childId, routinesTable.date],
+        set: {
+          title: parsed.data.title,
+          items: parsed.data.items,
+          adaptations: parsed.data.adaptations ?? [],
+          customized: false,
+        },
+      })
+      .returning();
+
+    const { tryMarkReferralValidForUser } = await import("../services/referralService.js");
+    tryMarkReferralValidForUser(userId, {
+      emailVerified: auth.emailVerified,
+      phoneNumber: auth.phoneNumber,
+    }).catch(() => {});
+
+    const { fireJourneyTask } = await import("../services/journeyService.js");
+    fireJourneyTask(userId, "routine_generate");
+
+    res.status(201).json(
+      GetRoutineResponse.parse({
+        ...routine,
+        childName: child?.name ?? "Unknown",
+        items: routine.items as RoutineItem[],
+        uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
+        createdAt: routine.createdAt.toISOString(),
+      }),
     );
+    return;
   }
 
-  const [routine] = await db.insert(routinesTable).values({
-    childId: parsed.data.childId,
-    date: parsed.data.date,
-    title: parsed.data.title,
-    items: parsed.data.items,
-    // Persist adaptations passed through from the generate response so the
-    // "Why this routine?" card stays populated when the routine is re-opened.
-    adaptations: parsed.data.adaptations ?? [],
-  }).returning();
+  const inserted = await db
+    .insert(routinesTable)
+    .values({
+      childId: parsed.data.childId,
+      date: parsed.data.date,
+      title: parsed.data.title,
+      items: parsed.data.items,
+      adaptations: parsed.data.adaptations ?? [],
+    })
+    .onConflictDoNothing({
+      target: [routinesTable.childId, routinesTable.date],
+    })
+    .returning();
+
+  if (inserted.length === 0) {
+    const [existing] = await db
+      .select({ id: routinesTable.id })
+      .from(routinesTable)
+      .where(
+        and(
+          eq(routinesTable.childId, parsed.data.childId),
+          eq(routinesTable.date, parsed.data.date),
+        ),
+      )
+      .limit(1);
+    res.status(409).json({
+      error: "routine_exists",
+      message: "A routine already exists for this child and date. Send override=true to replace it.",
+      routineId: existing?.id,
+    });
+    return;
+  }
+
+  const [routine] = inserted;
 
   const { tryMarkReferralValidForUser } = await import("../services/referralService.js");
   tryMarkReferralValidForUser(userId, {

@@ -42,6 +42,20 @@ describe("shapePollApiResult P0 contracts", () => {
     assert.equal((shaped as { answer: string }).answer, "Try a calm wind-down.");
   });
 
+  it("ai/assistant-ai skipSideEffects returns same answer shape", async () => {
+    const j = job({
+      type: "openai.chat",
+      payload: wrapJobInput("ai/assistant-ai", { namespace: "amy-assistant" }, {
+        question: "How do I help bedtime?",
+        userId: "user-1",
+      }),
+    });
+    const shaped = await shapePollApiResult(j, { content: "Try a calm wind-down." }, {
+      skipSideEffects: true,
+    });
+    assert.equal((shaped as { answer: string }).answer, "Try a calm wind-down.");
+  });
+
   it("infant-sleep/coach-plan returns ok plan envelope", async () => {
     const plan = { title: "Sleep plan", nights: [] };
     const shaped = await shapePollApiResult(

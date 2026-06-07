@@ -10,6 +10,17 @@ import {
 } from "./mode.js";
 import { getRedisUrl, verifyRedisConnection } from "./redis.js";
 
+let apiQueueBootstrapComplete = false;
+
+/** True after API queue mode is finalized (safe to enqueue). */
+export function isApiQueueBootstrapComplete(): boolean {
+  return apiQueueBootstrapComplete;
+}
+
+export function markApiQueueBootstrapComplete(): void {
+  apiQueueBootstrapComplete = true;
+}
+
 export type QueueHealthSnapshot = {
   status: "ok" | "degraded";
   redis: boolean;
@@ -21,6 +32,10 @@ export type QueueHealthSnapshot = {
 
 /** API startup: connect to Redis only when worker + BullMQ are enabled. */
 export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
+  if (apiQueueBootstrapComplete) {
+    return getQueueHealthSnapshot();
+  }
+
   const redisUrl = getRedisUrl();
 
   if (!isWorkerEnabled()) {
@@ -35,6 +50,7 @@ export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
       },
       "Redis/BullMQ bootstrap skipped — OpenAI runs in-process on API",
     );
+    markApiQueueBootstrapComplete();
     return {
       status: "ok",
       redis: false,
@@ -47,6 +63,7 @@ export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
   if (!redisUrl) {
     assertProductionQueueConfig();
     const effectiveMode = getQueueMode();
+    markApiQueueBootstrapComplete();
     return {
       status: "ok",
       redis: false,
@@ -95,6 +112,7 @@ export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
   const effectiveMode = getQueueMode();
   console.log("Queue mode:", effectiveMode);
   assertProductionQueueConfig();
+  markApiQueueBootstrapComplete();
 
   return {
     status: redisPing || effectiveMode !== "bullmq" ? "ok" : "degraded",

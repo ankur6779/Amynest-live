@@ -1,6 +1,6 @@
 # Release Intelligence Review: test-child-form
 
-> Generated: 2026-06-06T18:31:06.484Z
+> Generated: 2026-06-07T09:22:25.971Z
 > Base: `simulate` → Head: `simulate`
 > **Read-only analysis** — engineers make all deploy decisions.
 

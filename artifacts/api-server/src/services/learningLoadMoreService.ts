@@ -17,15 +17,8 @@ import {
   type AiContentNamespace,
 } from "./aiContentCacheService.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
-import { wrapJobInput } from "../queue/ai-job-payload.js";
-import { waitForJobResult } from "../queue/index.js";
-import { isBullMqActive } from "../queue/ai-job-queue.js";
-import { waitForJob } from "../queue/ai-job-store.js";
-import { runLifeSkillsAiGenerate, runPhonicsLoadMoreWords } from "./domain-ai/life-skills-runners.js";
-import { runSmartMathTricksAiGenerate } from "./domain-ai/smart-math-tricks-runners.js";
-import { runSmartStudyNextQuestions } from "./domain-ai/smart-study-runners.js";
-import { runOlympiadNextQuestions } from "./domain-ai/olympiad-runners.js";
-import { runSpellingAiGenerate } from "./domain-ai/spelling-runners.js";
+import { wrapJobInput, unwrapJobPayload } from "../queue/ai-job-payload.js";
+import type { AiJobType, AiJobRecord } from "../queue/types.js";
 import {
   levelForAge,
   normalizeStudyCountry,
@@ -168,6 +161,38 @@ async function reserveLoadMoreQuota(
   return { ok: true, isPremium, feature };
 }
 
+/** Refund one load-more quota unit when a reserved AI job does not succeed. */
+export async function refundLoadMoreQuota(
+  userId: string,
+  section: LearningLoadMoreSection,
+): Promise<void> {
+  const sub = await getOrCreateSubscription(userId);
+  const isPremium = isPremiumNow(sub);
+  const feature = LEARNING_LOAD_MORE_FEATURES[section];
+  const day = usageBucket(isPremium);
+  await db
+    .update(usageDailyTable)
+    .set({
+      count: sql`GREATEST(0, ${usageDailyTable.count} - 1)`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.day, day),
+        eq(usageDailyTable.feature, feature),
+      ),
+    );
+}
+
+export async function refundLoadMoreQuotaFromJob(job: AiJobRecord): Promise<void> {
+  const { routeName, pollContext } = unwrapJobPayload(job.payload);
+  if (!routeName.startsWith("learning-load-more/")) return;
+  const ctx = pollContext as LoadMorePollContext | undefined;
+  if (!ctx?.userId || !ctx?.section) return;
+  await refundLoadMoreQuota(ctx.userId, ctx.section);
+}
+
 async function loadOwnedChild(childId: number, userId: string) {
   const rows = await db
     .select({
@@ -194,32 +219,45 @@ async function resolveUserCountry(
   return normalizeStudyCountry(rows[0]?.country);
 }
 
-async function runAiJob<T>(
-  type: string,
+async function enqueueLoadMoreJob(
+  type: AiJobType,
   routeName: string,
   userId: string,
   input: unknown,
-  timeoutMs: number,
-): Promise<T | null> {
+  pollContext: LoadMorePollContext,
+): Promise<string | null> {
   try {
-    const enqueued = await enqueueAiJob(
-      type as Parameters<typeof enqueueAiJob>[0],
-      userId,
-      wrapJobInput(routeName, input),
-    );
-    if (!enqueued.jobId) return null;
-    const finished = isBullMqActive()
-      ? await waitForJobResult(enqueued.jobId, timeoutMs)
-      : await waitForJob(enqueued.jobId, timeoutMs);
-    if (finished?.status !== "completed" || !finished.result) return null;
-    return finished.result as T;
+    const enqueued = await enqueueAiJob(type, userId, wrapJobInput(routeName, input, pollContext));
+    if (!enqueued.jobId) {
+      logger.error(
+        { evt: "learning_load_more.enqueue_failed", type, routeName, userId },
+        "learning load-more enqueue failed",
+      );
+      return null;
+    }
+    return enqueued.jobId;
   } catch (err) {
     logger.warn(
-      `learning load-more AI job failed (${type}): ${err instanceof Error ? err.message : String(err)}`,
+      `learning load-more enqueue failed (${type}): ${err instanceof Error ? err.message : String(err)}`,
     );
     return null;
   }
 }
+
+export type LoadMorePollContext = {
+  userId: string;
+  section: LearningLoadMoreSection;
+  lookupKey: string;
+  cachedItems: unknown[];
+  count: number;
+  childId?: number;
+  olympiad?: {
+    ageBand: OlympiadAgeBand;
+    difficulty: OlympiadDifficulty;
+    subject: OlympiadSubject | "mixed";
+    country: string;
+  };
+};
 
 export type LoadMoreResult = {
   ok: true;
@@ -231,6 +269,134 @@ export type LoadMoreResult = {
   items: unknown;
 };
 
+export type LoadMoreProcessingResult = {
+  ok: false;
+  status: "processing";
+  jobId: string;
+  pollUrl: string;
+  section: LearningLoadMoreSection;
+};
+
+function itemsKeyForSection(section: LearningLoadMoreSection): string {
+  if (section === "smart_study" || section === "olympiad") return "questions";
+  if (section === "smart_math_tricks") return "tricks";
+  if (section === "spelling" || section === "phonics") return "words";
+  return "tasks";
+}
+
+function extractFreshItems(
+  section: LearningLoadMoreSection,
+  raw: unknown,
+  ctx: LoadMorePollContext,
+): unknown[] {
+  const body = raw as Record<string, unknown>;
+  switch (section) {
+    case "smart_study":
+      return (body.questions as unknown[]) ?? [];
+    case "smart_math_tricks":
+      return (body.tricks as unknown[]) ?? [];
+    case "spelling":
+    case "phonics":
+      return (body.words as unknown[]) ?? [];
+    case "life_skills":
+      return (body.tasks as unknown[]) ?? [];
+    case "olympiad": {
+      const aiRaw = (body.questions as unknown[]) ?? [];
+      const o = ctx.olympiad;
+      if (!o) return [];
+      return aiRaw.flatMap((row, i) => {
+        const r = row as {
+          subject: OlympiadSubject;
+          question: string;
+          options: string[];
+          answer: string;
+          explanation?: string;
+        };
+        return aiQuestionsToOlympiad(
+          [r],
+          r.subject ?? "math",
+          o.ageBand,
+          o.difficulty,
+          o.country,
+          `loadmore-${ctx.childId ?? 0}-${Date.now()}-${i}`,
+        );
+      });
+    }
+    default:
+      return [];
+  }
+}
+
+/** Poll finalize — merge worker output with cache, persist, return API shape. */
+export async function finalizeLearningLoadMorePoll(
+  rawResult: unknown,
+  pollContext: unknown,
+  opts?: { skipSideEffects?: boolean },
+): Promise<LoadMoreResult | { ok: false; error: string }> {
+  const skipSideEffects = opts?.skipSideEffects === true;
+  const ctx = pollContext as LoadMorePollContext;
+  const section = ctx.section;
+  const freshItems = extractFreshItems(section, rawResult, ctx).filter(Boolean);
+  const count = ctx.count;
+  const cachedItems = ctx.cachedItems ?? [];
+  const itemsKey = itemsKeyForSection(section);
+  const itemsPayload = {
+    [itemsKey]: [...cachedItems, ...freshItems].slice(0, count),
+  };
+
+  if (freshItems.length === 0) {
+    if (!skipSideEffects) {
+      await refundLoadMoreQuota(ctx.userId, section);
+    }
+    return { ok: false, error: "ai_empty" };
+  }
+
+  if (!assertLearningZoneEnglishItems(itemsPayload)) {
+    logger.warn(`learning load-more rejected non-English payload for ${section}`);
+    if (cachedItems.length > 0) {
+      if (!skipSideEffects) {
+        await refundLoadMoreQuota(ctx.userId, section);
+      }
+      const usage = await getLoadMoreUsageInfo(ctx.userId, section);
+      return {
+        ok: true,
+        section,
+        source: "cache",
+        fromCache: true,
+        charged: false,
+        usage,
+        items: { [itemsKey]: cachedItems },
+      };
+    }
+    if (!skipSideEffects) {
+      await refundLoadMoreQuota(ctx.userId, section);
+    }
+    return { ok: false, error: "ai_non_english" };
+  }
+
+  if (!skipSideEffects) {
+    await saveCachedItems({
+      namespace: section,
+      lookupKey: ctx.lookupKey,
+      items: freshItems,
+      source: "ai",
+    });
+  }
+
+  const usage = await getLoadMoreUsageInfo(ctx.userId, section);
+  usage.charged = true;
+
+  return {
+    ok: true,
+    section,
+    source: "ai",
+    fromCache: cachedItems.length > 0,
+    charged: true,
+    usage,
+    items: itemsPayload,
+  };
+}
+
 export async function executeLearningLoadMore(opts: {
   userId: string;
   section: LearningLoadMoreSection;
@@ -240,6 +406,7 @@ export async function executeLearningLoadMore(opts: {
   params: Record<string, unknown>;
 }): Promise<
   | LoadMoreResult
+  | LoadMoreProcessingResult
   | { ok: false; status: number; error: string; feature?: FeatureKey; limit?: number; used?: number }
 > {
   const section = opts.section;
@@ -454,278 +621,177 @@ export async function executeLearningLoadMore(opts: {
     };
   }
 
-  let freshItems: unknown[] = [];
-  let itemsPayload: unknown = null;
+  const pollContextBase: Omit<LoadMorePollContext, "lookupKey"> = {
+    userId: opts.userId,
+    section,
+    cachedItems,
+    count,
+    childId: opts.childId,
+  };
 
-  try {
-    switch (section) {
-      case "smart_study": {
-        if (!opts.childId) {
-          return { ok: false, status: 400, error: "childId_required" };
-        }
-        const child = await loadOwnedChild(opts.childId, opts.userId);
-        if (!child) return { ok: false, status: 404, error: "child_not_found" };
-        const subject = String(opts.params.subject ?? "") as SmartSubjectId;
-        const level = (Number(opts.params.level ?? levelForAge(child.age ?? 0)) ||
-          1) as Level;
-        const country = await resolveUserCountry(
-          opts.userId,
-          opts.params.country as string | undefined,
-        );
-        lookupKey = buildAiContentLookupKey("smart_study", {
+  let jobId: string | null = null;
+
+  switch (section) {
+    case "smart_study": {
+      if (!opts.childId) {
+        await refundLoadMoreQuota(opts.userId, section);
+        return { ok: false, status: 400, error: "childId_required" };
+      }
+      const child = await loadOwnedChild(opts.childId, opts.userId);
+      if (!child) {
+        await refundLoadMoreQuota(opts.userId, section);
+        return { ok: false, status: 404, error: "child_not_found" };
+      }
+      const subject = String(opts.params.subject ?? "") as SmartSubjectId;
+      const level = (Number(opts.params.level ?? levelForAge(child.age ?? 0)) || 1) as Level;
+      const country = await resolveUserCountry(
+        opts.userId,
+        opts.params.country as string | undefined,
+      );
+      lookupKey = buildAiContentLookupKey("smart_study", { level, subject, country });
+      jobId = await enqueueLoadMoreJob(
+        "smart-study.next_questions",
+        "learning-load-more/smart-study",
+        opts.userId,
+        {
           level,
           subject,
           country,
-        });
-
-        const result =
-          (await runAiJob<{ questions: unknown[] }>(
-            "smart-study.next_questions",
-            "learning-load-more/smart-study",
-            opts.userId,
-            {
-              level,
-              subject,
-              country,
-              ageYears: child.age ?? 0,
-              count: need,
-              excludeIds: [...excludeIds],
-            },
-            8000,
-          )) ??
-          (await runSmartStudyNextQuestions({
-            level,
-            subject,
-            country,
-            ageYears: child.age ?? 0,
-            count: need,
-            excludeIds: [...excludeIds],
-          }));
-
-        freshItems = (result?.questions ?? []) as unknown[];
-        itemsPayload = {
-          questions: [...cachedItems, ...freshItems].slice(0, count),
-        };
-        break;
-      }
-      case "smart_math_tricks": {
-        const age = String(opts.params.age ?? "4-6") as "4-6" | "6-8";
-        lookupKey = buildAiContentLookupKey("smart_math_tricks", { age });
-
-        const result = await runSmartMathTricksAiGenerate({
-          age,
+          ageYears: child.age ?? 0,
           count: need,
           excludeIds: [...excludeIds],
-        });
-        freshItems = result?.tricks ?? [];
-        itemsPayload = {
-          tricks: [...cachedItems, ...freshItems].slice(0, count),
-        };
-        break;
+        },
+        { ...pollContextBase, lookupKey },
+      );
+      break;
+    }
+    case "smart_math_tricks": {
+      const age = String(opts.params.age ?? "4-6") as "4-6" | "6-8";
+      lookupKey = buildAiContentLookupKey("smart_math_tricks", { age });
+      jobId = await enqueueLoadMoreJob(
+        "smart-math-tricks.ai_generate",
+        "learning-load-more/smart-math-tricks",
+        opts.userId,
+        { age, count: need, excludeIds: [...excludeIds] },
+        { ...pollContextBase, lookupKey },
+      );
+      break;
+    }
+    case "olympiad": {
+      if (!opts.childId) {
+        await refundLoadMoreQuota(opts.userId, section);
+        return { ok: false, status: 400, error: "childId_required" };
       }
-      case "olympiad": {
-        if (!opts.childId) {
-          return { ok: false, status: 400, error: "childId_required" };
-        }
-        const child = await loadOwnedChild(opts.childId, opts.userId);
-        if (!child) return { ok: false, status: 404, error: "child_not_found" };
-        const ageBand = String(opts.params.ageBand ?? "6-8") as OlympiadAgeBand;
-        const difficulty = String(
-          opts.params.difficulty ?? "medium",
-        ) as OlympiadDifficulty;
-        const subject = (opts.params.subject ?? "mixed") as
-          | OlympiadSubject
-          | "mixed";
-        const country = await resolveUserCountry(
-          opts.userId,
-          opts.params.country as string | undefined,
-        );
-        lookupKey = buildAiContentLookupKey("olympiad", {
+      const child = await loadOwnedChild(opts.childId, opts.userId);
+      if (!child) {
+        await refundLoadMoreQuota(opts.userId, section);
+        return { ok: false, status: 404, error: "child_not_found" };
+      }
+      const ageBand = String(opts.params.ageBand ?? "6-8") as OlympiadAgeBand;
+      const difficulty = String(opts.params.difficulty ?? "medium") as OlympiadDifficulty;
+      const subject = (opts.params.subject ?? "mixed") as OlympiadSubject | "mixed";
+      const country = await resolveUserCountry(
+        opts.userId,
+        opts.params.country as string | undefined,
+      );
+      lookupKey = buildAiContentLookupKey("olympiad", {
+        ageBand,
+        difficulty,
+        subject,
+        country,
+      });
+      jobId = await enqueueLoadMoreJob(
+        "olympiad.next_questions",
+        "learning-load-more/olympiad",
+        opts.userId,
+        {
           ageBand,
           difficulty,
           subject,
           country,
-        });
-
-        const aiRaw =
-          (await runAiJob<{ questions: unknown[] }>(
-            "olympiad.next_questions",
-            "learning-load-more/olympiad",
-            opts.userId,
-            {
-              ageBand,
-              difficulty,
-              subject,
-              country,
-              ageYears: child.age ?? 8,
-              count: need,
-              excludeIds: [...excludeIds],
-            },
-            8000,
-          )) ??
-          (await runOlympiadNextQuestions({
-            ageBand,
-            difficulty,
-            subject,
-            country,
-            ageYears: child.age ?? 8,
-            count: need,
-            excludeIds: [...excludeIds],
-          }));
-
-        const mapped = (aiRaw?.questions ?? []).flatMap((row, i) => {
-          const r = row as {
-            subject: OlympiadSubject;
-            question: string;
-            options: string[];
-            answer: string;
-            explanation?: string;
-          };
-          return aiQuestionsToOlympiad(
-            [r],
-            r.subject ?? "math",
-            ageBand,
-            difficulty,
-            country,
-            `loadmore-${opts.childId}-${Date.now()}-${i}`,
-          );
-        });
-        freshItems = mapped;
-        itemsPayload = {
-          questions: [...cachedItems, ...freshItems].slice(0, count),
-        };
-        break;
-      }
-      case "spelling": {
-        const age = String(opts.params.age ?? "4-6") as
-          | "2-4"
-          | "4-6"
-          | "6-8"
-          | "8-10+";
-        const difficulty = String(opts.params.difficulty ?? "medium") as
-          | "easy"
-          | "medium"
-          | "hard";
-        lookupKey = buildAiContentLookupKey("spelling", { age, difficulty });
-
-        const result =
-          (await runAiJob<{ words: unknown[] }>(
-            "spelling.ai_generate",
-            "learning-load-more/spelling",
-            opts.userId,
-            { age, difficulty, count: need },
-            25_000,
-          )) ?? (await runSpellingAiGenerate({ age, difficulty, count: need }));
-
-        freshItems = result?.words ?? [];
-        itemsPayload = {
-          words: [...cachedItems, ...freshItems].slice(0, count),
-        };
-        break;
-      }
-      case "phonics": {
-        const level = Math.max(1, Math.min(6, Number(opts.params.level ?? 1)));
-        const vowelFocus = String(opts.params.vowelFocus ?? "a").toLowerCase();
-        lookupKey = buildAiContentLookupKey("phonics", {
-          level,
-          vowel: vowelFocus,
-        });
-        const excludeWords = [...excludeIds].map((w) => w.toLowerCase());
-        for (const w of cachedItems) {
-          if (typeof w === "string") excludeWords.push(w);
-        }
-
-        const result = await runPhonicsLoadMoreWords({
-          level,
-          vowelFocus,
-          count: need,
-          excludeWords,
-        });
-        freshItems = result?.words ?? [];
-        itemsPayload = {
-          words: [...cachedItems, ...freshItems].slice(0, count),
-        };
-        break;
-      }
-      case "life_skills": {
-        if (!opts.childId) {
-          return { ok: false, status: 400, error: "childId_required" };
-        }
-        const child = await loadOwnedChild(opts.childId, opts.userId);
-        if (!child) return { ok: false, status: 404, error: "child_not_found" };
-        const ageBand =
-          (opts.params.ageBand as string | undefined) ??
-          ageBandForLifeSkills(child.age);
-        lookupKey = buildAiContentLookupKey("life_skills", { ageBand });
-
-        const result = await runLifeSkillsAiGenerate({
-          ageBand: ageBand as Parameters<
-            typeof runLifeSkillsAiGenerate
-          >[0]["ageBand"],
+          ageYears: child.age ?? 8,
           count: need,
           excludeIds: [...excludeIds],
-        });
-        freshItems = result?.tasks ?? [];
-        itemsPayload = {
-          tasks: [...cachedItems, ...freshItems].slice(0, count),
-        };
-        break;
+        },
+        {
+          ...pollContextBase,
+          lookupKey,
+          olympiad: { ageBand, difficulty, subject, country },
+        },
+      );
+      break;
+    }
+    case "spelling": {
+      const age = String(opts.params.age ?? "4-6") as "2-4" | "4-6" | "6-8" | "8-10+";
+      const difficulty = String(opts.params.difficulty ?? "medium") as
+        | "easy"
+        | "medium"
+        | "hard";
+      lookupKey = buildAiContentLookupKey("spelling", { age, difficulty });
+      jobId = await enqueueLoadMoreJob(
+        "spelling.ai_generate",
+        "learning-load-more/spelling",
+        opts.userId,
+        { age, difficulty, count: need },
+        { ...pollContextBase, lookupKey },
+      );
+      break;
+    }
+    case "phonics": {
+      const level = Math.max(1, Math.min(6, Number(opts.params.level ?? 1)));
+      const vowelFocus = String(opts.params.vowelFocus ?? "a").toLowerCase();
+      lookupKey = buildAiContentLookupKey("phonics", { level, vowel: vowelFocus });
+      const excludeWords = [...excludeIds].map((w) => w.toLowerCase());
+      for (const w of cachedItems) {
+        if (typeof w === "string") excludeWords.push(w);
       }
+      jobId = await enqueueLoadMoreJob(
+        "phonics.load_more_words",
+        "learning-load-more/phonics",
+        opts.userId,
+        { level, vowelFocus, count: need, excludeWords },
+        { ...pollContextBase, lookupKey },
+      );
+      break;
     }
-  } catch (err) {
-    logger.error(
-      `learning load-more generation failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
-    return { ok: false, status: 502, error: "ai_failed" };
-  }
-
-  const allNew = freshItems.filter(Boolean);
-  if (allNew.length === 0) {
-    return { ok: false, status: 502, error: "ai_empty" };
-  }
-
-  if (!assertLearningZoneEnglishItems(itemsPayload)) {
-    logger.warn(`learning load-more rejected non-English payload for ${section}`);
-    if (cachedItems.length > 0) {
-      const usage = await getLoadMoreUsageInfo(opts.userId, section);
-      const partialKey =
-        section === "smart_study" || section === "olympiad"
-          ? "questions"
-          : section === "smart_math_tricks"
-            ? "tricks"
-            : section === "spelling" || section === "phonics"
-              ? "words"
-              : "tasks";
-      return {
-        ok: true,
-        section,
-        source: "cache",
-        fromCache: true,
-        charged: false,
-        usage,
-        items: { [partialKey]: cachedItems },
-      };
+    case "life_skills": {
+      if (!opts.childId) {
+        await refundLoadMoreQuota(opts.userId, section);
+        return { ok: false, status: 400, error: "childId_required" };
+      }
+      const child = await loadOwnedChild(opts.childId, opts.userId);
+      if (!child) {
+        await refundLoadMoreQuota(opts.userId, section);
+        return { ok: false, status: 404, error: "child_not_found" };
+      }
+      const ageBand =
+        (opts.params.ageBand as string | undefined) ?? ageBandForLifeSkills(child.age);
+      lookupKey = buildAiContentLookupKey("life_skills", { ageBand });
+      jobId = await enqueueLoadMoreJob(
+        "life-skills.ai_generate",
+        "learning-load-more/life-skills",
+        opts.userId,
+        {
+          ageBand,
+          count: need,
+          excludeIds: [...excludeIds],
+        },
+        { ...pollContextBase, lookupKey },
+      );
+      break;
     }
-    return { ok: false, status: 502, error: "ai_non_english" };
   }
 
-  await saveCachedItems({
-    namespace: section,
-    lookupKey,
-    items: allNew,
-    source: "ai",
-  });
-
-  const usage = await getLoadMoreUsageInfo(opts.userId, section);
-  usage.charged = true;
+  if (!jobId) {
+    await refundLoadMoreQuota(opts.userId, section);
+    return { ok: false, status: 503, error: "ai_queue_unavailable" };
+  }
 
   return {
-    ok: true,
+    ok: false,
+    status: "processing",
+    jobId,
+    pollUrl: `/api/result/${jobId}`,
     section,
-    source: "ai",
-    fromCache: cachedItems.length > 0,
-    charged: true,
-    usage,
-    items: itemsPayload,
   };
 }

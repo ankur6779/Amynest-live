@@ -5,6 +5,7 @@ import {
   sanitizeLearningZoneAiObject,
   validateLearningZonePayload,
 } from "@/lib/learning-zone-ai-text";
+import { readResolvedApiJson } from "@/lib/poll-result";
 import { readStoredActiveChildId } from "@/lib/coach-age-nav";
 
 export type LearningLoadMoreSection =
@@ -101,31 +102,40 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
           return null;
         }
 
-        if (!res.ok) {
-          const err = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(err.error ?? `load_more_${res.status}`);
+        if (res.status === 202 || res.ok) {
+          const data = await readResolvedApiJson<LoadMoreResponse>(res, authFetch, {
+            poll: { maxAttempts: 25, intervalMs: 2000 },
+          }).catch(() => null);
+
+          if (!data?.ok) {
+            throw new Error("load_more_processing_failed");
+          }
+
+          let items = data.items;
+          const check = validateLearningZonePayload(items);
+          if (!check.valid && data.source === "ai") {
+            const retry = await authFetch("/api/learning/load-more", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody),
+            });
+            if (retry.ok || retry.status === 202) {
+              const retryData = await readResolvedApiJson<LoadMoreResponse>(retry, authFetch, {
+                poll: { maxAttempts: 25, intervalMs: 2000 },
+              }).catch(() => null);
+              if (retryData?.ok) items = retryData.items;
+            }
+          }
+          items = sanitizeLearningZoneAiObject(items);
+          setUsage(data.usage);
+          if (data.charged) {
+            refresh();
+          }
+          return { ...data, items };
         }
 
-        const data = (await res.json()) as LoadMoreResponse;
-        let items = data.items;
-        const check = validateLearningZonePayload(items);
-        if (!check.valid && data.source === "ai") {
-          const retry = await authFetch("/api/learning/load-more", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
-          });
-          if (retry.ok) {
-            const retryData = (await retry.json()) as LoadMoreResponse;
-            items = retryData.items;
-          }
-        }
-        items = sanitizeLearningZoneAiObject(items);
-        setUsage(data.usage);
-        if (data.charged) {
-          refresh();
-        }
-        return { ...data, items };
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? `load_more_${res.status}`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "load_more_failed");
         return null;

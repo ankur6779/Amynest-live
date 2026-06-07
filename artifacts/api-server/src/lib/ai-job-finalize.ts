@@ -1,6 +1,6 @@
 import { unwrapJobPayload } from "../queue/ai-job-payload.js";
 import type { AiJobRecord } from "../queue/types.js";
-import { patchJobRecord } from "../queue/job-results.js";
+import { patchJobRecord, tryAcquirePollFinalizeLock, waitForPollApiResult } from "../queue/job-results.js";
 import { isAiFinalizeRegistryEnabled } from "./ai-finalize-registry-flag.js";
 import { getAiRouteContract } from "./ai-route-contracts/index.js";
 import { shapePollApiResult } from "./ai-poll-api-result.js";
@@ -105,6 +105,7 @@ export async function resolveSyncApiBody(opts: {
 
 /**
  * Poll response body: cached apiResult → registry finalize → legacy shapePollApiResult.
+ * Side effects (cache persist, assistant history, infant plans) run at most once per job.
  */
 export async function resolvePollApiBody(job: AiJobRecord): Promise<unknown> {
   if (job.apiResult !== undefined) return job.apiResult;
@@ -121,5 +122,24 @@ export async function resolvePollApiBody(job: AiJobRecord): Promise<unknown> {
   });
   if (registryBody !== null) return registryBody;
 
-  return shapePollApiResult(job, raw);
+  let current = job;
+  if (!current.sideEffectsApplied) {
+    const acquired = await tryAcquirePollFinalizeLock(current.id);
+    if (!acquired) {
+      const waited = await waitForPollApiResult(current.id, 10_000);
+      if (waited?.apiResult !== undefined) return waited.apiResult;
+      if (waited) current = waited;
+    }
+  }
+
+  const skipSideEffects = current.sideEffectsApplied === true;
+  const apiResult = await shapePollApiResult(current, raw, { skipSideEffects });
+
+  if (!skipSideEffects) {
+    await patchJobRecord(current.id, { apiResult, sideEffectsApplied: true });
+  } else if (current.apiResult === undefined) {
+    await patchJobRecord(current.id, { apiResult });
+  }
+
+  return apiResult;
 }

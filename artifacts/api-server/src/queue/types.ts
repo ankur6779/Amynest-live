@@ -30,7 +30,11 @@ export type AiJobType =
   | "ai-coach.pregenerate_audio"
   | "ai-coach.pregenerate_infant_audio"
   | "explain.narrative"
-  | "speech.transcribe";
+  | "speech.transcribe"
+  | "static-audio.generate"
+  | "smart-math-tricks.ai_generate"
+  | "phonics.load_more_words"
+  | "life-skills.ai_generate";
 
 export interface AiJobRecord {
   id: string;
@@ -57,4 +61,6 @@ export interface EnqueueResult {
   /** True when the caller should poll instead of blocking. */
   deferred: boolean;
   retryAfterMs?: number;
+  /** Set when enqueue was rejected (e.g. job_records_disabled). */
+  error?: string;
 }

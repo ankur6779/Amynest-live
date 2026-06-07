@@ -21,6 +21,12 @@ import { getRedisUrl, isRedisQueueEnabled, verifyRedisConnection } from "../queu
 import { scheduleMemoryDrain, getMemoryQueueStats } from "../queue/memory-queue.js";
 import { startBullMqWorker, stopBullMqWorker } from "./bullmq-worker.js";
 import { closeRedisConnection } from "../queue/redis.js";
+import {
+  clearWorkerIdleReason,
+  getWorkerHealthSnapshot,
+  markMemoryDrainActive,
+  markWorkerIdle,
+} from "./worker-health.js";
 import http from "node:http";
 
 function startWorkerHealthServer(): void {
@@ -29,8 +35,15 @@ function startWorkerHealthServer(): void {
 
   const server = http.createServer((req, res) => {
     if (req.url === "/health" || req.url === "/health/") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
+      void (async () => {
+        const health = await getWorkerHealthSnapshot();
+        res.writeHead(health.ok ? 200 : 503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ...health, timestamp: Date.now() }));
+      })().catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: message, timestamp: Date.now() }));
+      });
       return;
     }
     res.writeHead(404).end();
@@ -47,6 +60,7 @@ function startWorkerHealthServer(): void {
  * immediately makes the platform restart the service in a tight loop.
  */
 function idleWorkerDisabled(reason: string): void {
+  markWorkerIdle(reason);
   logger.info({ evt: "ai_worker.skipped", reason }, "AI worker idling — no queue processing");
   console.log(`AI worker skipped: ${reason} — process staying alive (no BullMQ load)`);
   setInterval(() => {}, 60 * 60 * 1000);
@@ -83,6 +97,7 @@ async function startWorker(): Promise<void> {
       { evt: "ai_worker.mode", mode: "memory" },
       "REDIS_URL not set — using in-memory drain (dev only)",
     );
+    markMemoryDrainActive(true);
     setInterval(() => {
       scheduleMemoryDrain();
       const stats = getMemoryQueueStats();
@@ -104,6 +119,7 @@ async function startWorker(): Promise<void> {
       idleWorkerDisabled("BullMQ not active after Redis check");
       return;
     }
+    clearWorkerIdleReason();
     startBullMqWorker();
     console.log("BullMQ worker started");
     logger.info({ evt: "ai_worker.mode", mode: "bullmq" }, "AI worker running (BullMQ + Redis)");

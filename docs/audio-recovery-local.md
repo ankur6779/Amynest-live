@@ -57,7 +57,14 @@ cd android && ./gradlew bundleRelease
 
 Output: `android/releases/amynest-<version>-<versionCode>.aab`
 
-Replace stub pack with real clips before store upload: `pnpm run build:audio-pack` (when GCS is reachable).
+Replace stub pack with real clips before store upload:
+
+```bash
+pnpm run build:audio-pack          # --force re-downloads via www.amynest.in/api/static-audio
+pnpm run validate:audio-pack     # fails if tier=stub or duplicate placeholder clips
+```
+
+Set `STATIC_AUDIO_ORIGIN=https://www.amynest.in` when building from CI without direct GCS access.
 
 ## Device proof (required before “done”)
 
