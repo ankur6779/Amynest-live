@@ -6,7 +6,8 @@ import { logger } from "../lib/logger.js";
 export type InfantAiJobKind =
   | "infant_sleep_weekly_report"
   | "infant_feeding_plan"
-  | "infant_assistant";
+  | "infant_assistant"
+  | "infant_sleep_coach";
 
 export type InfantAiCostEvent = {
   job: InfantAiJobKind;

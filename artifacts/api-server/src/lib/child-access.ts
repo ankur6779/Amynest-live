@@ -10,10 +10,39 @@ import {
 
 export type AccessibleChild = {
   id: number;
+  /** Whole years from the child profile. */
+  age: number;
+  /** 0–11 month remainder from the child profile (not total months). */
+  ageMonthsPart: number;
+  /** Total age in months (age * 12 + ageMonthsPart). */
   ageMonths: number;
   name: string;
   userId: string;
+  dietType: string | null;
+  allergies: string | null;
 };
+
+function toAccessibleChild(row: {
+  id: number;
+  age: number;
+  ageMonths: number;
+  name: string;
+  userId: string | null;
+  dietType: string | null;
+  allergies: string | null;
+}, fallbackUserId: string): AccessibleChild {
+  const ageMonthsPart = row.ageMonths;
+  return {
+    id: row.id,
+    age: row.age,
+    ageMonthsPart,
+    ageMonths: row.age * 12 + ageMonthsPart,
+    name: row.name,
+    userId: row.userId ?? fallbackUserId,
+    dietType: row.dietType,
+    allergies: row.allergies,
+  };
+}
 
 export async function canAccessChild(
   childId: number,
@@ -26,19 +55,15 @@ export async function canAccessChild(
       age: childrenTable.age,
       name: childrenTable.name,
       userId: childrenTable.userId,
+      dietType: childrenTable.dietType,
+      allergies: childrenTable.allergies,
     })
     .from(childrenTable)
     .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
     .limit(1);
 
   if (childRows[0]) {
-    const c = childRows[0];
-    return {
-    id: c.id,
-    name: c.name,
-    userId: c.userId ?? userId,
-    ageMonths: c.age * 12 + c.ageMonths,
-  };
+    return toAccessibleChild(childRows[0], userId);
   }
 
   const caregiverRows = await db
@@ -48,6 +73,8 @@ export async function canAccessChild(
       age: childrenTable.age,
       name: childrenTable.name,
       userId: childrenTable.userId,
+      dietType: childrenTable.dietType,
+      allergies: childrenTable.allergies,
     })
     .from(childCaregiversTable)
     .innerJoin(childrenTable, eq(childrenTable.id, childCaregiversTable.childId))
@@ -62,12 +89,7 @@ export async function canAccessChild(
 
   const cg = caregiverRows[0];
   if (!cg) return null;
-  return {
-    id: cg.id,
-    name: cg.name,
-    userId: cg.userId ?? userId,
-    ageMonths: cg.age * 12 + cg.ageMonths,
-  };
+  return toAccessibleChild(cg, userId);
 }
 
 export async function isChildOwner(

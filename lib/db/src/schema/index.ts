@@ -28,6 +28,7 @@ export * from "./user_progress";
 export * from "./onboarding";
 export * from "./subscriptions";
 export * from "./razorpay_webhook_events";
+export * from "./revenuecat_webhook_events";
 export * from "./referrals";
 export * from "./user_coach_sessions";
 export * from "./coach_win_generations";

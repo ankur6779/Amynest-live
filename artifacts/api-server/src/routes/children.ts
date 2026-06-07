@@ -29,6 +29,11 @@ import { safeRoute } from "../lib/safe-route-handler.js";
 import { isSchemaMismatchError } from "../lib/db-safe.js";
 import { enrichChildEducationFields } from "../lib/child-education-enrich.js";
 import { logger } from "../lib/logger.js";
+import {
+  logDeletionAudit,
+  purgeChildScopedData,
+  type DeletionAuditEntry,
+} from "../services/data-deletion-service.js";
 
 const router: IRouter = Router();
 
@@ -77,32 +82,31 @@ router.post(
         }
       }
 
-      if (!isOnboarding) {
-        try {
-          const sub = await getOrCreateSubscription(userId);
-          if (!isPremiumNow(sub)) {
-            const [{ n }] = await db
-              .select({ n: sql<number>`count(*)::int` })
-              .from(childrenTable)
-              .where(eq(childrenTable.userId, userId));
-            if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
-              res.status(402).json({
-                error: "child_limit_reached",
-                message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
-                limit: FREE_LIMITS.childrenMax,
-              });
-              return;
-            }
+      // Enforce child limit for free users during onboarding and normal create.
+      try {
+        const sub = await getOrCreateSubscription(userId);
+        if (!isPremiumNow(sub)) {
+          const [{ n }] = await db
+            .select({ n: sql<number>`count(*)::int` })
+            .from(childrenTable)
+            .where(eq(childrenTable.userId, userId));
+          if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
+            res.status(402).json({
+              error: "child_limit_reached",
+              message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
+              limit: FREE_LIMITS.childrenMax,
+            });
+            return;
           }
-        } catch (err) {
-          if (isSchemaMismatchError(err)) {
-            logger.warn(
-              { evt: "children.create.subscription_check_skipped", err },
-              "Subscription check skipped — schema mismatch",
-            );
-          } else {
-            throw err;
-          }
+        }
+      } catch (err) {
+        if (isSchemaMismatchError(err)) {
+          logger.warn(
+            { evt: "children.create.subscription_check_skipped", err },
+            "Subscription check skipped — schema mismatch",
+          );
+        } else {
+          throw err;
         }
       }
 
@@ -256,15 +260,47 @@ router.delete("/children/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [child] = await db
-    .delete(childrenTable)
-    .where(and(eq(childrenTable.id, params.data.id), eq(childrenTable.userId, userId)))
-    .returning();
-  if (!child) {
+  const childId = params.data.id;
+  const [owned] = await db
+    .select({ id: childrenTable.id })
+    .from(childrenTable)
+    .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
+    .limit(1);
+  if (!owned) {
     res.status(404).json({ error: "Child not found" });
     return;
   }
-  res.sendStatus(204);
+
+  const requestId = typeof req.headers["x-request-id"] === "string"
+    ? req.headers["x-request-id"]
+    : undefined;
+
+  try {
+    const audit: DeletionAuditEntry[] = [];
+    await db.transaction(async (tx) => {
+      await purgeChildScopedData(tx, childId, audit);
+      const [deleted] = await tx
+        .delete(childrenTable)
+        .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
+        .returning({ id: childrenTable.id });
+      if (deleted) {
+        audit.push({ table: "children", rows: 1 });
+      }
+    });
+
+    logDeletionAudit({
+      operation: "child",
+      userId,
+      childId,
+      audit,
+      requestId,
+    });
+
+    res.sendStatus(204);
+  } catch (err) {
+    logger.error({ err, userId, childId }, "Child deletion failed");
+    res.status(500).json({ error: "Child deletion failed" });
+  }
 });
 
 export default router;

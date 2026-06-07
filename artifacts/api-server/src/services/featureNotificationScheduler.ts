@@ -120,7 +120,7 @@ async function dispatchPtmFollowupReminders(): Promise<number> {
 
       const reminders = (Array.isArray(row.reminders)
         ? row.reminders
-        : []) as PtmReminder[];
+        : []) as unknown as PtmReminder[];
       const prefs = await getOrCreatePreferences(userId);
       const { localDate } = getLocalParts(prefs.timezone);
       const due = activeReminders(reminders, localDate);

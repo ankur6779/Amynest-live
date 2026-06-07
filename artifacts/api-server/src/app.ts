@@ -7,6 +7,7 @@ import { sendSafeError } from "./lib/safe-api-response";
 import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
 import { slowApiGuard } from "./middlewares/slow-api-guard";
 import { requestTimeout } from "./middlewares/request-timeout.js";
+import { requestIdMiddleware } from "./middlewares/request-id.js";
 import { limitJsonResponse } from "./middlewares/limit-json-response.js";
 import { requestLoopDetector } from "./middlewares/request-loop-detector.js";
 import { getMemorySnapshot } from "./utils/memory-monitor.js";
@@ -36,6 +37,7 @@ export async function createApp(): Promise<Express> {
   });
 
   app.use(cookieParser());
+  app.use(requestIdMiddleware);
   app.use(requestTimeout);
   app.use(slowApiGuard);
   app.use(limitJsonResponse);

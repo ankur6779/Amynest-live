@@ -11,7 +11,7 @@ import { isProductionDeployment } from "../queue/mode.js";
 import type { AiJobType } from "../queue/types.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
 import { runAiJobHandler } from "../services/ai-job-handlers.js";
-import { checkAiRateLimit } from "../utils/ai-rate-limit.js";
+import { checkAiRateLimitAsync } from "../utils/ai-rate-limit.js";
 import { parseEnvMs } from "./env.js";
 import { logger } from "./logger.js";
 import { resolveSyncApiBody } from "./ai-job-finalize.js";
@@ -67,7 +67,7 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
   const waitMs = resolveHttpWaitMs(opts.waitMs);
   const rateKey = opts.rateLimitKey ?? opts.userId;
 
-  const rate = checkAiRateLimit(rateKey);
+  const rate = await checkAiRateLimitAsync(rateKey);
   if (!rate.allowed) {
     opts.res.status(429).json({
       error: "rate_limit",

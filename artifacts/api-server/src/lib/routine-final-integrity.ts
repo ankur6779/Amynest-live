@@ -1269,10 +1269,7 @@ export function enforceExtremeAqiSafety(
       (it.category ?? "").toLowerCase() === "outdoor";
     if (!isOutdoor) return it;
 
-    const alt = createLowEnergyIndoorAlternative(it.activity, {
-      rainMode: true,
-      category: getScheduleCategory(it),
-    });
+    const alt = createLowEnergyIndoorAlternative(it, true);
     adjustments.push(
       `extreme AQI ${Math.round(aqi)}: outdoor "${it.activity}" → indoor "${alt.activity}"`,
     );

@@ -219,6 +219,72 @@ export type EnrichedMeal = {
   safetyWarning?: string;
 };
 
+export type MealSafetyVerdict =
+  | { allowed: true }
+  | { allowed: false; reason: string };
+
+/** Hard block — returns reason when meal must not be served for this age. */
+export function assessMealAgeSafety(
+  meal: { title: string; ingredients: string[] },
+  ageMonths: number,
+): MealSafetyVerdict {
+  const band = getAgeBand(ageMonths);
+  const combinedText = `${meal.title} ${meal.ingredients.join(" ")}`;
+
+  if (band === "newborn_0_6m") {
+    const feedingSafe = /breast|formula|bottle|feeding|nurs|milk session|burp/i.test(combinedText);
+    if (containsAny(combinedText, NEWBORN_FORBIDDEN_KEYWORDS)) {
+      return {
+        allowed: false,
+        reason: "Solid or non-milk foods are not safe under 6 months — breast milk or formula only.",
+      };
+    }
+    if (!feedingSafe) {
+      return {
+        allowed: false,
+        reason: "Only breast milk or formula is appropriate under 6 months.",
+      };
+    }
+    return { allowed: true };
+  }
+
+  if (band === "infant_6_12m") {
+    const infantForbidden = [
+      "honey",
+      "cow milk drink",
+      "whole milk drink",
+      "added salt",
+      "added sugar",
+      "juice drink",
+      "whole nut",
+      "whole nuts",
+      "whole grape",
+      "popcorn",
+    ];
+    if (containsAny(combinedText, infantForbidden)) {
+      return {
+        allowed: false,
+        reason: "This food is not developmentally or medically safe for infants under 12 months.",
+      };
+    }
+    if (containsAny(combinedText, CHOKING_HAZARDS_INFANT)) {
+      return {
+        allowed: false,
+        reason: "Contains a choking hazard for this age — blocked for infant safety.",
+      };
+    }
+  }
+
+  if (band === "toddler_1_3y" && containsAny(combinedText, CHOKING_HAZARDS_TODDLER)) {
+    return {
+      allowed: false,
+      reason: "Contains a choking hazard for toddlers — choose a softer alternative.",
+    };
+  }
+
+  return { allowed: true };
+}
+
 function containsAny(text: string, keywords: string[]): boolean {
   const lower = text.toLowerCase();
   return keywords.some(kw => lower.includes(kw.toLowerCase()));
@@ -280,6 +346,11 @@ export function validateAndEnrichMeal(
   const aList = allergyList(allergies);
   const combinedText = `${meal.title} ${meal.ingredients.join(" ")}`;
 
+  const ageVerdict = assessMealAgeSafety(meal, ageMonths);
+  if (!ageVerdict.allowed) {
+    throw new Error(ageVerdict.reason);
+  }
+
   const badges: string[] = [];
   let safetyWarning: string | undefined;
 
@@ -303,7 +374,7 @@ export function validateAndEnrichMeal(
     : [];
 
   if (hazards.length > 0 && containsAny(combinedText, hazards)) {
-    safetyWarning = "Contains potential choking hazard for this age — verify before serving.";
+    throw new Error("Contains potential choking hazard for this age — meal blocked.");
   }
 
   // 3. Allergy badge

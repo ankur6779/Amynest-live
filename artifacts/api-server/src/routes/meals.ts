@@ -12,6 +12,7 @@ import {
   buildAgeSafetyPromptBlock,
   validateAndEnrichMeal,
   buildInfantFeedingCards,
+  assessMealAgeSafety,
 } from "../lib/meal-safety.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 
@@ -468,8 +469,16 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
 
   // Precise age in months — critical for infant safety (child.age=0 could be 0–11 months)
   const childAgeMonths: number | undefined = child?.age != null
-    ? (Math.floor(Number(child.age)) * 12) + Math.max(0, Math.min(11, Math.floor(Number((child as any).ageMonths ?? 0))))
+    ? (Math.floor(Number(child.age)) * 12) + Math.max(0, Math.min(11, Math.floor(Number(child.ageMonths ?? 0))))
     : (childAge != null ? childAge * 12 : undefined);
+
+  if (audience !== "parent_healthy" && childAgeMonths == null) {
+    res.status(422).json({
+      error: "child_age_required",
+      message: "Add a child profile with age before generating child-targeted meals.",
+    });
+    return;
+  }
 
   req.log.info({ dietType, allergies, foodStyle, subCuisine, region, childAge, childAgeMonths }, "[meals/ai-generate] resolved diet context");
 
@@ -512,7 +521,7 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
       buildSyncBody: (result) => {
         const ai = result as { meals: Array<Record<string, unknown>>; amyMessage: string; ageBand?: string };
         const SAFE_TAGS = new Set(["quick","healthy","veg","non-veg","protein","sweet","spicy","light","heavy","kids","tiffin"]);
-        const meals = ai.meals.slice(0, 6).map((o, idx) => {
+        const meals = ai.meals.slice(0, 6).flatMap((o, idx) => {
           const title = String(o.title ?? "").slice(0, 80) || "Meal";
           const emoji = typeof o.emoji === "string" && o.emoji.trim()
             ? o.emoji.trim().slice(0, 4)
@@ -527,6 +536,21 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
             .filter((t) => SAFE_TAGS.has(t));
           const isVegMeal = o.isVeg === true || tags.includes("veg");
           const bgGradient = AI_GENERATE_GRADIENTS[idx % AI_GENERATE_GRADIENTS.length] as [string, string];
+
+          if (childAgeMonths != null) {
+            const verdict = assessMealAgeSafety({ title, ingredients }, childAgeMonths);
+            if (!verdict.allowed) {
+              logger.warn(
+                { title, childAgeMonths, reason: verdict.reason },
+                "[meals/ai-generate] blocked unsafe meal",
+              );
+              return [];
+            }
+          } else {
+            logger.warn({ title }, "[meals/ai-generate] skipped meal — child age unknown");
+            return [];
+          }
+
           const enrichment = childAgeMonths != null
             ? validateAndEnrichMeal(
                 { title, ingredients, tags, isVeg: isVegMeal },
@@ -535,7 +559,7 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
                 dietType,
               )
             : { safetyBadges: [] as string[], whyThisMeal: "", safetyWarning: undefined };
-          return {
+          return [{
             id: slugify(title) + "-" + idx,
             title,
             emoji,
@@ -554,7 +578,7 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
             safetyBadges: enrichment.safetyBadges,
             whyThisMeal: enrichment.whyThisMeal,
             ...(enrichment.safetyWarning ? { safetyWarning: enrichment.safetyWarning } : {}),
-          };
+          }];
         });
         res.set("Cache-Control", "no-store");
         return { meals, amyMessage: ai.amyMessage, ...(ai.ageBand ? { ageBand: ai.ageBand } : {}) };
@@ -766,8 +790,16 @@ router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"),
 
   const childAge = child?.age ?? 6;
   const ageMonths = child != null
-    ? (Math.floor(Number(child.age)) * 12) + Math.max(0, Math.min(11, Math.floor(Number((child as any).ageMonths ?? 0))))
+    ? (Math.floor(Number(child.age)) * 12) + Math.max(0, Math.min(11, Math.floor(Number(child.ageMonths ?? 0))))
     : undefined;
+
+  if (!child || ageMonths == null) {
+    res.status(422).json({
+      error: "child_age_required",
+      message: "Add a child profile with age before generating a week meal plan.",
+    });
+    return;
+  }
   const childName = child?.name ? String(child.name).trim().slice(0, 40) : undefined;
   const dietType: string = child?.dietType ?? pp?.dietType ?? pp?.foodType ?? "veg";
   const foodStyle: string = child?.foodStyle ?? pp?.foodStyle ?? "indian";
@@ -820,8 +852,24 @@ router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"),
         const meals: Record<string, unknown> = {};
         for (const key of MEAL_KEYS) {
           const m = (rawDay.meals as Record<string, unknown> | undefined)?.[key] as Record<string, unknown> | undefined ?? {};
+          const name = String(m.name ?? "").slice(0, 100) || "—";
+          const verdict = assessMealAgeSafety({ title: name, ingredients: [name] }, ageMonths);
+          if (!verdict.allowed) {
+            logger.warn(
+              { name, ageMonths, reason: verdict.reason },
+              "[meals/week-plan] blocked unsafe meal",
+            );
+            meals[key] = {
+              name: "Age-appropriate soft meal",
+              protein_g: 0,
+              carbs_g: 0,
+              fiber_g: 0,
+              calories: 0,
+            };
+            continue;
+          }
           meals[key] = {
-            name: String(m.name ?? "").slice(0, 100) || "—",
+            name,
             protein_g: Math.min(60, Math.max(0, Number(m.protein_g) || 0)),
             carbs_g: Math.min(150, Math.max(0, Number(m.carbs_g) || 0)),
             fiber_g: Math.min(20, Math.max(0, Number(m.fiber_g) || 0)),

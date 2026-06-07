@@ -23,7 +23,7 @@ export const FREE_ENTITLEMENTS: Entitlements = {
   limits: {
     aiQueriesPerDay: 10,
     infantAiQueriesPerDay: INFANT_AI_DAILY_LIMIT,
-    childrenMax: 3,
+    childrenMax: 1,
     routinesMax: 2,
     hubArticlesMax: 5,
     trialDays: 0,

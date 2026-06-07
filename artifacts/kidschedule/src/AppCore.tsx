@@ -144,7 +144,7 @@ import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-pe
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
-import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
+import { useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
 import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
@@ -744,7 +744,15 @@ function AppCoreMountMarker() {
 function OfflineGate() {
   const isOnline = useOnlineStatus();
   if (isOnline) return null;
-  return <OfflineScreen />;
+  // Degraded mode: non-blocking banner so cached dashboard/hub content remains usable offline.
+  return (
+    <div
+      role="status"
+      className="fixed top-0 inset-x-0 z-[9998] bg-amber-600 text-white text-center text-sm py-2 px-4 shadow-md"
+    >
+      You&apos;re offline — showing saved content where available. Changes sync when you reconnect.
+    </div>
+  );
 }
 
 export default function AppCore() {

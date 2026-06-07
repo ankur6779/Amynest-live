@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth.js";
+import { canAccessChild } from "../lib/child-access.js";
 import { logger } from "../lib/logger.js";
 import {
   getFamilyCommandCenter,
@@ -81,6 +82,18 @@ router.post("/family-intelligence/goals", async (req, res): Promise<void> => {
   if (!goalType || !validTypes.has(String(goalType)) || !target) {
     res.status(400).json({ error: "invalid_goal" });
     return;
+  }
+  if (childId != null) {
+    const numericChildId = Number(childId);
+    if (!Number.isFinite(numericChildId)) {
+      res.status(400).json({ error: "invalid_child_id" });
+      return;
+    }
+    const access = await canAccessChild(numericChildId, userId);
+    if (!access) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
   }
   try {
     await upsertFamilyGoal(userId, {

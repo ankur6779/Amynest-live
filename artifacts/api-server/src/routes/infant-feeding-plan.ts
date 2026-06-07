@@ -17,7 +17,6 @@ import {
   infantCareLogsTable,
   parentProfilesTable,
 } from "@workspace/db";
-import { totalAgeMonths } from "../lib/infant-age.js";
 import type { InfantFeedingPlan, InfantFeedingPlanContext } from "../lib/infant-feeding-prompts.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { logger } from "../lib/logger.js";
@@ -56,7 +55,7 @@ async function loadFeedingContext(
   const child = await canAccessChild(childId, userId);
   if (!child) return null;
 
-  const ageMonths = totalAgeMonths(child.age ?? 0, child.ageMonths ?? 0);
+  const ageMonths = child.ageMonths;
   if (!isFeedingPlanAge(ageMonths)) return null;
 
   const since14d = new Date(Date.now() - 14 * 24 * 60 * 60_000);
@@ -219,7 +218,7 @@ router.post(
       return;
     }
 
-    const ageMonths = totalAgeMonths(child.age ?? 0, child.ageMonths ?? 0);
+    const ageMonths = child.ageMonths;
     if (!isFeedingPlanAge(ageMonths)) {
       res.status(400).json({
         error: "age_out_of_range",

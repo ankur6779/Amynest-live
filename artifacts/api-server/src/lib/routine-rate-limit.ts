@@ -1,14 +1,16 @@
+import {
+  checkDistributedRateLimit,
+  clearDistributedRateLimits,
+  type RateLimitResult,
+} from "./distributed-rate-limit.js";
+
 const WINDOW_MS = 60_000;
 const MAX_GENERATIONS_PER_WINDOW = 5;
 
 type Bucket = { timestamps: number[] };
-
 const buckets = new Map<string, Bucket>();
 
-export type RoutineRateLimitResult =
-  | { allowed: true; remaining: number }
-  | { allowed: false; retryAfterMs: number };
-
+/** In-memory — unit tests and dev fallback. */
 export function checkRoutineGenerationRateLimit(userId: string): RoutineRateLimitResult {
   const now = Date.now();
   const key = userId.trim() || "anonymous";
@@ -32,6 +34,25 @@ export function checkRoutineGenerationRateLimit(userId: string): RoutineRateLimi
   };
 }
 
+export type RoutineRateLimitResult =
+  | { allowed: true; remaining: number }
+  | { allowed: false; retryAfterMs: number };
+
+/** Production path — Redis-backed routine generation cap. */
+export async function checkRoutineGenerationRateLimitAsync(
+  userId: string,
+): Promise<RoutineRateLimitResult> {
+  const result: RateLimitResult = await checkDistributedRateLimit(
+    `routine-gen:${userId.trim() || "anonymous"}`,
+    { windowMs: WINDOW_MS, maxPerWindow: MAX_GENERATIONS_PER_WINDOW },
+  );
+  if (!result.allowed) {
+    return { allowed: false, retryAfterMs: result.retryAfterMs };
+  }
+  return { allowed: true, remaining: result.remaining };
+}
+
 export function clearRoutineRateLimits(): void {
   buckets.clear();
+  clearDistributedRateLimits();
 }

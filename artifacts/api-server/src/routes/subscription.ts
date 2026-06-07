@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
+import { db, revenuecatWebhookEventsTable } from "@workspace/db";
 import { getAuth } from "../lib/auth";
 import {
   getEntitlements,
@@ -205,6 +206,7 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
 
   const event = (req.body?.event ?? {}) as {
     type?: string;
+    id?: string;
     app_user_id?: string;
     original_app_user_id?: string;
     product_id?: string;
@@ -217,6 +219,24 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
   const userId = event.app_user_id ?? event.original_app_user_id;
   if (!userId) {
     res.status(400).json({ error: "missing_app_user_id" });
+    return;
+  }
+
+  const eventId = event.id ?? event.transaction_id ?? `${event.type}:${userId}:${event.expiration_at_ms ?? "na"}`;
+
+  const inserted = await db
+    .insert(revenuecatWebhookEventsTable)
+    .values({
+      eventId,
+      eventType: event.type ?? null,
+      appUserId: userId,
+      payload: req.body ?? {},
+    })
+    .onConflictDoNothing({ target: revenuecatWebhookEventsTable.eventId })
+    .returning({ eventId: revenuecatWebhookEventsTable.eventId });
+
+  if (inserted.length === 0) {
+    res.json({ ok: true, duplicate: true, eventId });
     return;
   }
 

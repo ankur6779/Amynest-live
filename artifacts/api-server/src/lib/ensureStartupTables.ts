@@ -312,6 +312,40 @@ export async function ensureRazorpayWebhookEventsTable(): Promise<void> {
   );
 }
 
+export async function ensureRevenuecatWebhookEventsTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS revenuecat_webhook_events (
+      event_id     TEXT PRIMARY KEY,
+      event_type   TEXT,
+      app_user_id  TEXT,
+      payload      JSONB,
+      received_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS event_type TEXT
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS app_user_id TEXT
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS payload JSONB
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events
+    ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  `);
+
+  logger.info(
+    { evt: "db.ensure", table: "revenuecat_webhook_events" },
+    "Ensured revenuecat_webhook_events table exists",
+  );
+}
+
 /** Run all startup table ensures (non-throwing per step). */
 /** Phonics curriculum engine — daily plans, progress, AI word cache. */
 export async function ensurePhonicsCurriculumTables(): Promise<void> {
@@ -641,6 +675,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "onboarding_profiles", run: ensureOnboardingProfilesTable },
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },
+    { name: "revenuecat_webhook_events", run: ensureRevenuecatWebhookEventsTable },
     { name: "phonics_curriculum", run: ensurePhonicsCurriculumTables },
     { name: "infant_care", run: ensureInfantCareTables },
     { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },

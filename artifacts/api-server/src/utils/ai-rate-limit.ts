@@ -1,19 +1,18 @@
+import {
+  checkDistributedRateLimit,
+  clearDistributedRateLimits,
+  type RateLimitOptions,
+  type RateLimitResult,
+} from "../lib/distributed-rate-limit.js";
+
+export type { RateLimitOptions, RateLimitResult };
+
 const WINDOW_MS = Number(process.env.AI_RATE_LIMIT_WINDOW_MS ?? String(60_000));
 const MAX_PER_WINDOW = Number(process.env.AI_RATE_LIMIT_MAX ?? "30");
 
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
-export interface RateLimitOptions {
-  windowMs?: number;
-  maxPerWindow?: number;
-}
-
-export interface RateLimitResult {
-  allowed: boolean;
-  retryAfterMs: number;
-  remaining: number;
-}
-
+/** In-memory rate limit — used in unit tests and as dev fallback. */
 export function checkAiRateLimit(key: string, options?: RateLimitOptions): RateLimitResult {
   const windowMs = options?.windowMs ?? WINDOW_MS;
   const maxPerWindow = options?.maxPerWindow ?? MAX_PER_WINDOW;
@@ -41,6 +40,15 @@ export function checkAiRateLimit(key: string, options?: RateLimitOptions): RateL
   };
 }
 
+/** Production path — Redis-backed, shared across API instances. */
+export async function checkAiRateLimitAsync(
+  key: string,
+  options?: RateLimitOptions,
+): Promise<RateLimitResult> {
+  return checkDistributedRateLimit(key, options);
+}
+
 export function clearAiRateLimits(): void {
   buckets.clear();
+  clearDistributedRateLimits();
 }

@@ -354,6 +354,7 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
     bypassDailyCap: true,
     bypassQuietHours: true,
     bypassCategoryCheck: true,
+    bypassPushConsent: true,
     ...(onlyPlatforms && onlyPlatforms.length > 0
       ? { restrictToPlatforms: onlyPlatforms }
       : {}),

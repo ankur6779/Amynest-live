@@ -1,24 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, inArray, or } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { adminAuth } from "../lib/firebase-admin";
-import {
-  db,
-  childrenTable,
-  routinesTable,
-  behaviorsTable,
-  parentProfilesTable,
-  babysittersTable,
-  onboardingProfilesTable,
-  subscriptionsTable,
-  usageDailyTable,
-  userProgressTable,
-  userCoachSessionsTable,
-  coachWinGenerationsTable,
-  userAiMessagesTable,
-  referralsTable,
-} from "@workspace/db";
+import { db } from "@workspace/db";
 import { logger } from "../lib/logger";
+import {
+  logDeletionAudit,
+  purgeUserData,
+  type DeletionAuditEntry,
+} from "../services/data-deletion-service.js";
 
 const router: IRouter = Router();
 
@@ -29,36 +18,31 @@ router.delete("/account", async (req, res): Promise<void> => {
     return;
   }
 
+  const requestId = typeof req.headers["x-request-id"] === "string"
+    ? req.headers["x-request-id"]
+    : undefined;
+
   try {
+    const audit: DeletionAuditEntry[] = [];
+    let childIds: number[] = [];
+    let accountEmail: string | null = null;
+    try {
+      const fbUser = await adminAuth().getUser(userId);
+      accountEmail = fbUser.email ?? null;
+    } catch {
+      // Email lookup is best-effort for admin grant cleanup.
+    }
+
     await db.transaction(async (tx) => {
-      const userChildren = await tx
-        .select({ id: childrenTable.id })
-        .from(childrenTable)
-        .where(eq(childrenTable.userId, userId));
-      const childIds = userChildren.map((c) => c.id);
+      childIds = await purgeUserData(tx, userId, audit, { accountEmail });
+    });
 
-      if (childIds.length > 0) {
-        await tx.delete(routinesTable).where(inArray(routinesTable.childId, childIds));
-        await tx.delete(behaviorsTable).where(inArray(behaviorsTable.childId, childIds));
-      }
-
-      await tx.delete(babysittersTable).where(eq(babysittersTable.userId, userId));
-      await tx.delete(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-      await tx.delete(onboardingProfilesTable).where(eq(onboardingProfilesTable.userId, userId));
-      await tx.delete(subscriptionsTable).where(eq(subscriptionsTable.userId, userId));
-      await tx.delete(usageDailyTable).where(eq(usageDailyTable.userId, userId));
-      await tx.delete(userProgressTable).where(eq(userProgressTable.userId, userId));
-      await tx.delete(userCoachSessionsTable).where(eq(userCoachSessionsTable.userId, userId));
-      await tx.delete(coachWinGenerationsTable).where(eq(coachWinGenerationsTable.userId, userId));
-      await tx.delete(userAiMessagesTable).where(eq(userAiMessagesTable.userId, userId));
-      await tx.delete(referralsTable).where(
-        or(
-          eq(referralsTable.referrerUserId, userId),
-          eq(referralsTable.referredUserId, userId),
-        ),
-      );
-
-      await tx.delete(childrenTable).where(eq(childrenTable.userId, userId));
+    logDeletionAudit({
+      operation: "account",
+      userId,
+      childIds,
+      audit,
+      requestId,
     });
 
     try {
@@ -67,7 +51,7 @@ router.delete("/account", async (req, res): Promise<void> => {
       logger.warn({ err, userId }, "Firebase user delete failed (data already wiped)");
     }
 
-    res.json({ ok: true });
+    res.json({ ok: true, deletedChildCount: childIds.length });
   } catch (err) {
     logger.error({ err, userId }, "Account deletion failed");
     res.status(500).json({ error: "Account deletion failed" });

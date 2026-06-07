@@ -4,6 +4,8 @@ import {
   notificationLogTable,
   notificationPreferencesTable,
   pushTokensTable,
+  childrenTable,
+  parentProfilesTable,
   intensityToCap,
   type NotificationCategory,
 } from "@workspace/db";
@@ -11,6 +13,7 @@ import {
   parseFingerprintChildId,
   resolveFingerprint,
   stableNotificationId,
+  canDeliverPush,
 } from "@workspace/notification-engine";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { getMessaging } from "firebase-admin/messaging";
@@ -52,6 +55,11 @@ export interface DispatchInput {
    * test sends so the delivery test always fires even if the category is off.
    */
   bypassCategoryCheck?: boolean;
+  /**
+   * Skip push consent gate. ONLY for explicit user-initiated delivery tests
+   * (same trust level as bypassDailyCap / bypassQuietHours).
+   */
+  bypassPushConsent?: boolean;
   /**
    * When set, only tokens whose stored `platform` matches one of these values
    * are considered (e.g. test ping from iOS simulator → `["ios-capacitor"]`
@@ -113,9 +121,6 @@ export interface DispatchResult {
   ticketIds?: string[];
 }
 
-/**
- * Read prefs row for a user; lazily insert defaults if missing.
- */
 export async function getOrCreatePreferences(userId: string) {
   const [existing] = await db
     .select()
@@ -138,6 +143,49 @@ export async function getOrCreatePreferences(userId: string) {
     .limit(1);
   if (!retry) throw new Error("Failed to create notification preferences");
   return retry;
+}
+
+async function resolveChildAgeYears(userId: string): Promise<number | null> {
+  const [youngest] = await db
+    .select({
+      age: childrenTable.age,
+      ageMonths: childrenTable.ageMonths,
+    })
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, userId))
+    .orderBy(childrenTable.age, childrenTable.ageMonths)
+    .limit(1);
+  if (!youngest) return null;
+  return Math.max(0, Math.floor(Number(youngest.age ?? 0)));
+}
+
+async function assertPushConsentAllowed(
+  input: DispatchInput,
+  prefs: Awaited<ReturnType<typeof getOrCreatePreferences>>,
+): Promise<DispatchResult | null> {
+  if (input.bypassPushConsent) return null;
+
+  const [profile] = await db
+    .select({ country: parentProfilesTable.country })
+    .from(parentProfilesTable)
+    .where(eq(parentProfilesTable.userId, input.userId))
+    .limit(1);
+
+  const childAgeYears = await resolveChildAgeYears(input.userId);
+  const consent = canDeliverPush({
+    pushConsentAt: prefs.pushConsentAt,
+    pushConsentVersion: prefs.pushConsentVersion,
+    marketingOptIn: prefs.marketingOptIn,
+    countryCode: profile?.country ?? prefs.countryCode ?? null,
+    childAgeYears,
+  });
+
+  if (!consent.allowed) {
+    await logNonDeliveryEvent(input, "throttled", consent.reason ?? "missing_push_consent");
+    return { status: "throttled", reason: consent.reason ?? "missing_push_consent" };
+  }
+
+  return null;
 }
 
 /**
@@ -441,6 +489,9 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   input.data = { ...input.data, ...actionPayload.data };
 
   const prefs = await getOrCreatePreferences(input.userId);
+
+  const consentBlock = await assertPushConsentAllowed(input, prefs);
+  if (consentBlock) return consentBlock;
 
   const localScheduledDate = new Intl.DateTimeFormat("en-CA", {
     timeZone: prefs.timezone,

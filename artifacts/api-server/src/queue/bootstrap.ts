@@ -1,6 +1,7 @@
 import { logger } from "../lib/logger.js";
 import { getAiJobsQueue } from "./index.js";
 import {
+  assertProductionQueueConfig,
   getQueueMode,
   isBullMqActive,
   isWorkerEnabled,
@@ -24,6 +25,7 @@ export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
 
   if (!isWorkerEnabled()) {
     markRedisBootstrapResult(false);
+    assertProductionQueueConfig();
     const inlineMode = getQueueMode();
     logger.info(
       {
@@ -42,55 +44,57 @@ export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
     };
   }
 
-  const queueMode = getQueueMode();
-  const workerExpected = queueMode === "bullmq";
+  if (!redisUrl) {
+    assertProductionQueueConfig();
+    const effectiveMode = getQueueMode();
+    return {
+      status: "ok",
+      redis: false,
+      queueMode: effectiveMode,
+      workerExpected: false,
+      redisPing: false,
+    };
+  }
 
-  console.log("Queue mode:", queueMode);
   console.log("Redis connected:", !!redisUrl);
   console.log("Worker enabled:", isWorkerEnabled());
 
+  // Ping Redis before resolving queue mode — avoids marking bootstrap failed
+  // while redisBootstrapOk is still undefined (which skipped the ping branch).
   let redisPing = false;
-  if (isBullMqActive()) {
-    try {
-      redisPing = await verifyRedisConnection();
-      markRedisBootstrapResult(redisPing);
-      if (!redisPing) {
-        logger.warn(
-          { evt: "queue.bootstrap.redis_unstable" },
-          "Redis ping failed — BullMQ disabled for this process (no retries)",
-        );
-      } else {
-        getAiJobsQueue();
-        logger.info(
-          {
-            evt: "queue.bootstrap",
-            queueMode,
-            redis: true,
-            redisPing,
-            workerExpected,
-          },
-          "API queue ready (BullMQ — AI runs on worker only)",
-        );
-      }
-    } catch (err) {
-      markRedisBootstrapResult(false);
-      const message = err instanceof Error ? err.message : String(err);
-      logger.error({ evt: "queue.bootstrap_failed", message }, "Redis/BullMQ init failed");
-      if (mustUseBullMq()) {
-        throw new Error(`Redis queue failed to initialize: ${message}`);
-      }
+  try {
+    redisPing = await verifyRedisConnection();
+    markRedisBootstrapResult(redisPing);
+    if (!redisPing) {
+      logger.warn(
+        { evt: "queue.bootstrap.redis_unstable" },
+        "Redis ping failed — BullMQ disabled for this process (no retries)",
+      );
+    } else {
+      getAiJobsQueue();
+      logger.info(
+        {
+          evt: "queue.bootstrap",
+          queueMode: "bullmq",
+          redis: true,
+          redisPing,
+          workerExpected: true,
+        },
+        "API queue ready (BullMQ — AI runs on worker only)",
+      );
     }
-  } else {
+  } catch (err) {
     markRedisBootstrapResult(false);
-    logger.warn(
-      { evt: "queue.bootstrap", queueMode },
-      queueMode === "memory"
-        ? "In-memory AI queue (development only)"
-        : "AI queue off — no Redis/BullMQ load",
-    );
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ evt: "queue.bootstrap_failed", message }, "Redis/BullMQ init failed");
+    if (mustUseBullMq()) {
+      throw new Error(`Redis queue failed to initialize: ${message}`);
+    }
   }
 
   const effectiveMode = getQueueMode();
+  console.log("Queue mode:", effectiveMode);
+  assertProductionQueueConfig();
 
   return {
     status: redisPing || effectiveMode !== "bullmq" ? "ok" : "degraded",

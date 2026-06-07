@@ -27,6 +27,11 @@ export function isRedisMarkedUnstable(): boolean {
   return raw === "true" || raw === "1";
 }
 
+/** @internal Test-only reset of Redis bootstrap state between cases. */
+export function resetQueueBootstrapStateForTests(): void {
+  redisBootstrapOk = undefined;
+}
+
 export function markRedisBootstrapResult(ok: boolean): void {
   redisBootstrapOk = ok;
 }
@@ -36,37 +41,75 @@ export function mustUseBullMq(): boolean {
   return isProductionDeployment() && isWorkerEnabled();
 }
 
-function inProcessFallback(): QueueMode {
-  return isProductionDeployment() ? "inline" : "memory";
+function devInProcessFallback(): QueueMode {
+  return "memory";
+}
+
+/**
+ * Fail fast in production when BullMQ is not correctly configured.
+ * Inline AI on web instances is disabled for launch safety.
+ */
+export function assertProductionQueueConfig(): void {
+  if (!isProductionDeployment()) return;
+
+  if (!isWorkerEnabled()) {
+    throw new Error(
+      "Production requires WORKER_ENABLED=true with REDIS_URL and a dedicated AI worker. Inline AI on API hosts is disabled.",
+    );
+  }
+
+  const redisUrl = getRedisUrl();
+  if (!redisUrl) {
+    throw new Error(
+      "Production requires REDIS_URL when WORKER_ENABLED=true. Set REDIS_URL on API and worker services.",
+    );
+  }
+
+  if (redisBootstrapOk === false) {
+    throw new Error(
+      "Production Redis bootstrap failed — BullMQ is required. Fix REDIS_URL connectivity before serving traffic.",
+    );
+  }
 }
 
 export function getQueueMode(): QueueMode {
   if (!isWorkerEnabled()) {
-    // External BullMQ worker disabled — API still runs OpenAI/ElevenLabs in-process.
-    return inProcessFallback();
+    if (isProductionDeployment()) {
+      throw new Error(
+        "Production requires WORKER_ENABLED=true. Inline AI on API hosts is disabled.",
+      );
+    }
+    return devInProcessFallback();
   }
-  if (isRedisMarkedUnstable()) return inProcessFallback();
+
+  if (isRedisMarkedUnstable()) {
+    if (isProductionDeployment()) {
+      throw new Error("REDIS_UNSTABLE cannot be set in production — BullMQ is required.");
+    }
+    return devInProcessFallback();
+  }
 
   const redisUrl = getRedisUrl();
   if (redisUrl) {
     if (redisBootstrapOk === true) return "bullmq";
-    // Redis missing, bootstrapping, or ping failed — never leave production dead.
-    if (redisBootstrapOk === false) return inProcessFallback();
-    return inProcessFallback();
+    if (redisBootstrapOk === false) {
+      if (isProductionDeployment()) {
+        throw new Error(
+          "Redis ping failed in production — cannot fall back to inline AI processing.",
+        );
+      }
+      return devInProcessFallback();
+    }
+    return devInProcessFallback();
   }
 
   if (mustUseBullMq()) {
     throw new Error(
-      "REDIS_URL is required when WORKER_ENABLED=true in production. Set REDIS_URL on the API and Worker services, or set WORKER_ENABLED=false to disable the queue.",
+      "REDIS_URL is required when WORKER_ENABLED=true in production. Set REDIS_URL on the API and Worker services.",
     );
   }
 
-  return inProcessFallback();
-}
-
-export function assertProductionQueueConfig(): void {
-  if (!isWorkerEnabled()) return;
-  getQueueMode();
+  return devInProcessFallback();
 }
 
 export function isBullMqActive(): boolean {
@@ -79,7 +122,7 @@ export function isQueueProcessingEnabled(): boolean {
   return mode === "bullmq" || mode === "memory" || mode === "inline";
 }
 
-/** In-process drain on the API host (no Redis). */
+/** In-process drain on the API host (no Redis). Dev/test only in practice. */
 export function isInProcessQueueMode(): boolean {
   const mode = getQueueMode();
   return mode === "memory" || mode === "inline";

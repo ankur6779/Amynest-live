@@ -26,7 +26,6 @@ import {
 } from "../lib/sleepPredict.js";
 import {
   isInfantAgeMonths,
-  totalAgeMonths,
 } from "../lib/infant-age.js";
 import type { InfantSleepCoachContext, InfantSleepCoachPlan } from "../lib/infant-sleep-prompts.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
@@ -79,7 +78,7 @@ async function loadSleepContext(
   const child = await canAccessChild(childId, userId);
   if (!child) return null;
 
-  const ageMonths = totalAgeMonths(child.age ?? 0, child.ageMonths ?? 0);
+  const ageMonths = child.ageMonths;
   if (!isInfantAgeMonths(ageMonths)) return null;
 
   const since14d = new Date(Date.now() - 14 * 24 * 60 * 60_000);
@@ -255,7 +254,7 @@ router.post(
       return;
     }
 
-    const ageMonths = totalAgeMonths(child.age ?? 0, child.ageMonths ?? 0);
+    const ageMonths = child.ageMonths;
     if (!isInfantAgeMonths(ageMonths)) {
       res.status(400).json({
         error: "age_out_of_range",

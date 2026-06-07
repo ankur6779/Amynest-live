@@ -17,7 +17,7 @@ import {
   getFixedActivitiesFromChild,
   listChildrenForUser,
 } from "../lib/children-db.js";
-import { checkRoutineGenerationRateLimit } from "../lib/routine-rate-limit.js";
+import { checkRoutineGenerationRateLimitAsync } from "../lib/routine-rate-limit.js";
 import {
   getCachedRoutine,
   routineCacheKey,
@@ -994,11 +994,14 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     mood: params.mood,
   };
 
-  const mergedItems = mergePipelineWithV2Meals(
-    piped.items as unknown as RoutineItem[],
-    v2Items as ScheduleItem[],
-    params.childClass,
-  );
+  const mergedItems =
+    params.ageGroup === "infant" || totalAgeMonths < 12
+      ? (piped.items as unknown as RoutineItem[])
+      : mergePipelineWithV2Meals(
+          piped.items as unknown as RoutineItem[],
+          v2Items as ScheduleItem[],
+          params.childClass,
+        );
   const weatherAdjustedItems = applyWeatherAdjustment(
     mergedItems as RoutineItem[],
     weatherOutdoor,
@@ -1739,7 +1742,7 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     return;
   }
 
-  const rateLimit = checkRoutineGenerationRateLimit(userId);
+  const rateLimit = await checkRoutineGenerationRateLimitAsync(userId);
   if (!rateLimit.allowed) {
     res.status(429).json({
       error: "rate_limit",
@@ -1903,7 +1906,7 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     wakeTime: effWakeUp,
     sleepTime: child.sleepTime,
     sleepQuality: previousDayContext?.sleepQuality ?? null,
-    aqi: aiEnvContext?.aqi ?? aiEnvContext?.environment?.AQI ?? null,
+    aqi: aiEnvContext?.AQI ?? null,
     fridgeItems: fridgeItems ?? null,
   });
   const cachedInQueue = getCachedRoutine(cacheKey);
@@ -2818,7 +2821,7 @@ function buildRoutineRuleFallbackPayload(ctx: RoutineGeneratePollContext): Recor
     mood: fallbackInputs.mood,
     foodType: ctx.foodType,
     region: ctx.region as Region,
-    goals: ctx.childGoals,
+    goals: ctx.childGoals ?? undefined,
     specialPlans: fallbackInputs.specialPlans || ctx.specialPlans || "",
     fridgeItems: fallbackInputs.fridgeItems || ctx.fridgeItems || "",
     caregiver: ctx.caregiver,
@@ -2868,7 +2871,7 @@ function buildRoutineRuleFallbackPayload(ctx: RoutineGeneratePollContext): Recor
     date: ctx.parsedDate,
     childId: String(ctx.childId),
     childName: ctx.childName,
-    region: ctx.region,
+    region: ctx.region ?? undefined,
     country: ctx.ppCountry,
     foodType: ctx.foodType,
     isWeekendDay: ctx.isWeekendDay,

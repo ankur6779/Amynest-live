@@ -11,6 +11,8 @@ export function fallbackChildProfile(userId: string, partial?: Partial<Child>): 
     userId: partial?.userId ?? userId,
     name: partial?.name?.trim() || "Child",
     dob: partial?.dob ?? null,
+    selectedAgeBand: partial?.selectedAgeBand ?? null,
+    dobIsEstimated: partial?.dobIsEstimated ?? null,
     age: partial?.age ?? 5,
     ageMonths: partial?.ageMonths ?? 0,
     educationStage: partial?.educationStage ?? null,

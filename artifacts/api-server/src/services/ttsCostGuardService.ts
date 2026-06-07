@@ -1,4 +1,4 @@
-import { checkAiRateLimit, clearAiRateLimits } from "../utils/ai-rate-limit.js";
+import { checkAiRateLimitAsync, clearAiRateLimits } from "../utils/ai-rate-limit.js";
 import {
   FREE_FEATURE_LIMITS,
   getFeatureUsage,
@@ -104,7 +104,7 @@ export async function assertTtsCacheMissAllowed(
   const burstLimit = burstLimitFor(isPremium);
   const dailyLimit = dailyLimitFor(isPremium);
 
-  const burst = checkAiRateLimit(`tts:burst:${userId}`, {
+  const burst = await checkAiRateLimitAsync(`tts:burst:${userId}`, {
     windowMs: BURST_WINDOW_MS,
     maxPerWindow: burstLimit,
   });
