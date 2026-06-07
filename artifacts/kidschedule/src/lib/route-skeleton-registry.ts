@@ -5,6 +5,10 @@ import { ParentingHubSkeleton } from "@/components/route-skeletons/parenting-hub
 import { NutritionHubSkeleton } from "@/components/route-skeletons/nutrition-hub-skeleton";
 import { CreativityHubSkeleton } from "@/components/route-skeletons/creativity-hub-skeleton";
 import { ProfileSkeleton } from "@/components/route-skeletons/profile-skeleton";
+import { RoutinesSkeleton } from "@/components/route-skeletons/routines-skeleton";
+import { StudySkeleton } from "@/components/route-skeletons/study-skeleton";
+import { SpeechCoachSkeleton } from "@/components/route-skeletons/speech-coach-skeleton";
+import { ProgressSkeleton } from "@/components/route-skeletons/progress-skeleton";
 import { GenericRouteSkeleton } from "@/components/route-skeletons/generic-route-skeleton";
 
 const ROUTE_SKELETONS: Record<string, ComponentType> = {
@@ -13,6 +17,10 @@ const ROUTE_SKELETONS: Record<string, ComponentType> = {
   "/nutrition": NutritionHubSkeleton,
   "/games": CreativityHubSkeleton,
   "/parent-profile": ProfileSkeleton,
+  "/routines": RoutinesSkeleton,
+  "/study": StudySkeleton,
+  "/speech-coach": SpeechCoachSkeleton,
+  "/progress": ProgressSkeleton,
 };
 
 export function resolveRouteSkeleton(pathname: string): ComponentType {

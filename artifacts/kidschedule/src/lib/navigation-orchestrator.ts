@@ -17,7 +17,22 @@ import {
   recordSanitizedTransition,
 } from "@/lib/route-history-manager";
 import { smartBack } from "@/lib/safe-navigation";
+import { hapticNavTransition } from "@/lib/navigation-haptics";
 import { withViewTransition } from "@/lib/view-transition";
+
+/** Triggers that represent a deliberate user gesture worth a haptic pulse. */
+const HAPTIC_NAV_TRIGGERS: ReadonlySet<NavTrigger> = new Set([
+  "user",
+  "back",
+]);
+
+function maybeHapticForTrigger(trigger?: NavTrigger): void {
+  // Default (undefined) navigations are user taps; auth/bootstrap/auto-redirect
+  // and system pushes should stay silent so the app never buzzes on launch.
+  if (trigger == null || HAPTIC_NAV_TRIGGERS.has(trigger)) {
+    hapticNavTransition();
+  }
+}
 
 export type NavTrigger =
   | "notification"
@@ -207,6 +222,7 @@ function executeNavigate(
     stack: getSanitizedPreviousRoute(),
   });
 
+  maybeHapticForTrigger(options?.trigger);
   withViewTransition(() => {
     recordSanitizedTransition(current, target, replace ? "replace" : "push");
     if (isTabRootRoute(target)) {
@@ -238,6 +254,7 @@ function executeReset(to: string, options?: OrchestratorNavigateOptions): boolea
 function executeBack(from: string, source?: string): void {
   if (!registeredNavigate) return;
   try {
+    hapticNavTransition();
     smartBack(registeredNavigate, from, source ?? "orchestrator-back");
     if (typeof window !== "undefined") {
       currentRoute = normalizeRoutePath(window.location.pathname);
