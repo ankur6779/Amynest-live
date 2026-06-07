@@ -12,8 +12,8 @@ export const SOURCE_MAPPINGS: SourceMapping[] = [
     locations: [
       {
         file: "artifacts/kidschedule/src/pages/children/form.tsx",
-        line: 324,
-        endLine: 342,
+        line: 329,
+        endLine: 347,
         functionName: "ChildForm",
         hook: "useEffect",
         dependencies: ["isInfant", "watchDob", "form"],
@@ -22,8 +22,8 @@ export const SOURCE_MAPPINGS: SourceMapping[] = [
       },
       {
         file: "artifacts/kidschedule/src/pages/children/form.tsx",
-        line: 259,
-        endLine: 270,
+        line: 262,
+        endLine: 273,
         functionName: "ChildForm",
         hook: "useWatch",
         dependencies: ["dob", "educationStage", "scheduleKnown"],
@@ -39,8 +39,8 @@ export const SOURCE_MAPPINGS: SourceMapping[] = [
       },
       {
         file: "artifacts/kidschedule/src/pages/children/form.tsx",
-        line: 354,
-        endLine: 430,
+        line: 359,
+        endLine: 467,
         functionName: "ChildForm",
         hook: "useEffect",
         dependencies: ["child", "isEditing", "parentCountry"],
@@ -56,8 +56,8 @@ export const SOURCE_MAPPINGS: SourceMapping[] = [
     locations: [
       {
         file: "artifacts/kidschedule/src/pages/children/form.tsx",
-        line: 354,
-        endLine: 430,
+        line: 359,
+        endLine: 467,
         functionName: "ChildForm",
         hook: "useEffect",
         dependencies: ["child", "isEditing", "parentCountry"],

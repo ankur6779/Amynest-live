@@ -20,7 +20,7 @@ describe("fix candidate engine", () => {
     const mapping = getSourceMappingForFingerprint(CHILD_FP);
     assert.ok(mapping);
     assert.equal(mapping.component, "ChildForm");
-    const infantEffect = mapping.locations.find((l) => l.line === 324);
+    const infantEffect = mapping.locations.find((l) => l.line === 329);
     assert.ok(infantEffect);
     assert.equal(infantEffect.hook, "useEffect");
     assert.ok(infantEffect.dependencies?.includes("isInfant"));
@@ -57,7 +57,7 @@ describe("fix candidate engine", () => {
   it("validates infant effect line via source scanner", () => {
     const validation = validateSourceMappingLines({
       file: "artifacts/kidschedule/src/pages/children/form.tsx",
-      line: 324,
+      line: 329,
       hook: "useEffect",
     });
     assert.equal(validation.valid, true);

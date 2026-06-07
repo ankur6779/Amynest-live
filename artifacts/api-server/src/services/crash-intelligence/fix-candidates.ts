@@ -11,7 +11,7 @@ export const FIX_CANDIDATES: FixCandidate[] = [
       "form.tsx:336 — setValue called when patches.educationStage is truthy without comparing current value",
       "infantFormNormalizationPatches returns patch when educationStage !== 'at_home'",
       "Effect deps [isInfant, watchDob, form] — form object identity triggers re-runs",
-      "Hydration reset (form.tsx:429) can change educationStage, re-triggering infant effect",
+      "Hydration reset (form.tsx:425) can change educationStage, re-triggering infant effect",
       "Production stack: Maximum update depth exceeded at ChildForm",
     ],
     proposedFix:
@@ -25,7 +25,7 @@ export const FIX_CANDIDATES: FixCandidate[] = [
     readableFingerprint: "ChildForm|MaximumDepth|ChildForm",
     issue: "form.reset on every React Query refetch despite hydration key guard.",
     evidence: [
-      "form.tsx:354-430 — hydration useEffect depends on child + parentCountry",
+      "form.tsx:359-467 — hydration useEffect depends on child + parentCountry",
       "childFormResetValuesEqual exists but reset still fires when watchers churn",
       "buildChildHydrationKey uses childId:dob:parentCountry (stable)",
     ],
