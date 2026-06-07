@@ -34,6 +34,9 @@
       "path": "./lib/db"
     },
     {
+      "path": "./lib/notification-engine"
+    },
+    {
       "path": "./lib/api-client-react"
     },
     {
