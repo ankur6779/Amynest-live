@@ -13,6 +13,7 @@ import { canAttemptAutoRecovery, navigateToSafeRoute } from "@/lib/crash-recover
 import {
   isBenignRuntimeError,
   isInfiniteRenderError,
+  serializeRuntimeError,
   shouldShowProductionCrashOverlay,
 } from "@/lib/runtime-crash-policy";
 
@@ -77,6 +78,14 @@ function silentLogCrash(payload: ProductionCrashPayload): void {
   );
 }
 
+function dismissDebugCrashOverlay(): void {
+  try {
+    document.getElementById(OVERLAY_ID)?.remove();
+  } catch {
+    /* best-effort */
+  }
+}
+
 /** User-safe full-screen recovery — no stack traces or internal details. */
 export function showUserSafeRecoveryOverlay(options?: {
   message?: string;
@@ -85,6 +94,7 @@ export function showUserSafeRecoveryOverlay(options?: {
 }): void {
   if (typeof document === "undefined") return;
   dismissSplash();
+  dismissDebugCrashOverlay();
 
   const message =
     options?.message ??
@@ -109,6 +119,7 @@ export function showUserSafeRecoveryOverlay(options?: {
       "color:#f0e8ff",
       "font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
       "text-align:center",
+      "pointer-events:auto",
     ].join(";");
     (document.body ?? document.documentElement).appendChild(el);
   }
@@ -214,21 +225,50 @@ function normalizePayload(
       at: new Date().toISOString(),
     };
   }
-  if (payload && typeof payload === "object" && "message" in payload) {
-    const p = payload as ProductionCrashPayload;
-    return {
-      ...p,
-      errorId: p.errorId ?? generateErrorReferenceId(),
-      at: p.at ?? new Date().toISOString(),
-      href: p.href ?? (typeof window !== "undefined" ? window.location.href : undefined),
-      route: p.route ?? (typeof window !== "undefined" ? window.location.pathname : undefined),
-    };
+  if (payload && typeof payload === "object") {
+    const nestedCrash =
+      "crash" in payload &&
+      payload.crash &&
+      typeof payload.crash === "object" &&
+      "message" in payload.crash
+        ? (payload as { crash: ProductionCrashPayload }).crash
+        : null;
+    if (nestedCrash) {
+      return normalizePayload({
+        ...nestedCrash,
+        kind: nestedCrash.kind ?? "debug.overlay",
+        href:
+          nestedCrash.href ??
+          ("href" in payload ? String((payload as { href?: string }).href ?? "") : undefined),
+        route:
+          nestedCrash.route ??
+          ("route" in payload ? String((payload as { route?: string }).route ?? "") : undefined),
+      });
+    }
+    if ("message" in payload) {
+      const p = payload as ProductionCrashPayload;
+      const message =
+        typeof p.message === "string"
+          ? p.message
+          : serializeRuntimeError(p.message);
+      return {
+        ...p,
+        kind: p.kind ?? "unknown",
+        message,
+        errorId: p.errorId ?? generateErrorReferenceId(),
+        at: p.at ?? new Date().toISOString(),
+        href: p.href ?? (typeof window !== "undefined" ? window.location.href : undefined),
+        route: p.route ?? (typeof window !== "undefined" ? window.location.pathname : undefined),
+      };
+    }
   }
   return {
     kind: "unknown",
-    message: String(payload ?? "unknown error"),
+    message: serializeRuntimeError(payload),
     errorId: generateErrorReferenceId(),
     at: new Date().toISOString(),
+    href: typeof window !== "undefined" ? window.location.href : undefined,
+    route: typeof window !== "undefined" ? window.location.pathname : undefined,
   };
 }
 
@@ -316,34 +356,12 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
 }
 
 function payloadFromError(err: unknown, kind: string, extra?: Partial<ProductionCrashPayload>): ProductionCrashPayload {
-  if (err instanceof Error) {
-    return {
-      kind,
-      message: err.message,
-      stack: err.stack,
-      errorId: generateErrorReferenceId(),
-      at: new Date().toISOString(),
-      href: typeof window !== "undefined" ? window.location.href : undefined,
-      route: typeof window !== "undefined" ? window.location.pathname : undefined,
-      ...extra,
-    };
-  }
-  if (err && typeof err === "object" && "message" in err) {
-    const e = err as { message?: string; stack?: string };
-    return {
-      kind,
-      message: e.message ?? String(err),
-      stack: e.stack,
-      errorId: generateErrorReferenceId(),
-      at: new Date().toISOString(),
-      href: typeof window !== "undefined" ? window.location.href : undefined,
-      route: typeof window !== "undefined" ? window.location.pathname : undefined,
-      ...extra,
-    };
-  }
+  const message = serializeRuntimeError(err);
+  const stack = err instanceof Error ? err.stack : undefined;
   return {
     kind,
-    message: String(err ?? "unknown error"),
+    message,
+    stack,
     errorId: generateErrorReferenceId(),
     at: new Date().toISOString(),
     href: typeof window !== "undefined" ? window.location.href : undefined,
@@ -385,6 +403,7 @@ export function installProductionCrashOverlay(): void {
       event.preventDefault();
       return;
     }
+    event.preventDefault();
     showProductionCrashOverlay(payloadFromError(event.reason, "unhandledrejection"));
   });
 }

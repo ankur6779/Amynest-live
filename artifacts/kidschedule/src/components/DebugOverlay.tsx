@@ -5,7 +5,7 @@ import {
   showProductionCrashOverlay,
   type ProductionCrashPayload,
 } from "@/lib/production-crash-overlay";
-import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
+import { isCrashDebugOverlayEnabled, serializeRuntimeError } from "@/lib/runtime-crash-policy";
 
 type CrashInfo = {
   kind: ProductionCrashPayload["kind"];
@@ -65,7 +65,16 @@ export default function DebugOverlay() {
     const show = (kind: CrashInfo["kind"], crash: Omit<CrashInfo, "kind" | "at">) => {
       const full = buildPayload(kind, crash);
       setPayload(full);
-      showProductionCrashOverlay(full);
+      showProductionCrashOverlay({
+        kind,
+        message: crash.message,
+        stack: crash.stack,
+        source: crash.source,
+        line: crash.line,
+        col: crash.col,
+        href: full.href,
+        route: full.route,
+      });
     };
 
     const w = window as Window & { __amynestLastCrash?: unknown };
@@ -95,8 +104,8 @@ export default function DebugOverlay() {
         message:
           reason instanceof Error
             ? reason.message
-            : reason?.message || "Unhandled promise rejection",
-        stack: reason instanceof Error ? reason.stack : reason?.stack,
+            : serializeRuntimeError(reason) || "Unhandled promise rejection",
+        stack: reason instanceof Error ? reason.stack : undefined,
       });
     };
 

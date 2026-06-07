@@ -24,7 +24,7 @@ export function ContinueJourneyCard() {
       surface: "continue_journey",
     });
     setActiveIntentId(intent.intentId);
-    void transition.mutateAsync({ intentId: intent.intentId, state: "started" });
+    void transition.mutateAsync({ intentId: intent.intentId, state: "started" }).catch(() => undefined);
     navigateAction(
       {
         actionTarget: intent.actionTarget as import("@workspace/action-routing").ActionTarget,
@@ -33,11 +33,11 @@ export function ContinueJourneyCard() {
       },
       { source: "hub_card" },
     );
-    void transition.mutateAsync({ intentId: intent.intentId, state: "in_progress" });
+    void transition.mutateAsync({ intentId: intent.intentId, state: "in_progress" }).catch(() => undefined);
   };
 
   const handleDismiss = () => {
-    void transition.mutateAsync({ intentId: intent.intentId, state: "abandoned" });
+    void transition.mutateAsync({ intentId: intent.intentId, state: "abandoned" }).catch(() => undefined);
     setActiveIntentId(null);
   };
 

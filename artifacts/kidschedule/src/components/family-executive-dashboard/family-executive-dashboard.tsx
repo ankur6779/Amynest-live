@@ -220,7 +220,7 @@ export function FamilyExecutiveDashboard({ childId, childName }: FamilyExecutive
         progressPct: 0,
       }).then((created: { intentId?: string }) => {
         if (created?.intentId) setActiveIntentId(created.intentId);
-      });
+      }).catch(() => undefined);
       navigateAction(action.action, { source: "hub_card" });
       setOpen(false);
     },

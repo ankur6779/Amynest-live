@@ -881,13 +881,17 @@ function ParentingHubPage() {
   }, []);
 
   const handleSessionStep = async (stepId: string) => {
-    const result = await learningProgress.completeSessionStep(stepId);
-    if (result.rewardEvents?.length) {
-      rewardCelebrations.celebrate(result.rewardEvents);
-    }
-    if (result.sessionComplete) {
-      setShowSessionComplete(true);
-      setLearningPanelOpen(true);
+    try {
+      const result = await learningProgress.completeSessionStep(stepId);
+      if (result.rewardEvents?.length) {
+        rewardCelebrations.celebrate(result.rewardEvents);
+      }
+      if (result.sessionComplete) {
+        setShowSessionComplete(true);
+        setLearningPanelOpen(true);
+      }
+    } catch {
+      /* session step failures are surfaced inline — never crash the hub */
     }
   };
   const hubUsage = useFeatureUsage();
@@ -921,11 +925,15 @@ function ParentingHubPage() {
 
   useEffect(() => {
     if (!effectiveChild || !ageGroup) return;
-    warmParentHubVisibleContent(authFetch, {
-      ageGroup,
-      ageMonths: totalAgeMonths,
-      childName: effectiveChild.name,
-    });
+    try {
+      warmParentHubVisibleContent(authFetch, {
+        ageGroup,
+        ageMonths: totalAgeMonths,
+        childName: effectiveChild.name,
+      });
+    } catch {
+      /* audio warmup is best-effort — must not crash the hub */
+    }
   }, [authFetch, effectiveChild?.id, effectiveChild?.name, ageGroup, totalAgeMonths]);
 
   const isHubLocked = useCallback(

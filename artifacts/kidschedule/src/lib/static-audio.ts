@@ -126,7 +126,9 @@ export function ensureStaticAudioMapLoaded(): Promise<void> {
   return staticAudioMapLoadPromise;
 }
 
-void ensureStaticAudioMapLoaded();
+void ensureStaticAudioMapLoaded().catch(() => {
+  console.warn("[static-audio] map preload failed — static playback may be limited");
+});
 
 export function isStaticAudioMapReady(): boolean {
   return map !== null;

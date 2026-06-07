@@ -482,6 +482,9 @@ importers:
       '@codetrix-studio/capacitor-google-auth':
         specifier: ^3.4.0-rc.4
         version: 3.4.0-rc.4(@capacitor/core@6.2.1)
+      '@react-three/fiber':
+        specifier: ^9.5.0
+        version: 9.6.1(@types/react@19.1.17)(expo-asset@12.0.13(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(expo-file-system@19.0.22(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)))(expo@54.0.34)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(three@0.182.0)
       '@workspace/age-content':
         specifier: workspace:*
         version: link:../../lib/age-content
@@ -614,6 +617,9 @@ importers:
       smplr:
         specifier: ^0.26.0
         version: 0.26.0
+      three:
+        specifier: ^0.182.0
+        version: 0.182.0
     devDependencies:
       '@hookform/resolvers':
         specifier: ^3.10.0
@@ -741,6 +747,9 @@ importers:
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.1.11(@types/react@19.1.17)
+      '@types/three':
+        specifier: ^0.184.1
+        version: 0.184.1
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 5.1.4(vite@7.3.3(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(tsx@4.21.0)(yaml@2.9.0))

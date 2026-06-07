@@ -31,6 +31,15 @@ const BENIGN_PATTERNS = [
   "audio_boot",
   "audio_start_timeout",
   "audio_load_failed",
+  "feature_locked",
+  "transition_failed",
+  "create_intent_failed",
+  "interrupt_failed",
+  "continue_journey_failed",
+  "hub_dashboard_",
+  "hub-journey status",
+  "learning-progress status",
+  "gaming earn",
 ] as const;
 
 const RECOVERABLE_PATTERNS = [
@@ -51,12 +60,37 @@ const INFINITE_RENDER_PATTERNS = [
   "Maximum call stack size exceeded",
 ] as const;
 
-function messageFromUnknown(err: unknown): string {
-  if (err instanceof Error) return `${err.name}: ${err.message}`;
-  if (err && typeof err === "object" && "message" in err) {
-    return String((err as { message?: string }).message ?? err);
+/** Stable string for logs, overlays, and benign-error pattern matching. */
+export function serializeRuntimeError(err: unknown): string {
+  if (err instanceof Error) {
+    const msg = err.message?.trim();
+    return msg ? `${err.name}: ${msg}` : err.name || "Error";
+  }
+  if (typeof err === "string") return err;
+  if (err && typeof err === "object") {
+    const o = err as Record<string, unknown>;
+    if (typeof o.message === "string" && o.message.trim()) return o.message.trim();
+    if (typeof o.error === "string" && o.error.trim()) return o.error.trim();
+    if (typeof o.detail === "string" && o.detail.trim()) return o.detail.trim();
+    if (typeof o.reason === "string" && o.reason.trim()) return o.reason.trim();
+    if (typeof o.code === "string" && o.code.trim()) return o.code.trim();
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return "unknown error";
+    }
   }
   return String(err ?? "");
+}
+
+function messageFromUnknown(err: unknown): string {
+  return serializeRuntimeError(err);
+}
+
+function isProductionHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname.toLowerCase();
+  return host === "www.amynest.in" || host === "amynest.in";
 }
 
 function errorName(err: unknown): string {
@@ -106,6 +140,7 @@ export function isInfiniteRenderError(err: unknown): boolean {
 
 /** True when end users must never see technical crash details. */
 export function isProductionEnvironment(): boolean {
+  if (isProductionHost()) return true;
   if (import.meta.env.DEV) return false;
   if (isLocalDevHost()) return false;
   if (isPreviewHost()) return false;

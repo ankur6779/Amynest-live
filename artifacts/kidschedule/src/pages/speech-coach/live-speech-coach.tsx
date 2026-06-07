@@ -35,6 +35,8 @@ import {
   type PronouncePromptKind,
 } from "@workspace/speech-coach";
 import { AmyIcon } from "@/components/amy-icon";
+import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
+import { coachStateToAmy3D } from "@/lib/amy-3d/use-amy-3d-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -205,7 +207,13 @@ function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
         ].join(" ")}
       >
         {thinking && <Loader2 className="absolute h-56 w-56 animate-spin text-amber-200/50" />}
-        <AmyIcon size={132} ring bounce={success || speaking} />
+        <AmyAvatar
+          tier="hero"
+          size={132}
+          ring
+          bounce={success || speaking}
+          state={success ? "celebrating" : coachStateToAmy3D(state)}
+        />
       </div>
     </div>
   );

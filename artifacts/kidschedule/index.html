@@ -376,11 +376,13 @@
               setTimeout(function () { splash.remove(); }, 200);
             }
             var host = location.hostname || "";
-            var showDebug = /[?&]crashdebug=1/.test(location.search || "") ||
+            var isProdHost = /^(www\.)?amynest\.in$/i.test(host);
+            var showDebug = !isProdHost && (
+              /[?&]crashdebug=1/.test(location.search || "") ||
               /localhost|127\.0\.0\.1/.test(host) ||
               /\.local$/.test(host) ||
               host.indexOf("preview") >= 0 ||
-              host.indexOf("staging") >= 0;
+              host.indexOf("staging") >= 0);
             if (!showDebug) {
               var safeEl = document.getElementById("amynest-safe-recovery-overlay");
               if (!safeEl) {

@@ -5,6 +5,7 @@ import {
   isCrashDebugOverlayEnabled,
   isInfiniteRenderError,
   isProductionEnvironment,
+  serializeRuntimeError,
   shouldShowProductionCrashOverlay,
 } from "@/lib/runtime-crash-policy";
 
@@ -36,5 +37,16 @@ describe("runtime-crash-policy", () => {
 
   it("aligns debug overlay with production environment", () => {
     expect(isCrashDebugOverlayEnabled()).toBe(!isProductionEnvironment());
+  });
+
+  it("serializes plain object rejections instead of [object Object]", () => {
+    expect(serializeRuntimeError({ error: "feature_locked", feature: "hub_articles" })).toBe(
+      "feature_locked",
+    );
+    expect(serializeRuntimeError({ code: "auth/unauthorized" })).toBe("auth/unauthorized");
+  });
+
+  it("treats API-shaped object rejections as benign", () => {
+    expect(isBenignRuntimeError({ error: "feature_locked" })).toBe(true);
   });
 });

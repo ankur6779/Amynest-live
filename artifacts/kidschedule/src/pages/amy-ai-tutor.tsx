@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
+import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { readResolvedApiJson } from "@/lib/poll-result";
@@ -259,7 +260,7 @@ export default function AmyAiTutorPage() {
           id: "empty",
           content: (
             <div className="flex min-h-[min(36vh,240px)] flex-col items-center justify-center gap-3 px-2 py-6 text-center">
-              <AmyIcon size={64} bounce ring />
+              <AmyAvatar tier="hero" size={96} ring bounce state="idle" />
               <div>
                 <h2 className="mb-1 font-quicksand text-lg font-bold text-foreground">
                   Hi {primaryChild?.name ?? "there"} — what should we learn today?

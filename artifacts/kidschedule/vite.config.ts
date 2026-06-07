@@ -281,6 +281,11 @@ export default defineConfig({
       // CJS-only; must pre-bundle (noDiscovery) or ESM import fails on every route
       // because landing.tsx is eagerly imported from AppCore.
       "react-qr-code",
+      // 3D Amy avatar — lazy-imported only on hero spots. With noDiscovery:true
+      // a dynamically imported dep that is NOT pre-bundled surfaces as a
+      // request-time 404, so the three.js stack must be listed explicitly here.
+      "three",
+      "@react-three/fiber",
     ],
   },
   root: path.resolve(import.meta.dirname),

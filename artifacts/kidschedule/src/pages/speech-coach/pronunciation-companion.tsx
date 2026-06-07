@@ -16,7 +16,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
-import { AmyIcon } from "@/components/amy-icon";
+import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
 import type { SpeechRecognitionState } from "@/hooks/useSpeechRecognition";
 import type { UseAmyVoiceState } from "@/hooks/use-amy-voice";
 import { isCapacitorIOS, openNativeAppSettings } from "@/lib/native-push-bridge";
@@ -232,8 +232,14 @@ function AmyRing({
         />
       )}
 
-      {/* Amy character */}
-      <AmyIcon size={size * 0.75} ring bounce={state === "celebrating"} />
+      {/* Amy character — live 3D on this hero, 2D fallback otherwise */}
+      <AmyAvatar
+        tier="hero"
+        size={size * 0.75}
+        ring
+        bounce={state === "celebrating"}
+        state={state}
+      />
     </div>
   );
 }
