@@ -49,9 +49,9 @@ function computeStreak(routines: Routine[]): number {
   return streak;
 }
 function getInsightStyle(type: string) {
-  if (type === "positive") return "bg-muted border-border text-primary";
-  if (type === "warning") return "bg-muted border-border text-primary";
-  return "bg-muted border-border text-primary";
+  if (type === "positive") return "bg-emerald-500/10 border-emerald-500/30 text-emerald-300";
+  if (type === "warning") return "bg-amber-500/10 border-amber-500/30 text-amber-300";
+  return "bg-sky-500/10 border-sky-500/30 text-sky-300";
 }
 function getInsightIcon(type: string, icon: string) {
   return icon || (type === "positive" ? "✅" : type === "warning" ? "⚠️" : "💡");
@@ -257,32 +257,32 @@ export default function ProgressPage() {
                   </div>
                 </div>
                 <div className="flex-1 grid grid-cols-2 gap-3">
-                  <div className="bg-muted rounded-2xl p-3 flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  <div className="bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/25 rounded-2xl p-3 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                     <div>
-                      <div className="font-bold text-primary">{completedItems}</div>
-                      <div className="text-xs text-primary">{t("pages.progress.completed")}</div>
+                      <div className="font-bold text-emerald-300">{completedItems}</div>
+                      <div className="text-xs text-emerald-400/80">{t("pages.progress.completed")}</div>
                     </div>
                   </div>
-                  <div className="bg-muted rounded-2xl p-3 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary shrink-0" />
+                  <div className="bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/25 rounded-2xl p-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-400 shrink-0" />
                     <div>
-                      <div className="font-bold text-primary">{delayedItems}</div>
-                      <div className="text-xs text-primary">{t("pages.progress.delayed")}</div>
+                      <div className="font-bold text-amber-300">{delayedItems}</div>
+                      <div className="text-xs text-amber-400/80">{t("pages.progress.delayed")}</div>
                     </div>
                   </div>
-                  <div className="bg-muted rounded-2xl p-3 flex items-center gap-2">
-                    <SkipForward className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="bg-gradient-to-br from-slate-500/15 to-slate-500/5 border border-slate-500/25 rounded-2xl p-3 flex items-center gap-2">
+                    <SkipForward className="h-4 w-4 text-slate-300 shrink-0" />
                     <div>
-                      <div className="font-bold text-foreground/70">{skippedItems}</div>
-                      <div className="text-xs text-muted-foreground">{t("pages.progress.skipped")}</div>
+                      <div className="font-bold text-slate-200">{skippedItems}</div>
+                      <div className="text-xs text-slate-400">{t("pages.progress.skipped")}</div>
                     </div>
                   </div>
-                  <div className="bg-muted rounded-2xl p-3 flex items-center gap-2">
-                    <Star className="h-4 w-4 text-primary shrink-0" />
+                  <div className="bg-gradient-to-br from-sky-500/15 to-sky-500/5 border border-sky-500/25 rounded-2xl p-3 flex items-center gap-2">
+                    <Star className="h-4 w-4 text-sky-400 shrink-0" />
                     <div>
-                      <div className="font-bold text-primary">{pendingItems}</div>
-                      <div className="text-xs text-primary">{t("pages.progress.pending")}</div>
+                      <div className="font-bold text-sky-300">{pendingItems}</div>
+                      <div className="text-xs text-sky-400/80">{t("pages.progress.pending")}</div>
                     </div>
                   </div>
                 </div>
@@ -307,7 +307,7 @@ export default function ProgressPage() {
                       <div className="w-full flex flex-col justify-end" style={{
                   height: "80px"
                 }}>
-                        <div className={`w-full rounded-t-lg transition-all ${day.routineCount === 0 ? "bg-muted" : isToday ? "bg-primary" : day.completionPct >= 70 ? "bg-muted" : day.completionPct >= 40 ? "bg-muted" : "bg-muted"}`} style={{
+                        <div className={`w-full rounded-t-lg transition-all ${day.routineCount === 0 ? "bg-muted" : isToday ? "bg-gradient-to-t from-orange-500 to-amber-400 shadow-[0_0_12px_rgba(251,146,60,0.5)]" : day.completionPct >= 70 ? "bg-gradient-to-t from-emerald-500 to-emerald-400" : day.completionPct >= 40 ? "bg-gradient-to-t from-amber-500 to-amber-400" : "bg-gradient-to-t from-rose-500 to-rose-400"}`} style={{
                     height: `${height}%`
                   }} />
                       </div>
@@ -317,9 +317,9 @@ export default function ProgressPage() {
             })}
               </div>
               <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-muted" />{t("pages.progress.70_done")}</span>
-                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-muted" />40–69%</span>
-                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-muted" />&lt;40%</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-emerald-400" />{t("pages.progress.70_done")}</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-amber-400" />40–69%</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-rose-400" />&lt;40%</span>
                 <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-muted" />{t("pages.progress.no_routine")}</span>
               </div>
             </CardContent>
@@ -338,13 +338,13 @@ export default function ProgressPage() {
                           <span className="text-xs text-muted-foreground">{stat.routineCount} {t("pages.progress.routine_2")}{stat.routineCount !== 1 ? "s" : ""} · {pct}{t("pages.progress.done")}</span>
                         </div>
                         <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${pct >= 70 ? "bg-muted" : pct >= 40 ? "bg-muted" : "bg-muted"}`} style={{
+                          <div className={`h-full rounded-full transition-all ${pct >= 70 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : pct >= 40 ? "bg-gradient-to-r from-amber-500 to-amber-400" : "bg-gradient-to-r from-rose-500 to-rose-400"}`} style={{
                     width: `${pct}%`
                   }} />
                         </div>
                         <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
-                          <span className="text-primary">✓ {stat.completed} {t("pages.progress.done_2")}</span>
-                          <span className="text-primary">⏱ {stat.delayed} {t("pages.progress.delayed_2")}</span>
+                          <span className="text-emerald-400">✓ {stat.completed} {t("pages.progress.done_2")}</span>
+                          <span className="text-amber-400">⏱ {stat.delayed} {t("pages.progress.delayed_2")}</span>
                           <span>⏭ {stat.skipped} {t("pages.progress.skipped_2")}</span>
                         </div>
                       </div>;
@@ -361,7 +361,7 @@ export default function ProgressPage() {
             <h3 className="font-quicksand font-bold text-foreground text-lg flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
               {t("pages.progress.amy_ai_parenting_insights")}
-              <Badge className="bg-gradient-to-r from-primary to-primary text-white text-xs font-bold border-0">
+              <Badge className="bg-gradient-to-r from-violet-500 to-pink-500 text-white text-xs font-bold border-0 shadow-[0_2px_10px_rgba(168,85,247,0.4)]">
                 <Zap className="h-3 w-3 mr-1" />
                 {t("pages.progress.amy_ai")}
               </Badge>

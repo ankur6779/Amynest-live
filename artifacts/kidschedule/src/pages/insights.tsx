@@ -85,12 +85,12 @@ function ChangeChip({ pct, pts }: { pct?: number; pts?: number }) {
   const { t } = useTranslation();
   const val = pts ?? pct ?? 0;
   if (val > 0) return (
-    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
       <TrendingUp className="h-3 w-3" />+{Math.abs(val).toFixed(0)}{pts !== undefined ? "pts" : "%"}
     </span>
   );
   if (val < 0) return (
-    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-full">
       <TrendingDown className="h-3 w-3" />-{Math.abs(val).toFixed(0)}{pts !== undefined ? "pts" : "%"}
     </span>
   );
@@ -196,20 +196,20 @@ export default function InsightsPage() {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-3">
-              <Card className="rounded-2xl">
+              <Card className="rounded-2xl border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-500/5">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("screens.insights.stat_routines")}</p>
-                  <p className="text-3xl font-extrabold text-foreground mt-1">{data.summary.routinesThisPeriod}</p>
+                  <p className="text-xs text-orange-300/90 font-semibold uppercase tracking-wide">{t("screens.insights.stat_routines")}</p>
+                  <p className="text-3xl font-extrabold text-orange-300 mt-1">{data.summary.routinesThisPeriod}</p>
                   <div className="mt-2">
                     <ChangeChip pct={data.summary.routinesChangePct} />
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">{t(range === "week" ? "screens.insights.vs_last_week" : "screens.insights.vs_last_month", { value: data.summary.routinesPreviousPeriod })}</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl">
+              <Card className="rounded-2xl border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("screens.insights.stat_positive_rate")}</p>
-                  <p className="text-3xl font-extrabold text-foreground mt-1">{data.summary.positiveRateThisPeriod.toFixed(0)}%</p>
+                  <p className="text-xs text-emerald-300/90 font-semibold uppercase tracking-wide">{t("screens.insights.stat_positive_rate")}</p>
+                  <p className="text-3xl font-extrabold text-emerald-300 mt-1">{data.summary.positiveRateThisPeriod.toFixed(0)}%</p>
                   <div className="mt-2">
                     <ChangeChip pts={data.summary.positiveRateChangePts} />
                   </div>
@@ -255,7 +255,7 @@ export default function InsightsPage() {
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-card transition-all duration-500"
+                            className="h-full rounded-full bg-gradient-to-r from-teal-400 via-emerald-400 to-green-400 transition-all duration-500"
                             style={{ width: `${Math.min(100, child.routineCompletionRate)}%` }}
                           />
                         </div>
@@ -292,8 +292,8 @@ export default function InsightsPage() {
 
             {/* Ask Amy CTA */}
             <Link href="/assistant">
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border cursor-pointer transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center text-primary-foreground shrink-0">
+              <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-pink-500/15 border border-violet-500/30 cursor-pointer transition-all hover:border-violet-500/50 hover:shadow-[0_4px_20px_rgba(168,85,247,0.25)]">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white shrink-0 shadow-[0_2px_10px_rgba(168,85,247,0.45)]">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
@@ -343,20 +343,20 @@ export default function InsightsPage() {
                   ) : (
                     <>
                       <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div className="bg-muted/50 rounded-lg px-3 py-2">
-                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">
+                        <div className="bg-gradient-to-br from-sky-500/15 to-sky-500/5 border border-sky-500/25 rounded-lg px-3 py-2">
+                          <p className="text-[11px] text-sky-300/90 uppercase font-semibold">
                             {c.accuracyIsWeekly ? "Accuracy" : "Lifetime accuracy"}
                           </p>
-                          <p className="text-lg font-extrabold text-foreground">{c.accuracyPct}%</p>
+                          <p className="text-lg font-extrabold text-sky-300">{c.accuracyPct}%</p>
                         </div>
-                        <div className="bg-muted/50 rounded-lg px-3 py-2">
-                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">{t("screens.insights.stat_points")}</p>
-                          <p className="text-lg font-extrabold text-foreground">{c.pointsThisWeek}</p>
+                        <div className="bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/25 rounded-lg px-3 py-2">
+                          <p className="text-[11px] text-amber-300/90 uppercase font-semibold">{t("screens.insights.stat_points")}</p>
+                          <p className="text-lg font-extrabold text-amber-300">{c.pointsThisWeek}</p>
                           <p className="text-[10px] text-muted-foreground">{t("screens.insights.stat_points_this_week")}</p>
                         </div>
-                        <div className="bg-muted/50 rounded-lg px-3 py-2">
-                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">{t("screens.insights.stat_levels")}</p>
-                          <p className="text-lg font-extrabold text-foreground">
+                        <div className="bg-gradient-to-br from-violet-500/15 to-violet-500/5 border border-violet-500/25 rounded-lg px-3 py-2">
+                          <p className="text-[11px] text-violet-300/90 uppercase font-semibold">{t("screens.insights.stat_levels")}</p>
+                          <p className="text-lg font-extrabold text-violet-300">
                             {c.levelsCompletedTotal}/5
                           </p>
                           <p className="text-[10px] text-muted-foreground">

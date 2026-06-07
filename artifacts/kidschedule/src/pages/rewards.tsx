@@ -11,9 +11,9 @@ function PointsBurst({ points }: { points: number }) {
   const { t } = useTranslation();
   return (
     <div className="relative flex flex-col items-center justify-center py-8">
-      <div className="w-28 h-28 rounded-full bg-card flex flex-col items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.4)]">
-        <span className="text-3xl font-extrabold text-primary-foreground leading-none">{points}</span>
-        <span className="text-xs font-bold text-primary-foreground uppercase tracking-wider mt-0.5">{t("screens.rewards.stars_label")}</span>
+      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 flex flex-col items-center justify-center shadow-[0_0_45px_rgba(251,146,60,0.55)] ring-4 ring-amber-300/20">
+        <span className="text-3xl font-extrabold text-white leading-none drop-shadow">{points}</span>
+        <span className="text-xs font-bold text-white/90 uppercase tracking-wider mt-0.5">{t("screens.rewards.stars_label")}</span>
       </div>
     </div>
   );
@@ -78,11 +78,11 @@ export default function RewardsPage() {
         </div>
 
         {/* Points burst */}
-        <Card data-on-dark className="rounded-3xl overflow-hidden bg-card border-0">
+        <Card data-on-dark className="rounded-3xl overflow-hidden border border-amber-500/25 bg-gradient-to-br from-violet-600/20 via-fuchsia-600/15 to-amber-500/20">
           <CardContent className="p-0">
             <PointsBurst points={points} />
             <div className="text-center pb-5">
-              <p className="text-primary-foreground text-sm font-semibold">{t("screens.rewards.earn_caption")}</p>
+              <p className="text-foreground/80 text-sm font-semibold">{t("screens.rewards.earn_caption")}</p>
             </div>
           </CardContent>
         </Card>
@@ -114,16 +114,16 @@ export default function RewardsPage() {
             {rewards.map((reward) => {
               const canAfford = points >= reward.cost;
               return (
-                <Card key={reward.id} className="rounded-2xl">
+                <Card key={reward.id} className={`rounded-2xl transition-colors ${canAfford ? "border-amber-500/30 bg-gradient-to-r from-amber-500/[0.07] to-transparent" : ""}`}>
                   <CardContent className="p-4 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/30 to-orange-500/20 border border-amber-500/20 flex items-center justify-center text-2xl shrink-0">
                       {reward.emoji}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-foreground truncate">{reward.label}</p>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="h-3 w-3 text-foreground fill-primary" />
-                        <span className="text-xs font-bold text-foreground">{t("screens.rewards.cost_stars", { count: reward.cost })}</span>
+                        <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
+                        <span className="text-xs font-bold text-amber-300">{t("screens.rewards.cost_stars", { count: reward.cost })}</span>
                       </div>
                     </div>
                     <button
@@ -131,7 +131,7 @@ export default function RewardsPage() {
                       disabled={!canAfford || redeemingId === reward.id}
                       className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shrink-0 ${
                         canAfford
-                          ? "bg-card text-primary-foreground hover:opacity-90 active:scale-95"
+                          ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-[0_2px_12px_rgba(251,146,60,0.4)] hover:opacity-90 active:scale-95"
                           : "bg-muted text-muted-foreground cursor-not-allowed"
                       }`}
                     >
@@ -157,15 +157,24 @@ export default function RewardsPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                {badges.map((badge) => (
-                  <Card key={badge.id} className="rounded-2xl">
+                {badges.map((badge, i) => {
+                  const tints = [
+                    "from-violet-500/20 to-fuchsia-500/10 border-violet-500/30",
+                    "from-sky-500/20 to-cyan-500/10 border-sky-500/30",
+                    "from-emerald-500/20 to-green-500/10 border-emerald-500/30",
+                    "from-amber-500/20 to-orange-500/10 border-amber-500/30",
+                    "from-pink-500/20 to-rose-500/10 border-pink-500/30",
+                  ];
+                  return (
+                  <Card key={badge.id} className={`rounded-2xl border bg-gradient-to-br ${tints[i % tints.length]}`}>
                     <CardContent className="p-4 flex flex-col items-center gap-2 text-center">
-                      <div className="text-3xl">{badge.emoji}</div>
+                      <div className="text-3xl drop-shadow">{badge.emoji}</div>
                       <p className="font-bold text-sm text-foreground">{badge.label}</p>
                       <p className="text-[11px] text-muted-foreground">{new Date(badge.earnedAt).toLocaleDateString()}</p>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -179,13 +188,13 @@ export default function RewardsPage() {
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("screens.rewards.redeemed_heading")}</p>
                 {redemptions.map((r, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border mb-1">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 mb-1">
                     <span className="text-lg">🎁</span>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-foreground">{r.rewardLabel}</p>
                       <p className="text-xs text-muted-foreground">{new Date(r.date).toLocaleDateString()}</p>
                     </div>
-                    <span className="text-xs font-bold text-foreground">-{r.cost} ⭐</span>
+                    <span className="text-xs font-bold text-rose-300">-{r.cost} ⭐</span>
                   </div>
                 ))}
               </div>
@@ -195,13 +204,13 @@ export default function RewardsPage() {
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 mt-3">{t("screens.rewards.earned_heading")}</p>
                 {ledger.map((entry, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border mb-1">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-1">
                     <span className="text-lg">⭐</span>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-foreground">{entry.activity}</p>
                       <p className="text-xs text-muted-foreground">{entry.childName} · {new Date(entry.date).toLocaleDateString()}</p>
                     </div>
-                    <span className="text-xs font-bold text-foreground">+{entry.points}</span>
+                    <span className="text-xs font-bold text-emerald-300">+{entry.points}</span>
                   </div>
                 ))}
               </div>

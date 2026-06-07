@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useNativeBilling } from "@/hooks/use-native-billing";
-import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
+import { isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
+import { usePricingRegion, applyIndiaPricing } from "@/lib/pricing-region";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -99,7 +100,17 @@ export default function PricingPage() {
   } = useSubscription();
   const { user } = useUser();
 
-  const sortedPlans = useMemo(() => sortPlanCards(plans), [plans]);
+  const nativeBilling = useNativeBilling();
+  const isNativeShell = nativeBilling.wrapperPresent;
+  const { isIndia } = usePricingRegion({ enabled: !isNativeShell });
+
+  // India web pays in INR via Razorpay — show ₹ prices that match the charge.
+  // Native shells are excluded (the App Store / Play Store localise prices).
+  const regionalPlans = useMemo(
+    () => (isIndia && !isNativeShell ? applyIndiaPricing(plans) : plans),
+    [plans, isIndia, isNativeShell],
+  );
+  const sortedPlans = useMemo(() => sortPlanCards(regionalPlans), [regionalPlans]);
 
   const planBillingLabels = useMemo<PlanBillingLabels>(
     () => ({
@@ -134,7 +145,6 @@ export default function PricingPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const isIndia = isIndiaRegion();
   const cancelAtPeriodEnd = entitlements?.cancelAtPeriodEnd ?? false;
   const provider = entitlements?.provider ?? "none";
 
@@ -152,10 +162,8 @@ export default function PricingPage() {
   const isManagedByStore = provider === "revenuecat";
   const canCancelHere = isPremium && !cancelAtPeriodEnd && !isManagedByStore;
   const isAndroid = isAndroidDevice();
-  const nativeBilling = useNativeBilling();
   const isIOS = nativeBilling.platform === "ios";
   const isAndroidNative = nativeBilling.platform === "android";
-  const isNativeShell = nativeBilling.wrapperPresent;
 
   const onPurchaseSuccess = (plan: Exclude<Plan, "free">) => {
     if (
@@ -689,6 +697,12 @@ export default function PricingPage() {
                 t("pricing.other_payment_options")
               )}
             </button>
+
+            {/* Risk-reversal reassurance at the point of action */}
+            <p className="flex items-center justify-center gap-1.5 pt-1 text-center text-xs font-semibold text-white/50">
+              <Shield className="h-3.5 w-3.5" />
+              {t("pricing.cancel_anytime")}
+            </p>
           </>
         )}
 

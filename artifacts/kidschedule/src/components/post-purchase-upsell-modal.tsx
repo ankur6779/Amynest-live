@@ -15,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { markPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
-import { isIndiaRegion } from "@/lib/geo";
+import { usePricingRegion } from "@/lib/pricing-region";
 
 type Props = {
   purchasedPlan: Exclude<Plan, "free">;
@@ -29,6 +29,9 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
   const nativeBilling = useNativeBilling();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const { isIndia } = usePricingRegion({
+    enabled: !nativeBilling.wrapperPresent,
+  });
 
   if (purchasedPlan === "yearly") return null;
 
@@ -61,7 +64,7 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
           onDone();
           return;
         }
-      } else if (isIndiaRegion()) {
+      } else if (isIndia) {
         const res = await checkoutRazorpay("yearly");
         if (res.ok) {
           trackSubscriptionEvent({ event: "purchase_success", plan: "yearly", source: "post_purchase_upsell" });

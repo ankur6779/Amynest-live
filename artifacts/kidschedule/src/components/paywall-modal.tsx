@@ -4,7 +4,7 @@ import {
   Headphones, CalendarDays, Brain, Users, MessageCircle, BarChart3,
   LayoutGrid, FileText, Moon, Utensils, type LucideIcon,
 } from "lucide-react";
-import { isIndiaRegion } from "@/lib/geo";
+import { usePricingRegion, applyIndiaPricing } from "@/lib/pricing-region";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -79,7 +79,16 @@ export function PaywallModal() {
   const [, setLocation] = useLocation();
   const nativeBilling = useNativeBilling();
   const { toast } = useToast();
-  const sortedPlans = useMemo(() => sortPlanCards(plans), [plans]);
+  const { isIndia } = usePricingRegion({
+    enabled: !nativeBilling.wrapperPresent,
+  });
+  // India web pays in INR via Razorpay — show ₹ prices that match the charge.
+  const regionalPlans = useMemo(
+    () =>
+      isIndia && !nativeBilling.wrapperPresent ? applyIndiaPricing(plans) : plans,
+    [plans, isIndia, nativeBilling.wrapperPresent],
+  );
+  const sortedPlans = useMemo(() => sortPlanCards(regionalPlans), [regionalPlans]);
 
   const planBillingLabels = useMemo<PlanBillingLabels>(
     () => ({
@@ -369,7 +378,7 @@ export function PaywallModal() {
             </div>
           )}
 
-          {!isNativeShell && isIndiaRegion() && (
+          {!isNativeShell && isIndia && (
             <Button
               onClick={onPayWithRazorpay}
               disabled={submitting || plans.length === 0}
@@ -380,7 +389,7 @@ export function PaywallModal() {
             </Button>
           )}
 
-          {!isNativeShell && !isIndiaRegion() && (
+          {!isNativeShell && !isIndia && (
             <div className="w-full rounded-xl border border-white/15 bg-white/8 px-4 py-4 text-center space-y-2">
               <Smartphone className="h-5 w-5 mx-auto text-muted-foreground" />
               <p className="text-sm font-bold text-white/90">

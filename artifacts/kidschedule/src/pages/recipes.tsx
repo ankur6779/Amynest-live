@@ -200,8 +200,8 @@ export default function RecipesPage() {
 
         {/* Empty state */}
         {!isLoading && recipes.length === 0 && <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-muted dark:bg-card flex items-center justify-center">
-              <BookOpen className="h-8 w-8 text-primary" />
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-400/30 to-amber-500/20 border border-orange-500/20 flex items-center justify-center">
+              <BookOpen className="h-8 w-8 text-orange-400" />
             </div>
             <div>
               <p className="text-lg font-bold text-foreground">{t("pages.recipes.no_recipes_saved_yet")}</p>
@@ -220,12 +220,14 @@ export default function RecipesPage() {
             {[1, 2, 3].map(i => <div key={i} className="h-28 rounded-2xl bg-muted animate-pulse" />)}
           </div> : <div className="grid gap-4">
             {recipes.map(recipe => {
-          return <Card key={recipe.id} className="overflow-hidden border border-border dark:border-primary shadow-sm hover:shadow-md transition-shadow">
+          return <Card key={recipe.id} className="overflow-hidden border border-orange-500/25 bg-gradient-to-br from-orange-500/[0.07] to-transparent shadow-sm hover:shadow-[0_4px_20px_rgba(251,146,60,0.18)] hover:border-orange-500/40 transition-all">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <ChefHat className="h-4 w-4 text-primary shrink-0" />
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400/30 to-amber-500/20 border border-orange-500/20 flex items-center justify-center shrink-0">
+                          <ChefHat className="h-4 w-4 text-orange-400" />
+                        </div>
                         <h3 className="font-bold text-base text-foreground leading-tight" style={{
                       wordBreak: "break-word"
                     }}>
@@ -234,21 +236,21 @@ export default function RecipesPage() {
                       </div>
                       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
                         <span className="flex items-center gap-1">
-                          <Timer className="h-3.5 w-3.5" />
+                          <Timer className="h-3.5 w-3.5 text-amber-400" />
                           {t("pages.recipes.prep")} {recipe.prepTime}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
+                          <Clock className="h-3.5 w-3.5 text-rose-400" />
                           {t("pages.recipes.cook")} {recipe.cookTime}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
+                          <Users className="h-3.5 w-3.5 text-sky-400" />
                           {recipe.servings}
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         <span className="font-medium text-foreground">{recipe.ingredients.length}</span> {t("pages.recipes.ingredients")} <span className="font-medium text-foreground">{recipe.steps.length}</span> {t("pages.recipes.steps")}
-                        {recipe.tip && <span className="ml-2">{t("pages.recipes.has_tip")}</span>}
+                        {recipe.tip && <span className="ml-2 text-amber-400 font-medium">{t("pages.recipes.has_tip")}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
