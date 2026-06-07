@@ -11,8 +11,8 @@
 
 // audit-block-ignore-start
 
-import { motion, useReducedMotion } from "framer-motion";
-import { useMemo } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useMemo, type ReactNode } from "react";
 import { isAndroidLiteClient } from "@/lib/device-lite";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -36,14 +36,20 @@ function seededRand(seed: number): number {
 function NightLayer({ reduced }: { reduced: boolean }) {
   const stars = useMemo(
     () =>
-      Array.from({ length: 18 }, (_, i) => ({
-        id: i,
-        top:  `${8 + seededRand(i * 3)      * 70}%`,
-        left: `${5 + seededRand(i * 3 + 1)  * 88}%`,
-        size: seededRand(i * 3 + 2) > 0.6 ? 2 : 1.5,
-        delay: seededRand(i) * 3,
-        dur:   2.5 + seededRand(i + 7) * 2,
-      })),
+      Array.from({ length: 16 }, (_, i) => {
+        // Parallax: ~40% of stars sit on a blurred, slower "far" tier for depth.
+        const far = seededRand(i * 3 + 5) > 0.6;
+        return {
+          id: i,
+          top:  `${8 + seededRand(i * 3)      * 70}%`,
+          left: `${5 + seededRand(i * 3 + 1)  * 88}%`,
+          size: far ? 1.2 : (seededRand(i * 3 + 2) > 0.6 ? 2.4 : 1.8),
+          delay: seededRand(i) * 3,
+          dur:   (far ? 3.5 : 2.2) + seededRand(i + 7) * 2,
+          blur:  far ? 0.6 : 0,
+          peak:  far ? 0.5 : 0.9,
+        };
+      }),
     [],
   );
 
@@ -94,16 +100,27 @@ function NightLayer({ reduced }: { reduced: boolean }) {
         animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0.8, 0.5] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Stars */}
+      {/* Stars — two parallax tiers for depth */}
       {stars.map(s => (
         <motion.div
           key={s.id}
           className="absolute rounded-full bg-white"
-          style={{ top: s.top, left: s.left, width: s.size, height: s.size }}
-          animate={{ opacity: [0.25, 0.85, 0.25], scale: [1, 1.4, 1] }}
+          style={{ top: s.top, left: s.left, width: s.size, height: s.size, filter: s.blur ? `blur(${s.blur}px)` : undefined }}
+          animate={{ opacity: [s.peak * 0.3, s.peak, s.peak * 0.3], scale: [1, 1.4, 1] }}
           transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
         />
       ))}
+      {/* Occasional shooting star */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          top: "14%", left: "72%", width: 64, height: 1.5, borderRadius: 2,
+          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 100%)",
+          rotate: 24,
+        }}
+        animate={{ x: [0, -180], y: [0, 86], opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 9, times: [0, 0.12, 0.7, 1], ease: "easeIn" }}
+      />
     </>
   );
 }
@@ -167,10 +184,9 @@ function SunnyLayer({ reduced }: { reduced: boolean }) {
             left: r.left, width: 60,
             background: "linear-gradient(180deg, rgba(255,240,180,0.13) 0%, transparent 100%)",
             transformOrigin: "top center",
-            rotate: r.rotate,
             opacity: r.opacity,
           }}
-          animate={{ opacity: [r.opacity, r.opacity * 2.2, r.opacity] }}
+          animate={{ opacity: [r.opacity, r.opacity * 2.2, r.opacity], rotate: [r.rotate - 2.5, r.rotate + 2.5, r.rotate - 2.5] }}
           transition={{ duration: r.dur, delay: r.delay, repeat: Infinity, ease: "easeInOut" }}
         />
       ))}
@@ -205,15 +221,31 @@ function SunnyLayer({ reduced }: { reduced: boolean }) {
 function RainyLayer({ stormy, reduced }: { stormy: boolean; reduced: boolean }) {
   const drops = useMemo(
     () =>
-      Array.from({ length: stormy ? 22 : 14 }, (_, i) => ({
-        id: i,
-        left: `${seededRand(i * 7) * 100}%`,
-        dur:  0.55 + seededRand(i * 7 + 1) * 0.4,
-        delay: seededRand(i * 7 + 2) * 1.5,
-        height: 8 + seededRand(i * 7 + 3) * 10,
-        opacity: 0.18 + seededRand(i * 7 + 4) * 0.18,
-      })),
+      Array.from({ length: stormy ? 18 : 13 }, (_, i) => {
+        // Parallax: "far" drops are thinner, slower, slightly blurred.
+        const far = seededRand(i * 7 + 9) > 0.55;
+        return {
+          id: i,
+          left: `${seededRand(i * 7) * 100}%`,
+          dur:  (far ? 0.85 : 0.5) + seededRand(i * 7 + 1) * 0.4,
+          delay: seededRand(i * 7 + 2) * 1.5,
+          height: (far ? 6 : 10) + seededRand(i * 7 + 3) * 9,
+          width: far ? 1 : 1.6,
+          opacity: (far ? 0.12 : 0.22) + seededRand(i * 7 + 4) * 0.16,
+          blur: far ? 0.5 : 0,
+        };
+      }),
     [stormy],
+  );
+  const splashes = useMemo(
+    () =>
+      Array.from({ length: 4 }, (_, i) => ({
+        id: i,
+        left: `${15 + seededRand(i * 23) * 70}%`,
+        delay: seededRand(i * 23 + 1) * 2,
+        dur:  0.6 + seededRand(i * 23 + 2) * 0.4,
+      })),
+    [],
   );
 
   if (reduced) {
@@ -234,30 +266,41 @@ function RainyLayer({ stormy, reduced }: { stormy: boolean; reduced: boolean }) 
         animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Lightning flash (stormy only) */}
+      {/* Lightning — realistic double-flash (stormy only) */}
       {stormy && (
         <motion.div
           className="absolute inset-0 pointer-events-none rounded-3xl"
-          style={{ background: "rgba(220,230,255,0.18)" }}
-          animate={{ opacity: [0, 0, 0, 0.7, 0, 0, 0] }}
-          transition={{ duration: 6, repeat: Infinity, times: [0, 0.35, 0.36, 0.37, 0.38, 0.6, 1], ease: "easeOut" }}
+          style={{ background: "rgba(220,230,255,0.20)" }}
+          animate={{ opacity: [0, 0, 0.75, 0.15, 0.55, 0, 0] }}
+          transition={{ duration: 6, repeat: Infinity, times: [0, 0.34, 0.36, 0.40, 0.42, 0.47, 1], ease: "easeOut" }}
         />
       )}
-      {/* Rain drops */}
+      {/* Rain drops — two parallax tiers */}
       {drops.map(d => (
         <motion.div
           key={d.id}
           className="absolute rounded-full"
           style={{
-            left: d.left, top: -12, width: 1.5, height: d.height,
+            left: d.left, top: -12, width: d.width, height: d.height,
             background: "linear-gradient(180deg, rgba(180,210,255,0.0) 0%, rgba(180,210,255,0.55) 100%)",
             opacity: d.opacity,
+            filter: d.blur ? `blur(${d.blur}px)` : undefined,
           }}
           animate={{ y: [0, 260], opacity: [0, d.opacity, 0] }}
           transition={{
             duration: d.dur, delay: d.delay,
             repeat: Infinity, ease: "linear",
           }}
+        />
+      ))}
+      {/* Splash ripples at the base */}
+      {splashes.map(s => (
+        <motion.div
+          key={`sp-${s.id}`}
+          className="absolute rounded-full border border-white/40 pointer-events-none"
+          style={{ bottom: "7%", left: s.left, width: 12, height: 4 }}
+          animate={{ scale: [0, 1.7], opacity: [0, 0.5, 0] }}
+          transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, repeatDelay: 0.7, ease: "easeOut" }}
         />
       ))}
     </>
@@ -330,15 +373,20 @@ function CloudyLayer({ reduced }: { reduced: boolean }) {
 function SnowLayer({ reduced }: { reduced: boolean }) {
   const flakes = useMemo(
     () =>
-      Array.from({ length: 16 }, (_, i) => ({
-        id: i,
-        left:  `${seededRand(i * 13) * 96}%`,
-        size:  2.5 + seededRand(i * 13 + 1) * 3,
-        dur:   6 + seededRand(i * 13 + 2) * 5,
-        delay: seededRand(i * 13 + 3) * 5,
-        swayX: 12 + seededRand(i * 13 + 4) * 16,
-        opacity: 0.35 + seededRand(i * 13 + 5) * 0.30,
-      })),
+      Array.from({ length: 14 }, (_, i) => {
+        // Parallax: "far" flakes smaller, slower, blurred & dimmer.
+        const far = seededRand(i * 13 + 7) > 0.5;
+        return {
+          id: i,
+          left:  `${seededRand(i * 13) * 96}%`,
+          size:  (far ? 2 : 3.5) + seededRand(i * 13 + 1) * 2.5,
+          dur:   (far ? 9 : 6) + seededRand(i * 13 + 2) * 5,
+          delay: seededRand(i * 13 + 3) * 5,
+          swayX: 12 + seededRand(i * 13 + 4) * 16,
+          opacity: (far ? 0.25 : 0.45) + seededRand(i * 13 + 5) * 0.25,
+          blur:  far ? 0.8 : 0,
+        };
+      }),
     [],
   );
 
@@ -373,7 +421,7 @@ function SnowLayer({ reduced }: { reduced: boolean }) {
         <motion.div
           key={f.id}
           className="absolute rounded-full bg-white pointer-events-none"
-          style={{ left: f.left, top: -8, width: f.size, height: f.size }}
+          style={{ left: f.left, top: -8, width: f.size, height: f.size, filter: f.blur ? `blur(${f.blur}px)` : undefined }}
           animate={{
             y: [0, 200],
             x: [0, f.swayX, -f.swayX * 0.5, f.swayX * 0.3, 0],
@@ -401,6 +449,7 @@ function WindyLayer({ reduced }: { reduced: boolean }) {
         delay: seededRand(i * 17 + 2) * 2,
         size:  1.5 + seededRand(i * 17 + 3) * 2.5,
         opacity: 0.20 + seededRand(i * 17 + 4) * 0.25,
+        swayY: 6 + seededRand(i * 17 + 5) * 10,
       })),
     [],
   );
@@ -426,7 +475,7 @@ function WindyLayer({ reduced }: { reduced: boolean }) {
             background: "rgba(200,220,255,0.60)",
             borderRadius: 4,
           }}
-          animate={{ x: [0, 360], opacity: [0, p.opacity, 0] }}
+          animate={{ x: [0, 360], y: [0, -p.swayY, p.swayY * 0.6, 0], opacity: [0, p.opacity, 0] }}
           transition={{
             duration: p.dur, delay: p.delay,
             repeat: Infinity, ease: "easeIn",
@@ -440,16 +489,46 @@ function WindyLayer({ reduced }: { reduced: boolean }) {
 // ── Heatwave: shimmer waves ───────────────────────────────────────────────────
 
 function HeatwaveLayer({ reduced }: { reduced: boolean }) {
+  const haze = useMemo(
+    () =>
+      Array.from({ length: 6 }, (_, i) => ({
+        id: i,
+        left:  `${10 + seededRand(i * 19) * 80}%`,
+        size:  4 + seededRand(i * 19 + 1) * 5,
+        dur:   4 + seededRand(i * 19 + 2) * 3,
+        delay: seededRand(i * 19 + 3) * 4,
+        sway:  10 + seededRand(i * 19 + 4) * 14,
+        rise:  70 + seededRand(i * 19 + 5) * 60,
+        opacity: 0.18 + seededRand(i * 19 + 6) * 0.20,
+      })),
+    [],
+  );
+
   if (reduced) {
     return (
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "linear-gradient(180deg, rgba(255,100,60,0.10) 0%, transparent 60%)" }}
-      />
+      <>
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(180deg, rgba(255,100,60,0.10) 0%, transparent 60%)" }}
+        />
+        {/* Static sun glow */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{ top: -30, right: -20, width: 120, height: 120, background: "radial-gradient(circle, rgba(255,180,90,0.28) 0%, transparent 70%)" }}
+        />
+      </>
     );
   }
   return (
     <>
+      {/* Pulsing sun glow in the corner */}
+      <motion.div
+        className="absolute rounded-full pointer-events-none"
+        style={{ top: -34, right: -22, width: 130, height: 130, background: "radial-gradient(circle, rgba(255,180,90,0.38) 0%, transparent 70%)" }}
+        animate={{ scale: [1, 1.14, 1], opacity: [0.5, 0.9, 0.5] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Shimmer waves */}
       {[0, 1, 2].map(i => (
         <motion.div
           key={i}
@@ -464,6 +543,16 @@ function HeatwaveLayer({ reduced }: { reduced: boolean }) {
           transition={{ duration: 3.5 + i * 0.8, delay: i * 1.1, repeat: Infinity, ease: "easeInOut" }}
         />
       ))}
+      {/* Rising heat haze particles */}
+      {haze.map(h => (
+        <motion.div
+          key={`hz-${h.id}`}
+          className="absolute rounded-full pointer-events-none"
+          style={{ left: h.left, bottom: "4%", width: h.size, height: h.size, background: "rgba(255,170,90,0.55)", filter: "blur(1.5px)" }}
+          animate={{ y: [0, -h.rise], x: [0, h.sway, -h.sway * 0.6, 0], opacity: [0, h.opacity, 0] }}
+          transition={{ duration: h.dur, delay: h.delay, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
     </>
   );
 }
@@ -473,6 +562,20 @@ function HeatwaveLayer({ reduced }: { reduced: boolean }) {
 function AQIOverlay({ aqiBucket, reduced }: { aqiBucket: string; reduced: boolean }) {
   const isPoor = ["unhealthy", "very_unhealthy", "hazardous"].includes(aqiBucket);
   const isGood = ["excellent", "good"].includes(aqiBucket);
+
+  const smog = useMemo(
+    () =>
+      Array.from({ length: 4 }, (_, i) => ({
+        id: i,
+        top:  `${15 + seededRand(i * 29) * 60}%`,
+        width: 70 + seededRand(i * 29 + 1) * 70,
+        height: 30 + seededRand(i * 29 + 2) * 24,
+        dur:  22 + seededRand(i * 29 + 3) * 14,
+        delay: i * 5,
+        opacity: 0.10 + seededRand(i * 29 + 4) * 0.08,
+      })),
+    [],
+  );
 
   if (isPoor) {
     if (reduced) {
@@ -484,12 +587,28 @@ function AQIOverlay({ aqiBucket, reduced }: { aqiBucket: string; reduced: boolea
       );
     }
     return (
-      <motion.div
-        className="absolute inset-0 pointer-events-none rounded-3xl"
-        style={{ background: "rgba(180,130,80,0.10)" }}
-        animate={{ opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
+      <>
+        <motion.div
+          className="absolute inset-0 pointer-events-none rounded-3xl"
+          style={{ background: "rgba(180,130,80,0.10)" }}
+          animate={{ opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Drifting smog/dust to convey poor air */}
+        {smog.map(s => (
+          <motion.div
+            key={`smog-${s.id}`}
+            className="absolute rounded-full pointer-events-none"
+            style={{
+              top: s.top, width: s.width, height: s.height,
+              background: "rgba(140,110,80,0.55)",
+              filter: "blur(22px)",
+            }}
+            animate={{ x: ["-15%", "115%"], opacity: [0, s.opacity, s.opacity, 0] }}
+            transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "linear" }}
+          />
+        ))}
+      </>
     );
   }
 
@@ -555,6 +674,23 @@ function BreathingGlow({ reduced }: { reduced: boolean }) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
+// Resolve the active weather state into a stable key + its layer node.
+function resolveWeatherLayer(
+  cond: string,
+  isNight: boolean,
+  reduced: boolean,
+): { key: string; node: ReactNode } {
+  if (isNight)                                return { key: "night",    node: <NightLayer reduced={reduced} /> };
+  if (cond === "sunny" || cond === "")        return { key: "sunny",    node: <SunnyLayer reduced={reduced} /> };
+  if (cond === "rainy" || cond === "stormy")  return { key: "rain",     node: <RainyLayer stormy={cond === "stormy"} reduced={reduced} /> };
+  if (cond === "cloudy" || cond === "foggy")  return { key: "cloudy",   node: <CloudyLayer reduced={reduced} /> };
+  if (cond === "cold")                        return { key: "snow",     node: <SnowLayer reduced={reduced} /> };
+  if (cond === "windy")                       return { key: "windy",    node: <WindyLayer reduced={reduced} /> };
+  if (cond === "heatwave")                    return { key: "heatwave", node: <HeatwaveLayer reduced={reduced} /> };
+  if (cond === "humid")                       return { key: "humid",    node: <SunnyLayer reduced={reduced} /> }; // warm particles — humid shares sunny base
+  return { key: "none", node: null };
+}
+
 export function HeroAmbientLayer({
   weatherCondition,
   aqiBucket = "moderate",
@@ -565,6 +701,7 @@ export function HeroAmbientLayer({
 
   const reduced = useReducedMotion() ?? false;
   const cond = weatherCondition ?? "";
+  const { key, node } = resolveWeatherLayer(cond, isNight, reduced);
 
   return (
     <div
@@ -575,23 +712,19 @@ export function HeroAmbientLayer({
       <AQIOverlay aqiBucket={aqiBucket} reduced={reduced} />
       <TagEffects heroTags={heroTags} reduced={reduced} />
 
-      {isNight ? (
-        <NightLayer reduced={reduced} />
-      ) : cond === "sunny" || cond === "" ? (
-        <SunnyLayer reduced={reduced} />
-      ) : cond === "rainy" || cond === "stormy" ? (
-        <RainyLayer stormy={cond === "stormy"} reduced={reduced} />
-      ) : cond === "cloudy" || cond === "foggy" ? (
-        <CloudyLayer reduced={reduced} />
-      ) : cond === "cold" ? (
-        <SnowLayer reduced={reduced} />
-      ) : cond === "windy" ? (
-        <WindyLayer reduced={reduced} />
-      ) : cond === "heatwave" ? (
-        <HeatwaveLayer reduced={reduced} />
-      ) : cond === "humid" ? (
-        <SunnyLayer reduced={reduced} /> // warm particles — humid shares sunny base
-      ) : null}
+      {/* Smooth crossfade when the weather state changes */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={key}
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduced ? 0 : 0.6, ease: "easeInOut" }}
+        >
+          {node}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

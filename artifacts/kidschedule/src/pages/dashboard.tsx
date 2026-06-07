@@ -151,6 +151,20 @@ const WEATHER_EMOJI_MAP: Record<string, string> = {
   humid: "🌊", cold: "❄️", heatwave: "🌡️", windy: "🌬️", foggy: "🌫️",
 };
 
+// Semantic colour coding for smart tags — makes the hero scannable at a glance.
+type TagStyle = { bg: string; border: string; dot: string };
+const HERO_TAG_STYLES: Record<string, TagStyle> = {
+  "High Pollution Alert":        { bg: "rgba(239,68,68,0.18)",  border: "rgba(239,68,68,0.42)",  dot: "#ef4444" },
+  "Hydration Day":               { bg: "rgba(56,189,248,0.18)", border: "rgba(56,189,248,0.42)", dot: "#38bdf8" },
+  "UV Protection Day":           { bg: "rgba(250,204,21,0.18)", border: "rgba(250,204,21,0.46)", dot: "#facc15" },
+  "Indoor Activity Recommended": { bg: "rgba(251,146,60,0.18)", border: "rgba(251,146,60,0.42)", dot: "#fb923c" },
+  "Limited Outdoor Time":        { bg: "rgba(251,191,36,0.16)", border: "rgba(251,191,36,0.40)", dot: "#fbbf24" },
+  "Outdoor Play Friendly":       { bg: "rgba(74,222,128,0.18)", border: "rgba(74,222,128,0.42)", dot: "#4ade80" },
+  "Clean Air Day":               { bg: "rgba(74,222,128,0.18)", border: "rgba(74,222,128,0.42)", dot: "#4ade80" },
+  "Good Sleep Weather":          { bg: "rgba(129,140,248,0.18)",border: "rgba(129,140,248,0.42)",dot: "#818cf8" },
+};
+const DEFAULT_TAG_STYLE: TagStyle = { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.24)", dot: "#ffffff" };
+
 function getHeroGradient(condition: string | undefined): { bg: string; glowA: string; glowB: string } {
   const hour = new Date().getHours();
   const isNight = hour >= 20 || hour < 6;
@@ -409,55 +423,68 @@ function SmartHeroSection({
         </Suspense>
       )}
 
-      {/* Row 1: greeting label + weather pill */}
+      {/* Row 1: greeting label + weather condition pill (temp lives in the metrics bar) */}
       <div className="relative flex items-center justify-between gap-2">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-white/70">{greeting}</p>
-        {ctx && (
-          <div className="shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20 text-[11px] font-bold text-white/90" style={{ background: "rgba(0,0,0,0.25)" }}>
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-white/65">{greeting}</p>
+        {ctx && weatherCondition && (
+          <div className="shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20 text-[11px] font-bold text-white/90 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.25)" }}>
             <span>{weatherEmoji}</span>
-            {snap.temperatureC != null && <span>{snap.temperatureC}°C</span>}
-            <span className="text-white/50">·</span>
-            <span className="capitalize">{weatherCondition?.replace(/_/g, " ") ?? ""}</span>
+            <span className="capitalize">{weatherCondition.replace(/_/g, " ")}</span>
           </div>
         )}
       </div>
 
       {/* Heading */}
-      <h1 className="relative font-quicksand text-2xl sm:text-[27px] font-black text-white mt-1 leading-[1.15] tracking-tight">
+      <h1 className="relative font-quicksand text-2xl sm:text-[27px] font-black text-white mt-1.5 leading-[1.12] tracking-tight">
         👋 {heading}
       </h1>
 
-      {/* Rotating insight */}
-      <div className="relative mt-2 min-h-[40px] flex items-start">
-        <p key={insightIdx} className="text-sm text-white/90 leading-snug animate-in fade-in duration-500">
-          {isError ? "⚠️ Unable to fetch live weather currently." : insights[insightIdx]}
-        </p>
+      {/* Rotating insight — highlighted glass chip with accent bar */}
+      <div className="relative mt-3 min-h-[44px]">
+        <div
+          key={insightIdx}
+          className="flex items-start gap-2.5 rounded-xl border border-white/10 pl-3 pr-3 py-2 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-1 duration-500"
+          style={{ background: "rgba(0,0,0,0.18)", borderLeft: "3px solid rgba(255,255,255,0.55)" }}
+        >
+          <Sparkles className="h-3.5 w-3.5 text-white/80 shrink-0 mt-[3px]" />
+          <p className="text-[13px] sm:text-sm text-white font-medium leading-snug">
+            {isError ? "⚠️ Unable to fetch live weather currently." : insights[insightIdx]}
+          </p>
+        </div>
       </div>
 
-      {/* Smart tags */}
+      {/* Smart tags — semantic colour coding for instant scanning */}
       {heroTags.length > 0 && (
         <div className="relative flex flex-wrap gap-1.5 mt-3">
-          {heroTags.map(tag => (
-            <span key={tag} className="inline-flex items-center text-[10.5px] font-bold rounded-full px-2.5 py-0.5 border border-white/20 text-white backdrop-blur-sm" style={{ background: "rgba(255,255,255,0.14)" }}>
-              {tag}
-            </span>
-          ))}
+          {heroTags.map(tag => {
+            const ts = HERO_TAG_STYLES[tag] ?? DEFAULT_TAG_STYLE;
+            return (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1.5 text-[10.5px] font-bold rounded-full pl-2 pr-2.5 py-0.5 border text-white backdrop-blur-sm"
+                style={{ background: ts.bg, borderColor: ts.border }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: ts.dot, boxShadow: `0 0 6px ${ts.dot}` }} />
+                {tag}
+              </span>
+            );
+          })}
         </div>
       )}
 
-      {/* Weather metrics bar */}
+      {/* Weather metrics bar — colour-tinted chips for faster scanning */}
       {ctx && (
-        <div className="relative flex items-center gap-2 mt-3 overflow-x-auto pb-0.5">
+        <div className="relative flex items-center gap-1.5 sm:gap-2 mt-3 overflow-x-auto pb-0.5 scrollbar-none">
           {/* Location pill — GPS reverse-geocoded or region default */}
           {locationLabel && (
-            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+            <div className="shrink-0 flex items-center gap-1 text-[11px] sm:text-xs rounded-lg px-2 py-[3px] sm:py-1 border" style={{ background: "rgba(0,0,0,0.22)", borderColor: "rgba(255,255,255,0.15)" }}>
               <MapPin className="h-3 w-3 text-white/70 shrink-0" />
               {/* i18n-ok: dynamic location label from reverse-geocoding / env API */}
               <span className="font-semibold text-white truncate max-w-[130px]">{locationLabel}</span>
             </div>
           )}
           {snap.temperatureC != null && (
-            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+            <div className="shrink-0 flex items-center gap-1 text-[11px] sm:text-xs rounded-lg px-2 py-[3px] sm:py-1 border" style={{ background: "rgba(251,146,60,0.16)", borderColor: "rgba(251,146,60,0.34)" }}>
               🌡️ <span className="font-bold text-white">{snap.temperatureC}°C</span>
               {snap.apparentC != null && snap.apparentC !== snap.temperatureC && (
                 <span className="text-white/55 text-[10px] ml-0.5">feels {snap.apparentC}°C</span>
@@ -465,19 +492,19 @@ function SmartHeroSection({
             </div>
           )}
           {snap.aqiUs != null && (
-            <div className="shrink-0 flex items-center gap-1.5 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
-              <span className="h-1.5 w-1.5 rounded-full animate-pulse shrink-0" style={{ background: aqiMeta.dotColor }} />
+            <div className="shrink-0 flex items-center gap-1.5 text-[11px] sm:text-xs rounded-lg px-2 py-[3px] sm:py-1 border" style={{ background: `${aqiMeta.dotColor}22`, borderColor: `${aqiMeta.dotColor}5c` }}>
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse shrink-0" style={{ background: aqiMeta.dotColor, boxShadow: `0 0 6px ${aqiMeta.dotColor}` }} />
               <span className="font-bold text-white">AQI {snap.aqiUs}</span>
               <span className="text-white/60 text-[10px]">{aqiMeta.label}</span>
             </div>
           )}
           {snap.humidityPct != null && (
-            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+            <div className="shrink-0 flex items-center gap-1 text-[11px] sm:text-xs rounded-lg px-2 py-[3px] sm:py-1 border" style={{ background: "rgba(56,189,248,0.16)", borderColor: "rgba(56,189,248,0.34)" }}>
               💧 <span className="font-bold text-white">{snap.humidityPct}%</span>
             </div>
           )}
           {snap.uvIndexMax != null && (
-            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+            <div className="shrink-0 flex items-center gap-1 text-[11px] sm:text-xs rounded-lg px-2 py-[3px] sm:py-1 border" style={{ background: "rgba(250,204,21,0.16)", borderColor: "rgba(250,204,21,0.36)" }}>
               ☀️ <span className="font-bold text-white">UV {snap.uvIndexMax}</span>
             </div>
           )}
