@@ -286,6 +286,7 @@ export default defineConfig({
       // request-time 404, so the three.js stack must be listed explicitly here.
       "three",
       "@react-three/fiber",
+      "@react-three/drei",
     ],
   },
   root: path.resolve(import.meta.dirname),
