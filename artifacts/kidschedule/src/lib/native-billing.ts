@@ -12,6 +12,8 @@
  * external payment for digital subscriptions.
  */
 
+import { isCapacitorIOS, logOutIOSBilling } from "@/lib/native-billing-ios";
+
 export type NativePackage = {
   identifier: string;
   packageType: string;
@@ -113,6 +115,8 @@ function callAsync<T>(
 
 export type NativeBilling = {
   setUserId: (userId: string) => Promise<{ ok?: boolean; error?: string } | void>;
+  /** Reset RevenueCat to anonymous on sign-out (no-op on wrappers lacking the action). */
+  logOut: () => Promise<{ ok?: boolean; error?: string } | void>;
   getOfferings: () => Promise<{ ok: true; data: NativeOfferings } | { ok: false; error: string }>;
   purchase: (packageId: string) => Promise<NativePurchaseResult>;
   presentPaywall: (options?: {
@@ -125,6 +129,25 @@ export type NativeBilling = {
   restore: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
   getCustomerInfo: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
 };
+
+/**
+ * Reset the native billing identity (RevenueCat) on sign-out, across iOS
+ * Capacitor and the Android wrapper. No-op in a plain browser. Never throws —
+ * sign-out must not depend on the billing bridge being healthy.
+ */
+export async function resetNativeBillingIdentity(): Promise<void> {
+  try {
+    if (isCapacitorIOS()) {
+      await logOutIOSBilling();
+      return;
+    }
+    if (isWrapperPresent()) {
+      await getNativeBilling()?.logOut?.();
+    }
+  } catch {
+    /* ignore — best-effort identity reset */
+  }
+}
 
 /** True if the page is running inside the kidschedule-android wrapper. */
 export function isWrapperPresent(): boolean {
@@ -180,6 +203,13 @@ export function getNativeBilling(): NativeBilling | null {
       return callAsync<{ ok?: boolean; error?: string }>(
         bridge,
         { action: "setUserId", userId: id },
+        10_000,
+      );
+    },
+    logOut: async () => {
+      return callAsync<{ ok?: boolean; error?: string }>(
+        bridge,
+        { action: "logOut" },
         10_000,
       );
     },

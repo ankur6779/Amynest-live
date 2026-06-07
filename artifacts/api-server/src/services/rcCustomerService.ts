@@ -68,6 +68,9 @@ export async function syncRevenueCatSubscription(userId: string): Promise<{
   reason?: string;
 }> {
   if (!RC_SECRET_KEY) {
+    // Without this key the server can NEVER mirror a store purchase into our DB —
+    // the user pays but stays non-premium until the webhook (if any) lands.
+    logger.warn({ userId }, "[rcSync] REVENUECAT_SECRET_KEY not configured — purchase cannot be synced");
     return { synced: false, isPremium: false, reason: "rc_not_configured" };
   }
 
@@ -84,17 +87,38 @@ export async function syncRevenueCatSubscription(userId: string): Promise<{
     );
 
     if (res.status === 404) {
+      // RevenueCat has no record for this app_user_id — almost always an
+      // app_user_id ↔ our user.id mismatch (purchase attributed to a different
+      // RC customer). This is a frequent cause of "paid but no premium".
+      logger.warn({ userId }, "[rcSync] RevenueCat subscriber not found (possible app_user_id mismatch)");
       return { synced: true, isPremium: false, reason: "subscriber_not_found" };
     }
     if (!res.ok) {
       const text = await res.text();
-      logger.warn({ status: res.status, text: text.slice(0, 200) }, "[rcSync] subscriber fetch failed");
+      logger.warn({ status: res.status, text: text.slice(0, 200), userId }, "[rcSync] subscriber fetch failed");
       return { synced: false, isPremium: false, reason: "rc_fetch_failed" };
     }
 
     const body = (await res.json()) as RcSubscriberResponse;
     const activeEnt = pickActiveEntitlement(body.subscriber?.entitlements);
     if (!activeEnt) {
+      // Log what RevenueCat DID return so we can tell apart "no purchase",
+      // "expired", and "entitlement present but no expiry" cases.
+      const entitlements = body.subscriber?.entitlements ?? {};
+      logger.warn(
+        {
+          userId,
+          expectedEntitlementId: ENTITLEMENT_ID,
+          entitlementsSeen: Object.keys(entitlements),
+          entitlementExpiries: Object.fromEntries(
+            Object.entries(entitlements).map(([id, ent]) => [
+              id,
+              ent.expires_date ?? ent.grace_period_expires_date ?? null,
+            ]),
+          ),
+        },
+        "[rcSync] no active entitlement for subscriber",
+      );
       return { synced: true, isPremium: false, reason: "no_active_entitlement" };
     }
 
@@ -102,7 +126,7 @@ export async function syncRevenueCatSubscription(userId: string): Promise<{
     if (!plan) {
       logger.warn(
         { productId: activeEnt.product_identifier, userId },
-        "[rcSync] active entitlement with unknown product",
+        "[rcSync] active entitlement with unknown product — check amynest_monthly/6month/yearly product id prefix",
       );
       return { synced: false, isPremium: false, reason: "unknown_product" };
     }
@@ -122,6 +146,15 @@ export async function syncRevenueCatSubscription(userId: string): Promise<{
       providerSubscriptionId: subscription?.store_transaction_id,
     });
 
+    logger.info(
+      {
+        userId,
+        plan,
+        productId: activeEnt.product_identifier,
+        periodEnd: periodEnd?.toISOString() ?? null,
+      },
+      "[rcSync] activated premium from RevenueCat subscriber",
+    );
     return { synced: true, isPremium: true, plan };
   } catch (err) {
     logger.error({ err, userId }, "[rcSync] failed");

@@ -189,7 +189,7 @@ export const PLAY_JOURNEY_LIMITS: Record<
   shapes: { 1: 3, 2: 6, 3: 8 },
   animals: { 1: 6, 2: 10, 3: 12 },
   fruits: { 1: 6, 2: 10, 3: 10 },
-  rhymes: { 1: 3, 2: 5, 3: 8 },
+  rhymes: { 1: 5, 2: 12, 3: 20 },
 };
 
 function clampJourneyDay(journeyDay: number): 1 | 2 | 3 {

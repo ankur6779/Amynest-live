@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { WorldEngine } from "./world-engine.js";
 import { buildPlatformHearFindQuestion } from "./hear-find.js";
-import { isValidWorldsLibraryObjectPath } from "./gcs-layout.js";
+import { isValidWorldsLibraryObjectPath, worldsLibraryPlaybackCandidates, extractWorldsLibraryObjectPath } from "./gcs-layout.js";
 import { getDiscoveryWorldDefinition } from "./registry.js";
 
 test("WorldEngine resolves neighbors and categories", () => {
@@ -22,6 +22,24 @@ test("vehicle GCS path validates for worlds-library", () => {
   const path = "worlds/vehicles/road/car/engine-01.mp3";
   assert.equal(isValidWorldsLibraryObjectPath("vehicle_world", path), true);
   assert.equal(isValidWorldsLibraryObjectPath("animal_world", path), false);
+});
+
+test("worlds library playback candidates prefer proxy then local mirror", () => {
+  const proxy = "/api/worlds-library/worlds/vehicles/road/car/engine-01.mp3";
+  const candidates = worldsLibraryPlaybackCandidates(proxy);
+  assert.ok(candidates.includes(proxy));
+  assert.ok(candidates.includes("/discovery-worlds-audio/worlds/vehicles/road/car/engine-01.mp3"));
+});
+
+test("extractWorldsLibraryObjectPath parses proxy and mirror URLs", () => {
+  assert.equal(
+    extractWorldsLibraryObjectPath("/api/worlds-library/worlds/nature/weather/rain/rain-01.mp3"),
+    "worlds/nature/weather/rain/rain-01.mp3",
+  );
+  assert.equal(
+    extractWorldsLibraryObjectPath("/discovery-worlds-audio/worlds/home/kitchen/blender/blend-01.mp3"),
+    "worlds/home/kitchen/blender/blend-01.mp3",
+  );
 });
 
 test("registry lists animal world as live reference", () => {

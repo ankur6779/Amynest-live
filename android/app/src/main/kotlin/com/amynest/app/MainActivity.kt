@@ -403,8 +403,19 @@ class MainActivity : AppCompatActivity() {
                 val url = request.url ?: return false
                 val scheme = url.scheme?.lowercase() ?: return false
                 if (scheme == "http" || scheme == "https") {
+                    // Google Play links (e.g. "Cancel subscription" → manage
+                    // subscriptions) must open in the Play Store app, not load
+                    // inside this WebView where the user can't actually cancel.
+                    val host = url.host?.lowercase().orEmpty()
+                    if (host == "play.google.com" && url.path.orEmpty().startsWith("/store")) {
+                        if (openExternally(url)) return true
+                    }
                     view.loadUrl(url.toString())
                     return true
+                }
+                // market:// deep links + standard intent schemes → native app.
+                if (scheme == "market") {
+                    if (openExternally(url)) return true
                 }
                 if (scheme == "mailto" || scheme == "tel" || scheme == "sms") {
                     try {
@@ -515,6 +526,22 @@ class MainActivity : AppCompatActivity() {
 
         WebView.setWebContentsDebuggingEnabled(true)
     }
+
+    /**
+     * Launch a URI in its native handler (Play Store, etc.) outside the WebView.
+     * Returns false if no app can handle it, so the caller can fall back.
+     */
+    private fun openExternally(uri: android.net.Uri): Boolean =
+        try {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, uri).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        }
 
     // ── URL construction ─────────────────────────────────────────────────────
 
@@ -1023,12 +1050,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Serve bundled /audio-pack/ URLs from APK assets (offline phonics, spelling, coach). */
+    /** Serve bundled /audio-pack/ and /infant-sleep-audio/ from APK assets (offline). */
     private fun interceptBundledAudioPack(uri: Uri): WebResourceResponse? {
         val host = uri.host?.lowercase() ?: return null
         if (host != "www.amynest.in" && host != "amynest.in") return null
         val path = uri.path ?: return null
-        if (!path.startsWith("/audio-pack/")) return null
+        if (!path.startsWith("/audio-pack/") && !path.startsWith("/infant-sleep-audio/")) return null
         val assetPath = path.removePrefix("/")
         return try {
             val stream = assets.open(assetPath)

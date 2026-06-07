@@ -174,8 +174,8 @@ describe("WhiteNoiseLullaby — immersive module", () => {
     expect(screen.getByTestId("smart-suggestion")).toBeInTheDocument();
     expect(screen.getByText(/best for sleep now/i)).toBeInTheDocument();
 
-    // All 7 noise tiles
-    ["shush", "rain", "fan", "heartbeat", "pink", "white", "womb"].forEach((id) => {
+    // All procedural noise tiles (9)
+    ["shush", "rain", "fan", "heartbeat", "pink", "white", "womb", "brown", "hvac"].forEach((id) => {
       expect(screen.getByTestId(`tile-${id}`)).toBeInTheDocument();
     });
   });
@@ -290,7 +290,7 @@ describe("WhiteNoiseLullaby — immersive module", () => {
       expect(screen.getByTestId("poem-age-tab-0-6m"))
         .toHaveAttribute("aria-selected", "true");
       // The 0–6m bucket includes the spec-provided "Sleep, Baby, Sleep" poem.
-      expect(screen.getByTestId("poem-tile-sleep-baby-sleep")).toBeInTheDocument();
+      expect(screen.getByTestId("poem-tile-poem-sleep-baby-sleep")).toBeInTheDocument();
     });
 
     it("changes visible poems when a different age sub-tab is selected", () => {
@@ -298,30 +298,26 @@ describe("WhiteNoiseLullaby — immersive module", () => {
       openPoemsTab();
 
       // Pre-condition: a 0–6m poem is visible, a 12–24m poem is not.
-      expect(screen.getByTestId("poem-tile-sleep-baby-sleep")).toBeInTheDocument();
-      expect(screen.queryByTestId("poem-tile-one-little-star")).toBeNull();
+      expect(screen.getByTestId("poem-tile-poem-sleep-baby-sleep")).toBeInTheDocument();
+      expect(screen.queryByTestId("poem-tile-poem-stars-count")).toBeNull();
 
       fireEvent.click(screen.getByTestId("poem-age-tab-12-24m"));
 
-      // After: 12–24m content is visible, the 0–6m poem is gone.
-      expect(screen.getByTestId("poem-tile-one-little-star")).toBeInTheDocument();
-      expect(screen.queryByTestId("poem-tile-sleep-baby-sleep")).toBeNull();
+      expect(screen.getByTestId("poem-tile-poem-stars-count")).toBeInTheDocument();
+      expect(screen.queryByTestId("poem-tile-poem-sleep-baby-sleep")).toBeNull();
     });
 
     it("paginates further poems via the Load More button", () => {
       render(<WhiteNoiseLullaby ageMonths={8} />);
       openPoemsTab();
 
-      // 6–12m group has 5 poems but only 3 are shown initially → Load More
-      // button is present.
+      // 6–12m group has 4 poems but only 3 shown initially
       const loadMore = screen.getByTestId("poem-load-more");
       expect(loadMore).toBeInTheDocument();
 
       fireEvent.click(loadMore);
 
-      // After Load More, all 5 poems in the 6–12m group are visible.
-      ["clap-clap-little-hands", "round-and-round", "soft-little-bird",
-       "pat-pat-pat", "humming-bumblebee"].forEach((id) => {
+      ["poem-pat-pat-pat", "poem-soft-bird-sleep", "poem-dream-boat", "poem-cozy-nest"].forEach((id) => {
         expect(screen.getByTestId(`poem-tile-${id}`)).toBeInTheDocument();
       });
       // No more poems left → button is now hidden.
@@ -332,7 +328,7 @@ describe("WhiteNoiseLullaby — immersive module", () => {
       render(<WhiteNoiseLullaby ageMonths={2} />);
       openPoemsTab();
 
-      fireEvent.click(screen.getByTestId("poem-tile-sleep-baby-sleep"));
+      fireEvent.click(screen.getByTestId("poem-tile-poem-sleep-baby-sleep"));
 
       const player = screen.getByTestId("poem-fullscreen-player");
       expect(player).toBeInTheDocument();
@@ -349,7 +345,7 @@ describe("WhiteNoiseLullaby — immersive module", () => {
       render(<WhiteNoiseLullaby ageMonths={2} />);
       openPoemsTab();
 
-      const tile = screen.getByTestId("poem-tile-sleep-baby-sleep");
+      const tile = screen.getByTestId("poem-tile-poem-sleep-baby-sleep");
       fireEvent.click(tile);
       // Tile flips to data-active="true" the moment the fullscreen player
       // opens for it (covers loading, playing, and paused states). We bind

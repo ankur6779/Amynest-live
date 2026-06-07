@@ -1,9 +1,21 @@
 import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wind, ChevronDown, Volume2, VolumeX, Info, Play, Pause, X, Clock, Sparkles, Plus } from "lucide-react";
+import { Wind, ChevronDown, Volume2, VolumeX, Info, Play, Pause, X, Clock, Sparkles, Plus, Music, BookOpen } from "lucide-react";
 import { useSoundEngine, type SoundId, type SoundEngine } from "@/hooks/use-sound-engine";
+import { useMp3LoopEngine } from "@/hooks/use-mp3-loop-engine";
 import { InfantPoems } from "./infant-poems";
+import { InfantSleepTracks } from "./infant-sleep-tracks";
+import { InfantSleepFavoritesRow } from "./infant-sleep-favorites";
+import { InfantSleepPackDownload } from "./infant-sleep-pack-download";
+import {
+  WHITE_NOISE_ITEMS,
+  getDefaultSleepAgeGroup,
+  getHeroWhiteNoiseId,
+  resolveSleepItemAudioUrl,
+  type SleepLibraryItem,
+} from "@/data/infant-sleep-catalog";
+import { recordSleepPlay } from "@/lib/infant-sleep-library-state";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -85,7 +97,40 @@ const NOISE_TYPES: NoiseType[] = [{
   gradient: "from-primary via-primary to-primary",
   tint: "hsl(var(--brand-rose-500))",
   iconAnim: "pulse"
+}, {
+  id: "brown",
+  emoji: "⛰️",
+  label: "Brown Noise",
+  desc: "Deep low-frequency noise — heavier than pink. Many older babies and toddlers find it grounding for long naps.",
+  bestFor: "6–24 months, deep sleep masking",
+  gradient: "from-muted via-muted to-muted",
+  tint: "#78716c",
+  iconAnim: "wave"
+}, {
+  id: "hvac",
+  emoji: "❄️",
+  label: "Soft HVAC Hum",
+  desc: "A steady air-handler hum — masks household noise without sharp highs. Good for apartment sleeping.",
+  bestFor: "3–24 months, all-night background",
+  gradient: "from-muted via-muted to-muted",
+  tint: "#64748b",
+  iconAnim: "wave"
 }];
+
+/** Bundled MP3 ambient loops (offline). */
+const MP3_NOISE_ITEMS = WHITE_NOISE_ITEMS.filter((i) => i.offlineSuitability === "bundled" && i.assetPath);
+
+const PROCEDURAL_ID_MAP: Record<string, SoundId> = {
+  "wn-shush": "shush",
+  "wn-womb": "womb",
+  "wn-heartbeat": "heartbeat",
+  "wn-pink": "pink",
+  "wn-white": "white",
+  "wn-brown": "brown",
+  "wn-fan": "fan",
+  "wn-hvac": "hvac",
+  "wn-rain": "rain",
+};
 type AgeTip = {
   band: string;
   fromMonths: number;
@@ -127,7 +172,7 @@ const AGE_TIPS: AgeTip[] = [{
   headline: "Begin gentle weaning from white noise",
   tip: "If your toddler still needs white noise for every sleep, start fading it slowly — reduce volume by a notch each week, then try turning it off 30 minutes after they've fallen asleep. Aim to be free of it by 2 years.",
   volume: "40–50 dB maximum. If they can talk over it easily, that's about right.",
-  recommended: ["rain", "pink"]
+  recommended: ["rain", "pink", "brown"]
 }];
 
 // NOTE: The old `SONGS` catalogue + `getSongs()` helper were removed when the
@@ -147,11 +192,20 @@ function getSmartSuggestion(months: number, hour: number): {
   id: SoundId;
   reason: string;
 } {
-  if (hour >= 22 || hour < 6) {
-    return {
-      id: "rain",
-      reason: "Late-night masking — keeps deep sleep undisturbed"
+  const ageGroup = getDefaultSleepAgeGroup(months);
+  const heroId = getHeroWhiteNoiseId(ageGroup, hour);
+  const procId = PROCEDURAL_ID_MAP[heroId];
+  if (procId) {
+    const reasons: Record<string, string> = {
+      "wn-window-rain": "Late-night rain masking — keeps deep sleep undisturbed",
+      "wn-womb": "Fourth-trimester favourite — most calming for newborns",
+      "wn-pink": "Softer than white noise for older babies",
+      "wn-brown": "Deep calm for toddler wind-down",
     };
+    return { id: procId, reason: reasons[heroId] ?? "Recommended for sleep right now" };
+  }
+  if (hour >= 22 || hour < 6) {
+    return { id: "rain", reason: "Late-night masking — keeps deep sleep undisturbed" };
   }
   if (months <= 3) {
     return {
@@ -201,20 +255,22 @@ const TIMER_OPTIONS: {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export function WhiteNoiseLullaby({
-  ageMonths
+  ageMonths,
+  childId,
 }: {
   ageMonths: number;
+  childId?: string;
 }) {
   const {
     t
   } = useTranslation();
-  // Tab state: "noise" → immersive WebAudio engine; "poems" → age-wise
-  // local-only poems module (Spec 3, replaces the old singing-guide list).
-  const [tab, setTab] = useState<"noise" | "poems">("noise");
+  type SleepTab = "noise" | "lullabies" | "poems" | "stories";
+  const [tab, setTab] = useState<SleepTab>("noise");
   const [openFullscreen, setOpenFullscreen] = useState(false);
   const [infoTileId, setInfoTileId] = useState<SoundId | null>(null);
   const ageTip = useMemo(() => getAgeTip(ageMonths), [ageMonths]);
   const engine = useSoundEngine();
+  const mp3Engine = useMp3LoopEngine();
 
   // Smart suggestion is recomputed when the active hour ticks over (every
   // ~5 min is enough — don't bind to per-second for re-renders).
@@ -225,12 +281,30 @@ export function WhiteNoiseLullaby({
   }, []);
   const suggestion = useMemo(() => getSmartSuggestion(ageMonths, now.getHours()), [ageMonths, now]);
   const suggestedNoise = NOISE_TYPES.find(n => n.id === suggestion.id)!;
+
+  function handleFavoriteSelect(item: SleepLibraryItem) {
+    if (item.category === "white_noise" && item.proceduralId) {
+      setTab("noise");
+      engine.play(item.proceduralId as SoundId);
+      recordSleepPlay(item.id, childId);
+      setOpenFullscreen(true);
+      return;
+    }
+    if (item.category === "lullaby") setTab("lullabies");
+    if (item.category === "poem") setTab("poems");
+    if (item.category === "story") setTab("stories");
+  }
+
   return <div className="space-y-3">
 
+      <InfantSleepFavoritesRow childId={childId} onSelect={handleFavoriteSelect} />
+
       {/* ── Tab toggle ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
-        <TabBtn active={tab === "noise"} onClick={() => setTab("noise")} icon={<Wind className="h-3.5 w-3.5" />} label="White Noise" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(99,102,241,0.5)]" />
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
+        <TabBtn active={tab === "noise"} onClick={() => setTab("noise")} icon={<Wind className="h-3.5 w-3.5" />} label="Noise" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(99,102,241,0.5)]" />
+        <TabBtn active={tab === "lullabies"} onClick={() => setTab("lullabies")} icon={<Music className="h-3.5 w-3.5" />} label="Lullabies" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(236,72,153,0.5)]" />
         <TabBtn active={tab === "poems"} onClick={() => setTab("poems")} icon={<Sparkles className="h-3.5 w-3.5" />} label="Poems" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" />
+        <TabBtn active={tab === "stories"} onClick={() => setTab("stories")} icon={<BookOpen className="h-3.5 w-3.5" />} label="Stories" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(59,130,246,0.5)]" />
       </div>
 
       {/* ── White Noise tab ─────────────────────────────────────────── */}
@@ -250,13 +324,46 @@ export function WhiteNoiseLullaby({
             <div className="grid grid-cols-3 gap-2">
               {NOISE_TYPES.map(n => <SoundTile key={n.id} noise={n} active={engine.active.has(n.id)} onToggle={() => {
             engine.toggle(n.id);
-            // First play opens the immersive player automatically so
-            // parents see the timer + mixer surface — they can dismiss
-            // it back to the tile grid if they prefer.
+            mp3Engine.stopAll();
+            recordSleepPlay(`wn-${n.id}`, childId);
             if (!engine.active.has(n.id)) setOpenFullscreen(true);
           }} onInfo={() => setInfoTileId(infoTileId === n.id ? null : n.id)} />)}
             </div>
           </div>
+
+          {MP3_NOISE_ITEMS.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                Premium ambient loops (offline)
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {MP3_NOISE_ITEMS.map((item) => {
+                  const url = resolveSleepItemAudioUrl(item)!;
+                  const active = mp3Engine.activeId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        engine.stopAll();
+                        mp3Engine.toggle(item.id, url);
+                        recordSleepPlay(item.id, childId);
+                        if (!active) setOpenFullscreen(true);
+                      }}
+                      data-testid={`mp3-noise-${item.id}`}
+                      className={`relative rounded-2xl py-3 px-1 text-center border-2 transition-all ${
+                        active
+                          ? "border-primary bg-primary/10 scale-[1.02]"
+                          : "border-border bg-white/60 dark:bg-white/[0.04]"
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">🌊</div>
+                      <p className="text-[10px] font-bold leading-tight">{item.title}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Expanded detail card (info button on a tile) */}
           <AnimatePresence>
@@ -291,7 +398,7 @@ export function WhiteNoiseLullaby({
 
           {/* Mini-player bar (visible whenever something is playing) */}
           <AnimatePresence>
-            {engine.isPlaying && <MiniPlayer engine={engine} onOpenFullscreen={() => setOpenFullscreen(true)} />}
+            {(engine.isPlaying || mp3Engine.isPlaying) && <MiniPlayer engine={engine} mp3Engine={mp3Engine} onOpenFullscreen={() => setOpenFullscreen(true)} />}
           </AnimatePresence>
 
           {/* Age-specific guidance card */}
@@ -335,8 +442,31 @@ export function WhiteNoiseLullaby({
         </div>}
 
       {/* ── Poems tab (Spec 3 — local poems, no external API) ──────────── */}
+      {tab === "lullabies" && <div className="animate-in fade-in duration-200">
+          <InfantSleepTracks
+            category="lullaby"
+            ageMonths={ageMonths}
+            childId={childId}
+            noiseEngine={engine}
+            headerTitle="Lullabies for your baby"
+            headerBlurb="Public-domain melodies and gentle originals. Tap any tile to open the immersive player — loop is optional so stories can end naturally."
+          />
+        </div>}
+
       {tab === "poems" && <div className="animate-in fade-in duration-200">
-          <InfantPoems ageMonths={ageMonths} />
+          <InfantPoems ageMonths={ageMonths} childId={childId} />
+        </div>}
+
+      {tab === "stories" && <div className="animate-in fade-in duration-200 space-y-3">
+          <InfantSleepPackDownload childId={childId} />
+          <InfantSleepTracks
+            category="story"
+            ageMonths={ageMonths}
+            childId={childId}
+            noiseEngine={engine}
+            headerTitle="Gentle sleep stories"
+            headerBlurb="Short, calm bedtime stories with no overstimulation. Best for 6–24 months. Single play — then optional fade into white noise."
+          />
         </div>}
 
       {/* ── Fullscreen immersive player ─────────────────────────────── */}
@@ -499,15 +629,19 @@ function AnimatedIcon({
 // ─────────────────────────────────────────────────────────────────────────────
 function MiniPlayer({
   engine,
+  mp3Engine,
   onOpenFullscreen
 }: {
   engine: SoundEngine;
+  mp3Engine?: ReturnType<typeof useMp3LoopEngine>;
   onOpenFullscreen: () => void;
 }) {
   const {
     t
   } = useTranslation();
   const activeIds = Array.from(engine.active);
+  const mp3Active = mp3Engine?.activeId;
+  const count = activeIds.length + (mp3Active ? 1 : 0);
   return <motion.div initial={{
     opacity: 0,
     y: 8
@@ -530,14 +664,14 @@ function MiniPlayer({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-bold text-primary dark:text-muted-foreground leading-tight">
-          {activeIds.length} {t("components.infant_sounds.sound")}{activeIds.length === 1 ? "" : "s"} {t("components.infant_sounds.playing")}
+          {count} {t("components.infant_sounds.sound")}{count === 1 ? "" : "s"} {t("components.infant_sounds.playing")}
         </p>
-        {engine.remainingMs !== null && engine.remainingMs > 0 && <p className="text-[10px] text-primary dark:text-muted-foreground flex items-center gap-1">
-            <Clock className="h-2.5 w-2.5" /> {formatRemaining(engine.remainingMs)} {t("components.infant_sounds.left")}
-          </p>}
+        {(engine.remainingMs !== null && engine.remainingMs > 0) || (mp3Engine?.remainingMs != null && mp3Engine.remainingMs > 0) ? <p className="text-[10px] text-primary dark:text-muted-foreground flex items-center gap-1">
+            <Clock className="h-2.5 w-2.5" /> {formatRemaining(engine.remainingMs ?? mp3Engine?.remainingMs ?? 0)} {t("components.infant_sounds.left")}
+          </p> : null}
       </div>
       <button onClick={onOpenFullscreen} className="text-[11px] font-bold text-primary dark:text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted dark:hover:bg-card">{t("components.infant_sounds.open")}</button>
-      <button onClick={() => engine.stopAll()} aria-label={t("components.infant_sounds.stop_all_sounds")} data-testid="mini-stop-all" className="h-8 w-8 rounded-full bg-primary hover:bg-primary text-white flex items-center justify-center shadow">
+      <button onClick={() => { engine.stopAll(); mp3Engine?.stopAll(); }} aria-label={t("components.infant_sounds.stop_all_sounds")} data-testid="mini-stop-all" className="h-8 w-8 rounded-full bg-primary hover:bg-primary text-white flex items-center justify-center shadow">
         <X className="h-4 w-4" />
       </button>
     </motion.div>;

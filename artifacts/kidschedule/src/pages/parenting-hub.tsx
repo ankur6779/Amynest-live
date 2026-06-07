@@ -144,31 +144,8 @@ const TODAY_TILE_ORDER = [
   "command-center",
 ] as const;
 
-const HUB_EXPANDED_GROUPS_KEY = "amynest:hub:expandedGroups:v2";
-const DEFAULT_EXPANDED_GROUPS: string[] = [];
-
 /** Reward points granted the first time per day a parent opens a hub section. */
 const HUB_SECTION_REWARD_POINTS = 5;
-
-function loadExpandedGroups(): Set<string> {
-  if (typeof window === "undefined") return new Set(DEFAULT_EXPANDED_GROUPS);
-  try {
-    const raw = window.localStorage.getItem(HUB_EXPANDED_GROUPS_KEY);
-    if (raw) return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    /* ignore corrupt storage */
-  }
-  return new Set(DEFAULT_EXPANDED_GROUPS);
-}
-
-function persistExpandedGroups(groups: Set<string>): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(HUB_EXPANDED_GROUPS_KEY, JSON.stringify([...groups]));
-  } catch {
-    /* ignore quota errors */
-  }
-}
 
 const WEB_HUB_GROUPS = [
   { key: "today",      emoji: "✨", i18n: "parent_hub.section_groups.today"      },
@@ -979,8 +956,8 @@ function ParentingHubPage() {
 
   const journeySoftLock = hubJourney.isJourneyLocked;
 
-  // Section-group expand/collapse — all groups collapsed by default; persisted.
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(loadExpandedGroups);
+  // Section-group expand/collapse — all groups collapsed by default; session-only (reset on refresh).
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -990,7 +967,6 @@ function ParentingHubPage() {
         next.add(key);
         awardHubSectionPoints(`group-${key}`);
       }
-      persistExpandedGroups(next);
       return next;
     });
   };
@@ -998,7 +974,6 @@ function ParentingHubPage() {
     setExpandedGroups(prev => {
       const next = new Set(prev);
       next.add(group);
-      persistExpandedGroups(next);
       return next;
     });
     requestAnimationFrame(() => {

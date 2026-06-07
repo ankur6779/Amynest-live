@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useNativeBilling } from "@/hooks/use-native-billing";
-import { isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
+import {
+  isAndroidDevice,
+  PLAY_STORE_URL,
+  APPLE_MANAGE_SUBSCRIPTIONS_URL,
+  PLAY_MANAGE_SUBSCRIPTIONS_URL,
+} from "@/lib/geo";
 import { usePricingRegion, applyIndiaPricing } from "@/lib/pricing-region";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -165,6 +170,13 @@ export default function PricingPage() {
   const isIOS = nativeBilling.platform === "ios";
   const isAndroidNative = nativeBilling.platform === "android";
 
+  // Which store's "manage subscription" link to surface for store-managed plans.
+  // Inside a native shell we know the store; on web (e.g. desktop) we can't tell
+  // where it was bought, so offer both.
+  const isGoogleContext = isAndroidNative || isAndroid;
+  const showAppleCancel = isIOS || (!isIOS && !isGoogleContext);
+  const showGoogleCancel = isGoogleContext || (!isIOS && !isGoogleContext);
+
   const onPurchaseSuccess = (plan: Exclude<Plan, "free">) => {
     if (
       FF_POST_PURCHASE_ANNUAL_UPSELL &&
@@ -200,6 +212,25 @@ export default function PricingPage() {
     const res = await cancelSubscription();
     setCancelling(false);
     if (!res.ok) setNotice(res.reason ?? "Could not cancel. Please try again."); // i18n-ok: fallback error
+  };
+
+  // Store-managed (RevenueCat) subscriptions can only be cancelled in Apple /
+  // Google's own subscription settings — send the user straight there.
+  const openStoreSubscriptions = (store: "apple" | "google") => {
+    trackSubscriptionEvent({ event: "cancel_started", source: "pricing" });
+    const url =
+      store === "apple"
+        ? APPLE_MANAGE_SUBSCRIPTIONS_URL
+        : PLAY_MANAGE_SUBSCRIPTIONS_URL;
+    // The Android WebView wrapper blocks window.open and loads http(s) in-place,
+    // so a top-level navigation is required for the native shell to intercept
+    // the Play Store URL and hand it to the Play Store app. iOS Capacitor and
+    // browsers open non-allowlisted store URLs externally via window.open.
+    if (isAndroidNative) {
+      window.location.href = url;
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const onUpgradeNativeStore = async () => {
@@ -779,11 +810,12 @@ export default function PricingPage() {
           </Button>
         )}
 
-        {/* Managed by Google Play / App Store */}
+        {/* Managed by Google Play / App Store — deep-link straight to the
+            store's subscription settings, where cancellation actually happens. */}
         {isPremium && !cancelAtPeriodEnd && isManagedByStore && (
           <div
             data-on-dark
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm"
+            className="space-y-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm"
           >
             <div className="flex items-start gap-2.5">
               <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-white/50" />
@@ -793,18 +825,34 @@ export default function PricingPage() {
                   {t("pages.pricing.subscribed_via_google_play_app_store")}
                 </p>
                 <p className="text-xs leading-relaxed text-white/55">
-                  {t("pages.pricing.your_billing_is_managed_by_your_device_s_app_store_to_cancel")}{" "}
-                  <strong className="text-white/80">
-                    {t("pages.pricing.google_play_subscriptions")}
-                  </strong>{" "}
-                  {/* i18n-ok: conjunction */}
-                  or{" "}
-                  <strong className="text-white/80">
-                    {t("pages.pricing.iphone_app_store_subscriptions")}
-                  </strong>{" "}
-                  {t("pages.pricing.and_cancel_amynest_there")}
+                  {t("pages.pricing.cancel_store_managed_intro")}
                 </p>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              {showAppleCancel && (
+                <Button
+                  variant="outline"
+                  onClick={() => openStoreSubscriptions("apple")}
+                  data-testid="button-cancel-app-store"
+                  data-on-dark
+                  className="h-11 w-full border-white/20 text-sm font-semibold text-white/85 hover:border-white/40 hover:bg-white/10 hover:text-white"
+                >
+                  {t("pages.pricing.cancel_in_app_store")}
+                </Button>
+              )}
+              {showGoogleCancel && (
+                <Button
+                  variant="outline"
+                  onClick={() => openStoreSubscriptions("google")}
+                  data-testid="button-cancel-google-play"
+                  data-on-dark
+                  className="h-11 w-full border-white/20 text-sm font-semibold text-white/85 hover:border-white/40 hover:bg-white/10 hover:text-white"
+                >
+                  {t("pages.pricing.cancel_in_google_play")}
+                </Button>
+              )}
             </div>
           </div>
         )}

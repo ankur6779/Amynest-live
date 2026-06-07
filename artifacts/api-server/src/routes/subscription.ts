@@ -18,6 +18,7 @@ import { buildSubscriptionFallbackResponse } from "../lib/api-fallbacks.js";
 import { buildPlanCardsForApi } from "@workspace/subscription-marketing";
 import { safeRoute } from "../lib/safe-route-handler.js";
 import { heavyRouteGuard } from "../middlewares/heavy-route-guard.js";
+import { logger } from "../lib/logger";
 import {
   createSubscription as rzpCreateSubscription,
   fetchSubscription as rzpFetchSubscription,
@@ -148,6 +149,18 @@ router.post("/subscription/rc-sync", requireAuth, async (req, res): Promise<void
   const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
   const result = await syncRevenueCatSubscription(userId);
   const ent = await getEntitlements(userId);
+  // One-line trace tying the sync attempt to what the user actually receives —
+  // makes "paid but no premium" reports diagnosable from logs alone.
+  logger.info(
+    {
+      userId,
+      synced: result.synced,
+      syncReason: result.reason ?? null,
+      isPremium: ent.isPremium,
+      plan: result.plan ?? ent.plan,
+    },
+    "[rc-sync] purchase finalize outcome",
+  );
   res.json({
     ok: result.synced,
     isPremium: ent.isPremium,

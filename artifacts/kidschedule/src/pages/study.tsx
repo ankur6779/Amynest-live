@@ -16,7 +16,7 @@ import {
   getBasicSubjectsForChild,
   getAdvancedSubjectsForChild,
   isAdaptivePracticeTopic,
-  getPlayItemCatalogSpeakOpts,
+  getPlayItemSpeakParts,
   getTopicNotesCatalogSpeakOpts,
   getTopicAmyCatalogSpeakOpts,
   type StudyMode, type PlayCategory, type PlayItem,
@@ -50,6 +50,7 @@ import {
 } from "@/components/learning-progress";
 import { StudyCurriculumVisibility } from "@/components/study-curriculum-visibility";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { catalogPlaybackSpeakOptions } from "@/lib/unified-catalog-playback";
 import {
   loadProgress, markPlayItem, markTopicResult,
   categoryPercent, subjectPercent, mergePlayProgressWithServer, type StudyProgress,
@@ -626,11 +627,33 @@ function PlayCategoryView({
   const [poppedId, setPoppedId] = useState<string | null>(null);
   const [xpTrigger, setXpTrigger] = useState(0);
   const [xpAmount, setXpAmount] = useState(0);
+  const numberBlocks = useMemo(() => {
+    if (cat?.id !== "numbers") return null;
+    const blocks: Array<{ start: number; end: number; items: PlayItem[] }> = [];
+    for (let i = 0; i < cat.items.length; i += 10) {
+      const chunk = cat.items.slice(i, i + 10);
+      const start = parseInt(chunk[0]?.id ?? "1", 10);
+      const end = parseInt(chunk[chunk.length - 1]?.id ?? String(start), 10);
+      if (!Number.isNaN(start) && !Number.isNaN(end)) {
+        blocks.push({ start, end, items: chunk });
+      }
+    }
+    return blocks;
+  }, [cat?.id, cat?.items]);
   if (!cat) return <p className="text-sm text-muted-foreground">{t("screens.study.category_not_found")}</p>;
   const completed = new Set(progress?.play[cat.id] ?? []);
+  const hideTileBadge = cat.id === "numbers";
+
+  const playItemAudio = async (item: PlayItem) => {
+    const parts = getPlayItemSpeakParts(item, cat.id);
+    for (const part of parts) {
+      const result = await speak(part, catalogPlaybackSpeakOptions(part));
+      if (!result.success) break;
+    }
+  };
+
   const handleTap = (item: PlayItem) => {
-    const speakOpts = getPlayItemCatalogSpeakOpts(item, cat.id);
-    void speak(speakOpts.staticCatalogTexts[0]!, speakOpts);
+    void playItemAudio(item);
     fx.play("tap");
     setPoppedId(item.id);
     window.setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 350);
@@ -652,6 +675,54 @@ function PlayCategoryView({
       toast({ title: t("screens.study.badge_toast_title"), description: t("screens.study.badge_toast_body", { count: result.newBadges.length }) });
     }
   };
+
+  const renderPlayTile = (item: PlayItem) => {
+    const done = completed.has(item.id);
+    const isRhyme = cat.id === "rhymes";
+    const popping = poppedId === item.id;
+    const speakParts = getPlayItemSpeakParts(item, cat.id);
+    return (
+      <motion.button
+        key={item.id}
+        onPointerDown={() => {
+          primeSpeakGesture(speakParts[0]!, catalogPlaybackSpeakOptions(speakParts[0]!));
+        }}
+        onClick={() => handleTap(item)}
+        animate={popping ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 10px rgba(99,102,241,0.18)", "0 0 0 0 rgba(99,102,241,0)"] } : { scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className={studyPlayTile(done)}
+      >
+        <div className={cn("flex items-start gap-2", hideTileBadge ? "justify-end" : "justify-between")}>
+          {!hideTileBadge ? (
+            <motion.div
+              animate={popping ? { scale: [1, 1.4, 1], rotate: [0, -8, 8, 0] } : { scale: 1, rotate: 0 }}
+              transition={{ duration: 0.45 }}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg text-lg leading-none",
+                "bg-gradient-to-br from-violet-500/25 to-fuchsia-500/15",
+                "border border-white/[0.10] font-bold text-foreground",
+              )}
+            >
+              {item.emoji ?? item.label.slice(0, 1)}
+            </motion.div>
+          ) : null}
+          {done && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
+        </div>
+        <div className="mt-2 font-quicksand text-lg font-bold text-foreground">{item.label}</div>
+        {isRhyme && item.body ? (
+          <div className="text-[11px] text-muted-foreground mt-1 line-clamp-3 whitespace-pre-line">
+            {item.body}
+          </div>
+        ) : (
+          <div className="text-[11px] text-muted-foreground mt-1">{item.speak}</div>
+        )}
+        <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-violet-200/80">
+          <Volume2 className="h-3 w-3" /> {t("screens.study.tap_to_hear")}
+        </div>
+      </motion.button>
+    );
+  };
+
   return (
     <div className="relative">
       <XpPopup amount={xpAmount} trigger={xpTrigger} />
@@ -660,51 +731,26 @@ function PlayCategoryView({
           <span className="text-2xl">{cat.emoji}</span> {cat.title}
         </h2>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {cat.items.map((item) => {
-          const done = completed.has(item.id);
-          const isRhyme = cat.id === "rhymes";
-          const popping = poppedId === item.id;
-          return (
-            <motion.button
-              key={item.id}
-              onPointerDown={() => {
-                const opts = getPlayItemCatalogSpeakOpts(item, cat.id);
-                primeSpeakGesture(opts.staticCatalogTexts[0]!, opts);
-              }}
-              onClick={() => handleTap(item)}
-              animate={popping ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 10px rgba(99,102,241,0.18)", "0 0 0 0 rgba(99,102,241,0)"] } : { scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className={studyPlayTile(done)}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <motion.div
-                  animate={popping ? { scale: [1, 1.4, 1], rotate: [0, -8, 8, 0] } : { scale: 1, rotate: 0 }}
-                  transition={{ duration: 0.45 }}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg text-lg leading-none",
-                    "bg-gradient-to-br from-violet-500/25 to-fuchsia-500/15",
-                    "border border-white/[0.10] font-bold text-foreground",
-                  )}
-                >
-                  {item.emoji ?? item.label.slice(0, 1)}
-                </motion.div>
-                {done && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
-              </div>
-              <div className="mt-2 font-quicksand text-lg font-bold text-foreground">{item.label}</div>
-              {isRhyme && item.body ? (
-                <div className="text-[11px] text-muted-foreground mt-1 line-clamp-3 whitespace-pre-line">
-                  {item.body}
+      <div className={cn("grid gap-3", numberBlocks ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4")}>
+        {numberBlocks
+          ? numberBlocks.map((block) => (
+              <section key={`${block.start}-${block.end}`} className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  {block.items[0]?.emoji ? (
+                    <span className="text-2xl" aria-hidden>
+                      {block.items[0].emoji}
+                    </span>
+                  ) : null}
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {block.start}–{block.end}
+                  </p>
                 </div>
-              ) : (
-                <div className="text-[11px] text-muted-foreground mt-1">{item.speak}</div>
-              )}
-              <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-violet-200/80">
-                <Volume2 className="h-3 w-3" /> {t("screens.study.tap_to_hear")}
-              </div>
-            </motion.button>
-          );
-        })}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {block.items.map((item) => renderPlayTile(item))}
+                </div>
+              </section>
+            ))
+          : cat.items.map((item) => renderPlayTile(item))}
       </div>
     </div>
   );

@@ -25,6 +25,10 @@ export interface PoemPlayerOptions {
   audioUrl?: string;
   /** Reserved for future per-poem language hints; ignored today (server picks the voice). */
   lang?: string;
+  /** Fired when playback completes naturally (not loop). */
+  onEnded?: () => void;
+  /** Track id for telemetry / library state. */
+  trackId?: string;
 }
 
 export interface PoemPlayer {
@@ -73,6 +77,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
 
   const loopRef = useRef(loop);
   const volumeRef = useRef(volume);
+  const onEndedRef = useRef<(() => void) | undefined>(undefined);
   useEffect(() => { loopRef.current = loop; }, [loop]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
 
@@ -141,6 +146,8 @@ export function useInfantPoemPlayer(): PoemPlayer {
         return;
       }
 
+      onEndedRef.current = opts.onEnded;
+
       const myId = ++reqIdRef.current;
       abortInFlight();
       clearFade();
@@ -195,6 +202,9 @@ export function useInfantPoemPlayer(): PoemPlayer {
           setIsPaused(false);
           clearFade();
           emitAudioPlaybackEvent("audio_completed", { source: "poem_player" });
+          if (!loopRef.current) {
+            onEndedRef.current?.();
+          }
         };
         audio.onerror = () => {
           if (myId !== reqIdRef.current) return;

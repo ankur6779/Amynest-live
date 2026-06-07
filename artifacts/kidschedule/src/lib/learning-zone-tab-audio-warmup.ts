@@ -8,7 +8,7 @@ import { buildLessonScript, type LevelId } from "@workspace/abacus";
 import { getCoachDialogueWarmupPhrases } from "@workspace/speech-coach";
 import {
   getPlayCategoriesForChild,
-  getPlayItemCatalogSpeakOpts,
+  getPlayItemSpeakParts,
 } from "@workspace/study-zone";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import {
@@ -168,9 +168,10 @@ export function pickSmartStudyTabWarmTexts(
   const texts: string[] = [];
   for (const cat of cats) {
     for (const item of cat.items.slice(0, 2)) {
-      const opts = getPlayItemCatalogSpeakOpts(item, cat.id);
-      const primary = opts.staticCatalogTexts[0]?.trim();
-      if (primary) texts.push(primary);
+      for (const part of getPlayItemSpeakParts(item, cat.id)) {
+        if (part.trim()) texts.push(part.trim());
+        if (texts.length >= maxTexts) break;
+      }
       if (texts.length >= maxTexts) break;
     }
     if (texts.length >= maxTexts) break;

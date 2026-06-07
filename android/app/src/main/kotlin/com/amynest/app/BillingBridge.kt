@@ -18,6 +18,7 @@ import com.revenuecat.purchases.PurchasesError
 import com.revenuecat.purchases.getCustomerInfoWith
 import com.revenuecat.purchases.getOfferingsWith
 import com.revenuecat.purchases.logInWith
+import com.revenuecat.purchases.logOutWith
 import com.revenuecat.purchases.purchaseWith
 import com.revenuecat.purchases.restorePurchasesWith
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
@@ -82,6 +83,24 @@ class BillingBridge(
                         resolveError(replyProxy, cbId, err.message ?: "login_failed")
                     },
                     onSuccess = { _, _ ->
+                        resolve(replyProxy, cbId, JSONObject().put("ok", true))
+                    },
+                )
+            }
+            "logOut" -> {
+                // Reset to a fresh anonymous customer on sign-out so the next
+                // user on this device never inherits stale entitlements.
+                if (!isReady()) {
+                    resolve(replyProxy, cbId, JSONObject().put("ok", true))
+                    return@handleMessage
+                }
+                Purchases.sharedInstance.logOutWith(
+                    onError = { err ->
+                        Log.w(TAG, "logOut error: ${err.message}")
+                        // Already-anonymous is not a real failure for sign-out.
+                        resolve(replyProxy, cbId, JSONObject().put("ok", true))
+                    },
+                    onSuccess = { _ ->
                         resolve(replyProxy, cbId, JSONObject().put("ok", true))
                     },
                 )
@@ -347,7 +366,7 @@ class BillingBridge(
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
         const val JS_INJECT_NAME = "AmyNestBillingInject"
-        const val BRIDGE_VERSION = "2.4.0"
+        const val BRIDGE_VERSION = "2.5.0"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"

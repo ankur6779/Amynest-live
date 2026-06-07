@@ -24,6 +24,7 @@ import {
   subscribeAuthSnapshot,
 } from "./firebase-auth-listener";
 import { resetOnboardingFetchLock } from "./onboarding-status-fetch";
+import { resetNativeBillingIdentity } from "@/lib/native-billing";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 
@@ -117,6 +118,10 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("[firebase-auth] signOut failed:", err);
     }
+    // Reset RevenueCat to anonymous so a different account signing in on this
+    // device cannot inherit the previous user's premium entitlements. Fire and
+    // forget — never block sign-out on the billing bridge.
+    void resetNativeBillingIdentity();
     resetOnboardingFetchLock();
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;

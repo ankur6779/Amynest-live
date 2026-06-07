@@ -27,6 +27,10 @@ export {
   isValidWorldsLibraryObjectPath,
   sanitizeWorldAssetId,
   worldsLibraryProxyPath,
+  WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX,
+  worldsLibraryLocalMirrorWebPath,
+  extractWorldsLibraryObjectPath,
+  worldsLibraryPlaybackCandidates,
 } from "./gcs-layout.js";
 
 export {

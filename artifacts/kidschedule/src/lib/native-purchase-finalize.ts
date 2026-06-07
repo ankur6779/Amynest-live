@@ -3,35 +3,76 @@ import { getApiUrl } from "@/lib/api";
 import type { SubscriptionResponse } from "@/hooks/use-subscription";
 
 const SUBSCRIPTION_KEY = ["subscription"] as const;
-const POLL_DELAYS_MS = [500, 1200, 2000, 3500, 5000, 7000];
+const POLL_DELAYS_MS = [500, 1200, 2000, 3000, 4000, 5000, 6000];
+// Re-run the server-side RevenueCat sync at these poll positions. The first
+// sync can race the store receipt (entitlement not visible to RevenueCat yet),
+// and a later sync also picks up state once the webhook has landed.
+const RESYNC_AT_POLL_INDEX = new Set([2, 4]);
 
 type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+
+type RcSyncResult = {
+  ok: boolean;
+  isPremium: boolean;
+  reason?: string;
+};
+
+/** POST /rc-sync and return the parsed result (null on transport failure). */
+async function postRcSync(authFetch: AuthFetch): Promise<RcSyncResult | null> {
+  try {
+    const res = await authFetch(getApiUrl("/api/subscription/rc-sync"), {
+      method: "POST",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as RcSyncResult;
+  } catch {
+    return null;
+  }
+}
+
+function refreshSubscriptionViews(qc: QueryClient): Promise<void> {
+  window.dispatchEvent(new Event("amynest:refresh-subscription"));
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY }),
+    qc.invalidateQueries({ queryKey: ["feature-usage"] }),
+  ]).then(() => undefined);
+}
 
 /**
  * After a native store purchase, ask the server to pull RevenueCat state and
  * poll `/api/subscription` until premium is reflected (or we time out).
+ *
+ * The first `/rc-sync` response is authoritative for the DB state right after
+ * the pull, so we short-circuit on it; otherwise we keep polling and re-sync a
+ * couple of times to ride out webhook / receipt-propagation lag.
  */
 export async function finalizeNativePurchase(
   authFetch: AuthFetch,
   qc: QueryClient,
 ): Promise<{ ok: boolean; isPremium: boolean }> {
-  try {
-    await authFetch(getApiUrl("/api/subscription/rc-sync"), { method: "POST" });
-  } catch {
-    /* webhook may still land — keep polling */
+  const first = await postRcSync(authFetch);
+  await refreshSubscriptionViews(qc);
+
+  // Server already confirmed premium during the sync — no need to poll.
+  if (first?.isPremium) {
+    return { ok: true, isPremium: true };
   }
 
-  await qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
-  await qc.invalidateQueries({ queryKey: ["feature-usage"] });
-  window.dispatchEvent(new Event("amynest:refresh-subscription"));
+  for (let i = 0; i < POLL_DELAYS_MS.length; i++) {
+    await new Promise((r) => setTimeout(r, POLL_DELAYS_MS[i]));
 
-  for (const delay of POLL_DELAYS_MS) {
-    await new Promise((r) => setTimeout(r, delay));
+    if (RESYNC_AT_POLL_INDEX.has(i)) {
+      const retry = await postRcSync(authFetch);
+      if (retry?.isPremium) {
+        await refreshSubscriptionViews(qc);
+        return { ok: true, isPremium: true };
+      }
+    }
+
     await qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
     const data = qc.getQueryData<SubscriptionResponse>(SUBSCRIPTION_KEY);
     if (data?.entitlements.isPremium) {
-      await qc.invalidateQueries({ queryKey: ["feature-usage"] });
-      window.dispatchEvent(new Event("amynest:refresh-subscription"));
+      await refreshSubscriptionViews(qc);
       return { ok: true, isPremium: true };
     }
   }

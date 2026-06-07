@@ -1,3 +1,4 @@
+import { numberWord } from "./content/play.js";
 import type { PlayCategoryId, PlayItem, StudyTopic } from "./types";
 
 /** Collapse line breaks/extra spaces — matches static-audio map lookup. */
@@ -24,6 +25,30 @@ function uniqueTexts(lines: string[]): string[] {
 }
 
 /**
+ * Static-audio clips to play in order for a number tile (1–100).
+ * Compound numbers (e.g. 21) use separate tens + ones clips from the pre-generated corpus.
+ */
+export function getPlayNumberSpeakParts(n: number): string[] {
+  if (!Number.isFinite(n) || n < 1) return [String(n)];
+  if (n <= 19 || n === 100 || n % 10 === 0) return [numberWord(n)];
+  const tens = Math.floor(n / 10) * 10;
+  const ones = n % 10;
+  return [numberWord(tens), numberWord(ones)];
+}
+
+/** Ordered speak parts for a play tile (numbers may be multi-clip). */
+export function getPlayItemSpeakParts(
+  item: PlayItem,
+  categoryId?: PlayCategoryId | string,
+): string[] {
+  if (categoryId === "numbers") {
+    const n = parseInt(item.id, 10);
+    if (!Number.isNaN(n)) return getPlayNumberSpeakParts(n);
+  }
+  return [getPlayItemSpeakText(item, categoryId)];
+}
+
+/**
  * Phrase Amy should speak for a play-zone tile.
  * Rhymes show `body` on screen but must read the full poem, not the short `speak` blurb.
  */
@@ -39,10 +64,12 @@ export function getPlayItemCatalogSpeakOpts(
   item: PlayItem,
   categoryId?: PlayCategoryId | string,
 ): StudyCatalogSpeakOpts {
-  const primary = getPlayItemSpeakText(item, categoryId);
+  const parts = getPlayItemSpeakParts(item, categoryId);
+  const primary = parts.join(" ");
   return {
     catalogPlayback: true,
     staticCatalogTexts: uniqueTexts([
+      ...parts,
       primary,
       item.speak,
       ...(item.body ? [collapseSpeakWhitespace(item.body)] : []),

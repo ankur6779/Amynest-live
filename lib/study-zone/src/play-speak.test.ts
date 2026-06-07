@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   getPlayItemCatalogSpeakOpts,
+  getPlayItemSpeakParts,
   getPlayItemSpeakText,
   getTopicAmySpeakText,
   getTopicNotesSpeakText,
@@ -23,6 +24,16 @@ describe("play-speak", () => {
     const opts = getPlayItemCatalogSpeakOpts(item, "rhymes");
     assert.equal(opts.catalogPlayback, true);
     assert.ok(opts.staticCatalogTexts[0]?.includes("little star"));
+  });
+
+  it("splits compound numbers into static speak parts", () => {
+    assert.deepEqual(getPlayItemSpeakParts({ id: "11", label: "11", speak: "Eleven" }, "numbers"), [
+      "Eleven",
+    ]);
+    assert.deepEqual(getPlayItemSpeakParts({ id: "21", label: "21", speak: "Twenty One" }, "numbers"), [
+      "Twenty",
+      "One",
+    ]);
   });
 
   it("prefers amySpeak over notes and AI prompt", () => {

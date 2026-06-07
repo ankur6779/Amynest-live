@@ -305,6 +305,23 @@ export async function restoreIOSPurchases(): Promise<{
   }
 }
 
+/**
+ * Reset RevenueCat to a fresh anonymous identity on sign-out so the next user
+ * on this device cannot inherit the previous account's entitlements. Safe to
+ * call when not configured or already anonymous — errors are ignored.
+ */
+export async function logOutIOSBilling(): Promise<void> {
+  const plugin = getPurchasesPlugin();
+  configuredForUser = null;
+  cachedOffering = null;
+  if (!plugin) return;
+  try {
+    await plugin.logOut();
+  } catch {
+    /* RevenueCat throws if already anonymous — safe to ignore */
+  }
+}
+
 export async function getIOSCustomerInfo(): Promise<RCCustomerInfo | null> {
   const plugin = getPurchasesPlugin();
   if (!plugin) return null;

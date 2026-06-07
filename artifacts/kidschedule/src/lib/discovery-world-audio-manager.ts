@@ -1,6 +1,10 @@
 /**
  * Discovery worlds audio — same playback contract as AnimalAudioManager (GCS proxy, no TTS).
  */
+import {
+  WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX,
+  worldsLibraryPlaybackCandidates,
+} from "@workspace/world-engine";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { audioManager } from "@/lib/audio-manager";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
@@ -22,8 +26,13 @@ let lastPlayKey = "";
 const preloadPool = new Map<string, { url: string; warmedAt: number }>();
 const inFlightPlay = new Map<string, Promise<boolean>>();
 
-function proxyUrl(url: string): string {
-  return resolveApiMediaUrl(url);
+/** Resolve playback URL — API proxy vs same-origin local mirror. */
+function resolvePlaybackUrl(url: string): string {
+  const u = (url ?? "").trim();
+  if (!u) return u;
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  if (u.startsWith(`${WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX}/`)) return u;
+  return resolveApiMediaUrl(u);
 }
 
 export class DiscoveryWorldAudioManager {
@@ -50,7 +59,9 @@ export class DiscoveryWorldAudioManager {
   }
 
   preload(urls: string[]): void {
-    const unique = [...new Set(urls.map(proxyUrl))].slice(0, POOL_MAX * 2);
+    const unique = [
+      ...new Set(urls.flatMap((url) => worldsLibraryPlaybackCandidates(url).map(resolvePlaybackUrl))),
+    ].slice(0, POOL_MAX * 2);
     for (const url of unique) {
       if (preloadPool.has(url)) continue;
       preloadPool.set(url, { url, warmedAt: Date.now() });
@@ -67,8 +78,9 @@ export class DiscoveryWorldAudioManager {
 
   async play(url: string, meta: DiscoveryWorldPlayMeta): Promise<boolean> {
     if (muted) return false;
-    const resolved = proxyUrl(url);
-    const playKey = `${meta.worldId}:${meta.itemId}:${meta.soundId}:${resolved}`;
+
+    const candidates = worldsLibraryPlaybackCandidates(url).map(resolvePlaybackUrl);
+    const playKey = `${meta.worldId}:${meta.itemId}:${meta.soundId}:${candidates[0] ?? url}`;
     const now = Date.now();
     if (playKey === lastPlayKey && now - lastPlayAt < TAP_DEBOUNCE_MS) {
       const pending = inFlightPlay.get(playKey);
@@ -86,14 +98,20 @@ export class DiscoveryWorldAudioManager {
 
     const run = (async () => {
       audioManager.stopAll();
-      preloadPool.set(resolved, { url: resolved, warmedAt: now });
-      audioManager.getCached(resolved, { forceReload: false });
-      const ok = await audioManager.playUrl(resolved, {
-        source: "discovery_world",
-        phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
-        interrupt: true,
-      });
-      return token === ownershipToken && ok;
+      for (const resolved of candidates) {
+        if (!resolved) continue;
+        preloadPool.set(resolved, { url: resolved, warmedAt: now });
+        audioManager.getCached(resolved, { forceReload: false });
+        const ok = await audioManager.playUrl(resolved, {
+          source: "discovery_world",
+          phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
+          interrupt: true,
+        });
+        if (token !== ownershipToken) return false;
+        if (ok) return true;
+      }
+      console.warn("[DiscoveryWorldAudioManager] play failed", meta, { tried: candidates.length });
+      return false;
     })();
 
     inFlightPlay.set(playKey, run);

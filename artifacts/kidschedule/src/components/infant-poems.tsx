@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Moon, Star, Cloud, Sparkles, Sun, Heart, Sprout, Bird, Flower2, Play, Pause, ChevronDown, Repeat, Volume2, Clock, Plus, Loader2, type LucideIcon } from "lucide-react";
 import { ALL_POEMS, POEM_AGE_GROUPS, getDefaultAgeGroup, getPoemsForGroup, type InfantPoem, type PoemAgeGroup, type PoemIconName } from "@/data/infant-poems";
 import { useInfantPoemPlayer, type PoemPlayer } from "@/hooks/use-poem-player";
+import { recordSleepPlay, toggleSleepFavorite, isSleepFavorite } from "@/lib/infant-sleep-library-state";
 
 // ─── Icon resolver ──────────────────────────────────────────────────────────
 // Keeps the data file render-free — names map to lucide components here only.
@@ -65,9 +66,11 @@ function formatRemaining(ms: number): string {
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 export function InfantPoems({
-  ageMonths
+  ageMonths,
+  childId,
 }: {
   ageMonths: number;
+  childId?: string;
 }) {
   const {
     t
@@ -75,6 +78,7 @@ export function InfantPoems({
   const [group, setGroup] = useState<PoemAgeGroup>(() => getDefaultAgeGroup(ageMonths));
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const [openPoem, setOpenPoem] = useState<InfantPoem | null>(null);
+  const [favTick, setFavTick] = useState(0);
   const player = useInfantPoemPlayer();
   const poemsInGroup = useMemo(() => getPoemsForGroup(group), [group]);
   const visiblePoems = useMemo(() => poemsInGroup.slice(0, visible), [poemsInGroup, visible]);
@@ -86,12 +90,11 @@ export function InfantPoems({
   }, [group]);
   function handleTilePress(poem: InfantPoem) {
     setOpenPoem(poem);
-    // Spec: "Auto play on open" — fire immediately so the parent doesn't
-    // have to tap twice. The originating tap counts as a user gesture so
-    // browser autoplay policies allow the audio element to start.
+    recordSleepPlay(poem.id, childId);
     void player.play({
       text: poem.lines.join(" "),
-      audioUrl: poem.audioUrl
+      audioUrl: poem.audioUrl,
+      trackId: poem.id,
     });
   }
   function handleClose() {
@@ -131,7 +134,7 @@ export function InfantPoems({
         // it — covers loading, playing, and paused states. The pulse
         // animation only kicks in once audio is actually playing.
         const isActive = openPoem?.id === poem.id;
-        return <PoemTile key={poem.id} poem={poem} isActive={isActive} isPlaying={isActive && player.isPlaying} isLoading={isActive && player.isLoading} onPress={() => handleTilePress(poem)} />;
+        return <PoemTile key={poem.id} poem={poem} isActive={isActive} isPlaying={isActive && player.isPlaying} isLoading={isActive && player.isLoading} isFavorite={isSleepFavorite(poem.id, childId)} onToggleFavorite={() => { toggleSleepFavorite(poem.id, childId); setFavTick(n => n + 1); }} onPress={() => handleTilePress(poem)} />;
       })}
       </div>
 
@@ -160,12 +163,16 @@ function PoemTile({
   isActive,
   isPlaying,
   isLoading,
+  isFavorite,
+  onToggleFavorite,
   onPress
 }: {
   poem: InfantPoem;
   isActive: boolean;
   isPlaying: boolean;
   isLoading: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
   onPress: () => void;
 }) {
   const {
@@ -173,6 +180,18 @@ function PoemTile({
   } = useTranslation();
   const Icon = ICONS[poem.icon];
   return <button onClick={onPress} data-testid={`poem-tile-${poem.id}`} data-active={isActive ? "true" : "false"} aria-label={`Play poem: ${poem.title}`} className={`relative aspect-[4/5] rounded-2xl overflow-hidden p-3 text-left bg-gradient-to-br ${poem.gradient} text-white border border-white/20 shadow-lg transition-transform active:scale-[0.97] hover:scale-[1.02]`}>
+      {onToggleFavorite && (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onToggleFavorite(); } }}
+          className="absolute top-2 right-2 z-20 h-7 w-7 rounded-full bg-black/20 flex items-center justify-center"
+          aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
+        >
+          <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-red-400 text-red-400" : "text-white/80"}`} />
+        </span>
+      )}
       {/* Playing pulse */}
       {isPlaying && <motion.div aria-hidden className="absolute inset-0 bg-white/10" animate={{
       opacity: [0.05, 0.18, 0.05]

@@ -26,10 +26,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getProceduralAudioContext } from "@/lib/procedural-sfx";
 
-export type SoundId = "shush" | "rain" | "fan" | "heartbeat" | "pink" | "white" | "womb";
+export type SoundId =
+  | "shush"
+  | "rain"
+  | "fan"
+  | "heartbeat"
+  | "pink"
+  | "white"
+  | "womb"
+  | "brown"
+  | "hvac";
 
 export const SOUND_IDS: readonly SoundId[] = [
-  "shush", "rain", "fan", "heartbeat", "pink", "white", "womb",
+  "shush", "rain", "fan", "heartbeat", "pink", "white", "womb", "brown", "hvac",
 ] as const;
 
 const DEFAULT_VOLUMES: Record<SoundId, number> = {
@@ -40,6 +49,8 @@ const DEFAULT_VOLUMES: Record<SoundId, number> = {
   pink: 0.6,
   white: 0.55,
   womb: 0.7,
+  brown: 0.65,
+  hvac: 0.6,
 };
 
 const FADE_SECONDS = 0.6; // smooth play/stop ramps so nothing clicks
@@ -175,6 +186,31 @@ function buildSound(id: SoundId, b: BuildContext, initialVolume: number): Active
     }
     case "pink": {
       startBufferLoop(b.pinkBuf, gain);
+      break;
+    }
+    case "brown": {
+      const lp = makeFilter("lowpass", 450, 0.9);
+      startBufferLoop(b.brownBuf, lp);
+      lp.connect(gain);
+      break;
+    }
+    case "hvac": {
+      const lp = makeFilter("lowpass", 280, 1);
+      const inner = makeGain(0.85);
+      startBufferLoop(b.pinkBuf, lp);
+      lp.connect(inner);
+      inner.connect(gain);
+      const lfo = ctx.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.value = 0.08;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 0.08;
+      lfo.connect(lfoGain).connect(inner.gain);
+      lfo.start();
+      owned.push({
+        stop: () => { try { lfo.stop(); } catch { /* already stopped */ } },
+        disconnect: () => { lfo.disconnect(); lfoGain.disconnect(); },
+      });
       break;
     }
     case "fan": {

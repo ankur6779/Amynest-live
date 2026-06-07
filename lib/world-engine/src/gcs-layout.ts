@@ -66,3 +66,66 @@ export function worldsLibraryProxyPath(worldId: WorldId, gcsObjectPath: string):
   }
   return `/api/worlds-library/${gcsObjectPath}`;
 }
+
+/** Vite/public mirror of generated clips (`artifacts/kidschedule/public/discovery-worlds-audio/`). */
+export const WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX = "/discovery-worlds-audio";
+
+export function worldsLibraryLocalMirrorWebPath(gcsObjectPath: string): string {
+  const trimmed = (gcsObjectPath ?? "").trim().replace(/^\/+/, "");
+  return `${WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX}/${trimmed}`;
+}
+
+/** Extract GCS object path from a worlds-library proxy URL or local mirror path. */
+export function extractWorldsLibraryObjectPath(urlOrPath: string): string | null {
+  const trimmed = (urlOrPath ?? "").trim();
+  if (!trimmed) return null;
+  try {
+    const path = trimmed.startsWith("http") ? new URL(trimmed).pathname : trimmed;
+    const proxyPrefix = "/api/worlds-library/";
+    if (path.startsWith(proxyPrefix)) {
+      return decodeURIComponent(path.slice(proxyPrefix.length)).replace(/^\/+/, "");
+    }
+    const mirrorPrefix = `${WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX}/`;
+    if (path.startsWith(mirrorPrefix)) {
+      return decodeURIComponent(path.slice(mirrorPrefix.length)).replace(/^\/+/, "");
+    }
+    if (/^worlds\/(vehicles|nature|home|instruments)\//i.test(path.replace(/^\/+/, ""))) {
+      return path.replace(/^\/+/, "");
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function worldIdFromGcsPath(gcsPath: string): WorldId | null {
+  if (gcsPath.startsWith("worlds/vehicles/")) return "vehicle_world";
+  if (gcsPath.startsWith("worlds/nature/")) return "nature_world";
+  if (gcsPath.startsWith("worlds/home/")) return "home_sounds_world";
+  if (gcsPath.startsWith("worlds/instruments/")) return "instrument_world";
+  return null;
+}
+
+/** Ordered playback URLs: API proxy first, then same-origin local mirror when present. */
+export function worldsLibraryPlaybackCandidates(urlOrGcsPath: string): string[] {
+  const trimmed = (urlOrGcsPath ?? "").trim();
+  if (!trimmed) return [];
+  const out: string[] = [];
+  const push = (value: string) => {
+    const v = value.trim();
+    if (v && !out.includes(v)) out.push(v);
+  };
+  push(trimmed);
+  const gcsPath =
+    extractWorldsLibraryObjectPath(trimmed) ??
+    (trimmed.replace(/^\/+/, "").startsWith("worlds/") ? trimmed.replace(/^\/+/, "") : null);
+  if (!gcsPath) return out;
+  const worldId = worldIdFromGcsPath(gcsPath);
+  if (worldId && isValidWorldsLibraryObjectPath(worldId, gcsPath)) {
+    push(worldsLibraryProxyPath(worldId, gcsPath));
+  } else {
+    push(`/api/worlds-library/${gcsPath}`);
+  }
+  push(worldsLibraryLocalMirrorWebPath(gcsPath));
+  return out;
+}

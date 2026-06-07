@@ -5,6 +5,8 @@ export * from "./levels";
 export { PLAY_CATEGORIES } from "./content/play";
 export {
   collapseSpeakWhitespace,
+  getPlayNumberSpeakParts,
+  getPlayItemSpeakParts,
   getPlayItemSpeakText,
   getPlayItemCatalogSpeakOpts,
   getTopicNotesSpeakText,

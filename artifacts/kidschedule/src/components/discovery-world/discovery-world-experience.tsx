@@ -426,6 +426,7 @@ function ToddlerGrid({
             className="flex aspect-square flex-col items-center justify-center gap-2 rounded-[24px] border border-white/10 bg-[rgba(18,28,60,0.78)] p-3"
             onClick={() => {
               if (!sound) return;
+              discoveryWorldAudioManager.unlockFromGesture();
               void discoveryWorldAudioManager.play(config.resolveAssetUrl(sound.gcsPath), {
                 worldId: config.worldId,
                 itemId: item.id,

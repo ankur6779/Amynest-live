@@ -7,6 +7,7 @@ import {
 } from "@workspace/world-engine";
 import { logger } from "../lib/logger.js";
 import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioStore.js";
+import { readLocalDiscoveryWorldAudio } from "../services/discoveryWorldsLocalAudio.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
 
@@ -49,6 +50,39 @@ function contentTypeForPath(objectPath: string): string {
   return "audio/mpeg";
 }
 
+function serveBuffer(
+  req: Parameters<typeof serveStaticAudioBuffer>[0],
+  res: Parameters<typeof serveStaticAudioBuffer>[1],
+  etagKey: string,
+  buffer: Buffer,
+  source: "memory" | "gcs",
+  objectPath: string,
+): void {
+  serveStaticAudioBuffer(req, res, etagKey, buffer, source, {
+    contentType: contentTypeForPath(objectPath),
+  });
+}
+
+async function resolveWorldsLibraryBuffer(objectPath: string): Promise<Buffer | null> {
+  if (legacyGcsConfigured()) {
+    try {
+      const fromGcs = await readGcsObjectBytes(objectPath);
+      if (fromGcs?.byteLength) return fromGcs;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.warn({ evt: "worlds_library.gcs_read_failed", objectPath, message });
+    }
+  }
+
+  const local = readLocalDiscoveryWorldAudio(objectPath);
+  if (local?.byteLength) {
+    logger.info({ evt: "worlds_library.local_mirror", objectPath }, "serving local discovery audio mirror");
+    return local;
+  }
+
+  return null;
+}
+
 function resolveWorldIdForPath(objectPath: string): WorldId | null {
   for (const worldId of WORLD_IDS) {
     if (worldId === "animal_world") continue;
@@ -81,35 +115,29 @@ worldsLibraryPublicRouter.get(
 
     const isAudio = objectPath.toLowerCase().endsWith(".mp3");
 
-    if (!legacyGcsConfigured()) {
-      logger.warn({ evt: "worlds_library.gcs_unconfigured", objectPath, worldId });
-      if (isAudio) {
-        serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
-      } else {
-        res.status(404).json({ error: "asset_unavailable" });
-      }
-      return;
-    }
-
     try {
-      const buffer = await readGcsObjectBytes(objectPath);
-      if (!buffer?.byteLength) {
-        logger.warn({ evt: "worlds_library.missing", objectPath, worldId });
-        if (isAudio) {
-          serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
-        } else {
-          res.status(404).json({ error: "asset_missing" });
-        }
+      const buffer = await resolveWorldsLibraryBuffer(objectPath);
+      if (buffer?.byteLength) {
+        serveBuffer(req, res, etagKey, buffer, "gcs", objectPath);
         return;
       }
-      serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs", {
-        contentType: contentTypeForPath(objectPath),
-      });
+
+      if (!legacyGcsConfigured()) {
+        logger.warn({ evt: "worlds_library.gcs_unconfigured", objectPath, worldId });
+      } else {
+        logger.warn({ evt: "worlds_library.missing", objectPath, worldId });
+      }
+
+      if (isAudio) {
+        serveBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", objectPath);
+      } else {
+        res.status(404).json({ error: "asset_missing" });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error({ evt: "worlds_library.stream_failed", objectPath, worldId, message });
       if (isAudio) {
-        serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+        serveBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", objectPath);
       } else {
         res.status(500).json({ error: "stream_failed" });
       }

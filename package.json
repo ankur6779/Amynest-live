@@ -39,6 +39,7 @@
     "generate:spelling-audio": "pnpm --filter @workspace/scripts run generate-spelling-audio",
     "build:audio-pack": "node scripts/build-local-audio-pack.mjs --tier minimal --force",
     "build:audio-pack:full": "node scripts/build-local-audio-pack.mjs --tier full --spelling-limit 500 --force",
+    "build:infant-sleep-audio": "node scripts/build-infant-sleep-audio-pack.mjs --force",
     "validate:audio-pack": "node scripts/validate-local-audio-pack.mjs",
     "seed:audio-pack": "node scripts/seed-local-audio-pack-stubs.mjs",
     "build:spelling-manifest": "pnpm --filter @workspace/spelling-catalog run build:manifest",

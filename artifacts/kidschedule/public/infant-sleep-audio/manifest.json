@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "packId": "core-v1",
+  "generatedAt": "2026-06-07T13:15:33.720Z",
+  "items": [
+    {
+      "id": "ocean-gentle-loop",
+      "assetPath": "packs/core-v1/white-noise/ocean-gentle-loop.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "stream-loop",
+      "assetPath": "packs/core-v1/white-noise/stream-loop.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "window-rain-loop",
+      "assetPath": "packs/core-v1/white-noise/window-rain-loop.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "twinkle",
+      "assetPath": "packs/core-v1/lullabies/twinkle.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "brahms",
+      "assetPath": "packs/core-v1/lullabies/brahms.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "rock-a-bye",
+      "assetPath": "packs/core-v1/lullabies/rock-a-bye.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "hush-baby",
+      "assetPath": "packs/core-v1/lullabies/hush-baby.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "sleep-little-one",
+      "assetPath": "packs/core-v1/lullabies/sleep-little-one.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "sleep-baby-sleep",
+      "assetPath": "packs/core-v1/lullabies/sleep-baby-sleep.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "hum-dee-dum",
+      "assetPath": "packs/core-v1/lullabies/hum-dee-dum.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "cradle-song",
+      "assetPath": "packs/core-v1/lullabies/cradle-song.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "all-through-night",
+      "assetPath": "packs/extended-v1/lullabies/all-through-night.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "golden-slumbers",
+      "assetPath": "packs/extended-v1/lullabies/golden-slumbers.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "lavenders-blue",
+      "assetPath": "packs/extended-v1/lullabies/lavenders-blue.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "bye-bunting",
+      "assetPath": "packs/extended-v1/lullabies/bye-bunting.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "skye-boat",
+      "assetPath": "packs/extended-v1/lullabies/skye-boat.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "stars-above",
+      "assetPath": "packs/extended-v1/lullabies/stars-above.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "dreamy-hum",
+      "assetPath": "packs/extended-v1/lullabies/dreamy-hum.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "cradle-moon",
+      "assetPath": "packs/extended-v1/lullabies/cradle-moon.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "moon-blanket",
+      "assetPath": "packs/extended-v1/stories/moon-blanket.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "cloud-pillow",
+      "assetPath": "packs/extended-v1/stories/cloud-pillow.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "star-friend",
+      "assetPath": "packs/extended-v1/stories/star-friend.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "garden-sleep",
+      "assetPath": "packs/extended-v1/stories/garden-sleep.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "boat-dreams",
+      "assetPath": "packs/extended-v1/stories/boat-dreams.mp3",
+      "packId": "extended-v1"
+    },
+    {
+      "id": "sleep-baby-sleep",
+      "assetPath": "packs/core-v1/poems/sleep-baby-sleep.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "hush-little-cloud",
+      "assetPath": "packs/core-v1/poems/hush-little-cloud.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "moon-and-me",
+      "assetPath": "packs/core-v1/poems/moon-and-me.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "tiny-star",
+      "assetPath": "packs/core-v1/poems/tiny-star.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "pat-pat-pat",
+      "assetPath": "packs/core-v1/poems/pat-pat-pat.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "soft-bird-sleep",
+      "assetPath": "packs/core-v1/poems/soft-bird-sleep.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "dream-boat",
+      "assetPath": "packs/core-v1/poems/dream-boat.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "cozy-nest",
+      "assetPath": "packs/core-v1/poems/cozy-nest.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "goodnight-everything",
+      "assetPath": "packs/core-v1/poems/goodnight-everything.mp3",
+      "packId": "core-v1"
+    },
+    {
+      "id": "stars-count",
+      "assetPath": "packs/core-v1/poems/stars-count.mp3",
+      "packId": "core-v1"
+    }
+  ],
+  "packs": {
+    "core-v1": {
+      "label": "Core Sleep Pack",
+      "bundled": true,
+      "estimatedMb": 12
+    },
+    "extended-v1": {
+      "label": "Extended Sleep Pack",
+      "bundled": false,
+      "estimatedMb": 8
+    }
+  }
+}

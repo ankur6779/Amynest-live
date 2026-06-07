@@ -24,6 +24,24 @@ export const APP_STORE_URL =
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.amynest.app";
 
+/** AmyNest Android application id (Play Store package name). */
+export const ANDROID_PACKAGE_NAME = "com.amynest.app";
+
+/**
+ * Apple "Manage Subscriptions" page. Opening this signs the user into their
+ * Apple ID subscriptions, where they can cancel AmyNest. Works from Safari,
+ * the App Store app, and inside the Capacitor iOS shell.
+ */
+export const APPLE_MANAGE_SUBSCRIPTIONS_URL =
+  "https://apps.apple.com/account/subscriptions";
+
+/**
+ * Google Play "Manage Subscriptions" deep link, pre-scoped to AmyNest via the
+ * `package` param so the user lands on (or near) the AmyNest subscription.
+ */
+export const PLAY_MANAGE_SUBSCRIPTIONS_URL =
+  `https://play.google.com/store/account/subscriptions?package=${ANDROID_PACKAGE_NAME}`;
+
 /**
  * Returns true when the current device is running Android.
  * Covers both installed PWA (standalone mode) and the Android WebView wrapper.

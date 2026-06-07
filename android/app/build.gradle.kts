@@ -131,8 +131,16 @@ tasks.register<Copy>("syncAudioPackAssets") {
     into(layout.projectDirectory.dir("src/main/assets/audio-pack"))
 }
 
+/** Bundle infant sleep library MP3s for offline WebView playback. */
+tasks.register<Copy>("syncInfantSleepAudioAssets") {
+    group = "release"
+    description = "Copy kidschedule public/infant-sleep-audio into APK/AAB assets"
+    from(rootProject.file("../artifacts/kidschedule/public/infant-sleep-audio"))
+    into(layout.projectDirectory.dir("src/main/assets/infant-sleep-audio"))
+}
+
 tasks.named("preBuild") {
-    dependsOn("syncAudioPackAssets")
+    dependsOn("syncAudioPackAssets", "syncInfantSleepAudioAssets")
 }
 
 tasks.register<Copy>("copyReleaseArtifacts") {

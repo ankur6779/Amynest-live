@@ -212,11 +212,7 @@ function IHSection({
   );
 }
 
-const INFANT_HUB_DEFAULT_OPEN = new Set([
-  "infant-cry",
-  "infant-sleep",
-  "infant-milestones",
-]);
+const INFANT_HUB_DEFAULT_OPEN = new Set<string>();
 
 // ─── Daily Activities ─────────────────────────────────────────────────────────
 function DailyActivities({ ageMonths }: { ageMonths: number }) {
@@ -781,7 +777,7 @@ export function InfantHub({
         open={openSections.has("infant-sounds")}
         onOpenChange={(v) => setSectionOpen("infant-sounds", v)}
       >
-        <WhiteNoiseLullaby ageMonths={ageMonths} />
+        <WhiteNoiseLullaby ageMonths={ageMonths} childId={childId} />
       </IHSection>
 
       <IHSection
