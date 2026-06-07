@@ -4,6 +4,10 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { hubModuleGate } from "../middlewares/hubModuleGate.js";
+import {
+  rejectInfantExploreMutationByBodyAge,
+  userHasOnlyInfantChildren,
+} from "../lib/infant-explore-guard.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import {
@@ -84,6 +88,16 @@ router.post(
   const parsed = BodySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  if (rejectInfantExploreMutationByBodyAge(res, parsed.data)) return;
+  if (await userHasOnlyInfantChildren(userId)) {
+    res.status(403).json({
+      error: "infant_explore_preview_only",
+      message:
+        "Event prep AI is preview-only for households with only children under 24 months.",
+    });
     return;
   }
 

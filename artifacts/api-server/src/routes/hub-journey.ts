@@ -7,6 +7,7 @@ import {
   getHubJourneyStatus,
   useHubJourneyPeekAhead,
 } from "../services/parentHubJourneyService.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
 
@@ -53,7 +54,7 @@ const CompleteBody = z.object({
  * POST /api/hub-journey/complete-path
  * Marks the current journey day's Today's Path as complete.
  */
-router.post("/hub-journey/complete-path", async (req, res): Promise<void> => {
+router.post("/hub-journey/complete-path", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -92,7 +93,7 @@ const PeekBody = z.object({
  * POST /api/hub-journey/peek-ahead
  * Unlocks a one-time preview of tomorrow's content for the current journey day.
  */
-router.post("/hub-journey/peek-ahead", async (req, res): Promise<void> => {
+router.post("/hub-journey/peek-ahead", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

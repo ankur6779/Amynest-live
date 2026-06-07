@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { hubModuleGate } from "../middlewares/hubModuleGate.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 import {
   db,
   childrenTable,
@@ -134,6 +135,7 @@ router.get(
 router.post(
   "/life-skills/progress",
   hubModuleGate("hub_life_skills"),
+  infantExploreMutationGate(),
   async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {

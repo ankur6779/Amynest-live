@@ -13,6 +13,12 @@ import {
   hubModuleGateFailureBody,
 } from "../services/hubModuleGateService.js";
 import type { ParentHubFeatureId } from "../services/featureUsageService.js";
+import {
+  assertInfantExploreMutationAllowed,
+  infantExploreGuardFailureBody,
+  userHasOnlyInfantChildren,
+} from "../lib/infant-explore-guard.js";
+import { isExploreLoadMoreSection } from "../lib/infant-explore-modules.js";
 
 const LOAD_MORE_HUB_FEATURE: Partial<
   Record<LearningLoadMoreSection, ParentHubFeatureId>
@@ -127,6 +133,26 @@ router.post("/learning/load-more", async (req, res): Promise<void> => {
     );
     if (!hubGate.ok) {
       res.status(402).json(hubModuleGateFailureBody(hubGate));
+      return;
+    }
+  }
+
+  if (isExploreLoadMoreSection(parsed.data.section)) {
+    if (parsed.data.childId != null) {
+      const infantGate = await assertInfantExploreMutationAllowed(
+        userId,
+        parsed.data.childId,
+      );
+      if (!infantGate.ok) {
+        res.status(infantGate.status).json(infantExploreGuardFailureBody(infantGate));
+        return;
+      }
+    } else if (await userHasOnlyInfantChildren(userId)) {
+      res.status(403).json({
+        error: "infant_explore_preview_only",
+        message:
+          "AI content generation is preview-only for households with only children under 24 months.",
+      });
       return;
     }
   }

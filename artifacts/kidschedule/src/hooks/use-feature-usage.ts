@@ -4,6 +4,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
+import { withActiveChildId } from "@/lib/coach-age-nav";
 import {
   getMaxFreeOpens,
   isFeatureQuotaExhausted,
@@ -89,7 +90,7 @@ export function useFeatureUsage() {
       const res = await authFetch(getApiUrl("/api/feature-usage/track"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ featureId }),
+        body: JSON.stringify(withActiveChildId({ featureId })),
       });
       if (!res.ok) throw new Error(`feature-usage track ${res.status}`);
       return res.json();

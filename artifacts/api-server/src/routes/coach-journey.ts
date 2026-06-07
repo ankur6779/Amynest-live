@@ -7,6 +7,7 @@ import {
   recordCoachPlanCompleted,
   syncLegacyCoachUsage,
 } from "../services/coachJourneyService.js";
+import { infantCoachPreviewGate } from "../middlewares/infantCoachPreviewGate.js";
 
 const router: IRouter = Router();
 
@@ -34,13 +35,14 @@ router.get("/coach-journey/status", async (req, res): Promise<void> => {
 const CompleteBody = z.object({
   goalId: z.string().min(1),
   sessionId: z.string().min(1),
+  childId: z.number().int().positive().optional(),
 });
 
 /**
  * POST /api/coach-journey/complete-plan
  * Records a successfully generated plan and advances the free journey day.
  */
-router.post("/coach-journey/complete-plan", async (req, res): Promise<void> => {
+router.post("/coach-journey/complete-plan", infantCoachPreviewGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -68,13 +70,14 @@ router.post("/coach-journey/complete-plan", async (req, res): Promise<void> => {
 
 const LegacySyncBody = z.object({
   blockUsedIds: z.array(z.string()).default([]),
+  childId: z.number().int().positive().optional(),
 });
 
 /**
  * POST /api/coach-journey/sync-legacy
  * One-time migration from client localStorage section usage.
  */
-router.post("/coach-journey/sync-legacy", async (req, res): Promise<void> => {
+router.post("/coach-journey/sync-legacy", infantCoachPreviewGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

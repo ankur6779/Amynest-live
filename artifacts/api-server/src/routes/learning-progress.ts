@@ -10,6 +10,7 @@ import {
   isValidProgressEvent,
 } from "../services/learningProgressService.js";
 import { maybeAutoGrantPremium } from "../services/subscriptionService.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
 
@@ -76,7 +77,7 @@ router.get("/learning-progress/status", async (req, res): Promise<void> => {
  * POST /api/learning-progress/complete-activity
  * Records activity completion, updates mastery/XP/streaks.
  */
-router.post("/learning-progress/complete-activity", async (req, res): Promise<void> => {
+router.post("/learning-progress/complete-activity", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const { userId, email, phoneNumber } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -145,7 +146,7 @@ const AnalyticsBody = z.object({
  * POST /api/learning-progress/analytics
  * Ingest retention / progression analytics events.
  */
-router.post("/learning-progress/analytics", async (req, res): Promise<void> => {
+router.post("/learning-progress/analytics", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -185,7 +186,7 @@ const SessionStepBody = z.object({
   stepId: z.string().min(1).max(120),
 });
 
-router.post("/learning-progress/session-step", async (req, res): Promise<void> => {
+router.post("/learning-progress/session-step", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

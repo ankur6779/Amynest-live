@@ -1,20 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useHubJourney } from "@/hooks/use-hub-journey";
-
-const HUB_CHILD_KEY = "amynest:hub:activeChildId";
-
-function readActiveHubChildId(): number | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(HUB_CHILD_KEY);
-    if (!raw) return null;
-    const n = Number(raw);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  } catch {
-    return null;
-  }
-}
+import { readStoredActiveChildId } from "@/lib/coach-age-nav";
 
 /**
  * Activity-gated freemium for full-screen Parent Hub modules.
@@ -22,7 +9,7 @@ function readActiveHubChildId(): number | null {
  */
 export function useHubModuleGate(featureId: string, childId?: number | null) {
   const usage = useFeatureUsage();
-  const resolvedChildId = childId ?? readActiveHubChildId();
+  const resolvedChildId = childId ?? readStoredActiveChildId();
   const hubJourney = useHubJourney(resolvedChildId);
   const engagedRef = useRef(false);
 

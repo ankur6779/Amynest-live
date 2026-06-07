@@ -33,6 +33,7 @@ import {
 } from "../services/subscriptionService";
 import { runOlympiadHint, localOlympiadHint } from "../services/domain-ai/olympiad-hint.js";
 import { runOlympiadInsight } from "../services/domain-ai/olympiad-insight.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
 
@@ -151,7 +152,7 @@ const SubmitScoreBody = z.object({
   durationSec: z.number().int().min(1).max(7200),
 });
 
-router.post("/olympiad/score", async (req, res): Promise<void> => {
+router.post("/olympiad/score", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -408,7 +409,7 @@ function staticPick(input: {
   }
 }
 
-router.post("/olympiad/next-questions", async (req, res): Promise<void> => {
+router.post("/olympiad/next-questions", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -582,7 +583,7 @@ router.get("/olympiad/stats", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/olympiad/stats", async (req, res): Promise<void> => {
+router.post("/olympiad/stats", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -662,7 +663,7 @@ const HintBody = z.object({
   difficulty: difficultySchema.default("easy"),
 });
 
-router.post("/olympiad/hint", async (req, res): Promise<void> => {
+router.post("/olympiad/hint", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -720,7 +721,7 @@ const InsightBody = z.object({
   ),
 });
 
-router.post("/olympiad/insight", async (req, res): Promise<void> => {
+router.post("/olympiad/insight", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

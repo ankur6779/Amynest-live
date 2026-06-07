@@ -19,6 +19,7 @@ import {
   getOrCreateSubscription,
   isPremiumNow,
 } from "../services/subscriptionService.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
 
@@ -288,7 +289,7 @@ const DownloadBody = z.object({
   fileId: z.string().min(5).max(80),
 });
 
-router.post("/funsheets/download", async (req, res): Promise<void> => {
+router.post("/funsheets/download", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

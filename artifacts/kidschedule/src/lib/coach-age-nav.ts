@@ -253,6 +253,29 @@ export function getCategoryHint(
 
 export const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
+/** Hub active child from localStorage (`amynest:hub:activeChildId`). */
+export function readStoredActiveChildId(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY);
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Attach active childId for infant-preview server guards when available. */
+export function withActiveChildId<T extends Record<string, unknown>>(
+  body: T,
+  childId?: number | null,
+): T & { childId?: number } {
+  const id = childId ?? readStoredActiveChildId();
+  if (id == null) return body;
+  return { ...body, childId: id };
+}
+
 export interface ChildAgeLike {
   id: number;
   age: number;
@@ -262,15 +285,10 @@ export interface ChildAgeLike {
 
 export function resolveActiveChild(children: ChildAgeLike[] | undefined | null): ChildAgeLike | null {
   if (!children?.length) return null;
-  try {
-    const raw = localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY);
-    if (raw) {
-      const id = Number(raw);
-      const match = children.find((c) => c.id === id);
-      if (match) return match;
-    }
-  } catch {
-    /* private mode */
+  const storedId = readStoredActiveChildId();
+  if (storedId != null) {
+    const match = children.find((c) => c.id === storedId);
+    if (match) return match;
   }
   return children[0] ?? null;
 }

@@ -22,6 +22,7 @@ import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { featureGate } from "../middlewares/featureGate";
+import { speechTranscribeGate } from "../middlewares/speechTranscribeGate.js";
 
 const router: IRouter = Router();
 
@@ -521,9 +522,8 @@ router.post("/speech/expert-waitlist", async (req, res): Promise<void> => {
 // the plain-text transcript. The caller is responsible for comparing the
 // result against the expected prompt text.
 //
-// Auth: required (bearer token).  Rate-limit: 20 calls per user per day via
-// the usage_daily table (shared bucket "speech_transcribe").
-// No additional feature-gate consume — the hub section already gated.
+// Auth: required (bearer token). Daily quota via usage_daily "speech_transcribe"
+// (20/day free, higher premium cap — see speechTranscribeGate).
 
 const transcribeBodySchema = z.object({
   audioBase64: z.string().min(1),
@@ -531,7 +531,7 @@ const transcribeBodySchema = z.object({
   provider: z.enum(["whisper", "elevenlabs"]).optional(),
 });
 
-router.post("/speech/transcribe", async (req, res): Promise<void> => {
+router.post("/speech/transcribe", speechTranscribeGate(), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

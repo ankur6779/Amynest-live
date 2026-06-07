@@ -5,6 +5,7 @@ import {
   sanitizeLearningZoneAiObject,
   validateLearningZonePayload,
 } from "@/lib/learning-zone-ai-text";
+import { readStoredActiveChildId } from "@/lib/coach-age-nav";
 
 export type LearningLoadMoreSection =
   | "smart_study"
@@ -76,16 +77,18 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
       setLoading(true);
       setError(null);
       try {
+        const resolvedChildId = body.childId ?? readStoredActiveChildId() ?? undefined;
+        const requestBody = {
+          section,
+          childId: resolvedChildId,
+          count: body.count,
+          excludeIds: body.excludeIds,
+          params: body.params ?? {},
+        };
         const res = await authFetch("/api/learning/load-more", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            section,
-            childId: body.childId,
-            count: body.count,
-            excludeIds: body.excludeIds,
-            params: body.params ?? {},
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (res.status === 402) {
@@ -110,13 +113,7 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
           const retry = await authFetch("/api/learning/load-more", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              section,
-              childId: body.childId,
-              count: body.count,
-              excludeIds: body.excludeIds,
-              params: body.params ?? {},
-            }),
+            body: JSON.stringify(requestBody),
           });
           if (retry.ok) {
             const retryData = (await retry.json()) as LoadMoreResponse;

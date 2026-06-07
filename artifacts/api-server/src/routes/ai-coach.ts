@@ -7,6 +7,7 @@ import { logger } from "../lib/logger.js";
 import { GOAL_IDS, type GoalId } from "../lib/image-map.js";
 import { getGoalPromptSection } from "../lib/goal-prompts.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
+import { infantCoachPreviewGate } from "../middlewares/infantCoachPreviewGate.js";
 import { incrementAiUsage } from "../services/subscriptionService.js";
 import {
   COACH_INITIAL_WINS,
@@ -880,10 +881,10 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
 }
 
 // ─── POST /ai-coach (2 wins now; wins 3–12 lazy on /coach/next-win) ───────
-router.post("/ai-coach", aiUsageGate, handleCoachGenerate);
-router.post("/coach/generate", aiUsageGate, handleCoachGenerate);
-router.post("/ai-coach/next-win", aiUsageGate, handleCoachNextWin);
-router.post("/coach/next-win", aiUsageGate, handleCoachNextWin);
+router.post("/ai-coach", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
+router.post("/coach/generate", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
+router.post("/ai-coach/next-win", infantCoachPreviewGate(), aiUsageGate, handleCoachNextWin);
+router.post("/coach/next-win", infantCoachPreviewGate(), aiUsageGate, handleCoachNextWin);
 
 async function handleCoachStatus(req: import("express").Request, res: import("express").Response): Promise<void> {
   const { userId } = getAuth(req);
@@ -927,7 +928,7 @@ router.get("/coach/status", handleCoachStatus);
 // as the AI generates each win, so the loading UI can show "Crafting win
 // 5 of 12…" instead of a static spinner. Same validation, same caches —
 // returns the same `{ plan, sessionId, ... }` shape inside a `done` event.
-router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => {
+router.post("/ai-coach/stream", infantCoachPreviewGate(), aiUsageGate, async (req, res): Promise<void> => {
   pruneMem();
   const { userId } = getAuth(req);
   const raw: CoachInput = req.body ?? {};
@@ -1163,7 +1164,7 @@ ${goalBrief}`;
 
 // ─── POST /ai-coach/extend ───────────────────────────────────────────────
 // When a parent says "Not worked for me" or "Partially worked" — generate 1 adaptive win
-router.post("/ai-coach/extend", aiUsageGate, async (req, res): Promise<void> => {
+router.post("/ai-coach/extend", infantCoachPreviewGate(), aiUsageGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -1266,7 +1267,7 @@ STRICT:
 });
 
 // ─── POST /ai-coach/feedback ─────────────────────────────────────────────
-router.post("/ai-coach/feedback", async (req, res): Promise<void> => {
+router.post("/ai-coach/feedback", infantCoachPreviewGate(), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -1463,7 +1464,7 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
 });
 
 // ─── POST /ai-coach/graduate ─────────────────────────────────────────────
-router.post("/ai-coach/graduate", async (req, res): Promise<void> => {
+router.post("/ai-coach/graduate", infantCoachPreviewGate(), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1496,7 +1497,7 @@ router.post("/ai-coach/graduate", async (req, res): Promise<void> => {
 });
 
 // ─── POST /ai-coach/check-in ─────────────────────────────────────────────
-router.post("/ai-coach/check-in", async (req, res): Promise<void> => {
+router.post("/ai-coach/check-in", infantCoachPreviewGate(), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

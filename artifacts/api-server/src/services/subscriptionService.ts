@@ -100,6 +100,8 @@ export const FREE_FEATURE_LIMITS = {
   // Enforced directly in routes/speech-converse.ts — the "count" column here
   // stores seconds consumed today (resets at UTC midnight).
   speech_conversation_seconds: 300,
+  /** Whisper / Scribe STT calls per UTC day (Speech Coach pronunciation checks). */
+  speech_transcribe: 20,
   // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
   nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
@@ -132,6 +134,7 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   hub_speech_session: "lifetime",
   hub_speech_coach: "lifetime",
   speech_conversation_seconds: "daily",
+  speech_transcribe: "daily",
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
   learning_load_more_smart_study: "lifetime",
@@ -198,6 +201,15 @@ function nextResetAtFor(feature: FeatureKey): string | null {
 }
 
 export { nextResetAtFor };
+
+/** Premium STT daily cap (env override). Free tier uses FREE_FEATURE_LIMITS.speech_transcribe. */
+export function speechTranscribeDailyLimit(isPremium: boolean): number {
+  if (!isPremium) return FREE_FEATURE_LIMITS.speech_transcribe;
+  const raw = process.env["SPEECH_TRANSCRIBE_DAILY_LIMIT_PREMIUM"];
+  if (!raw) return 100;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : 100;
+}
 
 export async function getOrCreateSubscription(
   userId: string,

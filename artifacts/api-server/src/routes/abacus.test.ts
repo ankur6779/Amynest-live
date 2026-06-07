@@ -57,6 +57,8 @@ const state: {
   openaiReply: string | null;
   openaiError: Error | null;
   openaiCalls: Array<{ system: string; user: string }>;
+  subscriptions: SubscriptionRow[];
+  usageDaily: UsageRow[];
 } = {
   authUserId: null,
   children: [],
@@ -64,17 +66,70 @@ const state: {
   openaiReply: null,
   openaiError: null,
   openaiCalls: [],
+  subscriptions: [],
+  usageDaily: [],
 };
 
 // Symbol tags so the chainable mock can route to the right table without
 // caring about drizzle's actual table shape.
 const CHILDREN_TABLE = { __tag: "children" } as const;
 const PROGRESS_TABLE = { __tag: "progress" } as const;
+const SUBSCRIPTIONS_TABLE = { __tag: "subscriptions" } as const;
+const USAGE_DAILY_TABLE = { __tag: "usage_daily" } as const;
+const ADMIN_PREMIUM_GRANTS_TABLE = { __tag: "admin_premium_grants" } as const;
 
-function tableOf(t: unknown): "children" | "progress" | "unknown" {
+type UsageRow = {
+  userId: string;
+  day: string;
+  feature: string;
+  count: number;
+};
+
+type SubscriptionRow = {
+  userId: string;
+  plan: string;
+  status: string;
+  provider: string;
+  bonusExpiresAt: Date | null;
+  trialEndsAt: Date | null;
+  currentPeriodEnd: Date | null;
+  cancelAtPeriodEnd: number;
+  phoneNumber: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function tableOf(
+  t: unknown,
+): "children" | "progress" | "subscriptions" | "usage_daily" | "admin_premium_grants" | "unknown" {
   if (t === CHILDREN_TABLE) return "children";
   if (t === PROGRESS_TABLE) return "progress";
+  if (t === SUBSCRIPTIONS_TABLE) return "subscriptions";
+  if (t === USAGE_DAILY_TABLE) return "usage_daily";
+  if (t === ADMIN_PREMIUM_GRANTS_TABLE) return "admin_premium_grants";
   return "unknown";
+}
+
+function upsertUsageDaily(vals: Record<string, unknown>): { count: number } {
+  const userId = String(vals.userId);
+  const feature = String(vals.feature);
+  const day = String(vals.day);
+  const insertCount = Number(vals.count ?? 0);
+  const existing = state.usageDaily.find(
+    (u) => u.userId === userId && u.feature === feature && u.day === day,
+  );
+  if (existing) {
+    const by = insertCount === 0 ? -1 : 1;
+    existing.count = Math.max(0, existing.count + by);
+    return { count: existing.count };
+  }
+  const row: UsageRow = { userId, feature, day, count: Math.max(0, insertCount) };
+  state.usageDaily.push(row);
+  return { count: row.count };
+}
+
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 // ─── Chainable db mock ─────────────────────────────────────────────────
@@ -95,6 +150,9 @@ function makeSelectChain(table: unknown) {
           const kind = tableOf(table);
           if (kind === "children") return state.children;
           if (kind === "progress") return state.progress;
+          if (kind === "subscriptions") return state.subscriptions;
+          if (kind === "usage_daily") return state.usageDaily;
+          if (kind === "admin_premium_grants") return [];
           return [];
         },
       }),
@@ -105,7 +163,52 @@ function makeSelectChain(table: unknown) {
 function makeInsertChain(table: unknown) {
   return {
     values: (vals: Record<string, unknown>) => ({
+      onConflictDoUpdate: (_opts: unknown) => ({
+        returning: async () => {
+          if (tableOf(table) === "usage_daily") {
+            return [upsertUsageDaily(vals)];
+          }
+          if (tableOf(table) === "subscriptions") {
+            const row: SubscriptionRow = {
+              userId: String(vals.userId),
+              plan: String(vals.plan ?? "free"),
+              status: String(vals.status ?? "free"),
+              provider: String(vals.provider ?? "none"),
+              bonusExpiresAt: (vals.bonusExpiresAt as Date | null) ?? null,
+              trialEndsAt: (vals.trialEndsAt as Date | null) ?? null,
+              currentPeriodEnd: (vals.currentPeriodEnd as Date | null) ?? null,
+              cancelAtPeriodEnd: Number(vals.cancelAtPeriodEnd ?? 0),
+              phoneNumber: (vals.phoneNumber as string | null) ?? null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            state.subscriptions = [row];
+            return [row];
+          }
+          return [];
+        },
+      }),
       returning: async () => {
+        if (tableOf(table) === "subscriptions") {
+          const row: SubscriptionRow = {
+            userId: String(vals.userId),
+            plan: String(vals.plan ?? "free"),
+            status: String(vals.status ?? "free"),
+            provider: String(vals.provider ?? "none"),
+            bonusExpiresAt: (vals.bonusExpiresAt as Date | null) ?? null,
+            trialEndsAt: (vals.trialEndsAt as Date | null) ?? null,
+            currentPeriodEnd: (vals.currentPeriodEnd as Date | null) ?? null,
+            cancelAtPeriodEnd: Number(vals.cancelAtPeriodEnd ?? 0),
+            phoneNumber: (vals.phoneNumber as string | null) ?? null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          state.subscriptions = [row];
+          return [row];
+        }
+        if (tableOf(table) === "usage_daily") {
+          return [upsertUsageDaily(vals)];
+        }
         if (tableOf(table) === "progress") {
           const row: ProgressRow = {
             childId: Number(vals.childId),
@@ -183,6 +286,10 @@ mock.module("@workspace/db", {
     db: dbMock,
     childrenTable: CHILDREN_TABLE,
     abacusProgressTable: PROGRESS_TABLE,
+    subscriptionsTable: SUBSCRIPTIONS_TABLE,
+    usageDailyTable: USAGE_DAILY_TABLE,
+    adminPremiumGrantsTable: ADMIN_PREMIUM_GRANTS_TABLE,
+    childCaregiversTable: { __tag: "child_caregivers" },
     referralsTable: {
       referrerUserId: "referrer_user_id",
       referredUserId: "referred_user_id",
@@ -204,6 +311,15 @@ mock.module(authUrl, {
       name: null,
       picture: null,
     }),
+  },
+});
+
+// Quota enforcement is covered in p0-cost-safety-guards.test.ts — keep abacus
+// route tests focused on progress/tutor behaviour without subscription mocks.
+const aiUsageGateUrl = new URL("../middlewares/aiUsageGate.ts", import.meta.url).href;
+mock.module(aiUsageGateUrl, {
+  namedExports: {
+    aiUsageGate: (_req: unknown, _res: unknown, next: () => void) => next(),
   },
 });
 
@@ -269,6 +385,8 @@ beforeEach(() => {
   state.openaiReply = "Push 1 upper bead and 2 lower beads — that makes 7!";
   state.openaiError = null;
   state.openaiCalls = [];
+  state.subscriptions = [];
+  state.usageDaily = [];
 });
 
 // ─── GET /api/abacus/progress ──────────────────────────────────────────

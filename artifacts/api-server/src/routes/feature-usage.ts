@@ -8,11 +8,18 @@ import {
   isTrackedFeature,
   trackFeatureUsage,
 } from "../services/featureUsageService";
+import {
+  assertInfantExploreMutationAllowed,
+  infantExploreGuardFailureBody,
+  userHasOnlyInfantChildren,
+} from "../lib/infant-explore-guard.js";
+import { isExploreNextStageHubFeature } from "../lib/infant-explore-modules.js";
 
 const router: IRouter = Router();
 
 const trackSchema = z.object({
   featureId: z.string().min(1).max(64),
+  childId: z.number().int().positive().optional(),
 });
 
 /**
@@ -54,12 +61,28 @@ router.post("/feature-usage/track", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
   }
-  const { featureId } = parsed.data;
+  const { featureId, childId } = parsed.data;
   if (!isTrackedFeature(featureId)) {
     res
       .status(400)
       .json({ error: "invalid_feature", allowed: PARENT_HUB_FEATURES });
     return;
+  }
+  if (isExploreNextStageHubFeature(featureId)) {
+    if (childId != null) {
+      const infantGate = await assertInfantExploreMutationAllowed(userId, childId);
+      if (!infantGate.ok) {
+        res.status(infantGate.status).json(infantExploreGuardFailureBody(infantGate));
+        return;
+      }
+    } else if (await userHasOnlyInfantChildren(userId)) {
+      res.status(403).json({
+        error: "infant_explore_preview_only",
+        message:
+          "Hub trial usage is preview-only for households with only children under 24 months.",
+      });
+      return;
+    }
   }
   try {
     const result = await trackFeatureUsage(userId, featureId);

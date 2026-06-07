@@ -32,6 +32,7 @@ import {
   isCategoryVisibleForBand,
   COACH_FOR_YOU_CATEGORY_ID,
   resolveActiveChild,
+  withActiveChildId,
 } from "@/lib/coach-age-nav";
 import { getGenericQuestionOptions } from "@/lib/coach-generic-questions";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
@@ -870,6 +871,7 @@ export default function AICoachPage() {
     () => resolveActiveChild(childrenList as { id: number; age: number; ageMonths?: number | null; name?: string | null }[] | undefined),
     [childrenList],
   );
+  const coachPreviewChildId = activeChild?.id ?? null;
 
   useEffect(() => {
     if (coachAgeBand !== null || resumeSessionId || phase !== "goals") return;
@@ -946,16 +948,21 @@ export default function AICoachPage() {
       void authFetch("/api/ai-coach/graduate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          goalId,
-          goalTitle: selectedGoal?.title ?? plan.title,
-          path,
-          progressPct: 100,
-        }),
+        body: JSON.stringify(
+          withActiveChildId(
+            {
+              sessionId,
+              goalId,
+              goalTitle: selectedGoal?.title ?? plan.title,
+              path,
+              progressPct: 100,
+            },
+            coachPreviewChildId,
+          ),
+        ),
       }).catch(() => {});
     },
-    [authFetch, goalId, plan, selectedGoal?.title, sessionId, userId],
+    [authFetch, coachPreviewChildId, goalId, plan, selectedGoal?.title, sessionId, userId],
   );
 
   const resetForNewCoachingGoal = useCallback((nextGoalId: string) => {
@@ -1400,10 +1407,15 @@ export default function AICoachPage() {
       const {
         default: i18nInstance
       } = await import("@/i18n");
-      const body = JSON.stringify({
-        ...payload,
-        language: i18nInstance.language || "en"
-      });
+      const body = JSON.stringify(
+        withActiveChildId(
+          {
+            ...payload,
+            language: i18nInstance.language || "en",
+          },
+          coachPreviewChildId,
+        ),
+      );
 
       await buildViaProgressive(body);
     } catch (err) {
@@ -1465,17 +1477,22 @@ export default function AICoachPage() {
       const res = await authFetch("/api/coach/next-win", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...lastPayloadRef.current,
-          sessionId,
-          plan: {
-            title: currentPlan.title,
-            root_cause: currentPlan.root_cause,
-            summary: currentPlan.summary,
-          },
-          existingWins: currentPlan.wins,
-          language: i18nInstance.language || "en",
-        }),
+        body: JSON.stringify(
+          withActiveChildId(
+            {
+              ...lastPayloadRef.current,
+              sessionId,
+              plan: {
+                title: currentPlan.title,
+                root_cause: currentPlan.root_cause,
+                summary: currentPlan.summary,
+              },
+              existingWins: currentPlan.wins,
+              language: i18nInstance.language || "en",
+            },
+            coachPreviewChildId,
+          ),
+        ),
       }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
@@ -1576,14 +1593,19 @@ export default function AICoachPage() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          sessionId,
-          goalId,
-          planTitle: plan.title,
-          winNumber,
-          totalWins: plan.wins.length,
-          feedback
-        })
+        body: JSON.stringify(
+          withActiveChildId(
+            {
+              sessionId,
+              goalId,
+              planTitle: plan.title,
+              winNumber,
+              totalWins: plan.wins.length,
+              feedback,
+            },
+            coachPreviewChildId,
+          ),
+        ),
       });
     } catch {/* silent */}
 
@@ -1673,15 +1695,20 @@ export default function AICoachPage() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          ...lastPayloadRef.current,
-          failedWinTitle: failedWin.title,
-          failedWinNumber,
-          startWinNumber: nextWinNum,
-          feedbackType: feedback === "somewhat" ? "partial" : "not_yet",
-          existingWinTitles: plan.wins.map(w => w.title),
-          language: i18nInstanceX.language || "en"
-        })
+        body: JSON.stringify(
+          withActiveChildId(
+            {
+              ...lastPayloadRef.current,
+              failedWinTitle: failedWin.title,
+              failedWinNumber,
+              startWinNumber: nextWinNum,
+              feedbackType: feedback === "somewhat" ? "partial" : "not_yet",
+              existingWinTitles: plan.wins.map(w => w.title),
+              language: i18nInstanceX.language || "en",
+            },
+            coachPreviewChildId,
+          ),
+        )
       }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
         const errBody = await res.json().catch(() => ({})) as { error?: string };

@@ -20,6 +20,8 @@ import {
 } from "@workspace/abacus";
 import { buildAbacusWeeklySummary } from "../services/abacusWeeklySummary";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
+import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 
 const router: IRouter = Router();
 
@@ -219,7 +221,7 @@ const PostBody = z.discriminatedUnion("action", [
   LogSessionBody,
 ]);
 
-router.post("/abacus/progress", async (req, res): Promise<void> => {
+router.post("/abacus/progress", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -346,7 +348,7 @@ const TutorBody = z.object({
   question: z.string().min(1).max(500),
 });
 
-router.post("/abacus/tutor", async (req, res): Promise<void> => {
+router.post("/abacus/tutor", infantExploreMutationGate(), aiUsageGate, async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

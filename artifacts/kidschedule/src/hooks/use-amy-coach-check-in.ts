@@ -23,6 +23,7 @@ import {
   isGoalInMaintenance,
   loadCoachGraduations,
 } from "@/lib/coach-graduation-state";
+import { withActiveChildId } from "@/lib/coach-age-nav";
 
 export function useAmyCoachCheckIn() {
   const authFetch = useAuthFetch();
@@ -149,14 +150,16 @@ export function useAmyCoachCheckIn() {
       void authFetch("/api/ai-coach/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: checkIn.sessionId,
-          goalId: checkIn.goalId,
-          kind: checkIn.kind,
-          optionId,
-          optionLabel: entry.optionLabel,
-          clarificationAnswer,
-        }),
+        body: JSON.stringify(
+          withActiveChildId({
+            sessionId: checkIn.sessionId,
+            goalId: checkIn.goalId,
+            kind: checkIn.kind,
+            optionId,
+            optionLabel: entry.optionLabel,
+            clarificationAnswer,
+          }),
+        ),
       }).catch(() => {});
 
       setRefreshKey((k) => k + 1);

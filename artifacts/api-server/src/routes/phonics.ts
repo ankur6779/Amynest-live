@@ -58,6 +58,7 @@ import {
   computePhonicsDripDay,
   pickPhonicsDailyItems,
 } from "@workspace/parent-hub-journey";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
 
@@ -436,7 +437,7 @@ router.get("/phonics/workbook/download", async (req, res): Promise<void> => {
   res.sendFile(path.resolve(filePath));
 });
 
-router.post("/phonics/downloads", async (req, res): Promise<void> => {
+router.post("/phonics/downloads", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -552,7 +553,7 @@ const PostBody = z.object({
   action: z.enum(["play", "mastered", "unmastered"]),
 });
 
-router.post("/phonics/progress", async (req, res): Promise<void> => {
+router.post("/phonics/progress", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -882,7 +883,7 @@ const StartBody = z.object({
   gameMode: GameModeSchema.optional(),
 });
 
-router.post("/phonics/tests/start", async (req, res): Promise<void> => {
+router.post("/phonics/tests/start", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1016,7 +1017,7 @@ const SubmitBody = z.object({
     .max(50),
 });
 
-router.post("/phonics/tests/submit", async (req, res): Promise<void> => {
+router.post("/phonics/tests/submit", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1364,7 +1365,7 @@ const CurriculumPlanBody = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-router.post("/phonics/curriculum/daily-plan", async (req, res): Promise<void> => {
+router.post("/phonics/curriculum/daily-plan", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1421,7 +1422,7 @@ const CompleteActivityBody = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-router.post("/phonics/curriculum/complete-activity", async (req, res): Promise<void> => {
+router.post("/phonics/curriculum/complete-activity", infantExploreMutationGate(), async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

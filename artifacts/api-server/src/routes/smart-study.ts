@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { hubModuleGate } from "../middlewares/hubModuleGate.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 import { logger } from "../lib/logger";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
@@ -214,6 +215,7 @@ const AttemptBody = z.union([SingleAttempt, z.array(SingleAttempt).min(1).max(50
 router.post(
   "/smart-study/attempt",
   hubModuleGate("hub_smart_study"),
+  infantExploreMutationGate(),
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
@@ -604,6 +606,7 @@ async function generateWithAi(
 router.post(
   "/smart-study/next-questions",
   hubModuleGate("hub_smart_study"),
+  infantExploreMutationGate(),
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {

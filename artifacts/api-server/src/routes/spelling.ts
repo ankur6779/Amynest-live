@@ -25,6 +25,7 @@ import {
 } from "@workspace/spelling-catalog";
 import { readCachedAudio } from "../services/ttsCacheService.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import {
   resolveSpellingWordAudioProxyUrl,
 } from "../services/spelling-audio-manifest.js";
@@ -516,7 +517,7 @@ const aiResponseSchema = z.object({
   words: z.array(aiWordSchema).min(1).max(15),
 });
 
-router.post("/spelling/ai-generate", async (req, res): Promise<void> => {
+router.post("/spelling/ai-generate", aiUsageGate, async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
