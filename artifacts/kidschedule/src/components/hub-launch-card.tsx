@@ -1,7 +1,9 @@
 import { AppLink } from "@/components/app-link";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
+import { useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import {
   getHubFeatureTileAccent,
   hubShadedSectionCardClasses,
@@ -35,8 +37,13 @@ export function HubLaunchCard({
   sectionId?: string;
   onNavigate?: () => void;
 }) {
+  const { t } = useTranslation();
+  const discoveryPreview = useInfantDiscoveryPreview();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
   const theme = getHubFeatureTileAccent(tileId);
+  const actionLabel = discoveryPreview
+    ? t("parent_hub.explore_next.cta_preview")
+    : t("parent_hub.explore_next.cta_open");
 
   return (
     <AppLink
@@ -59,12 +66,12 @@ export function HubLaunchCard({
           <div className={HUB_FEATURE_TILE_TEXT}>
             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
               <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
-              {tryFree ? <TryFreeBadge /> : null}
+              {tryFree && !discoveryPreview ? <TryFreeBadge /> : null}
             </div>
             <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
           </div>
           <span className="inline-flex h-7 shrink-0 items-center self-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
-            Open
+            {actionLabel}
           </span>
         </div>
       </HubShadedCardBody>

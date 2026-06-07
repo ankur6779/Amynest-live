@@ -64,7 +64,7 @@ export function isHubSectionVisible(
   );
 }
 
-/** Section 2 early-access tiles — 2+ modules shown to 0–24 month infants. */
+/** Section 2 early-access tiles — 2+ modules shown to 0–24 month infants for discovery preview. */
 export const SECTION_2_EARLY_ACCESS_TILE_IDS = [
   "life-skills",
   "olympiad",
@@ -81,7 +81,25 @@ export const SECTION_2_EARLY_ACCESS_TILE_IDS = [
 export type Section2EarlyAccessTileId =
   (typeof SECTION_2_EARLY_ACCESS_TILE_IDS)[number];
 
-/** Section 2 ("Try Early Access") — infants in band 0-2 only; disabled at 24+ months. */
+/** Hub feature IDs for Explore What's Next tiles — mirrors api-server registry. */
+export const EXPLORE_NEXT_STAGE_HUB_FEATURES = [
+  "hub_life_skills",
+  "hub_olympiad",
+  "hub_event_prep",
+  "hub_smart_math_tricks",
+  "hub_abacus",
+  "hub_smart_study",
+  "hub_ptm_prep",
+  "hub_phonics",
+  "hub_coloring_books",
+  "hub_fun_sheets",
+] as const;
+
+export function isExploreNextStageHubFeature(featureId: string): boolean {
+  return (EXPLORE_NEXT_STAGE_HUB_FEATURES as readonly string[]).includes(featureId);
+}
+
+/** Section 2 ("Explore What's Next") — infants in band 0-2 only; disabled at 24+ months. */
 export function shouldShowExploreSection(
   childAgeMonths: number,
   currentBand: AgeBand | null,

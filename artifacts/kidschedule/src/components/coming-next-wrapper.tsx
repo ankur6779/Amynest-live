@@ -4,9 +4,8 @@ import type { AgeBand } from "@/lib/age-bands";
 import { bandRangeLabel } from "@/lib/age-bands";
 
 /**
- * Wraps a HubSection in Section 2 ("Try Early Access") with a freemium pill.
- * Content stays fully interactive — LockedBlock inside handles one-time-free
- * then paywall for free users; premium users get full access.
+ * Wraps a HubSection in Section 2 ("Explore What's Next") with a next-stage pill.
+ * Infant parents can browse module UI; server-side guards block mutations.
  */
 export function ComingNextWrapper({
   band,
@@ -22,7 +21,7 @@ export function ComingNextWrapper({
       <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1.5 rounded-full bg-card border border-primary/30 px-2.5 py-0.5 shadow-sm">
         <Sparkles className="h-2.5 w-2.5 text-primary" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
-          {t("parent_hub.badges.early_access_pill")}
+          {t("parent_hub.badges.next_stage_pill")}
         </span>
       </div>
 
@@ -33,7 +32,7 @@ export function ComingNextWrapper({
           "shadow-[0_2px_18px_-10px_rgba(245,158,11,0.35)]",
           "hover:ring-primary hover:shadow-[0_4px_24px_-8px_rgba(245,158,11,0.45)]",
         ].join(" ")}
-        title={t("parent_hub.badges.early_access_tooltip", {
+        title={t("parent_hub.badges.next_stage_tooltip", {
           range: bandRangeLabel(band),
         })}
       >

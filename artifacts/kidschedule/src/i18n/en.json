@@ -2731,6 +2731,8 @@
       "premium_feature_aria": "Premium feature — tap to upgrade",
       "early_access_pill": "✨ Try Early Access (2+ Modules)",
       "early_access_tooltip": "Early access — unlocks fully at {{range}}",
+      "next_stage_pill": "Next Stage · 2+ Years",
+      "next_stage_tooltip": "Fully available at {{range}} — explore how it works today",
       "infant_stage_pill": "0–2 Years",
       "infant_stage_tooltip": "Infant stage features — from when your child was 0–24 months",
       "new": "New"
@@ -3380,11 +3382,11 @@
     },
     "headers": {
       "section1_for": "Section 1 · For you",
-      "section2_next": "Section 2 · Early access",
+      "section2_next": "Future learning",
       "for_child": "For {{name}}",
       "personalised": "Personalised content tuned to where {{name}} is right now.",
-      "explore_next": "Explore the next stage for {{name}}",
-      "explore_blurb": "Try every 2+ module once for free — upgrade for unlimited access as {{name}} grows.",
+      "explore_next": "Explore What's Next for {{name}}",
+      "explore_blurb": "Explore learning experiences, school readiness tools, and activities available as {{name}} grows.",
       "previous_stage_section": "Previous stage",
       "previous_stage_title": "Previous Stage Features",
       "previous_stage_blurb": "Infant-stage tools from {{name}}'s early months — still available for reference or your next baby.",
@@ -3528,6 +3530,11 @@
     "explore_ages": {
       "show": "Browse",
       "hide": "Hide"
+    },
+    "explore_next": {
+      "preview_banner": "This module becomes fully available after age 2. You can explore how it works today.",
+      "cta_open": "Open",
+      "cta_preview": "Preview"
     }
   },
   "components": {

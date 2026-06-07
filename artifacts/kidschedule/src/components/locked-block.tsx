@@ -16,6 +16,11 @@ interface LockedBlockProps {
   childName?: string;
   /** Infant child (0–24 months) — uses care-focused journey copy. */
   isInfant?: boolean;
+  /**
+   * Infant "Explore What's Next" discovery surface — keep tiles browsable;
+   * server enforces preview-only mutations.
+   */
+  discoveryPreview?: boolean;
   /** Paywall reason passed to openPaywall (defaults to hub_journey). */
   reason?: PaywallReason;
   rounded?: string;
@@ -34,6 +39,7 @@ export function LockedBlock({
   journeySoft = false,
   childName,
   isInfant = false,
+  discoveryPreview = false,
   reason = "hub_journey",
   rounded = "rounded-3xl",
   children,
@@ -41,6 +47,8 @@ export function LockedBlock({
   const { t } = useTranslation();
   const openGate = () =>
     openSubscriptionGate({ reason, source: "locked_block" });
+
+  if (discoveryPreview) return <>{children}</>;
 
   if (!locked) return <>{children}</>;
 

@@ -5,8 +5,10 @@ import { useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
+import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import { isExploreNextStageHubFeature } from "@/lib/hub-visibility";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -115,6 +117,8 @@ export function HubModulePageShell({
   }
 
   const headerSubtitle = subtitle?.(activeChild, totalAgeMonths) ?? activeChild.name;
+  const infantExplorePreview =
+    totalAgeMonths < 24 && isExploreNextStageHubFeature(featureId);
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">
@@ -159,7 +163,10 @@ export function HubModulePageShell({
 
       <main className="scroll-safe min-h-0 flex-1 px-4 py-4">
         <div className="mx-auto max-w-4xl">
-          {journeySoft ? (
+          {infantExplorePreview ? (
+            <InfantExplorePreviewBanner className="mb-4" />
+          ) : null}
+          {journeySoft && !infantExplorePreview ? (
             <JourneyPreviewContent childName={activeChild.name}>
               <div
                 onPointerDownCapture={() => onEngage()}
@@ -171,7 +178,10 @@ export function HubModulePageShell({
               </div>
             </JourneyPreviewContent>
           ) : (
-            <LockedBlock locked={locked} rounded="rounded-2xl">
+            <LockedBlock
+              locked={locked && !infantExplorePreview}
+              rounded="rounded-2xl"
+            >
               <div
                 onPointerDownCapture={() => onEngage()}
                 onKeyDownCapture={(e) => {

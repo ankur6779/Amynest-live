@@ -39,6 +39,8 @@ import {
 import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
 import { LockedBlock } from "@/components/locked-block";
+import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
+import { HubRenderContext, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
@@ -165,6 +167,11 @@ const WEB_HUB_GROUPS = [
   { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
 ] as const;
 
+function FeatureGate(props: React.ComponentProps<typeof LockedBlock>) {
+  const discoveryPreview = useInfantDiscoveryPreview();
+  return <LockedBlock {...props} discoveryPreview={discoveryPreview} />;
+}
+
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
   id: string;
@@ -206,6 +213,7 @@ function HubSection({
 }: SectionProps & {
   onOpen?: () => void;
 }) {
+  const discoveryPreview = useInfantDiscoveryPreview();
   const [open, setOpen] = useState(defaultOpen);
   const toggle = () => {
     setOpen(v => {
@@ -249,7 +257,7 @@ function HubSection({
               <div className={HUB_FEATURE_TILE_TEXT}>
                 <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                   <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
-                  {tryFree && <TryFreeBadge />}
+                  {tryFree && !discoveryPreview ? <TryFreeBadge /> : null}
                 </div>
                 <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
               </div>
@@ -284,7 +292,10 @@ function HubSection({
                 "animate-in fade-in slide-in-from-top-1 duration-200",
               )}
             >
-              {previewLocked && childName ? (
+              {discoveryPreview ? (
+                <InfantExplorePreviewBanner className="mb-3" />
+              ) : null}
+              {previewLocked && !discoveryPreview && childName ? (
                 <JourneyPreviewContent childName={childName} isInfant={isInfant}>
                   {children}
                 </JourneyPreviewContent>
@@ -618,7 +629,7 @@ function ActivitiesSection({
         </AppLink>
       </SubSection>
 
-      <LockedBlock locked={isHubLocked("hub_rewards_shop")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      <FeatureGate locked={isHubLocked("hub_rewards_shop")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
         <SubSection
           gateSection="hub_activities"
           icon={<Gift className="h-4 w-4 text-white" />}
@@ -637,7 +648,7 @@ function ActivitiesSection({
             </Button>
           </AppLink>
         </SubSection>
-      </LockedBlock>
+      </FeatureGate>
 
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfantHubAge && <>
@@ -1034,7 +1045,7 @@ function ParentingHubPage() {
       </div>;
   }
 
-  // ── Two-section layout: For You (current band) + Early Access (2+ modules) ──
+  // ── Two-section layout: For You (current band) + Explore What's Next (2+ preview) ──
   const currentBand: AgeBand | null = effectiveChild ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
   const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
@@ -1142,7 +1153,7 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_smart_math_tricks")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_smart_math_tricks")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/smart-math-tricks"
             title={t("parent_hub.web_tiles.smart-math-tricks.title")}
@@ -1154,7 +1165,7 @@ function ParentingHubPage() {
             testId="smart-math-tricks-launch-card"
             sectionId="smart-math-tricks"
           />
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   },
@@ -1165,7 +1176,7 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_abacus")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_abacus")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/abacus"
             title={t("pages.parenting_hub.abacus_pro_zone")}
@@ -1177,7 +1188,7 @@ function ParentingHubPage() {
             testId="abacus-launch-card"
             sectionId="abacus"
           />
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   },
@@ -1205,32 +1216,32 @@ function ParentingHubPage() {
     id: "articles",
     alwaysCurrent: true,
     render: () => {
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_articles")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_articles")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} preview={articlePreview} onOpen={() => markHubUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
             <ParentingArticles childAgeMonths={totalAgeMonths} compact />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "daily-tips",
     alwaysCurrent: true,
     render: () => {
       if (!ageGroup && !isTwoPlus) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_tips")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_tips")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="daily-tips" icon={<Lightbulb className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => markHubUsed("hub_tips")}> {/* audit-ok: brand tile accent gradient */}
             <DailyTips ageGroup={ageGroup!} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "emotional",
     alwaysCurrent: true,
     render: () => {
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_emotional")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_emotional")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} preview={moodHighlight ? t("parent_hub.support.emotional_mood_preview") : undefined} onOpen={() => markHubUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
             <EmotionalSupportSection cardOrder={emotionalCardOrder} moodHighlight={moodHighlight} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "new-parent-tips",
@@ -1257,11 +1268,11 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       if (!ageGroup && !isTwoPlus) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="activities" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}> {/* audit-ok: brand tile accent gradient */}
             <ActivitiesSection ageGroup={ageGroup!} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   },
   {
@@ -1270,7 +1281,7 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/games"
             title={t("parent_hub.web_tiles.gaming-rewards.title")}
@@ -1283,7 +1294,7 @@ function ParentingHubPage() {
             sectionId="gaming-rewards"
             onNavigate={() => markHubUsed("hub_gaming_rewards")}
           />
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   },
@@ -1292,22 +1303,22 @@ function ParentingHubPage() {
     id: "art-craft",
     alwaysCurrent: true,
     render: () => {
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_art_craft")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_art_craft")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(239,68,68,0.14)100%)" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => markHubUsed("hub_art_craft")}> {/* audit-ok: brand tile accent gradient */}
             <ArtCraftReels />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   },
   {
     id: "worksheets",
     alwaysCurrent: true,
     render: () => {
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_worksheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_worksheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="worksheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.tiles.worksheets.title")} description={t("parent_hub.tiles.worksheets.desc")} accentClass="bg-gradient-to-br from-sky-400 to-indigo-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_worksheets")} onOpen={() => markHubUsed("hub_worksheets")}> {/* audit-ok: brand tile accent gradient */}
             <PrintableWorksheets childAgeMonths={totalAgeMonths} childId={effectiveChild.id} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   },
   // ── GRID — band-based ─────────────────────────────────────────────────
@@ -1315,11 +1326,11 @@ function ParentingHubPage() {
     id: "story-hub",
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_story_hub")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_story_hub")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-purple-500 to-fuchsia-600" cardClass="linear-gradient(135deg,rgba(168,85,247,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => markHubUsed("hub_story_hub")}> {/* audit-ok: brand tile accent gradient */}
             <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "phonics",
@@ -1327,7 +1338,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("phonics", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_phonics")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_phonics")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           {isPhonicsModuleAvailable() ? (
           <HubLaunchCard
             href="/phonics"
@@ -1343,7 +1354,7 @@ function ParentingHubPage() {
           ) : (
             <PhonicsUnavailableFallback compact />
           )}
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   }, {
@@ -1351,7 +1362,7 @@ function ParentingHubPage() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_ptm_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_ptm_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="ptm-prep" highlighted={ptmSeason} icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => markHubUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
             <PtmPrepAssistant child={{
             id: effectiveChild.id,
@@ -1359,7 +1370,7 @@ function ParentingHubPage() {
             age: effectiveChild.age
           }} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "smart-study",
@@ -1367,7 +1378,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_smart_study")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_smart_study")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/study"
             title={t("parent_hub.web_tiles.smart-study.title")}
@@ -1380,7 +1391,7 @@ function ParentingHubPage() {
             sectionId="smart-study"
             onNavigate={() => markHubUsed("hub_smart_study")}
           />
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   }, {
@@ -1390,7 +1401,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("spelling-mastery", totalAgeMonths, isTwoPlus)) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_spelling_mastery")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_spelling_mastery")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/spelling"
             title={t("parent_hub.web_tiles.spelling-mastery.title")}
@@ -1402,7 +1413,7 @@ function ParentingHubPage() {
             testId="spelling-mastery-launch-card"
             sectionId="spelling-mastery"
           />
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   }, {
@@ -1411,7 +1422,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("olympiad", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_olympiad")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_olympiad")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/olympiad"
             title={t("parent_hub.web_tiles.olympiad.title")}
@@ -1423,7 +1434,7 @@ function ParentingHubPage() {
             testId="olympiad-launch-card"
             sectionId="olympiad"
           />
-        </LockedBlock>
+        </FeatureGate>
       );
     }
   }, {
@@ -1431,7 +1442,7 @@ function ParentingHubPage() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("life-skills", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_life_skills")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_life_skills")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} preview={lifeSkillPreview ? t("parent_hub.support.life_skill_preview", { skill: lifeSkillPreview }) : undefined} onOpen={() => markHubUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
             <LifeSkillsZone child={{
             id: effectiveChild.id,
@@ -1439,7 +1450,7 @@ function ParentingHubPage() {
             age: effectiveChild.age
           }} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     // Coloring Books — Google-Drive-backed PDF library. Shows for age
@@ -1450,11 +1461,11 @@ function ParentingHubPage() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("coloring-books", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_coloring_books")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_coloring_books")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(251,113,133,0.14)100%)" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => markHubUsed("hub_coloring_books")}> {/* audit-ok: brand tile accent gradient */}
             <ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     // Fun Sheets — activity & learning PDFs from two Google Drive folders.
@@ -1465,17 +1476,17 @@ function ParentingHubPage() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("fun-sheets", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_fun_sheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_fun_sheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" cardClass="linear-gradient(135deg,rgba(163,230,53,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => markHubUsed("hub_fun_sheets")}> {/* audit-ok: brand tile accent gradient */}
             <FunSheets childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "answer-to-kids-how",
     alwaysCurrent: true,
     render: () => (
-      <LockedBlock
+      <FeatureGate
         reason="hub_locked"
         locked={isHubLocked("hub_answer_to_kids_how")}
         journeySoft={journeySoftLock}
@@ -1494,18 +1505,18 @@ function ParentingHubPage() {
           sectionId="answer-to-kids-how"
           onNavigate={() => markHubUsed("hub_answer_to_kids_how")}
         />
-      </LockedBlock>
+      </FeatureGate>
     ),
   }, {
     id: "event-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("event-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_event_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_event_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(249,115,22,0.14)100%)" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => markHubUsed("hub_event_prep")}> {/* audit-ok: brand tile accent gradient */}
             <EventPrepCard />
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     // Amy Speech Coach — opens dedicated /parenting-hub/speech-coach page.
@@ -1515,7 +1526,7 @@ function ParentingHubPage() {
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
       if (!shouldRenderHubTileContent("speech-coach", totalAgeMonths, isTwoPlus)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_speech")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_speech")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="speech-coach" icon={<MessageCircleHeart className="h-5 w-5 text-white" />} title={t("screens.speech_coach.hub_tile.title")} description={t("screens.speech_coach.hub_tile.description")} accentClass="bg-gradient-to-br from-violet-500 to-fuchsia-500" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_speech")} onOpen={() => markHubUsed("hub_speech")}>  {/* audit-ok: intentional vibrant violet→fuchsia accent gradient for Speech Coach tile */}
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
@@ -1529,13 +1540,13 @@ function ParentingHubPage() {
               </AppLink>
             </div>
           </HubSection>
-        </LockedBlock>;
+        </FeatureGate>;
     }
   }, {
     id: "discovery-worlds",
     alwaysCurrent: true,
     render: () => (
-      <LockedBlock
+      <FeatureGate
         reason="hub_locked"
         locked={
           isHubLocked("hub_vehicle_world") &&
@@ -1558,7 +1569,7 @@ function ParentingHubPage() {
             tryFreeFor("hub_nature_world")
           }
         />
-      </LockedBlock>
+      </FeatureGate>
     ),
   }] : [];
 
@@ -1578,7 +1589,11 @@ function ParentingHubPage() {
     hubSurface.current = surface;
     const node = s.render();
     hubSurface.current = "main";
-    return node;
+    return (
+      <HubRenderContext.Provider value={{ surface, isInfant }}>
+        {node}
+      </HubRenderContext.Provider>
+    );
   };
 
   const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
