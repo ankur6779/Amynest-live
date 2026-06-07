@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { getAuth } from "../lib/auth";
 import { canAccessChild, isChildOwner } from "../lib/child-access";
+import { isCoParentFeatureEnabled } from "../lib/co-parent-feature";
 import { db, childCaregiversTable } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -24,6 +25,11 @@ function makeInviteCode(): string {
 }
 
 router.post("/child-caregivers/:childId/invite", async (req, res): Promise<void> => {
+  if (!isCoParentFeatureEnabled()) {
+    res.status(403).json({ error: "feature_disabled" });
+    return;
+  }
+
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -63,6 +69,11 @@ router.post("/child-caregivers/:childId/invite", async (req, res): Promise<void>
 });
 
 router.post("/child-caregivers/accept", async (req, res): Promise<void> => {
+  if (!isCoParentFeatureEnabled()) {
+    res.status(403).json({ error: "feature_disabled" });
+    return;
+  }
+
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

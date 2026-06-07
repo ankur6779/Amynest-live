@@ -41,8 +41,8 @@ export const FEATURE_PAGES: FeaturePageConfig[] = [
         body: "Track height, weight, and immunization schedules with reminders you can share with your pediatrician.",
       },
       {
-        title: "Weekly share for co-parents",
-        body: "Send a simple weekly summary so partners, grandparents, or caregivers stay aligned.",
+        title: "Weekly pediatrician summary",
+        body: "Export growth, feeds, and vaccine timelines in a simple report you can share at check-ups.",
       },
     ],
     faqs: [

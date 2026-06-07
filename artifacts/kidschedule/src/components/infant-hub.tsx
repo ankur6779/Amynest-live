@@ -25,6 +25,7 @@ import { ParentWellbeing } from "@/components/infant/parent-wellbeing";
 import { DoctorVisitReport } from "@/components/infant/doctor-visit-report";
 import { WeeklyProgressReport } from "@/components/infant/weekly-progress-report";
 import { CoParentPanel } from "@/components/infant/co-parent-panel";
+import { FF_CO_PARENT } from "@/lib/co-parent-feature-flags";
 import { InfantNotificationPrefs } from "@/components/infant/infant-notification-prefs";
 import { formatAge } from "@/lib/age-groups";
 import { INFANT_HUB_OPEN_SECTION_EVENT } from "@/lib/hub-activity-cross-link";
@@ -758,6 +759,7 @@ export function InfantHub({
         <DoctorVisitReport childId={childId} childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
+      {FF_CO_PARENT && (
       <IHSection
         sectionId="infant-coparent"
         icon={<Users className="h-4 w-4" />}
@@ -768,6 +770,7 @@ export function InfantHub({
       >
         <CoParentPanel childId={childId} ageMonths={ageMonths} />
       </IHSection>
+      )}
 
       <InfantNotificationPrefs childId={childId} ageMonths={ageMonths} />
 

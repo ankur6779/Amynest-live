@@ -11,9 +11,10 @@ import {
 } from "lucide-react";
 import { buildInfantHubSectionDeepLink, buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
 import { setInfantHubEntrySource, trackInfantHubShortcutTapped } from "@/lib/infant-hub-analytics";
+import { FF_CO_PARENT } from "@/lib/co-parent-feature-flags";
 import { Link } from "wouter";
 
-const SHORTCUTS = [
+const ALL_SHORTCUTS = [
   { id: "infant-cry", icon: MessageCircle, labelKey: "cry_insight", hash: "infant-cry", tint: "from-rose-400 to-pink-500" },
   { id: "infant-sleep", icon: BedDouble, labelKey: "sleep", hash: "infant-sleep", tint: "from-blue-400 to-indigo-500" },
   { id: "infant-milestones", icon: Activity, labelKey: "milestones", hash: "infant-milestones", tint: "from-violet-400 to-purple-500" },
@@ -23,6 +24,10 @@ const SHORTCUTS = [
   { id: "infant-doctor", icon: FileDown, labelKey: "doctor", hash: "infant-doctor", tint: "from-cyan-400 to-blue-500" },
   { id: "infant-coparent", icon: Users, labelKey: "coparent", hash: "infant-coparent", tint: "from-indigo-400 to-violet-500" },
 ] as const;
+
+const SHORTCUTS = ALL_SHORTCUTS.filter(
+  (s) => FF_CO_PARENT || s.id !== "infant-coparent",
+);
 
 type InfantModeShortcutsProps = {
   childId: number;
