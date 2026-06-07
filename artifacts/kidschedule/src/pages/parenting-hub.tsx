@@ -41,7 +41,14 @@ import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
 import { LockedBlock } from "@/components/locked-block";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
-import { HubRenderContext, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
+import {
+  HubRenderContext,
+  HubSectionPointsContext,
+  useHubSectionPoints,
+  useInfantDiscoveryPreview,
+} from "@/lib/hub-render-context";
+import { useAuth } from "@/lib/firebase-auth-hooks";
+import { earnGamingPoints } from "@/lib/gaming-wallet-api";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
@@ -140,6 +147,9 @@ const TODAY_TILE_ORDER = [
 const HUB_EXPANDED_GROUPS_KEY = "amynest:hub:expandedGroups:v2";
 const DEFAULT_EXPANDED_GROUPS: string[] = [];
 
+/** Reward points granted the first time per day a parent opens a hub section. */
+const HUB_SECTION_REWARD_POINTS = 5;
+
 function loadExpandedGroups(): Set<string> {
   if (typeof window === "undefined") return new Set(DEFAULT_EXPANDED_GROUPS);
   try {
@@ -215,11 +225,15 @@ function HubSection({
   onOpen?: () => void;
 }) {
   const discoveryPreview = useInfantDiscoveryPreview();
+  const awardSectionPoints = useHubSectionPoints();
   const [open, setOpen] = useState(defaultOpen);
   const toggle = () => {
     setOpen(v => {
       const next = !v;
-      if (next) onOpen?.();
+      if (next) {
+        onOpen?.();
+        awardSectionPoints(id);
+      }
       return next;
     });
   };
@@ -319,9 +333,11 @@ function RoutineLaunchCard({
   description: string;
 }) {
   const theme = getHubFeatureTileAccent("generate-routine");
+  const awardSectionPoints = useHubSectionPoints();
   return (
     <AppLink
       href="/routines/generate"
+      onClick={() => awardSectionPoints("generate-routine")}
       className={cn("group block h-full overflow-hidden p-0 pl-0", hubShadedSectionCardClasses(theme))}
       data-testid="routine-launch-card"
       data-section-id="generate-routine"
@@ -899,6 +915,32 @@ function ParentingHubPage() {
   };
   const hubUsage = useFeatureUsage();
   const authFetch = useAuthFetch();
+  const { isSignedIn } = useAuth();
+
+  // Award gaming-reward points the first time per day a parent opens a hub
+  // section. Deduped in-memory + server-side via a per-section/day idempotency
+  // key so reopening (or reloads) can't farm points. Fire-and-forget.
+  const awardedSectionsRef = useRef<Set<string>>(new Set());
+  const awardHubSectionPoints = useCallback(
+    (sectionId: string) => {
+      if (!isSignedIn || !sectionId) return;
+      const day = new Date().toISOString().slice(0, 10);
+      const key = `hub-section-${sectionId}-${day}`;
+      if (awardedSectionsRef.current.has(key)) return;
+      awardedSectionsRef.current.add(key);
+      void earnGamingPoints(authFetch, {
+        childName: effectiveChild?.name ?? "Explorer",
+        activity: `Parent hub: ${sectionId}`,
+        amount: HUB_SECTION_REWARD_POINTS,
+        source: "bonus",
+        idempotencyKey: key,
+      }).catch(() => {
+        // Allow a retry on the next open if the request failed.
+        awardedSectionsRef.current.delete(key);
+      });
+    },
+    [isSignedIn, authFetch, effectiveChild?.name],
+  );
 
   useEffect(() => {
     if (!effectiveChild || !ageGroup) return;
@@ -942,7 +984,12 @@ function ParentingHubPage() {
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+        awardHubSectionPoints(`group-${key}`);
+      }
       persistExpandedGroups(next);
       return next;
     });
@@ -1600,6 +1647,7 @@ function ParentingHubPage() {
   const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
 
   return (
+    <HubSectionPointsContext.Provider value={awardHubSectionPoints}>
     <div
       className={cn(
         PARENT_HUB_PAGE,
@@ -1868,6 +1916,7 @@ function ParentingHubPage() {
         </AppLink>
       </div>
     </div>
+    </HubSectionPointsContext.Provider>
   );
 }
 

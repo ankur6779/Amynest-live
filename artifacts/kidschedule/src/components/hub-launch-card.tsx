@@ -1,7 +1,7 @@
 import { AppLink } from "@/components/app-link";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
-import { useInfantDiscoveryPreview } from "@/lib/hub-render-context";
+import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,6 +39,7 @@ export function HubLaunchCard({
 }) {
   const { t } = useTranslation();
   const discoveryPreview = useInfantDiscoveryPreview();
+  const awardSectionPoints = useHubSectionPoints();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
   const theme = getHubFeatureTileAccent(tileId);
   const actionLabel = discoveryPreview
@@ -48,7 +49,10 @@ export function HubLaunchCard({
   return (
     <AppLink
       href={href}
-      onClick={() => onNavigate?.()}
+      onClick={() => {
+        awardSectionPoints(tileId);
+        onNavigate?.();
+      }}
       className={cn(
         "group block h-full overflow-hidden p-0 pl-0",
         hubShadedSectionCardClasses(theme),

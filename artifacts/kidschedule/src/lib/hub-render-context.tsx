@@ -12,3 +12,16 @@ export function useInfantDiscoveryPreview(): boolean {
   const { surface, isInfant } = useContext(HubRenderContext);
   return isInfant && surface === "early";
 }
+
+/**
+ * Awards gaming-reward points the first time (per day) a parent engages with a
+ * parent-hub section. The implementation is provided by the hub page; default
+ * is a no-op so the hub tiles work in isolation (tests, storybook).
+ */
+export const HubSectionPointsContext = createContext<(sectionId: string) => void>(
+  () => {},
+);
+
+export function useHubSectionPoints(): (sectionId: string) => void {
+  return useContext(HubSectionPointsContext);
+}
