@@ -1,3 +1,7 @@
+import {
+  MEALS_AI_MAX_COMPLETION_TOKENS,
+  MEALS_AI_OPENAI_TIMEOUT_MS,
+} from "../../lib/meals-ai-timeouts.js";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
 import {
   getAgeBand,
@@ -162,10 +166,10 @@ export async function runMealsAiGenerate(input: {
         { role: "user", content: input.prompt },
       ],
       temperature: 0.85,
-      max_completion_tokens: 2500,
+      max_completion_tokens: MEALS_AI_MAX_COMPLETION_TOKENS,
       response_format: { type: "json_object" },
     },
-    30_000,
+    MEALS_AI_OPENAI_TIMEOUT_MS,
   );
   if (!outcome.content) throw new Error(outcome.error ?? "ai_empty");
 

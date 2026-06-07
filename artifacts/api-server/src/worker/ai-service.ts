@@ -1,6 +1,7 @@
 import { logger } from "../lib/logger.js";
 import { getMemorySnapshot } from "../utils/memory-monitor.js";
 import { parseEnvMs } from "../lib/env.js";
+import { getMealsAiWorkerTimeoutMs } from "../lib/meals-ai-timeouts.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
 import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import type { AiJobQueuePayload } from "../queue/index.js";
@@ -8,6 +9,14 @@ import { getJobRecord, patchJobRecord, saveJobRecord } from "../queue/job-result
 import type { AiJobRecord } from "../queue/types.js";
 
 const JOB_TIMEOUT_MS = parseEnvMs("AI_JOB_TIMEOUT_MS", AI_CHAT_TIMEOUT_MS);
+
+function resolveJobTimeoutMs(type: string): number {
+  if (type === "meals.ai_generate") {
+    return getMealsAiWorkerTimeoutMs();
+  }
+  const ms = Number.isFinite(JOB_TIMEOUT_MS) ? JOB_TIMEOUT_MS : 10_000;
+  return ms > 0 ? ms : 10_000;
+}
 
 /**
  * Process one BullMQ AI job — OpenAI / ElevenLabs with timeout + Redis result storage.
@@ -34,7 +43,7 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
   };
   await saveJobRecord(processing);
 
-  const timeoutMs = Number.isFinite(JOB_TIMEOUT_MS) ? JOB_TIMEOUT_MS : 10_000;
+  const timeoutMs = resolveJobTimeoutMs(type);
   const timeout = new Promise<"timeout">((resolve) =>
     setTimeout(() => resolve("timeout"), timeoutMs),
   );
@@ -48,7 +57,10 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
         timedOut: true,
         error: "AI job timed out",
       });
-      logger.warn({ evt: "ai_worker.job_timeout", jobId, durationMs: Date.now() - started }, "AI job timed out");
+      logger.warn(
+        { evt: "ai_worker.job_timeout", jobId, type, timeoutMs, durationMs: Date.now() - started },
+        "AI job timed out",
+      );
       return null;
     }
 
