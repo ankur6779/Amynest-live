@@ -23,7 +23,6 @@
     "generate:appstore-preview": "node scripts/generate-appstore-preview-video.mjs",
     "generate:store-tap-image": "node scripts/generate-store-tap-image.mjs",
     "generate:social-assets": "node scripts/generate-social-assets.mjs",
-    "generate:amy-baked": "node scripts/render-amy-baked.mjs",
     "generate:infant-parenting-assets": "node scripts/generate-infant-parenting-assets.mjs",
     "test:e2e": "playwright test --config playwright.config.ts",
     "test:e2e:startup": "playwright test --config playwright.config.startup.ts",

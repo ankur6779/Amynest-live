@@ -45,7 +45,9 @@ export function AmyIcon({
     display: "block",
     width: faceSize,
     height: faceSize,
-    objectFit: "contain"
+    objectFit: "cover",
+    objectPosition: "center 42%",
+    borderRadius: "50%"
   }} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
     display: "block"
   }}>

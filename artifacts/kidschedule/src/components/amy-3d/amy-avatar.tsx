@@ -11,8 +11,10 @@
 
 import { Component, lazy, Suspense, type ReactNode } from "react";
 import { AmyIcon } from "@/components/amy-icon";
+import { AmyPortrait } from "@/components/amy-3d/amy-portrait";
 import { safeImport } from "@/lib/safe-import";
 import { canRenderLive3D } from "@/lib/amy-3d/webgl-support";
+import { AMY_MODEL_SRC, useAmyModelAvailable } from "@/lib/amy-3d/baked-avatar";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 
 const Amy3DStage = lazy(() =>
@@ -60,21 +62,36 @@ export function AmyAvatar({
   bounce = false,
   className,
 }: AmyAvatarProps) {
-  const fallback = (
+  const modelAvailable = useAmyModelAvailable();
+  const iconFallback = (
     <AmyIcon size={size} ring={ring} bounce={bounce} className={className} />
   );
 
-  if (tier !== "hero" || !canRenderLive3D()) {
-    return fallback;
+  // Small / non-hero spots stay 2D (the premium baked image via AmyIcon).
+  if (tier !== "hero") {
+    return iconFallback;
   }
 
-  return (
-    <Amy3DErrorBoundary fallback={fallback}>
-      <Suspense fallback={fallback}>
-        <Amy3DStage state={state} size={size} modelUrl={modelUrl} className={className} />
-      </Suspense>
-    </Amy3DErrorBoundary>
-  );
+  // Hero: prefer the live rigged 3D model when present + WebGL works.
+  // Otherwise show the premium animated image portrait (never the old sphere).
+  const portrait = <AmyPortrait state={state} size={size} className={className} />;
+
+  if (modelAvailable && canRenderLive3D()) {
+    return (
+      <Amy3DErrorBoundary fallback={portrait}>
+        <Suspense fallback={portrait}>
+          <Amy3DStage
+            state={state}
+            size={size}
+            modelUrl={modelUrl ?? AMY_MODEL_SRC}
+            className={className}
+          />
+        </Suspense>
+      </Amy3DErrorBoundary>
+    );
+  }
+
+  return portrait;
 }
 
 export default AmyAvatar;
