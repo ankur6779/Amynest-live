@@ -5,6 +5,8 @@ import { ArrowLeft, ArrowRight, Loader2, Mic, PhoneOff, Sparkles, Star, Trophy, 
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { AmyIcon } from "@/components/amy-icon";
+import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
+import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -43,6 +45,80 @@ import {
   loadCoachLocalSnapshot,
   saveCoachJourneySnapshot,
 } from "./speech-coach-utils";
+
+/** Big, responsive hero size (~half the viewport, capped for tablets/desktop). */
+function useHeroSize() {
+  const [size, setSize] = useState(300);
+  useEffect(() => {
+    const calc = () => {
+      const s = Math.min(window.innerWidth * 0.66, window.innerHeight * 0.44, 380);
+      setSize(Math.max(240, Math.round(s)));
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+  return size;
+}
+
+/** Large, animated Amy hero for the live conversation screen. */
+function ConversationAmyHero({
+  listening,
+  speaking,
+  thinking,
+}: {
+  listening: boolean;
+  speaking: boolean;
+  thinking: boolean;
+}) {
+  const avatar = useHeroSize();
+  const glass = Math.round(avatar * 1.16);
+  const glow = Math.round(avatar * 1.5);
+  const state: Amy3DState = speaking
+    ? "speaking"
+    : listening
+      ? "listening"
+      : thinking
+        ? "thinking"
+        : "idle";
+  return (
+    <div
+      className="relative flex flex-1 items-center justify-center"
+      style={{ minHeight: glass + 24 }}
+    >
+      <div
+        className={[
+          "absolute rounded-full blur-3xl transition-all duration-500",
+          listening ? "bg-cyan-400/30" : speaking ? "bg-fuchsia-500/35" : "bg-violet-500/20",
+        ].join(" ")}
+        style={{ width: glow, height: glow }}
+      />
+      {listening && (
+        <div
+          className="absolute animate-ping rounded-full border border-cyan-300/50"
+          style={{ width: glass, height: glass }}
+        />
+      )}
+      <div
+        className={[
+          "relative grid place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-500",
+          speaking ? "scale-105 border-fuchsia-300/70" : "",
+          listening ? "scale-110 border-cyan-300/80" : "",
+          thinking ? "border-amber-300/80" : "",
+        ].join(" ")}
+        style={{ width: glass, height: glass }}
+      >
+        {thinking && (
+          <Loader2
+            className="absolute animate-spin text-amber-200/50"
+            style={{ width: glass, height: glass }}
+          />
+        )}
+        <AmyAvatar tier="hero" size={avatar} ring bounce={speaking} state={state} />
+      </div>
+    </div>
+  );
+}
 
 type AnyChild = { id: number; name: string; age: number; ageMonths?: number | null };
 
@@ -688,26 +764,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         ) : null}
 
         <section className="mt-4 flex flex-1 flex-col rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(168,85,247,0.75)] backdrop-blur-xl">
-          <div className="relative flex min-h-[200px] flex-1 items-center justify-center">
-            <div
-              className={[
-                "absolute h-56 w-56 rounded-full blur-3xl transition-all duration-500",
-                listening ? "bg-cyan-400/30" : speaking ? "bg-fuchsia-500/35" : "bg-violet-500/20",
-              ].join(" ")}
-            />
-            {listening && <div className="absolute h-44 w-44 animate-ping rounded-full border border-cyan-300/50" />}
-            <div
-              className={[
-                "relative grid h-40 w-40 place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-500",
-                speaking ? "scale-105 border-fuchsia-300/70" : "",
-                listening ? "scale-110 border-cyan-300/80" : "",
-                thinking ? "border-amber-300/80" : "",
-              ].join(" ")}
-            >
-              {thinking && <Loader2 className="absolute h-44 w-44 animate-spin text-amber-200/50" />}
-              <AmyIcon size={104} ring bounce={speaking} />
-            </div>
-          </div>
+          <ConversationAmyHero listening={listening} speaking={speaking} thinking={thinking} />
 
           {phase === "idle" && (
             <div className="space-y-2 text-center">
