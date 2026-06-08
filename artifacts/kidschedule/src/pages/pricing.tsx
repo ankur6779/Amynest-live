@@ -25,7 +25,7 @@ import { SubscriptionEcosystemSection } from "@/components/subscription-ecosyste
 import { SubscriptionTrustSection } from "@/components/subscription-trust-section";
 import { SubscriptionAnnualUpsell } from "@/components/subscription-annual-upsell";
 import { SubscriptionTrialOffer } from "@/components/subscription-trial-offer";
-import { SubscriptionCancelDialog } from "@/components/subscription-cancel-dialog";
+import { AmyCancelAgent } from "@/components/amy-cancel-agent";
 import {
   PostPurchaseUpsellModal,
   shouldShowPostPurchaseUpsell,
@@ -58,7 +58,6 @@ import { wasPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storag
 import {
   SUBSCRIPTION_HERO,
   PURCHASE_SCREEN,
-  CANCELLATION_RETENTION,
   planCta,
 } from "@workspace/subscription-marketing";
 
@@ -142,7 +141,8 @@ export default function PricingPage() {
   const [submitting, setSubmitting] = useState<"googlepay" | "razorpay" | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showCancelAgent, setShowCancelAgent] = useState(false);
+  const [cancelAgentBillingMode, setCancelAgentBillingMode] = useState<"razorpay" | "store">("razorpay");
   const [notice, setNotice] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
@@ -207,17 +207,22 @@ export default function PricingPage() {
 
   const onCancel = async () => {
     setCancelling(true);
-    setShowConfirm(false);
+    setShowCancelAgent(false);
     setNotice(null);
     const res = await cancelSubscription();
     setCancelling(false);
     if (!res.ok) setNotice(res.reason ?? "Could not cancel. Please try again."); // i18n-ok: fallback error
   };
 
+  const openCancelAgent = (mode: "razorpay" | "store") => {
+    trackSubscriptionEvent({ event: "cancel_started", source: "pricing" });
+    setCancelAgentBillingMode(mode);
+    setShowCancelAgent(true);
+  };
+
   // Store-managed (RevenueCat) subscriptions can only be cancelled in Apple /
   // Google's own subscription settings — send the user straight there.
   const openStoreSubscriptions = (store: "apple" | "google") => {
-    trackSubscriptionEvent({ event: "cancel_started", source: "pricing" });
     const url =
       store === "apple"
         ? APPLE_MANAGE_SUBSCRIPTIONS_URL
@@ -797,10 +802,7 @@ export default function PricingPage() {
         {canCancelHere && (
           <Button
             variant="outline"
-            onClick={() => {
-              trackSubscriptionEvent({ event: "cancel_started", source: "pricing" });
-              setShowConfirm(true);
-            }}
+            onClick={() => openCancelAgent("razorpay")}
             disabled={cancelling}
             data-testid="button-cancel-subscription"
             data-on-dark
@@ -834,7 +836,7 @@ export default function PricingPage() {
               {showAppleCancel && (
                 <Button
                   variant="outline"
-                  onClick={() => openStoreSubscriptions("apple")}
+                  onClick={() => openCancelAgent("store")}
                   data-testid="button-cancel-app-store"
                   data-on-dark
                   className="h-11 w-full border-white/20 text-sm font-semibold text-white/85 hover:border-white/40 hover:bg-white/10 hover:text-white"
@@ -845,7 +847,7 @@ export default function PricingPage() {
               {showGoogleCancel && (
                 <Button
                   variant="outline"
-                  onClick={() => openStoreSubscriptions("google")}
+                  onClick={() => openCancelAgent("store")}
                   data-testid="button-cancel-google-play"
                   data-on-dark
                   className="h-11 w-full border-white/20 text-sm font-semibold text-white/85 hover:border-white/40 hover:bg-white/10 hover:text-white"
@@ -958,11 +960,19 @@ export default function PricingPage() {
         </div>
       )}
 
-      <SubscriptionCancelDialog
-        open={showConfirm}
-        onClose={() => setShowConfirm(false)}
+      <AmyCancelAgent
+        open={showCancelAgent}
+        onClose={() => setShowCancelAgent(false)}
+        billingMode={cancelAgentBillingMode}
         periodEnd={periodEnd}
         cancelling={cancelling}
+        storeTarget={
+          showAppleCancel && showGoogleCancel
+            ? "both"
+            : showAppleCancel
+              ? "apple"
+              : "google"
+        }
         annualMonthlyEquivalent={(() => {
           const yearly = sortedPlans.find((p) => p.id === "yearly");
           if (!yearly) return null;
@@ -976,9 +986,14 @@ export default function PricingPage() {
         })()}
         onSwitchToAnnual={() => {
           setSelected("yearly");
-          void onUpgradeNativeStore();
+          if (isManagedByStore || isNativeShell) {
+            void onUpgradeNativeStore();
+          } else {
+            void onUpgrade();
+          }
         }}
         onConfirmCancel={() => void onCancel()}
+        onOpenStore={openStoreSubscriptions}
       />
 
       {upsellPlan && (

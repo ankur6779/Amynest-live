@@ -5307,7 +5307,39 @@
       "yes_cancel": "Pause at period end",
       "win_back_headline": "Their routines and progress are still here",
       "win_back_subtitle": "You already built momentum—Speech practice, learning paths, and calmer days. Reactivate and avoid starting over when your child is ready to continue.",
-      "win_back_cta": "Reactivate Growth Year"
+      "win_back_cta": "Reactivate Growth Year",
+      "amy_cancel_agent": {
+        "title": "Amy Agent",
+        "close": "Close",
+        "greeting": "Hi, I'm Amy—happy to help with your plan cancellation.",
+        "ask_reason": "Would you mind sharing a bit about why you're looking to cancel?",
+        "feedback_helps": "Your feedback really helps us improve the experience for our entire community.",
+        "reasons": {
+          "too_expensive": "It's too expensive",
+          "not_using": "I'm not using it enough",
+          "missing_features": "Missing features I need",
+          "technical_issues": "Technical issues",
+          "child_grown": "My child has outgrown it",
+          "other": "Other reason"
+        },
+        "retention_too_expensive": "I hear you—budget matters. Many families switch to Growth Year instead of pausing: {{priceHint}}, save ~33%, and keep coaching and learning unbroken through the school year.",
+        "retention_not_using": "That's fair—busy weeks happen. Try one 5-minute routine or a single Coach session this week; most parents see calmer days within two weeks when they stick with it.",
+        "retention_missing_features": "Tell me what's missing—we ship Speech Coach, adaptive learning, routines, and Hub updates often. Your feedback goes straight to our team, and keeping your plan means you get new features automatically.",
+        "retention_technical_issues": "Sorry you hit a snag. Message support from the app and we'll fix it fast—most issues resolve in a day. Keeping your plan active means you won't lose progress while we help.",
+        "retention_child_grown": "AmyNest grows with children ages 0–12—routines, Speech Coach, and Hub content adapt as they develop. If you have another child in the family, the same subscription covers every profile.",
+        "lower_monthly_rate": "a lower monthly rate",
+        "switch_to_growth_year": "Switch to Growth Year",
+        "continue_cancellation": "Continue cancellation",
+        "still_want_cancel": "I still want to cancel",
+        "before_you_go": "Before you go—is there anything else you'd like us to know? Every note helps us build a better experience for families like yours.",
+        "feedback_placeholder": "Type your message…",
+        "send": "Send",
+        "skip_feedback": "Skip and continue",
+        "store_redirect_intro": "Got it—thank you for sharing. I'll take you to your app store's subscription settings, where you can complete the cancellation.",
+        "razorpay_confirm": "Understood. You can pause at the end of this billing period—your progress stays saved and you can return anytime.",
+        "razorpay_confirm_with_date": "Understood. Your plan stays active until {{date}}. After that, daily support pauses—your family profile and progress remain saved.",
+        "powered_by": "Powered by AmyNest AI"
+      }
     },
     "privacy": {
       "amynest_ai": "AmyNest AI",
