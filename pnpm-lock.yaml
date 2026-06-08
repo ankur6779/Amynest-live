@@ -316,6 +316,9 @@ importers:
       '@workspace/parent-hub-journey':
         specifier: workspace:*
         version: link:../../lib/parent-hub-journey
+      '@workspace/parent-hub-speak':
+        specifier: workspace:*
+        version: link:../../lib/parent-hub-speak
       '@workspace/parenting-articles':
         specifier: workspace:*
         version: link:../../lib/parenting-articles

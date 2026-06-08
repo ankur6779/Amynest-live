@@ -40,6 +40,7 @@
     "@workspace/infant-hub": "workspace:*",
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",
+    "@workspace/parent-hub-speak": "workspace:*",
     "@workspace/parent-hub-journey": "workspace:*",
     "@workspace/learning-progress-engine": "workspace:*",
     "@workspace/learning-zone-english": "workspace:*",

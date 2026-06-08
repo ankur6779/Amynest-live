@@ -91,6 +91,8 @@ vi.mock("@/lib/amy-voice-audio-start", () => ({
     await opts.play();
   }),
   isNotAllowedPlayError: vi.fn(() => false),
+  MIN_AUDIO_BLOB_BYTES: 500,
+  validateAudioBlobDecodable: vi.fn(async () => {}),
 }));
 
 /** Catalog bypass uses controller prepared URL — must resolve without real network. */
