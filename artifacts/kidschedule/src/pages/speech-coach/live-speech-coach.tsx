@@ -38,6 +38,7 @@ import {
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
 import { coachStateToAmy3D } from "@/lib/amy-3d/use-amy-3d-state";
+import { useMicLevelRef } from "@/lib/amy-3d/use-mic-level";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -210,6 +211,7 @@ function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
   const speaking = state === "ai_speaking" || state === "feedback" || state === "next_task";
   const thinking = state === "processing";
   const avatar = useHeroSize();
+  const audioLevelRef = useMicLevelRef(listening);
   const glass = Math.round(avatar * 1.18);
   const glow = Math.round(avatar * 1.5);
 
@@ -253,6 +255,7 @@ function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
           ring
           bounce={success || speaking}
           state={success ? "celebrating" : coachStateToAmy3D(state)}
+          audioLevelRef={audioLevelRef}
         />
       </div>
     </div>

@@ -9,7 +9,7 @@
 // This keeps "live 3D only on hero" enforced in one place and guarantees small
 // spots stay cheap on low-end Android WebView / iOS.
 
-import { Component, lazy, Suspense, type ReactNode } from "react";
+import { Component, lazy, Suspense, type ReactNode, type RefObject } from "react";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyPortrait } from "@/components/amy-3d/amy-portrait";
 import { safeImport } from "@/lib/safe-import";
@@ -42,6 +42,8 @@ export interface AmyAvatarProps {
   ring?: boolean;
   bounce?: boolean;
   className?: string;
+  /** Live mic level (0..1) ref → reactive listening halo on the hero portrait. */
+  audioLevelRef?: RefObject<number>;
 }
 
 // ── Error boundary: any failure inside the 3D stage drops to the 2D fallback ──
@@ -69,6 +71,7 @@ export function AmyAvatar({
   ring = false,
   bounce = false,
   className,
+  audioLevelRef,
 }: AmyAvatarProps) {
   const modelAvailable = useAmyModelAvailable();
   const iconFallback = (
@@ -82,7 +85,14 @@ export function AmyAvatar({
 
   // Hero: prefer the live rigged 3D model when present + WebGL works.
   // Otherwise show the premium animated image portrait (never the old sphere).
-  const portrait = <AmyPortrait state={state} size={size} className={className} />;
+  const portrait = (
+    <AmyPortrait
+      state={state}
+      size={size}
+      className={className}
+      audioLevelRef={audioLevelRef}
+    />
+  );
 
   if (ENABLE_LIVE_3D && modelAvailable && canRenderLive3D()) {
     return (

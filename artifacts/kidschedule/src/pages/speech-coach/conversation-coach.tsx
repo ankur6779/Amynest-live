@@ -7,6 +7,7 @@ import { AddChildLink } from "@/components/add-child-link";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
+import { useMicLevelRef } from "@/lib/amy-3d/use-mic-level";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -79,6 +80,9 @@ function ConversationAmyHero({
   const avatar = useHeroSize();
   const glass = Math.round(avatar * 1.16);
   const glow = Math.round(avatar * 1.5);
+  // Live mic level (0..1) → reactive listening halo. 0 when not listening or on
+  // the native Web Speech path (no accessible stream) → portrait uses its pulse.
+  const audioLevelRef = useMicLevelRef(listening);
   const state: Amy3DState = speaking
     ? "speaking"
     : listening
@@ -119,7 +123,14 @@ function ConversationAmyHero({
             style={{ width: glass, height: glass }}
           />
         )}
-        <AmyAvatar tier="hero" size={avatar} ring bounce={speaking} state={state} />
+        <AmyAvatar
+          tier="hero"
+          size={avatar}
+          ring
+          bounce={speaking}
+          state={state}
+          audioLevelRef={audioLevelRef}
+        />
       </div>
     </div>
   );

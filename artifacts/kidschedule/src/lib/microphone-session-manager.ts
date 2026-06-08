@@ -47,6 +47,17 @@ export class MicrophoneSessionManager {
   private watchdogTimeoutId: any = null;
   private stateChangeCallbacks: Set<(state: MicrophoneSessionState) => void> = new Set();
 
+  // ── Mic level meter (read-only, parasitic) ───────────────────────────────
+  // A passive AnalyserNode tap on the active stream, used ONLY to expose a
+  // smoothed input-volume level (0..1) for UI (e.g. a listening halo). It never
+  // connects to a destination (no echo) and never touches recording: any
+  // failure is swallowed so it cannot affect the mic lifecycle.
+  private levelSource: MediaStreamAudioSourceNode | null = null;
+  private levelAnalyser: AnalyserNode | null = null;
+  private levelRaf: number | null = null;
+  private micLevel = 0;
+  private micLevelCallbacks: Set<(level: number) => void> = new Set();
+
   // Statistics for production monitoring/hardening
   private stats = {
     totalSessionsStarted: 0,
@@ -283,6 +294,9 @@ export class MicrophoneSessionManager {
       );
     }
 
+    // C2. Start the read-only input-level meter (UI listening halo). Non-fatal.
+    this.startLevelMeter();
+
     // D. Pick optimal mime type and create fresh MediaRecorder
     const mimeType = this.pickRecorderMimeType();
     let recorder: MediaRecorder;
@@ -447,6 +461,9 @@ export class MicrophoneSessionManager {
    */
   public cleanup(): void {
     this.log("Executing deep cleanup of microphone session assets");
+
+    // Tear down the level meter first so its rAF/analyser release before tracks stop.
+    this.stopLevelMeter();
 
     if (this.watchdogTimeoutId !== null) {
       clearTimeout(this.watchdogTimeoutId);
@@ -621,6 +638,115 @@ export class MicrophoneSessionManager {
     return () => {
       this.stateChangeCallbacks.delete(cb);
     };
+  }
+
+  /**
+   * Subscribe to the smoothed microphone input level (0..1). Emits the current
+   * value immediately, then on every animation frame while a stream is live.
+   * Returns an unsubscribe fn. Purely a UI signal — does not affect recording.
+   */
+  public subscribeMicLevel(cb: (level: number) => void): () => void {
+    this.micLevelCallbacks.add(cb);
+    try {
+      cb(this.micLevel);
+    } catch {
+      /* ignore subscriber errors */
+    }
+    return () => {
+      this.micLevelCallbacks.delete(cb);
+    };
+  }
+
+  public getMicLevel(): number {
+    return this.micLevel;
+  }
+
+  private setMicLevel(value: number): void {
+    this.micLevel = value;
+    this.micLevelCallbacks.forEach((cb) => {
+      try {
+        cb(value);
+      } catch {
+        /* a broken UI subscriber must never affect the mic */
+      }
+    });
+  }
+
+  /**
+   * Attach a passive analyser to the active stream and stream a smoothed RMS
+   * level via setMicLevel(). Read-only: the analyser is never connected to a
+   * destination. Fully wrapped — any failure leaves recording untouched.
+   */
+  private startLevelMeter(): void {
+    if (typeof window === "undefined" || typeof requestAnimationFrame === "undefined") return;
+    try {
+      this.stopLevelMeter();
+      const ctx = this.audioContext;
+      const stream = this.stream;
+      if (!ctx || ctx.state === "closed" || !stream) return;
+
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.6;
+      source.connect(analyser); // NOTE: never connect to ctx.destination (no echo)
+
+      this.levelSource = source;
+      this.levelAnalyser = analyser;
+
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      let smoothed = 0;
+      const tick = () => {
+        const a = this.levelAnalyser;
+        if (!a) return;
+        try {
+          a.getByteTimeDomainData(buf);
+          let sumSquares = 0;
+          for (let i = 0; i < buf.length; i++) {
+            const centered = (buf[i] - 128) / 128;
+            sumSquares += centered * centered;
+          }
+          const rms = Math.sqrt(sumSquares / buf.length); // 0..~1, speech ~0.05-0.25
+          const normalized = Math.min(1, rms * 4); // lift quiet speech, clamp
+          // Asymmetric smoothing: rise fast, fall slow → lively but not jittery.
+          const alpha = normalized > smoothed ? 0.5 : 0.12;
+          smoothed = smoothed * (1 - alpha) + normalized * alpha;
+          this.setMicLevel(smoothed);
+        } catch {
+          /* transient analyser read error — keep last level */
+        }
+        this.levelRaf = requestAnimationFrame(tick);
+      };
+      this.levelRaf = requestAnimationFrame(tick);
+      this.log("Mic level meter started");
+    } catch (e) {
+      this.log("Mic level meter start failed (non-fatal)", e);
+      this.stopLevelMeter();
+    }
+  }
+
+  private stopLevelMeter(): void {
+    if (this.levelRaf !== null) {
+      try {
+        cancelAnimationFrame(this.levelRaf);
+      } catch {
+        /* ignore */
+      }
+      this.levelRaf = null;
+    }
+    try {
+      this.levelSource?.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      this.levelAnalyser?.disconnect();
+    } catch {
+      /* ignore */
+    }
+    this.levelSource = null;
+    this.levelAnalyser = null;
+    if (this.micLevel !== 0) this.setMicLevel(0);
   }
 
   public getState(): MicrophoneSessionState {
