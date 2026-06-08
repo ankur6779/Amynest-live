@@ -9,7 +9,7 @@ import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift, Mic } from "lucide-react";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
@@ -133,7 +133,7 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
   creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
-  stories:    ["story-hub", "speech-coach", "discovery-worlds"],
+  stories:    ["story-hub", "talking-amy", "speech-coach", "discovery-worlds"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
@@ -1562,6 +1562,25 @@ function ParentingHubPage() {
           </HubSection>
         </FeatureGate>;
     }
+  }, {
+    // Talking Amy — fun on-device voice echo (Baby / Chipmunk / Robot / Alien).
+    id: "talking-amy",
+    bands: ["0-2", "2-4", "4-6", "6-8"],
+    render: () => {
+      if (!shouldRenderHubTileContent("talking-amy", totalAgeMonths, isTwoPlus)) return null;
+      return (
+        <HubLaunchCard
+          href="/talking-amy"
+          title={t("parent_hub.web_tiles.talking-amy.title")}
+          description={t("parent_hub.web_tiles.talking-amy.description")}
+          icon={<Mic className="h-5 w-5 text-white" />}
+          accentClass="bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500"
+          cardClass="bg-gradient-to-br from-amber-400/30 via-orange-500/18 to-rose-500/12 hover:shadow-[0_10px_36px_-10px_rgba(251,146,60,0.45)]"
+          testId="talking-amy-launch-card"
+          sectionId="talking-amy"
+        />
+      );
+    },
   }, {
     // Amy Speech Coach — opens dedicated /parenting-hub/speech-coach page.
     // Visible for all infants and children up to 8 years (bands 0-2 → 6-8).

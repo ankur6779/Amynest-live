@@ -98,6 +98,7 @@ const LifeSkillsPage = lazyPage(() => import("@/pages/life-skills"));
 const SpeechCoachPage = lazyPage(() => import("@/pages/speech-coach/index"));
 const SpeechCoachLiveSessionPage = lazyPage(() => import("@/pages/speech-coach/live-speech-coach"));
 const SpeechCoachTalkPage = lazyPage(() => import("@/pages/speech-coach/conversation-coach"));
+const TalkingAmyPage = lazyPage(() => import("@/pages/talking-amy/index"));
 const KidsControlCenterPage = lazyPage(() => import("@/pages/kids-control-center"));
 const StudyPage = lazyPage(() => import("@/pages/study"));
 const SmartMathTricksPage = lazyPage(() => import("@/pages/smart-math-tricks"));
@@ -410,6 +411,7 @@ const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
 const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
 const SpeechCoachLiveSessionRoute = makeProtectedRoute(SpeechCoachLiveSessionPage);
 const SpeechCoachTalkRoute = makeProtectedRoute(SpeechCoachTalkPage);
+const TalkingAmyRoute = makeProtectedRoute(TalkingAmyPage);
 const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
 const StudyRoute = makeProtectedRoute(StudyPage);
 const SmartMathTricksRoute = makeProtectedRoute(SmartMathTricksPage);
@@ -720,12 +722,16 @@ function AppRoutes() {
           </Route>
           <Route path="/speech-coach/live-session" component={SpeechCoachLiveSessionRoute} />
           <Route path="/speech-coach/talk" component={SpeechCoachTalkRoute} />
+          <Route path="/talking-amy" component={TalkingAmyRoute} />
           <Route path="/speech-coach" component={SpeechCoachRoute} />
           <Route path="/parenting-hub/speech-coach/live">
             <Redirect to="/speech-coach/live-session" replace />
           </Route>
           <Route path="/parenting-hub/speech-coach">
             <Redirect to="/speech-coach" replace />
+          </Route>
+          <Route path="/parenting-hub/talking-amy">
+            <Redirect to="/talking-amy" replace />
           </Route>
           <Route path="/kids-control-center" component={KidsControlCenterRoute} />
           <Route path="/study" component={StudyRoute} />

@@ -9,6 +9,7 @@ export type NavMethod = "push" | "replace" | "pop" | "back" | "redirect";
 const ROUTE_ALIASES: Record<string, string> = {
   "/parenting-hub/speech-coach/live": "/speech-coach",
   "/parenting-hub/speech-coach": "/speech-coach",
+  "/parenting-hub/talking-amy": "/talking-amy",
   "/speech-coach/live": "/speech-coach",
 };
 
@@ -23,6 +24,7 @@ export const TAB_ROOT_ROUTES = new Set([
 /** Parent Hub modules — open with replace when launched from the hub. */
 export const HUB_MODULE_PREFIXES = [
   "/speech-coach",
+  "/talking-amy",
   "/phonics",
   "/audio-lessons",
   "/study",
@@ -40,6 +42,7 @@ export const HUB_MODULE_PREFIXES = [
 const PARENT_ROUTE: Record<string, string> = {
   "/speech-coach": "/parenting-hub",
   "/speech-coach/live-session": "/speech-coach",
+  "/talking-amy": "/parenting-hub",
   "/phonics/test/play": "/phonics",
   "/phonics/test": "/phonics",
   "/phonics": "/parenting-hub",

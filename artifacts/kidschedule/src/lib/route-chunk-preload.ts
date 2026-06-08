@@ -40,6 +40,7 @@ const EXACT_ROUTE_LOADERS: Record<string, ChunkLoader> = {
 const PREFIX_ROUTE_LOADERS: Array<{ prefix: string; load: ChunkLoader }> = [
   { prefix: "/routines", load: () => import("@/pages/routines/index") },
   { prefix: "/speech-coach", load: () => import("@/pages/speech-coach/index") },
+  { prefix: "/talking-amy", load: () => import("@/pages/talking-amy/index") },
   { prefix: "/children", load: () => import("@/pages/children/index") },
   {
     prefix: "/answer-to-kids-how/read",
