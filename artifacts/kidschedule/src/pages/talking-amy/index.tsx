@@ -838,7 +838,7 @@ export default function TalkingAmyPage() {
           </div>
         </div>
 
-        <section className="relative mt-4 flex flex-1 flex-col rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(251,191,36,0.55)] backdrop-blur-xl">
+        <section className="relative mt-4 flex flex-1 flex-col overflow-visible rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(251,191,36,0.55)] backdrop-blur-xl">
           <AchievementUnlockCard
             achievement={unlockedAchievement}
             show={phase === "celebrate" && !!unlockedAchievement}

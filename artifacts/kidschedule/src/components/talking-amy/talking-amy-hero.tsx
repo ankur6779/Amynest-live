@@ -91,8 +91,8 @@ export function TalkingAmyHero({
   miniSurprise?: TalkingAmyMiniSurpriseId | null;
 }) {
   const avatar = useHeroSize();
-  const glass = Math.round(avatar * 1.16);
-  const glow = Math.round(avatar * 1.5);
+  const glass = Math.round(avatar * 1.24);
+  const glow = Math.round(avatar * 1.62);
   const { theme } = mode;
 
   const listening = phase === "recording";
@@ -135,6 +135,7 @@ export function TalkingAmyHero({
   const haloScale = listening ? micVisual.haloScale : 1;
   const baseGlowOpacity = (listening ? micVisual.glowOpacity : 0.55) * glowOpacityScale;
   const idle = phase === "idle";
+  const ringOpacity = listening ? baseGlowOpacity : idle ? 0.62 : 0.78;
   const moodPulseSec = (mood?.idlePulseSec ?? 2.2) * animationSpeedScale;
 
   const surpriseMotion =
@@ -150,8 +151,8 @@ export function TalkingAmyHero({
 
   return (
     <motion.div
-      className="relative flex flex-1 items-center justify-center"
-      style={{ minHeight: glass + 24 }}
+      className="relative flex flex-1 items-center justify-center overflow-visible"
+      style={{ minHeight: glass + 40, padding: "12px 0" }}
       data-testid="talking-amy-hero"
       animate={
         reducedMotion
@@ -201,20 +202,39 @@ export function TalkingAmyHero({
           transform: listening ? `scale(${haloScale})` : undefined,
         }}
       />
-      {(listening || speaking || celebrating || theme.brightPurplePulse || theme.rainbowGlow || featured || secretActive) && (
-        <div
-          className={["absolute rounded-full border-2 transition-transform duration-100", ringClass].join(" ")}
-          style={{
-            width: glass,
-            height: glass,
-            opacity: listening ? baseGlowOpacity : 0.75,
-            transform: listening ? `scale(${haloScale})` : undefined,
-          }}
-        />
-      )}
       <motion.div
         className={[
-          "relative grid place-items-center rounded-full border shadow-2xl backdrop-blur-xl transition-all duration-300",
+          "pointer-events-none absolute rounded-full border-2 transition-transform duration-100",
+          idle && !listening ? "border-purple-400/55" : ringClass,
+        ].join(" ")}
+        style={{
+          width: glass,
+          height: glass,
+          opacity: ringOpacity,
+          transform: listening ? `scale(${haloScale})` : undefined,
+        }}
+        animate={
+          reducedMotion || !idle
+            ? undefined
+            : { scale: [1, 1.035, 1], opacity: [ringOpacity * 0.75, ringOpacity, ringOpacity * 0.75] }
+        }
+        transition={
+          reducedMotion || !idle
+            ? undefined
+            : { duration: 3.2 * animationSpeedScale, repeat: Infinity, ease: "easeInOut" }
+        }
+      />
+      {!reducedMotion && (idle || listening || speaking || celebrating) ? (
+        <motion.div
+          className="pointer-events-none absolute rounded-full border border-purple-300/25"
+          style={{ width: glass + 18, height: glass + 18 }}
+          animate={{ scale: [1, 1.06, 1], opacity: [0.25, 0.5, 0.25] }}
+          transition={{ duration: 4 * animationSpeedScale, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ) : null}
+      <motion.div
+        className={[
+          "relative grid place-items-center overflow-visible rounded-full border shadow-2xl backdrop-blur-xl transition-all duration-300",
           theme.transparentEffect ? "bg-white/5" : "bg-white/10",
           theme.rainbowGlow ? "border-pink-300/40" : "",
           mood?.ringAccent ?? "",

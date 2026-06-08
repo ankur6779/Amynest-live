@@ -387,14 +387,26 @@ export default function LandingPage() {
           </div>
 
           <div className="amy-fade-up-2 flex flex-col items-center">
-            <div
-              className="amy-avatar-ring amy-float relative rounded-full p-3 mb-5"
-              style={{
-                background: "linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.15))",
-                border: "1px solid rgba(168,85,247,0.35)",
-              }}
-            >
-              <AmyLandingAvatar size={140} className="w-[140px] h-[140px] md:w-[160px] md:h-[160px] object-contain rounded-full" />
+            <div className="relative mb-5 flex items-center justify-center" style={{ width: 196, height: 196 }}>
+              <div
+                className="amy-avatar-ring pointer-events-none absolute rounded-full"
+                style={{
+                  inset: 0,
+                  border: "2px solid rgba(168,85,247,0.55)",
+                  boxShadow: "0 0 28px rgba(168,85,247,0.45), 0 0 56px rgba(168,85,247,0.2)",
+                }}
+              />
+              <div
+                className="amy-float relative flex items-center justify-center rounded-full p-4"
+                style={{
+                  width: 172,
+                  height: 172,
+                  background: "linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.15))",
+                  border: "1px solid rgba(168,85,247,0.35)",
+                }}
+              >
+                <AmyLandingAvatar size={132} className="w-[132px] h-[132px] md:w-[148px] md:h-[148px] object-contain" />
+              </div>
             </div>
             <div className="amy-glass rounded-2xl px-5 py-4 max-w-xs text-center">
               <p className="text-[10px] font-bold uppercase tracking-wider text-white/45 mb-1">

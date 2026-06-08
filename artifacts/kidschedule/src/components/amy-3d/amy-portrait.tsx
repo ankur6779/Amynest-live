@@ -200,8 +200,7 @@ export function AmyPortrait({
   }, [state, reduced, size, tiltDir]);
 
   // ── Life layer: looping breathing (scale) + talking nod (y) ─────────────────
-  // Scale baselines sit at ~1.05 (overfill) so the pose layer's 3D yaw never
-  // exposes the circular mask edge.
+  // Image is inset inside the circle; modest scale pulses avoid clipping the cap.
   const life = useMemo(() => {
     if (reduced) {
       return {
@@ -213,8 +212,8 @@ export function AmyPortrait({
       case "speaking":
         return {
           animate: {
-            scale: [1.05, 1.068, 1.05],
-            y: [0, -size * 0.02, size * 0.004, -size * 0.02, 0],
+            scale: [1, 1.03, 1],
+            y: [0, -size * 0.015, size * 0.003, -size * 0.015, 0],
           },
           transition: {
             scale: { duration: 0.45, repeat: Infinity, ease: "easeInOut" as const },
@@ -223,7 +222,7 @@ export function AmyPortrait({
         };
       case "thinking":
         return {
-          animate: { scale: [1.05, 1.065, 1.05], y: [0, -size * 0.012, 0] },
+          animate: { scale: [1, 1.025, 1], y: [0, -size * 0.01, 0] },
           transition: {
             scale: { duration: 3.5, repeat: Infinity, ease: "easeInOut" as const },
             y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" as const },
@@ -231,23 +230,23 @@ export function AmyPortrait({
         };
       case "listening":
         return {
-          animate: { scale: [1.05, 1.062, 1.05], y: 0 }, // calm + focused
+          animate: { scale: [1, 1.02, 1], y: 0 }, // calm + focused
           transition: {
             scale: { duration: 3.2, repeat: Infinity, ease: "easeInOut" as const },
           },
         };
       case "celebrating":
         return {
-          animate: { scale: [1.05, 1.08, 1.05], y: [0, -size * 0.02, 0] },
+          animate: { scale: [1, 1.04, 1], y: [0, -size * 0.015, 0] },
           transition: {
             scale: { duration: 0.6, repeat: Infinity, ease: "easeInOut" as const },
             y: { duration: 0.6, repeat: Infinity, ease: "easeInOut" as const },
           },
         };
       default:
-        // idle: gentle breathing.
+        // idle: gentle breathing — keep scale modest so the cap stays inside the circle.
         return {
-          animate: { scale: [1.05, 1.07, 1.05], y: 0 },
+          animate: { scale: [1, 1.02, 1], y: 0 },
           transition: {
             scale: { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const },
           },
@@ -277,24 +276,26 @@ export function AmyPortrait({
 
   const glow = haloGlow(state);
 
+  const portraitInset = Math.round(size * 0.06);
+
   return (
     <div
       className={className}
-      style={{ width: size, height: size, position: "relative", flexShrink: 0 }}
+      style={{ width: size, height: size, position: "relative", flexShrink: 0, overflow: "visible" }}
       aria-hidden
     >
-      {/* Soft state-coloured halo — scale/opacity driven imperatively (rAF). */}
+      {/* Soft state-coloured halo — sits outside the clip circle so the glow reads clearly. */}
       <span
         ref={haloRef}
         style={{
           position: "absolute",
-          inset: 0,
+          inset: -portraitInset,
           borderRadius: "9999px",
           pointerEvents: "none",
           transformOrigin: "center",
           willChange: "transform, opacity",
           transition: "box-shadow 400ms ease",
-          boxShadow: `0 0 ${size * 0.18}px ${glow}, 0 0 ${size * 0.36}px ${glow}`,
+          boxShadow: `0 0 ${size * 0.22}px ${glow}, 0 0 ${size * 0.44}px ${glow}`,
         }}
       />
 
@@ -335,10 +336,11 @@ export function AmyPortrait({
             alt="Amy"
             draggable={false}
             style={{
-              width: "100%",
-              height: "100%",
+              width: "92%",
+              height: "92%",
+              margin: "4% auto 0",
               objectFit: "cover",
-              objectPosition: "center 42%",
+              objectPosition: "center 36%",
               display: "block",
             }}
           />
