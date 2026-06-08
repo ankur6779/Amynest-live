@@ -57,11 +57,35 @@ export function enqueueBehaviorWarmup(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ module, maxAssets, hints }),
-  }).catch((err) => {
-    if (import.meta.env.DEV) {
-      console.warn("[BehaviorAudioWarmup] enqueue failed", module, err);
-    }
-  });
+  })
+    .then(async (res) => {
+      if (res.ok || res.status === 202) return;
+      const { queueClientLog } = await import("@/lib/client-logs");
+      queueClientLog({
+        type: "warning",
+        message: "audio_warmup_enqueue_failed",
+        meta: { module, status: res.status },
+      });
+    })
+    .catch(async (err) => {
+      if (import.meta.env.DEV) {
+        console.warn("[BehaviorAudioWarmup] enqueue failed", module, err);
+      }
+      try {
+        const { queueClientLog } = await import("@/lib/client-logs");
+        queueClientLog({
+          type: "warning",
+          message: "audio_warmup_enqueue_failed",
+          meta: {
+            module,
+            status: 0,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
+      } catch {
+        /* telemetry optional */
+      }
+    });
 }
 
 /** Test-only reset. */

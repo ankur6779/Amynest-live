@@ -37,8 +37,17 @@ router.get("/health", (_req, res) => {
   res.json({ ok: true, timestamp: Date.now() });
 });
 
-/** Full env diagnostics (no secret values). */
-router.get("/healthz/env", async (_req, res) => {
+/** Full env diagnostics (no secret values). Production requires x-health-secret. */
+router.get("/healthz/env", async (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    const expected = process.env.INTERNAL_HEALTH_SECRET?.trim();
+    const provided = String(req.headers["x-health-secret"] ?? "").trim();
+    if (!expected || provided !== expected) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+  }
+
   const drive = getDriveKeyDiagnostics();
   const gcs = getGcsDiagnostics();
   const openai = getOpenAiCredentials();

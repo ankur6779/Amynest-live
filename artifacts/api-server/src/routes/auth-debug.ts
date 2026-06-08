@@ -23,6 +23,11 @@ function unsafeDecodeJwtPayload(token: string): Record<string, unknown> | null {
 }
 
 router.get("/auth/whoami", async (req, res): Promise<void> => {
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_AUTH_DEBUG !== "1") {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+
   const authHeader = req.headers["authorization"] || "";
   const hasBearer =
     typeof authHeader === "string" && authHeader.startsWith("Bearer ");

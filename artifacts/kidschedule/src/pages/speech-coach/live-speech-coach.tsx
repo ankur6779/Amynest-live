@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
+import { ApiRetryShell } from "@/components/api-retry-shell";
 import { getAuth } from "firebase/auth";
 import {
   ArrowLeft,
@@ -764,7 +765,7 @@ export function LiveSpeechCoach({
       <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
         <header className="flex items-center gap-3">
           <AppLink href="/speech-coach" replace source="live-speech-coach-back">
-            <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
+            <Button variant="ghost" size="icon" aria-label="Back to Speech Coach" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </AppLink>
@@ -789,7 +790,14 @@ export function LiveSpeechCoach({
           </div>
         </header>
 
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progressPct)}
+          aria-label="Session progress"
+        >
           <div
             className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-yellow-300 transition-all duration-500"
             style={{ width: `${progressPct}%` }}
@@ -973,6 +981,14 @@ export default function LiveSpeechCoachPage() {
   const child =
     eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
 
+  if (childrenQuery.isError) {
+    return (
+      <main className="min-h-dvh grid place-items-center bg-[#070812] p-4 text-white">
+        <ApiRetryShell onRetry={() => void childrenQuery.refetch()} />
+      </main>
+    );
+  }
+
   if (childrenQuery.isLoading) {
     return (
       <main className="min-h-dvh grid place-items-center bg-[#070812] text-white">
@@ -1004,12 +1020,14 @@ export default function LiveSpeechCoachPage() {
   return (
     <>
       {eligible.length > 1 ? (
-        <div className="fixed left-1/2 top-16 z-30 flex -translate-x-1/2 gap-2 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
+        <div className="fixed left-1/2 top-16 z-30 flex -translate-x-1/2 gap-2 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-xl" role="radiogroup" aria-label="Select child">
           {eligible.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => setSelectedId(c.id)}
+              aria-pressed={child.id === c.id}
+              aria-label={`Practice with ${c.name}`}
               className={[
                 "rounded-full px-3 py-1 text-xs font-black transition-colors",
                 child.id === c.id

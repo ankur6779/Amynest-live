@@ -172,6 +172,10 @@ router.put("/daily-puzzle/progress", async (req, res): Promise<void> => {
       const [row] = await tx
         .insert(dailyPuzzleProgressTable)
         .values(values)
+        .onConflictDoUpdate({
+          target: [dailyPuzzleProgressTable.childId, dailyPuzzleProgressTable.date],
+          set: { ...values, updatedAt: sql`now()` },
+        })
         .returning();
       return row;
     }

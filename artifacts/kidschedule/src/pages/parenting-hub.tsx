@@ -4,6 +4,7 @@ import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { ApiRetryShell } from "@/components/api-retry-shell";
 import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -842,7 +843,9 @@ function ParentingHubPage() {
   } = useTranslation();
   const {
     data: children = [],
-    isLoading
+    isLoading,
+    isError: childrenError,
+    refetch: refetchChildren,
   } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey()
@@ -1051,6 +1054,14 @@ function ParentingHubPage() {
   }, [effectiveChild?.id, selectedChildId]);
 
   // ── Loading ────────────────────────────────────────────────────────────────
+  if (childrenError) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <ApiRetryShell onRetry={() => void refetchChildren()} />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return <div className="flex items-center justify-center py-24">
         <div className="text-sm text-muted-foreground animate-pulse">{t("common.loading")}</div>

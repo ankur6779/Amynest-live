@@ -347,13 +347,21 @@ async function startServer(): Promise<void> {
       endBootPhase("queue_bootstrap");
     } catch (err) {
       failBootPhase("queue_bootstrap", err);
+      const message = err instanceof Error ? err.message : String(err);
       logger.error(
         {
           evt: "queue.bootstrap_prelisten_failed",
-          message: err instanceof Error ? err.message : String(err),
+          message,
         },
-        "Queue bootstrap failed before listen — AI enqueue will return 503",
+        "Queue bootstrap failed before listen",
       );
+      if (process.env.NODE_ENV === "production") {
+        const { isWorkerEnabled } = await import("./queue/mode.js");
+        if (isWorkerEnabled()) {
+          logger.fatal({ evt: "queue.bootstrap_fatal" }, "Exiting — production requires queue bootstrap");
+          process.exit(1);
+        }
+      }
     }
   } else {
     const { markApiQueueBootstrapComplete } = await import("./queue/bootstrap.js");

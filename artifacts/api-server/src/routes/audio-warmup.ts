@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { checkDistributedRateLimit } from "../lib/distributed-rate-limit.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import { wrapJobInput } from "../queue/ai-job-payload.js";
 import {
@@ -10,6 +11,8 @@ import {
 import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
+
+const WARMUP_DEDUP_WINDOW_MS = 5 * 60_000;
 
 const warmupBodySchema = z.object({
   module: z.enum([
@@ -36,7 +39,7 @@ const warmupBodySchema = z.object({
 });
 
 router.post("/audio-warmup/enqueue", async (req, res): Promise<void> => {
-  const userId = getAuth(req)?.uid;
+  const userId = getAuth(req)?.userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
@@ -48,30 +51,57 @@ router.post("/audio-warmup/enqueue", async (req, res): Promise<void> => {
     return;
   }
 
-  const cap = AUDIO_WARMUP_MODULE_CAPS[parsed.data.module];
-  const maxAssets = Math.min(parsed.data.maxAssets ?? cap, cap);
+  try {
+    const dedup = await checkDistributedRateLimit(`audio-warmup:${userId}:${parsed.data.module}`, {
+      windowMs: WARMUP_DEDUP_WINDOW_MS,
+      maxPerWindow: 1,
+    });
+    if (!dedup.allowed) {
+      res.status(202).json({
+        ok: true,
+        deduped: true,
+        module: parsed.data.module,
+        retryAfterMs: dedup.retryAfterMs,
+      });
+      return;
+    }
 
-  const enqueued = await enqueueAiJob(
-    "audio.warmup",
-    userId,
-    wrapJobInput("audio/warmup", { ...parsed.data, maxAssets }),
-  );
+    const cap = AUDIO_WARMUP_MODULE_CAPS[parsed.data.module];
+    const maxAssets = Math.min(parsed.data.maxAssets ?? cap, cap);
 
-  if (!enqueued.jobId) {
-    logger.warn(
-      { evt: "audio_warmup.enqueue_failed", module: parsed.data.module, userId },
-      "audio warmup enqueue failed",
+    const enqueued = await enqueueAiJob(
+      "audio.warmup",
+      userId,
+      wrapJobInput("audio/warmup", { ...parsed.data, maxAssets }),
     );
-    res.status(503).json({ error: enqueued.error ?? "ai_queue_unavailable" });
-    return;
-  }
 
-  res.status(202).json({
-    ok: true,
-    jobId: enqueued.jobId,
-    module: parsed.data.module,
-    maxAssets,
-  });
+    if (!enqueued.jobId) {
+      logger.warn(
+        { evt: "audio_warmup.enqueue_failed", module: parsed.data.module, userId },
+        "audio warmup enqueue failed",
+      );
+      res.status(503).json({ error: enqueued.error ?? "ai_queue_unavailable" });
+      return;
+    }
+
+    res.status(202).json({
+      ok: true,
+      jobId: enqueued.jobId,
+      module: parsed.data.module,
+      maxAssets,
+    });
+  } catch (err) {
+    logger.error(
+      {
+        evt: "audio_warmup.enqueue_error",
+        module: parsed.data.module,
+        userId,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "audio warmup enqueue threw",
+    );
+    res.status(503).json({ error: "ai_queue_unavailable" });
+  }
 });
 
 export default router;

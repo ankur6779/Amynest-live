@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { logger } from "./lib/logger";
+import { resolveCorsOrigin } from "./lib/cors-origins.js";
 import { sendSafeError } from "./lib/safe-api-response";
 import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
 import { slowApiGuard } from "./middlewares/slow-api-guard";
@@ -66,7 +67,7 @@ export async function createApp(): Promise<Express> {
     }),
   );
 
-  app.use(cors({ credentials: true, origin: true }));
+  app.use(cors({ credentials: true, origin: resolveCorsOrigin }));
   app.use(
     express.json({
       limit: "1mb",
@@ -85,7 +86,37 @@ export async function createApp(): Promise<Express> {
   });
 
   /** Load balancers / Render keep-warm — heartbeat for crash poller. */
-  app.get("/health", (_req, res) => {
+  app.get("/health", async (_req, res) => {
+    if (process.env.NODE_ENV === "production" && REDIS_HEALTH_ENABLED) {
+      try {
+        const { getQueueHealthSnapshot } = await import("./queue/bootstrap.js");
+        const { isWorkerEnabled } = await import("./queue/mode.js");
+        if (isWorkerEnabled()) {
+          const queue = await getQueueHealthSnapshot();
+          const queueOk =
+            queue.status === "ok" &&
+            queue.queueMode === "bullmq" &&
+            queue.redis &&
+            queue.redisPing === true;
+          if (!queueOk) {
+            res.status(503).json({
+              ok: false,
+              timestamp: Date.now(),
+              queue: {
+                status: queue.status,
+                mode: queue.queueMode,
+                redis: queue.redis,
+                redisPing: queue.redisPing ?? false,
+              },
+            });
+            return;
+          }
+        }
+      } catch {
+        res.status(503).json({ ok: false, timestamp: Date.now(), queue: "check_failed" });
+        return;
+      }
+    }
     res.status(200).json({ ok: true, timestamp: Date.now() });
   });
 

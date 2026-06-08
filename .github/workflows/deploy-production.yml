@@ -67,6 +67,12 @@ jobs:
           fi
           bash scripts/trigger-render-deploy.sh "${{ github.sha }}"
 
+      - name: Post-deploy smoke (production)
+        run: bash scripts/post-deploy-smoke.sh
+        env:
+          SMOKE_BASE_URL: https://www.amynest.in
+          SMOKE_API_URL: https://amynest-backend-dykj.onrender.com
+
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker
     runs-on: ubuntu-latest

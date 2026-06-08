@@ -10,9 +10,14 @@ import type { AiJobRecord } from "../queue/types.js";
 
 const JOB_TIMEOUT_MS = parseEnvMs("AI_JOB_TIMEOUT_MS", AI_CHAT_TIMEOUT_MS);
 
+const AUDIO_WARMUP_JOB_TIMEOUT_MS = parseEnvMs("AUDIO_WARMUP_JOB_TIMEOUT_MS", 180_000);
+
 function resolveJobTimeoutMs(type: string): number {
   if (type === "meals.ai_generate") {
     return getMealsAiWorkerTimeoutMs();
+  }
+  if (type === "audio.warmup") {
+    return AUDIO_WARMUP_JOB_TIMEOUT_MS;
   }
   const ms = Number.isFinite(JOB_TIMEOUT_MS) ? JOB_TIMEOUT_MS : 10_000;
   return ms > 0 ? ms : 10_000;

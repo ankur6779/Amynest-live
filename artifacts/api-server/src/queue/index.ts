@@ -36,7 +36,8 @@ export function getAiJobsQueue(): Queue<AiJobQueuePayload> {
     bullQueue = new Queue<AiJobQueuePayload>(AI_JOBS_QUEUE_NAME, {
       connection: getBullMqRedisConnection(),
       defaultJobOptions: {
-        attempts: 1,
+        attempts: 3,
+        backoff: { type: "exponential", delay: 2000 },
         removeOnComplete: { count: 200 },
         removeOnFail: { count: 100 },
       },

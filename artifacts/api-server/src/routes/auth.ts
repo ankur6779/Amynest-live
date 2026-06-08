@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { adminAuth } from "../lib/firebase-admin";
+import { checkDistributedRateLimit } from "../lib/distributed-rate-limit.js";
 import { logger } from "../lib/logger";
 
 /**
@@ -12,6 +13,16 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 router.post("/auth/check-reset-email", async (req, res): Promise<void> => {
+  const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
+  const rate = await checkDistributedRateLimit(`auth-check-reset:${ip}`, {
+    windowMs: 60_000,
+    maxPerWindow: 10,
+  });
+  if (!rate.allowed) {
+    res.status(429).json({ error: "rate_limited", retryAfterMs: rate.retryAfterMs });
+    return;
+  }
+
   const { email } = req.body as { email?: unknown };
 
   if (!email || typeof email !== "string" || !email.includes("@")) {

@@ -218,15 +218,22 @@ function flushMissingReports(): void {
   const keys = sorted.map(([k]) => k);
   const priorities = Object.fromEntries(sorted);
 
-  void import("@/lib/api")
-    .then(({ getApiUrl: apiUrl }) =>
-      fetch(apiUrl("/api/static-audio/missing"), {
+  void Promise.all([
+    import("@/lib/api"),
+    import("@/lib/firebase"),
+  ])
+    .then(async ([{ getApiUrl: apiUrl }, { getFirebaseAuth }]) => {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const token = await getFirebaseAuth().currentUser?.getIdToken();
+      if (!token) return;
+      headers.Authorization = `Bearer ${token}`;
+      return fetch(apiUrl("/api/static-audio/missing"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ keys, priorities }),
         keepalive: true,
-      }),
-    )
+      });
+    })
     .catch(() => {});
 }
 

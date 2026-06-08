@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { childrenTable, parentProfilesTable } from "@workspace/db/schema";
 import { getEnvironmentalContext, mapAgeGroupToEnvAgeGroup } from "@workspace/environment";
+import { canAccessChild } from "../lib/child-access.js";
 import { getAuth } from "../lib/auth.js";
 import { logger } from "../lib/logger.js";
 
@@ -50,14 +51,17 @@ router.get("/environment/context", async (req, res): Promise<void> => {
     let childName: string | undefined;
 
     if (childIdParam) {
-      const [child] = await db
-        .select()
-        .from(childrenTable)
-        .where(eq(childrenTable.id, childIdParam));
-      if (child) {
-        ageGroup = classifyAgeGroup(child.age, child.ageMonths ?? 0);
-        childName = child.name;
+      if (!Number.isFinite(childIdParam) || childIdParam <= 0) {
+        res.status(400).json({ error: "invalid_child_id" });
+        return;
       }
+      const child = await canAccessChild(childIdParam, userId);
+      if (!child) {
+        res.status(404).json({ error: "child_not_found" });
+        return;
+      }
+      ageGroup = classifyAgeGroup(child.age, child.ageMonthsPart ?? 0);
+      childName = child.name;
     } else {
       const children = await db
         .select()

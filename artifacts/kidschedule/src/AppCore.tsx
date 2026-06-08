@@ -331,7 +331,12 @@ function ProtectedRoute({
   const [location] = useLocation();
   const setupStatus = effectiveSetupStatus(data);
   const setupDone = isSetupComplete(setupStatus);
-  const { data: childrenList, isFetched: childrenFetched } = useListChildren({
+  const {
+    data: childrenList,
+    isFetched: childrenFetched,
+    isError: childrenError,
+    refetch: refetchChildren,
+  } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
       enabled: isSignedIn && setupDone,
@@ -354,6 +359,9 @@ function ProtectedRoute({
     return <ApiRetryShell onRetry={() => void refetch()} />;
   }
   if (!setupDone) return <Redirect to="/onboarding" />;
+  if (childrenError) {
+    return <ApiRetryShell onRetry={() => void refetchChildren()} />;
+  }
   if (
     childrenFetched &&
     (!childrenList || childrenList.length === 0) &&

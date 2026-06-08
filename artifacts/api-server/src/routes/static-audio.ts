@@ -27,6 +27,8 @@ import {
   extractTextFromMissingKey,
   parseStaticAudioMissingKey,
 } from "@workspace/static-audio";
+import { getAuth } from "../lib/auth.js";
+import { checkDistributedRateLimit } from "../lib/distributed-rate-limit.js";
 
 const reportedMissing = new Set<string>();
 
@@ -121,7 +123,25 @@ staticAudioPublicRouter.get("/static-audio/missing", (_req, res): void => {
   res.json({ missing });
 });
 
-staticAudioPublicRouter.post("/static-audio/missing", (req, res): void => {
+/** Authenticated missing-audio reports — enqueues TTS generation (cost-sensitive). */
+export const staticAudioAuthRouter: IRouter = Router();
+
+staticAudioAuthRouter.post("/static-audio/missing", async (req, res): Promise<void> => {
+  const userId = getAuth(req)?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const rate = await checkDistributedRateLimit(`static-audio-missing:${userId}`, {
+    windowMs: 60_000,
+    maxPerWindow: 30,
+  });
+  if (!rate.allowed) {
+    res.status(429).json({ error: "rate_limited", retryAfterMs: rate.retryAfterMs });
+    return;
+  }
+
   const parsed = reportBodySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_body" });
@@ -148,7 +168,12 @@ staticAudioPublicRouter.post("/static-audio/missing", (req, res): void => {
 
   if (keys.length > 0) {
     logger.warn(
-      { evt: "static_audio.missing_reported", keys: keys.slice(0, 20), total: reportedMissing.size },
+      {
+        evt: "static_audio.missing_reported",
+        userId,
+        keys: keys.slice(0, 20),
+        total: reportedMissing.size,
+      },
       "static audio missing key reported by client",
     );
   }

@@ -5,6 +5,7 @@ import { AppLink, useAppNavigate } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { ApiRetryShell } from "@/components/api-retry-shell";
 import {
   resolveStudyMode, MODE_LABELS,
   getPracticePickerTopics,
@@ -98,7 +99,7 @@ type View =
 export default function StudyPage() {
   const { t } = useTranslation();
   const { navigate, back } = useAppNavigate();
-  const { data: children, isLoading } = useListChildren({
+  const { data: children, isLoading, isError, refetch } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
   });
 
@@ -211,7 +212,9 @@ export default function StudyPage() {
         childId={activeChildId}
         childName={gateChildName}
       >
-      {isLoading ? (
+      {isError ? (
+        <ApiRetryShell onRetry={() => void refetch()} />
+      ) : isLoading ? (
         <Skeleton className="h-40 w-full rounded-2xl" />
       ) : list.length === 0 ? (
         <EmptyChildren />
