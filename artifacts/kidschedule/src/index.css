@@ -19,21 +19,8 @@
     filter: drop-shadow(0 0 12px rgba(168,85,247,1.0)) drop-shadow(0 0 28px rgba(236,72,153,.90)) drop-shadow(0 0 44px rgba(168,85,247,.55)) brightness(1.08);
   }
 }
-@keyframes amyMascotShimmerOrbit {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
 .amy-mascot-float { animation: amyMascotFloat 4s ease-in-out infinite; }
 .amy-mascot-glow  { animation: amyMascotGlow  3.5s ease-in-out infinite; }
-.amy-mascot-shimmer {
-  background: conic-gradient(
-    transparent 0deg,
-    transparent 348deg,
-    rgba(255,255,255,0.70) 356deg,
-    transparent 360deg
-  );
-  animation: amyMascotShimmerOrbit 4.5s linear infinite;
-}
 .amy-mascot-outer {
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
@@ -50,7 +37,7 @@
     0 0 56px 10px rgba(168,85,247,.45);
 }
 @media (prefers-reduced-motion: reduce) {
-  .amy-mascot-float, .amy-mascot-glow, .amy-mascot-shimmer { animation: none !important; }
+  .amy-mascot-float, .amy-mascot-glow { animation: none !important; }
 }
 
 /* ── Hero logo — static, lightweight (no animated filters on mobile) ─ */

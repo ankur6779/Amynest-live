@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { BAKED_AMY_SRC, useBakedAmyAvailable } from "@/lib/amy-3d/baked-avatar";
+import { useBakedAmyAvailable } from "@/lib/amy-3d/baked-avatar";
+import { AmyBlinkFace } from "@/components/amy-3d/amy-blink-face";
 interface AmyIconProps {
   size?: number;
   className?: string;
@@ -41,14 +42,7 @@ export function AmyIcon({
     frame = setTimeout(doBlink, 1000);
     return () => clearTimeout(frame);
   }, []);
-  const face = baked ? <img src={BAKED_AMY_SRC} width={faceSize} height={faceSize} alt={t("components.amy_icon.amy")} draggable={false} style={{
-    display: "block",
-    width: faceSize,
-    height: faceSize,
-    objectFit: "cover",
-    objectPosition: "center 42%",
-    borderRadius: "50%"
-  }} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
+  const face = baked ? <AmyBlinkFace size={faceSize} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
     display: "block"
   }}>
       <defs>
