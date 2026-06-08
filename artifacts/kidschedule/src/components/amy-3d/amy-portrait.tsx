@@ -1,16 +1,15 @@
 // AmyPortrait — premium animated image avatar.
 //
-// This is the hero avatar shown until a rigged 3D model (public/amy-3d/amy.glb)
-// is added. It renders the high-quality Amy render with idle breathing, a gentle
-// float, subtle head tilt, and a soft purple neon halo pulse — so Amy feels
-// alive and premium without a live WebGL canvas. When `state === "speaking"` the
-// halo + scale pulse speeds up to read as "talking".
+// Renders the high-quality Amy render with idle breathing, a gentle float,
+// subtle head tilt, and a soft purple neon halo pulse — so Amy feels alive and
+// premium without a live WebGL canvas. When `state === "speaking"` she does a
+// gentle "talking" nod and the halo/breath speed up.
 //
-// True per-eye blink and viseme lip-sync are intentionally NOT faked here (they
-// cannot be aligned reliably on a baked image) — those arrive with the rigged
-// 3D model via AmyGltf in amy-3d-stage.tsx.
+// 2D blink approximation: soft eyelid overlays positioned over Amy's eyes blink
+// every 3–5s. This is a baked-image approximation — crisp per-viseme lip-sync
+// and per-eye blink come with an animatable renderer (rigged 3D glb / Rive).
 
-import { useMemo } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AMY_PORTRAIT_SRC } from "@/lib/amy-3d/baked-avatar";
 import { prefersReducedMotion } from "@/lib/amy-3d/webgl-support";
@@ -22,11 +21,42 @@ export interface AmyPortraitProps {
   className?: string;
 }
 
+// Eye positions as fractions of the square portrait. Measured from
+// amy-avatar-square.png (eye centers ~y 0.625, x 0.365 / 0.635) and verified
+// with an overlay preview so the blink lids sit exactly on Amy's eyes.
+const EYE = { y: 0.625, h: 0.145, w: 0.165, lX: 0.365, rX: 0.635 };
+
 export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const speaking = state === "speaking";
   const listening = state === "listening";
   const celebrating = state === "celebrating";
+
+  // ── Blink scheduler (random 3–5s, ~110ms close, occasional double) ──────────
+  const [blinking, setBlinking] = useState(false);
+  useEffect(() => {
+    if (reduced) return;
+    let timer: ReturnType<typeof setTimeout>;
+    let openTimer: ReturnType<typeof setTimeout>;
+    let doubleTimer: ReturnType<typeof setTimeout>;
+    const run = () => {
+      setBlinking(true);
+      openTimer = setTimeout(() => setBlinking(false), 110);
+      if (Math.random() < 0.25) {
+        doubleTimer = setTimeout(() => {
+          setBlinking(true);
+          setTimeout(() => setBlinking(false), 95);
+        }, 230);
+      }
+      timer = setTimeout(run, 3000 + Math.random() * 2000);
+    };
+    timer = setTimeout(run, 1200 + Math.random() * 1500);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(openTimer);
+      clearTimeout(doubleTimer);
+    };
+  }, [reduced]);
 
   // Per-state halo glow colour (mirrors the 3D rim-light tokens).
   const glow = celebrating
@@ -37,17 +67,37 @@ export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProp
         ? "rgba(168,85,247,0.7)"
         : "rgba(139,92,246,0.55)";
 
-  const breatheDuration = speaking ? 0.45 : celebrating ? 0.6 : 3.6;
+  const breatheDuration = speaking ? 0.42 : celebrating ? 0.6 : 3.6;
   const haloDuration = speaking ? 0.9 : 2.8;
 
   // Even under prefers-reduced-motion we keep a very gentle, slow life so the
   // companion never looks like a frozen sticker — just calmer & smaller.
-  const floatY = reduced ? size * 0.012 : size * 0.035;
+  const floatY = reduced ? size * 0.012 : speaking ? size * 0.022 : size * 0.035;
   const tiltDeg = reduced ? 1.2 : celebrating ? 4 : 3;
-  const breatheScale = reduced ? 1.008 : celebrating ? 1.03 : 1.02;
-  const floatDur = reduced ? 6 : 3.6;
+  const breatheScale = reduced ? 1.008 : speaking ? 1.018 : celebrating ? 1.03 : 1.02;
+  const floatDur = reduced ? 6 : speaking ? 0.9 : 3.6;
   const tiltDur = reduced ? 9 : celebrating ? 0.8 : 5;
   const haloDur = reduced ? 5 : haloDuration;
+
+  // Eyelid geometry (px).
+  const lidW = EYE.w * size;
+  const lidH = EYE.h * size;
+  const lidTop = (EYE.y - EYE.h / 2) * size;
+  const lidStyle = (cx: number): CSSProperties => ({
+    position: "absolute",
+    left: cx * size - lidW / 2,
+    top: lidTop,
+    width: lidW,
+    height: lidH,
+    borderRadius: "18% 18% 48% 48% / 22% 22% 80% 80%",
+    background: "linear-gradient(180deg,#F1ECF9 0%,#E7DEF3 60%,#D8C9EA 100%)",
+    boxShadow: "inset 0 -1px 2px rgba(120,90,160,0.35)",
+    transformOrigin: "center top",
+    transform: `scaleY(${blinking ? 1 : 0})`,
+    transition: "transform 80ms ease-in-out",
+    pointerEvents: "none",
+    zIndex: 2,
+  });
 
   return (
     <div
@@ -68,7 +118,7 @@ export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProp
         transition={{ duration: haloDur, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Amy render — float + breathing + head tilt */}
+      {/* Amy render — float + breathing + head tilt (+ talking nod) + blink */}
       <motion.div
         style={{
           position: "absolute",
@@ -100,6 +150,9 @@ export function AmyPortrait({ state = "idle", size, className }: AmyPortraitProp
             display: "block",
           }}
         />
+        {/* Soft eyelid overlays for a 2D blink. */}
+        {!reduced && <span style={lidStyle(EYE.lX)} />}
+        {!reduced && <span style={lidStyle(EYE.rX)} />}
       </motion.div>
     </div>
   );
