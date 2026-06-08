@@ -266,8 +266,7 @@ describe("WhiteNoiseLullaby — immersive module", () => {
   // ─── Spec 3 — Poems tab ─────────────────────────────────────────────────
   describe("Poems tab", () => {
     function openPoemsTab() {
-      // The "Poems" tab now replaces "Songs & Lullabies" in the top toggle.
-      fireEvent.click(screen.getByRole("button", { name: /^poems$/i }));
+      fireEvent.click(screen.getByRole("tab", { name: /^poems$/i }));
     }
 
     it("switches to the poems module and shows the age sub-tabs", () => {

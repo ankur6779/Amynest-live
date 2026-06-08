@@ -59,11 +59,24 @@ export function getApiUrl(path: string): string {
  * Resolves TTS / media paths returned by the API (`/api/tts/audio/...`) to the
  * backend origin. Required on the static site (amynest-live-1) where relative
  * `/api/*` URLs would hit the CDN, not the API server.
+ *
+ * Bundled infant sleep MP3s (`/infant-sleep-audio/...`) and other Vite `public/`
+ * assets must stay on the web origin — they are not served by the API server.
  */
 export function resolveApiMediaUrl(pathOrUrl: string): string {
   const u = (pathOrUrl ?? "").trim();
   if (!u) return u;
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  if (
+    u.startsWith("http://") ||
+    u.startsWith("https://") ||
+    u.startsWith("blob:") ||
+    u.startsWith("data:")
+  ) {
+    return u;
+  }
+  if (u.startsWith("/infant-sleep-audio/")) return u;
+  if (u.startsWith("/api/")) return getApiUrl(u);
+  if (u.startsWith("/")) return u;
   return getApiUrl(u);
 }
 

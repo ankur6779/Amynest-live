@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wind, ChevronDown, Volume2, VolumeX, Info, Play, Pause, X, Clock, Sparkles, Plus, Music, BookOpen } from "lucide-react";
+import { ChevronDown, Volume2, VolumeX, Info, Play, Pause, X, Clock, Sparkles, Plus } from "lucide-react";
 import { useSoundEngine, type SoundId, type SoundEngine } from "@/hooks/use-sound-engine";
 import { useMp3LoopEngine } from "@/hooks/use-mp3-loop-engine";
 import { InfantPoems } from "./infant-poems";
@@ -16,6 +16,7 @@ import {
   type SleepLibraryItem,
 } from "@/data/infant-sleep-catalog";
 import { recordSleepPlay } from "@/lib/infant-sleep-library-state";
+import { SleepModuleShell, SleepTabBar, type SleepModuleTab } from "@/components/infant-sleep-ui";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -264,7 +265,7 @@ export function WhiteNoiseLullaby({
   const {
     t
   } = useTranslation();
-  type SleepTab = "noise" | "lullabies" | "poems" | "stories";
+  type SleepTab = SleepModuleTab;
   const [tab, setTab] = useState<SleepTab>("noise");
   const [openFullscreen, setOpenFullscreen] = useState(false);
   const [infoTileId, setInfoTileId] = useState<SoundId | null>(null);
@@ -295,17 +296,11 @@ export function WhiteNoiseLullaby({
     if (item.category === "story") setTab("stories");
   }
 
-  return <div className="space-y-3">
-
+  return (
+    <SleepModuleShell>
       <InfantSleepFavoritesRow childId={childId} onSelect={handleFavoriteSelect} />
 
-      {/* ── Tab toggle ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
-        <TabBtn active={tab === "noise"} onClick={() => setTab("noise")} icon={<Wind className="h-3.5 w-3.5" />} label="Noise" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(99,102,241,0.5)]" />
-        <TabBtn active={tab === "lullabies"} onClick={() => setTab("lullabies")} icon={<Music className="h-3.5 w-3.5" />} label="Lullabies" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(236,72,153,0.5)]" />
-        <TabBtn active={tab === "poems"} onClick={() => setTab("poems")} icon={<Sparkles className="h-3.5 w-3.5" />} label="Poems" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" />
-        <TabBtn active={tab === "stories"} onClick={() => setTab("stories")} icon={<BookOpen className="h-3.5 w-3.5" />} label="Stories" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(59,130,246,0.5)]" />
-      </div>
+      <SleepTabBar tab={tab} onTabChange={setTab} />
 
       {/* ── White Noise tab ─────────────────────────────────────────── */}
       {tab === "noise" && <div className="space-y-3 animate-in fade-in duration-200">
@@ -471,7 +466,8 @@ export function WhiteNoiseLullaby({
 
       {/* ── Fullscreen immersive player ─────────────────────────────── */}
       <FullscreenPlayer open={openFullscreen} onClose={() => setOpenFullscreen(false)} engine={engine} />
-    </div>;
+    </SleepModuleShell>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -492,7 +488,7 @@ function SmartSuggestion({
     t
   } = useTranslation();
   const isActive = engine.active.has(noise.id);
-  return <div className={`relative rounded-2xl overflow-hidden border border-white/30 dark:border-white/10 p-3.5 bg-gradient-to-br ${noise.gradient}`} data-testid="smart-suggestion">
+  return <div className={`sleep-smart-strip relative rounded-2xl overflow-hidden border border-white/30 dark:border-white/10 p-3.5 bg-gradient-to-br ${noise.gradient}`} data-testid="smart-suggestion">
       <div className="absolute inset-0 backdrop-blur-[1px] bg-black/10" />
       <div className="relative flex items-center gap-3">
         <div className="flex flex-col items-start flex-1 min-w-0">
@@ -531,7 +527,7 @@ function SoundTile({
   onToggle: () => void;
   onInfo: () => void;
 }) {
-  return <div className={["relative rounded-2xl overflow-hidden border-2 transition-all", active ? "border-white/50 shadow-[0_8px_28px_-6px_var(--tile-glow)] scale-[1.02]" : "border-border bg-white/60 dark:bg-white/[0.04] hover:border-border dark:hover:border-primary"].join(" ")} style={{
+  return <div className={["sleep-noise-tile relative rounded-2xl overflow-hidden border-2 transition-all", active ? "border-white/50 shadow-[0_8px_28px_-6px_var(--tile-glow)] scale-[1.02]" : "border-transparent hover:border-white/30 dark:hover:border-white/15"].join(" ")} style={{
     // Custom CSS var so the inline shadow above can pick up the per-tile tint.
     "--tile-glow": active ? `${noise.tint}60` : "transparent"
   } as React.CSSProperties}>
@@ -653,7 +649,7 @@ function MiniPlayer({
     y: 8
   }} transition={{
     duration: 0.2
-  }} className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card backdrop-blur-md p-2.5 flex items-center gap-2.5 shadow-lg" data-testid="mini-player">
+  }} className="sleep-mini-player rounded-2xl p-2.5 flex items-center gap-2.5 shadow-lg" data-testid="mini-player">
       <div className="flex -space-x-1.5 shrink-0">
         {activeIds.slice(0, 3).map(id => {
         const n = NOISE_TYPES.find(x => x.id === id)!;
@@ -992,24 +988,4 @@ function Particles({
       ease: "linear"
     }} />)}
     </div>;
-}
-
-// ─── Tab button ───────────────────────────────────────────────────────────────
-function TabBtn({
-  active,
-  onClick,
-  icon,
-  label,
-  activeClass
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: ReactNode;
-  label: string;
-  activeClass: string;
-}) {
-  return <button onClick={onClick} className={["flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all", active ? activeClass : "text-muted-foreground hover:text-foreground"].join(" ")}>
-      {icon}
-      {label}
-    </button>;
 }

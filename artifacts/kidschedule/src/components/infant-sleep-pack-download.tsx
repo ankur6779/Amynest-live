@@ -53,12 +53,12 @@ export function InfantSleepPackDownload({ childId }: { childId?: string }) {
   if (downloaded) {
     return (
       <div
-        className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-[11px] text-muted-foreground"
+        className="sleep-section-header flex items-center gap-2.5 !py-2.5"
         data-testid="sleep-pack-downloaded"
       >
-        <Check className="h-4 w-4 text-green-600 shrink-0" />
-        <span>
-          <strong>{pack.label}</strong> is ready for offline use (~{pack.estimatedMb} MB).
+        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+        <span className="text-[11px] text-muted-foreground">
+          <strong className="text-foreground">{pack.label}</strong> is ready for offline use (~{pack.estimatedMb} MB).
         </span>
       </div>
     );
@@ -66,7 +66,7 @@ export function InfantSleepPackDownload({ childId }: { childId?: string }) {
 
   return (
     <div
-      className="rounded-xl border border-dashed border-border bg-white/40 dark:bg-white/5 p-3 space-y-2"
+      className="sleep-section-header sleep-section-header--story space-y-2.5"
       data-testid="sleep-pack-download-prompt"
     >
       <p className="text-[12px] font-bold text-foreground">{pack.label}</p>

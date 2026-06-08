@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveProductionSameOriginApi } from "@/config";
-import { getAppApiBaseOrigin } from "@/lib/api";
+import { getAppApiBaseOrigin, resolveApiMediaUrl } from "@/lib/api";
 
 describe("resolveProductionSameOriginApi", () => {
   afterEach(() => {
@@ -45,5 +45,35 @@ describe("getAppApiBaseOrigin", () => {
     });
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0" });
     expect(getAppApiBaseOrigin()).toBe("https://www.amynest.in");
+  });
+});
+
+describe("resolveApiMediaUrl", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("rewrites /api/* paths to the configured API origin", () => {
+    vi.stubEnv("VITE_APP_API_ORIGIN", "https://api.example.com");
+    expect(resolveApiMediaUrl("/api/tts/audio/abc123.mp3")).toBe(
+      "https://api.example.com/api/tts/audio/abc123.mp3",
+    );
+  });
+
+  it("keeps bundled infant sleep MP3s on the web origin", () => {
+    vi.stubEnv("VITE_APP_API_ORIGIN", "https://api.example.com");
+    expect(resolveApiMediaUrl("/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3")).toBe(
+      "/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3",
+    );
+  });
+
+  it("keeps other same-origin static paths unchanged", () => {
+    vi.stubEnv("VITE_APP_API_ORIGIN", "https://api.example.com");
+    expect(resolveApiMediaUrl("/pwa-icon-192.png")).toBe("/pwa-icon-192.png");
+  });
+
+  it("passes through absolute URLs unchanged", () => {
+    const url = "https://cdn.example.com/audio.mp3";
+    expect(resolveApiMediaUrl(url)).toBe(url);
   });
 });

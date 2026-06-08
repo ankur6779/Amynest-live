@@ -32,20 +32,20 @@ export function InfantSleepFavoritesRow({
 
   if (favoriteItems.length === 0 && recentItems.length === 0) {
     return (
-      <p className="text-[11px] text-muted-foreground px-1" data-testid="sleep-favorites-empty">
+      <p className="text-[11px] text-muted-foreground px-1 leading-relaxed" data-testid="sleep-favorites-empty">
         Tap the heart on any track to save favorites. Your recently played tracks will appear here.
       </p>
     );
   }
 
   return (
-    <div className="space-y-2" data-testid="sleep-favorites-row">
+    <div className="space-y-2.5" data-testid="sleep-favorites-row">
       {favoriteItems.length > 0 && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
-            <Heart className="h-3 w-3" /> Favorites
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5">
+            <Heart className="h-3 w-3 text-pink-500" /> Favorites
           </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             {favoriteItems.map((item) => (
               <button
                 key={item.id}
@@ -54,7 +54,7 @@ export function InfantSleepFavoritesRow({
                   setTick((n) => n + 1);
                 }}
                 data-testid={`sleep-fav-${item.id}`}
-                className="shrink-0 px-3 py-2 rounded-xl bg-white/50 dark:bg-white/5 border border-border text-[11px] font-bold text-foreground"
+                className="sleep-fav-chip text-foreground"
               >
                 {item.title}
               </button>
@@ -64,16 +64,16 @@ export function InfantSleepFavoritesRow({
       )}
       {recentItems.length > 0 && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5">
             <Clock className="h-3 w-3" /> Recently played
           </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             {recentItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onSelect(item)}
                 data-testid={`sleep-recent-${item.id}`}
-                className="shrink-0 px-3 py-2 rounded-xl bg-white/40 dark:bg-white/5 border border-border text-[11px] font-medium text-muted-foreground"
+                className="sleep-fav-chip sleep-fav-chip--recent"
               >
                 {item.title}
               </button>

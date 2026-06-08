@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Star, Cloud, Sparkles, Music, Heart, Bird, Sprout, BookOpen, Waves,
-  Play, Pause, ChevronDown, Repeat, Volume2, Clock, Plus, Loader2, Heart as HeartIcon,
+  Play, Pause, ChevronDown, Repeat, Volume2, Clock, Loader2, Heart as HeartIcon,
   Download, Check, type LucideIcon,
 } from "lucide-react";
 import {
@@ -28,6 +28,12 @@ import {
   setSleepPreference,
 } from "@/lib/infant-sleep-library-state";
 import type { SoundEngine } from "@/hooks/use-sound-engine";
+import {
+  SleepAgeTabs,
+  SleepLoadMoreButton,
+  SleepSectionHeader,
+  sleepMediaGradient,
+} from "@/components/infant-sleep-ui";
 
 const ICONS: Record<string, LucideIcon> = {
   Moon, Star, Cloud, Sparkles, Music, HeartIcon, Bird, Sprout, BookOpen, Waves,
@@ -126,17 +132,18 @@ export function InfantSleepTracks({
 
   return (
     <div className="space-y-3" data-testid={`infant-sleep-${category}-section`}>
-      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card border border-border dark:border-border p-3 backdrop-blur-md">
-        <div className="flex items-center gap-2 mb-1">
-          {category === "lullaby" ? (
-            <Music className="h-4 w-4 text-primary dark:text-muted-foreground" />
+      <SleepSectionHeader
+        icon={
+          category === "lullaby" ? (
+            <Music className="h-4 w-4" />
           ) : (
-            <BookOpen className="h-4 w-4 text-primary dark:text-muted-foreground" />
-          )}
-          <p className="text-xs font-bold text-primary dark:text-muted-foreground">{headerTitle}</p>
-        </div>
-        <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{headerBlurb}</p>
-      </div>
+            <BookOpen className="h-4 w-4" />
+          )
+        }
+        title={headerTitle}
+        blurb={headerBlurb}
+        accent={category === "lullaby" ? "lullaby" : "story"}
+      />
 
       {category === "lullaby" && noiseEngine && (
         <ContinuousModeToggle
@@ -145,24 +152,12 @@ export function InfantSleepTracks({
         />
       )}
 
-      <div role="tablist" aria-label="Age groups" className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
-        {SLEEP_AGE_GROUPS.map((g) => (
-          <button
-            key={g.id}
-            role="tab"
-            aria-selected={group === g.id}
-            data-testid={`sleep-age-tab-${g.id}`}
-            onClick={() => setGroup(g.id)}
-            className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${
-              group === g.id
-                ? "bg-primary text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]"
-                : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
-            }`}
-          >
-            {g.label}
-          </button>
-        ))}
-      </div>
+      <SleepAgeTabs<SleepAgeGroup>
+        groups={SLEEP_AGE_GROUPS}
+        value={group}
+        onChange={setGroup}
+        testIdPrefix="sleep-age-tab"
+      />
 
       <p className="text-[11px] text-muted-foreground px-1">
         {SLEEP_AGE_GROUPS.find((g) => g.id === group)?.blurb}
@@ -196,14 +191,11 @@ export function InfantSleepTracks({
       </div>
 
       {hasMore && (
-        <button
+        <SleepLoadMoreButton
           onClick={() => setVisible((v) => Math.min(tracksInGroup.length, v + PAGE_SIZE))}
-          data-testid="sleep-load-more"
-          className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border dark:border-border bg-white/40 dark:bg-white/5 hover:bg-muted dark:hover:bg-card text-primary dark:text-muted-foreground text-xs font-bold transition-colors"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Load more
-        </button>
+          label="Load more"
+          testId="sleep-load-more"
+        />
       )}
 
       <SleepTrackFullscreenPlayer
@@ -263,8 +255,9 @@ function SleepTrackTile({
   onToggleFavorite: () => void;
 }) {
   const Icon = ICONS[track.icon] ?? Moon;
+  const gradient = sleepMediaGradient(track.category as "lullaby" | "story", track.id);
   return (
-    <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/20 shadow-lg bg-gradient-to-br from-muted to-muted">
+    <div className={`sleep-media-tile aspect-[4/5] bg-gradient-to-br ${gradient}`}>
       <button
         onClick={onPress}
         disabled={!downloaded}
@@ -282,7 +275,7 @@ function SleepTrackTile({
         )}
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="flex items-start justify-between">
-            <div className="h-12 w-12 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center">
+            <div className="sleep-media-tile-icon">
               <Icon className="h-6 w-6" />
             </div>
             {isLoading ? (
@@ -366,7 +359,7 @@ function SleepTrackFullscreenPlayer({
           aria-modal="true"
           data-testid="sleep-track-fullscreen-player"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-muted via-muted to-black" />
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/90 via-violet-950/95 to-black" />
           <div className="relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <button

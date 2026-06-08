@@ -124,7 +124,8 @@ export function isSleepPackDownloaded(packId: SleepPackId, childId?: string): bo
   return state.downloadedPacks.includes(packId);
 }
 
-const SLEEP_PACK_BUNDLED = new Set<SleepPackId>(["core-v1"]);
+/** Packs shipped under `public/infant-sleep-audio/` — playable without OTA download. */
+const SLEEP_PACK_BUNDLED = new Set<SleepPackId>(["core-v1", "extended-v1"]);
 
 export function markSleepPackDownloaded(packId: SleepPackId, childId?: string): void {
   const state = readRaw(childId);

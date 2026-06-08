@@ -18,10 +18,16 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Moon, Star, Cloud, Sparkles, Sun, Heart, Sprout, Bird, Flower2, Play, Pause, ChevronDown, Repeat, Volume2, Clock, Plus, Loader2, type LucideIcon } from "lucide-react";
+import { Moon, Star, Cloud, Sparkles, Sun, Heart, Sprout, Bird, Flower2, Play, Pause, ChevronDown, Repeat, Volume2, Clock, Loader2, type LucideIcon } from "lucide-react";
 import { ALL_POEMS, POEM_AGE_GROUPS, getDefaultAgeGroup, getPoemsForGroup, type InfantPoem, type PoemAgeGroup, type PoemIconName } from "@/data/infant-poems";
 import { useInfantPoemPlayer, type PoemPlayer } from "@/hooks/use-poem-player";
 import { recordSleepPlay, toggleSleepFavorite, isSleepFavorite } from "@/lib/infant-sleep-library-state";
+import {
+  SleepAgeTabs,
+  SleepLoadMoreButton,
+  SleepSectionHeader,
+  sleepMediaGradient,
+} from "@/components/infant-sleep-ui";
 
 // ─── Icon resolver ──────────────────────────────────────────────────────────
 // Keeps the data file render-free — names map to lucide components here only.
@@ -102,25 +108,19 @@ export function InfantPoems({
     player.stop();
   }
   return <div className="space-y-3" data-testid="infant-poems-section">
-      {/* Header strip */}
-      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card border border-border dark:border-border p-3 backdrop-blur-md">
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="h-4 w-4 text-primary dark:text-muted-foreground" />
-          <p className="text-xs font-bold text-primary dark:text-muted-foreground">
-            {t("components.infant_poems.poems_for_your_baby")}
-          </p>
-        </div>
-        <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">
-          {t("components.infant_poems.soft_age_appropriate_verses_with_gentle_audio_playback_tap_a")}
-        </p>
-      </div>
+      <SleepSectionHeader
+        icon={<Sparkles className="h-4 w-4" />}
+        title={t("components.infant_poems.poems_for_your_baby")}
+        blurb={t("components.infant_poems.soft_age_appropriate_verses_with_gentle_audio_playback_tap_a")}
+        accent="poem"
+      />
 
-      {/* Age sub-tabs */}
-      <div role="tablist" aria-label={t("components.infant_poems.poem_age_groups")} className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
-        {POEM_AGE_GROUPS.map(g => <button key={g.id} role="tab" aria-selected={group === g.id} data-testid={`poem-age-tab-${g.id}`} onClick={() => setGroup(g.id)} className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${group === g.id ? "bg-primary text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"}`}>
-            {g.label}
-          </button>)}
-      </div>
+      <SleepAgeTabs<PoemAgeGroup>
+        groups={POEM_AGE_GROUPS}
+        value={group}
+        onChange={setGroup}
+        testIdPrefix="poem-age-tab"
+      />
 
       {/* Group blurb */}
       <p className="text-[11px] text-muted-foreground px-1">
@@ -145,10 +145,13 @@ export function InfantPoems({
         </div>}
 
       {/* Load More */}
-      {hasMore && <button onClick={() => setVisible(v => Math.min(poemsInGroup.length, v + PAGE_SIZE))} data-testid="poem-load-more" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border dark:border-border bg-white/40 dark:bg-white/5 hover:bg-muted dark:hover:bg-card text-primary dark:text-muted-foreground text-xs font-bold transition-colors">
-          <Plus className="h-3.5 w-3.5" />
-          {t("components.infant_poems.load_more_poems")}
-        </button>}
+      {hasMore && (
+        <SleepLoadMoreButton
+          onClick={() => setVisible(v => Math.min(poemsInGroup.length, v + PAGE_SIZE))}
+          label={t("components.infant_poems.load_more_poems")}
+          testId="poem-load-more"
+        />
+      )}
 
       {/* Fullscreen immersive player */}
       <PoemFullscreenPlayer open={openPoem !== null} poem={openPoem} player={player} onClose={handleClose} />
@@ -179,7 +182,8 @@ function PoemTile({
     t
   } = useTranslation();
   const Icon = ICONS[poem.icon];
-  return <button onClick={onPress} data-testid={`poem-tile-${poem.id}`} data-active={isActive ? "true" : "false"} aria-label={`Play poem: ${poem.title}`} className={`relative aspect-[4/5] rounded-2xl overflow-hidden p-3 text-left bg-gradient-to-br ${poem.gradient} text-white border border-white/20 shadow-lg transition-transform active:scale-[0.97] hover:scale-[1.02]`}>
+  const gradient = sleepMediaGradient("poem", poem.id, poem.gradient);
+  return <button onClick={onPress} data-testid={`poem-tile-${poem.id}`} data-active={isActive ? "true" : "false"} aria-label={`Play poem: ${poem.title}`} className={`sleep-media-tile relative aspect-[4/5] p-3 text-left bg-gradient-to-br ${gradient} text-white transition-transform active:scale-[0.97] hover:scale-[1.02]`}>
       {onToggleFavorite && (
         <span
           role="button"
@@ -210,7 +214,7 @@ function PoemTile({
           duration: 2.4,
           repeat: Infinity,
           ease: "easeInOut"
-        }} className="h-12 w-12 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center">
+        }} className="sleep-media-tile-icon">
             <Icon className="h-6 w-6 drop-shadow-sm" />
           </motion.div>
           {isLoading ? <span className="text-[9px] font-bold uppercase tracking-wider bg-white/25 backdrop-blur-sm px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
