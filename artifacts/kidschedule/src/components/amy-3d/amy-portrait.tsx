@@ -174,27 +174,34 @@ export function AmyPortrait({
     return () => cancelAnimationFrame(raf);
   }, [state, reduced, audioLevelRef]);
 
-  // ── Pose layer: smooth tween to per-state head tilt + vertical offset ───────
+  // ── Pose layer: head tilt (roll) + 3D head turn (yaw → an ear comes forward) ─
+  // roll = rotateZ; yawBase/yawSway = rotateY oscillation around a per-state
+  // turn so a headphone ear drifts toward the viewer for a lively 3D feel.
   const pose = useMemo(() => {
     if (reduced) {
-      // No tilt; keep only the static positional cue for "thinking" (look up).
-      return { rotate: 0, y: state === "thinking" ? -size * 0.04 : 0 };
+      // Flat: no tilt/turn; keep only the static positional cue for "thinking".
+      return { roll: 0, yawBase: 0, yawSway: 0, yawDur: 0, y: state === "thinking" ? -size * 0.04 : 0 };
     }
     switch (state) {
       case "listening":
-        return { rotate: tiltDir * 4, y: 0 };
+        return { roll: tiltDir * 7, yawBase: tiltDir * 13, yawSway: 3, yawDur: 4, y: 0 };
       case "thinking":
-        return { rotate: tiltDir * 2, y: -size * 0.05 }; // slight upward gaze
+        return { roll: tiltDir * 5, yawBase: tiltDir * 10, yawSway: 3, yawDur: 4.5, y: -size * 0.05 };
       case "encouraging":
-        return { rotate: tiltDir * 2, y: 0 };
+        return { roll: tiltDir * 5, yawBase: tiltDir * 10, yawSway: 3, yawDur: 4.5, y: 0 };
+      case "speaking":
+        return { roll: tiltDir * 2, yawBase: 0, yawSway: 6, yawDur: 3, y: 0 };
       case "celebrating":
-        return { rotate: 0, y: -size * 0.02 };
+        return { roll: 0, yawBase: 0, yawSway: 8, yawDur: 2.6, y: -size * 0.02 };
       default:
-        return { rotate: 0, y: 0 }; // idle / speaking → centred
+        // idle: gentle continuous turn so an ear keeps drifting to the front.
+        return { roll: tiltDir * 2, yawBase: tiltDir * 4, yawSway: 5, yawDur: 5.5, y: 0 };
     }
   }, [state, reduced, size, tiltDir]);
 
   // ── Life layer: looping breathing (scale) + talking nod (y) ─────────────────
+  // Scale baselines sit at ~1.05 (overfill) so the pose layer's 3D yaw never
+  // exposes the circular mask edge.
   const life = useMemo(() => {
     if (reduced) {
       return {
@@ -206,7 +213,7 @@ export function AmyPortrait({
       case "speaking":
         return {
           animate: {
-            scale: [1, 1.018, 1],
+            scale: [1.05, 1.068, 1.05],
             y: [0, -size * 0.02, size * 0.004, -size * 0.02, 0],
           },
           transition: {
@@ -216,7 +223,7 @@ export function AmyPortrait({
         };
       case "thinking":
         return {
-          animate: { scale: [1, 1.015, 1], y: [0, -size * 0.012, 0] },
+          animate: { scale: [1.05, 1.065, 1.05], y: [0, -size * 0.012, 0] },
           transition: {
             scale: { duration: 3.5, repeat: Infinity, ease: "easeInOut" as const },
             y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" as const },
@@ -224,23 +231,23 @@ export function AmyPortrait({
         };
       case "listening":
         return {
-          animate: { scale: [1, 1.012, 1], y: 0 }, // mouth/posture calm + focused
+          animate: { scale: [1.05, 1.062, 1.05], y: 0 }, // calm + focused
           transition: {
             scale: { duration: 3.2, repeat: Infinity, ease: "easeInOut" as const },
           },
         };
       case "celebrating":
         return {
-          animate: { scale: [1, 1.03, 1], y: [0, -size * 0.02, 0] },
+          animate: { scale: [1.05, 1.08, 1.05], y: [0, -size * 0.02, 0] },
           transition: {
             scale: { duration: 0.6, repeat: Infinity, ease: "easeInOut" as const },
             y: { duration: 0.6, repeat: Infinity, ease: "easeInOut" as const },
           },
         };
       default:
-        // idle: gentle breathing only, no head/positional motion.
+        // idle: gentle breathing.
         return {
-          animate: { scale: [1, 1.02, 1], y: 0 },
+          animate: { scale: [1.05, 1.07, 1.05], y: 0 },
           transition: {
             scale: { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const },
           },
@@ -291,7 +298,7 @@ export function AmyPortrait({
         }}
       />
 
-      {/* Pose layer — smooth tween to per-state tilt + offset. */}
+      {/* Pose layer — head tilt (roll) + 3D head turn (yaw) under perspective. */}
       <motion.div
         style={{
           position: "absolute",
@@ -299,9 +306,23 @@ export function AmyPortrait({
           borderRadius: "9999px",
           overflow: "hidden",
           willChange: "transform",
+          transformPerspective: size * 3,
+          transformOrigin: "center 60%",
         }}
-        animate={pose}
-        transition={{ duration: 0.55, ease: "easeInOut" }}
+        animate={{
+          rotateZ: pose.roll,
+          rotateY: pose.yawSway
+            ? [pose.yawBase - pose.yawSway, pose.yawBase + pose.yawSway, pose.yawBase - pose.yawSway]
+            : pose.yawBase,
+          y: pose.y,
+        }}
+        transition={{
+          rotateZ: { duration: 0.6, ease: "easeInOut" },
+          y: { duration: 0.6, ease: "easeInOut" },
+          rotateY: pose.yawSway
+            ? { duration: pose.yawDur, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.6, ease: "easeInOut" },
+        }}
       >
         {/* Life layer — looping breathing + talking nod. */}
         <motion.div
