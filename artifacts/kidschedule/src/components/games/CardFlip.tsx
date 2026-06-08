@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackTap } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
@@ -18,6 +18,7 @@ export function CardFlipGame({
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
+  const finishedRef = useRef(false);
 
   useEffect(() => {
     if (flipped.length !== 2) return;
@@ -31,11 +32,11 @@ export function CardFlipGame({
   }, [flipped, cards]);
 
   useEffect(() => {
-    if (matched.length === cards.length) {
-      const extraMoves = Math.max(0, moves - pairs);
-      const score = Math.max(0, Math.min(pairs, pairs + 3 - extraMoves));
-      onFinish(score, pairs);
-    }
+    if (matched.length !== cards.length || finishedRef.current) return;
+    finishedRef.current = true;
+    const extraMoves = Math.max(0, moves - pairs);
+    const score = Math.max(0, Math.min(pairs, pairs + 3 - extraMoves));
+    onFinish(score, pairs);
   }, [matched, cards.length, moves, onFinish, pairs]);
 
   const onClick = (i: number) => {

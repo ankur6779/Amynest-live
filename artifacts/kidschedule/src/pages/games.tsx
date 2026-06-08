@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppNavigate } from "@/components/app-link";
 import {
@@ -69,6 +69,13 @@ export default function GamesPage() {
   const [active, setActive] = useState<ActiveGame>(null);
   const [showRedeem, setShowRedeem] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const finishGameLockRef = useRef(false);
+
+  useEffect(() => {
+    if (!active || active.kind !== "play") {
+      finishGameLockRef.current = false;
+    }
+  }, [active]);
 
   useEffect(() => {
     ensureStarterUnlocks();
@@ -151,6 +158,9 @@ export default function GamesPage() {
   };
 
   const finishGame = async (g: GameDef, score: number, total: number) => {
+    if (finishGameLockRef.current) return;
+    finishGameLockRef.current = true;
+
     const ratio = total === 0 ? 0 : score / total;
     const perfect = ratio >= 0.95;
     recordPerfectStreak(perfect);
@@ -169,6 +179,7 @@ export default function GamesPage() {
         void hapticGameSuccess(perfect);
       }
     } catch (e) {
+      finishGameLockRef.current = false;
       setError(e instanceof Error ? e.message : t("screens.games.limit_reached_msg", { count: limit }));
       setActive(null);
       return;
