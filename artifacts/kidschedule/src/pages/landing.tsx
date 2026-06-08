@@ -1,406 +1,277 @@
+import type { ComponentType } from "react";
 import { Link } from "wouter";
-import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator, Mic, Headphones } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  Brain,
+  Calendar,
+  MessageCircle,
+  Zap,
+  CheckCircle2,
+  Flame,
+  Smartphone,
+  Moon,
+  EarOff,
+  Utensils,
+  Target,
+  ShieldCheck,
+  BookOpen,
+  Microscope,
+  Star,
+  Puzzle,
+  GraduationCap,
+  Heart,
+  Award,
+  BarChart3,
+  FlaskConical,
+  Calculator,
+  Mic,
+} from "lucide-react";
 import { StoreQrCode } from "@/components/store-qr-code";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
-const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "landing.highlight_3", "landing.highlight_4"];
-const LEARNING_SPOTLIGHT = [{
-  icon: Mic,
-  titleKey: "landing.spotlight_speech_title",
-  descKey: "landing.spotlight_speech_desc",
-  highlightKeys: ["landing.spotlight_speech_h1", "landing.spotlight_speech_h2", "landing.spotlight_speech_h3", "landing.spotlight_speech_h4"],
-  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
-  glow: "rgba(56,189,248,0.45)",
-  cardBg: "linear-gradient(135deg, rgba(56,189,248,0.18) 0%, rgba(99,102,241,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-  borderColor: "rgba(56,189,248,0.35)",
-  radial: "hsl(var(--brand-cyan-500))"
-}, {
-  icon: GraduationCap,
-  titleKey: "landing.spotlight_phonics_title",
-  descKey: "landing.spotlight_phonics_desc",
-  highlightKeys: ["landing.spotlight_phonics_h1", "landing.spotlight_phonics_h2", "landing.spotlight_phonics_h3", "landing.spotlight_phonics_h4"],
-  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))",
-  glow: "rgba(236,72,153,0.45)",
-  cardBg: "linear-gradient(135deg, rgba(236,72,153,0.16) 0%, rgba(168,85,247,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-  borderColor: "rgba(236,72,153,0.35)",
-  radial: "hsl(var(--brand-pink-500))"
-}, {
-  icon: Headphones,
-  titleKey: "landing.spotlight_audio_title",
-  descKey: "landing.spotlight_audio_desc",
-  highlightKeys: ["landing.spotlight_audio_h1", "landing.spotlight_audio_h2", "landing.spotlight_audio_h3", "landing.spotlight_audio_h4"],
-  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)))",
-  glow: "rgba(168,85,247,0.45)",
-  cardBg: "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(123,63,242,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-  borderColor: "rgba(168,85,247,0.35)",
-  radial: "hsl(var(--brand-purple-500))",
-  wide: true
-}];
-const PROBLEMS = [{
-  icon: Flame,
-  labelKey: "landing.problem_tantrums",
-  color: "hsl(var(--brand-red-500))"
-}, {
-  icon: Smartphone,
-  labelKey: "landing.problem_screen",
-  color: "hsl(var(--brand-cyan-500))"
-}, {
-  icon: Moon,
-  labelKey: "landing.problem_sleep",
-  color: "hsl(var(--brand-indigo-500))"
-}, {
-  icon: EarOff,
-  labelKey: "landing.problem_listening",
-  color: "hsl(var(--brand-orange-500))"
-}, {
-  icon: Utensils,
-  labelKey: "landing.problem_eating",
-  color: "hsl(var(--brand-pink-500))"
-}, {
-  icon: Target,
-  labelKey: "landing.problem_focus",
-  color: "hsl(var(--brand-purple-500))"
-}];
-const SECONDARY_FEATURES = [{
-  icon: Calendar,
-  titleKey: "landing.feature_routine_title",
-  descKey: "landing.feature_routine_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))"
-}, {
-  icon: LayoutGrid,
-  titleKey: "landing.feature_hub_title",
-  descKey: "landing.feature_hub_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))"
-}, {
-  icon: Zap,
-  titleKey: "landing.feature_ai_title",
-  descKey: "landing.feature_ai_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-orange-500)))"
-}];
-const NEW_HUB_FEATURES = [{
-  icon: Mic,
-  titleKey: "landing.new_speech_title",
-  descKey: "landing.new_speech_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
-  glow: "rgba(56,189,248,0.45)"
-}, {
-  icon: GraduationCap,
-  titleKey: "landing.new_phonics_title",
-  descKey: "landing.new_phonics_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))",
-  glow: "rgba(236,72,153,0.45)"
-}, {
-  icon: Headphones,
-  titleKey: "landing.new_audio_title",
-  descKey: "landing.new_audio_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)))",
-  glow: "rgba(168,85,247,0.45)"
-}, {
-  icon: BookOpen,
-  titleKey: "landing.new_smart_study_title",
-  descKey: "landing.new_smart_study_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)))",
-  glow: "rgba(99,102,241,0.45)"
-}, {
-  icon: Baby,
-  titleKey: "landing.new_infant_title",
-  descKey: "landing.new_infant_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-blue-400)),hsl(var(--brand-indigo-500)))",
-  glow: "rgba(99,102,241,0.45)"
-}, {
-  icon: Calculator,
-  titleKey: "landing.new_abacus_title",
-  descKey: "landing.new_abacus_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
-  glow: "rgba(245,158,11,0.45)"
-}];
-const STEPS = [{
-  icon: Target,
-  titleKey: "landing.step1_title",
-  descKey: "landing.step1_desc"
-}, {
-  icon: HelpCircle,
-  titleKey: "landing.step2_title",
-  descKey: "landing.step2_desc"
-}, {
-  icon: ListChecks,
-  titleKey: "landing.step3_title",
-  descKey: "landing.step3_desc"
-}];
-const TRUST_PILLARS = [{
-  icon: BookOpen,
-  titleKey: "landing.trust1_title",
-  descKey: "landing.trust1_desc"
-}, {
-  icon: FlaskConical,
-  titleKey: "landing.trust2_title",
-  descKey: "landing.trust2_desc"
-}, {
-  icon: ShieldCheck,
-  titleKey: "landing.trust3_title",
-  descKey: "landing.trust3_desc"
-}];
-const SCIENCE_STATS = [{
-  value: "87%",
-  label: "calmer mornings in 2 weeks"
-}, {
-  value: "12K+",
-  label: "families parenting smarter"
-}, {
-  value: "30+",
-  label: "research studies referenced"
-}, {
-  value: "4.9★",
-  label: "average parent rating"
-}];
-const SCIENCE_CITATIONS = ["📚 Habit Loop — Charles Duhigg (2012)", "🧠 Growth Mindset — Dr. Carol Dweck, Stanford", "👶 AAP Screen Time Guidelines (2023)", "💤 CDC Infant Sleep Standards", "🎯 Positive Reinforcement — B.F. Skinner", "🌱 Montessori Life Skills Framework", "📊 Executive Function — Harvard Center on the Developing Child", "❤️ Secure Attachment — Dr. Daniel Siegel", "⚡ CPS Model — Dr. Ross Greene", "🍎 SEL Framework — CASEL"];
-const ALL_FEATURES = [{
-  icon: Mic,
-  titleKey: "landing.spotlight_speech_title",
-  descKey: "landing.spotlight_speech_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
-  badge: "Featured"
-}, {
-  icon: GraduationCap,
-  titleKey: "landing.spotlight_phonics_title",
-  descKey: "landing.spotlight_phonics_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))",
-  badge: "Featured"
-}, {
-  icon: Headphones,
-  titleKey: "landing.spotlight_audio_title",
-  descKey: "landing.spotlight_audio_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)))",
-  badge: "New"
-}, {
-  icon: BookOpen,
-  titleKey: "landing.new_smart_study_title",
-  descKey: "landing.new_smart_study_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)))",
-  badge: "New"
-}, {
-  icon: Video,
-  title: "Kids Story Hub",
-  desc: "Bedtime, moral & fun stories in a Netflix-style hub — fresh stories matched to your child's age every day.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-sky-400)),hsl(var(--brand-indigo-500)))",
-  badge: "New"
-}, {
-  icon: Utensils,
-  title: "Nutrition Hub",
-  desc: "Age-wise nutrition science, meal ideas, and tiffin suggestions aligned with WHO and ICMR guidance.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-green-500)))",
-  badge: null
-}, {
-  icon: Brain,
-  title: "Amy AI Tutor",
-  desc: "Personalized tutoring across subjects — Amy adapts explanations to your child's age and learning pace.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-  badge: null
-}, {
-  icon: ShieldCheck,
-  title: "Kids Control Center",
-  desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)",
-  badge: "Coming Soon"
-}, {
-  icon: TrendingUp,
-  title: "Behavior Tracking",
-  desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC (Antecedent-Behavior-Consequence) behavioral analysis.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-cyan-500)))",
-  badge: "Popular"
-}, {
-  icon: Gamepad2,
-  title: "Gaming Reward Zone",
-  desc: "Gamified milestones based on B.F. Skinner's positive reinforcement — kids earn real rewards tied to real-world achievements.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-red-500)))",
-  badge: "New"
-}, {
-  icon: Baby,
-  titleKey: "landing.new_infant_title",
-  descKey: "landing.new_infant_desc",
-  title: "Infant Parenting Hub",
-  desc: "Pediatrician-aligned guidance on sleep, feeding, milestones and daily care for babies under 12 months.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-blue-400)),hsl(var(--brand-indigo-500)))",
-  badge: "New"
-}, {
-  icon: Calculator,
-  titleKey: "landing.new_abacus_title",
-  descKey: "landing.new_abacus_desc",
-  title: "Abacus Zone",
-  desc: "Step-by-step abacus lessons that build mental math and concentration — perfect for ages 5–12.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
-  badge: "New"
-}, {
-  icon: Video,
-  title: "Parenting Reels",
-  desc: "Short, expert-curated video reels on positive parenting techniques from leading child psychologists.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-purple-500)))",
-  badge: null
-}, {
-  icon: Lightbulb,
-  title: "Daily Parenting Tips",
-  desc: "Science-backed tip delivered every day — personalized to your child's age and developmental stage per Piaget's framework.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-orange-500)))",
-  badge: null
-}, {
-  icon: Activity,
-  title: "Life Skills Zone",
-  desc: "Teach independence — from dressing to cooking — with Montessori-aligned milestone tracking that builds intrinsic motivation.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-  badge: null
-}, {
-  icon: GraduationCap,
-  title: "Olympiad Zone",
-  desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14. Builds executive function.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
-  badge: null
-}, {
-  icon: Palette,
-  titleKey: "landing.new_coloring_title",
-  descKey: "landing.new_coloring_desc",
-  title: "Coloring Sheets",
-  desc: "Curated coloring books to build focus, fine motor skills and creative expression — print at home or color in-app.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
-  badge: "New"
-}, {
-  icon: FileText,
-  titleKey: "landing.new_funsheets_title",
-  descKey: "landing.new_funsheets_desc",
-  title: "Fun Sheets",
-  desc: "Printable activity sheets — mazes, dot-to-dot, tracing and logic puzzles your child can finish today.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-emerald-500)))",
-  badge: "New"
-}, {
-  icon: Puzzle,
-  title: "Daily Brain Puzzles",
-  desc: "Brain-boosting puzzles tailored to your child's cognitive stage — builds logic, creativity and working memory.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-purple-500)))",
-  badge: null
-}, {
-  icon: BookOpen,
-  title: "Parenting Articles",
-  desc: "Deep-dive articles written by child development experts and child psychologists on every stage of childhood.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-blue-500)),hsl(var(--brand-cyan-500)))",
-  badge: null
-}, {
-  icon: Users,
-  title: "Babysitter Profiles",
-  desc: "Create and share child care profiles securely. Routines, allergies, and notes — all in one safe place.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-purple-500)))",
-  badge: null
-}, {
-  icon: Award,
-  title: "Parent Score & Streaks",
-  desc: "Gamified motivation keeps you consistent — earn points, build streaks, and celebrate every parenting win.",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-red-500)))",
-  badge: null
-}];
-const TESTIMONIALS = [{
-  name: "Priya M.",
-  location: "Mumbai, India",
-  text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
-  avatar: "P",
-  color: "hsl(var(--brand-purple-500))",
-  result: "Tantrums reduced 80% in 3 weeks"
-}, {
-  name: "Rahul & Kavya",
-  location: "Bangalore, India",
-  text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
-  avatar: "R",
-  color: "hsl(var(--brand-cyan-500))",
-  result: "Identified sleep-trigger pattern in 5 days"
-}, {
-  name: "Sarah K.",
-  location: "Dubai, UAE",
-  text: "Twin toddlers + infant sleep tracker + Amy's personalized CDC-aligned tips = sanity saved. The sleep schedule feature got our 6-month-old sleeping through the night in 11 days. Nothing else had worked.",
-  avatar: "S",
-  color: "hsl(var(--brand-pink-500))",
-  result: "Baby sleeping through the night in 11 days"
-}];
+
+const HERO_BADGES = [
+  { icon: Microscope, key: "landing.hero_badge_science", color: "hsl(var(--brand-cyan-500))" },
+  { icon: BookOpen, key: "landing.hero_badge_research", color: "hsl(var(--brand-indigo-500))" },
+  { icon: Award, key: "landing.hero_badge_patent", color: "hsl(var(--brand-purple-500))" },
+];
+
+const TECH_PILLARS = [
+  { icon: FlaskConical, titleKey: "landing.tech_science_title", descKey: "landing.tech_science_desc" },
+  { icon: BookOpen, titleKey: "landing.tech_research_title", descKey: "landing.tech_research_desc" },
+  { icon: ShieldCheck, titleKey: "landing.tech_patent_title", descKey: "landing.tech_patent_desc" },
+];
+
+const ROUTINE_ENGINE_KEYS = [
+  "landing.tech_engine_1",
+  "landing.tech_engine_2",
+  "landing.tech_engine_3",
+  "landing.tech_engine_4",
+];
+
+const AMY_AI_MODES = [
+  {
+    icon: Brain,
+    titleKey: "landing.amy_mode_coach_title",
+    descKey: "landing.amy_mode_coach_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
+  },
+  {
+    icon: Mic,
+    titleKey: "landing.amy_mode_talk_title",
+    descKey: "landing.amy_mode_talk_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-violet-600)))",
+  },
+  {
+    icon: GraduationCap,
+    titleKey: "landing.amy_mode_tutor_title",
+    descKey: "landing.amy_mode_tutor_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
+  },
+];
+
+const PLATFORM_CATEGORIES = [
+  {
+    icon: Calendar,
+    titleKey: "landing.cat_routines_title",
+    descKey: "landing.cat_routines_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
+    items: [
+      "landing.feature_routine_title",
+      "landing.feature_ai_title",
+      "landing.coach_title",
+      "landing.new_infant_title",
+    ],
+  },
+  {
+    icon: GraduationCap,
+    titleKey: "landing.cat_learning_title",
+    descKey: "landing.cat_learning_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
+    items: [
+      "landing.spotlight_speech_title",
+      "landing.spotlight_phonics_title",
+      "landing.spotlight_audio_title",
+      "landing.new_smart_study_title",
+      "landing.new_abacus_title",
+    ],
+  },
+  {
+    icon: Heart,
+    titleKey: "landing.cat_parenting_title",
+    descKey: "landing.cat_parenting_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
+    items: [
+      "landing.feature_hub_title",
+      "Behavior Tracking",
+      "Nutrition Hub",
+      "Parenting Reels",
+      "Parenting Articles",
+    ],
+  },
+  {
+    icon: Puzzle,
+    titleKey: "landing.cat_creative_title",
+    descKey: "landing.cat_creative_desc",
+    gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-red-500)))",
+    items: [
+      "Kids Story Hub",
+      "Daily Brain Puzzles",
+      "landing.new_coloring_title",
+      "landing.new_funsheets_title",
+      "Gaming Reward Zone",
+    ],
+  },
+];
+
+const PROBLEMS = [
+  { icon: Flame, labelKey: "landing.problem_tantrums", color: "hsl(var(--brand-red-500))" },
+  { icon: Smartphone, labelKey: "landing.problem_screen", color: "hsl(var(--brand-cyan-500))" },
+  { icon: Moon, labelKey: "landing.problem_sleep", color: "hsl(var(--brand-indigo-500))" },
+  { icon: EarOff, labelKey: "landing.problem_listening", color: "hsl(var(--brand-orange-500))" },
+  { icon: Utensils, labelKey: "landing.problem_eating", color: "hsl(var(--brand-pink-500))" },
+  { icon: Target, labelKey: "landing.problem_focus", color: "hsl(var(--brand-purple-500))" },
+];
+
+const STEPS = [
+  { icon: Target, titleKey: "landing.step1_title", descKey: "landing.step1_desc" },
+  { icon: MessageCircle, titleKey: "landing.step2_title", descKey: "landing.step2_desc" },
+  { icon: CheckCircle2, titleKey: "landing.step3_title", descKey: "landing.step3_desc" },
+];
+
+const SCIENCE_STATS = [
+  { value: "87%", label: "calmer mornings in 2 weeks" },
+  { value: "12K+", label: "families parenting smarter" },
+  { value: "30+", label: "research studies referenced" },
+  { value: "4.9★", label: "average parent rating" },
+];
+
+const SCIENCE_CITATIONS = [
+  "Habit Loop — Charles Duhigg (2012)",
+  "Growth Mindset — Dr. Carol Dweck, Stanford",
+  "AAP Screen Time Guidelines (2023)",
+  "CDC Infant Sleep Standards",
+  "Positive Reinforcement — B.F. Skinner",
+  "Montessori Life Skills Framework",
+  "Executive Function — Harvard Center on the Developing Child",
+  "Secure Attachment — Dr. Daniel Siegel",
+  "CPS Model — Dr. Ross Greene",
+  "SEL Framework — CASEL",
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Priya M.",
+    location: "Mumbai, India",
+    text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
+    avatar: "P",
+    color: "hsl(var(--brand-purple-500))",
+    result: "Tantrums reduced 80% in 3 weeks",
+  },
+  {
+    name: "Rahul & Kavya",
+    location: "Bangalore, India",
+    text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
+    avatar: "R",
+    color: "hsl(var(--brand-cyan-500))",
+    result: "Identified sleep-trigger pattern in 5 days",
+  },
+  {
+    name: "Sarah K.",
+    location: "Dubai, UAE",
+    text: "Twin toddlers + infant sleep tracker + Amy's personalized CDC-aligned tips = sanity saved. The sleep schedule feature got our 6-month-old sleeping through the night in 11 days. Nothing else had worked.",
+    avatar: "S",
+    color: "hsl(var(--brand-pink-500))",
+    result: "Baby sleeping through the night in 11 days",
+  },
+];
+
+function AmyLandingAvatar({ size = 140, className = "" }: { size?: number; className?: string }) {
+  return (
+    <picture>
+      <source srcSet="/amy-3d/amy-idle.webp" type="image/webp" />
+      <img
+        src="/amy-3d/amy-idle.png"
+        alt="Amy AI"
+        width={size}
+        height={size}
+        className={className}
+        decoding="async"
+        fetchPriority="high"
+      />
+    </picture>
+  );
+}
+
+function SectionEyebrow({
+  icon: Icon,
+  label,
+  accent,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  accent?: string;
+}) {
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white"
+      style={
+        accent
+          ? { background: accent, border: "1px solid rgba(255,255,255,0.15)" }
+          : undefined
+      }
+    >
+      <Icon className="h-3 w-3" />
+      {label}
+    </div>
+  );
+}
+
 export default function LandingPage() {
-  const {
-    t
-  } = useTranslation();
-  return <div data-on-dark className="min-h-screen flex flex-col overflow-x-hidden text-white relative" style={{
-    background: "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)"
-  }}>
+  const { t } = useTranslation();
+
+  return (
+    <div
+      data-on-dark
+      className="min-h-screen flex flex-col overflow-x-hidden text-white relative"
+      style={{ background: "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)" }}
+    >
       <style>{`
-        @keyframes amyFloat {
-          0%, 100% { transform: translateY(0) }
-          50% { transform: translateY(-10px) }
-        }
-        @keyframes amyBounce {
-          0%, 100% { transform: translateY(0) }
-          50% { transform: translateY(-6px) }
-        }
-        @keyframes amyPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.6) }
-          50% { box-shadow: 0 0 0 18px rgba(168,85,247,0) }
-        }
-        @keyframes amyFadeUp {
-          from { opacity: 0; transform: translateY(24px) }
-          to { opacity: 1; transform: translateY(0) }
-        }
-        @keyframes amyShimmer {
-          0% { background-position: 0% 50% }
-          100% { background-position: 200% 50% }
-        }
-        @keyframes amyColorCycle {
-          0%   { color: hsl(var(--brand-violet-600)) }
-          25%  { color: #FF4ECD }
-          50%  { color: hsl(var(--brand-sky-400)) }
-          75%  { color: hsl(var(--brand-yellow-300)) }
-          100% { color: hsl(var(--brand-violet-600)) }
-        }
-        @keyframes amyCounterGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.3) }
-          50% { box-shadow: 0 0 24px 4px rgba(168,85,247,0.2) }
-        }
-        @keyframes scrollX {
-          0% { transform: translateX(0) }
-          100% { transform: translateX(-50%) }
-        }
+        @keyframes amyFloat { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+        @keyframes amyFadeUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes amyShimmer { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
+        @keyframes scrollX { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
+        @keyframes amyGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.45) } 50% { box-shadow: 0 0 0 14px rgba(168,85,247,0) } }
         .amy-float { animation: amyFloat 5s ease-in-out infinite }
-        .amy-bounce { animation: amyBounce 2.6s ease-in-out infinite }
-        .amy-pulse { animation: amyPulse 2.8s ease-out infinite }
-        .amy-fade-up { animation: amyFadeUp 0.8s ease-out both }
-        .amy-fade-up-1 { animation: amyFadeUp 0.8s ease-out 0.1s both }
-        .amy-fade-up-2 { animation: amyFadeUp 0.8s ease-out 0.2s both }
-        .amy-fade-up-3 { animation: amyFadeUp 0.8s ease-out 0.35s both }
-        .amy-fade-up-4 { animation: amyFadeUp 0.8s ease-out 0.5s both }
-        .amy-color-cycle {
-          animation: amyColorCycle 4s ease-in-out infinite;
-          will-change: color;
-          text-shadow: 0 0 24px rgba(168,85,247,0.35);
-        }
+        .amy-fade-up { animation: amyFadeUp 0.7s ease-out both }
+        .amy-fade-up-1 { animation: amyFadeUp 0.7s ease-out 0.08s both }
+        .amy-fade-up-2 { animation: amyFadeUp 0.7s ease-out 0.16s both }
+        .amy-fade-up-3 { animation: amyFadeUp 0.7s ease-out 0.24s both }
         .amy-gradient-text {
           background: linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)),hsl(var(--brand-purple-500)));
           background-size: 200% auto;
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
+          -webkit-background-clip: text; background-clip: text; color: transparent;
           animation: amyShimmer 6s linear infinite;
         }
         .amy-glass {
           background: rgba(255,255,255,0.05);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
+          backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
           border: 1px solid rgba(255,255,255,0.1);
         }
         .amy-glass-card {
           background: rgba(255,255,255,0.04);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255,255,255,0.1);
           transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
         }
         .amy-glass-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 20px 50px -10px rgba(168,85,247,0.4);
-          border-color: rgba(168,85,247,0.4);
+          transform: translateY(-4px);
+          box-shadow: 0 16px 40px -10px rgba(168,85,247,0.35);
+          border-color: rgba(168,85,247,0.35);
         }
         .amy-cta {
           background: linear-gradient(135deg,hsl(var(--brand-purple-500)) 0%,hsl(var(--brand-pink-500)) 100%);
@@ -408,23 +279,12 @@ export default function LandingPage() {
           transition: transform .3s ease, box-shadow .3s ease;
         }
         .amy-cta:hover {
-          transform: scale(1.05);
-          box-shadow: 0 14px 50px rgba(236,72,153,0.6), 0 0 0 1px rgba(255,255,255,0.2) inset;
+          transform: scale(1.04);
+          box-shadow: 0 14px 50px rgba(236,72,153,0.55), 0 0 0 1px rgba(255,255,255,0.2) inset;
         }
-        .amy-stat-card {
-          animation: amyCounterGlow 3s ease-in-out infinite;
-        }
-        .amy-feature-card {
-          background: rgba(255,255,255,0.04);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255,255,255,0.08);
-          transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
-        }
-        .amy-feature-card:hover {
-          transform: translateY(-4px) scale(1.02);
-          box-shadow: 0 16px 40px -8px rgba(168,85,247,0.35);
-          border-color: rgba(168,85,247,0.35);
-        }
+        .amy-avatar-ring { animation: amyGlow 3s ease-out infinite }
+        .marquee-track { display: flex; gap: 12px; animation: scrollX 32s linear infinite; width: max-content }
+        .marquee-track:hover { animation-play-state: paused }
         .amy-testimonial {
           background: rgba(255,255,255,0.04);
           backdrop-filter: blur(16px);
@@ -435,89 +295,12 @@ export default function LandingPage() {
           border-color: rgba(168,85,247,0.3);
           box-shadow: 0 12px 40px -8px rgba(168,85,247,0.25);
         }
-        .marquee-track {
-          display: flex;
-          gap: 12px;
-          animation: scrollX 28s linear infinite;
-          width: max-content;
-        }
-        .marquee-track:hover { animation-play-state: paused }
-        @keyframes amyBlink {
-          0%, 45%, 100% { transform: scaleY(1) }
-          48% { transform: scaleY(0.18) }
-          50% { transform: scaleY(0.04) }
-          52% { transform: scaleY(0.18) }
-        }
-        @keyframes amyCapBob {
-          0%, 100% { transform: translateY(0) }
-          50% { transform: translateY(-1px) }
-        }
-        @keyframes amyCapShine {
-          0%, 100% { opacity: 0.7 }
-          50% { opacity: 1 }
-        }
-        .amy-eye {
-          display: inline-block;
-          width: 10px;
-          height: 10px;
-          background: #1a1a2e;
-          border-radius: 50%;
-          border: 2px solid white;
-          animation: amyBlink 3.5s ease-in-out infinite;
-          transform-origin: center;
-        }
-        .amy-face-wrap {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)),hsl(var(--brand-pink-400)));
-          border-radius: 50%;
-          width: 28px;
-          height: 28px;
-          gap: 3px;
-          flex-shrink: 0;
-          box-shadow: 0 5px 14px rgba(168,85,247,0.55);
-          position: relative;
-          animation: amyCapBob 2.6s ease-in-out infinite;
-        }
-        .amy-face-wrap::before {
-          content: "";
-          position: absolute;
-          top: -6px;
-          left: 2px;
-          right: 2px;
-          height: 9px;
-          border-radius: 999px 999px 4px 4px;
-          background: linear-gradient(90deg,hsl(var(--brand-violet-900)),hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)));
-          box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset;
-          animation: amyCapShine 2.8s ease-in-out infinite;
-        }
-        .amy-face-iris {
-          display: inline-block;
-          width: 6px;
-          height: 6px;
-          background: #fff;
-          border-radius: 50%;
-          position: relative;
-          z-index: 1;
-          box-shadow: 0 0 0 1px rgba(30,20,60,0.2);
-        }
       `}</style>
 
-      {/* Glow blobs */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30" style={{
-        background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)"
-      }} />
-        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-25" style={{
-        background: "radial-gradient(circle,hsl(var(--brand-blue-500)),transparent 70%)"
-      }} />
-        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full opacity-20" style={{
-        background: "radial-gradient(circle,hsl(var(--brand-pink-500)),transparent 70%)"
-      }} />
-        <div className="absolute top-2/3 left-10 w-[300px] h-[300px] rounded-full opacity-15" style={{
-        background: "radial-gradient(circle,hsl(var(--brand-cyan-500)),transparent 70%)"
-      }} />
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30" style={{ background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)" }} />
+        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-25" style={{ background: "radial-gradient(circle,hsl(var(--brand-blue-500)),transparent 70%)" }} />
+        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,hsl(var(--brand-pink-500)),transparent 70%)" }} />
       </div>
 
       {/* NAV */}
@@ -526,11 +309,14 @@ export default function LandingPage() {
           <div className="flex items-center gap-3 cursor-pointer">
             <AmyMascotLogo size={44} />
             <div className="flex flex-col leading-tight">
-              <span className="font-quicksand font-black text-xl" style={{
-              background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent"
-            }}>
+              <span
+                className="font-quicksand font-black text-xl"
+                style={{
+                  background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
                 {t("pages.landing.amynest_ai")}
               </span>
               <span className="text-[10px] text-white/45 font-medium tracking-wide">
@@ -554,444 +340,235 @@ export default function LandingPage() {
       </header>
 
       {/* HERO */}
-      <section className="relative z-10 flex flex-col items-center text-center px-5 pt-12 pb-16">
-        <div className="amy-fade-up-1 relative -mb-6 flex items-center justify-center">
-          <picture>
-            <source media="(min-width: 768px)" srcSet="/amynest-hero-logo.webp" type="image/webp" />
-            <source media="(max-width: 767px)" srcSet="/amynest-hero-logo-mobile.webp" type="image/webp" />
-            <img
-              src="/amynest-hero-logo-mobile.webp"
-              alt={t("pages.landing.amynest_ai_2")}
-              className="amy-hero-static w-64 sm:w-72 md:w-[480px] max-w-full h-auto object-contain"
-              width={600}
-              height={400}
-              decoding="async"
-              fetchPriority="high"
-            />
-          </picture>
+      <section className="relative z-10 px-5 pt-6 pb-14 md:pb-20">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+          <div className="text-center md:text-left">
+            <div className="amy-fade-up flex flex-wrap justify-center md:justify-start gap-2 mb-6">
+              {HERO_BADGES.map(({ icon: Icon, key, color }) => (
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full text-white/90"
+                  style={{ background: `${color}22`, border: `1px solid ${color}55` }}
+                >
+                  <Icon className="h-3 w-3" style={{ color }} />
+                  {t(key)}
+                </span>
+              ))}
+            </div>
+
+            <h1 className="amy-fade-up-1 font-quicksand font-black text-4xl md:text-5xl lg:text-6xl leading-[1.08] tracking-tight mb-4">
+              <span className="amy-gradient-text">{t("landing.hero_headline")}</span>
+            </h1>
+
+            <p className="amy-fade-up-2 text-white/75 text-base md:text-lg max-w-xl leading-relaxed mb-8 mx-auto md:mx-0">
+              {t("landing.hero_sub")}
+            </p>
+
+            <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3">
+              <Link href="/sign-up">
+                <button
+                  className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white"
+                  data-testid="button-hero-cta"
+                >
+                  {t("landing.hero_cta")}
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              </Link>
+              <Link href="/sign-in">
+                <button className="amy-glass inline-flex items-center gap-2 text-sm font-semibold px-6 py-4 rounded-2xl text-white/80 hover:text-white transition-all">
+                  {t("landing.nav_sign_in")}
+                </button>
+              </Link>
+            </div>
+
+            <p className="amy-fade-up-3 mt-4 text-[10px] font-bold uppercase tracking-widest text-white/30">
+              {t("landing.hero_free")}
+            </p>
+          </div>
+
+          <div className="amy-fade-up-2 flex flex-col items-center">
+            <div
+              className="amy-avatar-ring amy-float relative rounded-full p-3 mb-5"
+              style={{
+                background: "linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.15))",
+                border: "1px solid rgba(168,85,247,0.35)",
+              }}
+            >
+              <AmyLandingAvatar size={140} className="w-[140px] h-[140px] md:w-[160px] md:h-[160px] object-contain rounded-full" />
+            </div>
+            <div className="amy-glass rounded-2xl px-5 py-4 max-w-xs text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/45 mb-1">
+                {t("landing.amy_ai_eyebrow")}
+              </p>
+              <p className="text-white/85 text-sm font-semibold leading-snug">
+                {t("landing.amy_ai_sub")}
+              </p>
+            </div>
+          </div>
         </div>
-
-        <h1 className="amy-fade-up-2 amy-color-cycle font-quicksand font-black text-4xl md:text-6xl leading-[1.1] tracking-tight max-w-3xl mb-4">
-          {t("landing.hero_headline")}
-        </h1>
-
-        <p className="amy-fade-up-3 text-white/75 text-base md:text-xl max-w-xl leading-relaxed mb-10">
-          {t("landing.hero_sub")}
-        </p>
-
-        <div className="amy-fade-up-4 flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/sign-up">
-            <button className="amy-cta inline-flex items-center gap-2 text-base md:text-lg font-bold px-9 md:px-10 py-4 md:py-5 rounded-2xl text-white" data-testid="button-hero-cta">
-              {t("landing.hero_cta")}
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </Link>
-          <Link href="/sign-in">
-            <button className="amy-glass inline-flex items-center gap-2 text-sm font-semibold px-7 py-4 rounded-2xl text-white/80 hover:text-white hover:border-white/20 transition-all">
-              {t("landing.nav_sign_in")}
-            </button>
-          </Link>
-        </div>
-
-        <p className="amy-fade-up-4 mt-5 text-[10px] font-bold uppercase tracking-widest text-white/25">
-          {t("patent_pending.trust_line")}
-        </p>
-
       </section>
 
-      {/* SCIENCE CITATIONS SCROLLING MARQUEE */}
-      <div className="relative z-10 overflow-hidden py-3 border-y" style={{
-      borderColor: "rgba(168,85,247,0.15)",
-      background: "rgba(168,85,247,0.04)"
-    }}>
+      {/* RESEARCH MARQUEE */}
+      <div
+        className="relative z-10 overflow-hidden py-3 border-y"
+        style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.04)" }}
+      >
         <div className="marquee-track">
-          {[...SCIENCE_CITATIONS, ...SCIENCE_CITATIONS].map((cite, i) => <span key={i} className="shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] text-white/55 font-medium whitespace-nowrap" style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)"
-        }}>
+          {[...SCIENCE_CITATIONS, ...SCIENCE_CITATIONS].map((cite, i) => (
+            <span
+              key={i}
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] text-white/55 font-medium whitespace-nowrap"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
               {cite}
-            </span>)}
+            </span>
+          ))}
         </div>
       </div>
 
-      <InfantParentingSection page="landing" />
-
-      {/* LEARNING SPOTLIGHT — Speech Coach, Phonics, Audio Lessons */}
-      <section className="relative z-10 px-5 pb-20">
+      {/* PATENT-PENDING ROUTINE ENGINE */}
+      <section className="relative z-10 px-5 py-16 md:py-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 md:mb-12">
-            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white" style={{
-            background: "linear-gradient(135deg,rgba(56,189,248,0.22),rgba(168,85,247,0.18))",
-            border: "1px solid rgba(56,189,248,0.4)",
-            boxShadow: "0 6px 20px rgba(56,189,248,0.25)"
-          }}>
-              <Mic className="h-3 w-3" />
-              {t("landing.learning_eyebrow")}
-            </div>
+            <SectionEyebrow
+              icon={Zap}
+              label={t("landing.tech_eyebrow")}
+              accent="linear-gradient(135deg,rgba(168,85,247,0.25),rgba(99,102,241,0.18))"
+            />
             <h2 className="font-quicksand font-bold text-3xl md:text-5xl text-white mb-3">
-              {t("landing.learning_heading")}
+              {t("landing.tech_heading")}
             </h2>
             <p className="text-white/65 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-              {t("landing.learning_sub")}
+              {t("landing.tech_sub")}
+            </p>
+            <p className="mt-4 text-[11px] font-bold uppercase tracking-widest text-white/35">
+              {t("patent_pending.trust_line")}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6 mb-5 md:mb-6">
-            {LEARNING_SPOTLIGHT.filter((m) => !m.wide).map(({
-            icon: Icon,
-            titleKey,
-            descKey,
-            highlightKeys,
-            gradient,
-            cardBg,
-            borderColor,
-            radial
-          }) => <div key={titleKey} className="amy-glass-card rounded-3xl p-8 md:p-10 relative overflow-hidden min-h-[320px]" style={{
-            background: cardBg,
-            borderColor
-          }}>
-                <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 pointer-events-none" style={{
-              background: `radial-gradient(circle,${radial},transparent 70%)`
-            }} />
-                <div className="relative h-full flex flex-col">
-                  <div className="flex flex-col gap-5 mb-6">
-                    <div className="h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] rounded-2xl flex items-center justify-center shrink-0" style={{
-                  background: gradient,
-                  boxShadow: "0 12px 36px rgba(168,85,247,0.45)"
-                }}>
-                      <Icon className="h-8 w-8 md:h-9 md:w-9 text-white" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <h3 className="font-quicksand font-bold text-2xl md:text-3xl text-white">
-                          {t(titleKey)}
-                        </h3>
-                        <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
-                      background: gradient,
-                      boxShadow: "0 4px 14px rgba(236,72,153,0.4)"
-                    }}>
-                          {t("landing.featured_badge")}
-                        </span>
-                      </div>
-                      <p className="text-white/75 text-sm md:text-base leading-relaxed">
-                        {t(descKey)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-auto">
-                    {highlightKeys.map((key) => <div key={key} className="flex items-start gap-2.5 rounded-xl px-3.5 py-2.5" style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)"
-                  }}>
-                        <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0 mt-0.5" />
-                        <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
-                      </div>)}
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {TECH_PILLARS.map(({ icon: Icon, titleKey, descKey }) => (
+              <div key={titleKey} className="amy-glass-card rounded-2xl p-5 md:p-6">
+                <div
+                  className="h-11 w-11 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.35)" }}
+                >
+                  <Icon className="h-5 w-5 text-muted-foreground" />
                 </div>
-              </div>)}
+                <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
+                <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
+              </div>
+            ))}
           </div>
 
-          {LEARNING_SPOTLIGHT.filter((m) => m.wide).map(({
-          icon: Icon,
-          titleKey,
-          descKey,
-          highlightKeys,
-          gradient,
-          cardBg,
-          borderColor,
-          radial
-        }) => <div key={titleKey} className="amy-glass-card rounded-3xl p-8 md:p-10 relative overflow-hidden" style={{
-          background: cardBg,
-          borderColor
-        }}>
-              <div aria-hidden className="absolute -top-16 -right-16 w-72 h-72 rounded-full opacity-35 pointer-events-none" style={{
-            background: `radial-gradient(circle,${radial},transparent 70%)`
-          }} />
-              <div className="relative flex flex-col md:flex-row md:items-start gap-6 md:gap-10">
-                <div className="h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] rounded-2xl flex items-center justify-center shrink-0" style={{
-              background: gradient,
-              boxShadow: "0 12px 36px rgba(168,85,247,0.45)"
-            }}>
-                  <Icon className="h-8 w-8 md:h-9 md:w-9 text-white" />
+          <div
+            className="amy-glass-card rounded-3xl p-6 md:p-8"
+            style={{
+              background: "linear-gradient(135deg,rgba(99,102,241,0.14) 0%,rgba(168,85,247,0.10) 100%)",
+              borderColor: "rgba(168,85,247,0.3)",
+            }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {ROUTINE_ENGINE_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <span className="text-white/85 text-sm">{t(key)}</span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <h3 className="font-quicksand font-bold text-2xl md:text-3xl text-white">
-                      {t(titleKey)}
-                    </h3>
-                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
-                  background: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
-                  boxShadow: "0 4px 14px rgba(56,189,248,0.4)"
-                }}>
-                      {t("landing.new_badge")}
-                    </span>
-                  </div>
-                  <p className="text-white/75 text-sm md:text-base leading-relaxed mb-6 max-w-3xl">
-                    {t(descKey)}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {highlightKeys.map((key) => <div key={key} className="flex items-start gap-2.5 rounded-xl px-3.5 py-2.5" style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)"
-                }}>
-                        <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
-                        <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
-                      </div>)}
-                  </div>
-                </div>
-              </div>
-            </div>)}
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* PROBLEM HOOK */}
-      <section className="relative z-10 px-5 pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Sparkles className="h-3 w-3 text-muted-foreground" />
-              {t("landing.problems_eyebrow")}
+      {/* AMY AI MODES */}
+      <section className="relative z-10 px-5 pb-16 md:pb-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div>
+              <SectionEyebrow
+                icon={Sparkles}
+                label={t("landing.amy_ai_eyebrow")}
+                accent="linear-gradient(135deg,rgba(236,72,153,0.22),rgba(168,85,247,0.18))"
+              />
+              <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
+                {t("landing.amy_ai_heading")}
+              </h2>
+              <p className="text-white/65 text-base max-w-xl leading-relaxed">{t("landing.amy_ai_sub")}</p>
             </div>
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("landing.problems_heading")}
-            </h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">
-              {t("landing.problems_sub")}
-            </p>
+            <AmyLandingAvatar size={96} className="hidden md:block w-24 h-24 object-contain opacity-90" />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
-            {PROBLEMS.map(({
-            icon: Icon,
-            labelKey,
-            color
-          }) => {
-            return <div key={labelKey} className="amy-glass-card rounded-2xl p-4 md:p-5 flex items-center gap-3">
-                <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl flex items-center justify-center shrink-0" style={{
-                background: `${color}20`,
-                border: `1px solid ${color}40`
-              }}>
-                  <Icon className="h-5 w-5 md:h-5 md:w-5" style={{
-                  color
-                }} />
-                </div>
-                <span className="text-white/90 text-sm md:text-base font-semibold">{t(labelKey)}</span>
-              </div>;
-          })}
-          </div>
-
-          <p className="text-center text-white/70 text-base md:text-lg italic">
-            {t("landing.not_alone")}
-          </p>
-        </div>
-      </section>
-
-      {/* CORE FEATURES */}
-      <section className="relative z-10 px-5 pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("landing.features_heading")}
-            </h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">
-              {t("landing.features_sub")}
-            </p>
-          </div>
-
-          {/* Amy Coach hero card */}
-          <div className="amy-glass-card rounded-3xl p-7 md:p-10 mb-5 relative overflow-hidden" style={{
-          background: "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-          borderColor: "rgba(168,85,247,0.35)"
-        }}>
-            <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 pointer-events-none" style={{
-            background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)"
-          }} />
-            <div className="relative">
-              <div className="flex flex-col md:flex-row md:items-start gap-5 md:gap-7 mb-6">
-                <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0" style={{
-                background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-                boxShadow: "0 10px 30px rgba(168,85,247,0.45)"
-              }}>
-                  <Brain className="h-7 w-7 md:h-8 md:w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <h3 className="font-quicksand font-bold text-xl md:text-2xl text-white">
-                      {t("landing.coach_title")}
-                    </h3>
-                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
-                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
-                    boxShadow: "0 4px 14px rgba(236,72,153,0.4)"
-                  }}>
-                      {t("landing.core_feature")}
-                    </span>
-                  </div>
-                  <p className="text-white/75 text-sm md:text-base leading-relaxed">
-                    {t("landing.coach_desc")}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                {COACH_HIGHLIGHT_KEYS.map(key => {
-                return <div key={key} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)"
-                }}>
-                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0" />
-                    <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
-                  </div>;
-              })}
-              </div>
-            </div>
-          </div>
-
-          {/* Secondary feature cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
-            {SECONDARY_FEATURES.map(({
-            icon: Icon,
-            titleKey,
-            descKey,
-            gradient
-          }) => {
-            return <div key={titleKey} className="amy-glass-card rounded-3xl p-5 md:p-7 flex flex-col gap-3 md:gap-4">
-                <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl flex items-center justify-center" style={{
-                background: gradient,
-                boxShadow: "0 8px 24px rgba(168,85,247,0.25)"
-              }}>
-                  <Icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+            {AMY_AI_MODES.map(({ icon: Icon, titleKey, descKey, gradient }) => (
+              <div key={titleKey} className="amy-glass-card rounded-3xl p-6 flex flex-col gap-4">
+                <div
+                  className="h-12 w-12 rounded-2xl flex items-center justify-center"
+                  style={{ background: gradient, boxShadow: "0 8px 24px rgba(168,85,247,0.3)" }}
+                >
+                  <Icon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-quicksand font-bold text-base md:text-lg text-white mb-1.5 md:mb-2">
-                    {t(titleKey)}
-                  </h3>
-                  <p className="text-white/65 text-xs md:text-sm leading-relaxed">{t(descKey)}</p>
+                  <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
+                  <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
                 </div>
-              </div>;
-          })}
-          </div>
-
-          {/* Mid CTA */}
-          <div className="text-center mt-12">
-            <p className="text-white/80 text-base md:text-lg mb-5 font-medium">
-              {t("landing.mid_cta")}
-            </p>
-            <Link href="/sign-up">
-              <button className="amy-cta inline-flex items-center gap-2 text-sm md:text-base font-bold px-7 md:px-8 py-3.5 md:py-4 rounded-2xl text-white" data-testid="button-features-cta">
-                {t("landing.mid_cta_btn")}
-                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-              </button>
-            </Link>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* WHAT'S NEW IN PARENT HUB */}
-      <section className="relative z-10 px-5 pb-20">
+      <InfantParentingSection page="landing" />
+
+      {/* PLATFORM — single consolidated grid */}
+      <section className="relative z-10 px-5 pb-16 md:pb-20">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10 md:mb-12 amy-fade-up">
-            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white" style={{
-            background: "linear-gradient(135deg,rgba(236,72,153,0.22),rgba(168,85,247,0.18))",
-            border: "1px solid rgba(236,72,153,0.4)",
-            boxShadow: "0 6px 20px rgba(236,72,153,0.25)"
-          }}>
-              <Sparkles className="h-3 w-3" />
-              {t("landing.whats_new_eyebrow")}
-            </div>
+          <div className="text-center mb-10">
+            <SectionEyebrow icon={LayoutGridIcon} label={t("landing.platform_eyebrow")} />
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("landing.whats_new_heading")}
+              {t("landing.platform_heading")}
             </h2>
-            <p className="text-white/65 text-base max-w-xl mx-auto leading-relaxed">
-              {t("landing.whats_new_sub")}
-            </p>
+            <p className="text-white/60 text-base max-w-xl mx-auto">{t("landing.platform_sub")}</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            {NEW_HUB_FEATURES.map(({
-            icon: Icon,
-            titleKey,
-            descKey,
-            gradient,
-            glow
-          }) => {
-            return <div key={titleKey} className="amy-glass-card amy-fade-up rounded-3xl p-5 md:p-6 flex flex-col gap-4 relative overflow-hidden" style={{
-              borderColor: "rgba(236,72,153,0.25)"
-            }}>
-                  <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
-                background: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-purple-500)))",
-                boxShadow: "0 4px 14px rgba(236,72,153,0.45)"
-              }}>
-                    {t("landing.new_badge")}
-                  </span>
-                  <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center shrink-0" style={{
-                background: gradient,
-                boxShadow: `0 10px 28px ${glow}`
-              }}>
-                    <Icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {PLATFORM_CATEGORIES.map(({ icon: Icon, titleKey, descKey, gradient, items }) => (
+              <div key={titleKey} className="amy-glass-card rounded-3xl p-6 md:p-7">
+                <div className="flex items-start gap-4 mb-5">
+                  <div
+                    className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0"
+                    style={{ background: gradient, boxShadow: "0 8px 24px rgba(168,85,247,0.25)" }}
+                  >
+                    <Icon className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-quicksand font-bold text-base md:text-lg text-white mb-1.5">
-                      {t(titleKey)}
-                    </h3>
-                    <p className="text-white/65 text-xs md:text-sm leading-relaxed">{t(descKey)}</p>
-                  </div>
-                </div>;
-          })}
-          </div>
-        </div>
-      </section>
-
-      {/* ALL FEATURES MEGA GRID */}
-      <section className="relative z-10 px-5 pb-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Sparkles className="h-3 w-3 text-muted-foreground" />
-              {t("pages.landing.everything_in_one_app")}
-            </div>
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("pages.landing.14_science_backed_tools_in_one_app")}
-            </h2>
-            <p className="text-white/60 text-base max-w-xl mx-auto">
-              {t("pages.landing.from_newborns_to_teens_every_feature_is_grounded_in_child_ps")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            {ALL_FEATURES.map(({
-            icon: Icon,
-            title,
-            desc,
-            titleKey,
-            descKey,
-            gradient,
-            badge
-          }) => <div key={titleKey ?? title} className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden">
-                {badge && <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
-              background: badge === "New" ? "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))" : badge === "Featured" ? "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))" : badge === "Coming Soon" ? "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)" : "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-red-500)))"
-            }}>
-                    {badge === "New" ? t("landing.new_badge") : badge === "Featured" ? t("landing.featured_badge") : badge === "Coming Soon" ? t("pages.landing.coming_soon") : badge}
-                  </span>}
-                <div className="flex items-start gap-3">
-                  <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{
-                background: gradient,
-                boxShadow: "0 6px 18px rgba(168,85,247,0.25)"
-              }}>
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-quicksand font-bold text-base text-white mb-1">{titleKey ? t(titleKey) : title}</h3>
-                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">{descKey ? t(descKey) : desc}</p>
+                    <h3 className="font-quicksand font-bold text-xl text-white mb-1">{t(titleKey)}</h3>
+                    <p className="text-white/60 text-sm leading-relaxed">{t(descKey)}</p>
                   </div>
                 </div>
-              </div>)}
+                <div className="flex flex-wrap gap-2">
+                  {items.map((item) => (
+                    <span
+                      key={item}
+                      className="text-xs font-medium text-white/75 px-3 py-1.5 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                    >
+                      {item.startsWith("landing.") ? t(item) : item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* CTA after mega grid */}
-          <div className="text-center mt-12">
+          <div className="text-center mt-10">
             <Link href="/sign-up">
-              <button className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white">
+              <button className="amy-cta inline-flex items-center gap-2 text-sm md:text-base font-bold px-7 py-3.5 rounded-2xl text-white" data-testid="button-features-cta">
                 {t("pages.landing.unlock_all_features_free")}
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-4 w-4" />
               </button>
             </Link>
             <p className="mt-3 text-xs text-white/40">{t("pages.landing.free_plan_included_upgrade_anytime")}</p>
@@ -999,95 +576,144 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="relative z-10 px-5 pb-20">
+      {/* PROBLEMS */}
+      <section className="relative z-10 px-5 pb-16">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Zap className="h-3 w-3 text-muted-foreground" />
-              {t("landing.how_eyebrow")}
-            </div>
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("landing.how_heading")}
-            </h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">
-              {t("landing.how_sub")}
-            </p>
+          <div className="text-center mb-8">
+            <SectionEyebrow icon={Sparkles} label={t("landing.problems_eyebrow")} />
+            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">{t("landing.problems_heading")}</h2>
+            <p className="text-white/60 text-base max-w-lg mx-auto">{t("landing.problems_sub")}</p>
           </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+            {PROBLEMS.map(({ icon: Icon, labelKey, color }) => (
+              <div key={labelKey} className="amy-glass-card rounded-2xl p-4 flex items-center gap-3">
+                <div
+                  className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `${color}20`, border: `1px solid ${color}40` }}
+                >
+                  <Icon className="h-5 w-5" style={{ color }} />
+                </div>
+                <span className="text-white/90 text-sm font-semibold">{t(labelKey)}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-white/70 text-base italic">{t("landing.not_alone")}</p>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
-            {STEPS.map(({
-            icon: Icon,
-            titleKey,
-            descKey
-          }, idx) => {
-            return <div key={titleKey} className="amy-glass-card rounded-3xl p-6 md:p-7 relative">
-                <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand" style={{
-                background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
-                boxShadow: "0 6px 18px rgba(236,72,153,0.45)"
-              }}>
+      {/* HOW IT WORKS */}
+      <section className="relative z-10 px-5 pb-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <SectionEyebrow icon={Zap} label={t("landing.how_eyebrow")} />
+            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">{t("landing.how_heading")}</h2>
+            <p className="text-white/60 text-base max-w-lg mx-auto">{t("landing.how_sub")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {STEPS.map(({ icon: Icon, titleKey, descKey }, idx) => (
+              <div key={titleKey} className="amy-glass-card rounded-3xl p-6 relative">
+                <div
+                  className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand"
+                  style={{
+                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
+                    boxShadow: "0 6px 18px rgba(236,72,153,0.45)",
+                  }}
+                >
                   {idx + 1}
                 </div>
-                <div className="h-12 w-12 rounded-2xl flex items-center justify-center mb-4" style={{
-                background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-                boxShadow: "0 8px 24px rgba(168,85,247,0.3)"
-              }}>
-                  <Icon className="h-6 w-6 text-white" />
+                <div
+                  className="h-11 w-11 rounded-2xl flex items-center justify-center mb-4"
+                  style={{
+                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
+                    boxShadow: "0 8px 24px rgba(168,85,247,0.3)",
+                  }}
+                >
+                  <Icon className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="font-quicksand font-bold text-lg md:text-xl text-white mb-2">
-                  {t(titleKey)}
-                </h3>
+                <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
                 <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
-              </div>;
-          })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SCIENCE STATS */}
+      <section className="relative z-10 px-5 pb-16">
+        <div className="max-w-5xl mx-auto">
+          <div
+            className="amy-glass rounded-3xl p-7 md:p-10"
+            style={{
+              background: "linear-gradient(135deg,rgba(99,102,241,0.12) 0%,rgba(168,85,247,0.10) 100%)",
+              borderColor: "rgba(168,85,247,0.25)",
+            }}
+          >
+            <div className="text-center mb-8">
+              <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">{t("landing.trust_heading")}</h2>
+              <p className="text-white/65 text-sm md:text-base max-w-xl mx-auto">{t("landing.trust_sub")}</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {SCIENCE_STATS.map(({ value, label }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl p-4 text-center"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <p className="font-quicksand font-black text-2xl md:text-3xl text-white mb-1">{value}</p>
+                  <p className="text-white/50 text-[11px] md:text-xs leading-snug">{label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { titleKey: "landing.trust1_title", descKey: "landing.trust1_desc", icon: BookOpen },
+                { titleKey: "landing.trust2_title", descKey: "landing.trust2_desc", icon: FlaskConical },
+                { titleKey: "landing.trust3_title", descKey: "landing.trust3_desc", icon: ShieldCheck },
+              ].map(({ titleKey, descKey, icon: Icon }) => (
+                <div
+                  key={titleKey}
+                  className="rounded-2xl p-5"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <Icon className="h-5 w-5 text-muted-foreground mb-3" />
+                  <h3 className="font-quicksand font-bold text-base text-white mb-1.5">{t(titleKey)}</h3>
+                  <p className="text-white/60 text-xs leading-relaxed">{t(descKey)}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="relative z-10 px-5 pb-20">
+      <section className="relative z-10 px-5 pb-16">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Heart className="h-3 w-3 text-muted-foreground" />
-              {t("pages.landing.parent_stories")}
-            </div>
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("pages.landing.real_parents_real_results")}
-            </h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">
-              {t("pages.landing.thousands_of_families_use_amynest_every_day_to_raise_happier")}
-            </p>
+          <div className="text-center mb-10">
+            <SectionEyebrow icon={Heart} label={t("pages.landing.parent_stories")} />
+            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">{t("pages.landing.real_parents_real_results")}</h2>
+            <p className="text-white/60 text-base max-w-lg mx-auto">{t("pages.landing.thousands_of_families_use_amynest_every_day_to_raise_happier")}</p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map(({
-            name,
-            location,
-            text,
-            avatar,
-            color,
-            result
-          }) => <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map(s => <Star key={s} className="h-4 w-4 text-primary fill-primary" />)}
-                  </div>
+            {TESTIMONIALS.map(({ name, location, text, avatar, color, result }) => (
+              <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className="h-4 w-4 text-primary fill-primary" />
+                  ))}
                 </div>
-                {/* Outcome badge */}
-                <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{
-              background: `linear-gradient(135deg,${color}CC,${color}88)`,
-              border: `1px solid ${color}44`
-            }}>
+                <div
+                  className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
+                  style={{ background: `linear-gradient(135deg,${color}CC,${color}88)`, border: `1px solid ${color}44` }}
+                >
                   <BarChart3 className="h-3 w-3" />
                   {result}
                 </div>
-                <p className="text-white/80 text-sm leading-relaxed flex-1">"{text}"</p>
+                <p className="text-white/80 text-sm leading-relaxed flex-1">&ldquo;{text}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{
-                background: `linear-gradient(135deg,${color},${color}99)`,
-                boxShadow: `0 4px 14px ${color}40`
-              }}>
+                  <div
+                    className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                    style={{ background: `linear-gradient(135deg,${color},${color}99)`, boxShadow: `0 4px 14px ${color}40` }}
+                  >
                     {avatar}
                   </div>
                   <div>
@@ -1095,86 +721,39 @@ export default function LandingPage() {
                     <p className="text-white/50 text-xs">{location}</p>
                   </div>
                 </div>
-              </div>)}
-          </div>
-        </div>
-      </section>
-
-      {/* TRUST / SCIENCE */}
-      <section className="relative z-10 px-5 pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="amy-glass rounded-3xl p-7 md:p-12 relative overflow-hidden" style={{
-          background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 100%)",
-          borderColor: "rgba(168,85,247,0.25)"
-        }}>
-            <div aria-hidden className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full opacity-30 pointer-events-none" style={{
-            background: "radial-gradient(circle,hsl(var(--brand-indigo-500)),transparent 70%)"
-          }} />
-
-            <div className="relative text-center mb-9">
-              <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl mb-5" style={{
-              background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))",
-              boxShadow: "0 10px 30px rgba(99,102,241,0.45)"
-            }}>
-                <ShieldCheck className="h-7 w-7 text-white" />
               </div>
-              <h2 className="font-quicksand font-bold text-2xl md:text-4xl text-white leading-tight mb-3">
-                {t("landing.trust_heading")}
-              </h2>
-              <p className="text-white/65 text-base max-w-xl mx-auto leading-relaxed">
-                {t("landing.trust_sub")}
-              </p>
-            </div>
-
-            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-              {TRUST_PILLARS.map(({
-              icon: Icon,
-              titleKey,
-              descKey
-            }) => {
-              return <div key={titleKey} className="rounded-2xl p-5 md:p-6" style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)"
-              }}>
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3" style={{
-                  background: "rgba(168,85,247,0.20)",
-                  border: "1px solid rgba(168,85,247,0.35)"
-                }}>
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-quicksand font-bold text-base md:text-lg text-white mb-1.5">
-                    {t(titleKey)}
-                  </h3>
-                  <p className="text-white/65 text-xs md:text-sm leading-relaxed">{t(descKey)}</p>
-                </div>;
-            })}
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* DOWNLOAD THE APP */}
+      {/* FINAL CTA */}
+      <section className="relative z-10 px-5 pb-12">
+        <div className="max-w-3xl mx-auto text-center amy-glass rounded-3xl p-8 md:p-12">
+          <h2 className="font-quicksand font-black text-2xl md:text-4xl text-white mb-3">{t("landing.final_cta_heading")}</h2>
+          <p className="text-white/65 text-base mb-6">{t("landing.final_cta_sub")}</p>
+          <Link href="/sign-up">
+            <button className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white">
+              {t("landing.final_cta_btn")}
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </Link>
+        </div>
+      </section>
+
+      {/* DOWNLOAD */}
       <section className="relative z-10 px-5 pb-24">
         <div className="max-w-5xl mx-auto">
-          <div className="amy-glass rounded-3xl overflow-hidden relative" style={{
-          background: "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.14) 60%, rgba(236,72,153,0.10) 100%)",
-          borderColor: "rgba(168,85,247,0.35)"
-        }}>
-            {/* bg glow blobs */}
-            <div aria-hidden className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 pointer-events-none" style={{
-            background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)"
-          }} />
-            <div aria-hidden className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full opacity-25 pointer-events-none" style={{
-            background: "radial-gradient(circle,hsl(var(--brand-pink-500)),transparent 70%)"
-          }} />
-
+          <div
+            className="amy-glass rounded-3xl overflow-hidden relative"
+            style={{
+              background: "linear-gradient(135deg,rgba(168,85,247,0.18) 0%,rgba(99,102,241,0.14) 60%,rgba(236,72,153,0.10) 100%)",
+              borderColor: "rgba(168,85,247,0.35)",
+            }}
+          >
             <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-0 px-8 py-12 md:py-14">
-              {/* Left: copy + buttons */}
               <div className="flex-1 text-center md:text-left z-10">
-                <div className="inline-flex items-center gap-1.5 amy-glass mb-5 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-                  <Smartphone className="h-3 w-3 text-muted-foreground" />
-                  {t("pages.landing.available_on_ios_android")}
-                </div>
+                <SectionEyebrow icon={Smartphone} label={t("pages.landing.available_on_ios_android")} />
                 <h2 className="font-quicksand font-black text-3xl md:text-4xl text-white leading-tight mb-4">
                   {t("pages.landing.take_amy_with_you")}{" "}
                   <span className="amy-gradient-text">{t("pages.landing.everywhere")}</span>
@@ -1182,8 +761,6 @@ export default function LandingPage() {
                 <p className="text-white/65 text-base md:text-lg max-w-md leading-relaxed mb-8">
                   {t("pages.landing.get_personalised_parenting_guidance_ai_built_routines_and_be")}
                 </p>
-
-                {/* Store buttons */}
                 <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
                   <a
                     href={APP_STORE_URL}
@@ -1191,11 +768,7 @@ export default function LandingPage() {
                     rel="noopener noreferrer"
                     aria-label={t("pages.landing.app_store_download")}
                     className="flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-colors hover:bg-white/10"
-                    style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.18)",
-                      textDecoration: "none",
-                    }}
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", textDecoration: "none" }}
                   >
                     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 fill-white" aria-hidden>
                       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
@@ -1205,18 +778,13 @@ export default function LandingPage() {
                       <p className="text-white font-bold text-base">{t("pages.landing.app_store")}</p>
                     </div>
                   </a>
-
                   <a
                     href={PLAY_STORE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={t("pages.landing.google_play_download")}
                     className="flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-colors hover:bg-white/10"
-                    style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.18)",
-                      textDecoration: "none",
-                    }}
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", textDecoration: "none" }}
                   >
                     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" aria-hidden>
                       <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335" />
@@ -1230,160 +798,53 @@ export default function LandingPage() {
                     </div>
                   </a>
                 </div>
-
-                {/* QR codes — scan to download */}
                 <div className="mt-8 flex flex-wrap items-start justify-center md:justify-start gap-6">
-                  <a
-                    href={APP_STORE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-2.5 group"
-                    aria-label={t("pages.landing.scan_for_app_store")}
-                  >
+                  <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2.5 group" aria-label={t("pages.landing.scan_for_app_store")}>
                     <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
                       <StoreQrCode value={APP_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
-                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">
-                      {t("pages.landing.scan_for_app_store")}
-                    </p>
+                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">{t("pages.landing.scan_for_app_store")}</p>
                   </a>
-                  <a
-                    href={PLAY_STORE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-2.5 group"
-                    aria-label={t("pages.landing.scan_for_google_play")}
-                  >
+                  <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2.5 group" aria-label={t("pages.landing.scan_for_google_play")}>
                     <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
                       <StoreQrCode value={PLAY_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
-                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">
-                      {t("pages.landing.scan_for_google_play")}
-                    </p>
+                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">{t("pages.landing.scan_for_google_play")}</p>
                   </a>
                 </div>
-
               </div>
 
-              {/* Right: phone mockup */}
-              <div className="relative flex-shrink-0 flex items-end justify-center h-80 md:h-96 w-48 md:w-56">
-                {/* Phone outer frame */}
-                <div className="relative w-44 md:w-52 rounded-[2.5rem] overflow-hidden" style={{
-                height: "92%",
-                background: "linear-gradient(160deg,#1a1a2e,#16213e)",
-                border: "2px solid rgba(255,255,255,0.12)",
-                boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 0 40px rgba(168,85,247,0.25)"
-              }}>
-                  {/* Notch */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 rounded-b-2xl z-20" style={{
-                  background: "#0f0c29"
-                }} />
-                  {/* Screen content */}
+              <div className="relative flex-shrink-0 flex items-end justify-center h-72 md:h-80 w-44 md:w-52">
+                <div
+                  className="relative w-40 md:w-48 rounded-[2.5rem] overflow-hidden"
+                  style={{
+                    height: "92%",
+                    background: "linear-gradient(160deg,#1a1a2e,#16213e)",
+                    border: "2px solid rgba(255,255,255,0.12)",
+                    boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 40px rgba(168,85,247,0.25)",
+                  }}
+                >
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 rounded-b-2xl z-20" style={{ background: "#0f0c29" }} />
                   <div className="absolute inset-0 pt-5 px-3 pb-3 flex flex-col gap-2 overflow-hidden">
-                    {/* Status bar */}
-                    <div className="flex justify-between items-center px-1 mt-1">
-                      <span className="text-white/60 text-[8px] font-medium">9:41</span>
-                      <div className="flex gap-1 items-center">
-                        <div className="w-3 h-1.5 rounded-sm bg-white/60" />
-                        <div className="w-1 h-1 rounded-full bg-white/60" />
-                      </div>
-                    </div>
-                    {/* App header */}
-                    <div className="flex items-center gap-1.5 px-1">
-                      <div className="h-5 w-5 rounded-full flex items-center justify-center" style={{
-                      background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-pink-500)))"
-                    }}>
-                        <span className="text-white text-[7px] font-black">A</span>
-                      </div>
+                    <div className="flex items-center gap-1.5 px-1 mt-2">
+                      <AmyLandingAvatar size={28} className="w-7 h-7 object-contain" />
                       <span className="text-white text-[9px] font-bold">{t("pages.landing.amynest_ai_3")}</span>
                     </div>
-                    {/* Today label */}
-                    <div className="rounded-xl px-2.5 py-2" style={{
-                    background: "rgba(168,85,247,0.18)",
-                    border: "1px solid rgba(168,85,247,0.3)"
-                  }}>
+                    <div className="rounded-xl px-2.5 py-2" style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.3)" }}>
                       <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">{t("pages.landing.today_s_routine")}</p>
-                      <div className="flex flex-col gap-1">
-                        {[{
-                        label: "Wake up & stretch",
-                        color: "hsl(var(--brand-purple-500))",
-                        time: "7:00"
-                      }, {
-                        label: "Breakfast time",
-                        color: "hsl(var(--brand-orange-500))",
-                        time: "7:30"
-                      }, {
-                        label: "Reading zone",
-                        color: "hsl(var(--brand-cyan-500))",
-                        time: "8:00"
-                      }].map(({
-                        label,
-                        color,
-                        time
-                      }) => <div key={label} className="flex items-center gap-1.5">
-                            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{
-                          background: color
-                        }} />
-                            <span className="text-white/80 text-[7px] flex-1">{label}</span>
-                            <span className="text-white/40 text-[7px]">{time}</span>
-                          </div>)}
-                      </div>
+                      {["Wake up", "Breakfast", "Reading"].map((label, i) => (
+                        <div key={label} className="flex items-center gap-1.5">
+                          <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: ["hsl(var(--brand-purple-500))", "hsl(var(--brand-orange-500))", "hsl(var(--brand-cyan-500))"][i] }} />
+                          <span className="text-white/80 text-[7px] flex-1">{label}</span>
+                        </div>
+                      ))}
                     </div>
-                    {/* Amy chat bubble */}
-                    <div className="rounded-xl px-2.5 py-2" style={{
-                    background: "rgba(236,72,153,0.15)",
-                    border: "1px solid rgba(236,72,153,0.25)"
-                  }}>
+                    <div className="rounded-xl px-2.5 py-2 mt-auto" style={{ background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.25)" }}>
                       <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">{t("pages.landing.amy_says")}</p>
-                      <p className="text-white/75 text-[7px] leading-snug">
-                        {t("pages.landing.great_morning_liam_completed_3_tasks_try_adding_a_calm_down_")}
-                      </p>
-                    </div>
-                    {/* Stats row */}
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {[{
-                      label: "Streak",
-                      value: "14d",
-                      color: "hsl(var(--brand-yellow-300))"
-                    }, {
-                      label: "Score",
-                      value: "920",
-                      color: "hsl(var(--brand-purple-500))"
-                    }].map(({
-                      label,
-                      value,
-                      color
-                    }) => <div key={label} className="rounded-xl p-2 text-center" style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)"
-                    }}>
-                          <p className="font-bold text-[10px]" style={{
-                        color
-                      }}>{value}</p>
-                          <p className="text-white/45 text-[7px]">{label}</p>
-                        </div>)}
-                    </div>
-                    {/* Bottom nav bar */}
-                    <div className="mt-auto rounded-2xl px-3 py-1.5 flex justify-around" style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)"
-                  }}>
-                      {[Calendar, Brain, MessageCircle, Users].map((Icon, i) => <div key={i} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "opacity-100" : "opacity-40"}`}>
-                          <Icon className="h-3 w-3 text-white" />
-                          <div className={`h-0.5 w-3 rounded-full ${i === 0 ? "bg-muted" : "bg-transparent"}`} />
-                        </div>)}
+                      <p className="text-white/75 text-[7px] leading-snug">{t("pages.landing.great_morning_liam_completed_3_tasks_try_adding_a_calm_down_")}</p>
                     </div>
                   </div>
-                  {/* Reflective sheen */}
-                  <div aria-hidden className="absolute inset-0 pointer-events-none" style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 45%)"
-                }} />
                 </div>
-                {/* Phone shadow */}
-                <div aria-hidden className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-6 rounded-full pointer-events-none" style={{
-                background: "rgba(168,85,247,0.3)",
-                filter: "blur(16px)"
-              }} />
               </div>
             </div>
           </div>
@@ -1393,21 +854,20 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer className="relative z-10 px-5 py-8 border-t border-white/10">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="flex items-center gap-3">
-              <AmyIcon size={38} ring />
-              <div className="flex flex-col leading-tight">
-                <span className="font-quicksand font-black text-lg" style={{
-                background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent"
-              }}>
-                  {t("pages.landing.amynest_ai_4")}
-                </span>
-                <span className="text-[10px] text-white/40 font-medium tracking-wide">
-                  {t("pages.landing.where_smart_parenting_starts_2")}
-                </span>
-              </div>
+          <div className="flex items-center gap-3">
+            <AmyIcon size={38} ring />
+            <div className="flex flex-col leading-tight">
+              <span
+                className="font-quicksand font-black text-lg"
+                style={{
+                  background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                {t("pages.landing.amynest_ai_4")}
+              </span>
+              <span className="text-[10px] text-white/40 font-medium tracking-wide">{t("patent_pending.footer_label")}</span>
             </div>
           </div>
           <div className="flex items-center gap-6 text-xs text-white/40">
@@ -1420,5 +880,17 @@ export default function LandingPage() {
           <p className="text-xs text-white/30">{t("pages.landing.2026_amynest_ai_all_rights_reserved")}</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
+}
+
+function LayoutGridIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  );
 }

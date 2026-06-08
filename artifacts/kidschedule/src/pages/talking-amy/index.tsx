@@ -52,7 +52,16 @@ import {
   type TalkingAmyRegularModeId,
   type TalkingAmySecretModeId,
 } from "@/lib/talking-amy-modes";
-import { pickSmartTalkingAmyReaction } from "@/lib/talking-amy-reactions";
+import {
+  getTalkingAmyPersonalitySnapshot,
+  pickContextualTalkingAmyReaction,
+} from "@/lib/talking-amy-personality";
+import { recordTalkingAmyVisit } from "@/lib/talking-amy-streak";
+import {
+  miniSurpriseDurationMs,
+  tryTalkingAmyMiniSurprise,
+  type TalkingAmyMiniSurpriseId,
+} from "@/lib/talking-amy-surprises";
 import {
   loadFavoriteTalkingAmyMode,
   pickSurpriseTalkingAmyMode,
@@ -200,6 +209,7 @@ export default function TalkingAmyPage() {
   const reducedMotion = useReducedMotion();
   const dailySpecialId = useMemo(() => getDailySpecialAmyModeId(), []);
   const dailySpecial = useMemo(() => getDailySpecialAmyMode(), []);
+  const personality = useMemo(() => getTalkingAmyPersonalitySnapshot(), []);
   const { data: children = [], isLoading } = useListChildren();
   const [childIdx, setChildIdx] = useState(0);
   const child = (children[childIdx] ?? children[0]) as AnyChild | undefined;
@@ -229,8 +239,12 @@ export default function TalkingAmyPage() {
   const [statusHint, setStatusHint] = useState<string | null>(null);
   const [micDenied, setMicDenied] = useState(false);
   const [unlockedAchievement, setUnlockedAchievement] = useState<TalkingAmyAchievement | null>(null);
+  const [isFirstUseToday, setIsFirstUseToday] = useState(false);
+  const [streakDay, setStreakDay] = useState(0);
+  const [miniSurprise, setMiniSurprise] = useState<TalkingAmyMiniSurpriseId | null>(null);
 
   const startedAtRef = useRef(0);
+  const consecutiveRepeatsRef = useRef(0);
   const lastDurationMsRef = useRef(0);
   const maxTimerRef = useRef<number | null>(null);
   const holdActiveRef = useRef(false);
@@ -264,6 +278,10 @@ export default function TalkingAmyPage() {
     if (!child) return;
     if (sessionTrackedRef.current) return;
     sessionTrackedRef.current = true;
+    const visit = recordTalkingAmyVisit(child.id);
+    setIsFirstUseToday(visit.isFirstUseToday);
+    setStreakDay(visit.streakDay);
+    consecutiveRepeatsRef.current = 0;
     const next = recordTalkingAmySessionStart(child.id);
     setStats(next);
     setCollection(loadTalkingAmyCollection(child.id));
@@ -339,23 +357,43 @@ export default function TalkingAmyPage() {
   }, [inputMode, modeLocked]);
 
   const runCelebrate = useCallback(
-    (activeMode: ReturnType<typeof getTalkingAmyMode>, durationMs: number, achievement?: TalkingAmyAchievement | null) => {
-      const msg = achievement
-        ? `${achievement.emoji} ${achievement.title}!`
-        : pickSmartTalkingAmyReaction(activeMode, durationMs);
+    (
+      activeMode: ReturnType<typeof getTalkingAmyMode>,
+      durationMs: number,
+      opts?: {
+        achievement?: TalkingAmyAchievement | null;
+        secretDiscovered?: boolean;
+        isReplay?: boolean;
+        miniSurpriseId?: TalkingAmyMiniSurpriseId | null;
+      },
+    ) => {
+      const achievement = opts?.achievement ?? null;
+      const msg = pickContextualTalkingAmyReaction(activeMode, durationMs, {
+        achievement,
+        secretDiscovered: opts?.secretDiscovered,
+        isFirstUseToday,
+        consecutiveRepeats: consecutiveRepeatsRef.current,
+        streakDay,
+        isReplay: opts?.isReplay,
+      });
       setCelebration(msg);
-      setUnlockedAchievement(achievement ?? null);
+      setUnlockedAchievement(achievement);
+      setMiniSurprise(opts?.miniSurpriseId ?? null);
       setPhase("celebrate");
       rotatePrompt();
       if (celebrateTimerRef.current != null) window.clearTimeout(celebrateTimerRef.current);
-      const duration = achievement ? ACHIEVEMENT_UNLOCK_MS : randomCelebrateDurationMs();
+      const surpriseMs = opts?.miniSurpriseId ? miniSurpriseDurationMs() : 0;
+      const duration = achievement
+        ? ACHIEVEMENT_UNLOCK_MS
+        : Math.max(randomCelebrateDurationMs(), surpriseMs);
       celebrateTimerRef.current = window.setTimeout(() => {
         setPhase("idle");
         setCelebration(null);
         setUnlockedAchievement(null);
+        setMiniSurprise(null);
       }, duration);
     },
-    [rotatePrompt],
+    [isFirstUseToday, rotatePrompt, streakDay],
   );
 
   const playEcho = useCallback(
@@ -397,6 +435,7 @@ export default function TalkingAmyPage() {
               const withSecret = discoverTalkingAmyMode(child.id, triggeredSecret);
               setCollection(withSecret);
             }
+            consecutiveRepeatsRef.current += 1;
             const merged = mergeUnlockedAchievements(
               child.id,
               next.repeatCount,
@@ -412,7 +451,13 @@ export default function TalkingAmyPage() {
           setStatusHint(`✨ Secret Mode Active — ${secretMode.emoji} ${secretMode.label}!`);
           window.setTimeout(() => setStatusHint(null), 2800);
         }
-        runCelebrate(activeMode, durationMs, achievement);
+        const miniSurpriseId = tryTalkingAmyMiniSurprise();
+        runCelebrate(activeMode, durationMs, {
+          achievement,
+          secretDiscovered: !!triggeredSecret,
+          isReplay: opts?.isReplay,
+          miniSurpriseId,
+        });
       } else {
         setPhase("idle");
         setStatusHint("Oops! Try again.");
@@ -655,7 +700,7 @@ export default function TalkingAmyPage() {
           </AppLink>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-200/85">
-              {mode.emoji} {mode.tagline}
+              {personality.mood.emoji} {personality.mood.label} · {mode.tagline}
             </p>
             <h1 className="truncate font-quicksand text-xl font-black">Talking Amy</h1>
           </div>
@@ -666,6 +711,23 @@ export default function TalkingAmyPage() {
 
         {children.length > 1 ? (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{childTabs}</div>
+        ) : null}
+
+        {personality.bedtime ? (
+          <div
+            className="mt-3 rounded-2xl border border-indigo-300/30 bg-indigo-500/12 px-3 py-2"
+            data-testid="talking-amy-bedtime-banner"
+          >
+            <p className="text-[11px] font-black uppercase tracking-wider text-indigo-100/90">
+              🌙 Sleepy Amy is here — soft glows and gentle echoes tonight
+            </p>
+          </div>
+        ) : null}
+
+        {streakDay >= 2 ? (
+          <div className="mt-2 text-center text-[10px] font-bold uppercase tracking-wider text-amber-200/75">
+            🔥 {streakDay}-day Amy streak
+          </div>
         ) : null}
 
         <div
@@ -790,6 +852,11 @@ export default function TalkingAmyPage() {
             reducedMotion={reducedMotion}
             featured={isFeaturedToday && !activeSecretId}
             secretActive={!!activeSecretId}
+            mood={personality.mood}
+            bedtime={personality.bedtime}
+            glowOpacityScale={personality.glowOpacityScale}
+            animationSpeedScale={personality.animationSpeedScale}
+            miniSurprise={miniSurprise}
           />
 
           <div className="space-y-2 text-center">

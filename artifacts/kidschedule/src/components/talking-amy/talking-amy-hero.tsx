@@ -7,7 +7,12 @@ import {
   type TalkingAmyPhase,
 } from "@/lib/talking-amy-avatar-contract";
 import { micLevelToParticleCount } from "@/lib/talking-amy-mic-visual";
+import type { TalkingAmyMoodProfile } from "@/lib/talking-amy-mood";
 import type { TalkingAmyMode } from "@/lib/talking-amy-modes";
+import {
+  miniSurpriseEmoji,
+  type TalkingAmyMiniSurpriseId,
+} from "@/lib/talking-amy-surprises";
 import { useTalkingAmyMicVisual } from "@/hooks/use-talking-amy-mic-visual";
 
 function useHeroSize() {
@@ -67,6 +72,11 @@ export function TalkingAmyHero({
   reducedMotion,
   featured = false,
   secretActive = false,
+  mood,
+  bedtime = false,
+  glowOpacityScale = 1,
+  animationSpeedScale = 1,
+  miniSurprise = null,
 }: {
   phase: TalkingAmyPhase;
   mode: TalkingAmyMode;
@@ -74,6 +84,11 @@ export function TalkingAmyHero({
   reducedMotion: boolean;
   featured?: boolean;
   secretActive?: boolean;
+  mood?: TalkingAmyMoodProfile;
+  bedtime?: boolean;
+  glowOpacityScale?: number;
+  animationSpeedScale?: number;
+  miniSurprise?: TalkingAmyMiniSurpriseId | null;
 }) {
   const avatar = useHeroSize();
   const glass = Math.round(avatar * 1.16);
@@ -118,7 +133,20 @@ export function TalkingAmyHero({
     : micLevelToParticleCount(0.6, 6, reducedMotion);
 
   const haloScale = listening ? micVisual.haloScale : 1;
-  const glowOpacity = listening ? micVisual.glowOpacity : 0.55;
+  const baseGlowOpacity = (listening ? micVisual.glowOpacity : 0.55) * glowOpacityScale;
+  const idle = phase === "idle";
+  const moodPulseSec = (mood?.idlePulseSec ?? 2.2) * animationSpeedScale;
+
+  const surpriseMotion =
+    miniSurprise === "spin"
+      ? { rotate: [0, 360], scale: [1, 1.05, 1] }
+      : miniSurprise === "happy_jump"
+        ? { y: [0, -28, 0], scale: [1, 1.1, 1] }
+        : miniSurprise === "rainbow_wave"
+          ? { scale: [1, 1.14, 1], rotate: [-4, 4, -4] }
+          : miniSurprise === "sparkle_burst"
+            ? { scale: [1, 1.18, 1], opacity: [1, 1, 0.95] }
+            : null;
 
   return (
     <motion.div
@@ -128,32 +156,48 @@ export function TalkingAmyHero({
       animate={
         reducedMotion
           ? { y: 0, rotate: 0 }
-          : shouldHop
-            ? { y: [0, -14, 0, -8, 0] }
-            : theme.floatMotion && (speaking || listening || thinking)
-              ? { y: [0, -6, 0] }
-              : listening
-                ? { rotate: [-2, 2, -2] }
-                : { y: 0, rotate: 0 }
+          : surpriseMotion
+            ? surpriseMotion
+            : shouldHop
+              ? { y: [0, -14, 0, -8, 0] }
+              : theme.floatMotion && (speaking || listening || thinking)
+                ? { y: [0, -6, 0] }
+                : idle && mood && !bedtime
+                  ? { y: [0, -5, 0], scale: [1, 1.02, 1] }
+                  : idle && bedtime
+                    ? { y: [0, -3, 0] }
+                    : listening
+                      ? { rotate: [-2, 2, -2] }
+                      : { y: 0, rotate: 0 }
       }
       transition={
         reducedMotion
           ? { duration: 0.2 }
-          : shouldHop
-            ? { duration: 0.9, repeat: Infinity, ease: "easeOut" }
-            : theme.floatMotion
-              ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-              : listening
-                ? { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
-                : { duration: 0.3 }
+          : surpriseMotion
+            ? { duration: 1.2 * animationSpeedScale, ease: "easeOut" }
+            : shouldHop
+              ? { duration: 0.9 * animationSpeedScale, repeat: Infinity, ease: "easeOut" }
+              : idle && (mood || bedtime)
+                ? { duration: moodPulseSec, repeat: Infinity, ease: "easeInOut" }
+                : theme.floatMotion
+                  ? { duration: 2.2 * animationSpeedScale, repeat: Infinity, ease: "easeInOut" }
+                  : listening
+                    ? { duration: 2.5 * animationSpeedScale, repeat: Infinity, ease: "easeInOut" }
+                    : { duration: 0.3 }
       }
     >
+      {mood ? (
+        <div
+          className={["pointer-events-none absolute rounded-full blur-3xl", mood.glowOverlay].join(" ")}
+          style={{ width: glow * 0.92, height: glow * 0.92, opacity: baseGlowOpacity * 0.65 }}
+        />
+      ) : null}
       <div
         className={["absolute rounded-full blur-3xl transition-all duration-150", glowClass].join(" ")}
         style={{
           width: glow,
           height: glow,
-          opacity: listening ? glowOpacity : 0.55,
+          opacity: baseGlowOpacity,
           transform: listening ? `scale(${haloScale})` : undefined,
         }}
       />
@@ -163,7 +207,7 @@ export function TalkingAmyHero({
           style={{
             width: glass,
             height: glass,
-            opacity: listening ? glowOpacity : 0.75,
+            opacity: listening ? baseGlowOpacity : 0.75,
             transform: listening ? `scale(${haloScale})` : undefined,
           }}
         />
@@ -173,8 +217,10 @@ export function TalkingAmyHero({
           "relative grid place-items-center rounded-full border shadow-2xl backdrop-blur-xl transition-all duration-300",
           theme.transparentEffect ? "bg-white/5" : "bg-white/10",
           theme.rainbowGlow ? "border-pink-300/40" : "",
+          mood?.ringAccent ?? "",
           featured ? "ring-2 ring-amber-200/50" : "",
           secretActive ? "ring-2 ring-fuchsia-300/60" : "",
+          bedtime ? "ring-1 ring-indigo-300/35" : "",
           listening ? "scale-110" : "",
           ringClass,
         ].join(" ")}
@@ -278,6 +324,16 @@ export function TalkingAmyHero({
               ✨
             </motion.span>
           </>
+        ) : null}
+        {miniSurprise && !reducedMotion ? (
+          <motion.span
+            className="pointer-events-none absolute -top-2 text-3xl"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.3, 0.8], y: [0, -20, -36] }}
+            transition={{ duration: 1.4 * animationSpeedScale, ease: "easeOut" }}
+          >
+            {miniSurpriseEmoji(miniSurprise)}
+          </motion.span>
         ) : null}
         <AmyAvatar
           tier="hero"
