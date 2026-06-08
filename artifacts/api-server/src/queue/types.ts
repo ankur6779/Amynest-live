@@ -32,6 +32,7 @@ export type AiJobType =
   | "explain.narrative"
   | "speech.transcribe"
   | "static-audio.generate"
+  | "audio.warmup"
   | "smart-math-tricks.ai_generate"
   | "phonics.load_more_words"
   | "life-skills.ai_generate";

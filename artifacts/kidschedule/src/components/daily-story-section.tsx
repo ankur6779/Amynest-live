@@ -1,5 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import {
   createParentHubAudioIdentity,
   PARENT_HUB_SECTIONS,
@@ -310,8 +312,16 @@ export function DailyStorySection({
   const {
     t
   } = useTranslation();
+  const authFetch = useAuthFetch();
   const pool = useMemo(() => getDailyPool(ageMonths), [ageMonths]);
   const PAGE = 5;
+
+  useEffect(() => {
+    enqueueBehaviorWarmup(authFetch, "stories", {
+      storyIds: pool.slice(0, 5).map((s) => s.id),
+      ageMonths,
+    });
+  }, [authFetch, ageMonths, pool]);
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [playingId, setPlayingId] = useState<string | null>(null);

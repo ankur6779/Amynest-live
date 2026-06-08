@@ -50,6 +50,8 @@ import {
 } from "@/components/learning-progress";
 import { StudyCurriculumVisibility } from "@/components/study-curriculum-visibility";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { catalogPlaybackSpeakOptions } from "@/lib/unified-catalog-playback";
 import {
   loadProgress, markPlayItem, markTopicResult,
@@ -139,9 +141,15 @@ export default function StudyPage() {
     });
   }, [activeChildId, learningProgress.profile?.completedActivities]);
 
+  const authFetch = useAuthFetch();
   const child = "childId" in view ? list.find((c) => c.id === view.childId) : undefined;
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
   const gateChildName = child?.name ?? list[0]?.name ?? "your child";
+
+  useEffect(() => {
+    if (view.kind !== "play-home") return;
+    enqueueBehaviorWarmup(authFetch, "study_zone");
+  }, [authFetch, view.kind]);
 
   const goBack = useCallback(() => {
     if (view.kind === "play-home" || view.kind === "study-home") {
@@ -621,7 +629,24 @@ function PlayCategoryView({
     return getPlayCategoriesForChild(country, childAge, journeyDay);
   }, [country, childAge, journeyDay, unlocks, isPremium]);
   const cat = categories.find((c) => c.id === (categoryId as PlayCategory["id"]));
+  const authFetch = useAuthFetch();
   const { speak, primeSpeakGesture } = useAmyVoice();
+
+  useEffect(() => {
+    if (categoryId === "rhymes") {
+      const texts = (cat?.items ?? [])
+        .slice(0, 8)
+        .flatMap((item) => getPlayItemSpeakParts(item, "rhymes"));
+      enqueueBehaviorWarmup(authFetch, "rhymes", { studyTexts: texts });
+      return;
+    }
+    if (cat?.items?.length) {
+      const texts = cat.items
+        .slice(0, 8)
+        .flatMap((item) => getPlayItemSpeakParts(item, cat.id));
+      enqueueBehaviorWarmup(authFetch, "study_zone", { studyTexts: texts });
+    }
+  }, [authFetch, categoryId, cat?.id, cat?.items]);
   const fx = useStudyFx();
   const { toast } = useToast();
   const [poppedId, setPoppedId] = useState<string | null>(null);

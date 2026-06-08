@@ -26,6 +26,10 @@ import {
 } from "@workspace/static-audio/browser";
 import { replaceCoachPersonalNameWithFriend } from "@workspace/speech-coach";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
+import {
+  isPlaceholderStaticAsset,
+  STATIC_AUDIO_SOURCE_HEADER,
+} from "@/lib/static-audio-placeholder-guard";
 
 function audioDebugLog(...args: unknown[]): void {
   if (import.meta.env.DEV || isStaticAudioDebug() || isAmyVoiceAudioDebugEnabled()) {
@@ -615,7 +619,20 @@ async function createStaticPlaybackElementFromBlob(
       ok: res.ok,
     });
     if (!res.ok) return null;
+    if (
+      isPlaceholderStaticAsset({
+        staticSourceHeader: res.headers.get(STATIC_AUDIO_SOURCE_HEADER),
+        contentLength: Number(res.headers.get("content-length") ?? "0"),
+      })
+    ) {
+      logAmyVoiceDiag("static_placeholder_rejected", { url: absUrl.slice(-72) });
+      return null;
+    }
     const blob = await res.blob();
+    if (isPlaceholderStaticAsset({ blobSize: blob.size })) {
+      logAmyVoiceDiag("static_placeholder_blob_rejected", { url: absUrl.slice(-72), bytes: blob.size });
+      return null;
+    }
     try {
       await validateAudioBlobDecodable(blob);
     } catch (err) {

@@ -43,6 +43,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { isCoachStaticPackLine, playCoachStaticLine } from "@/lib/coach-local-playback";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
@@ -263,8 +265,13 @@ export function LiveSpeechCoach({
   child: AnyChild;
   onOpenParentTools?: () => void;
 }) {
+  const authFetch = useAuthFetch();
   const ageMonths = totalMonths(child);
   const mode = useMemo(() => getAgeMode(ageMonths), [ageMonths]);
+
+  useEffect(() => {
+    enqueueBehaviorWarmup(authFetch, "speech_coach", { ageMonths });
+  }, [authFetch, ageMonths]);
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
   const featureUsage = useFeatureUsage();
   const speechLocked = featureUsage.isFeatureLocked(SPEECH_COACH_SESSION_FEATURE);

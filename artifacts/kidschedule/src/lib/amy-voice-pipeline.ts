@@ -134,6 +134,10 @@ import {
   schedulePlaybackProgressCheck,
   shouldSkipLiveTtsWhenStaticExists,
 } from "@/lib/audio-playback-recovery";
+import {
+  isNearSilentStaticDuration,
+  probeStaticAudioProxyUrl,
+} from "@/lib/static-audio-placeholder-guard";
 import { hasStaticCatalogAudio } from "@/lib/unified-catalog-playback";
 import {
   beginPlaybackTrace,
@@ -229,6 +233,16 @@ function staticModesToTry(primary: StaticAudioMode, phonicsOnly = false): Static
   if (phonicsOnly) return [primary];
   const alt: StaticAudioMode = primary === "phonics" ? "default" : "phonics";
   return [primary, alt];
+}
+
+/** Wait briefly for duration metadata on direct-stream static clips. */
+async function waitForStaticDurationHint(audio: HTMLAudioElement, maxMs: number): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    if (Number.isFinite(audio.duration) && audio.duration > 0) return;
+    if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+    await delay(40);
+  }
 }
 
 /** Strict audible check — playback must have started with valid duration. */
@@ -415,6 +429,13 @@ async function playElementWithNeverSilentWatchdog(
 
   if (!played || isStale(ctx)) return { ok: false, error: "audio_play_failed" };
 
+  if (meta.source === "static") {
+    await waitForStaticDurationHint(audio, 600);
+    if (isNearSilentStaticDuration(audio.duration)) {
+      return { ok: false, error: "static_placeholder" };
+    }
+  }
+
   if (isAudioPlaybackRecoveryMode()) {
     schedulePlaybackProgressCheck(audio, `${meta.source}_play`);
     markAudioHealthAudibleStart(healthLayer, { startedAt: playStartedAt });
@@ -550,6 +571,12 @@ async function attemptStaticPlay(
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       const proxyUrl = lookupStaticAudioUrl(candidate, tryMode);
       if (!proxyUrl) continue;
+
+      const probe = await probeStaticAudioProxyUrl(proxyUrl);
+      if (probe.isPlaceholder) {
+        recordAmyVoiceLayerFailed("static", "static_placeholder");
+        continue;
+      }
 
       const audio = await prepareStaticPlaybackAudio(candidate, tryMode, { quiet: true });
       if (!audio) continue;

@@ -146,6 +146,11 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       return runStaticAudioGenerate(input as Parameters<typeof runStaticAudioGenerate>[0]);
     }
 
+    case "audio.warmup": {
+      const { runAudioWarmup } = await import("../domain-ai/audio-warmup-runner.js");
+      return runAudioWarmup(input as Parameters<typeof runAudioWarmup>[0]);
+    }
+
     case "smart-math-tricks.ai_generate": {
       const { runSmartMathTricksAiGenerate } = await import("../domain-ai/smart-math-tricks-runners.js");
       return runSmartMathTricksAiGenerate(

@@ -8,6 +8,8 @@ import { type SpellingAgeGroup, type SpellingDifficulty, type SpellingWord, type
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { useSpellingRetention, buildWeeklyReport } from "@/hooks/use-spelling-retention";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import {
   AchievementCabinet,
   DailyGoalCard,
@@ -222,9 +224,17 @@ export function SpellingMastery({
     getWeakestSound,
     state: retentionState,
   } = retention;
+  const authFetch = useAuthFetch();
   const tts = useSpellingTTS();
   const displayWords = wordsState.words;
   const activeSessionWords = displayWords;
+
+  useEffect(() => {
+    if (!activeSessionWords.length) return;
+    enqueueBehaviorWarmup(authFetch, "spelling", {
+      spellingWords: activeSessionWords.slice(0, 12).map((w) => w.word),
+    });
+  }, [authFetch, activeSessionWords]);
 
   const bumpContentRevision = useCallback(() => {
     setContentRevision(r => r + 1);

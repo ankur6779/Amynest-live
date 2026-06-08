@@ -35,10 +35,12 @@ function applyEdgeCacheHeaders(
   byteLength: number,
   originCache: "memory" | "gcs",
   contentType = "audio/mpeg",
+  staticSource: "asset" | "placeholder" = "asset",
 ): void {
   const etag = `"${hash}"`;
   res.setHeader("Content-Type", contentType);
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader(STATIC_AUDIO_SOURCE_HEADER, staticSource);
   res.setHeader("ETag", etag);
   res.setHeader("Cache-Control", STATIC_AUDIO_CACHE_CONTROL);
   res.setHeader("CDN-Cache-Control", STATIC_AUDIO_CDN_CACHE_CONTROL);
@@ -54,7 +56,11 @@ function applyEdgeCacheHeaders(
 export type ServeStaticBufferOptions = {
   /** Defaults to audio/mpeg for MP3 library routes. */
   contentType?: string;
+  /** `placeholder` when bytes are the fail-safe silent clip — clients must not treat as success. */
+  staticSource?: "asset" | "placeholder";
 };
+
+export const STATIC_AUDIO_SOURCE_HEADER = "X-AmyNest-Static-Source";
 
 /** Stream bytes with Range support and edge-cache headers. */
 export function serveStaticAudioBuffer(
@@ -79,8 +85,10 @@ export function serveStaticAudioBuffer(
 
   const range = parseRangeHeader(req.headers.range, size);
 
+  const staticSource = options?.staticSource ?? "asset";
+
   if (!range) {
-    applyEdgeCacheHeaders(res, hash, size, originCache, contentType);
+    applyEdgeCacheHeaders(res, hash, size, originCache, contentType, staticSource);
     res.status(200).end(buffer);
     return;
   }
@@ -88,7 +96,7 @@ export function serveStaticAudioBuffer(
   const chunk = buffer.subarray(range.start, range.end + 1);
   const chunkLen = chunk.byteLength;
 
-  applyEdgeCacheHeaders(res, hash, chunkLen, originCache, contentType);
+  applyEdgeCacheHeaders(res, hash, chunkLen, originCache, contentType, staticSource);
   res.setHeader("Content-Range", `bytes ${range.start}-${range.end}/${size}`);
   res.status(206).end(chunk);
 }

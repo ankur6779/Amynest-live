@@ -68,7 +68,9 @@ staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise
 
   if (!HASH_RE.test(hash)) {
     recordStaticAudioRequest("success");
-    serveStaticAudioBuffer(req, res, hash, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, hash, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
     return;
   }
 
@@ -89,12 +91,16 @@ staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise
       void sendStaticAudioAlert("placeholder_serve", { hash });
     }
 
-    serveStaticAudioBuffer(req, res, hash, resolved.buffer, originSource);
+    serveStaticAudioBuffer(req, res, hash, resolved.buffer, originSource, {
+      staticSource: resolved.source === "placeholder" ? "placeholder" : "asset",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ evt: "static_audio.stream_failed", hash, message }, "static audio resolve failed");
     recordStaticAudioRequest("success");
-    serveStaticAudioBuffer(req, res, hash, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, hash, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
   }
 });
 

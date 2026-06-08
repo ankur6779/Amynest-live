@@ -33,6 +33,7 @@ import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { warmParentHubVisibleContent } from "@/lib/parent-hub-audio-warmup";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import {
   warmLearningZoneTabOnOpen,
   warmSpeechCoachOnStoriesTabOpen,
@@ -926,6 +927,7 @@ function ParentingHubPage() {
   useEffect(() => {
     if (!effectiveChild || !ageGroup) return;
     try {
+      enqueueBehaviorWarmup(authFetch, "parent_hub", { ageMonths: totalAgeMonths });
       warmParentHubVisibleContent(authFetch, {
         ageGroup,
         ageMonths: totalAgeMonths,

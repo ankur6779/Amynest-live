@@ -16,6 +16,8 @@ import {
 import { getDiscoveryWorldConfigBySlug } from "@/lib/discovery-world-config";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 
 const SLUG_TO_WORLD = {
   vehicles: "vehicle_world",
@@ -29,6 +31,7 @@ type Child = { id: number; name: string; age: number };
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
 export default function DiscoveryWorldLivePage() {
+  const authFetch = useAuthFetch();
   const { slug = "" } = useParams<{ slug: string }>();
   const { back } = useAppNavigate();
   const config = getDiscoveryWorldConfigBySlug(slug);
@@ -56,6 +59,11 @@ export default function DiscoveryWorldLivePage() {
     setSelectedChildId(activeChild.id);
     window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(activeChild.id));
   }, [activeChild]);
+
+  useEffect(() => {
+    if (!worldId) return;
+    enqueueBehaviorWarmup(authFetch, "discovery_world", { discoveryWorldId: worldId });
+  }, [authFetch, worldId]);
 
   usePageBackHandler(() => {
     back("discovery-world-live-back");

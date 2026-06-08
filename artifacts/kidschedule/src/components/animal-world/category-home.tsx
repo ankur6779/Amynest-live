@@ -9,6 +9,8 @@ import {
 } from "@workspace/animal-world";
 import { cn } from "@/lib/utils";
 import { warmAnimalWorldOnOpen } from "@/lib/animal-world-audio-warmup";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
 import { AnimalCard } from "./animal-card";
 import { VirtualizedGrid, useResponsiveGridColumns } from "./virtualized-grid";
@@ -24,6 +26,7 @@ export function CategoryHome({
   activeCategory,
   onCategoryChange,
 }: CategoryHomeProps) {
+  const authFetch = useAuthFetch();
   const columns = useResponsiveGridColumns();
 
   const animals = useMemo(() => {
@@ -36,6 +39,7 @@ export function CategoryHome({
   const onCategoryTap = (category: AnimalCategory | "all") => {
     onCategoryChange(category);
     if (category !== "all") {
+      enqueueBehaviorWarmup(authFetch, "animal_world", { animalCategory: category });
       warmAnimalWorldOnOpen(category);
       trackAnimalWorldEvent("category_opened", { category });
     }
