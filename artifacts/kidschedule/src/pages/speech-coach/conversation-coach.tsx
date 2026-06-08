@@ -46,12 +46,17 @@ import {
   saveCoachJourneySnapshot,
 } from "./speech-coach-utils";
 
-/** Big, responsive hero size (~half the viewport, capped for tablets/desktop). */
+/**
+ * Big, responsive hero size — width-based only (capped for tablets/desktop).
+ * Deliberately does NOT read viewport height: on this ChatPlatform-governed
+ * chat screen, guessing heights is forbidden (keyboard handling is owned by
+ * ChatPlatform), and the avatar lives in scrollable content so width is enough.
+ */
 function useHeroSize() {
-  const [size, setSize] = useState(300);
+  const [size, setSize] = useState(320);
   useEffect(() => {
     const calc = () => {
-      const s = Math.min(window.innerWidth * 0.66, window.innerHeight * 0.44, 380);
+      const s = Math.min(window.innerWidth * 0.72, 420);
       setSize(Math.max(240, Math.round(s)));
     };
     calc();
