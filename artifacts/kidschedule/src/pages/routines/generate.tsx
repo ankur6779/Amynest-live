@@ -73,6 +73,7 @@ import {
 } from "@/lib/fixed-activities";
 import { weekdayLabelFromRoutineDate } from "@/lib/fixed-activities-utils";
 import type { FixedActivitiesResult } from "@workspace/api-client-react";
+import { extractApiErrorMessage } from "@/lib/api-error-message";
 
 // Mirrors the `weatherOutdoor` enum in the regenerated GenerateRoutineBody
 // schema (see lib/api-zod/src/generated/types/generateRoutineBodyWeatherOutdoor.ts).
@@ -207,6 +208,13 @@ function toGeneratedRoutine(data: RoutineGenerateResult): GeneratedRoutine {
     fixedActivitiesResult:
       (data.fixedActivitiesResult as FixedActivitiesResult | null | undefined) ?? null,
   };
+}
+
+function normalizeRoutineItemsForSave(items: RoutineItem[]): RoutineItem[] {
+  return items.map((item) => ({
+    ...item,
+    duration: Math.max(1, Math.round(Number(item.duration) || 30)),
+  }));
 }
 type ChildType = {
   id: number;
@@ -894,16 +902,34 @@ export default function RoutineGenerate() {
   }, [selectedChild, selectedChildData?.id]);
 
   // ── Core save helper ───────────────────────────────────────────────────────
-  const saveGeneratedRoutine = React.useCallback((data: GeneratedRoutine, shouldOverride: boolean | undefined) => {
+  const saveGeneratedRoutine = React.useCallback((
+    data: GeneratedRoutine,
+    shouldOverride: boolean | undefined,
+    retryOnConflict = true,
+  ) => {
+    const normalizedItems = normalizeRoutineItemsForSave(data.items);
+    const payload = {
+      childId: selectedChild!,
+      date,
+      title: data.title,
+      items: normalizedItems as never,
+      adaptations: data.adaptations ?? undefined,
+      override: shouldOverride,
+    };
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.info("[routine-save] submitting", {
+        childId: payload.childId,
+        date: payload.date,
+        override: payload.override,
+        itemCount: normalizedItems.length,
+        categories: [...new Set(normalizedItems.map((i) => i.category))],
+        hasSchool: hasSchool ?? undefined,
+        fixedActivityCount: serializedFixedActivities.length,
+      });
+    }
     createMutation.mutate({
-      data: {
-        childId: selectedChild!,
-        date,
-        title: data.title,
-        items: data.items as never,
-        adaptations: data.adaptations ?? undefined,
-        override: shouldOverride
-      }
+      data: payload,
     }, {
       onSuccess: savedRoutine => {
         track("routine_generated", {
@@ -937,8 +963,27 @@ export default function RoutineGenerate() {
         setLocation(`/routines/${savedRoutine.id}?reveal=1`);
       },
       onError: (err: unknown) => {
-        const msg = err instanceof Error ? err.message : "";
-        const isLimit = msg.toLowerCase().includes("limit") || msg.includes("402");
+        const errObj = err as { status?: number; data?: { error?: string; routineId?: number } };
+        const msg = extractApiErrorMessage(err, "");
+        const isConflict =
+          retryOnConflict &&
+          !shouldOverride &&
+          errObj.status === 409 &&
+          errObj.data?.error === "routine_exists";
+        if (isConflict) {
+          setOverrideMode(true);
+          setExistingRoutine({
+            exists: true,
+            routineId: errObj.data?.routineId,
+          });
+          saveGeneratedRoutine(data, true, false);
+          return;
+        }
+        const isLimit =
+          errObj.status === 402 ||
+          errObj.data?.error === "routine_limit_reached" ||
+          msg.toLowerCase().includes("limit") ||
+          msg.includes("402");
         if (isLimit) {
           // Hit the routinesMax cap → surface the universal premium paywall
           // instead of a passive toast.
@@ -950,13 +995,20 @@ export default function RoutineGenerate() {
           return;
         }
         toast({
-          title: "Could not save routine",
-          description: "Please try again in a moment.",
+          title: t("toasts.routines_generate.save_failed_title", {
+            defaultValue: "Could not save routine",
+          }),
+          description: extractApiErrorMessage(
+            err,
+            t("toasts.routines_generate.save_failed_body", {
+              defaultValue: "Please try again in a moment.",
+            }),
+          ),
           variant: "destructive"
         });
       }
     });
-  }, [createMutation, selectedChild, date, toast, queryClient, setLocation, children, authFetch]);
+  }, [createMutation, selectedChild, date, toast, queryClient, setLocation, children, authFetch, t, hasSchool, serializedFixedActivities]);
 
   const applyWakeAndTodayAdjustments = React.useCallback((
     generatedData: GeneratedRoutine,

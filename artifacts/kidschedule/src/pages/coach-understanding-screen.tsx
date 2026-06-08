@@ -7,11 +7,14 @@ export function CoachUnderstandingScreen({
   understanding,
   onBack,
   onGenerate,
+  canGenerate = true,
 }: {
   goalTitle: string;
   understanding: AmyUnderstandingView;
   onBack: () => void;
   onGenerate: () => void;
+  /** When false (child under 24m), show preview-only age gate instead of generate CTA. */
+  canGenerate?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -142,18 +145,40 @@ export function CoachUnderstandingScreen({
 
         {/* CTAs */}
         <div className="flex flex-col gap-3 pt-1">
-          <button
-            type="button"
-            data-on-dark
-            onClick={onGenerate}
-            className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-              boxShadow: "0 0 28px rgba(139,92,246,0.4)",
-            }}
-          >
-            {t("pages.ai_coach.generate_my_first_win", "Generate My First Win")}
-          </button>
+          {canGenerate ? (
+            <button
+              type="button"
+              data-on-dark
+              data-testid="coach-generate-plan"
+              onClick={onGenerate}
+              className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all"
+              style={{
+                background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                boxShadow: "0 0 28px rgba(139,92,246,0.4)",
+              }}
+            >
+              {t("pages.ai_coach.generate_my_first_win", "Generate My First Win")}
+            </button>
+          ) : (
+            <div
+              data-testid="coach-preview-age-gate"
+              className="w-full py-4 px-4 rounded-2xl text-center space-y-1"
+              style={{
+                background: "rgba(139,92,246,0.12)",
+                border: "1px solid rgba(167,139,250,0.28)",
+              }}
+            >
+              <p className="font-bold text-base text-white">
+                {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
+              </p>
+              <p className="text-sm text-white/70 leading-snug">
+                {t(
+                  "pages.ai_coach.preview_age_gate_body",
+                  "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
+                )}
+              </p>
+            </div>
+          )}
           <button
             type="button"
             onClick={onBack}

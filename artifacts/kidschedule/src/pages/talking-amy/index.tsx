@@ -21,7 +21,24 @@ import {
   mergeUnlockedAchievements,
   type TalkingAmyAchievement,
 } from "@/lib/talking-amy-achievements";
-import { getDailySpecialAmyMode } from "@/lib/talking-amy-daily-special";
+import {
+  dailyFeaturedAchievementBonus,
+  getDailySpecialAmyMode,
+  getDailySpecialAmyModeId,
+  isDailyFeaturedMode,
+} from "@/lib/talking-amy-daily-special";
+import {
+  getCollectionProgress,
+  loadTalkingAmyCollection,
+  recordTalkingAmyCollectionUse,
+  discoverTalkingAmyMode,
+  type TalkingAmyCollection,
+} from "@/lib/talking-amy-collection";
+import {
+  getActiveSecretModeId,
+  getSecretModeRemainingMs,
+  tryTriggerSecretMode,
+} from "@/lib/talking-amy-secrets";
 import {
   loadTalkingAmyInputMode,
   saveTalkingAmyInputMode,
@@ -30,7 +47,10 @@ import {
 import {
   TALKING_AMY_MODES,
   getTalkingAmyMode,
+  resolveTalkingAmyPlaybackMode,
   type TalkingAmyModeId,
+  type TalkingAmyRegularModeId,
+  type TalkingAmySecretModeId,
 } from "@/lib/talking-amy-modes";
 import { pickSmartTalkingAmyReaction } from "@/lib/talking-amy-reactions";
 import {
@@ -117,18 +137,20 @@ function ModeSelector({
   selected,
   favorite,
   dailySpecialId,
+  discoveredIds,
   onSelect,
   disabled,
 }: {
-  selected: TalkingAmyModeId;
-  favorite: TalkingAmyModeId | null;
-  dailySpecialId: TalkingAmyModeId;
-  onSelect: (id: TalkingAmyModeId) => void;
+  selected: TalkingAmyRegularModeId;
+  favorite: TalkingAmyRegularModeId | null;
+  dailySpecialId: TalkingAmyRegularModeId;
+  discoveredIds: readonly TalkingAmyModeId[];
+  onSelect: (id: TalkingAmyRegularModeId) => void;
   disabled: boolean;
 }) {
   return (
     <div
-      className="grid grid-cols-2 gap-2 sm:grid-cols-5"
+      className="grid max-h-[220px] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-3"
       data-testid="talking-amy-mode-selector"
       role="radiogroup"
       aria-label="Amy voice mode"
@@ -137,6 +159,7 @@ function ModeSelector({
         const active = m.id === selected;
         const isFavorite = m.id === favorite;
         const isDaily = m.id === dailySpecialId;
+        const isNew = !discoveredIds.includes(m.id);
         return (
           <button
             key={m.id}
@@ -144,12 +167,13 @@ function ModeSelector({
             role="radio"
             aria-checked={active}
             disabled={disabled}
-            onClick={() => onSelect(m.id)}
+            onClick={() => onSelect(m.id as TalkingAmyRegularModeId)}
             className={[
               "relative rounded-2xl border px-2 py-2.5 text-center transition active:scale-[0.98]",
               active
                 ? "border-white/50 bg-white/20 shadow-lg ring-2 ring-white/30"
                 : "border-white/15 bg-white/5 hover:bg-white/10",
+              isDaily ? "ring-1 ring-amber-200/40" : "",
               disabled ? "opacity-50 pointer-events-none" : "",
             ].join(" ")}
           >
@@ -158,6 +182,9 @@ function ModeSelector({
             ) : null}
             {isDaily ? (
               <span className="absolute left-1.5 top-1.5 text-[9px]">✨</span>
+            ) : null}
+            {isNew ? (
+              <span className="absolute bottom-1 right-1.5 text-[8px] text-amber-200/80">NEW</span>
             ) : null}
             <div className="text-2xl leading-none">{m.emoji}</div>
             <div className="mt-1 text-[10px] font-black leading-tight">{m.label}</div>
@@ -171,14 +198,18 @@ function ModeSelector({
 export default function TalkingAmyPage() {
   usePrimeIosMicrophone();
   const reducedMotion = useReducedMotion();
+  const dailySpecialId = useMemo(() => getDailySpecialAmyModeId(), []);
   const dailySpecial = useMemo(() => getDailySpecialAmyMode(), []);
   const { data: children = [], isLoading } = useListChildren();
   const [childIdx, setChildIdx] = useState(0);
   const child = (children[childIdx] ?? children[0]) as AnyChild | undefined;
 
-  const [modeId, setModeId] = useState<TalkingAmyModeId>(() => resolveInitialTalkingAmyMode());
-  const [favoriteMode, setFavoriteMode] = useState<TalkingAmyModeId | null>(() =>
+  const [modeId, setModeId] = useState<TalkingAmyRegularModeId>(() => resolveInitialTalkingAmyMode());
+  const [favoriteMode, setFavoriteMode] = useState<TalkingAmyRegularModeId | null>(() =>
     loadFavoriteTalkingAmyMode(),
+  );
+  const [activeSecretId, setActiveSecretId] = useState<TalkingAmySecretModeId | null>(() =>
+    getActiveSecretModeId(),
   );
   const [inputMode, setInputMode] = useState<TalkingAmyInputMode>(() => loadTalkingAmyInputMode());
   const [stats, setStats] = useState<TalkingAmyLocalStats>({
@@ -186,7 +217,11 @@ export default function TalkingAmyPage() {
     replayCount: 0,
     sessionCount: 0,
   });
-  const mode = getTalkingAmyMode(modeId);
+  const [collection, setCollection] = useState<TalkingAmyCollection>(() => loadTalkingAmyCollection(0));
+  const playbackModeId = resolveTalkingAmyPlaybackMode(modeId, activeSecretId);
+  const mode = getTalkingAmyMode(playbackModeId);
+  const collectionProgress = useMemo(() => getCollectionProgress(collection), [collection]);
+  const isFeaturedToday = isDailyFeaturedMode(modeId);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [promptIdx, setPromptIdx] = useState(0);
@@ -231,8 +266,23 @@ export default function TalkingAmyPage() {
     sessionTrackedRef.current = true;
     const next = recordTalkingAmySessionStart(child.id);
     setStats(next);
+    setCollection(loadTalkingAmyCollection(child.id));
     trackTalkingAmySessionStarted(child.id, next.sessionCount);
   }, [child]);
+
+  useEffect(() => {
+    if (!child) return;
+    setCollection(loadTalkingAmyCollection(child.id));
+    setActiveSecretId(getActiveSecretModeId());
+  }, [child?.id]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const secret = getActiveSecretModeId();
+      setActiveSecretId(secret);
+    }, 15_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -269,9 +319,12 @@ export default function TalkingAmyPage() {
   }, []);
 
   const selectMode = useCallback(
-    (id: TalkingAmyModeId) => {
+    (id: TalkingAmyRegularModeId) => {
       setModeId(id);
-      if (child) trackTalkingAmyModeSelected(child.id, id);
+      if (child) {
+        trackTalkingAmyModeSelected(child.id, id);
+        setCollection(discoverTalkingAmyMode(child.id, id));
+      }
     },
     [child],
   );
@@ -307,20 +360,30 @@ export default function TalkingAmyPage() {
 
   const playEcho = useCallback(
     async (blob: Blob, opts?: { isReplay?: boolean; durationMs?: number }) => {
-      const activeMode = getTalkingAmyMode(modeIdRef.current);
+      const secretNow = getActiveSecretModeId();
+      const effectiveId = resolveTalkingAmyPlaybackMode(modeIdRef.current, secretNow);
+      const activeMode = getTalkingAmyMode(effectiveId);
       const durationMs = opts?.durationMs ?? lastDurationMsRef.current;
       setPhase("thinking");
       setCelebration(null);
       setUnlockedAchievement(null);
 
       const result = await playTalkingAmyEcho(blob, {
-        mode: modeIdRef.current,
+        mode: effectiveId,
         onPlaybackStart: () => setPhase("echoing"),
       });
 
       if (result.ok) {
         let achievement: TalkingAmyAchievement | null = null;
+        let triggeredSecret: TalkingAmySecretModeId | null = null;
         if (child) {
+          const featuredBonus = dailyFeaturedAchievementBonus(modeIdRef.current);
+          const nextCollection = recordTalkingAmyCollectionUse(child.id, effectiveId, {
+            isReplay: opts?.isReplay,
+            dailyFeaturedBonus: featuredBonus && !opts?.isReplay,
+          });
+          setCollection(nextCollection);
+
           if (opts?.isReplay) {
             const next = recordTalkingAmyReplay(child.id);
             setStats(next);
@@ -328,9 +391,26 @@ export default function TalkingAmyPage() {
           } else {
             const next = recordTalkingAmyRepeat(child.id);
             setStats(next);
-            const merged = mergeUnlockedAchievements(child.id, next.repeatCount);
+            triggeredSecret = tryTriggerSecretMode();
+            if (triggeredSecret) {
+              setActiveSecretId(triggeredSecret);
+              const withSecret = discoverTalkingAmyMode(child.id, triggeredSecret);
+              setCollection(withSecret);
+            }
+            const merged = mergeUnlockedAchievements(
+              child.id,
+              next.repeatCount,
+              triggeredSecret
+                ? discoverTalkingAmyMode(child.id, triggeredSecret)
+                : nextCollection,
+            );
             achievement = merged.newlyUnlocked[0] ?? null;
           }
+        }
+        if (triggeredSecret) {
+          const secretMode = getTalkingAmyMode(triggeredSecret);
+          setStatusHint(`✨ Secret Mode Active — ${secretMode.emoji} ${secretMode.label}!`);
+          window.setTimeout(() => setStatusHint(null), 2800);
         }
         runCelebrate(activeMode, durationMs, achievement);
       } else {
@@ -593,16 +673,41 @@ export default function TalkingAmyPage() {
           data-testid="talking-amy-daily-special"
         >
           <p className="text-[11px] font-black uppercase tracking-wider text-amber-100/90">
-            ✨ Today&apos;s Special Amy: {dailySpecial.emoji} {dailySpecial.label}
+            ✨ Featured Today: {dailySpecial.emoji} {dailySpecial.label}
+            {isFeaturedToday ? " — bonus sparkle & progress!" : ""}
           </p>
         </div>
+
+        {activeSecretId ? (
+          <div
+            className="mt-2 rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 py-2"
+            data-testid="talking-amy-secret-badge"
+          >
+            <p className="text-[11px] font-black uppercase tracking-wider text-fuchsia-100">
+              ✨ Secret Mode Active — {getTalkingAmyMode(activeSecretId).emoji}{" "}
+              {getTalkingAmyMode(activeSecretId).label}
+              <span className="ml-2 text-[10px] font-bold text-white/60 tabular-nums">
+                {Math.ceil(getSecretModeRemainingMs() / 60_000)}m left
+              </span>
+            </p>
+          </div>
+        ) : null}
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
           <div className="text-[11px] font-black uppercase tracking-wider text-white/70">
             🏆 Amy repeated you: <span className="text-amber-200">{stats.repeatCount}</span>
           </div>
+          <div
+            className="text-[11px] font-black uppercase tracking-wider text-white/70"
+            data-testid="talking-amy-collection"
+          >
+            🎁 Collection:{" "}
+            <span className="text-emerald-200">
+              {collectionProgress.unlocked} / {collectionProgress.total}
+            </span>
+          </div>
           <div className="text-[10px] text-white/45 tabular-nums">
-            {stats.replayCount} replays · {stats.sessionCount} visits
+            {stats.replayCount} replays · {collectionProgress.secretUnlocked} secrets
           </div>
         </div>
 
@@ -610,7 +715,8 @@ export default function TalkingAmyPage() {
           <ModeSelector
             selected={modeId}
             favorite={favoriteMode}
-            dailySpecialId={dailySpecial.id}
+            dailySpecialId={dailySpecialId}
+            discoveredIds={collection.discoveredModeIds}
             onSelect={selectMode}
             disabled={modeLocked}
           />
@@ -682,6 +788,8 @@ export default function TalkingAmyPage() {
             mode={mode}
             audioLevelRef={audioLevelRef}
             reducedMotion={reducedMotion}
+            featured={isFeaturedToday && !activeSecretId}
+            secretActive={!!activeSecretId}
           />
 
           <div className="space-y-2 text-center">
@@ -802,7 +910,7 @@ export default function TalkingAmyPage() {
 
           <div className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/45">
             <Sparkles className="h-3.5 w-3.5 text-amber-300/80" />
-            5 fun voices · zero cloud
+            9 fun voices · 3 secrets · zero cloud
           </div>
         </section>
       </div>

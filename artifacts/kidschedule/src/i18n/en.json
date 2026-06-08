@@ -1117,6 +1117,7 @@
     "cry_insight": {
       "analyse_failed_title": "Couldn't analyse",
       "analyse_failed_body": "Server returned {{status}}. Please try again.",
+      "history_failed_title": "Could not load history",
       "mic_unavailable_title": "Mic not available",
       "mic_unavailable_body": "Your browser doesn't support audio recording. Try the context-only analyse below.",
       "mic_denied_title": "Mic access denied",
@@ -4852,6 +4853,10 @@
       "what_coaching_may_focus_on": "What coaching may focus on",
       "focus_disclaimer": "These are examples, not commitments — Amy adapts based on your progress.",
       "generate_my_first_win": "Generate My First Win",
+      "preview_available_from_age_2": "Available from age 2+",
+      "preview_age_gate_body": "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
+      "preview_sample_wins": "Sample wins",
+      "preview_sample_win": "Sample Win",
       "your_first_coaching_win": "Your First Coaching Win",
       "loading_headline": "Amy is preparing your coaching",
       "loading_state_understanding": "Understanding your situation…",

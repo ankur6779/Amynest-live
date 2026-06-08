@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import type { ZodError } from "zod";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, routinesTable, childrenTable, parentProfilesTable, customRecipesTable } from "@workspace/db";
@@ -157,6 +158,15 @@ function rejectLegacyParentFields(body: unknown): string | null {
   const present = LEGACY_PARENT_KEYS.filter((k) => k in (body as Record<string, unknown>));
   if (present.length === 0) return null;
   return `Removed fields not allowed: ${present.join(", ")}. Use 'caregiver' and 'weatherOutdoor' instead.`;
+}
+
+function formatZodValidationMessage(error: ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "body";
+      return `${path}: ${issue.message}`;
+    })
+    .join("; ");
 }
 
 // ─── School-day detection helper ───────────────────────────────────────────
@@ -2209,10 +2219,38 @@ router.get("/routines/check", async (req, res): Promise<void> => {
   }
 });
 
+function sendSavedRoutineResponse(
+  res: import("express").Response,
+  status: number,
+  routine: typeof routinesTable.$inferSelect,
+  childName: string,
+): void {
+  try {
+    res.status(status).json(
+      GetRoutineResponse.parse({
+        ...routine,
+        childName,
+        items: routine.items as RoutineItem[],
+        uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
+        createdAt: routine.createdAt.toISOString(),
+      }),
+    );
+  } catch (parseErr) {
+    console.error("[routines] GetRoutineResponse parse failed after save", parseErr);
+    res.status(500).json({
+      error: "routine_response_invalid",
+      message:
+        "Routine was saved but could not be returned. Refresh your routines list or try again.",
+      routineId: routine.id,
+    });
+  }
+}
+
 router.post("/routines", async (req, res): Promise<void> => {
   const parsed = CreateRoutineBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    const message = formatZodValidationMessage(parsed.error);
+    res.status(400).json({ error: "validation_failed", message });
     return;
   }
   const auth = getAuth(req);
@@ -2227,7 +2265,7 @@ router.post("/routines", async (req, res): Promise<void> => {
     .from(childrenTable)
     .where(and(eq(childrenTable.id, parsed.data.childId), eq(childrenTable.userId, userId)));
   if (!child) {
-    res.status(404).json({ error: "Child not found" });
+    res.status(404).json({ error: "child_not_found", message: "Child not found or you do not have access." });
     return;
   }
 
@@ -2300,15 +2338,7 @@ router.post("/routines", async (req, res): Promise<void> => {
     const { fireJourneyTask } = await import("../services/journeyService.js");
     fireJourneyTask(userId, "routine_generate");
 
-    res.status(201).json(
-      GetRoutineResponse.parse({
-        ...routine,
-        childName: child?.name ?? "Unknown",
-        items: routine.items as RoutineItem[],
-        uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
-        createdAt: routine.createdAt.toISOString(),
-      }),
-    );
+    sendSavedRoutineResponse(res, 201, routine, child?.name ?? "Unknown");
     return;
   }
 
@@ -2356,15 +2386,7 @@ router.post("/routines", async (req, res): Promise<void> => {
   const { fireJourneyTask } = await import("../services/journeyService.js");
   fireJourneyTask(userId, "routine_generate");
 
-  res.status(201).json(
-    GetRoutineResponse.parse({
-      ...routine,
-      childName: child?.name ?? "Unknown",
-      items: routine.items as RoutineItem[],
-      uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
-      createdAt: routine.createdAt.toISOString(),
-    }),
-  );
+  sendSavedRoutineResponse(res, 201, routine, child?.name ?? "Unknown");
 });
 
 router.get("/routines/:id", async (req, res): Promise<void> => {

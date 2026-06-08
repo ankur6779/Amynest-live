@@ -6,6 +6,9 @@ import {
   groupCategoriesForBand,
   isCategoryVisibleForBand,
   getCategoryHint,
+  isCoachEligible,
+  childTotalAgeMonths,
+  COACH_MIN_AGE_MONTHS,
 } from "./coach-age-nav";
 
 describe("childToCoachAgeBand", () => {
@@ -77,5 +80,27 @@ describe("getCategoryHint", () => {
 
   it("suggests infant problems for 0-2 on sleep", () => {
     expect(getCategoryHint("sleep", "0-2")?.targetCategoryId).toBe("infant-problems");
+  });
+});
+
+describe("isCoachEligible", () => {
+  it("uses the same 24-month boundary as the backend infant coach guard", () => {
+    expect(COACH_MIN_AGE_MONTHS).toBe(24);
+  });
+
+  it("blocks plan generation under 24 months", () => {
+    expect(isCoachEligible({ id: 1, age: 0, ageMonths: 18 })).toBe(false);
+    expect(isCoachEligible({ id: 1, age: 1, ageMonths: 11 })).toBe(false);
+    expect(childTotalAgeMonths({ id: 1, age: 1, ageMonths: 11 })).toBe(23);
+  });
+
+  it("allows plan generation at 24+ months", () => {
+    expect(isCoachEligible({ id: 1, age: 2, ageMonths: 0 })).toBe(true);
+    expect(isCoachEligible({ id: 1, age: 1, ageMonths: 12 })).toBe(true);
+  });
+
+  it("does not block when child context is missing", () => {
+    expect(isCoachEligible(null)).toBe(true);
+    expect(isCoachEligible(undefined)).toBe(true);
   });
 });

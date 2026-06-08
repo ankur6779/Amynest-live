@@ -1,5 +1,10 @@
 /** Coach entry flow: age band → grouped categories → goal → questions */
 
+import { getTotalMonths } from "@/lib/age-groups";
+
+/** Matches backend infant coach preview guard (`isInfantAgeMonths`). */
+export const COACH_MIN_AGE_MONTHS = 24;
+
 export type CoachAgeBand = "0-2" | "2-4" | "5-7" | "8-10" | "10+";
 
 export interface CoachAgeBandOption {
@@ -291,4 +296,16 @@ export function resolveActiveChild(children: ChildAgeLike[] | undefined | null):
     if (match) return match;
   }
   return children[0] ?? null;
+}
+
+export function childTotalAgeMonths(child: Pick<ChildAgeLike, "age" | "ageMonths">): number {
+  return getTotalMonths(child.age, child.ageMonths ?? 0);
+}
+
+/** Plan generation and progress unlock at 24+ months (backend: infant_coach_preview_only). */
+export function isCoachEligible(
+  child: Pick<ChildAgeLike, "age" | "ageMonths"> | null | undefined,
+): boolean {
+  if (!child) return true;
+  return childTotalAgeMonths(child) >= COACH_MIN_AGE_MONTHS;
 }

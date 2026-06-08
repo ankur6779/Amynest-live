@@ -1,5 +1,4 @@
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { describe, it, expect } from "vitest";
 import { emptyEngagement } from "@workspace/study-zone";
 import {
   hydratePlayFromCompletedActivities,
@@ -18,8 +17,8 @@ describe("hydratePlayFromCompletedActivities", () => {
       "play_alphabets_A",
       "math_q1",
     ]);
-    assert.deepEqual(merged.play.numbers, ["1", "2"]);
-    assert.deepEqual(merged.play.alphabets, ["A"]);
+    expect(merged.play.numbers).toEqual(["1", "2"]);
+    expect(merged.play.alphabets).toEqual(["A"]);
   });
 
   it("is idempotent when items already exist locally", () => {
@@ -31,6 +30,6 @@ describe("hydratePlayFromCompletedActivities", () => {
       "play_numbers_1",
       "play_numbers_3",
     ]);
-    assert.deepEqual(merged.play.numbers?.sort(), ["1", "2", "3"]);
+    expect(merged.play.numbers?.sort()).toEqual(["1", "2", "3"]);
   });
 });

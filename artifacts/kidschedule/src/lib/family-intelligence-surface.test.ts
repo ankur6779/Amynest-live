@@ -15,10 +15,10 @@ describe("buildFamilyIntelligenceSurface", () => {
 
     expect(surface?.signals[0]).toMatchObject({
       id: "remembers",
-      label: "Amy remembers your rhythm",
+      label: "Amy is noticing your patterns",
     });
-    expect(surface?.signals[0]?.detail).toContain("4 recent family days");
-    expect(surface?.headline).toContain("Amy remembers your rhythm");
+    expect(surface?.signals[0]?.detail).toContain("4 recent");
+    expect(surface?.headline).toContain("Amy is noticing your patterns");
   });
 
   it("frames difficult days with gentle support for generate mood", () => {

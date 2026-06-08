@@ -27,6 +27,8 @@ import {
   pastSuccessesFromGraduations,
   type CoachGraduationRecord,
 } from "@/lib/coach-graduation-state";
+import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { resolveActiveChild, isCoachEligible } from "@/lib/coach-age-nav";
 
 const TREND_STYLE: Record<
   ProgressTrend,
@@ -425,6 +427,11 @@ export default function AICoachProgressPage() {
   const [, setLocation] = useLocation();
   const [sessions, setSessions] = useState<CoachProgressViewModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: childrenList } = useListChildren({
+    query: { queryKey: getListChildrenQueryKey(), staleTime: 60_000 },
+  });
+  const activeChild = resolveActiveChild(childrenList ?? undefined);
+  const coachEligible = isCoachEligible(activeChild);
 
   const graduations = useMemo(
     () => pastSuccessesFromGraduations(loadCoachGraduations(userId ?? "anon")),
@@ -441,6 +448,10 @@ export default function AICoachProgressPage() {
   );
 
   useEffect(() => {
+    if (!coachEligible) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const res = await authFetch("/api/ai-coach/progress");
@@ -452,7 +463,40 @@ export default function AICoachProgressPage() {
         setLoading(false);
       }
     })();
-  }, [authFetch]);
+  }, [authFetch, coachEligible]);
+
+  if (!coachEligible) {
+    return (
+      <div
+        className="min-h-full pb-8"
+        style={{ background: "linear-gradient(180deg, #0f0c29 0%, #141028 40%, #0c1220 100%)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+          <AppLink
+            href="/amy-coach"
+            source="ai-coach-progress-back"
+            className="flex items-center gap-1 text-sm text-violet-300/80 hover:text-violet-200"
+          >
+            <ChevronLeft className="h-4 w-4" /> {t("screens.ai_coach_progress.back_to_coach")}
+          </AppLink>
+          <div
+            className="rounded-2xl px-4 py-5 space-y-2"
+            style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(167,139,250,0.28)" }}
+          >
+            <h1 className="font-quicksand text-xl font-bold text-white">
+              {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
+            </h1>
+            <p className="text-sm text-white/75 leading-relaxed">
+              {t(
+                "pages.ai_coach.preview_age_gate_body",
+                "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

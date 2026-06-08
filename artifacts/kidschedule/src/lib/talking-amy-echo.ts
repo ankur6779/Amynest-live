@@ -13,6 +13,7 @@ import {
 import {
   TALKING_AMY_DEFAULT_MODE,
   type TalkingAmyModeId,
+  getChipmunkPlaybackRate,
   getTalkingAmyMode,
 } from "@/lib/talking-amy-modes";
 
@@ -74,16 +75,27 @@ function wireChipmunkChain(
   ctx: AudioContext,
   preset: ReturnType<typeof getTalkingAmyMode>["voice"],
   destination: AudioNode,
+  recordingDurationSec: number,
 ): EffectHandles {
   source.detune.value = preset.detuneCents;
-  source.playbackRate.value = preset.playbackRate;
+  source.playbackRate.value = getChipmunkPlaybackRate(recordingDurationSec);
 
   const highpass = ctx.createBiquadFilter();
   highpass.type = "highpass";
   highpass.frequency.value = 180;
 
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.lowPassHz ?? 6800;
+  lowpass.Q.value = 0.55;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.94;
+
   source.connect(highpass);
-  highpass.connect(destination);
+  highpass.connect(lowpass);
+  lowpass.connect(gain);
+  gain.connect(destination);
   return { oscillators: [] };
 }
 
@@ -164,6 +176,268 @@ function wireMonsterChain(
   return { oscillators: [] };
 }
 
+function wireEchoReverbChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const dry = ctx.createGain();
+  dry.gain.value = 0.78;
+
+  const echoDelay = ctx.createDelay(0.8);
+  echoDelay.delayTime.value = preset.echoDelaySec ?? 0.2;
+  const echoFb = ctx.createGain();
+  echoFb.gain.value = 0.28;
+  const echoWet = ctx.createGain();
+  echoWet.gain.value = preset.echoMix ?? 0.3;
+
+  const reverbDelay = ctx.createDelay(0.9);
+  reverbDelay.delayTime.value = preset.reverbDelaySec ?? 0.35;
+  const reverbFb = ctx.createGain();
+  reverbFb.gain.value = 0.22;
+  const reverbWet = ctx.createGain();
+  reverbWet.gain.value = preset.reverbMix ?? 0.25;
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.lowPassHz ?? 5000;
+
+  source.connect(dry);
+  source.connect(echoDelay);
+  echoDelay.connect(echoFb);
+  echoFb.connect(echoDelay);
+  echoDelay.connect(echoWet);
+  source.connect(reverbDelay);
+  reverbDelay.connect(reverbFb);
+  reverbFb.connect(reverbDelay);
+  reverbDelay.connect(reverbWet);
+  dry.connect(lowpass);
+  echoWet.connect(lowpass);
+  reverbWet.connect(lowpass);
+  lowpass.connect(destination);
+  return { oscillators: [] };
+}
+
+function wireSpaceChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const delay = ctx.createDelay(0.2);
+  delay.delayTime.value = preset.transmissionDelaySec ?? 0.05;
+
+  const bandpass = ctx.createBiquadFilter();
+  bandpass.type = "bandpass";
+  bandpass.frequency.value =
+    ((preset.radioBandLowHz ?? 420) + (preset.radioBandHighHz ?? 3200)) / 2;
+  bandpass.Q.value = 1.2;
+
+  const highpass = ctx.createBiquadFilter();
+  highpass.type = "highpass";
+  highpass.frequency.value = preset.radioBandLowHz ?? 420;
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.radioBandHighHz ?? 3200;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.9;
+
+  source.connect(delay);
+  delay.connect(highpass);
+  highpass.connect(bandpass);
+  bandpass.connect(lowpass);
+  lowpass.connect(gain);
+  gain.connect(destination);
+  return { oscillators: [] };
+}
+
+function wireMagicChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const shimmer = ctx.createOscillator();
+  shimmer.type = "sine";
+  shimmer.frequency.value = preset.shimmerHz ?? 6.5;
+  const shimmerDepth = ctx.createGain();
+  shimmerDepth.gain.value = preset.shimmerDepthCents ?? 45;
+  shimmer.connect(shimmerDepth);
+  shimmerDepth.connect(source.detune);
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.lowPassHz ?? 7200;
+  lowpass.Q.value = 0.5;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.93;
+
+  source.connect(lowpass);
+  lowpass.connect(gain);
+  gain.connect(destination);
+  shimmer.start(0);
+  return { oscillators: [shimmer] };
+}
+
+function wireFrogChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const peak = ctx.createBiquadFilter();
+  peak.type = "peaking";
+  peak.frequency.value = preset.resonanceHz ?? 320;
+  peak.Q.value = preset.resonanceQ ?? 4.2;
+  peak.gain.value = 5;
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.lowPassHz ?? 4800;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.94;
+
+  source.connect(peak);
+  peak.connect(lowpass);
+  lowpass.connect(gain);
+  gain.connect(destination);
+  return { oscillators: [] };
+}
+
+function wireRainbowChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const wobble = ctx.createOscillator();
+  wobble.type = "sine";
+  wobble.frequency.value = preset.wobbleHz ?? 4.2;
+  const wobbleDepth = ctx.createGain();
+  wobbleDepth.gain.value = preset.wobbleDepthCents ?? 90;
+  wobble.connect(wobbleDepth);
+  wobbleDepth.connect(source.detune);
+
+  const shimmer = ctx.createOscillator();
+  shimmer.type = "triangle";
+  shimmer.frequency.value = preset.shimmerHz ?? 8;
+  const shimmerDepth = ctx.createGain();
+  shimmerDepth.gain.value = preset.shimmerDepthCents ?? 35;
+  shimmer.connect(shimmerDepth);
+  shimmerDepth.connect(source.detune);
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.92;
+  source.connect(gain);
+  gain.connect(destination);
+  wobble.start(0);
+  shimmer.start(0);
+  return { oscillators: [wobble, shimmer] };
+}
+
+function wireLightningChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const carrier = ctx.createOscillator();
+  carrier.type = "square";
+  carrier.frequency.value = preset.ringModHz ?? 42;
+  const modGain = ctx.createGain();
+  modGain.gain.value = 0.35;
+
+  const highpass = ctx.createBiquadFilter();
+  highpass.type = "highpass";
+  highpass.frequency.value = preset.highPassHz ?? 280;
+
+  const shaper = ctx.createWaveShaper();
+  shaper.curve = makeDistortionCurve(48);
+  shaper.oversample = "2x";
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.lowPassHz ?? 5200;
+
+  const outGain = ctx.createGain();
+  outGain.gain.value = 0.86;
+
+  source.connect(modGain);
+  carrier.connect(modGain.gain);
+  modGain.connect(highpass);
+  highpass.connect(shaper);
+  shaper.connect(lowpass);
+  lowpass.connect(outGain);
+  outGain.connect(destination);
+  carrier.start(0);
+  return { oscillators: [carrier] };
+}
+
+function wireGalaxyChain(
+  source: AudioBufferSourceNode,
+  ctx: AudioContext,
+  preset: ReturnType<typeof getTalkingAmyMode>["voice"],
+  destination: AudioNode,
+): EffectHandles {
+  source.detune.value = preset.detuneCents;
+  source.playbackRate.value = preset.playbackRate;
+
+  const wobble = ctx.createOscillator();
+  wobble.type = "sine";
+  wobble.frequency.value = preset.wobbleHz ?? 3.2;
+  const wobbleDepth = ctx.createGain();
+  wobbleDepth.gain.value = preset.wobbleDepthCents ?? 120;
+  wobble.connect(wobbleDepth);
+  wobbleDepth.connect(source.detune);
+
+  const dry = ctx.createGain();
+  dry.gain.value = 0.65;
+  const delay = ctx.createDelay(0.8);
+  delay.delayTime.value = preset.echoDelaySec ?? 0.28;
+  const feedback = ctx.createGain();
+  feedback.gain.value = 0.38;
+  const wet = ctx.createGain();
+  wet.gain.value = preset.echoMix ?? 0.42;
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = preset.lowPassHz ?? 3600;
+
+  source.connect(dry);
+  source.connect(delay);
+  delay.connect(feedback);
+  feedback.connect(delay);
+  delay.connect(wet);
+  dry.connect(lowpass);
+  wet.connect(lowpass);
+  lowpass.connect(destination);
+  wobble.start(0);
+  return { oscillators: [wobble] };
+}
+
 function wireAlienChain(
   source: AudioBufferSourceNode,
   ctx: AudioContext,
@@ -208,21 +482,36 @@ function wireModeChain(
   source: AudioBufferSourceNode,
   ctx: AudioContext,
   destination: AudioNode,
+  recordingDurationSec: number,
 ): EffectHandles {
   const preset = getTalkingAmyMode(modeId).voice;
   switch (modeId) {
     case "baby":
       return wireBabyChain(source, ctx, preset, destination);
     case "chipmunk":
-      return wireChipmunkChain(source, ctx, preset, destination);
+      return wireChipmunkChain(source, ctx, preset, destination, recordingDurationSec);
     case "robot":
       return wireRobotChain(source, ctx, preset, destination);
     case "alien":
       return wireAlienChain(source, ctx, preset, destination);
     case "monster":
       return wireMonsterChain(source, ctx, preset, destination);
+    case "ghost":
+      return wireEchoReverbChain(source, ctx, preset, destination);
+    case "space":
+      return wireSpaceChain(source, ctx, preset, destination);
+    case "magic":
+      return wireMagicChain(source, ctx, preset, destination);
+    case "frog":
+      return wireFrogChain(source, ctx, preset, destination);
+    case "rainbow":
+      return wireRainbowChain(source, ctx, preset, destination);
+    case "lightning":
+      return wireLightningChain(source, ctx, preset, destination);
+    case "galaxy":
+      return wireGalaxyChain(source, ctx, preset, destination);
     default:
-      return wireChipmunkChain(source, ctx, preset, destination);
+      return wireChipmunkChain(source, ctx, preset, destination, recordingDurationSec);
   }
 }
 
@@ -326,7 +615,7 @@ export async function playTalkingAmyEcho(
   source.buffer = audioBuffer;
   activeSource = source;
 
-  const handles = wireModeChain(modeId, source, ctx, ctx.destination);
+  const handles = wireModeChain(modeId, source, ctx, ctx.destination, audioBuffer.duration);
   activeOscillators = handles.oscillators;
 
   return new Promise((resolve) => {

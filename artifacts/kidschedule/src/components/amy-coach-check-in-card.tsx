@@ -7,11 +7,18 @@ import { AmyIcon } from "@/components/amy-icon";
 import { DashboardGlassCard } from "@/components/dashboard-glass-card";
 import { DASHBOARD_SECTION_BODY, DASHBOARD_SECTION_HEADER, DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 import { useAmyCoachCheckIn } from "@/hooks/use-amy-coach-check-in";
+import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { resolveActiveChild, isCoachEligible } from "@/lib/coach-age-nav";
 
 export function AmyCoachCheckInCard() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { loading, primarySession, checkIn, lastCheckInLabel, respond } = useAmyCoachCheckIn();
+  const { data: childrenList } = useListChildren({
+    query: { queryKey: getListChildrenQueryKey(), staleTime: 60_000 },
+  });
+  const activeChild = resolveActiveChild(childrenList ?? undefined);
+  const coachEligible = isCoachEligible(activeChild);
   const [clarifying, setClarifying] = useState(false);
   const [thanks, setThanks] = useState(false);
 
@@ -40,9 +47,17 @@ export function AmyCoachCheckInCard() {
           </p>
           <AppLink href="/amy-coach" source="dashboard-amy-coach-start">
             <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-violet-300 hover:underline">
-              {t("dashboard.amy_coach_card.start", "Start coaching")} <ArrowRight className="h-3 w-3" />
+              {coachEligible
+                ? t("dashboard.amy_coach_card.start", "Start coaching")
+                : t("dashboard.amy_coach_card.browse_goals", "Browse goals")}{" "}
+              <ArrowRight className="h-3 w-3" />
             </span>
           </AppLink>
+          {!coachEligible && (
+            <p className="text-[11px] text-violet-200/70 mt-2">
+              {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
+            </p>
+          )}
         </div>
       </DashboardGlassCard>
     );
@@ -178,13 +193,22 @@ export function AmyCoachCheckInCard() {
             </div>
           </div>
         ) : (
+          coachEligible ? (
           <AppLink href={`/amy-coach?resume=${primarySession.sessionId}`} source="dashboard-amy-coach-continue">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-300 hover:underline">
               {t("dashboard.amy_coach_card.continue", "Continue coaching")} <ArrowRight className="h-3 w-3" />
             </span>
           </AppLink>
+          ) : (
+            <AppLink href="/amy-coach" source="dashboard-amy-coach-browse">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-300 hover:underline">
+                {t("dashboard.amy_coach_card.browse_goals", "Browse goals")} <ArrowRight className="h-3 w-3" />
+              </span>
+            </AppLink>
+          )
         )}
 
+        {coachEligible ? (
         <div className="flex items-center justify-between text-[11px] text-white/45 pt-0.5">
           <span>
             {t("dashboard.amy_coach_card.progress", "{{pct}}% toward goal", {
@@ -197,6 +221,11 @@ export function AmyCoachCheckInCard() {
             </span>
           </AppLink>
         </div>
+        ) : (
+          <p className="text-[11px] text-violet-200/70 pt-0.5">
+            {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
+          </p>
+        )}
       </div>
     </DashboardGlassCard>
   );

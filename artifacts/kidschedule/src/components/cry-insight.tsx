@@ -21,7 +21,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Sparkles, History, MessageCircleHeart } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { getApiUrl } from "@/lib/api";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import {
+  cryInsightErrorDescription,
+  fetchCryInsightHistory,
+  postCryInsightAnalyze,
+  type CryCause,
+  type CrySession,
+} from "@/lib/cry-insight-api";
 import { infantActivationQueryKey } from "@/lib/infant-activation-api";
 import { microphoneSessionManager } from "@/lib/microphone-session-manager";
 import {
@@ -35,7 +42,6 @@ interface CryInsightProps {
   childName: string;
   ageMonths: number;
 }
-type CryCause = "hunger" | "sleepy" | "discomfort" | "pain";
 interface AudioStats {
   avgAmplitude?: number;
   peakAmplitude?: number;
@@ -48,24 +54,6 @@ interface CryContext {
   diaperChangedRecently?: boolean;
   fever?: boolean;
   ageMonths?: number;
-}
-interface CrySession {
-  id: number;
-  childId: number;
-  durationMs: number;
-  audioStats: AudioStats;
-  context: CryContext;
-  primary: {
-    cause: CryCause;
-    confidence: number;
-  };
-  secondary: {
-    cause: CryCause;
-    confidence: number;
-  };
-  suggestion: string;
-  medicalFlag: boolean;
-  createdAt: string;
 }
 const CAUSE_META: Record<CryCause, {
   emoji: string;
@@ -179,6 +167,7 @@ export function CryInsight({
   const {
     toast
   } = useToast();
+  const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
 
   // Context form state
@@ -203,19 +192,20 @@ export function CryInsight({
   const fetchHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const r = await fetch(getApiUrl(`/api/cry-insight/history/${childId}?limit=10`), {
-        credentials: "include"
-      });
-      if (!r.ok) return;
-      const j = (await r.json()) as {
-        ok: boolean;
-        sessions: CrySession[];
-      };
-      if (j.ok) setHistory(j.sessions);
+      const outcome = await fetchCryInsightHistory(authFetch, childId);
+      if (outcome.ok) {
+        setHistory(outcome.sessions);
+      } else {
+        toast({
+          title: t("toasts.cry_insight.history_failed_title", "Could not load history"),
+          description: cryInsightErrorDescription(outcome.status, outcome.data),
+          variant: "destructive",
+        });
+      }
     } finally {
       setHistoryLoading(false);
     }
-  }, [childId]);
+  }, [authFetch, childId, t, toast]);
   useEffect(() => {
     void fetchHistory();
   }, [fetchHistory]);
@@ -257,37 +247,24 @@ export function CryInsight({
       },
       language: i18nInstance.language || "en"
     };
-    const r = await fetch(getApiUrl("/api/cry-insight/analyze"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify(body)
-    });
-    if (!r.ok) {
-      trackCryAnalysisFailed(childId, ageMonths, `http_${r.status}`);
+    const outcome = await postCryInsightAnalyze(authFetch, body);
+    if (!outcome.ok) {
+      trackCryAnalysisFailed(childId, ageMonths, `http_${outcome.status}`);
       toast({
         title: t("toasts.cry_insight.analyse_failed_title"),
-        description: t("toasts.cry_insight.analyse_failed_body", {
-          status: r.status
-        }),
+        description: cryInsightErrorDescription(outcome.status, outcome.data),
         variant: "destructive"
       });
       return;
     }
-    const j = (await r.json()) as {
-      ok: true;
-      session: CrySession;
-    };
-    setResult(j.session);
+    setResult(outcome.session);
     trackCryAnalysisCompleted(childId, ageMonths, {
-      likelyCause: j.session.primary.cause,
-      confidence: j.session.primary.confidence,
+      likelyCause: outcome.session.primary.cause,
+      confidence: outcome.session.primary.confidence,
     });
     void queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
     void fetchHistory();
-  }, [ageMonths, childId, diaperRecent, feedHrs, fever, fetchHistory, queryClient, sleepHrs, toast]);
+  }, [ageMonths, authFetch, childId, diaperRecent, feedHrs, fever, fetchHistory, queryClient, sleepHrs, t, toast]);
 
   // ─── Start recording ────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {

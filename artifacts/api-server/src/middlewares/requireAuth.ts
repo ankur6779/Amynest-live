@@ -45,7 +45,10 @@ export async function requireAuth(
       },
       "requireAuth rejected request — no bearer token",
     );
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({
+      error: "Unauthorized",
+      message: "Authentication required. Please sign in again.",
+    });
     return;
   }
 
@@ -85,7 +88,10 @@ export async function requireAuth(
       },
       "requireAuth rejected request — token verification failed",
     );
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({
+      error: "Unauthorized",
+      message: "Authentication required. Please sign in again.",
+    });
     return;
   }
 }

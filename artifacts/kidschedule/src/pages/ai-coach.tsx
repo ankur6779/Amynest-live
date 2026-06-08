@@ -33,7 +33,9 @@ import {
   COACH_FOR_YOU_CATEGORY_ID,
   resolveActiveChild,
   withActiveChildId,
+  isCoachEligible,
 } from "@/lib/coach-age-nav";
+import { extractApiErrorMessage } from "@/lib/api-error-message";
 import { getGenericQuestionOptions } from "@/lib/coach-generic-questions";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { formatAge } from "@/lib/age-groups";
@@ -871,6 +873,7 @@ export default function AICoachPage() {
     () => resolveActiveChild(childrenList as { id: number; age: number; ageMonths?: number | null; name?: string | null }[] | undefined),
     [childrenList],
   );
+  const coachEligible = useMemo(() => isCoachEligible(activeChild), [activeChild]);
   const coachPreviewChildId = activeChild?.id ?? null;
 
   useEffect(() => {
@@ -984,7 +987,7 @@ export default function AICoachPage() {
     (path: GraduationPath, strengthenGoalId?: string) => {
       persistGraduation(path);
       if (path === "maintenance") {
-        setLocation("/amy-coach/progress");
+        setLocation(coachEligible ? "/amy-coach/progress" : "/amy-coach");
         return;
       }
       if (path === "strengthen") {
@@ -995,7 +998,7 @@ export default function AICoachPage() {
       resetForNewCoachingGoal("");
       setPhase("goals");
     },
-    [goalId, persistGraduation, resetForNewCoachingGoal, setLocation],
+    [goalId, persistGraduation, resetForNewCoachingGoal, setLocation, coachEligible],
   );
 
   const handleGraduationRecommendedGoal = useCallback(
@@ -1188,7 +1191,7 @@ export default function AICoachPage() {
         setProgressSnapshotByWin({});
         setIsFirstCoachingWin(true);
         setPhase("result");
-        if (!coachJourney.isPremium) {
+        if (!coachJourney.isPremium && coachEligible) {
           void coachJourney.completePlan(id, infantSessionId);
         }
         return;
@@ -1290,6 +1293,7 @@ export default function AICoachPage() {
 
   // ─── Submit to API
   const submitPlan = async () => {
+    if (!coachEligible) return;
     // Cancel any previous in-flight build (e.g. user retried) before starting.
     buildAbortRef.current?.abort();
     const ctrl = new AbortController();
@@ -1391,7 +1395,18 @@ export default function AICoachPage() {
         try {
           bodySnippet = (await res.text()).slice(0, 200);
         } catch {/* noop */}
-        throw new Error(`Server ${res.status}${bodySnippet ? ` — ${bodySnippet}` : ""}`);
+        const parsed = (() => {
+          try {
+            return JSON.parse(bodySnippet) as { message?: string; error?: string };
+          } catch {
+            return null;
+          }
+        })();
+        const detail =
+          parsed?.message ??
+          parsed?.error ??
+          (bodySnippet ? bodySnippet : undefined);
+        throw new Error(detail ? `Server ${res.status}: ${detail}` : `Server ${res.status}`);
       }
       const data = (await res.json()) as {
         plan: Plan;
@@ -1427,7 +1442,7 @@ export default function AICoachPage() {
       console.error("[ai-coach] Build Plan failed:", msg, err);
       toast({
         title: "Something went wrong",
-        description: msg.length > 0 ? `Please try again. (${msg})` : "Please try again in a moment.",
+        description: extractApiErrorMessage(err, "Please try again in a moment."),
         variant: "destructive"
       });
       setPhase("understanding");
@@ -1545,6 +1560,7 @@ export default function AICoachPage() {
   // ─── Feedback (yes / somewhat / no)
   const submitFeedback = async (winNumber: number, feedback: Feedback) => {
     if (!plan || !sessionId) return;
+    if (!coachEligible) return;
 
     const denom = originalWinCountRef.current || plan.wins.length;
     const prevPct = computeCoachProgressPct(feedbackByWin, denom);
@@ -1857,11 +1873,13 @@ export default function AICoachPage() {
             <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back")}
             </Link>
+            {coachEligible ? (
             <Link href="/amy-coach/progress">
               <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress")}
               </button>
             </Link>
+            ) : null}
           </div>
           {journeyBanner}
           <div className="relative">
@@ -1910,11 +1928,13 @@ export default function AICoachPage() {
             <button onClick={() => setSelectedCategoryId(null)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ChevronLeft className="h-4 w-4" /> {isForYouEntry && !coachAgeBand ? t("pages.ai_coach.back_2") : t("pages.ai_coach.categories")}
             </button>
+            {coachEligible ? (
             <Link href="/amy-coach/progress">
               <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_2")}
               </button>
             </Link>
+            ) : null}
           </div>
 
           {selectedAgeOption && !isForYouEntry && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
@@ -2007,11 +2027,13 @@ export default function AICoachPage() {
             <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
             </Link>
+            {coachEligible ? (
             <Link href="/amy-coach/progress">
               <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
               </button>
             </Link>
+            ) : null}
           </div>
 
           <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
@@ -2117,11 +2139,13 @@ export default function AICoachPage() {
           <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
           </Link>
+          {coachEligible ? (
           <Link href="/amy-coach/progress">
             <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
               <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
             </button>
           </Link>
+          ) : null}
         </div>
 
         <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
@@ -2147,6 +2171,23 @@ export default function AICoachPage() {
         </div>
 
         {journeyBanner}
+
+        {!coachEligible && (
+          <div
+            data-testid="coach-goals-preview-banner"
+            className="rounded-2xl px-4 py-3 text-sm border border-violet-400/30 bg-violet-500/10 text-violet-100"
+          >
+            <p className="font-semibold text-white">
+              {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
+            </p>
+            <p className="text-white/75 mt-1 leading-snug">
+              {t(
+                "pages.ai_coach.preview_age_gate_body",
+                "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
+              )}
+            </p>
+          </div>
+        )}
 
         {selectedAgeOption && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
             <span>{selectedAgeOption.emoji}</span>
@@ -2299,6 +2340,7 @@ export default function AICoachPage() {
         understanding={amyUnderstanding}
         onBack={() => setPhase("questions")}
         onGenerate={() => void submitPlan()}
+        canGenerate={coachEligible}
       />
     );
   }
@@ -2430,6 +2472,7 @@ export default function AICoachPage() {
 
   // ── PHASE: RESULT ────────────────────────────────────────────────────
   if (phase === "result" && plan) {
+    const isCoachPreview = !coachEligible;
     return <div className="app-fixed-below-header fixed inset-0 z-50 flex flex-col" style={{
       background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
     }}>
@@ -2462,7 +2505,8 @@ export default function AICoachPage() {
             <ArrowLeft size={18} />
           </button>
 
-          {/* Goal progress pill */}
+          {/* Goal progress pill — hidden in infant preview (sample wins only) */}
+          {!isCoachPreview ? (
           <div data-on-dark style={{
           display: "flex",
           flexDirection: "column",
@@ -2492,6 +2536,25 @@ export default function AICoachPage() {
               {plan.title}
             </span>
           </div>
+          ) : (
+          <div data-on-dark data-testid="coach-preview-sample-label" style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 2,
+          background: "rgba(139,92,246,0.18)",
+          color: "#fff",
+          padding: "6px 12px",
+          borderRadius: 14,
+          fontSize: 11,
+          fontWeight: 700,
+          border: "1px solid rgba(167,139,250,0.28)",
+          maxWidth: "46vw",
+        }}>
+            <span>{t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}</span>
+            <span style={{ fontSize: 10.5, opacity: 0.85 }}>{t("pages.ai_coach.preview_sample_wins", "Sample wins")}</span>
+          </div>
+          )}
 
           <div style={{
           display: "flex",
@@ -2525,6 +2588,7 @@ export default function AICoachPage() {
           }} aria-label={t("pages.ai_coach.share")}>
               <Share2 size={16} />
             </button>
+            {coachEligible ? (
             <button onClick={() => setLocation("/amy-coach/progress")} style={{
             color: "hsl(var(--brand-violet-700))",
             background: "rgba(167,139,250,0.15)",
@@ -2539,6 +2603,7 @@ export default function AICoachPage() {
           }} aria-label={t("pages.ai_coach.progress_2")}>
               <BarChart3 size={16} />
             </button>
+            ) : null}
           </div>
         </div>
 
@@ -2546,6 +2611,7 @@ export default function AICoachPage() {
         <PrintablePlan plan={plan} />
 
         {/* Goal progress bar — toward 100%, not a fixed win count */}
+        {!isCoachPreview && (
         <div style={{
         position: "absolute",
         top: 58,
@@ -2568,6 +2634,7 @@ export default function AICoachPage() {
           }} />
           </div>
         </div>
+        )}
 
         {/* Scroller */}
         <div ref={scrollerRef} style={{
@@ -2599,6 +2666,7 @@ export default function AICoachPage() {
               usedPhraseHashes={coachIntelligence.usedPhraseHashes}
               familyReference={coachIntelligence.familyReference}
               contentDensity={coachIntelligence.contentDensity}
+              previewOnly={isCoachPreview}
               onFeedback={(f) => submitFeedback(w.win, f)}
             />
           ))}
@@ -2636,7 +2704,9 @@ export default function AICoachPage() {
         const waitingForNext = atLastLoaded && loadingNextWin;
         const progressComplete = progressPct >= 100;
         const atGenuineEnd = atLastLoaded && progressComplete;
-        const nextDisabled = !hasFeedback || loadingNextWin || extending || atGenuineEnd;
+        const nextDisabled = isCoachPreview
+          ? activeIdx >= plan.wins.length - 1
+          : !hasFeedback || loadingNextWin || extending || atGenuineEnd;
         return <div className="app-bottom-action-bar" style={{
           flexShrink: 0,
           width: "100%",
@@ -2689,15 +2759,21 @@ export default function AICoachPage() {
             }}>
                   <ArrowLeft size={14} /> {t("pages.ai_coach.prev")}
                 </button>
-                <button data-on-dark onClick={() => void advanceAfterFeedback(activeIdx + 1)} disabled={nextDisabled} title={!hasFeedback ? t("pages.ai_coach.feedback_required_hint", "Share how this win went to continue") : waitingForNext ? t("pages.ai_coach.generating_next_strategy") : undefined} style={{
+                <button data-on-dark onClick={() => {
+                  if (isCoachPreview) {
+                    goToCard(activeIdx + 1);
+                    return;
+                  }
+                  void advanceAfterFeedback(activeIdx + 1);
+                }} disabled={nextDisabled} title={isCoachPreview ? undefined : !hasFeedback ? t("pages.ai_coach.feedback_required_hint", "Share how this win went to continue") : waitingForNext ? t("pages.ai_coach.generating_next_strategy") : undefined} style={{
               color: "#fff",
-              background: hasFeedback
+              background: (isCoachPreview || hasFeedback)
                 ? "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))"
                 : "rgba(255,255,255,0.12)",
-              boxShadow: hasFeedback ? "0 4px 12px rgba(139,92,246,0.3)" : "none",
+              boxShadow: (isCoachPreview || hasFeedback) ? "0 4px 12px rgba(139,92,246,0.3)" : "none",
               borderRadius: 999,
               padding: "10px 18px",
-              border: hasFeedback ? "none" : "1px solid rgba(139,92,246,0.25)",
+              border: (isCoachPreview || hasFeedback) ? "none" : "1px solid rgba(139,92,246,0.25)",
               cursor: nextDisabled ? "not-allowed" : "pointer",
               opacity: nextDisabled ? 0.45 : 1,
               display: "flex",
@@ -2737,6 +2813,7 @@ function WinCard({
   usedPhraseHashes = [],
   familyReference = null,
   contentDensity = "standard",
+  previewOnly = false,
   onFeedback,
 }: {
   win: Win;
@@ -2756,6 +2833,7 @@ function WinCard({
   usedPhraseHashes?: string[];
   familyReference?: string | null;
   contentDensity?: "concise" | "standard" | "detailed";
+  previewOnly?: boolean;
   onFeedback: (f: Feedback) => void;
 }) {
   const { t } = useTranslation();
@@ -2871,10 +2949,13 @@ function WinCard({
               marginBottom: 8,
             }}
           >
-            {isFirstCoachingWin
+            {previewOnly
+              ? t("pages.ai_coach.preview_sample_win", "Sample Win")
+              : isFirstCoachingWin
               ? t("pages.ai_coach.your_first_coaching_win", "Your First Coaching Win")
               : `${t("pages.ai_coach.current_win", "Current Win")} · ${t("pages.ai_coach.win", "Win")} ${win.win}`}
           </div>
+          {!previewOnly && (
           <p
             style={{
               fontSize: 11,
@@ -2886,6 +2967,7 @@ function WinCard({
           >
             {t("pages.ai_coach.progress_toward_goal", "{{pct}}% toward goal", { pct: progressPct })}
           </p>
+          )}
           <h2
             style={{
               fontSize: 17,
@@ -3155,7 +3237,9 @@ function WinCard({
           </div>
         )}
 
-        {/* Feedback — prominent, supportive */}
+        {/* Feedback — prominent, supportive (hidden in infant preview) */}
+        {!previewOnly && (
+        <>
         <div
           style={{
             background: "rgba(255,255,255,0.04)",
@@ -3258,6 +3342,8 @@ function WinCard({
               )}
             </p>
           </div>
+        )}
+        </>
         )}
 
         {/* Collapsed educational content */}

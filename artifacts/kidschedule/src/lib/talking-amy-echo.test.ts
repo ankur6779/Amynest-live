@@ -13,10 +13,9 @@ describe("talking-amy-echo", () => {
     expect(result).toEqual({ ok: false, error: "echo_empty_blob" });
   });
 
-  it("exposes chipmunk preset rate for legacy callers", () => {
+  it("exposes chipmunk base preset rate for legacy callers", () => {
     expect(TALKING_AMY_ECHO_RATE).toBe(getTalkingAmyMode("chipmunk").voice.playbackRate);
-    expect(TALKING_AMY_ECHO_RATE).toBeGreaterThan(1.6);
-    expect(TALKING_AMY_ECHO_RATE).toBeLessThanOrEqual(2.0);
+    expect(TALKING_AMY_ECHO_RATE).toBe(1.35);
   });
 
   it("stop clears playing state", () => {

@@ -4,8 +4,9 @@
 
 import {
   TALKING_AMY_DEFAULT_MODE,
-  TALKING_AMY_MODES,
+  TALKING_AMY_REGULAR_MODES,
   type TalkingAmyModeId,
+  type TalkingAmyRegularModeId,
 } from "@/lib/talking-amy-modes";
 
 const FAVORITE_MODE_KEY = "talking_amy_favorite_mode_v1";
@@ -23,8 +24,8 @@ const EMPTY_STATS: TalkingAmyLocalStats = {
   sessionCount: 0,
 };
 
-function isModeId(value: string): value is TalkingAmyModeId {
-  return TALKING_AMY_MODES.some((m) => m.id === value);
+function isModeId(value: string): value is TalkingAmyRegularModeId {
+  return TALKING_AMY_REGULAR_MODES.some((m) => m.id === value);
 }
 
 function readJson<T>(raw: string | null, fallback: T): T {
@@ -36,14 +37,14 @@ function readJson<T>(raw: string | null, fallback: T): T {
   }
 }
 
-export function loadFavoriteTalkingAmyMode(): TalkingAmyModeId | null {
+export function loadFavoriteTalkingAmyMode(): TalkingAmyRegularModeId | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(FAVORITE_MODE_KEY);
   if (!raw || !isModeId(raw)) return null;
   return raw;
 }
 
-export function saveFavoriteTalkingAmyMode(modeId: TalkingAmyModeId): void {
+export function saveFavoriteTalkingAmyMode(modeId: TalkingAmyRegularModeId): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(FAVORITE_MODE_KEY, modeId);
 }
@@ -93,16 +94,17 @@ export function recordTalkingAmyReplay(childId: number): TalkingAmyLocalStats {
   });
 }
 
-export function resolveInitialTalkingAmyMode(): TalkingAmyModeId {
+export function resolveInitialTalkingAmyMode(): TalkingAmyRegularModeId {
   return loadFavoriteTalkingAmyMode() ?? TALKING_AMY_DEFAULT_MODE;
 }
 
-export function pickSurpriseTalkingAmyMode(current?: TalkingAmyModeId): TalkingAmyModeId {
-  const pool = TALKING_AMY_MODES.map((m) => m.id);
+export function pickSurpriseTalkingAmyMode(current?: TalkingAmyRegularModeId): TalkingAmyRegularModeId {
+  const pool = TALKING_AMY_REGULAR_MODES.map((m) => m.id) as TalkingAmyRegularModeId[];
   if (pool.length <= 1) return pool[0] ?? TALKING_AMY_DEFAULT_MODE;
   const others = current ? pool.filter((id) => id !== current) : pool;
   const pickFrom = others.length > 0 ? others : pool;
-  return pickFrom[Math.floor(Math.random() * pickFrom.length)] ?? TALKING_AMY_DEFAULT_MODE;
+  return (pickFrom[Math.floor(Math.random() * pickFrom.length)] ??
+    TALKING_AMY_DEFAULT_MODE) as TalkingAmyRegularModeId;
 }
 
 export function randomCelebrateDurationMs(): number {

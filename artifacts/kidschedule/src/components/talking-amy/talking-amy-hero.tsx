@@ -65,11 +65,15 @@ export function TalkingAmyHero({
   mode,
   audioLevelRef,
   reducedMotion,
+  featured = false,
+  secretActive = false,
 }: {
   phase: TalkingAmyPhase;
   mode: TalkingAmyMode;
   audioLevelRef: RefObject<number>;
   reducedMotion: boolean;
+  featured?: boolean;
+  secretActive?: boolean;
 }) {
   const avatar = useHeroSize();
   const glass = Math.round(avatar * 1.16);
@@ -104,7 +108,11 @@ export function TalkingAmyHero({
     (speaking || celebrating) &&
     (theme.fastBounce || theme.gentleBounce || theme.giantBounce);
 
+  const shouldHop =
+    !reducedMotion && theme.hopAnimation && (speaking || celebrating || listening);
+
   const bounceScale = theme.giantBounce ? 1.12 : theme.fastBounce ? 1.08 : 1.04;
+  const particleActive = speaking || celebrating || listening;
   const particleCount = listening
     ? micVisual.particleCount
     : micLevelToParticleCount(0.6, 6, reducedMotion);
@@ -120,20 +128,24 @@ export function TalkingAmyHero({
       animate={
         reducedMotion
           ? { y: 0, rotate: 0 }
-          : theme.floatMotion && (speaking || listening || thinking)
-            ? { y: [0, -6, 0] }
-            : listening
-              ? { rotate: [-2, 2, -2] }
-              : { y: 0, rotate: 0 }
+          : shouldHop
+            ? { y: [0, -14, 0, -8, 0] }
+            : theme.floatMotion && (speaking || listening || thinking)
+              ? { y: [0, -6, 0] }
+              : listening
+                ? { rotate: [-2, 2, -2] }
+                : { y: 0, rotate: 0 }
       }
       transition={
         reducedMotion
           ? { duration: 0.2 }
-          : theme.floatMotion
-            ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-            : listening
-              ? { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
-              : { duration: 0.3 }
+          : shouldHop
+            ? { duration: 0.9, repeat: Infinity, ease: "easeOut" }
+            : theme.floatMotion
+              ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+              : listening
+                ? { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
+                : { duration: 0.3 }
       }
     >
       <div
@@ -145,7 +157,7 @@ export function TalkingAmyHero({
           transform: listening ? `scale(${haloScale})` : undefined,
         }}
       />
-      {(listening || speaking || celebrating || theme.brightPurplePulse) && (
+      {(listening || speaking || celebrating || theme.brightPurplePulse || theme.rainbowGlow || featured || secretActive) && (
         <div
           className={["absolute rounded-full border-2 transition-transform duration-100", ringClass].join(" ")}
           style={{
@@ -158,11 +170,15 @@ export function TalkingAmyHero({
       )}
       <motion.div
         className={[
-          "relative grid place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-300",
+          "relative grid place-items-center rounded-full border shadow-2xl backdrop-blur-xl transition-all duration-300",
+          theme.transparentEffect ? "bg-white/5" : "bg-white/10",
+          theme.rainbowGlow ? "border-pink-300/40" : "",
+          featured ? "ring-2 ring-amber-200/50" : "",
+          secretActive ? "ring-2 ring-fuchsia-300/60" : "",
           listening ? "scale-110" : "",
           ringClass,
         ].join(" ")}
-        style={{ width: glass, height: glass }}
+        style={{ width: glass, height: glass, opacity: theme.transparentEffect ? 0.88 : 1 }}
         animate={
           reducedMotion
             ? { scale: speaking ? 1.03 : 1 }
@@ -178,18 +194,66 @@ export function TalkingAmyHero({
       >
         <ReactiveParticles
           glyphs={["✦", "·", "✧", "·", "✦", "·"]}
-          active={theme.cosmicParticles && (speaking || celebrating || listening)}
+          active={theme.cosmicParticles && particleActive}
           count={particleCount}
           className="absolute text-xs text-emerald-200/70"
           reducedMotion={reducedMotion}
         />
         <ReactiveParticles
           glyphs={["💜", "🦖", "✦", "💜", "·", "🦖"]}
-          active={theme.monsterParticles && (speaking || celebrating || listening)}
+          active={theme.monsterParticles && particleActive}
           count={particleCount}
           className="absolute text-sm text-purple-200/80"
           reducedMotion={reducedMotion}
         />
+        <ReactiveParticles
+          glyphs={["👻", "·", "○", "·", "👻", "·"]}
+          active={theme.ghostParticles && particleActive}
+          count={particleCount}
+          className="absolute text-sm text-white/75"
+          reducedMotion={reducedMotion}
+        />
+        <ReactiveParticles
+          glyphs={["🚀", "⭐", "·", "🪐", "⭐", "·"]}
+          active={theme.spaceParticles && particleActive}
+          count={particleCount}
+          className="absolute text-xs text-indigo-200/80"
+          reducedMotion={reducedMotion}
+        />
+        <ReactiveParticles
+          glyphs={["✨", "🌟", "·", "✨", "💫", "·"]}
+          active={theme.magicParticles && particleActive}
+          count={particleCount}
+          className="absolute text-sm text-pink-200/85"
+          reducedMotion={reducedMotion}
+        />
+        <ReactiveParticles
+          glyphs={["🐸", "🍃", "·", "🐸", "💧", "·"]}
+          active={theme.frogParticles && particleActive}
+          count={particleCount}
+          className="absolute text-sm text-emerald-200/85"
+          reducedMotion={reducedMotion}
+        />
+        {!reducedMotion && theme.orbitingStars && particleActive
+          ? ["⭐", "✦", "·"].map((glyph, i) => (
+              <motion.span
+                key={`orbit-${glyph}-${i}`}
+                className="pointer-events-none absolute left-1/2 top-1/2 text-xs text-sky-200/80"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4 + i, repeat: Infinity, ease: "linear" }}
+                style={{ transformOrigin: `${36 + i * 8}px 0` }}
+              >
+                {glyph}
+              </motion.span>
+            ))
+          : null}
+        {!reducedMotion && (theme.featuredGlow || featured) ? (
+          <motion.div
+            className="pointer-events-none absolute inset-2 rounded-full border border-amber-200/40"
+            animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.85, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ) : null}
         {!reducedMotion && theme.digitalPulse && (speaking || thinking) ? (
           <motion.div
             className="pointer-events-none absolute inset-6 rounded-full border border-cyan-300/30"
