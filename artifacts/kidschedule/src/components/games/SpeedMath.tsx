@@ -7,10 +7,27 @@ import {
   type GameDifficulty,
 } from "@/lib/game-difficulty";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
+import {
+  GAME_SESSION_ROUNDS,
+  sessionMathConfig,
+} from "@/lib/game-session-progression";
 
-interface Round { question: string; correct: number; choices: number[] }
+interface Round {
+  question: string;
+  correct: number;
+  choices: number[];
+  perQSeconds: number;
+}
 
-function buildRound(cfg: (typeof SPEED_MATH_CONFIG)["normal"]): Round {
+function buildRound(roundIndex: number, difficulty: GameDifficulty): Round {
+  const base = sessionMathConfig(roundIndex, GAME_SESSION_ROUNDS);
+  const bonus = SPEED_MATH_CONFIG[difficulty];
+  const cfg = {
+    perQSeconds: Math.max(4, base.perQSeconds + bonus.perQSecondsBonus),
+    maxNum: Math.max(5, base.maxNum + bonus.maxNumBonus),
+    allowMultiply: base.allowMultiply,
+    allowDivide: base.allowDivide,
+  };
   const ops: string[] = ["+", "-"];
   if (cfg.allowMultiply) ops.push("×");
   if (cfg.allowDivide) ops.push("÷");
@@ -40,20 +57,19 @@ function buildRound(cfg: (typeof SPEED_MATH_CONFIG)["normal"]): Round {
     if (w !== correct && w >= 0) wrongs.add(w);
   }
   const choices = [correct, ...Array.from(wrongs)].sort(() => Math.random() - 0.5);
-  return { question: `${a} ${op} ${b}`, correct, choices };
+  return { question: `${a} ${op} ${b}`, correct, choices, perQSeconds: cfg.perQSeconds };
 }
 
 export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
-  const cfg = SPEED_MATH_CONFIG[difficulty];
   const rounds = useMemo(
-    () => Array.from({ length: cfg.total }, () => buildRound(cfg)),
-    [cfg],
+    () => Array.from({ length: GAME_SESSION_ROUNDS }, (_, i) => buildRound(i, difficulty)),
+    [difficulty],
   );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
-  const [timeLeft, setTimeLeft] = useState(cfg.perQSeconds);
+  const [timeLeft, setTimeLeft] = useState(rounds[0]?.perQSeconds ?? 10);
   const tickRef = useRef<number | null>(null);
   const resolvedRef = useRef(false);
 
@@ -63,12 +79,26 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
     setIdx(0);
     setScore(0);
     setFeedback(null);
-    setTimeLeft(SPEED_MATH_CONFIG[level].perQSeconds);
     resolvedRef.current = false;
   };
 
+  const advance = (correctPick: boolean) => {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    if (tickRef.current) window.clearInterval(tickRef.current);
+    setFeedback(correctPick ? "correct" : "wrong");
+    void (correctPick ? feedbackCorrect() : feedbackWrong());
+    if (correctPick) setScore((s) => s + 1);
+    setTimeout(() => {
+      setFeedback(null);
+      if (idx + 1 >= GAME_SESSION_ROUNDS) onFinish(correctPick ? score + 1 : score, GAME_SESSION_ROUNDS);
+      else setIdx((n) => n + 1);
+    }, 700);
+  };
+
   useEffect(() => {
-    setTimeLeft(cfg.perQSeconds);
+    const perQ = rounds[idx]?.perQSeconds ?? 10;
+    setTimeLeft(perQ);
     resolvedRef.current = false;
     if (tickRef.current) window.clearInterval(tickRef.current);
     tickRef.current = window.setInterval(() => {
@@ -84,33 +114,19 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
     }, 1000);
     return () => { if (tickRef.current) window.clearInterval(tickRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, cfg.perQSeconds]);
+  }, [idx, rounds]);
 
-  const advance = (correctPick: boolean) => {
-    if (resolvedRef.current) return;
-    resolvedRef.current = true;
-    if (tickRef.current) window.clearInterval(tickRef.current);
-    setFeedback(correctPick ? "correct" : "wrong");
-    void (correctPick ? feedbackCorrect() : feedbackWrong());
-    if (correctPick) setScore((s) => s + 1);
-    setTimeout(() => {
-      setFeedback(null);
-      if (idx + 1 >= cfg.total) onFinish(correctPick ? score + 1 : score, cfg.total);
-      else setIdx((n) => n + 1);
-    }, 700);
-  };
-
-  if (idx >= cfg.total) return null;
+  if (idx >= GAME_SESSION_ROUNDS) return null;
   const r = rounds[idx];
-  const progress = ((idx + (feedback ? 1 : 0)) / cfg.total) * 100;
+  const progress = ((idx + (feedback ? 1 : 0)) / GAME_SESSION_ROUNDS) * 100;
 
   return (
     <GameShell
       round={idx + 1}
-      totalRounds={cfg.total}
+      totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       progress={progress}
-      subtitle={`Question ${idx + 1} of ${cfg.total} · ⏱ ${timeLeft}s`}
+      subtitle={`Question ${idx + 1} of ${GAME_SESSION_ROUNDS} · ⏱ ${timeLeft}s`}
       feedback={feedback}
       feedbackText={feedback === "correct" ? "Nice!" : "Time's up or wrong answer"}
       showDifficulty

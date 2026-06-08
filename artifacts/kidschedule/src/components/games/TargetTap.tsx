@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackTap } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
-
-const DURATION_MS = 30_000;
-const SPAWN_MS = 850;
-const LIFE_MS = 1400;
+import {
+  GAME_SESSION_ROUNDS,
+  sessionTargetTapWave,
+  TARGET_TAP_WAVE_MS,
+} from "@/lib/game-session-progression";
 
 interface Target {
   id: number;
@@ -19,30 +20,53 @@ export function TargetTapGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
+  const [wave, setWave] = useState(0);
   const [targets, setTargets] = useState<Target[]>([]);
   const [score, setScore] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(Math.round(DURATION_MS / 1000));
+  const [waveHits, setWaveHits] = useState(0);
+  const [waveTotal, setWaveTotal] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(Math.round(TARGET_TAP_WAVE_MS / 1000));
   const tickRef = useRef<number | null>(null);
   const spawnRef = useRef<number | null>(null);
   const cleanRef = useRef<number | null>(null);
   const idRef = useRef(0);
   const overRef = useRef(false);
   const scoreRef = useRef(0);
-  const totalRef = useRef(0);
+  const totalTargetsRef = useRef(0);
+  const waveConfig = sessionTargetTapWave(wave, GAME_SESSION_ROUNDS);
+
+  const cleanup = () => {
+    if (tickRef.current) window.clearInterval(tickRef.current);
+    if (spawnRef.current) window.clearInterval(spawnRef.current);
+    if (cleanRef.current) window.clearInterval(cleanRef.current);
+  };
 
   useEffect(() => {
+    cleanup();
+    overRef.current = false;
+    setTargets([]);
+    setWaveHits(0);
+    setWaveTotal(0);
+    setTimeLeft(Math.round(TARGET_TAP_WAVE_MS / 1000));
+
+    const cfg = sessionTargetTapWave(wave, GAME_SESSION_ROUNDS);
     const startTime = Date.now();
+
     tickRef.current = window.setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const left = Math.max(0, Math.round((DURATION_MS - elapsed) / 1000));
+      const left = Math.max(0, Math.round((TARGET_TAP_WAVE_MS - elapsed) / 1000));
       setTimeLeft(left);
-      if (elapsed >= DURATION_MS && !overRef.current) {
+      if (elapsed >= TARGET_TAP_WAVE_MS && !overRef.current) {
         overRef.current = true;
         cleanup();
-        onFinish(scoreRef.current, Math.max(totalRef.current, 1));
+        if (wave + 1 >= GAME_SESSION_ROUNDS) {
+          onFinish(scoreRef.current, Math.max(totalTargetsRef.current, GAME_SESSION_ROUNDS));
+        } else {
+          setWave((w) => w + 1);
+        }
       }
-    }, 250);
+    }, 200);
+
     spawnRef.current = window.setInterval(() => {
       if (overRef.current) return;
       const t: Target = {
@@ -52,44 +76,43 @@ export function TargetTapGame({
         bornAt: Date.now(),
       };
       setTargets((arr) => [...arr, t]);
-      totalRef.current += 1;
-      setTotal(totalRef.current);
-    }, SPAWN_MS);
+      totalTargetsRef.current += 1;
+      setWaveTotal((n) => n + 1);
+    }, cfg.spawnMs);
+
     cleanRef.current = window.setInterval(() => {
       const now = Date.now();
-      setTargets((arr) => arr.filter((t) => now - t.bornAt < LIFE_MS));
-    }, 200);
+      setTargets((arr) => arr.filter((t) => now - t.bornAt < cfg.lifeMs));
+    }, 150);
+
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function cleanup() {
-    if (tickRef.current) window.clearInterval(tickRef.current);
-    if (spawnRef.current) window.clearInterval(spawnRef.current);
-    if (cleanRef.current) window.clearInterval(cleanRef.current);
-  }
+  }, [wave]);
 
   const onTap = (id: number) => {
     setTargets((arr) => {
       if (!arr.some((t) => t.id === id)) return arr;
       scoreRef.current += 1;
       setScore(scoreRef.current);
+      setWaveHits((h) => h + 1);
       void feedbackTap();
       return arr.filter((t) => t.id !== id);
     });
   };
 
-  const totalSeconds = DURATION_MS / 1000;
-  const progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
+  const waveProgress = ((GAME_SESSION_ROUNDS - wave - 1) / GAME_SESSION_ROUNDS) * 100
+    + ((TARGET_TAP_WAVE_MS / 1000 - timeLeft) / (TARGET_TAP_WAVE_MS / 1000)) * (100 / GAME_SESSION_ROUNDS);
 
   return (
     <GameShell
-      subtitle={`Hit ${score} / ${total}`}
+      round={wave + 1}
+      totalRounds={GAME_SESSION_ROUNDS}
       score={score}
-      progress={progress}
-      progressLabel={`⏱ ${timeLeft}s remaining`}
+      subtitle={`Wave hits ${waveHits} · targets ${waveTotal}`}
+      progress={Math.min(100, waveProgress)}
+      progressLabel={`⏱ ${timeLeft}s · wave ${wave + 1}`}
       title="Tap the targets!"
-      footer="Tap each target before it disappears — 30 seconds total."
+      footer="Each wave gets faster — tap before targets vanish!"
     >
       <div
         style={{
@@ -107,7 +130,7 @@ export function TargetTapGame({
       >
         {targets.map((tg) => {
           const age = Date.now() - tg.bornAt;
-          const scale = 1 - Math.min(0.4, (age / LIFE_MS) * 0.4);
+          const scale = 1 - Math.min(0.45, (age / waveConfig.lifeMs) * 0.45);
           return (
             <button
               key={tg.id}

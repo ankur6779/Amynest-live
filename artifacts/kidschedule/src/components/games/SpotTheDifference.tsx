@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackTap, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS } from "@/lib/game-session-progression";
 
 interface SDScene {
   name: string;
@@ -97,14 +98,17 @@ const ALL_SCENES: SDScene[] = [
   },
 ];
 
-const ROUNDS = 3;
-
 export function SpotTheDifferenceGame({
   onFinish,
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const scenes = useMemo(() => [...ALL_SCENES].sort(() => Math.random() - 0.5).slice(0, ROUNDS), []);
+  const scenes = useMemo(() => {
+    const shuffled = [...ALL_SCENES].sort(() => Math.random() - 0.5);
+    const out = [...shuffled];
+    while (out.length < GAME_SESSION_ROUNDS) out.push(shuffled[out.length % shuffled.length]);
+    return out.slice(0, GAME_SESSION_ROUNDS);
+  }, []);
   const [roundIdx, setRoundIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [foundDiffs, setFoundDiffs] = useState<Set<string>>(new Set());
@@ -128,8 +132,8 @@ export function SpotTheDifferenceGame({
         setRoundDone(true);
         void feedbackCorrect();
         setTimeout(() => {
-          if (roundIdx + 1 >= ROUNDS) {
-            onFinish(newScore, ROUNDS);
+          if (roundIdx + 1 >= GAME_SESSION_ROUNDS) {
+            onFinish(newScore, GAME_SESSION_ROUNDS);
           } else {
             setRoundIdx((i) => i + 1);
             setFoundDiffs(new Set());
@@ -218,7 +222,7 @@ export function SpotTheDifferenceGame({
   return (
     <GameShell
       round={roundIdx + 1}
-      totalRounds={ROUNDS}
+      totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       subtitle={`${scene.name} — found ${foundDiffs.size} / ${total}`}
       title="Tap the differences in the right picture"

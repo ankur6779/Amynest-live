@@ -30,21 +30,22 @@ export const MAZE_CONFIG: Record<GameDifficulty, { size: number; maxMoves: numbe
 
 export const SPEED_MATH_CONFIG: Record<
   GameDifficulty,
-  { total: number; perQSeconds: number; maxNum: number; allowMultiply: boolean; allowDivide: boolean }
+  { perQSecondsBonus: number; maxNumBonus: number }
 > = {
-  easy: { total: 5, perQSeconds: 12, maxNum: 10, allowMultiply: false, allowDivide: false },
-  normal: { total: 6, perQSeconds: 8, maxNum: 12, allowMultiply: true, allowDivide: false },
-  hard: { total: 8, perQSeconds: 6, maxNum: 20, allowMultiply: true, allowDivide: true },
+  easy: { perQSecondsBonus: 3, maxNumBonus: -4 },
+  normal: { perQSecondsBonus: 0, maxNumBonus: 0 },
+  hard: { perQSecondsBonus: -2, maxNumBonus: 4 },
 };
 
-export const SEQUENCE_CONFIG: Record<GameDifficulty, { length: number }> = {
-  easy: { length: 4 },
-  normal: { length: 6 },
-  hard: { length: 8 },
+/** Flash speed ms — lower is harder (used by sequence / color memory). */
+export const SEQUENCE_FLASH_MS: Record<GameDifficulty, number> = {
+  easy: 750,
+  normal: 600,
+  hard: 450,
 };
 
-export const COLOR_MEMORY_CONFIG: Record<GameDifficulty, { rounds: number[] }> = {
-  easy: { rounds: [3, 3, 4] },
-  normal: { rounds: [3, 4, 5, 5] },
-  hard: { rounds: [4, 5, 6, 6, 7] },
+export const COLOR_MEMORY_FLASH_MS: Record<GameDifficulty, number> = {
+  easy: 800,
+  normal: 650,
+  hard: 500,
 };

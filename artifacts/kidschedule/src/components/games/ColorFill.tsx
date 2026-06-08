@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackTap } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS } from "@/lib/game-session-progression";
 
 const PALETTE = [
   { id: 0, color: "hsl(var(--brand-red-500))", label: "Red" },
@@ -65,10 +66,15 @@ const PICTURES = [
   },
 ];
 
-const TOTAL = 4;
-
 export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
-  const picOrder = useMemo(() => [...PICTURES].sort(() => Math.random() - 0.5).slice(0, TOTAL), []);
+  const picOrder = useMemo(() => {
+    const shuffled = [...PICTURES].sort(() => Math.random() - 0.5);
+    const out = [...shuffled];
+    while (out.length < GAME_SESSION_ROUNDS) {
+      out.push(shuffled[out.length % shuffled.length]);
+    }
+    return out.slice(0, GAME_SESSION_ROUNDS);
+  }, []);
 
   const [roundIdx, setRoundIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -108,8 +114,8 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
     setFeedback("correct");
     void feedbackCorrect();
     setTimeout(() => {
-      if (roundIdx + 1 >= TOTAL) {
-        onFinish(newScore, TOTAL);
+      if (roundIdx + 1 >= GAME_SESSION_ROUNDS) {
+        onFinish(newScore, GAME_SESSION_ROUNDS);
       } else {
         setRoundIdx((i) => i + 1);
         setFilled(new Map());
@@ -133,7 +139,7 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
   return (
     <GameShell
       round={roundIdx + 1}
-      totalRounds={TOTAL}
+      totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       feedback={feedback}
       feedbackText={feedback === "correct" ? "Perfect colours! 🎨" : undefined}

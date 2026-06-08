@@ -2,25 +2,31 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS, sessionDotCount } from "@/lib/game-session-progression";
 
 interface Round {
   count: number;
   choices: number[];
 }
 
-function buildRound(): Round {
-  const count = Math.floor(Math.random() * 9) + 2;
+function buildRound(roundIndex: number): Round {
+  const count = sessionDotCount(roundIndex, GAME_SESSION_ROUNDS);
+  const spread = Math.max(2, Math.round(count * 0.35));
   const wrongs = new Set<number>();
   while (wrongs.size < 3) {
-    const w = Math.max(1, Math.min(12, count + (Math.floor(Math.random() * 5) - 2 || 1)));
+    const delta = Math.floor(Math.random() * spread * 2 + 1) * (Math.random() > 0.5 ? 1 : -1);
+    const w = Math.max(1, Math.min(15, count + delta));
     if (w !== count) wrongs.add(w);
   }
   return { count, choices: [count, ...Array.from(wrongs)].sort(() => Math.random() - 0.5) };
 }
 
 export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
-  const TOTAL = 6;
-  const rounds = useMemo(() => Array.from({ length: TOTAL }, buildRound), []);
+  const TOTAL = GAME_SESSION_ROUNDS;
+  const rounds = useMemo(
+    () => Array.from({ length: TOTAL }, (_, i) => buildRound(i)),
+    [],
+  );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);

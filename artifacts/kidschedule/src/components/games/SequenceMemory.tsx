@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import {
   getGameDifficulty,
   setGameDifficulty,
-  SEQUENCE_CONFIG,
+  SEQUENCE_FLASH_MS,
   type GameDifficulty,
 } from "@/lib/game-difficulty";
 import { feedbackCorrect, feedbackWrong, feedbackTap } from "@/lib/game-feedback";
+import {
+  GAME_SESSION_ROUNDS,
+  sessionSequenceLengths,
+} from "@/lib/game-session-progression";
 
 const COLORS = [
   { id: "red", bg: "hsl(var(--brand-red-500))", glow: "hsl(var(--brand-red-300))" },
@@ -15,75 +19,95 @@ const COLORS = [
   { id: "yellow", bg: "hsl(var(--brand-yellow-500))", glow: "hsl(var(--brand-amber-200))" },
 ];
 
+function buildSequence(len: number): string[] {
+  return Array.from({ length: len }, () => COLORS[Math.floor(Math.random() * COLORS.length)].id);
+}
+
 export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
-  const targetLen = SEQUENCE_CONFIG[difficulty].length;
-  const [sequence, setSequence] = useState<string[]>([]);
-  const [showingIdx, setShowingIdx] = useState<number | null>(null);
-  const [phase, setPhase] = useState<"showing" | "input" | "done">("showing");
-  const [inputIdx, setInputIdx] = useState(0);
-  const [over, setOver] = useState(false);
-  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const lengths = useMemo(() => sessionSequenceLengths(GAME_SESSION_ROUNDS), []);
+  const sequences = useMemo(() => lengths.map(buildSequence), [lengths]);
+  const flashMs = SEQUENCE_FLASH_MS[difficulty];
 
-  const rebuild = (level: GameDifficulty) => {
-    const len = SEQUENCE_CONFIG[level].length;
-    const seq = Array.from({ length: len }, () => COLORS[Math.floor(Math.random() * 4)].id);
+  const [round, setRound] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showingIdx, setShowingIdx] = useState<number | null>(null);
+  const [phase, setPhase] = useState<"showing" | "input" | "feedback">("showing");
+  const [inputIdx, setInputIdx] = useState(0);
+  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const timerRef = useRef<number | null>(null);
+
+  const resetDifficulty = (level: GameDifficulty) => {
     setGameDifficulty(level);
     setDifficulty(level);
-    setSequence(seq);
-    setShowingIdx(null);
+    setRound(0);
+    setScore(0);
     setPhase("showing");
+    setShowingIdx(null);
     setInputIdx(0);
-    setOver(false);
     setFeedback(null);
   };
 
-  useEffect(() => {
-    rebuild(difficulty);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const sequence = sequences[round] ?? [];
 
   useEffect(() => {
     if (phase !== "showing" || sequence.length === 0) return;
     let i = 0;
-    const tick = () => {
+    setShowingIdx(0);
+    timerRef.current = window.setInterval(() => {
+      i += 1;
       if (i >= sequence.length) {
-        setShowingIdx(null);
-        setPhase("input");
-        return;
-      }
-      setShowingIdx(i);
-      setTimeout(() => {
+        if (timerRef.current) window.clearInterval(timerRef.current);
         setShowingIdx(null);
         setTimeout(() => {
-          i++;
-          tick();
-        }, 200);
-      }, 600);
-    };
-    const start = setTimeout(tick, 600);
-    return () => clearTimeout(start);
-  }, [phase, sequence]);
+          setPhase("input");
+          setInputIdx(0);
+        }, 250);
+      } else {
+        setShowingIdx(i);
+      }
+    }, flashMs);
+    return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
+  }, [round, phase, sequence.length, flashMs]);
+
+  if (round >= GAME_SESSION_ROUNDS) return null;
 
   const tap = (id: string) => {
-    if (phase !== "input" || over) return;
+    if (phase !== "input") return;
     void feedbackTap();
     if (id === sequence[inputIdx]) {
       const next = inputIdx + 1;
       if (next >= sequence.length) {
-        setPhase("done");
+        setPhase("feedback");
         setFeedback("correct");
         void feedbackCorrect();
-        setTimeout(() => onFinish(sequence.length, sequence.length), 400);
+        const newScore = score + 1;
+        setScore(newScore);
+        setTimeout(() => {
+          if (round + 1 >= GAME_SESSION_ROUNDS) onFinish(newScore, GAME_SESSION_ROUNDS);
+          else {
+            setRound((r) => r + 1);
+            setPhase("showing");
+            setFeedback(null);
+            setInputIdx(0);
+          }
+        }, 700);
       } else {
         setInputIdx(next);
       }
     } else {
-      setOver(true);
-      setPhase("done");
+      setPhase("feedback");
       setFeedback("wrong");
       void feedbackWrong();
-      setTimeout(() => onFinish(inputIdx, sequence.length), 600);
+      setTimeout(() => {
+        if (round + 1 >= GAME_SESSION_ROUNDS) onFinish(score, GAME_SESSION_ROUNDS);
+        else {
+          setRound((r) => r + 1);
+          setPhase("showing");
+          setFeedback(null);
+          setInputIdx(0);
+        }
+      }, 700);
     }
   };
 
@@ -91,19 +115,21 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
     phase === "showing"
       ? "Watch carefully…"
       : phase === "input"
-      ? `Repeat: ${inputIdx} / ${sequence.length}`
-      : over
-      ? "Game over"
-      : "Done!";
+        ? `Repeat: ${inputIdx} / ${sequence.length}`
+        : feedback === "correct"
+          ? "Great memory!"
+          : "Almost — next round!";
 
   return (
     <GameShell
+      round={round + 1}
+      totalRounds={GAME_SESSION_ROUNDS}
+      score={score}
       subtitle={phaseLabel}
-      progress={phase === "input" ? (inputIdx / sequence.length) * 100 : phase === "done" ? 100 : 10}
       feedback={feedback}
       showDifficulty
       difficulty={difficulty}
-      onDifficultyChange={rebuild}
+      onDifficultyChange={resetDifficulty}
       title="Remember and repeat the colour sequence"
     >
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, maxWidth: 240, margin: "0 auto" }}>

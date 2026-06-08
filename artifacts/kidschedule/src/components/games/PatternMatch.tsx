@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import {
+  GAME_SESSION_ROUNDS,
+  sessionChoiceCount,
+  sessionPatternLength,
+  sessionProgress,
+} from "@/lib/game-session-progression";
 
 const SHAPES = ["🟥", "🟦", "🟩", "🟨", "⬛", "🟪", "🟧"];
 
@@ -9,25 +15,35 @@ function buildPattern(rounds: number): {
   sequence: string[];
   missing: number;
   choices: string[];
+  correct: string;
 }[] {
   const out: {
     sequence: string[];
     missing: number;
     choices: string[];
+    correct: string;
   }[] = [];
   for (let r = 0; r < rounds; r++) {
+    const progress = sessionProgress(r, rounds);
     const a = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     const b = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     let c = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     while (c === a || c === b) c = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-    const useABC = Math.random() > 0.5;
-    const seq = useABC ? [a, b, c, a, b, c, a, b, c] : [a, b, a, b, a, b, a, b];
-    const missing = seq.length - 1;
-    const correct = seq[missing];
-    seq[missing] = "?";
-    const distractors = SHAPES.filter((s) => s !== correct).sort(() => Math.random() - 0.5).slice(0, 3);
+    const useABC = progress > 0.25 || Math.random() > 0.45;
+    const unit = useABC ? [a, b, c] : [a, b];
+    const targetLen = sessionPatternLength(r, rounds);
+    const seq: string[] = [];
+    while (seq.length < targetLen) seq.push(...unit);
+    const trimmed = seq.slice(0, targetLen);
+    const missing = trimmed.length - 1;
+    const correct = trimmed[missing];
+    trimmed[missing] = "?";
+    const choiceN = sessionChoiceCount(r, 4, 6, rounds);
+    const distractors = SHAPES.filter((s) => s !== correct)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, choiceN - 1);
     const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
-    out.push({ sequence: seq, missing, choices });
+    out.push({ sequence: trimmed, missing, choices, correct });
   }
   return out;
 }
@@ -37,7 +53,7 @@ export function PatternMatchGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const rounds = useMemo(() => buildPattern(5), []);
+  const rounds = useMemo(() => buildPattern(GAME_SESSION_ROUNDS), []);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
@@ -54,18 +70,10 @@ export function PatternMatchGame({
   if (idx >= rounds.length) return null;
 
   const round = rounds[idx];
-  const correctValue = (() => {
-    const seq = round.sequence;
-    const beforeBefore = seq[round.missing - 2];
-    return round.choices.find((c) => {
-      if (seq.length === 8) return c === beforeBefore;
-      return c === seq[round.missing - 3];
-    })!;
-  })();
 
   const onPick = (choice: string) => {
     if (feedback) return;
-    const ok = choice === correctValue;
+    const ok = choice === round.correct;
     if (ok) {
       setFeedback("correct");
       setFeedbackText("Correct! ✨");
@@ -73,7 +81,7 @@ export function PatternMatchGame({
       void feedbackCorrect();
     } else {
       setFeedback("wrong");
-      setFeedbackText(`Almost — the answer was ${correctValue}`);
+      setFeedbackText(`Almost — the answer was ${round.correct}`);
       void feedbackWrong();
     }
     setTimeout(() => {
@@ -144,12 +152,12 @@ export function PatternMatchGame({
               padding: "12px 0",
               borderRadius: 12,
               background:
-                feedback && c === correctValue
+                feedback && c === round.correct
                   ? gameTheme.successBg
                   : "rgba(255,255,255,0.08)",
               border:
                 "1px solid " +
-                (feedback && c === correctValue
+                (feedback && c === round.correct
                   ? "rgba(34,197,94,0.6)"
                   : gameTheme.glassBorder),
               cursor: feedback ? "default" : "pointer",

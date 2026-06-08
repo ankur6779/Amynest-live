@@ -3,10 +3,14 @@ import { GameShell } from "@/components/games/GameShell";
 import {
   getGameDifficulty,
   setGameDifficulty,
-  COLOR_MEMORY_CONFIG,
+  COLOR_MEMORY_FLASH_MS,
   type GameDifficulty,
 } from "@/lib/game-difficulty";
 import { feedbackCorrect, feedbackWrong, feedbackTap } from "@/lib/game-feedback";
+import {
+  GAME_SESSION_ROUNDS,
+  sessionSequenceLengths,
+} from "@/lib/game-session-progression";
 
 const COLORS = [
   { id: "r", name: "Red", bg: "hsl(var(--brand-red-500))" },
@@ -23,8 +27,10 @@ function buildSequence(len: number): string[] {
 
 export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
-  const roundLens = COLOR_MEMORY_CONFIG[difficulty].rounds;
+  const roundLens = useMemo(() => sessionSequenceLengths(GAME_SESSION_ROUNDS), []);
   const sequences = useMemo(() => roundLens.map(buildSequence), [roundLens]);
+  const flashMs = COLOR_MEMORY_FLASH_MS[difficulty];
+
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<"show" | "input" | "feedback">("show");
   const [showIdx, setShowIdx] = useState(0);
@@ -56,13 +62,13 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       i += 1;
       if (i >= seq.length) {
         if (timerRef.current) window.clearInterval(timerRef.current);
-        setTimeout(() => { setPhase("input"); setInput([]); }, 400);
+        setTimeout(() => { setPhase("input"); setInput([]); }, 350);
       } else {
         setShowIdx(i);
       }
-    }, 700);
+    }, flashMs);
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [round, phase, seq.length]);
+  }, [round, phase, seq.length, flashMs]);
 
   if (round >= sequences.length) return null;
 
@@ -77,9 +83,10 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       setPhase("feedback");
       setFeedback(ok ? "correct" : "wrong");
       void (ok ? feedbackCorrect() : feedbackWrong());
-      if (ok) setScore((s) => s + 1);
+      const newScore = ok ? score + 1 : score;
+      if (ok) setScore(newScore);
       setTimeout(() => {
-        if (round + 1 >= sequences.length) onFinish(ok ? score + 1 : score, sequences.length);
+        if (round + 1 >= sequences.length) onFinish(newScore, sequences.length);
         else { setRound((r) => r + 1); setPhase("show"); setFeedback(null); }
       }, 1100);
     }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong, feedbackTap } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS, sessionShapeCount } from "@/lib/game-session-progression";
 
 interface ShapeDef {
   id: string;
@@ -20,13 +21,10 @@ const ALL_SHAPES: ShapeDef[] = [
   { id: "hexagon", emoji: "⬡", label: "Hexagon" },
 ];
 
-const ROUNDS = 5;
-const PER_ROUND = 4;
-
 function buildRounds() {
-  return Array.from({ length: ROUNDS }, () => {
-    const shuffled = [...ALL_SHAPES].sort(() => Math.random() - 0.5).slice(0, PER_ROUND);
-    return shuffled;
+  return Array.from({ length: GAME_SESSION_ROUNDS }, (_, roundIdx) => {
+    const count = sessionShapeCount(roundIdx, GAME_SESSION_ROUNDS);
+    return [...ALL_SHAPES].sort(() => Math.random() - 0.5).slice(0, count);
   });
 }
 
@@ -61,8 +59,8 @@ export function ShapeMatchingGame({ onFinish }: { onFinish: (score: number, tota
         const newScore = score + 1;
         setScore(newScore);
         setTimeout(() => {
-          if (roundIdx + 1 >= ROUNDS) {
-            onFinish(newScore, ROUNDS);
+          if (roundIdx + 1 >= GAME_SESSION_ROUNDS) {
+            onFinish(newScore, GAME_SESSION_ROUNDS);
           } else {
             setRoundIdx((i) => i + 1);
             setSelected(null);
@@ -89,7 +87,7 @@ export function ShapeMatchingGame({ onFinish }: { onFinish: (score: number, tota
   return (
     <GameShell
       round={roundIdx + 1}
-      totalRounds={ROUNDS}
+      totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       feedback={feedback}
       feedbackText={feedback === "wrong" ? "Not quite — try again!" : undefined}

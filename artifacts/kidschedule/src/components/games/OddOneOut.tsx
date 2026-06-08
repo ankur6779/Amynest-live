@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS, sessionOddOneOutItems } from "@/lib/game-session-progression";
 
 const GROUPS: {
   items: string[];
@@ -19,12 +20,21 @@ const GROUPS: {
   ],
 ];
 
+const EXTRA_ODDS = ["🎸", "🎻", "🎺", "🥁", "🎷", "🪕", "🎤", "📻"];
+
 function pickRounds(n: number) {
   const pool = [...GROUPS[0]].sort(() => Math.random() - 0.5);
-  return pool.slice(0, n).map((g) => ({
-    ...g,
-    items: [...g.items].sort(() => Math.random() - 0.5),
-  }));
+  return pool.slice(0, n).map((g, roundIdx) => {
+    const count = sessionOddOneOutItems(roundIdx, n);
+    const base = [...g.items].sort(() => Math.random() - 0.5);
+    const items = base.slice(0, Math.min(count, base.length));
+    while (items.length < count) {
+      const extra = EXTRA_ODDS.find((e) => e !== g.odd && !items.includes(e))
+        ?? EXTRA_ODDS[items.length % EXTRA_ODDS.length];
+      if (!items.includes(extra)) items.push(extra);
+    }
+    return { ...g, items: items.sort(() => Math.random() - 0.5) };
+  });
 }
 
 export function OddOneOutGame({
@@ -32,7 +42,7 @@ export function OddOneOutGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const rounds = useMemo(() => pickRounds(5), []);
+  const rounds = useMemo(() => pickRounds(GAME_SESSION_ROUNDS), []);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
@@ -81,9 +91,9 @@ export function OddOneOutGame({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
+          gridTemplateColumns: `repeat(${r.items.length > 4 ? 3 : 2}, 1fr)`,
           gap: 12,
-          maxWidth: 260,
+          maxWidth: r.items.length > 4 ? 300 : 260,
           margin: "0 auto",
         }}
       >

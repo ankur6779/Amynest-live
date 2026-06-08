@@ -10,7 +10,7 @@ export function CardFlipGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const pairs = 6;
+  const pairs = 8;
   const cards = useMemo(() => {
     const set = ICONS.slice(0, pairs);
     return [...set, ...set].sort(() => Math.random() - 0.5);

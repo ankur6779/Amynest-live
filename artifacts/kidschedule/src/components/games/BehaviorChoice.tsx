@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS } from "@/lib/game-session-progression";
 
 interface Scenario {
   emoji: string;
@@ -55,10 +56,40 @@ const SCENARIOS: Scenario[] = [
       { text: "Yell as loud as I can.", correct: false, why: "Yelling makes the angry feeling stay longer." },
     ],
   },
+  {
+    emoji: "🚌",
+    question: "Someone cuts in line at the bus stop. What is the kind thing to do?",
+    options: [
+      { text: "Shove them out of the way.", correct: false, why: "Pushing can hurt someone." },
+      { text: "Use a calm voice and ask them to wait their turn.", correct: true, why: "Calm words keep everyone safe." },
+      { text: "Give up and go home.", correct: false, why: "You can still wait fairly." },
+    ],
+  },
+  {
+    emoji: "🎨",
+    question: "Your friend draws on your picture by accident. What should you do?",
+    options: [
+      { text: "Rip up their drawing too.", correct: false, why: "Payback makes both people upset." },
+      { text: "Tell them how you feel and fix it together.", correct: true, why: "Talking and fixing builds friendship." },
+      { text: "Never speak to them again.", correct: false, why: "Mistakes happen — friends can repair them." },
+    ],
+  },
+  {
+    emoji: "🛏️",
+    question: "Bedtime is soon but you want to keep playing. What is the smart choice?",
+    options: [
+      { text: "Hide and keep playing.", correct: false, why: "Sleep helps your brain grow." },
+      { text: "Finish calmly and start the bedtime routine.", correct: true, why: "Routines help bodies rest and recharge." },
+      { text: "Cry until bedtime is cancelled.", correct: false, why: "A calm wind-down works better." },
+    ],
+  },
 ];
 
 export function BehaviorChoiceGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
-  const rounds = useMemo(() => [...SCENARIOS].sort(() => Math.random() - 0.5).slice(0, 5), []);
+  const rounds = useMemo(
+    () => [...SCENARIOS].sort(() => Math.random() - 0.5).slice(0, GAME_SESSION_ROUNDS),
+    [],
+  );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);

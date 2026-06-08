@@ -2,11 +2,16 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackTap, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS, sessionHiddenTargetCount } from "@/lib/game-session-progression";
 
 interface Scene {
   name: string;
   targets: string[];
   distractors: string[];
+}
+
+interface RoundScene extends Scene {
+  targetCount: number;
 }
 
 const SCENES: Scene[] = [
@@ -35,12 +40,11 @@ const SCENES: Scene[] = [
 const COLS = 4;
 const ROWS = 5;
 const TOTAL_CELLS = COLS * ROWS;
-const ROUNDS = 3;
-
-function buildGrid(scene: Scene): string[] {
-  const neededDistractors = TOTAL_CELLS - scene.targets.length;
+function buildGrid(scene: RoundScene): string[] {
+  const targets = scene.targets.slice(0, scene.targetCount);
+  const neededDistractors = TOTAL_CELLS - targets.length;
   const distractors = scene.distractors.slice(0, neededDistractors);
-  let pool = [...scene.targets, ...distractors];
+  let pool = [...targets, ...distractors];
   while (pool.length < TOTAL_CELLS) {
     pool.push(scene.distractors[pool.length % scene.distractors.length]);
   }
@@ -52,7 +56,14 @@ export function HiddenObjectsGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const sceneOrder = useMemo(() => [...SCENES].sort(() => Math.random() - 0.5).slice(0, ROUNDS), []);
+  const sceneOrder = useMemo(() => {
+    const shuffled = [...SCENES].sort(() => Math.random() - 0.5);
+    return Array.from({ length: GAME_SESSION_ROUNDS }, (_, i) => {
+      const base = shuffled[i % shuffled.length];
+      const targetCount = sessionHiddenTargetCount(i, GAME_SESSION_ROUNDS);
+      return { ...base, targetCount };
+    });
+  }, []);
   const [roundIdx, setRoundIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [found, setFound] = useState<Set<number>>(new Set());
@@ -65,21 +76,22 @@ export function HiddenObjectsGame({
   const tap = (cellIdx: number) => {
     if (found.has(cellIdx) || roundDone) return;
     const emoji = grid[cellIdx];
-    if (scene.targets.includes(emoji)) {
+    const activeTargets = scene.targets.slice(0, scene.targetCount);
+    if (activeTargets.includes(emoji)) {
       void feedbackTap();
       const next = new Set(found).add(cellIdx);
       setFound(next);
       const foundTargetTypes = new Set(
-        [...next].map((idx) => grid[idx]).filter((e) => scene.targets.includes(e)),
+        [...next].map((idx) => grid[idx]).filter((e) => activeTargets.includes(e)),
       );
-      if (foundTargetTypes.size === scene.targets.length) {
+      if (foundTargetTypes.size === activeTargets.length) {
         const newScore = score + 1;
         setScore(newScore);
         setRoundDone(true);
         void feedbackCorrect();
         setTimeout(() => {
-          if (roundIdx + 1 >= ROUNDS) {
-            onFinish(newScore, ROUNDS);
+          if (roundIdx + 1 >= GAME_SESSION_ROUNDS) {
+            onFinish(newScore, GAME_SESSION_ROUNDS);
           } else {
             setRoundIdx((i) => i + 1);
             setFound(new Set());
@@ -96,20 +108,21 @@ export function HiddenObjectsGame({
   };
 
   const foundTargets = new Set(
-    [...found].map((idx) => grid[idx]).filter((e) => scene.targets.includes(e)),
+    [...found].map((idx) => grid[idx]).filter((e) => scene.targets.slice(0, scene.targetCount).includes(e)),
   );
+  const activeTargets = scene.targets.slice(0, scene.targetCount);
 
   return (
     <GameShell
       round={roundIdx + 1}
-      totalRounds={ROUNDS}
+      totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       subtitle={`Scene: ${scene.name}`}
-      title="Find these 5 items"
+      title={`Find these ${activeTargets.length} items`}
       footer={
         <>
           Found <strong style={{ color: gameTheme.accentSoft }}>{foundTargets.size}</strong> /{" "}
-          {scene.targets.length}
+          {activeTargets.length}
         </>
       }
     >
@@ -121,7 +134,7 @@ export function HiddenObjectsGame({
             gap: 6,
           }}
         >
-          {scene.targets.map((t) => (
+          {activeTargets.map((t) => (
             <div
               key={t}
               style={{

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_SESSION_ROUNDS, sessionGridSide } from "@/lib/game-session-progression";
 
 interface Round {
   tiles: string[];
@@ -20,10 +21,12 @@ const SETS: { base: string; mistake: string }[] = [
   { base: "9", mistake: "6" },
 ];
 
-function buildRound(): Round {
+function buildRound(roundIndex: number): Round {
   const s = SETS[Math.floor(Math.random() * SETS.length)];
-  const tiles = Array(9).fill(s.base);
-  const idx = Math.floor(Math.random() * 9);
+  const side = sessionGridSide(roundIndex, GAME_SESSION_ROUNDS);
+  const cells = side * side;
+  const tiles = Array(cells).fill(s.base);
+  const idx = Math.floor(Math.random() * cells);
   tiles[idx] = s.mistake;
   return { tiles, mistakeIdx: idx };
 }
@@ -33,8 +36,11 @@ export function FindMistakeGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const TOTAL = 5;
-  const rounds = useMemo(() => Array.from({ length: TOTAL }, buildRound), []);
+  const TOTAL = GAME_SESSION_ROUNDS;
+  const rounds = useMemo(
+    () => Array.from({ length: TOTAL }, (_, i) => buildRound(i)),
+    [],
+  );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -74,9 +80,9 @@ export function FindMistakeGame({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: `repeat(${Math.round(Math.sqrt(r.tiles.length))}, 1fr)`,
           gap: 8,
-          maxWidth: 260,
+          maxWidth: r.tiles.length > 9 ? 300 : 260,
           margin: "0 auto",
         }}
       >
