@@ -1,0 +1,146 @@
+import { useTranslation } from "react-i18next";
+import { Gift, Target } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
+import { GAMES_GLASS_PANEL, gameTheme } from "@/lib/game-theme";
+import { DAILY_LIMIT_FREE, PERFECT_COMBO_BADGE_AT, STREAK_UNLOCK_DAYS } from "@/lib/games";
+import type { Reward } from "@/lib/rewards";
+
+interface GamesStatusCardProps {
+  playedToday: number;
+  limit: number;
+  limitHit: boolean;
+  dailyPct: number;
+  isPremium: boolean;
+  routineStreak: number;
+  perfectStreak: number;
+  showComboBadge: boolean;
+  nextReward: { reward: Reward; remaining: number } | null;
+}
+
+export function GamesStatusCard({
+  playedToday,
+  limit,
+  limitHit,
+  dailyPct,
+  isPremium,
+  routineStreak,
+  perfectStreak,
+  showComboBadge,
+  nextReward,
+}: GamesStatusCardProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className={cn(GAMES_GLASS_PANEL, "rounded-2xl p-3.5")}>
+      <div className="flex items-center gap-3">
+        <div className="relative h-14 w-14 shrink-0">
+          <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56" aria-hidden>
+            <circle
+              cx="28"
+              cy="28"
+              r="22"
+              className="stroke-white/10"
+              strokeWidth="5"
+              fill="none"
+            />
+            <circle
+              cx="28"
+              cy="28"
+              r="22"
+              className={limitHit ? "stroke-red-400" : "stroke-amber-400"}
+              strokeWidth="5"
+              strokeLinecap="round"
+              fill="none"
+              strokeDasharray={2 * Math.PI * 22}
+              strokeDashoffset={2 * Math.PI * 22 * (1 - dailyPct / 100)}
+              style={{ transition: "stroke-dashoffset 0.35s ease" }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-[9px] font-extrabold text-foreground">
+            <Target className="mb-0.5 h-3.5 w-3.5 text-amber-300" />
+            <span className="tabular-nums">
+              {playedToday}/{limit}
+            </span>
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-300/90">
+            {t("screens.games.daily_plays_title")}
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-foreground">
+            {limitHit
+              ? t("screens.games.daily_plays_done")
+              : t("screens.games.daily_plays_remaining", { count: limit - playedToday })}
+          </p>
+          {nextReward && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Gift className="h-3 w-3 shrink-0 text-amber-300/80" />
+              {t("screens.games.next_reward_nudge", {
+                emoji: nextReward.reward.emoji,
+                label: nextReward.reward.label,
+                count: nextReward.remaining,
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <Accordion type="single" collapsible className="mt-2 border-t border-white/[0.08]">
+        <AccordionItem value="how-it-works" className="border-none">
+          <AccordionTrigger
+            className={cn(
+              "py-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground",
+              "hover:no-underline [&[data-state=open]>svg]:text-amber-300",
+            )}
+          >
+            {t("screens.games.how_it_works")}
+          </AccordionTrigger>
+          <AccordionContent className="space-y-2 pb-1 text-[11.5px] leading-relaxed text-muted-foreground">
+            <p>{t("screens.games.earn_to_unlock")}</p>
+            {!isPremium && (
+              <p>{t("screens.games.free_tier_hint", { limit: DAILY_LIMIT_FREE })}</p>
+            )}
+            <p>
+              {t("screens.games.streak_unlock_hint", {
+                days: STREAK_UNLOCK_DAYS,
+                current: routineStreak,
+              })}
+            </p>
+            {!showComboBadge && perfectStreak > 0 && (
+              <p>
+                {t("screens.games.perfect_combo_progress", {
+                  current: perfectStreak,
+                  remaining: PERFECT_COMBO_BADGE_AT - perfectStreak,
+                })}
+              </p>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <div
+        className="mt-2 h-1.5 overflow-hidden rounded-full"
+        style={{ background: gameTheme.progressTrack }}
+        aria-hidden
+      >
+        <div
+          className="hub-progress-fill h-full rounded-full"
+          style={{
+            width: `${dailyPct}%`,
+            background: limitHit
+              ? "linear-gradient(90deg, hsl(var(--brand-red-500)), hsl(var(--brand-red-300)))"
+              : "linear-gradient(90deg, rgba(255,184,0,0.95), rgba(251,191,36,0.95))",
+            transition: "width 0.35s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}

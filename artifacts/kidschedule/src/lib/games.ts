@@ -60,6 +60,17 @@ export const CATEGORY_EMOJI: Record<GameCategory, string> = {
   creativity: "🎨", behavior: "💛", action: "🎯", puzzle: "🧩",
 };
 
+export const CATEGORY_BLURB: Record<GameCategory, string> = {
+  brain: "Pattern thinking & logic",
+  memory: "Recall & working memory",
+  math: "Numbers & mental math",
+  focus: "Attention & observation",
+  creativity: "Colour, shape & imagination",
+  behavior: "Kind choices & decisions",
+  action: "Reflexes & coordination",
+  puzzle: "Problem-solving puzzles",
+};
+
 const UNLOCKED_KEY  = "amynest_unlocked_games_v1";
 const PLAY_LOG_KEY  = "amynest_game_play_log_v1";
 const SKILLS_KEY    = "amynest_skill_progress_v1";
@@ -392,6 +403,23 @@ export interface WeeklyLeaderboardRow {
   bestScore: number;
   bestTotal: number;
   plays: number;
+}
+
+export interface GamePersonalBest {
+  ratio: number;
+  plays: number;
+  lastPlayedAt: string | null;
+}
+
+export function getGamePersonalBest(gameId: string): GamePersonalBest | null {
+  const log = getLeaderboardLog().filter((e) => e.gameId === gameId);
+  if (log.length === 0) return null;
+  const best = log.reduce((a, b) => (b.ratio > a.ratio ? b : a));
+  return {
+    ratio: Math.round(best.ratio * 100),
+    plays: log.length,
+    lastPlayedAt: log[0]?.date ?? null,
+  };
 }
 
 export function getWeeklyLeaderboard(): WeeklyLeaderboardRow[] {

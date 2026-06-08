@@ -2,16 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppNavigate } from "@/components/app-link";
 import {
-  ArrowLeft, Lock, Gamepad2, Trophy, X, Coins, Gift, Plus, Trash2, Check,
+  Trophy, X, Coins, Gift, Plus, Trash2, Check,
 } from "lucide-react";
 import {
-  GAMES, CATEGORY_LABEL, CATEGORY_EMOJI, unlockGame, recordPlay,
-  gamesPlayedToday, dailyLimit, dailyLimitReached, amySuggestion, getSkillPercent,
-  canPlayGame, isGameUnlockedForPlay, ensureStarterUnlocks, getWeeklyGameSummary,
-  getCachedRoutineStreak, canUnlockGameWithStreak, STREAK_UNLOCK_DAYS,
-  requiresPremiumToPlay, isFreeStarter, DAILY_LIMIT_FREE,
+  GAMES, unlockGame, recordPlay,
+  gamesPlayedToday, dailyLimit, amySuggestion, getSkillPercent,
+  canPlayGame, ensureStarterUnlocks, getWeeklyGameSummary, getCachedRoutineStreak,
+  requiresPremiumToPlay,
   getPerfectStreak, hasPerfectComboBadge, recordPerfectStreak, recordLeaderboardEntry,
-  PERFECT_COMBO_BADGE_AT,
   type GameDef, type GameCategory,
 } from "@/lib/games";
 import { gameTheme } from "@/lib/game-theme";
@@ -25,6 +23,7 @@ import { unlockGamingGame, recordGamingPlay } from "@/lib/gaming-wallet-api";
 import { hapticGameSuccess } from "@/lib/game-haptics";
 import {
   getTotalPoints, addPoints, getRewards, saveRewards, redeemReward, getRedemptions,
+  getNextAffordableReward,
   type Reward,
 } from "@/lib/rewards";
 import { PatternMatchGame } from "@/components/games/PatternMatch";
@@ -43,21 +42,14 @@ import { ColorFillGame } from "@/components/games/ColorFill";
 import { HiddenObjectsGame } from "@/components/games/HiddenObjects";
 import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifference";
 import { AmySuggestionPanel } from "@/components/games/AmySuggestionPanel";
-import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
-import { GamePreviewTile } from "@/components/games/GamePreviewTile";
+import { GameCategorySection } from "@/components/games/GameCategorySection";
+import { GamesInsightsPanel } from "@/components/games/GamesInsightsPanel";
+import { GamesPageHeader } from "@/components/games/GamesPageHeader";
+import { GamesStatusCard } from "@/components/games/GamesStatusCard";
+import { ConfettiBurst } from "@/components/study-engagement";
+import { AnimatedPoints } from "@/components/games/AnimatedPoints";
 import { cn } from "@/lib/utils";
 import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
-
-const CATEGORY_ACCENT: Record<GameCategory, string> = {
-  brain: "rgba(167,139,250,0.45)",
-  memory: "rgba(96,165,250,0.45)",
-  math: "rgba(251,191,36,0.45)",
-  focus: "rgba(52,211,153,0.45)",
-  creativity: "rgba(244,114,182,0.45)",
-  behavior: "rgba(74,222,128,0.45)",
-  action: "rgba(251,146,60,0.45)",
-  puzzle: "rgba(129,140,248,0.45)",
-};
 
 type ActiveGame =
   | { kind: "play"; game: GameDef }
@@ -77,7 +69,6 @@ export default function GamesPage() {
   const [active, setActive] = useState<ActiveGame>(null);
   const [showRedeem, setShowRedeem] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredGame, setHoveredGame] = useState<string | null>(null);
 
   useEffect(() => {
     ensureStarterUnlocks();
@@ -107,6 +98,7 @@ export default function GamesPage() {
   const suggestion = useMemo(() => amySuggestion(isPremium), [unlockedTick, active, isPremium]);
   const weekly = useMemo(() => getWeeklyGameSummary(), [unlockedTick, active]);
   const routineStreak = serverWallet?.routineStreakDays ?? getCachedRoutineStreak();
+  const nextReward = useMemo(() => getNextAffordableReward(points), [points, unlockedTick, showRedeem]);
   const suggestedGame = suggestion.gameId
     ? GAMES.find((g) => g.id === suggestion.gameId)
     : undefined;
@@ -215,341 +207,80 @@ export default function GamesPage() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-2px); }
         }
+        .games-card-float {
+          animation: gamesCardFloat 1.6s ease-in-out infinite;
+        }
       `}</style>
-      {/* Top bar */}
-      <div style={{
-        position: "sticky", top: 0, zIndex: 20,
-        padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: gameTheme.glass,
-        backdropFilter: "blur(18px)",
-        borderBottom: `1px solid ${gameTheme.glassBorder}`,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={() => back("games-exit")}
-            style={{ color: gameTheme.textSoft, background: "rgba(122,92,255,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(122,92,255,0.25)", cursor: "pointer" }}
-            aria-label={t("screens.games.back")}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Gamepad2 size={20} color={gameTheme.textSoft} />
-            <h1 style={{ fontFamily: "Quicksand, sans-serif", fontSize: 18, fontWeight: 800, margin: 0 }}>{t("screens.games.title")}</h1>
-          </div>
+      <GamesPageHeader
+        points={points}
+        showComboBadge={showComboBadge}
+        perfectStreak={perfectStreak}
+        isPremium={isPremium}
+        onBack={() => back("games-exit")}
+        onRedeem={() => setShowRedeem(true)}
+        onRewardsShop={() => goTo("/rewards")}
+        onUpgrade={() => goTo("/pricing")}
+        onDevGrant={import.meta.env.DEV ? devGrantPoints : undefined}
+      />
+
+      <div className="hub-today-stack">
+        <div className="hub-page-enter mx-auto max-w-[720px] space-y-3 px-4 pb-1 pt-4">
+          <GamesStatusCard
+            playedToday={playedToday}
+            limit={limit}
+            limitHit={limitHit}
+            dailyPct={dailyPct}
+            isPremium={isPremium}
+            routineStreak={routineStreak}
+            perfectStreak={perfectStreak}
+            showComboBadge={showComboBadge}
+            nextReward={nextReward}
+          />
+          <AmySuggestionPanel
+            line={suggestion.line}
+            suggestedGame={suggestedGame}
+            canPlay={!!(suggestedGame && canPlayGame(suggestedGame, isPremium) && !limitHit)}
+            onPlay={onPlaySuggested}
+          />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {import.meta.env.DEV && (
-            <button
-              onClick={devGrantPoints}
-              title={t("screens.games.dev_grant_title")}
-              style={{
-                color: "#fff", background: "rgba(16,185,129,0.25)", border: "1px solid rgba(16,185,129,0.5)",
-                padding: "5px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 4,
-              }}
-            >
-              <Plus size={11} /> {t("screens.games.dev_grant_label")} <span style={{ opacity: 0.7, fontWeight: 400 }}>{t("screens.games.dev_label")}</span>
-            </button>
-          )}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            background: gameTheme.ctaGradient,
-            padding: "6px 12px", borderRadius: 999, color: "#fff", fontWeight: 800, fontSize: 13,
-            boxShadow: gameTheme.playShadow,
-          }}>
-            <Coins size={14} /> {points}
-          </div>
-          {showComboBadge && (
+        <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-3">
+          <GamesInsightsPanel skills={skills} isPremium={isPremium} weekly={weekly} />
+        </div>
+
+        {error && (
+          <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-3">
             <div
-              title={`${perfectStreak} perfect scores in a row`}
-              style={{
-                display: "flex", alignItems: "center", gap: 4,
-                background: "linear-gradient(135deg, hsl(var(--brand-green-500)), hsl(var(--brand-green-400)))",
-                padding: "6px 10px", borderRadius: 999, color: "#fff", fontWeight: 800, fontSize: 11,
-                boxShadow: "0 4px 12px rgba(34,197,94,0.35)",
-              }}
+              className="flex items-center justify-between gap-3 rounded-xl border border-red-500/40 bg-red-500/15 px-3.5 py-2.5 text-sm text-red-200"
+              role="alert"
             >
-              🔥 {perfectStreak}× Perfect
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="shrink-0 border-none bg-transparent text-red-200"
+                aria-label={t("screens.games.close")}
+              >
+                <X size={14} />
+              </button>
             </div>
-          )}
-          <button
-            onClick={() => setShowRedeem(true)}
-            style={{ color: "#fff", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-          ><Gift size={13} /> {t("screens.games.redeem_button")}</button>
-          <button
-            onClick={() => goTo("/rewards")}
-            style={{ color: "rgba(251,191,36,0.95)", background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.35)", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
-          >{t("screens.games.rewards_shop_link")}</button>
-          {!isPremium && (
-            <button
-              onClick={() => goTo("/pricing")}
-              style={{ color: "#fff", background: gameTheme.violetGradient, border: "none", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: gameTheme.violetShadow }}
-            >{t("screens.games.upgrade_premium")}</button>
-          )}
-        </div>
-      </div>
-
-      {/* Daily limit + Amy suggestion */}
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 16px 4px" }}>
-        <AmySuggestionPanel
-          line={suggestion.line}
-          suggestedGame={suggestedGame}
-          canPlay={!!(suggestedGame && canPlayGame(suggestedGame, isPremium) && !limitHit)}
-          onPlay={onPlaySuggested}
-        />
-        {!showComboBadge && perfectStreak > 0 && (
-          <p style={{ marginTop: 8, fontSize: 11.5, color: gameTheme.textMuted, lineHeight: 1.4 }}>
-            {perfectStreak} perfect in a row — {PERFECT_COMBO_BADGE_AT - perfectStreak} more for a combo badge!
-          </p>
+          </div>
         )}
-        {!isPremium && (
-          <p style={{ marginTop: 8, fontSize: 11.5, color: gameTheme.textMuted, lineHeight: 1.4 }}>
-            {t("screens.games.free_tier_hint", { limit: DAILY_LIMIT_FREE })}
-          </p>
-        )}
-        <p style={{ marginTop: 6, fontSize: 11.5, color: gameTheme.textMuted, lineHeight: 1.4 }}>
-          {t("screens.games.streak_unlock_hint", { days: STREAK_UNLOCK_DAYS, current: routineStreak })}
-        </p>
-        <div style={{
-          marginTop: 10,
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          fontSize: 12, color: gameTheme.textMuted,
-        }}>
-          <span>{t("screens.games.played_today_label")} <strong style={{ color: limitHit ? gameTheme.error : gameTheme.text }}>{playedToday} / {limit}</strong></span>
-          <span>{t("screens.games.earn_to_unlock")}</span>
-        </div>
-        <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: gameTheme.progressTrack, overflow: "hidden" }}>
-          <div style={{
-            width: `${dailyPct}%`, height: "100%",
-            background: limitHit
-              ? "linear-gradient(90deg, hsl(var(--brand-red-500)), hsl(var(--brand-red-300)))"
-              : "linear-gradient(90deg, rgba(255,184,0,0.95), rgba(251,191,36,0.95))",
-            transition: "width 0.35s ease",
-          }} />
-        </div>
-      </div>
 
-      {isPremium && (
-        <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
-          <GamesLeaderboard />
+        <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-0 pt-4">
+          {gamesByCategory.map(([cat, list]) => (
+            <GameCategorySection
+              key={cat}
+              category={cat}
+              games={list}
+              isPremium={isPremium}
+              limitHit={limitHit}
+              onPlay={onPlay}
+              onUnlock={onUnlock}
+              onUpgrade={() => goTo("/pricing")}
+            />
+          ))}
         </div>
-      )}
-
-      {isPremium && weekly.playsLast7Days > 0 && (
-        <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
-          <div style={{
-            background: gameTheme.successBg,
-            border: "1px solid rgba(16,185,129,0.35)",
-            backdropFilter: "blur(18px)",
-            borderRadius: 14, padding: "12px 14px",
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: gameTheme.success, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              {t("screens.games.weekly_summary_title")}
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", fontSize: 12, color: gameTheme.textMuted }}>
-              <span>{t("screens.games.weekly_plays", { count: weekly.playsLast7Days })}</span>
-              <span>{t("screens.games.weekly_perfect", { count: weekly.perfectCount })}</span>
-              <span>{t("screens.games.weekly_points", { count: weekly.pointsEarned })}</span>
-              {weekly.topCategory != null && (
-                <span>{t("screens.games.weekly_top_skill", {
-                  category: CATEGORY_LABEL[weekly.topCategory].split("&")[0].trim(),
-                  pct: weekly.categoryAccuracies[0]?.pct ?? 0,
-                })}</span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div style={{
-          maxWidth: 720, margin: "10px auto 0", padding: "10px 14px",
-          background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)",
-          borderRadius: 12, color: "hsl(var(--brand-red-200))", fontSize: 13,
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-        }}>
-          <span>{error}</span>
-          <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "hsl(var(--brand-red-200))", cursor: "pointer" }}><X size={14} /></button>
-        </div>
-      )}
-
-      {/* Skill Progress strip */}
-      <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
-        <div style={{
-          background: gameTheme.cardBg,
-          border: `1.5px solid ${gameTheme.cardBorder}`,
-          backdropFilter: "blur(18px)",
-          borderRadius: 16, padding: "12px 14px",
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(251,191,36,0.9)", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("screens.games.skill_progress")}</span>
-            <span style={{ fontSize: 11, color: gameTheme.textMuted }}>{t("screens.games.skill_subtitle")}</span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
-            {skills.map(({ cat, pct }) => (
-              <div key={cat}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: gameTheme.text, marginBottom: 4 }}>
-                  <span>{CATEGORY_EMOJI[cat]} {CATEGORY_LABEL[cat].split("&")[0]}</span>
-                  <span style={{ fontWeight: 800, color: pct >= 75 ? gameTheme.success : pct >= 40 ? "rgba(251,191,36,0.95)" : gameTheme.textMuted }}>{pct}%</span>
-                </div>
-                <div style={{ height: 6, borderRadius: 999, background: gameTheme.progressTrack, overflow: "hidden" }}>
-                  <div style={{
-                    width: `${pct}%`, height: "100%",
-                    background: pct >= 75 ? "linear-gradient(90deg,hsl(var(--brand-green-500)),hsl(var(--brand-green-400)))"
-                      : pct >= 40 ? gameTheme.playGradient
-                      : gameTheme.violetGradient,
-                    transition: "width 0.4s",
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Games grouped by category */}
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 16px 0" }}>
-        {gamesByCategory.map(([cat, list]) => (
-          <div key={cat} style={{ marginBottom: 18 }}>
-            <div style={{
-              display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10,
-            }}>
-              <span style={{ fontSize: 18 }}>{CATEGORY_EMOJI[cat]}</span>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: gameTheme.text, fontFamily: "Quicksand, sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                {CATEGORY_LABEL[cat]}
-              </h3>
-              <span style={{ fontSize: 11, color: gameTheme.textMuted, marginLeft: "auto" }}>{t("screens.games.games_count", { count: list.length })}</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
-              {list.map((g) => {
-                const playable = canPlayGame(g, isPremium);
-                const unlocked = isGameUnlockedForPlay(g.id, isPremium);
-                const soon = g.status === "soon";
-                const premiumOnly = requiresPremiumToPlay(g) && !isPremium;
-                const showLock = !unlocked && !soon && !premiumOnly;
-                const isHovered = hoveredGame === g.id;
-                return (
-                  <div
-                    key={g.id}
-                    onMouseEnter={() => setHoveredGame(g.id)}
-                    onMouseLeave={() => setHoveredGame(null)}
-                    style={{
-                      position: "relative",
-                      background: isHovered && playable && !soon
-                        ? "rgba(255,255,255,0.08)"
-                        : gameTheme.cardBg,
-                      border: `1px solid ${isHovered && playable && !soon ? gameTheme.hubBorderActive : gameTheme.glassBorder}`,
-                      backdropFilter: "blur(18px)",
-                      borderRadius: 16, padding: 14,
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                      opacity: soon ? 0.6 : 1,
-                      filter: showLock ? "blur(0.4px)" : "none",
-                      transform: isHovered && playable && !soon ? "translateY(-3px)" : "none",
-                      boxShadow: isHovered && playable && !soon ? "0 8px 32px rgba(122,92,255,0.12)" : "none",
-                      transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease",
-                    }}
-                  >
-                    {g.premiumOnly && (
-                      <div style={{
-                        position: "absolute", top: 8, left: 8,
-                        background: gameTheme.ctaGradient,
-                        borderRadius: 999, padding: "2px 8px", fontSize: 9, fontWeight: 800, color: "#fff",
-                      }}>{t("screens.games.premium_game")}</div>
-                    )}
-                    {showLock && (
-                      <div style={{
-                        position: "absolute", top: 8, right: 8,
-                        background: "rgba(0,0,0,0.4)", borderRadius: 999,
-                        padding: 4,
-                      }}><Lock size={11} color="hsl(var(--brand-amber-300))" /></div>
-                    )}
-                    {isFreeStarter(g.id) && !isPremium && (
-                      <div style={{
-                        position: "absolute", top: 8, right: 8,
-                        background: "rgba(16,185,129,0.35)", borderRadius: 999,
-                        padding: "2px 7px", fontSize: 9, fontWeight: 800, color: "#fff",
-                      }}>FREE</div>
-                    )}
-                    {(showLock || premiumOnly) ? (
-                      <div style={{ filter: showLock ? "grayscale(0.5)" : "none" }}>
-                        <GamePreviewTile gameId={g.id} emoji={g.emoji} active />
-                      </div>
-                    ) : (
-                      <div style={{
-                        fontSize: 36, lineHeight: 1, width: 56, height: 56,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        background: `linear-gradient(145deg, ${CATEGORY_ACCENT[g.category]}, rgba(18,28,60,0.85))`,
-                        border: `1px solid ${gameTheme.glassBorder}`,
-                        borderRadius: 14,
-                        animation: isHovered && playable && !soon ? "gamesCardFloat 1.6s ease-in-out infinite" : "none",
-                      }}>{g.emoji}</div>
-                    )}
-                    <div style={{ fontSize: 13.5, fontWeight: 800, fontFamily: "Quicksand, sans-serif", textAlign: "center", lineHeight: 1.2 }}>
-                      {g.title}
-                    </div>
-                    {g.ageHint && (
-                      <div style={{ fontSize: 11, color: gameTheme.textMuted }}>{g.ageHint}</div>
-                    )}
-
-                    {soon ? (
-                      <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "hsl(var(--brand-amber-300))" }}>{t("screens.games.coming_soon")}</div>
-                    ) : premiumOnly ? (
-                      <button
-                        type="button"
-                        onClick={() => goTo("/pricing")}
-                        style={{
-                          marginTop: 6, width: "100%",
-                          background: gameTheme.ctaGradient,
-                          color: "#fff", border: "none", borderRadius: 999,
-                          padding: "7px 0", fontSize: 11.5, fontWeight: 700, cursor: "pointer",
-                        }}
-                      >{t("screens.games.upgrade_premium")}</button>
-                    ) : playable ? (
-                      <button
-                        type="button"
-                        onClick={() => onPlay(g)}
-                        disabled={limitHit}
-                        style={{
-                          marginTop: 6, width: "100%",
-                          background: limitHit ? "rgba(255,255,255,0.06)" : gameTheme.playGradient,
-                          color: "#fff", border: "none", borderRadius: 999,
-                          padding: "7px 0", fontSize: 12.5, fontWeight: 700,
-                          cursor: limitHit ? "default" : "pointer",
-                          boxShadow: limitHit ? "none" : gameTheme.playShadow,
-                          opacity: limitHit ? 0.5 : 1,
-                        }}
-                      >{t("screens.games.play")}</button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onUnlock(g)}
-                        style={{
-                          marginTop: 6, width: "100%",
-                          background: canUnlockGameWithStreak()
-                            ? "rgba(16,185,129,0.2)"
-                            : "rgba(255,255,255,0.06)",
-                          color: "#fff",
-                          border: canUnlockGameWithStreak()
-                            ? "1px solid rgba(16,185,129,0.5)"
-                            : `1px solid ${gameTheme.cardBorder}`,
-                          borderRadius: 999,
-                          padding: "7px 0", fontSize: 11, fontWeight: 700, cursor: "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                        }}
-                      >
-                        <Lock size={11} />
-                        {canUnlockGameWithStreak()
-                          ? t("screens.games.unlock_streak_btn", { days: STREAK_UNLOCK_DAYS })
-                          : t("screens.games.points_short", { cost: g.unlockCost })}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Active game / result modal */}
@@ -571,6 +302,8 @@ function GameModal({
 }: { state: NonNullable<ActiveGame>; onClose: () => void; onFinish: (score: number, total: number) => void }) {
   const { t } = useTranslation();
   const game = state.game;
+  const confettiTrigger = state.kind === "result" && state.perfect ? 1 : 0;
+
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 60,
@@ -622,7 +355,8 @@ function GameModal({
         )}
 
         {state.kind === "result" && (
-          <div style={{ textAlign: "center", padding: "8px 4px 0" }}>
+          <div className="relative text-center" style={{ padding: "8px 4px 0" }}>
+            <ConfettiBurst trigger={confettiTrigger} />
             <Trophy size={48} color={state.perfect ? "hsl(var(--brand-amber-300))" : "hsl(var(--brand-violet-300))"} style={{ margin: "12px auto" }} />
             <h3 style={{ margin: "0 0 6px", fontSize: 20, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>
               {state.perfect ? t("screens.games.perfect_score") : t("screens.games.nice_work")}
@@ -638,7 +372,8 @@ function GameModal({
               boxShadow: gameTheme.playShadow,
               marginBottom: 16,
             }}>
-              <Coins size={16} /> {t("screens.games.points_earned", { count: state.pointsEarned })}
+              <Coins size={16} />
+              +<AnimatedPoints value={state.pointsEarned} /> {t("screens.games.points_hero_label")}
               {state.perfect && <span style={{ fontSize: 11, opacity: 0.85 }}>{t("screens.games.perfect_bonus")}</span>}
             </div>
             <div>

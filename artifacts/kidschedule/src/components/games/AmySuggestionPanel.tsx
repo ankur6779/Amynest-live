@@ -1,8 +1,9 @@
-import { Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Play, Sparkles } from "lucide-react";
 import type { GameDef } from "@/lib/games";
-import { getSkillGaps } from "@/lib/games";
-import { gameTheme } from "@/lib/game-theme";
+import { GAMES_GLASS_PANEL } from "@/lib/game-theme";
 import { GamePreviewTile } from "./GamePreviewTile";
+import { cn } from "@/lib/utils";
 
 interface AmySuggestionPanelProps {
   line: string;
@@ -17,95 +18,44 @@ export function AmySuggestionPanel({
   canPlay,
   onPlay,
 }: AmySuggestionPanelProps) {
-  const gaps = getSkillGaps(4);
+  const { t } = useTranslation();
 
   return (
     <div
-      style={{
-        background: gameTheme.cardBg,
-        border: `1.5px solid ${gameTheme.cardBorder}`,
-        backdropFilter: "blur(18px)",
-        borderRadius: 16,
-        padding: 14,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
+      className={cn(
+        GAMES_GLASS_PANEL,
+        "rounded-2xl p-3.5",
+        canPlay && "border-fuchsia-400/30 shadow-[0_0_24px_rgba(255,72,212,0.12)]",
+      )}
     >
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div className="flex gap-3">
         {suggestedGame ? (
           <GamePreviewTile gameId={suggestedGame.id} emoji={suggestedGame.emoji} active />
         ) : (
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 28,
-              background: "rgba(122,92,255,0.12)",
-              border: `1px solid ${gameTheme.glassBorder}`,
-            }}
-          >
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-violet-500/10 text-2xl">
             ✨
           </div>
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <Sparkles size={16} color="rgba(251,191,36,0.95)" />
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-                color: "rgba(251,191,36,0.9)",
-              }}
-            >
-              Amy&apos;s pick
+
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            <span className="text-[11px] font-extrabold uppercase tracking-wide text-amber-300/90">
+              {t("screens.games.amy_pick_label")}
             </span>
           </div>
-          <div style={{ color: gameTheme.text, fontSize: 13.5, lineHeight: 1.45, fontWeight: 600 }}>
-            {line}
-          </div>
+          <p className="text-[13px] font-semibold leading-snug text-foreground">{line}</p>
           {suggestedGame && (
-            <div style={{ marginTop: 6, fontSize: 12, color: gameTheme.textMuted }}>
-              {suggestedGame.emoji} {suggestedGame.title} · {suggestedGame.ageHint ?? "All ages"}
-            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {suggestedGame.emoji} {suggestedGame.title}
+              {suggestedGame.ageHint ? ` · ${suggestedGame.ageHint}` : ""}
+              {" · "}
+              {t("screens.games.reward_range", {
+                min: suggestedGame.rewardMin,
+                max: suggestedGame.rewardMax,
+              })}
+            </p>
           )}
-        </div>
-      </div>
-
-      <div>
-        <div style={{ fontSize: 10, fontWeight: 800, color: gameTheme.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>
-          Skill gaps to grow
-        </div>
-        <div style={{ display: "grid", gap: 6 }}>
-          {gaps.map(({ cat, pct, label, emoji }) => (
-            <div key={cat}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: gameTheme.text, marginBottom: 3 }}>
-                <span>{emoji} {label}</span>
-                <span style={{ fontWeight: 800, color: pct >= 75 ? gameTheme.success : pct >= 40 ? "rgba(251,191,36,0.95)" : gameTheme.textMuted }}>
-                  {pct}%
-                </span>
-              </div>
-              <div style={{ height: 5, borderRadius: 999, background: gameTheme.progressTrack, overflow: "hidden" }}>
-                <div
-                  style={{
-                    width: `${pct}%`,
-                    height: "100%",
-                    background: pct >= 75
-                      ? "linear-gradient(90deg,hsl(var(--brand-green-500)),hsl(var(--brand-green-400)))"
-                      : pct >= 40
-                      ? gameTheme.playGradient
-                      : gameTheme.violetGradient,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -113,23 +63,14 @@ export function AmySuggestionPanel({
         <button
           type="button"
           onClick={onPlay}
-          style={{
-            alignSelf: "flex-start",
-            background: gameTheme.playGradient,
-            color: "#fff",
-            border: "none",
-            borderRadius: 999,
-            padding: "8px 16px",
-            fontSize: 12.5,
-            fontWeight: 800,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            boxShadow: gameTheme.playShadow,
-          }}
+          className={cn(
+            "mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-extrabold text-white",
+            "bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_4px_14px_rgba(255,184,0,0.35)]",
+            "transition-transform active:scale-[0.97]",
+          )}
         >
-          {suggestedGame.emoji} Play now
+          <Play className="h-3.5 w-3.5 fill-current" />
+          {t("screens.games.amy_play_now")}
         </button>
       )}
     </div>

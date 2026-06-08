@@ -85,6 +85,14 @@ export function getRewards(): Reward[] {
   return defaults;
 }
 
+export function getNextAffordableReward(points: number): { reward: Reward; remaining: number } | null {
+  const next = getRewards()
+    .filter((r) => r.cost > points)
+    .sort((a, b) => a.cost - b.cost)[0];
+  if (!next) return null;
+  return { reward: next, remaining: next.cost - points };
+}
+
 export function saveRewards(rewards: Reward[]): void {
   localStorage.setItem(REWARDS_KEY, JSON.stringify(rewards));
 }
