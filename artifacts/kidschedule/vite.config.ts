@@ -21,7 +21,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? "/";
 
 /** PWA / service-worker cache bucket — bump on deploy to purge stale shells. */
-const CACHE_VERSION = "amynest-v14";
+const CACHE_VERSION = "amynest-v15";
 
 function resolveDeployVersion(): string {
   const sha =

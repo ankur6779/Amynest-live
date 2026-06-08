@@ -7,9 +7,6 @@
 //   • Life layer  (inner) — looping breathing (scale) and, while speaking, a
 //                            gentle talking nod.
 //   • Eyelids             — random blink (rate varies by state).
-//   • Mouth               — procedural 2D lip-sync: a viseme overlay hides the
-//                            baked smile and morphs (AA/EE/IH/OH/OU) while
-//                            speaking. No rigged model / audio access needed.
 //   • Halo                — one rAF loop drives scale + opacity; on LISTENING it
 //                            reacts to live mic volume (haloScale = 1 + lvl*0.05).
 //
@@ -44,23 +41,6 @@ export interface AmyPortraitProps {
 // amy-avatar-square.png (eye centers ~y 0.625, x 0.365 / 0.635) and verified
 // with an overlay preview so the blink lids sit exactly on Amy's eyes.
 const EYE = { y: 0.625, h: 0.145, w: 0.165, lX: 0.365, rX: 0.635 };
-
-// Mouth center + base ellipse (fractions of size), measured/previewed on
-// amy-avatar-square.png. The overlay hides the baked smile while speaking and
-// morphs through visemes (procedural 2D lip-sync — no rigged model needed).
-const MOUTH = { cx: 0.5, cy: 0.75, w: 0.09, h: 0.075 };
-
-// Per-viseme [scaleX, scaleY] applied to the base mouth ellipse.
-// 0=rest/closed, 1=AA, 2=EE, 3=IH, 4=OH, 5=OU.
-const VISEME_SCALE: Record<number, [number, number]> = {
-  0: [0.85, 0.06],
-  1: [0.88, 1.0],
-  2: [1.0, 0.18],
-  3: [0.72, 0.42],
-  4: [0.72, 0.92],
-  5: [0.52, 0.55],
-};
-const SPEAKING_VISEMES = [1, 2, 3, 4, 5];
 
 // Per-state halo glow colour (mirrors the 3D rim-light tokens).
 function haloGlow(state: Amy3DState): string {
@@ -161,29 +141,6 @@ export function AmyPortrait({
       clearTimeout(doubleOpenTimer);
     };
   }, [reduced, state]);
-
-  // ── Procedural lip-sync: cycle visemes while speaking ───────────────────────
-  // No audio access (engine-frozen) → drive mouth shapes on a natural rhythm
-  // when `speaking`; snap closed otherwise. Swap to TTS viseme timing later.
-  const [viseme, setViseme] = useState(0);
-  useEffect(() => {
-    if (reduced || !speaking) {
-      setViseme(0);
-      return;
-    }
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      // ~15% brief close for natural pauses between syllables.
-      const next =
-        Math.random() < 0.15
-          ? 0
-          : SPEAKING_VISEMES[Math.floor(Math.random() * SPEAKING_VISEMES.length)];
-      setViseme(next);
-      timer = setTimeout(tick, 110 + Math.random() * 90);
-    };
-    tick();
-    return () => clearTimeout(timer);
-  }, [speaking, reduced]);
 
   // ── Halo: single rAF loop → transform (scale) + opacity only ────────────────
   const haloRef = useRef<HTMLSpanElement>(null);
@@ -388,64 +345,6 @@ export function AmyPortrait({
           {/* Soft eyelid overlays for a 2D blink. */}
           {!reduced && <span style={lidStyle(EYE.lX)} />}
           {!reduced && <span style={lidStyle(EYE.rX)} />}
-
-          {/* Procedural lip-sync mouth — hides the baked smile while speaking. */}
-          {!reduced && (
-            <div
-              style={{
-                position: "absolute",
-                left: MOUTH.cx * size - (0.17 * size) / 2,
-                top: MOUTH.cy * size - (0.12 * size) / 2,
-                width: 0.17 * size,
-                height: 0.12 * size,
-                display: "grid",
-                placeItems: "center",
-                opacity: speaking ? 1 : 0,
-                transition: "opacity 180ms ease",
-                pointerEvents: "none",
-                zIndex: 2,
-              }}
-            >
-              {/* Skin patch (radial, soft edges) covers the printed smile. */}
-              <span
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  background:
-                    "radial-gradient(ellipse at 50% 45%, #F2ECF9 0%, #ECE3F5 55%, rgba(236,227,245,0) 80%)",
-                }}
-              />
-              {/* Mouth cavity — morphs between visemes via transform scale. */}
-              <span
-                style={{
-                  position: "relative",
-                  width: MOUTH.w * size,
-                  height: MOUTH.h * size,
-                  borderRadius: "50%",
-                  background: "#7a3850",
-                  overflow: "hidden",
-                  boxShadow: "inset 0 2px 3px rgba(60,20,35,0.5)",
-                  transformOrigin: "center",
-                  transform: `scale(${VISEME_SCALE[viseme][0]}, ${VISEME_SCALE[viseme][1]})`,
-                  transition: "transform 90ms ease",
-                }}
-              >
-                {/* Lower-lip / tongue highlight. */}
-                <span
-                  style={{
-                    position: "absolute",
-                    left: "16%",
-                    right: "16%",
-                    bottom: "6%",
-                    height: "46%",
-                    borderRadius: "50%",
-                    background: "#c46781",
-                  }}
-                />
-              </span>
-            </div>
-          )}
         </motion.div>
       </motion.div>
     </div>
