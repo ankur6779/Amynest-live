@@ -14,7 +14,6 @@ export type AiJobType =
   | "routines.generate"
   | "routines.enrich_meals"
   | "spelling.ai_generate"
-  | "spelling.tts_prewarm"
   | "smart-study.next_questions"
   | "olympiad.next_questions"
   | "abacus.tutor"

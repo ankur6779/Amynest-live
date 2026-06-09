@@ -2,7 +2,6 @@ import { getAllCatalogEntries } from "@workspace/spelling-catalog";
 import type { SpellingCatalogEntry } from "@workspace/spelling-catalog";
 import {
   getSpellingGcsObjectPath,
-  getSpellingGcsPublicUrl,
   spellingLibraryProxyPath,
 } from "./gcs-paths.js";
 import type {
@@ -28,7 +27,7 @@ export function buildSpellingAudioManifestEntry(
   const version = opts?.version ?? SPELLING_AUDIO_VERSION;
   const voice = opts?.voice ?? SPELLING_AUDIO_VOICE_DEFAULT;
   const gcsPath = getSpellingGcsObjectPath(entry.word, version);
-  const url = getSpellingGcsPublicUrl(bucket, entry.word, version);
+  const url = spellingLibraryProxyPath(gcsPath);
   return {
     word: entry.word,
     catalogId: entry.id,

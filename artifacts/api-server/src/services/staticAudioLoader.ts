@@ -1,4 +1,5 @@
 import { getStaticAudioObjectKey, normalizeStaticAudioKey } from "@workspace/static-audio";
+import { getRedisConnection, isRedisQueueEnabled } from "../queue/redis.js";
 import { logger } from "../lib/logger.js";
 import { recordGcsRead } from "./staticAudioMetrics.js";
 import { readStaticAudioFromGcs } from "./ttsAudioStore.js";
@@ -73,7 +74,26 @@ export async function getStaticAudioBuffer(hash: string): Promise<Buffer | null>
   return load;
 }
 
+const PREWARM_LOCK_KEY = "static_audio:boot_prewarm";
+const PREWARM_LOCK_TTL_SEC = 300;
+
+async function tryAcquirePrewarmLock(): Promise<boolean> {
+  if (!isRedisQueueEnabled()) return true;
+  try {
+    const redis = getRedisConnection();
+    const ok = await redis.set(PREWARM_LOCK_KEY, String(process.pid), "EX", PREWARM_LOCK_TTL_SEC, "NX");
+    return ok === "OK";
+  } catch {
+    return true;
+  }
+}
+
 export async function prewarmStaticAudioBuffers(): Promise<void> {
+  const acquired = await tryAcquirePrewarmLock();
+  if (!acquired) {
+    logger.info({ evt: "static_audio.prewarm_skipped" }, "static audio prewarm skipped — lock held");
+    return;
+  }
   const hashes = getPrewarmHashes();
   let warmed = 0;
   for (const hash of hashes) {

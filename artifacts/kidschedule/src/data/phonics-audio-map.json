@@ -3,7 +3,7 @@
   "libraryVersion": 1,
   "generatedAt": "2026-06-01T09:07:50.409Z",
   "bucket": "amynest-audio-storage",
-  "baseUrl": "https://storage.googleapis.com/amynest-audio-storage",
+  "baseUrl": "",
   "voiceId": "QbQKfe9vgx5OsbZUvlFv",
   "modelId": "eleven_turbo_v2_5",
   "assetCount": 151,
@@ -16,7 +16,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/a.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/a.mp3",
+      "url": "/api/phonics-library/phonics/letters/a.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -28,7 +28,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/b.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/b.mp3",
+      "url": "/api/phonics-library/phonics/letters/b.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -41,7 +41,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/c.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/c.mp3",
+      "url": "/api/phonics-library/phonics/letters/c.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -53,7 +53,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/d.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/d.mp3",
+      "url": "/api/phonics-library/phonics/letters/d.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -65,7 +65,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/e.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/e.mp3",
+      "url": "/api/phonics-library/phonics/letters/e.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -77,7 +77,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/f.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/f.mp3",
+      "url": "/api/phonics-library/phonics/letters/f.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -90,7 +90,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/g.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/g.mp3",
+      "url": "/api/phonics-library/phonics/letters/g.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -102,7 +102,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/h.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/h.mp3",
+      "url": "/api/phonics-library/phonics/letters/h.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -114,7 +114,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/i.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/i.mp3",
+      "url": "/api/phonics-library/phonics/letters/i.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -126,7 +126,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/j.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/j.mp3",
+      "url": "/api/phonics-library/phonics/letters/j.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -138,7 +138,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/k.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/k.mp3",
+      "url": "/api/phonics-library/phonics/letters/k.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -150,7 +150,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/l.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/l.mp3",
+      "url": "/api/phonics-library/phonics/letters/l.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -162,7 +162,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/m.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/m.mp3",
+      "url": "/api/phonics-library/phonics/letters/m.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -174,7 +174,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/n.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/n.mp3",
+      "url": "/api/phonics-library/phonics/letters/n.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -186,7 +186,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/o.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/o.mp3",
+      "url": "/api/phonics-library/phonics/letters/o.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -198,7 +198,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/p.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/p.mp3",
+      "url": "/api/phonics-library/phonics/letters/p.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -210,7 +210,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/q.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/q.mp3",
+      "url": "/api/phonics-library/phonics/letters/q.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -222,7 +222,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/r.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/r.mp3",
+      "url": "/api/phonics-library/phonics/letters/r.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -234,7 +234,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/s.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/s.mp3",
+      "url": "/api/phonics-library/phonics/letters/s.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -246,7 +246,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/t.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/t.mp3",
+      "url": "/api/phonics-library/phonics/letters/t.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -258,7 +258,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/u.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/u.mp3",
+      "url": "/api/phonics-library/phonics/letters/u.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -270,7 +270,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/v.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/v.mp3",
+      "url": "/api/phonics-library/phonics/letters/v.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -282,7 +282,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/w.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/w.mp3",
+      "url": "/api/phonics-library/phonics/letters/w.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -294,7 +294,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/x.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/x.mp3",
+      "url": "/api/phonics-library/phonics/letters/x.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -306,7 +306,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/y.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/y.mp3",
+      "url": "/api/phonics-library/phonics/letters/y.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -318,7 +318,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/letters/z.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/letters/z.mp3",
+      "url": "/api/phonics-library/phonics/letters/z.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -330,7 +330,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/sh.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/sh.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/sh.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -342,7 +342,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/ch.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ch.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/ch.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -354,7 +354,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/th1.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/th1.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/th1.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -366,7 +366,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/th2.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/th2.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/th2.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -378,7 +378,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/wh.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/wh.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/wh.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -390,7 +390,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/ph.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ph.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/ph.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -402,7 +402,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/ng.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ng.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/ng.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -414,7 +414,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/ck.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ck.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/ck.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -426,7 +426,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/digraphs/qu.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/qu.mp3",
+      "url": "/api/phonics-library/phonics/digraphs/qu.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -438,7 +438,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/bl.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/bl.mp3",
+      "url": "/api/phonics-library/phonics/blends/bl.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -450,7 +450,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/cl.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/cl.mp3",
+      "url": "/api/phonics-library/phonics/blends/cl.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -462,7 +462,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/fl.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/fl.mp3",
+      "url": "/api/phonics-library/phonics/blends/fl.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -474,7 +474,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/gl.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/gl.mp3",
+      "url": "/api/phonics-library/phonics/blends/gl.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -486,7 +486,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/pl.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/pl.mp3",
+      "url": "/api/phonics-library/phonics/blends/pl.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -498,7 +498,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sl.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sl.mp3",
+      "url": "/api/phonics-library/phonics/blends/sl.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -510,7 +510,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/br.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/br.mp3",
+      "url": "/api/phonics-library/phonics/blends/br.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -522,7 +522,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/cr.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/cr.mp3",
+      "url": "/api/phonics-library/phonics/blends/cr.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -534,7 +534,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/dr.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/dr.mp3",
+      "url": "/api/phonics-library/phonics/blends/dr.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -546,7 +546,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/fr.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/fr.mp3",
+      "url": "/api/phonics-library/phonics/blends/fr.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -558,7 +558,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/gr.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/gr.mp3",
+      "url": "/api/phonics-library/phonics/blends/gr.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -570,7 +570,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/pr.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/pr.mp3",
+      "url": "/api/phonics-library/phonics/blends/pr.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -582,7 +582,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/tr.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/tr.mp3",
+      "url": "/api/phonics-library/phonics/blends/tr.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -594,7 +594,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sc.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sc.mp3",
+      "url": "/api/phonics-library/phonics/blends/sc.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -606,7 +606,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sk.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sk.mp3",
+      "url": "/api/phonics-library/phonics/blends/sk.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -618,7 +618,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sm.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sm.mp3",
+      "url": "/api/phonics-library/phonics/blends/sm.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -630,7 +630,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sn.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sn.mp3",
+      "url": "/api/phonics-library/phonics/blends/sn.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -642,7 +642,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sp.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sp.mp3",
+      "url": "/api/phonics-library/phonics/blends/sp.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -654,7 +654,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/st.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/st.mp3",
+      "url": "/api/phonics-library/phonics/blends/st.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -666,7 +666,7 @@
       "difficulty": 3,
       "curriculumLevel": 5,
       "gcsPath": "phonics/blends/sw.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sw.mp3",
+      "url": "/api/phonics-library/phonics/blends/sw.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -677,7 +677,7 @@
       "difficulty": 1,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/bat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/bat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -688,7 +688,7 @@
       "difficulty": 3,
       "curriculumLevel": 3,
       "gcsPath": "phonics/cvc/bed.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bed.mp3",
+      "url": "/api/phonics-library/phonics/cvc/bed.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -699,7 +699,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/bit.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bit.mp3",
+      "url": "/api/phonics-library/phonics/cvc/bit.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -710,7 +710,7 @@
       "difficulty": 3,
       "curriculumLevel": 3,
       "gcsPath": "phonics/cvc/bus.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bus.mp3",
+      "url": "/api/phonics-library/phonics/cvc/bus.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -721,7 +721,7 @@
       "difficulty": 1,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/cat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/cat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/cat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -732,7 +732,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/cup.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/cup.mp3",
+      "url": "/api/phonics-library/phonics/cvc/cup.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -743,7 +743,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/dog.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/dog.mp3",
+      "url": "/api/phonics-library/phonics/cvc/dog.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -754,7 +754,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/fog.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/fog.mp3",
+      "url": "/api/phonics-library/phonics/cvc/fog.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -765,7 +765,7 @@
       "difficulty": 3,
       "curriculumLevel": 3,
       "gcsPath": "phonics/cvc/hat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/hat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/hat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -776,7 +776,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/hen.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/hen.mp3",
+      "url": "/api/phonics-library/phonics/cvc/hen.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -787,7 +787,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/hit.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/hit.mp3",
+      "url": "/api/phonics-library/phonics/cvc/hit.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -798,7 +798,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/log.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/log.mp3",
+      "url": "/api/phonics-library/phonics/cvc/log.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -809,7 +809,7 @@
       "difficulty": 1,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/mat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/mat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/mat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -820,7 +820,7 @@
       "difficulty": 1,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/pat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/pat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -831,7 +831,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/pen.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pen.mp3",
+      "url": "/api/phonics-library/phonics/cvc/pen.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -842,7 +842,7 @@
       "difficulty": 3,
       "curriculumLevel": 3,
       "gcsPath": "phonics/cvc/pig.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pig.mp3",
+      "url": "/api/phonics-library/phonics/cvc/pig.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -853,7 +853,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/pin.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pin.mp3",
+      "url": "/api/phonics-library/phonics/cvc/pin.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -864,7 +864,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/pot.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pot.mp3",
+      "url": "/api/phonics-library/phonics/cvc/pot.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -875,7 +875,7 @@
       "difficulty": 3,
       "curriculumLevel": 3,
       "gcsPath": "phonics/cvc/rat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/rat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/rat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -886,7 +886,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/run.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/run.mp3",
+      "url": "/api/phonics-library/phonics/cvc/run.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -897,7 +897,7 @@
       "difficulty": 1,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/sat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/sat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/sat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -908,7 +908,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/sit.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/sit.mp3",
+      "url": "/api/phonics-library/phonics/cvc/sit.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -919,7 +919,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/sun.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/sun.mp3",
+      "url": "/api/phonics-library/phonics/cvc/sun.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -930,7 +930,7 @@
       "difficulty": 2,
       "curriculumLevel": 2,
       "gcsPath": "phonics/cvc/ten.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/ten.mp3",
+      "url": "/api/phonics-library/phonics/cvc/ten.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -941,7 +941,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/big.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/big.mp3",
+      "url": "/api/phonics-library/phonics/cvc/big.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -952,7 +952,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/blue.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/blue.mp3",
+      "url": "/api/phonics-library/phonics/cvc/blue.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -963,7 +963,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/brag.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/brag.mp3",
+      "url": "/api/phonics-library/phonics/cvc/brag.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -974,7 +974,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/bun.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bun.mp3",
+      "url": "/api/phonics-library/phonics/cvc/bun.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -985,7 +985,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/chat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chat.mp3",
+      "url": "/api/phonics-library/phonics/cvc/chat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -996,7 +996,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/chin.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chin.mp3",
+      "url": "/api/phonics-library/phonics/cvc/chin.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1007,7 +1007,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/chip.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chip.mp3",
+      "url": "/api/phonics-library/phonics/cvc/chip.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1018,7 +1018,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/chop.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chop.mp3",
+      "url": "/api/phonics-library/phonics/cvc/chop.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1029,7 +1029,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/clap.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/clap.mp3",
+      "url": "/api/phonics-library/phonics/cvc/clap.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1040,7 +1040,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/cog.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/cog.mp3",
+      "url": "/api/phonics-library/phonics/cvc/cog.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1051,7 +1051,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/crab.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/crab.mp3",
+      "url": "/api/phonics-library/phonics/cvc/crab.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1062,7 +1062,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/den.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/den.mp3",
+      "url": "/api/phonics-library/phonics/cvc/den.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1073,7 +1073,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/dig.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/dig.mp3",
+      "url": "/api/phonics-library/phonics/cvc/dig.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1084,7 +1084,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/dish.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/dish.mp3",
+      "url": "/api/phonics-library/phonics/cvc/dish.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1095,7 +1095,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/drum.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/drum.mp3",
+      "url": "/api/phonics-library/phonics/cvc/drum.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1106,7 +1106,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/fish.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/fish.mp3",
+      "url": "/api/phonics-library/phonics/cvc/fish.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1117,7 +1117,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/flag.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/flag.mp3",
+      "url": "/api/phonics-library/phonics/cvc/flag.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1128,7 +1128,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/frog.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/frog.mp3",
+      "url": "/api/phonics-library/phonics/cvc/frog.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1139,7 +1139,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/fun.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/fun.mp3",
+      "url": "/api/phonics-library/phonics/cvc/fun.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1150,7 +1150,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/glad.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/glad.mp3",
+      "url": "/api/phonics-library/phonics/cvc/glad.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1161,7 +1161,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/plan.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/plan.mp3",
+      "url": "/api/phonics-library/phonics/cvc/plan.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1172,7 +1172,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/ship.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/ship.mp3",
+      "url": "/api/phonics-library/phonics/cvc/ship.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1183,7 +1183,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/shop.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/shop.mp3",
+      "url": "/api/phonics-library/phonics/cvc/shop.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1194,7 +1194,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/stop.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/stop.mp3",
+      "url": "/api/phonics-library/phonics/cvc/stop.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1205,7 +1205,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/that.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/that.mp3",
+      "url": "/api/phonics-library/phonics/cvc/that.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1216,7 +1216,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/thin.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/thin.mp3",
+      "url": "/api/phonics-library/phonics/cvc/thin.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1227,7 +1227,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/this.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/this.mp3",
+      "url": "/api/phonics-library/phonics/cvc/this.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1238,7 +1238,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/tree.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/tree.mp3",
+      "url": "/api/phonics-library/phonics/cvc/tree.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1249,7 +1249,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/trip.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/trip.mp3",
+      "url": "/api/phonics-library/phonics/cvc/trip.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1260,7 +1260,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/cvc/wig.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/wig.mp3",
+      "url": "/api/phonics-library/phonics/cvc/wig.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1271,7 +1271,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/the.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/the.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/the.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1282,7 +1282,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/and.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/and.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/and.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1293,7 +1293,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/is.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/is.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/is.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1304,7 +1304,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/it.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/it.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/it.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1315,7 +1315,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/to.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/to.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/to.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1326,7 +1326,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/was.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/was.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/was.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1337,7 +1337,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/you.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/you.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/you.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1348,7 +1348,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sight_words/said.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/said.mp3",
+      "url": "/api/phonics-library/phonics/sight_words/said.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1359,7 +1359,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/the_cat_is_fat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_cat_is_fat.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_cat_is_fat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1370,7 +1370,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/i_see_a_red_bus.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_see_a_red_bus.mp3",
+      "url": "/api/phonics-library/phonics/sentences/i_see_a_red_bus.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1381,7 +1381,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/mum_and_dad_play.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/mum_and_dad_play.mp3",
+      "url": "/api/phonics-library/phonics/sentences/mum_and_dad_play.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1392,7 +1392,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/the_sun_is_up.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_sun_is_up.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_sun_is_up.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1403,7 +1403,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/i_like_my_hat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_like_my_hat.mp3",
+      "url": "/api/phonics-library/phonics/sentences/i_like_my_hat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1414,7 +1414,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/the_dog_is_in_bed.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_dog_is_in_bed.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_dog_is_in_bed.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1425,7 +1425,7 @@
       "difficulty": 2,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/the_cat_sat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_cat_sat.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_cat_sat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1436,7 +1436,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/i_see_a_dog.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_see_a_dog.mp3",
+      "url": "/api/phonics-library/phonics/sentences/i_see_a_dog.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1447,7 +1447,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/the_sun_is_hot.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_sun_is_hot.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_sun_is_hot.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1458,7 +1458,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/the_big_brown_dog_ran_fast.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_big_brown_dog_ran_fast.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_big_brown_dog_ran_fast.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1469,7 +1469,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/i_like_to_play_in_the_park.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_like_to_play_in_the_park.mp3",
+      "url": "/api/phonics-library/phonics/sentences/i_like_to_play_in_the_park.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1480,7 +1480,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/my_mum_makes_the_best_food.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/my_mum_makes_the_best_food.mp3",
+      "url": "/api/phonics-library/phonics/sentences/my_mum_makes_the_best_food.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1491,7 +1491,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/we_went_to_school_on_the_bus.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/we_went_to_school_on_the_bus.mp3",
+      "url": "/api/phonics-library/phonics/sentences/we_went_to_school_on_the_bus.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1502,7 +1502,7 @@
       "difficulty": 4,
       "curriculumLevel": 6,
       "gcsPath": "phonics/sentences/the_little_bird_flew_up_to_the_sky.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_little_bird_flew_up_to_the_sky.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_little_bird_flew_up_to_the_sky.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1513,7 +1513,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/can_you_help_me_find_my_book.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/can_you_help_me_find_my_book.mp3",
+      "url": "/api/phonics-library/phonics/sentences/can_you_help_me_find_my_book.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1524,7 +1524,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/i_love_my_baby_sister.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_love_my_baby_sister.mp3",
+      "url": "/api/phonics-library/phonics/sentences/i_love_my_baby_sister.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1535,7 +1535,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/wow_look_at_the_rainbow.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/wow_look_at_the_rainbow.mp3",
+      "url": "/api/phonics-library/phonics/sentences/wow_look_at_the_rainbow.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1546,7 +1546,7 @@
       "difficulty": 3,
       "curriculumLevel": 6,
       "gcsPath": "phonics/sentences/the_little_duck_sat_by_the_pond.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_little_duck_sat_by_the_pond.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_little_duck_sat_by_the_pond.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1557,7 +1557,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/she_saw_a_big_ship_sail_past.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/she_saw_a_big_ship_sail_past.mp3",
+      "url": "/api/phonics-library/phonics/sentences/she_saw_a_big_ship_sail_past.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1568,7 +1568,7 @@
       "difficulty": 3,
       "curriculumLevel": 6,
       "gcsPath": "phonics/sentences/a_whale_popped_up_and_waved_hello.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/a_whale_popped_up_and_waved_hello.mp3",
+      "url": "/api/phonics-library/phonics/sentences/a_whale_popped_up_and_waved_hello.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1579,7 +1579,7 @@
       "difficulty": 3,
       "curriculumLevel": 6,
       "gcsPath": "phonics/sentences/the_duck_laughed_and_flapped_her_wings.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_duck_laughed_and_flapped_her_wings.mp3",
+      "url": "/api/phonics-library/phonics/sentences/the_duck_laughed_and_flapped_her_wings.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1590,7 +1590,7 @@
       "difficulty": 3,
       "curriculumLevel": 4,
       "gcsPath": "phonics/sentences/what_a_fun_day_at_the_pond.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/what_a_fun_day_at_the_pond.mp3",
+      "url": "/api/phonics-library/phonics/sentences/what_a_fun_day_at_the_pond.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1601,7 +1601,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/tap_the_animal_making_this_sound.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_animal_making_this_sound.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/tap_the_animal_making_this_sound.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1612,7 +1612,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/which_sound_does_this_letter_make.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/which_sound_does_this_letter_make.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/which_sound_does_this_letter_make.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1623,7 +1623,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/tap_the_letter_that_makes_this_sound.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_letter_that_makes_this_sound.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/tap_the_letter_that_makes_this_sound.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1634,7 +1634,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/what_is_this.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/what_is_this.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/what_is_this.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1645,7 +1645,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/blend_the_sounds_which_word_is_it.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/blend_the_sounds_which_word_is_it.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/blend_the_sounds_which_word_is_it.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1656,7 +1656,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/what_letter_is_missing.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/what_letter_is_missing.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/what_letter_is_missing.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1667,7 +1667,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/which_word_starts_with_this_sound.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/which_word_starts_with_this_sound.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/which_word_starts_with_this_sound.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1678,7 +1678,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/tap_the_letters_to_spell_the_word.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_letters_to_spell_the_word.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/tap_the_letters_to_spell_the_word.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1689,7 +1689,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/listen_and_pick_the_word.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/listen_and_pick_the_word.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/listen_and_pick_the_word.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1700,7 +1700,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/which_word_says_ship.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/which_word_says_ship.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/which_word_says_ship.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1711,7 +1711,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/tap_the_word_cat.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_word_cat.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/tap_the_word_cat.mp3",
       "version": 1,
       "quality": "auto"
     },
@@ -1722,7 +1722,7 @@
       "difficulty": 1,
       "curriculumLevel": 1,
       "gcsPath": "phonics/quizzes/what_sound_do_you_hear.mp3",
-      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/what_sound_do_you_hear.mp3",
+      "url": "/api/phonics-library/phonics/quizzes/what_sound_do_you_hear.mp3",
       "version": 1,
       "quality": "auto"
     }

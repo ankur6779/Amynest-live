@@ -891,13 +891,9 @@ describe("spelling sessions — DB integration (trust + concurrency)", { skip: !
     }
   });
 
-  // BRANCH 2 (audio_pending): a previous /advance committed the
-  // next-round session row in-tx and then post-tx TTS prewarm
-  // failed. The retry of /advance MUST detect this (unfinalized
-  // session + empty audioKeys) and return audio_pending — it must
-  // NOT enter the normal flow and finalize the unplayed session
-  // (which would apply a 0-attempt round and wrongly eliminate).
-  it("/advance returns audio_pending on TTS-prewarm-failed retry, NOT finalize-with-zero", async () => {
+  // BRANCH 2 (round_incomplete): R2 session exists but the kid has
+  // not finished all words. /advance MUST refuse to finalize.
+  it("/advance returns round_incomplete when session has incomplete attempts", async () => {
     const userId = `spelling-test-${randomUUID()}`;
     const tournamentToken = `tour_${randomUUID()}`;
     const r1SessionToken = `tok_${randomUUID()}`;
@@ -939,9 +935,7 @@ describe("spelling sessions — DB integration (trust + concurrency)", { skip: !
         }),
         parentTournamentToken: tournamentToken,
       });
-      // R2 session (unfinalized, empty audioKeys ⇒ audio_pending).
-      // Insert this one slightly later so it sorts as "latest" by
-      // startedAt.
+      // R2 session (unfinalized, zero attempts ⇒ round_incomplete).
       await new Promise((r) => setTimeout(r, 5));
       const r2Row = freshSessionRow({
         userId,
@@ -961,10 +955,10 @@ describe("spelling sessions — DB integration (trust + concurrency)", { skip: !
 
       assert.equal(
         result.kind,
-        "audio_pending",
-        "must return audio_pending — not 'ok' (would have finalized R2 with 0 attempts!)",
+        "round_incomplete",
+        "must return round_incomplete — not 'ok' (would have finalized R2 with 0 attempts!)",
       );
-      if (result.kind === "audio_pending") {
+      if (result.kind === "round_incomplete") {
         assert.equal(result.session.sessionToken, r2SessionToken);
         assert.equal(
           result.session.finalizedAt,
@@ -985,8 +979,82 @@ describe("spelling sessions — DB integration (trust + concurrency)", { skip: !
       assert.equal(
         r2After.finalizedAt,
         null,
-        "audio_pending branch must NOT finalize the session",
+        "round_incomplete branch must NOT finalize the session",
       );
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+      await db
+        .delete(spellingTournamentsTable)
+        .where(eq(spellingTournamentsTable.userId, userId));
+    }
+  });
+
+  it("/advance finalizes R1 and inserts R2 when all words were attempted (manifest audio, empty audioKeys)", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const tournamentToken = `tour_${randomUUID()}`;
+    const r1SessionToken = `tok_${randomUUID()}`;
+    try {
+      await db.insert(spellingTournamentsTable).values({
+        tournamentToken,
+        userId,
+        childId: 999_999,
+        ageGroup: "4-6",
+        status: "active",
+        currentRound: 1,
+        rounds: [],
+        totalScore: 0,
+        eliminatedAtRound: null,
+        finalizedAt: null,
+      });
+
+      const words = Array.from({ length: 5 }, (_, i) => ({
+        id: `w${i}`,
+        word: ["cat", "dog", "sun", "hat", "run"][i]!,
+        ageGroup: "4-6" as const,
+        difficulty: "easy" as const,
+        syllables: ["cat"],
+        chunks: ["c", "at"],
+        hint: "test",
+      }));
+      const attempts: Record<string, { guess: string; correct: boolean; ts: string }> = {};
+      for (let i = 0; i < words.length; i++) {
+        attempts[String(i)] = {
+          guess: words[i]!.word,
+          correct: true,
+          ts: new Date().toISOString(),
+        };
+      }
+
+      await db.insert(spellingSessionsTable).values({
+        sessionToken: r1SessionToken,
+        childId: 999_999,
+        userId,
+        ageGroup: "4-6",
+        mode: "tournament",
+        difficulty: "easy",
+        words,
+        audioKeys: [],
+        attempts,
+        finalizedAt: null,
+        parentTournamentToken: tournamentToken,
+      });
+
+      const result = await db.transaction((tx) =>
+        _advanceTournamentTxForTest(tx, { tournamentToken, userId }),
+      );
+
+      assert.equal(result.kind, "ok", "must advance when all words attempted despite empty audioKeys");
+      if (result.kind !== "ok") return;
+      assert.equal(result.next.currentRound, 2);
+      assert.ok(result.nextSessionData !== null, "must create R2 session");
+      const r1After = await db
+        .select({ finalizedAt: spellingSessionsTable.finalizedAt })
+        .from(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.sessionToken, r1SessionToken))
+        .limit(1);
+      assert.ok(r1After[0]?.finalizedAt, "R1 must be finalized");
     } finally {
       await db
         .delete(spellingSessionsTable)

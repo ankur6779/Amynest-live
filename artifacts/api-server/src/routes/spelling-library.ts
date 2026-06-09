@@ -12,6 +12,7 @@ import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
 import { spellingWordForSlug } from "../services/spelling-audio-manifest.js";
 import { synthesizeSafe } from "../services/ttsSafe.js";
 import { readCachedAudio } from "../services/ttsCacheService.js";
+import { checkDistributedRateLimit } from "../lib/distributed-rate-limit.js";
 
 export const spellingLibraryPublicRouter: IRouter = Router();
 
@@ -117,6 +118,16 @@ function decodeObjectPathParam(raw: string | string[]): string {
  * never fetch storage.googleapis.com directly (CORS + bucket ACL).
  */
 spellingLibraryPublicRouter.get("/spelling-library/*objectPath", async (req, res): Promise<void> => {
+  const clientIp = String(req.ip ?? req.socket.remoteAddress ?? "unknown");
+  const rate = await checkDistributedRateLimit(`spelling-library:${clientIp}`, {
+    windowMs: 60_000,
+    maxPerWindow: 120,
+  });
+  if (!rate.allowed) {
+    res.status(429).json({ error: "rate_limited", retryAfterMs: rate.retryAfterMs });
+    return;
+  }
+
   const rawParam = req.params.objectPath;
   const objectPath = decodeObjectPathParam(
     Array.isArray(rawParam) ? rawParam : (rawParam ?? ""),

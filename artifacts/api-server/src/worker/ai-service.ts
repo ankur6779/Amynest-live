@@ -12,6 +12,16 @@ const JOB_TIMEOUT_MS = parseEnvMs("AI_JOB_TIMEOUT_MS", AI_CHAT_TIMEOUT_MS);
 
 const AUDIO_WARMUP_JOB_TIMEOUT_MS = parseEnvMs("AUDIO_WARMUP_JOB_TIMEOUT_MS", 180_000);
 
+const AUDIO_JOB_TYPES = new Set([
+  "audio.warmup",
+  "tts.pregenerate",
+  "tts.synthesize",
+  "static-audio.generate",
+  "audio-lessons.pregenerate",
+  "ai-coach.pregenerate_audio",
+  "ai-coach.pregenerate_infant_audio",
+]);
+
 function resolveJobTimeoutMs(type: string): number {
   if (type === "meals.ai_generate") {
     return getMealsAiWorkerTimeoutMs();
@@ -62,6 +72,14 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
         timedOut: true,
         error: "AI job timed out",
       });
+      if (AUDIO_JOB_TYPES.has(type)) {
+        logger.error(
+          { evt: "audio_job.timed_out", jobId, type, userId, timeoutMs },
+          "audio job timed out",
+        );
+        const { recordAudioJobFailure } = await import("../services/audio-job-alert-store.js");
+        recordAudioJobFailure(type, jobId, "timed_out");
+      }
       logger.warn(
         { evt: "ai_worker.job_timeout", jobId, type, timeoutMs, durationMs: Date.now() - started },
         "AI job timed out",
@@ -83,6 +101,20 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
     return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    if (AUDIO_JOB_TYPES.has(type)) {
+      logger.error(
+        {
+          evt: "audio_job.failed",
+          jobId,
+          type,
+          userId,
+          message: message.slice(0, 300),
+        },
+        "audio job failed — inspect BullMQ failed queue",
+      );
+      const { recordAudioJobFailure } = await import("../services/audio-job-alert-store.js");
+      recordAudioJobFailure(type, jobId, message);
+    }
     await patchJobRecord(jobId, {
       status: "failed",
       error: message.slice(0, 500),

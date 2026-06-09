@@ -127,8 +127,8 @@ describe("P0-2 routine uniqueness", () => {
 
   it("POST /routines uses conflict-safe insert paths", () => {
     const src = readSource("../routes/routines.ts");
-    assert.match(src, /onConflictDoUpdate\(\{/);
-    assert.match(src, /onConflictDoNothing\(\{/);
+    assert.match(src, /persistRoutineForChildDate/);
     assert.match(src, /error: "routine_exists"/);
+    assert.match(src, /error: "routine_save_failed"/);
   });
 });

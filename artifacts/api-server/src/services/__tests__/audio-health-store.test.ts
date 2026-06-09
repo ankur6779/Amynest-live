@@ -2,6 +2,7 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   getAudioHealthDashboard,
+  getAudioSloSnapshot,
   ingestAudioHealthEvents,
   resetAudioHealthStoreForTests,
 } from "../audio-health-store.js";
@@ -62,5 +63,32 @@ describe("audio-health-store", () => {
     assert.equal(dash.status, "failing");
     assert.ok(dash.alerts.some((a) => a.code === "system_failing"));
     assert.ok(dash.errorFeed.length > 0);
+  });
+
+  it("exposes TTFA p50/p95 SLO metrics", () => {
+    const samples = [400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300];
+    for (const ttfaMs of samples) {
+      ingestAudioHealthEvents([
+        {
+          event: "audio_start",
+          module: "coach",
+          layer: "static",
+          ttfaMs,
+          device: "mid",
+          network: "fast",
+          timestamp: Date.now(),
+        },
+      ]);
+    }
+
+    const dash = getAudioHealthDashboard();
+    assert.ok(dash.ttfaP50 > 0);
+    assert.ok(dash.ttfaP95 >= dash.ttfaP50);
+    assert.equal(dash.ttfaSlo.sampleCount, samples.length);
+    assert.equal(dash.ttfaSlo.p95TargetMs, 1200);
+
+    const slo = getAudioSloSnapshot();
+    assert.equal(slo.ttfa.p95, dash.ttfaP95);
+    assert.ok(slo.byModule.coach.sampleCount > 0);
   });
 });

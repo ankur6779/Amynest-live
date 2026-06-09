@@ -31,6 +31,7 @@ import {
   updateSystemHealthFromMetrics,
   type SystemMetrics,
 } from "./system-health-store.js";
+import { getStaticAudioMemoryHitRate } from "./staticAudioMetrics.js";
 
 const METRICS_INTERVAL_MS = Number(process.env.SELF_HEAL_METRICS_MS ?? 20_000);
 const RECOVERY_INTERVAL_MS = Number(process.env.SELF_HEAL_RECOVERY_MS ?? 60_000);
@@ -99,13 +100,18 @@ function enableStreamingGlobally(): void {
   });
 }
 
-async function triggerCachePrewarm(metrics: SystemMetrics): Promise<void> {
+async function triggerCachePrewarm(
+  metrics: SystemMetrics,
+  reason = "low_cache_hit_rate",
+  extra?: Partial<SystemMetrics> & { staticMemHitRate?: number },
+): Promise<void> {
   const now = Date.now();
   if (now - lastCachePrewarmAt < CACHE_PREWARM_COOLDOWN_MS) return;
   if (!tryHealAction(now)) return;
   lastCachePrewarmAt = now;
-  logSelfHealAction("cache_prewarm", "low_cache_hit_rate", {
+  logSelfHealAction("cache_prewarm", reason, {
     cacheHitRate: metrics.cacheHitRate,
+    ...extra,
   });
   try {
     const { prewarmStaticAudioBuffers } = await import("./staticAudioLoader.js");
@@ -188,6 +194,11 @@ function evaluateAutoActions(metrics: SystemMetrics): void {
 
   if (metrics.cacheHitRate > 0 && metrics.cacheHitRate < 0.3) {
     void triggerCachePrewarm(metrics);
+  }
+
+  const staticMemHitRate = getStaticAudioMemoryHitRate();
+  if (staticMemHitRate > 0 && staticMemHitRate < 0.25) {
+    void triggerCachePrewarm(metrics, "low_static_memory_hit_rate", { staticMemHitRate });
   }
 
   if (metrics.workerQueueDelayMs > 5000) {

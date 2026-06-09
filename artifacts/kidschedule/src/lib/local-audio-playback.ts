@@ -1,7 +1,8 @@
 /**
- * Direct local HTMLAudio playback — tap → bundled asset → play.
- * No AudioManager, no queue, no coalesce, no fallback, no retries.
+ * Direct local HTMLAudio playback — stops global speech channel first.
  */
+
+import { audioManager } from "@/lib/audio-manager";
 
 let active: HTMLAudioElement | null = null;
 let generation = 0;
@@ -36,6 +37,7 @@ export function playLocalAudio(
   if (!url) return Promise.resolve({ ok: false, error: "local_empty_url" });
 
   stopLocalAudio();
+  audioManager.stopAll();
   const gen = ++generation;
 
   const el = new Audio(url);

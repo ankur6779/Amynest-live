@@ -44,7 +44,7 @@ export async function runTtsPregenerate(input: {
     } catch (err) {
       if (isTtsRateLimitedError(err)) {
         rateLimited += 1;
-        break;
+        continue;
       }
       failed += 1;
     }

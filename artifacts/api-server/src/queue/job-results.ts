@@ -5,7 +5,23 @@ import { isCacheDisabled } from "../services/admin-ops-store.js";
 const JOB_KEY_PREFIX = "job:";
 const USER_ACTIVE_PREFIX = "ai:user:";
 const FINALIZE_LOCK_PREFIX = "job:finalize:";
-const TTL_SEC = Number(process.env.AI_JOB_RESULT_TTL_SEC ?? "600");
+const TTL_SEC_DEFAULT = Number(process.env.AI_JOB_RESULT_TTL_SEC ?? "600");
+const TTL_SEC_LONG = Number(process.env.AI_JOB_RESULT_TTL_LONG_SEC ?? "900");
+
+const LONG_TTL_JOB_TYPES = new Set([
+  "tts.pregenerate",
+  "audio.warmup",
+  "audio-lessons.pregenerate",
+  "ai-coach.pregenerate_audio",
+  "ai-coach.pregenerate_infant_audio",
+]);
+
+const MAX_USER_ACTIVE_JOBS = Number(process.env.AI_MAX_USER_ACTIVE_JOBS ?? "4");
+
+function jobResultTtlSec(type?: string): number {
+  if (type && LONG_TTL_JOB_TYPES.has(type)) return TTL_SEC_LONG;
+  return TTL_SEC_DEFAULT;
+}
 
 export class JobRecordPersistenceError extends Error {
   readonly code: "job_records_disabled" | "redis_unavailable";
@@ -40,7 +56,7 @@ export async function saveJobRecord(record: AiJobRecord): Promise<void> {
     );
   }
   const redis = getRedisConnection();
-  await redis.set(jobKey(record.id), JSON.stringify(record), "EX", TTL_SEC);
+  await redis.set(jobKey(record.id), JSON.stringify(record), "EX", jobResultTtlSec(record.type));
 }
 
 export async function getJobRecord(jobId: string): Promise<AiJobRecord | undefined> {
@@ -143,14 +159,14 @@ export async function patchJobRecord(
   return updated;
 }
 
-/** Per-user cap: 1 processing + 1 queued (max 2 active). */
+/** Per-user cap on concurrently active jobs (queued + processing). */
 export async function tryAcquireUserSlot(userId: string): Promise<boolean> {
   if (!isRedisQueueEnabled()) return true;
   const redis = getRedisConnection();
   const key = userActiveKey(userId);
   const n = await redis.incr(key);
-  await redis.expire(key, TTL_SEC);
-  if (n <= 2) return true;
+  await redis.expire(key, TTL_SEC_LONG);
+  if (n <= MAX_USER_ACTIVE_JOBS) return true;
   await redis.decr(key);
   return false;
 }

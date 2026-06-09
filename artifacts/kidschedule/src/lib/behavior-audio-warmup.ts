@@ -60,6 +60,15 @@ export function enqueueBehaviorWarmup(
   })
     .then(async (res) => {
       if (res.ok || res.status === 202) return;
+      const body = (await res.json().catch(() => ({}))) as { retryAfterMs?: number };
+      if (res.status === 429 || body.retryAfterMs) {
+        const delayMs = Math.min(body.retryAfterMs ?? 2_000, 15_000);
+        window.setTimeout(() => {
+          sessionFired.delete(module);
+          enqueueBehaviorWarmup(authFetch, module, hints);
+        }, delayMs);
+        return;
+      }
       const { queueClientLog } = await import("@/lib/client-logs");
       queueClientLog({
         type: "warning",

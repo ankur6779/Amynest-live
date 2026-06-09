@@ -16,6 +16,8 @@ export type InfantSleepLibraryState = {
   favorites: string[];
   recentlyPlayed: RecentPlayEntry[];
   downloadedPacks: SleepPackId[];
+  /** Manifest version per OTA-downloaded pack. */
+  packVersions?: Partial<Record<SleepPackId, number>>;
   preferences: {
     defaultLoop: boolean;
     defaultTimerMin: number | null;
@@ -29,6 +31,7 @@ const DEFAULT_STATE: InfantSleepLibraryState = {
   favorites: [],
   recentlyPlayed: [],
   downloadedPacks: ["core-v1"],
+  packVersions: {},
   preferences: {
     defaultLoop: true,
     defaultTimerMin: null,
@@ -54,6 +57,10 @@ function readRaw(childId?: string): InfantSleepLibraryState {
       downloadedPacks: Array.isArray(parsed.downloadedPacks)
         ? (parsed.downloadedPacks as SleepPackId[])
         : ["core-v1"],
+      packVersions:
+        parsed.packVersions && typeof parsed.packVersions === "object"
+          ? (parsed.packVersions as Partial<Record<SleepPackId, number>>)
+          : {},
       preferences: {
         ...DEFAULT_STATE.preferences,
         ...(parsed.preferences ?? {}),
@@ -118,21 +125,36 @@ export function getRecentSleepIds(childId?: string, limit = 5): string[] {
     .map((r) => r.id);
 }
 
+/** Packs shipped under `public/infant-sleep-audio/` — playable without OTA download. */
+const SLEEP_PACK_BUNDLED = new Set<SleepPackId>(["core-v1", "extended-v1"]);
+
 export function isSleepPackDownloaded(packId: SleepPackId, childId?: string): boolean {
   const state = readRaw(childId);
   if (SLEEP_PACK_BUNDLED.has(packId)) return true;
   return state.downloadedPacks.includes(packId);
 }
 
-/** Packs shipped under `public/infant-sleep-audio/` — playable without OTA download. */
-const SLEEP_PACK_BUNDLED = new Set<SleepPackId>(["core-v1", "extended-v1"]);
+export function getSleepPackDownloadVersion(
+  packId: SleepPackId,
+  childId?: string,
+): number | null {
+  const v = readRaw(childId).packVersions?.[packId];
+  return typeof v === "number" ? v : null;
+}
 
-export function markSleepPackDownloaded(packId: SleepPackId, childId?: string): void {
+export function markSleepPackDownloaded(
+  packId: SleepPackId,
+  childId?: string,
+  manifestVersion?: number,
+): void {
   const state = readRaw(childId);
   if (!state.downloadedPacks.includes(packId)) {
     state.downloadedPacks = [...state.downloadedPacks, packId];
-    writeRaw(state, childId);
   }
+  if (manifestVersion != null) {
+    state.packVersions = { ...state.packVersions, [packId]: manifestVersion };
+  }
+  writeRaw(state, childId);
 }
 
 export function setSleepPreference<K extends keyof InfantSleepLibraryState["preferences"]>(

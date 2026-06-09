@@ -2,6 +2,7 @@
  * Cloudflare Worker — proxy /api/* + edge CDN cache for immutable media.
  *
  * Cacheable at edge (Cache API + long TTL from origin):
+ *   /api/tts/audio/{sha256}.mp3       (immutable dynamic TTS — full GET only)
  *   /api/static-audio/{hash}.mp3
  *   /api/phonics-library/…/*.mp3
  *   /api/spelling-library/…/*.mp3
@@ -13,6 +14,7 @@
  */
 const DEFAULT_BACKEND = "https://amynest-backend-dykj.onrender.com";
 
+const TTS_AUDIO_RE = /^\/api\/tts\/audio\/[a-f0-9]{64}\.mp3$/i;
 const STATIC_AUDIO_RE = /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i;
 const PHONICS_LIBRARY_RE = /^\/api\/phonics-library\/.+\.mp3$/i;
 const SPELLING_LIBRARY_RE = /^\/api\/spelling-library\/.+\.mp3$/i;
@@ -26,6 +28,7 @@ const MEDIA_CACHE_TTL_FALLBACK =
 /** @param {string} pathname */
 function isCacheableAudioPath(pathname) {
   return (
+    TTS_AUDIO_RE.test(pathname) ||
     STATIC_AUDIO_RE.test(pathname) ||
     PHONICS_LIBRARY_RE.test(pathname) ||
     SPELLING_LIBRARY_RE.test(pathname)

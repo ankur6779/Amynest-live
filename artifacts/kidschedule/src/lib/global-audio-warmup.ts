@@ -412,7 +412,6 @@ export function installGlobalAudioWarmupOnGesture(): void {
     markUserGestureUnlocked();
     recordTtsUserGesture();
     initGlobalAudioWarmup();
-    warmAppBootStaticPhrases();
     void primeGlobalAudioCache();
   };
 

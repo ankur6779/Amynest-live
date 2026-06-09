@@ -4,7 +4,6 @@ import {
   computeCatalogMissingStaticAudioKeys,
   mergeMissingStaticAudioKeys,
 } from "@workspace/static-audio";
-import { getGcsBucketId } from "../lib/env.js";
 import { getShippedStaticAudioMap } from "../lib/static-audio-map.js";
 import { logger } from "../lib/logger.js";
 import {
@@ -46,22 +45,15 @@ rebuildStaticHashIndex();
 
 staticAudioPublicRouter.get("/static-audio/health", (_req, res): void => {
   const gcs = legacyGcsConfigured();
-  const bucket = getGcsBucketId() ?? "";
-  const status = gcs && bucket ? "ok" : "degraded";
+  const status = gcs ? "ok" : "degraded";
 
   res.json({
     gcs,
-    bucket,
     status,
+    ok: status === "ok" && isLastGcsProbeOk(),
     circuitOpen: isStaticAudioCircuitOpen(),
     gcsProbeOk: isLastGcsProbeOk(),
-    hashIndexSize: rebuildStaticHashIndex(),
-    metrics: getStaticAudioMetrics().reliability,
   });
-});
-
-staticAudioPublicRouter.get("/static-audio/metrics", (_req, res): void => {
-  res.json(getStaticAudioMetrics());
 });
 
 staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise<void> => {
@@ -106,7 +98,33 @@ staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise
   }
 });
 
-staticAudioPublicRouter.get("/static-audio/missing", (_req, res): void => {
+function isAdminUser(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const list = (process.env["ADMIN_USER_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(userId);
+}
+
+/** Authenticated missing-audio reports — enqueues TTS generation (cost-sensitive). */
+export const staticAudioAuthRouter: IRouter = Router();
+
+staticAudioAuthRouter.get("/static-audio/metrics", (req, res): void => {
+  const userId = getAuth(req)?.userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  res.json(getStaticAudioMetrics());
+});
+
+staticAudioAuthRouter.get("/static-audio/missing", (req, res): void => {
+  const userId = getAuth(req)?.userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
   const catalogMissing = computeCatalogMissingStaticAudioKeys(getShippedStaticAudioMap());
   const missing = mergeMissingStaticAudioKeys(catalogMissing, reportedMissing);
 
@@ -122,9 +140,6 @@ staticAudioPublicRouter.get("/static-audio/missing", (_req, res): void => {
 
   res.json({ missing });
 });
-
-/** Authenticated missing-audio reports — enqueues TTS generation (cost-sensitive). */
-export const staticAudioAuthRouter: IRouter = Router();
 
 staticAudioAuthRouter.post("/static-audio/missing", async (req, res): Promise<void> => {
   const userId = getAuth(req)?.userId;

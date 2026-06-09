@@ -71,6 +71,48 @@ export function getAdminOpsControlPanel(): AdminOpsControlPanel {
   };
 }
 
+/** Minimal ops flags exposed to all authenticated clients (no admin internals). */
+export function getClientAudioOpsFlags(): {
+  disableStreaming: boolean;
+  disableApi: boolean;
+  forceEmergencyMode: boolean;
+  safeMode: boolean;
+  pregenerationPaused: boolean;
+  reduceDbReads: boolean;
+  cacheDisabled: boolean;
+  selfHealEnabled: boolean;
+  streamingEnabled: boolean;
+  apiEnabled: boolean;
+  cacheEnabled: boolean;
+  degradedMode: boolean;
+  apiUsageFactor: number;
+  streamingWeightFactor: number;
+  prefetchDepth: number;
+  cacheClearedAt: number | null;
+  updatedAt: number;
+} {
+  const ops = getAdminOpsControlPanel();
+  return {
+    disableStreaming: ops.disableStreaming,
+    disableApi: ops.disableApi,
+    forceEmergencyMode: ops.forceEmergencyMode,
+    safeMode: ops.safeMode,
+    pregenerationPaused: ops.pregenerationPaused,
+    reduceDbReads: ops.reduceDbReads,
+    cacheDisabled: ops.cacheDisabled,
+    selfHealEnabled: ops.selfHealEnabled,
+    streamingEnabled: ops.streamingEnabled,
+    apiEnabled: ops.apiEnabled,
+    cacheEnabled: ops.cacheEnabled,
+    degradedMode: false,
+    apiUsageFactor: 1,
+    streamingWeightFactor: 1,
+    prefetchDepth: 1,
+    cacheClearedAt: ops.cacheClearedAt,
+    updatedAt: ops.updatedAt,
+  };
+}
+
 export function isCacheDisabled(): boolean {
   return state.cacheDisabled;
 }

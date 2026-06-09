@@ -210,6 +210,21 @@ function toGeneratedRoutine(data: RoutineGenerateResult): GeneratedRoutine {
   };
 }
 
+function formatRoutineSaveError(err: unknown, fallback: string): string {
+  const errObj = err as {
+    status?: number;
+    data?: { message?: string; error?: string; cause?: string };
+    message?: string;
+  };
+  const parts: string[] = [];
+  if (errObj.data?.error) parts.push(errObj.data.error);
+  if (errObj.data?.cause) parts.push(`[${errObj.data.cause}]`);
+  const msg = errObj.data?.message ?? (err instanceof Error ? err.message : errObj.message);
+  if (msg?.trim()) parts.push(msg.trim());
+  if (parts.length > 0) return parts.join(" ");
+  return extractApiErrorMessage(err, fallback);
+}
+
 function normalizeRoutineItemsForSave(items: RoutineItem[]): RoutineItem[] {
   return items.map((item) => ({
     ...item,
@@ -914,8 +929,16 @@ export default function RoutineGenerate() {
       title: data.title,
       items: normalizedItems as never,
       adaptations: data.adaptations ?? undefined,
-      override: shouldOverride,
+      override: !!shouldOverride,
     };
+    const ageMonths = (selectedChildData as { ageMonths?: number } | undefined)?.ageMonths ?? 0;
+    console.log("[routine-gen] save request", {
+      childId: payload.childId,
+      routineType: "smart-amy",
+      ageMonths,
+      ageYears: selectedChildData?.age,
+      payload,
+    });
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.info("[routine-save] submitting", {
@@ -932,6 +955,7 @@ export default function RoutineGenerate() {
       data: payload,
     }, {
       onSuccess: savedRoutine => {
+        console.log("[routine-gen] save response", savedRoutine);
         track("routine_generated", {
           routineId: savedRoutine.id,
           childId: selectedChild ?? undefined,
@@ -963,7 +987,9 @@ export default function RoutineGenerate() {
         setLocation(`/routines/${savedRoutine.id}?reveal=1`);
       },
       onError: (err: unknown) => {
-        const errObj = err as { status?: number; data?: { error?: string; routineId?: number } };
+        console.error("[routine-gen] save failed", err);
+        console.error("[routine-gen] save failed data", (err as { data?: unknown })?.data);
+        const errObj = err as { status?: number; data?: { error?: string; routineId?: number; cause?: string } };
         const msg = extractApiErrorMessage(err, "");
         const isConflict =
           retryOnConflict &&
@@ -998,7 +1024,7 @@ export default function RoutineGenerate() {
           title: t("toasts.routines_generate.save_failed_title", {
             defaultValue: "Could not save routine",
           }),
-          description: extractApiErrorMessage(
+          description: formatRoutineSaveError(
             err,
             t("toasts.routines_generate.save_failed_body", {
               defaultValue: "Please try again in a moment.",
@@ -1008,7 +1034,7 @@ export default function RoutineGenerate() {
         });
       }
     });
-  }, [createMutation, selectedChild, date, toast, queryClient, setLocation, children, authFetch, t, hasSchool, serializedFixedActivities]);
+  }, [createMutation, selectedChild, selectedChildData, date, toast, queryClient, setLocation, children, authFetch, t, hasSchool, serializedFixedActivities]);
 
   const applyWakeAndTodayAdjustments = React.useCallback((
     generatedData: GeneratedRoutine,
@@ -1222,11 +1248,20 @@ export default function RoutineGenerate() {
     setIsAiGenerating(true);
     setAiGeneratingSlow(false);
     const payload = buildGeneratePayload(wakeTime, weatherForCall);
+    const ageMonths = (selectedChildData as { ageMonths?: number } | undefined)?.ageMonths ?? 0;
+    console.log("[routine-gen] generate request", {
+      childId: payload.childId,
+      routineType: "ai",
+      ageMonths,
+      ageYears: selectedChildData?.age,
+      payload,
+    });
     try {
       const generatedData = await fetchAmyAiRoutine(authFetch, payload, {
         onSlow: () => setAiGeneratingSlow(true),
         userId,
       });
+      console.log("[routine-gen] generate response", generatedData);
       if (generatedData.fallback) {
         toast({
           title: t("toasts.routines_generate.ai_fallback_used"),
@@ -1238,6 +1273,8 @@ export default function RoutineGenerate() {
         items: simplified,
       }, shouldOverride, wakeTime);
     } catch (err) {
+      console.error("[routine-gen] generate failed", err);
+      console.error("[routine-gen] generate failed data", (err as { data?: unknown })?.data);
       if (err instanceof RoutineGenerationFixedActivityError) {
         setInlineFixedBlocking(err.fixedActivitiesResult as FixedActivitiesResult | null);
         setLastFixedActivitiesResult(err.fixedActivitiesResult as FixedActivitiesResult | null);
@@ -1257,7 +1294,7 @@ export default function RoutineGenerate() {
       setIsAiGenerating(false);
       setAiGeneratingSlow(false);
     }
-  }, [overrideMode, existingRoutine, buildGeneratePayload, handlerType, userId, authFetch, handlePostGenerate, handleGenerationError, toast, t]);
+  }, [overrideMode, existingRoutine, buildGeneratePayload, handlerType, userId, authFetch, handlePostGenerate, handleGenerationError, toast, t, selectedChildData]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
   const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean, weatherForCall?: WeatherOutdoorChoice) => {

@@ -49,10 +49,6 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       const { runSpellingAiGenerate } = await import("../domain-ai/spelling-runners.js");
       return runSpellingAiGenerate(input as Parameters<typeof runSpellingAiGenerate>[0]);
     }
-    case "spelling.tts_prewarm": {
-      const { runSpellingTtsPrewarm } = await import("../domain-ai/spelling-runners.js");
-      return runSpellingTtsPrewarm(input as Parameters<typeof runSpellingTtsPrewarm>[0]);
-    }
 
     case "smart-study.next_questions": {
       const { runSmartStudyNextQuestions } = await import("../domain-ai/smart-study-runners.js");

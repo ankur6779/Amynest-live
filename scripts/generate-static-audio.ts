@@ -217,13 +217,16 @@ function buildStorage(): Storage {
   return new Storage();
 }
 
-function publicGcsUrl(bucketName: string, objectKey: string): string {
-  return `https://storage.googleapis.com/${bucketName}/static-audio/${objectKey}.mp3`;
+function publicGcsUrl(_bucketName: string, objectKey: string): string {
+  return `/api/static-audio/${objectKey}.mp3`;
 }
 
 function isValidMapUrl(url: string | undefined): boolean {
   const u = (url ?? "").trim();
-  return u.startsWith("https://") && !u.includes("undefined");
+  return (
+    (u.startsWith("https://") && !u.includes("undefined")) ||
+    u.startsWith("/api/static-audio/")
+  );
 }
 
 function isEntryComplete(map: StaticAudioMap, mode: StaticAudioMode, text: string): boolean {

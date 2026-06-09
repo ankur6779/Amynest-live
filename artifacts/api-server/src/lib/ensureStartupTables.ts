@@ -667,9 +667,26 @@ export async function ensurePtmPrepDataTable(): Promise<void> {
   logger.info({ evt: "db.ensure", table: "ptm_prep_data" }, "Ensured ptm_prep_data table");
 }
 
+/** P0: one routine per (child_id, date) — required for safe replace semantics. */
+export async function ensureRoutinesChildDateUnique(): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM routines r
+    USING routines r2
+    WHERE r.child_id = r2.child_id
+      AND r.date = r2.date
+      AND r.id < r2.id
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS routines_child_date_uq
+      ON routines (child_id, date)
+  `);
+  logger.info({ evt: "db.ensure", index: "routines_child_date_uq" }, "Ensured routines child+date uniqueness");
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
+    { name: "routines_child_date_uq", run: ensureRoutinesChildDateUnique },
     { name: "parent_profiles", run: ensureParentProfilesTable },
     { name: "subscriptions", run: ensureSubscriptionsTable },
     { name: "onboarding_profiles", run: ensureOnboardingProfilesTable },

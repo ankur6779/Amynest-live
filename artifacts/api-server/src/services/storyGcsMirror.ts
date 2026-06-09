@@ -230,7 +230,14 @@ export async function streamStoryVideo(
     .limit(1);
   const story = storyRows[0];
 
-  if (story && legacyGcsConfigured()) {
+  if (!story) {
+    if (!res.headersSent) {
+      res.status(404).json({ error: "story_not_found" });
+    }
+    return;
+  }
+
+  if (legacyGcsConfigured()) {
     const objectName = storyGcsObjectName(story.driveFileId, story.mimeType, story.originalName);
     const mirrored =
       isValidStoryGcsUrl(story.gcsUrl) || (await gcsObjectExists(objectName));

@@ -23,7 +23,7 @@ import {
   type SpellingDifficulty,
   type SpellingWord,
 } from "@workspace/spelling-catalog";
-import { readCachedAudio } from "../services/ttsCacheService.js";
+import { readSpellingSessionWordAudio } from "../services/spellingSessionAudio.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import {
@@ -1639,7 +1639,7 @@ type AdvanceTxResult =
   | { kind: "no_words_available" }
   | { kind: "session_not_found" }
   | {
-      kind: "audio_pending";
+      kind: "round_incomplete";
       session: SpellingSessionRow;
     }
   | {
@@ -1666,17 +1666,12 @@ type AdvanceTxResult =
 //
 // Branches:
 //
-//   1. Normal flow — latest session is unfinalized AND has audioKeys:
-//      finalize, applyRoundResult, update tournament, INSERT next
-//      session row (empty audioKeys; TTS prewarm runs after the tx
-//      commits and writes audioKeys back via a separate UPDATE).
+//   1. Normal flow — latest session is unfinalized AND all words were
+//      attempted: finalize, applyRoundResult, update tournament, INSERT
+//      next session row (audio served from spelling library manifest).
 //
-//   2. Audio-pending — latest session is unfinalized AND audioKeys is
-//      empty: a previous /advance committed the session row but the
-//      post-tx TTS prewarm failed. DO NOT finalize/apply (the session
-//      has no playable audio so no attempts could have happened, and
-//      finalizing it would erroneously apply a 0-attempt round and
-//      eliminate the kid). Return the existing session for re-prewarm.
+//   2. Round incomplete — latest session is unfinalized but not all words
+//      have attempts yet. Refuse to finalize (would apply a partial round).
 //
 //   3. Legacy recovery — latest session is finalized AND
 //      `tournament.rounds[last].sessionToken` matches it: pre-fix
@@ -1773,9 +1768,10 @@ async function advanceTournamentTxImpl(
       passed: true,
     };
   } else {
-    const audioKeys = activeSession.audioKeys ?? [];
-    if (audioKeys.length === 0) {
-      return { kind: "audio_pending", session: activeSession };
+    const words = activeSession.words ?? [];
+    const attemptCount = Object.keys(activeSession.attempts ?? {}).length;
+    if (words.length > 0 && attemptCount < words.length) {
+      return { kind: "round_incomplete", session: activeSession };
     }
 
     // Normal flow — finalize the just-played round, apply the result,
@@ -1820,11 +1816,8 @@ async function advanceTournamentTxImpl(
       );
   }
 
-  // ATOMIC NEXT-SESSION INSERT (DB-only). audioKeys left empty — TTS
-  // prewarm runs after the tx commits and writes audioKeys back via
-  // a separate UPDATE. If TTS fails, the session row exists with
-  // empty audio; a future /advance retry hits the audio_pending
-  // branch above and re-prewarms against the same row.
+  // ATOMIC NEXT-SESSION INSERT (DB-only). Playback uses spelling library
+  // manifest URLs — audioKeys remain unused for tournament rounds.
   let nextSessionData: AdvanceTxResult & { kind: "ok" } extends {
     nextSessionData: infer D;
   }
@@ -1943,10 +1936,10 @@ router.post(
       res.status(404).json({ error: "session_not_found" });
       return;
     }
-    if (txResult.kind === "audio_pending") {
-      res.status(202).json({
+    if (txResult.kind === "round_incomplete") {
+      res.status(409).json({
         ok: false,
-        status: "audio_pending",
+        status: "round_incomplete",
         sessionToken: txResult.session.sessionToken,
       });
       return;
@@ -2118,33 +2111,29 @@ spellingPublicRouter.get(
 
     try {
       const rows = await db
-        .select({ audioKeys: spellingSessionsTable.audioKeys })
+        .select({ words: spellingSessionsTable.words })
         .from(spellingSessionsTable)
         .where(eq(spellingSessionsTable.sessionToken, token))
         .limit(1);
       const session = rows[0];
-      if (!session || idx >= session.audioKeys.length) {
+      const wordRow = session?.words?.[idx];
+      if (!session || !wordRow?.word) {
         res.status(404).json({ error: "not_found" });
         return;
       }
-      const key = session.audioKeys[idx];
-      if (!key) {
-        res.status(404).json({ error: "not_found" });
-        return;
-      }
-      const cached = await readCachedAudio(key);
-      if (!cached) {
+      const buffer = await readSpellingSessionWordAudio(wordRow.word, wordRow.id);
+      if (!buffer?.byteLength) {
         res.status(404).json({ error: "audio_not_found" });
         return;
       }
       res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("X-Content-Type-Options", "nosniff");
-      res.setHeader("Content-Length", String(cached.buffer.byteLength));
+      res.setHeader("Content-Length", String(buffer.byteLength));
       // Per-session audio: short cache so a finalised / abandoned session
       // doesn't keep serving forever. Browsers + the proxy can still
       // cache the few MP3s a single run actually plays.
       res.setHeader("Cache-Control", "private, max-age=300");
-      res.status(200).end(cached.buffer);
+      res.status(200).end(buffer);
     } catch (err) {
       logger.error(
         {

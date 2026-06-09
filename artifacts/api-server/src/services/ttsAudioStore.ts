@@ -136,6 +136,20 @@ export function legacyGcsConfigured(): boolean {
   return getGcsDiagnostics().legacyGcsConfigured;
 }
 
+/** List object names under tts-cache/ (for orphan cleanup). */
+export async function listTtsCacheObjectNames(limit: number): Promise<string[]> {
+  if (!legacyGcsConfigured()) return [];
+  const capped = Math.min(Math.max(1, limit), 500);
+  const [files] = await getBucket().getFiles({ prefix: "tts-cache/", maxResults: capped });
+  return files.map((f) => f.name);
+}
+
+/** Delete a tts-cache GCS object (best-effort). */
+export async function deleteTtsGcsObject(objectName: string): Promise<void> {
+  if (!legacyGcsConfigured()) return;
+  await getBucket().file(objectName).delete({ ignoreNotFound: true });
+}
+
 /** Download a raw object from the primary GCS bucket (e.g. content-bank/*.json). */
 export async function readGcsObjectBytes(objectName: string): Promise<Buffer | null> {
   if (!legacyGcsConfigured()) return null;

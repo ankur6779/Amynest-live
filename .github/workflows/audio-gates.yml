@@ -9,7 +9,9 @@ on:
       - "lib/phonics-sounds/**"
       - "scripts/check-amy-voice-usage.ts"
       - "scripts/check-speech-coach-engine-freeze.ts"
-      - "scripts/check-static-audio*.ts"
+      - "scripts/check-audio-manifest-urls.ts"
+      - "scripts/normalize-audio-manifest-urls.ts"
+      - "scripts/audio-load-test.ts"
       - "scripts/check-audio-release-certification.ts"
   workflow_dispatch:
   workflow_call:
@@ -69,3 +71,44 @@ jobs:
 
       - name: Audio device certification gate
         run: pnpm run check:audio-device-certification
+
+  audio-manifest-urls:
+    name: Audio manifest proxy URLs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: No raw GCS playback URLs in manifests
+        run: pnpm run check:audio-manifest-urls
+
+  audio-load-test:
+    name: Audio load test (staging)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Concurrent static + spelling audio load
+        env:
+          AUDIO_LOAD_BASE_URL: ${{ vars.AUDIO_LOAD_BASE_URL || 'https://api.amynest.in' }}
+          AUDIO_LOAD_CONCURRENCY: "50"
+          AUDIO_LOAD_P95_MS: "2500"
+        run: pnpm run load:audio

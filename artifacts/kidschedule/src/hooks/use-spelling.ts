@@ -961,6 +961,13 @@ export function useSpellingTournament(
         `/api/spelling/tournaments/${tournament.tournamentToken}/advance`,
         { method: "POST", headers: { "Content-Type": "application/json" } },
       );
+      if (res.status === 409) {
+        const pending = (await res.json()) as { status?: string };
+        if (pending.status === "round_incomplete") {
+          setError("round_incomplete");
+          return null;
+        }
+      }
       if (!res.ok) throw new Error(`tournament_advance_${res.status}`);
       const data = (await res.json()) as {
         ok: true;

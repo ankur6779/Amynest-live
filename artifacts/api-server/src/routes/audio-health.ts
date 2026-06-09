@@ -4,11 +4,13 @@ import { getAuth } from "../lib/auth";
 import {
   applyAdminOpsAction,
   getAdminOpsControlPanel,
+  getClientAudioOpsFlags,
   type AdminOpsAction,
 } from "../services/admin-ops-store";
 import {
   getAdminDashboard,
   getAudioHealthDashboard,
+  getAudioSloSnapshot,
   ingestAudioHealthEvents,
 } from "../services/audio-health-store";
 import { getSystemHealthSnapshot } from "../services/system-health-store";
@@ -94,13 +96,100 @@ router.post("/audio-health", async (req, res): Promise<void> => {
 });
 
 /**
- * GET /api/audio-ops — live ops flags for all authenticated clients.
+ * GET /api/audio-ops — client-safe ops flags (no admin internals).
  */
 router.get("/audio-ops", (_req, res): void => {
+  const client = getClientAudioOpsFlags();
+  const predictive = getPredictiveOpsState();
+  res.json({
+    ...client,
+    degradedMode: predictive.degradedMode,
+    apiUsageFactor: predictive.apiUsageFactor,
+    streamingWeightFactor: predictive.streamingWeightFactor,
+    prefetchDepth: predictive.prefetchDepth,
+    layerWeights: predictive.layerWeights,
+    updatedAt: Math.max(client.updatedAt, predictive.lastUpdated),
+  });
+});
+
+/**
+ * GET /api/admin/audio-ops-panel — full ops + predictive state (admin only).
+ */
+router.get("/admin/audio-ops-panel", (req, res): void => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
   res.json({
     ...getAdminOpsControlPanel(),
     ...getPredictiveOpsState(),
   });
+});
+
+/**
+ * GET /api/admin/audio-jobs/failed — recent failed BullMQ audio jobs.
+ */
+router.get("/admin/audio-jobs/failed", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const { getRecentFailedAiJobDiagnostics } = await import(
+    "../queue/failed-job-diagnostics.js"
+  );
+  const jobs = await getRecentFailedAiJobDiagnostics(10);
+  const replayable = new Set<string>([
+    "audio.warmup",
+    "tts.pregenerate",
+    "tts.synthesize",
+    "static-audio.generate",
+    "audio-lessons.pregenerate",
+    "ai-coach.pregenerate_audio",
+    "ai-coach.pregenerate_infant_audio",
+  ]);
+  res.json({
+    jobs: jobs.filter((j) => replayable.has(j.type)),
+  });
+});
+
+/**
+ * POST /api/admin/audio-jobs/:jobId/replay — re-enqueue a failed audio job.
+ */
+router.post("/admin/audio-jobs/:jobId/replay", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const jobId = String(req.params.jobId ?? "").trim();
+  if (!jobId) {
+    res.status(400).json({ error: "invalid_job_id" });
+    return;
+  }
+  const { replayFailedAudioJob } = await import("../services/audioJobReplayService.js");
+  const result = await replayFailedAudioJob(jobId);
+  if (!result.ok) {
+    res.status(result.error === "job_not_found" ? 404 : 409).json(result);
+    return;
+  }
+  res.json(result);
+});
+
+/**
+ * POST /api/admin/tts-orphan-cleanup — manual GCS orphan purge (admin only).
+ */
+router.post("/admin/tts-orphan-cleanup", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const dryRun = req.body?.dryRun === true;
+  const { runTtsOrphanCleanup } = await import("../services/ttsOrphanCleanup.js");
+  const result = await runTtsOrphanCleanup({ dryRun });
+  res.json({ ok: true, ...result });
 });
 
 /**
@@ -127,6 +216,19 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
   }
 
   res.json(getAdminDashboard());
+});
+
+/**
+ * GET /api/admin/audio-slo — TTFA p50/p95/p99 SLO snapshot (admin only).
+ */
+router.get("/admin/audio-slo", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  res.json(getAudioSloSnapshot());
 });
 
 /**

@@ -2069,12 +2069,35 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
       buildSyncBody: (generated) => buildRoutineAiSuccessPayload(generated, routinePollContext),
       res,
     });
+    logger.info(
+      {
+        evt: "routine.generate_ai_ok",
+        userId,
+        childId: parsed.data.childId,
+        date: parsed.data.date,
+        ageGroup,
+        totalAgeMonths,
+      },
+      "AI routine generation completed",
+    );
     return;
   } catch (err) {
-    console.error("[generate-ai] AI ERROR:", err);
+    console.error("ROUTINE_GENERATION_FAILED", err);
     if (err instanceof Error && err.stack) {
       console.error("[generate-ai] stack:", err.stack);
     }
+    logger.error(
+      {
+        evt: "routine.generate_ai_failed",
+        userId,
+        childId: parsed.data.childId,
+        date: parsed.data.date,
+        ageGroup,
+        totalAgeMonths,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "AI routine generation failed — attempting rule fallback",
+    );
     try {
       const fallbackPayload = buildRoutineRuleFallbackPayload(routinePollContext);
       console.info("[generate-ai] fallback success", {
@@ -2250,22 +2273,120 @@ function sendSavedRoutineResponse(
 function respondRoutineSaveFailed(
   res: import("express").Response,
   err: unknown,
-  context: { childId: number; date: string; override?: boolean },
+  context: { childId: number; date: string; override?: boolean; userId?: string },
 ): void {
+  const rawMessage = err instanceof Error ? err.message : String(err);
+  const cause = classifyRoutineSaveError(rawMessage);
   logger.error(
     {
       evt: "routine.save_failed",
+      userId: context.userId,
       childId: context.childId,
       date: context.date,
       override: context.override ?? false,
-      message: err instanceof Error ? err.message : String(err),
+      cause,
+      message: rawMessage,
+      stack: err instanceof Error ? err.stack : undefined,
     },
     "Routine insert/upsert failed",
   );
   res.status(500).json({
     error: "routine_save_failed",
     message: "Could not save routine. Please try again.",
+    cause,
   });
+}
+
+function classifyRoutineSaveError(message: string): string {
+  if (/no unique or exclusion constraint/i.test(message)) return "missing_unique_index";
+  if (/duplicate key value violates unique constraint/i.test(message)) return "duplicate_key";
+  if (/foreign key constraint/i.test(message)) return "foreign_key";
+  if (/Failed query:/i.test(message)) return "query_failed";
+  return "database_error";
+}
+
+type RoutineSaveInput = {
+  childId: number;
+  date: string;
+  title: string;
+  items: unknown;
+  adaptations?: string[] | null;
+  override?: boolean;
+};
+
+async function persistRoutineForChildDate(
+  input: RoutineSaveInput,
+): Promise<
+  | { ok: true; routine: typeof routinesTable.$inferSelect }
+  | { ok: false; kind: "conflict"; routineId?: number }
+> {
+  const adaptations = input.adaptations ?? [];
+  const [existing] = await db
+    .select({ id: routinesTable.id })
+    .from(routinesTable)
+    .where(
+      and(eq(routinesTable.childId, input.childId), eq(routinesTable.date, input.date)),
+    )
+    .limit(1);
+
+  if (existing) {
+    if (!input.override) {
+      return { ok: false, kind: "conflict", routineId: existing.id };
+    }
+    const [routine] = await db
+      .update(routinesTable)
+      .set({
+        title: input.title,
+        items: input.items,
+        adaptations,
+        customized: false,
+      })
+      .where(eq(routinesTable.id, existing.id))
+      .returning();
+    return { ok: true, routine };
+  }
+
+  try {
+    const [routine] = await db
+      .insert(routinesTable)
+      .values({
+        childId: input.childId,
+        date: input.date,
+        title: input.title,
+        items: input.items,
+        adaptations,
+        customized: false,
+      })
+      .returning();
+    return { ok: true, routine };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/duplicate key value violates unique constraint/i.test(msg)) {
+      throw err;
+    }
+    const [raced] = await db
+      .select({ id: routinesTable.id })
+      .from(routinesTable)
+      .where(
+        and(eq(routinesTable.childId, input.childId), eq(routinesTable.date, input.date)),
+      )
+      .limit(1);
+    if (!raced) throw err;
+    if (!input.override) {
+      return { ok: false, kind: "conflict", routineId: raced.id };
+    }
+    const [routine] = await db
+      .update(routinesTable)
+      .set({
+        title: input.title,
+        items: input.items,
+        adaptations,
+        customized: false,
+      })
+      .where(eq(routinesTable.id, raced.id))
+      .returning();
+    return { ok: true, routine };
+  }
 }
 
 router.post("/routines", async (req, res): Promise<void> => {
@@ -2329,94 +2450,60 @@ router.post("/routines", async (req, res): Promise<void> => {
   }
 
   // If override flag is set, replace any existing routine for this child+date.
-  if (parsed.data.override) {
-    let routine: typeof routinesTable.$inferSelect;
-    try {
-      [routine] = await db
-        .insert(routinesTable)
-        .values({
-          childId: parsed.data.childId,
-          date: parsed.data.date,
-          title: parsed.data.title,
-          items: parsed.data.items,
-          adaptations: parsed.data.adaptations ?? [],
-          customized: false,
-        })
-        .onConflictDoUpdate({
-          target: [routinesTable.childId, routinesTable.date],
-          set: {
-            title: parsed.data.title,
-            items: parsed.data.items,
-            adaptations: parsed.data.adaptations ?? [],
-            customized: false,
-          },
-        })
-        .returning();
-    } catch (err) {
-      respondRoutineSaveFailed(res, err, {
-        childId: parsed.data.childId,
-        date: parsed.data.date,
-        override: true,
+  const saveInput: RoutineSaveInput = {
+    childId: parsed.data.childId,
+    date: parsed.data.date,
+    title: parsed.data.title,
+    items: parsed.data.items,
+    adaptations: parsed.data.adaptations,
+    override: parsed.data.override === true,
+  };
+
+  logger.info(
+    {
+      evt: "routine.save_start",
+      userId,
+      childId: saveInput.childId,
+      date: saveInput.date,
+      override: saveInput.override,
+      itemCount: Array.isArray(parsed.data.items) ? parsed.data.items.length : 0,
+      titleLen: parsed.data.title.length,
+    },
+    "Persisting generated routine",
+  );
+
+  let routine: typeof routinesTable.$inferSelect;
+  try {
+    const saved = await persistRoutineForChildDate(saveInput);
+    if (!saved.ok) {
+      res.status(409).json({
+        error: "routine_exists",
+        message: "A routine already exists for this child and date. Send override=true to replace it.",
+        routineId: saved.routineId,
       });
       return;
     }
-
-    const { tryMarkReferralValidForUser } = await import("../services/referralService.js");
-    tryMarkReferralValidForUser(userId, {
-      emailVerified: auth.emailVerified,
-      phoneNumber: auth.phoneNumber,
-    }).catch(() => {});
-
-    const { fireJourneyTask } = await import("../services/journeyService.js");
-    fireJourneyTask(userId, "routine_generate");
-
-    sendSavedRoutineResponse(res, 201, routine, child?.name ?? "Unknown");
-    return;
-  }
-
-  let inserted: (typeof routinesTable.$inferSelect)[];
-  try {
-    inserted = await db
-      .insert(routinesTable)
-      .values({
-        childId: parsed.data.childId,
-        date: parsed.data.date,
-        title: parsed.data.title,
-        items: parsed.data.items,
-        adaptations: parsed.data.adaptations ?? [],
-      })
-      .onConflictDoNothing({
-        target: [routinesTable.childId, routinesTable.date],
-      })
-      .returning();
+    routine = saved.routine;
   } catch (err) {
     respondRoutineSaveFailed(res, err, {
       childId: parsed.data.childId,
       date: parsed.data.date,
+      override: saveInput.override,
+      userId,
     });
     return;
   }
 
-  if (inserted.length === 0) {
-    const [existing] = await db
-      .select({ id: routinesTable.id })
-      .from(routinesTable)
-      .where(
-        and(
-          eq(routinesTable.childId, parsed.data.childId),
-          eq(routinesTable.date, parsed.data.date),
-        ),
-      )
-      .limit(1);
-    res.status(409).json({
-      error: "routine_exists",
-      message: "A routine already exists for this child and date. Send override=true to replace it.",
-      routineId: existing?.id,
-    });
-    return;
-  }
-
-  const [routine] = inserted;
+  logger.info(
+    {
+      evt: "routine.save_ok",
+      userId,
+      childId: routine.childId,
+      routineId: routine.id,
+      date: routine.date,
+    },
+    "Routine saved",
+  );
 
   const { tryMarkReferralValidForUser } = await import("../services/referralService.js");
   tryMarkReferralValidForUser(userId, {

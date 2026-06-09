@@ -2,6 +2,10 @@
  * Server-side audio health aggregation — rolling 15-minute realtime + 24h trends.
  */
 
+import {
+  computePercentiles,
+  TTFA_P95_SLO_MS,
+} from "../lib/audio-slo-utils.js";
 import { logger } from "../lib/logger.js";
 import { getApiHealthSnapshot, type ApiHealthSnapshot } from "./api-health-store.js";
 import { getAdminOpsState, type AdminOpsState } from "./admin-ops-store.js";
@@ -105,6 +109,26 @@ export type AudioHealthAlert = {
   threshold: number;
 };
 
+export type TtfaSloMetrics = {
+  p50: number;
+  p95: number;
+  p99: number;
+  avg: number;
+  sampleCount: number;
+  p95TargetMs: number;
+  p95Met: boolean;
+};
+
+export type AudioSloSnapshot = {
+  windowMs: number;
+  generatedAt: number;
+  ttfa: TtfaSloMetrics;
+  byModule: Record<
+    AudioHealthModule,
+    { p50: number; p95: number; sampleCount: number }
+  >;
+};
+
 export type AdminDashboard = {
   windowMs: number;
   generatedAt: number;
@@ -113,6 +137,10 @@ export type AdminDashboard = {
   fallbackRate: number;
   failureRate: number;
   avgTTFA: number;
+  ttfaP50: number;
+  ttfaP95: number;
+  ttfaP99: number;
+  ttfaSlo: TtfaSloMetrics;
   avgBuffering: number;
   status: "healthy" | "degraded" | "failing";
   perModuleStats: ModuleStats[];
@@ -329,6 +357,7 @@ function buildAlerts(metrics: {
   failureRate: number;
   fallbackRate: number;
   avgTTFA: number;
+  ttfaP95: number;
   layerHealth: LayerHealthRow[];
   apiHealth: ApiHealthSnapshot;
   perModuleStats: ModuleStats[];
@@ -381,14 +410,25 @@ function buildAlerts(metrics: {
     });
   }
 
-  if (metrics.avgTTFA > 1200) {
+  if (metrics.avgTTFA > TTFA_P95_SLO_MS) {
     alerts.push({
-      code: "ttfa_high",
-      message: "TTFA too high",
+      code: "ttfa_avg_high",
+      message: "TTFA average too high",
       severity: "warning",
       emoji: "🟡",
       value: metrics.avgTTFA,
-      threshold: 1200,
+      threshold: TTFA_P95_SLO_MS,
+    });
+  }
+
+  if (metrics.ttfaP95 > TTFA_P95_SLO_MS) {
+    alerts.push({
+      code: "ttfa_p95_slo_breach",
+      message: "TTFA p95 SLO breach",
+      severity: "warning",
+      emoji: "🟡",
+      value: metrics.ttfaP95,
+      threshold: TTFA_P95_SLO_MS,
     });
   }
 
@@ -467,8 +507,18 @@ export function getAdminDashboard(now = Date.now()): AdminDashboard {
   const successRate = totalRequests > 0 ? successes.length / totalRequests : 1;
   const failureRate = totalRequests > 0 ? failures.length / totalRequests : 0;
   const fallbackRate = totalRequests > 0 ? fallbacks.length / totalRequests : 0;
-  const avgTTFA = avg(ttfaSamples);
+  const ttfaStats = computePercentiles(ttfaSamples);
+  const avgTTFA = ttfaStats.avg;
   const avgBuffering = avg(bufferingSamples);
+  const ttfaSlo: TtfaSloMetrics = {
+    p50: ttfaStats.p50,
+    p95: ttfaStats.p95,
+    p99: ttfaStats.p99,
+    avg: ttfaStats.avg,
+    sampleCount: ttfaStats.count,
+    p95TargetMs: TTFA_P95_SLO_MS,
+    p95Met: ttfaStats.count === 0 || ttfaStats.p95 <= TTFA_P95_SLO_MS,
+  };
 
   const perModuleStats: ModuleStats[] = MODULES.map((module) => {
     const rows = windowEvents.filter((e) => e.module === module);
@@ -566,8 +616,36 @@ export function getAdminDashboard(now = Date.now()): AdminDashboard {
     sessionFlows,
     deviceNetworkHeatmap,
     trends24h: buildTrends24h(now),
-    alerts: buildAlerts(metrics),
+    alerts: buildAlerts({ ...metrics, ttfaP95: ttfaSlo.p95 }),
     ops: getAdminOpsState(),
+    ttfaP50: ttfaSlo.p50,
+    ttfaP95: ttfaSlo.p95,
+    ttfaP99: ttfaSlo.p99,
+    ttfaSlo,
+  };
+}
+
+/** TTFA SLO snapshot for admin monitoring and alerting. */
+export function getAudioSloSnapshot(now = Date.now()): AudioSloSnapshot {
+  const dash = getAdminDashboard(now);
+  const byModule = {} as AudioSloSnapshot["byModule"];
+  for (const mod of MODULES) {
+    const cutoff = now - WINDOW_MS;
+    const moduleTtfa = eventLog
+      .filter((e) => e.at >= cutoff && e.module === mod && e.ttfaMs && e.ttfaMs > 0)
+      .map((e) => e.ttfaMs!);
+    const stats = computePercentiles(moduleTtfa);
+    byModule[mod] = {
+      p50: stats.p50,
+      p95: stats.p95,
+      sampleCount: stats.count,
+    };
+  }
+  return {
+    windowMs: dash.windowMs,
+    generatedAt: dash.generatedAt,
+    ttfa: dash.ttfaSlo,
+    byModule,
   };
 }
 

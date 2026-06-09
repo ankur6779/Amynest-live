@@ -17,7 +17,7 @@ import {
 import { logger } from "../../lib/logger.js";
 import { generateAndPersistStaticPhrase } from "../staticAudioGeneration.js";
 import { readGcsObjectBytes, readStaticAudioFromGcs, MIN_TTS_BYTES } from "../ttsAudioStore.js";
-import { runTtsPregenerate } from "./tts-pregenerate-runner.js";
+import { getSpellingGcsObjectPath } from "@workspace/spelling-audio";
 import { runStaticAudioGenerate } from "./static-audio-runners.js";
 
 export type AudioWarmupModule =
@@ -88,14 +88,6 @@ function coachPhrases(limit: number): StaticPhrase[] {
     .map((text) => ({ text, mode: "default" as const }));
 }
 
-function spellingPhrases(limit: number, words?: string[]): StaticPhrase[] {
-  const list = (words ?? ["cat", "dog", "sun", "hat", "run", "bed", "pig", "bus"])
-    .map((w) => w.trim())
-    .filter(Boolean)
-    .slice(0, limit);
-  return list.map((text) => ({ text, mode: "default" as const }));
-}
-
 function rhymePhrases(limit: number): StaticPhrase[] {
   const rhymes = PLAY_CATEGORIES.find((c) => c.id === "rhymes");
   if (!rhymes) return [];
@@ -150,6 +142,13 @@ async function warmStaticPhrases(phrases: StaticPhrase[]): Promise<{
     const buffer = await generateAndPersistStaticPhrase(text, mode, "audio_warmup");
     if (buffer && buffer.byteLength >= MIN_TTS_BYTES) {
       generated += 1;
+      cdnWarmed += 1;
+      continue;
+    }
+
+    const raced = await readStaticAudioFromGcs(hash).catch(() => null);
+    if (raced && raced.byteLength >= MIN_TTS_BYTES) {
+      verified += 1;
       cdnWarmed += 1;
       continue;
     }
@@ -276,7 +275,14 @@ export async function runAudioWarmup(input: AudioWarmupInput): Promise<AudioWarm
       phrases = coachPhrases(limit);
       break;
     case "spelling":
-      phrases = spellingPhrases(limit, hints.spellingWords);
+      libraryPaths = (hints.spellingWords?.length
+        ? hints.spellingWords
+        : ["cat", "dog", "sun", "hat", "run", "bed", "pig", "bus"]
+      )
+        .map((w) => w.trim())
+        .filter(Boolean)
+        .slice(0, limit)
+        .map((word) => getSpellingGcsObjectPath(word));
       break;
     case "rhymes":
       phrases = rhymePhrases(limit);
@@ -304,13 +310,6 @@ export async function runAudioWarmup(input: AudioWarmupInput): Promise<AudioWarm
   const libraryResult = libraryPaths.length
     ? await warmLibraryPaths(libraryPaths)
     : { verified: 0, generated: 0, failed: 0, cdnWarmed: 0 };
-
-  if (input.module === "spelling" && hints.spellingWords?.length) {
-    await runTtsPregenerate({
-      texts: hints.spellingWords.slice(0, limit),
-      mode: "default",
-    });
-  }
 
   return {
     ok: true,

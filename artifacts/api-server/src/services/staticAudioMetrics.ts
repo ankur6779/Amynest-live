@@ -189,6 +189,10 @@ export function recordMissingAudioReport(): void {
   missingAudioReports += 1;
 }
 
+export function getStaticAudioMemoryHitRate(): number {
+  return getMemoryCacheStats().hitRate;
+}
+
 export function getStaticAudioMetrics() {
   const mem = getMemoryCacheStats();
   const avgResponseTimeMs =

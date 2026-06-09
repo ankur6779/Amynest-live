@@ -99,6 +99,10 @@ async function startBackgroundTasks(): Promise<void> {
       const { startStoryGcsMirrorCron } = await import("./lib/storyGcsCron.js");
       startStoryGcsMirrorCron();
     });
+    await runBackgroundPhase("tts_orphan_cleanup_cron", async () => {
+      const { startTtsOrphanCleanupCron } = await import("./lib/ttsOrphanCleanupCron.js");
+      startTtsOrphanCleanupCron();
+    });
     await runBackgroundPhase("learning_content_seed_cron", async () => {
       const { startLearningContentSeedCron } = await import("./lib/learningContentSeedCron.js");
       startLearningContentSeedCron();
