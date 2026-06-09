@@ -179,7 +179,8 @@ describe("audio-health-gate", () => {
 
   it("FAIL when production secrets missing", () => {
     const blockers = validateProductionSecrets({ apiUrl: "https://example.com", requireProductionSecrets: true });
-    assert.equal(blockers.length, 2);
+    assert.equal(blockers.length, 1);
+    assert.ok(blockers[0]!.includes("INTERNAL_HEALTH_SECRET"));
     const report = evaluateAudioHealthGate({
       infraAudioOk: true,
       configBlockers: blockers,

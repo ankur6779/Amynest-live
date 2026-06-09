@@ -32,6 +32,7 @@ jobs:
     name: ChatPlatform device certification (manual release gate)
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

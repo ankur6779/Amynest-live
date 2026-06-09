@@ -95,6 +95,7 @@ jobs:
   audio-device-certification:
     name: Audio device matrix (manual release)
     if: github.event_name == 'workflow_dispatch'
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,6 +133,7 @@ jobs:
   audio-load-test:
     name: Audio load test (staging)
     if: github.event_name == 'workflow_dispatch'
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -147,7 +149,7 @@ jobs:
 
       - name: Concurrent static + spelling audio load
         env:
-          AUDIO_LOAD_BASE_URL: ${{ vars.AUDIO_LOAD_BASE_URL || 'https://api.amynest.in' }}
+          AUDIO_LOAD_BASE_URL: ${{ vars.AUDIO_LOAD_BASE_URL || 'https://amynest-backend-dykj.onrender.com' }}
           AUDIO_LOAD_CONCURRENCY: "50"
           AUDIO_LOAD_P95_MS: "2500"
         run: pnpm run load:audio

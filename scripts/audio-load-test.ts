@@ -2,7 +2,7 @@
  * Audio subsystem load test — static-audio, spelling-library, optional TTS playback.
  *
  * Usage:
- *   AUDIO_LOAD_BASE_URL=https://api.amynest.in pnpm run load:audio
+ *   AUDIO_LOAD_BASE_URL=https://amynest-backend-dykj.onrender.com pnpm run load:audio
  *   AUDIO_LOAD_BASE_URL=http://localhost:5000 AUDIO_LOAD_CONCURRENCY=50 pnpm run load:audio
  *
  * Optional:

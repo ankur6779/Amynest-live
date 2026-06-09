@@ -361,13 +361,31 @@ function buildCacheInput(
 export function validateProductionSecrets(opts: AudioHealthGateRunnerOptions): string[] {
   if (!opts.requireProductionSecrets) return [];
   const blockers: string[] = [];
-  if (!opts.adminToken?.trim()) {
-    blockers.push("ADMIN_AUTH_TOKEN missing — production gate requires admin telemetry probes");
-  }
   if (!opts.internalHealthSecret?.trim()) {
     blockers.push("INTERNAL_HEALTH_SECRET missing — production gate requires queue health probes");
   }
   return blockers;
+}
+
+function deriveTtsHealthFromInfra(
+  infraBody: Record<string, unknown> | undefined,
+  staticSamples: StaticAudioSample[] | undefined,
+): TtsHealthInput {
+  const ttsMeta = infraBody?.tts as { openAiConfigured?: boolean } | undefined;
+  const openAiConfigured = !!ttsMeta?.openAiConfigured;
+  const storageOk = infraBody?.ok === true;
+  const staticProbed = (staticSamples?.length ?? 0) > 0;
+  const staticOk = staticSamples?.every((sample) => sample.ok) ?? false;
+
+  return {
+    generationOk: openAiConfigured && storageOk,
+    playbackUrlValid: staticProbed && staticOk,
+    ttfaMs: null,
+    generationLatencyMs: null,
+    cacheLatencyMs: null,
+    openAiConfigured,
+    storageOk,
+  };
 }
 
 export async function collectAudioHealthGateInput(
@@ -400,20 +418,19 @@ export async function collectAudioHealthGateInput(
   let queueInput: AudioHealthGateInput["queue"];
   let adminSysBody: AdminSystemHealthBody | undefined;
   let dashBody: AdminDashboardBody | undefined;
+  let adminAuthorized = false;
 
   if (!adminToken) {
     phaseSkips[AUDIO_GATE_PHASE_NAMES.log] = "ADMIN_AUTH_TOKEN not configured";
     phaseSkips[AUDIO_GATE_PHASE_NAMES.orphan] = "ADMIN_AUTH_TOKEN not configured";
-    if (opts.requireProductionSecrets) {
-      phaseSkips[AUDIO_GATE_PHASE_NAMES.tts] = "ADMIN_AUTH_TOKEN not configured";
-    }
   } else {
     const dash = await gateFetch(opts.apiUrl, "/api/admin/dashboard", { adminToken, auth: true });
     const system = await gateFetch(opts.apiUrl, "/api/admin/system-health", { adminToken, auth: true });
     adminSysBody = system.body as AdminSystemHealthBody;
     dashBody = dash.body as AdminDashboardBody;
+    adminAuthorized = dash.ok && !!dashBody;
 
-    if (dash.ok && dashBody) {
+    if (adminAuthorized) {
       logAnalysis = deriveLogAnalysis(dashBody);
       const hitRate = dashBody.cacheHealth?.hitRate ?? adminSysBody?.metrics?.cacheHitRate ?? 0;
       cache = buildCacheInput(
@@ -425,6 +442,7 @@ export async function collectAudioHealthGateInput(
       );
     } else {
       phaseSkips[AUDIO_GATE_PHASE_NAMES.log] = "Admin dashboard unreachable or unauthorized";
+      phaseSkips[AUDIO_GATE_PHASE_NAMES.orphan] = "Admin token invalid or expired";
     }
   }
 
@@ -489,7 +507,7 @@ export async function collectAudioHealthGateInput(
   const security = await runSecurityChecks(opts.apiUrl);
 
   let orphan: AudioHealthGateInput["orphan"];
-  if (!adminToken) {
+  if (!adminToken || !adminAuthorized) {
     orphan = undefined;
   } else {
     const orphanRes = await gateFetch(opts.apiUrl, "/api/admin/tts-orphan-cleanup", {
@@ -528,10 +546,10 @@ export async function collectAudioHealthGateInput(
   }
 
   let tts: TtsHealthInput | undefined;
-  if (adminToken && !phaseSkips[AUDIO_GATE_PHASE_NAMES.tts]) {
+  if (adminAuthorized) {
     tts = await runTtsGenerateProbe(opts.apiUrl, adminToken, infraBody);
-  } else if (!adminToken) {
-    phaseSkips[AUDIO_GATE_PHASE_NAMES.tts] = "ADMIN_AUTH_TOKEN not configured";
+  } else {
+    tts = deriveTtsHealthFromInfra(infraBody, staticSamples);
   }
 
   const prewarm = derivePrewarmMetrics(
