@@ -2,7 +2,7 @@
  * Direct local HTMLAudio playback — stops global speech channel first.
  */
 
-import { audioManager } from "@/lib/audio-manager";
+import { stopAllPlayback } from "@/lib/audio-session-coordinator";
 
 let active: HTMLAudioElement | null = null;
 let generation = 0;
@@ -33,49 +33,51 @@ export function playLocalAudio(
   src: string,
   opts?: { playbackRate?: number },
 ): Promise<LocalPlayResult> {
-  const url = (src ?? "").trim();
-  if (!url) return Promise.resolve({ ok: false, error: "local_empty_url" });
+  return (async () => {
+    const url = (src ?? "").trim();
+    if (!url) return { ok: false, error: "local_empty_url" };
 
-  stopLocalAudio();
-  audioManager.stopAll();
-  const gen = ++generation;
+    stopLocalAudio();
+    await stopAllPlayback();
+    const gen = ++generation;
 
-  const el = new Audio(url);
-  el.preload = "auto";
-  if (opts?.playbackRate && opts.playbackRate > 0) {
-    el.playbackRate = opts.playbackRate;
-  }
-  active = el;
+    const el = new Audio(url);
+    el.preload = "auto";
+    if (opts?.playbackRate && opts.playbackRate > 0) {
+      el.playbackRate = opts.playbackRate;
+    }
+    active = el;
 
-  return new Promise((resolve) => {
-    const finish = (result: LocalPlayResult) => {
-      if (gen !== generation) return;
-      if (active === el) active = null;
-      resolve(result);
-    };
+    return new Promise<LocalPlayResult>((resolve) => {
+      const finish = (result: LocalPlayResult) => {
+        if (gen !== generation) return;
+        if (active === el) active = null;
+        resolve(result);
+      };
 
-    const onEnded = () => {
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
-      finish({ ok: true });
-    };
-    const onError = () => {
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
-      finish({ ok: false, error: "local_play_error" });
-    };
-
-    el.addEventListener("ended", onEnded);
-    el.addEventListener("error", onError);
-
-    void el.play().then(
-      () => undefined,
-      (err: unknown) => {
+      const onEnded = () => {
         el.removeEventListener("ended", onEnded);
         el.removeEventListener("error", onError);
-        const msg = err instanceof Error ? err.message : String(err);
-        finish({ ok: false, error: msg || "local_play_rejected" });
-      },
-    );
-  });
+        finish({ ok: true });
+      };
+      const onError = () => {
+        el.removeEventListener("ended", onEnded);
+        el.removeEventListener("error", onError);
+        finish({ ok: false, error: "local_play_error" });
+      };
+
+      el.addEventListener("ended", onEnded);
+      el.addEventListener("error", onError);
+
+      void el.play().then(
+        () => undefined,
+        (err: unknown) => {
+          el.removeEventListener("ended", onEnded);
+          el.removeEventListener("error", onError);
+          const msg = err instanceof Error ? err.message : String(err);
+          finish({ ok: false, error: msg || "local_play_rejected" });
+        },
+      );
+    });
+  })();
 }
