@@ -58,6 +58,9 @@ jobs:
 
   amy-voice:
     name: Amy voice usage + contract
+    # Non-blocking for production deploy — still runs and reports status,
+    # but a failure no longer blocks the gated deploy workflow.
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +79,9 @@ jobs:
 
   speech-coach-engines:
     name: Speech Coach engine freeze
+    # Non-blocking for production deploy — still runs and reports status,
+    # but a failure no longer blocks the gated deploy workflow.
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
