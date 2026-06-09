@@ -1,6 +1,7 @@
 /**
  * Infant Poems Catalog — 10 sleep-focused bedtime poems (0–24 months).
- * Bundled MP3 preferred; TTS fallback only when audioUrl missing.
+ * Bundled MP3 paths exist for offline pack generation; playback uses TTS narration
+ * of the full poem lines (Amy voice, server-cached by content hash).
  */
 
 import { infantSleepAssetUrl } from "@/data/infant-sleep-catalog";

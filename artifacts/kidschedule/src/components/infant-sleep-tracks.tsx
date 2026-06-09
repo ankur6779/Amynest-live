@@ -18,6 +18,7 @@ import {
   resolveSleepItemAudioUrl,
   type SleepCategory,
 } from "@/data/infant-sleep-catalog";
+import { getSleepStorySpeakText } from "@/data/infant-sleep-stories";
 import { useInfantPoemPlayer, type PoemPlayer } from "@/hooks/use-poem-player";
 import {
   recordSleepPlay,
@@ -111,16 +112,23 @@ export function InfantSleepTracks({
   }, [prefs.continuousMode, prefs.continuousNoiseId, noiseEngine]);
 
   function handleTilePress(track: SleepLibraryItem) {
-    if (!isSleepPackDownloaded(track.packId === "none" ? "core-v1" : track.packId, childId)) return;
+    const isStory = category === "story";
+    const packId = track.packId === "none" ? "core-v1" : track.packId;
+    if (!isStory && !isSleepPackDownloaded(packId, childId)) return;
     setOpenTrack(track);
-    const url = resolveSleepItemAudioUrl(track);
     const defaultLoop = defaultLoopForItem(track);
     player.setLoop(defaultLoop);
     recordSleepPlay(track.id, childId);
+
+    const speakText = isStory
+      ? getSleepStorySpeakText(track.id, track.title)
+      : track.title;
+
     void player.play({
-      text: track.title,
-      audioUrl: url,
+      text: speakText,
+      audioUrl: isStory ? undefined : resolveSleepItemAudioUrl(track),
       trackId: track.id,
+      contentType: category,
       onEnded: category === "story" || !defaultLoop ? handleContinuousAfterEnd : undefined,
     });
   }
@@ -170,6 +178,7 @@ export function InfantSleepTracks({
             track.packId === "none" ? "core-v1" : track.packId,
             childId,
           );
+          const playable = category === "story" || downloaded;
           const isFav = isSleepFavorite(track.id, childId);
           return (
             <SleepTrackTile
@@ -179,7 +188,7 @@ export function InfantSleepTracks({
               isPlaying={isActive && player.isPlaying}
               isLoading={isActive && player.isLoading}
               isFavorite={isFav}
-              downloaded={downloaded}
+              downloaded={playable}
               onPress={() => handleTilePress(track)}
               onToggleFavorite={() => {
                 toggleSleepFavorite(track.id, childId);
@@ -281,7 +290,7 @@ function SleepTrackTile({
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-white/80" />
             ) : downloaded ? (
-              <Check className="h-4 w-4 text-white/70" aria-label="Downloaded" />
+              <Check className="h-4 w-4 text-white/70" aria-label="Ready to play" />
             ) : (
               <Download className="h-4 w-4 text-white/70" aria-label="Download required" />
             )}
@@ -399,10 +408,14 @@ function SleepTrackFullscreenPlayer({
                 onClick={() => {
                   if (player.isLoading) return;
                   if (!player.isPlaying) {
+                    const isStory = track.category === "story";
                     void player.play({
-                      text: track.title,
-                      audioUrl: resolveSleepItemAudioUrl(track),
+                      text: isStory
+                        ? getSleepStorySpeakText(track.id, track.title)
+                        : track.title,
+                      audioUrl: isStory ? undefined : resolveSleepItemAudioUrl(track),
                       trackId: track.id,
+                      contentType: track.category as "lullaby" | "story",
                     });
                   } else if (player.isPaused) player.resume();
                   else player.pause();

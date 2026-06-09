@@ -13,6 +13,11 @@ import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
 import { playInfantSleepBundledMp3 } from "@/lib/infant-sleep-bundled-playback";
+import {
+  logInfantSleepPlaybackRequest,
+  warnIfAudioSourceDuplicated,
+  type InfantSleepContentType,
+} from "@/lib/infant-sleep-playback-trace";
 import { isAudioUnlocked, recordTtsUserGesture } from "@/lib/tts-guard";
 
 const FADE_IN_MS = 2000;
@@ -31,6 +36,8 @@ export interface PoemPlayerOptions {
   onEnded?: () => void;
   /** Track id for telemetry / library state. */
   trackId?: string;
+  /** Drives pipeline selection — lullabies use bundled MP3; poems/stories use TTS narration. */
+  contentType?: InfantSleepContentType;
 }
 
 export interface PoemPlayer {
@@ -152,7 +159,9 @@ export function useInfantPoemPlayer(): PoemPlayer {
       onEndedRef.current = opts.onEnded;
 
       const myId = ++reqIdRef.current;
-      const wantsBundled = isBundledInfantSleepAudioUrl(opts.audioUrl);
+      const contentType: InfantSleepContentType = opts.contentType ?? "poem";
+      const wantsBundled =
+        contentType === "lullaby" && isBundledInfantSleepAudioUrl(opts.audioUrl);
       abortInFlight();
       clearFade();
       teardownAudio();
@@ -195,6 +204,15 @@ export function useInfantPoemPlayer(): PoemPlayer {
         trimmedUrl: string,
         bundled: boolean,
       ): Promise<boolean> => {
+        logInfantSleepPlaybackRequest({
+          selectedId: opts.trackId,
+          resolvedAudioUrl: trimmedUrl,
+          contentType,
+          pipeline: bundled ? "bundled_mp3" : "tts_narration",
+        });
+        if (opts.trackId) {
+          warnIfAudioSourceDuplicated(opts.trackId, trimmedUrl);
+        }
         emitAudioPlaybackEvent("audio_started", {
           source: bundled ? "infant_sleep_mp3" : "poem_player",
           proxyUrl: trimmedUrl.slice(0, 120),
@@ -228,8 +246,8 @@ export function useInfantPoemPlayer(): PoemPlayer {
       };
 
       try {
-        let audioUrl = opts.audioUrl;
-        let bundled = isBundledInfantSleepAudioUrl(audioUrl);
+        let audioUrl = wantsBundled ? opts.audioUrl : undefined;
+        let bundled = wantsBundled;
 
         if (!audioUrl) {
           const controller = new AbortController();
@@ -267,8 +285,8 @@ export function useInfantPoemPlayer(): PoemPlayer {
         bundledPlaybackRef.current = bundled;
         let played = await startPlayback(trimmedUrl, bundled);
 
-        // Bundled MP3 missing or blocked — fall back to TTS so content still plays.
-        if (!played && bundled && text) {
+        // Lullaby bundled MP3 missing or blocked — fall back to TTS so content still plays.
+        if (!played && bundled && contentType === "lullaby" && text) {
           teardownAudio();
           const controller = new AbortController();
           abortRef.current = controller;
