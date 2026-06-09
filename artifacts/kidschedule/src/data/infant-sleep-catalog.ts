@@ -62,6 +62,13 @@ export function infantSleepAssetUrl(relativePath: string): string {
   return `${INFANT_SLEEP_AUDIO_PREFIX}/${trimmed}`;
 }
 
+/** True when the URL points at a bundled /infant-sleep-audio/ MP3 (not API TTS). */
+export function isBundledInfantSleepAudioUrl(url: string | undefined): boolean {
+  const u = (url ?? "").trim();
+  if (!u) return false;
+  return u.includes(`${INFANT_SLEEP_AUDIO_PREFIX}/`);
+}
+
 export const SLEEP_AGE_GROUPS = [
   {
     id: "0-6m" as const,

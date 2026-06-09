@@ -1,12 +1,13 @@
 /**
- * useInfantPoemPlayer — ambient poem playback (loop, fade, volume, sleep timer).
+ * useInfantPoemPlayer — ambient poem / lullaby / story playback (loop, fade, volume, sleep timer).
  *
- * TTS resolution and speech-channel arbitration go through amyVoiceController.
- * Loop/fade/volume remain local (ambient UX controls not supported by speak()).
+ * Bundled `/infant-sleep-audio/` MP3s use the UI/static channel (same as white-noise loops).
+ * Live TTS narration uses the speech channel via amyVoiceController.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { isBundledInfantSleepAudioUrl } from "@/data/infant-sleep-catalog";
 import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
@@ -74,6 +75,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
   const abortRef = useRef<AbortController | null>(null);
   const fadeIntervalRef = useRef<number | null>(null);
   const reqIdRef = useRef(0);
+  const bundledPlaybackRef = useRef(false);
 
   const loopRef = useRef(loop);
   const volumeRef = useRef(volume);
@@ -149,51 +151,19 @@ export function useInfantPoemPlayer(): PoemPlayer {
       onEndedRef.current = opts.onEnded;
 
       const myId = ++reqIdRef.current;
+      const wantsBundled = isBundledInfantSleepAudioUrl(opts.audioUrl);
       abortInFlight();
       clearFade();
       teardownAudio();
-      amyVoiceController.pause();
+      if (!wantsBundled) {
+        amyVoiceController.pause();
+      }
       setError(null);
       setIsPaused(false);
       setIsPlaying(false);
       setIsLoading(true);
 
-      try {
-        let audioUrl = opts.audioUrl;
-
-        if (!audioUrl) {
-          const controller = new AbortController();
-          abortRef.current = controller;
-          const resolved = await amyVoiceController.fetchNarrationUrl(
-            authFetch,
-            text,
-            { signal: controller.signal, category: "sentences" },
-          );
-          if (myId !== reqIdRef.current) return;
-          if (!resolved?.url) {
-            setError("tts_failed");
-            setIsLoading(false);
-            emitAudioPlaybackEvent("audio_failed", {
-              source: "poem_player",
-              phrase: text.slice(0, 80),
-              error: "tts_failed",
-            });
-            return;
-          }
-          audioUrl = resolved.url;
-        }
-
-        const trimmedUrl = (audioUrl ?? "").trim();
-        if (!trimmedUrl || trimmedUrl.includes("undefined")) {
-          setError("tts_failed");
-          emitAudioPlaybackEvent("audio_failed", {
-            source: "poem_player",
-            error: "invalid_audio_url",
-          });
-          return;
-        }
-
-        const audio = audioManager.create(trimmedUrl);
+      const attachHandlers = (audio: HTMLAudioElement) => {
         audio.loop = loopRef.current;
         audio.volume = 0;
         audio.onended = () => {
@@ -218,23 +188,98 @@ export function useInfantPoemPlayer(): PoemPlayer {
           });
         };
         audioRef.current = audio;
+      };
+
+      const startPlayback = async (
+        trimmedUrl: string,
+        bundled: boolean,
+      ): Promise<boolean> => {
+        const proxyUrl = resolveApiMediaUrl(trimmedUrl);
+        const audio = audioManager.create(proxyUrl);
+        attachHandlers(audio);
+
+        const channel = bundled ? "ui" : "speech";
+        const srcType = bundled ? "static" : "tts";
+        const source = bundled ? "infant_sleep_media" : "poem_player";
 
         emitAudioPlaybackEvent("audio_started", {
           source: "poem_player",
-          proxyUrl: resolveApiMediaUrl(trimmedUrl).slice(0, 120),
+          proxyUrl: proxyUrl.slice(0, 120),
         });
 
-        const played = await audioManager.play(
+        return audioManager.play(
           audio,
           {
-            proxyUrl: resolveApiMediaUrl(trimmedUrl),
-            source: "poem_player",
-            channel: "speech",
+            proxyUrl,
+            source,
+            channel,
             interrupt: true,
-            srcType: "tts",
+            srcType,
+            phrase: opts.trackId,
           },
-          { channel: "speech", interrupt: true },
+          { channel, interrupt: true },
         );
+      };
+
+      try {
+        let audioUrl = opts.audioUrl;
+        let bundled = isBundledInfantSleepAudioUrl(audioUrl);
+
+        if (!audioUrl) {
+          const controller = new AbortController();
+          abortRef.current = controller;
+          const resolved = await amyVoiceController.fetchNarrationUrl(
+            authFetch,
+            text,
+            { signal: controller.signal, category: "sentences" },
+          );
+          if (myId !== reqIdRef.current) return;
+          if (!resolved?.url) {
+            setError("tts_failed");
+            setIsLoading(false);
+            emitAudioPlaybackEvent("audio_failed", {
+              source: "poem_player",
+              phrase: text.slice(0, 80),
+              error: "tts_failed",
+            });
+            return;
+          }
+          audioUrl = resolved.url;
+          bundled = false;
+        }
+
+        let trimmedUrl = (audioUrl ?? "").trim();
+        if (!trimmedUrl || trimmedUrl.includes("undefined")) {
+          setError("tts_failed");
+          emitAudioPlaybackEvent("audio_failed", {
+            source: "poem_player",
+            error: "invalid_audio_url",
+          });
+          return;
+        }
+
+        bundledPlaybackRef.current = bundled;
+        let played = await startPlayback(trimmedUrl, bundled);
+
+        // Bundled MP3 missing or blocked — fall back to TTS so content still plays.
+        if (!played && bundled && text) {
+          teardownAudio();
+          const controller = new AbortController();
+          abortRef.current = controller;
+          const resolved = await amyVoiceController.fetchNarrationUrl(
+            authFetch,
+            text,
+            { signal: controller.signal, category: "sentences" },
+          );
+          if (myId !== reqIdRef.current) return;
+          if (resolved?.url) {
+            trimmedUrl = resolved.url.trim();
+            bundled = false;
+            bundledPlaybackRef.current = false;
+            played = await startPlayback(trimmedUrl, false);
+          }
+        }
+
         if (!played) {
           if (myId !== reqIdRef.current) return;
           setError("playback_failed");
@@ -249,7 +294,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
           return;
         }
         if (myId !== reqIdRef.current) {
-          try { audio.pause(); } catch { /* noop */ }
+          try { audioRef.current?.pause(); } catch { /* noop */ }
           teardownAudio();
           emitAudioPlaybackEvent("audio_interrupted", { source: "poem_player" });
           return;
@@ -309,7 +354,10 @@ export function useInfantPoemPlayer(): PoemPlayer {
     abortInFlight();
     clearFade();
     teardownAudio();
-    amyVoiceController.pause();
+    if (!bundledPlaybackRef.current) {
+      amyVoiceController.pause();
+    }
+    bundledPlaybackRef.current = false;
     setIsPlaying(false);
     setIsPaused(false);
     setIsLoading(false);
@@ -368,6 +416,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
           try { a.load(); } catch { /* noop */ }
         }
         audioRef.current = null;
+        bundledPlaybackRef.current = false;
         setFadeInProgress(false);
         setIsPlaying(false);
         setIsPaused(false);
