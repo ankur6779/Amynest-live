@@ -28,6 +28,7 @@
     "@workspace/animal-world": "workspace:*",
     "@workspace/world-engine": "workspace:*",
     "@workspace/phonics-sounds": "workspace:*",
+    "@workspace/rhymes-audio": "workspace:*",
     "@workspace/phonics-curriculum": "workspace:*",
     "@workspace/environment": "workspace:*",
     "@workspace/family-routine": "workspace:*",

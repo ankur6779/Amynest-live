@@ -39,15 +39,25 @@ function isCacheableAudioPath(pathname) {
 function isCacheableMediaPath(pathname) {
   return (
     isCacheableAudioPath(pathname) ||
+    isSignedUrlMetadataPath(pathname) ||
     WORLDS_LIBRARY_RE.test(pathname) ||
     ANIMAL_WORLD_LIBRARY_RE.test(pathname) ||
     STORIES_STREAM_RE.test(pathname)
   );
 }
 
+const SIGNED_URL_METADATA_RE = /^\/api\/audio\/signed-url\/[a-z0-9-]+$/i;
+const RHYMES_CATALOG_RE = /^\/api\/audio\/rhymes\/catalog$/i;
+
+/** @param {string} pathname */
+function isSignedUrlMetadataPath(pathname) {
+  return SIGNED_URL_METADATA_RE.test(pathname) || RHYMES_CATALOG_RE.test(pathname);
+}
+
 /** @param {string} pathname @param {string} contentType */
 function shouldStoreInEdgeCache(pathname, contentType) {
   if (!contentType) return false;
+  if (isSignedUrlMetadataPath(pathname)) return contentType.includes("json");
   if (isCacheableAudioPath(pathname)) return contentType.includes("audio");
   if (WORLDS_LIBRARY_RE.test(pathname) || ANIMAL_WORLD_LIBRARY_RE.test(pathname)) {
     return contentType.includes("audio") || contentType.includes("image");

@@ -55,6 +55,7 @@
     "check:phonics-audio": "pnpm --filter @workspace/scripts run check-phonics-audio",
     "clean:phonics-audio-legacy": "pnpm --filter @workspace/scripts run clean-phonics-audio-legacy",
     "generate:phonics-library": "pnpm --filter @workspace/scripts run generate-phonics-library",
+    "generate:rhymes-registry": "node scripts/generate-rhymes-audio-registry.mjs",
     "generate:animal-world-audio": "pnpm --filter @workspace/scripts run generate-animal-world-audio",
     "generate:animal-world-real-heroes": "pnpm --filter @workspace/scripts run generate-animal-world-real-heroes",
     "sprint:animal-world-real-photos": "pnpm --filter @workspace/scripts run animal-world-real-photo-sprint",

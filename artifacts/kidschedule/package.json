@@ -160,6 +160,7 @@
     "@workspace/ptm-prep": "workspace:*",
     "@workspace/routine-journey": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
+    "@workspace/rhymes-audio": "workspace:*",
     "@workspace/spelling-audio": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",
     "@workspace/static-audio": "workspace:*",

@@ -334,6 +334,9 @@ importers:
       '@workspace/reality-validation':
         specifier: workspace:*
         version: link:../../lib/reality-validation
+      '@workspace/rhymes-audio':
+        specifier: workspace:*
+        version: link:../../lib/rhymes-audio
       '@workspace/routine-intelligence':
         specifier: workspace:*
         version: link:../../lib/routine-intelligence
@@ -578,6 +581,9 @@ importers:
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
+      '@workspace/rhymes-audio':
+        specifier: workspace:*
+        version: link:../../lib/rhymes-audio
       '@workspace/routine-journey':
         specifier: workspace:*
         version: link:../../lib/routine-journey
@@ -1564,6 +1570,12 @@ importers:
       '@workspace/notification-engine':
         specifier: workspace:*
         version: link:../notification-engine
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/rhymes-audio:
     devDependencies:
       tsx:
         specifier: 'catalog:'

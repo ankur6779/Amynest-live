@@ -29,7 +29,7 @@ export type SleepIconName =
   | "BookOpen";
 
 export type LoopRecommendation = "always" | "recommended" | "optional" | "single-play";
-export type OfflineSuitability = "procedural" | "bundled" | "downloadable";
+export type OfflineSuitability = "procedural" | "bundled" | "downloadable" | "streaming";
 
 export interface SleepLibraryItem {
   id: string;
@@ -44,8 +44,10 @@ export interface SleepLibraryItem {
   loopRecommendation: LoopRecommendation;
   packId: "core-v1" | "extended-v1" | "none";
   tags: string[];
-  /** Bundled or downloadable MP3 path (relative to /infant-sleep-audio/). */
+  /** Bundled or downloadable MP3 path (relative to /infant-sleep-audio/). Lullabies use GCS streaming instead. */
   assetPath?: string;
+  /** GCS-backed lullaby id for signed URL playback (Rhymes/ library). */
+  gcsAudioId?: string;
   /** Procedural sound-engine id when offlineSuitability is procedural. */
   proceduralId?: string;
   /** Poem lines (poem category only). */
@@ -276,31 +278,7 @@ export const WHITE_NOISE_ITEMS: SleepLibraryItem[] = [
   },
 ];
 
-/** Core lullabies shipped in the app bundle (P0). */
-export const LULLABY_CORE_ITEMS: SleepLibraryItem[] = [
-  { id: "lul-twinkle", title: "Twinkle, Twinkle Little Star", category: "lullaby", ageGroups: ["0-6m", "6-12m", "12-24m"], primaryAgeGroup: "0-6m", icon: "Star", durationSec: 62, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/twinkle.mp3", calmingIntensity: 2, loopRecommendation: "optional", packId: "core-v1", tags: ["classic"] },
-  { id: "lul-brahms", title: "Brahms' Lullaby", category: "lullaby", ageGroups: ["0-6m", "6-12m", "12-24m"], primaryAgeGroup: "0-6m", icon: "Moon", durationSec: 78, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/brahms.mp3", calmingIntensity: 1, loopRecommendation: "optional", packId: "core-v1", tags: ["classic"] },
-  { id: "lul-rock-a-bye", title: "Rock-a-Bye Baby", category: "lullaby", ageGroups: ["0-6m", "6-12m"], primaryAgeGroup: "0-6m", icon: "Moon", durationSec: 58, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/rock-a-bye.mp3", calmingIntensity: 2, loopRecommendation: "optional", packId: "core-v1", tags: ["classic"] },
-  { id: "lul-hush-baby", title: "Hush, Little Baby", category: "lullaby", ageGroups: ["0-6m", "6-12m"], primaryAgeGroup: "0-6m", icon: "HeartIcon", durationSec: 72, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/hush-baby.mp3", calmingIntensity: 1, loopRecommendation: "optional", packId: "core-v1", tags: ["classic"] },
-  { id: "lul-sleep-little-one", title: "Sleep Little One", category: "lullaby", ageGroups: ["0-6m"], primaryAgeGroup: "0-6m", icon: "Sparkles", durationSec: 54, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/sleep-little-one.mp3", calmingIntensity: 1, loopRecommendation: "recommended", packId: "core-v1", tags: ["original"] },
-  { id: "lul-sleep-baby-sleep", title: "Sleep, Baby, Sleep", category: "lullaby", ageGroups: ["0-6m"], primaryAgeGroup: "0-6m", icon: "Moon", durationSec: 48, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/sleep-baby-sleep.mp3", calmingIntensity: 1, loopRecommendation: "recommended", packId: "core-v1", tags: ["classic"] },
-  { id: "lul-hum-dee-dum", title: "Hum Dee Dum", category: "lullaby", ageGroups: ["0-6m"], primaryAgeGroup: "0-6m", icon: "Music", durationSec: 60, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/hum-dee-dum.mp3", calmingIntensity: 1, loopRecommendation: "always", packId: "core-v1", tags: ["instrumental"] },
-  { id: "lul-cradle-song", title: "Cradle Song", category: "lullaby", ageGroups: ["0-6m", "6-12m"], primaryAgeGroup: "0-6m", icon: "HeartIcon", durationSec: 65, offlineSuitability: "bundled", assetPath: "packs/core-v1/lullabies/cradle-song.mp3", calmingIntensity: 1, loopRecommendation: "recommended", packId: "core-v1", tags: ["original"] },
-];
-
-/** Extended lullabies — OTA pack (P2). */
-export const LULLABY_EXTENDED_ITEMS: SleepLibraryItem[] = [
-  { id: "lul-all-through-night", title: "All Through the Night", category: "lullaby", ageGroups: ["0-6m", "6-12m", "12-24m"], primaryAgeGroup: "0-6m", icon: "Moon", durationSec: 85, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/all-through-night.mp3", calmingIntensity: 1, loopRecommendation: "optional", packId: "extended-v1", tags: ["classic"] },
-  { id: "lul-golden-slumbers", title: "Golden Slumbers", category: "lullaby", ageGroups: ["0-6m", "6-12m", "12-24m"], primaryAgeGroup: "6-12m", icon: "Star", durationSec: 70, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/golden-slumbers.mp3", calmingIntensity: 1, loopRecommendation: "optional", packId: "extended-v1", tags: ["classic"] },
-  { id: "lul-lavenders-blue", title: "Lavender's Blue", category: "lullaby", ageGroups: ["6-12m", "12-24m"], primaryAgeGroup: "6-12m", icon: "Sparkles", durationSec: 68, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/lavenders-blue.mp3", calmingIntensity: 2, loopRecommendation: "optional", packId: "extended-v1", tags: ["classic"] },
-  { id: "lul-bye-bunting", title: "Bye, Baby Bunting", category: "lullaby", ageGroups: ["6-12m", "12-24m"], primaryAgeGroup: "6-12m", icon: "Bird", durationSec: 55, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/bye-bunting.mp3", calmingIntensity: 2, loopRecommendation: "optional", packId: "extended-v1", tags: ["classic"] },
-  { id: "lul-skye-boat", title: "Skye Boat Song", category: "lullaby", ageGroups: ["6-12m", "12-24m"], primaryAgeGroup: "6-12m", icon: "Cloud", durationSec: 80, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/skye-boat.mp3", calmingIntensity: 2, loopRecommendation: "optional", packId: "extended-v1", tags: ["classic"] },
-  { id: "lul-stars-above", title: "Stars Above You", category: "lullaby", ageGroups: ["6-12m", "12-24m"], primaryAgeGroup: "6-12m", icon: "Star", durationSec: 70, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/stars-above.mp3", calmingIntensity: 2, loopRecommendation: "optional", packId: "extended-v1", tags: ["original"] },
-  { id: "lul-dreamy-hum", title: "Dreamy Hum", category: "lullaby", ageGroups: ["0-6m", "6-12m", "12-24m"], primaryAgeGroup: "0-6m", icon: "Sparkles", durationSec: 90, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/dreamy-hum.mp3", calmingIntensity: 1, loopRecommendation: "always", packId: "extended-v1", tags: ["instrumental"] },
-  { id: "lul-cradle-moon", title: "Cradle and Moon", category: "lullaby", ageGroups: ["12-24m"], primaryAgeGroup: "12-24m", icon: "Moon", durationSec: 72, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/lullabies/cradle-moon.mp3", calmingIntensity: 1, loopRecommendation: "optional", packId: "extended-v1", tags: ["original"] },
-];
-
-export const LULLABY_ITEMS: SleepLibraryItem[] = [...LULLABY_CORE_ITEMS, ...LULLABY_EXTENDED_ITEMS];
+import { LULLABY_ITEMS, LULLABY_LEGACY_ID_ALIASES } from "./infant-lullaby-gcs-catalog";
 
 export const STORY_ITEMS: SleepLibraryItem[] = [
   { id: "story-moon-blanket", title: "The Moon's Soft Blanket", category: "story", ageGroups: ["6-12m", "12-24m"], primaryAgeGroup: "6-12m", icon: "Moon", durationSec: 180, offlineSuitability: "downloadable", assetPath: "packs/extended-v1/stories/moon-blanket.mp3", calmingIntensity: 1, loopRecommendation: "single-play", packId: "extended-v1", tags: ["bedtime"] },
@@ -320,14 +298,14 @@ export const SLEEP_PACKS = {
   "core-v1": {
     id: "core-v1",
     label: "Core Sleep Pack",
-    description: "Essential lullabies, poems, and ambient loops — included with the app.",
+    description: "Essential poems and ambient loops — lullabies stream from cloud.",
     estimatedMb: 12,
     bundled: true,
   },
   "extended-v1": {
     id: "extended-v1",
     label: "Extended Sleep Pack",
-    description: "More lullabies and gentle sleep stories — download for offline use.",
+    description: "Gentle sleep stories — download for offline use.",
     estimatedMb: 8,
     bundled: false,
   },
@@ -354,19 +332,21 @@ export function getItemsForAgeAndCategory(
 }
 
 export function getSleepItemById(id: string): SleepLibraryItem | undefined {
-  return ALL_SLEEP_ITEMS.find((i) => i.id === id);
+  const aliased = LULLABY_LEGACY_ID_ALIASES[id] ?? id;
+  return ALL_SLEEP_ITEMS.find((i) => i.id === aliased);
 }
 
 export function resolveSleepItemAudioUrl(item: SleepLibraryItem): string | undefined {
+  if (item.category === "lullaby" && item.gcsAudioId) return undefined;
   if (!item.assetPath) return undefined;
   return infantSleepAssetUrl(item.assetPath);
 }
 
 export function getDefaultFeaturedIds(ageGroup: SleepAgeGroup): string[] {
   const map: Record<SleepAgeGroup, string[]> = {
-    "0-6m": ["wn-womb", "lul-sleep-baby-sleep", "poem-sleep-baby-sleep"],
-    "6-12m": ["wn-pink", "lul-cradle-song", "poem-pat-pat-pat"],
-    "12-24m": ["wn-window-rain", "lul-golden-slumbers", "poem-goodnight-everything"],
+    "0-6m": ["wn-womb", "twinkle-twinkle-little-star", "poem-sleep-baby-sleep"],
+    "6-12m": ["wn-pink", "brahms-lullaby", "poem-pat-pat-pat"],
+    "12-24m": ["wn-window-rain", "a-star-s-lullaby", "poem-goodnight-everything"],
   };
   return map[ageGroup];
 }

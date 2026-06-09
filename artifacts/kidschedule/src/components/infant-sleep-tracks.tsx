@@ -113,8 +113,9 @@ export function InfantSleepTracks({
 
   function handleTilePress(track: SleepLibraryItem) {
     const isStory = category === "story";
+    const isLullaby = category === "lullaby";
     const packId = track.packId === "none" ? "core-v1" : track.packId;
-    if (!isStory && !isSleepPackDownloaded(packId, childId)) return;
+    if (!isStory && !isLullaby && !isSleepPackDownloaded(packId, childId)) return;
     setOpenTrack(track);
     const defaultLoop = defaultLoopForItem(track);
     player.setLoop(defaultLoop);
@@ -126,8 +127,9 @@ export function InfantSleepTracks({
 
     void player.play({
       text: speakText,
-      audioUrl: isStory ? undefined : resolveSleepItemAudioUrl(track),
+      audioUrl: isLullaby || isStory ? undefined : resolveSleepItemAudioUrl(track),
       trackId: track.id,
+      gcsAudioId: isLullaby ? (track.gcsAudioId ?? track.id) : undefined,
       contentType: category,
       onEnded: category === "story" || !defaultLoop ? handleContinuousAfterEnd : undefined,
     });
@@ -178,7 +180,7 @@ export function InfantSleepTracks({
             track.packId === "none" ? "core-v1" : track.packId,
             childId,
           );
-          const playable = category === "story" || downloaded;
+          const playable = category === "lullaby" || category === "story" || downloaded;
           const isFav = isSleepFavorite(track.id, childId);
           return (
             <SleepTrackTile
@@ -409,12 +411,14 @@ function SleepTrackFullscreenPlayer({
                   if (player.isLoading) return;
                   if (!player.isPlaying) {
                     const isStory = track.category === "story";
+                    const isLullaby = track.category === "lullaby";
                     void player.play({
                       text: isStory
                         ? getSleepStorySpeakText(track.id, track.title)
                         : track.title,
-                      audioUrl: isStory ? undefined : resolveSleepItemAudioUrl(track),
+                      audioUrl: isLullaby || isStory ? undefined : resolveSleepItemAudioUrl(track),
                       trackId: track.id,
+                      gcsAudioId: isLullaby ? (track.gcsAudioId ?? track.id) : undefined,
                       contentType: track.category as "lullaby" | "story",
                     });
                   } else if (player.isPaused) player.resume();

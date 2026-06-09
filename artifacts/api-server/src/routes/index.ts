@@ -107,6 +107,7 @@ import contentOrchestrationRouter from "./content-orchestration";
 import eventPrepRouter from "./event-prep";
 import ptmPrepRouter from "./ptm-prep";
 import contentBankRouter from "./content-bank";
+import { audioSignedUrlPublicRouter } from "./audio-signed-url";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -154,6 +155,7 @@ router.use(staticAudioPublicRouter);
 // Capacitor OTA (Capgo) — public POST, patch-only web bundles (Apple Guideline 2.5.2).
 router.use(otaRouter);
 router.use(storiesPublicRouter);
+router.use(audioSignedUrlPublicRouter);
 router.use(learningSeedPublicRouter);
 router.use(startupTelemetryPublicRouter);
 router.use(remoteConfigRouter);

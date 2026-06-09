@@ -8,7 +8,7 @@ export type InfantSleepPlaybackRequest = {
   selectedId?: string;
   resolvedAudioUrl?: string;
   contentType: InfantSleepContentType;
-  pipeline: "bundled_mp3" | "tts_narration" | "procedural";
+  pipeline: "bundled_mp3" | "tts_narration" | "procedural" | "gcs_signed_url";
 };
 
 let lastPlayback: {

@@ -13,6 +13,7 @@ import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
 import { playInfantSleepBundledMp3 } from "@/lib/infant-sleep-bundled-playback";
+import { fetchSignedLullabyUrl, LULLABY_UNAVAILABLE } from "@/lib/lullaby-gcs-audio";
 import {
   logInfantSleepPlaybackRequest,
   warnIfAudioSourceDuplicated,
@@ -36,8 +37,10 @@ export interface PoemPlayerOptions {
   onEnded?: () => void;
   /** Track id for telemetry / library state. */
   trackId?: string;
-  /** Drives pipeline selection — lullabies use bundled MP3; poems/stories use TTS narration. */
+  /** Drives pipeline selection — lullabies use GCS signed URLs; poems/stories use TTS narration. */
   contentType?: InfantSleepContentType;
+  /** GCS Rhymes library id for signed-URL lullaby playback. */
+  gcsAudioId?: string;
 }
 
 export interface PoemPlayer {
@@ -142,8 +145,10 @@ export function useInfantPoemPlayer(): PoemPlayer {
   const play = useCallback(
     async (opts: PoemPlayerOptions) => {
       if (!supported) return;
+      const contentType: InfantSleepContentType = opts.contentType ?? "poem";
       const text = (opts.text ?? "").trim();
-      if (!text && !opts.audioUrl) return;
+      const isGcsLullaby = contentType === "lullaby";
+      if (!text && !opts.audioUrl && !isGcsLullaby) return;
 
       recordTtsUserGesture();
       if (!isAudioUnlocked()) {
@@ -159,9 +164,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
       onEndedRef.current = opts.onEnded;
 
       const myId = ++reqIdRef.current;
-      const contentType: InfantSleepContentType = opts.contentType ?? "poem";
-      const wantsBundled =
-        contentType === "lullaby" && isBundledInfantSleepAudioUrl(opts.audioUrl);
+      const wantsBundled = isBundledInfantSleepAudioUrl(opts.audioUrl);
       abortInFlight();
       clearFade();
       teardownAudio();
@@ -202,23 +205,42 @@ export function useInfantPoemPlayer(): PoemPlayer {
 
       const startPlayback = async (
         trimmedUrl: string,
-        bundled: boolean,
+        mode: "bundled" | "tts" | "gcs_signed",
       ): Promise<boolean> => {
+        const pipeline =
+          mode === "bundled"
+            ? "bundled_mp3"
+            : mode === "gcs_signed"
+              ? "gcs_signed_url"
+              : "tts_narration";
+        const traceUrl =
+          mode === "gcs_signed"
+            ? "(gcs-signed-url)"
+            : trimmedUrl;
         logInfantSleepPlaybackRequest({
           selectedId: opts.trackId,
-          resolvedAudioUrl: trimmedUrl,
+          resolvedAudioUrl: traceUrl,
           contentType,
-          pipeline: bundled ? "bundled_mp3" : "tts_narration",
+          pipeline,
         });
         if (opts.trackId) {
-          warnIfAudioSourceDuplicated(opts.trackId, trimmedUrl);
+          warnIfAudioSourceDuplicated(opts.trackId, traceUrl);
         }
         emitAudioPlaybackEvent("audio_started", {
-          source: bundled ? "infant_sleep_mp3" : "poem_player",
+          source: mode === "bundled" ? "infant_sleep_mp3" : "poem_player",
           proxyUrl: trimmedUrl.slice(0, 120),
         });
 
-        if (bundled) {
+        if (mode === "bundled") {
+          const audio = audioManager.create(trimmedUrl);
+          attachHandlers(audio, true);
+          return playInfantSleepBundledMp3(trimmedUrl, audio, {
+            loop: loopRef.current,
+            volume: volumeRef.current,
+          });
+        }
+
+        if (mode === "gcs_signed") {
           const audio = audioManager.create(trimmedUrl);
           attachHandlers(audio, true);
           return playInfantSleepBundledMp3(trimmedUrl, audio, {
@@ -246,6 +268,46 @@ export function useInfantPoemPlayer(): PoemPlayer {
       };
 
       try {
+        if (isGcsLullaby) {
+          const gcsId = (opts.gcsAudioId ?? opts.trackId ?? "").trim();
+          if (!gcsId) {
+            setError(LULLABY_UNAVAILABLE);
+            setIsLoading(false);
+            return;
+          }
+          const { signedUrl, error: gcsErr } = await fetchSignedLullabyUrl(gcsId, authFetch);
+          if (myId !== reqIdRef.current) return;
+          if (!signedUrl) {
+            setError(gcsErr ?? LULLABY_UNAVAILABLE);
+            setIsLoading(false);
+            emitAudioPlaybackEvent("audio_failed", {
+              source: "poem_player",
+              phrase: gcsId,
+              error: "lullaby_signed_url_failed",
+            });
+            return;
+          }
+          bundledPlaybackRef.current = false;
+          const played = await startPlayback(signedUrl, "gcs_signed");
+          if (!played) {
+            if (myId !== reqIdRef.current) return;
+            setError(LULLABY_UNAVAILABLE);
+            setIsPlaying(false);
+            setIsPaused(false);
+            clearFade();
+            teardownAudio();
+            emitAudioPlaybackEvent("audio_failed", {
+              source: "poem_player",
+              error: "lullaby_playback_failed",
+            });
+            return;
+          }
+          if (myId !== reqIdRef.current) return;
+          setIsPlaying(true);
+          setIsLoading(false);
+          return;
+        }
+
         let audioUrl = wantsBundled ? opts.audioUrl : undefined;
         let bundled = wantsBundled;
 
@@ -283,26 +345,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
         }
 
         bundledPlaybackRef.current = bundled;
-        let played = await startPlayback(trimmedUrl, bundled);
-
-        // Lullaby bundled MP3 missing or blocked — fall back to TTS so content still plays.
-        if (!played && bundled && contentType === "lullaby" && text) {
-          teardownAudio();
-          const controller = new AbortController();
-          abortRef.current = controller;
-          const resolved = await amyVoiceController.fetchNarrationUrl(
-            authFetch,
-            text,
-            { signal: controller.signal, category: "sentences" },
-          );
-          if (myId !== reqIdRef.current) return;
-          if (resolved?.url) {
-            trimmedUrl = resolved.url.trim();
-            bundled = false;
-            bundledPlaybackRef.current = false;
-            played = await startPlayback(trimmedUrl, false);
-          }
-        }
+        let played = await startPlayback(trimmedUrl, bundled ? "bundled" : "tts");
 
         if (!played) {
           if (myId !== reqIdRef.current) return;
