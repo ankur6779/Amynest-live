@@ -18,7 +18,7 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
   }
 
   if (type === "infant.sleep_coach" || type === "infant.feeding_plan") {
-    return handleInfantJob(type, { routeName, input });
+    return handleInfantJob(type, payload);
   }
 
   switch (type) {

@@ -22,6 +22,8 @@ fi
 ssh_cmd() { ssh "${SSH_OPTS[@]}" "${SSH_USER}@${HETZNER_HOST}" "$@"; }
 
 echo "[deploy-remote] target ${SSH_USER}@${HETZNER_HOST}"
+echo "[deploy-remote] NOTE: code-only deploy — worker.env is NOT refreshed."
+echo "[deploy-remote] After secret/env changes run: bash scripts/hetzner/deploy-worker.sh"
 
 if ! ssh_cmd "echo ok" >/dev/null 2>&1; then
   echo "SSH failed — check HETZNER_SSH_PRIVATE_KEY and HETZNER_HOST secrets." >&2

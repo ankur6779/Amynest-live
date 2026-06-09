@@ -16,6 +16,7 @@ import {
   ttsGcsUpload,
   ttsStorageBackend,
   computeTtsContentSha256,
+  purgeStaleTtsCacheRow,
 } from "./ttsAudioStore";
 import type { TtsGenerationContext } from "./ttsGenerate.js";
 import {
@@ -240,6 +241,7 @@ export async function synthesizeElevenLabsFallback(
       { evt: "tts.stale_cache_row", cacheKey, charCount: text.length },
       "tts cache metadata present but audio missing — regenerating",
     );
+    await purgeStaleTtsCacheRow(cacheKey);
   }
 
   let guardPremium: boolean | undefined;

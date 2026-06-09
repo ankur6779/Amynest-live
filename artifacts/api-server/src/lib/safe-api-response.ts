@@ -27,16 +27,36 @@ export function sendSafeJson<T>(
   res.status(status).json(body);
 }
 
+/** Strip Drizzle/Postgres internals before returning errors to clients. */
+export function sanitizePublicErrorMessage(message: string): string {
+  const trimmed = message.trim();
+  if (!trimmed) return "Something went wrong. Please try again.";
+  if (/Failed query:/i.test(trimmed)) {
+    return "Something went wrong. Please try again.";
+  }
+  if (/\bon conflict\s*\(/i.test(trimmed) && trimmed.length > 120) {
+    return "Something went wrong. Please try again.";
+  }
+  if (trimmed.length > 400) {
+    return "Something went wrong. Please try again.";
+  }
+  return trimmed;
+}
+
 export function sendSafeError(
   res: Response,
   status: number,
   message: string,
   fallback = false,
 ): void {
+  const safe =
+    process.env.NODE_ENV === "production"
+      ? sanitizePublicErrorMessage(message)
+      : message;
   sendSafeJson(res, status, {
     success: false,
     data: {},
     fallback,
-    error: message,
+    error: safe,
   });
 }

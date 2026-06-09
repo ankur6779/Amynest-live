@@ -21,11 +21,14 @@ export { TALKING_AMY_ECHO_RATE } from "@/lib/talking-amy-modes";
 
 type AudioCtor = typeof AudioContext;
 
+export type TalkingAmyEchoResult = { ok: true } | { ok: false; error: string };
+
 let generation = 0;
 let activeCtx: AudioContext | null = null;
 let activeSource: AudioBufferSourceNode | null = null;
 let activeOscillators: OscillatorNode[] = [];
 let playing = false;
+let pendingResolve: ((result: TalkingAmyEchoResult) => void) | null = null;
 
 function getAudioContextCtor(): AudioCtor | null {
   if (typeof window === "undefined") return null;
@@ -515,7 +518,7 @@ function wireModeChain(
   }
 }
 
-function teardownActive(): void {
+function teardownActive(opts?: { resolvePending?: boolean }): void {
   generation += 1;
   playing = false;
 
@@ -545,6 +548,12 @@ function teardownActive(): void {
   activeCtx = null;
   if (ctx) void closeAudioContext(ctx);
   notifyPlaybackEnded("talking-amy-echo");
+
+  if (opts?.resolvePending !== false && pendingResolve) {
+    const resolve = pendingResolve;
+    pendingResolve = null;
+    resolve({ ok: false, error: "echo_cancelled" });
+  }
 }
 
 export function stopTalkingAmyEcho(): void {
@@ -554,8 +563,6 @@ export function stopTalkingAmyEcho(): void {
 export function isTalkingAmyEchoPlaying(): boolean {
   return playing;
 }
-
-export type TalkingAmyEchoResult = { ok: true } | { ok: false; error: string };
 
 export type PlayTalkingAmyEchoOptions = {
   mode?: TalkingAmyModeId;
@@ -619,9 +626,12 @@ export async function playTalkingAmyEcho(
   activeOscillators = handles.oscillators;
 
   return new Promise((resolve) => {
+    pendingResolve = resolve;
+
     const finish = (result: TalkingAmyEchoResult) => {
       if (gen !== generation) return;
-      teardownActive();
+      pendingResolve = null;
+      teardownActive({ resolvePending: false });
       resolve(result);
     };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { Moon, Sun, Clock, Play, Pause, Plus, Trash2, Edit3, Check, X, AlertTriangle, TrendingUp, Sparkles, RotateCcw, BedDouble, Activity, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -154,11 +155,12 @@ function napSessionsToSleepEvents(sessions: NapSessionRow[]): SleepEvent[] {
   return events.sort((a, b) => a.ts - b.ts);
 }
 
-async function loadSleepLogFromApi(childId: number): Promise<SleepEvent[] | null> {
+async function loadSleepLogFromApi(
+  childId: number,
+  authFetch: ReturnType<typeof useAuthFetch>,
+): Promise<SleepEvent[] | null> {
   try {
-    const res = await fetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=50`), {
-      credentials: "include",
-    });
+    const res = await authFetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=50`));
     if (!res.ok) return null;
     const json = (await res.json()) as { sessions?: NapSessionRow[] };
     const sessions = json.sessions ?? [];
@@ -170,13 +172,14 @@ async function loadSleepLogFromApi(childId: number): Promise<SleepEvent[] | null
 }
 
 function useSleepLog(childId: number | undefined, childName: string) {
+  const authFetch = useAuthFetch();
   const [log, setLog] = useState<SleepEvent[]>(() => loadSleepLog(childName));
 
   useEffect(() => {
     let cancelled = false;
     const hydrate = async () => {
       if (childId != null) {
-        const apiLog = await loadSleepLogFromApi(childId);
+        const apiLog = await loadSleepLogFromApi(childId, authFetch);
         if (!cancelled && apiLog && apiLog.length > 0) {
           setLog(apiLog);
           return;
@@ -188,7 +191,7 @@ function useSleepLog(childId: number | undefined, childName: string) {
     return () => {
       cancelled = true;
     };
-  }, [childId, childName]);
+  }, [authFetch, childId, childName]);
 
   const persistLocal = useCallback(
     (next: SleepEvent[]) => {

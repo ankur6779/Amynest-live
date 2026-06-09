@@ -31,6 +31,7 @@ import { formatAge } from "@/lib/age-groups";
 import { INFANT_HUB_OPEN_SECTION_EVENT } from "@/lib/hub-activity-cross-link";
 import { trackInfantHubOpened } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { HubCollapsibleSubTile } from "@/components/hub-collapsible-sub-tile";
 import { InfantAskAmyCta } from "@/components/infant/infant-ask-amy-cta";
 import { InfantSleepCoachingPanel } from "@/components/infant/infant-sleep-coaching-panel";
@@ -299,15 +300,14 @@ function HealthCare({
   const {
     toast
   } = useToast();
+  const authFetch = useAuthFetch();
 
   // Load logs once per child
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(getApiUrl(`/api/vaccinations/${childId}`), {
-          credentials: "include"
-        });
+        const r = await authFetch(getApiUrl(`/api/vaccinations/${childId}`));
         if (!r.ok) return;
         const j = (await r.json()) as {
           ok: boolean;
@@ -327,7 +327,7 @@ function HealthCare({
     return () => {
       cancelled = true;
     };
-  }, [childId]);
+  }, [authFetch, childId]);
   const setStatus = useCallback(async (ageLabel: string, status: VaxStatus | null) => {
     const previous = logMap[ageLabel];
     setLogMap(prev => {
@@ -340,12 +340,10 @@ function HealthCare({
     setPendingLabel(ageLabel);
     try {
       const path = `/api/vaccinations/${childId}/${encodeURIComponent(ageLabel)}`;
-      const r = status === null ? await fetch(getApiUrl(path), {
+      const r = status === null ? await authFetch(getApiUrl(path), {
         method: "DELETE",
-        credentials: "include"
-      }) : await fetch(getApiUrl(path), {
+      }) : await authFetch(getApiUrl(path), {
         method: "PUT",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -371,7 +369,7 @@ function HealthCare({
     } finally {
       setPendingLabel(null);
     }
-  }, [childId, logMap, toast]);
+  }, [authFetch, childId, logMap, toast]);
   const upcoming = useMemo(() => getUpcomingVaccinationsWithLog(ageMonths, logMap), [ageMonths, logMap]);
   const overdue = useMemo(() => VACCINATIONS.filter(v => v.ageMonths < ageMonths && logMap[v.ageLabel] !== "done"), [ageMonths, logMap]);
   const summary = useMemo(() => getVaccinationSummary(ageMonths, logMap), [ageMonths, logMap]);

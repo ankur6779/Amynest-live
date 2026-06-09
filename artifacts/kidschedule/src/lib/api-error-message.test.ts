@@ -21,4 +21,18 @@ describe("extractApiErrorMessage", () => {
       "HTTP 409 Conflict",
     );
   });
+
+  it("maps HTTP 401 to session expired", () => {
+    expect(extractApiErrorMessage(new Error("HTTP 401 Unauthorized"))).toBe(
+      "Session expired. Please sign in again.",
+    );
+  });
+
+  it("never surfaces Drizzle SQL leak in toast", () => {
+    const sql =
+      'Failed query: insert into "routines" ... on conflict ("child_id","date") do update params: 33, 2026-06-09';
+    expect(
+      extractApiErrorMessage({ data: { error: sql } }, "Could not save routine"),
+    ).toBe("Could not save routine");
+  });
 });

@@ -9,7 +9,7 @@ import { waitForJob } from "../queue/ai-job-store.js";
 import { getJobForApi, waitForJobResult, isTerminalStatus } from "../queue/index.js";
 import { isProductionDeployment } from "../queue/mode.js";
 import type { AiJobType } from "../queue/types.js";
-import { checkAiRateLimitAsync } from "../utils/ai-rate-limit.js";
+import { checkAiRateLimitAsync, type RateLimitOptions } from "../utils/ai-rate-limit.js";
 import { parseEnvMs } from "./env.js";
 import { logger } from "./logger.js";
 import { resolveSyncApiBody } from "./ai-job-finalize.js";
@@ -41,6 +41,8 @@ export interface SubmitAiJobOptions {
   buildSyncBody: (result: unknown) => unknown;
   buildAsyncBody?: (jobId: string) => unknown;
   rateLimitKey?: string;
+  /** Override default AI enqueue rate limit (30/min). TTS routes use a higher cap. */
+  rateLimitOptions?: RateLimitOptions;
 }
 
 async function respondQueueUnavailable(
@@ -76,7 +78,7 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
   const waitMs = resolveHttpWaitMs(opts.waitMs);
   const rateKey = opts.rateLimitKey ?? opts.userId;
 
-  const rate = await checkAiRateLimitAsync(rateKey);
+  const rate = await checkAiRateLimitAsync(rateKey, opts.rateLimitOptions);
   if (!rate.allowed) {
     opts.res.status(429).json({
       error: "rate_limit",

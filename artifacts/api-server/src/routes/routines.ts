@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import type { ZodError } from "zod";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { logger } from "../lib/logger.js";
 import { db, routinesTable, childrenTable, parentProfilesTable, customRecipesTable } from "@workspace/db";
 import type { CustomRecipeEntry } from "../lib/routine-templates.js";
 import {
@@ -2246,6 +2247,27 @@ function sendSavedRoutineResponse(
   }
 }
 
+function respondRoutineSaveFailed(
+  res: import("express").Response,
+  err: unknown,
+  context: { childId: number; date: string; override?: boolean },
+): void {
+  logger.error(
+    {
+      evt: "routine.save_failed",
+      childId: context.childId,
+      date: context.date,
+      override: context.override ?? false,
+      message: err instanceof Error ? err.message : String(err),
+    },
+    "Routine insert/upsert failed",
+  );
+  res.status(500).json({
+    error: "routine_save_failed",
+    message: "Could not save routine. Please try again.",
+  });
+}
+
 router.post("/routines", async (req, res): Promise<void> => {
   const parsed = CreateRoutineBody.safeParse(req.body);
   if (!parsed.success) {
@@ -2308,26 +2330,36 @@ router.post("/routines", async (req, res): Promise<void> => {
 
   // If override flag is set, replace any existing routine for this child+date.
   if (parsed.data.override) {
-    const [routine] = await db
-      .insert(routinesTable)
-      .values({
-        childId: parsed.data.childId,
-        date: parsed.data.date,
-        title: parsed.data.title,
-        items: parsed.data.items,
-        adaptations: parsed.data.adaptations ?? [],
-        customized: false,
-      })
-      .onConflictDoUpdate({
-        target: [routinesTable.childId, routinesTable.date],
-        set: {
+    let routine: typeof routinesTable.$inferSelect;
+    try {
+      [routine] = await db
+        .insert(routinesTable)
+        .values({
+          childId: parsed.data.childId,
+          date: parsed.data.date,
           title: parsed.data.title,
           items: parsed.data.items,
           adaptations: parsed.data.adaptations ?? [],
           customized: false,
-        },
-      })
-      .returning();
+        })
+        .onConflictDoUpdate({
+          target: [routinesTable.childId, routinesTable.date],
+          set: {
+            title: parsed.data.title,
+            items: parsed.data.items,
+            adaptations: parsed.data.adaptations ?? [],
+            customized: false,
+          },
+        })
+        .returning();
+    } catch (err) {
+      respondRoutineSaveFailed(res, err, {
+        childId: parsed.data.childId,
+        date: parsed.data.date,
+        override: true,
+      });
+      return;
+    }
 
     const { tryMarkReferralValidForUser } = await import("../services/referralService.js");
     tryMarkReferralValidForUser(userId, {
@@ -2342,19 +2374,28 @@ router.post("/routines", async (req, res): Promise<void> => {
     return;
   }
 
-  const inserted = await db
-    .insert(routinesTable)
-    .values({
+  let inserted: (typeof routinesTable.$inferSelect)[];
+  try {
+    inserted = await db
+      .insert(routinesTable)
+      .values({
+        childId: parsed.data.childId,
+        date: parsed.data.date,
+        title: parsed.data.title,
+        items: parsed.data.items,
+        adaptations: parsed.data.adaptations ?? [],
+      })
+      .onConflictDoNothing({
+        target: [routinesTable.childId, routinesTable.date],
+      })
+      .returning();
+  } catch (err) {
+    respondRoutineSaveFailed(res, err, {
       childId: parsed.data.childId,
       date: parsed.data.date,
-      title: parsed.data.title,
-      items: parsed.data.items,
-      adaptations: parsed.data.adaptations ?? [],
-    })
-    .onConflictDoNothing({
-      target: [routinesTable.childId, routinesTable.date],
-    })
-    .returning();
+    });
+    return;
+  }
 
   if (inserted.length === 0) {
     const [existing] = await db

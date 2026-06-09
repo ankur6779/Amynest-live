@@ -12,6 +12,7 @@ import {
   resetApiBackoff,
   waitForApiBackoff,
 } from "@/lib/amy-voice-api-backoff";
+import { runTtsGenerateRequest } from "@/lib/tts-generate-queue";
 import { shouldSkipLiveTtsApi } from "@/lib/amy-voice-circuit";
 import {
   getPhonicsAudioText,
@@ -112,15 +113,17 @@ export async function generateTts(
     // Never default to "alloy" here; it sounds male/neutral and bypasses server config.
     if (voiceOverride) payload.voice = voiceOverride;
 
-    const res = await authFetch(
-      "/api/tts/generate",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...init?.headers },
-        body: JSON.stringify(payload),
-        signal: init?.signal,
-      },
-      getTtsRequestTimeoutMs(),
+    const res = await runTtsGenerateRequest(() =>
+      authFetch(
+        "/api/tts/generate",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...init?.headers },
+          body: JSON.stringify(payload),
+          signal: init?.signal,
+        },
+        getTtsRequestTimeoutMs(),
+      ),
     );
     if (res.status !== 202 && !res.ok) {
       recordApiBackoffFailure();

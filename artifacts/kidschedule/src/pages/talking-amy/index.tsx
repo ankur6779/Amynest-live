@@ -332,6 +332,13 @@ export default function TalkingAmyPage() {
     }
   }, []);
 
+  const clearCelebrateTimer = useCallback(() => {
+    if (celebrateTimerRef.current != null) {
+      window.clearTimeout(celebrateTimerRef.current);
+      celebrateTimerRef.current = null;
+    }
+  }, []);
+
   const rotatePrompt = useCallback(() => {
     setPromptIdx((n) => n + 1);
   }, []);
@@ -381,19 +388,21 @@ export default function TalkingAmyPage() {
       setMiniSurprise(opts?.miniSurpriseId ?? null);
       setPhase("celebrate");
       rotatePrompt();
-      if (celebrateTimerRef.current != null) window.clearTimeout(celebrateTimerRef.current);
+      clearCelebrateTimer();
       const surpriseMs = opts?.miniSurpriseId ? miniSurpriseDurationMs() : 0;
       const duration = achievement
         ? ACHIEVEMENT_UNLOCK_MS
         : Math.max(randomCelebrateDurationMs(), surpriseMs);
       celebrateTimerRef.current = window.setTimeout(() => {
+        celebrateTimerRef.current = null;
+        if (phaseRef.current !== "celebrate") return;
         setPhase("idle");
         setCelebration(null);
         setUnlockedAchievement(null);
         setMiniSurprise(null);
       }, duration);
     },
-    [isFirstUseToday, rotatePrompt, streakDay],
+    [clearCelebrateTimer, isFirstUseToday, rotatePrompt, streakDay],
   );
 
   const playEcho = useCallback(
@@ -459,12 +468,17 @@ export default function TalkingAmyPage() {
           miniSurpriseId,
         });
       } else {
+        clearCelebrateTimer();
         setPhase("idle");
-        setStatusHint("Oops! Try again.");
-        window.setTimeout(() => setStatusHint(null), 2200);
+        setStatusHint(
+          result.error === "echo_cancelled" ? null : "Oops! Try again.",
+        );
+        if (result.error !== "echo_cancelled") {
+          window.setTimeout(() => setStatusHint(null), 2200);
+        }
       }
     },
-    [child, runCelebrate],
+    [child, clearCelebrateTimer, runCelebrate],
   );
 
   const handleEchoFromBlob = useCallback(
@@ -486,14 +500,20 @@ export default function TalkingAmyPage() {
   );
 
   const finishRecording = useCallback(async () => {
-    if (phaseRef.current !== "recording") return;
+    const micActive = microphoneSessionManager.getState() === "recording";
+    if (phaseRef.current !== "recording" && !micActive) return;
+
+    clearCelebrateTimer();
     clearMaxTimer();
     clearVadWatcher();
     holdActiveRef.current = false;
+    if (phaseRef.current !== "recording") {
+      setPhase("recording");
+    }
     const elapsed = Date.now() - startedAtRef.current;
     const blob = await microphoneSessionManager.stopRecording();
     await handleEchoFromBlob(blob, elapsed);
-  }, [clearMaxTimer, clearVadWatcher, handleEchoFromBlob]);
+  }, [clearCelebrateTimer, clearMaxTimer, clearVadWatcher, handleEchoFromBlob]);
 
   const startVadWatcher = useCallback(() => {
     clearVadWatcher();
@@ -506,18 +526,36 @@ export default function TalkingAmyPage() {
   }, [clearVadWatcher, finishRecording]);
 
   const startRecording = useCallback(async () => {
-    if (holdActiveRef.current || phaseRef.current === "echoing" || phaseRef.current === "thinking") {
+    if (
+      phaseRef.current === "echoing" ||
+      phaseRef.current === "thinking" ||
+      phaseRef.current === "celebrate"
+    ) {
       return;
     }
+    if (phaseRef.current === "recording" && holdActiveRef.current) {
+      return;
+    }
+    if (holdActiveRef.current && microphoneSessionManager.getState() !== "recording") {
+      holdActiveRef.current = false;
+    }
+    if (holdActiveRef.current || phaseRef.current !== "idle") {
+      return;
+    }
+
     recordTtsUserGesture();
     stopTalkingAmyEcho();
+    clearCelebrateTimer();
     clearVadWatcher();
     setMicDenied(false);
     setStatusHint(null);
     setCelebration(null);
+    setUnlockedAchievement(null);
+    setMiniSurprise(null);
     holdActiveRef.current = true;
     startedAtRef.current = Date.now();
     setPhase("recording");
+    phaseRef.current = "recording";
 
     const success = await microphoneSessionManager.startRecording({
       echoCancellation: true,
@@ -542,6 +580,15 @@ export default function TalkingAmyPage() {
     if (!success) {
       holdActiveRef.current = false;
       setPhase("idle");
+      setStatusHint("Microphone busy — try again in a moment.");
+      window.setTimeout(() => setStatusHint(null), 2200);
+      return;
+    }
+
+    if (phaseRef.current !== "recording" || !holdActiveRef.current) {
+      holdActiveRef.current = false;
+      await microphoneSessionManager.stopRecording();
+      if (phaseRef.current === "recording") setPhase("idle");
       return;
     }
 
@@ -553,7 +600,14 @@ export default function TalkingAmyPage() {
     maxTimerRef.current = window.setTimeout(() => {
       void finishRecording();
     }, MAX_RECORD_MS);
-  }, [clearMaxTimer, clearVadWatcher, finishRecording, inputMode, startVadWatcher]);
+  }, [
+    clearCelebrateTimer,
+    clearMaxTimer,
+    clearVadWatcher,
+    finishRecording,
+    inputMode,
+    startVadWatcher,
+  ]);
 
   const handleHearAgain = useCallback(async () => {
     const blob = lastBlobRef.current;
@@ -913,7 +967,9 @@ export default function TalkingAmyPage() {
             <motion.button
               type="button"
               data-testid="talking-amy-hold-button"
-              disabled={phase === "echoing" || phase === "thinking"}
+              disabled={
+                phase === "echoing" || phase === "thinking" || phase === "celebrate"
+              }
               onClick={inputMode === "tap" ? handleMicTap : undefined}
               onPointerDown={onHoldStart}
               onPointerUp={onHoldEnd}

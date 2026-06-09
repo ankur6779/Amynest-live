@@ -28,6 +28,15 @@ ssh root@167.233.39.146
 
 ### 2. Render Redis external access
 
+**Maxmemory policy (BullMQ):** `amynest-redis-dykj` must use **`noeviction`** — not `allkeys-lru` (LRU can drop queued jobs under memory pressure). Set in Dashboard → Settings, or:
+
+```bash
+export RENDER_API_KEY=rnd_...
+bash scripts/render-redis-eviction-policy.sh noeviction
+```
+
+`render.yaml` also declares `maxmemoryPolicy: noeviction` for Blueprint sync.
+
 1. Render Dashboard → **amynest-redis-dykj** → **Networking**
 2. Add IP allow rule: `167.233.39.146/32`
 3. **Connect** tab → copy **External** URL (`rediss://…`)

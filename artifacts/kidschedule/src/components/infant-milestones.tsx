@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, CheckCircle2, RotateCcw, ArrowUp, Clock, TrendingUp, Lightbulb, Smile, Baby, BookOpen, Cloud, CloudOff } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { trackMilestoneViewed, trackMilestoneCompleted } from "@/lib/infant-hub-analytics";
@@ -404,11 +405,12 @@ function mergeProgress(local: Stored, remote: Stored): Stored {
   return merged;
 }
 
-async function fetchRemoteProgress(childId: number): Promise<Stored | null> {
+async function fetchRemoteProgress(
+  childId: number,
+  authFetch: ReturnType<typeof useAuthFetch>,
+): Promise<Stored | null> {
   try {
-    const r = await fetch(getApiUrl(`/api/infant-milestones/${childId}`), {
-      credentials: "include",
-    });
+    const r = await authFetch(getApiUrl(`/api/infant-milestones/${childId}`));
     if (!r.ok) return null;
     const j = (await r.json()) as {
       ok: boolean;
@@ -420,11 +422,14 @@ async function fetchRemoteProgress(childId: number): Promise<Stored | null> {
   }
 }
 
-async function pushProgressToServer(childId: number, data: Stored): Promise<Stored | null> {
+async function pushProgressToServer(
+  childId: number,
+  data: Stored,
+  authFetch: ReturnType<typeof useAuthFetch>,
+): Promise<Stored | null> {
   try {
-    const r = await fetch(getApiUrl(`/api/infant-milestones/${childId}/sync`), {
+    const r = await authFetch(getApiUrl(`/api/infant-milestones/${childId}/sync`), {
       method: "POST",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ progress: data }),
     });
@@ -440,13 +445,13 @@ async function saveRemoteMilestone(
   childId: number,
   milestoneId: string,
   state: MState,
+  authFetch: ReturnType<typeof useAuthFetch>,
 ): Promise<boolean> {
   try {
-    const r = await fetch(
+    const r = await authFetch(
       getApiUrl(`/api/infant-milestones/${childId}/${encodeURIComponent(milestoneId)}`),
       {
         method: "PUT",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ state }),
       },
@@ -597,6 +602,7 @@ export function BuddyMilestonePlanner({
   const {
     toast
   } = useToast();
+  const authFetch = useAuthFetch();
   const [progress, setProgress] = useState<Stored>(() => loadProgress(childId, childName));
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "offline">("idle");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -615,7 +621,7 @@ export function BuddyMilestonePlanner({
     setSyncState("syncing");
 
     (async () => {
-      const remote = await fetchRemoteProgress(childId);
+      const remote = await fetchRemoteProgress(childId, authFetch);
       if (cancelled) return;
 
       if (!remote) {
@@ -631,7 +637,7 @@ export function BuddyMilestonePlanner({
 
       let finalProgress = merged;
       if (localHasNewer || Object.keys(remote).length === 0) {
-        const synced = await pushProgressToServer(childId, merged);
+        const synced = await pushProgressToServer(childId, merged, authFetch);
         if (synced) finalProgress = mergeProgress(merged, synced);
       }
 
@@ -644,7 +650,7 @@ export function BuddyMilestonePlanner({
     return () => {
       cancelled = true;
     };
-  }, [childId, childName]);
+  }, [authFetch, childId, childName]);
   const ageBand = getAgeBand(ageMonths);
   const ageMilestones = useMemo(() => getMilestonesForAge(ageMonths), [ageMonths]);
   const bandMilestones = useMemo(() => MILESTONES.filter(m => {
@@ -673,7 +679,7 @@ export function BuddyMilestonePlanner({
       saveProgress(childId, next);
       return next;
     });
-    void saveRemoteMilestone(childId, id, state).then(ok => {
+    void saveRemoteMilestone(childId, id, state, authFetch).then(ok => {
       setSyncState(ok ? "synced" : "offline");
     });
     if (state === "achieved") {
@@ -695,7 +701,7 @@ export function BuddyMilestonePlanner({
         description: t(`toasts.infant_milestones.in_progress_${idx}`)
       });
     }
-  }, [childId, childName, toast, t]);
+  }, [ageMonths, authFetch, bandMilestones, childId, toast, t]);
 
   // Weekly summary stats (across the current age band, not just plan)
   const stats = useMemo(() => {

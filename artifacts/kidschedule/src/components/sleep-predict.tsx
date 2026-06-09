@@ -14,7 +14,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert, Loader2, RefreshCw, History, Lightbulb, CloudMoon } from "lucide-react";
 import { SleepNapReminders } from "@/components/sleep-predict-reminders";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
+import { extractApiErrorMessage } from "@/lib/api-error-message";
 import { infantActivationQueryKey } from "@/lib/infant-activation-api";
 import { trackSleepPredictionViewed, trackSleepLogAdded } from "@/lib/infant-hub-analytics";
 interface SleepPredictProps {
@@ -128,6 +130,7 @@ export function SleepPredict({
   const {
     toast
   } = useToast();
+  const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
   const [data, setData] = useState<PredictResponse | null>(null);
   const [history, setHistory] = useState<NapSession[]>([]);
@@ -153,11 +156,10 @@ export function SleepPredict({
     setLoading(true);
     try {
       const tzOffsetMin = new Date().getTimezoneOffset();
-      const [pRes, hRes] = await Promise.all([fetch(getApiUrl(`/api/sleep-predict/predict/${childId}?tzOffsetMin=${tzOffsetMin}`), {
-        credentials: "include"
-      }), fetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=10`), {
-        credentials: "include"
-      })]);
+      const [pRes, hRes] = await Promise.all([
+        authFetch(getApiUrl(`/api/sleep-predict/predict/${childId}?tzOffsetMin=${tzOffsetMin}`)),
+        authFetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=10`)),
+      ]);
       if (pRes.ok) {
         const json = (await pRes.json()) as PredictResponse;
         setData(json);
@@ -177,13 +179,13 @@ export function SleepPredict({
     } catch (e) {
       toast({
         title: t("toasts.sleep_predict.load_failed_title"),
-        description: e instanceof Error ? e.message : t("toasts.sleep_predict.network_error"),
+        description: extractApiErrorMessage(e, t("toasts.sleep_predict.network_error")),
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
-  }, [ageMonths, childId, toast]);
+  }, [ageMonths, authFetch, childId, t, toast]);
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -192,9 +194,8 @@ export function SleepPredict({
     setLogging(true);
     try {
       const startedAt = new Date().toISOString();
-      const r = await fetch(getApiUrl("/api/sleep-predict/log"), {
+      const r = await authFetch(getApiUrl("/api/sleep-predict/log"), {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -204,7 +205,10 @@ export function SleepPredict({
           startedAt
         })
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        const data = await r.json().catch(() => null);
+        throw { status: r.status, data };
+      }
       setActiveStartIso(startedAt);
       setActiveSleepKind(kind);
       trackSleepLogAdded(childId, ageMonths, { sleepType: kind });
@@ -217,21 +221,20 @@ export function SleepPredict({
     } catch (e) {
       toast({
         title: t("toasts.sleep_predict.log_sleep_failed_title"),
-        description: e instanceof Error ? e.message : t("toasts.sleep_predict.network_error"),
+        description: extractApiErrorMessage(e, t("toasts.sleep_predict.network_error")),
         variant: "destructive"
       });
     } finally {
       setLogging(false);
     }
-  }, [ageMonths, childId, logging, queryClient, refresh, toast]);
+  }, [ageMonths, authFetch, childId, logging, queryClient, refresh, t, toast]);
   const logWake = useCallback(async () => {
     if (logging || !activeStartIso) return;
     const sleepKind = activeSleepKind ?? "nap";
     setLogging(true);
     try {
-      const r = await fetch(getApiUrl("/api/sleep-predict/log"), {
+      const r = await authFetch(getApiUrl("/api/sleep-predict/log"), {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -242,7 +245,10 @@ export function SleepPredict({
           endedAt: new Date().toISOString()
         })
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        const data = await r.json().catch(() => null);
+        throw { status: r.status, data };
+      }
       setActiveStartIso(null);
       setActiveSleepKind(null);
       const durationMinutes = Math.max(
@@ -260,13 +266,13 @@ export function SleepPredict({
     } catch (e) {
       toast({
         title: t("toasts.sleep_predict.log_wake_failed_title"),
-        description: e instanceof Error ? e.message : t("toasts.sleep_predict.network_error"),
+        description: extractApiErrorMessage(e, t("toasts.sleep_predict.network_error")),
         variant: "destructive"
       });
     } finally {
       setLogging(false);
     }
-  }, [activeSleepKind, activeStartIso, ageMonths, childId, logging, queryClient, refresh, t, toast]);
+  }, [activeSleepKind, activeStartIso, ageMonths, authFetch, childId, logging, queryClient, refresh, t, toast]);
   const prediction = data?.prediction;
   const band = prediction ? BAND_META[prediction.pressureBand] : null;
   const dimmed = prediction?.shouldWindDown ?? false;

@@ -232,8 +232,8 @@ export async function createApp(): Promise<Express> {
     ) => {
       logger.error({ err }, "Unhandled API error");
       if (res.headersSent) return;
-      const message = err instanceof Error ? err.message : "Internal server error";
-      sendSafeError(res, 500, message, true);
+      const raw = err instanceof Error ? err.message : "Internal server error";
+      sendSafeError(res, 500, raw, true);
     },
   );
 

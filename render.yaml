@@ -44,7 +44,11 @@ services:
     name: amynest-redis
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     region: singapore
-    ipAllowList: []
+    # BullMQ: never evict queued jobs (Render default allkeys-lru drops keys under pressure)
+    maxmemoryPolicy: noeviction
+    ipAllowList:
+      - source: 167.233.39.146/32
+        description: Hetzner AI worker
 
   # ─── Production API (Docker — deps layer cached until lockfile changes) ─────
   - type: web

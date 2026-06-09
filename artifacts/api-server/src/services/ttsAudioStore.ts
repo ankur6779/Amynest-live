@@ -529,6 +529,23 @@ export async function ttsAudioExists(
   return false;
 }
 
+/** Remove cache metadata when GCS/Postgres bytes are missing (prevents ghost-row loops). */
+export async function purgeStaleTtsCacheRow(cacheKey: string): Promise<void> {
+  try {
+    await db.delete(ttsCacheTable).where(eq(ttsCacheTable.cacheKey, cacheKey));
+    logger.info({ evt: "tts.cache_row_purged", cacheKey }, "Purged stale TTS cache row");
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "tts.cache_row_purge_failed",
+        cacheKey,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "Failed to purge stale TTS cache row",
+    );
+  }
+}
+
 export async function ttsAudioRead(
   cacheKey: string,
   audioData: Buffer | null | undefined,
