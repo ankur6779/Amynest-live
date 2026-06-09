@@ -3,10 +3,8 @@
  */
 import { resolveApiPublicUrl } from "../lib/env.js";
 import { loadStaticAudioMapFromRepo } from "./audio-health-gate-static.js";
-import {
-  runAudioHealthGate,
-  type AudioHealthGateReport,
-} from "./audio-health-gate-runner.js";
+import type { AudioHealthGateReport } from "./audio-health-gate.js";
+import { runAudioHealthGate } from "./audio-health-gate-runner.js";
 
 function resolveGateApiUrl(): string {
   return (
