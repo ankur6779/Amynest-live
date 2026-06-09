@@ -83,6 +83,9 @@ export type TrendHourBucket = {
   successRate: number;
   failureRate: number;
   total: number;
+  ttfaP50: number;
+  ttfaP95: number;
+  ttfaSampleCount: number;
 };
 
 export type CacheHealthMetrics = {
@@ -462,16 +465,31 @@ function buildAlerts(metrics: {
 }
 
 function buildTrends24h(now: number): TrendHourBucket[] {
+  const cutoff = now - TREND_MS;
+  const ttfaByHour = new Map<string, number[]>();
+  for (const e of eventLog) {
+    if (e.at < cutoff) continue;
+    if (!e.ttfaMs || e.ttfaMs <= 0) continue;
+    const key = hourKey(e.at);
+    const samples = ttfaByHour.get(key) ?? [];
+    samples.push(e.ttfaMs);
+    ttfaByHour.set(key, samples);
+  }
+
   const buckets: TrendHourBucket[] = [];
   for (let i = 23; i >= 0; i -= 1) {
     const ts = now - i * 60 * 60 * 1000;
     const key = hourKey(ts);
     const bucket = hourBuckets.get(key) ?? { success: 0, failure: 0, total: 0 };
+    const ttfaStats = computePercentiles(ttfaByHour.get(key) ?? []);
     buckets.push({
       hour: key,
       successRate: bucket.total > 0 ? bucket.success / bucket.total : 1,
       failureRate: bucket.total > 0 ? bucket.failure / bucket.total : 0,
       total: bucket.total,
+      ttfaP50: ttfaStats.p50,
+      ttfaP95: ttfaStats.p95,
+      ttfaSampleCount: ttfaStats.count,
     });
   }
   return buckets;

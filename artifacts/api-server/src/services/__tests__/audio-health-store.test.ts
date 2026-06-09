@@ -90,5 +90,9 @@ describe("audio-health-store", () => {
     const slo = getAudioSloSnapshot();
     assert.equal(slo.ttfa.p95, dash.ttfaP95);
     assert.ok(slo.byModule.coach.sampleCount > 0);
+    assert.ok(dash.trends24h.length === 24);
+    const withTtfa = dash.trends24h.filter((b) => b.ttfaSampleCount > 0);
+    assert.ok(withTtfa.length > 0);
+    assert.ok(withTtfa.every((b) => b.ttfaP95 >= b.ttfaP50));
   });
 });

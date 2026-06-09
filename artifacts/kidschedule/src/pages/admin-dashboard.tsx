@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
@@ -26,6 +26,18 @@ interface DashboardData {
   fallbackRate: number;
   failureRate: number;
   avgTTFA: number;
+  ttfaP50: number;
+  ttfaP95: number;
+  ttfaP99: number;
+  ttfaSlo: {
+    p50: number;
+    p95: number;
+    p99: number;
+    avg: number;
+    sampleCount: number;
+    p95TargetMs: number;
+    p95Met: boolean;
+  };
   avgBuffering: number;
   status: DashboardStatus;
   perModuleStats: Array<{
@@ -92,6 +104,9 @@ interface DashboardData {
     successRate: number;
     failureRate: number;
     total: number;
+    ttfaP50: number;
+    ttfaP95: number;
+    ttfaSampleCount: number;
   }>;
   alerts: Array<{
     code: string;
@@ -346,6 +361,33 @@ export default function AdminDashboardPage() {
     },
   });
 
+  const [orphanResult, setOrphanResult] = useState<string | null>(null);
+  const orphanCleanupMutation = useMutation({
+    mutationFn: async (dryRun: boolean) => {
+      const res = await authFetch("/api/admin/tts-orphan-cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun }),
+      });
+      if (!res.ok) throw new Error("orphan_cleanup_failed");
+      return res.json() as Promise<{
+        scanned: number;
+        orphans: number;
+        deleted: number;
+        dryRun: boolean;
+      }>;
+    },
+    onSuccess: (result) => {
+      setOrphanResult(
+        `${result.dryRun ? "Dry-run" : "Live"}: scanned ${result.scanned}, orphans ${result.orphans}` +
+          (result.dryRun ? "" : `, deleted ${result.deleted}`),
+      );
+    },
+    onError: () => {
+      setOrphanResult("TTS orphan cleanup failed — check API logs.");
+    },
+  });
+
   if (error instanceof Error && error.message === "not_admin") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-8">
@@ -369,6 +411,11 @@ export default function AdminDashboardPage() {
   }
 
   const maxTrend = Math.max(...(data?.trends24h.map((t) => t.total) ?? [1]), 1);
+  const maxTtfaP95 = Math.max(
+    ...(data?.trends24h.map((t) => t.ttfaP95) ?? [1]),
+    data?.ttfaSlo.p95TargetMs ?? 1200,
+    1,
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -436,6 +483,16 @@ export default function AdminDashboardPage() {
                 label="Avg TTFA"
                 value={`${Math.round(data.avgTTFA)}ms`}
                 icon={<Zap className="h-3 w-3 text-primary/60" />}
+              />
+              <StatCard
+                label="TTFA P95"
+                value={`${Math.round(data.ttfaP95)}ms`}
+                sub={
+                  data.ttfaSlo.sampleCount > 0
+                    ? `SLO ${data.ttfaSlo.p95TargetMs}ms · ${data.ttfaSlo.p95Met ? "met" : "breach"}`
+                    : "No TTFA samples yet"
+                }
+                icon={<Zap className={cn("h-3 w-3", data.ttfaSlo.p95Met ? "text-emerald-400/80" : "text-amber-400/80")} />}
               />
               <StatCard
                 label="Failure Rate"
@@ -655,7 +712,25 @@ export default function AdminDashboardPage() {
                   onClick={() => actionMutation.mutate("reset_all")}
                   loading={actionMutation.isPending}
                 />
+                <ActionButton
+                  label="TTS Orphan Scan"
+                  onClick={() => orphanCleanupMutation.mutate(true)}
+                  loading={orphanCleanupMutation.isPending}
+                />
+                <ActionButton
+                  label="TTS Orphan Purge"
+                  danger
+                  onClick={() => {
+                    if (window.confirm("Delete GCS TTS orphans with no Postgres row?")) {
+                      orphanCleanupMutation.mutate(false);
+                    }
+                  }}
+                  loading={orphanCleanupMutation.isPending}
+                />
               </div>
+              {orphanResult && (
+                <p className="text-[11px] text-muted-foreground mt-2 font-mono">{orphanResult}</p>
+              )}
               {(data.ops.pregenerationPaused || data.ops.reduceDbReads) && (
                 <p className="text-[11px] text-amber-300 mt-2">
                   {data.ops.pregenerationPaused && "Pregeneration paused · "}
@@ -760,9 +835,66 @@ export default function AdminDashboardPage() {
                 <MiniStat label="Success" value={pct(data.successRate)} />
                 <MiniStat label="Failure" value={pct(data.failureRate)} />
                 <MiniStat label="Fallback" value={pct(data.fallbackRate)} />
+                <MiniStat label="TTFA P50" value={`${Math.round(data.ttfaP50)}ms`} />
+                <MiniStat
+                  label="TTFA P95"
+                  value={`${Math.round(data.ttfaP95)}ms`}
+                />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <MiniStat label="TTFA P99" value={`${Math.round(data.ttfaP99)}ms`} />
                 <MiniStat label="Avg TTFA" value={`${Math.round(data.avgTTFA)}ms`} />
                 <MiniStat label="Buffering" value={data.avgBuffering.toFixed(1)} />
+                <MiniStat
+                  label="SLO P95"
+                  value={data.ttfaSlo.p95Met ? "Met" : "Breach"}
+                />
               </div>
+              {data.trends24h.some((b) => b.ttfaSampleCount > 0) && (
+                <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
+                    TTFA P95 — last 24h (target {data.ttfaSlo.p95TargetMs}ms)
+                  </p>
+                  <div className="relative flex items-end gap-0.5 h-20">
+                    <div
+                      className="absolute left-0 right-0 border-t border-dashed border-amber-400/40 pointer-events-none"
+                      style={{
+                        bottom: `${Math.max(8, (data.ttfaSlo.p95TargetMs / maxTtfaP95) * 100)}%`,
+                      }}
+                      title={`SLO ${data.ttfaSlo.p95TargetMs}ms`}
+                    />
+                    {data.trends24h.map((bucket) => (
+                      <div
+                        key={`ttfa-${bucket.hour}`}
+                        className="flex-1 min-w-0 flex flex-col justify-end"
+                        title={
+                          bucket.ttfaSampleCount > 0
+                            ? `${new Date(bucket.hour).toLocaleTimeString()} · p95 ${bucket.ttfaP95}ms · p50 ${bucket.ttfaP50}ms · n=${bucket.ttfaSampleCount}`
+                            : `${new Date(bucket.hour).toLocaleTimeString()} · no TTFA samples`
+                        }
+                      >
+                        <div
+                          className={cn(
+                            "w-full rounded-t-sm min-h-[2px]",
+                            bucket.ttfaP95 > data.ttfaSlo.p95TargetMs
+                              ? "bg-amber-500/70"
+                              : "bg-emerald-500/70",
+                          )}
+                          style={{
+                            height:
+                              bucket.ttfaSampleCount > 0
+                                ? `${Math.max(4, (bucket.ttfaP95 / maxTtfaP95) * 100)}%`
+                                : "2px",
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Dashed line = SLO target · green = under target · amber = breach
+                  </p>
+                </div>
+              )}
               <DataTable
                 headers={["Module", "Success", "Fail", "Fallback", "TTFA"]}
                 rows={data.perModuleStats.map((row) => [

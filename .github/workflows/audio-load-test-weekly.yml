@@ -1,0 +1,33 @@
+# Weekly audio load test against production API.
+# Fails the workflow if p95 latency or error rate exceeds thresholds.
+
+name: Audio load test (weekly)
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  load:
+    name: Concurrent static + spelling audio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audio load test
+        env:
+          AUDIO_LOAD_BASE_URL: ${{ vars.AUDIO_LOAD_BASE_URL || 'https://api.amynest.in' }}
+          AUDIO_LOAD_CONCURRENCY: "50"
+          AUDIO_LOAD_P95_MS: "2500"
+          AUDIO_LOAD_MAX_FAIL_RATE: "0.05"
+        run: pnpm run load:audio
