@@ -47,11 +47,16 @@ describe("amy-voice-audio-guard", () => {
     expect(isStreamingTemporarilyDisabled()).toBe(true);
   });
 
-  it("resetGuardFailures clears failure count", () => {
-    trackGuardFailure();
-    trackGuardFailure();
+  it("resetGuardFailures clears failure count and re-enables API/streaming", () => {
+    for (let i = 0; i < GUARD_FAILURE_THRESHOLD; i++) {
+      trackGuardFailure();
+    }
+    expect(isTtsApiCircuitOpen()).toBe(true);
+    expect(isStreamingTemporarilyDisabled()).toBe(true);
     resetGuardFailures();
     expect(getGuardFailureCount()).toBe(0);
+    expect(isTtsApiCircuitOpen()).toBe(false);
+    expect(isStreamingTemporarilyDisabled()).toBe(false);
   });
 
   it("temporarilyDisableStreaming respects duration", () => {

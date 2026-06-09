@@ -1,6 +1,6 @@
 /**
- * Temporary playback recovery — trust audio.play() after load; no audible gate / force restart.
- * Remove or set AUDIO_PLAYBACK_RECOVERY_MODE = false when root cause is fixed.
+ * Playback recovery — trust audio.play() after load; skip redundant post-play watchdogs.
+ * Audible-start validation lives in playWithAudibleStartGuarantee (strict) or play() resolve (recovery).
  */
 export const AUDIO_PLAYBACK_RECOVERY_MODE = true;
 

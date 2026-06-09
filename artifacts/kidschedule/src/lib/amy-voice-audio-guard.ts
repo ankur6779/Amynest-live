@@ -3,7 +3,7 @@
  * Every failed speak attempt must fallback to emergency audio or surface retry UI.
  */
 
-import { forceOpenTtsApiCircuit } from "@/lib/amy-voice-circuit";
+import { forceOpenTtsApiCircuit, resetTtsApiCircuit } from "@/lib/amy-voice-circuit";
 import { isAdminStreamingDisabled } from "@/lib/admin-audio-ops";
 import {
   forceEmergencyPlayback,
@@ -45,6 +45,13 @@ export function trackGuardFailure(): void {
 
 export function resetGuardFailures(): void {
   guardFailureCount = 0;
+  streamingDisabledUntil = 0;
+  resetTtsApiCircuit();
+}
+
+/** Fresh user speak — clear guard circuit so live TTS can run after prior failures. */
+export function resetGuardForUserSpeak(): void {
+  resetGuardFailures();
 }
 
 export function getGuardFailureCount(): number {

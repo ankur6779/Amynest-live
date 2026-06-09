@@ -1021,7 +1021,12 @@ class AudioManagerImpl {
       layer: meta?.source,
       phase: "post_audible_start_guarantee",
     });
-    await this.runPlaybackWatchdog(audio, token, channel);
+
+    // playWithAudibleStartGuarantee already waits for audible start in strict mode.
+    // Extra watchdog/clock gates caused false PLAYBACK_WATCHDOG on mobile after play() resolved.
+    if (audio.error) {
+      throw new Error(`media_error_${audio.error.code ?? "unknown"}`);
+    }
 
     if (!this.verifyAudibleOutput(audio)) {
       logAudioStart({
@@ -1034,29 +1039,7 @@ class AudioManagerImpl {
       throw new Error(AUDIO_ERROR.SILENT_OUTPUT);
     }
 
-    const clockStarted = await this.waitForPlaybackClockStart(
-      audio,
-      this.playbackClockWaitMs(),
-    );
-    if (!clockStarted && !this.isPlaybackValid(audio)) {
-      logAudioDebug(
-        "audio_manager_playback_clock_stuck",
-        {
-          fileUrl: audio.src,
-          playbackMethod: meta?.source ?? "audioManager.attemptPlay",
-          error: AUDIO_ERROR.PLAYBACK_WATCHDOG,
-          layer: meta?.source,
-        },
-        audio,
-      );
-      logAudibleStartGate("isPlaybackValid", "fail", audio, {
-        layer: meta?.source,
-        errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,
-        requires: "!paused (ended also ok)",
-        classification: classifyAudibleStartFailure(audio, "isPlaybackValid"),
-      });
-      throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);
-    }
+    schedulePlaybackProgressCheck(audio, meta?.source ?? "attemptPlay");
 
     if (token !== this.channelState(channel).playToken) {
       this.pauseElement(audio);
@@ -1283,15 +1266,6 @@ class AudioManagerImpl {
 
         try {
           await this.attemptPlay(element, token, channel, attempt + 1, meta);
-
-          if (!this.isPlaybackValid(element)) {
-            logAudibleStartGate("attemptPlay_post_watchdog", "fail", element, {
-              attempt: attempt + 1,
-              errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,
-              classification: classifyAudibleStartFailure(element, "isPlaybackValid"),
-            });
-            throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);
-          }
 
           this.consecutiveFailures = 0;
           this.silentOutputStreak = 0;

@@ -87,6 +87,7 @@ import { stopPhonicsPlayback, isPhonicsPlaying } from "@/lib/phonics-player";
 import {
   playControllerEmergencyAudio,
   resetGuardFailures,
+  resetGuardForUserSpeak,
   shouldBypassAudioGuard,
   trackGuardFailure,
   CONTROLLER_EMERGENCY_PHRASE,
@@ -619,6 +620,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     startAudioHealthSpeak(opts);
     recordTtsUserGesture();
+    resetGuardForUserSpeak();
     if (getQueuePolicy(reliabilityModule) === "interrupt") {
       this.stopCurrentAudio();
     }
@@ -1017,6 +1019,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     }
 
     recordTtsUserGesture();
+    resetGuardForUserSpeak();
     this.stopCurrentAudio();
 
     const proxyUrl = resolveApiMediaUrl(trimmed);
