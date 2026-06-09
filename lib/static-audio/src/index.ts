@@ -9,6 +9,7 @@ export {
   computeCatalogMissingStaticAudioKeys,
   computeCorpusMissingStaticAudioKeys,
   extractTextFromMissingKey,
+  isValidStaticAudioMapEntryUrl,
   mergeMissingStaticAudioKeys,
   parseStaticAudioMissingKey,
   resolveStaticTtsFromMissingKey,

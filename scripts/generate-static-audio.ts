@@ -19,6 +19,7 @@ import {
   computeCorpusMissingStaticAudioKeys,
   extractTextFromMissingKey,
   getStaticAudioObjectKey,
+  isValidStaticAudioMapEntryUrl,
   collectAllSpeakablePhrases,
   getStaticTtsEntries,
   mergeMissingStaticAudioKeys,
@@ -222,11 +223,7 @@ function publicGcsUrl(_bucketName: string, objectKey: string): string {
 }
 
 function isValidMapUrl(url: string | undefined): boolean {
-  const u = (url ?? "").trim();
-  return (
-    (u.startsWith("https://") && !u.includes("undefined")) ||
-    u.startsWith("/api/static-audio/")
-  );
+  return isValidStaticAudioMapEntryUrl(url);
 }
 
 function isEntryComplete(map: StaticAudioMap, mode: StaticAudioMode, text: string): boolean {

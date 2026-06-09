@@ -129,6 +129,16 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
+      - key: TTS_ORPHAN_CLEANUP_DRY_RUN
+        sync: false
+      - key: TTS_ORPHAN_CLEANUP_BATCH
+        sync: false
+      - key: TTS_ORPHAN_CLEANUP_CRON
+        sync: false
+      - key: TTS_ORPHAN_CLEANUP_TZ
+        sync: false
+      - key: DISABLE_TTS_ORPHAN_CLEANUP_CRON
+        sync: false
 
   # ─── Production AI worker (Docker — separate image from API / frontend) ──────
   - type: worker

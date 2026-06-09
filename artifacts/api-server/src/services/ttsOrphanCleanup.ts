@@ -32,7 +32,10 @@ export async function runTtsOrphanCleanup(options?: {
   batchSize?: number;
   dryRun?: boolean;
 }): Promise<TtsOrphanCleanupResult> {
-  const dryRun = options?.dryRun ?? process.env.TTS_ORPHAN_CLEANUP_DRY_RUN === "1";
+  const dryRun =
+    options?.dryRun ??
+    (process.env.TTS_ORPHAN_CLEANUP_DRY_RUN === "1" ||
+      process.env.TTS_ORPHAN_CLEANUP_DRY_RUN === "true");
   const batchSize = Math.min(Math.max(1, options?.batchSize ?? DEFAULT_BATCH), 500);
 
   if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) {

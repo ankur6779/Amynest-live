@@ -26,9 +26,11 @@ function loadManifest(): SpellingAudioManifest | null {
   }
 }
 
-function isValidGcsUrl(url: string): boolean {
+function isValidPlaybackUrl(url: string): boolean {
   const u = (url ?? "").trim();
-  return u.startsWith("https://storage.googleapis.com/") && !u.includes("undefined");
+  if (!u || u.includes("undefined")) return false;
+  if (u.startsWith("https://storage.googleapis.com/")) return true;
+  return /^\/api\/spelling-library\/spelling\/v[0-9]+\/[a-z0-9_-]+\.mp3$/i.test(u);
 }
 
 export function runSpellingAudioChecks(): CheckResult[] {
@@ -61,7 +63,7 @@ export function runSpellingAudioChecks(): CheckResult[] {
     if (asset.word !== entry.word) {
       badUrl.push(`${entry.id}: word mismatch`);
     }
-    if (!isValidGcsUrl(asset.url)) {
+    if (!isValidPlaybackUrl(asset.url)) {
       badUrl.push(`${entry.id}: invalid url`);
     }
     if (!isValidSpellingGcsObjectPath(asset.gcsPath)) {
@@ -83,7 +85,7 @@ export function runSpellingAudioChecks(): CheckResult[] {
 
   results.push({
     id: "urls",
-    label: "All entries have valid GCS URLs",
+    label: "All entries have valid playback URLs (API proxy or GCS)",
     ok: badUrl.length === 0,
     detail: badUrl.length ? badUrl.slice(0, 5).join("; ") : "ok",
   });

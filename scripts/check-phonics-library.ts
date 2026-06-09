@@ -16,6 +16,14 @@ import { PHONICS_LIBRARY_MANIFEST_PATHS, REPO_ROOT } from "./phonics-library-io.
 
 type CheckResult = { id: string; label: string; ok: boolean; detail?: string };
 
+/** Shipped manifests use API proxy paths; legacy entries may still use public GCS HTTPS. */
+function isValidPhonicsManifestPlaybackUrl(url: string | undefined): boolean {
+  const u = (url ?? "").trim();
+  if (!u) return false;
+  if (u.startsWith("https://")) return true;
+  return u.startsWith("/api/phonics-library/phonics/");
+}
+
 function loadManifest(): PhonicsAudioLibraryManifest | null {
   const path = PHONICS_LIBRARY_MANIFEST_PATHS[0];
   if (!existsSync(path)) return null;
@@ -48,7 +56,7 @@ function checkCatalogCoverage(manifest: PhonicsAudioLibraryManifest | null): Che
   for (const entry of catalog) {
     const key = getPhonicsCatalogKey(entry.type, entry.id);
     const asset = manifest.assets[key];
-    if (!asset?.url?.startsWith("https://")) {
+    if (!isValidPhonicsManifestPlaybackUrl(asset?.url)) {
       missing.push(key);
       continue;
     }
@@ -164,7 +172,7 @@ function checkManifestIntegrity(manifest: PhonicsAudioLibraryManifest | null): C
   const entries = Object.entries(manifest.assets);
   let missingUrls = 0;
   for (const [, asset] of entries) {
-    if (!asset?.url?.startsWith("https://")) missingUrls += 1;
+    if (!isValidPhonicsManifestPlaybackUrl(asset?.url)) missingUrls += 1;
   }
 
   return [
@@ -176,7 +184,7 @@ function checkManifestIntegrity(manifest: PhonicsAudioLibraryManifest | null): C
     },
     {
       id: "https-urls",
-      label: "Every manifest asset has HTTPS url",
+      label: "Every manifest asset has playable url (API proxy or HTTPS)",
       ok: missingUrls === 0,
       detail: missingUrls ? `${missingUrls} missing/bad URLs` : "ok",
     },
