@@ -1,0 +1,33 @@
+{
+  "fileCount": 172,
+  "probedOk": 168,
+  "failed": 4,
+  "totalCurrentBytes": 759775946,
+  "totalCurrentGb": 0.708,
+  "totalCurrentMb": 724.6,
+  "totalDurationSec": 18604.9,
+  "totalDurationHours": 5.17,
+  "estimate128KbpsMp3TotalBytes": 297682514,
+  "estimate128KbpsMp3TotalMb": 283.9,
+  "estimate96KbpsAacTotalBytes": 223261886,
+  "estimate96KbpsAacTotalMb": 212.9,
+  "storageReduction128KbpsBytes": 462093432,
+  "storageReduction128KbpsPct": 60.8,
+  "storageReduction96AacBytes": 536514060,
+  "storageReduction96AacPct": 70.6,
+  "bandwidthReduction128KbpsPct": 60.8,
+  "bandwidthReduction96AacPct": 70.6,
+  "bitrateKbps": {
+    "min": 320,
+    "max": 320,
+    "avg": 320,
+    "median": 320
+  },
+  "sampleRateHz": {
+    "unique": [
+      44100
+    ],
+    "mostCommon": 44100
+  },
+  "avgCurrentKbpsFromSize": 327
+}

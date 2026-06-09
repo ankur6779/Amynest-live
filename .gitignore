@@ -85,6 +85,9 @@ artifacts/kidschedule/playwright-report-stress/
 # Script run logs (phonics cleanup, library prewarm, etc.)
 scripts/logs/
 
+# Rhymes re-encode local staging (725 MB+ MP3 cache — regenerate via pnpm reencode:rhymes-gcs-audio)
+lib/rhymes-audio/staging/
+
 # Discovery worlds — generated audio + expiring GCS signed URLs (regenerate via pnpm run generate:discovery-worlds-audio)
 artifacts/kidschedule/public/discovery-worlds-audio/
 lib/world-engine/src/discovery-worlds-signed-urls.json

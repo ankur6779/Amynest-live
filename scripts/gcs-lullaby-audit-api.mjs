@@ -3,7 +3,7 @@
  * Minimal signed-URL API for GCS lullaby production audits (no Postgres / tsx required).
  */
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Storage } from "@google-cloud/storage";
@@ -81,17 +81,28 @@ const registry = JSON.parse(
 );
 const byId = new Map(registry.entries.map((e) => [e.id, e]));
 const cache = new Map();
+const RHYMES_128_PREFIX = "Rhymes-128/";
 
-async function resolveSignedUrl(audioId) {
+function objectPathForVariant(entry, variant) {
+  const v = (variant ?? "320").toLowerCase();
+  if (v === "128" || v === "rhymes-128" || v === "optimized") {
+    return entry.objectPath.replace(/^Rhymes\//, RHYMES_128_PREFIX);
+  }
+  return entry.objectPath;
+}
+
+async function resolveSignedUrl(audioId, variant) {
   const entry = byId.get(audioId);
   if (!entry) return { ok: false, reason: "not_found" };
-  const hit = cache.get(audioId);
+  const cacheKey = `${audioId}:${variant ?? "320"}`;
+  const hit = cache.get(cacheKey);
   if (hit && Date.now() < hit.expiresAt) {
     return { ok: true, ...hit.payload, cached: true };
   }
   if (!storage) return { ok: false, reason: "gcs_unconfigured" };
+  const objectPath = objectPathForVariant(entry, variant);
   try {
-    const [url] = await storage.bucket(bucketId).file(entry.objectPath).getSignedUrl({
+    const [url] = await storage.bucket(bucketId).file(objectPath).getSignedUrl({
       version: "v4",
       action: "read",
       expires: Date.now() + TTL_MS,
@@ -99,13 +110,35 @@ async function resolveSignedUrl(audioId) {
     const payload = {
       audioId,
       title: entry.title,
+      variant: variant ?? "320",
+      objectPath,
       signedUrl: url,
       expiresIn: Math.floor(TTL_MS / 1000),
     };
-    cache.set(audioId, { expiresAt: Date.now() + CACHE_TTL_MS, payload });
+    cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, payload });
     return { ok: true, ...payload, cached: false };
   } catch (err) {
     return { ok: false, reason: err instanceof Error ? err.message : "sign_failed" };
+  }
+}
+
+function loadReencodeReport() {
+  const p = join(REPO, "lib/rhymes-audio/audit/rhymes-reencode-report.json");
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function loadQualityAudit() {
+  const p = join(REPO, "lib/rhymes-audio/audit/rhymes-reencode-quality-audit.json");
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    return null;
   }
 }
 
@@ -119,9 +152,34 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/audio/rhymes-reencode-report") {
+    const report = loadReencodeReport();
+    if (!report) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "report_not_found" }));
+      return;
+    }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: true, report }));
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/audio/rhymes-reencode-quality") {
+    const quality = loadQualityAudit();
+    if (!quality) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "quality_audit_not_found" }));
+      return;
+    }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: true, quality }));
+    return;
+  }
+
   const match = url.pathname.match(/^\/api\/audio\/signed-url\/([a-z0-9-]+)$/i);
   if (req.method === "GET" && match) {
-    const result = await resolveSignedUrl(decodeURIComponent(match[1]));
+    const variant = url.searchParams.get("variant") ?? "320";
+    const result = await resolveSignedUrl(decodeURIComponent(match[1]), variant);
     if (!result.ok) {
       res.writeHead(result.reason === "not_found" ? 404 : 503, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: false, error: result.reason }));

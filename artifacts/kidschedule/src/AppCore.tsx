@@ -131,6 +131,7 @@ const NotificationDiagnosticsPage = lazyPage(() => import("@/pages/notification-
 const NotifyPromptPage = lazyPage(() => import("@/pages/notify-prompt"));
 const DebugParityPage = lazyPage(() => import("@/pages/debug-parity"));
 const PhonicsAudioPreviewPage = lazyPage(() => import("@/pages/phonics-audio-preview"));
+const RhymesAudioAbPage = lazyPage(() => import("@/pages/rhymes-audio-ab"));
 const EnvironmentPage = lazyPage(() => import("@/pages/environment"));
 const FeedbackPage = lazyPage(() => import("@/pages/feedback"));
 const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
@@ -762,6 +763,7 @@ function AppRoutes() {
           <Route path="/rewards" component={RewardsRoute} />
           <Route path="/debug-parity" component={DebugParityPage} />
           <Route path="/dev/phonics-audio-preview" component={PhonicsAudioPreviewPage} />
+          <Route path="/dev/rhymes-audio-ab" component={RhymesAudioAbPage} />
           <Route path="/environment" component={EnvironmentRoute} />
           <Route path="/feedback" component={FeedbackRoute} />
           <Route path="/admin/feedback" component={AdminFeedbackRoute} />

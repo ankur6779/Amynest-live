@@ -3,6 +3,7 @@
  * Never exposes raw GCS object paths — only audioId → API → signedUrl.
  */
 import { getApiUrl } from "@/lib/api";
+import { fetchWithTimeout, DEFAULT_API_TIMEOUT_MS } from "@/lib/fetch-with-timeout";
 import type { RhymesSignedUrlResponse } from "@workspace/rhymes-audio";
 
 type CachedSigned = {
@@ -45,9 +46,18 @@ export type AuthFetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
+/** Public endpoint — use plain fetch so a stale auth token cannot block lullaby playback. */
+async function fetchSignedUrlPublic(url: string): Promise<Response> {
+  return fetchWithTimeout(
+    url,
+    { method: "GET", credentials: "include", cache: "no-store" },
+    DEFAULT_API_TIMEOUT_MS,
+  );
+}
+
 export async function fetchSignedLullabyUrl(
   audioId: string,
-  authFetch: AuthFetch,
+  _authFetch?: AuthFetch,
 ): Promise<{ signedUrl: string | null; error: string | null }> {
   const id = audioId.trim();
   if (!id) return { signedUrl: null, error: LULLABY_UNAVAILABLE };
@@ -59,10 +69,7 @@ export async function fetchSignedLullabyUrl(
   }
 
   try {
-    const res = await authFetch(getApiUrl(`/api/audio/signed-url/${encodeURIComponent(id)}`), {
-      method: "GET",
-      credentials: "include",
-    });
+    const res = await fetchSignedUrlPublic(getApiUrl(`/api/audio/signed-url/${encodeURIComponent(id)}`));
     if (!res.ok) {
       console.warn("[LullabyGcs]", JSON.stringify({ audioId: id, signedUrlGenerated: false, status: res.status }));
       return { signedUrl: null, error: LULLABY_UNAVAILABLE };
