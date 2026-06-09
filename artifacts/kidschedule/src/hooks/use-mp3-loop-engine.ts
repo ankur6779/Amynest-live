@@ -2,10 +2,9 @@
  * Looping MP3 playback for bundled white-noise clips (offline, no TTS).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { playInfantSleepBundledMp3 } from "@/lib/infant-sleep-bundled-playback";
 import { audioManager } from "@/lib/audio-manager";
 import { recordTtsUserGesture, isAudioUnlocked } from "@/lib/tts-guard";
-
-const FADE_SECONDS = 0.6;
 
 export type Mp3LoopEngine = {
   activeId: string | null;
@@ -75,8 +74,6 @@ export function useMp3LoopEngine(): Mp3LoopEngine {
 
       teardown();
       const audio = audioManager.create(trimmed);
-      audio.loop = true;
-      audio.volume = 0;
       audio.onerror = () => {
         teardown();
       };
@@ -84,29 +81,16 @@ export function useMp3LoopEngine(): Mp3LoopEngine {
       activeIdRef.current = id;
       setActiveId(id);
 
-      const played = await audioManager.play(
-        audio,
-        { proxyUrl: trimmed, source: "infant_sleep_mp3", channel: "ui", interrupt: true },
-        { channel: "ui", interrupt: true },
-      );
+      const played = await playInfantSleepBundledMp3(trimmed, audio, {
+        loop: true,
+        volume: volumeRef.current,
+      });
       if (!played) {
         teardown();
         return;
       }
 
-      const target = volumeRef.current;
-      audio.volume = target;
       setIsPlaying(true);
-
-      const fadeStart = performance.now();
-      const fade = () => {
-        const a = audioRef.current;
-        if (!a) return;
-        const t = Math.min(1, (performance.now() - fadeStart) / (FADE_SECONDS * 1000));
-        a.volume = target * t;
-        if (t < 1) requestAnimationFrame(fade);
-      };
-      requestAnimationFrame(fade);
     },
     [stop, teardown],
   );

@@ -70,6 +70,7 @@ function mapPlaybackSource(meta: AudioPlayMeta): AudioPlaybackSource {
   const raw = (meta.source ?? "").toLowerCase();
   if (raw.includes("phonics") || raw.includes("cvc")) return "phonics";
   if (raw.includes("spelling")) return "spelling";
+  if (raw.includes("infant_sleep")) return "infant_sleep_mp3";
   if (raw.includes("poem")) return "poem_player";
   if (raw.includes("event")) return "event_prep";
   if (raw.includes("study")) return "study";
@@ -204,6 +205,7 @@ function sleep(ms: number): Promise<void> {
 function inferSrcType(url: string): AudioSrcType {
   const u = (url ?? "").trim();
   if (u.startsWith("blob:")) return "blob";
+  if (u.includes("/infant-sleep-audio/")) return "unknown";
   if (u.includes("/api/static-audio/")) return "static";
   if (u.includes("/api/tts/")) return "tts";
   return "unknown";

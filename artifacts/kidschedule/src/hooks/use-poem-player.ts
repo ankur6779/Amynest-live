@@ -12,6 +12,7 @@ import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
+import { playInfantSleepBundledMp3 } from "@/lib/infant-sleep-bundled-playback";
 import { isAudioUnlocked, recordTtsUserGesture } from "@/lib/tts-guard";
 
 const FADE_IN_MS = 2000;
@@ -163,9 +164,9 @@ export function useInfantPoemPlayer(): PoemPlayer {
       setIsPlaying(false);
       setIsLoading(true);
 
-      const attachHandlers = (audio: HTMLAudioElement) => {
+      const attachHandlers = (audio: HTMLAudioElement, bundled: boolean) => {
         audio.loop = loopRef.current;
-        audio.volume = 0;
+        audio.volume = bundled ? volumeRef.current : 0;
         audio.onended = () => {
           if (myId !== reqIdRef.current) return;
           setIsPlaying(false);
@@ -194,30 +195,35 @@ export function useInfantPoemPlayer(): PoemPlayer {
         trimmedUrl: string,
         bundled: boolean,
       ): Promise<boolean> => {
+        emitAudioPlaybackEvent("audio_started", {
+          source: bundled ? "infant_sleep_mp3" : "poem_player",
+          proxyUrl: trimmedUrl.slice(0, 120),
+        });
+
+        if (bundled) {
+          const audio = audioManager.create(trimmedUrl);
+          attachHandlers(audio, true);
+          return playInfantSleepBundledMp3(trimmedUrl, audio, {
+            loop: loopRef.current,
+            volume: volumeRef.current,
+          });
+        }
+
         const proxyUrl = resolveApiMediaUrl(trimmedUrl);
         const audio = audioManager.create(proxyUrl);
-        attachHandlers(audio);
-
-        const channel = bundled ? "ui" : "speech";
-        const srcType = bundled ? "static" : "tts";
-        const source = bundled ? "infant_sleep_media" : "poem_player";
-
-        emitAudioPlaybackEvent("audio_started", {
-          source: "poem_player",
-          proxyUrl: proxyUrl.slice(0, 120),
-        });
+        attachHandlers(audio, false);
 
         return audioManager.play(
           audio,
           {
             proxyUrl,
-            source,
-            channel,
+            source: "poem_player",
+            channel: "speech",
             interrupt: true,
-            srcType,
+            srcType: "tts",
             phrase: opts.trackId,
           },
-          { channel, interrupt: true },
+          { channel: "speech", interrupt: true },
         );
       };
 
@@ -301,7 +307,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
         }
         setIsPlaying(true);
         setIsLoading(false);
-        beginFadeIn();
+        if (!bundled) beginFadeIn();
       } catch (err) {
         const name = (err as { name?: string })?.name;
         if (name === "AbortError") return;

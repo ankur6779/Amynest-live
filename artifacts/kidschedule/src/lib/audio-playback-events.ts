@@ -15,6 +15,7 @@ export type AudioPlaybackSource =
   | "phonics"
   | "spelling"
   | "poem_player"
+  | "infant_sleep_mp3"
   | "event_prep"
   | "study"
   | "static"
