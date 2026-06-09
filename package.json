@@ -84,6 +84,7 @@
     "check:audio-manifest-urls": "pnpm --filter @workspace/scripts run check-audio-manifest-urls",
     "normalize:audio-manifest-urls": "pnpm --filter @workspace/scripts run normalize-audio-manifest-urls",
     "load:audio": "pnpm --filter @workspace/scripts run audio-load-test",
+    "tts-orphan:dry-run": "pnpm --filter @workspace/scripts run tts-orphan-dry-run",
     "audit:audio-modules": "pnpm --filter @workspace/scripts run audit-audio-modules",
     "report:static-audio-corpus": "node scripts/static-audio-corpus-report.mjs",
     "verify:audio-edge-cache": "node scripts/verify-audio-edge-cache.mjs",

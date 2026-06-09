@@ -1,0 +1,32 @@
+# Manual TTS GCS orphan dry-run against production credentials (no deletes).
+
+name: TTS orphan dry-run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    name: Scan GCS tts-cache batch (dry-run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TTS orphan cleanup dry-run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GCS_SERVICE_ACCOUNT_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_JSON }}
+          DEFAULT_OBJECT_STORAGE_BUCKET_ID: ${{ secrets.DEFAULT_OBJECT_STORAGE_BUCKET_ID }}
+          TTS_USE_GCS: "true"
+          TTS_ORPHAN_CLEANUP_DRY_RUN: "1"
+          TTS_ORPHAN_CLEANUP_BATCH: "200"
+        run: pnpm run tts-orphan:dry-run

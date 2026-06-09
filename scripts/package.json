@@ -11,6 +11,7 @@
     "stress-amy-coach": "tsx ./stress-test-amy-coach.ts",
     "stability-load": "tsx ./src/stability-load-test.ts",
     "audio-load-test": "tsx ./audio-load-test.ts",
+    "tts-orphan-dry-run": "tsx ./tts-orphan-dry-run.ts",
     "normalize-audio-manifest-urls": "tsx ./normalize-audio-manifest-urls.ts",
     "check-audio-manifest-urls": "tsx ./check-audio-manifest-urls.ts",
     "generate-static-audio": "tsx ./generate-static-audio.ts",
