@@ -90,6 +90,13 @@ async function maybeRefundLoadMoreQuota(job: AiJobRecord): Promise<void> {
   }
 }
 
+async function maybeRefundAssistantAiQuota(job: AiJobRecord): Promise<void> {
+  const { refundAssistantAiQuotaFromJob } = await import(
+    "../services/assistantAiQuotaService.js"
+  );
+  await refundAssistantAiQuotaFromJob(job);
+}
+
 async function readJobRecord(jobId: string): Promise<AiJobRecord | undefined> {
   if (isRedisQueueEnabled()) {
     return getJobRecord(jobId);
@@ -154,6 +161,7 @@ export async function patchJobRecord(
     await releaseUserSlot(updated.userId);
     if (updated.status === "failed" || updated.status === "timed_out") {
       void maybeRefundLoadMoreQuota(updated);
+      void maybeRefundAssistantAiQuota(updated);
     }
   }
   return updated;

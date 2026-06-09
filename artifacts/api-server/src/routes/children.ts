@@ -82,34 +82,6 @@ router.post(
         }
       }
 
-      // Enforce child limit for free users during onboarding and normal create.
-      try {
-        const sub = await getOrCreateSubscription(userId);
-        if (!isPremiumNow(sub)) {
-          const [{ n }] = await db
-            .select({ n: sql<number>`count(*)::int` })
-            .from(childrenTable)
-            .where(eq(childrenTable.userId, userId));
-          if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
-            res.status(402).json({
-              error: "child_limit_reached",
-              message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
-              limit: FREE_LIMITS.childrenMax,
-            });
-            return;
-          }
-        }
-      } catch (err) {
-        if (isSchemaMismatchError(err)) {
-          logger.warn(
-            { evt: "children.create.subscription_check_skipped", err },
-            "Subscription check skipped — schema mismatch",
-          );
-        } else {
-          throw err;
-        }
-      }
-
       let inheritedPrefs: Record<string, unknown> = {};
       if (!parsed.data.dietType && !parsed.data.foodStyle) {
         try {
@@ -156,7 +128,49 @@ router.post(
         ...enriched,
         userId,
       };
-      const child = await insertChildRow(insertData);
+
+      let child;
+      try {
+        const created = await db.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtext(${`child_create:${userId}`}))`,
+          );
+
+          const sub = await getOrCreateSubscription(userId);
+          if (!isPremiumNow(sub)) {
+            const [{ n }] = await tx
+              .select({ n: sql<number>`count(*)::int` })
+              .from(childrenTable)
+              .where(eq(childrenTable.userId, userId));
+            if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
+              return { blocked: true as const };
+            }
+          }
+
+          const row = await insertChildRow(insertData, tx);
+          return { blocked: false as const, child: row };
+        });
+
+        if (created.blocked) {
+          res.status(402).json({
+            error: "child_limit_reached",
+            message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
+            limit: FREE_LIMITS.childrenMax,
+          });
+          return;
+        }
+        child = created.child;
+      } catch (err) {
+        if (isSchemaMismatchError(err)) {
+          logger.warn(
+            { evt: "children.create.subscription_check_skipped", err },
+            "Subscription check skipped — schema mismatch",
+          );
+          child = await insertChildRow(insertData);
+        } else {
+          throw err;
+        }
+      }
 
       tryMarkReferralValidForUser(userId, {
         emailVerified: auth.emailVerified,
