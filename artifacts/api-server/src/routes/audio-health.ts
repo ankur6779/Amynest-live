@@ -206,6 +206,20 @@ router.get("/admin/alerts", async (req, res): Promise<void> => {
 });
 
 /**
+ * GET /api/admin/audio-health-gate — live deployment gate evaluation (admin).
+ */
+router.get("/admin/audio-health-gate", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const { runLiveAudioHealthGate } = await import("../services/audio-health-gate-live.js");
+  res.json(await runLiveAudioHealthGate());
+});
+
+/**
  * GET /api/admin/dashboard — unified system health dashboard.
  */
 router.get("/admin/dashboard", async (req, res): Promise<void> => {

@@ -41,6 +41,7 @@
     "check-phonics-interaction-gate": "tsx ./check-phonics-interaction-gate.ts",
     "check-phonics-release-gate": "tsx ./check-phonics-release-gate.ts",
     "check-crash-launch-gate": "tsx ./check-crash-launch-gate.ts",
+    "check-audio-health-gate": "tsx ./audio-health-gate.ts",
     "crash-engineering-audit": "tsx ./crash-engineering-audit.ts",
     "generate-crash-review-packages": "tsx ./generate-crash-review-packages.ts",
     "release-intelligence": "tsx ./release-intelligence.ts",

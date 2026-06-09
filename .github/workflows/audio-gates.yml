@@ -12,11 +12,50 @@ on:
       - "scripts/check-audio-manifest-urls.ts"
       - "scripts/normalize-audio-manifest-urls.ts"
       - "scripts/audio-load-test.ts"
-      - "scripts/check-audio-release-certification.ts"
+      - "scripts/check-audio-health-gate.ts"
+      - "scripts/audio-health-gate.ts"
+      - "artifacts/api-server/src/services/audio-health-gate.ts"
   workflow_dispatch:
   workflow_call:
 
 jobs:
+  audio-health-gate:
+    name: Audio Health Gate (deploy blocker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Unit tests (gate evaluator)
+        run: |
+          cd artifacts/api-server
+          node --import tsx/esm --test src/services/__tests__/audio-health-gate.test.ts
+
+      - name: Audio Health Gate (production probes)
+        env:
+          CI: true
+          AUDIO_GATE_REQUIRE_SECRETS: "1"
+          AUDIO_GATE_API_URL: ${{ vars.AUDIO_GATE_API_URL || 'https://amynest-backend-dykj.onrender.com' }}
+          ADMIN_AUTH_TOKEN: ${{ secrets.ADMIN_AUTH_TOKEN }}
+          INTERNAL_HEALTH_SECRET: ${{ secrets.INTERNAL_HEALTH_SECRET }}
+        run: pnpm run check:audio-health-gate
+
+      - name: Upload gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-health-gate-report
+          path: artifacts/audio-health-gate/latest.json
+          if-no-files-found: ignore
+
   amy-voice:
     name: Amy voice usage + contract
     runs-on: ubuntu-latest

@@ -26,6 +26,15 @@ if [[ "${healthz_status}" != "200" ]]; then
   exit 1
 fi
 
+echo "[smoke] API audio healthz: ${API_URL}/api/healthz/audio"
+audio_health="$(curl -fsS "${API_URL}/api/healthz/audio" || echo '{}')"
+audio_ok="$(printf '%s' "${audio_health}" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);process.stdout.write(j.ok===true?'true':'false')}catch{process.stdout.write('false')}})")"
+if [[ "${audio_ok}" != "true" ]]; then
+  echo "[smoke] FAIL api /api/healthz/audio not ready"
+  printf '%s\n' "${audio_health}" | head -c 400
+  exit 1
+fi
+
 echo "[smoke] Public static-audio missing POST rejected (401): ${API_URL}/api/static-audio/missing"
 post_status="$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
   -H 'Content-Type: application/json' \

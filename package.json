@@ -76,6 +76,7 @@
     "check:phonics-release-gate": "pnpm --filter @workspace/scripts run check-phonics-release-gate",
     "check:phonics-interaction-gate": "pnpm --filter @workspace/scripts run check-phonics-interaction-gate",
     "check:crash-launch-gate": "pnpm --filter @workspace/scripts run check-crash-launch-gate",
+    "check:audio-health-gate": "pnpm --filter @workspace/scripts run check-audio-health-gate",
     "crash:engineering-audit": "pnpm --filter @workspace/scripts run crash-engineering-audit",
     "crash:generate-review-packages": "pnpm --filter @workspace/scripts run generate-crash-review-packages",
     "release:intelligence": "pnpm --filter @workspace/scripts run release-intelligence",

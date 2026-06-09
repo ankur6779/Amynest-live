@@ -18,6 +18,24 @@ import { SelfHealingOpsPanel } from "@/components/admin/self-healing-ops-panel";
 
 type DashboardStatus = "healthy" | "degraded" | "failing";
 
+type AudioHealthGateData = {
+  generatedAt: string;
+  decision: "PASS" | "WARNING" | "FAIL";
+  score: number;
+  blockers: string[];
+  warnings: string[];
+  categories: Record<string, { score: number | null; status: string; issues: string[] }>;
+  metrics: {
+    failureRate: number;
+    timeoutRate: number;
+    cacheHitRate: number;
+    ttfaMs: number | null;
+    failedJobs: number;
+    staticSamplesOk: number;
+    staticSamplesTotal: number;
+  };
+};
+
 interface DashboardData {
   windowMs: number;
   generatedAt: number;
@@ -343,6 +361,16 @@ export default function AdminDashboardPage() {
       return res.json();
     },
     refetchInterval: 20_000,
+  });
+
+  const { data: audioHealthGate } = useQuery({
+    queryKey: ["admin-audio-health-gate"],
+    queryFn: async (): Promise<AudioHealthGateData> => {
+      const res = await authFetch("/api/admin/audio-health-gate");
+      if (!res.ok) throw new Error(`http_${res.status}`);
+      return res.json();
+    },
+    refetchInterval: 60_000,
   });
 
   const actionMutation = useMutation({
@@ -831,6 +859,41 @@ export default function AdminDashboardPage() {
 
             {/* 2. Audio health */}
             <Section title="Audio Health">
+              {audioHealthGate && (
+                <div
+                  className={cn(
+                    "mb-4 rounded-xl border p-3",
+                    audioHealthGate.decision === "PASS"
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : audioHealthGate.decision === "WARNING"
+                        ? "border-amber-500/30 bg-amber-500/10"
+                        : "border-red-500/40 bg-red-500/10",
+                  )}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      Deploy Gate: {audioHealthGate.decision} · {audioHealthGate.score}/100
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Updated {new Date(audioHealthGate.generatedAt).toLocaleTimeString()}
+                    </p>
+                  </div>
+                  {audioHealthGate.blockers.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-xs text-red-200">
+                      {audioHealthGate.blockers.slice(0, 4).map((b) => (
+                        <li key={b}>✗ {b}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {audioHealthGate.warnings.length > 0 && audioHealthGate.blockers.length === 0 && (
+                    <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
+                      {audioHealthGate.warnings.slice(0, 3).map((w) => (
+                        <li key={w}>⚠ {w}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
                 <MiniStat label="Success" value={pct(data.successRate)} />
                 <MiniStat label="Failure" value={pct(data.failureRate)} />
