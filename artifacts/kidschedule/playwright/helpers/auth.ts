@@ -24,7 +24,7 @@ export async function dismissCountryPromptIfVisible(page: Page): Promise<void> {
 
 export async function signInWithEmail(page: Page): Promise<void> {
   const { email, password } = stressCredentials();
-  await page.goto("/sign-in", { waitUntil: "networkidle", timeout: 90_000 });
+  await page.goto("/sign-in", { waitUntil: "domcontentloaded", timeout: 90_000 });
 
   const emailInput = page.locator('input[type="email"]');
   if (!(await emailInput.isVisible({ timeout: 15_000 }).catch(() => false))) {
@@ -32,7 +32,7 @@ export async function signInWithEmail(page: Page): Promise<void> {
     if (await signInLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await signInLink.click();
     } else {
-      await page.goto("/login", { waitUntil: "networkidle", timeout: 90_000 });
+      await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 90_000 });
     }
     await emailInput.waitFor({ state: "visible", timeout: 30_000 });
   }

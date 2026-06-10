@@ -45,11 +45,13 @@ test("audio lessons: play paragraph without tts_background failure", async ({ pa
   await ageTile.click({ timeout: 30_000 });
   await page.waitForTimeout(800);
 
-  const lessonCard = page.getByTestId(/lesson-card-/).first();
+  const lessonCard = page.locator('[data-testid^="lesson-card-"]:not([disabled])').first();
   await lessonCard.click({ timeout: 30_000 });
   await page.waitForTimeout(1_500);
 
-  const playBtn = page.getByRole("button", { name: "Play" });
+  const sheet = page.getByTestId("audio-player-sheet");
+  await expect(sheet).toBeVisible({ timeout: 20_000 });
+  const playBtn = sheet.getByRole("button", { name: "Play" });
   await expect(playBtn).toBeVisible({ timeout: 20_000 });
   await playBtn.click();
 

@@ -27,7 +27,8 @@
     "test:e2e": "playwright test --config playwright.config.ts",
     "test:e2e:startup": "playwright test --config playwright.config.startup.ts",
     "test:e2e:onboarding": "playwright test --config playwright.config.onboarding.ts",
-    "test:stress": "playwright test --config playwright.config.stress.ts"
+    "test:stress": "playwright test --config playwright.config.stress.ts",
+    "test:e2e:audio-coverage": "playwright test --config playwright.config.audio-coverage.ts"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
