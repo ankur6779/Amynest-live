@@ -27,7 +27,10 @@ type CachedSignedUrl = {
   signedUrl: string;
   title: string;
   objectPath: string;
+  /** Server-side cache entry expiry (ms). */
   expiresAt: number;
+  /** GCS V4 signed URL expiry (ms) — must not serve past this. */
+  signedUrlExpiresAt: number;
   expiresInSec: number;
 };
 
@@ -53,6 +56,34 @@ export function getRhymesSignedUrlCacheSizeForTests(): number {
   return signedUrlCache.size;
 }
 
+/** Seed cache for unit tests — simulates a prior signed URL response. */
+export function seedRhymesSignedUrlCacheForTests(input: {
+  audioId: string;
+  signedUrl?: string;
+  title?: string;
+  objectPath?: string;
+  cacheTtlMs?: number;
+  signedUrlTtlSec?: number;
+}): void {
+  const entry = getRhymesRegistryEntry(input.audioId);
+  if (!entry) throw new Error(`unknown test audioId: ${input.audioId}`);
+  const now = Date.now();
+  const cacheTtlMs = input.cacheTtlMs ?? SIGNED_URL_CACHE_TTL_MS;
+  const signedUrlTtlSec = input.signedUrlTtlSec ?? Math.floor(RHYMES_SIGNED_URL_TTL_MS / 1000);
+  signedUrlCache.set(cacheKey(input.audioId), {
+    signedUrl: input.signedUrl ?? "https://storage.googleapis.com/example/signed.mp3?X-Goog-Signature=test",
+    title: input.title ?? entry.title,
+    objectPath: input.objectPath ?? entry.objectPath,
+    expiresAt: now + cacheTtlMs,
+    signedUrlExpiresAt: now + signedUrlTtlSec * 1000,
+    expiresInSec: signedUrlTtlSec,
+  });
+}
+
+export function isRhymesSignedUrlCacheHitForTests(audioId: string): boolean {
+  return readCache(audioId) != null;
+}
+
 function cacheKey(audioId: string): string {
   return audioId.trim().toLowerCase();
 }
@@ -60,7 +91,8 @@ function cacheKey(audioId: string): string {
 function readCache(audioId: string): CachedSignedUrl | null {
   const hit = signedUrlCache.get(cacheKey(audioId));
   if (!hit) return null;
-  if (Date.now() >= hit.expiresAt) {
+  const now = Date.now();
+  if (now >= hit.expiresAt || now >= hit.signedUrlExpiresAt) {
     signedUrlCache.delete(cacheKey(audioId));
     return null;
   }
@@ -68,13 +100,20 @@ function readCache(audioId: string): CachedSignedUrl | null {
 }
 
 function writeCache(entry: RhymesGcsRegistryEntry, signedUrl: string, expiresInSec: number): void {
+  const now = Date.now();
   signedUrlCache.set(cacheKey(entry.id), {
     signedUrl,
     title: entry.title,
     objectPath: entry.objectPath,
-    expiresAt: Date.now() + SIGNED_URL_CACHE_TTL_MS * 1000,
+    expiresAt: now + SIGNED_URL_CACHE_TTL_MS,
+    signedUrlExpiresAt: now + expiresInSec * 1000,
     expiresInSec,
   });
+}
+
+function remainingCacheSeconds(cached: CachedSignedUrl): number {
+  const remainingMs = Math.min(cached.expiresAt, cached.signedUrlExpiresAt) - Date.now();
+  return Math.max(60, Math.floor(remainingMs / 1000));
 }
 
 export async function resolveRhymesSignedUrl(audioId: string): Promise<RhymesSignedUrlResult> {
@@ -109,7 +148,7 @@ export async function resolveRhymesSignedUrl(audioId: string): Promise<RhymesSig
       audioId: id,
       title: cached.title,
       signedUrl: cached.signedUrl,
-      expiresIn: Math.max(60, Math.floor((cached.expiresAt - Date.now()) / 1000)),
+      expiresIn: remainingCacheSeconds(cached),
       cached: true,
       gcsObjectPath: cached.objectPath,
     };
