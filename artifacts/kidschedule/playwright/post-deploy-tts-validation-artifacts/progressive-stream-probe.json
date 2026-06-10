@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "transferEncoding": null,
+  "contentLength": null,
+  "cacheKey": "d6f679d751f5c766ce95c34803483abae884f65a0599e2656e6307290cce9a47",
+  "cacheControl": "no-cache, no-store",
+  "headerMs": 875,
+  "firstByteMs": 875,
+  "kb1": 875,
+  "kb16": 883,
+  "completeMs": 893,
+  "playbackMs": 902,
+  "totalBytes": 59395,
+  "playbackBeforeComplete": false
+}

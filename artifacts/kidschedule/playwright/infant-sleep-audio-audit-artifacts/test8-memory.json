@@ -1,0 +1,12 @@
+{
+  "before": {
+    "audioCount": 0,
+    "heap": 0
+  },
+  "after": {
+    "audioCount": 0,
+    "pausedOrEmpty": 0,
+    "heap": 0
+  },
+  "ttsCallCount": 6
+}

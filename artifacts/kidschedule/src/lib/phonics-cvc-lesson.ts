@@ -102,7 +102,7 @@ export function usePhonicsCvcLesson(initialLevel: 1 | 2 | 3) {
       const idx = levelWords.findIndex((entry) => entry.word === w);
       const resolved = idx >= 0 ? levelWords[idx]! : null;
 
-      if (!resolved || idx === selectedIndex) return;
+      if (!resolved) return;
 
       void phonicsEngineStop("word_select");
       setIsPlaying(false);

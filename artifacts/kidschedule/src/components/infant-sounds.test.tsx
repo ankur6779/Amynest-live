@@ -9,12 +9,6 @@
  *     add-sound chips, sleep timer pills, and a stop-everything button
  *   - The mini player appears whenever something is playing and can stop all
  *
- * Plus the Spec 3 Poems tab contract:
- *   - Tab toggle exposes a "Poems" tab (replacing "Songs & Lullabies")
- *   - Tapping a poem tile opens the immersive fullscreen player
- *   - Age sub-tabs switch the visible poems
- *   - "Load More Poems" reveals additional poems in the same group
- *   - Loop is ON by default in the poem player
  *
  * jsdom has no WebAudio and only a stub HTMLAudioElement, so we install
  * minimal mocks: the WebAudio context for the white-noise engine, and the
@@ -263,104 +257,12 @@ describe("WhiteNoiseLullaby — immersive module", () => {
     expect(screen.getByTestId("tile-fan")).toHaveAttribute("data-active", "false");
   });
 
-  // ─── Spec 3 — Poems tab ─────────────────────────────────────────────────
-  describe("Poems tab", () => {
-    function openPoemsTab() {
-      fireEvent.click(screen.getByRole("tab", { name: /^poems$/i }));
-    }
+  it("shows only Noise and Lullabies tabs", () => {
+    render(<WhiteNoiseLullaby ageMonths={2} />);
 
-    it("switches to the poems module and shows the age sub-tabs", () => {
-      render(<WhiteNoiseLullaby ageMonths={2} />);
-      openPoemsTab();
-
-      expect(screen.getByTestId("infant-poems-section")).toBeInTheDocument();
-      expect(screen.getByText(/poems for your baby/i)).toBeInTheDocument();
-      // 3 age sub-tabs are rendered
-      ["0-6m", "6-12m", "12-24m"].forEach((id) => {
-        expect(screen.getByTestId(`poem-age-tab-${id}`)).toBeInTheDocument();
-      });
-    });
-
-    it("defaults to the age group matching the child's age in months", () => {
-      render(<WhiteNoiseLullaby ageMonths={2} />);
-      openPoemsTab();
-
-      // 2 months → 0–6m group is selected
-      expect(screen.getByTestId("poem-age-tab-0-6m"))
-        .toHaveAttribute("aria-selected", "true");
-      // The 0–6m bucket includes the spec-provided "Sleep, Baby, Sleep" poem.
-      expect(screen.getByTestId("poem-tile-poem-sleep-baby-sleep")).toBeInTheDocument();
-    });
-
-    it("changes visible poems when a different age sub-tab is selected", () => {
-      render(<WhiteNoiseLullaby ageMonths={2} />);
-      openPoemsTab();
-
-      // Pre-condition: a 0–6m poem is visible, a 12–24m poem is not.
-      expect(screen.getByTestId("poem-tile-poem-sleep-baby-sleep")).toBeInTheDocument();
-      expect(screen.queryByTestId("poem-tile-poem-stars-count")).toBeNull();
-
-      fireEvent.click(screen.getByTestId("poem-age-tab-12-24m"));
-
-      expect(screen.getByTestId("poem-tile-poem-stars-count")).toBeInTheDocument();
-      expect(screen.queryByTestId("poem-tile-poem-sleep-baby-sleep")).toBeNull();
-    });
-
-    it("paginates further poems via the Load More button", () => {
-      render(<WhiteNoiseLullaby ageMonths={8} />);
-      openPoemsTab();
-
-      // 6–12m group has 4 poems but only 3 shown initially
-      const loadMore = screen.getByTestId("poem-load-more");
-      expect(loadMore).toBeInTheDocument();
-
-      fireEvent.click(loadMore);
-
-      ["poem-pat-pat-pat", "poem-soft-bird-sleep", "poem-dream-boat", "poem-cozy-nest"].forEach((id) => {
-        expect(screen.getByTestId(`poem-tile-${id}`)).toBeInTheDocument();
-      });
-      // No more poems left → button is now hidden.
-      expect(screen.queryByTestId("poem-load-more")).toBeNull();
-    });
-
-    it("opens the immersive fullscreen player when a tile is tapped, with loop ON by default", () => {
-      render(<WhiteNoiseLullaby ageMonths={2} />);
-      openPoemsTab();
-
-      fireEvent.click(screen.getByTestId("poem-tile-poem-sleep-baby-sleep"));
-
-      const player = screen.getByTestId("poem-fullscreen-player");
-      expect(player).toBeInTheDocument();
-      // Loop toggle is pressed by default (Spec 3 — "Loop ON by default").
-      expect(within(player).getByTestId("poem-loop-toggle"))
-        .toHaveAttribute("aria-pressed", "true");
-      // The 4 sleep-timer pills are rendered.
-      ["off", "15m", "30m", "1h"].forEach((label) => {
-        expect(within(player).getByTestId(`poem-timer-${label}`)).toBeInTheDocument();
-      });
-    });
-
-    it("close button stops playback (clears the active marker on the tile)", () => {
-      render(<WhiteNoiseLullaby ageMonths={2} />);
-      openPoemsTab();
-
-      const tile = screen.getByTestId("poem-tile-poem-sleep-baby-sleep");
-      fireEvent.click(tile);
-      // Tile flips to data-active="true" the moment the fullscreen player
-      // opens for it (covers loading, playing, and paused states). We bind
-      // to `openPoem` rather than to the async `isPlaying` flag so the
-      // marker doesn't blink while the synth fetch is in flight.
-      expect(tile).toHaveAttribute("data-active", "true");
-
-      fireEvent.click(screen.getByTestId("poem-fullscreen-close"));
-
-      // openPoem is cleared synchronously on close → tile flips back. We
-      // don't assert on the player's DOM presence here because
-      // <AnimatePresence> keeps its children mounted during the exit
-      // animation, and framer-motion's animations don't complete cleanly
-      // under jsdom + fake timers (same caveat as the white-noise stop-all
-      // test above).
-      expect(tile).toHaveAttribute("data-active", "false");
-    });
+    expect(screen.getByRole("tab", { name: /^noise$/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^lullabies$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^poems$/i })).toBeNull();
+    expect(screen.queryByRole("tab", { name: /^stories$/i })).toBeNull();
   });
 });

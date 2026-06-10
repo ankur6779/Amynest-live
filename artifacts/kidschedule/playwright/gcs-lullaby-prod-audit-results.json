@@ -1,0 +1,149 @@
+{
+  "config": {
+    "configFile": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright.config.gcs-lullaby-prod-audit.ts",
+    "rootDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "android-chrome",
+        "name": "android-chrome",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "/gcs-lullaby-production-audit\\.spec\\.ts/"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone-safari",
+        "name": "iphone-safari",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "/gcs-lullaby-production-audit\\.spec\\.ts/"
+        ],
+        "timeout": 300000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright/gcs-lullaby-prod-audit-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gcs-lullaby-production-audit.spec.ts",
+      "file": "gcs-lullaby-production-audit.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "GCS lullaby production audit",
+          "file": "gcs-lullaby-production-audit.spec.ts",
+          "line": 156,
+          "column": 6,
+          "specs": [
+            {
+              "title": "lullaby playback matrix — real GCS signed URLs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 300000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "iphone-safari",
+                  "projectName": "iphone-safari",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11098,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:51:06.944Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/gcs-lullaby-production-aud-e3e06-trix-—-real-GCS-signed-URLs-iphone-safari/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/gcs-lullaby-production-aud-e3e06-trix-—-real-GCS-signed-URLs-iphone-safari/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dce10be8a2061089eeae-0af862383c3a339e48a1",
+              "file": "gcs-lullaby-production-audit.spec.ts",
+              "line": 166,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-09T18:51:00.984Z",
+    "duration": 18462.639,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

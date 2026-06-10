@@ -11,10 +11,7 @@ import {
 } from "lucide-react";
 import {
   type SleepLibraryItem,
-  type SleepAgeGroup,
-  SLEEP_AGE_GROUPS,
-  getDefaultSleepAgeGroup,
-  getItemsForAgeAndCategory,
+  getItemsForCategory,
   resolveSleepItemAudioUrl,
   type SleepCategory,
 } from "@/data/infant-sleep-catalog";
@@ -30,7 +27,6 @@ import {
 } from "@/lib/infant-sleep-library-state";
 import type { SoundEngine } from "@/hooks/use-sound-engine";
 import {
-  SleepAgeTabs,
   SleepLoadMoreButton,
   SleepSectionHeader,
   sleepMediaGradient,
@@ -63,36 +59,26 @@ function defaultLoopForItem(item: SleepLibraryItem): boolean {
 
 export function InfantSleepTracks({
   category,
-  ageMonths,
   childId,
   noiseEngine,
   headerTitle,
   headerBlurb,
 }: {
   category: Extract<SleepCategory, "lullaby" | "story">;
-  ageMonths: number;
   childId?: string;
   noiseEngine?: SoundEngine;
   headerTitle: string;
   headerBlurb: string;
 }) {
-  const [group, setGroup] = useState<SleepAgeGroup>(() => getDefaultSleepAgeGroup(ageMonths));
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const [openTrack, setOpenTrack] = useState<SleepLibraryItem | null>(null);
   const [favTick, setFavTick] = useState(0);
   const player = useInfantPoemPlayer();
   const prefs = useMemo(() => getSleepPreferences(childId), [childId, favTick]);
 
-  const tracksInGroup = useMemo(
-    () => getItemsForAgeAndCategory(category, group),
-    [category, group],
-  );
-  const visibleTracks = useMemo(() => tracksInGroup.slice(0, visible), [tracksInGroup, visible]);
-  const hasMore = visible < tracksInGroup.length;
-
-  useEffect(() => {
-    setVisible(INITIAL_VISIBLE);
-  }, [group]);
+  const allTracks = useMemo(() => getItemsForCategory(category), [category]);
+  const visibleTracks = useMemo(() => allTracks.slice(0, visible), [allTracks, visible]);
+  const hasMore = visible < allTracks.length;
 
   const handleContinuousAfterEnd = useCallback(() => {
     if (!prefs.continuousMode || !noiseEngine) return;
@@ -162,17 +148,6 @@ export function InfantSleepTracks({
         />
       )}
 
-      <SleepAgeTabs<SleepAgeGroup>
-        groups={SLEEP_AGE_GROUPS}
-        value={group}
-        onChange={setGroup}
-        testIdPrefix="sleep-age-tab"
-      />
-
-      <p className="text-[11px] text-muted-foreground px-1">
-        {SLEEP_AGE_GROUPS.find((g) => g.id === group)?.blurb}
-      </p>
-
       <div className="grid grid-cols-2 gap-2.5">
         {visibleTracks.map((track) => {
           const isActive = openTrack?.id === track.id;
@@ -203,7 +178,7 @@ export function InfantSleepTracks({
 
       {hasMore && (
         <SleepLoadMoreButton
-          onClick={() => setVisible((v) => Math.min(tracksInGroup.length, v + PAGE_SIZE))}
+          onClick={() => setVisible((v) => Math.min(allTracks.length, v + PAGE_SIZE))}
           label="Load more"
           testId="sleep-load-more"
         />

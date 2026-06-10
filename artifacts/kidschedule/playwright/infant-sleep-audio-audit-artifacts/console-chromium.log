@@ -1,0 +1,476 @@
+[vite] connecting...
+[vite] connected.
+%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[AmyNest] Web DEV — API http://127.0.0.1:5192 (override: VITE_APP_API_ORIGIN)
+[amynest:firebase] init start
+[amynest:firebase] init success {apps: 1, projectId: amynest-836ff}
+AUTH STATE CHANGED {authStatus: unauthenticated, uid: null}
+[InfantSleepPlayback] {"selectedId":"lul-twinkle","resolvedAudioUrl":"/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3","contentType":"lullaby","pipeline":"bundled_mp3"}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3, ts: 1781027984471}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: undefined, audio_trace_id: trace_04c99459-d83, sourceLayer: STATIC_GCS}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3, layer: infant_sleep_mp3}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, layer: unknown, phrase: undefined, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: undefined, audio_trace_id: trace_04c99459-d83, sourceLayer: STATIC_GCS}
+[AudioManager] play success {srcType: unknown, attempt: 1, source: infant_sleep_mp3, channel: ui, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3}
+[amynest:audio-coordinator] playback started {source: infant_sleep_mp3, userAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…L, like Gecko) Chrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.913045, duration: 49, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.913045}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.915275, duration: 49, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.915275}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027985768}
+[InfantSleepPlayback] {"selectedId":"lul-brahms","resolvedAudioUrl":"/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3","contentType":"lullaby","pipeline":"bundled_mp3"}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3, ts: 1781027986149}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: undefined, audio_trace_id: trace_0b10c077-cae, sourceLayer: STATIC_GCS}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3, layer: infant_sleep_mp3}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, layer: unknown, phrase: undefined, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: undefined, audio_trace_id: trace_0b10c077-cae, sourceLayer: STATIC_GCS}
+[AudioManager] play success {srcType: unknown, attempt: 1, source: infant_sleep_mp3, channel: ui, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3}
+[amynest:audio-coordinator] playback started {source: infant_sleep_mp3, userAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…L, like Gecko) Chrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.893179, duration: 49, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.893179}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.893512, duration: 49, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.893512}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027987418}
+[InfantSleepPlayback] {"selectedId":"lul-rock-a-bye","resolvedAudioUrl":"/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3","contentType":"lullaby","pipeline":"bundled_mp3"}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3, ts: 1781027987800}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: undefined, audio_trace_id: trace_7eb64d84-2d7, sourceLayer: STATIC_GCS}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3, layer: infant_sleep_mp3}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, layer: unknown, phrase: undefined, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: undefined, audio_trace_id: trace_7eb64d84-2d7, sourceLayer: STATIC_GCS}
+[AudioManager] play success {srcType: unknown, attempt: 1, source: infant_sleep_mp3, channel: ui, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3}
+[amynest:audio-coordinator] playback started {source: infant_sleep_mp3, userAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…L, like Gecko) Chrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.893596, duration: 49, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.893596}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.893596, duration: 49, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.893596}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027989076}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Sleep baby sleep, Stars are shining deep, Moon is watching you, Dreams will come, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"poem-sleep-baby-sleep","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3","contentType":"poem","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, ts: 1781027990564}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: poem-sleep-baby-sleep, audio_trace_id: trace_8d388a6d-0b7, sourceLayer: DYNAMIC_TTS}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: poem-sleep-baby-sleep, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: poem-sleep-baby-sleep, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: poem-sleep-baby-sleep, audio_trace_id: trace_8d388a6d-0b7, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: poem-sleep-baby-sleep, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781027991203}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027991450}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Hush little cloud, drift soft and slow, Cradle the moon in its silver glow, Whis, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"poem-hush-little-cloud","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3","contentType":"poem","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, ts: 1781027992222}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: poem-hush-little-cloud, audio_trace_id: trace_9419aee7-774, sourceLayer: DYNAMIC_TTS}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: poem-hush-little-cloud, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: poem-hush-little-cloud, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: poem-hush-little-cloud, audio_trace_id: trace_9419aee7-774, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: poem-hush-little-cloud, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781027992857}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027993104}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Pat pat pat, on baby's back, Gentle taps, a steady knack, Slow and soft and warm, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"poem-pat-pat-pat","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3","contentType":"poem","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, ts: 1781027993870}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: poem-pat-pat-pat, audio_trace_id: trace_af453033-c2f, sourceLayer: DYNAMIC_TTS}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: poem-pat-pat-pat, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: poem-pat-pat-pat, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: poem-pat-pat-pat, audio_trace_id: trace_af453033-c2f, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: poem-pat-pat-pat, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781027994506}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027994750}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Once upon a quiet night, the moon looked down and saw a little one getting sleep, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-moon-blanket","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, ts: 1781027996073}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-moon-blanket, audio_trace_id: trace_df0fc0e0-48d, sourceLayer: DYNAMIC_TTS}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-moon-blanket, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-moon-blanket, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: story-moon-blanket, audio_trace_id: trace_df0fc0e0-48d, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: story-moon-blanket, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781027996708}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781027997934}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: High above the sleepy town, a little cloud floated slowly, slowly, slow. It was , proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-cloud-pillow","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, ts: 1781027998654}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-cloud-pillow, audio_trace_id: trace_d7a78c13-204, sourceLayer: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-cloud-pillow, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-cloud-pillow, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: story-cloud-pillow, audio_trace_id: trace_d7a78c13-204, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: story-cloud-pillow, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781027999296}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028000499}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: A little boat rocked on a calm, moonlit sea. No hurry. No noise. Just the gentle, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-boat-dreams","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, ts: 1781028001228}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-boat-dreams, audio_trace_id: trace_54029c23-28a, sourceLayer: DYNAMIC_TTS}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-boat-dreams, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-boat-dreams, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: story-boat-dreams, audio_trace_id: trace_54029c23-28a, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: story-boat-dreams, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781028001866}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028003099}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Every night, one small star waits just for you. It blinks once, twice, three tim, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-star-friend","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, ts: 1781028003856}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-star-friend, audio_trace_id: trace_af19790f-119, sourceLayer: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-star-friend, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-star-friend, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: story-star-friend, audio_trace_id: trace_af19790f-119, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: story-star-friend, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781028004519}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028005731}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: source_selected, source: tts, phrase: In the sleepy garden, flowers folded their petals. Crickets played a tiny lullab, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-garden-sleep","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, ts: 1781028006454}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-garden-sleep, audio_trace_id: trace_4a9d1498-f71, sourceLayer: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, readyState: 0}
+[AudioManager] play failed (attempt 1/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 1, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-garden-sleep, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, readyState: 0}
+[AudioManager] play failed (attempt 2/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 2, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3}
+[AudioReliability] {event: audio_recovered, module: other, audioIdentity: story-garden-sleep, sourceLayer: DYNAMIC_TTS, recoveredFrom: DYNAMIC_TTS}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player, error: Failed to load because no supported source was found.}
+[AmyVoiceAudioStart] playback failed, retrying {layer: poem_player, error: Failed to load because no supported source was found.}
+[AUDIBLE_START_DIAG] FAIL {gate: playWithAudibleStartGuarantee, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AmyVoiceAudioStart] {event: audio_start, success: false, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player, error: The element has no supported sources.}
+[AUDIBLE_START_DIAG] FAIL {gate: attemptPlay, phase: fail, recoveryMode: true, readyState: 0, readyStateLabel: HAVE_NOTHING}
+[AudioManager] attemptPlay audible start failed {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, readyState: 0}
+[AudioManager] play failed (attempt 3/3) {errorName: NotSupportedError, errorMessage: The element has no supported sources., attempt: 3, srcType: tts, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3}
+[AudioReliability] {event: audio_play_failed, module: other, audioIdentity: story-garden-sleep, audio_trace_id: trace_4a9d1498-f71, failureReason: UNKNOWN}
+[AudioPlayback] {evt: audio_failed, source: poem_player, layer: tts, phrase: story-garden-sleep, error: PLAYBACK_FAILED}
+[AudioManager] AudioManager recovery triggered
+[AmyVoice] Audio stop triggered outside controller (audioManager.stop)
+[AudioPlayback] {evt: audio_failed, source: poem_player, error: play_failed, ts: 1781028007086}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028008302}
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.
+The AudioContext encountered an error from the audio device or the WebAudio renderer.

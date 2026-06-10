@@ -1,0 +1,579 @@
+{
+  "config": {
+    "configFile": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright.config.infant-sleep-audio.ts",
+    "rootDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "/infant-sleep-audio-audit\\.spec\\.ts/"
+        ],
+        "timeout": 240000
+      },
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-iphone",
+        "name": "webkit-iphone",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "/infant-sleep-audio-audit\\.spec\\.ts/"
+        ],
+        "timeout": 240000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright/infant-sleep-audio-audit-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": {
+      "command": "PORT=5192 VITE_APP_API_ORIGIN=http://127.0.0.1:5192 BASE_PATH=/ pnpm exec vite --config vite.config.ts --port 5192 --host 127.0.0.1 --strictPort",
+      "url": "http://127.0.0.1:5192/playwright-infant-sleep-audio.html",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "infant-sleep-audio-audit.spec.ts",
+      "file": "infant-sleep-audio-audit.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Infant sleep audio — post-fix runtime audit",
+          "file": "infant-sleep-audio-audit.spec.ts",
+          "line": 105,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TEST 1–4: lullabies, poems, stories, network trace",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 28811,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T17:59:40.462Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-cc66e-poems-stories-network-trace-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-cc66e-poems-stories-network-trace-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-6cd9f402de71671197f6",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 110,
+              "column": 3
+            },
+            {
+              "title": "TEST 5: iOS Safari — replay, pause, resume, next item",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "iOS Safari project only",
+                      "location": {
+                        "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/infant-sleep-audio-audit.spec.ts",
+                        "line": 300,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:00:10.679Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "iOS Safari project only",
+                          "location": {
+                            "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/infant-sleep-audio-audit.spec.ts",
+                            "line": 300,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-506c2-play-pause-resume-next-item-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-506c2-play-pause-resume-next-item-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-20d9b856ad22f4279f07",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 299,
+              "column": 3
+            },
+            {
+              "title": "TEST 6: offline mode — lullaby works, TTS graceful failure",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7656,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:00:10.893Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-d94b8--works-TTS-graceful-failure-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-d94b8--works-TTS-graceful-failure-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-65f2647d370ac6eadf5b",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 328,
+              "column": 3
+            },
+            {
+              "title": "TEST 7: duplication guard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1238,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:00:18.778Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-0468b-it-TEST-7-duplication-guard-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-0468b-it-TEST-7-duplication-guard-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-11befe3e580198b3ea25",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 359,
+              "column": 3
+            },
+            {
+              "title": "TEST 8: memory — back-to-back playback",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15649,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:00:20.058Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-385e7-ory-—-back-to-back-playback-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-385e7-ory-—-back-to-back-playback-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-19fb5e41271b21f29486",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 390,
+              "column": 3
+            },
+            {
+              "title": "TEST 1–4: lullabies, poems, stories, network trace",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-iphone",
+                  "projectName": "webkit-iphone",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 32753,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:00:37.699Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-cc66e-poems-stories-network-trace-webkit-iphone/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-cc66e-poems-stories-network-trace-webkit-iphone/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-350565203d8fc1ceb810",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 110,
+              "column": 3
+            },
+            {
+              "title": "TEST 5: iOS Safari — replay, pause, resume, next item",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-iphone",
+                  "projectName": "webkit-iphone",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8914,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:01:11.770Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-506c2-play-pause-resume-next-item-webkit-iphone/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-506c2-play-pause-resume-next-item-webkit-iphone/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-d27bf2d673ff53efacc1",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 299,
+              "column": 3
+            },
+            {
+              "title": "TEST 6: offline mode — lullaby works, TTS graceful failure",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-iphone",
+                  "projectName": "webkit-iphone",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9329,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:01:20.908Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-d94b8--works-TTS-graceful-failure-webkit-iphone/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-d94b8--works-TTS-graceful-failure-webkit-iphone/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-a714dc6dea8a64e32bbd",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 328,
+              "column": 3
+            },
+            {
+              "title": "TEST 7: duplication guard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-iphone",
+                  "projectName": "webkit-iphone",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1955,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:01:30.380Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-0468b-it-TEST-7-duplication-guard-webkit-iphone/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-0468b-it-TEST-7-duplication-guard-webkit-iphone/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-46307af7f49eebd6ea41",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 359,
+              "column": 3
+            },
+            {
+              "title": "TEST 8: memory — back-to-back playback",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-iphone",
+                  "projectName": "webkit-iphone",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 18755,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T18:01:32.394Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-385e7-ory-—-back-to-back-playback-webkit-iphone/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/infant-sleep-audio-audit-I-385e7-ory-—-back-to-back-playback-webkit-iphone/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "44a8a0a7f9c4ef51ebba-5eeb8b1d1e751741596a",
+              "file": "infant-sleep-audio-audit.spec.ts",
+              "line": 390,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-09T17:59:33.597Z",
+    "duration": 138335.56,
+    "expected": 9,
+    "skipped": 1,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "validatedAt": "2026-06-10T10:15:25.325Z",
+  "base": "https://www.amynest.in",
+  "health": {
+    "verdict": "PASS",
+    "status": "PASS",
+    "phase1BlobFallback": true,
+    "enableMseStreaming": "false",
+    "mseStreamingActive": false,
+    "streamProbe": {
+      "ok": true,
+      "bytes": 1658,
+      "latencyMs": 868
+    }
+  },
+  "global": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "unhandledRejections": [],
+    "mseErrors": [],
+    "noConsoleErrors": true,
+    "noUnhandledRejections": true,
+    "noMseExceptions": true
+  },
+  "features": [
+    {
+      "feature": "Parent Hub Story",
+      "verdict": "FAIL",
+      "reason": "locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid^=\"article-card-\"]').first()\n",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Amy Coach",
+      "verdict": "FAIL",
+      "reason": "locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for getByTestId('coach-listen-btn')\n",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Conversation Coach",
+      "verdict": "FAIL",
+      "reason": "no_audio_element",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Speech Coach",
+      "verdict": "FAIL",
+      "reason": "no_audio_element",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Infant Story",
+      "verdict": "FAIL",
+      "reason": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid^=\"sleep-track-tile-\"]').first()\n",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Infant Poem",
+      "verdict": "FAIL",
+      "reason": "locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /read aloud|aloud/i }).first()\n",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Audio Lesson",
+      "verdict": "FAIL",
+      "reason": "locator.click: Error: strict mode violation: getByRole('button', { name: 'Play' }) resolved to 5 elements:\n    1) <button disabled type=\"button\" data-testid=\"lesson-card-toddler-no-phase\">…</button> aka getByTestId('lesson-card-toddler-no-phase')\n    2) <button disabled type=\"button\" data-testid=\"lesson-card-toddler-daycare-transition\">…</button> aka getByTestId('lesson-card-toddler-daycare-transition')\n    3) <button disabled type=\"button\" data-testid=\"lesson-card-toddler-potty-readiness\">…</button> aka getByTestId('lesson-card-toddler-potty-readiness')\n    4) <button disabled type=\"button\" data-testid=\"lesson-card-health-immunity-truth\">…</button> aka getByTestId('lesson-card-health-immunity-truth')\n    5) <button disabled type=\"button\" data-testid=\"lesson-card-health-hidden-nutrition-gaps\">…</button> aka getByTestId('lesson-card-health-hidden-nutrition-gaps')\n\nCall log:\n  - waiting for getByRole('button', { name: 'Play' })\n",
+      "checks": {
+        "elementExists": false
+      }
+    },
+    {
+      "feature": "Phonics",
+      "verdict": "FAIL",
+      "reason": "locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid^=\"phonics-tile-\"]').first()\n",
+      "checks": {
+        "elementExists": false
+      }
+    }
+  ],
+  "overall": "FAIL",
+  "detail": [
+    {
+      "feature": "Parent Hub Story",
+      "id": "parent_hub_story",
+      "verdict": "FAIL",
+      "triggerError": "locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid^=\"article-card-\"]').first()\n",
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 21659
+    },
+    {
+      "feature": "Amy Coach",
+      "id": "amy_coach",
+      "verdict": "FAIL",
+      "triggerError": "locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for getByTestId('coach-listen-btn')\n",
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 30199
+    },
+    {
+      "feature": "Conversation Coach",
+      "id": "conversation_coach",
+      "verdict": "FAIL",
+      "triggerError": null,
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 10049
+    },
+    {
+      "feature": "Speech Coach",
+      "id": "speech_coach",
+      "verdict": "FAIL",
+      "triggerError": null,
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 9773
+    },
+    {
+      "feature": "Infant Story",
+      "id": "infant_story",
+      "verdict": "FAIL",
+      "triggerError": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid^=\"sleep-track-tile-\"]').first()\n",
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 24840
+    },
+    {
+      "feature": "Infant Poem",
+      "id": "infant_poem",
+      "verdict": "FAIL",
+      "triggerError": "locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /read aloud|aloud/i }).first()\n",
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 20931
+    },
+    {
+      "feature": "Audio Lesson",
+      "id": "audio_lesson",
+      "verdict": "FAIL",
+      "triggerError": "locator.click: Error: strict mode violation: getByRole('button', { name: 'Play' }) resolved to 5 elements:\n    1) <button disabled type=\"button\" data-testid=\"lesson-card-toddler-no-phase\">…</button> aka getByTestId('lesson-card-toddler-no-phase')\n    2) <button disabled type=\"button\" data-testid=\"lesson-card-toddler-daycare-transition\">…</button> aka getByTestId('lesson-card-toddler-daycare-transition')\n    3) <button disabled type=\"button\" data-testid=\"lesson-card-toddler-potty-readiness\">…</button> aka getByTestId('lesson-card-toddler-potty-readiness')\n    4) <button disabled type=\"button\" data-testid=\"lesson-card-health-immunity-truth\">…</button> aka getByTestId('lesson-card-health-immunity-truth')\n    5) <button disabled type=\"button\" data-testid=\"lesson-card-health-hidden-nutrition-gaps\">…</button> aka getByTestId('lesson-card-health-hidden-nutrition-gaps')\n\nCall log:\n  - waiting for getByRole('button', { name: 'Play' })\n",
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 10187
+    },
+    {
+      "feature": "Phonics",
+      "id": "phonics",
+      "verdict": "FAIL",
+      "triggerError": "locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid^=\"phonics-tile-\"]').first()\n",
+      "audio": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false
+        }
+      },
+      "elapsedMs": 21449
+    }
+  ]
+}

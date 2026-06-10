@@ -187,18 +187,18 @@ async function playCvcWordFinale(
     if (catalog.ok) return { success: true, layer: "static" };
   }
 
-  for (const mode of ["phonics", "default"] as const) {
-    if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
-    const proxyUrl = lookupStaticAudioUrl(w, mode);
-    if (!proxyUrl) continue;
-    const result = await amyVoiceController.playPreparedUrl(proxyUrl, {
-      source: "phonics",
-      phrase: w,
-      srcType: "static",
-      isCancelled: opts?.isCancelled,
-      waitUntilEnd: true,
-    });
-    if (result.success) return result;
+  if (!opts?.isCancelled?.()) {
+    const proxyUrl = lookupStaticAudioUrl(w, "phonics");
+    if (proxyUrl) {
+      const result = await amyVoiceController.playPreparedUrl(proxyUrl, {
+        source: "phonics",
+        phrase: w,
+        srcType: "static",
+        isCancelled: opts?.isCancelled,
+        waitUntilEnd: true,
+      });
+      if (result.success) return result;
+    }
   }
 
   const entry = getCvcWordEntry(w);

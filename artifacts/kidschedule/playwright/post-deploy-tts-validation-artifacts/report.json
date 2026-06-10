@@ -1,0 +1,3510 @@
+{
+  "validatedAt": "2026-06-10T10:18:04.203Z",
+  "base": "https://www.amynest.in",
+  "healthBefore": {
+    "ttsProvider": "openai",
+    "ttsCacheGcsEnabled": true,
+    "openAiConfigured": true,
+    "openAiTts": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "coral",
+      "accent": "indian",
+      "instructionsPreview": "Speak in a warm, friendly female voice with a natural Indian English accent, like a caring Indian parent coach. Keep ton"
+    },
+    "legacyGcsConfigured": true,
+    "ok": true,
+    "ttsStorage": "gcs",
+    "amyTtsModel": "eleven_flash_v2_5",
+    "amyTtsVoice": "QbQKfe9vgx5OsbZUvlFv",
+    "latency": {
+      "tts_request_total": 127,
+      "tts_cache_hit": 127,
+      "tts_cache_miss": 0,
+      "tts_cache_hit_pct": 100,
+      "tts_generation_ms_avg": null,
+      "tts_first_audio_ms_p50": 22,
+      "tts_first_audio_ms_p95": 159,
+      "tts_generation_ms_p50": null,
+      "tts_generation_ms_p95": null,
+      "tts_elevenlabs_calls": 0,
+      "tts_model": "eleven_flash_v2_5",
+      "tts_voice": "QbQKfe9vgx5OsbZUvlFv",
+      "recentSamples": 127,
+      "server_ttfa_ms_p50": 22,
+      "server_ttfa_ms_p95": 159,
+      "client_ttfa_ms_p50": null,
+      "client_ttfa_ms_p95": null,
+      "user_playback_start_ms_avg": null,
+      "user_first_audio_heard_ms_avg": null,
+      "user_first_audio_heard_ms_p50": null,
+      "user_first_audio_heard_ms_p95": null,
+      "playback_started_before_download_complete_pct": null,
+      "user_metric_samples": 0,
+      "coach_cache_hit": 0,
+      "coach_cache_miss": 0,
+      "coach_cache_hit_pct": null,
+      "coach_generation_ms_avg": null
+    }
+  },
+  "healthAfter": {
+    "ttsProvider": "openai",
+    "ttsCacheGcsEnabled": true,
+    "openAiConfigured": true,
+    "openAiTts": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "coral",
+      "accent": "indian",
+      "instructionsPreview": "Speak in a warm, friendly female voice with a natural Indian English accent, like a caring Indian parent coach. Keep ton"
+    },
+    "legacyGcsConfigured": true,
+    "ok": true,
+    "ttsStorage": "gcs",
+    "amyTtsModel": "eleven_flash_v2_5",
+    "amyTtsVoice": "QbQKfe9vgx5OsbZUvlFv",
+    "latency": {
+      "tts_request_total": 205,
+      "tts_cache_hit": 205,
+      "tts_cache_miss": 0,
+      "tts_cache_hit_pct": 100,
+      "tts_generation_ms_avg": null,
+      "tts_first_audio_ms_p50": 13,
+      "tts_first_audio_ms_p95": 140,
+      "tts_generation_ms_p50": null,
+      "tts_generation_ms_p95": null,
+      "tts_elevenlabs_calls": 0,
+      "tts_model": "eleven_flash_v2_5",
+      "tts_voice": "QbQKfe9vgx5OsbZUvlFv",
+      "recentSamples": 205,
+      "server_ttfa_ms_p50": 13,
+      "server_ttfa_ms_p95": 140,
+      "client_ttfa_ms_p50": null,
+      "client_ttfa_ms_p95": null,
+      "user_playback_start_ms_avg": null,
+      "user_first_audio_heard_ms_avg": null,
+      "user_first_audio_heard_ms_p50": null,
+      "user_first_audio_heard_ms_p95": null,
+      "playback_started_before_download_complete_pct": null,
+      "user_metric_samples": 0,
+      "coach_cache_hit": 0,
+      "coach_cache_miss": 0,
+      "coach_cache_hit_pct": null,
+      "coach_generation_ms_avg": null
+    }
+  },
+  "thresholds": {
+    "ttfaDynamicMs": 800,
+    "ttfaCachedMs": 300
+  },
+  "expected": {
+    "model": "eleven_flash_v2_5",
+    "voice": "QbQKfe9vgx5OsbZUvlFv"
+  },
+  "coachProbes": {
+    "first": {
+      "label": "Coach Cache Probe",
+      "requestStartWall": 1781086680829,
+      "status": 404,
+      "ms": 190,
+      "json": {
+        "success": false,
+        "data": {},
+        "fallback": false,
+        "error": "No handler for POST /api/coach-audio/generate on api-server."
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "Range, Accept, Content-Type",
+        "access-control-allow-methods": "GET, HEAD, OPTIONS",
+        "access-control-allow-origin": "https://www.amynest.in",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a097a12bf8898bd0-SIN",
+        "content-encoding": "br",
+        "content-length": "94",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 10 Jun 2026 10:18:00 GMT",
+        "etag": "W/\"73-A2xCTtfTHJ7bTHPjM594CLebR08\"",
+        "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "priority": "u=1,i",
+        "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=aIjVpWcd1xPC9ipnQx68VXaboJcmrOz4BUJpmDELHn3sXJrqkTasXlxoUNqZ66IM8VZo7nyFVkWJKFv89WgqhRxUq0OFvGCdRCLofDAgX%2F08UOuLu3bMUepk%2F7VIFTylIF%2FQfZHkRY%2FaeP9uQA%3D%3D\"}]}",
+        "rndr-id": "96ddf901-d633-4681",
+        "server": "cloudflare",
+        "server-timing": "cfExtPri",
+        "vary": "Origin, Accept-Encoding",
+        "x-powered-by": "Express",
+        "x-render-origin-server": "Render",
+        "x-request-id": "5c860a0a-3519-4f23-a28f-f0c3ba3fe47b"
+      },
+      "requestStartTs": 1781086680826
+    },
+    "second": {
+      "label": "Coach Cache Probe 2nd",
+      "requestStartWall": 1781086681021,
+      "status": 404,
+      "ms": 171,
+      "json": {
+        "success": false,
+        "data": {},
+        "fallback": false,
+        "error": "No handler for POST /api/coach-audio/generate on api-server."
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "Range, Accept, Content-Type",
+        "access-control-allow-methods": "GET, HEAD, OPTIONS",
+        "access-control-allow-origin": "https://www.amynest.in",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a097a12d48b48bd0-SIN",
+        "content-encoding": "br",
+        "content-length": "94",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 10 Jun 2026 10:18:01 GMT",
+        "etag": "W/\"73-A2xCTtfTHJ7bTHPjM594CLebR08\"",
+        "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "priority": "u=1,i",
+        "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=8mSXsWHqIkUWZXdaVZkIncsv4MHes2RdZK%2BzEIvTbQ6qY3Bql0b1TpdrpqqnFjqs%2BplDAYRdcgpJ8K89roeYmPPZZfATMZ7P1DFFgTtd60nuDarSYPvVDqMG%2FczZpNCy%2FNnf9piap%2ByDphuatg%3D%3D\"}]}",
+        "rndr-id": "5d8e5687-dcd2-4aa1",
+        "server": "cloudflare",
+        "server-timing": "cfExtPri",
+        "vary": "Origin, Accept-Encoding",
+        "x-powered-by": "Express",
+        "x-render-origin-server": "Render",
+        "x-request-id": "d95a456c-ce5f-4652-8d52-4640f164f52b"
+      },
+      "requestStartTs": 1781086681020
+    }
+  },
+  "streamIntegrity": {
+    "cacheKey": "82cae3830771d71a29c75cd7bf6c15fd8a39107d159c3a0577dff41a922510a6",
+    "coldBytes": 56469,
+    "hotBytes": 56469,
+    "gcsBytes": 56469,
+    "truncated16k": false,
+    "hotMatchesGcs": true
+  },
+  "features": [
+    {
+      "feature": "Parent Hub Story",
+      "key": "parent_hub_story",
+      "firstRun": {
+        "label": "Parent Hub Story",
+        "requestStartWall": 1781086562055,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979e45ce708bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:02 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=06UsndKGIBdQHI116D78fj4pG2fklbUwTGnztC%2Frk%2BSyKNEWCYPk2uLIQWdW0hXofP1QMN59nJIfDHJfcPfe6HcSSuaZnLFZT9ILDV7HhuUdH4PxyXO5w6zSku8tvdWRrf3BDABgltA1HFtRrg%3D%3D\"}]}",
+          "rndr-id": "70cc9c28-81f7-4856",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "4d464987-dea7-4138-a1e3-5621c7fbb00c",
+          "x-tts-cache-key": "8ee9577cc8bd916a2e5881e232c376797fd35b74b5e575d078f20116fceff6f3"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "8ee9577cc8bd916a2e5881e232c376797fd35b74b5e575d078f20116fceff6f3",
+        "gcsPath": null,
+        "firstByteMs": 207,
+        "firstPlayableByteMs": 208,
+        "playbackStartMs": 240,
+        "responseCompleteMs": 230,
+        "synthesisCompleteMs": 230,
+        "totalBytes": 54797,
+        "error": null,
+        "requestStartTs": 1781086562053
+      },
+      "secondRun": {
+        "label": "Parent Hub Story (2nd)",
+        "requestStartWall": 1781086562702,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979e4a1f048bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:02 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=p0YE2%2BYKZwvPVeUCfu8Ky3YHV3nIiY4yCuQ7WU5KCbt7v2kPt2zKE0zohLge7guOiQ7FUY%2BcbzLXUvZZN0RGIOLTZhEfKGHr9r2cOY5NiGFSudsorFqSVGArU953sCgwAAcE%2FhtHfWLreCY6PQ%3D%3D\"}]}",
+          "rndr-id": "6ae1c64d-7dce-4e85",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "f311345c-4bbf-43c3-9188-e29f8be3a49a",
+          "x-tts-cache-key": "8ee9577cc8bd916a2e5881e232c376797fd35b74b5e575d078f20116fceff6f3"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "8ee9577cc8bd916a2e5881e232c376797fd35b74b5e575d078f20116fceff6f3",
+        "gcsPath": null,
+        "firstByteMs": 202,
+        "firstPlayableByteMs": 202,
+        "playbackStartMs": 242,
+        "responseCompleteMs": 227,
+        "synthesisCompleteMs": 227,
+        "totalBytes": 54797,
+        "error": null,
+        "requestStartTs": 1781086562699
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086564161,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: m09:question}"
+        },
+        {
+          "ts": 1781086564164,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: m09:answer}"
+        },
+        {
+          "ts": 1781086564172,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: h07:question}"
+        },
+        {
+          "ts": 1781086564180,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: h07:answer}"
+        },
+        {
+          "ts": 1781086564193,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: e08:question}"
+        },
+        {
+          "ts": 1781086564200,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: e08:answer}"
+        },
+        {
+          "ts": 1781086564205,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_puzzle, itemId: correct-feedback}"
+        },
+        {
+          "ts": 1781086564230,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_articles, itemId: infant-sleep-cycles:0}"
+        },
+        {
+          "ts": 1781086564231,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_articles, itemId: infant-sleep-cycles:1}"
+        },
+        {
+          "ts": 1781086564231,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_articles, itemId: infant-sleep-cycles:2}"
+        },
+        {
+          "ts": 1781086564233,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_articles, itemId: infant-sleep-cycles:3}"
+        },
+        {
+          "ts": 1781086564233,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_kids_activity, itemId: og1:0}"
+        },
+        {
+          "ts": 1781086564240,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_kids_activity, itemId: og1:1}"
+        },
+        {
+          "ts": 1781086564246,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_kids_activity, itemId: og1:2}"
+        },
+        {
+          "ts": 1781086564252,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_kids_activity, itemId: og1:3}"
+        },
+        {
+          "ts": 1781086564259,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_kids_activity, itemId: og1:4}"
+        },
+        {
+          "ts": 1781086564268,
+          "t": "[TTS] {evt: tts.playback, event: parent_hub_audio_identity, moduleId: parent-hub, sectionId: hub_kids_activity, itemId: og1:5}"
+        },
+        {
+          "ts": 1781086565568,
+          "t": "[STATIC AUDIO LOOKUP] {text: a as in apple, normalized: a as in apple, mode: phonics, url: https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3}"
+        },
+        {
+          "ts": 1781086565568,
+          "t": "[STATIC AUDIO LOOKUP] {text: b, normalized: b, mode: phonics, url: https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3}"
+        },
+        {
+          "ts": 1781086565568,
+          "t": "[STATIC AUDIO LOOKUP] {text: cat, normalized: cat, mode: phonics, url: https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/7eb13bd75f8060ffaea5351252b1276b.mp3",
+          "status": 200,
+          "ts": 1781086567009,
+          "transferEncoding": null,
+          "contentLength": "73728",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/96b294346e5a6686c0a54ba08a9929ab.mp3",
+          "status": 200,
+          "ts": 1781086567014,
+          "transferEncoding": null,
+          "contentLength": "105600",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/885931045a1056c2858f1cc91e958c5c.mp3",
+          "status": 200,
+          "ts": 1781086567086,
+          "transferEncoding": null,
+          "contentLength": "111360",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/c9f4f1645bea8c573d9776fb571f6436.mp3",
+          "status": 200,
+          "ts": 1781086567091,
+          "transferEncoding": null,
+          "contentLength": "76800",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/885931045a1056c2858f1cc91e958c5c.mp3",
+          "status": 200,
+          "ts": 1781086567102,
+          "transferEncoding": null,
+          "contentLength": "111360",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/8fa786e49b4f891dd5bcdd28aa286f94.mp3",
+          "status": 200,
+          "ts": 1781086567196,
+          "transferEncoding": null,
+          "contentLength": "88320",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4ae9aec04185fffe97a56944a712f295.mp3",
+          "status": 200,
+          "ts": 1781086567201,
+          "transferEncoding": null,
+          "contentLength": "84096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/a7f5c03013a7ff8faef0394232b6647e.mp3",
+          "status": 200,
+          "ts": 1781086567254,
+          "transferEncoding": null,
+          "contentLength": "95232",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/47e6d1f267b2c04edd07a3ac1150712e.mp3",
+          "status": 200,
+          "ts": 1781086567260,
+          "transferEncoding": null,
+          "contentLength": "93696",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/a7f5c03013a7ff8faef0394232b6647e.mp3",
+          "status": 200,
+          "ts": 1781086567269,
+          "transferEncoding": null,
+          "contentLength": "95232",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/47e6d1f267b2c04edd07a3ac1150712e.mp3",
+          "status": 200,
+          "ts": 1781086567310,
+          "transferEncoding": null,
+          "contentLength": "93696",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4ae9aec04185fffe97a56944a712f295.mp3",
+          "status": 200,
+          "ts": 1781086567315,
+          "transferEncoding": null,
+          "contentLength": "84096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/55800987cb6e8d58d55de299dea896ec.mp3",
+          "status": 200,
+          "ts": 1781086567361,
+          "transferEncoding": null,
+          "contentLength": "92160",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/8fa786e49b4f891dd5bcdd28aa286f94.mp3",
+          "status": 200,
+          "ts": 1781086567361,
+          "transferEncoding": null,
+          "contentLength": "88320",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/df26cf0a12e87efe6bf5fc78898c804c.mp3",
+          "status": 200,
+          "ts": 1781086567464,
+          "transferEncoding": null,
+          "contentLength": "80256",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/1c10c57dd4f5e226b243e4a653c23eff.mp3",
+          "status": 200,
+          "ts": 1781086567467,
+          "transferEncoding": null,
+          "contentLength": "96768",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/37957780d56226e8dee53c8053075dbf.mp3",
+          "status": 200,
+          "ts": 1781086567491,
+          "transferEncoding": null,
+          "contentLength": "109056",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/37957780d56226e8dee53c8053075dbf.mp3",
+          "status": 200,
+          "ts": 1781086567493,
+          "transferEncoding": null,
+          "contentLength": "109056",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/88a6226ea725f376e494c2fa25f3ebde.mp3",
+          "status": 200,
+          "ts": 1781086567508,
+          "transferEncoding": null,
+          "contentLength": "115200",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/88a6226ea725f376e494c2fa25f3ebde.mp3",
+          "status": 200,
+          "ts": 1781086567512,
+          "transferEncoding": null,
+          "contentLength": "115200",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/85847ed88274710a0f0333c35d46889a.mp3",
+          "status": 200,
+          "ts": 1781086567555,
+          "transferEncoding": null,
+          "contentLength": "123264",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/85847ed88274710a0f0333c35d46889a.mp3",
+          "status": 200,
+          "ts": 1781086567569,
+          "transferEncoding": null,
+          "contentLength": "123264",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/1c10c57dd4f5e226b243e4a653c23eff.mp3",
+          "status": 200,
+          "ts": 1781086567679,
+          "transferEncoding": null,
+          "contentLength": "96768",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/96b294346e5a6686c0a54ba08a9929ab.mp3",
+          "status": 200,
+          "ts": 1781086567739,
+          "transferEncoding": null,
+          "contentLength": "105600",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/d8fb50da2db77d379deff6af41cb19fe.mp3",
+          "status": 200,
+          "ts": 1781086567777,
+          "transferEncoding": null,
+          "contentLength": "172800",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/d8fb50da2db77d379deff6af41cb19fe.mp3",
+          "status": 200,
+          "ts": 1781086567906,
+          "transferEncoding": null,
+          "contentLength": "172800",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/8c927d36fd76bfa72876a1ae70f9016d.mp3",
+          "status": 200,
+          "ts": 1781086567970,
+          "transferEncoding": null,
+          "contentLength": "219264",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/8c927d36fd76bfa72876a1ae70f9016d.mp3",
+          "status": 200,
+          "ts": 1781086567972,
+          "transferEncoding": null,
+          "contentLength": "219264",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/5ec83188d343ce9fa9770ee45917b123.mp3",
+          "status": 200,
+          "ts": 1781086568139,
+          "transferEncoding": null,
+          "contentLength": "343296",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/5ec83188d343ce9fa9770ee45917b123.mp3",
+          "status": 200,
+          "ts": 1781086568141,
+          "transferEncoding": null,
+          "contentLength": "343296",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        }
+      ]
+    },
+    {
+      "feature": "Amy Coach Listen",
+      "key": "amy_coach_listen",
+      "firstRun": {
+        "label": "Amy Coach Listen",
+        "requestStartWall": 1781086570707,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979e7c4ed18bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:11 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=%2FJV9Tr4sMYVU4Vpv3IsxhQ0uXRfYjwshT%2B6%2BFOKPp5wYEywmFp9lRqNVIFOgyaAJbCwmyX39IziU%2FAUy6bnG8u69CAp9Lct5r%2FNs1xxtt2vlfX1t8OFQvK4e%2Fbal0AjGtkG2Pvnns6iiRd2YZw%3D%3D\"}]}",
+          "rndr-id": "2603159a-8b25-4519",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "02a89e04-1f59-4e9e-ad76-475f8cee9549",
+          "x-tts-cache-key": "0bed4cf94d92083d14fab1b0e456f6a19cba2a63067af75256e9178ed7cdd082"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "0bed4cf94d92083d14fab1b0e456f6a19cba2a63067af75256e9178ed7cdd082",
+        "gcsPath": null,
+        "firstByteMs": 258,
+        "firstPlayableByteMs": 258,
+        "playbackStartMs": 293,
+        "responseCompleteMs": 283,
+        "synthesisCompleteMs": 283,
+        "totalBytes": 46856,
+        "error": null,
+        "requestStartTs": 1781086570704
+      },
+      "secondRun": {
+        "label": "Amy Coach Listen (2nd)",
+        "requestStartWall": 1781086571405,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979e806f8d8bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:11 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=H9jvay9PQo9Xf5ilX%2BcsxM3NpGzGUvg4QeztfqzgQMqPxxJ3qQyPRv8rfHXU0v8t3tqQQqkMMxAyyBK4q7%2BdzMKspP7KZsLUf4%2F7%2B%2BvP7ZFlsLDAn8maSMdIhsfuodSwjKjV0ENqaYG0zbYjiA%3D%3D\"}]}",
+          "rndr-id": "eee17626-0136-49ee",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "a73e9ec7-264d-4c54-bf3c-1cb3d7926b98",
+          "x-tts-cache-key": "0bed4cf94d92083d14fab1b0e456f6a19cba2a63067af75256e9178ed7cdd082"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "0bed4cf94d92083d14fab1b0e456f6a19cba2a63067af75256e9178ed7cdd082",
+        "gcsPath": null,
+        "firstByteMs": 197,
+        "firstPlayableByteMs": 197,
+        "playbackStartMs": 261,
+        "responseCompleteMs": 252,
+        "synthesisCompleteMs": 252,
+        "totalBytes": 46856,
+        "error": null,
+        "requestStartTs": 1781086571403
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086571882,
+          "t": "[amynest:boot] Boot context {hostname: www.amynest.in, origin: https://www.amynest.in, pathname: /amy-coach, href: https://www.amynest.in/amy-coach, userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0}"
+        },
+        {
+          "ts": 1781086571928,
+          "t": "[AMY VOICE] Field validation ready — run __amyVoiceValidation.run({ forceLowEndDevice: true })"
+        },
+        {
+          "ts": 1781086572224,
+          "t": "[amynest:audio-coordinator] audio session lifecycle installed {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086572504,
+          "t": "[amynest:nav] nav-orchestrator-ready {route: /amy-coach, ts: 1781086572497}"
+        },
+        {
+          "ts": 1781086572504,
+          "t": "[amynest:nav] route-history-snapshot {stack: Array(0), method: replace, ts: 1781086572500}"
+        },
+        {
+          "ts": 1781086572599,
+          "t": "[amynest:nav] layout-mounted {location: /amy-coach, ts: 1781086572550}"
+        },
+        {
+          "ts": 1781086572700,
+          "t": "[onboarding-finish] BOOTSTRAP_ONBOARDING_DECISION {timestamp: 2026-06-10T10:16:12.699Z, onboardingRunId: null, route: /amy-coach, step: undefined, userId: null}"
+        },
+        {
+          "ts": 1781086573921,
+          "t": "[STATIC AUDIO LOOKUP] {text: a as in apple, normalized: a as in apple, mode: phonics, url: https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3}"
+        },
+        {
+          "ts": 1781086573922,
+          "t": "[STATIC AUDIO LOOKUP] {text: b, normalized: b, mode: phonics, url: https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3}"
+        },
+        {
+          "ts": 1781086573923,
+          "t": "[STATIC AUDIO LOOKUP] {text: cat, normalized: cat, mode: phonics, url: https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3}"
+        },
+        {
+          "ts": 1781086573939,
+          "t": "[amynest:nav] stack-transition {from: /amy-coach, to: /audio-lessons, method: push, stack: Array(2), ts: 1781086573937}"
+        },
+        {
+          "ts": 1781086573939,
+          "t": "[amynest:nav] route-history-snapshot {stack: Array(2), method: push, ts: 1781086573938}"
+        },
+        {
+          "ts": 1781086574263,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 0, hash: e54c121510e}"
+        },
+        {
+          "ts": 1781086574324,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 1, hash: 24a2c756108}"
+        },
+        {
+          "ts": 1781086574387,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 2, hash: cd69e12311d}"
+        },
+        {
+          "ts": 1781086574448,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 3, hash: 39ee497daf}"
+        },
+        {
+          "ts": 1781086574513,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 0, hash: f8532f22d3}"
+        },
+        {
+          "ts": 1781086574574,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 1, hash: c984f806ef}"
+        },
+        {
+          "ts": 1781086574636,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 2, hash: 8d1ddc4af7}"
+        },
+        {
+          "ts": 1781086574701,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 3, hash: eb0372729e}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086574699,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "method": "GET",
+          "ts": 1781086574702
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "method": "GET",
+          "ts": 1781086574702
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086574729
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086574788,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086574838
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086574872
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086574929,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086574962
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086575013
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086575078,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/904a6fe3d03ec865ac03a1cf7fe85a93.mp3",
+          "status": 200,
+          "ts": 1781086575117,
+          "transferEncoding": null,
+          "contentLength": "128256",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086575147,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/904a6fe3d03ec865ac03a1cf7fe85a93.mp3",
+          "status": 200,
+          "ts": 1781086575181,
+          "transferEncoding": null,
+          "contentLength": "128256",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086575182,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086575306
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086575477,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4351249feb9fde106a7718ffcd47e35e.mp3",
+          "status": 200,
+          "ts": 1781086575524,
+          "transferEncoding": null,
+          "contentLength": "250368",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4351249feb9fde106a7718ffcd47e35e.mp3",
+          "status": 200,
+          "ts": 1781086575805,
+          "transferEncoding": null,
+          "contentLength": "250368",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "status": 200,
+          "ts": 1781086575812,
+          "transferEncoding": null,
+          "contentLength": "132096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/f055d3c487f7c6265dd2c1831596111e.mp3",
+          "status": 200,
+          "ts": 1781086575823,
+          "transferEncoding": null,
+          "contentLength": "256896",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/f055d3c487f7c6265dd2c1831596111e.mp3",
+          "status": 200,
+          "ts": 1781086575827,
+          "transferEncoding": null,
+          "contentLength": "256896",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "status": 200,
+          "ts": 1781086575887,
+          "transferEncoding": null,
+          "contentLength": "132096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/7d59b86d15e7961575a7877370174e33.mp3",
+          "status": 200,
+          "ts": 1781086575954,
+          "transferEncoding": null,
+          "contentLength": "211968",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/7d59b86d15e7961575a7877370174e33.mp3",
+          "status": 200,
+          "ts": 1781086576041,
+          "transferEncoding": null,
+          "contentLength": "211968",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ba6e862dcf187511aedcc40ec0245fd.mp3",
+          "status": 200,
+          "ts": 1781086576107,
+          "transferEncoding": null,
+          "contentLength": "227328",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ed21c00d93b75e7acd795b9d705406c.mp3",
+          "status": 200,
+          "ts": 1781086576149,
+          "transferEncoding": null,
+          "contentLength": "240000",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ba6e862dcf187511aedcc40ec0245fd.mp3",
+          "status": 200,
+          "ts": 1781086576216,
+          "transferEncoding": null,
+          "contentLength": "227328",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ed21c00d93b75e7acd795b9d705406c.mp3",
+          "status": 200,
+          "ts": 1781086576219,
+          "transferEncoding": null,
+          "contentLength": "240000",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086576504,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        }
+      ]
+    },
+    {
+      "feature": "Conversation Coach",
+      "key": "conversation_coach",
+      "firstRun": {
+        "label": "Conversation Coach",
+        "requestStartWall": 1781086578959,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979eaf6db28bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:19 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=U8Lm8sV9a85IQuMuj8cp8bPQSavLxufPL%2Ba93FLpX3Vrg2dFSI%2FPw3N0urlrrncEBtM%2BusOwag1MJYZkf2r2gO6%2BvCdb8KuyldlpNUdFSOrcZIj6efLP8WfB5xkIg9zOLyEXvy4E83RWkr9L1Q%3D%3D\"}]}",
+          "rndr-id": "4a0a2acd-78e9-4f01",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "c7b89920-3249-48a6-a4ef-0b3311436a72",
+          "x-tts-cache-key": "62f82a911fb5e75b404b668af994d10b1f717e597fa89438248a9056ac197f17"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "62f82a911fb5e75b404b668af994d10b1f717e597fa89438248a9056ac197f17",
+        "gcsPath": null,
+        "firstByteMs": 216,
+        "firstPlayableByteMs": 216,
+        "playbackStartMs": 241,
+        "responseCompleteMs": 231,
+        "synthesisCompleteMs": 231,
+        "totalBytes": 48946,
+        "error": null,
+        "requestStartTs": 1781086578957
+      },
+      "secondRun": {
+        "label": "Conversation Coach (2nd)",
+        "requestStartWall": 1781086579604,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979eb39e378bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:19 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=IVTjsP4LHGjN8zUxA7od48EZWFdvjb1UqpyRiFH3ojIvHOgXAphYIRnhXvclR1IzQa0ZX8yaZfhGt0zd6bTqJdhZRDI63aEQ0KtSwoG8BNAWvclXKQtx8R9YoMeNIE1fVaa0v6dzYlgMv1Xzzg%3D%3D\"}]}",
+          "rndr-id": "85ca5a1c-883a-4d70",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "7788423a-ccb5-457c-b59b-59e56ea6a9a1",
+          "x-tts-cache-key": "62f82a911fb5e75b404b668af994d10b1f717e597fa89438248a9056ac197f17"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "62f82a911fb5e75b404b668af994d10b1f717e597fa89438248a9056ac197f17",
+        "gcsPath": null,
+        "firstByteMs": 262,
+        "firstPlayableByteMs": 262,
+        "playbackStartMs": 287,
+        "responseCompleteMs": 276,
+        "synthesisCompleteMs": 276,
+        "totalBytes": 48946,
+        "error": null,
+        "requestStartTs": 1781086579603
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086580112,
+          "t": "[amynest:boot] Boot context {hostname: www.amynest.in, origin: https://www.amynest.in, pathname: /amy-coach, href: https://www.amynest.in/amy-coach, userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0}"
+        },
+        {
+          "ts": 1781086580155,
+          "t": "[AMY VOICE] Field validation ready — run __amyVoiceValidation.run({ forceLowEndDevice: true })"
+        },
+        {
+          "ts": 1781086580449,
+          "t": "[amynest:audio-coordinator] audio session lifecycle installed {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086580576,
+          "t": "[amynest:nav] nav-orchestrator-ready {route: /amy-coach, ts: 1781086580572}"
+        },
+        {
+          "ts": 1781086580576,
+          "t": "[amynest:nav] route-history-snapshot {stack: Array(0), method: replace, ts: 1781086580574}"
+        },
+        {
+          "ts": 1781086580662,
+          "t": "[amynest:nav] layout-mounted {location: /amy-coach, ts: 1781086580620}"
+        },
+        {
+          "ts": 1781086580757,
+          "t": "[onboarding-finish] BOOTSTRAP_ONBOARDING_DECISION {timestamp: 2026-06-10T10:16:20.757Z, onboardingRunId: null, route: /amy-coach, step: undefined, userId: null}"
+        },
+        {
+          "ts": 1781086581657,
+          "t": "[STATIC AUDIO LOOKUP] {text: a as in apple, normalized: a as in apple, mode: phonics, url: https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3}"
+        },
+        {
+          "ts": 1781086581657,
+          "t": "[STATIC AUDIO LOOKUP] {text: b, normalized: b, mode: phonics, url: https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3}"
+        },
+        {
+          "ts": 1781086581657,
+          "t": "[STATIC AUDIO LOOKUP] {text: cat, normalized: cat, mode: phonics, url: https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3}"
+        },
+        {
+          "ts": 1781086581675,
+          "t": "[amynest:nav] stack-transition {from: /amy-coach, to: /audio-lessons, method: push, stack: Array(2), ts: 1781086581673}"
+        },
+        {
+          "ts": 1781086581675,
+          "t": "[amynest:nav] route-history-snapshot {stack: Array(2), method: push, ts: 1781086581673}"
+        },
+        {
+          "ts": 1781086582009,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 0, hash: e54c121510e}"
+        },
+        {
+          "ts": 1781086582073,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 1, hash: 24a2c756108}"
+        },
+        {
+          "ts": 1781086582132,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 2, hash: cd69e12311d}"
+        },
+        {
+          "ts": 1781086582195,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 3, hash: 39ee497daf}"
+        },
+        {
+          "ts": 1781086582259,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 0, hash: f8532f22d3}"
+        },
+        {
+          "ts": 1781086582319,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 1, hash: c984f806ef}"
+        },
+        {
+          "ts": 1781086582381,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 2, hash: 8d1ddc4af7}"
+        },
+        {
+          "ts": 1781086582443,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 3, hash: eb0372729e}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/7d59b86d15e7961575a7877370174e33.mp3",
+          "status": 200,
+          "ts": 1781086582261,
+          "transferEncoding": null,
+          "contentLength": "211968",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/7d59b86d15e7961575a7877370174e33.mp3",
+          "status": 200,
+          "ts": 1781086582261,
+          "transferEncoding": null,
+          "contentLength": "211968",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/3ed21c00d93b75e7acd795b9d705406c.mp3",
+          "method": "GET",
+          "ts": 1781086582320
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/3ed21c00d93b75e7acd795b9d705406c.mp3",
+          "method": "GET",
+          "ts": 1781086582321
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ed21c00d93b75e7acd795b9d705406c.mp3",
+          "status": 200,
+          "ts": 1781086582322,
+          "transferEncoding": null,
+          "contentLength": "240000",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ed21c00d93b75e7acd795b9d705406c.mp3",
+          "status": 200,
+          "ts": 1781086582322,
+          "transferEncoding": null,
+          "contentLength": "240000",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582377
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582380
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/3ba6e862dcf187511aedcc40ec0245fd.mp3",
+          "method": "GET",
+          "ts": 1781086582382
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/3ba6e862dcf187511aedcc40ec0245fd.mp3",
+          "method": "GET",
+          "ts": 1781086582383
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ba6e862dcf187511aedcc40ec0245fd.mp3",
+          "status": 200,
+          "ts": 1781086582384,
+          "transferEncoding": null,
+          "contentLength": "227328",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/3ba6e862dcf187511aedcc40ec0245fd.mp3",
+          "status": 200,
+          "ts": 1781086582385,
+          "transferEncoding": null,
+          "contentLength": "227328",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "method": "GET",
+          "ts": 1781086582444
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "method": "GET",
+          "ts": 1781086582445
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "status": 200,
+          "ts": 1781086582446,
+          "transferEncoding": null,
+          "contentLength": "132096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "status": 200,
+          "ts": 1781086582446,
+          "transferEncoding": null,
+          "contentLength": "132096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582494,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582508,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582511
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582530
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582589
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582656,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582675
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582709
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582713,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086582754
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582770,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582814,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582840,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086582877,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        }
+      ]
+    },
+    {
+      "feature": "Speech Coach",
+      "key": "speech_coach",
+      "firstRun": {
+        "label": "Speech Coach",
+        "requestStartWall": 1781086586685,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979edffdb18bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:27 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=iM29aktrk03e39DjS0Bu%2FiD5nPDOkbi6LybgoNAccqulpkxmyXCyB%2BdrhF8ZjKl%2Bp64xCc%2BSpNJpuseQq7xSqGouP2ZqMlu9IdomAwiVy8Gxl4wQD3iybOyB9jK4DzeulxPY%2FVj9e0uvWqhMwg%3D%3D\"}]}",
+          "rndr-id": "bd08c508-1864-4581",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "59052954-592d-4029-af3c-33d4479208d8",
+          "x-tts-cache-key": "e3a04ad772ccd59e3bcdac3e589094ae9ddfb1194bc82962e4bf75fbd7778bc4"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "e3a04ad772ccd59e3bcdac3e589094ae9ddfb1194bc82962e4bf75fbd7778bc4",
+        "gcsPath": null,
+        "firstByteMs": 281,
+        "firstPlayableByteMs": 281,
+        "playbackStartMs": 340,
+        "responseCompleteMs": 331,
+        "synthesisCompleteMs": 331,
+        "totalBytes": 46856,
+        "error": null,
+        "requestStartTs": 1781086586683
+      },
+      "secondRun": {
+        "label": "Speech Coach (2nd)",
+        "requestStartWall": 1781086587430,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979ee49e5d8bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:27 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=h60pQaopwUydpqxzNeWyuEh4zIPCufGu30I5xPczTez1AI4X5VWQ%2B0F2xZBUmawURoenZGux6HIOVYyeezMj5Y9fU0pqfmKzN8clhE9IsYQQx%2FhNGqoZ3rwaEYPP4WEOM7HHpDXBTm0vP689mA%3D%3D\"}]}",
+          "rndr-id": "ada57558-3d1b-4fb2",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "df38e690-8a00-49df-945b-79d4f653a285",
+          "x-tts-cache-key": "e3a04ad772ccd59e3bcdac3e589094ae9ddfb1194bc82962e4bf75fbd7778bc4"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "e3a04ad772ccd59e3bcdac3e589094ae9ddfb1194bc82962e4bf75fbd7778bc4",
+        "gcsPath": null,
+        "firstByteMs": 213,
+        "firstPlayableByteMs": 213,
+        "playbackStartMs": 265,
+        "responseCompleteMs": 256,
+        "synthesisCompleteMs": 256,
+        "totalBytes": 46856,
+        "error": null,
+        "requestStartTs": 1781086587428
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086588135,
+          "t": "[amynest:audio-coordinator] app lifecycle: hidden {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086588136,
+          "t": "[amynest:audio-coordinator] stopAllPlayback {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086588136,
+          "t": "[AmyVoice] Audio stop triggered outside controller (audioManager.stopAll)"
+        },
+        {
+          "ts": 1781086588136,
+          "t": "[AmyVoice] Audio stop triggered outside controller (audioManager.stop)"
+        },
+        {
+          "ts": 1781086588136,
+          "t": "[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11}"
+        },
+        {
+          "ts": 1781086588150,
+          "t": "[amynest:boot] Pre-React {hostname: www.amynest.in, href: https://www.amynest.in/speech-coach, pwa: false}"
+        },
+        {
+          "ts": 1781086588191,
+          "t": "[amynest:boot] Boot context {hostname: www.amynest.in, origin: https://www.amynest.in, pathname: /speech-coach, href: https://www.amynest.in/speech-coach, userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0}"
+        },
+        {
+          "ts": 1781086588238,
+          "t": "[AMY VOICE] Field validation ready — run __amyVoiceValidation.run({ forceLowEndDevice: true })"
+        },
+        {
+          "ts": 1781086588537,
+          "t": "[amynest:audio-coordinator] audio session lifecycle installed {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086588706,
+          "t": "[amynest:nav] nav-orchestrator-ready {route: /speech-coach, ts: 1781086588692}"
+        },
+        {
+          "ts": 1781086588706,
+          "t": "[amynest:nav] route-history-snapshot {stack: Array(0), method: replace, ts: 1781086588694}"
+        },
+        {
+          "ts": 1781086588706,
+          "t": "[amynest:nav] layout-mounted {location: /speech-coach, ts: 1781086588695}"
+        },
+        {
+          "ts": 1781086588867,
+          "t": "[onboarding-finish] BOOTSTRAP_ONBOARDING_DECISION {timestamp: 2026-06-10T10:16:28.867Z, onboardingRunId: null, route: /speech-coach, step: undefined, userId: null}"
+        },
+        {
+          "ts": 1781086589831,
+          "t": "[STATIC AUDIO LOOKUP] {text: a as in apple, normalized: a as in apple, mode: phonics, url: https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3}"
+        },
+        {
+          "ts": 1781086589831,
+          "t": "[STATIC AUDIO LOOKUP] {text: b, normalized: b, mode: phonics, url: https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3}"
+        },
+        {
+          "ts": 1781086589831,
+          "t": "[STATIC AUDIO LOOKUP] {text: cat, normalized: cat, mode: phonics, url: https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/8fe47cd89b92aaa722b0f69d0f4ec61c.mp3",
+          "method": "GET",
+          "ts": 1781086590046
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/d422e22753968fa76d22e6584f88a506.mp3",
+          "method": "GET",
+          "ts": 1781086590046
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/4c85b5b308227c8fd947fe744916aa58.mp3",
+          "method": "GET",
+          "ts": 1781086590046
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/2ad8305e14d722cd3500e062978e7f36.mp3",
+          "method": "GET",
+          "ts": 1781086590046
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/07bd9f567a5f31d8db6857cd23bc9561.mp3",
+          "method": "GET",
+          "ts": 1781086590046
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/8fe47cd89b92aaa722b0f69d0f4ec61c.mp3",
+          "method": "GET",
+          "ts": 1781086590047
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/d422e22753968fa76d22e6584f88a506.mp3",
+          "method": "GET",
+          "ts": 1781086590047
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/4c85b5b308227c8fd947fe744916aa58.mp3",
+          "method": "GET",
+          "ts": 1781086590047
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/2ad8305e14d722cd3500e062978e7f36.mp3",
+          "status": 200,
+          "ts": 1781086590048,
+          "transferEncoding": null,
+          "contentLength": "40320",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/07bd9f567a5f31d8db6857cd23bc9561.mp3",
+          "status": 200,
+          "ts": 1781086590048,
+          "transferEncoding": null,
+          "contentLength": "33024",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/8fe47cd89b92aaa722b0f69d0f4ec61c.mp3",
+          "status": 200,
+          "ts": 1781086590049,
+          "transferEncoding": null,
+          "contentLength": "21120",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/d422e22753968fa76d22e6584f88a506.mp3",
+          "status": 200,
+          "ts": 1781086590049,
+          "transferEncoding": null,
+          "contentLength": "31488",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4c85b5b308227c8fd947fe744916aa58.mp3",
+          "status": 200,
+          "ts": 1781086590049,
+          "transferEncoding": null,
+          "contentLength": "33024",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/2ad8305e14d722cd3500e062978e7f36.mp3",
+          "status": 200,
+          "ts": 1781086590053,
+          "transferEncoding": null,
+          "contentLength": "40320",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/07bd9f567a5f31d8db6857cd23bc9561.mp3",
+          "status": 200,
+          "ts": 1781086590053,
+          "transferEncoding": null,
+          "contentLength": "33024",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/8fe47cd89b92aaa722b0f69d0f4ec61c.mp3",
+          "status": 200,
+          "ts": 1781086590053,
+          "transferEncoding": null,
+          "contentLength": "21120",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/d422e22753968fa76d22e6584f88a506.mp3",
+          "status": 200,
+          "ts": 1781086590054,
+          "transferEncoding": null,
+          "contentLength": "31488",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4c85b5b308227c8fd947fe744916aa58.mp3",
+          "status": 200,
+          "ts": 1781086590054,
+          "transferEncoding": null,
+          "contentLength": "33024",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "method": "GET",
+          "ts": 1781086590176
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "method": "GET",
+          "ts": 1781086590176
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "method": "GET",
+          "ts": 1781086590176
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "method": "GET",
+          "ts": 1781086590176
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "method": "GET",
+          "ts": 1781086590176
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "method": "GET",
+          "ts": 1781086590176
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "status": 200,
+          "ts": 1781086590176,
+          "transferEncoding": null,
+          "contentLength": "29568",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "status": 200,
+          "ts": 1781086590176,
+          "transferEncoding": null,
+          "contentLength": "46464",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "status": 200,
+          "ts": 1781086590176,
+          "transferEncoding": null,
+          "contentLength": "51456",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "status": 200,
+          "ts": 1781086590176,
+          "transferEncoding": null,
+          "contentLength": "29568",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "status": 200,
+          "ts": 1781086590177,
+          "transferEncoding": null,
+          "contentLength": "46464",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "status": 200,
+          "ts": 1781086590177,
+          "transferEncoding": null,
+          "contentLength": "51456",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        }
+      ]
+    },
+    {
+      "feature": "Infant Poem",
+      "key": "infant_poem",
+      "firstRun": {
+        "label": "Infant Poem",
+        "requestStartWall": 1781086594854,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979f130b788bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:35 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=BtqK%2BbIe4GvZpYHOQ2qUizjJpd6psEZGV1WnVYwrfMs%2BYoFDwAFKKQsCRmGuYXR7X5PvIgdpNRjh%2B9qaJNWOrPnsfyPavDWYaVwMxncH8iXPCh7nPA%2BjQgof%2FQ7y4vatFe3LhRWQiac%2FK7heNA%3D%3D\"}]}",
+          "rndr-id": "016b55c4-4472-44d0",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "48eb851b-44b3-46b8-856e-1c17e99dfb82",
+          "x-tts-cache-key": "7d1c2a8c8c61db59aec7d42a31fb17ffd581988dbe0dc4081a3c6429bf0019e0"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "7d1c2a8c8c61db59aec7d42a31fb17ffd581988dbe0dc4081a3c6429bf0019e0",
+        "gcsPath": null,
+        "firstByteMs": 238,
+        "firstPlayableByteMs": 238,
+        "playbackStartMs": 265,
+        "responseCompleteMs": 255,
+        "synthesisCompleteMs": 255,
+        "totalBytes": 40169,
+        "error": null,
+        "requestStartTs": 1781086594852
+      },
+      "secondRun": {
+        "label": "Infant Poem (2nd)",
+        "requestStartWall": 1781086595524,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979f171be08bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:16:35 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=zxubRooUuzm2Hrn9lwGl3u0LqD4EpOUhSRo6pUVoMwFyoELiDKYynCNZQxLHEPYBh0YKwQXlxdHmCFCBPBSL1h6LSuvqK71LcXKfmtxmPIyaVp7p%2BuDvez%2FbDiX9F0vLgbX3paPKg9%2FTSMQz6w%3D%3D\"}]}",
+          "rndr-id": "f70e1003-5d49-45b6",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "2b59f1cd-2481-45ef-970e-e2b85c6efb87",
+          "x-tts-cache-key": "7d1c2a8c8c61db59aec7d42a31fb17ffd581988dbe0dc4081a3c6429bf0019e0"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "7d1c2a8c8c61db59aec7d42a31fb17ffd581988dbe0dc4081a3c6429bf0019e0",
+        "gcsPath": null,
+        "firstByteMs": 197,
+        "firstPlayableByteMs": 197,
+        "playbackStartMs": 216,
+        "responseCompleteMs": 203,
+        "synthesisCompleteMs": 203,
+        "totalBytes": 40169,
+        "error": null,
+        "requestStartTs": 1781086595522
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086596191,
+          "t": "[amynest:audio-coordinator] app lifecycle: hidden {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086596191,
+          "t": "[amynest:audio-coordinator] stopAllPlayback {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086596191,
+          "t": "[AmyVoice] Audio stop triggered outside controller (audioManager.stopAll)"
+        },
+        {
+          "ts": 1781086596191,
+          "t": "[AmyVoice] Audio stop triggered outside controller (audioManager.stop)"
+        },
+        {
+          "ts": 1781086596191,
+          "t": "[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086594855
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086595093,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086595526
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086595722,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        }
+      ]
+    },
+    {
+      "feature": "Infant Story",
+      "key": "infant_story",
+      "firstRun": {
+        "label": "Infant Story",
+        "requestStartWall": 1781086621197,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979fb79aec8bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:17:01 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=a5pbnY1R90CvI5iqsMCecgyEYqI3R%2B7ELaZgo9JvCLS15hHM5NCuzj8emQ%2FVEjEza8IBUjL8%2FBqP348vMPBiVL0doLG%2FNoFLYjPVK0%2B0Ju%2B1%2FjN0WWtt8nuPR6meQpfMj%2F95QaaIBvnvYEHxtA%3D%3D\"}]}",
+          "rndr-id": "38de5526-1376-4cec",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "9973971c-e284-4b79-a5f8-8f4e02623a98",
+          "x-tts-cache-key": "ae3ac78e94001bde77e1be124791af2a4da140bded6044637b78dabd7834055c"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "ae3ac78e94001bde77e1be124791af2a4da140bded6044637b78dabd7834055c",
+        "gcsPath": null,
+        "firstByteMs": 298,
+        "firstPlayableByteMs": 298,
+        "playbackStartMs": 323,
+        "responseCompleteMs": 315,
+        "synthesisCompleteMs": 315,
+        "totalBytes": 46856,
+        "error": null,
+        "requestStartTs": 1781086621195
+      },
+      "secondRun": {
+        "label": "Infant Story (2nd)",
+        "requestStartWall": 1781086621924,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a0979fbbfb438bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:17:02 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=cA5ZR3R6xyj4xAnduDvrOOsMSyxKMKvSmLZ%2BzvhWQ1%2BoJ35udUvVDnf7fkpPuseA64I4crrApAtNwOg1H4IpJgJ1OiFIARv%2Bf47J8i%2BbsJAwYaqzzJjKy6a5IumsfqoAEJuB2LbPIkh5M5DXhw%3D%3D\"}]}",
+          "rndr-id": "a409eea2-34ef-4500",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "23f33180-5cf1-4ddd-8904-ba3e93bee4d9",
+          "x-tts-cache-key": "ae3ac78e94001bde77e1be124791af2a4da140bded6044637b78dabd7834055c"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "ae3ac78e94001bde77e1be124791af2a4da140bded6044637b78dabd7834055c",
+        "gcsPath": null,
+        "firstByteMs": 189,
+        "firstPlayableByteMs": 189,
+        "playbackStartMs": 209,
+        "responseCompleteMs": 201,
+        "synthesisCompleteMs": 201,
+        "totalBytes": 46856,
+        "error": null,
+        "requestStartTs": 1781086621923
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [],
+      "uiNetwork": [
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086621198
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086621496,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086621925
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086622113,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        }
+      ]
+    },
+    {
+      "feature": "Phonics Tap",
+      "key": "phonics_tap",
+      "firstRun": {
+        "label": "Phonics Tap",
+        "requestStartWall": 1781086665218,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a097a0cace258bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:17:45 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=4uTtnSKDf%2FoBNBwzger3bOns%2BSMmDxLH%2FvhZ06jp9qSyaywKLNJYulLIRE1tHx%2FxvncWKiFVzCo7vJdH8dgXkAtvYYmrn2ZIt2hEQoZfNRVgrMCl2mGKVasrAPbFyguUuJRINtuQJTPhie03vw%3D%3D\"}]}",
+          "rndr-id": "a625581e-0747-4ab4",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "aaf12e82-c0d8-43f0-bc21-7cf7d19ee7a1",
+          "x-tts-cache-key": "c5c214caa01f70b646909dcd6b6986bdc14059b5a0baab3258a082acc6bd52b3"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "c5c214caa01f70b646909dcd6b6986bdc14059b5a0baab3258a082acc6bd52b3",
+        "gcsPath": null,
+        "firstByteMs": 317,
+        "firstPlayableByteMs": 318,
+        "playbackStartMs": 329,
+        "responseCompleteMs": 321,
+        "synthesisCompleteMs": 321,
+        "totalBytes": 23032,
+        "error": null,
+        "requestStartTs": 1781086665215
+      },
+      "secondRun": {
+        "label": "Phonics Tap (2nd)",
+        "requestStartWall": 1781086665951,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a097a0cf1ed68bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:17:46 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=4SCcbF4v3pjZYYDTR7rDC%2BTagrTmXPXOZQWQPYU9rYxPN%2B%2BUnRq0u3C%2B%2BtzNgy4dBUXIupIEgxLm%2FI3BrRA%2BMlv0XvdtSdzoy3N%2BW2JbYK5%2FGq8MFTk16Jy%2FOiAM89sM6ze68MU0FwdhlIf4pA%3D%3D\"}]}",
+          "rndr-id": "683bf711-70f7-4d24",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "57de41d5-9db5-42fd-af04-b920cb7fc325",
+          "x-tts-cache-key": "c5c214caa01f70b646909dcd6b6986bdc14059b5a0baab3258a082acc6bd52b3"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "c5c214caa01f70b646909dcd6b6986bdc14059b5a0baab3258a082acc6bd52b3",
+        "gcsPath": null,
+        "firstByteMs": 191,
+        "firstPlayableByteMs": 191,
+        "playbackStartMs": 200,
+        "responseCompleteMs": 192,
+        "synthesisCompleteMs": 192,
+        "totalBytes": 23032,
+        "error": null,
+        "requestStartTs": 1781086665950
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086666288,
+          "t": "[amynest:boot] Pre-React {hostname: www.amynest.in, href: https://www.amynest.in/phonics, pwa: false}"
+        },
+        {
+          "ts": 1781086666341,
+          "t": "[amynest:boot] Boot context {hostname: www.amynest.in, origin: https://www.amynest.in, pathname: /phonics, href: https://www.amynest.in/phonics, userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0}"
+        },
+        {
+          "ts": 1781086666389,
+          "t": "[AMY VOICE] Field validation ready — run __amyVoiceValidation.run({ forceLowEndDevice: true })"
+        },
+        {
+          "ts": 1781086666686,
+          "t": "[amynest:audio-coordinator] audio session lifecycle installed {userAgent: Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebK…Mobile Safari/537.36 AmyNestProdTTSValidation/1.0, webViewHint: Chrome/120.0.0.0, androidVersion: 11, isSamsung: false, isMiui: false}"
+        },
+        {
+          "ts": 1781086666936,
+          "t": "[amynest:nav] nav-orchestrator-ready {route: /phonics, ts: 1781086666920}"
+        },
+        {
+          "ts": 1781086666936,
+          "t": "[amynest:nav] route-history-snapshot {stack: Array(0), method: replace, ts: 1781086666923}"
+        },
+        {
+          "ts": 1781086666936,
+          "t": "[amynest:nav] layout-mounted {location: /phonics, ts: 1781086666924}"
+        },
+        {
+          "ts": 1781086666996,
+          "t": "[onboarding-finish] BOOTSTRAP_ONBOARDING_DECISION {timestamp: 2026-06-10T10:17:46.995Z, onboardingRunId: null, route: /phonics, step: undefined, userId: null}"
+        },
+        {
+          "ts": 1781086671015,
+          "t": "[STATIC AUDIO LOOKUP] {text: ship, normalized: ship, mode: phonics, url: https://www.amynest.in/api/static-audio/0c770d00f2306eb684e6f7821dbca90b.mp3}"
+        },
+        {
+          "ts": 1781086671016,
+          "t": "[STATIC AUDIO LOOKUP] {text: shop, normalized: shop, mode: phonics, url: https://www.amynest.in/api/static-audio/9ecc36650081681eeaf5c879a1984a09.mp3}"
+        },
+        {
+          "ts": 1781086671018,
+          "t": "[STATIC AUDIO LOOKUP] {text: fish, normalized: fish, mode: phonics, url: https://www.amynest.in/api/static-audio/23d7949f4f78f7f977906ff1516a7681.mp3}"
+        },
+        {
+          "ts": 1781086671019,
+          "t": "[STATIC AUDIO LOOKUP] {text: dish, normalized: dish, mode: phonics, url: https://www.amynest.in/api/static-audio/ee3f15212e79457a238a66084264ff4c.mp3}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/d422e22753968fa76d22e6584f88a506.mp3",
+          "status": 200,
+          "ts": 1781086668507,
+          "transferEncoding": null,
+          "contentLength": "31488",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4c85b5b308227c8fd947fe744916aa58.mp3",
+          "status": 200,
+          "ts": 1781086668508,
+          "transferEncoding": null,
+          "contentLength": "33024",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "method": "GET",
+          "ts": 1781086668590
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "method": "GET",
+          "ts": 1781086668590
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "method": "GET",
+          "ts": 1781086668590
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "method": "GET",
+          "ts": 1781086668591
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "method": "GET",
+          "ts": 1781086668591
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "method": "GET",
+          "ts": 1781086668591
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "status": 200,
+          "ts": 1781086668591,
+          "transferEncoding": null,
+          "contentLength": "29568",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "status": 200,
+          "ts": 1781086668591,
+          "transferEncoding": null,
+          "contentLength": "46464",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "status": 200,
+          "ts": 1781086668594,
+          "transferEncoding": null,
+          "contentLength": "51456",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/335bb3db3085208cafccea811766a641.mp3",
+          "status": 200,
+          "ts": 1781086668594,
+          "transferEncoding": null,
+          "contentLength": "29568",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/18a2b13dd26cb76cd4e7196f1a6a6789.mp3",
+          "status": 200,
+          "ts": 1781086668595,
+          "transferEncoding": null,
+          "contentLength": "46464",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/cf1c59d143617f041a09e8e73dccf95f.mp3",
+          "status": 200,
+          "ts": 1781086668599,
+          "transferEncoding": null,
+          "contentLength": "51456",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/bc70ac80de8876062621ae66a5c90177.mp3",
+          "method": "GET",
+          "ts": 1781086670496
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/f84c55aca9fd9706e482a3f521a461ea.mp3",
+          "method": "GET",
+          "ts": 1781086670496
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/e5ee3e7a1c34c083183dc565c461bc67.mp3",
+          "method": "GET",
+          "ts": 1781086670497
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/4a14cfd8137279280694fce31f36ed86.mp3",
+          "method": "GET",
+          "ts": 1781086670513
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/4a14cfd8137279280694fce31f36ed86.mp3",
+          "status": 200,
+          "ts": 1781086670998,
+          "transferEncoding": null,
+          "contentLength": "45696",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/f84c55aca9fd9706e482a3f521a461ea.mp3",
+          "status": 200,
+          "ts": 1781086671007,
+          "transferEncoding": null,
+          "contentLength": "43392",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/bc70ac80de8876062621ae66a5c90177.mp3",
+          "status": 200,
+          "ts": 1781086671012,
+          "transferEncoding": null,
+          "contentLength": "59520",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/e5ee3e7a1c34c083183dc565c461bc67.mp3",
+          "status": 200,
+          "ts": 1781086671012,
+          "transferEncoding": null,
+          "contentLength": "64128",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/0c770d00f2306eb684e6f7821dbca90b.mp3",
+          "method": "GET",
+          "ts": 1781086671015
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/9ecc36650081681eeaf5c879a1984a09.mp3",
+          "method": "GET",
+          "ts": 1781086671016
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/23d7949f4f78f7f977906ff1516a7681.mp3",
+          "method": "GET",
+          "ts": 1781086671018
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/ee3f15212e79457a238a66084264ff4c.mp3",
+          "method": "GET",
+          "ts": 1781086671020
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/23d7949f4f78f7f977906ff1516a7681.mp3",
+          "status": 200,
+          "ts": 1781086672229,
+          "transferEncoding": null,
+          "contentLength": "19200",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/9ecc36650081681eeaf5c879a1984a09.mp3",
+          "status": 200,
+          "ts": 1781086672231,
+          "transferEncoding": null,
+          "contentLength": "24192",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/0c770d00f2306eb684e6f7821dbca90b.mp3",
+          "status": 200,
+          "ts": 1781086672235,
+          "transferEncoding": null,
+          "contentLength": "29568",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/ee3f15212e79457a238a66084264ff4c.mp3",
+          "status": 200,
+          "ts": 1781086672236,
+          "transferEncoding": null,
+          "contentLength": "27264",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        }
+      ]
+    },
+    {
+      "feature": "Audio Lesson",
+      "key": "audio_lesson",
+      "firstRun": {
+        "label": "Audio Lesson",
+        "requestStartWall": 1781086672815,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a097a0faafc58bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:17:53 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=j3bU5a6e4WbLRCej3scf271AR4sUXJQwM9OG%2FQSzPO6fqNdYC1W4VncbMh26r4XoQg0wVldKKpFrft4vstrv8WO7CiPJUzOcm%2FBpJsLfy7HEUTivG1Ls%2BIA4CPDwK0PK9DAwCe6PVkH98Bs0Ww%3D%3D\"}]}",
+          "rndr-id": "ceb1dca1-7d83-4c3b",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "519395fd-3546-4694-ab71-4b90299b641b",
+          "x-tts-cache-key": "d437845f822fde97be1f552b5f45a2b69c2f916a52a3038041dc1267adfc53c5"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "d437845f822fde97be1f552b5f45a2b69c2f916a52a3038041dc1267adfc53c5",
+        "gcsPath": null,
+        "firstByteMs": 335,
+        "firstPlayableByteMs": 336,
+        "playbackStartMs": 682,
+        "responseCompleteMs": 664,
+        "synthesisCompleteMs": 664,
+        "totalBytes": 45184,
+        "error": null,
+        "requestStartTs": 1781086672809
+      },
+      "secondRun": {
+        "label": "Audio Lesson (2nd)",
+        "requestStartWall": 1781086673904,
+        "status": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "Range, Accept, Content-Type",
+          "access-control-allow-methods": "GET, HEAD, OPTIONS",
+          "access-control-allow-origin": "https://www.amynest.in",
+          "alt-svc": "h3=\":443\"; ma=86400",
+          "cache-control": "public, max-age=31536000, immutable",
+          "cf-cache-status": "DYNAMIC",
+          "cf-ray": "a097a100d8ed8bd0-SIN",
+          "content-type": "audio/mpeg",
+          "date": "Wed, 10 Jun 2026 10:17:54 GMT",
+          "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "priority": "u=1,i",
+          "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=09k9I8F35faNaloQGr2WfyWv0LUqbcMiMEx65lC5saFfKAkHbI6TNgzqoRxAyB8T546AbieQvUv55NQLqTHmHRtPnsUBsAaw3JwxtFOB%2BH%2F79FywIPER3YR3uCvncpINCRCKeFfzkxKNlBGLhQ%3D%3D\"}]}",
+          "rndr-id": "52d706bc-1c0c-46aa",
+          "server": "cloudflare",
+          "server-timing": "cfExtPri",
+          "vary": "Origin",
+          "x-content-type-options": "nosniff",
+          "x-powered-by": "Express",
+          "x-render-origin-server": "Render",
+          "x-request-id": "197dbe9b-df18-4745-bf68-973e4f1f19d6",
+          "x-tts-cache-key": "d437845f822fde97be1f552b5f45a2b69c2f916a52a3038041dc1267adfc53c5"
+        },
+        "transferEncoding": null,
+        "contentLength": null,
+        "model": null,
+        "voice": null,
+        "cached": null,
+        "cacheKey": "d437845f822fde97be1f552b5f45a2b69c2f916a52a3038041dc1267adfc53c5",
+        "gcsPath": null,
+        "firstByteMs": 193,
+        "firstPlayableByteMs": 193,
+        "playbackStartMs": 208,
+        "responseCompleteMs": 195,
+        "synthesisCompleteMs": 195,
+        "totalBytes": 45184,
+        "error": null,
+        "requestStartTs": 1781086673902
+      },
+      "modelVoice": {
+        "headerModel": null,
+        "headerVoice": null,
+        "healthModel": "eleven_flash_v2_5",
+        "healthVoice": "QbQKfe9vgx5OsbZUvlFv",
+        "modelOk": true
+      },
+      "checks": {
+        "transferEncodingChunked": false,
+        "contentLengthAbsent": true,
+        "playbackBeforeSynthesisComplete": false,
+        "gcsCached": false,
+        "secondPlaybackCacheHit": false
+      },
+      "uiLogs": [
+        {
+          "ts": 1781086675367,
+          "t": "[STATIC AUDIO LOOKUP] {text: a as in apple, normalized: a as in apple, mode: phonics, url: https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3}"
+        },
+        {
+          "ts": 1781086675367,
+          "t": "[STATIC AUDIO LOOKUP] {text: b, normalized: b, mode: phonics, url: https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3}"
+        },
+        {
+          "ts": 1781086675367,
+          "t": "[STATIC AUDIO LOOKUP] {text: cat, normalized: cat, mode: phonics, url: https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3}"
+        },
+        {
+          "ts": 1781086675405,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 2, hash: cd69e12311d}"
+        },
+        {
+          "ts": 1781086675659,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 3, hash: 39ee497daf}"
+        },
+        {
+          "ts": 1781086675693,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 0, hash: e54c121510e}"
+        },
+        {
+          "ts": 1781086675698,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 0, hash: f8532f22d3}"
+        },
+        {
+          "ts": 1781086675704,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 1, hash: 24a2c756108}"
+        },
+        {
+          "ts": 1781086675708,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 1, hash: c984f806ef}"
+        },
+        {
+          "ts": 1781086675709,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 2, hash: cd69e12311d}"
+        },
+        {
+          "ts": 1781086675712,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 2, hash: 8d1ddc4af7}"
+        },
+        {
+          "ts": 1781086675732,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-no-phase, paragraphIdx: 3, hash: 39ee497daf}"
+        },
+        {
+          "ts": 1781086675744,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 3, hash: eb0372729e}"
+        },
+        {
+          "ts": 1781086675803,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 0, hash: f8532f22d3}"
+        },
+        {
+          "ts": 1781086675869,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 1, hash: c984f806ef}"
+        },
+        {
+          "ts": 1781086676013,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 2, hash: 8d1ddc4af7}"
+        },
+        {
+          "ts": 1781086676140,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-picky-eating, paragraphIdx: 3, hash: eb0372729e}"
+        },
+        {
+          "ts": 1781086676260,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-daycare-transition, paragraphIdx: 0, hash: 9e6e71dfd5}"
+        },
+        {
+          "ts": 1781086676571,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-daycare-transition, paragraphIdx: 1, hash: d6ac8d18e6}"
+        },
+        {
+          "ts": 1781086676580,
+          "t": "[TTS] {evt: tts.playback, event: audio_identity, lessonId: toddler-daycare-transition, paragraphIdx: 2, hash: f252b0deb3}"
+        }
+      ],
+      "uiNetwork": [
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/736b7d282e187d3b1159fc23174c38ba.mp3",
+          "status": 200,
+          "ts": 1781086676571,
+          "transferEncoding": null,
+          "contentLength": "132096",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/2ffe09793a2347d0369bc5f46cd3061e.mp3",
+          "method": "GET",
+          "ts": 1781086676572
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/2ffe09793a2347d0369bc5f46cd3061e.mp3",
+          "method": "GET",
+          "ts": 1781086676572
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086676574,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086676575,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086676575,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/accbd0141f346632ba952ea948de5184.mp3",
+          "method": "GET",
+          "ts": 1781086676580
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/static-audio/accbd0141f346632ba952ea948de5184.mp3",
+          "method": "GET",
+          "ts": 1781086676581
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086676753
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086676755
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086676756
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086676756
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086676756
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086676879
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677059,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677060,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677060,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677061,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677061,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086677061
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677198,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "request",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "method": "POST",
+          "ts": 1781086677274
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677277,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/tts/stream",
+          "status": 200,
+          "ts": 1781086677467,
+          "transferEncoding": null,
+          "contentLength": null,
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": null,
+          "xOriginCache": null
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/accbd0141f346632ba952ea948de5184.mp3",
+          "status": 200,
+          "ts": 1781086678020,
+          "transferEncoding": null,
+          "contentLength": "136320",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/accbd0141f346632ba952ea948de5184.mp3",
+          "status": 200,
+          "ts": 1781086678040,
+          "transferEncoding": null,
+          "contentLength": "136320",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/5530cc72c679871efd011de9dfeb674d.mp3",
+          "status": 200,
+          "ts": 1781086678225,
+          "transferEncoding": null,
+          "contentLength": "187392",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/2ffe09793a2347d0369bc5f46cd3061e.mp3",
+          "status": 200,
+          "ts": 1781086678326,
+          "transferEncoding": null,
+          "contentLength": "202368",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/5530cc72c679871efd011de9dfeb674d.mp3",
+          "status": 200,
+          "ts": 1781086678392,
+          "transferEncoding": null,
+          "contentLength": "187392",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        },
+        {
+          "phase": "response",
+          "url": "https://www.amynest.in/api/static-audio/2ffe09793a2347d0369bc5f46cd3061e.mp3",
+          "status": 200,
+          "ts": 1781086679300,
+          "transferEncoding": null,
+          "contentLength": "202368",
+          "xTtsModel": null,
+          "xTtsVoice": null,
+          "xTtsCached": null,
+          "xStaticSource": "asset",
+          "xOriginCache": "memory"
+        }
+      ]
+    }
+  ],
+  "verdict": {
+    "Streaming": "PASS",
+    "TTFA": "PASS",
+    "Caching": "FAIL",
+    "Coach Cache": "FAIL",
+    "GCS Reuse": "FAIL",
+    "Cost Deduplication": "PASS"
+  },
+  "networkEventCount": 2800
+}

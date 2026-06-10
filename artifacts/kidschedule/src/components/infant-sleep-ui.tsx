@@ -1,11 +1,11 @@
 /**
  * Shared premium visual chrome for the infant sleep library
- * (White Noise, Lullabies, Poems, Stories).
+ * (White Noise and Lullabies).
  */
 import type { ReactNode } from "react";
-import { BookOpen, Music, Plus, Sparkles, Wind } from "lucide-react";
+import { Music, Plus, Wind } from "lucide-react";
 
-export type SleepModuleTab = "noise" | "lullabies" | "poems" | "stories";
+export type SleepModuleTab = "noise" | "lullabies";
 
 const TAB_CONFIG: {
   id: SleepModuleTab;
@@ -24,18 +24,6 @@ const TAB_CONFIG: {
     label: "Lullabies",
     icon: <Music className="h-3.5 w-3.5" />,
     activeClass: "sleep-tab-btn--lullabies",
-  },
-  {
-    id: "poems",
-    label: "Poems",
-    icon: <Sparkles className="h-3.5 w-3.5" />,
-    activeClass: "sleep-tab-btn--poems",
-  },
-  {
-    id: "stories",
-    label: "Stories",
-    icon: <BookOpen className="h-3.5 w-3.5" />,
-    activeClass: "sleep-tab-btn--stories",
   },
 ];
 
@@ -87,7 +75,7 @@ export function SleepTabBar({
   onTabChange: (tab: SleepModuleTab) => void;
 }) {
   return (
-    <div className="sleep-tab-bar grid grid-cols-4 gap-1 p-1" role="tablist" aria-label="Sleep library">
+    <div className="sleep-tab-bar grid grid-cols-2 gap-1 p-1" role="tablist" aria-label="Sleep library">
       {TAB_CONFIG.map((t) => (
         <button
           key={t.id}

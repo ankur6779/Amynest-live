@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-06-09T18:48:30.209Z",
+  "project": "android-chrome",
+  "apiOrigin": "http://127.0.0.1:5010",
+  "registryCount": 172,
+  "metrics": [
+    {
+      "audioId": "how-much-is-that-doggie-in-the-window",
+      "label": "first-lullaby",
+      "signedUrlMs": 38,
+      "audioStartMs": 1494,
+      "bufferingMs": 1093,
+      "gcsStatus": 200,
+      "gcsHeaders": {
+        "content-type": "audio/mpeg",
+        "content-length": "5503578",
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "(none)"
+      },
+      "playbackSuccess": true,
+      "error": null,
+      "cached": false
+    },
+    {
+      "audioId": "a-new-day",
+      "label": "fifth-lullaby",
+      "signedUrlMs": 10,
+      "audioStartMs": 938,
+      "bufferingMs": 536,
+      "gcsStatus": 200,
+      "gcsHeaders": {
+        "content-type": "audio/mpeg",
+        "content-length": "4829691",
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "(none)"
+      },
+      "playbackSuccess": true,
+      "error": null,
+      "cached": false
+    },
+    {
+      "audioId": "little-cowboy",
+      "label": "random-lullaby",
+      "signedUrlMs": 19,
+      "audioStartMs": 877,
+      "bufferingMs": 476,
+      "gcsStatus": 200,
+      "gcsHeaders": {
+        "content-type": "audio/mpeg",
+        "content-length": "5747214",
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "(none)"
+      },
+      "playbackSuccess": true,
+      "error": null,
+      "cached": false
+    }
+  ],
+  "expiryTest": {},
+  "successRate": 1
+}

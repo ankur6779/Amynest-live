@@ -7,7 +7,7 @@ import {
   scheduleLearningZoneAudioPrewarm,
   buildLearningZoneAudioStateKey,
 } from "@/lib/learning-zone-audio-prewarm";
-import { resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
+import { phonicsTilePlaybackText } from "@/lib/phonics-tile-playback";
 import {
   PHONICS_LEVELS,
   getPhonicsLevel,
@@ -333,11 +333,7 @@ export function usePhonicsData(
         setSource("api");
 
         const pregenTexts = [...apiItemsMapped, ...apiDailyMapped].map((it) =>
-          resolvePhonicsPlaybackText({
-            symbol: it.symbol,
-            phoneme: it.phoneme ?? null,
-            sound: it.sound,
-          }),
+          phonicsTilePlaybackText(it),
         );
         pregenerateTtsTexts(authFetch, pregenTexts, "phonics");
         scheduleLearningZoneAudioPrewarm(authFetch, {

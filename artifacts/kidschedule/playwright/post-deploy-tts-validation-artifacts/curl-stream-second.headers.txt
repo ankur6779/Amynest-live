@@ -1,0 +1,23 @@
+HTTP/2 200 
+date: Wed, 10 Jun 2026 06:46:42 GMT
+content-type: audio/mpeg
+cf-ray: a0966ba168d476b5-SIN
+cf-cache-status: DYNAMIC
+access-control-allow-origin: https://www.amynest.in
+cache-control: public, max-age=31536000, immutable
+server: cloudflare
+vary: Origin
+access-control-allow-credentials: true
+access-control-allow-headers: Range, Accept, Content-Type
+access-control-allow-methods: GET, HEAD, OPTIONS
+alt-svc: h3=":443"; ma=86400
+rndr-id: 78da7a05-ca1b-4a69
+x-content-type-options: nosniff
+x-powered-by: Express
+x-render-origin-server: Render
+x-request-id: a4382bab-41fe-4c8d-bde2-d418ddf159fa
+x-tts-cache-key: bd055332fad71bc0049a51184238a144f4942eced514b1f7a10cf3768352e245
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Fh50VXybEWxZpXDmm2ByDsujVY4onY2dhDX9ItN177kRT2h34LC1hWLYcn6aWRK9Ln0GvgkIpBZI3RUfpidPfhcoFd%2BUlSNXUrq1ZRUXnrIaThaNXXpSvIIeCj4x76qubVZgbPmhtcTl7Tuolg%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+
+

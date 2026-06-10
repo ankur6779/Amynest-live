@@ -1,0 +1,184 @@
+{
+  "generatedAt": "2026-06-09T10:19:21.450Z",
+  "decision": "FAIL",
+  "score": 100,
+  "categories": {
+    "Prewarm": {
+      "score": 100,
+      "status": "pass",
+      "issues": []
+    },
+    "TTS": {
+      "score": null,
+      "status": "skip",
+      "issues": [
+        "ADMIN_AUTH_TOKEN not configured"
+      ]
+    },
+    "Queue": {
+      "score": null,
+      "status": "skip",
+      "issues": [
+        "INTERNAL_HEALTH_SECRET not configured"
+      ]
+    },
+    "Playback": {
+      "score": 100,
+      "status": "pass",
+      "issues": []
+    },
+    "Cache": {
+      "score": 100,
+      "status": "pass",
+      "issues": []
+    },
+    "Security": {
+      "score": 100,
+      "status": "pass",
+      "issues": []
+    },
+    "Storage": {
+      "score": null,
+      "status": "skip",
+      "issues": [
+        "ADMIN_AUTH_TOKEN not configured"
+      ]
+    },
+    "Observability": {
+      "score": null,
+      "status": "skip",
+      "issues": [
+        "ADMIN_AUTH_TOKEN not configured"
+      ]
+    }
+  },
+  "phases": [
+    {
+      "name": "Infrastructure",
+      "status": "PASS",
+      "metrics": {
+        "infraAudioOk": true,
+        "staticCircuitOpen": false
+      },
+      "blockers": [],
+      "warnings": []
+    },
+    {
+      "name": "Log analysis (24h)",
+      "status": "SKIPPED",
+      "metrics": {
+        "skipReason": "ADMIN_AUTH_TOKEN not configured"
+      },
+      "blockers": [],
+      "warnings": []
+    },
+    {
+      "name": "Queue health",
+      "status": "SKIPPED",
+      "metrics": {
+        "skipReason": "INTERNAL_HEALTH_SECRET not configured"
+      },
+      "blockers": [],
+      "warnings": []
+    },
+    {
+      "name": "TTS health",
+      "status": "SKIPPED",
+      "metrics": {
+        "skipReason": "ADMIN_AUTH_TOKEN not configured"
+      },
+      "blockers": [],
+      "warnings": []
+    },
+    {
+      "name": "Prewarm health",
+      "status": "WARNING",
+      "metrics": {
+        "warmupSuccessRate": null,
+        "lockOk": true,
+        "recentWarmupFailures": 0,
+        "recentWarmupTotal": 0
+      },
+      "blockers": [],
+      "warnings": [
+        "No recent warmup job samples — prewarm health unverified"
+      ]
+    },
+    {
+      "name": "Static audio health",
+      "status": "PASS",
+      "metrics": {
+        "sampled": 10,
+        "ok": 10,
+        "failed": 0
+      },
+      "blockers": [],
+      "warnings": []
+    },
+    {
+      "name": "Cache health",
+      "status": "WARNING",
+      "metrics": {
+        "hitRate": 0,
+        "hitRateVerified": false,
+        "memoryOk": true,
+        "redisOk": false,
+        "gcsOk": true,
+        "postgresOk": true
+      },
+      "blockers": [],
+      "warnings": [
+        "Cache hit rate unverified (no telemetry samples)"
+      ]
+    },
+    {
+      "name": "Orphan health",
+      "status": "SKIPPED",
+      "metrics": {
+        "skipReason": "ADMIN_AUTH_TOKEN not configured"
+      },
+      "blockers": [],
+      "warnings": []
+    },
+    {
+      "name": "Security health",
+      "status": "PASS",
+      "metrics": {
+        "staticMissingPostProtected": true,
+        "adminDashboardProtected": true,
+        "adminSystemHealthProtected": true,
+        "storyStreamRequiresAuth": null
+      },
+      "blockers": [],
+      "warnings": []
+    }
+  ],
+  "metrics": {
+    "totalAudioRequests": 0,
+    "totalFailures": 0,
+    "failureRate": 0,
+    "timeoutRate": 0,
+    "cacheHitRate": 0,
+    "cacheHitRateVerified": false,
+    "warmupSuccessRate": null,
+    "queueSuccessRate": null,
+    "ttfaMs": null,
+    "generationLatencyMs": null,
+    "cacheLatencyMs": null,
+    "failedJobs": 0,
+    "stalledJobs": 0,
+    "waitingJobs": 0,
+    "activeJobs": 0,
+    "orphanCount": null,
+    "staticSamplesOk": 10,
+    "staticSamplesTotal": 10
+  },
+  "blockers": [
+    "ADMIN_AUTH_TOKEN missing — production gate requires admin telemetry probes",
+    "INTERNAL_HEALTH_SECRET missing — production gate requires queue health probes"
+  ],
+  "warnings": [
+    "No recent warmup job samples — prewarm health unverified",
+    "Cache hit rate unverified (no telemetry samples)"
+  ]
+}

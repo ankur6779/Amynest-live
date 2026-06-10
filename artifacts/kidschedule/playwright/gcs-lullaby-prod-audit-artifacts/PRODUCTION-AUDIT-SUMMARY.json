@@ -1,0 +1,60 @@
+{
+  "auditTitle": "Production GCS Lullaby Audio Audit",
+  "timestamp": "2026-06-09T18:50:00.000Z",
+  "productionRenderApi": {
+    "status": "BLOCKED",
+    "wwwAmynestIn": "401 Unauthorized — /api/audio/signed-url not deployed",
+    "renderBackend": "401 Unauthorized — route missing from production",
+    "actionRequired": "Deploy GCS lullaby commit to Render + Cloudflare worker"
+  },
+  "productionGcsBucket": {
+    "status": "PASS",
+    "bucket": "amynest-audio-storage",
+    "prefix": "Rhymes/",
+    "registryCount": 172,
+    "headStatus": 200,
+    "contentType": "audio/mpeg",
+    "acceptRanges": "bytes",
+    "accessControlAllowOrigin": "none (HTML audio playback still works — no CORS errors observed)"
+  },
+  "signedUrlGeneration": {
+    "status": "PASS",
+    "via": "audit API with production GCS service account",
+    "typicalLatencyMs": "10–38",
+    "expiresInSec": 2700,
+    "serverCacheObserved": true
+  },
+  "platformResults": {
+    "iphoneSafari": {
+      "playbackSuccessRate": 1.0,
+      "firstLullaby": { "signedUrlMs": 31, "audioStartMs": 1011, "bufferingMs": 609 },
+      "fifthLullaby": { "signedUrlMs": 10, "audioStartMs": 892, "bufferingMs": 490 },
+      "randomLullaby": { "signedUrlMs": 12, "audioStartMs": 769, "bufferingMs": 369 },
+      "visibilityResume": "PASS",
+      "signedUrlExpiryRefresh": "PASS — stale URL fails, fresh URL plays",
+      "slow3G": "PASS"
+    },
+    "androidChrome": {
+      "playbackSuccessRate": 1.0,
+      "firstLullaby": { "signedUrlMs": 38, "audioStartMs": 1494, "bufferingMs": 1093 },
+      "fifthLullaby": { "signedUrlMs": 10, "audioStartMs": 938, "bufferingMs": 536 },
+      "randomLullaby": { "signedUrlMs": 19, "audioStartMs": 877, "bufferingMs": 476 },
+      "visibilityResume": "PASS",
+      "signedUrlExpiryRefresh": "PASS",
+      "slow3G": "GCS 200; playback timeout at 15s under CDP+route throttle (expected for ~5MB file)"
+    }
+  },
+  "failConditions": {
+    "gcs403": false,
+    "corsError": false,
+    "expiryBreaksWithoutRefresh": false,
+    "lockUnlockStall": false,
+    "cloudflareCachesExpiredUrl": "NOT TESTED — production API not deployed"
+  },
+  "artifacts": {
+    "dir": "artifacts/kidschedule/playwright/gcs-lullaby-prod-audit-artifacts/",
+    "reports": ["report-android-chrome.json", "report-iphone-safari.json", "prod-probe-report.json", "expiry-*.json"],
+    "screenshots": ["first-iphone-safari.png", "in-app-player-iphone-safari.png", "random-iphone-safari.png", "visibility-*.png"]
+  },
+  "confidenceScore": 72
+}

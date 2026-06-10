@@ -10,7 +10,7 @@ describe("phonics-audio-availability", () => {
   it("treats static-catalog CVC words as available even without library manifest", () => {
     const shop = checkPhonicsWordClip("shop");
     expect(shop.available).toBe(true);
-    expect(shop.catalogKey).toBe("static:shop");
+    expect(shop.catalogKey).toBe("static:phonics:shop");
   });
 
   it("treats static-catalog digraph keys as available", () => {

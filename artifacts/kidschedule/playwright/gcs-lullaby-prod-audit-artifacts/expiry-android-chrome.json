@@ -1,0 +1,15 @@
+{
+  "staleAfter10s": {
+    "audioStartMs": null,
+    "bufferingMs": null,
+    "success": false,
+    "error": "MEDIA_ELEMENT_ERROR: Format error"
+  },
+  "refreshedUrl": false,
+  "freshPlayback": {
+    "audioStartMs": 1481,
+    "bufferingMs": 1079,
+    "success": true,
+    "error": null
+  }
+}

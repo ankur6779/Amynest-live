@@ -4,10 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Volume2, VolumeX, Info, Play, Pause, X, Clock, Sparkles, Plus } from "lucide-react";
 import { useSoundEngine, type SoundId, type SoundEngine } from "@/hooks/use-sound-engine";
 import { useMp3LoopEngine } from "@/hooks/use-mp3-loop-engine";
-import { InfantPoems } from "./infant-poems";
 import { InfantSleepTracks } from "./infant-sleep-tracks";
 import { InfantSleepFavoritesRow } from "./infant-sleep-favorites";
-import { InfantSleepPackDownload } from "./infant-sleep-pack-download";
 import {
   WHITE_NOISE_ITEMS,
   getDefaultSleepAgeGroup,
@@ -292,8 +290,6 @@ export function WhiteNoiseLullaby({
       return;
     }
     if (item.category === "lullaby") setTab("lullabies");
-    if (item.category === "poem") setTab("poems");
-    if (item.category === "story") setTab("stories");
   }
 
   return (
@@ -436,31 +432,13 @@ export function WhiteNoiseLullaby({
           </div>
         </div>}
 
-      {/* ── Poems tab (Spec 3 — local poems, no external API) ──────────── */}
       {tab === "lullabies" && <div className="animate-in fade-in duration-200">
           <InfantSleepTracks
             category="lullaby"
-            ageMonths={ageMonths}
             childId={childId}
             noiseEngine={engine}
             headerTitle="Lullabies for your baby"
-            headerBlurb="Public-domain melodies and gentle originals. Tap any tile to open the immersive player — loop is optional so stories can end naturally."
-          />
-        </div>}
-
-      {tab === "poems" && <div className="animate-in fade-in duration-200">
-          <InfantPoems ageMonths={ageMonths} childId={childId} />
-        </div>}
-
-      {tab === "stories" && <div className="animate-in fade-in duration-200 space-y-3">
-          <InfantSleepPackDownload childId={childId} />
-          <InfantSleepTracks
-            category="story"
-            ageMonths={ageMonths}
-            childId={childId}
-            noiseEngine={engine}
-            headerTitle="Gentle sleep stories"
-            headerBlurb="Short, calm bedtime stories with no overstimulation. Best for 6–24 months. Single play — then optional fade into white noise."
+            headerBlurb="Public-domain melodies and gentle originals. Tap any tile to open the immersive player."
           />
         </div>}
 

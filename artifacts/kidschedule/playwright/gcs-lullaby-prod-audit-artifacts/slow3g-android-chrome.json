@@ -1,0 +1,17 @@
+{
+  "audioId": "little-cowboy",
+  "label": "slow-3g-random",
+  "signedUrlMs": 30,
+  "audioStartMs": null,
+  "bufferingMs": null,
+  "gcsStatus": 200,
+  "gcsHeaders": {
+    "content-type": "audio/mpeg",
+    "content-length": "5747214",
+    "accept-ranges": "bytes",
+    "access-control-allow-origin": "(none)"
+  },
+  "playbackSuccess": false,
+  "error": "timeout_15s",
+  "cached": false
+}

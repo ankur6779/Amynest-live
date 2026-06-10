@@ -6,6 +6,7 @@ import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { amyVoiceController } from "@/lib/amy-voice-controller";
 import type { SpeakOptions } from "@/lib/amy-voice-controller";
 import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import type { StaticAudioMode } from "@workspace/static-audio/browser";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   getAudioTraceModule,
@@ -24,6 +25,12 @@ export function shouldBypassPhonicsSpellingLibraries(): boolean {
   return BYPASS_PHONICS_SPELLING_LIBRARIES;
 }
 
+/** Short isolated CVC/sight words must never map to default-catalog lesson paragraphs. */
+function isIsolatedPhonicsWord(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  return /^[a-z]{2,5}$/.test(t) && !/\s/.test(t);
+}
+
 export function resolvePhonicsCatalogPhrase(
   input: string,
   phoneme?: string | null,
@@ -32,9 +39,10 @@ export function resolvePhonicsCatalogPhrase(
   if (!trimmed) return "";
   const fromLetter = getPhonicsAudioText(trimmed.toLowerCase());
   const candidates = [fromLetter, trimmed, (phoneme ?? "").trim()].filter(Boolean);
+  const phonicsOnly = isIsolatedPhonicsWord(trimmed);
   for (const phrase of candidates) {
     if (lookupStaticAudioUrl(phrase, "phonics")) return phrase;
-    if (lookupStaticAudioUrl(phrase, "default")) return phrase;
+    if (!phonicsOnly && lookupStaticAudioUrl(phrase, "default")) return phrase;
   }
   return fromLetter || trimmed;
 }
@@ -83,7 +91,10 @@ export async function playCatalogPreparedUrl(
   if (!resolved) return { ok: false, error: "tts_empty_text" };
   if (opts?.isCancelled?.()) return { ok: false, error: "tts_cancelled" };
 
-  for (const mode of ["phonics", "default"] as const) {
+  const modes: StaticAudioMode[] = isIsolatedPhonicsWord(resolved)
+    ? ["phonics"]
+    : ["phonics", "default"];
+  for (const mode of modes) {
     const raw = lookupStaticAudioUrl(resolved, mode);
     if (!raw) continue;
     if (traceModule && !tracePlayPreparedUrlInput(traceModule, raw)) {

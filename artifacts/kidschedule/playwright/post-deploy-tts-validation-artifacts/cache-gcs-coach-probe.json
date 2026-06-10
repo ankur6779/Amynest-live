@@ -1,0 +1,648 @@
+{
+  "coachUiNetwork": [
+    {
+      "url": "static-audio/health",
+      "status": 200,
+      "h": {
+        "x-request-id": "5bcc1ac1-8e20-4379-83d1-56ad0538c7ae",
+        "x-render-origin-server": "Render",
+        "content-length": "65",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/20ccf010450267bfff3fb54c9f09820c.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "30720",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "30720",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/396aed049388b521ca275482a532c66c.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "390a8c5d-c1ee-481d-92c8-b2f7d8bf1d85",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "24192",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/2ad8305e14d722cd3500e062978e7f36.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "40320",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/8fe47cd89b92aaa722b0f69d0f4ec61c.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "21120",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "0e7afd90-0037-4857-b924-0f6aaf5352b0",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "38400",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/6c493f92236fc6c59efd8ea041c45100.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "28032",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/52f106d1d1344f585de39c0af73630e6.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "eb25821d-5257-4cad-8db7-0a599b192612",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "31488",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/046781e6f9f801be0a102c96c55ecd1c.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "47232",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/810df1abf6c0573675aa109a80b5c2d8.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "941fdcbe-308a-40ae-a8bb-530895bb89f0",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "35328",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/f63e1f7b4caf116fc435b0416d84d9f5.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "41088",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/796e117dff9377dbd4fd37095d3b7d7b.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "50688",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/4e0fdcbbf03e49ecb5bdc40e37917778.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "23396a80-b337-4b1d-84fb-261575f5e331",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "45696",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/ac27a0bc9658dcae6eadb72521aebd1b.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "36096",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/26310270981ddec4788b86bafe91262d.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "584b0d39-65cd-46f6-afdc-afd5b2869b6c",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "28032",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "018ac5ba-6ffb-453c-87a5-2f2a154435d0",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "33024",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "018ac5ba-6ffb-453c-87a5-2f2a154435d0",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "33024",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/8fe47cd89b92aaa722b0f69d0f4ec61c.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "21120",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "30720",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/26310270981ddec4788b86bafe91262d.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "584b0d39-65cd-46f6-afdc-afd5b2869b6c",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "28032",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/4c85b5b308227c8fd947fe744916aa58.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "33024",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/cab95f6777b9d54a1c91e3a6b3c9d82b.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "22656",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/cab95f6777b9d54a1c91e3a6b3c9d82b.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "22656",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/335bb3db3085208cafccea811766a641.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "29568",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/0fde14ae8655067be381f7c61a38a45a.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "45696",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/25ee207b7f1971317b8e2dc31a6fb075.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "fb7941c0-05d9-4069-a804-c4f0dfd3b4dc",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "35328",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/d422e22753968fa76d22e6584f88a506.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "31488",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "08fa090f-78b7-4e33-ba36-42d31ab8adcf",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "17664",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/335bb3db3085208cafccea811766a641.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "29568",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/766bfb182185ad114c51eb319d8a032b.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "ec3acf66-c9ce-46b4-bb29-401e01890f84",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "39168",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/5bf46b14881fd8a76f5f3d4f9a5f4aab.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "46464",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/396aed049388b521ca275482a532c66c.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "390a8c5d-c1ee-481d-92c8-b2f7d8bf1d85",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "24192",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/fa048b29297a1548f796cbaa8b7cad6e.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "52224",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/8c7a007902b7bee9541357213a7a87d3.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "eb334397-fe5a-43c9-b772-ac21c3c4b955",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "49920",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "08fa090f-78b7-4e33-ba36-42d31ab8adcf",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "17664",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/07bd9f567a5f31d8db6857cd23bc9561.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "33024",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/52f106d1d1344f585de39c0af73630e6.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "eb25821d-5257-4cad-8db7-0a599b192612",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "31488",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/e0f99f9eacecaa889ec05104e744e9ae.mp3",
+      "status": 200,
+      "h": {
+        "x-request-id": "185f0607-24d6-423a-8f03-c7eb9f7f7f65",
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-static-source": "asset",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "48000",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    },
+    {
+      "url": "static-audio/8caa0096012af0e00f53978c0519e614.mp3",
+      "status": 200,
+      "h": {
+        "x-content-type-options": "nosniff",
+        "x-render-origin-server": "Render",
+        "x-amynest-origin-cache": "memory",
+        "cache-control": "public, max-age=31536000, stale-while-revalidate=86400, immutable",
+        "cdn-cache-control": "public, max-age=31536000, stale-while-revalidate=86400",
+        "x-amynest-edge-cache": "HIT",
+        "content-length": "38400",
+        "x-amynest-sw-cache": "MISS",
+        "x-powered-by": "Express"
+      }
+    }
+  ],
+  "cold": {
+    "ms": 346,
+    "bytes": 38497,
+    "status": 200,
+    "te": null,
+    "cl": null,
+    "cc": "no-cache, no-store",
+    "ck": "3f5afe3539daba8a93f401ade38354574cb1b96406f4d653bbb7becf69833d20"
+  },
+  "hot": {
+    "ms": 315,
+    "bytes": 36407,
+    "status": 200,
+    "te": null,
+    "cl": null,
+    "cc": "no-cache, no-store",
+    "ck": "3f5afe3539daba8a93f401ade38354574cb1b96406f4d653bbb7becf69833d20"
+  },
+  "gcs": {
+    "ms": 208,
+    "bytes": 38497,
+    "status": 200,
+    "cl": "38497",
+    "cc": "public, max-age=31536000, immutable"
+  }
+}

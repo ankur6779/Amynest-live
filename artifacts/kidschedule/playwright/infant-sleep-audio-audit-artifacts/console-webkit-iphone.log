@@ -1,0 +1,185 @@
+[vite] connecting...
+[vite] connected.
+[AmyNest] Web DEV — API http://127.0.0.1:5192 (override: VITE_APP_API_ORIGIN)
+[amynest:firebase] init start
+[amynest:firebase] init success {apps: 1, projectId: amynest-836ff}
+Info: The current domain is not authorized for OAuth operations. This will prevent signInWithPopup, signInWithRedirect, linkWithPopup and linkWithRedirect from working. Add your domain (127.0.0.1) to the OAuth redirect domains list in the Firebase console -> Authentication -> Settings -> Authorized domains tab.
+AUTH STATE CHANGED {authStatus: unauthenticated, uid: null}
+[InfantSleepPlayback] {"selectedId":"lul-twinkle","resolvedAudioUrl":"/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3","contentType":"lullaby","pipeline":"bundled_mp3"}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3, ts: 1781028044843}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: undefined, audio_trace_id: trace_f0fd3814-401, sourceLayer: STATIC_GCS}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49.031836734693876, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3, layer: infant_sleep_mp3}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49.031836734693876, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, layer: unknown, phrase: undefined, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: undefined, audio_trace_id: trace_f0fd3814-401, sourceLayer: STATIC_GCS}
+[AudioManager] play success {srcType: unknown, attempt: 1, source: infant_sleep_mp3, channel: ui, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3}
+[amynest:audio-coordinator] playback started {source: infant_sleep_mp3, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.986330141009705, duration: 49.031836734693876, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.9866139519891588}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.9871754459910447, duration: 49.031836734693876, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.9873297710019981}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028046170}
+[InfantSleepPlayback] {"selectedId":"lul-brahms","resolvedAudioUrl":"/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3","contentType":"lullaby","pipeline":"bundled_mp3"}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3, ts: 1781028046570}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: undefined, audio_trace_id: trace_d1ba5886-e46, sourceLayer: STATIC_GCS}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49.031836734693876, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3, layer: infant_sleep_mp3}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49.031836734693876, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, layer: unknown, phrase: undefined, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: undefined, audio_trace_id: trace_d1ba5886-e46, sourceLayer: STATIC_GCS}
+[AudioManager] play success {srcType: unknown, attempt: 1, source: infant_sleep_mp3, channel: ui, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3}
+[amynest:audio-coordinator] playback started {source: infant_sleep_mp3, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.9650529059942266, duration: 49.031836734693876, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.9653372169774876}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.9655793139897206, duration: 49.031836734693876, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.9656915619922721}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028047874}
+[InfantSleepPlayback] {"selectedId":"lul-rock-a-bye","resolvedAudioUrl":"/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3","contentType":"lullaby","pipeline":"bundled_mp3"}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3, ts: 1781028048281}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: undefined, audio_trace_id: trace_4213a7e9-9cc, sourceLayer: STATIC_GCS}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49.031836734693876, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3, layer: infant_sleep_mp3}
+[AudioPlaybackRecovery] infant_sleep_mp3:start {paused: false, currentTime: 0, duration: 49.031836734693876, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: infant_sleep_mp3, layer: unknown, phrase: undefined, proxyUrl: /infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: undefined, audio_trace_id: trace_4213a7e9-9cc, sourceLayer: STATIC_GCS}
+[AudioManager] play success {srcType: unknown, attempt: 1, source: infant_sleep_mp3, channel: ui, src: http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3}
+[amynest:audio-coordinator] playback started {source: infant_sleep_mp3, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.9657598859893403, duration: 49.031836734693876, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.9660656710010732}
+[AudioPlaybackRecovery] infant_sleep_mp3:+1000ms {paused: false, currentTime: 0.9662605359889346, duration: 49.031836734693876, muted: false, volume: 0.85}
+[AudioPlaybackRecovery] playback_progress_ok {label: infant_sleep_mp3, currentTime: 0.9664380849834776}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028049591}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Sleep baby sleep, Stars are shining deep, Moon is watching you, Dreams will come, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"poem-sleep-baby-sleep","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3","contentType":"poem","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, ts: 1781028051098}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: poem-sleep-baby-sleep, audio_trace_id: trace_9aff0aff-cc0, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: poem-sleep-baby-sleep, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: poem-sleep-baby-sleep, audio_trace_id: trace_9aff0aff-cc0, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[AmyVoiceController] {reason: pause, requestId: 1}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028052125}
+[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0, duration: NaN, muted: false, volume: 0.385475}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0, duration: NaN, muted: false, volume: 0.385475}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Hush little cloud, drift soft and slow, Cradle the moon in its silver glow, Whis, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"poem-hush-little-cloud","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3","contentType":"poem","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, ts: 1781028053007}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: poem-hush-little-cloud, audio_trace_id: trace_a917ca36-671, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: poem-hush-little-cloud, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: poem-hush-little-cloud, audio_trace_id: trace_a917ca36-671, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[AmyVoiceController] {reason: pause, requestId: 2}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028053997}
+[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0, duration: NaN, muted: false, volume: 0.3774}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0, duration: NaN, muted: false, volume: 0.3774}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Pat pat pat, on baby's back, Gentle taps, a steady knack, Slow and soft and warm, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"poem-pat-pat-pat","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3","contentType":"poem","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, ts: 1781028054839}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: poem-pat-pat-pat, audio_trace_id: trace_9e1ae87b-43e, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: poem-pat-pat-pat, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: poem-pat-pat-pat, audio_trace_id: trace_9e1ae87b-43e, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[AmyVoiceController] {reason: pause, requestId: 3}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028055806}
+[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0, duration: NaN, muted: false, volume: 0.376975}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0, duration: NaN, muted: false, volume: 0.376975}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Once upon a quiet night, the moon looked down and saw a little one getting sleep, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-moon-blanket","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, ts: 1781028057223}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-moon-blanket, audio_trace_id: trace_1a03028b-0fd, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: story-moon-blanket, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: story-moon-blanket, audio_trace_id: trace_1a03028b-0fd, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[amynest:audio-coordinator] playback ended {source: poem_player, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42414999999999997}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42414999999999997}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028059109}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: High above the sleepy town, a little cloud floated slowly, slowly, slow. It was , proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-cloud-pillow","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, ts: 1781028059883}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-cloud-pillow, audio_trace_id: trace_38db118a-026, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: story-cloud-pillow, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: story-cloud-pillow, audio_trace_id: trace_38db118a-026, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[amynest:audio-coordinator] playback ended {source: poem_player, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42414999999999997}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42414999999999997}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028061758}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: A little boat rocked on a calm, moonlit sea. No hurry. No noise. Just the gentle, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-boat-dreams","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, ts: 1781028062537}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-boat-dreams, audio_trace_id: trace_90610bbb-14d, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: story-boat-dreams, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: story-boat-dreams, audio_trace_id: trace_90610bbb-14d, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[amynest:audio-coordinator] playback ended {source: poem_player, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.4233}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.4233}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028064403}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: Every night, one small star waits just for you. It blinks once, twice, three tim, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-star-friend","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, ts: 1781028065220}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-star-friend, audio_trace_id: trace_e582e7ac-275, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: story-star-friend, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: story-star-friend, audio_trace_id: trace_e582e7ac-275, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[amynest:audio-coordinator] playback ended {source: poem_player, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42414999999999997}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42414999999999997}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028067087}
+[AudioPlayback] {evt: source_selected, source: tts, phrase: In the sleepy garden, flowers folded their petals. Crickets played a tiny lullab, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: cache}
+[InfantSleepPlayback] {"selectedId":"story-garden-sleep","resolvedAudioUrl":"http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3","contentType":"story","pipeline":"tts_narration"}
+[AudioPlayback] {evt: audio_started, source: poem_player, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, ts: 1781028067870}
+[AudioReliability] {event: audio_requested, module: other, audioIdentity: story-garden-sleep, audio_trace_id: trace_b5b70173-6f7, sourceLayer: DYNAMIC_TTS}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AmyVoiceAudioStart] {event: audio_start, success: true, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3, layer: poem_player}
+[AudioPlaybackRecovery] poem_player:start {paused: false, currentTime: 0, duration: 0.026122448979591838, muted: false, volume: 1}
+[AudioPlayback] {evt: audio_started, source: poem_player, layer: tts, phrase: story-garden-sleep, proxyUrl: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3}
+[AudioReliability] {event: audio_play_started, module: other, audioIdentity: story-garden-sleep, audio_trace_id: trace_b5b70173-6f7, sourceLayer: DYNAMIC_TTS}
+[AudioManager] play success {srcType: tts, attempt: 1, source: poem_player, channel: speech, src: http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3}
+[amynest:audio-coordinator] playback started {source: poem_player, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null, isSamsung: false}
+[amynest:audio-coordinator] playback ended {source: poem_player, msSinceStart: null, userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac O…ke Gecko) Version/26.4 Mobile/15E148 Safari/604.1, webViewHint: null, androidVersion: null}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42372499999999996}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlaybackRecovery] poem_player:+1000ms {paused: true, currentTime: 0.026122448979591838, duration: 0.026122448979591838, muted: false, volume: 0.42372499999999996}
+[AudioPlaybackRecovery] playback_progress_ok {label: poem_player, currentTime: 0.026122448979591838}
+[AudioPlayback] {evt: audio_interrupted, source: poem_player, interruptedBy: stop, ts: 1781028069771}

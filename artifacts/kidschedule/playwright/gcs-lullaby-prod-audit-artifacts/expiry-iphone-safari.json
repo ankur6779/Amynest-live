@@ -1,0 +1,15 @@
+{
+  "staleAfter10s": {
+    "audioStartMs": null,
+    "bufferingMs": null,
+    "success": false,
+    "error": "The operation is not supported."
+  },
+  "refreshedUrl": false,
+  "freshPlayback": {
+    "audioStartMs": 991,
+    "bufferingMs": 590,
+    "success": true,
+    "error": null
+  }
+}

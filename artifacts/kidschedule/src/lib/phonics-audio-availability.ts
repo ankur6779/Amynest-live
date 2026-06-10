@@ -10,6 +10,7 @@ import {
 import { lookupPhonicsLibraryAsset } from "@/lib/phonics-audio-map";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { hasStaticCatalogAudio } from "@/lib/unified-catalog-playback";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
 
 export type PhonicsClipAvailability = {
   available: boolean;
@@ -65,11 +66,11 @@ export function checkPhonicsContentClip(
   return { available: true, catalogKey };
 }
 
-/** Word must have CVC library clip or static catalog audio for hear-and-tap / blending finale. */
+/** Word must have CVC library clip or phonics-mode static audio — never default lesson catalog. */
 export function checkPhonicsWordClip(word: string): PhonicsClipAvailability {
   const w = word.trim().toLowerCase();
-  if (hasStaticCatalogAudio(w)) {
-    return { available: true, catalogKey: `static:${w}` };
+  if (lookupStaticAudioUrl(w, "phonics")) {
+    return { available: true, catalogKey: `static:phonics:${w}` };
   }
   return checkPhonicsContentClip(w, "cvc");
 }

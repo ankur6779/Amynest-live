@@ -243,8 +243,7 @@ async function tryStaticCatalogClip(
   options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
 ): Promise<PlayPhonicsStaticResult | null> {
   const phrase = resolvePhonicsCatalogPhrase(label);
-  const staticUrl =
-    lookupStaticAudioUrl(phrase, "phonics") ?? lookupStaticAudioUrl(phrase, "default");
+  const staticUrl = lookupStaticAudioUrl(phrase, "phonics");
   if (!staticUrl) return null;
 
   const catalog = await playCatalogPreparedUrl(phrase, {

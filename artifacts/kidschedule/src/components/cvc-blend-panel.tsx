@@ -26,6 +26,8 @@ type CvcBlendPanelProps = {
   practiceLevel: 1 | 2 | 3;
   /** Shared lesson state from parent; internal hook used when omitted. */
   lesson?: ReturnType<typeof usePhonicsCvcLesson>;
+  /** Increment to auto-start blend after a practice-card word tap. */
+  blendKick?: number;
 };
 
 export function CvcBlendPanel({
@@ -35,10 +37,12 @@ export function CvcBlendPanel({
   onComplete,
   practiceLevel,
   lesson: lessonProp,
+  blendKick,
 }: CvcBlendPanelProps) {
   const internalLesson = usePhonicsCvcLesson(practiceLevel);
   const lesson = lessonProp ?? internalLesson;
   const blendSessionRef = useRef(0);
+  const lastBlendKickRef = useRef<number | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [phase, setPhase] = useState<CvcBlendPhase | null>(null);
   const [showWord, setShowWord] = useState(false);
@@ -136,6 +140,12 @@ export function CvcBlendPanel({
       amyVoiceController.pause();
     };
   }, []);
+
+  useEffect(() => {
+    if (blendKick == null || blendKick === lastBlendKickRef.current) return;
+    lastBlendKickRef.current = blendKick;
+    void runBlend();
+  }, [blendKick, runBlend]);
 
   const handleClose = useCallback(() => {
     stopBlend();
@@ -340,11 +350,28 @@ export function CvcBlendingPracticeCard({
     level.ageGroup === "3_4y" ? 1 : level.ageGroup === "4_5y" ? 2 : 3;
   const lesson = usePhonicsCvcLesson(practiceLevel);
   const [panelWord, setPanelWord] = useState<string | null>(null);
+  const [blendKick, setBlendKick] = useState(0);
+
+  const primeWordTap = useCallback(() => {
+    recordTtsUserGesture();
+    audioManager.unlockFromUserGesture();
+  }, []);
+
+  const handleWordTap = useCallback(
+    (w: (typeof lesson.levelWords)[number]) => {
+      amyVoiceController.pause();
+      lesson.selectWord(w);
+      setPanelWord(w.word);
+      setBlendKick((k) => k + 1);
+    },
+    [lesson],
+  );
 
   // Sync only when curriculum age band changes — not when the user picks Level 1/2/3 manually.
   useEffect(() => {
     lesson.selectLevel(practiceLevel);
     setPanelWord(null);
+    setBlendKick(0);
   }, [practiceLevel]);
 
   return (
@@ -369,8 +396,10 @@ export function CvcBlendingPracticeCard({
               variant={lesson.activeLevel === lv ? "default" : "outline"}
               className="rounded-full text-[10px] font-bold h-7"
               onClick={() => {
+                amyVoiceController.pause();
                 lesson.selectLevel(lv);
                 setPanelWord(null);
+                setBlendKick(0);
               }}
             >
               Level {lv}
@@ -386,10 +415,9 @@ export function CvcBlendingPracticeCard({
               size="sm"
               variant={lesson.selectedWord?.word === w.word ? "default" : "outline"}
               className="rounded-full font-quicksand font-bold"
-              onClick={() => {
-                lesson.selectWord(w);
-                setPanelWord(w.word);
-              }}
+              disabled={lesson.isPlaying}
+              onPointerDown={primeWordTap}
+              onClick={() => handleWordTap(w)}
             >
               {w.word}
             </Button>
@@ -401,7 +429,13 @@ export function CvcBlendingPracticeCard({
             word={panelWord}
             practiceLevel={lesson.activeLevel}
             lesson={lesson}
-            onClose={() => setPanelWord(null)}
+            blendKick={blendKick}
+            onClose={() => {
+              amyVoiceController.pause();
+              void phonicsEngineStop("cvc_blend_close");
+              setPanelWord(null);
+              setBlendKick(0);
+            }}
             onComplete={() => recordPlay(`cvc-${panelWord}`)}
           />
         )}

@@ -1,0 +1,114 @@
+{
+  "timestamp": "2026-06-09T18:00:08.787Z",
+  "project": "chromium",
+  "test1_lullabies": {
+    "urls": {
+      "lul-twinkle": "http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3",
+      "lul-brahms": "http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3",
+      "lul-rock-a-bye": "http://127.0.0.1:5192/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3"
+    },
+    "sha256": {
+      "lul-twinkle": "81f6f952698610b22997c44f1794c11d55ce94b75b906cb8ef22d96a0ab85b8d",
+      "lul-brahms": "f97054f9dcb464eb45ddf93401dbd76e1370714c65b17a5cab18c93ae95986b4",
+      "lul-rock-a-bye": "8764676ec351e685694bcb7276b811f1694a01e85c847e6e9f47f7feb49e56f3"
+    },
+    "uniqueHashes": 3
+  },
+  "test2_poems": [
+    {
+      "text": "High above the sleepy town, a little cloud floated slowly, slowly, slow. It was fluffy and light, the softest pillow in the sky. Birds tucked their wings. Trees whispered goodnight. The cloud drifted down just enough to say, rest now, little one. Rest on your cloud pillow.",
+      "audioUrl": "/api/tts/audio/mock-tts-0016e2a576f5.mp3"
+    }
+  ],
+  "test3_stories": [
+    {
+      "chars": 278,
+      "preview": "Once upon a quiet night, the moon looked down and saw a litt"
+    },
+    {
+      "chars": 273,
+      "preview": "High above the sleepy town, a little cloud floated slowly, s"
+    },
+    {
+      "chars": 237,
+      "preview": "A little boat rocked on a calm, moonlit sea. No hurry. No no"
+    },
+    {
+      "chars": 253,
+      "preview": "Every night, one small star waits just for you. It blinks on"
+    },
+    {
+      "chars": 244,
+      "preview": "In the sleepy garden, flowers folded their petals. Crickets "
+    }
+  ],
+  "test4_playbackLogs": [
+    {
+      "selectedId": "lul-twinkle",
+      "resolvedAudioUrl": "/infant-sleep-audio/packs/core-v1/lullabies/twinkle.mp3",
+      "contentType": "lullaby",
+      "pipeline": "bundled_mp3"
+    },
+    {
+      "selectedId": "lul-brahms",
+      "resolvedAudioUrl": "/infant-sleep-audio/packs/core-v1/lullabies/brahms.mp3",
+      "contentType": "lullaby",
+      "pipeline": "bundled_mp3"
+    },
+    {
+      "selectedId": "lul-rock-a-bye",
+      "resolvedAudioUrl": "/infant-sleep-audio/packs/core-v1/lullabies/rock-a-bye.mp3",
+      "contentType": "lullaby",
+      "pipeline": "bundled_mp3"
+    },
+    {
+      "selectedId": "poem-sleep-baby-sleep",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-ef6ca876422b.mp3",
+      "contentType": "poem",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "poem-hush-little-cloud",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-00f44b3b3831.mp3",
+      "contentType": "poem",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "poem-pat-pat-pat",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-84f688d751ab.mp3",
+      "contentType": "poem",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "story-moon-blanket",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-a1c01da7a317.mp3",
+      "contentType": "story",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "story-cloud-pillow",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-0016e2a576f5.mp3",
+      "contentType": "story",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "story-boat-dreams",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-f3e121d8f9fa.mp3",
+      "contentType": "story",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "story-star-friend",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-629b65073232.mp3",
+      "contentType": "story",
+      "pipeline": "tts_narration"
+    },
+    {
+      "selectedId": "story-garden-sleep",
+      "resolvedAudioUrl": "http://127.0.0.1:5192/api/tts/audio/mock-tts-a3a4c7f7ea3c.mp3",
+      "contentType": "story",
+      "pipeline": "tts_narration"
+    }
+  ],
+  "dupWarnings": []
+}
