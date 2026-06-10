@@ -883,42 +883,40 @@ async function attemptOpenAiPlay(
       { planCacheKey: identity.planCacheKey, identity },
       { signal },
     );
-    if (!data?.ok || !data.audioUrl) {
-      recordTtsApiFailure();
-      return { ok: false, error: data?.error ?? "coach_audio_failed" };
-    }
-    const playbackUrl = resolveCoachPlaybackUrl(data.audioUrl, data.cacheKey);
-    if (!playbackUrl) return { ok: false, error: "tts_invalid_audio_url" };
+    if (data?.ok && data.cached && data.audioUrl) {
+      const playbackUrl = resolveCoachPlaybackUrl(data.audioUrl, data.cacheKey);
+      if (!playbackUrl) return { ok: false, error: "tts_invalid_audio_url" };
 
-    const audio = playAudio(playbackUrl);
-    if (!audio) return { ok: false, error: "tts_invalid_audio_url" };
+      const audio = playAudio(playbackUrl);
+      if (!audio) return { ok: false, error: "tts_invalid_audio_url" };
 
-    const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
-      proxyUrl: playbackUrl,
-      phrase: identity.text,
-      mode: "default",
-      source: "api",
-      waitUntilEnd,
-    });
-    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-    if (play.ok) {
-      recordTtsApiSuccess();
-      if (data.cacheKey) {
-        void warmLocalCacheFromUrl(coachLocalCacheKey(identity), playbackUrl);
+      const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+        proxyUrl: playbackUrl,
+        phrase: identity.text,
+        mode: "default",
+        source: "api",
+        waitUntilEnd,
+      });
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      if (play.ok) {
+        recordTtsApiSuccess();
+        if (data.cacheKey) {
+          void warmLocalCacheFromUrl(coachLocalCacheKey(identity), playbackUrl);
+        }
+        recordAmyVoiceLayerSuccess("api_success", { cacheKey: data.cacheKey, coach: true });
+        return {
+          ok: true,
+          layer: "api",
+          playedDuration: play.playedDuration,
+          expectedDuration: play.expectedDuration,
+          stopPlayback: () => {
+            audio.pause();
+            audio.currentTime = 0;
+          },
+        };
       }
-      recordAmyVoiceLayerSuccess("api_success", { cacheKey: data.cacheKey, coach: true });
-      return {
-        ok: true,
-        layer: "api",
-        playedDuration: play.playedDuration,
-        expectedDuration: play.expectedDuration,
-        stopPlayback: () => {
-          audio.pause();
-          audio.currentTime = 0;
-        },
-      };
     }
-    return { ok: false, error: "play_failed_or_silent" };
+    // Cache miss — fall through to streaming-first path below.
   }
 
   const mode = opts?.mode === "phonics" ? "phonics" : "default";
@@ -976,6 +974,12 @@ async function attemptOpenAiPlay(
           streaming: true,
           ttfaMs: stream.metrics.ttfaMs,
         });
+        if (opts?.coach && isCoachAudioIdentity(opts.audioIdentity)) {
+          void generateCoachWinAudio(ctx.authFetch, {
+            planCacheKey: opts.audioIdentity.planCacheKey,
+            identity: opts.audioIdentity,
+          });
+        }
         recordRlOutcome(
           buildRlTelemetryPayload(
             scoringContext,

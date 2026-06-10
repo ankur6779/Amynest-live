@@ -38,6 +38,7 @@ import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   generateElevenLabsFallbackTts,
   ELEVENLABS_VOICE_EN_FEMALE,
+  ELEVENLABS_MODEL_EN,
 } from "@/lib/elevenlabs-fallback-tts";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
@@ -177,7 +178,6 @@ type MemoryPayload = {
 const DEFAULT_BUDGET_SECONDS = 300;
 const MAX_LISTEN_MS = 9000;
 /** ElevenLabs Flash v2.5 — lowest-latency model for instant live conversation. */
-const AMY_FLASH_MODEL = "eleven_flash_v2_5";
 /** Below this remaining time, Amy starts wrapping up. */
 const WIND_DOWN_AT = 80;
 /** Below this remaining time, Amy gives the closing goodbye + report. */
@@ -402,7 +402,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         try {
           const el = await generateElevenLabsFallbackTts(apiFetch, text, {
             voiceId: ELEVENLABS_VOICE_EN_FEMALE,
-            modelId: AMY_FLASH_MODEL,
+            modelId: ELEVENLABS_MODEL_EN,
           });
           if (el.success && el.audioUrl) {
             const res = await voice.playPreparedUrl(el.audioUrl, {

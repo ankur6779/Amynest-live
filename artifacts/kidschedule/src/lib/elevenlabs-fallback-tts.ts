@@ -1,3 +1,7 @@
+import {
+  AMY_TTS_MODEL_ID,
+  AMY_TTS_VOICE_ID,
+} from "@workspace/static-audio/browser";
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
 import {
   isValidAudioUrl,
@@ -6,9 +10,10 @@ import {
 } from "@/lib/tts-playback";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
-/** English Indian Female — Ananya K (legacy Amy ElevenLabs voice). */
-export const ELEVENLABS_VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
-export const ELEVENLABS_MODEL_EN = "eleven_turbo_v2_5";
+/** @deprecated Use AMY_TTS_VOICE_ID */
+export const ELEVENLABS_VOICE_EN_FEMALE = AMY_TTS_VOICE_ID;
+/** @deprecated Use AMY_TTS_MODEL_ID */
+export const ELEVENLABS_MODEL_EN = AMY_TTS_MODEL_ID;
 
 const OPENAI_VOICES = new Set([
   "alloy",
@@ -34,10 +39,10 @@ export function resolveElevenLabsVoiceIds(
   if (vid.length >= 15 && !OPENAI_VOICES.has(vid.toLowerCase())) {
     return {
       voiceId: vid,
-      modelId: modelId?.trim() || ELEVENLABS_MODEL_EN,
+      modelId: modelId?.trim() || AMY_TTS_MODEL_ID,
     };
   }
-  return { voiceId: ELEVENLABS_VOICE_EN_FEMALE, modelId: ELEVENLABS_MODEL_EN };
+  return { voiceId: AMY_TTS_VOICE_ID, modelId: AMY_TTS_MODEL_ID };
 }
 
 /**

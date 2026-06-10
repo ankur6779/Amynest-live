@@ -1,13 +1,9 @@
 import { db, coachAudioCacheTable } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
-import { getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
 import { isPregenerationPaused } from "./admin-ops-store.js";
-import {
-  AMY_MODEL_ID_DEFAULT,
-  AMY_VOICE_ID_DEFAULT,
-  trySynthesizeFromCache,
-} from "./ttsCacheService.js";
+import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
+import { readCachedAudio, trySynthesizeFromCache } from "./ttsCacheService.js";
 import { generateOpenAiTts } from "./ttsGenerate.js";
 import { isValidTtsPublicUrl, resolveTtsPlaybackUrl } from "./ttsAudioStore.js";
 import {
@@ -74,9 +70,37 @@ export async function tryCoachWinAudioFromCache(
   const row = await lookupCoachAudioRow(input.planCacheKey, input.winIndex);
   if (!row || row.textHash !== textHash) return null;
 
+  const voiceId = getAmyTtsVoiceId();
+  const modelId = getAmyTtsModelId();
+
+  if (row.ttsCacheKey) {
+    const bytes = await readCachedAudio(row.ttsCacheKey).catch(() => null);
+    if (bytes?.buffer?.byteLength) {
+      const audioUrl = resolveTtsPlaybackUrl(row.ttsCacheKey) ?? row.audioUrl;
+      if (isValidTtsPublicUrl(audioUrl)) {
+        void db
+          .update(coachAudioCacheTable)
+          .set({
+            hitCount: sql`${coachAudioCacheTable.hitCount} + 1`,
+            lastAccessedAt: sql`now()`,
+          })
+          .where(eq(coachAudioCacheTable.id, row.id))
+          .catch(() => {});
+        return {
+          planCacheKey: input.planCacheKey,
+          winIndex: input.winIndex,
+          textHash,
+          ttsCacheKey: row.ttsCacheKey,
+          audioUrl,
+          cached: true,
+        };
+      }
+    }
+  }
+
   const cached = await trySynthesizeFromCache(text, {
-    voiceId: getOpenAiTtsVoice() || AMY_VOICE_ID_DEFAULT,
-    modelId: AMY_MODEL_ID_DEFAULT,
+    voiceId,
+    modelId,
     mode: "default",
   });
   if (!cached || !isValidTtsPublicUrl(cached.audioUrl)) return null;
@@ -112,7 +136,7 @@ export async function generateAndCacheCoachWinAudio(
   if (hit) return hit;
 
   const textHash = hashCoachListenText(text);
-  const voiceId = getOpenAiTtsVoice() || AMY_VOICE_ID_DEFAULT;
+  const voiceId = getAmyTtsVoiceId();
 
   const generated = await generateOpenAiTts({
     text,

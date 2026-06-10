@@ -190,7 +190,8 @@ Duration target: 300–800ms; reject if >900ms or <250ms; stop sounds (b,c,d,p,t
 
 /** Default ElevenLabs voice — English Indian Female (Amy). */
 export const PHONICS_ELEVENLABS_VOICE_ID_DEFAULT = "QbQKfe9vgx5OsbZUvlFv";
-export const PHONICS_ELEVENLABS_MODEL_DEFAULT = "eleven_turbo_v2_5";
+/** Canonical Amy TTS model — keep aligned with lib/static-audio/src/amy-tts-config.ts */
+export const PHONICS_ELEVENLABS_MODEL_DEFAULT = "eleven_flash_v2_5";
 
 /** Isolated phoneme clips — crisp, no expression. */
 export const PHONICS_ELEVENLABS_VOICE_SETTINGS = {

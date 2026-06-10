@@ -5,7 +5,7 @@
   "bucket": "amynest-audio-storage",
   "baseUrl": "",
   "voiceId": "QbQKfe9vgx5OsbZUvlFv",
-  "modelId": "eleven_turbo_v2_5",
+  "modelId": "eleven_flash_v2_5",
   "assetCount": 151,
   "assets": {
     "letter:a": {

@@ -7,6 +7,7 @@ import type { AmyHomeState } from "@/lib/amy-signals";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import type { LangCode, Lesson } from "@/lib/audio-lessons";
 import { getLessonById, getLessonText } from "@/lib/audio-lessons";
+import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
 import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { prepareAmyLessonParagraphSpeech } from "@/lib/amy-speech-mode";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
@@ -14,8 +15,7 @@ import { createAudioIdentity } from "@/lib/lesson-audio-identity";
 import { preloadStaticPhrases } from "@/lib/static-audio";
 
 /** Match player-sheet voice — lesson narration uses ElevenLabs Amy EN. */
-export const LESSON_VOICE_ID = "QbQKfe9vgx5OsbZUvlFv";
-export const LESSON_MODEL_ID = "eleven_turbo_v2_5";
+export { AMY_TTS_VOICE_ID as LESSON_VOICE_ID, AMY_TTS_MODEL_ID as LESSON_MODEL_ID } from "@workspace/static-audio/browser";
 
 const MAX_WARM_LESSONS = 3;
 const MAX_PARAGRAPHS_PER_LESSON = 4;
@@ -119,7 +119,7 @@ async function warmLessonParagraphs(
     if (!text) continue;
 
     const identity = createAudioIdentity(lesson.id, idx, text);
-    prefetchLessonParagraph(identity, authFetch, LESSON_VOICE_ID, LESSON_MODEL_ID);
+    prefetchLessonParagraph(identity, authFetch, AMY_TTS_VOICE_ID, AMY_TTS_MODEL_ID);
     staticTexts.push(text);
 
     if (BATCH_GAP_MS > 0) {

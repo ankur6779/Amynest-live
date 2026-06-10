@@ -15,8 +15,10 @@ import { createAudioIdentity } from "@/lib/lesson-audio-identity";
 import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
 
-const VOICE_AMY_EN = "QbQKfe9vgx5OsbZUvlFv";
-const MODEL_EN = "eleven_turbo_v2_5";
+import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
+
+const VOICE_AMY_EN = AMY_TTS_VOICE_ID;
+const MODEL_EN = AMY_TTS_MODEL_ID;
 
 export type PlayerSheetPlayback = {
   playing: boolean;

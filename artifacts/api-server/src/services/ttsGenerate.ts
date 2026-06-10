@@ -1,6 +1,4 @@
 import {
-  AMY_MODEL_ID_DEFAULT,
-  AMY_VOICE_ID_DEFAULT,
   computeTtsCacheKey,
   trySynthesizeFromCache,
   type SynthesizeMode,
@@ -17,11 +15,8 @@ import {
 } from "@workspace/phonics-sounds";
 import { logger } from "../lib/logger.js";
 import { isElevenLabsFallbackEnabled } from "../lib/env.js";
-import {
-  AMY_MODEL_ID_FLASH,
-  AMY_VOICE_ID_DEFAULT as ELEVEN_VOICE_DEFAULT,
-  synthesizeElevenLabsFallback,
-} from "./elevenLabsFallbackService.js";
+import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
+import { synthesizeElevenLabsFallback } from "./elevenLabsFallbackService.js";
 import {
   assertTtsCacheMissAllowed,
   refundTtsDailyMiss,
@@ -95,7 +90,11 @@ export async function generateOpenAiTts(
     try {
       const el = await synthesizeElevenLabsFallback(
         text,
-        { voiceId: ELEVEN_VOICE_DEFAULT, modelId: AMY_MODEL_ID_FLASH, mode },
+        {
+          voiceId: getAmyTtsVoiceId(),
+          modelId: getAmyTtsModelId(),
+          mode,
+        },
         ctx,
       );
       if (el && isValidTtsPublicUrl(el.audioUrl)) {
@@ -113,8 +112,8 @@ export async function generateOpenAiTts(
     }
   }
 
-  const voiceId = (input.voice?.trim() || getOpenAiTtsVoice() || AMY_VOICE_ID_DEFAULT).slice(0, 64);
-  const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
+  const voiceId = (input.voice?.trim() || getAmyTtsVoiceId()).slice(0, 64);
+  const modelId = getAmyTtsModelId();
 
   const cacheHit = await trySynthesizeFromCache(text, { voiceId, modelId, mode });
   if (cacheHit && isValidTtsPublicUrl(cacheHit.audioUrl)) {

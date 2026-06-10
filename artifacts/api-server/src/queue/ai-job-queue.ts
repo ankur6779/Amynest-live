@@ -22,10 +22,16 @@ export {
   isWorkerEnabled,
 } from "./mode.js";
 
+export type EnqueueAiJobOptions = {
+  /** When set, BullMQ uses this job id — enables dedup for static-audio generation. */
+  deterministicJobId?: string;
+};
+
 export async function enqueueAiJob(
   type: AiJobType,
   userId: string,
   payload: unknown,
+  options?: EnqueueAiJobOptions,
 ): Promise<EnqueueResult> {
   if (isWorkerEnabled() && !isApiQueueBootstrapComplete()) {
     return {
@@ -45,7 +51,7 @@ export async function enqueueAiJob(
     };
   }
   if (isBullMqActive()) {
-    return enqueueBullMqJob(type, userId, payload);
+    return enqueueBullMqJob(type, userId, payload, options?.deterministicJobId);
   }
   const mode = getQueueMode();
   if (mode === "memory" || mode === "inline") {

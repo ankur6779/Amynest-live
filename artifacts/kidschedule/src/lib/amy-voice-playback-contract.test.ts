@@ -26,15 +26,19 @@ describe("amy-voice-playback-contract", () => {
     vi.useRealTimers();
   });
 
-  it("defaults to full-required when no flags set", () => {
-    expect(resolvePlaybackMode()).toBe("full-required");
-    expect(resolvePlaybackMode({})).toBe("full-required");
+  it("defaults to partial-ok when no flags set", () => {
+    expect(resolvePlaybackMode()).toBe("partial-ok");
+    expect(resolvePlaybackMode({})).toBe("partial-ok");
   });
 
-  it("maps lesson and narration to full-required", () => {
+  it("maps lesson and waitUntilEnd to full-required", () => {
     expect(resolvePlaybackMode({ lessonParagraph: true })).toBe("full-required");
-    expect(resolvePlaybackMode({ narration: true })).toBe("full-required");
     expect(resolvePlaybackMode({ waitUntilEnd: true })).toBe("full-required");
+  });
+
+  it("parent hub and narration use streaming-first partial-ok", () => {
+    expect(resolvePlaybackMode({ parentHub: true })).toBe("partial-ok");
+    expect(resolvePlaybackMode({ narration: true })).toBe("partial-ok");
   });
 
   it("maps phonics taps to partial-ok", () => {

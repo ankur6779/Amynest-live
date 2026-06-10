@@ -22,6 +22,8 @@ import { ttsStorageBackend } from "../services/ttsAudioStore";
 import { resolvePhonicsSessionSecret } from "../lib/phonicsSessionSecret.js";
 import { isLastGcsProbeOk } from "../services/staticAudioMonitor.js";
 import { isStaticAudioCircuitOpen } from "../services/staticAudioMetrics.js";
+import { getTtsLatencyDashboard } from "../services/ttsLatencyMetrics.js";
+import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -166,6 +168,9 @@ router.get("/healthz/tts", (_req, res) => {
     legacyGcsConfigured,
     ok: openAiConfigured,
     ttsStorage: ttsStorageBackend(),
+    amyTtsModel: getAmyTtsModelId(),
+    amyTtsVoice: getAmyTtsVoiceId(),
+    latency: getTtsLatencyDashboard(),
   });
 });
 

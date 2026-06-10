@@ -5,13 +5,13 @@ import { logger } from "../lib/logger";
 import { TTS_MAX_INPUT_CHARS, readCachedAudio } from "../services/ttsCacheService";
 import { isValidTtsPublicUrl, MIN_TTS_BYTES } from "../services/ttsAudioStore";
 import {
-  AMY_MODEL_ID_DEFAULT as ELEVEN_MODEL_DEFAULT,
-  AMY_MODEL_ID_FLASH,
-  AMY_VOICE_ID_DEFAULT as ELEVEN_VOICE_DEFAULT,
-  synthesizeElevenLabsFallback,
-} from "../services/elevenLabsFallbackService.js";
+  getAmyTtsModelId,
+  getAmyTtsVoiceId,
+} from "../lib/amy-tts-config.js";
+import { streamElevenLabsTtsWithCache } from "../services/elevenLabsStreamCache.js";
+import { synthesizeElevenLabsFallback } from "../services/elevenLabsFallbackService.js";
 import { isElevenLabsFallbackEnabled } from "../lib/env.js";
-import { getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
+import { getOpenAiTtsModel, getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
 import {
   getPhonicsText,
   getPhonicsAudioText,
@@ -24,12 +24,8 @@ import {
   resolveTtsStrategy,
 } from "../services/ttsIntelligenceService.js";
 import { applyPredictiveStrategyAdjustments } from "../services/predictive-strategy.js";
-import {
-  computeTtsCacheKey,
-  AMY_MODEL_ID_DEFAULT,
-} from "../services/ttsCacheService.js";
+import { computeTtsCacheKey } from "../services/ttsCacheService.js";
 import { recordApiHealthSample } from "../services/api-health-store.js";
-import { getOpenAiTtsModel } from "../lib/openai-tts-config.js";
 import { streamOpenAiTtsWithCache } from "../services/openaiTtsStreamCache.js";
 import { ingestRlTelemetry, resolveRlStrategy } from "../services/ttsRlService.js";
 import {
@@ -250,8 +246,8 @@ router.post("/tts/elevenlabs-fallback", async (req, res): Promise<void> => {
     const result = await synthesizeElevenLabsFallback(
       text,
       {
-        voiceId: parsed.data.voiceId ?? ELEVEN_VOICE_DEFAULT,
-        modelId: parsed.data.modelId ?? ELEVEN_MODEL_DEFAULT,
+        voiceId: parsed.data.voiceId ?? getAmyTtsVoiceId(),
+        modelId: parsed.data.modelId ?? getAmyTtsModelId(),
         mode,
       },
       { userId, route: "tts/elevenlabs-fallback" },
@@ -521,8 +517,7 @@ router.get("/tts/strategy", async (req, res): Promise<void> => {
 });
 
 /**
- * POST /api/tts/stream — streaming MP3 (cache-first, live OpenAI pipe).
- * Response: audio/mpeg with X-TTS-Cache-Key header.
+ * POST /api/tts/stream — progressive MP3 (ElevenLabs stream-first, OpenAI fallback).
  */
 router.post("/tts/stream", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -545,28 +540,24 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
 
   const mode = parsed.data.mode ?? "default";
   const startedAt = Date.now();
+  const voiceId = getAmyTtsVoiceId();
+  const modelId = getAmyTtsModelId();
+  const cacheKey = computeTtsCacheKey(phrase, voiceId, modelId, mode);
 
-  // Primary: ElevenLabs Flash v2.5 — generate once (cache-first → GCS) and
-  // serve the bytes through this streaming endpoint. OpenAI stays the safety
-  // net below so audio never disappears if ElevenLabs is unavailable.
   if (isElevenLabsFallbackEnabled()) {
     try {
-      const el = await synthesizeElevenLabsFallback(
-        phrase,
-        { voiceId: ELEVEN_VOICE_DEFAULT, modelId: AMY_MODEL_ID_FLASH, mode },
+      const ok = await streamElevenLabsTtsWithCache(
+        res,
+        { text: phrase, voiceId, modelId, mode, cacheKey },
         { userId, route: "tts/stream" },
       );
-      if (el && isValidTtsPublicUrl(el.audioUrl)) {
-        const cached = await readCachedAudio(el.cacheKey);
-        if (cached && cached.buffer.byteLength >= MIN_TTS_BYTES) {
-          res.setHeader("X-TTS-Cache-Key", el.cacheKey);
-          res.setHeader("Content-Type", "audio/mpeg");
-          res.setHeader("X-Content-Type-Options", "nosniff");
-          res.setHeader("Content-Length", String(cached.buffer.byteLength));
-          res.status(200).end(cached.buffer);
-          recordApiHealthSample({ route: "stream", success: true, latencyMs: Date.now() - startedAt });
-          return;
-        }
+      if (ok) {
+        recordApiHealthSample({
+          route: "stream",
+          success: true,
+          latencyMs: Date.now() - startedAt,
+        });
+        return;
       }
     } catch (err) {
       if (isTtsRateLimitedError(err)) {
@@ -578,27 +569,27 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
           evt: "tts.stream_elevenlabs_fallback_openai",
           message: err instanceof Error ? err.message : String(err),
         },
-        "ElevenLabs Flash stream failed — falling back to OpenAI",
+        "ElevenLabs stream failed — falling back to OpenAI",
       );
     }
   }
 
   const clientVoice = parsed.data.voice?.trim();
-  const voiceId = (clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice()).slice(0, 64);
-  const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
-  const cacheKey = computeTtsCacheKey(phrase, voiceId, modelId, mode);
+  const openAiVoiceId = (clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice()).slice(0, 64);
+  const openAiModelId = getOpenAiTtsModel();
+  const openAiCacheKey = computeTtsCacheKey(phrase, openAiVoiceId, openAiModelId, mode);
 
-  if (!res.headersSent) res.setHeader("X-TTS-Cache-Key", cacheKey);
+  if (!res.headersSent) res.setHeader("X-TTS-Cache-Key", openAiCacheKey);
 
   try {
     const ok = await streamOpenAiTtsWithCache(
       res,
       {
         text: phrase,
-        voiceId,
-        modelId,
+        voiceId: openAiVoiceId,
+        modelId: openAiModelId,
         mode,
-        cacheKey,
+        cacheKey: openAiCacheKey,
       },
       { userId, route: "tts/stream" },
     );

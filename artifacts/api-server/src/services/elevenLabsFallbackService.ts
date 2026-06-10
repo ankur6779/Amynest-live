@@ -26,35 +26,35 @@ import {
   recordTtsCacheMissAndGenerated,
   TtsRateLimitedError,
 } from "./ttsCostGuardService.js";
+import {
+  AMY_TTS_MODEL_ID,
+  AMY_TTS_OUTPUT_FORMAT,
+  AMY_TTS_VOICE_ID,
+  getAmyTtsModelId,
+  getAmyTtsVoiceId,
+} from "../lib/amy-tts-config.js";
+import { VOICE_SETTINGS } from "./elevenLabsVoiceSettings.js";
+import { withTtsInflightGeneration } from "./ttsInflightGeneration.js";
+import { recordTtsLatencySample } from "./ttsLatencyMetrics.js";
 
 // ─── Indian ElevenLabs Voice IDs ────────────────────────────────────────────
-// English Indian Female — Ananya K (Clear & Polished Indian Reel Voice)
-export const AMY_VOICE_ID_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
-// English Indian Male — Karthik (Indian AI Voice)
-export const AMY_VOICE_ID_EN_MALE   = "oaz5NvoRIhcJystOASAA";
-// Hindi Female — Anjura (Calm & Warm Hindi Agent)
+export const AMY_VOICE_ID_EN_FEMALE = AMY_TTS_VOICE_ID;
+export const AMY_VOICE_ID_EN_MALE = "oaz5NvoRIhcJystOASAA";
 export const AMY_VOICE_ID_HI_FEMALE = "TllHtNijgXBd45uTSCS7";
-// Hindi Male — Rahul S (Professional Hindi Conversational Voice)
-export const AMY_VOICE_ID_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
+export const AMY_VOICE_ID_HI_MALE = "2cdvnKJ5TZi631y5PN1s";
 
-// Defaults (English Indian Female)
-export const AMY_VOICE_ID_DEFAULT = AMY_VOICE_ID_EN_FEMALE;
-export const AMY_MODEL_ID_DEFAULT = "eleven_turbo_v2_5";
-/** Lowest-latency model — primary for live/dynamic TTS across the whole app. */
-export const AMY_MODEL_ID_FLASH = "eleven_flash_v2_5";
-
-// Hindi defaults
+/** Canonical Amy voice + model — re-exported for legacy imports. */
+export const AMY_VOICE_ID_DEFAULT = AMY_TTS_VOICE_ID;
+export const AMY_MODEL_ID_DEFAULT = AMY_TTS_MODEL_ID;
+export const AMY_MODEL_ID_FLASH = AMY_TTS_MODEL_ID;
 export const AMY_VOICE_ID_HINDI = AMY_VOICE_ID_HI_FEMALE;
-export const AMY_MODEL_ID_HINDI  = "eleven_multilingual_v2";
+export const AMY_MODEL_ID_HINDI = AMY_TTS_MODEL_ID;
 
 // Hard guard against huge payloads.
 export const TTS_MAX_INPUT_CHARS = 4000;
 
 /** Hard cap on ElevenLabs round-trip so TTS never blocks the server. */
 const TTS_ELEVENLABS_TIMEOUT_MS = 5_000;
-
-// ─── In-flight single-flight map ────────────────────────────────────────────
-const inFlight = new Map<string, Promise<SynthesizeResult>>();
 
 /**
  * `default` = the warm conversational Amy voice used for stories, coaching,
@@ -111,17 +111,6 @@ export function computeTtsCacheKey(
     .digest("hex");
 }
 
-/** Per-mode ElevenLabs voice settings. See SynthesizeMode docstring for rationale. */
-const VOICE_SETTINGS: Record<SynthesizeMode, {
-  stability: number;
-  similarity_boost: number;
-  style: number;
-  use_speaker_boost: boolean;
-}> = {
-  default: { stability: 0.5,  similarity_boost: 0.75, style: 0.0, use_speaker_boost: true },
-  phonics: { stability: 0.85, similarity_boost: 0.85, style: 0.0, use_speaker_boost: true },
-};
-
 /**
  * Synthesize text → MP3 using ElevenLabs.
  *
@@ -137,8 +126,8 @@ export async function trySynthesizeFromCache(
   const text = rawText.trim();
   if (!text) return null;
 
-  const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
-  const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
+  const voiceId = options.voiceId?.trim() || getAmyTtsVoiceId();
+  const modelId = options.modelId?.trim() || getAmyTtsModelId();
   const mode: SynthesizeMode = options.mode ?? "default";
   const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
 
@@ -188,13 +177,13 @@ export async function synthesizeElevenLabsFallback(
   if (!text) throw new Error("tts_empty_text");
   if (text.length > TTS_MAX_INPUT_CHARS) throw new Error("tts_text_too_long");
 
-  const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
-  const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
+  const voiceId = options.voiceId?.trim() || getAmyTtsVoiceId();
+  const modelId = options.modelId?.trim() || getAmyTtsModelId();
   const mode: SynthesizeMode = options.mode ?? "default";
   const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
   const audioPath = ttsAudioPath(cacheKey);
 
-  const cachedOnly = await trySynthesizeFromCache(text, options);
+  const cachedOnly = await trySynthesizeFromCache(text, { voiceId, modelId, mode });
   if (cachedOnly) {
     emitCacheHit(ctx);
     return cachedOnly;
@@ -253,19 +242,28 @@ export async function synthesizeElevenLabsFallback(
     guardPremium = guard.isPremium;
   }
 
-  const pending = inFlight.get(cacheKey);
-  if (pending) {
-    logger.info({ evt: "tts.in_flight_wait", cacheKey, charCount: text.length }, "TTS: waiting on in-flight generation");
-    const result = await pending;
-    return { ...result, cached: true };
-  }
-
-  const generation = (async (): Promise<SynthesizeResult> => {
+  return withTtsInflightGeneration(cacheKey, async () => {
+    const raced = await trySynthesizeFromCache(text, { voiceId, modelId, mode });
+    if (raced) {
+      emitCacheHit(ctx);
+      return raced;
+    }
     try {
+      const genStarted = performance.now();
       const result = await generateAndStore({ text, voiceId, modelId, mode, cacheKey, audioPath });
       if (ctx) {
         recordTtsCacheMissAndGenerated(ctx.userId, ctx.route, guardPremium);
       }
+      recordTtsLatencySample({
+        route: ctx?.route ?? "tts/generate",
+        provider: "elevenlabs",
+        cacheHit: false,
+        generationMs: Math.round(performance.now() - genStarted),
+        streaming: false,
+        modelId,
+        voiceId,
+        charCount: text.length,
+      });
       return result;
     } catch (err) {
       if (ctx && !(err instanceof TtsRateLimitedError)) {
@@ -273,14 +271,7 @@ export async function synthesizeElevenLabsFallback(
       }
       throw err;
     }
-  })();
-
-  inFlight.set(cacheKey, generation);
-  try {
-    return await generation;
-  } finally {
-    inFlight.delete(cacheKey);
-  }
+  });
 }
 
 interface GenerateArgs {
@@ -313,7 +304,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     throw new Error("tts_missing_api_key");
   }
 
-  const elevenUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+  const elevenUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${AMY_TTS_OUTPUT_FORMAT}`;
   const aiStarted = performance.now();
 
   logger.info(

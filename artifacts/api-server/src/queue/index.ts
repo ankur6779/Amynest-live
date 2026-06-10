@@ -50,8 +50,25 @@ export async function enqueueBullMqJob(
   type: AiJobType,
   userId: string,
   payload: unknown,
+  deterministicJobId?: string,
 ): Promise<EnqueueResult> {
   const uid = userId.trim() || "anonymous";
+
+  if (deterministicJobId) {
+    try {
+      const queue = getAiJobsQueue();
+      const existing = await queue.getJob(deterministicJobId);
+      if (existing) {
+        const state = await existing.getState();
+        if (state === "waiting" || state === "active" || state === "delayed") {
+          return { jobId: deterministicJobId, status: "queued", deferred: false };
+        }
+      }
+    } catch {
+      /* proceed with enqueue */
+    }
+  }
+
   const slotOk = await tryAcquireUserSlot(uid);
   if (!slotOk) {
     return {
@@ -62,7 +79,7 @@ export async function enqueueBullMqJob(
     };
   }
 
-  const jobId = randomUUID();
+  const jobId = deterministicJobId?.trim() || randomUUID();
   const now = Date.now();
   const record: AiJobRecord = {
     id: jobId,

@@ -3,7 +3,7 @@
   "generatedAt": "2026-06-03T03:56:09.069Z",
   "bucket": "amynest-audio-storage",
   "voiceId": "QbQKfe9vgx5OsbZUvlFv",
-  "ttsModel": "eleven_turbo_v2_5",
+  "ttsModel": "eleven_flash_v2_5",
   "assets": {
     "cow:moo-01": {
       "gcsPath": "animal-world/farm/cow/moo-01.mp3",

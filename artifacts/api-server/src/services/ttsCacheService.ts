@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { getOpenAiTtsModel, getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
+import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 import { logger } from "../lib/logger.js";
 import { shouldReduceDbReads } from "./admin-ops-store.js";
 import {
@@ -11,9 +11,10 @@ import {
   ttsAudioRead,
 } from "./ttsAudioStore.js";
 
-/** OpenAI voice + model defaults (content-addressed cache). */
-export const AMY_VOICE_ID_DEFAULT = getOpenAiTtsVoice();
-export const AMY_MODEL_ID_DEFAULT = getOpenAiTtsModel();
+/** @deprecated Use getAmyTtsVoiceId() for ElevenLabs cache lookups. */
+export const AMY_VOICE_ID_DEFAULT = getAmyTtsVoiceId();
+/** @deprecated Use getAmyTtsModelId() for ElevenLabs cache lookups. */
+export const AMY_MODEL_ID_DEFAULT = getAmyTtsModelId();
 
 export const TTS_MAX_INPUT_CHARS = 4000;
 
@@ -68,8 +69,8 @@ export async function trySynthesizeFromCache(
   const text = rawText.trim();
   if (!text) return null;
 
-  const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
-  const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
+  const voiceId = options.voiceId?.trim() || getAmyTtsVoiceId();
+  const modelId = options.modelId?.trim() || getAmyTtsModelId();
   const mode: SynthesizeMode = options.mode ?? "default";
   const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
 

@@ -1,12 +1,9 @@
 /**
- * Amy voice playback contract — streaming safety and completion guarantees.
+ * Amy voice playback contract — streaming-first with safe completion for lessons.
  *
  * RULE:
- * - Streaming is ONLY for partial-ok playback
- * - Full-required playback MUST use complete audio
- * - HTMLAudioElement "ended" cannot be trusted for full-required (lessons)
- *
- * New modules MUST set playbackMode explicitly. Default: "full-required".
+ * - Default playback is partial-ok (streaming-first)
+ * - full-required ONLY for lesson paragraphs and explicit waitUntilEnd
  */
 
 import { audioManager } from "@/lib/audio-manager";
@@ -57,13 +54,11 @@ const FAILSAFE_MULTIPLIER = 1.5;
 const STREAM_POLL_MS = 80;
 const STREAM_STALL_MS = 400;
 
-/** Safe default — full audio required unless explicitly partial-ok. */
+/** Streaming-first default — full audio only for lessons / explicit waitUntilEnd. */
 export function resolvePlaybackMode(opts?: PlaybackModeInput): PlaybackMode {
   if (opts?.playbackMode) return opts.playbackMode;
-  if (opts?.lessonParagraph || opts?.parentHub || opts?.narration) return "full-required";
-  if (opts?.waitUntilEnd) return "full-required";
-  if (opts?.mode === "phonics") return "partial-ok";
-  return "full-required";
+  if (opts?.waitUntilEnd || opts?.lessonParagraph) return "full-required";
+  return "partial-ok";
 }
 
 /** ONLY gate for streaming eligibility — do not scatter other checks. */
