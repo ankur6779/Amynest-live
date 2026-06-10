@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { listRhymesRegistryEntries } from "@workspace/rhymes-audio";
+import { audioManager } from "@/lib/audio-manager";
 
 const AB_API =
   (import.meta.env.VITE_RHYMES_AB_API_URL as string | undefined)?.replace(/\/$/, "") ??
@@ -126,7 +127,7 @@ export default function RhymesAudioAbPage() {
         setLoading(null);
         return;
       }
-      const audio = new Audio(url);
+      const audio = audioManager.create(url);
       audioRef.current = audio;
       audio.onended = () => {
         setPlaying(null);
