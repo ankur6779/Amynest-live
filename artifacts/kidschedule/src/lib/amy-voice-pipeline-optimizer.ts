@@ -13,10 +13,8 @@ import {
   generateCoachWinAudio,
   resolveCoachPlaybackUrl,
 } from "@/lib/coach-audio-playback";
-import {
-  generateTts,
-  resolveClientPlaybackUrl,
-} from "@/lib/tts-playback";
+import { prefetchStreamingChunk } from "@/lib/amy-voice-stream-player";
+import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
 import { warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
 import { preloadStaticPhrases, lookupStaticAudioUrl } from "@/lib/static-audio";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
@@ -473,25 +471,17 @@ export function prefetchLessonParagraph(
       }
       if (shouldSkipLiveTtsApi() || isSafeModeActive() || isCacheDisabled() || isSlowNetwork()) return;
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8_000);
-      const data = await generateTts(
+      prefetchStreamingChunk(
         authFetch,
         {
           text: identity.text,
-          voiceId,
-          modelId,
+          voiceId: voiceId ?? AMY_TTS_VOICE_ID,
+          modelId: modelId ?? AMY_TTS_MODEL_ID,
           mode: policy.pipelineMode,
         },
-        { signal: controller.signal },
-      ).finally(() => clearTimeout(timer));
-
-      if (data?.success && data.cacheKey && data.audioUrl) {
-        const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
-        if (playbackUrl) {
-          void warmLocalCacheFromUrl(lessonLocalCacheKey(identity, policy.pipelineMode), playbackUrl);
-        }
-      }
+        cacheKey,
+        "partial-ok",
+      );
     } catch {
       /* best-effort prefetch */
     } finally {
@@ -557,25 +547,17 @@ export function prefetchParentHubItem(
       }
       if (shouldSkipLiveTtsApi() || isSafeModeActive() || isCacheDisabled() || isSlowNetwork()) return;
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8_000);
-      const data = await generateTts(
+      prefetchStreamingChunk(
         authFetch,
         {
           text: identity.text,
-          voiceId,
-          modelId,
+          voiceId: voiceId ?? AMY_TTS_VOICE_ID,
+          modelId: modelId ?? AMY_TTS_MODEL_ID,
           mode: policy.pipelineMode,
         },
-        { signal: controller.signal },
-      ).finally(() => clearTimeout(timer));
-
-      if (data?.success && data.cacheKey && data.audioUrl) {
-        const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
-        if (playbackUrl) {
-          void warmLocalCacheFromUrl(parentHubLocalCacheKey(identity), playbackUrl);
-        }
-      }
+        cacheKey,
+        "partial-ok",
+      );
     } catch {
       /* best-effort prefetch */
     } finally {

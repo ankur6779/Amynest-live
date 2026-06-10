@@ -321,6 +321,7 @@ export function DailyStorySection({
       storyIds: pool.slice(0, 5).map((s) => s.id),
       ageMonths,
     });
+    enqueueBehaviorWarmup(authFetch, "parent_hub", { ageMonths });
   }, [authFetch, ageMonths, pool]);
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -356,7 +357,7 @@ export function DailyStorySection({
     void speak(identity.text, {
       parentHub: true,
       audioIdentity: identity,
-      playbackMode: "full-required",
+      waitUntilEnd: true,
       narration: true,
     }).then((res) => {
       if (!res?.success) console.warn("TTS failed, skipping audio flow:", res?.error);

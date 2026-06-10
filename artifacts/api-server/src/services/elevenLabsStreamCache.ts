@@ -27,6 +27,15 @@ import {
 import { recordTtsLatencySample } from "./ttsLatencyMetrics.js";
 import { VOICE_SETTINGS } from "./elevenLabsVoiceSettings.js";
 
+type LiveFanout = {
+  chunks: Buffer[];
+  waiters: Array<{ resolve: (chunk: Buffer | null) => void }>;
+  done: boolean;
+  error: Error | null;
+};
+
+const liveFanouts = new Map<string, LiveFanout>();
+
 export interface ElevenLabsLiveTtsParams {
   text: string;
   voiceId: string;
@@ -49,7 +58,11 @@ function buildElevenLabsStreamUrl(voiceId: string): string {
   return `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream?${params}`;
 }
 
-function serveBufferChunked(res: ExpressResponse, buffer: Buffer, immutable: boolean): void {
+async function serveBufferChunked(
+  res: ExpressResponse,
+  buffer: Buffer,
+  immutable: boolean,
+): Promise<void> {
   if (res.headersSent) return;
   res.status(200);
   res.setHeader("Content-Type", "audio/mpeg");
@@ -63,8 +76,11 @@ function serveBufferChunked(res: ExpressResponse, buffer: Buffer, immutable: boo
   let offset = 0;
   while (offset < buffer.byteLength) {
     const end = Math.min(offset + CHUNK_WRITE_BYTES, buffer.byteLength);
-    if (!res.write(buffer.subarray(offset, end))) break;
+    const ok = res.write(buffer.subarray(offset, end));
     offset = end;
+    if (!ok) {
+      await new Promise<void>((resolve) => res.once("drain", resolve));
+    }
   }
   res.end();
 }
@@ -83,7 +99,8 @@ async function streamUpstreamToClient(
   res: ExpressResponse,
   upstream: Response,
   cacheKey: string,
-): Promise<Buffer> {
+  fanout?: LiveFanout,
+): Promise<{ buffer: Buffer; firstAudioMs: number }> {
   if (!upstream.body) throw new Error("elevenlabs_empty_body");
 
   if (!res.headersSent) {
@@ -97,11 +114,14 @@ async function streamUpstreamToClient(
   const reader = upstream.body.getReader();
   const chunks: Buffer[] = [];
   let total = 0;
+  let firstAudioMs = 0;
+  const streamStarted = performance.now();
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     if (!value?.length) continue;
+    if (firstAudioMs === 0) firstAudioMs = Math.round(performance.now() - streamStarted);
     total += value.byteLength;
     if (total > MAX_BUFFER_BYTES) {
       reader.cancel().catch(() => {});
@@ -109,19 +129,57 @@ async function streamUpstreamToClient(
     }
     const buf = Buffer.from(value);
     chunks.push(buf);
+    fanout?.chunks.push(buf);
+    for (const waiter of fanout?.waiters ?? []) {
+      waiter.resolve(buf);
+    }
     if (!res.write(buf)) {
       await new Promise<void>((resolve) => res.once("drain", resolve));
     }
   }
   res.end();
+  if (fanout) {
+    fanout.done = true;
+    for (const waiter of fanout.waiters) waiter.resolve(null);
+    fanout.waiters.length = 0;
+  }
 
   const buffer = Buffer.concat(chunks);
   if (!buffer.byteLength) throw new Error("elevenlabs_empty_audio");
   logger.info(
-    { evt: "elevenlabs.stream_complete", cacheKey, bytes: buffer.byteLength },
+    { evt: "elevenlabs.stream_complete", cacheKey, bytes: buffer.byteLength, firstAudioMs },
     "ElevenLabs stream complete",
   );
-  return buffer;
+  return { buffer, firstAudioMs };
+}
+
+async function streamLiveFanoutToClient(res: ExpressResponse, fanout: LiveFanout): Promise<void> {
+  if (!res.headersSent) {
+    res.status(200);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "no-cache, no-store");
+    res.setHeader("Transfer-Encoding", "chunked");
+  }
+  for (const chunk of fanout.chunks) {
+    if (!res.write(chunk)) {
+      await new Promise<void>((resolve) => res.once("drain", resolve));
+    }
+  }
+  if (fanout.done) {
+    res.end();
+    return;
+  }
+  while (!fanout.done) {
+    const chunk = await new Promise<Buffer | null>((resolve) => {
+      fanout.waiters.push({ resolve });
+    });
+    if (chunk == null) break;
+    if (!res.write(chunk)) {
+      await new Promise<void>((resolve) => res.once("drain", resolve));
+    }
+  }
+  if (!res.writableEnded) res.end();
 }
 
 async function fetchElevenLabsStream(
@@ -168,36 +226,50 @@ function startElevenLabsGeneration(
   const genStarted = performance.now();
 
   const generation = (async (): Promise<Buffer> => {
-    const upstream = await fetchElevenLabsStream(params.text, voiceId, modelId, params.mode);
-    if (!upstream.ok) {
-      const detail = await upstream.text().catch(() => "");
-      throw new Error(`elevenlabs_upstream_${upstream.status}:${detail.slice(0, 120)}`);
-    }
+    const fanout: LiveFanout = { chunks: [], waiters: [], done: false, error: null };
+    liveFanouts.set(params.cacheKey, fanout);
+    try {
+      const upstream = await fetchElevenLabsStream(params.text, voiceId, modelId, params.mode);
+      if (!upstream.ok) {
+        const detail = await upstream.text().catch(() => "");
+        throw new Error(`elevenlabs_upstream_${upstream.status}:${detail.slice(0, 120)}`);
+      }
 
-    const buffer = await streamUpstreamToClient(res, upstream, params.cacheKey);
-    void persistOpenAiTtsCache({
-      cacheKey: params.cacheKey,
-      text: params.text,
-      voiceId,
-      modelId,
-      mode: params.mode,
-      buffer,
-    });
-    if (ctx) {
-      recordTtsCacheMissAndGenerated(ctx.userId, ctx.route, guardPremium);
+      const persistStarted = performance.now();
+      const { buffer, firstAudioMs } = await streamUpstreamToClient(
+        res,
+        upstream,
+        params.cacheKey,
+        fanout,
+      );
+      void persistOpenAiTtsCache({
+        cacheKey: params.cacheKey,
+        text: params.text,
+        voiceId,
+        modelId,
+        mode: params.mode,
+        buffer,
+      });
+      const gcsWriteMs = Math.round(performance.now() - persistStarted);
+      if (ctx) {
+        recordTtsCacheMissAndGenerated(ctx.userId, ctx.route, guardPremium);
+      }
+      recordTtsLatencySample({
+        route: ctx?.route ?? "tts/stream",
+        provider: "elevenlabs",
+        cacheHit: false,
+        generationMs: Math.round(performance.now() - genStarted),
+        firstAudioMs,
+        streaming: true,
+        modelId,
+        voiceId,
+        charCount: params.text.length,
+        gcsWriteMs,
+      });
+      return buffer;
+    } finally {
+      liveFanouts.delete(params.cacheKey);
     }
-    recordTtsLatencySample({
-      route: ctx?.route ?? "tts/stream",
-      provider: "elevenlabs",
-      cacheHit: false,
-      generationMs: Math.round(performance.now() - genStarted),
-      firstAudioMs: Math.round(performance.now() - genStarted),
-      streaming: true,
-      modelId,
-      voiceId,
-      charCount: params.text.length,
-    });
-    return buffer;
   })();
 
   elevenInflight.set(params.cacheKey, generation);
@@ -244,7 +316,7 @@ export async function streamElevenLabsTtsWithCache(
   const cached = await readCachedBuffer(params.cacheKey);
   if (cached) {
     if (ctx) recordTtsCacheHit(ctx.userId, ctx.route);
-    serveBufferChunked(res, cached, true);
+    await serveBufferChunked(res, cached, true);
     recordTtsLatencySample({
       route: ctx?.route ?? "tts/stream",
       provider: "cache",
@@ -271,10 +343,21 @@ export async function streamElevenLabsTtsWithCache(
   }
 
   const inflight = elevenInflight.get(params.cacheKey);
+  const live = liveFanouts.get(params.cacheKey);
+  if (live) {
+    try {
+      await streamLiveFanoutToClient(res, live);
+      if (ctx) recordTtsCacheHit(ctx.userId, ctx.route);
+      return true;
+    } catch (err) {
+      failPlayback(res, err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  }
   if (inflight) {
     try {
       const buffer = await inflight;
-      serveBufferChunked(res, buffer, true);
+      await serveBufferChunked(res, buffer, true);
       if (ctx) recordTtsCacheHit(ctx.userId, ctx.route);
       return true;
     } catch (err) {

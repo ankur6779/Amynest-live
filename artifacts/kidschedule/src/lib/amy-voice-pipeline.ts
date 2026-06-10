@@ -157,6 +157,7 @@ import {
   resolveAdaptiveTtsSpeed,
   supportsStreamingPlayback,
 } from "@/lib/amy-voice-stream-player";
+import { flushUserTtsTimings } from "@/lib/tts-user-perceived-metrics";
 import {
   isStreamingTemporarilyDisabled,
 } from "@/lib/amy-voice-audio-guard";
@@ -974,6 +975,7 @@ async function attemptOpenAiPlay(
           streaming: true,
           ttfaMs: stream.metrics.ttfaMs,
         });
+        void flushUserTtsTimings(ctx.authFetch);
         if (opts?.coach && isCoachAudioIdentity(opts.audioIdentity)) {
           void generateCoachWinAudio(ctx.authFetch, {
             planCacheKey: opts.audioIdentity.planCacheKey,

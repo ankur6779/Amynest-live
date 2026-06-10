@@ -1215,7 +1215,7 @@ function OrigamiStepsModal({
       void speak(identity.text, {
         parentHub: true,
         audioIdentity: identity,
-        playbackMode: "full-required",
+        waitUntilEnd: true,
         onFinished: opts?.onFinished,
       });
     },

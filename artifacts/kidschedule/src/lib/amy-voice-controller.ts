@@ -97,7 +97,6 @@ import { resolveApiMediaUrl } from "@/lib/api";
 import { audioManager, type AudioSrcType } from "@/lib/audio-manager";
 import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
 import {
-  generateTts,
   resolveClientPlaybackUrl,
 } from "@/lib/tts-playback";
 import { prepareRemotePlaybackAudio } from "@/lib/static-audio";
@@ -977,26 +976,28 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
   ): Promise<{ url: string; cacheKey?: string } | null> {
     const trimmed = (text ?? "").trim();
     if (!trimmed) return null;
-    const data = await generateTts(
+    const { streamTtsToObjectUrl } = await import("@/lib/amy-voice-stream-player");
+    const data = await streamTtsToObjectUrl(
       authFetch,
-      { text: trimmed, category: init?.category ?? "words" },
-      { signal: init?.signal },
+      { text: trimmed, category: init?.category ?? "words", playbackMode: "partial-ok" },
+      { signal: init?.signal, feature: init?.category ?? "narration" },
     );
-    if (!data?.success || !data.audioUrl) {
+    if (!data.ok) {
       emitAudioPlaybackEvent("audio_failed", {
         source: "amy_voice",
         phrase: trimmed.slice(0, 80),
-        error: data?.error ?? "tts_failed",
+        error: data.error ?? "tts_failed",
       });
       return null;
     }
-    const url =
-      resolveClientPlaybackUrl(data.audioUrl, data.cacheKey) ?? data.audioUrl;
+    const url = data.cacheKey
+      ? (resolveClientPlaybackUrl(`/api/tts/audio/${data.cacheKey}.mp3`, data.cacheKey) ?? data.url)
+      : data.url;
     emitAudioPlaybackEvent("source_selected", {
       source: "tts",
       phrase: trimmed.slice(0, 80),
       proxyUrl: url.slice(0, 120),
-      layer: data.cached ? "cache" : "api",
+      layer: "api",
     });
     return { url, cacheKey: data.cacheKey };
   }

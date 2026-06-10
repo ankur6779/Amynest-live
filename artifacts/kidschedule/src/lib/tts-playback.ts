@@ -4,15 +4,13 @@ import {
   isCatalogPhrase,
   logDynamicTtsViolation,
 } from "@/lib/static-audio";
-import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
-import { getTtsRequestTimeoutMs } from "@/lib/tts-guard";
+import type { AuthFetchFn } from "@/lib/poll-result";
 import {
   isApiBackoffActive,
   recordApiBackoffFailure,
   resetApiBackoff,
   waitForApiBackoff,
 } from "@/lib/amy-voice-api-backoff";
-import { runTtsGenerateRequest } from "@/lib/tts-generate-queue";
 import { ttsCrossTabLockKey, withCrossTabTtsLock } from "@/lib/tts-cross-tab-coord";
 import { shouldSkipLiveTtsApi } from "@/lib/amy-voice-circuit";
 import {
@@ -22,6 +20,7 @@ import {
   formatBlendLine,
 } from "@workspace/phonics-sounds";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
+import { streamTtsToObjectUrl } from "@/lib/amy-voice-stream-player";
 
 const LOG = "[TTS]";
 
@@ -67,8 +66,26 @@ function resolvePhrase(body: Record<string, unknown>): string {
   return getPhonicsAudioText(raw) || raw;
 }
 
+function buildStreamPayload(body: Record<string, unknown>, phrase: string, mode: StaticAudioMode) {
+  const voiceOverride = String(body.voice ?? body.voiceId ?? "").trim();
+  const modelOverride = String(body.model ?? body.modelId ?? "").trim();
+  return {
+    text: phrase,
+    letter: String(body.letter ?? "").trim() || undefined,
+    phoneme: String(body.phoneme ?? "").trim() || undefined,
+    word: String(body.word ?? "").trim().toLowerCase() || undefined,
+    blend: String(body.blend ?? "").trim().toLowerCase() || undefined,
+    speed: body.speed ?? 0.9,
+    mode,
+    category: body.category ?? (mode === "phonics" ? "phonics" : "words"),
+    voiceId: voiceOverride || undefined,
+    modelId: modelOverride || undefined,
+    playbackMode: "partial-ok" as const,
+  };
+}
+
 /**
- * Unified TTS — always POST /api/tts/generate (OpenAI, cache-first).
+ * Unified TTS — stream-first via POST /api/tts/stream (ElevenLabs progressive).
  */
 export async function generateTts(
   authFetch: AuthFetchFn,
@@ -99,63 +116,30 @@ export async function generateTts(
   }
 
   try {
-    const voiceOverride = String(body.voice ?? body.voiceId ?? "").trim();
-    const payload: Record<string, unknown> = {
-      text: phrase,
-      letter: letterKey || undefined,
-      phoneme: phonemeKey || undefined,
-      word: cvcWord || undefined,
-      blend: blendWord || undefined,
-      speed: body.speed ?? 0.9,
-      mode,
-      category: body.category ?? (mode === "phonics" ? "phonics" : "words"),
-    };
-    // Omit voice when unset — server uses OPENAI_TTS_VOICE (coral/nova female default).
-    // Never default to "alloy" here; it sounds male/neutral and bypasses server config.
-    if (voiceOverride) payload.voice = voiceOverride;
-
-    const res = await withCrossTabTtsLock(ttsCrossTabLockKey(payload), () =>
-      runTtsGenerateRequest(() =>
-        authFetch(
-          "/api/tts/generate",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...init?.headers },
-            body: JSON.stringify(payload),
-            signal: init?.signal,
-          },
-          getTtsRequestTimeoutMs(),
-        ),
-      ),
+    const payload = buildStreamPayload(body, phrase, mode);
+    const result = await withCrossTabTtsLock(ttsCrossTabLockKey(payload), () =>
+      streamTtsToObjectUrl(authFetch, payload, {
+        signal: init?.signal ?? undefined,
+        feature: String(body.category ?? mode),
+      }),
     );
-    if (res.status !== 202 && !res.ok) {
+
+    if (!result.ok) {
       recordApiBackoffFailure();
-      const errBody = (await res.json().catch(() => ({}))) as { error?: string };
-      return { success: false, ok: false, error: errBody.error ?? `generate_failed_${res.status}` };
+      return { success: false, ok: false, error: result.error };
     }
-    const data = await readResolvedApiJson<{
-      ok?: boolean;
-      url?: string;
-      audioUrl?: string;
-      cacheKey?: string;
-      cached?: boolean;
-      error?: string;
-    }>(res, authFetch, { poll: { maxAttempts: 25, intervalMs: 1500 } }).catch(() => null);
-    if (!data?.ok) {
-      recordApiBackoffFailure();
-      return { success: false, ok: false, error: data?.error ?? `generate_failed_${res.status}` };
-    }
+
     resetApiBackoff();
-    const audioUrl = data.url ?? data.audioUrl;
-    if (!isValidAudioUrl(audioUrl)) {
-      return { success: false, ok: false, error: "tts_invalid_audio_url" };
-    }
+    const proxyUrl = result.cacheKey
+      ? resolveTtsAudioUrl(`/api/tts/audio/${result.cacheKey}.mp3`)
+      : result.url;
+
     return {
       success: true,
       ok: true,
-      audioUrl,
-      cacheKey: data.cacheKey,
-      cached: data.cached,
+      audioUrl: proxyUrl,
+      cacheKey: result.cacheKey,
+      cached: result.cached,
     };
   } catch {
     recordApiBackoffFailure();
@@ -163,10 +147,10 @@ export async function generateTts(
   }
 }
 
-/** @deprecated Alias — all callers should use generateTts. */
+/** @deprecated Alias — routes through stream-first generateTts. */
 export const synthesizeTtsWithBackgroundPoll = generateTts;
 
-/** @deprecated Alias — all callers should use generateTts. */
+/** @deprecated Alias — routes through stream-first generateTts. */
 export const synthesizeTts = generateTts;
 
 export function resolveTtsAudioUrl(audioUrl: string): string {

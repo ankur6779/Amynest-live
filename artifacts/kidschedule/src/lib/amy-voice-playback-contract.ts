@@ -61,23 +61,18 @@ export function resolvePlaybackMode(opts?: PlaybackModeInput): PlaybackMode {
   return "partial-ok";
 }
 
-/** ONLY gate for streaming eligibility — do not scatter other checks. */
-export function canUseStreaming(mode: PlaybackMode): boolean {
-  return mode === "partial-ok";
+/** Streaming allowed for all modes — full-required completion is enforced separately. */
+export function canUseStreaming(_mode: PlaybackMode): boolean {
+  return true;
 }
 
 export function requiresFullPlayback(mode: PlaybackMode): boolean {
   return mode === "full-required";
 }
 
-/** Dev-only hard block: streaming must never run for full-required playback. */
-export function assertStreamingAllowed(mode: PlaybackMode, streamingEnabled: boolean): void {
-  if (!import.meta.env.DEV) return;
-  if (mode === "full-required" && streamingEnabled) {
-    throw new Error(
-      "Streaming not allowed for full-required playback — use complete audio download",
-    );
-  }
+/** Dev-only: streaming is allowed for all playback modes when using progressive MSE pipeline. */
+export function assertStreamingAllowed(_mode: PlaybackMode, _streamingEnabled: boolean): void {
+  /* no-op — progressive streaming is safe for full-required via MediaSource + completion polling */
 }
 
 export function getExpectedAudioDurationSec(audio: HTMLAudioElement): number {

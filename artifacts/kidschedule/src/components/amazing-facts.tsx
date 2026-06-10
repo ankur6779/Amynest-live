@@ -173,7 +173,7 @@ export function AmazingFacts({
     void speak(identity.text, {
       parentHub: true,
       audioIdentity: identity,
-      playbackMode: "full-required",
+      waitUntilEnd: true,
     }).then(() => {
       setPlayingId(null);
     });

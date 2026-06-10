@@ -51,15 +51,13 @@ describe("amy-voice-playback-contract", () => {
     ).toBe("partial-ok");
   });
 
-  it("canUseStreaming is only true for partial-ok", () => {
+  it("canUseStreaming is true for all playback modes", () => {
     expect(canUseStreaming("partial-ok")).toBe(true);
-    expect(canUseStreaming("full-required")).toBe(false);
+    expect(canUseStreaming("full-required")).toBe(true);
   });
 
-  it("assertStreamingAllowed throws in dev for full-required + streaming", () => {
-    expect(() => assertStreamingAllowed("full-required", true)).toThrow(
-      /Streaming not allowed/,
-    );
+  it("assertStreamingAllowed is a no-op for progressive streaming", () => {
+    expect(() => assertStreamingAllowed("full-required", true)).not.toThrow();
     expect(() => assertStreamingAllowed("partial-ok", true)).not.toThrow();
   });
 
@@ -271,14 +269,14 @@ describe("amy-voice-playback-contract", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("full-required blocks streaming via canUseStreaming", () => {
+  it("full-required still allows streaming via canUseStreaming", () => {
     const lessonMode = resolvePlaybackMode({
       lessonParagraph: true,
       playbackMode: "full-required",
       waitUntilEnd: true,
     });
     expect(lessonMode).toBe("full-required");
-    expect(canUseStreaming(lessonMode)).toBe(false);
+    expect(canUseStreaming(lessonMode)).toBe(true);
   });
 
   it("partial ~4KB stream ended early must NOT complete full-required lesson before 98%", async () => {
@@ -339,14 +337,17 @@ describe("amy-voice-playback-contract", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("playStreamingTts rejects full-required mode (dev guard)", async () => {
+  it("playStreamingTts allows full-required mode with progressive pipeline", async () => {
     const { playStreamingTts } = await import("@/lib/amy-voice-stream-player");
-    const authFetch = vi.fn();
-    await expect(
-      playStreamingTts(authFetch, { text: "lesson paragraph" }, {
-        playbackMode: "full-required",
-      }),
-    ).rejects.toThrow(/Streaming not allowed/);
-    expect(authFetch).not.toHaveBeenCalled();
+    const authFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      body: null,
+    });
+    const result = await playStreamingTts(authFetch, { text: "lesson paragraph" }, {
+      playbackMode: "full-required",
+    });
+    expect(result.ok).toBe(false);
+    expect(authFetch).toHaveBeenCalled();
   });
 });

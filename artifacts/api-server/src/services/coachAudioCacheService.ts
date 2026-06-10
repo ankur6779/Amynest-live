@@ -4,8 +4,9 @@ import { logger } from "../lib/logger.js";
 import { isPregenerationPaused } from "./admin-ops-store.js";
 import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 import { readCachedAudio, trySynthesizeFromCache } from "./ttsCacheService.js";
-import { generateOpenAiTts } from "./ttsGenerate.js";
+import { synthesizeElevenLabsFallback } from "./elevenLabsFallbackService.js";
 import { isValidTtsPublicUrl, resolveTtsPlaybackUrl } from "./ttsAudioStore.js";
+import { recordCoachCacheMetric } from "./ttsLatencyMetrics.js";
 import {
   buildCoachWinListenText,
   hashCoachListenText,
@@ -133,21 +134,36 @@ export async function generateAndCacheCoachWinAudio(
   if (!text) return null;
 
   const hit = await tryCoachWinAudioFromCache(input);
-  if (hit) return hit;
+  if (hit) {
+    recordCoachCacheMetric({
+      planCacheKey: input.planCacheKey,
+      winIndex: input.winIndex,
+      cacheHit: true,
+      generationMs: 0,
+    });
+    return hit;
+  }
 
   const textHash = hashCoachListenText(text);
   const voiceId = getAmyTtsVoiceId();
+  const modelId = getAmyTtsModelId();
+  const genStarted = performance.now();
 
-  const generated = await generateOpenAiTts({
-    text,
-    voice: voiceId,
+  const generated = await synthesizeElevenLabsFallback(text, {
+    voiceId,
+    modelId,
     mode: "default",
-    category: "sentences",
   });
-  if (!generated || !isValidTtsPublicUrl(generated.url)) return null;
+  if (!generated || !isValidTtsPublicUrl(generated.audioUrl)) return null;
 
-  const audioUrl = resolveTtsPlaybackUrl(generated.cacheKey) ?? generated.url;
+  const audioUrl = resolveTtsPlaybackUrl(generated.cacheKey) ?? generated.audioUrl;
   const playbackPath = `/api/tts/audio/${generated.cacheKey}.mp3`;
+  recordCoachCacheMetric({
+    planCacheKey: input.planCacheKey,
+    winIndex: input.winIndex,
+    cacheHit: generated.cached,
+    generationMs: Math.round(performance.now() - genStarted),
+  });
 
   try {
     await db

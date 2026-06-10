@@ -146,7 +146,6 @@ function ArticleModal({
     void speak(identity.text, {
       parentHub: true,
       audioIdentity: identity,
-      playbackMode: "full-required",
       waitUntilEnd: autoAdvanceRef.current,
       onFinished: autoAdvanceRef.current ? handleFinished : undefined,
     }).then((res) => {

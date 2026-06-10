@@ -32,6 +32,7 @@ import {
   isTtsRateLimitedError,
   ttsRateLimitResponseBody,
 } from "../services/ttsCostGuardService.js";
+import { recordUserTtsClientMetrics } from "../services/ttsLatencyMetrics.js";
 
 export const ttsPublicRouter: IRouter = Router();
 
@@ -487,6 +488,42 @@ router.post("/tts/telemetry", async (req, res): Promise<void> => {
   }
 
   const { accepted } = ingestTtsTelemetry(parsed.data.events);
+  res.status(202).json({ ok: true, accepted });
+});
+
+const clientMetricSchema = z.object({
+  route: z.string().min(1).max(64),
+  feature: z.string().max(64).optional(),
+  requestStartMs: z.number().min(0).max(120_000),
+  firstNetworkByteMs: z.number().min(0).max(120_000).nullable(),
+  firstPlayableByteMs: z.number().min(0).max(120_000).nullable(),
+  downloadCompleteMs: z.number().min(0).max(120_000).nullable(),
+  userPlaybackStartMs: z.number().min(0).max(120_000).nullable(),
+  userFirstAudioHeardMs: z.number().min(0).max(120_000).nullable(),
+  playbackStartedBeforeDownloadComplete: z.boolean(),
+  streamingUsed: z.boolean(),
+  cacheKey: z.string().max(128).optional(),
+});
+
+const clientMetricsBodySchema = z.object({
+  samples: z.array(clientMetricSchema).min(1).max(50),
+});
+
+/** POST /api/tts/client-metrics — user-perceived TTFA from browser. */
+router.post("/tts/client-metrics", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = clientMetricsBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const accepted = recordUserTtsClientMetrics(parsed.data.samples);
   res.status(202).json({ ok: true, accepted });
 });
 
