@@ -6,6 +6,9 @@ import {
   isMseStreamingEnabled,
   playStreamingTts,
   streamTtsToObjectUrl,
+  storeCompletePrefetch,
+  storePartialPrefetch,
+  takePartialPrefetch,
   STREAM_MIN_START_BYTES,
 } from "@/lib/amy-voice-stream-player";
 import { resetAdminAudioOpsForTests } from "@/lib/admin-audio-ops";
@@ -66,5 +69,32 @@ describe("amy-voice-stream-player outage recovery", () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("stream_failed");
+  });
+
+  it("ignores partial prefetch blobs (prevents mid-phrase truncation)", async () => {
+    const key = "test:partial";
+    storePartialPrefetch(key, new Blob([new Uint8Array(STREAM_MIN_START_BYTES + 512)], { type: "audio/mpeg" }));
+    expect(takePartialPrefetch(key)).toBeNull();
+  });
+
+  it("plays complete prefetch blobs on repeat taps", async () => {
+    const key = "test:complete";
+    const blob = new Blob([new Uint8Array(STREAM_MIN_START_BYTES + 512)], { type: "audio/mpeg" });
+    storeCompletePrefetch(key, blob);
+
+    const authFetch = vi.fn();
+    const audioPlay = vi.spyOn(
+      (await import("@/lib/audio-manager")).audioManager,
+      "play",
+    ).mockResolvedValue(true);
+
+    const result = await playStreamingTts(authFetch, { text: "hello" }, {
+      cacheKeyHint: key,
+      playbackMode: "partial-ok",
+    });
+    expect(result.ok).toBe(true);
+    expect(authFetch).not.toHaveBeenCalled();
+    expect(takePartialPrefetch(key)).toBeNull();
+    audioPlay.mockRestore();
   });
 });

@@ -43,7 +43,8 @@ export type StreamPlayResult =
     }
   | { ok: false; error: string; metrics?: Partial<StreamPlayMetrics> };
 
-const partialChunkCache = new Map<string, Blob>();
+type PrefetchEntry = { blob: Blob; complete: boolean };
+const partialChunkCache = new Map<string, PrefetchEntry>();
 const streamPenalties = new Map<string, number>();
 
 export function supportsStreamingPlayback(): boolean {
@@ -104,16 +105,26 @@ export function penalizeStreamingLayer(cacheKey: string, ms = 30_000): void {
   streamPenalties.set(cacheKey, Date.now() + ms);
 }
 
+/** Network warm chunk — must not be played (truncates mid-phrase). */
 export function storePartialPrefetch(cacheKey: string, blob: Blob): void {
   if (blob.size >= STREAM_MIN_START_BYTES) {
-    partialChunkCache.set(cacheKey, blob);
+    partialChunkCache.set(cacheKey, { blob, complete: false });
   }
 }
 
+/** Full MP3 after drain — safe for instant replay on repeat taps. */
+export function storeCompletePrefetch(cacheKey: string, blob: Blob): void {
+  if (blob.size >= STREAM_MIN_START_BYTES) {
+    partialChunkCache.set(cacheKey, { blob, complete: true });
+  }
+}
+
+/** Only returns fully-drained prefetches — partial warm chunks are ignored. */
 export function takePartialPrefetch(cacheKey: string): Blob | null {
-  const blob = partialChunkCache.get(cacheKey);
-  if (blob) partialChunkCache.delete(cacheKey);
-  return blob ?? null;
+  const entry = partialChunkCache.get(cacheKey);
+  if (!entry?.complete) return null;
+  partialChunkCache.delete(cacheKey);
+  return entry.blob;
 }
 
 function attachBufferMonitor(audio: HTMLAudioElement): { getCount: () => number } {
@@ -295,7 +306,7 @@ async function playViaMediaSource(
   return { audio, objectUrl, monitor };
 }
 
-async function playViaPrefixBlob(
+async function playViaFullBlob(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   ctx: ProgressiveCtx,
   signal?: AbortSignal,
@@ -303,40 +314,23 @@ async function playViaPrefixBlob(
   audio: HTMLAudioElement;
   objectUrl: string;
   monitor: ReturnType<typeof attachBufferMonitor>;
-  activeReader: ReadableStreamDefaultReader<Uint8Array>;
-  prefixChunks: Uint8Array[];
+  blob: Blob;
 }> {
-  const prefixChunks: Uint8Array[] = [];
-  let total = 0;
-  while (total < STREAM_MIN_START_BYTES) {
-    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value?.length) {
-      markFirstByte(ctx);
-      prefixChunks.push(value);
-      total += value.length;
-      ctx.totalBytes += value.length;
-    }
-  }
-  if (total < 256) throw new Error("stream_too_short");
-
-  const initialBlob = new Blob(prefixChunks as BlobPart[], { type: "audio/mpeg" });
-  const objectUrl = URL.createObjectURL(initialBlob);
+  logMseTransition("blob_fallback", { path: "full_blob" });
+  const blob = await drainReaderToBlob(reader, ctx, signal);
+  const objectUrl = URL.createObjectURL(blob);
   const audio = audioManager.create(objectUrl);
   configureMobileAudioElement(audio);
   const monitor = attachBufferMonitor(audio);
-
   const played = await audioManager.play(
     audio,
-    { source: "tts_stream", proxyUrl: objectUrl, srcType: "tts" },
+    { source: "tts_stream_blob", proxyUrl: objectUrl, srcType: "tts" },
     { channel: "speech", interrupt: true, maxRetries: 1 },
   );
   if (played && ctx.userPlaybackStartMs == null) {
     ctx.userPlaybackStartMs = Date.now() - ctx.startedAt;
   }
-
-  return { audio, objectUrl, monitor, activeReader: reader, prefixChunks };
+  return { audio, objectUrl, monitor, blob };
 }
 
 async function drainReaderToBlob(
@@ -362,28 +356,6 @@ async function drainReaderToBlob(
   }
   if (total < 256) throw new Error("stream_too_short");
   return new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
-}
-
-async function playViaFullBlob(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  ctx: ProgressiveCtx,
-  signal?: AbortSignal,
-): Promise<{ audio: HTMLAudioElement; objectUrl: string; monitor: ReturnType<typeof attachBufferMonitor> }> {
-  logMseTransition("blob_fallback", { path: "full_blob" });
-  const blob = await drainReaderToBlob(reader, ctx, signal);
-  const objectUrl = URL.createObjectURL(blob);
-  const audio = audioManager.create(objectUrl);
-  configureMobileAudioElement(audio);
-  const monitor = attachBufferMonitor(audio);
-  const played = await audioManager.play(
-    audio,
-    { source: "tts_stream_blob", proxyUrl: objectUrl, srcType: "tts" },
-    { channel: "speech", interrupt: true, maxRetries: 1 },
-  );
-  if (played && ctx.userPlaybackStartMs == null) {
-    ctx.userPlaybackStartMs = Date.now() - ctx.startedAt;
-  }
-  return { audio, objectUrl, monitor };
 }
 
 type StreamFetchResult = {
@@ -509,7 +481,7 @@ export async function playStreamingTts(
           totalBytes: prefetched.size,
         },
         monitor,
-        true,
+        false,
       );
       const userTiming = buildUserTtsTiming(startedAt, {
         route: "tts/stream",
@@ -565,64 +537,23 @@ export async function playStreamingTts(
       }
       ({ reader, cacheKey } = await fetchTtsStream(authFetch, body, opts?.signal));
     } else {
-      logMseTransition("mse_skipped", { reason: "phase1_blob" });
+      logMseTransition("mse_skipped", { reason: "phase1_full_blob" });
     }
 
-    try {
-      const { audio, objectUrl, monitor, activeReader, prefixChunks } = await playViaPrefixBlob(
-        reader,
-        ctx,
-        opts?.signal,
-      );
-
-      void (async () => {
-        try {
-          const chunks = [...prefixChunks];
-          while (true) {
-            const { done, value } = await activeReader.read();
-            if (done) {
-              ctx.downloadCompleteMs = Date.now() - ctx.startedAt;
-              break;
-            }
-            if (value?.length) {
-              chunks.push(value);
-              ctx.totalBytes += value.length;
-            }
-          }
-          if (cacheKey) {
-            storePartialPrefetch(cacheKey, new Blob(chunks as BlobPart[], { type: "audio/mpeg" }));
-          }
-        } catch {
-          /* partial playback continues */
-        }
-      })();
-
-      return finalizeStreamPlayback(
-        audio,
-        objectUrl,
-        monitor,
-        ctx,
-        startedAt,
-        cacheKey,
-        true,
-        opts?.feature,
-      );
-    } catch (prefixErr) {
-      const prefixMsg = prefixErr instanceof Error ? prefixErr.message : String(prefixErr);
-      logMseTransition("blob_fallback", { path: "prefix_failed", error: prefixMsg });
-      ({ reader, cacheKey } = await fetchTtsStream(authFetch, body, opts?.signal));
-      const { audio, objectUrl, monitor } = await playViaFullBlob(reader, ctx, opts?.signal);
-      return finalizeStreamPlayback(
-        audio,
-        objectUrl,
-        monitor,
-        ctx,
-        startedAt,
-        cacheKey,
-        false,
-        opts?.feature,
-      );
+    const { audio, objectUrl, monitor, blob } = await playViaFullBlob(reader, ctx, opts?.signal);
+    if (cacheKey) {
+      storeCompletePrefetch(cacheKey, blob);
     }
+    return finalizeStreamPlayback(
+      audio,
+      objectUrl,
+      monitor,
+      ctx,
+      startedAt,
+      cacheKey,
+      false,
+      opts?.feature,
+    );
   } catch (err) {
     const errName = (err as { name?: string })?.name;
     if (errName === "AbortError") return { ok: false, error: "tts_cancelled" };

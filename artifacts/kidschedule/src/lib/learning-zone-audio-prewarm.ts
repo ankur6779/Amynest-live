@@ -31,6 +31,7 @@ import { getPredictedNextKey, recordPhraseTransition } from "@/lib/amy-voice-pip
 
 export type LearningZoneAudioModule =
   | "smart_math_tricks"
+  | "math_playground"
   | "abacus"
   | "phonics"
   | "spelling"
@@ -205,8 +206,8 @@ function predictLikelyTexts(ctx: LearningZonePrewarmContext): string[] {
   if (ctx.module === "spelling" || ctx.module === "phonics") {
     predicted.push("good job", "try again", "well done");
   }
-  if (ctx.module === "smart_math_tricks" || ctx.module === "abacus") {
-    predicted.push("Correct! Well done!");
+  if (ctx.module === "smart_math_tricks" || ctx.module === "abacus" || ctx.module === "math_playground") {
+    predicted.push("Correct! Well done!", "Great job!");
   }
   if (ctx.module === "learn_with_amy") {
     predicted.push(

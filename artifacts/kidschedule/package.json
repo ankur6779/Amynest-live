@@ -150,6 +150,7 @@
     "@workspace/life-skills": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
     "@workspace/math-tricks": "workspace:*",
+    "@workspace/math-playground": "workspace:*",
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
     "@workspace/parent-hub-journey": "workspace:*",

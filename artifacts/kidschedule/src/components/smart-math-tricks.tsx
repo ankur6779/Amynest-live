@@ -33,6 +33,7 @@ import {
   ParentInsightCard,
   type SceneCompletionSummary,
 } from "@/components/math-animation";
+import { MathPlayground } from "@/components/math-playground";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
@@ -952,7 +953,7 @@ function PracticeTab({
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-type Tab = "today" | "learn" | "practice";
+type Tab = "today" | "learn" | "practice" | "playground";
 interface SmartMathTricksProps {
   childName: string;
   ageYears: number;
@@ -1109,6 +1110,7 @@ export function SmartMathTricks({
     { key: "today", labelKey: "tab_today", icon: "📅" },
     { key: "learn", labelKey: "tab_learn", icon: "📚" },
     { key: "practice", labelKey: "tab_practice", icon: "✏️" },
+    { key: "playground", labelKey: "tab_playground", icon: "🎮" },
   ];
   return <div className="rounded-3xl overflow-hidden" style={{
     background: "linear-gradient(160deg,#451a03 0%,#1c0a00 100%)"
@@ -1148,7 +1150,7 @@ export function SmartMathTricks({
             <button
               key={tabItem.key}
               onClick={() => setTab(tabItem.key)}
-              className="flex-1 py-2 rounded-xl font-bold text-xs transition-all active:scale-95"
+              className="flex-1 py-2 rounded-xl font-bold text-[10px] sm:text-xs transition-all active:scale-95"
               style={{
                 background: tab === tabItem.key ? "rgba(245,158,11,0.3)" : "transparent",
                 color: tab === tabItem.key ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.4)",
@@ -1210,6 +1212,9 @@ export function SmartMathTricks({
             onPracticeResult={handlePracticeResult}
             onSessionComplete={handleSessionComplete}
           />
+        )}
+        {tab === "playground" && (
+          <MathPlayground childName={childName} ageYears={ageYears} childId={childId} />
         )}
       </div>
     </div>;

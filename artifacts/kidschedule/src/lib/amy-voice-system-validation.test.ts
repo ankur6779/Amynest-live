@@ -15,6 +15,7 @@ import {
 } from "@/lib/amy-voice-pipeline-optimizer";
 import {
   storePartialPrefetch,
+  storeCompletePrefetch,
   takePartialPrefetch,
   playStreamingTts,
   STREAM_MIN_START_BYTES,
@@ -91,10 +92,10 @@ describe("TTS system validation", () => {
   });
 
   describe("3. Streaming — TTFA and prefetch", () => {
-    it("prefetch partial blob enables sub-target TTFA", async () => {
+    it("complete prefetch enables instant replay without re-fetch", async () => {
       const key = "test:prefetch";
       const blob = new Blob([new Uint8Array(STREAM_MIN_START_BYTES + 512)], { type: "audio/mpeg" });
-      storePartialPrefetch(key, blob);
+      storeCompletePrefetch(key, blob);
 
       const authFetch = vi.fn();
       const audioPlay = vi.spyOn(
@@ -107,9 +108,10 @@ describe("TTS system validation", () => {
         playbackMode: "partial-ok",
       });
       expect(result.ok).toBe(true);
+      expect(authFetch).not.toHaveBeenCalled();
       if (result.ok) {
         expect(result.metrics.ttfaMs).toBeLessThan(TTFA_TARGET_MS);
-        expect(result.metrics.streamingUsed).toBe(true);
+        expect(result.metrics.streamingUsed).toBe(false);
       }
       expect(takePartialPrefetch(key)).toBeNull();
       audioPlay.mockRestore();

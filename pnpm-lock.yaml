@@ -551,6 +551,9 @@ importers:
       '@workspace/load-forecast':
         specifier: workspace:*
         version: link:../../lib/load-forecast
+      '@workspace/math-playground':
+        specifier: workspace:*
+        version: link:../../lib/math-playground
       '@workspace/math-tricks':
         specifier: workspace:*
         version: link:../../lib/math-tricks
@@ -1502,6 +1505,12 @@ importers:
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../family-routine
+
+  lib/math-playground:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
 
   lib/math-tricks:
     devDependencies:
