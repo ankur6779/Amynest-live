@@ -7,6 +7,7 @@ import { getApiUrl } from "@/lib/api";
 export type AdminAudioOps = {
   disableStreaming: boolean;
   disableApi: boolean;
+  disableMseStreaming: boolean;
   forceEmergencyMode: boolean;
   safeMode: boolean;
   pregenerationPaused: boolean;
@@ -14,6 +15,7 @@ export type AdminAudioOps = {
   cacheDisabled: boolean;
   selfHealEnabled: boolean;
   streamingEnabled: boolean;
+  mseStreamingEnabled: boolean;
   apiEnabled: boolean;
   cacheEnabled: boolean;
   degradedMode: boolean;
@@ -34,6 +36,7 @@ export type AdminAudioOps = {
 let cachedOps: AdminAudioOps = {
   disableStreaming: false,
   disableApi: false,
+  disableMseStreaming: true,
   forceEmergencyMode: false,
   safeMode: false,
   pregenerationPaused: false,
@@ -41,6 +44,7 @@ let cachedOps: AdminAudioOps = {
   cacheDisabled: false,
   selfHealEnabled: true,
   streamingEnabled: true,
+  mseStreamingEnabled: false,
   apiEnabled: true,
   cacheEnabled: true,
   degradedMode: false,
@@ -60,6 +64,11 @@ export function getAdminAudioOps(): AdminAudioOps {
 
 export function isAdminStreamingDisabled(): boolean {
   return cachedOps.disableStreaming;
+}
+
+/** Runtime MSE kill switch — polled from /api/audio-ops (no redeploy). */
+export function isAdminMseStreamingDisabled(): boolean {
+  return cachedOps.disableMseStreaming !== false;
 }
 
 export function isAdminApiDisabled(): boolean {
@@ -119,7 +128,12 @@ async function fetchOps(): Promise<void> {
     const ops = (await res.json()) as AdminAudioOps;
     cachedOps = {
       ...ops,
+      disableMseStreaming:
+        ops.disableMseStreaming ??
+        (ops.mseStreamingEnabled === true ? false : true),
       streamingEnabled: ops.streamingEnabled ?? !ops.disableStreaming,
+      mseStreamingEnabled:
+        ops.mseStreamingEnabled ?? ops.disableMseStreaming === false,
       apiEnabled: ops.apiEnabled ?? !ops.disableApi,
       safeMode: ops.safeMode ?? false,
       pregenerationPaused: ops.pregenerationPaused ?? false,
@@ -172,6 +186,7 @@ export function resetAdminAudioOpsForTests(): void {
   cachedOps = {
     disableStreaming: false,
     disableApi: false,
+    disableMseStreaming: true,
     forceEmergencyMode: false,
     safeMode: false,
     pregenerationPaused: false,
@@ -179,6 +194,7 @@ export function resetAdminAudioOpsForTests(): void {
     cacheDisabled: false,
     selfHealEnabled: true,
     streamingEnabled: true,
+    mseStreamingEnabled: false,
     apiEnabled: true,
     cacheEnabled: true,
     degradedMode: false,

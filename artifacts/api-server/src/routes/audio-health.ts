@@ -51,6 +51,8 @@ const actionSchema = z.object({
   action: z.enum([
     "disable_streaming",
     "enable_streaming",
+    "disable_mse_streaming",
+    "enable_mse_streaming",
     "disable_api",
     "enable_api",
     "clear_cache",

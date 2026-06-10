@@ -13,6 +13,7 @@ import {
   recordUserTtsTiming,
   type UserTtsTimingSample,
 } from "@/lib/tts-user-perceived-metrics";
+import { getAdminAudioOps, isAdminMseStreamingDisabled } from "@/lib/admin-audio-ops";
 
 export const STREAM_MIN_START_BYTES = 2048;
 export const STREAM_PREFETCH_BYTES = 8192;
@@ -57,6 +58,35 @@ export function supportsMediaSourceMpeg(): boolean {
     return MediaSource.isTypeSupported("audio/mpeg");
   } catch {
     return false;
+  }
+}
+
+/** Phase-2 MSE opt-in — default OFF (Phase-1 blob playback) for outage safety. */
+export function isMseStreamingEnabled(): boolean {
+  if (!supportsMediaSourceMpeg()) return false;
+  if (isAdminMseStreamingDisabled()) return false;
+  if (getAdminAudioOps().mseStreamingEnabled) return true;
+  const envFlag = import.meta.env.VITE_ENABLE_MSE_STREAMING;
+  if (envFlag === "false" || envFlag === "0") return false;
+  if (envFlag === "true" || envFlag === "1") return true;
+  return false;
+}
+
+type MseTransition =
+  | "mse_skipped"
+  | "sourceopen"
+  | "sourcebuffer_created"
+  | "append_ok"
+  | "updateend"
+  | "playback_start"
+  | "end_of_stream"
+  | "mse_failed"
+  | "mse_silent"
+  | "blob_fallback";
+
+function logMseTransition(step: MseTransition, detail?: Record<string, unknown>): void {
+  if (import.meta.env.DEV || (typeof window !== "undefined" && localStorage.getItem("MSE_STREAM_DIAG") === "1")) {
+    console.info("[TTS/MSE]", step, detail ?? "");
   }
 }
 
@@ -147,9 +177,17 @@ async function playViaMediaSource(
   const monitor = attachBufferMonitor(audio);
 
   await new Promise<void>((resolve, reject) => {
+    const sourceOpenTimer = setTimeout(() => {
+      logMseTransition("mse_failed", { reason: "sourceopen_timeout" });
+      reject(new Error("mse_sourceopen_timeout"));
+    }, 12_000);
+
     const onOpen = () => {
+      clearTimeout(sourceOpenTimer);
+      logMseTransition("sourceopen", { readyState: mediaSource.readyState });
       try {
         const sb = mediaSource.addSourceBuffer("audio/mpeg");
+        logMseTransition("sourcebuffer_created");
         const queue: Uint8Array[] = [];
         let appending = false;
         let playbackStarted = false;
@@ -159,10 +197,22 @@ async function playViaMediaSource(
           if (appending || queue.length === 0) return;
           appending = true;
           const chunk = queue.shift()!;
-          sb.appendBuffer(new Uint8Array(chunk));
+          try {
+            sb.appendBuffer(new Uint8Array(chunk));
+            logMseTransition("append_ok", { bytes: chunk.byteLength });
+          } catch (err) {
+            logMseTransition("mse_failed", {
+              reason: "appendBuffer",
+              error: err instanceof Error ? err.message : String(err),
+            });
+            reject(err);
+          }
         };
 
         sb.addEventListener("updateend", () => {
+          logMseTransition("updateend", {
+            buffered: sb.buffered.length > 0 ? sb.buffered.end(0) : 0,
+          });
           appending = false;
           if (
             !playbackStarted &&
@@ -170,6 +220,7 @@ async function playViaMediaSource(
             sb.buffered.end(0) > 0.05
           ) {
             playbackStarted = true;
+            logMseTransition("playback_start");
             void audioManager
               .play(
                 audio,
@@ -186,10 +237,16 @@ async function playViaMediaSource(
           if (streamDone && queue.length === 0 && !appending && mediaSource.readyState === "open") {
             try {
               mediaSource.endOfStream();
+              logMseTransition("end_of_stream");
             } catch {
               /* already ended */
             }
           }
+        });
+
+        sb.addEventListener("error", () => {
+          logMseTransition("mse_failed", { reason: "sourcebuffer_error" });
+          reject(new Error("mse_sourcebuffer_error"));
         });
 
         void (async () => {
@@ -212,14 +269,27 @@ async function playViaMediaSource(
               }
             }
           } catch (err) {
+            logMseTransition("mse_failed", {
+              reason: "reader",
+              error: err instanceof Error ? err.message : String(err),
+            });
             reject(err);
           }
         })();
       } catch (err) {
+        logMseTransition("mse_failed", {
+          reason: "sourceopen_handler",
+          error: err instanceof Error ? err.message : String(err),
+        });
         reject(err);
       }
     };
     mediaSource.addEventListener("sourceopen", onOpen, { once: true });
+    mediaSource.addEventListener("error", () => {
+      clearTimeout(sourceOpenTimer);
+      logMseTransition("mse_failed", { reason: "mediasource_error" });
+      reject(new Error("mse_mediasource_error"));
+    }, { once: true });
   });
 
   return { audio, objectUrl, monitor };
@@ -267,6 +337,107 @@ async function playViaPrefixBlob(
   }
 
   return { audio, objectUrl, monitor, activeReader: reader, prefixChunks };
+}
+
+async function drainReaderToBlob(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  ctx: ProgressiveCtx,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    const { done, value } = await reader.read();
+    if (done) {
+      ctx.downloadCompleteMs = Date.now() - ctx.startedAt;
+      break;
+    }
+    if (value?.length) {
+      markFirstByte(ctx);
+      chunks.push(value);
+      total += value.length;
+      ctx.totalBytes += value.length;
+    }
+  }
+  if (total < 256) throw new Error("stream_too_short");
+  return new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
+}
+
+async function playViaFullBlob(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  ctx: ProgressiveCtx,
+  signal?: AbortSignal,
+): Promise<{ audio: HTMLAudioElement; objectUrl: string; monitor: ReturnType<typeof attachBufferMonitor> }> {
+  logMseTransition("blob_fallback", { path: "full_blob" });
+  const blob = await drainReaderToBlob(reader, ctx, signal);
+  const objectUrl = URL.createObjectURL(blob);
+  const audio = audioManager.create(objectUrl);
+  configureMobileAudioElement(audio);
+  const monitor = attachBufferMonitor(audio);
+  const played = await audioManager.play(
+    audio,
+    { source: "tts_stream_blob", proxyUrl: objectUrl, srcType: "tts" },
+    { channel: "speech", interrupt: true, maxRetries: 1 },
+  );
+  if (played && ctx.userPlaybackStartMs == null) {
+    ctx.userPlaybackStartMs = Date.now() - ctx.startedAt;
+  }
+  return { audio, objectUrl, monitor };
+}
+
+type StreamFetchResult = {
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+  cacheKey?: string;
+};
+
+async function fetchTtsStream(
+  authFetch: AuthFetchFn,
+  body: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<StreamFetchResult> {
+  const res = await authFetch(
+    "/api/tts/stream",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
+      body: JSON.stringify(body),
+      signal,
+    },
+    getTtsRequestTimeoutMs(),
+  );
+  if (!res.ok || !res.body) {
+    throw new Error(`stream_failed_${res.status}`);
+  }
+  return {
+    reader: res.body.getReader(),
+    cacheKey: res.headers.get("X-TTS-Cache-Key") ?? undefined,
+  };
+}
+
+async function finalizeStreamPlayback(
+  audio: HTMLAudioElement,
+  objectUrl: string,
+  monitor: ReturnType<typeof attachBufferMonitor>,
+  ctx: ProgressiveCtx,
+  startedAt: number,
+  cacheKey: string | undefined,
+  streamingUsed: boolean,
+  feature?: string,
+): Promise<StreamPlayResult> {
+  const heardMs = await waitForAudibleStart(audio);
+  if (heardMs != null && ctx.userPlaybackStartMs == null) {
+    ctx.userPlaybackStartMs = heardMs;
+  }
+  const metrics = buildMetrics(ctx, monitor, streamingUsed);
+  const userTiming = buildUserTtsTiming(startedAt, {
+    route: "tts/stream",
+    feature,
+    ...metrics,
+    cacheKey,
+  });
+  recordUserTtsTiming(userTiming);
+  return { ok: true, audio, objectUrl, cacheKey, metrics, userTiming };
 }
 
 function buildMetrics(ctx: ProgressiveCtx, monitor: ReturnType<typeof attachBufferMonitor>, streamingUsed: boolean): StreamPlayMetrics {
@@ -366,83 +537,92 @@ export async function playStreamingTts(
   };
 
   try {
-    const res = await authFetch(
-      "/api/tts/stream",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
-        body: JSON.stringify(body),
-        signal: opts?.signal,
-      },
-      getTtsRequestTimeoutMs(),
-    );
+    let { reader, cacheKey } = await fetchTtsStream(authFetch, body, opts?.signal);
 
-    if (!res.ok || !res.body) {
-      return { ok: false, error: `stream_failed_${res.status}` };
-    }
-
-    const cacheKey = res.headers.get("X-TTS-Cache-Key") ?? undefined;
-    const reader = res.body.getReader();
-
-    if (supportsMediaSourceMpeg()) {
-      const { audio, objectUrl, monitor } = await playViaMediaSource(reader, ctx, opts?.signal);
-      const heardMs = await waitForAudibleStart(audio);
-      if (heardMs != null && ctx.userPlaybackStartMs == null) {
-        ctx.userPlaybackStartMs = heardMs;
-      }
-      const metrics = buildMetrics(ctx, monitor, true);
-      const userTiming = buildUserTtsTiming(startedAt, {
-        route: "tts/stream",
-        feature: opts?.feature,
-        ...metrics,
-        cacheKey,
-      });
-      recordUserTtsTiming(userTiming);
-      void authFetch;
-      return { ok: true, audio, objectUrl, cacheKey, metrics, userTiming };
-    }
-
-    const { audio, objectUrl, monitor, activeReader, prefixChunks } = await playViaPrefixBlob(
-      reader,
-      ctx,
-      opts?.signal,
-    );
-
-    void (async () => {
+    if (isMseStreamingEnabled()) {
       try {
-        const chunks = [...prefixChunks];
-        while (true) {
-          const { done, value } = await activeReader.read();
-          if (done) {
-            ctx.downloadCompleteMs = Date.now() - ctx.startedAt;
-            break;
-          }
-          if (value?.length) {
-            chunks.push(value);
-            ctx.totalBytes += value.length;
-          }
+        const { audio, objectUrl, monitor } = await playViaMediaSource(reader, ctx, opts?.signal);
+        const heardMs = await waitForAudibleStart(audio);
+        if (heardMs != null) {
+          return finalizeStreamPlayback(
+            audio,
+            objectUrl,
+            monitor,
+            ctx,
+            startedAt,
+            cacheKey,
+            true,
+            opts?.feature,
+          );
         }
-        if (cacheKey) {
-          storePartialPrefetch(cacheKey, new Blob(chunks as BlobPart[], { type: "audio/mpeg" }));
-        }
-      } catch {
-        /* partial playback continues */
+        logMseTransition("mse_silent", { heardMs });
+        audio.pause();
+        URL.revokeObjectURL(objectUrl);
+      } catch (mseErr) {
+        const mseMsg = mseErr instanceof Error ? mseErr.message : String(mseErr);
+        logMseTransition("mse_failed", { error: mseMsg });
+        if (opts?.cacheKeyHint) penalizeStreamingLayer(opts.cacheKeyHint);
       }
-    })();
-
-    const heardMs = await waitForAudibleStart(audio);
-    if (heardMs != null && ctx.userPlaybackStartMs == null) {
-      ctx.userPlaybackStartMs = heardMs;
+      ({ reader, cacheKey } = await fetchTtsStream(authFetch, body, opts?.signal));
+    } else {
+      logMseTransition("mse_skipped", { reason: "phase1_blob" });
     }
-    const metrics = buildMetrics(ctx, monitor, true);
-    const userTiming = buildUserTtsTiming(startedAt, {
-      route: "tts/stream",
-      feature: opts?.feature,
-      ...metrics,
-      cacheKey,
-    });
-    recordUserTtsTiming(userTiming);
-    return { ok: true, audio, objectUrl, cacheKey, metrics, userTiming };
+
+    try {
+      const { audio, objectUrl, monitor, activeReader, prefixChunks } = await playViaPrefixBlob(
+        reader,
+        ctx,
+        opts?.signal,
+      );
+
+      void (async () => {
+        try {
+          const chunks = [...prefixChunks];
+          while (true) {
+            const { done, value } = await activeReader.read();
+            if (done) {
+              ctx.downloadCompleteMs = Date.now() - ctx.startedAt;
+              break;
+            }
+            if (value?.length) {
+              chunks.push(value);
+              ctx.totalBytes += value.length;
+            }
+          }
+          if (cacheKey) {
+            storePartialPrefetch(cacheKey, new Blob(chunks as BlobPart[], { type: "audio/mpeg" }));
+          }
+        } catch {
+          /* partial playback continues */
+        }
+      })();
+
+      return finalizeStreamPlayback(
+        audio,
+        objectUrl,
+        monitor,
+        ctx,
+        startedAt,
+        cacheKey,
+        true,
+        opts?.feature,
+      );
+    } catch (prefixErr) {
+      const prefixMsg = prefixErr instanceof Error ? prefixErr.message : String(prefixErr);
+      logMseTransition("blob_fallback", { path: "prefix_failed", error: prefixMsg });
+      ({ reader, cacheKey } = await fetchTtsStream(authFetch, body, opts?.signal));
+      const { audio, objectUrl, monitor } = await playViaFullBlob(reader, ctx, opts?.signal);
+      return finalizeStreamPlayback(
+        audio,
+        objectUrl,
+        monitor,
+        ctx,
+        startedAt,
+        cacheKey,
+        false,
+        opts?.feature,
+      );
+    }
   } catch (err) {
     const errName = (err as { name?: string })?.name;
     if (errName === "AbortError") return { ok: false, error: "tts_cancelled" };
@@ -450,19 +630,32 @@ export async function playStreamingTts(
   }
 }
 
-/** Drain /api/tts/stream and return a blob object URL (legacy URL-based callers). */
+/** Drain /api/tts/stream and return a blob object URL (Phase-1 — no MSE playback). */
 export async function streamTtsToObjectUrl(
   authFetch: AuthFetchFn,
   body: Record<string, unknown>,
   init?: { signal?: AbortSignal; feature?: string },
 ): Promise<{ ok: true; url: string; cacheKey?: string; cached?: boolean } | { ok: false; error: string }> {
-  const play = await playStreamingTts(authFetch, body, {
-    signal: init?.signal,
-    playbackMode: "partial-ok",
-    feature: init?.feature,
-  });
-  if (!play.ok) return { ok: false, error: play.error };
-  return { ok: true, url: play.objectUrl, cacheKey: play.cacheKey };
+  const startedAt = Date.now();
+  const ctx: ProgressiveCtx = {
+    startedAt,
+    firstNetworkByteMs: null,
+    firstPlayableByteMs: null,
+    downloadCompleteMs: null,
+    userPlaybackStartMs: null,
+    totalBytes: 0,
+  };
+  try {
+    const { reader, cacheKey } = await fetchTtsStream(authFetch, body, init?.signal);
+    const blob = await drainReaderToBlob(reader, ctx, init?.signal);
+    const objectUrl = URL.createObjectURL(blob);
+    void init?.feature;
+    return { ok: true, url: objectUrl, cacheKey, cached: false };
+  } catch (err) {
+    const errName = (err as { name?: string })?.name;
+    if (errName === "AbortError") return { ok: false, error: "tts_cancelled" };
+    return { ok: false, error: err instanceof Error ? err.message : "stream_error" };
+  }
 }
 
 export function prefetchStreamingChunk(

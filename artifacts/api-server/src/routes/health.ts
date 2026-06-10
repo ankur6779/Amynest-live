@@ -24,6 +24,8 @@ import { isLastGcsProbeOk } from "../services/staticAudioMonitor.js";
 import { isStaticAudioCircuitOpen } from "../services/staticAudioMetrics.js";
 import { getTtsLatencyDashboard } from "../services/ttsLatencyMetrics.js";
 import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
+import { fetchOpenAiTtsStream } from "../services/openaiTtsService.js";
+import { getAdminOpsState } from "../services/admin-ops-store.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -175,10 +177,10 @@ router.get("/healthz/tts", (_req, res) => {
 });
 
 /**
- * Audio stack readiness — static MP3 proxy + OpenAI TTS + optional ElevenLabs fallback.
+ * Audio stack readiness — static MP3 proxy + OpenAI TTS stream probe + playback flags.
  * Use after deploy: GET /api/healthz/audio (no secrets).
  */
-router.get("/healthz/audio", (_req, res) => {
+router.get("/healthz/audio", async (_req, res) => {
   const gcs = getGcsDiagnostics();
   const openAiConfigured = !!getOpenAiApiKeyForFetch();
   const elevenLabsConfigured = !!getElevenLabsApiKey();
@@ -187,6 +189,10 @@ router.get("/healthz/audio", (_req, res) => {
   const gcsReady = gcs.legacyGcsConfigured && bucketSet;
   const gcsProbeOk = isLastGcsProbeOk();
   const staticCircuitOpen = isStaticAudioCircuitOpen();
+  const adminOps = getAdminOpsState();
+  const envMse =
+    process.env.ENABLE_MSE_STREAMING?.trim().toLowerCase() === "true" ||
+    process.env.ENABLE_MSE_STREAMING?.trim() === "1";
 
   const missing: string[] = [];
   if (!openAiConfigured) missing.push("OPENAI_API_KEY");
@@ -201,10 +207,66 @@ router.get("/healthz/audio", (_req, res) => {
     missing.push("TTS_USE_GCS=true (recommended in production)");
   }
 
-  const ok = openAiConfigured && gcsReady;
+  let ttsStreamProbe: {
+    ok: boolean;
+    bytes?: number;
+    latencyMs?: number;
+    error?: string;
+  } = { ok: false, error: "openai_not_configured" };
+
+  if (openAiConfigured) {
+    const probeStarted = Date.now();
+    try {
+      const streamRes = await fetchOpenAiTtsStream("ok", { mode: "default" });
+      if (!streamRes.ok || !streamRes.body) {
+        ttsStreamProbe = {
+          ok: false,
+          latencyMs: Date.now() - probeStarted,
+          error: `openai_stream_${streamRes.status}`,
+        };
+      } else {
+        const reader = streamRes.body.getReader();
+        let bytes = 0;
+        const deadline = Date.now() + 8_000;
+        while (Date.now() < deadline) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value?.length) bytes += value.length;
+          if (bytes >= 512) break;
+        }
+        try {
+          await reader.cancel();
+        } catch {
+          /* best-effort */
+        }
+        ttsStreamProbe = {
+          ok: bytes >= 256,
+          bytes,
+          latencyMs: Date.now() - probeStarted,
+          error: bytes >= 256 ? undefined : "stream_too_short",
+        };
+      }
+    } catch (err) {
+      ttsStreamProbe = {
+        ok: false,
+        latencyMs: Date.now() - probeStarted,
+        error: err instanceof Error ? err.message : "tts_probe_failed",
+      };
+    }
+  }
+
+  const playback = {
+    mseStreamingEnvEnabled: envMse,
+    mseStreamingAdminDisabled: adminOps.disableMseStreaming,
+    mseStreamingActive: envMse && !adminOps.disableMseStreaming,
+    phase1BlobFallback: adminOps.disableMseStreaming || !envMse,
+  };
+
+  const ok = openAiConfigured && gcsReady && ttsStreamProbe.ok;
 
   res.status(ok ? 200 : 503).json({
     ok,
+    status: ok ? "PASS" : "FAIL",
     tts: {
       provider: getTtsProvider(),
       openAiConfigured,
@@ -213,7 +275,9 @@ router.get("/healthz/audio", (_req, res) => {
       cacheGcsEnabled: isTtsCacheGcsEnabled(),
       storageBackend: ttsStorageBackend(),
       openAiTts: getOpenAiTtsConfigSummary(),
+      streamProbe: ttsStreamProbe,
     },
+    playback,
     staticAudio: {
       gcsConfigured: gcsReady,
       gcsProbeOk,
@@ -226,6 +290,7 @@ router.get("/healthz/audio", (_req, res) => {
       gcsCredentials: gcs.credentials.ok ? "set" : "missing",
       bucketId: bucketSet ? "set" : "missing",
       ttsUseGcs: isTtsCacheGcsEnabled(),
+      enableMseStreaming: envMse ? "true" : "false",
     },
     missingEnv: missing.filter((m) => !m.includes("optional") && !m.includes("recommended")),
     hints: missing,

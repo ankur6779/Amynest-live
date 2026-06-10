@@ -246,16 +246,20 @@ async function waitForStaticDurationHint(audio: HTMLAudioElement, maxMs: number)
   }
 }
 
-/** Strict audible check — playback must have started with valid duration. */
+/** Strict audible check — playback must have started (MSE streams may report Infinity duration). */
 function validateAudibleElement(audio: HTMLAudioElement): boolean {
   if (isAudioPlaybackRecoveryMode()) {
     return audio.readyState >= 2 || !audio.paused;
   }
   if (audio.muted) return false;
   if (audio.volume <= 0) return false;
-  const dur = audio.duration;
-  if (!Number.isFinite(dur) || dur <= 0) return false;
   if (audio.currentTime <= 0) return false;
+  if (!audio.paused && audio.currentTime > 0.02) return true;
+  const dur = audio.duration;
+  if (dur === Infinity) {
+    return !audio.paused && audio.currentTime > 0;
+  }
+  if (!Number.isFinite(dur) || dur <= 0) return false;
   return true;
 }
 

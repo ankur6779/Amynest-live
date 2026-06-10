@@ -3,9 +3,15 @@
  * Self-healing controller writes here with adminUserId "self-heal".
  */
 
+function isEnvMseStreamingEnabled(): boolean {
+  const v = process.env.ENABLE_MSE_STREAMING?.trim().toLowerCase();
+  return v === "true" || v === "1";
+}
+
 export type AdminOpsState = {
   disableStreaming: boolean;
   disableApi: boolean;
+  disableMseStreaming: boolean;
   forceEmergencyMode: boolean;
   safeMode: boolean;
   pregenerationPaused: boolean;
@@ -30,6 +36,7 @@ const MANUAL_LOCK_MS = 15 * 60 * 1000;
 let state: AdminOpsState = {
   disableStreaming: false,
   disableApi: false,
+  disableMseStreaming: !isEnvMseStreamingEnabled(),
   forceEmergencyMode: false,
   safeMode: false,
   pregenerationPaused: false,
@@ -46,6 +53,8 @@ let manualOpsLockUntil = 0;
 export type AdminOpsAction =
   | "disable_streaming"
   | "enable_streaming"
+  | "disable_mse_streaming"
+  | "enable_mse_streaming"
   | "disable_api"
   | "enable_api"
   | "clear_cache"
@@ -75,6 +84,8 @@ export function getAdminOpsControlPanel(): AdminOpsControlPanel {
 export function getClientAudioOpsFlags(): {
   disableStreaming: boolean;
   disableApi: boolean;
+  disableMseStreaming: boolean;
+  mseStreamingEnabled: boolean;
   forceEmergencyMode: boolean;
   safeMode: boolean;
   pregenerationPaused: boolean;
@@ -95,6 +106,8 @@ export function getClientAudioOpsFlags(): {
   return {
     disableStreaming: ops.disableStreaming,
     disableApi: ops.disableApi,
+    disableMseStreaming: ops.disableMseStreaming,
+    mseStreamingEnabled: !ops.disableMseStreaming,
     forceEmergencyMode: ops.forceEmergencyMode,
     safeMode: ops.safeMode,
     pregenerationPaused: ops.pregenerationPaused,
@@ -176,6 +189,12 @@ export function applyAdminOpsAction(
         state.safeMode = false;
       }
       break;
+    case "disable_mse_streaming":
+      state.disableMseStreaming = true;
+      break;
+    case "enable_mse_streaming":
+      state.disableMseStreaming = false;
+      break;
     case "disable_api":
       state.disableApi = true;
       break;
@@ -216,6 +235,7 @@ export function applyAdminOpsAction(
       state = {
         disableStreaming: false,
         disableApi: false,
+        disableMseStreaming: !isEnvMseStreamingEnabled(),
         forceEmergencyMode: false,
         safeMode: false,
         pregenerationPaused: false,
@@ -266,6 +286,7 @@ export function resetAdminOpsStoreForTests(): void {
   state = {
     disableStreaming: false,
     disableApi: false,
+    disableMseStreaming: !isEnvMseStreamingEnabled(),
     forceEmergencyMode: false,
     safeMode: false,
     pregenerationPaused: false,
