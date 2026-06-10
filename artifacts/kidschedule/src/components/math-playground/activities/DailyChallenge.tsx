@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { DailyPayload } from "@workspace/math-playground";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
 import { ActivityTaskRenderer } from "./ActivityTaskRenderer";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface DailyChallengeProps {
+interface DailyChallengeProps extends ActivitySharedProps {
   payload: DailyPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
-export function DailyChallenge({ payload, amy, accentColor, onComplete }: DailyChallengeProps) {
+export function DailyChallenge({
+  payload,
+  amy,
+  accentColor,
+  onComplete,
+  engagement,
+  childId = 0,
+}: DailyChallengeProps) {
   const [taskIdx, setTaskIdx] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState<number>(payload.timeLimitSec);
   const [allDone, setAllDone] = useState(false);
@@ -69,11 +73,13 @@ export function DailyChallenge({ payload, amy, accentColor, onComplete }: DailyC
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey="amy_daily_intro"
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       <div className="mb-3">
@@ -97,6 +103,8 @@ export function DailyChallenge({ payload, amy, accentColor, onComplete }: DailyC
           amy={amy}
           accentColor={accentColor}
           onComplete={handleTaskComplete}
+          engagement={engagement}
+          childId={childId}
         />
       )}
     </div>

@@ -4,19 +4,23 @@ import type { AdditionPayload } from "@workspace/math-playground";
 import { audioManager } from "@/lib/audio-manager";
 import { EquationMorph } from "@/components/math-animation/EquationMorph";
 import { useReducedMotion } from "@/lib/reduced-motion";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
-import { PlaygroundObject } from "../shared/PlaygroundObject";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import { LivingPlaygroundObject } from "../objects/LivingPlaygroundObject";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface AdditionLabProps {
+interface AdditionLabProps extends ActivitySharedProps {
   payload: AdditionPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
-export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionLabProps) {
+export function AdditionLab({
+  payload,
+  amy,
+  accentColor,
+  onComplete,
+  engagement,
+  childId = 0,
+}: AdditionLabProps) {
   const reduced = useReducedMotion();
   const total = payload.augend + payload.addend;
   const [inBasket, setInBasket] = useState(0);
@@ -44,6 +48,7 @@ export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionL
     (side: "left" | "right", id: string) => {
       if (done) return;
       audioManager.unlockFromUserGesture();
+      engagement?.recordInteraction();
       if (side === "left" && !movedLeft.has(id)) {
         setMovedLeft((s) => new Set([...s, id]));
         setInBasket((n) => n + 1);
@@ -53,7 +58,7 @@ export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionL
         setInBasket((n) => n + 1);
       }
     },
-    [done, movedLeft, movedRight],
+    [done, movedLeft, movedRight, engagement],
   );
 
   useEffect(() => {
@@ -67,12 +72,14 @@ export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionL
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey={done ? "amy_great_job" : "amy_addition_intro"}
         messageVars={{ a: payload.augend, b: payload.addend }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       <div className="grid grid-cols-3 gap-2 mb-3">
@@ -83,12 +90,13 @@ export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionL
           {leftObjects.map(
             (id) =>
               !movedLeft.has(id) && (
-                <PlaygroundObject
+                <LivingPlaygroundObject
                   key={id}
                   kind={payload.objectKind}
                   size={30}
                   interactive
                   onTap={() => moveToBasket("left", id)}
+                  childId={childId}
                 />
               ),
           )}
@@ -101,12 +109,13 @@ export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionL
           {rightObjects.map(
             (id) =>
               !movedRight.has(id) && (
-                <PlaygroundObject
+                <LivingPlaygroundObject
                   key={id}
                   kind={payload.objectKind}
                   size={30}
                   interactive
                   onTap={() => moveToBasket("right", id)}
+                  childId={childId}
                 />
               ),
           )}
@@ -134,7 +143,12 @@ export function AdditionLab({ payload, amy, accentColor, onComplete }: AdditionL
             animate={{ scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 16 }}
           >
-            <PlaygroundObject kind={payload.objectKind} size={28} />
+            <LivingPlaygroundObject
+              kind={payload.objectKind}
+              size={28}
+              motionTrigger="collect"
+              childId={childId}
+            />
           </motion.span>
         ))}
       </motion.button>

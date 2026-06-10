@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   ACTIVITY_CARDS,
   pickComebackActivity,
+  type ParentRetentionSnapshot,
   type PlaygroundActivityId,
   type PlaygroundLearningState,
   type PlaygroundRewardState,
@@ -11,12 +12,17 @@ import { ActivityCard } from "./shared/ActivityCard";
 import { RewardsDrawer } from "./rewards/RewardsDrawer";
 import { ParentSummaryCard } from "./rewards/ParentSummaryCard";
 import { ComebackMissionCard } from "./shell/ComebackMissionCard";
+import { PlayModeSelector } from "./mode/PlayModeSelector";
+import type { PlayModeApi } from "./mode/usePlayMode";
 
 interface MathPlaygroundHubProps {
   childName: string;
   ageYears: number;
+  childId: number;
   rewards: PlaygroundRewardState;
   learning: PlaygroundLearningState;
+  lastParentSnapshot?: ParentRetentionSnapshot;
+  playMode: PlayModeApi;
   onSelectActivity: (id: PlaygroundActivityId) => void;
 }
 
@@ -25,6 +31,9 @@ export function MathPlaygroundHub({
   ageYears,
   rewards,
   learning,
+  lastParentSnapshot,
+  playMode,
+  childId,
   onSelectActivity,
 }: MathPlaygroundHubProps) {
   const { t } = useTranslation();
@@ -56,7 +65,15 @@ export function MathPlaygroundHub({
         </button>
       </div>
 
-      <ParentSummaryCard childName={childName} rewards={rewards} learning={learning} ageYears={ageYears} />
+      <PlayModeSelector playMode={playMode} childId={childId} />
+
+      <ParentSummaryCard
+        childName={childName}
+        rewards={rewards}
+        learning={learning}
+        ageYears={ageYears}
+        lastParentSnapshot={lastParentSnapshot}
+      />
 
       {comebackId && (
         <ComebackMissionCard

@@ -2,15 +2,18 @@ import { useTranslation } from "react-i18next";
 import {
   buildParentAdaptiveInsights,
   topPlaygroundActivities,
+  type ParentRetentionSnapshot,
   type PlaygroundLearningState,
   type PlaygroundRewardState,
 } from "@workspace/math-playground";
+import { ParentRetentionDashboard } from "./ParentRetentionDashboard";
 
 interface ParentSummaryCardProps {
   childName: string;
   rewards: PlaygroundRewardState;
   learning: PlaygroundLearningState;
   ageYears: number;
+  lastParentSnapshot?: ParentRetentionSnapshot;
 }
 
 export function ParentSummaryCard({
@@ -18,12 +21,16 @@ export function ParentSummaryCard({
   rewards,
   learning,
   ageYears,
+  lastParentSnapshot,
 }: ParentSummaryCardProps) {
   const { t } = useTranslation();
   const top = topPlaygroundActivities(rewards);
   const adaptive = buildParentAdaptiveInsights(learning, ageYears);
 
-  if (top.length === 0 && rewards.stars === 0) return null;
+  const hasRetentionData =
+    learning.sessionHistory.length > 0 || (lastParentSnapshot?.sessionCount ?? 0) > 0;
+
+  if (top.length === 0 && rewards.stars === 0 && !hasRetentionData) return null;
 
   return (
     <div
@@ -83,6 +90,13 @@ export function ParentSummaryCard({
           ))}
         </div>
       )}
+
+      <ParentRetentionDashboard
+        learning={learning}
+        rewards={rewards}
+        ageYears={ageYears}
+        snapshot={lastParentSnapshot}
+      />
     </div>
   );
 }

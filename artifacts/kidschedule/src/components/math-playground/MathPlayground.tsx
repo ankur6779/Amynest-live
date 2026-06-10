@@ -8,8 +8,12 @@ import {
 import { ageYearsToBand } from "@workspace/math-playground";
 import { useTranslation } from "react-i18next";
 import { usePlaygroundState } from "./hooks/usePlaygroundState";
+import { usePlayMode } from "./mode/usePlayMode";
 import { MathPlaygroundHub } from "./MathPlaygroundHub";
 import { MathPlaygroundSession } from "./MathPlaygroundSession";
+import { VoicePlaygroundSession } from "./VoicePlaygroundSession";
+import { isMpVoiceModeEnabled } from "./lib/feature-flags";
+import { isVoiceSupportedActivity } from "@workspace/math-playground-voice";
 
 const STATIC_PHRASE_KEYS = [
   "amy_count_prompt",
@@ -31,7 +35,21 @@ const STATIC_PHRASE_KEYS = [
   "amy_puzzle_bigger",
   "amy_puzzle_match",
   "amy_puzzle_sort",
+  "amy_mini_pop",
+  "amy_mini_rocket",
+  "amy_mini_balloon",
+  "amy_mini_monkey",
+  "amy_mini_train",
+  "amy_mini_castle",
+  "amy_voice_count",
+  "amy_voice_how_many",
+  "amy_voice_add",
+  "amy_voice_sub",
+  "amy_voice_multiply",
+  "amy_voice_divide",
 ] as const;
+
+const VOICE_PREWARM_REVISION = 3;
 
 interface MathPlaygroundProps {
   childName: string;
@@ -43,8 +61,13 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const playground = usePlaygroundState(childId);
+  const playMode = usePlayMode(playground);
   const [activeActivity, setActiveActivity] = useState<PlaygroundActivityId | null>(null);
   const ageBand = ageYearsToBand(ageYears);
+  const useVoiceSession =
+    playMode.isVoiceModeActive &&
+    activeActivity !== null &&
+    isVoiceSupportedActivity(activeActivity);
 
   useEffect(() => {
     const texts = STATIC_PHRASE_KEYS.map((key) =>
@@ -54,7 +77,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
         a: 3,
         b: 2,
         pick: 3,
-        total: 8,
+        total: 12,
         groups: 3,
         each: 4,
         children: 3,
@@ -67,7 +90,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
       stateKey: buildLearningZoneAudioStateKey({
         module: "math_playground",
         ageGroup: ageBand,
-        revision: 2,
+        revision: isMpVoiceModeEnabled() ? VOICE_PREWARM_REVISION : 2,
       }),
     });
   }, [authFetch, ageBand, t]);
@@ -90,19 +113,32 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
     >
       <div className="px-3 py-3">
         {activeActivity ? (
-          <MathPlaygroundSession
-            activityId={activeActivity}
-            ageYears={ageYears}
-            childId={childId}
-            playground={playground}
-            onExit={handleExit}
-          />
+          useVoiceSession ? (
+            <VoicePlaygroundSession
+              activityId={activeActivity}
+              ageYears={ageYears}
+              childId={childId}
+              playground={playground}
+              onExit={handleExit}
+            />
+          ) : (
+            <MathPlaygroundSession
+              activityId={activeActivity}
+              ageYears={ageYears}
+              childId={childId}
+              playground={playground}
+              onExit={handleExit}
+            />
+          )
         ) : (
           <MathPlaygroundHub
             childName={childName}
             ageYears={ageYears}
             rewards={playground.rewards}
             learning={playground.learning}
+            lastParentSnapshot={playground.lastParentSnapshot}
+            playMode={playMode}
+            childId={childId}
             onSelectActivity={handleSelect}
           />
         )}

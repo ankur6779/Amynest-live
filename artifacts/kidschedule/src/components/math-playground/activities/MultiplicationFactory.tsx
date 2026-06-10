@@ -5,16 +5,13 @@ import { audioManager } from "@/lib/audio-manager";
 import { EquationMorph } from "@/components/math-animation/EquationMorph";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { useVisualBudget } from "@/lib/performance-tier";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
-import { PlaygroundObject } from "../shared/PlaygroundObject";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import { LivingPlaygroundObject } from "../objects/LivingPlaygroundObject";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface MultiplicationFactoryProps {
+interface MultiplicationFactoryProps extends ActivitySharedProps {
   payload: MultiplicationPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
 export function MultiplicationFactory({
@@ -22,6 +19,8 @@ export function MultiplicationFactory({
   amy,
   accentColor,
   onComplete,
+  engagement,
+  childId = 0,
 }: MultiplicationFactoryProps) {
   const reduced = useReducedMotion();
   const budget = useVisualBudget();
@@ -40,9 +39,10 @@ export function MultiplicationFactory({
     (idx: number) => {
       if (openedBoxes.has(idx)) return;
       audioManager.unlockFromUserGesture();
+      engagement?.recordInteraction();
       setOpenedBoxes((prev) => new Set([...prev, idx]));
     },
-    [openedBoxes],
+    [openedBoxes, engagement],
   );
 
   useEffect(() => {
@@ -56,12 +56,14 @@ export function MultiplicationFactory({
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey={allOpen ? "amy_great_job" : "amy_multiply_intro"}
         messageVars={{ groups: payload.groups, each: payload.perGroup }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       <div
@@ -109,7 +111,13 @@ export function MultiplicationFactory({
                     className="flex flex-wrap gap-0.5 justify-center max-w-[64px]"
                   >
                     {Array.from({ length: payload.perGroup }).map((__, ti) => (
-                      <PlaygroundObject key={ti} kind={payload.objectKind} size={18} />
+                      <LivingPlaygroundObject
+                        key={ti}
+                        kind={payload.objectKind}
+                        size={18}
+                        motionTrigger="correct"
+                        childId={childId}
+                      />
                     ))}
                   </motion.div>
                 )}
@@ -125,7 +133,13 @@ export function MultiplicationFactory({
             className="flex flex-wrap gap-1 justify-center pb-4 px-2"
           >
             {Array.from({ length: total }).map((_, i) => (
-              <PlaygroundObject key={i} kind={payload.objectKind} size={22} />
+              <LivingPlaygroundObject
+                key={i}
+                kind={payload.objectKind}
+                size={22}
+                motionTrigger="correct"
+                childId={childId}
+              />
             ))}
           </motion.div>
         )}

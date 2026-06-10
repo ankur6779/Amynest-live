@@ -16,13 +16,10 @@ import { MultiplicationFactory } from "./MultiplicationFactory";
 import { DivisionBakery } from "./DivisionBakery";
 import { NumberPatterns } from "./NumberPatterns";
 import { MathPuzzles } from "./MathPuzzles";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface ActivityTaskRendererProps {
+interface ActivityTaskRendererProps extends ActivitySharedProps {
   activity: ActivityParams;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hints: number) => void;
 }
 
 export function ActivityTaskRenderer({
@@ -30,6 +27,8 @@ export function ActivityTaskRenderer({
   amy,
   accentColor,
   onComplete,
+  engagement,
+  childId,
 }: ActivityTaskRendererProps) {
   switch (activity.activityId) {
     case "counting_adventure":
@@ -39,6 +38,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "addition_lab":
@@ -48,6 +49,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "subtraction_garden":
@@ -57,6 +60,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "multiplication_factory":
@@ -66,6 +71,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "division_bakery":
@@ -75,6 +82,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "number_patterns":
@@ -84,6 +93,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "math_puzzles":
@@ -93,6 +104,8 @@ export function ActivityTaskRenderer({
           amy={amy}
           accentColor={accentColor}
           onComplete={onComplete}
+          engagement={engagement}
+          childId={childId}
         />
       );
     case "daily_challenge":

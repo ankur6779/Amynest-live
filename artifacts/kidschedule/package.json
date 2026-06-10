@@ -151,6 +151,8 @@
     "@workspace/load-forecast": "workspace:*",
     "@workspace/math-tricks": "workspace:*",
     "@workspace/math-playground": "workspace:*",
+    "@workspace/math-playground-engagement": "workspace:*",
+    "@workspace/math-playground-voice": "workspace:*",
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
     "@workspace/parent-hub-journey": "workspace:*",

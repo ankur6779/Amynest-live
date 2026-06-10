@@ -4,25 +4,30 @@ import type { CountingPayload } from "@workspace/math-playground";
 import { audioManager } from "@/lib/audio-manager";
 import { EquationMorph } from "@/components/math-animation/EquationMorph";
 import { useReducedMotion } from "@/lib/reduced-motion";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
 import { SparkleBurst } from "../effects/SparkleBurst";
-import { PlaygroundObject } from "../shared/PlaygroundObject";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import { LivingPlaygroundObject } from "../objects/LivingPlaygroundObject";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface CountingAdventureProps {
+interface CountingAdventureProps extends ActivitySharedProps {
   payload: CountingPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
-export function CountingAdventure({ payload, amy, accentColor, onComplete }: CountingAdventureProps) {
+export function CountingAdventure({
+  payload,
+  amy,
+  accentColor,
+  onComplete,
+  engagement,
+  childId = 0,
+}: CountingAdventureProps) {
   const reduced = useReducedMotion();
   const [collected, setCollected] = useState<Set<string>>(new Set());
   const [sparkle, setSparkle] = useState<{ x: number; y: number } | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const [hintsUsed] = useState(0);
+  const [delightKeys, setDelightKeys] = useState<Record<string, number>>({});
   const count = collected.size;
   const done = count === payload.targetCount;
 
@@ -37,6 +42,8 @@ export function CountingAdventure({ payload, amy, accentColor, onComplete }: Cou
     (id: string, el: HTMLElement) => {
       if (collected.has(id) || done) return;
       audioManager.unlockFromUserGesture();
+      engagement?.recordInteraction();
+      setDelightKeys((d) => ({ ...d, [id]: (d[id] ?? 0) + 1 }));
       setCollected((prev) => new Set([...prev, id]));
       const rect = el.getBoundingClientRect();
       const parent = el.offsetParent as HTMLElement | null;
@@ -49,7 +56,7 @@ export function CountingAdventure({ payload, amy, accentColor, onComplete }: Cou
       setSparkle({ x: px, y: py });
       window.setTimeout(() => setSparkle(null), 500);
     },
-    [collected, done],
+    [collected, done, engagement],
   );
 
   useEffect(() => {
@@ -62,7 +69,7 @@ export function CountingAdventure({ payload, amy, accentColor, onComplete }: Cou
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey={done ? "amy_great_job" : "amy_count_prompt"}
         messageVars={{
           count: payload.targetCount,
@@ -71,6 +78,8 @@ export function CountingAdventure({ payload, amy, accentColor, onComplete }: Cou
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       <div
@@ -101,10 +110,13 @@ export function CountingAdventure({ payload, amy, accentColor, onComplete }: Cou
               handleTap(obj.id, e.currentTarget);
             }}
           >
-            <PlaygroundObject
+            <LivingPlaygroundObject
               kind={obj.kind}
               collected={collected.has(obj.id)}
               interactive={false}
+              delightKey={delightKeys[obj.id]}
+              motionTrigger={collected.has(obj.id) ? "collect" : undefined}
+              childId={childId}
             />
           </div>
         ))}

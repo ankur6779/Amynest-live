@@ -554,6 +554,12 @@ importers:
       '@workspace/math-playground':
         specifier: workspace:*
         version: link:../../lib/math-playground
+      '@workspace/math-playground-engagement':
+        specifier: workspace:*
+        version: link:../../lib/math-playground-engagement
+      '@workspace/math-playground-voice':
+        specifier: workspace:*
+        version: link:../../lib/math-playground-voice
       '@workspace/math-tricks':
         specifier: workspace:*
         version: link:../../lib/math-tricks
@@ -1507,6 +1513,26 @@ importers:
         version: link:../family-routine
 
   lib/math-playground:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/math-playground-engagement:
+    dependencies:
+      '@workspace/math-playground':
+        specifier: workspace:*
+        version: link:../math-playground
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/math-playground-voice:
+    dependencies:
+      '@workspace/math-playground':
+        specifier: workspace:*
+        version: link:../math-playground
     devDependencies:
       tsx:
         specifier: 'catalog:'

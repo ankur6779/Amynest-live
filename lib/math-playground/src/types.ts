@@ -12,10 +12,21 @@ export type PlaygroundActivityId =
 
 export type ObjectKind = "apple" | "flower" | "star" | "cookie" | "toy" | "block";
 
+export type MiniGameTemplate =
+  | "pop_correct_answer"
+  | "rocket_counting"
+  | "balloon_burst"
+  | "feed_the_monkey"
+  | "number_train"
+  | "castle_builder";
+
 export type PuzzleTemplate =
   | "bigger_number"
   | "match_quantity"
-  | "sort_ascending";
+  | "sort_ascending"
+  | MiniGameTemplate;
+
+export type PlaygroundPlayMode = "touch" | "voice";
 
 export interface PlaygroundObjectSpec {
   id: string;
@@ -62,6 +73,17 @@ export interface PatternPayload {
   stepLabel: string;
 }
 
+export interface PuzzleBalloonSpec {
+  id: string;
+  value: number;
+}
+
+export interface CastleBuildRound {
+  question: string;
+  answer: number;
+  choices: number[];
+}
+
 export interface PuzzlePayload {
   template: PuzzleTemplate;
   leftValue?: number;
@@ -69,6 +91,19 @@ export interface PuzzlePayload {
   targetNumeral?: number;
   targetCount?: number;
   sortNumbers?: number[];
+  /** Mini-game fields (Phase 4c) */
+  question?: string;
+  choices?: number[];
+  correctIndex?: number;
+  correctAnswer?: number;
+  fuelTarget?: number;
+  targetQuantity?: number;
+  balloons?: PuzzleBalloonSpec[];
+  targetBananas?: number;
+  trainSequence?: (number | null)[];
+  trainChoices?: number[];
+  castlePiecesTotal?: number;
+  castleRounds?: CastleBuildRound[];
 }
 
 export interface DailyPayload {
@@ -95,7 +130,18 @@ export interface PlaygroundSessionRecord {
   durationMs: number;
   success: boolean;
   tierUsed: AdaptivityTier;
+  /** Phase 4 optional signals — omitted on legacy v2 sessions */
+  playMode?: PlaygroundPlayMode;
+  responseTimeMs?: number;
+  voiceConfidence?: number;
+  retryCount?: number;
+  idleMs?: number;
+  consecutiveSuccessAtEnd?: number;
+  consecutiveFailureAtEnd?: number;
 }
+
+/** Alias for extended session records (all v4 fields optional). */
+export type PlaygroundSessionRecordV4 = PlaygroundSessionRecord;
 
 export interface ActivityLearningStats {
   attempts: number;
@@ -151,11 +197,42 @@ export interface ActivityParams {
   adaptivityTier?: AdaptivityTier;
 }
 
+export type SkillTrend = "improving" | "stable" | "needs_practice";
+
+export interface SkillBreakdown {
+  counting: number;
+  addition: number;
+  subtraction: number;
+  multiplication: number;
+  division: number;
+  patterns: number;
+}
+
+export interface ParentRetentionSnapshot {
+  mathConfidenceStars: 1 | 2 | 3 | 4 | 5;
+  skillBreakdown: SkillBreakdown;
+  recommendedActivityId: PlaygroundActivityId;
+  recommendedTrend: SkillTrend;
+  sessionCount: number;
+  generatedAt: number;
+}
+
+export interface PlaygroundEngagementState {
+  consecutiveSuccesses: number;
+  consecutiveFailures: number;
+  lastInteractionAt: number;
+  sessionStartedAt: number;
+}
+
 export interface PlaygroundPersistedState {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   childId: number;
   rewards: PlaygroundRewardState;
   learning?: PlaygroundLearningState;
+  /** Phase 4 — optional; absent on v1/v2 loads until migration */
+  preferredPlayMode?: PlaygroundPlayMode;
+  lastParentSnapshot?: ParentRetentionSnapshot;
+  engagement?: PlaygroundEngagementState;
 }
 
 export interface ActivityCardDef {

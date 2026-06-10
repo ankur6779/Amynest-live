@@ -3,15 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { PatternPayload } from "@workspace/math-playground";
 import { audioManager } from "@/lib/audio-manager";
 import { useReducedMotion } from "@/lib/reduced-motion";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface NumberPatternsProps {
+interface NumberPatternsProps extends ActivitySharedProps {
   payload: PatternPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
 export function NumberPatterns({
@@ -19,6 +16,7 @@ export function NumberPatterns({
   amy,
   accentColor,
   onComplete,
+  engagement,
 }: NumberPatternsProps) {
   const reduced = useReducedMotion();
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
@@ -35,6 +33,7 @@ export function NumberPatterns({
   const handleSlotTap = useCallback(() => {
     if (filled !== null || selectedChoice === null) return;
     audioManager.unlockFromUserGesture();
+    engagement?.recordInteraction();
     if (selectedChoice === payload.correctChoice) {
       setFilled(selectedChoice);
       setCelebrate(true);
@@ -42,20 +41,23 @@ export function NumberPatterns({
       window.setTimeout(() => onComplete(hintsUsed), 1800);
     } else {
       setWrong(true);
+      engagement?.recordFailure();
       setHintsUsed((h) => h + 1);
       amy.queueCue("amy_try_together");
       window.setTimeout(() => setWrong(false), 500);
       setSelectedChoice(null);
     }
-  }, [filled, selectedChoice, payload.correctChoice, hintsUsed, onComplete, amy]);
+  }, [filled, selectedChoice, payload.correctChoice, hintsUsed, onComplete, amy, engagement]);
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey={done ? "amy_great_job" : "amy_pattern_intro"}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       <div

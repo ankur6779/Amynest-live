@@ -4,16 +4,13 @@ import type { SubtractionPayload } from "@workspace/math-playground";
 import { audioManager } from "@/lib/audio-manager";
 import { EquationMorph } from "@/components/math-animation/EquationMorph";
 import { useReducedMotion } from "@/lib/reduced-motion";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
-import { PlaygroundObject } from "../shared/PlaygroundObject";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import { LivingPlaygroundObject } from "../objects/LivingPlaygroundObject";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface SubtractionGardenProps {
+interface SubtractionGardenProps extends ActivitySharedProps {
   payload: SubtractionPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
 export function SubtractionGarden({
@@ -21,6 +18,8 @@ export function SubtractionGarden({
   amy,
   accentColor,
   onComplete,
+  engagement,
+  childId = 0,
 }: SubtractionGardenProps) {
   const reduced = useReducedMotion();
   const remaining = payload.minuend - payload.subtrahend;
@@ -50,9 +49,10 @@ export function SubtractionGarden({
     (id: string) => {
       if (picked.has(id) || done) return;
       audioManager.unlockFromUserGesture();
+      engagement?.recordInteraction();
       setPicked((prev) => new Set([...prev, id]));
     },
-    [picked, done],
+    [picked, done, engagement],
   );
 
   useEffect(() => {
@@ -66,12 +66,14 @@ export function SubtractionGarden({
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey={done ? "amy_great_job" : "amy_subtraction_intro"}
         messageVars={{ pick: payload.subtrahend, total: payload.minuend }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       <div
@@ -99,10 +101,11 @@ export function SubtractionGarden({
                 style={{ left: `${f.x}%`, top: `${f.y}%`, transform: "translate(-50%, -50%)" }}
                 exit={{ opacity: 0, y: -40, scale: 0.5, transition: { duration: 0.4 } }}
               >
-                <PlaygroundObject
+                <LivingPlaygroundObject
                   kind={payload.objectKind}
                   interactive
                   onTap={() => handlePick(f.id)}
+                  childId={childId}
                 />
               </motion.div>
             ),

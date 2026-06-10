@@ -9,6 +9,11 @@ import {
   deriveAdaptivityTier,
   pickDailyTaskIds,
 } from "./adaptive";
+import {
+  generateMiniGame,
+  isMiniGameTemplate,
+  MINI_GAME_TEMPLATES,
+} from "./mini-game-generators";
 import type {
   ActivityParams,
   CountingPayload,
@@ -180,14 +185,26 @@ const PUZZLE_TEMPLATES: PuzzleTemplate[] = [
   "sort_ascending",
 ];
 
+export interface GeneratePuzzleOptions {
+  enableMiniGames?: boolean;
+}
+
 export function generatePuzzle(
   ageBand: PlaygroundAgeBand,
   seed: number,
   tier: AdaptivityTier = "standard",
+  opts?: GeneratePuzzleOptions,
 ): PuzzlePayload {
   const rng = seededRandom(seed);
-  const template = PUZZLE_TEMPLATES[Math.floor(rng() * PUZZLE_TEMPLATES.length)]!;
+  const pool: PuzzleTemplate[] = opts?.enableMiniGames
+    ? [...PUZZLE_TEMPLATES, ...MINI_GAME_TEMPLATES]
+    : [...PUZZLE_TEMPLATES];
+  const template = pool[Math.floor(rng() * pool.length)]!;
   const cap = ageBand === "2-3" ? 5 : tier === "stretch" ? 10 : 8;
+
+  if (isMiniGameTemplate(template)) {
+    return generateMiniGame(template, ageBand, seed + 7, tier);
+  }
 
   if (template === "bigger_number") {
     const left = tierRandInt(rng, 2, cap, tier);
@@ -217,6 +234,7 @@ export function generateActivity(opts: {
   seed?: number;
   learning?: PlaygroundLearningState;
   adaptivityTier?: AdaptivityTier;
+  enableMiniGames?: boolean;
 }): ActivityParams {
   const ageBand = ageYearsToBand(opts.ageYears);
   const seed = opts.seed ?? dailySeed(opts.childId) + opts.activityId.length;
@@ -251,7 +269,9 @@ export function generateActivity(opts: {
     case "number_patterns":
       return wrap(generatePattern(ageBand, seed, tier));
     case "math_puzzles":
-      return wrap(generatePuzzle(ageBand, seed, tier));
+      return wrap(
+        generatePuzzle(ageBand, seed, tier, { enableMiniGames: opts.enableMiniGames }),
+      );
     case "daily_challenge": {
       const base = dailySeed(opts.childId);
       const kinds = learning

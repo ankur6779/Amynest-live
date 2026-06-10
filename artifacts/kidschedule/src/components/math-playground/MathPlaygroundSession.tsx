@@ -1,5 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ACTIVITY_CARDS,
@@ -11,11 +10,15 @@ import {
   type PlaygroundActivityId,
 } from "@workspace/math-playground";
 import { usePlaygroundAmy } from "./hooks/usePlaygroundAmy";
+import { usePlaygroundEngagement } from "./hooks/usePlaygroundEngagement";
 import { ActivityTaskRenderer } from "./activities/ActivityTaskRenderer";
 import { DailyChallenge } from "./activities/DailyChallenge";
 import { AdaptivePaceBadge } from "./shell/AdaptivePaceBadge";
+import { SessionComplete } from "./shell/SessionComplete";
 import type { PlaygroundStateApi } from "./hooks/usePlaygroundState";
 import type { DailyPayload } from "@workspace/math-playground";
+import { trackPlaygroundSessionStart } from "./lib/playground-analytics";
+import { isMpMiniGamesEnabled } from "./lib/feature-flags";
 
 interface MathPlaygroundSessionProps {
   activityId: PlaygroundActivityId;
@@ -34,9 +37,14 @@ export function MathPlaygroundSession({
 }: MathPlaygroundSessionProps) {
   const { t } = useTranslation();
   const amy = usePlaygroundAmy();
+  const engagement = usePlaygroundEngagement(childId, playground, amy);
   const [starsEarned, setStarsEarned] = useState<number | null>(null);
   const [newBadges, setNewBadges] = useState<string[]>([]);
   const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    trackPlaygroundSessionStart(childId, activityId, "touch");
+  }, [childId, activityId]);
 
   const adaptivityTier = useMemo(
     () =>
@@ -54,6 +62,7 @@ export function MathPlaygroundSession({
         childId,
         learning: playground.learning,
         adaptivityTier,
+        enableMiniGames: isMpMiniGamesEnabled(),
       }),
     [activityId, ageYears, childId, playground.learning, adaptivityTier],
   );
@@ -66,6 +75,7 @@ export function MathPlaygroundSession({
       const stars =
         activityId === "daily_challenge" ? 5 : starsForCompletion(hintsUsed);
       setStarsEarned(stars);
+      engagement.recordSuccess();
 
       playground.recordSession({
         activityId,
@@ -86,8 +96,10 @@ export function MathPlaygroundSession({
         if (unlocked.length > 0) setNewBadges(unlocked);
         return next;
       });
+
+      playground.generateParentSnapshot(ageYears);
     },
-    [activityId, playground, adaptivityTier],
+    [activityId, playground, adaptivityTier, engagement, ageYears],
   );
 
   return (
@@ -122,6 +134,8 @@ export function MathPlaygroundSession({
           payload={activity.payload as DailyPayload}
           amy={amy}
           accentColor={accentColor}
+          engagement={engagement}
+          childId={childId}
           onComplete={handleComplete}
         />
       ) : (
@@ -129,50 +143,11 @@ export function MathPlaygroundSession({
           activity={activity}
           amy={amy}
           accentColor={accentColor}
+          engagement={engagement}
+          childId={childId}
           onComplete={handleComplete}
         />
       )}
     </div>
-  );
-}
-
-function SessionComplete({
-  stars,
-  accentColor,
-  newBadges,
-  onHome,
-}: {
-  stars: number;
-  accentColor: string;
-  newBadges: string[];
-  onHome: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="text-center py-8 rounded-2xl"
-      style={{ background: "rgba(255,255,255,0.06)" }}
-    >
-      <p className="text-4xl mb-2">⭐</p>
-      <p className="text-lg font-black text-white">
-        +{stars} {t("components.math_playground.stars")}
-      </p>
-      {newBadges.length > 0 && (
-        <p className="text-xs font-bold mt-2" style={{ color: accentColor }}>
-          🏅 {t("components.math_playground.new_badge")}:{" "}
-          {newBadges.map((k) => t(`components.math_playground.${k}`)).join(", ")}
-        </p>
-      )}
-      <button
-        type="button"
-        onClick={onHome}
-        className="mt-4 px-6 py-3 rounded-2xl font-black text-sm text-white active:scale-95"
-        style={{ background: `linear-gradient(135deg, ${accentColor}, hsl(var(--brand-amber-500)))` }}
-      >
-        {t("components.math_playground.back_to_hub")}
-      </button>
-    </motion.div>
   );
 }

@@ -4,16 +4,13 @@ import type { DivisionPayload } from "@workspace/math-playground";
 import { audioManager } from "@/lib/audio-manager";
 import { EquationMorph } from "@/components/math-animation/EquationMorph";
 import { useReducedMotion } from "@/lib/reduced-motion";
-import { AmyCompanionBar } from "../shell/AmyCompanionBar";
+import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
-import { PlaygroundObject } from "../shared/PlaygroundObject";
-import type { usePlaygroundAmy } from "../hooks/usePlaygroundAmy";
+import { LivingPlaygroundObject } from "../objects/LivingPlaygroundObject";
+import type { ActivitySharedProps } from "./activity-shared-props";
 
-interface DivisionBakeryProps {
+interface DivisionBakeryProps extends ActivitySharedProps {
   payload: DivisionPayload;
-  amy: ReturnType<typeof usePlaygroundAmy>;
-  accentColor: string;
-  onComplete: (hintsUsed: number) => void;
 }
 
 export function DivisionBakery({
@@ -21,6 +18,8 @@ export function DivisionBakery({
   amy,
   accentColor,
   onComplete,
+  engagement,
+  childId = 0,
 }: DivisionBakeryProps) {
   const reduced = useReducedMotion();
   const perChild = payload.total / payload.recipients;
@@ -55,9 +54,11 @@ export function DivisionBakery({
     (childIdx: number) => {
       if (!selectedCookie || assignedSet.has(selectedCookie)) return;
       audioManager.unlockFromUserGesture();
+      engagement?.recordInteraction();
       const current = assignments[childIdx] ?? [];
       if (current.length >= perChild) {
         setWrongShake(childIdx);
+        engagement?.recordFailure();
         amy.queueCue("amy_fair_share");
         setHintsUsed((h) => h + 1);
         window.setTimeout(() => setWrongShake(null), 400);
@@ -69,7 +70,7 @@ export function DivisionBakery({
       }));
       setSelectedCookie(null);
     },
-    [selectedCookie, assignedSet, assignments, perChild, amy],
+    [selectedCookie, assignedSet, assignments, perChild, amy, engagement],
   );
 
   useEffect(() => {
@@ -89,12 +90,14 @@ export function DivisionBakery({
 
   return (
     <div>
-      <AmyCompanionBar
+      <PlaygroundAmyShell
         messageKey={allAssigned ? "amy_great_job" : "amy_division_intro"}
         messageVars={{ total: payload.total, children: payload.recipients }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
         speaking={amy.speaking}
+        engagement={engagement}
+        accentColor={accentColor}
       />
 
       {/* Cookie tray */}
@@ -119,7 +122,12 @@ export function DivisionBakery({
                   transform: selectedCookie === id ? "scale(1.1)" : "scale(1)",
                 }}
               >
-                <PlaygroundObject kind={payload.objectKind} size={32} interactive={false} />
+                <LivingPlaygroundObject
+                  kind={payload.objectKind}
+                  size={32}
+                  interactive={false}
+                  childId={childId}
+                />
               </button>
             ),
         )}
@@ -145,7 +153,13 @@ export function DivisionBakery({
             <span className="text-2xl mb-1">🧒</span>
             <div className="flex flex-wrap gap-0.5 justify-center">
               {(assignments[childIdx] ?? []).map((cid) => (
-                <PlaygroundObject key={cid} kind={payload.objectKind} size={20} />
+                <LivingPlaygroundObject
+                  key={cid}
+                  kind={payload.objectKind}
+                  size={20}
+                  motionTrigger="collect"
+                  childId={childId}
+                />
               ))}
             </div>
             <span className="text-[9px] text-white/30 mt-1">
