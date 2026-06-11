@@ -225,14 +225,16 @@ export interface PlaygroundEngagementState {
 }
 
 export interface PlaygroundPersistedState {
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   childId: number;
   rewards: PlaygroundRewardState;
-  learning?: PlaygroundLearningState;
   /** Phase 4 — optional; absent on v1/v2 loads until migration */
+  learning?: PlaygroundLearningState;
   preferredPlayMode?: PlaygroundPlayMode;
   lastParentSnapshot?: ParentRetentionSnapshot;
   engagement?: PlaygroundEngagementState;
+  /** Phase 6 — worksheets, readiness, reports; absent until v4 migration */
+  intelligence?: import("./intelligence-types").PlaygroundIntelligenceState;
 }
 
 export interface ActivityCardDef {

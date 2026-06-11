@@ -9,7 +9,7 @@ import type {
   SkillTrend,
 } from "./types";
 
-const SKILL_ACTIVITIES: Record<keyof SkillBreakdown, PlaygroundActivityId[]> = {
+export const SKILL_ACTIVITIES: Record<keyof SkillBreakdown, PlaygroundActivityId[]> = {
   counting: ["counting_adventure"],
   addition: ["addition_lab"],
   subtraction: ["subtraction_garden"],

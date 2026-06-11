@@ -9,22 +9,28 @@ export function BalloonBurst({
   onCorrect,
   onWrong,
   engagement,
+  locked,
 }: MiniGameProps) {
   const target = payload.targetQuantity ?? 0;
   const [popped, setPopped] = useState<Set<string>>(new Set());
+  const [won, setWon] = useState(false);
 
   const handlePop = (id: string) => {
-    if (popped.has(id)) return;
+    if (won || locked || popped.has(id)) return;
     audioManager.unlockFromUserGesture();
     engagement?.recordInteraction();
-    const next = new Set([...popped, id]);
-    setPopped(next);
-    if (next.size === target) {
-      onCorrect();
-    } else if (next.size > target) {
-      onWrong();
-      setPopped(new Set());
-    }
+
+    setPopped((prev) => {
+      const next = new Set([...prev, id]);
+      if (next.size === target) {
+        setWon(true);
+        onCorrect();
+      } else if (next.size > target) {
+        onWrong();
+        return new Set();
+      }
+      return next;
+    });
   };
 
   return (
@@ -35,17 +41,18 @@ export function BalloonBurst({
       <div className="flex flex-wrap justify-center gap-2 min-h-[120px]">
         <AnimatePresence>
           {(payload.balloons ?? []).map((balloon, i) =>
-            popped.has(balloon.id) ? null : (
+            won || popped.has(balloon.id) ? null : (
               <motion.button
                 key={balloon.id}
                 type="button"
+                disabled={won || locked}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1, y: [0, -4, 0] }}
                 exit={{ scale: 1.4, opacity: 0 }}
                 transition={{ y: { repeat: Infinity, duration: 1.8 + i * 0.1 } }}
                 whileTap={{ scale: 0.85 }}
                 onClick={() => handlePop(balloon.id)}
-                className="w-14 h-16 rounded-full font-bold text-white text-sm"
+                className="w-14 h-16 rounded-full font-bold text-white text-sm disabled:pointer-events-none"
                 style={{
                   background: `linear-gradient(160deg, ${accentColor}, hsl(var(--brand-pink-400)))`,
                 }}

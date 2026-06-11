@@ -99,6 +99,7 @@ export function DailyChallenge({
 
       {current && (
         <ActivityTaskRenderer
+          key={current.id}
           activity={current}
           amy={amy}
           accentColor={accentColor}

@@ -554,12 +554,21 @@ importers:
       '@workspace/math-playground':
         specifier: workspace:*
         version: link:../../lib/math-playground
+      '@workspace/math-playground-assessment':
+        specifier: workspace:*
+        version: link:../../lib/math-playground-assessment
       '@workspace/math-playground-engagement':
         specifier: workspace:*
         version: link:../../lib/math-playground-engagement
+      '@workspace/math-playground-reporting':
+        specifier: workspace:*
+        version: link:../../lib/math-playground-reporting
       '@workspace/math-playground-voice':
         specifier: workspace:*
         version: link:../../lib/math-playground-voice
+      '@workspace/math-playground-worksheets':
+        specifier: workspace:*
+        version: link:../../lib/math-playground-worksheets
       '@workspace/math-tricks':
         specifier: workspace:*
         version: link:../../lib/math-tricks
@@ -1518,6 +1527,16 @@ importers:
         specifier: 'catalog:'
         version: 4.21.0
 
+  lib/math-playground-assessment:
+    dependencies:
+      '@workspace/math-playground':
+        specifier: workspace:*
+        version: link:../math-playground
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
   lib/math-playground-engagement:
     dependencies:
       '@workspace/math-playground':
@@ -1528,11 +1547,40 @@ importers:
         specifier: 'catalog:'
         version: 4.21.0
 
+  lib/math-playground-reporting:
+    dependencies:
+      '@workspace/math-playground':
+        specifier: workspace:*
+        version: link:../math-playground
+      '@workspace/math-playground-assessment':
+        specifier: workspace:*
+        version: link:../math-playground-assessment
+      '@workspace/math-playground-worksheets':
+        specifier: workspace:*
+        version: link:../math-playground-worksheets
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
   lib/math-playground-voice:
     dependencies:
       '@workspace/math-playground':
         specifier: workspace:*
         version: link:../math-playground
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/math-playground-worksheets:
+    dependencies:
+      '@workspace/math-playground':
+        specifier: workspace:*
+        version: link:../math-playground
+      '@workspace/math-playground-assessment':
+        specifier: workspace:*
+        version: link:../math-playground-assessment
     devDependencies:
       tsx:
         specifier: 'catalog:'

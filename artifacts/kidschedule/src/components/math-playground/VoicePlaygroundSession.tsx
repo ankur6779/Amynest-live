@@ -21,6 +21,7 @@ import { SessionComplete } from "./shell/SessionComplete";
 import { MathPlaygroundSession } from "./MathPlaygroundSession";
 import type { PlaygroundStateApi } from "./hooks/usePlaygroundState";
 import { trackPlaygroundSessionStart, trackPlaygroundSessionComplete } from "./lib/playground-analytics";
+import { isMpPhase6Enabled } from "./lib/feature-flags";
 import { useVoiceMathSession } from "./voice/useVoiceMathSession";
 import { VoiceMathRound } from "./voice/VoiceMathRound";
 
@@ -28,6 +29,7 @@ interface VoicePlaygroundSessionProps {
   activityId: PlaygroundActivityId;
   ageYears: number;
   childId: number;
+  childName: string;
   playground: PlaygroundStateApi;
   onExit: () => void;
 }
@@ -36,20 +38,28 @@ export function VoicePlaygroundSession({
   activityId,
   ageYears,
   childId,
+  childName,
   playground,
   onExit,
 }: VoicePlaygroundSessionProps) {
   const { t } = useTranslation();
-  const amy = usePlaygroundAmy();
+  const amy = usePlaygroundAmy(ageYears);
   const engagement = usePlaygroundEngagement(childId, playground, amy);
   const [starsEarned, setStarsEarned] = useState<number | null>(null);
   const [newBadges, setNewBadges] = useState<string[]>([]);
   const startedAtRef = useRef(Date.now());
+  const completedRef = useRef(false);
   const voiceSupported = isVoiceSupportedActivity(activityId);
 
   useEffect(() => {
     trackPlaygroundSessionStart(childId, activityId, "voice");
   }, [childId, activityId]);
+
+  useEffect(() => {
+    return () => {
+      amy.pause();
+    };
+  }, [amy.pause]);
 
   const adaptivityTier = useMemo(
     () => deriveAdaptivityTierV4(activityId, playground.learning),
@@ -79,12 +89,15 @@ export function VoicePlaygroundSession({
 
   const handleVoiceComplete = useCallback(
     (summary: VoiceRoundSummary) => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+
       const hintsUsed = summary.hintsUsed;
       const stars = starsForCompletion(hintsUsed);
       setStarsEarned(stars);
 
-      if (summary.success) engagement.recordSuccess();
-      else engagement.recordFailure();
+      if (summary.success) engagement.recordSuccess({ silent: true });
+      else engagement.recordFailure({ silent: true });
 
       playground.recordSessionV4({
         activityId,
@@ -117,8 +130,11 @@ export function VoicePlaygroundSession({
       });
 
       playground.generateParentSnapshot(ageYears);
+      if (isMpPhase6Enabled()) {
+        playground.refreshIntelligence(ageYears, childName, true);
+      }
     },
-    [activityId, playground, adaptivityTier, engagement, childId, ageYears],
+    [activityId, playground, adaptivityTier, engagement, childId, ageYears, childName],
   );
 
   if (!voiceSupported || !scenario) {
@@ -127,6 +143,7 @@ export function VoicePlaygroundSession({
         activityId={activityId}
         ageYears={ageYears}
         childId={childId}
+        childName={childName}
         playground={playground}
         onExit={onExit}
       />

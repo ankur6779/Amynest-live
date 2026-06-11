@@ -10,28 +10,32 @@ export function PopCorrectAnswer({
   onCorrect,
   onWrong,
   engagement,
+  locked,
 }: MiniGameProps) {
   const choices = payload.choices ?? [];
   const correct = payload.correctAnswer ?? choices[payload.correctIndex ?? 0];
 
   return (
-    <div className="text-center">
+    <div data-testid="mp-mini-game">
       <p className="text-lg font-black text-white mb-4">{payload.question}</p>
       <div className="flex flex-wrap justify-center gap-3">
         {choices.map((val, i) => (
           <motion.button
             key={`${val}-${i}`}
             type="button"
+            data-testid={`mp-mini-choice-${val}`}
             whileTap={{ scale: 0.88 }}
             animate={{ y: [0, -6, 0] }}
             transition={{ repeat: Infinity, duration: 2 + i * 0.2, ease: "easeInOut" }}
             onClick={() => {
+              if (locked) return;
               audioManager.unlockFromUserGesture();
               engagement?.recordInteraction();
               if (val === correct) onCorrect();
               else onWrong();
             }}
-            className="relative w-20 h-24 rounded-full font-black text-2xl text-white shadow-lg"
+            disabled={locked}
+            className="relative w-20 h-24 rounded-full font-black text-2xl text-white shadow-lg disabled:opacity-40 disabled:pointer-events-none"
             style={{
               background: `radial-gradient(circle at 30% 30%, ${BALLOON_COLORS[i % BALLOON_COLORS.length]}, ${accentColor})`,
               border: `2px solid ${accentColor}88`,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { isMiniGameTemplate, type PuzzlePayload } from "@workspace/math-playground";
 import { audioManager } from "@/lib/audio-manager";
@@ -7,7 +7,7 @@ import { ConfettiCelebration } from "../effects/ConfettiCelebration";
 import { LivingPlaygroundObject } from "../objects/LivingPlaygroundObject";
 import { MiniGameRouter } from "../mini-games/MiniGameRouter";
 import { MINI_GAME_AMY_KEYS } from "../mini-games/mini-game-shared";
-import { isMpMiniGamesEnabled } from "../lib/feature-flags";
+import { isMpAmyAvatarEnabled, isMpMiniGamesEnabled } from "../lib/feature-flags";
 import type { ActivitySharedProps } from "./activity-shared-props";
 
 interface MathPuzzlesProps extends ActivitySharedProps {
@@ -24,19 +24,34 @@ export function MathPuzzles({
 }: MathPuzzlesProps) {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [celebrate, setCelebrate] = useState(false);
+  const completedRef = useRef(false);
+  const finishTimeoutRef = useRef<number | null>(null);
   const miniGamesOn = isMpMiniGamesEnabled();
   const isMiniGame = isMiniGameTemplate(payload.template) && miniGamesOn;
 
+  useEffect(() => {
+    return () => {
+      if (finishTimeoutRef.current !== null) {
+        window.clearTimeout(finishTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const finish = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
     setCelebrate(true);
     amy.queueCue("amy_great_job");
-    window.setTimeout(() => onComplete(hintsUsed), 1600);
+    finishTimeoutRef.current = window.setTimeout(() => onComplete(hintsUsed), 1600);
   }, [hintsUsed, onComplete, amy]);
 
   const onWrong = useCallback(() => {
+    if (completedRef.current) return;
     engagement?.recordFailure();
     setHintsUsed((h) => h + 1);
-    amy.queueCue("amy_try_together");
+    if (!isMpAmyAvatarEnabled()) {
+      amy.queueCue("amy_try_together");
+    }
   }, [amy, engagement]);
 
   const messageKey = useMemo(() => {
@@ -48,7 +63,22 @@ export function MathPuzzles({
 
   useEffect(() => {
     amy.queueCue(messageKey);
-  }, [messageKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [messageKey, amy, amy.muted]);
+
+  const miniGameKey = useMemo(
+    () =>
+      JSON.stringify({
+        template: payload.template,
+        question: payload.question,
+        correctAnswer: payload.correctAnswer,
+        fuelTarget: payload.fuelTarget,
+        targetQuantity: payload.targetQuantity,
+        targetBananas: payload.targetBananas,
+        trainSequence: payload.trainSequence,
+        castlePiecesTotal: payload.castlePiecesTotal,
+      }),
+    [payload],
+  );
 
   return (
     <div>
@@ -64,12 +94,14 @@ export function MathPuzzles({
 
       {isMiniGame ? (
         <MiniGameRouter
+          key={miniGameKey}
           payload={payload}
           accentColor={accentColor}
           onCorrect={finish}
           onWrong={onWrong}
           engagement={engagement}
           childId={childId}
+          locked={celebrate}
         />
       ) : (
         <>
@@ -80,6 +112,7 @@ export function MathPuzzles({
               accentColor={accentColor}
               onCorrect={finish}
               onWrong={onWrong}
+              locked={celebrate}
             />
           )}
           {payload.template === "match_quantity" && (
@@ -89,6 +122,7 @@ export function MathPuzzles({
               onCorrect={finish}
               onWrong={onWrong}
               childId={childId}
+              locked={celebrate}
             />
           )}
           {payload.template === "sort_ascending" && (
@@ -97,6 +131,7 @@ export function MathPuzzles({
               accentColor={accentColor}
               onCorrect={finish}
               onWrong={onWrong}
+              locked={celebrate}
             />
           )}
         </>
@@ -111,12 +146,14 @@ function BiggerNumberPuzzle({
   accentColor,
   onCorrect,
   onWrong,
+  locked,
 }: {
   left: number;
   right: number;
   accentColor: string;
   onCorrect: () => void;
   onWrong: () => void;
+  locked?: boolean;
 }) {
   const bigger = Math.max(left, right);
   return (
@@ -125,13 +162,15 @@ function BiggerNumberPuzzle({
         <motion.button
           key={i}
           type="button"
-          whileTap={{ scale: 0.92 }}
+          disabled={locked}
+          whileTap={{ scale: locked ? 1 : 0.92 }}
           onClick={() => {
+            if (locked) return;
             audioManager.unlockFromUserGesture();
             if (val === bigger) onCorrect();
             else onWrong();
           }}
-          className="flex-1 max-w-[120px] rounded-2xl py-6 font-black text-3xl"
+          className="flex-1 max-w-[120px] rounded-2xl py-6 font-black text-3xl disabled:opacity-40"
           style={{
             background: "rgba(255,255,255,0.08)",
             border: `2px solid ${accentColor}44`,
@@ -151,12 +190,14 @@ function MatchQuantityPuzzle({
   onCorrect,
   onWrong,
   childId,
+  locked,
 }: {
   target: number;
   accentColor: string;
   onCorrect: () => void;
   onWrong: () => void;
   childId: number;
+  locked?: boolean;
 }) {
   const options = useMemo(
     () => [target, target + 1, Math.max(1, target - 1)].sort((a, b) => a - b),
@@ -174,13 +215,15 @@ function MatchQuantityPuzzle({
           <motion.button
             key={opt}
             type="button"
-            whileTap={{ scale: 0.9 }}
+            disabled={locked}
+            whileTap={{ scale: locked ? 1 : 0.9 }}
             onClick={() => {
+              if (locked) return;
               audioManager.unlockFromUserGesture();
               if (opt === target) onCorrect();
               else onWrong();
             }}
-            className="w-14 h-14 rounded-xl font-black text-xl"
+            className="w-14 h-14 rounded-xl font-black text-xl disabled:opacity-40"
             style={{
               background: "rgba(255,255,255,0.08)",
               border: `2px solid ${accentColor}44`,
@@ -200,17 +243,19 @@ function SortPuzzle({
   accentColor,
   onCorrect,
   onWrong,
+  locked,
 }: {
   numbers: number[];
   accentColor: string;
   onCorrect: () => void;
   onWrong: () => void;
+  locked?: boolean;
 }) {
   const sorted = useMemo(() => [...numbers].sort((a, b) => a - b), [numbers]);
   const [picked, setPicked] = useState<number[]>([]);
 
   const handlePick = (n: number) => {
-    if (picked.includes(n)) return;
+    if (locked || picked.includes(n)) return;
     audioManager.unlockFromUserGesture();
     const next = [...picked, n];
     const expected = sorted[next.length - 1];
@@ -229,8 +274,8 @@ function SortPuzzle({
         <motion.button
           key={n}
           type="button"
-          whileTap={{ scale: 0.9 }}
-          disabled={picked.includes(n)}
+          whileTap={{ scale: locked ? 1 : 0.9 }}
+          disabled={locked || picked.includes(n)}
           onClick={() => handlePick(n)}
           className="w-14 h-14 rounded-xl font-black text-lg"
           style={{

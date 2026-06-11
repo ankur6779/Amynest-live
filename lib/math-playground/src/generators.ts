@@ -275,8 +275,8 @@ export function generateActivity(opts: {
     case "daily_challenge": {
       const base = dailySeed(opts.childId);
       const kinds = learning
-        ? pickDailyTaskIds(learning, opts.ageYears, 4)
-        : pickDailyTaskIds({ sessionHistory: [], activityStats: {} }, opts.ageYears, 4);
+        ? pickDailyTaskIds(learning, opts.ageYears, 4, base)
+        : pickDailyTaskIds({ sessionHistory: [], activityStats: {} }, opts.ageYears, 4, base);
       const tasks = kinds.map((kind, i) =>
         generateActivity({
           activityId: kind,
@@ -284,6 +284,7 @@ export function generateActivity(opts: {
           childId: opts.childId,
           seed: base + i * 997,
           learning,
+          enableMiniGames: opts.enableMiniGames,
         }),
       );
       return {

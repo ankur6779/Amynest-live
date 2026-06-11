@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { PuzzlePayload } from "@workspace/math-playground";
 import { isMiniGameTemplate } from "@workspace/math-playground";
 import { trackPlaygroundEvent } from "../lib/playground-analytics";
@@ -12,6 +12,11 @@ import { CastleBuilder } from "./CastleBuilder";
 
 export function MiniGameRouter(props: MiniGameProps) {
   const { payload, childId = 0 } = props;
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    completedRef.current = false;
+  }, [payload.template, payload.correctAnswer, payload.fuelTarget, payload.targetQuantity]);
 
   useEffect(() => {
     if (childId > 0 && isMiniGameTemplate(payload.template)) {
@@ -20,13 +25,24 @@ export function MiniGameRouter(props: MiniGameProps) {
   }, [childId, payload.template]);
 
   const wrapCorrect = () => {
+    if (completedRef.current || props.locked) return;
+    completedRef.current = true;
     if (childId > 0 && isMiniGameTemplate(payload.template)) {
       trackPlaygroundEvent("mini_game_complete", childId, { template: payload.template });
     }
     props.onCorrect();
   };
 
-  const gameProps: MiniGameProps = { ...props, onCorrect: wrapCorrect };
+  const wrapWrong = () => {
+    if (completedRef.current || props.locked) return;
+    props.onWrong();
+  };
+
+  const gameProps: MiniGameProps = {
+    ...props,
+    onCorrect: wrapCorrect,
+    onWrong: wrapWrong,
+  };
 
   switch (payload.template) {
     case "pop_correct_answer":

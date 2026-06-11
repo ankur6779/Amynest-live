@@ -1,5 +1,5 @@
 /**
- * Math Playground analytics — session/mode/voice events only. No child speech content.
+ * Math Playground analytics — session/mode/voice/intelligence events. No child speech content.
  */
 
 import { queueClientLog } from "@/lib/client-logs";
@@ -17,7 +17,13 @@ export type PlaygroundAnalyticsEvent =
   | "amy_reaction_triggered"
   | "object_delight_tap"
   | "parent_snapshot_generated"
-  | "engagement_idle_reengage";
+  | "engagement_idle_reengage"
+  | "worksheet_generated"
+  | "worksheet_downloaded"
+  | "assessment_completed"
+  | "learning_gap_detected"
+  | "recommendation_clicked"
+  | "teacher_report_generated";
 
 function emit(
   event: PlaygroundAnalyticsEvent,
@@ -69,4 +75,43 @@ export function trackParentSnapshotGenerated(
   },
 ): void {
   trackPlaygroundEvent("parent_snapshot_generated", childId, meta);
+}
+
+export function trackWorksheetGenerated(
+  childId: number,
+  meta: { category: string; level: number },
+): void {
+  trackPlaygroundEvent("worksheet_generated", childId, meta);
+}
+
+export function trackWorksheetDownloaded(
+  childId: number,
+  meta: { category: string; level: number },
+): void {
+  trackPlaygroundEvent("worksheet_downloaded", childId, meta);
+}
+
+export function trackAssessmentCompleted(
+  childId: number,
+  meta: { type: string; sessions: number },
+): void {
+  trackPlaygroundEvent("assessment_completed", childId, meta);
+}
+
+export function trackLearningGapDetected(childId: number, gapCount: number): void {
+  trackPlaygroundEvent("learning_gap_detected", childId, { gapCount });
+}
+
+export function trackRecommendationClicked(
+  childId: number,
+  meta: { horizon: string; activityId?: string },
+): void {
+  trackPlaygroundEvent("recommendation_clicked", childId, meta);
+}
+
+export function trackTeacherReportGenerated(
+  childId: number,
+  meta: { readinessScore: number },
+): void {
+  trackPlaygroundEvent("teacher_report_generated", childId, meta);
 }

@@ -7,20 +7,23 @@ export function FeedTheMonkey({
   payload,
   accentColor,
   onCorrect,
-  onWrong,
   engagement,
+  locked,
 }: MiniGameProps) {
   const target = payload.targetBananas ?? 0;
   const [fed, setFed] = useState(0);
 
   const feedBanana = () => {
-    if (fed >= target) return;
+    if (locked) return;
     audioManager.unlockFromUserGesture();
     engagement?.recordInteraction();
-    const next = fed + 1;
-    setFed(next);
-    if (next === target) onCorrect();
-    else if (next > target) onWrong();
+
+    setFed((prev) => {
+      if (prev >= target) return prev;
+      const next = prev + 1;
+      if (next === target) onCorrect();
+      return next;
+    });
   };
 
   return (
@@ -41,7 +44,7 @@ export function FeedTheMonkey({
             key={i}
             type="button"
             whileTap={{ scale: 0.85, y: -12 }}
-            disabled={fed >= target}
+            disabled={fed >= target || locked}
             onClick={feedBanana}
             className="text-3xl p-2 rounded-xl disabled:opacity-30"
             style={{ background: "rgba(255,255,255,0.06)" }}

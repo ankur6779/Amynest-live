@@ -143,6 +143,7 @@ export function pickDailyTaskIds(
   learning: PlaygroundLearningState,
   ageYears: number,
   count = 4,
+  rotateSeed = 0,
 ): PlaygroundActivityId[] {
   const pool = practicePool(ageYears);
   const weak = pickWeakActivities(learning, ageYears, 1);
@@ -150,7 +151,10 @@ export function pickDailyTaskIds(
 
   if (weak[0]) chosen.push(weak[0]);
 
-  for (const id of pool) {
+  const offset = pool.length > 0 ? Math.abs(rotateSeed) % pool.length : 0;
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+
+  for (const id of rotated) {
     if (chosen.length >= count) break;
     if (!chosen.includes(id)) chosen.push(id);
   }

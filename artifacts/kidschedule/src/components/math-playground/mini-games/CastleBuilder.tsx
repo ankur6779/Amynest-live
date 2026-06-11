@@ -9,20 +9,26 @@ export function CastleBuilder({
   onCorrect,
   onWrong,
   engagement,
+  locked,
 }: MiniGameProps) {
   const rounds = payload.castleRounds ?? [];
   const total = payload.castlePiecesTotal ?? rounds.length;
   const [piece, setPiece] = useState(0);
+  const [done, setDone] = useState(false);
   const current = rounds[piece];
 
   const answer = (val: number) => {
-    if (!current) return;
+    if (!current || done || locked) return;
     audioManager.unlockFromUserGesture();
     engagement?.recordInteraction();
     if (val === current.answer) {
       const next = piece + 1;
-      if (next >= total) onCorrect();
-      else setPiece(next);
+      if (next >= total) {
+        setDone(true);
+        onCorrect();
+      } else {
+        setPiece(next);
+      }
     } else {
       onWrong();
     }
@@ -43,17 +49,18 @@ export function CastleBuilder({
           </motion.div>
         ))}
       </div>
-      {current && (
+      {current && !done && (
         <>
           <p className="text-center text-lg font-black text-white mb-3">{current.question}</p>
           <div className="flex justify-center gap-2 flex-wrap">
-            {current.choices.map((val) => (
+            {current.choices.map((val, idx) => (
               <motion.button
-                key={val}
+                key={`${piece}-${idx}-${val}`}
                 type="button"
+                disabled={done || locked}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => answer(val)}
-                className="w-14 h-14 rounded-xl font-black text-xl text-white"
+                className="w-14 h-14 rounded-xl font-black text-xl text-white disabled:opacity-40"
                 style={{
                   background: "rgba(255,255,255,0.08)",
                   border: `2px solid ${accentColor}44`,

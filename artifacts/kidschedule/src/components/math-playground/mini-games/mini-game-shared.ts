@@ -8,6 +8,7 @@ export interface MiniGameProps {
   onWrong: () => void;
   engagement?: PlaygroundEngagementApi;
   childId?: number;
+  locked?: boolean;
 }
 
 export const MINI_GAME_AMY_KEYS: Record<string, string> = {

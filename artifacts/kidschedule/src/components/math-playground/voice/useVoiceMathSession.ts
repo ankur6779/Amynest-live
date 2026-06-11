@@ -15,6 +15,18 @@ import { trackPlaygroundEvent } from "../lib/playground-analytics";
 export type VoiceRoundPhase = "prompt" | "listen" | "validating" | "success" | "retry";
 
 const MAX_RETRIES = 2;
+const ROUND_COMPLETE_DELAY_MS = 1_400;
+const RETRY_LISTEN_DELAY_MS = 400;
+
+function scenarioSignature(scenario: VoiceScenario): string {
+  return JSON.stringify({
+    kind: scenario.kind,
+    activityId: scenario.activityId,
+    promptKey: scenario.promptKey,
+    promptVars: scenario.promptVars,
+    expectedAnswers: scenario.expectedAnswers,
+  });
+}
 
 export function useVoiceMathSession(opts: {
   scenario: VoiceScenario;
@@ -41,22 +53,63 @@ export function useVoiceMathSession(opts: {
   const promptStarted = useRef(false);
   const prevSpeaking = useRef(false);
   const processedTranscript = useRef("");
+  const roundCompleteTimeoutRef = useRef<number | null>(null);
+  const retryListenTimeoutRef = useRef<number | null>(null);
+  const onRoundCompleteRef = useRef(onRoundComplete);
+
+  useEffect(() => {
+    onRoundCompleteRef.current = onRoundComplete;
+  }, [onRoundComplete]);
+
+  const clearRoundTimers = useCallback(() => {
+    if (roundCompleteTimeoutRef.current !== null) {
+      window.clearTimeout(roundCompleteTimeoutRef.current);
+      roundCompleteTimeoutRef.current = null;
+    }
+    if (retryListenTimeoutRef.current !== null) {
+      window.clearTimeout(retryListenTimeoutRef.current);
+      retryListenTimeoutRef.current = null;
+    }
+  }, []);
+
+  const waitForAmySilentThen = useCallback(
+    (fn: () => void, maxWaitMs = 5_000) => {
+      const started = Date.now();
+      const tick = () => {
+        if (!amy.speaking && !amy.loading) {
+          fn();
+          return;
+        }
+        if (Date.now() - started >= maxWaitMs) {
+          fn();
+          return;
+        }
+        retryListenTimeoutRef.current = window.setTimeout(tick, 120);
+      };
+      retryListenTimeoutRef.current = window.setTimeout(tick, RETRY_LISTEN_DELAY_MS);
+    },
+    [amy.speaking, amy.loading],
+  );
 
   const beginPrompt = useCallback(() => {
+    clearRoundTimers();
     promptStarted.current = true;
     processedTranscript.current = "";
+    setAttempts(0);
+    setHintsUsed(0);
     stt.reset();
     setPhase("prompt");
+    prevSpeaking.current = false;
     amy.queueCue(scenario.promptKey, scenario.promptVars);
     trackPlaygroundEvent("voice_round_start", childId, {
       scenarioKind: scenario.kind,
       activityId: scenario.activityId,
     });
-  }, [amy, scenario, stt, childId]);
+  }, [amy, scenario, stt, childId, clearRoundTimers]);
 
   useEffect(() => {
     beginPrompt();
-  }, [scenario.activityId, scenario.kind]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scenarioSignature(scenario)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startListening = useCallback(async () => {
     audioManager.unlockFromUserGesture();
@@ -71,14 +124,21 @@ export function useVoiceMathSession(opts: {
 
   useEffect(() => {
     if (phase !== "prompt" || !promptStarted.current) return;
+
+    if (amy.muted) {
+      void startListening();
+      return;
+    }
+
     if (prevSpeaking.current && !amy.speaking && !amy.loading) {
       void startListening();
     }
     prevSpeaking.current = amy.speaking || amy.loading;
-  }, [amy.speaking, amy.loading, phase, startListening]);
+  }, [amy.speaking, amy.loading, amy.muted, phase, startListening]);
 
   const finishRound = useCallback(
     (success: boolean, voiceConfidence: number, responseTimeMs: number) => {
+      clearRoundTimers();
       setPhase(success ? "success" : "retry");
       const summary: VoiceRoundSummary = {
         scenario,
@@ -88,6 +148,7 @@ export function useVoiceMathSession(opts: {
         voiceConfidence,
         success,
       };
+
       if (success) {
         amy.queueCue(scenario.celebrateKey ?? scenario.successKey, scenario.promptVars);
         trackPlaygroundEvent("voice_round_correct", childId, {
@@ -96,17 +157,23 @@ export function useVoiceMathSession(opts: {
           voiceConfidence,
           retryCount: attempts,
         });
-        window.setTimeout(() => onRoundComplete(summary), 1_400);
+        roundCompleteTimeoutRef.current = window.setTimeout(
+          () => onRoundCompleteRef.current(summary),
+          ROUND_COMPLETE_DELAY_MS,
+        );
       } else {
         amy.queueCue(scenario.struggleKey, scenario.promptVars);
         trackPlaygroundEvent("voice_round_incorrect", childId, {
           scenarioKind: scenario.kind,
           retryCount: attempts,
         });
-        window.setTimeout(() => onRoundComplete(summary), 1_200);
+        roundCompleteTimeoutRef.current = window.setTimeout(
+          () => onRoundCompleteRef.current(summary),
+          ROUND_COMPLETE_DELAY_MS,
+        );
       }
     },
-    [scenario, attempts, hintsUsed, amy, childId, onRoundComplete],
+    [scenario, attempts, hintsUsed, amy, childId, clearRoundTimers],
   );
 
   useEffect(() => {
@@ -147,11 +214,12 @@ export function useVoiceMathSession(opts: {
       setHintsUsed((h) => h + 1);
       amy.queueCue(scenario.struggleKey, scenario.promptVars);
       setPhase("retry");
-      window.setTimeout(() => {
+      stt.stop();
+      waitForAmySilentThen(() => {
         stt.reset();
         processedTranscript.current = "";
         void startListening();
-      }, 1_200);
+      });
       return;
     }
 
@@ -169,14 +237,17 @@ export function useVoiceMathSession(opts: {
     finishRound,
     startListening,
     stt,
+    waitForAmySilentThen,
   ]);
 
   useEffect(() => {
     return () => {
+      clearRoundTimers();
       stt.stop();
       stt.reset();
+      amy.pause();
     };
-  }, [stt]);
+  }, [stt, amy, clearRoundTimers]);
 
   return {
     phase,

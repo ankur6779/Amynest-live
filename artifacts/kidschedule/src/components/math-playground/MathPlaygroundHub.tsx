@@ -14,6 +14,8 @@ import { ParentSummaryCard } from "./rewards/ParentSummaryCard";
 import { ComebackMissionCard } from "./shell/ComebackMissionCard";
 import { PlayModeSelector } from "./mode/PlayModeSelector";
 import type { PlayModeApi } from "./mode/usePlayMode";
+import { PlaygroundIntelligencePanel } from "./intelligence/PlaygroundIntelligencePanel";
+import type { PlaygroundIntelligenceApi } from "./hooks/usePlaygroundIntelligence";
 
 interface MathPlaygroundHubProps {
   childName: string;
@@ -23,6 +25,7 @@ interface MathPlaygroundHubProps {
   learning: PlaygroundLearningState;
   lastParentSnapshot?: ParentRetentionSnapshot;
   playMode: PlayModeApi;
+  intelligenceApi?: PlaygroundIntelligenceApi;
   onSelectActivity: (id: PlaygroundActivityId) => void;
 }
 
@@ -33,6 +36,7 @@ export function MathPlaygroundHub({
   learning,
   lastParentSnapshot,
   playMode,
+  intelligenceApi,
   childId,
   onSelectActivity,
 }: MathPlaygroundHubProps) {
@@ -74,6 +78,14 @@ export function MathPlaygroundHub({
         ageYears={ageYears}
         lastParentSnapshot={lastParentSnapshot}
       />
+
+      {intelligenceApi && (
+        <PlaygroundIntelligencePanel
+          childName={childName}
+          ageYears={ageYears}
+          intelligenceApi={intelligenceApi}
+        />
+      )}
 
       {comebackId && (
         <ComebackMissionCard

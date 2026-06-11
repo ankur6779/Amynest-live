@@ -12,6 +12,7 @@ export function SessionComplete({ stars, accentColor, newBadges, onHome }: Sessi
   const { t } = useTranslation();
   return (
     <motion.div
+      data-testid="mp-session-complete"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className="text-center py-8 rounded-2xl"

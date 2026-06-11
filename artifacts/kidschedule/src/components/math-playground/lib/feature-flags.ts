@@ -21,3 +21,7 @@ export function isMpMiniGamesEnabled(): boolean {
 export function isMpVoiceModeEnabled(): boolean {
   return import.meta.env.VITE_MP_VOICE_MODE === "1";
 }
+
+export function isMpPhase6Enabled(): boolean {
+  return import.meta.env.VITE_MP_PHASE6 === "1" || import.meta.env.VITE_MP_INTELLIGENCE === "1";
+}

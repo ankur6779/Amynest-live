@@ -12,13 +12,19 @@ import {
   type PlaygroundSessionRecordV4,
 } from "@workspace/math-playground";
 import { recordEngagementOutcome } from "@workspace/math-playground-engagement";
+import { refreshPlaygroundIntelligence } from "@workspace/math-playground-reporting";
 import {
   loadPlaygroundState,
   saveParentSnapshot,
   savePlaygroundState,
   updateEngagementState,
 } from "../lib/storage";
-import { trackParentSnapshotGenerated } from "../lib/playground-analytics";
+import {
+  trackAssessmentCompleted,
+  trackLearningGapDetected,
+  trackParentSnapshotGenerated,
+  trackWorksheetGenerated,
+} from "../lib/playground-analytics";
 
 export function usePlaygroundState(childId: number) {
   const [state, setState] = useState(() => loadPlaygroundState(childId));
@@ -33,7 +39,7 @@ export function usePlaygroundState(childId: number) {
       setState((prev) => {
         const next: PlaygroundPersistedState = {
           ...prev,
-          version: 3,
+          version: 4,
           rewards: updater(prev.rewards),
         };
         savePlaygroundState(next);
@@ -49,7 +55,7 @@ export function usePlaygroundState(childId: number) {
         prev.learning ?? defaultLearningState(),
         record,
       );
-      const next: PlaygroundPersistedState = { ...prev, version: 3, learning };
+      const next: PlaygroundPersistedState = { ...prev, version: 4, learning };
       savePlaygroundState(next);
       return next;
     });
@@ -61,7 +67,7 @@ export function usePlaygroundState(childId: number) {
         prev.learning ?? defaultLearningState(),
         record,
       );
-      const next: PlaygroundPersistedState = { ...prev, version: 3, learning };
+      const next: PlaygroundPersistedState = { ...prev, version: 4, learning };
       savePlaygroundState(next);
       return next;
     });
@@ -79,7 +85,7 @@ export function usePlaygroundState(childId: number) {
           },
           outcome,
         );
-        const next: PlaygroundPersistedState = { ...prev, version: 3, engagement };
+        const next: PlaygroundPersistedState = { ...prev, version: 4, engagement };
         savePlaygroundState(next);
         return next;
       });
@@ -95,7 +101,7 @@ export function usePlaygroundState(childId: number) {
         snapshot = buildParentRetentionSnapshot(learning, prev.rewards, ageYears);
         const next: PlaygroundPersistedState = {
           ...prev,
-          version: 3,
+          version: 4,
           lastParentSnapshot: snapshot,
         };
         savePlaygroundState(next);
@@ -111,10 +117,48 @@ export function usePlaygroundState(childId: number) {
     [childId],
   );
 
+  const refreshIntelligence = useCallback(
+    (ageYears: number, childDisplayName: string, afterSessionComplete = false) => {
+      let result!: ReturnType<typeof refreshPlaygroundIntelligence>;
+      setState((prev) => {
+        result = refreshPlaygroundIntelligence({
+          state: prev,
+          ageYears,
+          childDisplayName,
+          afterSessionComplete,
+        });
+        const next: PlaygroundPersistedState = {
+          ...prev,
+          version: 4,
+          intelligence: result.intelligence,
+        };
+        savePlaygroundState(next);
+        return next;
+      });
+
+      if (result.gapsDetected > 0) {
+        trackLearningGapDetected(childId, result.gapsDetected);
+      }
+      if (result.parentReportGenerated) {
+        trackAssessmentCompleted(childId, {
+          type: "parent_report",
+          sessions: result.intelligence.schoolReadiness?.sessionCount ?? 0,
+        });
+      }
+      if (result.worksheetGenerated && result.intelligence.generatedWorksheets?.[0]) {
+        const ws = result.intelligence.generatedWorksheets[0].worksheet;
+        trackWorksheetGenerated(childId, { category: ws.category, level: ws.level });
+      }
+
+      return result;
+    },
+    [childId],
+  );
+
   const setPreferredPlayMode = useCallback(
     (mode: PlaygroundPersistedState["preferredPlayMode"]) => {
       setState((prev) => {
-        const next: PlaygroundPersistedState = { ...prev, version: 3, preferredPlayMode: mode };
+        const next: PlaygroundPersistedState = { ...prev, version: 4, preferredPlayMode: mode };
         savePlaygroundState(next);
         return next;
       });
@@ -125,7 +169,7 @@ export function usePlaygroundState(childId: number) {
   const saveEngagement = useCallback(
     (engagement: PlaygroundEngagementState) => {
       updateEngagementState(childId, engagement);
-      setState((prev) => ({ ...prev, version: 3, engagement }));
+      setState((prev) => ({ ...prev, version: 4, engagement }));
     },
     [childId],
   );
@@ -133,7 +177,7 @@ export function usePlaygroundState(childId: number) {
   const saveSnapshot = useCallback(
     (snapshot: ParentRetentionSnapshot) => {
       saveParentSnapshot(childId, snapshot);
-      setState((prev) => ({ ...prev, version: 3, lastParentSnapshot: snapshot }));
+      setState((prev) => ({ ...prev, version: 4, lastParentSnapshot: snapshot }));
     },
     [childId],
   );
@@ -143,6 +187,7 @@ export function usePlaygroundState(childId: number) {
     rewards: state.rewards,
     learning: state.learning ?? defaultLearningState(),
     engagement: state.engagement,
+    intelligence: state.intelligence,
     lastParentSnapshot: state.lastParentSnapshot,
     preferredPlayMode: state.preferredPlayMode,
     persistRewards,
@@ -151,6 +196,7 @@ export function usePlaygroundState(childId: number) {
     recordSessionV4,
     recordEngagement,
     generateParentSnapshot,
+    refreshIntelligence,
     setPreferredPlayMode,
     saveEngagement,
     saveSnapshot,

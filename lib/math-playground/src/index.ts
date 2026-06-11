@@ -7,3 +7,4 @@ export * from "./generators";
 export * from "./mini-game-generators";
 export * from "./parent-retention";
 export * from "./reward-rules";
+export * from "./intelligence-types";

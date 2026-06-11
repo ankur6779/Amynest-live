@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PlaygroundActivityId } from "@workspace/math-playground";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import {
-  buildLearningZoneAudioStateKey,
-  scheduleLearningZoneAudioPrewarm,
-} from "@/lib/learning-zone-audio-prewarm";
+import { scheduleLearningZoneAudioPrewarm } from "@/lib/learning-zone-audio-prewarm";
+import { buildMathPlaygroundPrewarmContext } from "./lib/playground-audio";
 import { ageYearsToBand } from "@workspace/math-playground";
 import { useTranslation } from "react-i18next";
 import { usePlaygroundState } from "./hooks/usePlaygroundState";
+import { usePlaygroundIntelligence } from "./hooks/usePlaygroundIntelligence";
 import { usePlayMode } from "./mode/usePlayMode";
 import { MathPlaygroundHub } from "./MathPlaygroundHub";
 import { MathPlaygroundSession } from "./MathPlaygroundSession";
 import { VoicePlaygroundSession } from "./VoicePlaygroundSession";
-import { isMpVoiceModeEnabled } from "./lib/feature-flags";
+import { isMpPhase6Enabled } from "./lib/feature-flags";
 import { isVoiceSupportedActivity } from "@workspace/math-playground-voice";
 
 const STATIC_PHRASE_KEYS = [
@@ -49,8 +48,6 @@ const STATIC_PHRASE_KEYS = [
   "amy_voice_divide",
 ] as const;
 
-const VOICE_PREWARM_REVISION = 3;
-
 interface MathPlaygroundProps {
   childName: string;
   ageYears: number;
@@ -62,6 +59,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
   const authFetch = useAuthFetch();
   const playground = usePlaygroundState(childId);
   const playMode = usePlayMode(playground);
+  const intelligenceApi = usePlaygroundIntelligence(childId, ageYears, childName, playground);
   const [activeActivity, setActiveActivity] = useState<PlaygroundActivityId | null>(null);
   const ageBand = ageYearsToBand(ageYears);
   const useVoiceSession =
@@ -83,15 +81,10 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
         children: 3,
       }),
     );
+    const prewarmCtx = buildMathPlaygroundPrewarmContext(ageBand);
     scheduleLearningZoneAudioPrewarm(authFetch, {
-      module: "math_playground",
+      ...prewarmCtx,
       texts,
-      ageGroup: ageBand,
-      stateKey: buildLearningZoneAudioStateKey({
-        module: "math_playground",
-        ageGroup: ageBand,
-        revision: isMpVoiceModeEnabled() ? VOICE_PREWARM_REVISION : 2,
-      }),
     });
   }, [authFetch, ageBand, t]);
 
@@ -105,6 +98,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
 
   return (
     <div
+      data-testid="math-playground"
       className="rounded-2xl overflow-hidden"
       style={{
         background: "linear-gradient(160deg, rgba(69,26,3,0.6) 0%, rgba(28,10,0,0.8) 100%)",
@@ -118,6 +112,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
               activityId={activeActivity}
               ageYears={ageYears}
               childId={childId}
+              childName={childName}
               playground={playground}
               onExit={handleExit}
             />
@@ -126,6 +121,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
               activityId={activeActivity}
               ageYears={ageYears}
               childId={childId}
+              childName={childName}
               playground={playground}
               onExit={handleExit}
             />
@@ -139,6 +135,7 @@ export function MathPlayground({ childName, ageYears, childId = 0 }: MathPlaygro
             lastParentSnapshot={playground.lastParentSnapshot}
             playMode={playMode}
             childId={childId}
+            intelligenceApi={isMpPhase6Enabled() ? intelligenceApi : undefined}
             onSelectActivity={handleSelect}
           />
         )}

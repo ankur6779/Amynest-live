@@ -5,6 +5,7 @@ import { audioManager } from "@/lib/audio-manager";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { PlaygroundAmyShell } from "../shell/PlaygroundAmyShell";
 import { ConfettiCelebration } from "../effects/ConfettiCelebration";
+import { isMpAmyAvatarEnabled } from "../lib/feature-flags";
 import type { ActivitySharedProps } from "./activity-shared-props";
 
 interface NumberPatternsProps extends ActivitySharedProps {
@@ -43,7 +44,9 @@ export function NumberPatterns({
       setWrong(true);
       engagement?.recordFailure();
       setHintsUsed((h) => h + 1);
-      amy.queueCue("amy_try_together");
+      if (!isMpAmyAvatarEnabled()) {
+        amy.queueCue("amy_try_together");
+      }
       window.setTimeout(() => setWrong(false), 500);
       setSelectedChoice(null);
     }

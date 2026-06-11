@@ -10,8 +10,8 @@ import { trackPlaygroundEvent } from "../lib/playground-analytics";
 import { isMpAmyAvatarEnabled } from "../lib/feature-flags";
 
 export interface PlaygroundEngagementApi {
-  recordSuccess: () => void;
-  recordFailure: () => void;
+  recordSuccess: (opts?: { silent?: boolean }) => void;
+  recordFailure: (opts?: { silent?: boolean }) => void;
   recordInteraction: () => void;
   presence: AmyPresenceOutput;
   amy3dState: ReturnType<typeof usePlaygroundAmyPresence>["amy3dState"];
@@ -69,15 +69,21 @@ export function usePlaygroundEngagement(
     setReactionKey((k) => k + 1);
   }, []);
 
-  const recordSuccess = useCallback(() => {
-    playground.recordEngagement("success");
-    bumpOutcome("success");
-  }, [playground, bumpOutcome]);
+  const recordSuccess = useCallback(
+    (opts?: { silent?: boolean }) => {
+      playground.recordEngagement("success");
+      if (!opts?.silent) bumpOutcome("success");
+    },
+    [playground, bumpOutcome],
+  );
 
-  const recordFailure = useCallback(() => {
-    playground.recordEngagement("failure");
-    bumpOutcome("failure");
-  }, [playground, bumpOutcome]);
+  const recordFailure = useCallback(
+    (opts?: { silent?: boolean }) => {
+      playground.recordEngagement("failure");
+      if (!opts?.silent) bumpOutcome("failure");
+    },
+    [playground, bumpOutcome],
+  );
 
   const recordInteraction = useCallback(() => {
     playground.recordEngagement("interaction");

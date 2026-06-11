@@ -100,7 +100,8 @@ export function generateMiniGame(
     }
     case "number_train": {
       const step = tier === "ease" ? 1 : randInt(rng, 1, 3);
-      const start = randInt(rng, 1, Math.max(2, cap - step * 3));
+      const maxStart = Math.max(1, cap - step * 4);
+      const start = randInt(rng, 1, Math.max(1, maxStart));
       const seq: (number | null)[] = [
         start,
         start + step,
@@ -108,7 +109,7 @@ export function generateMiniGame(
         null,
         start + step * 4,
       ];
-      const correct = start + step * 3;
+      const correct = Math.min(start + step * 3, cap);
       const choices = shuffledChoices(rng, correct, cap);
       return {
         template,

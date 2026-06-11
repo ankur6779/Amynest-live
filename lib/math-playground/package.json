@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --import tsx/esm --test src/adaptive.test.ts src/adaptive-v4.test.ts src/parent-retention.test.ts src/mini-game-generators.test.ts"
+    "test": "node --import tsx/esm --test src/adaptive.test.ts src/adaptive-v4.test.ts src/parent-retention.test.ts src/mini-game-generators.test.ts src/mini-game-stress.test.ts src/daily-mini-games.test.ts"
   },
   "devDependencies": {
     "tsx": "catalog:"

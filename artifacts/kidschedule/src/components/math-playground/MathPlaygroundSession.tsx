@@ -18,12 +18,13 @@ import { SessionComplete } from "./shell/SessionComplete";
 import type { PlaygroundStateApi } from "./hooks/usePlaygroundState";
 import type { DailyPayload } from "@workspace/math-playground";
 import { trackPlaygroundSessionStart } from "./lib/playground-analytics";
-import { isMpMiniGamesEnabled } from "./lib/feature-flags";
+import { isMpMiniGamesEnabled, isMpPhase6Enabled } from "./lib/feature-flags";
 
 interface MathPlaygroundSessionProps {
   activityId: PlaygroundActivityId;
   ageYears: number;
   childId: number;
+  childName: string;
   playground: PlaygroundStateApi;
   onExit: () => void;
 }
@@ -32,19 +33,27 @@ export function MathPlaygroundSession({
   activityId,
   ageYears,
   childId,
+  childName,
   playground,
   onExit,
 }: MathPlaygroundSessionProps) {
   const { t } = useTranslation();
-  const amy = usePlaygroundAmy();
+  const amy = usePlaygroundAmy(ageYears);
   const engagement = usePlaygroundEngagement(childId, playground, amy);
   const [starsEarned, setStarsEarned] = useState<number | null>(null);
   const [newBadges, setNewBadges] = useState<string[]>([]);
   const startedAtRef = useRef(Date.now());
+  const completedRef = useRef(false);
 
   useEffect(() => {
     trackPlaygroundSessionStart(childId, activityId, "touch");
   }, [childId, activityId]);
+
+  useEffect(() => {
+    return () => {
+      amy.pause();
+    };
+  }, [amy.pause]);
 
   const adaptivityTier = useMemo(
     () =>
@@ -72,6 +81,9 @@ export function MathPlaygroundSession({
 
   const handleComplete = useCallback(
     (hintsUsed: number) => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+
       const stars =
         activityId === "daily_challenge" ? 5 : starsForCompletion(hintsUsed);
       setStarsEarned(stars);
@@ -98,12 +110,15 @@ export function MathPlaygroundSession({
       });
 
       playground.generateParentSnapshot(ageYears);
+      if (isMpPhase6Enabled()) {
+        playground.refreshIntelligence(ageYears, childName, true);
+      }
     },
-    [activityId, playground, adaptivityTier, engagement, ageYears],
+    [activityId, playground, adaptivityTier, engagement, ageYears, childName],
   );
 
   return (
-    <div>
+    <div data-testid="mp-session">
       <div className="flex items-center justify-between mb-3 gap-2">
         <button
           type="button"

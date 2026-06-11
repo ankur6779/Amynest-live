@@ -3,6 +3,7 @@ import {
   isMpAmyAvatarEnabled,
   isMpLivingObjectsEnabled,
   isMpMiniGamesEnabled,
+  isMpPhase6Enabled,
   isMpVoiceModeEnabled,
 } from "./feature-flags";
 
@@ -31,8 +32,8 @@ describe("math-playground feature flags", () => {
     expect(isMpMiniGamesEnabled()).toBe(true);
   });
 
-  it("enables voice mode with dedicated flag", () => {
-    vi.stubEnv("VITE_MP_VOICE_MODE", "1");
-    expect(isMpVoiceModeEnabled()).toBe(true);
+  it("enables phase 6 intelligence with dedicated flag", () => {
+    vi.stubEnv("VITE_MP_PHASE6", "1");
+    expect(isMpPhase6Enabled()).toBe(true);
   });
 });

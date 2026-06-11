@@ -29,6 +29,7 @@ export function ActivityCard({
     <motion.button
       type="button"
       disabled={!unlocked}
+      data-testid={`mp-activity-${card.id}`}
       onClick={onSelect}
       whileTap={unlocked ? { scale: 0.95 } : undefined}
       className="relative flex flex-col items-center justify-center rounded-2xl p-4 min-h-[140px] text-center transition-opacity"

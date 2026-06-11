@@ -8,6 +8,7 @@ export function RocketCounting({
   onCorrect,
   onWrong,
   engagement,
+  locked,
 }: MiniGameProps) {
   const target = payload.fuelTarget ?? 0;
   const choices = payload.choices ?? [];
@@ -31,12 +32,14 @@ export function RocketCounting({
             type="button"
             whileTap={{ scale: 0.9 }}
             onClick={() => {
+              if (locked) return;
               audioManager.unlockFromUserGesture();
               engagement?.recordInteraction();
               if (val === target) onCorrect();
               else onWrong();
             }}
-            className="w-14 h-14 rounded-xl font-black text-xl text-white"
+            disabled={locked}
+            className="w-14 h-14 rounded-xl font-black text-xl text-white disabled:opacity-40"
             style={{
               background: "rgba(255,255,255,0.1)",
               border: `2px solid ${accentColor}55`,
