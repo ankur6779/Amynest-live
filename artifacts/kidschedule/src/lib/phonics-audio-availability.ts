@@ -9,8 +9,8 @@ import {
 } from "@workspace/phonics-sounds";
 import { lookupPhonicsLibraryAsset } from "@/lib/phonics-audio-map";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
-import { hasStaticCatalogAudio } from "@/lib/unified-catalog-playback";
-import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import { hasPhonicsStaticCatalogAudio } from "@/lib/unified-catalog-playback";
+import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
 
 export type PhonicsClipAvailability = {
   available: boolean;
@@ -23,7 +23,7 @@ export function checkPhonicsLetterClip(audioKey: string): PhonicsClipAvailabilit
   if (!key) {
     return { available: false, catalogKey: null, reason: "missing_catalog_key" };
   }
-  if (hasStaticCatalogAudio(key)) {
+  if (hasPhonicsStaticCatalogAudio(key)) {
     return { available: true, catalogKey: `static:${key}` };
   }
   const catalogKey = resolveLetterClipCatalogKey(key);
@@ -69,7 +69,7 @@ export function checkPhonicsContentClip(
 /** Word must have CVC library clip or phonics-mode static audio — never default lesson catalog. */
 export function checkPhonicsWordClip(word: string): PhonicsClipAvailability {
   const w = word.trim().toLowerCase();
-  if (lookupStaticAudioUrl(w, "phonics")) {
+  if (lookupStaticAudioUrlStrict(w, "phonics")) {
     return { available: true, catalogKey: `static:phonics:${w}` };
   }
   return checkPhonicsContentClip(w, "cvc");

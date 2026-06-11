@@ -361,6 +361,14 @@ function lookupStaticAudioUrlForMode(
   return proxyUrl;
 }
 
+/** Single catalog bucket only — no phonics↔default cross-fallback (required for tile playback). */
+export function lookupStaticAudioUrlStrict(
+  rawText: string,
+  mode: StaticAudioMode,
+): string | null {
+  return lookupStaticAudioUrlForMode(rawText.trim(), mode);
+}
+
 export function lookupStaticAudioUrl(
   rawText: string,
   mode: StaticAudioMode = "default",

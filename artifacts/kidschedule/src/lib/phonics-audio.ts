@@ -24,7 +24,7 @@ import {
   prefetchPhonicsAudioKeys,
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
-import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
 import {
   playCatalogPreparedUrl,
   resolvePhonicsCatalogPhrase,
@@ -124,6 +124,7 @@ export async function speakPhonicsFastClip(
       playbackRate: opts?.playbackRate,
       isCancelled: opts?.isCancelled,
       source: "phonics-catalog-fallback",
+      phonicsOnly: true,
     });
     if (catalog.ok) return { success: true, layer: "static" };
     if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
@@ -136,6 +137,7 @@ export async function speakPhonicsFastClip(
       playbackRate: opts?.playbackRate,
       isCancelled: opts?.isCancelled,
       source: "phonics-static-catalog",
+      phonicsOnly: true,
     });
     if (catalog.ok) return { success: true, layer: "static" };
     if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
@@ -183,12 +185,13 @@ async function playCvcWordFinale(
     const catalog = await playCatalogPreparedUrl(w, {
       isCancelled: opts?.isCancelled,
       source: "phonics-cvc-word-fallback",
+      phonicsOnly: true,
     });
     if (catalog.ok) return { success: true, layer: "static" };
   }
 
   if (!opts?.isCancelled?.()) {
-    const proxyUrl = lookupStaticAudioUrl(w, "phonics");
+    const proxyUrl = lookupStaticAudioUrlStrict(w, "phonics");
     if (proxyUrl) {
       const result = await amyVoiceController.playPreparedUrl(proxyUrl, {
         source: "phonics",

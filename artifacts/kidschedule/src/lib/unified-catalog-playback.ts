@@ -5,7 +5,7 @@
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { amyVoiceController } from "@/lib/amy-voice-controller";
 import type { SpeakOptions } from "@/lib/amy-voice-controller";
-import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
@@ -25,35 +25,62 @@ export function shouldBypassPhonicsSpellingLibraries(): boolean {
   return BYPASS_PHONICS_SPELLING_LIBRARIES;
 }
 
-/** Short isolated CVC/sight words must never map to default-catalog lesson paragraphs. */
-function isIsolatedPhonicsWord(text: string): boolean {
+/** Short tile clips (letters, digraphs, CVC) — never map to Parent Hub lesson paragraphs. */
+export function isPhonicsOnlyCatalogText(text: string): boolean {
   const t = text.trim().toLowerCase();
-  return /^[a-z]{2,5}$/.test(t) && !/\s/.test(t);
+  if (!t) return false;
+  if (/^[a-z]{1,5}$/.test(t)) return true;
+  if (/^[a-z]{1,2}\s+as\s+in\s+[a-z]+$/i.test(t)) return true;
+  return false;
 }
+
+export type PhonicsCatalogResolveOptions = {
+  phoneme?: string | null;
+  /** When true, never resolve or play from the default Parent Hub / lesson catalog. */
+  phonicsOnly?: boolean;
+};
 
 export function resolvePhonicsCatalogPhrase(
   input: string,
-  phoneme?: string | null,
+  phonemeOrOpts?: string | null | PhonicsCatalogResolveOptions,
+  legacyPhonicsOnly?: boolean,
 ): string {
+  const opts: PhonicsCatalogResolveOptions =
+    typeof phonemeOrOpts === "object" && phonemeOrOpts !== null
+      ? phonemeOrOpts
+      : { phoneme: phonemeOrOpts ?? null, phonicsOnly: legacyPhonicsOnly };
   const trimmed = (input ?? "").trim();
   if (!trimmed) return "";
   const fromLetter = getPhonicsAudioText(trimmed.toLowerCase());
-  const candidates = [fromLetter, trimmed, (phoneme ?? "").trim()].filter(Boolean);
-  const phonicsOnly = isIsolatedPhonicsWord(trimmed);
+  const candidates = [fromLetter, trimmed, (opts.phoneme ?? "").trim()].filter(Boolean);
+  const phonicsOnly = opts.phonicsOnly || isPhonicsOnlyCatalogText(trimmed);
   for (const phrase of candidates) {
-    if (lookupStaticAudioUrl(phrase, "phonics")) return phrase;
-    if (!phonicsOnly && lookupStaticAudioUrl(phrase, "default")) return phrase;
+    if (lookupStaticAudioUrlStrict(phrase, "phonics")) return phrase;
+    if (!phonicsOnly && lookupStaticAudioUrlStrict(phrase, "default")) return phrase;
   }
   return fromLetter || trimmed;
 }
 
-export function hasStaticCatalogAudio(phrase: string): boolean {
-  const resolved = resolvePhonicsCatalogPhrase(phrase);
+export function hasStaticCatalogAudio(
+  phrase: string,
+  opts?: { phonicsOnly?: boolean },
+): boolean {
+  const resolved = resolvePhonicsCatalogPhrase(phrase, {
+    phonicsOnly: opts?.phonicsOnly,
+  });
   if (!resolved) return false;
+  if (opts?.phonicsOnly || isPhonicsOnlyCatalogText(resolved)) {
+    return Boolean(lookupStaticAudioUrlStrict(resolved, "phonics"));
+  }
   return (
-    Boolean(lookupStaticAudioUrl(resolved, "phonics")) ||
-    Boolean(lookupStaticAudioUrl(resolved, "default"))
+    Boolean(lookupStaticAudioUrlStrict(resolved, "phonics")) ||
+    Boolean(lookupStaticAudioUrlStrict(resolved, "default"))
   );
+}
+
+/** Phonics tiles — availability checks must not treat Parent Hub lesson clips as phoneme audio. */
+export function hasPhonicsStaticCatalogAudio(phrase: string): boolean {
+  return hasStaticCatalogAudio(phrase, { phonicsOnly: true });
 }
 
 export function catalogPlaybackSpeakOptions(
@@ -76,9 +103,12 @@ export async function playCatalogPreparedUrl(
     playbackRate?: number;
     isCancelled?: () => boolean;
     source?: string;
+    phonicsOnly?: boolean;
   },
 ): Promise<{ ok: boolean; error?: string }> {
-  const resolved = resolvePhonicsCatalogPhrase(phrase);
+  const resolved = resolvePhonicsCatalogPhrase(phrase, {
+    phonicsOnly: opts?.phonicsOnly,
+  });
   const traceModule = getAudioTraceModule();
   if (traceModule) {
     traceBrokenModulePreflight(traceModule, {
@@ -91,11 +121,10 @@ export async function playCatalogPreparedUrl(
   if (!resolved) return { ok: false, error: "tts_empty_text" };
   if (opts?.isCancelled?.()) return { ok: false, error: "tts_cancelled" };
 
-  const modes: StaticAudioMode[] = isIsolatedPhonicsWord(resolved)
-    ? ["phonics"]
-    : ["phonics", "default"];
+  const phonicsOnly = opts?.phonicsOnly || isPhonicsOnlyCatalogText(resolved);
+  const modes: StaticAudioMode[] = phonicsOnly ? ["phonics"] : ["phonics", "default"];
   for (const mode of modes) {
-    const raw = lookupStaticAudioUrl(resolved, mode);
+    const raw = lookupStaticAudioUrlStrict(resolved, mode);
     if (!raw) continue;
     if (traceModule && !tracePlayPreparedUrlInput(traceModule, raw)) {
       return { ok: false, error: "tts_static_missing_url" };

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import type { AuthFetchFn } from "@/lib/poll-result";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { safeAuthFetchJson } from "@/lib/safe-auth-fetch-json";
 import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
@@ -130,6 +131,57 @@ function inferType(itemId: string, ageGroup: string): PhonicsType {
   return "letter";
 }
 
+function levelItemToDisplay(
+  it: PhonicsLevel["items"][number],
+  ageGroup: string,
+): DisplayPhonicsItem {
+  return {
+    id: it.id,
+    symbol: it.symbol,
+    sound: it.sound,
+    phoneme: it.phoneme,
+    example: it.example,
+    examples: it.examples,
+    emoji: it.emoji,
+    hint: it.hint,
+    type: inferType(it.id, ageGroup),
+  };
+}
+
+/** Prewarm phonics clips for the active child + age stage (API or offline fallback). */
+function schedulePhonicsAgeContentPrewarm(
+  authFetch: AuthFetchFn,
+  params: {
+    childId: number | string;
+    ageGroup: string;
+    contentItems: DisplayPhonicsItem[];
+    dailyContentItems: DisplayPhonicsItem[];
+    revision: string | number;
+  },
+): void {
+  const merged = [...params.contentItems, ...params.dailyContentItems];
+  if (merged.length === 0) return;
+
+  const pregenTexts = [
+    ...new Set(merged.map((it) => phonicsTilePlaybackText(it)).filter(Boolean)),
+  ];
+  if (pregenTexts.length === 0) return;
+
+  pregenerateTtsTexts(authFetch, pregenTexts, "phonics");
+  scheduleLearningZoneAudioPrewarm(authFetch, {
+    module: "phonics",
+    texts: pregenTexts,
+    sequenceTexts: pregenTexts,
+    mode: "phonics",
+    ageGroup: params.ageGroup,
+    stateKey: buildLearningZoneAudioStateKey({
+      module: "phonics",
+      ageGroup: params.ageGroup,
+      revision: `${params.childId}:${params.revision}`,
+    }),
+  });
+}
+
 function progressArrayToMap(
   rows: PhonicsApiProgressRow[],
 ): PhonicsProgressMap {
@@ -252,6 +304,57 @@ export function usePhonicsData(
   // Track the latest request so a slow response from a stale (childId,
   // ageGroup) doesn't overwrite fresher state.
   const reqIdRef = useRef(0);
+  const lastPhonicsPrewarmKeyRef = useRef("");
+
+  const phonicsPrewarmPlan = useMemo(() => {
+    if (!level || loading) return null;
+
+    let contentItems: DisplayPhonicsItem[];
+    let dailyContentItems: DisplayPhonicsItem[];
+    if (source === "api") {
+      if (apiItems.length === 0) return null;
+      contentItems = apiItems;
+      dailyContentItems = apiDaily.length > 0 ? apiDaily : apiItems;
+    } else if (level.items.length > 0) {
+      contentItems = level.items.map((it) => levelItemToDisplay(it, level.ageGroup));
+      dailyContentItems = contentItems.slice(0, 10);
+    } else {
+      return null;
+    }
+
+    const revision = journeyMeta?.journeyDay ?? source;
+    const key = [
+      childId,
+      level.ageGroup,
+      source,
+      revision,
+      contentItems.map((item) => item.id).join(","),
+    ].join("|");
+
+    return { key, contentItems, dailyContentItems, revision };
+  }, [
+    childId,
+    level,
+    loading,
+    source,
+    apiItems,
+    apiDaily,
+    journeyMeta?.journeyDay,
+  ]);
+
+  useEffect(() => {
+    if (!level || !phonicsPrewarmPlan) return;
+    if (phonicsPrewarmPlan.key === lastPhonicsPrewarmKeyRef.current) return;
+    lastPhonicsPrewarmKeyRef.current = phonicsPrewarmPlan.key;
+
+    schedulePhonicsAgeContentPrewarm(authFetch, {
+      childId,
+      ageGroup: level.ageGroup,
+      contentItems: phonicsPrewarmPlan.contentItems,
+      dailyContentItems: phonicsPrewarmPlan.dailyContentItems,
+      revision: phonicsPrewarmPlan.revision,
+    });
+  }, [authFetch, childId, level, phonicsPrewarmPlan]);
 
   // ── Fetch from API ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -331,22 +434,6 @@ export function usePhonicsData(
         setInsights(data?.insights ?? []);
         setProgress(merged);
         setSource("api");
-
-        const pregenTexts = [...apiItemsMapped, ...apiDailyMapped].map((it) =>
-          phonicsTilePlaybackText(it),
-        );
-        pregenerateTtsTexts(authFetch, pregenTexts, "phonics");
-        scheduleLearningZoneAudioPrewarm(authFetch, {
-          module: "phonics",
-          texts: pregenTexts,
-          sequenceTexts: pregenTexts,
-          mode: "phonics",
-          stateKey: buildLearningZoneAudioStateKey({
-            module: "phonics",
-            ageGroup: String(childId ?? ""),
-            revision: data?.journeyMeta?.journeyDay ?? "catalog",
-          }),
-        });
 
         // Best-effort replay: for any item where local is *ahead* of the
         // server, fire the missing writes. We don't await — failures are

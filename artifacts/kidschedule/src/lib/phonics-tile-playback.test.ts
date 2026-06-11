@@ -47,4 +47,27 @@ describe("phonicsTilePlaybackText", () => {
       }),
     ).toBe(false);
   });
+
+  it("ignores verbose Parent Hub lesson lines on letter tiles", () => {
+    const lesson =
+      "Newborn sleep is not broken — it is biologically designed to be short, fragmented, and frequent.";
+    expect(
+      phonicsTilePlaybackText({
+        type: "letter",
+        symbol: "s",
+        sound: lesson,
+      }),
+    ).toBe("s");
+  });
+
+  it("ignores verbose lesson lines on sound-discovery tiles", () => {
+    const lesson = "Listen with Amy in this audio lesson about the letter S.";
+    expect(
+      phonicsTilePlaybackText({
+        type: "sound",
+        symbol: "Moo",
+        sound: lesson,
+      }),
+    ).toBe("moo");
+  });
 });

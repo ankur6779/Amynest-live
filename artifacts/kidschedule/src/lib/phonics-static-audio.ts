@@ -13,7 +13,6 @@ import {
   resolvePhonicsSequenceKeys,
   type PhonicsAssetType,
 } from "@workspace/phonics-sounds";
-import { getGlobalCachedAudioForPlayback } from "@/lib/global-audio-cache";
 import { getLocalCachedAudioUrl, warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { logAudioHealthSuccess } from "@/lib/audio-health";
@@ -42,7 +41,7 @@ import {
   resolvePhonicsCatalogPhrase,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
-import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
 
 export { getAllPhonicsAudioKeys, resolvePhonicsAudioKey, resolvePhonicsSequenceKeys };
 export { stopPhonicsPlayback, isPhonicsPlaying };
@@ -57,12 +56,8 @@ export function getPhonicsStaticAudioUrl(audioKey: string): string {
   const fromLibrary = lookupPhonicsLetterUrl(audioKey);
   if (fromLibrary) return fromLibrary;
 
-  const phrase = resolvePhonicsCatalogPhrase(audioKey);
-  return (
-    lookupStaticAudioUrl(phrase, "phonics") ??
-    lookupStaticAudioUrl(phrase, "default") ??
-    ""
-  );
+  const phrase = resolvePhonicsCatalogPhrase(audioKey, { phonicsOnly: true });
+  return lookupStaticAudioUrlStrict(phrase, "phonics") ?? "";
 }
 
 /** HTTPS URL for CVC word, sight word, sentence, or quiz — library first, then static catalog. */
@@ -73,12 +68,8 @@ export function getPhonicsContentAudioUrl(
   const fromLibrary = lookupPhonicsContentUrl(text, preferredType);
   if (fromLibrary) return fromLibrary;
 
-  const phrase = resolvePhonicsCatalogPhrase(text);
-  return (
-    lookupStaticAudioUrl(phrase, "phonics") ??
-    lookupStaticAudioUrl(phrase, "default") ??
-    ""
-  );
+  const phrase = resolvePhonicsCatalogPhrase(text, { phonicsOnly: true });
+  return lookupStaticAudioUrlStrict(phrase, "phonics") ?? "";
 }
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
@@ -168,9 +159,6 @@ async function resolveBestPlayUrl(
   networkUrl: string,
 ): Promise<ResolvedPlayUrl> {
   if (shouldPhonicsUseCache()) {
-    const warmed = getGlobalCachedAudioForPlayback(cacheKey);
-    if (warmed?.src) return { url: warmed.src };
-
     const blobUrl = await getLocalCachedAudioUrl(cacheKey);
     if (blobUrl) {
       return { url: blobUrl, cleanup: () => URL.revokeObjectURL(blobUrl) };
@@ -242,14 +230,15 @@ async function tryStaticCatalogClip(
   source: string,
   options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
 ): Promise<PlayPhonicsStaticResult | null> {
-  const phrase = resolvePhonicsCatalogPhrase(label);
-  const staticUrl = lookupStaticAudioUrl(phrase, "phonics");
+  const phrase = resolvePhonicsCatalogPhrase(label, { phonicsOnly: true });
+  const staticUrl = lookupStaticAudioUrlStrict(phrase, "phonics");
   if (!staticUrl) return null;
 
   const catalog = await playCatalogPreparedUrl(phrase, {
     playbackRate: options?.playbackRate,
     isCancelled: options?.isCancelled,
     source,
+    phonicsOnly: true,
   });
   if (catalog.ok) {
     logAudioHealthSuccess({ layer: "static", fallbackUsed: true });

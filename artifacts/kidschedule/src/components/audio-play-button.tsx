@@ -23,6 +23,7 @@ import {
 import {
   catalogPlaybackSpeakOptions,
   hasStaticCatalogAudio,
+  hasPhonicsStaticCatalogAudio,
   playCatalogPreparedUrl,
   resolvePhonicsCatalogPhrase,
   shouldBypassPhonicsSpellingLibraries,
@@ -199,7 +200,7 @@ export function AudioPlayButton({
     const trimmed = (text ?? "").trim();
     if (!trimmed) return false;
     try {
-      if (hasStaticCatalogAudio(trimmed)) return true;
+      if (hasPhonicsStaticCatalogAudio(trimmed)) return true;
       // Phonics clips often live in phonics-library / TTS, not static-audio-map — keep buttons tappable.
       if (shouldBypassPhonicsSpellingLibraries() || isLocalAudioRecoveryEnabled()) {
         return true;
@@ -220,7 +221,10 @@ export function AudioPlayButton({
     if (!trimmed) return "";
     if (mode !== "phonics") return trimmed;
     if (shouldBypassPhonicsSpellingLibraries()) {
-      return resolvePhonicsCatalogPhrase(trimmed, phonemeKey);
+      return resolvePhonicsCatalogPhrase(trimmed, {
+        phoneme: phonemeKey,
+        phonicsOnly: true,
+      });
     }
     return resolvedAudioKey || trimmed;
   }, [text, mode, resolvedAudioKey, phonemeKey]);
@@ -306,10 +310,11 @@ export function AudioPlayButton({
           pause();
           await phonicsEngineStop("audio_play_button");
           const tryStaticCatalogFirst = async (phrase: string) => {
-            if (!hasStaticCatalogAudio(phrase)) return null;
+            if (!hasPhonicsStaticCatalogAudio(phrase)) return null;
             const catalog = await playCatalogPreparedUrl(phrase, {
               playbackRate,
               source: "audio-play-button",
+              phonicsOnly: true,
             });
             if (catalog.ok) {
               if (isMounted.current) onPlay?.();
@@ -334,7 +339,10 @@ export function AudioPlayButton({
               return { success: true, layer: "static" as const };
             }
             const staticFirst = await tryStaticCatalogFirst(
-              resolvePhonicsCatalogPhrase(resolvedText, phonemeKey),
+              resolvePhonicsCatalogPhrase(resolvedText, {
+                phoneme: phonemeKey,
+                phonicsOnly: true,
+              }),
             );
             if (staticFirst?.success) return staticFirst;
             const fastWord = await speakPhonicsFastClip(resolvedText, {
@@ -371,7 +379,10 @@ export function AudioPlayButton({
             return fast;
           }
           const staticLetter = await tryStaticCatalogFirst(
-            resolvePhonicsCatalogPhrase(resolvedText, phonemeKey),
+            resolvePhonicsCatalogPhrase(resolvedText, {
+              phoneme: phonemeKey,
+              phonicsOnly: true,
+            }),
           );
           if (staticLetter?.success) return staticLetter;
           if (isMounted.current) setVisualFallback(true);
