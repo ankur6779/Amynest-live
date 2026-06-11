@@ -10,6 +10,7 @@ import { ELEVENLABS_SPEAK_TEXT } from "./phonics-generation.js";
 import {
   getPhonicsCatalogKey,
   getPhonicsGcsObjectPath,
+  phonicsLibraryProxyPath,
   type PhonicsAssetType,
 } from "./gcs-paths.js";
 
@@ -403,7 +404,7 @@ export function catalogEntryToManifestAsset(
     difficulty: entry.difficulty,
     curriculumLevel: entry.curriculumLevel,
     gcsPath,
-    url: `https://storage.googleapis.com/${bucketId}/${gcsPath}`,
+    url: phonicsLibraryProxyPath(gcsPath),
     version: PHONICS_LIBRARY_VERSION,
     quality: "auto",
     ...overrides,

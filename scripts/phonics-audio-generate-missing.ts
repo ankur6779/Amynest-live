@@ -110,7 +110,7 @@ async function processItem(
     const { buffer, durationMs, source } = await synthesizeCatalogEntry(entry, opts.useFfmpeg, {
       allowFallback: process.env.PHONICS_NO_FALLBACK !== "1",
     });
-    const url = await uploadToGcs(opts.storage, opts.bucket, gcsPath, buffer);
+    await uploadToGcs(opts.storage, opts.bucket, gcsPath, buffer);
     const verified = await verifyGcsUpload(opts.storage, opts.bucket, gcsPath);
     if (!verified) {
       return {
@@ -124,7 +124,7 @@ async function processItem(
         },
       };
     }
-    const base = catalogEntryToManifestAsset(entry, opts.bucket, { url, gcsPath, durationMs });
+    const base = catalogEntryToManifestAsset(entry, opts.bucket, { gcsPath, durationMs });
     return {
       ok: true,
       skipped: false,
@@ -185,6 +185,45 @@ function printBuildSummary(opts: {
   console.log("");
 }
 
+async function rebuildManifestFromGcs(
+  inventory: PhonicsInventoryItem[],
+  storage: ReturnType<typeof buildStorage>,
+  bucket: string,
+): Promise<Record<string, ReturnType<typeof catalogEntryToManifestAsset>>> {
+  const assets: Record<string, ReturnType<typeof catalogEntryToManifestAsset>> = {};
+  for (const item of inventory) {
+    const exists = await verifyGcsUpload(storage, bucket, item.gcsPath);
+    if (!exists) continue;
+    const entry = inventoryToCatalogEntries([item])[0]!;
+    assets[item.catalogKey] = catalogEntryToManifestAsset(entry, bucket, { gcsPath: item.gcsPath });
+  }
+  return assets;
+}
+
+async function findAssetsNeedingGeneration(
+  inventory: PhonicsInventoryItem[],
+  force: boolean,
+  storage: ReturnType<typeof buildStorage>,
+  bucket: string,
+): Promise<PhonicsInventoryItem[]> {
+  if (force) return inventory;
+
+  const manifest = await runPhonicsAudioAudit();
+  const manifestMissing = new Set(manifest.missing.map((m) => m.catalogKey));
+  const needsWork: PhonicsInventoryItem[] = [];
+
+  for (const item of inventory) {
+    if (manifestMissing.has(item.catalogKey)) {
+      needsWork.push(item);
+      continue;
+    }
+    const exists = await verifyGcsUpload(storage, bucket, item.gcsPath);
+    if (!exists) needsWork.push(item);
+  }
+
+  return needsWork;
+}
+
 async function main(): Promise<void> {
   if (!readEnvApiKey()) {
     console.error("[phonics-audio:generate-missing] ELEVENLABS_API_KEY required");
@@ -192,12 +231,21 @@ async function main(): Promise<void> {
   }
 
   const force = process.argv.includes("--force");
-  const before = await runPhonicsAudioAudit();
   const inventory = await loadFullPhonicsInventory();
-  const missingKeys = new Set(before.missing.map((m) => m.catalogKey));
-  const toGenerate = force
-    ? inventory
-    : inventory.filter((item) => missingKeys.has(item.catalogKey));
+  const storage = buildStorage();
+  const bucket = getBucketName();
+
+  const verifiedAssets = await rebuildManifestFromGcs(inventory, storage, bucket);
+  const cleaned = await mergeManifestWithInventory(verifiedAssets, { includePlaceholders: false });
+  cleaned.voiceId = VOICE_ID;
+  cleaned.modelId = MODEL_ID;
+  writePhonicsLibraryManifest(cleaned);
+  console.log(
+    `[phonics-audio:generate-missing] manifest reset to ${cleaned.assetCount} GCS-verified assets`,
+  );
+
+  const before = await runPhonicsAudioAudit();
+  const toGenerate = await findAssetsNeedingGeneration(inventory, force, storage, bucket);
 
   if (toGenerate.length === 0) {
     console.log("[phonics-audio:generate-missing] No missing assets — catalog complete.");
@@ -206,8 +254,6 @@ async function main(): Promise<void> {
   }
 
   const useFfmpeg = await resolveUseFfmpeg();
-  const storage = buildStorage();
-  const bucket = getBucketName();
   const generatedAssets: Record<string, ReturnType<typeof catalogEntryToManifestAsset>> = {};
   let created = 0;
   let skipped = 0;
@@ -255,7 +301,7 @@ async function main(): Promise<void> {
     writePhonicsLibraryManifest(manifest);
 
     console.log(
-      `[batch ${batchNum}/${batchTotal}] created=${batchCreated} skipped=${batchSkipped} failed=${batchFailed} manifest=${manifest.assetCount}`,
+      `[batch ${batchNum}/${batchTotal}] created=${batchCreated} skipped=${batchSkipped} failed=${batchFailed} manifest=${Object.keys(generatedAssets).length}`,
     );
 
     if (offset + BATCH_SIZE < toGenerate.length) {
@@ -265,6 +311,21 @@ async function main(): Promise<void> {
 
   const uploadFailures = failures.filter((f) => f.stage === "upload" || f.stage === "verify").length;
   const failureReportPath = failures.length > 0 ? writeFailureReport(failures) : null;
+
+  const finalGenerated = { ...generatedAssets };
+  for (const item of inventory) {
+    const exists = await verifyGcsUpload(storage, bucket, item.gcsPath);
+    if (exists && !finalGenerated[item.catalogKey]) {
+      const entry = inventoryToCatalogEntries([item])[0]!;
+      finalGenerated[item.catalogKey] = catalogEntryToManifestAsset(entry, bucket, {
+        gcsPath: item.gcsPath,
+      });
+    }
+  }
+  const finalManifest = await mergeManifestWithInventory(finalGenerated, { includePlaceholders: false });
+  finalManifest.voiceId = VOICE_ID;
+  finalManifest.modelId = MODEL_ID;
+  writePhonicsLibraryManifest(finalManifest);
 
   const after = await runPhonicsAudioAudit({ verifyGcs: true });
   after.generatedThisRun = created;
@@ -276,7 +337,7 @@ async function main(): Promise<void> {
     skipped,
     failed: failures.length,
     uploadFailures,
-    manifestEntries: after.audioAvailable,
+    manifestEntries: finalManifest.assetCount,
     failures,
   });
 

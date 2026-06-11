@@ -359,7 +359,7 @@ async function main(): Promise<void> {
     libraryVersion: PHONICS_LIBRARY_VERSION,
     generatedAt: new Date().toISOString(),
     bucket,
-    baseUrl: `https://storage.googleapis.com/${bucket}`,
+    baseUrl: "",
     voiceId: VOICE_ID,
     modelId: MODEL_ID,
     assetCount: Object.keys(assets).length,

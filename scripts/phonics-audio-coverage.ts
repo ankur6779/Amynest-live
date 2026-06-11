@@ -189,6 +189,7 @@ export function printPhonicsAudioAuditReport(
 
 export async function mergeManifestWithInventory(
   generatedAssets: PhonicsAudioLibraryManifest["assets"],
+  opts?: { includePlaceholders?: boolean },
 ): Promise<PhonicsAudioLibraryManifest> {
   const prior = loadManifest();
   const inventory = await loadFullPhonicsInventory();
@@ -203,10 +204,12 @@ export async function mergeManifestWithInventory(
     ...generatedAssets,
   };
 
-  for (const item of inventory) {
-    if (!assets[item.catalogKey]) {
-      const entry = inventoryToCatalogEntries([item])[0]!;
-      assets[item.catalogKey] = catalogEntryToManifestAsset(entry, bucket);
+  if (opts?.includePlaceholders) {
+    for (const item of inventory) {
+      if (!assets[item.catalogKey]) {
+        const entry = inventoryToCatalogEntries([item])[0]!;
+        assets[item.catalogKey] = catalogEntryToManifestAsset(entry, bucket);
+      }
     }
   }
 
@@ -215,7 +218,7 @@ export async function mergeManifestWithInventory(
     libraryVersion: PHONICS_LIBRARY_VERSION,
     generatedAt: new Date().toISOString(),
     bucket,
-    baseUrl: `https://storage.googleapis.com/${bucket}`,
+    baseUrl: "",
     voiceId: prior?.voiceId ?? "",
     modelId: prior?.modelId ?? "",
     assetCount: Object.keys(assets).length,
