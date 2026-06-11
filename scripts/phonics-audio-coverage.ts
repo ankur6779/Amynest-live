@@ -200,7 +200,6 @@ export async function mergeManifestWithInventory(
     "amynest-audio-storage";
 
   const assets: PhonicsAudioLibraryManifest["assets"] = {
-    ...(prior?.assets ?? {}),
     ...generatedAssets,
   };
 
