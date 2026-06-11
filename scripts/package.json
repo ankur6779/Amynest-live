@@ -43,7 +43,7 @@
     "phonics-audio-audit": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./phonics-audio-audit.ts",
     "phonics-audio-generate-missing": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./phonics-audio-generate-missing.ts",
     "phonics-audio-certify": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./phonics-audio-certify.ts",
-    "check-phonics-release-gate": "tsx ./check-phonics-release-gate.ts",
+    "check-phonics-release-gate": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./check-phonics-release-gate.ts",
     "check-crash-launch-gate": "tsx ./check-crash-launch-gate.ts",
     "check-audio-health-gate": "tsx ./audio-health-gate.ts",
     "crash-engineering-audit": "tsx ./crash-engineering-audit.ts",
