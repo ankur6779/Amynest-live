@@ -57,6 +57,12 @@ export const CVC_WORDS: CvcWordEntry[] = [
   { word: "mat", phonemes: ["m", "æ", "t"], level: 1 },
   { word: "sat", phonemes: ["s", "æ", "t"], level: 1 },
   { word: "pat", phonemes: ["p", "æ", "t"], level: 1 },
+  { word: "hat", phonemes: ["h", "æ", "t"], level: 1 },
+  { word: "rat", phonemes: ["r", "æ", "t"], level: 1 },
+  { word: "can", phonemes: ["k", "æ", "n"], level: 1 },
+  { word: "fan", phonemes: ["f", "æ", "n"], level: 1 },
+  { word: "man", phonemes: ["m", "æ", "n"], level: 1 },
+  { word: "pan", phonemes: ["p", "æ", "n"], level: 1 },
 
   { word: "dog", phonemes: ["d", "ɒ", "g"], level: 2 },
   { word: "log", phonemes: ["l", "ɒ", "g"], level: 2 },
@@ -65,20 +71,36 @@ export const CVC_WORDS: CvcWordEntry[] = [
   { word: "pen", phonemes: ["p", "ɛ", "n"], level: 2 },
   { word: "hen", phonemes: ["h", "ɛ", "n"], level: 2 },
   { word: "ten", phonemes: ["t", "ɛ", "n"], level: 2 },
+  { word: "bed", phonemes: ["b", "ɛ", "d"], level: 2 },
 
   { word: "sit", phonemes: ["s", "ɪ", "t"], level: 2 },
   { word: "hit", phonemes: ["h", "ɪ", "t"], level: 2 },
+  { word: "pin", phonemes: ["p", "ɪ", "n"], level: 2 },
+  { word: "win", phonemes: ["w", "ɪ", "n"], level: 2 },
+  { word: "fin", phonemes: ["f", "ɪ", "n"], level: 2 },
+  { word: "pig", phonemes: ["p", "ɪ", "g"], level: 2 },
+  { word: "sip", phonemes: ["s", "ɪ", "p"], level: 2 },
+  { word: "lip", phonemes: ["l", "ɪ", "p"], level: 2 },
+  { word: "tip", phonemes: ["t", "ɪ", "p"], level: 2 },
 
   { word: "cup", phonemes: ["k", "ʌ", "p"], level: 2 },
   { word: "sun", phonemes: ["s", "ʌ", "n"], level: 2 },
+  { word: "bus", phonemes: ["b", "ʌ", "s"], level: 2 },
 
-  // Level 3 — same words, used in random-order practice
-  { word: "hat", phonemes: ["h", "æ", "t"], level: 3 },
-  { word: "rat", phonemes: ["r", "æ", "t"], level: 3 },
-  { word: "pig", phonemes: ["p", "ɪ", "g"], level: 3 },
-  { word: "bed", phonemes: ["b", "ɛ", "d"], level: 3 },
-  { word: "bus", phonemes: ["b", "ʌ", "s"], level: 3 },
+  { word: "pot", phonemes: ["p", "ɒ", "t"], level: 2 },
 ];
+
+/** Phoneme key for a grapheme slot in a CVC blend (index matches c–a–t splits). */
+export function getCvcBlendPhonemeAt(
+  word: string,
+  graphemeIndex: number,
+): string | undefined {
+  const entry = getCvcWordEntry(word);
+  if (!entry || graphemeIndex < 0 || graphemeIndex >= entry.phonemes.length) {
+    return undefined;
+  }
+  return entry.phonemes[graphemeIndex];
+}
 
 const CVC_BY_WORD = new Map(CVC_WORDS.map((e) => [e.word.toLowerCase(), e]));
 

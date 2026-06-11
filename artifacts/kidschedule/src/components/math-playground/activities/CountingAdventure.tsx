@@ -31,13 +31,6 @@ export function CountingAdventure({
   const count = collected.size;
   const done = count === payload.targetCount;
 
-  useEffect(() => {
-    amy.queueCue("amy_count_prompt", {
-      count: payload.targetCount,
-      objects: objectPlural(payload.objectKind),
-    });
-  }, [payload.targetCount, payload.objectKind]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleTap = useCallback(
     (id: string, el: HTMLElement) => {
       if (collected.has(id) || done) return;
@@ -77,7 +70,7 @@ export function CountingAdventure({
         }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

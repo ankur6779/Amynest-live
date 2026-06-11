@@ -60,6 +60,23 @@ describe("generateAdaptiveInfantDayRoutine", () => {
     }
   });
 
+  it("passes audit for onboarding default times (7:00 AM / 7:30 PM)", () => {
+    for (const ageMonths of [6, 8, 10]) {
+      const { finalAudit } = generateValidatedInfantRoutine({
+        ageMonths,
+        wakeTime: "07:00",
+        sleepTime: "19:30",
+        feedingType: "mixed",
+      });
+      const failed = finalAudit.results.filter((r) => r.status === "FAIL");
+      assert.equal(
+        failed.length,
+        0,
+        `${ageMonths}mo: ${failed.map((f) => f.details.join("; ")).join(" | ")}`,
+      );
+    }
+  });
+
   it("validated pipeline reaches all PASS for standard 7mo scenario", () => {
     const { finalAudit, realismScore, result } = generateValidatedInfantRoutine({
       ageMonths: 7,

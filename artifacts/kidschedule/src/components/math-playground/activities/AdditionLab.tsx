@@ -40,10 +40,6 @@ export function AdditionLab({
   const [movedLeft, setMovedLeft] = useState<Set<string>>(new Set());
   const [movedRight, setMovedRight] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    amy.queueCue("amy_addition_intro", { a: payload.augend, b: payload.addend });
-  }, [payload.augend, payload.addend]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const moveToBasket = useCallback(
     (side: "left" | "right", id: string) => {
       if (done) return;
@@ -77,7 +73,7 @@ export function AdditionLab({
         messageVars={{ a: payload.augend, b: payload.addend }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

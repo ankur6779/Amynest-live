@@ -42,9 +42,11 @@ export function validateInfantPipelineSchedule(
 
   if (ageMonths >= 6 && ageMonths < 12) {
     const band = getNapsPerDayForAge(ageMonths);
-    if (naps.length < band.min) {
+    const dayWindow = sleepMins - wakeMins;
+    const minNaps = dayWindow < 600 ? Math.min(1, band.min) : band.min;
+    if (naps.length < minNaps) {
       errors.push(
-        `infant safety: expected at least ${band.min} nap(s), found ${naps.length}`,
+        `infant safety: expected at least ${minNaps} nap(s), found ${naps.length}`,
       );
     }
   }

@@ -13,6 +13,7 @@
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
   },
   "dependencies": {
+    "@workspace/phonics-v3-progress": "workspace:*",
     "@workspace/gaming-rewards": "workspace:*",
     "@opentelemetry/api": "^1.9.1",
     "drizzle-orm": "catalog:",

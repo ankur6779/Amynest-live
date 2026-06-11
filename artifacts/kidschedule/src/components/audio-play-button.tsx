@@ -345,21 +345,10 @@ export function AudioPlayButton({
               if (isMounted.current) onPlay?.();
               return fastWord;
             }
-            const speakWord = await speak(
-              resolvedText,
-              catalogPlaybackSpeakOptions(resolvedText, {
-                mode: "phonics",
-                phoneme: phonemeKey,
-                word: cvcWordKey,
-                playbackMode: "partial-ok",
-              }),
-            );
-            if (speakWord?.success) {
-              if (isMounted.current) onPlay?.();
-              return speakWord;
-            }
+            // Never fall back to Amy runtime TTS for CVC tiles — it plays lesson
+            // paragraphs ("C says…") instead of bare phoneme/word clips.
             if (isMounted.current) setVisualFallback(true);
-            return { success: false, error: speakWord?.error ?? "phonics_play_failed" };
+            return { success: false, error: fastWord.error ?? "phonics_audio_preparing" };
           }
           const letterKey = resolvedAudioKey || phonemeKey || resolvedText;
           if (
@@ -385,21 +374,10 @@ export function AudioPlayButton({
             resolvePhonicsCatalogPhrase(resolvedText, phonemeKey),
           );
           if (staticLetter?.success) return staticLetter;
-          const speakLetter = await speak(
-            resolvedText,
-            catalogPlaybackSpeakOptions(resolvedText, {
-              mode: "phonics",
-              phoneme: phonemeKey,
-              word: cvcWordKey,
-              playbackMode: "partial-ok",
-            }),
-          );
-          if (speakLetter?.success) {
-            if (isMounted.current) onPlay?.();
-            return speakLetter;
-          }
           if (isMounted.current) setVisualFallback(true);
-          return speakLetter ?? fast;
+          return fast.success === false
+            ? fast
+            : { success: false, error: "phonics_audio_preparing" };
         }
 
         const isSentenceRead = resolvedText.includes(" ");

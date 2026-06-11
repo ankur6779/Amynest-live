@@ -90,26 +90,26 @@ const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji, examples
 
 // ─── 3–4 years: CVC blending words ───────────────────────────────────────────
 const CVC_WORDS: Array<[string, string, string]> = [
-  // [word, "c–a–t", emoji]
+  // [word, blend hint, emoji]
   ["cat", "c–a–t", "🐱"], ["bat", "b–a–t", "🦇"], ["hat", "h–a–t", "🎩"],
-  ["mat", "m–a–t", "🧶"], ["pen", "p–e–n", "🖊️"], ["bed", "b–e–d", "🛏️"],
-  ["pig", "p–i–g", "🐷"], ["pin", "p–i–n", "📍"], ["dog", "d–o–g", "🐶"],
+  ["mat", "m–a–t", "🧶"], ["rat", "r–a–t", "🐀"], ["pen", "p–e–n", "🖊️"],
+  ["hen", "h–e–n", "🐔"], ["bed", "b–e–d", "🛏️"], ["pig", "p–i–g", "🐷"],
+  ["pin", "p–i–n", "📍"], ["sit", "s–i–t", "🪑"], ["dog", "d–o–g", "🐶"],
   ["pot", "p–o–t", "🪴"], ["cup", "c–u–p", "🥤"], ["bus", "b–u–s", "🚌"],
+  ["sun", "s–u–n", "☀️"],
 ];
 
-const TIER_3_4Y: SeedItem[] = CVC_WORDS.map(([word, blend, emoji], i) => {
-  const sounds = blend.split("–");
-  return {
-    ageGroup: "3_4y",
-    level: i + 1,
-    type: "word",
-    symbol: word,
-    sound: `${sounds.join(". ")}. ${word}.`,
-    example: blend,
-    emoji,
-    hint: "Blend the sounds",
-  };
-});
+const TIER_3_4Y: SeedItem[] = CVC_WORDS.map(([word, blend, emoji], i) => ({
+  ageGroup: "3_4y",
+  level: i + 1,
+  type: "word",
+  symbol: word,
+  // Bare word only — blending UI plays phoneme clips, not lesson paragraphs.
+  sound: word,
+  example: blend,
+  emoji,
+  hint: "Tap · then Blend",
+}));
 
 // ─── 4–5 years: sight words + simple sentences ───────────────────────────────
 const SIGHT_WORDS: Array<[string, string]> = [

@@ -37,7 +37,7 @@ export function VoiceMathRound({
         messageVars={scenario.promptVars}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

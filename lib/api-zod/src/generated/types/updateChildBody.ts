@@ -13,8 +13,11 @@ export interface UpdateChildBody {
   dob?: string | null;
   selectedAgeBand?: string | null;
   dobIsEstimated?: boolean | null;
+  /** Developmental / education stage (at_home, daycare, lkg, school, …). */
   educationStage?: string | null;
+  /** Learning context — home, daycare, early_learning, formal_school, homeschool. */
   learningEnvironment?: string | null;
+  /** True when parent provided school schedule; false uses age-appropriate defaults. */
   scheduleKnown?: boolean | null;
   age?: number;
   ageMonths?: number;

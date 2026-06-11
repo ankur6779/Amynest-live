@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ageYearsToBand } from "@workspace/math-playground";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { audioManager } from "@/lib/audio-manager";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { catalogPlaybackSpeakOptions } from "@/lib/unified-catalog-playback";
 import { speakPlaygroundCue } from "../lib/playground-audio";
@@ -88,6 +89,38 @@ export function usePlaygroundAmy(ageYears?: number) {
     [enqueueCueText, t],
   );
 
+  /** User-initiated: plays once immediately, cancels any queued speech, never loops. */
+  const playCueOnTap = useCallback(
+    (textKey: string, vars?: Record<string, string | number>) => {
+      if (mutedRef.current) return;
+      audioManager.unlockFromUserGesture();
+      queueGenRef.current += 1;
+      const gen = queueGenRef.current;
+      pause();
+      const text = t(`components.math_playground.${textKey}`, vars ?? {});
+      if (!text.trim()) return;
+      void (async () => {
+        if (mutedRef.current || gen !== queueGenRef.current) return;
+        const isCancelled = () => gen !== queueGenRef.current || mutedRef.current;
+        if (ageBand) {
+          await speakPlaygroundCue(text, ageBand, {
+            speak,
+            playPreparedUrl,
+            playbackRate: 0.95,
+            isCancelled,
+          });
+          return;
+        }
+        await speak(text, {
+          ...catalogPlaybackSpeakOptions(text),
+          playbackRate: 0.95,
+          waitUntilEnd: true,
+        }).catch(() => undefined);
+      })();
+    },
+    [ageBand, speak, playPreparedUrl, pause, t],
+  );
+
   const primeCue = useCallback(
     (textKey: string, vars?: Record<string, string | number>) => {
       if (mutedRef.current) return;
@@ -97,5 +130,5 @@ export function usePlaygroundAmy(ageYears?: number) {
     [t],
   );
 
-  return { queueCue, primeCue, pause, speaking, loading, muted, setMuted };
+  return { queueCue, playCueOnTap, primeCue, pause, speaking, loading, muted, setMuted };
 }

@@ -152,9 +152,21 @@ async function postRoutineEndpoint(
   logRoutineGen("API response", { path, status: res.status, body });
 
   if (res.status === 422) {
-    const errBody = body as { error?: string; fixedActivitiesResult?: unknown } | null;
+    const errBody = body as {
+      error?: string;
+      message?: string;
+      fixedActivitiesResult?: unknown;
+    } | null;
     if (errBody?.error === "fixed_activity_blocking") {
       throw new RoutineGenerationFixedActivityError(errBody.fixedActivitiesResult ?? null);
+    }
+    if (
+      errBody?.error === "routine_validation_failed" ||
+      errBody?.error === "partial_regenerate_unsupported_for_age"
+    ) {
+      throw new Error(
+        errBody.message ?? "We couldn't build a safe routine right now. Please try again.",
+      );
     }
   }
 

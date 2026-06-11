@@ -30,7 +30,11 @@ import {
   type PhonicsAgeGroup,
   type PhonicsLevel,
 } from "@/lib/phonics-content";
-import { getPhonicsAudioText } from "@workspace/phonics-sounds";
+import {
+  getCvcBlendPhonemeAt,
+  getPhonemeAudioText,
+  getPhonicsAudioText,
+} from "@workspace/phonics-sounds";
 import { playPhonicsBlend, playCvcBlendWithSpeak } from "@/lib/phonics-audio";
 import {
   phonicsTilePlaybackText,
@@ -42,6 +46,8 @@ import { PhonicsStopButton } from "@/components/phonics-stop-button";
 import { stopPhonicsPlayback } from "@/lib/phonics-player";
 import { PhonicsJourneyHub } from "@/components/phonics-journey-hub";
 import { PhonicsLearningPacks } from "@/components/phonics-learning-packs";
+import { PhonicsV2 } from "@/components/phonics-v2";
+import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
 import { recordPhonicsHabitActivity } from "@/lib/phonics-journey-habit";
@@ -224,6 +230,9 @@ function PhonicsLearningContent({
     return () => stopPhonicsPlayback("leave_phonics");
   }, []);
   const phonicsData = usePhonicsData(childId, totalAgeMonths, stageOverride);
+  const phonicsCurriculum = usePhonicsCurriculum(
+    typeof childId === "number" ? childId : null,
+  );
   const { recordActivity } = useRecordLearningActivity(
     Number.isFinite(numericChildId) ? numericChildId : null,
   );
@@ -401,6 +410,19 @@ function PhonicsLearningContent({
           practiceItems={practiceItems}
           insights={safeInsights}
           onPrimaryCtaChange={onPrimaryCtaChange}
+        />
+      )}
+
+      {typeof childId === "number" && level && (
+        <PhonicsV2
+          childId={childId}
+          childName={childName}
+          totalAgeMonths={totalAgeMonths}
+          level={level}
+          items={safeItems}
+          progress={safeProgress}
+          recordPlay={recordPlay}
+          curriculumLevel={phonicsCurriculum.data?.progress?.currentLevel ?? null}
         />
       )}
 
@@ -1192,25 +1214,37 @@ function BlendPanel({
       </div>
 
       <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
-        {sounds.map((s, i) => <div key={i} className="flex items-center gap-2">
+        {sounds.map((s, i) => {
+          const blendPhoneme = getCvcBlendPhonemeAt(word, i);
+          const phonemePlaybackText = blendPhoneme
+            ? getPhonemeAudioText(blendPhoneme)
+            : getPhonicsAudioText(s);
+          const nextPhoneme = sounds[i + 1]
+            ? getCvcBlendPhonemeAt(word, i + 1)
+            : undefined;
+          return <div key={i} className="flex items-center gap-2">
             <div className={cn(
               "rounded-xl bg-white dark:bg-white/[0.08] border px-3 py-2 flex items-center gap-2 transition-all",
               activeLetter === i ? "border-violet-500 ring-2 ring-violet-400/50" : "border-border dark:border-border",
             )}>
               <span className="font-quicksand text-xl font-bold text-primary dark:text-muted-foreground">{s}</span>
               <AudioPlayButton
-                text={s}
+                text={phonemePlaybackText}
                 mode="phonics"
-                prefetchNextText={sounds[i + 1] ? getPhonicsAudioText(sounds[i + 1]!) : undefined}
+                phonemeKey={blendPhoneme}
+                prefetchNextText={
+                  nextPhoneme ? getPhonemeAudioText(nextPhoneme) : undefined
+                }
                 size="sm"
                 variant="violet"
-                ariaLabel={`Play ${s}`}
+                ariaLabel={`Play sound ${s}`}
                 onPlay={() => setActiveLetter(i)}
                 onSpeakingEnd={() => setActiveLetter((a) => (a === i ? null : a))}
               />
             </div>
             {i < sounds.length - 1 && <span className="text-primary text-xl">+</span>}
-          </div>)}
+          </div>;
+        })}
       </div>
 
       <div className="flex items-center justify-center gap-3 pt-3 border-t border-border dark:border-border">

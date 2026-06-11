@@ -10,6 +10,7 @@ interface PlaygroundAmyAvatarProps {
   messageVars?: Record<string, string | number>;
   muted: boolean;
   onToggleMute: () => void;
+  onPlayMessage?: () => void;
   amy3dState: Amy3DState;
   presence: AmyPresenceOutput;
   reactionKey: number;
@@ -21,6 +22,7 @@ export function PlaygroundAmyAvatar({
   messageVars,
   muted,
   onToggleMute,
+  onPlayMessage,
   amy3dState,
   presence,
   reactionKey,
@@ -43,21 +45,37 @@ export function PlaygroundAmyAvatar({
         />
       </div>
       <p className="flex-1 text-sm font-bold text-white/90 leading-snug pt-1">{message}</p>
-      <button
-        type="button"
-        onClick={onToggleMute}
-        className="shrink-0 p-2 rounded-xl transition-all active:scale-95"
-        style={{ background: "rgba(255,255,255,0.08)" }}
-        aria-label={
-          muted ? t("components.math_animation.voice_off") : t("components.math_animation.voice_on")
-        }
-      >
-        {muted ? (
-          <VolumeX className="h-4 w-4 text-white/50" />
-        ) : (
-          <Volume2 className="h-4 w-4 text-amber-300" />
-        )}
-      </button>
+      <div className="flex shrink-0 flex-col gap-1">
+        {onPlayMessage ? (
+          <button
+            type="button"
+            data-testid="mp-amy-play"
+            onClick={onPlayMessage}
+            disabled={muted}
+            className="p-2 rounded-xl transition-all active:scale-95 disabled:opacity-40"
+            style={{ background: "rgba(255,255,255,0.08)" }}
+            aria-label={t("components.math_playground.amy_tap_to_hear")}
+          >
+            <Volume2 className="h-4 w-4 text-amber-300" />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          data-testid="mp-mute-toggle"
+          onClick={onToggleMute}
+          className="p-2 rounded-xl transition-all active:scale-95"
+          style={{ background: "rgba(255,255,255,0.08)" }}
+          aria-label={
+            muted ? t("components.math_animation.voice_off") : t("components.math_animation.voice_on")
+          }
+        >
+          {muted ? (
+            <VolumeX className="h-4 w-4 text-white/50" />
+          ) : (
+            <Volume2 className="h-4 w-4 text-amber-300" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }

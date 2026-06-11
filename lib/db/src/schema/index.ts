@@ -60,6 +60,7 @@ export * from "./phonics_progress";
 export * from "./phonics_downloads";
 export * from "./phonics_test_results";
 export * from "./phonics_curriculum_progress";
+export * from "./phonics_v3";
 export * from "./phonics_daily_plans";
 export * from "./phonics_content_cache";
 export * from "./phonics_audio_assets";

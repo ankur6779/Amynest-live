@@ -421,7 +421,10 @@ export function generateAdaptiveInfantDayRoutine(
 
     const care = pickCare(careIndex++, indoorOnly, seed);
     const careDur = dur(care.duration, seed++);
-    if (cursor + careDur > sleepMins - 80) break;
+    const eveningCutoff = blocks.some((b) => /late afternoon/i.test(b.activity))
+      ? sleepMins - 58
+      : sleepMins - 80;
+    if (cursor + careDur > eveningCutoff) break;
 
     if (!indoorOnly && careIndex % 5 === 0 && ageMonths >= 4) {
       cursor = pushBlock(
@@ -488,36 +491,111 @@ export function generateAdaptiveInfantDayRoutine(
     }
   }
 
-  while (cursor + 30 < sleepMins - 55) {
-    const gap = sleepMins - 55 - cursor;
-    if (gap <= MAX_IDLE_MINS) break;
-    const care = pickCare(careIndex++, true, seed);
-    const d = Math.min(dur(care.duration, seed++), gap - 10);
-    if (d < 10) break;
-    cursor = pushBlock(blocks, cursor, d, care.activity, care.kind, care.notes);
+  const hasLateAfternoonNap = blocks.some((b) =>
+    /late afternoon/i.test(b.activity),
+  );
+  if (!hasLateAfternoonNap) {
+    while (cursor + 30 < sleepMins - 55) {
+      const gap = sleepMins - 55 - cursor;
+      if (gap <= MAX_IDLE_MINS) break;
+      const care = pickCare(careIndex++, true, seed);
+      const d = Math.min(dur(care.duration, seed++), gap - 10);
+      if (d < 10) break;
+      cursor = pushBlock(blocks, cursor, d, care.activity, care.kind, care.notes);
+    }
   }
 
+  const bathDur = dur([15, 22], seed++);
+  const windDur = dur([18, 28], seed++);
+  const dreamFeedRoom = ageMonths >= 6 ? 14 : 0;
+  let bathStart = sleepMins - bathDur - GAP_MINS - windDur - dreamFeedRoom;
+  if (bathStart < cursor) {
+    bathStart = cursor;
+  }
+
+  while (bathStart - cursor > MAX_IDLE_MINS) {
+    const gap = bathStart - cursor;
+    const d = Math.min(dur([14, 24], seed++), gap - 10);
+    if (d < 12) break;
+    if (hasLateAfternoonNap) {
+      const lateNap = blocks.find((b) => /late afternoon/i.test(b.activity));
+      if (lateNap) {
+        const postAwake = cursor - blockEndMins(lateNap);
+        const cap = Math.min(4 * 60 + 30, wwIdeal + 75);
+        if (postAwake + d > cap - 40) break;
+      }
+    }
+    const prev = blocks[blocks.length - 1];
+    const bridgeKind =
+      prev?.kind === "soothing" || prev?.kind === "bonding" ? "play" : "soothing";
+    const bridgeActivity =
+      bridgeKind === "play" ? "Sensory basket time" : "Quiet cuddles & bonding";
+    cursor = pushBlock(
+      blocks,
+      cursor,
+      d,
+      bridgeActivity,
+      bridgeKind,
+      "Calm time before the evening bath.",
+    );
+  }
+
+  const hasLateAfternoonNapBeforeBath = blocks.some((b) =>
+    /late afternoon/i.test(b.activity),
+  );
+  if (!hasLateAfternoonNapBeforeBath) {
+    const lastNap = [...blocks].reverse().find((b) => b.kind === "nap");
+    if (lastNap) {
+      const awakeToSleep = sleepMins - blockEndMins(lastNap);
+      const bedtimeCap = Math.min(4 * 60 + 30, wwMax + 75);
+      if (awakeToSleep > bedtimeCap) {
+        const napDur = dur([35, 55], seed++);
+        const napStart = Math.max(
+          blockEndMins(lastNap) + 90,
+          sleepMins - bathDur - GAP_MINS - windDur - dreamFeedRoom - napDur - 25,
+        );
+        if (napStart + napDur <= sleepMins - bathDur - GAP_MINS - windDur - 10) {
+          pushBlock(
+            blocks,
+            napStart,
+            napDur,
+            "Late afternoon nap",
+            "nap",
+            "Short nap to split a long wake window before bedtime.",
+          );
+          cursor = Math.max(cursor, napStart + napDur + GAP_MINS);
+        }
+      }
+    }
+  }
+
+  bathStart = Math.max(cursor, sleepMins - bathDur - GAP_MINS - windDur - dreamFeedRoom);
   cursor = pushBlock(
     blocks,
-    sleepMins - 50,
-    dur([15, 22], seed++),
+    bathStart,
+    bathDur,
     "Evening bath",
     "hygiene",
     "Warm water; calm voice — no rough play.",
   );
+  const bathEnd = cursor;
+  const windStart = Math.max(
+    bathEnd + GAP_MINS,
+    sleepMins - windDur - 5,
+  );
   cursor = pushBlock(
     blocks,
-    sleepMins - 28,
-    dur([18, 28], seed++),
+    windStart,
+    Math.min(windDur, sleepMins - 5 - windStart),
     "Quiet wind-down & lullaby",
     "soothing",
     "Dim lights; low stimulation before night sleep.",
   );
-  if (ageMonths >= 6 && cursor < sleepMins - 12) {
+  if (ageMonths >= 6 && cursor + 8 < sleepMins - 5) {
     pushBlock(
       blocks,
       cursor,
-      Math.min(12, sleepMins - 12 - cursor),
+      Math.min(12, sleepMins - 5 - cursor),
       feedingLabel(input.feedingType, feedIndex++),
       "feed",
       "Dream feed optional if baby takes it without full wake.",
@@ -629,7 +707,7 @@ export function auditInfantRoutine(
       if (b.kind === "nap" || b.kind === "sleep") {
         const toBedtime = b.kind === "sleep" && /night/i.test(b.activity);
         const cap = toBedtime
-          ? Math.min(4 * 60, wwMaxAllowed + 60)
+          ? Math.min(4 * 60 + 30, wwMaxAllowed + 75)
           : wwMaxAllowed;
         if (awakeMins > cap) {
           wwIssues.push(
@@ -920,6 +998,21 @@ export function repairInfantRoutine(
     });
   }
 
+  if (failEnergy?.status === "FAIL") {
+    blocks = blocks.map((b) => {
+      if (blockStartMins(b) >= EVENING_CUTOFF_MINS && HIGH_STIM_KINDS.has(b.kind)) {
+        fixes.push(`Replaced evening "${b.activity}" with quiet cuddles`);
+        return {
+          ...b,
+          activity: "Quiet cuddles",
+          kind: "soothing" as const,
+          notes: "Lower stimulation before bed.",
+        };
+      }
+      return b;
+    });
+  }
+
   if (failAdj?.status === "FAIL" && !opts?.skipAdjacencyBuffers) {
     const out: InfantRoutineBlock[] = [];
     for (let i = 0; i < blocks.length; i++) {
@@ -988,7 +1081,9 @@ export function repairInfantRoutine(
       if (nextSleepIdx < 0) continue;
       const next = blocks[nextSleepIdx]!;
       const cap =
-        next.kind === "sleep" ? Math.min(4 * 60, result.wakeWindowMax + 60) : result.wakeWindowMax + 10;
+        next.kind === "sleep"
+          ? Math.min(4 * 60 + 30, result.wakeWindowMax + 75)
+          : result.wakeWindowMax + 10;
       if (awakeMins > cap && next.kind === "nap") {
         const insertAt = sleepEnd + Math.round(result.wakeWindowMax * 0.85);
         blocks.push({
@@ -999,35 +1094,78 @@ export function repairInfantRoutine(
           notes: "Split long wake window.",
         });
         fixes.push(`Inserted micro-nap after "${start.activity}" (wake was ${awakeMins}min)`);
+      } else if (awakeMins > cap && next.kind === "sleep" && /night/i.test(next.activity)) {
+        const sleepMins = parseTimeToMins(input.sleepTime);
+        const napDur = 45;
+        const napStart = Math.max(
+          sleepEnd + 90,
+          sleepMins - napDur - 75,
+        );
+        if (napStart + napDur < sleepMins - 55) {
+          blocks.push({
+            start: minsToClock(napStart),
+            end: minsToClock(napStart + napDur),
+            activity: "Late afternoon nap",
+            kind: "nap",
+            notes: "Split long wake window before bedtime.",
+          });
+          fixes.push(
+            `Inserted late-afternoon nap after "${start.activity}" (wake was ${awakeMins}min)`,
+          );
+        }
       }
     }
     blocks.sort((a, b) => blockStartMins(a) - blockStartMins(b));
+    if (failEnergy?.status === "FAIL") {
+      blocks = blocks.map((b) => {
+        if (blockStartMins(b) >= EVENING_CUTOFF_MINS && HIGH_STIM_KINDS.has(b.kind)) {
+          fixes.push(`Replaced evening "${b.activity}" with quiet cuddles`);
+          return {
+            ...b,
+            activity: "Quiet cuddles",
+            kind: "soothing" as const,
+            notes: "Lower stimulation before bed.",
+          };
+        }
+        return b;
+      });
+    }
   }
 
   if (failGap?.status === "FAIL") {
-    const filled: InfantRoutineBlock[] = [];
-    for (let i = 0; i < blocks.length; i++) {
-      filled.push(blocks[i]!);
-      const next = blocks[i + 1];
-      if (!next) continue;
-      const gap = blockStartMins(next) - blockEndMins(blocks[i]!);
-      if (gap > MAX_IDLE_MINS) {
-        if (blocks[i]!.kind === "sleep" || /night feeding/i.test(blocks[i + 1]?.activity ?? "")) {
-          continue;
+    let filled: InfantRoutineBlock[] = [];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      filled = [];
+      for (let i = 0; i < blocks.length; i++) {
+        filled.push(blocks[i]!);
+        const next = blocks[i + 1];
+        if (!next) continue;
+        const gap = blockStartMins(next) - blockEndMins(blocks[i]!);
+        if (gap > MAX_IDLE_MINS) {
+          if (blocks[i]!.kind === "sleep" || /night feeding/i.test(next.activity ?? "")) {
+            continue;
+          }
+          const insertAt = blockEndMins(blocks[i]!) + 5;
+          const insertDur = Math.min(22, gap - 15);
+          if (insertDur >= 10) {
+            filled.push({
+              start: minsToClock(insertAt),
+              end: minsToClock(insertAt + insertDur),
+              activity: "Calm play & diaper check",
+              kind: "bonding",
+              notes: "Fills long idle gap with low-key care.",
+            });
+            fixes.push(`Filled ${gap}min gap after "${blocks[i]!.activity}"`);
+            changed = true;
+          }
         }
-        const insertAt = blockEndMins(blocks[i]!) + 5;
-        const insertDur = Math.min(22, gap - 15);
-        filled.push({
-          start: minsToClock(insertAt),
-          end: minsToClock(insertAt + insertDur),
-          activity: "Calm play & diaper check",
-          kind: "bonding",
-          notes: "Fills long idle gap with low-key care.",
-        });
-        fixes.push(`Filled ${gap}min gap after "${blocks[i]!.activity}"`);
+      }
+      if (changed) {
+        blocks = filled.sort((a, b) => blockStartMins(a) - blockStartMins(b));
       }
     }
-    blocks = filled.sort((a, b) => blockStartMins(a) - blockStartMins(b));
   }
 
   if (failFeed?.status === "FAIL") {
@@ -1109,6 +1247,8 @@ export function generateValidatedInfantRoutine(input: InfantRoutineInput): {
     realismContext,
   );
   let realismRewriteApplied = false;
+  const preRealismResult = result;
+  const preRealismAudit = finalAudit;
 
   if (realismScoreBeforeRewrite.total < REALISM_TARGET_SCORE) {
     realismRewriteApplied = true;
@@ -1139,6 +1279,12 @@ export function generateValidatedInfantRoutine(input: InfantRoutineInput): {
         items: toScheduleItems(repolished),
       };
       finalAudit = auditInfantRoutine(result, input);
+    }
+    if (!finalAudit.allPassed) {
+      result = preRealismResult;
+      finalAudit = preRealismAudit;
+      realismRewriteApplied = false;
+      fixes.push("reverted realism rewrite — audit did not pass after repair");
     }
   }
 

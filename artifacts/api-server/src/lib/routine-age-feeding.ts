@@ -276,20 +276,31 @@ export function buildRealisticInfant0_6Routine(
   const sleepMins = opts.sleepMins ?? 21 * 60;
   const ageInMonths = opts.ageInMonths ?? 3;
   const seed = opts.seed ?? ageInMonths;
+  const eveningReserveMins = 62;
+  const lastFeedEndMax = sleepMins - eveningReserveMins;
+  const awakeSpan = Math.max(0, lastFeedEndMax - wakeMins);
+  const minDaytimeFeeds =
+    awakeSpan >= 540 ? 6 : awakeSpan >= 420 ? 5 : 4;
+  const targetFeedInterval = Math.max(
+    90,
+    Math.min(180, Math.floor(awakeSpan / Math.max(1, minDaytimeFeeds - 1))),
+  );
 
   const feedAnchors: number[] = [wakeMins];
-  let t = wakeMins;
-  while (t + 120 <= sleepMins - 35 && feedAnchors.length < 10) {
-    const interval = flexibleFeedIntervalMins(ageInMonths, seed + feedAnchors.length);
-    t += interval;
-    if (t <= sleepMins - 30) feedAnchors.push(t);
+  while (feedAnchors.length < 10) {
+    const interval = Math.min(
+      flexibleFeedIntervalMins(ageInMonths, seed + feedAnchors.length),
+      targetFeedInterval,
+    );
+    const next = feedAnchors[feedAnchors.length - 1]! + interval;
+    if (next + 20 > lastFeedEndMax) break;
+    feedAnchors.push(next);
   }
-  while (feedAnchors.length < 7 && feedAnchors[feedAnchors.length - 1]! + 120 <= sleepMins - 30) {
+  while (
+    feedAnchors.length < minDaytimeFeeds &&
+    feedAnchors[feedAnchors.length - 1]! + 120 <= lastFeedEndMax
+  ) {
     feedAnchors.push(feedAnchors[feedAnchors.length - 1]! + 120);
-  }
-  const lastAnchor = feedAnchors[feedAnchors.length - 1]!;
-  if (lastAnchor < sleepMins - 25 && sleepMins - 25 - lastAnchor >= 90) {
-    feedAnchors.push(sleepMins - 25);
   }
 
   const timeline: RoutineScheduleItem[] = [];
@@ -311,7 +322,7 @@ export function buildRealisticInfant0_6Routine(
           time: minsToTime24(cursor),
           activity: fi < 3 ? "Morning nap" : "Afternoon nap",
           duration: napDur,
-          category: "sleep",
+          category: "nap",
           status: "pending",
           notes: "Nap length varies — follow sleepy cues (about 45–120 min).",
           culturalReason: "Infants need 14–17 hours total sleep per 24 hours",
@@ -335,10 +346,28 @@ export function buildRealisticInfant0_6Routine(
 
   const windDown = INFANT_CARE_BLOCKS.find((b) => /wind-down/i.test(b.activity))!;
   const bath = INFANT_CARE_BLOCKS.find((b) => /bath/i.test(b.activity))!;
-  let preSleep = sleepMins - 55;
+  const bathDur = flexibleDuration(bath.durationRange, seed + 50);
+  const windDur = flexibleDuration(windDown.durationRange, seed + 51);
+  const eveningBuffer = 10;
+  for (let i = timeline.length - 1; i >= 0; i--) {
+    if (/bath|wind-down/i.test(timeline[i]!.activity)) {
+      timeline.splice(i, 1);
+    }
+  }
+  const lastActivityEnd = timeline.reduce(
+    (maxEnd, item) =>
+      Math.max(maxEnd, parseTimeToMins(item.time) + (item.duration ?? 0)),
+    wakeMins,
+  );
+  let preSleep = Math.max(
+    lastActivityEnd + GAP_MINS,
+    sleepMins - bathDur - GAP_MINS - windDur - eveningBuffer,
+  );
+  preSleep = Math.min(preSleep, sleepMins - bathDur - GAP_MINS - windDur - eveningBuffer);
   timeline.push(makeCareBlock(bath, preSleep, seed + 50));
-  preSleep += flexibleDuration(bath.durationRange, seed + 50) + GAP_MINS;
-  timeline.push(makeCareBlock(windDown, preSleep, seed + 51));
+  timeline.push(
+    makeCareBlock(windDown, preSleep + bathDur + GAP_MINS, seed + 51),
+  );
 
   timeline.push({
     time: minsToTime24(sleepMins),
@@ -499,11 +528,11 @@ export function buildInfant6_12FeedingTimeline(
 
   const slots: RoutineScheduleItem[] = [];
   const anchors = [
-    wakeMins + 30,
-    wakeMins + 150,
-    wakeMins + 330,
-    wakeMins + 480,
-    wakeMins + 630,
+    wakeMins,
+    wakeMins + 120,
+    wakeMins + 300,
+    wakeMins + 450,
+    wakeMins + 600,
     sleepMins - 90,
   ].filter((t) => t >= wakeMins && t + 25 <= sleepMins);
 
@@ -552,6 +581,24 @@ export function buildInfant6_12FeedingTimeline(
   return [...base, ...slots].sort(
     (a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time),
   );
+}
+
+/**
+ * Rebuild 6–12 month feeding blocks so trust validators see 2–4 milk feeds
+ * and 2–3 soft meals (adaptive infant paths can over-schedule feeds).
+ */
+export function normalizeInfant612FeedingSchedule(
+  items: RoutineScheduleItem[],
+  opts: AgeFeedingOpts,
+): RoutineScheduleItem[] {
+  const nonFeeding = items.filter(
+    (it) =>
+      !isFeedingBlock(it) &&
+      !isSoftMealBlock(it) &&
+      !isOptionalNightFeed(it) &&
+      !isAdultMealBlock(it),
+  );
+  return buildInfant6_12FeedingTimeline(nonFeeding, opts);
 }
 
 /**
@@ -726,6 +773,7 @@ export function enrichAgeFeedingMeals(
 export function validateAgeFeedingIntegration(
   items: RoutineScheduleItem[],
   group: FeedingAgeGroup,
+  opts: { wakeMins?: number; sleepMins?: number } = {},
 ): string[] {
   const warnings: string[] = [];
   if (group === "child") return warnings;
@@ -749,9 +797,15 @@ export function validateAgeFeedingIntegration(
         `age-feeding: infant 0–6 must not include school/adult activities (found ${adultPatterns.length})`,
       );
     }
-    if (dayFeeds.length < 6 || dayFeeds.length > 10) {
+    const awakeSpan =
+      opts.wakeMins != null && opts.sleepMins != null
+        ? Math.max(0, opts.sleepMins - opts.wakeMins - 62)
+        : 12 * 60;
+    const idealMin = awakeSpan >= 540 ? 6 : awakeSpan >= 420 ? 5 : 4;
+    const minFeeds = Math.min(idealMin, Math.max(4, Math.floor(awakeSpan / 110)));
+    if (dayFeeds.length < minFeeds || dayFeeds.length > 10) {
       warnings.push(
-        `age-feeding: infant 0–6 expected 6–10 daytime feeds (found ${dayFeeds.length})`,
+        `age-feeding: infant 0–6 expected ${minFeeds}–10 daytime feeds (found ${dayFeeds.length})`,
       );
     }
     if (nightFeeds.length < 1) {

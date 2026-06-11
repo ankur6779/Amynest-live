@@ -27,10 +27,6 @@ export function NumberPatterns({
   const [hintsUsed, setHintsUsed] = useState(0);
   const done = filled === payload.correctChoice;
 
-  useEffect(() => {
-    amy.queueCue("amy_pattern_intro");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleSlotTap = useCallback(() => {
     if (filled !== null || selectedChoice === null) return;
     audioManager.unlockFromUserGesture();
@@ -58,7 +54,7 @@ export function NumberPatterns({
         messageKey={done ? "amy_great_job" : "amy_pattern_intro"}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

@@ -423,6 +423,15 @@ export function enforceSleepBoundary(
       if (newDur < MIN_ACTIVITY_MINS && isWindDownItem(it)) {
         newDur = clampDurationForCategory(it.category ?? "rest", 25);
         newStart = Math.max(wakeMins, sleepMins - newDur - sleepBuffer);
+        const prevEnd = kept.reduce(
+          (max, prev) =>
+            Math.max(max, parseTimeToMins(prev.time) + (prev.duration ?? 0)),
+          wakeMins,
+        );
+        newStart = Math.max(newStart, prevEnd + 1);
+        if (newStart + newDur > sleepMins - sleepBuffer) {
+          newDur = Math.max(MIN_ACTIVITY_MINS, sleepMins - sleepBuffer - newStart);
+        }
         adjustments.push(`moved wind-down earlier to fit before lights-out`);
         kept.push({ ...it, time: minsToTime24(newStart), duration: newDur });
         continue;
@@ -450,8 +459,12 @@ export function enforceSleepBoundary(
   }
 
   kept.sort((a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time));
+  const overlapPass = resolveOverlapsByPriority(kept, sleepMins);
+  if (overlapPass.adjustments.length) {
+    adjustments.push(...overlapPass.adjustments.slice(0, 6));
+  }
   kept.push(sleepItem);
-  return { items: kept, adjustments };
+  return { items: [...overlapPass.items, sleepItem], adjustments };
 }
 
 export function resolveOverlapsByPriority(

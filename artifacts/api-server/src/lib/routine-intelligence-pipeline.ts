@@ -80,6 +80,7 @@ import {
 import {
   getAgeGroup,
   isExclusiveInfantPhase,
+  normalizeInfant612FeedingSchedule,
   shouldSkipCountryCulture,
 } from "./routine-age-feeding.js";
 import {
@@ -88,6 +89,11 @@ import {
 } from "./infant-adaptive-routine.js";
 import { validateInfantPipelineSchedule } from "./routine-infant-schedule-validation.js";
 import { runBlockingTrustValidation, validateInfantFeedingStructure } from "./routine-trust-validators.js";
+import {
+  buildEmergencySafeRoutine,
+  repairTrustValidationFailures,
+  type EmergencyRoutineOpts,
+} from "./routine-emergency-fallback.js";
 import { getRoutineOutcomeStore } from "./routine-outcome-log.js";
 import {
   ensureFixedActivitiesPreserved,
@@ -217,6 +223,37 @@ function mapInfantFeedingMode(
   return "mixed";
 }
 
+type PipelineOutput = ReturnType<typeof runRoutineIntelligencePipeline>;
+
+function finalizeWithEmergencyFallback(
+  result: PipelineOutput,
+  emergencyOpts: EmergencyRoutineOpts,
+): PipelineOutput {
+  if (result.validated) return result;
+  const emergency = buildEmergencySafeRoutine(emergencyOpts);
+  const wake = emergencyOpts.wakeUpTime;
+  const sleep = emergencyOpts.sleepTime;
+  const hard = hardValidateSchedule(emergency, wake, sleep);
+  const trust = runBlockingTrustValidation(emergency, {
+    wakeMins: emergencyOpts.wakeUpTime ? parseTimeToMins(wake) : 0,
+    sleepMins: parseTimeToMins(sleep),
+    ageGroup: emergencyOpts.ageGroup,
+    ageInMonths: emergencyOpts.ageInMonths,
+    country: emergencyOpts.country,
+    hasSchool: emergencyOpts.hasSchool,
+  });
+  if (!hard.valid || !trust.valid) return result;
+  return {
+    ...result,
+    items: emergency,
+    validated: true,
+    reverted: true,
+    validationErrors: [],
+    debugLog: [...result.debugLog, "emergency_safe_routine_fallback"],
+    confidence: "medium",
+  };
+}
+
 export function buildHistoryFromOutcomeStore(
   childId: string | undefined,
   previousDayContext?: RoutineActivityHistory["previousDayContext"],
@@ -334,9 +371,12 @@ export function runRoutineIntelligencePipeline(
       culturalChanges: [],
     });
     infantItems = enforceSleepBoundary(infantItems, sleepMins, wakeMins).items;
+    infantItems = resolveOverlapsByPriority(infantItems, sleepMins).items;
     const hard = hardValidateSchedule(infantItems, wake, sleep);
     const feedingTrust = validateInfantFeedingStructure(infantItems, {
       ageInMonths: ageInMonthsEarly ?? 4,
+      wakeMins,
+      sleepMins,
     });
     const sleepTrust = runBlockingTrustValidation(infantItems, {
       wakeMins,
@@ -353,7 +393,18 @@ export function runRoutineIntelligencePipeline(
       feedingTrust: feedingTrust.valid,
       sleepTrust: sleepTrust.valid,
     });
-    return {
+    const emergencyOpts: EmergencyRoutineOpts = {
+      wakeUpTime: wake,
+      sleepTime: sleep,
+      ageInMonths: ageInMonthsEarly ?? 4,
+      ageGroup: "infant",
+      country: state.country,
+      hasSchool: false,
+      feedingType: feedingType as EmergencyRoutineOpts["feedingType"],
+      seed: mealSeed,
+    };
+    return finalizeWithEmergencyFallback(
+      {
       items: infantItems,
       validated: infantValid,
       reverted: !infantValid,
@@ -375,7 +426,9 @@ export function runRoutineIntelligencePipeline(
       parsedSpecialEvents: specialParse.events,
       fixedActivities: fixedParse.debug,
       parsedFixedActivities: fixedParse.activities,
-    };
+    },
+      emergencyOpts,
+    );
   }
 
   if (isAdaptiveInfantDay(ageInMonthsEarly)) {
@@ -414,6 +467,41 @@ export function runRoutineIntelligencePipeline(
       parseTimeToMins(sleep),
       parseTimeToMins(wake),
     ).items;
+    infantItems = resolveOverlapsByPriority(
+      infantItems,
+      parseTimeToMins(sleep),
+    ).items;
+    infantItems = normalizeInfant612FeedingSchedule(infantItems, {
+      wakeMins: parseTimeToMins(wake),
+      sleepMins: parseTimeToMins(sleep),
+      ageInMonths: ageInMonthsEarly ?? 6,
+      feedingType: input.feedingType ?? childProfile.feedingType,
+      seed: input.mealSeed ?? ageInMonthsEarly,
+    });
+    infantItems = enrichRoutineMeals(infantItems, {
+      country: state.country,
+      ageInMonths: ageInMonthsEarly,
+      feedingType: input.feedingType ?? childProfile.feedingType,
+      seed: input.mealSeed,
+      feedingAgeGroup: "infant_6_12",
+    });
+    infantItems = enforceSleepBoundary(
+      infantItems,
+      parseTimeToMins(sleep),
+      parseTimeToMins(wake),
+    ).items;
+    infantItems = resolveOverlapsByPriority(
+      infantItems,
+      parseTimeToMins(sleep),
+    ).items;
+    const wakeAnchorAdaptive = enforceWakeAnchor(
+      infantItems,
+      parseTimeToMins(wake),
+      parseTimeToMins(sleep),
+    );
+    if (wakeAnchorAdaptive.adjustments.length) {
+      infantItems = wakeAnchorAdaptive.items;
+    }
     const infantSafety = validateInfantPipelineSchedule(infantItems, {
       ageMonths: ageInMonthsEarly ?? 6,
       wakeMins: parseTimeToMins(wake),
@@ -421,48 +509,63 @@ export function runRoutineIntelligencePipeline(
     });
     const feedingTrust = validateInfantFeedingStructure(infantItems, {
       ageInMonths: ageInMonthsEarly ?? 6,
+      wakeMins: parseTimeToMins(wake),
+      sleepMins: parseTimeToMins(sleep),
     });
     const hard = hardValidateSchedule(infantItems, wake, sleep);
-    const auditPassed =
-      validated.finalAudit.allPassed &&
-      infantSafety.valid &&
-      feedingTrust.valid;
+    const scheduleValid =
+      hard.valid && infantSafety.valid && feedingTrust.valid;
     pipelineDebug(debug, debugLog, "infant_adaptive_validated_path", {
       realismScore: validated.realismScore.total,
       blocks: validated.result.blocks.length,
-      auditPassed,
+      auditPassed: validated.finalAudit.allPassed,
       schedulerValid: hard.valid,
       infantSafetyValid: infantSafety.valid,
+      feedingTrustValid: feedingTrust.valid,
     });
-    return {
+    const emergencyOpts: EmergencyRoutineOpts = {
+      wakeUpTime: wake,
+      sleepTime: sleep,
+      ageInMonths: ageInMonthsEarly ?? 6,
+      ageGroup: "infant",
+      country: state.country,
+      hasSchool: false,
+      feedingType: (input.feedingType ?? childProfile.feedingType) as EmergencyRoutineOpts["feedingType"],
+      seed: input.mealSeed,
+    };
+    return finalizeWithEmergencyFallback(
+      {
       items: infantItems,
-      validated: auditPassed && hard.valid,
-      reverted: !auditPassed || !hard.valid,
+      validated: scheduleValid,
+      reverted: !scheduleValid || !validated.finalAudit.allPassed,
       intelligenceTier: "baseline",
       behaviorSignature,
       state,
       difficultyAdjustments: [],
       culturalChanges: [],
       debugLog: [...debugLog, "infant_adaptive_validated_path"],
-      validationErrors: [
-        ...(auditPassed
-          ? hard.valid
-            ? []
-            : hard.errors
-          : validated.finalAudit.results
-              .filter((r) => r.status === "FAIL")
-              .flatMap((r) => r.details)),
-        ...infantSafety.errors,
-        ...feedingTrust.errors,
-      ],
+      validationErrors: scheduleValid
+        ? []
+        : [
+            ...(validated.finalAudit.allPassed
+              ? []
+              : validated.finalAudit.results
+                  .filter((r) => r.status === "FAIL")
+                  .flatMap((r) => r.details)),
+            ...infantSafety.errors,
+            ...feedingTrust.errors,
+            ...hard.errors,
+          ],
       decisionTrace,
-      confidence: auditPassed ? "high" : "medium",
+      confidence: scheduleValid ? "high" : "medium",
       specialEvent: specialParse.debug,
       parsedSpecialEvent: specialParse.event,
       parsedSpecialEvents: specialParse.events,
       fixedActivities: fixedParse.debug,
       parsedFixedActivities: fixedParse.activities,
-    };
+    },
+      emergencyOpts,
+    );
   }
 
   let items: RoutineScheduleItem[] = enrichItemsWithActivityMetadata(
@@ -1185,20 +1288,39 @@ export function runRoutineIntelligencePipeline(
     hasSchool: flowOpts.hasSchool,
   });
   if (!finalTrust.valid) {
-    pipelineDebug(debug, debugLog, "finalTrustFailed", finalTrust.errors);
-    validated = {
-      valid: false,
-      items: polished,
-      errors: [
-        ...validated.errors.filter((e) => !e.startsWith("trust-")),
-        ...finalTrust.errors,
-      ],
-    };
-    reverted = true;
-    if (!debugLog.includes("reverted:post_integrity_trust_failed")) {
-      debugLog.push("reverted:final_trust_failed");
+    const trustRepair = repairTrustValidationFailures(polished, {
+      wakeUpTime: scheduleOpts.wakeUpTime,
+      sleepTime: scheduleOpts.sleepTime,
+      ageInMonths: ageInMonthsEarly,
+      ageGroup: scheduleOpts.ageGroup,
+      country: state.country,
+      hasSchool: flowOpts.hasSchool,
+      feedingType: input.feedingType ?? childProfile.feedingType,
+    });
+    if (trustRepair.repaired) {
+      polished = trustRepair.items;
+      validated = {
+        valid: true,
+        items: polished,
+        errors: validated.errors.filter((e) => !e.startsWith("trust-")),
+      };
+      debugLog.push("repaired:final_trust_failures");
+    } else {
+      pipelineDebug(debug, debugLog, "finalTrustFailed", finalTrust.errors);
+      validated = {
+        valid: false,
+        items: polished,
+        errors: [
+          ...validated.errors.filter((e) => !e.startsWith("trust-")),
+          ...finalTrust.errors,
+        ],
+      };
+      reverted = true;
+      if (!debugLog.includes("reverted:post_integrity_trust_failed")) {
+        debugLog.push("reverted:final_trust_failed");
+      }
+      fixedActivities.validationWarnings.push(...finalTrust.errors);
     }
-    fixedActivities.validationWarnings.push(...finalTrust.errors);
   }
 
   if (input.childId) {
@@ -1255,30 +1377,42 @@ export function runRoutineIntelligencePipeline(
     });
   }
 
-  return {
-    items: polished,
-    validated: validated.valid,
-    reverted,
-    intelligenceTier,
-    behaviorSignature,
-    state,
-    difficultyAdjustments,
-    culturalChanges,
-    debugLog,
-    validationErrors: [
-      ...validated.errors,
-      ...specialEvent.validationWarnings,
-      ...fixedActivities.validationWarnings,
-    ],
-    decisionTrace,
-    confidence,
-    specialEvent,
-    parsedSpecialEvent: specialParse.event,
-    parsedSpecialEvents: specialParse.events,
-    fixedActivities,
-    parsedFixedActivities: fixedParse.activities,
-    adaptiveCompletion,
-    productionDiagnostics,
-    familyIntelligence,
-  };
+  return finalizeWithEmergencyFallback(
+    {
+      items: polished,
+      validated: validated.valid,
+      reverted,
+      intelligenceTier,
+      behaviorSignature,
+      state,
+      difficultyAdjustments,
+      culturalChanges,
+      debugLog,
+      validationErrors: [
+        ...validated.errors,
+        ...specialEvent.validationWarnings,
+        ...fixedActivities.validationWarnings,
+      ],
+      decisionTrace,
+      confidence,
+      specialEvent,
+      parsedSpecialEvent: specialParse.event,
+      parsedSpecialEvents: specialParse.events,
+      fixedActivities,
+      parsedFixedActivities: fixedParse.activities,
+      adaptiveCompletion,
+      productionDiagnostics,
+      familyIntelligence,
+    },
+    {
+      wakeUpTime: scheduleOpts.wakeUpTime,
+      sleepTime: scheduleOpts.sleepTime,
+      ageInMonths: ageInMonthsEarly ?? 36,
+      ageGroup: scheduleOpts.ageGroup,
+      country: state.country,
+      hasSchool: flowOpts.hasSchool,
+      feedingType: input.feedingType ?? childProfile.feedingType,
+      seed: input.mealSeed,
+    },
+  );
 }

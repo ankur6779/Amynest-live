@@ -41,10 +41,6 @@ export function SubtractionGarden({
   const pickCount = picked.size;
   const done = pickCount === payload.subtrahend;
 
-  useEffect(() => {
-    amy.queueCue("amy_subtraction_intro", { pick: payload.subtrahend, total: payload.minuend });
-  }, [payload.subtrahend, payload.minuend]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handlePick = useCallback(
     (id: string) => {
       if (picked.has(id) || done) return;
@@ -71,7 +67,7 @@ export function SubtractionGarden({
         messageVars={{ pick: payload.subtrahend, total: payload.minuend }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

@@ -30,6 +30,7 @@
     "@workspace/phonics-sounds": "workspace:*",
     "@workspace/rhymes-audio": "workspace:*",
     "@workspace/phonics-curriculum": "workspace:*",
+    "@workspace/phonics-v3-progress": "workspace:*",
     "@workspace/environment": "workspace:*",
     "@workspace/family-routine": "workspace:*",
     "@workspace/conflict-resolution": "workspace:*",

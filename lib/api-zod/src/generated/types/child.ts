@@ -17,11 +17,11 @@ export interface Child {
   selectedAgeBand?: string | null;
   /** True when dob was approximated from the selected age band. */
   dobIsEstimated?: boolean | null;
-  /** Education stage code (at_home, nursery, lkg, ukg, playgroup, school, etc.) */
+  /** Developmental / education stage (at_home, daycare, nursery, lkg, ukg, playgroup, school, …). */
   educationStage?: string | null;
-  /** Learning environment (home, daycare, early_learning, formal_school, homeschool) */
+  /** Learning context — home, daycare, early_learning, formal_school, homeschool. */
   learningEnvironment?: string | null;
-  /** Whether formal school schedule times are confirmed by the parent */
+  /** True when parent provided school schedule; false uses age-appropriate defaults. */
   scheduleKnown?: boolean | null;
   age: number;
   ageMonths: number;

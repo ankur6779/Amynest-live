@@ -8,11 +8,12 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
-  buildPhonicsAudioCatalog,
   getPhonicsCatalogKey,
   type PhonicsAudioLibraryManifest,
+  type PhonicsCatalogEntry,
 } from "@workspace/phonics-sounds";
 import { PHONICS_LIBRARY_MANIFEST_PATHS, REPO_ROOT } from "./phonics-library-io.js";
+import { loadFullPhonicsCatalog } from "./phonics-audio-coverage.js";
 
 type CheckResult = { id: string; label: string; ok: boolean; detail?: string };
 
@@ -34,8 +35,10 @@ function loadManifest(): PhonicsAudioLibraryManifest | null {
   }
 }
 
-function checkCatalogCoverage(manifest: PhonicsAudioLibraryManifest | null): CheckResult[] {
-  const catalog = buildPhonicsAudioCatalog();
+function checkCatalogCoverage(
+  manifest: PhonicsAudioLibraryManifest | null,
+  catalog: PhonicsCatalogEntry[],
+): CheckResult[] {
   const results: CheckResult[] = [];
 
   if (!manifest?.assets) {
@@ -191,21 +194,22 @@ function checkManifestIntegrity(manifest: PhonicsAudioLibraryManifest | null): C
   ];
 }
 
-export function runPhonicsLibraryChecks(): CheckResult[] {
+export async function runPhonicsLibraryChecks(): Promise<CheckResult[]> {
   if (process.env.PHONICS_LIBRARY_SKIP_CHECK === "1") {
     console.log("[check:phonics-library] skipped (PHONICS_LIBRARY_SKIP_CHECK=1)");
     return [];
   }
   const manifest = loadManifest();
+  const catalog = await loadFullPhonicsCatalog();
   return [
-    ...checkCatalogCoverage(manifest),
+    ...checkCatalogCoverage(manifest, catalog),
     ...checkManifestIntegrity(manifest),
     ...checkLegacyRemoved(),
   ];
 }
 
-function main(): void {
-  const results = runPhonicsLibraryChecks();
+async function main(): Promise<void> {
+  const results = await runPhonicsLibraryChecks();
   if (results.length === 0) return;
 
   console.log("\n[check:phonics-library] PHONICS LIBRARY VALIDATION\n");

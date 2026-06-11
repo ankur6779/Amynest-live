@@ -43,13 +43,6 @@ export function DivisionBakery({
 
   const allAssigned = assignedSet.size === payload.total;
 
-  useEffect(() => {
-    amy.queueCue("amy_division_intro", {
-      total: payload.total,
-      children: payload.recipients,
-    });
-  }, [payload.total, payload.recipients]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const assignToChild = useCallback(
     (childIdx: number) => {
       if (!selectedCookie || assignedSet.has(selectedCookie)) return;
@@ -95,7 +88,7 @@ export function DivisionBakery({
         messageVars={{ total: payload.total, children: payload.recipients }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

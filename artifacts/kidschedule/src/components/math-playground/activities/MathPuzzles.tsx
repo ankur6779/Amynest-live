@@ -61,10 +61,6 @@ export function MathPuzzles({
     return "amy_puzzle_sort";
   }, [isMiniGame, payload.template]);
 
-  useEffect(() => {
-    amy.queueCue(messageKey);
-  }, [messageKey, amy, amy.muted]);
-
   const miniGameKey = useMemo(
     () =>
       JSON.stringify({
@@ -86,7 +82,7 @@ export function MathPuzzles({
         messageKey={messageKey}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

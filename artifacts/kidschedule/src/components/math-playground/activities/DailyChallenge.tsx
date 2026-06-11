@@ -26,10 +26,6 @@ export function DailyChallenge({
   const current = tasks[taskIdx];
 
   useEffect(() => {
-    amy.queueCue("amy_daily_intro");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
     if (allDone) return;
     const iv = setInterval(() => {
       setSecondsLeft((s) => Math.max(0, s - 1));
@@ -77,7 +73,7 @@ export function DailyChallenge({
         messageKey="amy_daily_intro"
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

@@ -3118,7 +3118,38 @@ function buildRoutineRuleFallbackPayload(ctx: RoutineGeneratePollContext): Recor
   });
 
   if (!fallbackPiped.validated) {
-    throw new Error("routine_validation_failed");
+    const { buildEmergencySafeRoutine } = await import("../lib/routine-emergency-fallback.js");
+    const { hardValidateSchedule, parseTimeToMins } = await import("../lib/routine-scheduler.js");
+    const { runBlockingTrustValidation } = await import("../lib/routine-trust-validators.js");
+    const emergency = buildEmergencySafeRoutine({
+      wakeUpTime: fallbackInputs.wakeUpTime,
+      sleepTime: fallbackInputs.sleepTime,
+      ageInMonths: ctx.totalAgeMonths,
+      ageGroup: ctx.ageGroup,
+      country: ctx.ppCountry,
+      hasSchool: fallbackInputs.hasSchool,
+      feedingType: fallbackInputs.feedingType,
+    });
+    const hard = hardValidateSchedule(
+      emergency,
+      fallbackInputs.wakeUpTime,
+      fallbackInputs.sleepTime,
+    );
+    const trust = runBlockingTrustValidation(emergency, {
+      wakeMins: parseTimeToMins(fallbackInputs.wakeUpTime),
+      sleepMins: parseTimeToMins(fallbackInputs.sleepTime),
+      ageGroup: ctx.ageGroup,
+      ageInMonths: ctx.totalAgeMonths,
+      country: ctx.ppCountry,
+      hasSchool: fallbackInputs.hasSchool,
+    });
+    if (hard.valid && trust.valid) {
+      fallbackPiped.items = emergency as typeof fallbackPiped.items;
+      fallbackPiped.validated = true;
+      fallbackPiped.validationErrors = [];
+    } else {
+      throw new Error("routine_validation_failed");
+    }
   }
 
   const fallbackExplCtx = parentExplanationCtx(fallbackInputs, ctx.isWeekendDay);

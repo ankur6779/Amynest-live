@@ -328,6 +328,9 @@ importers:
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../../lib/phonics-sounds
+      '@workspace/phonics-v3-progress':
+        specifier: workspace:*
+        version: link:../../lib/phonics-v3-progress
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -596,6 +599,9 @@ importers:
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../../lib/phonics-sounds
+      '@workspace/phonics-v3-progress':
+        specifier: workspace:*
+        version: link:../../lib/phonics-v3-progress
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -1375,6 +1381,9 @@ importers:
       '@workspace/gaming-rewards':
         specifier: workspace:*
         version: link:../gaming-rewards
+      '@workspace/phonics-v3-progress':
+        specifier: workspace:*
+        version: link:../phonics-v3-progress
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
@@ -1634,6 +1643,16 @@ importers:
         version: link:../phonics-sounds
 
   lib/phonics-sounds:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/phonics-v3-progress:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
     devDependencies:
       tsx:
         specifier: 'catalog:'

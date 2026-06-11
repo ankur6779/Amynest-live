@@ -14,7 +14,6 @@ import { join } from "node:path";
 import { config } from "dotenv";
 import { Storage } from "@google-cloud/storage";
 import {
-  buildPhonicsAudioCatalog,
   catalogEntryToManifestAsset,
   getPhonicsCatalogKey,
   getPhonicsGcsObjectPath,
@@ -22,6 +21,7 @@ import {
   type PhonicsAudioLibraryManifest,
   type PhonicsCatalogEntry,
 } from "@workspace/phonics-sounds";
+import { loadFullPhonicsCatalog } from "./phonics-audio-coverage.js";
 import {
   PHONICS_ELEVENLABS_MODEL_DEFAULT,
   PHONICS_ELEVENLABS_VOICE_ID_DEFAULT,
@@ -306,7 +306,7 @@ async function main(): Promise<void> {
   const onlyTypes = parseOnlyTypes(process.argv);
   const bucket = getBucketName();
   const storage = buildStorage();
-  const catalog = buildPhonicsAudioCatalog().filter(
+  const catalog = (await loadFullPhonicsCatalog()).filter(
     (e) => !onlyTypes || onlyTypes.has(e.type),
   );
 

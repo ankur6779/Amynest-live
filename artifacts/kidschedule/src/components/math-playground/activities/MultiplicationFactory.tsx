@@ -31,10 +31,6 @@ export function MultiplicationFactory({
   const [hintsUsed] = useState(0);
   const allOpen = openedBoxes.size === payload.groups;
 
-  useEffect(() => {
-    amy.queueCue("amy_multiply_intro", { groups: payload.groups, each: payload.perGroup });
-  }, [payload.groups, payload.perGroup]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const openBox = useCallback(
     (idx: number) => {
       if (openedBoxes.has(idx)) return;
@@ -61,7 +57,7 @@ export function MultiplicationFactory({
         messageVars={{ groups: payload.groups, each: payload.perGroup }}
         muted={amy.muted}
         onToggleMute={() => amy.setMuted(!amy.muted)}
-        speaking={amy.speaking}
+        amyAudio={amy}
         engagement={engagement}
         accentColor={accentColor}
       />

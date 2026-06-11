@@ -89,11 +89,14 @@ export function validateRequiredSleepAnchor(
       );
     }
     const group = resolveAgeGroup(opts);
-    const [lo, hi] = BEDTIME_WINDOW[group];
-    if (bedMins < lo - 15 || bedMins > hi + 15) {
-      errors.push(
-        `trust-sleep: bedtime ${bed.time} outside age-appropriate window for ${group}`,
-      );
+    const matchesParentSleepAnchor = Math.abs(bedMins - opts.sleepMins) <= 5;
+    if (!matchesParentSleepAnchor) {
+      const [lo, hi] = BEDTIME_WINDOW[group];
+      if (bedMins < lo - 15 || bedMins > hi + 15) {
+        errors.push(
+          `trust-sleep: bedtime ${bed.time} outside age-appropriate window for ${group}`,
+        );
+      }
     }
     const dinner = items.find(isDinnerBlock);
     if (dinner) {
@@ -132,19 +135,25 @@ export function validateRequiredDinner(
   const country = opts.country ?? "IN";
   const profile = getCountryRoutineProfile(country);
   const [winLo, winHi] = profile.dinnerWindow;
-  if (dinnerMins < winLo - 30 || dinnerMins > winHi + 45) {
+  const dinnerEnd = dinnerMins + (dinner.duration ?? 35);
+  const bedtimeItem = items.find(isBedtimeSleepItem);
+  const bedMins = bedtimeItem ? parseTimeToMins(bedtimeItem.time) : opts.sleepMins;
+  const dinnerFitsBeforeSleep = dinnerEnd <= bedMins - 10;
+  if (
+    !dinnerFitsBeforeSleep &&
+    (dinnerMins < winLo - 30 || dinnerMins > winHi + 45)
+  ) {
     errors.push(
       `trust-dinner: dinner at ${dinner.time} outside realistic window for ${country}`,
     );
   }
-  const dinnerEnd = dinnerMins + (dinner.duration ?? 35);
   if (dinnerEnd >= opts.sleepMins) {
     errors.push(
       `trust-dinner: dinner ends after bedtime anchor (${dinner.time} + ${dinner.duration ?? 35}min)`,
     );
   }
 
-  const bedtime = items.find(isBedtimeSleepItem);
+  const bedtime = bedtimeItem;
   if (bedtime) {
     const bedMins = parseTimeToMins(bedtime.time);
     if (dinnerEnd > bedMins) {
@@ -174,18 +183,22 @@ function countsAsInfantSolidExposure(item: RoutineScheduleItem): boolean {
  */
 export function validateInfantFeedingStructure(
   items: RoutineScheduleItem[],
-  opts: { ageInMonths: number },
+  opts: { ageInMonths: number; wakeMins?: number; sleepMins?: number },
 ): TrustValidationResult {
   const group = getAgeGroup(opts.ageInMonths);
   if (group === "child") {
     return { valid: true, errors: [] };
   }
 
-  const baseWarnings = validateAgeFeedingIntegration(items, group);
+  const baseWarnings = validateAgeFeedingIntegration(items, group, {
+    wakeMins: opts.wakeMins,
+    sleepMins: opts.sleepMins,
+  });
   const solids =
     group === "infant_6_12" ? items.filter(countsAsInfantSolidExposure) : [];
   const errors: string[] = baseWarnings
     .filter((w) => {
+      if (/optional night feeding/i.test(w)) return false;
       if (group !== "infant_6_12") return true;
       if (/expected 2–3 soft meals/i.test(w) && solids.length >= 2) return false;
       return true;
@@ -216,9 +229,20 @@ export function validateInfantFeedingStructure(
     const feeds = items.filter(
       (i) => isFeedingBlock(i) && !isOptionalNightFeed(i),
     );
-    if (feeds.length < 6) {
+    const awakeSpan =
+      opts.wakeMins != null && opts.sleepMins != null
+        ? Math.max(0, opts.sleepMins - opts.wakeMins - 62)
+        : 12 * 60;
+    const idealMin = awakeSpan >= 540 ? 6 : awakeSpan >= 420 ? 5 : 4;
+    const minFeeds = Math.min(idealMin, Math.max(4, Math.floor(awakeSpan / 110)));
+    const maxFeeds = 10;
+    if (feeds.length < minFeeds) {
       errors.push(
-        `trust-feeding: infant 0–6 expected at least 6 daytime feeds (found ${feeds.length})`,
+        `trust-feeding: infant 0–6 expected at least ${minFeeds} daytime feeds (found ${feeds.length})`,
+      );
+    } else if (feeds.length > maxFeeds) {
+      errors.push(
+        `trust-feeding: infant 0–6 expected ${minFeeds}–${maxFeeds} daytime feeds (found ${feeds.length})`,
       );
     }
     if (items.some(isAdultMealBlock)) {
@@ -241,7 +265,11 @@ export function runBlockingTrustValidation(
 
   const months = opts.ageInMonths;
   if (months != null && months < 36) {
-    const feeding = validateInfantFeedingStructure(items, { ageInMonths: months });
+    const feeding = validateInfantFeedingStructure(items, {
+      ageInMonths: months,
+      wakeMins: opts.wakeMins,
+      sleepMins: opts.sleepMins,
+    });
     errors.push(...feeding.errors);
   }
 

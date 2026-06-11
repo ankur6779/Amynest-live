@@ -112,12 +112,6 @@ export function usePlaygroundEngagement(
     [presence.reaction, childId],
   );
 
-  useEffect(() => {
-    if (presence.reaction?.cueKey && isMpAmyAvatarEnabled()) {
-      amy.queueCue(presence.reaction.cueKey);
-    }
-  }, [reactionKey, presence.reaction?.cueKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return {
     recordSuccess,
     recordFailure,

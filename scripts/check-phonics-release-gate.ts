@@ -11,8 +11,8 @@ import { runPhonicsLibraryChecks } from "./check-phonics-library.js";
 
 const REPO_ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 
-function assertLibrary(): void {
-  const results = runPhonicsLibraryChecks();
+async function assertLibrary(): Promise<void> {
+  const results = await runPhonicsLibraryChecks();
   console.log("\n[check:phonics-release-gate] LIBRARY + MANIFEST\n");
   for (const r of results) {
     const icon = r.ok ? "✔" : "✗";
@@ -65,6 +65,35 @@ function runSmokeTests(): void {
   console.log("\n[check:phonics-release-gate] PASS — release gate clear.\n");
 }
 
-assertLibrary();
-runInteractionGate();
-runSmokeTests();
+function runAudioCertification(): void {
+  console.log("[check:phonics-release-gate] Running audio certification…\n");
+  const result = spawnSync("pnpm", ["--filter", "@workspace/scripts", "run", "check-phonics-audio-certification"], {
+    cwd: REPO_ROOT,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    console.error("\n[check:phonics-release-gate] FAIL — audio certification failed.\n");
+    process.exit(result.status ?? 1);
+  }
+}
+
+async function runAudioCoverageCertify(): Promise<void> {
+  console.log("[check:phonics-release-gate] Running full audio coverage certify…\n");
+  const result = spawnSync(
+    "pnpm",
+    ["phonics:audio:certify"],
+    { cwd: REPO_ROOT, stdio: "inherit", env: { ...process.env, PHONICS_AUDIO_SKIP_CERTIFY: "0" } },
+  );
+  if (result.status !== 0) {
+    console.error("\n[check:phonics-release-gate] FAIL — phonics audio coverage certify failed.\n");
+    process.exit(result.status ?? 1);
+  }
+}
+
+void (async () => {
+  await assertLibrary();
+  await runAudioCoverageCertify();
+  runAudioCertification();
+  runInteractionGate();
+  runSmokeTests();
+})();
