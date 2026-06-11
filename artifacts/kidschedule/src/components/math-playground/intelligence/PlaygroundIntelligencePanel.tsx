@@ -39,6 +39,7 @@ export function PlaygroundIntelligencePanel({
         </p>
         <button
           type="button"
+          data-testid="mp-intelligence-refresh"
           onClick={() => intelligenceApi.refreshNow()}
           className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
           style={{ background: "rgba(99,102,241,0.2)", color: "hsl(var(--brand-indigo-300))" }}

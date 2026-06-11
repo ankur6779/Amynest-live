@@ -109,14 +109,23 @@ export function DivisionBakery({
         {cookies.map(
           (id) =>
             !assignedSet.has(id) && (
-              <button
+              <div
                 key={id}
-                type="button"
+                role="button"
+                tabIndex={0}
+                data-testid="mp-cookie-pick"
                 onClick={() => {
                   audioManager.unlockFromUserGesture();
                   setSelectedCookie(id);
                 }}
-                className="rounded-lg transition-all"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    audioManager.unlockFromUserGesture();
+                    setSelectedCookie(id);
+                  }
+                }}
+                className="rounded-lg transition-all cursor-pointer"
                 style={{
                   outline: selectedCookie === id ? `2px solid ${accentColor}` : "none",
                   transform: selectedCookie === id ? "scale(1.1)" : "scale(1)",
@@ -128,7 +137,7 @@ export function DivisionBakery({
                   interactive={false}
                   childId={childId}
                 />
-              </button>
+              </div>
             ),
         )}
       </div>
@@ -142,6 +151,7 @@ export function DivisionBakery({
           <motion.button
             key={childIdx}
             type="button"
+            data-testid={`mp-child-slot-${childIdx}`}
             onClick={() => assignToChild(childIdx)}
             animate={wrongShake === childIdx ? { x: [-4, 4, -4, 4, 0] } : { x: 0 }}
             className="rounded-xl p-2 min-h-[80px] min-w-[80px] flex flex-col items-center"

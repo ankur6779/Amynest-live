@@ -103,6 +103,7 @@ export function CountingAdventure({
         {payload.objects.map((obj) => (
           <div
             key={obj.id}
+            data-testid={collected.has(obj.id) || done ? undefined : "mp-tap-target"}
             className="absolute cursor-pointer"
             style={{ left: `${obj.x}%`, top: `${obj.y}%`, transform: "translate(-50%, -50%)" }}
             onClick={(e) => {

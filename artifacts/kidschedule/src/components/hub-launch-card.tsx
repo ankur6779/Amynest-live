@@ -74,7 +74,7 @@ export function HubLaunchCard({
             </div>
             <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
           </div>
-          <span className="inline-flex h-7 shrink-0 items-center self-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
+          <span className="inline-flex h-8 shrink-0 items-center self-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
             {actionLabel}
           </span>
         </div>

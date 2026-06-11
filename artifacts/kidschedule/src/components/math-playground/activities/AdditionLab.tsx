@@ -122,11 +122,7 @@ export function AdditionLab({
         </div>
       </div>
 
-      <motion.button
-        type="button"
-        onClick={() => {
-          /* basket drop zone — objects tap into basket */
-        }}
+      <motion.div
         className="relative w-full rounded-2xl py-4 mb-2 flex flex-wrap gap-1 justify-center items-center min-h-[80px]"
         style={{
           background: "linear-gradient(180deg, rgba(245,158,11,0.2), rgba(0,0,0,0.25))",
@@ -151,7 +147,7 @@ export function AdditionLab({
             />
           </motion.span>
         ))}
-      </motion.button>
+      </motion.div>
 
       <AnimatePresence>
         {showEquation && (

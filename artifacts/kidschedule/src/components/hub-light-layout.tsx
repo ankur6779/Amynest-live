@@ -10,6 +10,11 @@ import {
   HUB_EXPANDED_CONTENT,
   HUB_EXPANDED_CONTENT_STACK,
   HUB_PANEL_ACCENTS,
+  HUB_SECTION_GROUP_HEADER,
+  HUB_SECTION_GROUP_ICON,
+  HUB_SECTION_GROUP_SUBTITLE,
+  HUB_SECTION_GROUP_TEXT,
+  HUB_SECTION_GROUP_TITLE,
   hubShadedSectionCardClasses,
   type HubPanelAccentKey,
 } from "@/lib/parent-hub-premium";
@@ -176,25 +181,19 @@ export function HubExploreAgesSection({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="w-full flex items-center justify-between gap-2 px-3 py-3 text-left transition-all duration-[220ms] ease-[ease] hover:bg-white/[0.04]"
+            className={cn(HUB_SECTION_GROUP_HEADER, "hover:bg-white/[0.04]")}
             aria-expanded={open}
           >
-            <div className="flex items-center gap-2.5 min-w-0 text-left">
-              <span
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base",
-                  panel.emojiShell,
-                )}
-                aria-hidden
-              >
-                {headerEmoji}
-              </span>
-              <div className="min-w-0">
-                <p className={cn(HUB_CARD_TITLE, "truncate")}>{title}</p>
-                {!open ? <p className={cn(HUB_BODY, "line-clamp-1")}>{subtitle}</p> : null}
-              </div>
+            <span className={cn(HUB_SECTION_GROUP_ICON, panel.emojiShell)} aria-hidden>
+              {headerEmoji}
+            </span>
+            <div className={HUB_SECTION_GROUP_TEXT}>
+              <p className={cn(HUB_SECTION_GROUP_TITLE, "text-foreground")}>{title}</p>
+              {!open ? (
+                <p className={HUB_SECTION_GROUP_SUBTITLE}>{subtitle}</p>
+              ) : null}
             </div>
-            <span className="text-xs font-bold text-amber-300/90 shrink-0 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1">
+            <span className="text-xs font-bold text-amber-300/90 shrink-0 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 h-8 inline-flex items-center">
               {open ? t("parent_hub.explore_ages.hide") : t("parent_hub.explore_ages.show")}
             </span>
           </button>

@@ -16,7 +16,7 @@ export function PopCorrectAnswer({
   const correct = payload.correctAnswer ?? choices[payload.correctIndex ?? 0];
 
   return (
-    <div data-testid="mp-mini-game">
+    <div>
       <p className="text-lg font-black text-white mb-4">{payload.question}</p>
       <div className="flex flex-wrap justify-center gap-3">
         {choices.map((val, i) => (

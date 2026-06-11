@@ -20,17 +20,18 @@ export function BalloonBurst({
     audioManager.unlockFromUserGesture();
     engagement?.recordInteraction();
 
-    setPopped((prev) => {
-      const next = new Set([...prev, id]);
-      if (next.size === target) {
-        setWon(true);
-        onCorrect();
-      } else if (next.size > target) {
-        onWrong();
-        return new Set();
-      }
-      return next;
-    });
+    const next = new Set([...popped, id]);
+    if (next.size > target) {
+      setPopped(new Set());
+      window.setTimeout(() => onWrong(), 0);
+      return;
+    }
+
+    setPopped(next);
+    if (next.size === target) {
+      setWon(true);
+      window.setTimeout(() => onCorrect(), 0);
+    }
   };
 
   return (
@@ -45,6 +46,7 @@ export function BalloonBurst({
               <motion.button
                 key={balloon.id}
                 type="button"
+                data-testid="mp-balloon-pop"
                 disabled={won || locked}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1, y: [0, -4, 0] }}

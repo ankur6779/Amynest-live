@@ -64,7 +64,9 @@ export function MathPlaygroundHub({
           {rewards.streakDays > 0 && (
             <p className="text-[10px] font-bold text-amber-300">🔥 {rewards.streakDays}</p>
           )}
-          <p className="text-[11px] font-bold text-amber-300">⭐ {rewards.stars}</p>
+          <p className="text-[11px] font-bold text-amber-300" data-testid="mp-stars">
+            ⭐ {rewards.stars}
+          </p>
           <p className="text-[9px] text-white/30">{t("components.math_playground.view_rewards")}</p>
         </button>
       </div>

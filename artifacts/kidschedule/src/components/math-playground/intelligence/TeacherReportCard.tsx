@@ -27,6 +27,7 @@ export function TeacherReportCard({
       </p>
       <button
         type="button"
+        data-testid="mp-teacher-export"
         onClick={onExport}
         className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg"
         style={{ background: "rgba(255,255,255,0.1)", color: "white" }}

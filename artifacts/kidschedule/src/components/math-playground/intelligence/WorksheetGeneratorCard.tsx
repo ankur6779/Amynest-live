@@ -57,6 +57,7 @@ export function WorksheetGeneratorCard({
       </p>
       <button
         type="button"
+        data-testid="mp-worksheet-generate"
         onClick={handleGenerate}
         className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg mr-2"
         style={{ background: "rgba(245,158,11,0.2)", color: "hsl(var(--brand-amber-300))" }}
@@ -66,6 +67,7 @@ export function WorksheetGeneratorCard({
       {latestWorksheet && (
         <button
           type="button"
+          data-testid="mp-worksheet-download"
           onClick={() => handleDownload(latestWorksheet)}
           className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg"
           style={{ background: "rgba(255,255,255,0.08)", color: "white" }}

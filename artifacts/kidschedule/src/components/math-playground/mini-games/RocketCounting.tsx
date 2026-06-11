@@ -30,6 +30,7 @@ export function RocketCounting({
           <motion.button
             key={val}
             type="button"
+            data-testid={`mp-mini-choice-${val}`}
             whileTap={{ scale: 0.9 }}
             onClick={() => {
               if (locked) return;

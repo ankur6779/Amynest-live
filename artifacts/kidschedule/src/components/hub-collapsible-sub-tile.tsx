@@ -6,6 +6,8 @@ import {
   extractTintRgbFromCardClass,
   getHubSubTileIconAccent,
   HUB_EXPANDED_CONTENT,
+  HUB_SUB_TILE_DESC,
+  HUB_SUB_TILE_HEADER,
   HUB_SUB_TILE_ICON_LG,
 } from "@/lib/parent-hub-premium";
 
@@ -68,29 +70,28 @@ export function HubCollapsibleSubTile({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "w-full flex items-center justify-between gap-3 px-3 py-3.5 sm:px-4 sm:py-4 text-left",
-          "transition-colors duration-200",
+          HUB_SUB_TILE_HEADER,
           open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
         )}
         aria-expanded={open}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className={cn(HUB_SUB_TILE_ICON_LG, iconAccent)}>
             <span className="text-white [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <span className="font-bold text-[15px] leading-snug text-foreground block truncate">
               {title}
             </span>
             {badge ? (
-              <span className="inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 dark:bg-white/10 text-foreground/80 backdrop-blur-sm">
-                {badge}
+              <span className="inline-flex h-[2rem] items-center">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 dark:bg-white/10 text-foreground/80 backdrop-blur-sm">
+                  {badge}
+                </span>
               </span>
-            ) : description ? (
-              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
-                {description}
-              </p>
-            ) : null}
+            ) : (
+              <p className={HUB_SUB_TILE_DESC}>{description ?? "\u00A0"}</p>
+            )}
           </div>
         </div>
         {open ? (

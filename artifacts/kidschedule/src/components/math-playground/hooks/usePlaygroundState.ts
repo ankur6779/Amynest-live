@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   buildParentRetentionSnapshot,
   defaultLearningState,
@@ -28,85 +28,80 @@ import {
 
 export function usePlaygroundState(childId: number) {
   const [state, setState] = useState(() => loadPlaygroundState(childId));
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
-  const persistState = useCallback((next: PlaygroundPersistedState) => {
+  const commitState = useCallback((next: PlaygroundPersistedState) => {
+    stateRef.current = next;
     savePlaygroundState(next);
     setState(next);
+    return next;
   }, []);
+
+  const persistState = useCallback(
+    (next: PlaygroundPersistedState) => commitState(next),
+    [commitState],
+  );
 
   const persistRewards = useCallback(
     (updater: (prev: PlaygroundRewardState) => PlaygroundRewardState) => {
-      setState((prev) => {
-        const next: PlaygroundPersistedState = {
-          ...prev,
-          version: 4,
-          rewards: updater(prev.rewards),
-        };
-        savePlaygroundState(next);
-        return next;
+      const prev = stateRef.current;
+      return commitState({
+        ...prev,
+        version: 4,
+        rewards: updater(prev.rewards),
       });
     },
-    [],
+    [commitState],
   );
 
-  const recordSession = useCallback((record: PlaygroundSessionRecord) => {
-    setState((prev) => {
+  const recordSession = useCallback(
+    (record: PlaygroundSessionRecord) => {
+      const prev = stateRef.current;
       const learning = recordPlaygroundSession(
         prev.learning ?? defaultLearningState(),
         record,
       );
-      const next: PlaygroundPersistedState = { ...prev, version: 4, learning };
-      savePlaygroundState(next);
-      return next;
-    });
-  }, []);
+      return commitState({ ...prev, version: 4, learning });
+    },
+    [commitState],
+  );
 
-  const recordSessionV4 = useCallback((record: PlaygroundSessionRecordV4) => {
-    setState((prev) => {
+  const recordSessionV4 = useCallback(
+    (record: PlaygroundSessionRecordV4) => {
+      const prev = stateRef.current;
       const learning = recordPlaygroundSessionV4(
         prev.learning ?? defaultLearningState(),
         record,
       );
-      const next: PlaygroundPersistedState = { ...prev, version: 4, learning };
-      savePlaygroundState(next);
-      return next;
-    });
-  }, []);
+      return commitState({ ...prev, version: 4, learning });
+    },
+    [commitState],
+  );
 
   const recordEngagement = useCallback(
     (outcome: "success" | "failure" | "interaction") => {
-      setState((prev) => {
-        const engagement = recordEngagementOutcome(
-          prev.engagement ?? {
-            consecutiveSuccesses: 0,
-            consecutiveFailures: 0,
-            lastInteractionAt: Date.now(),
-            sessionStartedAt: Date.now(),
-          },
-          outcome,
-        );
-        const next: PlaygroundPersistedState = { ...prev, version: 4, engagement };
-        savePlaygroundState(next);
-        return next;
-      });
+      const prev = stateRef.current;
+      const engagement = recordEngagementOutcome(
+        prev.engagement ?? {
+          consecutiveSuccesses: 0,
+          consecutiveFailures: 0,
+          lastInteractionAt: Date.now(),
+          sessionStartedAt: Date.now(),
+        },
+        outcome,
+      );
+      return commitState({ ...prev, version: 4, engagement });
     },
-    [],
+    [commitState],
   );
 
   const generateParentSnapshot = useCallback(
     (ageYears: number): ParentRetentionSnapshot => {
-      let snapshot!: ParentRetentionSnapshot;
-      setState((prev) => {
-        const learning = prev.learning ?? defaultLearningState();
-        snapshot = buildParentRetentionSnapshot(learning, prev.rewards, ageYears);
-        const next: PlaygroundPersistedState = {
-          ...prev,
-          version: 4,
-          lastParentSnapshot: snapshot,
-        };
-        savePlaygroundState(next);
-        return next;
-      });
+      const prev = stateRef.current;
+      const learning = prev.learning ?? defaultLearningState();
+      const snapshot = buildParentRetentionSnapshot(learning, prev.rewards, ageYears);
+      commitState({ ...prev, version: 4, lastParentSnapshot: snapshot });
       trackParentSnapshotGenerated(childId, {
         confidenceStars: snapshot.mathConfidenceStars,
         recommendedActivityId: snapshot.recommendedActivityId,
@@ -114,27 +109,19 @@ export function usePlaygroundState(childId: number) {
       });
       return snapshot;
     },
-    [childId],
+    [childId, commitState],
   );
 
   const refreshIntelligence = useCallback(
     (ageYears: number, childDisplayName: string, afterSessionComplete = false) => {
-      let result!: ReturnType<typeof refreshPlaygroundIntelligence>;
-      setState((prev) => {
-        result = refreshPlaygroundIntelligence({
-          state: prev,
-          ageYears,
-          childDisplayName,
-          afterSessionComplete,
-        });
-        const next: PlaygroundPersistedState = {
-          ...prev,
-          version: 4,
-          intelligence: result.intelligence,
-        };
-        savePlaygroundState(next);
-        return next;
+      const prev = stateRef.current;
+      const result = refreshPlaygroundIntelligence({
+        state: prev,
+        ageYears,
+        childDisplayName,
+        afterSessionComplete,
       });
+      commitState({ ...prev, version: 4, intelligence: result.intelligence });
 
       if (result.gapsDetected > 0) {
         trackLearningGapDetected(childId, result.gapsDetected);
@@ -152,34 +139,33 @@ export function usePlaygroundState(childId: number) {
 
       return result;
     },
-    [childId],
+    [childId, commitState],
   );
 
   const setPreferredPlayMode = useCallback(
     (mode: PlaygroundPersistedState["preferredPlayMode"]) => {
-      setState((prev) => {
-        const next: PlaygroundPersistedState = { ...prev, version: 4, preferredPlayMode: mode };
-        savePlaygroundState(next);
-        return next;
-      });
+      const prev = stateRef.current;
+      return commitState({ ...prev, version: 4, preferredPlayMode: mode });
     },
-    [],
+    [commitState],
   );
 
   const saveEngagement = useCallback(
     (engagement: PlaygroundEngagementState) => {
       updateEngagementState(childId, engagement);
-      setState((prev) => ({ ...prev, version: 4, engagement }));
+      const prev = stateRef.current;
+      return commitState({ ...prev, version: 4, engagement });
     },
-    [childId],
+    [childId, commitState],
   );
 
   const saveSnapshot = useCallback(
     (snapshot: ParentRetentionSnapshot) => {
       saveParentSnapshot(childId, snapshot);
-      setState((prev) => ({ ...prev, version: 4, lastParentSnapshot: snapshot }));
+      const prev = stateRef.current;
+      return commitState({ ...prev, version: 4, lastParentSnapshot: snapshot });
     },
-    [childId],
+    [childId, commitState],
   );
 
   return {

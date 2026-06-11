@@ -44,6 +44,7 @@ export function MiniGameRouter(props: MiniGameProps) {
     onWrong: wrapWrong,
   };
 
+  const game = (() => {
   switch (payload.template) {
     case "pop_correct_answer":
       return <PopCorrectAnswer {...gameProps} />;
@@ -60,4 +61,7 @@ export function MiniGameRouter(props: MiniGameProps) {
     default:
       return null;
   }
+  })();
+
+  return <div data-testid="mp-mini-game">{game}</div>;
 }

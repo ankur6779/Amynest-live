@@ -224,9 +224,32 @@ export const HUB_TILE = cn(
   "hover:border-white/15 active:scale-[0.985]",
 );
 
+/** Collapsed Parent Hub section-group headers (Today, Learning, Previous Stage, etc.). */
+export const HUB_SECTION_GROUP_HEADER = cn(
+  "w-full flex items-center gap-3 text-left px-3 py-3.5 min-h-[4.5rem]",
+  "transition-all duration-[220ms] ease-[ease]",
+);
+
+export const HUB_SECTION_GROUP_ICON = cn(
+  "flex items-center justify-center w-8 h-8 rounded-xl shrink-0 text-base",
+);
+
+export const HUB_SECTION_GROUP_TEXT = "flex-1 min-w-0";
+
+export const HUB_SECTION_GROUP_TITLE = cn(
+  "block font-quicksand font-bold text-sm leading-tight truncate",
+);
+
+export const HUB_SECTION_GROUP_SUBTITLE = cn(
+  "block text-[11px] mt-0.5 line-clamp-1 min-h-[1rem] text-muted-foreground opacity-75",
+);
+
+/** Collapsed hub feature tile — uniform shell height (HubSection + HubLaunchCard). */
+export const HUB_FEATURE_TILE_COLLAPSED_HEIGHT = "min-h-[6.375rem]";
+
 /** Collapsed Parent Hub feature tiles — shared header geometry for HubSection + HubLaunchCard. */
 export const HUB_FEATURE_TILE_HEADER = cn(
-  "w-full flex items-center justify-between gap-2.5 px-2.5 py-2.5 sm:px-3 text-left",
+  "w-full flex flex-1 items-center justify-between gap-2.5 px-2.5 py-2.5 sm:px-3 text-left",
   "transition-all duration-[220ms] ease-[ease]",
 );
 
@@ -241,21 +264,26 @@ export const HUB_FEATURE_TILE_TITLE = cn(
 );
 
 export const HUB_FEATURE_TILE_DESC = cn(
-  "text-[12px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-[1.35] min-h-[2.125rem]",
+  "text-[12px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-[1.35] h-[2.125rem]",
 );
 
 export const HUB_FEATURE_TILE_PREVIEW = cn(
-  "px-3 pb-2.5 -mt-0.5 min-h-[1.625rem] flex items-center",
+  "px-3 pb-2.5 -mt-0.5 h-[1.625rem] shrink-0 flex items-center",
 );
 
-export const HUB_FEATURE_TILE_CHEVRON = cn(
+const HUB_FEATURE_TILE_CHEVRON_BASE = cn(
   "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
   "border border-white/10 bg-white/[0.05] transition-transform duration-300",
 );
 
+export const HUB_FEATURE_TILE_CHEVRON = HUB_FEATURE_TILE_CHEVRON_BASE;
+
+export const HUB_SECTION_GROUP_CHEVRON = HUB_FEATURE_TILE_CHEVRON_BASE;
+
 /** Launch / link tiles — same collapsed height as HubSection header + preview row. */
 export const HUB_FEATURE_TILE_LAUNCH_ROW = cn(
-  "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5 min-h-[4.75rem]",
+  "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5",
+  HUB_FEATURE_TILE_COLLAPSED_HEIGHT,
 );
 
 export const HUB_XP_GOLD = "font-semibold text-[#FFD54F] tabular-nums";
@@ -573,6 +601,16 @@ export const HUB_SUB_TILE_ICON = cn(
 export const HUB_SUB_TILE_ICON_LG = cn(
   "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
+);
+
+/** Collapsed Activities / sub-section rows inside expanded hub tiles. */
+export const HUB_SUB_TILE_HEADER = cn(
+  "w-full flex items-center justify-between gap-3 px-3 py-3.5 sm:px-4 text-left min-h-[4.5rem]",
+  "transition-colors duration-200",
+);
+
+export const HUB_SUB_TILE_DESC = cn(
+  "text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug h-[2rem]",
 );
 
 const HUB_SUB_TILE_ICON_ACCENTS: Record<string, string> = {

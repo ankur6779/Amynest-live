@@ -114,12 +114,19 @@ import {
   hubShadedSectionCardClasses,
   HUB_FEATURE_TILE_CHEVRON,
   HUB_FEATURE_TILE_DESC,
+  HUB_FEATURE_TILE_COLLAPSED_HEIGHT,
   HUB_FEATURE_TILE_HEADER,
   HUB_FEATURE_TILE_ICON,
   HUB_FEATURE_TILE_LAUNCH_ROW,
   HUB_FEATURE_TILE_PREVIEW,
   HUB_FEATURE_TILE_TEXT,
   HUB_FEATURE_TILE_TITLE,
+  HUB_SECTION_GROUP_CHEVRON,
+  HUB_SECTION_GROUP_HEADER,
+  HUB_SECTION_GROUP_ICON,
+  HUB_SECTION_GROUP_SUBTITLE,
+  HUB_SECTION_GROUP_TEXT,
+  HUB_SECTION_GROUP_TITLE,
   HUB_EXPANDED_CONTENT,
   HUB_EXPANDED_CONTENT_STACK,
 } from "@/lib/parent-hub-premium";
@@ -228,7 +235,7 @@ function HubSection({
       )}
     >
       <HubShadedCardBody theme={tileTheme} cardClass={cardClass}>
-        <div className="min-w-0 flex-1 flex flex-col">
+        <div className={cn("min-w-0 flex-1 flex flex-col", !open && HUB_FEATURE_TILE_COLLAPSED_HEIGHT)}>
           <button
             onClick={toggle}
             className={cn(
@@ -1819,28 +1826,31 @@ function ParentingHubPage() {
                   <button
                     onClick={() => toggleGroup(group.key)}
                     className={cn(
-                      "w-full flex items-center gap-3 text-left px-3 py-3.5",
-                      "transition-all duration-[220ms] ease-[ease]",
+                      HUB_SECTION_GROUP_HEADER,
                       isOpen ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
                     )}
                     aria-expanded={isOpen}
                   >
-                    <span className={cn("flex items-center justify-center w-8 h-8 rounded-xl shrink-0 text-base", gs.emojiShell)}>
+                    <span className={cn(HUB_SECTION_GROUP_ICON, gs.emojiShell)}>
                       {group.emoji}
                     </span>
-                    <span className="flex-1 min-w-0">
-                      <span className={cn("block font-quicksand font-bold text-sm leading-tight truncate", isOpen ? "text-amber-100/95" : "text-foreground")}>
+                    <span className={HUB_SECTION_GROUP_TEXT}>
+                      <span className={cn(
+                        HUB_SECTION_GROUP_TITLE,
+                        isOpen ? "text-amber-100/95" : "text-foreground",
+                      )}>
                         {t(group.i18n)}
                       </span>
-                      {isSupport && !isOpen ? (
-                        <span className={cn("block text-[11px] mt-0.5 line-clamp-1", HUB_BODY)}>
-                          {t("parent_hub.support.group_subtitle", { count: groupGrid.length })}
+                      {!isOpen ? (
+                        <span className={HUB_SECTION_GROUP_SUBTITLE}>
+                          {isSupport
+                            ? t("parent_hub.support.group_subtitle", { count: groupGrid.length })
+                            : "\u00A0"}
                         </span>
                       ) : null}
                     </span>
                     <span className={cn(
-                      "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
-                      "border border-white/10 bg-white/[0.05] transition-transform duration-300",
+                      HUB_SECTION_GROUP_CHEVRON,
                       isOpen ? "rotate-180 text-amber-300/90" : "text-muted-foreground",
                     )}>
                       <ChevronDown className="h-3.5 w-3.5" />

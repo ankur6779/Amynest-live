@@ -35,6 +35,7 @@ export function AmyCompanionBar({
       <p className="flex-1 text-sm font-bold text-white/90 leading-snug pt-1">{message}</p>
       <button
         type="button"
+        data-testid="mp-mute-toggle"
         onClick={onToggleMute}
         className="shrink-0 p-2 rounded-xl transition-all active:scale-95"
         style={{ background: "rgba(255,255,255,0.08)" }}

@@ -14,16 +14,15 @@ export function FeedTheMonkey({
   const [fed, setFed] = useState(0);
 
   const feedBanana = () => {
-    if (locked) return;
+    if (locked || fed >= target) return;
     audioManager.unlockFromUserGesture();
     engagement?.recordInteraction();
 
-    setFed((prev) => {
-      if (prev >= target) return prev;
-      const next = prev + 1;
-      if (next === target) onCorrect();
-      return next;
-    });
+    const next = fed + 1;
+    setFed(next);
+    if (next === target) {
+      window.setTimeout(() => onCorrect(), 0);
+    }
   };
 
   return (
@@ -43,6 +42,7 @@ export function FeedTheMonkey({
           <motion.button
             key={i}
             type="button"
+            data-testid="mp-banana-feed"
             whileTap={{ scale: 0.85, y: -12 }}
             disabled={fed >= target || locked}
             onClick={feedBanana}

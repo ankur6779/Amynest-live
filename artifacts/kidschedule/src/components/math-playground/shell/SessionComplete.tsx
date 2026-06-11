@@ -30,6 +30,7 @@ export function SessionComplete({ stars, accentColor, newBadges, onHome }: Sessi
       )}
       <button
         type="button"
+        data-testid="mp-back-hub"
         onClick={onHome}
         className="mt-4 px-6 py-3 rounded-2xl font-black text-sm text-white active:scale-95"
         style={{ background: `linear-gradient(135deg, ${accentColor}, hsl(var(--brand-amber-500)))` }}

@@ -95,6 +95,7 @@ export function NumberPatterns({
             <motion.button
               key={choice}
               type="button"
+              data-testid={`mp-pattern-choice-${choice}`}
               onClick={() => {
                 audioManager.unlockFromUserGesture();
                 setSelectedChoice(choice);
@@ -137,6 +138,7 @@ function PatternCard({
   return (
     <motion.button
       type="button"
+      data-testid={blank ? "mp-pattern-slot" : undefined}
       onClick={onTap}
       disabled={!blank || value !== null}
       animate={

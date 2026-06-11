@@ -57,6 +57,7 @@ export function CastleBuilder({
               <motion.button
                 key={`${piece}-${idx}-${val}`}
                 type="button"
+                data-testid={`mp-mini-choice-${val}`}
                 disabled={done || locked}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => answer(val)}

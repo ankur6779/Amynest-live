@@ -91,6 +91,7 @@ export function MultiplicationFactory({
             <motion.button
               key={idx}
               type="button"
+              data-testid={`mp-mult-box-${idx}`}
               onClick={() => openBox(idx)}
               disabled={openedBoxes.has(idx)}
               whileTap={{ scale: 0.92 }}

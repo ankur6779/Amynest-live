@@ -46,6 +46,7 @@ export function PlayModeSelector({ playMode, childId }: PlayModeSelectorProps) {
       style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
     >
       <ModeButton
+        testId="mp-mode-touch"
         active={playMode.mode === "touch"}
         onClick={selectTouch}
         label={t("components.math_playground.mode_touch")}
@@ -53,6 +54,7 @@ export function PlayModeSelector({ playMode, childId }: PlayModeSelectorProps) {
         disabled={pending}
       />
       <ModeButton
+        testId="mp-mode-voice"
         active={playMode.mode === "voice"}
         onClick={() => void selectVoice()}
         label={t("components.math_playground.mode_voice")}
@@ -64,12 +66,14 @@ export function PlayModeSelector({ playMode, childId }: PlayModeSelectorProps) {
 }
 
 function ModeButton({
+  testId,
   active,
   onClick,
   label,
   emoji,
   disabled,
 }: {
+  testId?: string;
   active: boolean;
   onClick: () => void;
   label: string;
@@ -79,6 +83,7 @@ function ModeButton({
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       disabled={disabled}
       className="flex-1 rounded-lg py-2 px-2 text-center transition-all active:scale-95 disabled:opacity-50"

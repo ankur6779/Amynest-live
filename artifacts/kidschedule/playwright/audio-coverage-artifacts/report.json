@@ -1,0 +1,286 @@
+{
+  "validatedAt": "2026-06-10T11:14:38.100Z",
+  "features": [
+    {
+      "feature": "Parent Hub Story",
+      "verdict": "PASS",
+      "reason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.643197,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "video",
+        "srcTail": "https://www.amynest.in/api/stories/stream/1VBU1iWLKZrCxinctWY1QRoZRJRpMX0xB",
+        "readyState": 4,
+        "speechPlaying": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/parent_hub_story.png"
+    },
+    {
+      "feature": "Amy Coach",
+      "verdict": "PASS",
+      "reason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.699951,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "blob:https://www.amynest.in/3bd9ef89-ae93-4ebe-95c0-d5eb1d9e8b79",
+        "readyState": 4,
+        "speechPlaying": true
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/amy_coach.png"
+    },
+    {
+      "feature": "Conversation Coach",
+      "verdict": "PASS",
+      "reason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.013983,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "i/tts/audio/8c7ae94ba207e850642cc5a810913741e838d0661581f0f43c3165254cf885e3.mp3",
+        "readyState": 4,
+        "speechPlaying": true
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/conversation_coach.png"
+    },
+    {
+      "feature": "Speech Coach",
+      "verdict": "PASS",
+      "reason": "not_advancing",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 0.912,
+        "currentTimeAdvancing": false,
+        "paused": true,
+        "mediaKind": "audio",
+        "srcTail": "https://www.amynest.in/api/static-audio/900fac3b4c8757daa5b1f5da10822575.mp3",
+        "readyState": 4,
+        "speechPlaying": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/speech_coach.png"
+    },
+    {
+      "feature": "Infant Story",
+      "verdict": "FAIL",
+      "reason": "no_audio_element",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/infant_story.png"
+    },
+    {
+      "feature": "Infant Poem",
+      "verdict": "FAIL",
+      "reason": "infant_poem_requires_infant_child_or_fixture",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/infant_poem.png"
+    },
+    {
+      "feature": "Audio Lesson",
+      "verdict": "PASS",
+      "reason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.860684,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "https://www.amynest.in/api/static-audio/787627465b1a51ba151312153a4cb5a9.mp3",
+        "readyState": 4,
+        "speechPlaying": true
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/audio_lesson.png"
+    },
+    {
+      "feature": "Phonics",
+      "verdict": "FAIL",
+      "reason": "locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid^=\"audio-play-\"]').first() to be visible\u001b[22m\n",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/phonics.png"
+    }
+  ],
+  "overall": "FAIL",
+  "detail": [
+    {
+      "feature": "Parent Hub Story",
+      "id": "parent_hub_story",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.643197,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "video",
+        "srcTail": "https://www.amynest.in/api/stories/stream/1VBU1iWLKZrCxinctWY1QRoZRJRpMX0xB",
+        "readyState": 4,
+        "speechPlaying": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/parent_hub_story.png"
+    },
+    {
+      "feature": "Amy Coach",
+      "id": "amy_coach",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.699951,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "blob:https://www.amynest.in/3bd9ef89-ae93-4ebe-95c0-d5eb1d9e8b79",
+        "readyState": 4,
+        "speechPlaying": true
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/amy_coach.png"
+    },
+    {
+      "feature": "Conversation Coach",
+      "id": "conversation_coach",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.013983,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "i/tts/audio/8c7ae94ba207e850642cc5a810913741e838d0661581f0f43c3165254cf885e3.mp3",
+        "readyState": 4,
+        "speechPlaying": true
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/conversation_coach.png"
+    },
+    {
+      "feature": "Speech Coach",
+      "id": "speech_coach",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "not_advancing",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 0.912,
+        "currentTimeAdvancing": false,
+        "paused": true,
+        "mediaKind": "audio",
+        "srcTail": "https://www.amynest.in/api/static-audio/900fac3b4c8757daa5b1f5da10822575.mp3",
+        "readyState": 4,
+        "speechPlaying": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/speech_coach.png"
+    },
+    {
+      "feature": "Infant Story",
+      "id": "infant_story",
+      "verdict": "FAIL",
+      "triggerError": null,
+      "audioReason": "no_audio_element",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/infant_story.png"
+    },
+    {
+      "feature": "Infant Poem",
+      "id": "infant_poem",
+      "verdict": "FAIL",
+      "triggerError": "infant_poem_requires_infant_child_or_fixture",
+      "audioReason": "no_audio_element",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/infant_poem.png"
+    },
+    {
+      "feature": "Audio Lesson",
+      "id": "audio_lesson",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.860684,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "https://www.amynest.in/api/static-audio/787627465b1a51ba151312153a4cb5a9.mp3",
+        "readyState": 4,
+        "speechPlaying": true
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/audio_lesson.png"
+    },
+    {
+      "feature": "Phonics",
+      "id": "phonics",
+      "verdict": "FAIL",
+      "triggerError": "locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid^=\"audio-play-\"]').first() to be visible\u001b[22m\n",
+      "audioReason": "no_audio_element",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      },
+      "screenshot": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/audio-coverage-artifacts/phonics.png"
+    }
+  ]
+}

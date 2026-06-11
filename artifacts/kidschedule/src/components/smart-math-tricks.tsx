@@ -1149,6 +1149,7 @@ export function SmartMathTricks({
           {tabs.map((tabItem) => (
             <button
               key={tabItem.key}
+              data-testid={`smt-tab-${tabItem.key}`}
               onClick={() => setTab(tabItem.key)}
               className="flex-1 py-2 rounded-xl font-bold text-[10px] sm:text-xs transition-all active:scale-95"
               style={{
