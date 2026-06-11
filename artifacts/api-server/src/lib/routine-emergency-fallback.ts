@@ -26,7 +26,10 @@ import {
   runBlockingTrustValidation,
   type TrustValidationOpts,
 } from "./routine-trust-validators.js";
-import { generateValidatedInfantRoutine } from "./infant-adaptive-routine.js";
+import {
+  generateValidatedInfantRoutine,
+  type InfantFeedingMode,
+} from "./infant-adaptive-routine.js";
 
 function isAdaptiveInfantAge(ageInMonths: number): boolean {
   return ageInMonths >= 6 && ageInMonths < 12;
@@ -42,6 +45,15 @@ export type EmergencyRoutineOpts = {
   feedingType?: "breastfeeding" | "formula" | "mixed";
   seed?: number;
 };
+
+function mapEmergencyFeedingType(
+  feedingType?: EmergencyRoutineOpts["feedingType"],
+): InfantFeedingMode {
+  if (feedingType === "formula") return "formula";
+  if (feedingType === "mixed") return "mixed";
+  if (feedingType === "breastfeeding") return "breast";
+  return "breast";
+}
 
 function trustOpts(opts: EmergencyRoutineOpts): TrustValidationOpts {
   const wake = normalizeTo24h(opts.wakeUpTime);
@@ -227,7 +239,7 @@ export function buildEmergencySafeRoutine(opts: EmergencyRoutineOpts): RoutineSc
       ageMonths: opts.ageInMonths,
       wakeTime: wake,
       sleepTime: sleep,
-      feedingType: opts.feedingType ?? "breastfeeding",
+      feedingType: mapEmergencyFeedingType(opts.feedingType),
     });
     candidates.push(
       polishInfantSchedule(adaptive.result.items, wake, sleep),

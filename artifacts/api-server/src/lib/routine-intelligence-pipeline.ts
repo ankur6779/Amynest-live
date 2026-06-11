@@ -1291,7 +1291,7 @@ export function runRoutineIntelligencePipeline(
     const trustRepair = repairTrustValidationFailures(polished, {
       wakeUpTime: scheduleOpts.wakeUpTime,
       sleepTime: scheduleOpts.sleepTime,
-      ageInMonths: ageInMonthsEarly,
+      ageInMonths: ageInMonthsEarly ?? childProfile.ageInMonths ?? 4,
       ageGroup: scheduleOpts.ageGroup,
       country: state.country,
       hasSchool: flowOpts.hasSchool,

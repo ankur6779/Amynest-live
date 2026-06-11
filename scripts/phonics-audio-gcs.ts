@@ -61,15 +61,34 @@ function parseRenderEnvJsonLine(text: string, key: string): Record<string, unkno
   return tryParseJsonObject(val);
 }
 
+function renderEnvJsonCandidates(raw: string): string[] {
+  const t = raw.trim();
+  const out = new Set<string>([t]);
+  const push = (s: string) => {
+    if (s.trim()) out.add(s);
+  };
+  if (t.includes("\\n")) push(t.replace(/\\n/g, "\n"));
+  if (t.includes('\\"')) push(t.replace(/\\"/g, '"'));
+  let combo = t;
+  if (combo.includes("\\n")) combo = combo.replace(/\\n/g, "\n");
+  if (combo.includes('\\"')) combo = combo.replace(/\\"/g, '"');
+  push(combo);
+  return [...out];
+}
+
 function tryParseJsonObject(raw: string): Record<string, unknown> | null {
-  try {
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
+  for (const s of renderEnvJsonCandidates(raw)) {
     try {
-      return JSON.parse(Buffer.from(raw.trim(), "base64").toString("utf8")) as Record<string, unknown>;
+      return JSON.parse(s) as Record<string, unknown>;
     } catch {
-      return null;
+      /* try next */
     }
+  }
+  try {
+    const decoded = Buffer.from(raw.trim(), "base64").toString("utf8");
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
   }
 }
 

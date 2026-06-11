@@ -14,7 +14,7 @@ import {
   postPhonicsV3Progress,
   syncPhonicsV3Progress,
 } from "../lib/phonicsV3ProgressService.js";
-import { infantExploreMutationGate } from "../lib/infantExploreMutationGate.js";
+import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
 

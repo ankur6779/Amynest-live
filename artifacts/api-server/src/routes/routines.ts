@@ -85,7 +85,14 @@ import {
   type GenerationSource,
 } from "../lib/routine-evidence-strength.js";
 import type { ParentExplanationContext } from "@workspace/explainability";
-import { normalizeTo24h, resolveTimelineOverlaps, parseTimeToMins } from "../lib/routine-scheduler.js";
+import {
+  hardValidateSchedule,
+  normalizeTo24h,
+  resolveTimelineOverlaps,
+  parseTimeToMins,
+} from "../lib/routine-scheduler.js";
+import { buildEmergencySafeRoutine } from "../lib/routine-emergency-fallback.js";
+import { runBlockingTrustValidation } from "../lib/routine-trust-validators.js";
 import { applyRoutineContentIntegrity } from "../lib/routine-content-integrity.js";
 import {
   enforceRoutineSafety,
@@ -2056,6 +2063,12 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     childIntelEnergyProfile: childIntel.energyProfile,
     childIsSchoolGoing: child.isSchoolGoing,
     childSchoolDays: (child as any).schoolDays,
+    feedingType:
+      child.feedingType === "breastfeeding" ||
+      child.feedingType === "formula" ||
+      child.feedingType === "mixed"
+        ? child.feedingType
+        : null,
   };
 
   try {
@@ -2955,6 +2968,7 @@ export type RoutineGeneratePollContext = {
   childIntelEnergyProfile: EnergyProfile | null;
   childIsSchoolGoing: boolean | null | undefined;
   childSchoolDays: number[] | null | undefined;
+  feedingType?: "breastfeeding" | "formula" | "mixed" | null;
 };
 
 function buildRoutineAiSuccessPayload(
@@ -3118,9 +3132,6 @@ function buildRoutineRuleFallbackPayload(ctx: RoutineGeneratePollContext): Recor
   });
 
   if (!fallbackPiped.validated) {
-    const { buildEmergencySafeRoutine } = await import("../lib/routine-emergency-fallback.js");
-    const { hardValidateSchedule, parseTimeToMins } = await import("../lib/routine-scheduler.js");
-    const { runBlockingTrustValidation } = await import("../lib/routine-trust-validators.js");
     const emergency = buildEmergencySafeRoutine({
       wakeUpTime: fallbackInputs.wakeUpTime,
       sleepTime: fallbackInputs.sleepTime,
@@ -3128,7 +3139,7 @@ function buildRoutineRuleFallbackPayload(ctx: RoutineGeneratePollContext): Recor
       ageGroup: ctx.ageGroup,
       country: ctx.ppCountry,
       hasSchool: fallbackInputs.hasSchool,
-      feedingType: fallbackInputs.feedingType,
+      feedingType: ctx.feedingType ?? undefined,
     });
     const hard = hardValidateSchedule(
       emergency,
