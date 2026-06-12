@@ -2246,3 +2246,30 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
     transition: none !important;
   }
 }
+
+/* ── Amy Health Lab™ — wellness playground animations ─────────────── */
+@keyframes healthLabPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes healthLabGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.35); }
+  50% { box-shadow: 0 0 36px rgba(34, 211, 238, 0.5); }
+}
+
+.health-lab-glow-pulse {
+  animation: healthLabGlow 3s ease-in-out infinite;
+}
+
+.health-lab-score-reveal {
+  animation: healthLabPulse 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-lab-glow-pulse,
+  .health-lab-score-reveal {
+    animation: none !important;
+  }
+}
+

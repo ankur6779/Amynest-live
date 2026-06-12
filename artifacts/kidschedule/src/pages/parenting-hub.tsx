@@ -9,7 +9,7 @@ import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift, Mic, Salad } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift, Mic, Salad, FlaskConical } from "lucide-react";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
@@ -1239,6 +1239,30 @@ function ParentingHubPage() {
             tryFree={tryFreeFor("hub_abacus")}
             testId="abacus-launch-card"
             sectionId="abacus"
+          />
+        </FeatureGate>
+      );
+    }
+  },
+  // ── Amy Health Lab™ (age 3–13, sensor wellness playground) ─────────────
+  {
+    id: "health-lab",
+    bands: ["2-4", "4-6", "6-8", "8-10", "10-12"] as AgeBand[],
+    render: () => {
+      if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
+      if (totalAgeMonths < 36) return null;
+      return (
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_health_lab")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+          <HubLaunchCard
+            href="/health-lab"
+            title="Amy Health Lab™"
+            description="Play, move, breathe & discover wellness superpowers"
+            icon={<FlaskConical className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-violet-500 to-cyan-500"
+            cardClass="bg-gradient-to-br from-violet-500/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(34,211,238,0.45)]"
+            tryFree={tryFreeFor("hub_health_lab")}
+            testId="health-lab-launch-card"
+            sectionId="health-lab"
           />
         </FeatureGate>
       );

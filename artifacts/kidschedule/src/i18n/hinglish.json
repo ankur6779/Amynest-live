@@ -1,0 +1,26 @@
+{
+  "health_lab": {
+    "title": "Amy Health Lab™",
+    "subtitle": "Play, move, breathe — apni superpowers discover karo",
+    "start_quest": "Start Health Quest",
+    "progress": "Progress",
+    "shop": "Lab Shop",
+    "dashboard": "Parent Dashboard",
+    "daily_surprise": "Daily Surprise!",
+    "treasure_chest": "Treasure Chest",
+    "weekly_challenge": "Weekly Challenge",
+    "wellness_report": "Amy Wellness Report",
+    "save_snapshot": "Wellness Snapshot save karo",
+    "view_snapshot": "Wellness Snapshot dekho",
+    "simulation_mode": "Simulation mode — badge rewards off hain",
+    "celebration_continue": "Continue",
+    "level_up": "Level Up!",
+    "quest_complete": "Quest complete!",
+    "disclaimer": "Amy Health Lab fun, learning aur healthy habits ke liye hai — medical test nahi.",
+    "monthly_mega_quest": "Monthly Mega Quest",
+    "daily_quests": "Daily Quests",
+    "wellness_challenges": "Wellness Challenges",
+    "equip": "Equip",
+    "equipped": "Equipped"
+  }
+}

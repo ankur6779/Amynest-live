@@ -1,0 +1,77 @@
+name: Health Lab gates
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/kidschedule/src/features/health-lab/**"
+      - "artifacts/kidschedule/playwright/specs/health-lab-certification.spec.ts"
+      - "artifacts/kidschedule/playwright.config.health-lab.ts"
+      - "artifacts/api-server/src/routes/health-lab.ts"
+      - "artifacts/api-server/src/lib/healthLabProgressService.ts"
+      - "lib/db/src/schema/health_lab_progress.ts"
+      - "artifacts/api-server/src/lib/healthLabProgressService.ts"
+      - "artifacts/api-server/src/services/health-lab-metrics-store.ts"
+  workflow_dispatch:
+
+jobs:
+  api-sync-tests:
+    name: Health Lab API sync tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @workspace/db exec tsc --build
+      - name: Merge + metrics + two-device sync tests
+        run: pnpm --filter @workspace/api-server test -- src/lib/healthLabProgressService.test.ts src/lib/healthLabTwoDeviceSync.test.ts src/routes/health-lab-metrics.test.ts src/services/__tests__/health-lab-metrics-store.test.ts
+
+  unit-tests:
+    name: Health Lab unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Vitest health-lab
+        run: pnpm --filter @workspace/kidschedule test -- health-lab.test.ts
+
+  e2e:
+    name: Health Lab Playwright certification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @workspace/kidschedule exec playwright install chromium --with-deps
+
+      - name: E2E health-lab certification
+        run: pnpm --filter @workspace/kidschedule run test:e2e:health-lab
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-lab-playwright-report
+          path: artifacts/kidschedule/playwright/health-lab-artifacts/
+          if-no-files-found: ignore

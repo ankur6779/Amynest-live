@@ -65,6 +65,7 @@ export * from "./phonics_daily_plans";
 export * from "./phonics_content_cache";
 export * from "./phonics_audio_assets";
 export * from "./abacus_progress";
+export * from "./health_lab_progress";
 export * from "./coloring_downloads";
 export * from "./funsheet_downloads";
 export * from "./story_content";

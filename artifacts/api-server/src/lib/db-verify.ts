@@ -29,6 +29,7 @@ const CRITICAL_TABLES: readonly string[] = [
   "push_tokens",
   "onboarding_profiles",
   "razorpay_webhook_events",
+  "health_lab_progress",
 ];
 
 /** Columns that commonly drift and crash onboarding if missing. */

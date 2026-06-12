@@ -88,6 +88,7 @@ export const EXPLORE_NEXT_STAGE_HUB_FEATURES = [
   "hub_event_prep",
   "hub_smart_math_tricks",
   "hub_abacus",
+  "hub_health_lab",
   "hub_smart_study",
   "hub_ptm_prep",
   "hub_phonics",

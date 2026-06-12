@@ -27,6 +27,7 @@
     "test:e2e": "playwright test --config playwright.config.ts",
     "test:e2e:math-playground": "playwright test --config playwright.config.math-playground.ts",
     "test:e2e:certification": "playwright test --config playwright.config.certification.ts",
+    "test:e2e:health-lab": "playwright test --config playwright.config.health-lab.ts",
     "test:e2e:startup": "playwright test --config playwright.config.startup.ts",
     "test:e2e:onboarding": "playwright test --config playwright.config.onboarding.ts",
     "test:stress": "playwright test --config playwright.config.stress.ts",

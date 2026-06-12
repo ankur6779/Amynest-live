@@ -1,0 +1,26 @@
+{
+  "health_lab": {
+    "title": "Amy Health Lab™",
+    "subtitle": "खेलो, हिलो, साँस लो और अपनी सुपरपावर खोजो",
+    "start_quest": "हेल्थ क्वेस्ट शुरू करो",
+    "progress": "प्रगति",
+    "shop": "लैब शॉप",
+    "dashboard": "पेरेंट डैशबोर्ड",
+    "daily_surprise": "रोज़ाना सरप्राइज़!",
+    "treasure_chest": "खज़ाना बॉक्स",
+    "weekly_challenge": "साप्ताहिक चैलेंज",
+    "wellness_report": "Amy वेलनेस रिपोर्ट",
+    "save_snapshot": "वेलनेस स्नैपशॉट सेव करो",
+    "view_snapshot": "वेलनेस स्नैपशॉट देखो",
+    "simulation_mode": "सिमुलेशन मोड — बैज रिवॉर्ड बंद",
+    "celebration_continue": "आगे बढ़ो",
+    "level_up": "लेवल अप!",
+    "quest_complete": "क्वेस्ट पूरी!",
+    "disclaimer": "Amy Health Lab मज़े, सीखने और अच्छी आदतों के लिए है। यह मेडिकल टेस्ट नहीं है।",
+    "monthly_mega_quest": "मासिक मेगा क्वेस्ट",
+    "daily_quests": "रोज़ाना क्वेस्ट",
+    "wellness_challenges": "वेलनेस चैलेंज",
+    "equip": "पहनो",
+    "equipped": "पहना हुआ"
+  }
+}

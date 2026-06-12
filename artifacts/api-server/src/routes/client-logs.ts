@@ -7,6 +7,7 @@ import { ingestChatPlatformHealthEvent } from "../services/chatPlatformHealthSto
 import { persistInfantProductAnalyticsEvent } from "../services/infantAnalyticsIngestService";
 import { safePersistCrashEvent } from "../services/crash-intelligence/ingest-service.js";
 import { parseCrashEventFromClientLog } from "../services/crash-intelligence/ingest-parsers.js";
+import { recordHealthLabClientEvent } from "../services/health-lab-metrics-store.js";
 
 const router: IRouter = Router();
 
@@ -147,6 +148,13 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
     if (crashPayload) {
       void safePersistCrashEvent(crashPayload);
     }
+  }
+
+  if (meta?.feature === "health_lab" && typeof meta?.event === "string") {
+    recordHealthLabClientEvent(meta.event, {
+      childId: typeof meta.childId === "number" ? meta.childId : undefined,
+      userId,
+    });
   }
 
   if (logType === "infant_parenting" && userId) {

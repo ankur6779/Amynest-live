@@ -103,6 +103,7 @@ const KidsControlCenterPage = lazyPage(() => import("@/pages/kids-control-center
 const StudyPage = lazyPage(() => import("@/pages/study"));
 const SmartMathTricksPage = lazyPage(() => import("@/pages/smart-math-tricks"));
 const AbacusPage = lazyPage(() => import("@/pages/abacus"));
+const HealthLabPage = lazyPage(() => import("@/pages/health-lab"));
 const SpellingPage = lazyPage(() => import("@/pages/spelling"));
 const OlympiadPage = lazyPage(() => import("@/pages/olympiad"));
 const EventPrepPage = lazyPage(() => import("@/pages/event-prep"));
@@ -418,6 +419,7 @@ const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
 const StudyRoute = makeProtectedRoute(StudyPage);
 const SmartMathTricksRoute = makeProtectedRoute(SmartMathTricksPage);
 const AbacusRoute = makeProtectedRoute(AbacusPage);
+const HealthLabRoute = makeProtectedRoute(HealthLabPage);
 const SpellingRoute = makeProtectedRoute(SpellingPage);
 const OlympiadRoute = makeProtectedRoute(OlympiadPage);
 const EventPrepRoute = makeProtectedRoute(EventPrepPage);
@@ -745,6 +747,7 @@ function AppRoutes() {
           <Route path="/study" component={StudyRoute} />
           <Route path="/smart-math-tricks" component={SmartMathTricksRoute} />
           <Route path="/abacus" component={AbacusRoute} />
+          <Route path="/health-lab" component={HealthLabRoute} />
           <Route path="/spelling" component={SpellingRoute} />
           <Route path="/olympiad" component={OlympiadRoute} />
           <Route path="/event-prep" component={EventPrepRoute} />
