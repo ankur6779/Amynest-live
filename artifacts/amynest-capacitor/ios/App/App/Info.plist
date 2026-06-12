@@ -217,5 +217,7 @@
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>AmyNest uses your location to show nearby school times, weather-aware routines, and local reminders.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>AmyNest uses motion sensors in Amy Health Lab for balance and freeze games. Motion is optional — other games use touch only and work without it.</string>
 </dict>
 </plist>

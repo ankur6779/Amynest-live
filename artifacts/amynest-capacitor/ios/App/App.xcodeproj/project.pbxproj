@@ -21,6 +21,11 @@
 		AMY100000000000000000004 /* AmyNestFcmBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000005 /* AmyNestFcmBridge.swift */; };
 		AMY100000000000000000005 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000006 /* GoogleService-Info.plist */; };
 		AMY100000000000000000007 /* AmyNestAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000007 /* AmyNestAppearance.swift */; };
+		AMY300000000000000000001 /* amynest_nest_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = AMY400000000000000000001 /* amynest_nest_chime.caf */; };
+		AMY300000000000000000002 /* amynest_sparkle.caf in Resources */ = {isa = PBXBuildFile; fileRef = AMY400000000000000000002 /* amynest_sparkle.caf */; };
+		AMY300000000000000000003 /* amynest_soft_bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = AMY400000000000000000003 /* amynest_soft_bell.caf */; };
+		AMY300000000000000000004 /* amynest_story_ping.caf in Resources */ = {isa = PBXBuildFile; fileRef = AMY400000000000000000004 /* amynest_story_ping.caf */; };
+		AMY300000000000000000005 /* amynest_learning_pop.caf in Resources */ = {isa = PBXBuildFile; fileRef = AMY400000000000000000005 /* amynest_learning_pop.caf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +47,11 @@
 		AMY200000000000000000005 /* AmyNestFcmBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmyNestFcmBridge.swift; sourceTree = "<group>"; };
 		AMY200000000000000000006 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AMY200000000000000000007 /* AmyNestAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmyNestAppearance.swift; sourceTree = "<group>"; };
+		AMY400000000000000000001 /* amynest_nest_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = file; explicitFileType = audio.x-caf; path = amynest_nest_chime.caf; sourceTree = "<group>"; };
+		AMY400000000000000000002 /* amynest_sparkle.caf */ = {isa = PBXFileReference; lastKnownFileType = file; explicitFileType = audio.x-caf; path = amynest_sparkle.caf; sourceTree = "<group>"; };
+		AMY400000000000000000003 /* amynest_soft_bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; explicitFileType = audio.x-caf; path = amynest_soft_bell.caf; sourceTree = "<group>"; };
+		AMY400000000000000000004 /* amynest_story_ping.caf */ = {isa = PBXFileReference; lastKnownFileType = file; explicitFileType = audio.x-caf; path = amynest_story_ping.caf; sourceTree = "<group>"; };
+		AMY400000000000000000005 /* amynest_learning_pop.caf */ = {isa = PBXFileReference; lastKnownFileType = file; explicitFileType = audio.x-caf; path = amynest_learning_pop.caf; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -83,6 +93,18 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		AMY500000000000000000001 /* NotificationSounds */ = {
+			isa = PBXGroup;
+			children = (
+				AMY400000000000000000001 /* amynest_nest_chime.caf */,
+				AMY400000000000000000002 /* amynest_sparkle.caf */,
+				AMY400000000000000000003 /* amynest_soft_bell.caf */,
+				AMY400000000000000000004 /* amynest_story_ping.caf */,
+				AMY400000000000000000005 /* amynest_learning_pop.caf */,
+			);
+			path = NotificationSounds;
+			sourceTree = "<group>";
+		};
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -101,6 +123,7 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				AMY500000000000000000001 /* NotificationSounds */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -184,6 +207,11 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				AMY300000000000000000001 /* amynest_nest_chime.caf in Resources */,
+				AMY300000000000000000002 /* amynest_sparkle.caf in Resources */,
+				AMY300000000000000000003 /* amynest_soft_bell.caf in Resources */,
+				AMY300000000000000000004 /* amynest_story_ping.caf in Resources */,
+				AMY300000000000000000005 /* amynest_learning_pop.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

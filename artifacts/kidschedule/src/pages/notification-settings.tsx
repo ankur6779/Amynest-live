@@ -22,6 +22,8 @@ import {
   syncCapacitorPushRegistrationWithOs,
 } from "@/lib/native-push-bridge";
 import { getApiUrl } from "@/lib/api";
+import { useUiSoundsSetting } from "@/hooks/use-ui-sounds-setting";
+import { Volume2, VolumeX } from "lucide-react";
 type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
 
 type Prefs = {
@@ -537,6 +539,9 @@ export default function NotificationSettingsPage() {
     },
   });
 
+  const { muted: uiSoundsMuted, setMuted: setUiSoundsMuted, previewSound } =
+    useUiSoundsSetting();
+
   const test = useMutation({
     mutationFn: async (category: CategoryDef["testCategory"]) => {
       const r = await authFetch("/api/notifications/test", {
@@ -799,6 +804,46 @@ export default function NotificationSettingsPage() {
             <div className="text-muted-foreground text-sm mt-1">
               {t("pages.notification_settings.timezone")} {local.timezone}{t("pages.notification_settings.we_never_send_notifications_during_this_window")}
             </div>
+          </CardContent>
+        </Card>
+
+        <h2 className="text-xs uppercase tracking-widest text-primary mt-8 mb-3">
+          In-app sounds
+        </h2>
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-6">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                {uiSoundsMuted ? (
+                  <VolumeX className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                ) : (
+                  <Volume2 className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    UI sounds in the app
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    Tab taps and learning celebrations. Push notification sounds are separate.
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={!uiSoundsMuted}
+                onCheckedChange={(on) => setUiSoundsMuted(!on)}
+                aria-label="In-app UI sounds"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uiSoundsMuted}
+              onClick={previewSound}
+              className="border-border text-white hover:bg-white/10"
+            >
+              Preview celebration sound
+            </Button>
           </CardContent>
         </Card>
 

@@ -172,9 +172,10 @@ Suggested test account (paste into App Store Connect → App Review Information)
 2. Tap the permission prompt and allow Notifications, Microphone, and Location.
 3. Open Speech Coach to verify the microphone prompt and read-aloud flow.
 4. Open Notifications settings and send a test notification.
-5. Open any premium feature or Pricing, select a plan, and verify Apple In-App Purchase opens through RevenueCat.
-6. Tap Restore Purchases from the paywall.
-7. Open **My Profile** → scroll to **Delete Account** to verify account deletion is available.
+5. Open **Parenting Hub → Amy Health Lab™** (child age 3+). Start **Sky Island Survival** or **Crystal Garden Challenge** — tap Allow when iOS asks for motion access. Denying motion still lets the child play in simulation mode (touch-based games need no motion prompt).
+6. Open any premium feature or Pricing, select a plan, and verify Apple In-App Purchase opens through RevenueCat.
+7. Tap Restore Purchases from the paywall.
+8. Open **My Profile** → scroll to **Delete Account** to verify account deletion is available.
 
 ## Permissions Explanation
 
@@ -182,8 +183,15 @@ Suggested test account (paste into App Store Connect → App Review Information)
 - Microphone: Speech Coach pronunciation practice and read-aloud exercises.
 - Location: local weather-aware routines and regional recommendations.
 - Photo Library / Camera: optional child profile or milestone photos selected by the user.
+- Motion (Amy Health Lab only): optional accelerometer for two wellness games (balance and freeze). Requested in-app when a child starts those games. Four other Health Lab games use touch only. If motion is denied, games continue in simulation mode — no crash, no lock-out.
 
 The app remains usable if a user denies any optional permission. Denied permissions show a Settings recovery path.
+
+**Paste into App Review Information → Notes (Health Lab motion):**
+
+```
+Amy Health Lab™ includes six child wellness games. Two games (Sky Island Survival, Crystal Garden Challenge) optionally use the device accelerometer via standard WebKit DeviceMotion APIs when the child taps Start. iOS shows a motion permission prompt at that moment. Motion is not required — denying it enables simulation mode. The other four games use touch only. No camera, microphone, or location is used inside Health Lab. NSMotionUsageDescription is declared in Info.plist for reviewer transparency.
+```
 
 ## Billing
 
@@ -263,6 +271,16 @@ Test account (unchanged):
 - apple.review@amynest.in / AmyNestReview2025!
 Sign in with email/password or Sign in with Apple. Email verification is skipped for this inbox.
 ```
+
+### Custom notification sounds (reviewer note)
+
+Paste if asked about bundled audio:
+
+```
+AmyNest ships five short custom notification sounds (.caf, under 2 seconds each) in the app bundle folder NotificationSounds/. They play only when a remote push notification arrives — not in the background. UIBackgroundModes does not include audio. Optional in-app UI sounds (tab taps, learning celebrations) load from the web bundle and can be disabled under Notifications → In-app sounds.
+```
+
+See `ios-config/NOTIFICATION-SOUNDS.md` for file list and APNs paths.
 
 ### Before you archive the next build
 

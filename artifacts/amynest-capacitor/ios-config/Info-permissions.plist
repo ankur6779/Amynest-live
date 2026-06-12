@@ -46,6 +46,10 @@
   <key>NSContactsUsageDescription</key>
   <string>AmyNest accesses your contacts only when you choose to share a routine via the Share Routine feature.</string>
 
+  <!-- ── Motion (Amy Health Lab balance / freeze games in WKWebView) ── -->
+  <key>NSMotionUsageDescription</key>
+  <string>AmyNest uses motion sensors in Amy Health Lab for balance and freeze games. Motion is optional — other games use touch only and work without it.</string>
+
   <!--
     ── App Transport Security ───────────────────────────────────────────
     Firebase Auth from inside WKWebView fetches identitytoolkit.googleapis.com

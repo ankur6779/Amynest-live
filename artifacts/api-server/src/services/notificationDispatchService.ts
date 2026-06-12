@@ -32,6 +32,34 @@ import {
 
 const expo = new Expo();
 
+/** iOS APNs sound paths — files live in App bundle subfolder NotificationSounds/. */
+const IOS_NOTIFICATION_SOUND_PREFIX = "NotificationSounds/";
+
+function iosNotificationSound(category: NotificationCategory): string {
+  switch (category) {
+    case "routine":
+    case "routine_item":
+    case "good_night":
+      return `${IOS_NOTIFICATION_SOUND_PREFIX}amynest_nest_chime.caf`;
+    case "milestone":
+    case "weekly":
+    case "engagement":
+      return `${IOS_NOTIFICATION_SOUND_PREFIX}amynest_sparkle.caf`;
+    case "insights":
+    case "parenting_tips":
+    case "infant_care":
+      return `${IOS_NOTIFICATION_SOUND_PREFIX}amynest_soft_bell.caf`;
+    case "story_time":
+      return `${IOS_NOTIFICATION_SOUND_PREFIX}amynest_story_ping.caf`;
+    case "nutrition":
+    case "phonics":
+    case "learning_activity":
+      return `${IOS_NOTIFICATION_SOUND_PREFIX}amynest_learning_pop.caf`;
+    default:
+      return `${IOS_NOTIFICATION_SOUND_PREFIX}amynest_nest_chime.caf`;
+  }
+}
+
 export interface DispatchInput {
   userId: string;
   category: NotificationCategory;
@@ -458,7 +486,7 @@ async function sendFcmIosPush(
             title: input.title,
             body: input.body,
           },
-          sound: "default",
+          sound: iosNotificationSound(input.category),
         },
       },
     },

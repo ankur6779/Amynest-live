@@ -44,6 +44,10 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+  <!-- Amy Health Lab: optional motion sensors (WebView DeviceMotion; no runtime permission) -->
+  <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
+  <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false" />
+
   <!-- ── Application attributes (add to existing <application> tag) ─────── -->
   <!--
     android:usesCleartextTraffic="false"

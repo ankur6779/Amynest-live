@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release shrinkResources: keep bundled notification sounds (referenced from Kotlin). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/amynest_learning_pop,@raw/amynest_nest_chime,@raw/amynest_soft_bell,@raw/amynest_sparkle,@raw/amynest_story_ping" />

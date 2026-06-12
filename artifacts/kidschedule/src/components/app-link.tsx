@@ -12,6 +12,7 @@ import {
 import { PRESS_FEEDBACK } from "@/lib/experience-system";
 import { cn } from "@/lib/utils";
 import { isTabRootRoute, markTabRootEntry } from "@/lib/navigation-stack";
+import { playNavTabSound } from "@/lib/ui-sounds";
 
 type AppLinkProps = {
   href: string;
@@ -77,6 +78,9 @@ export function AppLink({
         if (event.defaultPrevented) return;
         event.preventDefault();
         runSafeNavAction(`${location}->${target}`, () => {
+          if (tabNav && isTabRootRoute(target) && target !== location) {
+            playNavTabSound();
+          }
           if (tabNav && isTabRootRoute(target)) {
             markTabRootEntry(target);
           }

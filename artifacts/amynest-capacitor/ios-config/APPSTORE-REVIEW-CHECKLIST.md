@@ -92,6 +92,12 @@ Complete ALL items before submitting. Missing items = **rejection**.
 - [ ] App works gracefully when offline (shows offline screen)
 - [ ] No crashes on poor network conditions
 
+### 11b. Custom notification sounds
+- [ ] Five `.caf` files in `ios/App/App/NotificationSounds/` (see `ios-config/NOTIFICATION-SOUNDS.md`)
+- [ ] All five listed in Xcode **Copy Bundle Resources**
+- [ ] APNs payload uses paths like `NotificationSounds/amynest_nest_chime.caf` (server: `notificationDispatchService.ts`)
+- [ ] **Do NOT** add `audio` to UIBackgroundModes for these sounds
+
 ### 12. Background Modes
 - [ ] Only declare background modes that the app ACTUALLY uses
 - [ ] **Do NOT** include `audio` — lullabies/infant sounds play in the foreground only

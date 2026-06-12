@@ -34,6 +34,7 @@
     "animal-world-real-photo-sprint": "tsx ./animal-world-real-photo-sprint.ts",
     "upload-animal-world-visuals": "tsx ./upload-animal-world-visuals.ts",
     "generate-discovery-worlds-audio": "tsx ./generate-discovery-worlds-audio.ts",
+    "generate-notification-sounds": "tsx ./generate-notification-sounds.ts",
     "generate-discovery-worlds-visuals": "tsx ./generate-discovery-worlds-visuals.ts",
     "upload-discovery-worlds-visuals": "tsx ./upload-discovery-worlds-visuals.ts",
     "upload-discovery-worlds-catalog": "node ./upload-discovery-worlds-catalog.mjs",

@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Star, Target, Trophy } from "lucide-react";
 import { playProceduralTone } from "@/lib/procedural-sfx";
+import { isUiSoundsMuted, playUiSound, setUiSoundsMuted, type UiSoundCue } from "@/lib/ui-sounds";
 import {
   DAILY_GOAL_TARGET,
   badgeLabel,
@@ -215,18 +216,62 @@ export const playFx = {
   },
 };
 
-// Hook: respects a "muted" flag persisted in localStorage so parents can
-// silence the sound effects without tearing them out of the JSX.
-const MUTE_KEY = "amynest:study-fx-muted";
+const UI_SOUND_CUE: Partial<Record<keyof typeof playFx, UiSoundCue>> = {
+  tap: "nav_tab",
+  correct: "study_correct",
+  perfect: "celebration",
+  reward: "celebration",
+  complete: "complete",
+};
+
+/** Maps learning-progress SoundCue → bundled asset (unlock uses soft bell). */
+export function playLearningSoundCue(cue: "tap" | "unlock" | "complete" | "reward"): void {
+  if (isUiSoundsMuted()) return;
+  const mapped: Record<typeof cue, UiSoundCue> = {
+    tap: "nav_tab",
+    unlock: "unlock",
+    complete: "complete",
+    reward: "celebration",
+  };
+  void playUiSound(mapped[cue]).then((ok) => {
+    if (!ok) {
+      const fallback: Record<typeof cue, keyof typeof playFx> = {
+        tap: "tap",
+        unlock: "tap",
+        complete: "complete",
+        reward: "reward",
+      };
+      try {
+        playFx[fallback[cue]]();
+      } catch {
+        /* blocked */
+      }
+    }
+  });
+}
+
+// Hook: respects global UI sounds mute (notification settings).
 export function useStudyFx() {
   const mutedRef = useRef<boolean>(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    mutedRef.current = window.localStorage.getItem(MUTE_KEY) === "1";
+    mutedRef.current = isUiSoundsMuted();
   }, []);
   return {
     play(name: keyof typeof playFx) {
-      if (mutedRef.current) return;
+      if (mutedRef.current || isUiSoundsMuted()) return;
+      const cue = UI_SOUND_CUE[name];
+      if (cue) {
+        void playUiSound(cue).then((ok) => {
+          if (!ok) {
+            try {
+              playFx[name]();
+            } catch {
+              /* AudioContext blocked */
+            }
+          }
+        });
+        return;
+      }
       try {
         playFx[name]();
       } catch {
@@ -235,10 +280,8 @@ export function useStudyFx() {
     },
     setMuted(m: boolean) {
       mutedRef.current = m;
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(MUTE_KEY, m ? "1" : "0");
-      }
+      setUiSoundsMuted(m);
     },
-    isMuted: () => mutedRef.current,
+    isMuted: () => mutedRef.current || isUiSoundsMuted(),
   };
 }

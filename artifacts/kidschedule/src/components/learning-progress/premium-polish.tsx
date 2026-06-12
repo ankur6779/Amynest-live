@@ -7,7 +7,7 @@
 import { useMemo, useRef, type ReactNode } from "react";
 import { motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useStudyFx, playFx } from "@/components/study-engagement";
+import { playFx, playLearningSoundCue } from "@/components/study-engagement";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import {
   CARD_BASE,
@@ -22,7 +22,6 @@ import {
   softScale,
   staggerDelay,
   STAGGER_STEP,
-  SOUND_CUE_MAP,
   SKELETON_BASE,
   rewardIntensity,
   type CardTier,
@@ -367,24 +366,23 @@ export function StarBurst({ active }: { active: boolean }) {
 
 // ─── Sound ─────────────────────────────────────────────────────────────────
 
-/** Unified sound family — respects study-fx mute. */
+/** Unified sound family — respects global UI sounds mute. */
 export function useLearningRewardFx() {
-  const fx = useStudyFx();
   const played = useRef(false);
   return {
     play(cue: SoundCue) {
-      fx.play(SOUND_CUE_MAP[cue]);
+      playLearningSoundCue(cue);
     },
     playLevelUp() {
       if (played.current) return;
       played.current = true;
-      fx.play(SOUND_CUE_MAP.reward);
+      playLearningSoundCue("reward");
     },
     playComplete() {
-      fx.play(SOUND_CUE_MAP.complete);
+      playLearningSoundCue("complete");
     },
     playUnlock() {
-      fx.play(SOUND_CUE_MAP.unlock);
+      playLearningSoundCue("unlock");
     },
     reset() {
       played.current = false;

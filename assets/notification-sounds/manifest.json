@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-06-12T19:55:53.046Z",
+  "platformPaths": {
+    "android": "android/app/src/main/res/raw/",
+    "ios": "artifacts/amynest-capacitor/ios/App/App/NotificationSounds/",
+    "web": "artifacts/kidschedule/public/sounds/notifications/",
+    "source": "assets/notification-sounds/source/"
+  },
+  "iosApnsPrefix": "NotificationSounds/",
+  "sounds": [
+    {
+      "id": "nest_chime",
+      "android": "res/raw/amynest_nest_chime.mp3",
+      "ios": "NotificationSounds/amynest_nest_chime.caf",
+      "web": "/sounds/notifications/amynest_nest_chime.mp3",
+      "categories": ["routine", "routine_item", "good_night"]
+    },
+    {
+      "id": "sparkle",
+      "android": "res/raw/amynest_sparkle.mp3",
+      "ios": "NotificationSounds/amynest_sparkle.caf",
+      "web": "/sounds/notifications/amynest_sparkle.mp3",
+      "categories": ["milestone", "weekly", "engagement"]
+    },
+    {
+      "id": "soft_bell",
+      "android": "res/raw/amynest_soft_bell.mp3",
+      "ios": "NotificationSounds/amynest_soft_bell.caf",
+      "web": "/sounds/notifications/amynest_soft_bell.mp3",
+      "categories": ["insights", "parenting_tips", "infant_care"]
+    },
+    {
+      "id": "story_ping",
+      "android": "res/raw/amynest_story_ping.mp3",
+      "ios": "NotificationSounds/amynest_story_ping.caf",
+      "web": "/sounds/notifications/amynest_story_ping.mp3",
+      "categories": ["story_time"]
+    },
+    {
+      "id": "learning_pop",
+      "android": "res/raw/amynest_learning_pop.mp3",
+      "ios": "NotificationSounds/amynest_learning_pop.caf",
+      "web": "/sounds/notifications/amynest_learning_pop.mp3",
+      "categories": ["phonics", "learning_activity", "nutrition"]
+    }
+  ]
+}

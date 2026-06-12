@@ -9,7 +9,8 @@ Full-screen Android wrapper for **https://amynest.in** with native Firebase Clou
 | `MainActivity` | Full-screen `WebView` — no browser chrome, no address bar |
 | `PushBridge` | Exposes `window.AmyNestPushNative` to the web page via `WebViewCompat.addWebMessageListener` |
 | `KidScheduleFcmService` | Receives FCM messages in background/killed state, shows system tray notifications |
-| `AmyNestApp` | Creates the `"default"` notification channel at app start |
+| `AmyNestApp` | Creates notification channels + custom sounds at app start |
+| `NotificationSounds` | Declares `res/raw/amynest_*.mp3` bundled push sounds |
 | Web: `native-push-bridge.ts` | Talks to `window.AmyNestPushNative`, gets native FCM token, calls `/api/push/register` |
 | Server: `notificationDispatchService.ts` | Routes `platform:"android"` tokens via `sendFcmAndroidPush()` (already built) |
 
@@ -223,6 +224,33 @@ const isNativeAndroid = /AmyNestAndroid/.test(navigator.userAgent);
 
 The existing `native-push-bridge.ts` checks for `window.AmyNestPushNative` instead —
 use that for push-specific logic as it's more reliable than UA sniffing.
+
+---
+
+## Custom notification sounds
+
+Five ElevenLabs-generated MP3 files ship in **`android/app/src/main/res/raw/`**:
+
+| File | Channel / category |
+|------|------------------|
+| `amynest_nest_chime.mp3` | routine, routine_item, good_night |
+| `amynest_sparkle.mp3` | milestone, weekly, engagement |
+| `amynest_soft_bell.mp3` | insights, parenting_tips, infant_care |
+| `amynest_story_ping.mp3` | story_time |
+| `amynest_learning_pop.mp3` | nutrition, phonics, learning_activity |
+
+- **`NotificationSounds.kt`** — explicit `@RawRes` references (release `shrinkResources` safe).
+- **`res/raw/keep.xml`** — keeps raw assets in release builds.
+- **`NotificationChannels.kt`** — assigns default sound per notification channel.
+- **`KidScheduleFcmService.kt`** — per-category sound on each tray notification.
+
+Regenerate all platforms:
+
+```bash
+pnpm run generate:notification-sounds
+```
+
+Manifest: `assets/notification-sounds/manifest.json`
 
 ---
 

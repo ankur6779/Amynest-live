@@ -17,6 +17,14 @@
     <!-- Required for Google Play Billing (in-app purchases / subscriptions). -->
     <uses-permission android:name="com.android.vending.BILLING" />
 
+    <!--
+        Amy Health Lab: optional accelerometer/gyro for balance & freeze games.
+        Accessed via WebView DeviceMotion — no BODY_SENSORS runtime permission.
+        Games fall back to touch simulation if sensors are unavailable.
+    -->
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false" />
+
     <application
         android:name=".AmyNestApp"
         android:allowBackup="false"

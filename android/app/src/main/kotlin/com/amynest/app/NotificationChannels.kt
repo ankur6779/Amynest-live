@@ -3,7 +3,10 @@ package com.amynest.app
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
+import androidx.annotation.RawRes
 import androidx.core.app.NotificationCompat
 
 /**
@@ -80,7 +83,22 @@ enum class NotifCategory(
         channelId = "milestone",
         priority = androidx.core.app.NotificationCompat.PRIORITY_HIGH,
         fallbackDeepLink = "/progress",
+    ),
+    INFANT_CARE(
+        channelId = "parenting",
+        priority = androidx.core.app.NotificationCompat.PRIORITY_DEFAULT,
+        fallbackDeepLink = "/parenting-hub",
     );
+
+    /** Bundled AmyNest notification sound in res/raw (ElevenLabs-generated). */
+    @RawRes
+    fun soundResId(): Int = when (this) {
+        ROUTINE, ROUTINE_ITEM, GOOD_NIGHT -> NotificationSounds.NEST_CHIME
+        MILESTONE, WEEKLY, ENGAGEMENT -> NotificationSounds.SPARKLE
+        INSIGHTS, PARENTING_TIPS, INFANT_CARE -> NotificationSounds.SOFT_BELL
+        STORY_TIME -> NotificationSounds.STORY_PING
+        NUTRITION, PHONICS, LEARNING_ACTIVITY -> NotificationSounds.LEARNING_POP
+    }
 
     companion object {
         /**
@@ -103,19 +121,32 @@ enum class NotifCategory(
             val manager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            data class ChannelSpec(val id: String, val nameRes: Int, val importance: Int)
+            data class ChannelSpec(
+                val id: String,
+                val nameRes: Int,
+                val importance: Int,
+                @RawRes val soundRes: Int,
+            )
 
             val specs = listOf(
-                ChannelSpec("routine",   R.string.channel_routine,   NotificationManager.IMPORTANCE_HIGH),
-                ChannelSpec("nutrition", R.string.channel_nutrition, NotificationManager.IMPORTANCE_DEFAULT),
-                ChannelSpec("parenting", R.string.channel_parenting, NotificationManager.IMPORTANCE_DEFAULT),
-                ChannelSpec("learning",  R.string.channel_learning,  NotificationManager.IMPORTANCE_DEFAULT),
-                ChannelSpec("milestone", R.string.channel_milestone, NotificationManager.IMPORTANCE_HIGH),
-                ChannelSpec("default",   R.string.notification_channel_name, NotificationManager.IMPORTANCE_DEFAULT),
+                ChannelSpec("routine",   R.string.channel_routine,   NotificationManager.IMPORTANCE_HIGH,   NotificationSounds.NEST_CHIME),
+                ChannelSpec("nutrition", R.string.channel_nutrition, NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.LEARNING_POP),
+                ChannelSpec("parenting", R.string.channel_parenting, NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.SOFT_BELL),
+                ChannelSpec("learning",  R.string.channel_learning,  NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.LEARNING_POP),
+                ChannelSpec("milestone", R.string.channel_milestone, NotificationManager.IMPORTANCE_HIGH,   NotificationSounds.SPARKLE),
+                ChannelSpec("default",   R.string.notification_channel_name, NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.NEST_CHIME),
             )
+
+            val audioAttrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
 
             for (spec in specs) {
                 if (manager.getNotificationChannel(spec.id) != null) continue
+                val soundUri = Uri.parse(
+                    "android.resource://${context.packageName}/${spec.soundRes}",
+                )
                 val ch = NotificationChannel(
                     spec.id,
                     context.getString(spec.nameRes),
@@ -124,6 +155,7 @@ enum class NotifCategory(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         enableLights(true)
                         lightColor = context.getColor(R.color.notification_accent)
+                        setSound(soundUri, audioAttrs)
                     }
                 }
                 manager.createNotificationChannel(ch)
