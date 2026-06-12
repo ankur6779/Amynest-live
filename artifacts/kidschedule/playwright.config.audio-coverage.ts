@@ -5,8 +5,8 @@ const BASE_URL =
 
 export default defineConfig({
   testDir: "./playwright/specs",
-  testMatch: /audio-coverage\.spec\.ts/,
-  timeout: 300_000,
+  testMatch: /(audio-coverage|post-fix-cert)\.spec\.ts/,
+  timeout: 600_000,
   retries: 0,
   workers: 1,
   fullyParallel: false,

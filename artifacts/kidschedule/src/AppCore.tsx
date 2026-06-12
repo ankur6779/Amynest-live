@@ -112,6 +112,7 @@ const AmyCoachProgressPage = lazyPage(() => import("@/pages/ai-coach-progress"))
 const RecipesPage = lazyPage(() => import("@/pages/recipes"));
 const NutritionHubPage = lazyPage(() => import("@/pages/nutrition"));
 const AudioLessonsPage = lazyPage(() => import("@/pages/audio-lessons"));
+const RhymesPage = lazyPage(() => import("@/pages/rhymes"));
 const GamesPage = lazyPage(() => import("@/pages/games"));
 const AnimalWorldPage = lazyPage(() => import("@/pages/animal-world"));
 const DiscoveryWorldsHubPage = lazyPage(() => import("@/pages/discovery-worlds-hub"));
@@ -426,6 +427,7 @@ const AmyCoachProgressRoute = makeProtectedRoute(AmyCoachProgressPage);
 const RecipesRoute = makeProtectedRoute(RecipesPage);
 const NutritionHubRoute = makeProtectedRoute(NutritionHubPage);
 const AudioLessonsRoute = makeProtectedRoute(AudioLessonsPage);
+const RhymesRoute = makeProtectedRoute(RhymesPage);
 const GamesRoute = makeProtectedRoute(GamesPage);
 const AnimalWorldRoute = makeProtectedRoute(AnimalWorldPage);
 const DiscoveryWorldsHubRoute = makeProtectedRoute(DiscoveryWorldsHubPage);
@@ -752,6 +754,7 @@ function AppRoutes() {
           <Route path="/recipes" component={RecipesRoute} />
           <Route path="/nutrition" component={NutritionHubRoute} />
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
+          <Route path="/rhymes" component={RhymesRoute} />
           <Route path="/games" component={GamesRoute} />
           <Route path="/animal-world" component={AnimalWorldRoute} />
           <Route path="/discovery-worlds" component={DiscoveryWorldsHubRoute} />

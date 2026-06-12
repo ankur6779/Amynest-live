@@ -300,7 +300,9 @@ export function AudioPlayButton({
 
     await runInFlight(async () => {
       const play = safeAsync(async () => {
-        if (busy) {
+        // Phonics tiles use phonics-player / static catalog — not Amy runtime TTS.
+        // Amy controller loading state must not swallow phonics taps (shows enabled UI, no audio).
+        if (mode !== "phonics" && busy) {
           pause();
           return null;
         }
@@ -323,6 +325,12 @@ export function AudioPlayButton({
             return null;
           };
           if (isWordClip && cvcWordKey) {
+            const catalogPhrase = resolvePhonicsCatalogPhrase(resolvedText, {
+              phoneme: phonemeKey,
+              phonicsOnly: true,
+            });
+            const staticFirst = await tryStaticCatalogFirst(catalogPhrase);
+            if (staticFirst?.success) return staticFirst;
             if (
               isLocalAudioRecoveryEnabled() &&
               isPhonicsLocalPlaybackAvailable(cvcWordKey, "word")
@@ -338,13 +346,6 @@ export function AudioPlayButton({
               if (isMounted.current) onPlay?.();
               return { success: true, layer: "static" as const };
             }
-            const staticFirst = await tryStaticCatalogFirst(
-              resolvePhonicsCatalogPhrase(resolvedText, {
-                phoneme: phonemeKey,
-                phonicsOnly: true,
-              }),
-            );
-            if (staticFirst?.success) return staticFirst;
             const fastWord = await speakPhonicsFastClip(resolvedText, {
               phoneme: phonemeKey,
               playbackRate,

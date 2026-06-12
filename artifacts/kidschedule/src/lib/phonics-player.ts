@@ -312,10 +312,17 @@ export async function playPhonicsUrl(
 
   const now = Date.now();
   if (playing && trimmed === lastUrl && now - lastStartAt < TAP_DEBOUNCE_MS) {
-    log("phonics_debounce_skip", { label });
-    recordPhonicsDebounceSkip(label);
-    options.cleanup?.();
-    return { ok: true };
+    const stillAudible =
+      activeElement != null &&
+      !activeElement.paused &&
+      activeElement.currentTime > 0 &&
+      !activeElement.ended;
+    if (stillAudible) {
+      log("phonics_debounce_skip", { label });
+      recordPhonicsDebounceSkip(label);
+      options.cleanup?.();
+      return { ok: true };
+    }
   }
 
   const module =

@@ -16,6 +16,8 @@ export type AudioFeatureId =
   | "speech_coach"
   | "infant_story"
   | "infant_poem"
+  | "infant_lullaby"
+  | "rhymes"
   | "audio_lesson"
   | "phonics";
 
@@ -25,7 +27,7 @@ export type AudioFeatureSpec = {
   trigger: (page: Page) => Promise<void>;
 };
 
-async function triggerParentHubStory(page: Page): Promise<void> {
+export async function triggerParentHubStory(page: Page): Promise<void> {
   await openParentingHubTile(page, { group: "stories", tileId: "story-hub" });
   await page.getByTestId("story-hub").waitFor({ state: "visible", timeout: 30_000 });
   const watch = page.getByRole("button", { name: /^Watch / }).first();
@@ -77,7 +79,7 @@ async function ensureAmyCoachListenReady(page: Page): Promise<void> {
   await page.waitForTimeout(1_500);
 }
 
-async function triggerAmyCoach(page: Page): Promise<void> {
+export async function triggerAmyCoach(page: Page): Promise<void> {
   await ensureAmyCoachListenReady(page);
   const listen = page.getByTestId("coach-listen-btn").first();
   await listen.waitFor({ state: "visible", timeout: 25_000 });
@@ -95,7 +97,7 @@ async function ensureSpeechCoachChild(page: Page): Promise<void> {
   }
 }
 
-async function triggerConversationCoach(page: Page): Promise<void> {
+export async function triggerConversationCoach(page: Page): Promise<void> {
   await ensureSpeechCoachChild(page);
   await page.goto("/speech-coach/talk", { waitUntil: "domcontentloaded", timeout: 120_000 });
   await page.waitForTimeout(2_500);
@@ -244,7 +246,47 @@ async function triggerAudioLesson(page: Page): Promise<void> {
   await page.waitForTimeout(1_000);
 }
 
-async function triggerPhonics(page: Page): Promise<void> {
+export async function triggerRhymes(page: Page): Promise<void> {
+  await page.goto("/rhymes", { waitUntil: "domcontentloaded", timeout: 120_000 });
+  await page.waitForTimeout(1_500);
+  await primeUserGesture(page);
+  await page.getByTestId("rhymes-page").waitFor({ state: "visible", timeout: 30_000 });
+
+  const tile = page.locator('[data-testid^="rhyme-tile-"]').first();
+  await tile.waitFor({ state: "visible", timeout: 30_000 });
+  await tile.scrollIntoViewIfNeeded({ timeout: 15_000 });
+  await tile.click({ timeout: 15_000 });
+  await page.waitForTimeout(1_200);
+
+  const player = page.getByTestId("sleep-track-fullscreen-player");
+  if (await player.isVisible({ timeout: 8_000 }).catch(() => false)) {
+    await primeUserGesture(page);
+    await player.locator("button.h-16.w-16").click({ timeout: 8_000 }).catch(() => {});
+    await page.waitForTimeout(1_500);
+  }
+}
+
+export async function triggerInfantLullaby(page: Page): Promise<void> {
+  const hubReady = await openInfantSleepModule(page);
+  if (hubReady) {
+    await selectSleepModuleTab(page, "lullabies");
+    const tile = page.locator('[data-testid^="sleep-track-tile-"]').first();
+    if (await tile.isVisible({ timeout: 8_000 }).catch(() => false)) {
+      await tile.click({ timeout: 15_000 });
+      await page.waitForTimeout(1_200);
+      const player = page.getByTestId("sleep-track-fullscreen-player");
+      if (await player.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await primeUserGesture(page);
+        await player.locator("button.h-16.w-16").click({ timeout: 8_000 }).catch(() => {});
+        await page.waitForTimeout(1_500);
+      }
+      return;
+    }
+  }
+  await triggerRhymes(page);
+}
+
+export async function triggerPhonics(page: Page): Promise<void> {
   await page.goto("/phonics", { waitUntil: "domcontentloaded", timeout: 120_000 });
   await page.waitForTimeout(2_000);
   await primeUserGesture(page);
@@ -255,8 +297,11 @@ async function triggerPhonics(page: Page): Promise<void> {
     await page.waitForTimeout(800);
   }
 
-  await page.locator("main.scroll-safe").first().click({ position: { x: 16, y: 120 }, force: true });
-  await page.waitForTimeout(300);
+  const mainScroll = page.locator("main.scroll-safe").first();
+  if (await mainScroll.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await mainScroll.click({ position: { x: 16, y: 120 }, force: true });
+    await page.waitForTimeout(300);
+  }
 
   const cta = page.getByTestId("phonics-primary-cta");
   if (await cta.isVisible({ timeout: 8_000 }).catch(() => false)) {
@@ -265,8 +310,11 @@ async function triggerPhonics(page: Page): Promise<void> {
   }
 
   const practice = page.getByTestId("phonics-practice-sounds");
-  await practice.scrollIntoViewIfNeeded({ timeout: 45_000 });
-  await practice.waitFor({ state: "visible", timeout: 45_000 });
+  const practiceVisible = await practice.isVisible({ timeout: 12_000 }).catch(() => false);
+  if (practiceVisible) {
+    await practice.scrollIntoViewIfNeeded({ timeout: 45_000 });
+    await practice.waitFor({ state: "visible", timeout: 45_000 });
+  }
 
   let playByTestId = page.locator('[data-testid^="audio-play-"]').first();
   if (!(await playByTestId.isVisible({ timeout: 8_000 }).catch(() => false))) {
@@ -275,8 +323,33 @@ async function triggerPhonics(page: Page): Promise<void> {
     playByTestId = page.locator('[data-testid^="audio-play-"]').first();
   }
   await playByTestId.waitFor({ state: "visible", timeout: 25_000 });
+  await playByTestId.scrollIntoViewIfNeeded({ timeout: 15_000 });
+  await playByTestId.dispatchEvent("pointerdown");
   await playByTestId.click({ timeout: 12_000 });
-  await page.waitForTimeout(1_500);
+  await page
+    .waitForFunction(
+      () => {
+        const mgr = (window as Window & {
+          __amynestAudioManagerRef?: {
+            isAnyChannelPlaying?: () => boolean;
+            isSpeechPlaying?: () => boolean;
+            getRecentPlaybackEvidence?: (withinMs?: number) => {
+              peakCurrentTime: number;
+            } | null;
+          };
+        }).__amynestAudioManagerRef;
+        const evidence = mgr?.getRecentPlaybackEvidence?.(8_000);
+        return (
+          mgr?.isAnyChannelPlaying?.() === true ||
+          mgr?.isSpeechPlaying?.() === true ||
+          (evidence?.peakCurrentTime ?? 0) > 0 ||
+          !!document.querySelector("audio[src],video[src]")
+        );
+      },
+      { timeout: 15_000 },
+    )
+    .catch(() => {});
+  await page.waitForTimeout(1_000);
 }
 
 export const AUDIO_COVERAGE_FEATURES: AudioFeatureSpec[] = [
@@ -286,6 +359,8 @@ export const AUDIO_COVERAGE_FEATURES: AudioFeatureSpec[] = [
   { id: "speech_coach", label: "Speech Coach", trigger: triggerSpeechCoach },
   { id: "infant_story", label: "Infant Story", trigger: triggerInfantStory },
   { id: "infant_poem", label: "Infant Poem", trigger: triggerInfantPoem },
+  { id: "infant_lullaby", label: "Infant Lullaby", trigger: triggerInfantLullaby },
+  { id: "rhymes", label: "Rhymes", trigger: triggerRhymes },
   { id: "audio_lesson", label: "Audio Lesson", trigger: triggerAudioLesson },
   { id: "phonics", label: "Phonics", trigger: triggerPhonics },
 ];

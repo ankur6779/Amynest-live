@@ -278,7 +278,12 @@ class AudioManagerImpl {
   private appInitiatedPause = false;
   private externalPauseDetected = false;
   /** Recently played element — short phonics clips finish before Playwright probes. */
-  private lastMediaRef: { element: HTMLAudioElement; at: number } | null = null;
+  private lastMediaRef: {
+    element: HTMLAudioElement;
+    at: number;
+    proxyUrl: string;
+    peakCurrentTime: number;
+  } | null = null;
   private silentOutputStreak = 0;
   private totalSuccessfulPlays = 0;
   private pendingFocusReplay: PendingFocusReplay | null = null;
@@ -1096,7 +1101,23 @@ class AudioManagerImpl {
     state.playToken = token;
     state.current = audio;
     state.playing = true;
-    this.lastMediaRef = { element: audio, at: Date.now() };
+    this.lastMediaRef = {
+      element: audio,
+      at: Date.now(),
+      proxyUrl: proxyUrl || audio.src,
+      peakCurrentTime: 0,
+    };
+
+    const bumpPeakCurrentTime = () => {
+      if (this.lastMediaRef?.element !== audio) return;
+      const ct = audio.currentTime;
+      if (Number.isFinite(ct) && ct > this.lastMediaRef.peakCurrentTime) {
+        this.lastMediaRef.peakCurrentTime = ct;
+      }
+    };
+    audio.addEventListener("timeupdate", bumpPeakCurrentTime);
+    audio.addEventListener("playing", bumpPeakCurrentTime);
+    audio.addEventListener("ended", bumpPeakCurrentTime, { once: true });
 
     const blobUrl = audio.src.startsWith("blob:") ? audio.src : null;
 
@@ -1560,7 +1581,34 @@ class AudioManagerImpl {
     const recent = this.lastMediaRef;
     if (!recent) return null;
     if (Date.now() - recent.at > withinMs) return null;
-    return recent.element?.src ? recent.element : null;
+    if (recent.element?.src) return recent.element;
+    if (recent.peakCurrentTime > 0 && recent.proxyUrl) return recent.element;
+    return null;
+  }
+
+  /** Playback evidence for short clips whose blob src may be revoked after ended. */
+  getRecentPlaybackEvidence(withinMs = 8_000): {
+    src: string;
+    peakCurrentTime: number;
+    ended: boolean;
+  } | null {
+    const active = this.getActiveMediaElement();
+    if (active?.src) {
+      return {
+        src: active.src,
+        peakCurrentTime: active.currentTime,
+        ended: active.ended,
+      };
+    }
+    const recent = this.lastMediaRef;
+    if (!recent || Date.now() - recent.at > withinMs) return null;
+    const src = recent.element?.src || recent.proxyUrl;
+    if (!src) return null;
+    return {
+      src,
+      peakCurrentTime: recent.peakCurrentTime,
+      ended: recent.element?.ended ?? recent.peakCurrentTime > 0,
+    };
   }
 
   isAnyChannelPlaying(): boolean {

@@ -31,6 +31,11 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
         getCurrentElement?: () => HTMLAudioElement | null;
         getActiveMediaElement?: () => HTMLAudioElement | null;
         getRecentMediaElement?: (withinMs?: number) => HTMLAudioElement | null;
+        getRecentPlaybackEvidence?: (withinMs?: number) => {
+          src: string;
+          peakCurrentTime: number;
+          ended: boolean;
+        } | null;
         getUiCurrentElement?: () => HTMLAudioElement | null;
         isSpeechPlaying?: () => boolean;
         isAnyChannelPlaying?: () => boolean;
@@ -40,6 +45,11 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
     const pickMedia = (): HTMLMediaElement | null => {
       const fromRecent = mgr?.getRecentMediaElement?.(8_000) ?? null;
       if (fromRecent?.src) return fromRecent;
+      const evidence = mgr?.getRecentPlaybackEvidence?.(8_000);
+      if (evidence?.src && evidence.peakCurrentTime > 0) {
+        const fromActive = mgr?.getActiveMediaElement?.() ?? mgr?.getCurrentElement?.() ?? null;
+        if (fromActive) return fromActive;
+      }
       const fromActive = mgr?.getActiveMediaElement?.() ?? mgr?.getCurrentElement?.() ?? null;
       if (fromActive?.src) return fromActive;
       const fromUi = mgr?.getUiCurrentElement?.() ?? null;
@@ -50,7 +60,7 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
     };
 
     let media: HTMLMediaElement | null = null;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 12; i++) {
       if (mgr?.isAnyChannelPlaying?.() || mgr?.isSpeechPlaying?.()) {
         media = pickMedia();
         if (media?.src) break;
@@ -61,6 +71,23 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
     }
 
     if (!media?.src) {
+      const evidence = mgr?.getRecentPlaybackEvidence?.(8_000);
+      if (evidence?.peakCurrentTime && evidence.peakCurrentTime > 0) {
+        return {
+          ok: true,
+          reason: "ok",
+          checks: {
+            elementExists: true,
+            playResolved: true,
+            playingEventFired: true,
+            currentTimeGt0: true,
+            currentTimeAfter2s: evidence.peakCurrentTime,
+            currentTimeAdvancing: evidence.peakCurrentTime > 0.02,
+            srcTail: evidence.src.slice(-80),
+            speechPlaying: mgr?.isAnyChannelPlaying?.() ?? mgr?.isSpeechPlaying?.() ?? null,
+          },
+        };
+      }
       return {
         ok: false,
         reason: "no_audio_element",

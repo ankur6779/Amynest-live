@@ -1,0 +1,115 @@
+{
+  "validatedAt": "2026-06-12T12:48:35.213Z",
+  "baseUrl": "https://www.amynest.in",
+  "passed": 3,
+  "total": 6,
+  "audioCoveragePct": 50,
+  "results": [
+    {
+      "id": "amy_coach",
+      "label": "Amy Coach",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.815689,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "blob:https://www.amynest.in/f242478c-a8ad-47fa-a7e8-98f16302a074",
+        "readyState": 4,
+        "speechPlaying": true
+      }
+    },
+    {
+      "id": "conversation_coach",
+      "label": "Conversation Coach",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 4.996408,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "audio",
+        "srcTail": "i/tts/audio/442602b2d93004ccb9b59d0d0370dc1f4ba94262cc3f8f8a580eb86d7fd9a3c5.mp3",
+        "readyState": 4,
+        "speechPlaying": true
+      }
+    },
+    {
+      "id": "parent_hub_story",
+      "label": "Story Hub",
+      "verdict": "PASS",
+      "triggerError": null,
+      "audioReason": "ok",
+      "checks": {
+        "elementExists": true,
+        "playResolved": true,
+        "playingEventFired": true,
+        "currentTimeGt0": true,
+        "currentTimeAfter2s": 2.962349,
+        "currentTimeAdvancing": true,
+        "paused": false,
+        "mediaKind": "video",
+        "srcTail": "https://www.amynest.in/api/stories/stream/1VBU1iWLKZrCxinctWY1QRoZRJRpMX0xB",
+        "readyState": 4,
+        "speechPlaying": false
+      }
+    },
+    {
+      "id": "rhymes",
+      "label": "Rhymes",
+      "verdict": "FAIL",
+      "triggerError": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('rhymes-page') to be visible\u001b[22m\n",
+      "audioReason": "no_audio_element",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      }
+    },
+    {
+      "id": "phonics",
+      "label": "Phonics",
+      "verdict": "FAIL",
+      "triggerError": "locator.scrollIntoViewIfNeeded: Protocol error (DOM.scrollIntoViewIfNeeded): Cannot find context with specified id\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n",
+      "audioReason": "no_audio_element",
+      "checks": {
+        "elementExists": false,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false
+      }
+    },
+    {
+      "id": "infant_lullaby",
+      "label": "Infant Lullaby",
+      "verdict": "FAIL",
+      "triggerError": null,
+      "audioReason": "play_failed:The element has no supported sources.",
+      "checks": {
+        "elementExists": true,
+        "playResolved": false,
+        "playingEventFired": false,
+        "currentTimeGt0": false,
+        "currentTimeAfter2s": 0,
+        "currentTimeAdvancing": false,
+        "paused": true,
+        "mediaKind": "audio",
+        "srcTail": "8a4308d878a5a4bd64149a33e8cfae5b8de5b34965107a768119d31d3c3ed1af1a22c51353f36d55",
+        "readyState": 0,
+        "speechPlaying": false
+      }
+    }
+  ]
+}

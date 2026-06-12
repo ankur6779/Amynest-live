@@ -63,12 +63,15 @@ export function InfantSleepTracks({
   noiseEngine,
   headerTitle,
   headerBlurb,
+  tileTestIdPrefix = "sleep-track-tile",
 }: {
   category: Extract<SleepCategory, "lullaby" | "story">;
   childId?: string;
   noiseEngine?: SoundEngine;
   headerTitle: string;
   headerBlurb: string;
+  /** Override tile test id prefix (e.g. rhyme-tile for /rhymes). */
+  tileTestIdPrefix?: string;
 }) {
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const [openTrack, setOpenTrack] = useState<SleepLibraryItem | null>(null);
@@ -161,6 +164,7 @@ export function InfantSleepTracks({
             <SleepTrackTile
               key={track.id}
               track={track}
+              tileTestId={`${tileTestIdPrefix}-${track.id}`}
               isActive={isActive}
               isPlaying={isActive && player.isPlaying}
               isLoading={isActive && player.isLoading}
@@ -223,6 +227,7 @@ function ContinuousModeToggle({
 
 function SleepTrackTile({
   track,
+  tileTestId,
   isActive,
   isPlaying,
   isLoading,
@@ -232,6 +237,7 @@ function SleepTrackTile({
   onToggleFavorite,
 }: {
   track: SleepLibraryItem;
+  tileTestId: string;
   isActive: boolean;
   isPlaying: boolean;
   isLoading: boolean;
@@ -247,7 +253,7 @@ function SleepTrackTile({
       <button
         onClick={onPress}
         disabled={!downloaded}
-        data-testid={`sleep-track-tile-${track.id}`}
+        data-testid={tileTestId}
         aria-label={`Play ${track.title}`}
         className="relative w-full h-full p-3 text-left text-white transition-transform active:scale-[0.97] disabled:opacity-50"
       >
