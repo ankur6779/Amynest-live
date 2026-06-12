@@ -9,7 +9,7 @@ import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift, Mic } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift, Mic, Salad } from "lucide-react";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
@@ -133,6 +133,7 @@ import {
 import { cn } from "@/lib/utils";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
+import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -141,7 +142,7 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
   creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
   stories:    ["story-hub", "talking-amy", "speech-coach", "discovery-worlds"],
-  support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
+  support:    ["nutrition", "articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
 /** Explicit render order inside the "Today For You" group. */
@@ -1261,6 +1262,39 @@ function ParentingHubPage() {
           title={t("parent_hub.web_tiles.generate-routine.title")}
           description={t("parent_hub.web_tiles.generate-routine.description")}
         />
+      );
+    }
+  }, {
+    id: "nutrition",
+    alwaysCurrent: true,
+    render: () => {
+      return (
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_nutrition")}
+          journeySoft={journeySoftLock}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+        >
+          <HubSection
+            id="nutrition"
+            icon={<Salad className="h-5 w-5 text-white" />}
+            title={t("parent_hub.web_tiles.nutrition.title")}
+            description={t("parent_hub.web_tiles.nutrition.description")}
+            accentClass="bg-gradient-to-br from-emerald-400 to-teal-500"
+            cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(16,185,129,0.14)100%)"
+            tryFree={tryFreeFor("hub_nutrition")}
+            preview={t("parent_hub.web_tiles.nutrition.preview")}
+            onOpen={() => markHubUsed("hub_nutrition")}
+          >
+            <NutritionHubParentContent
+              childAgeMonths={totalAgeMonths}
+              isFreeJourneyPeriod={hubJourney.isFreeJourneyPeriod}
+              isPremium={hubUsage.isPremium}
+              onOpenHub={() => markHubUsed("hub_nutrition")}
+            />
+          </HubSection>
+        </FeatureGate>
       );
     }
   }, {

@@ -5,6 +5,7 @@
 import { getApiUrl } from "@/lib/api";
 import { fetchWithTimeout, DEFAULT_API_TIMEOUT_MS } from "@/lib/fetch-with-timeout";
 import type { RhymesSignedUrlResponse } from "@workspace/rhymes-audio";
+import { isGcsSignedUrlValid } from "@workspace/rhymes-audio";
 
 type CachedSigned = {
   signedUrl: string;
@@ -27,6 +28,10 @@ function readCache(audioId: string): string | null {
   const hit = signedUrlCache.get(cacheKey(audioId));
   if (!hit) return null;
   if (Date.now() >= hit.expiresAt - 30_000) {
+    signedUrlCache.delete(cacheKey(audioId));
+    return null;
+  }
+  if (!isGcsSignedUrlValid(hit.signedUrl)) {
     signedUrlCache.delete(cacheKey(audioId));
     return null;
   }

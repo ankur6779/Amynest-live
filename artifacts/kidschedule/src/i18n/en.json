@@ -3259,6 +3259,19 @@
         "title": "Amy Quick Tutor",
         "description": "Teach a topic, run a quiz, or clear a doubt in chat"
       },
+      "nutrition": {
+        "title": "🥗 Nutrition Hub",
+        "description": "Age-wise nutrients, meal plans & family portions — infant to teen",
+        "preview": "WHO-backed guides · all ages",
+        "intro": "Science-backed nutrition for your whole family. Nutrients, AI meal plans, family portions, and expert guides — tuned to your child's age.",
+        "access_title": "Free vs Premium",
+        "journey_access": "3-day Parent Hub journey: full Nutrition Hub access while your free journey is active (Days 1–3).",
+        "free_access": "Free: browse nutrients & daily score · 1 AI 7-day meal plan · 1 family portion lookup · guide previews · 2 lifetime hub opens after the journey ends.",
+        "premium_access": "Premium: unlimited hub access · unlimited AI meal & portion plans · download all nutrition guides.",
+        "cta": "Open Nutrition Hub",
+        "ages_all": "All ages",
+        "age_hint": "Personalised for your child ({{months}} months)"
+      },
       "articles": {
         "title": "Parenting Articles",
         "description": "Research-based, age-matched reading"

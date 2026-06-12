@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-06-11T19:07:31.675Z",
+  "validatedAt": "2026-06-12T09:25:56.267Z",
   "baseURL": "https://www.amynest.in",
   "routes": [
     {
@@ -8,7 +8,11 @@
       "httpStatus": 200,
       "crashOverlay": 0,
       "notFound": 0,
-      "consoleErrors": [],
+      "consoleErrors": [
+        "[setup-status] onboarding fetch failed TypeError: Failed to fetch\n    at r (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:110360)\n    at Zh (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:9",
+        "[setup-status] onboarding fetch failed TypeError: Failed to fetch\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114989)\n    at https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:1155",
+        "[dashboard] parent-profile fetch failed TypeError: Failed to fetch\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114989)\n    at https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115"
+      ],
       "pageErrors": [],
       "error": null
     },
@@ -44,36 +48,37 @@
     },
     {
       "route": "/speech-coach",
-      "verdict": "PASS",
-      "httpStatus": 200,
-      "crashOverlay": 0,
-      "notFound": 0,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "error": null
-    },
-    {
-      "route": "/phonics",
-      "verdict": "PASS",
-      "httpStatus": 200,
-      "crashOverlay": 0,
-      "notFound": 0,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "error": null
-    },
-    {
-      "route": "/routines",
-      "verdict": "PASS",
-      "httpStatus": 200,
+      "verdict": "FAIL",
+      "httpStatus": null,
       "crashOverlay": 0,
       "notFound": 0,
       "consoleErrors": [
-        "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <ta>\n      <div className=\"parent-hub...\">\n        <header>\n        <Tabs defaultValue=\"sch",
-        "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. button <button>"
+        "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/"
       ],
       "pageErrors": [],
-      "error": null
+      "error": "page.goto: Timeout 90000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://www.amynest.in/speech-coach\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "route": "/phonics",
+      "verdict": "FAIL",
+      "httpStatus": null,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [
+        "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/"
+      ],
+      "pageErrors": [],
+      "error": "page.goto: Timeout 90000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://www.amynest.in/phonics\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "route": "/routines",
+      "verdict": "FAIL",
+      "httpStatus": null,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": "page.goto: Navigation to \"https://www.amynest.in/routines\" is interrupted by another navigation to \"https://www.amynest.in/phonics\"\nCall log:\n\u001b[2m  - navigating to \"https://www.amynest.in/routines\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "route": "/insights",
@@ -111,7 +116,9 @@
       "httpStatus": 200,
       "crashOverlay": 0,
       "notFound": 0,
-      "consoleErrors": [],
+      "consoleErrors": [
+        "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/"
+      ],
       "pageErrors": [],
       "error": null
     },
@@ -121,7 +128,9 @@
       "httpStatus": 200,
       "crashOverlay": 0,
       "notFound": 0,
-      "consoleErrors": [],
+      "consoleErrors": [
+        "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/"
+      ],
       "pageErrors": [],
       "error": null
     },
@@ -166,9 +175,14 @@
       "error": null
     }
   ],
-  "overall": "PASS",
+  "overall": "FAIL",
   "consoleErrorSample": [
-    "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <ta>\n      <div className=\"parent-hub...\">\n        <header>\n        <Tabs defaultValue=\"schedule\" className=\"w-full\">\n          <TabsProvider scope={undefined} baseId=\"radix-«rc»\" value=\"sche",
-    "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. button <button>"
+    "[setup-status] onboarding fetch failed TypeError: Failed to fetch\n    at r (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:110360)\n    at Zh (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:95332)\n    at ag (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:110405)\n    at async ee (https:",
+    "[setup-status] onboarding fetch failed TypeError: Failed to fetch\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114989)\n    at https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115574\n    at d_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114055)\n    at https://www.amynest",
+    "[dashboard] parent-profile fetch failed TypeError: Failed to fetch\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114989)\n    at https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115574\n    at d_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114055)\n    at https://www.amynes",
+    "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114049)\n    at async Zh (https://www.amynest.in/assets/AppCore-Cdu12y8L",
+    "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114049)\n    at async Zh (https://www.amynest.in/assets/AppCore-Cdu12y8L",
+    "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114049)\n    at async Zh (https://www.amynest.in/assets/AppCore-Cdu12y8L",
+    "[setup-status] onboarding fetch failed FetchTimeoutError: Request timed out after 8000ms\n    at f_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:115073)\n    at async d_ (https://www.amynest.in/assets/AppCore-Cdu12y8L.js:2:114049)\n    at async Zh (https://www.amynest.in/assets/AppCore-Cdu12y8L"
   ]
 }

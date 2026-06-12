@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --import tsx/esm --test src/registry.test.ts"
+    "test": "node --import tsx/esm --test src/registry.test.ts src/gcs-signed-url-expiry.test.ts"
   },
   "devDependencies": {
     "tsx": "catalog:"

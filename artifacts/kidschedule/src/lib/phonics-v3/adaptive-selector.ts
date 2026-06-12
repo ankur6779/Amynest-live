@@ -6,7 +6,12 @@ import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { WORD_FAMILIES, getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
 import type { PhonicsMasteryState } from "./mastery-engine";
 import { getWeakestWords } from "./mastery-engine";
-import type { DailyMissionTask, DailyReadingMission } from "@/lib/phonics-v2/daily-missions";
+import {
+  filterMissionWordItems,
+  formatMissionWordLabel,
+  type DailyMissionTask,
+  type DailyReadingMission,
+} from "@/lib/phonics-v2/daily-missions";
 import {
   getOverdueWordIds,
   type PhonicsRetentionState,
@@ -131,7 +136,8 @@ export function selectAdaptiveLessons(opts: {
     });
   }
 
-  const reviewed = opts.items.filter(
+  const missionItems = filterMissionWordItems(opts.items);
+  const reviewed = missionItems.filter(
     (it) => (opts.progress.practiced[it.id] ?? 0) > 0 || opts.progress.mastered[it.id],
   );
   for (let i = 0; i < reviewSlots; i++) {
@@ -143,10 +149,10 @@ export function selectAdaptiveLessons(opts: {
     });
   }
 
-  const fresh = opts.items.filter(
+  const fresh = missionItems.filter(
     (it) => !opts.progress.practiced[it.id] && !opts.progress.mastered[it.id],
   );
-  const newPool = fresh.length > 0 ? fresh : opts.items;
+  const newPool = fresh.length > 0 ? fresh : missionItems;
   for (let i = 0; i < newSlots; i++) {
     const item = newPool[(seed + i + 7) % newPool.length]!;
     picks.push({
@@ -220,7 +226,7 @@ export function buildAdaptiveDailyMission(opts: {
       slot: "review",
       id: `ad-overdue-${p.word}-${i}`,
       emoji: "⏰",
-      label: `Overdue: ${p.word}`,
+      label: formatMissionWordLabel("Overdue", p.word),
       word: p.word,
       completed: false,
     });
@@ -231,7 +237,7 @@ export function buildAdaptiveDailyMission(opts: {
       slot: "review",
       id: `ad-review-${review[0].word}`,
       emoji: "🔄",
-      label: `Review: ${review[0].word}`,
+      label: formatMissionWordLabel("Review", review[0].word),
       word: review[0].word,
       completed: false,
     });
@@ -287,7 +293,7 @@ export function buildAdaptiveDailyMission(opts: {
       slot: "practice",
       id: `ad-weak-${p.word}-${i}`,
       emoji: "🎯",
-      label: `Practice: ${p.word}`,
+      label: formatMissionWordLabel("Practice", p.word),
       word: p.word,
       familyId: getFamilyForWord(p.word)?.id,
       completed: false,
@@ -299,7 +305,7 @@ export function buildAdaptiveDailyMission(opts: {
       slot: "new_word",
       id: `ad-new-${neu[0].word}`,
       emoji: "✨",
-      label: `New: ${neu[0].word}`,
+      label: formatMissionWordLabel("New", neu[0].word),
       word: neu[0].word,
       completed: false,
     });
@@ -311,7 +317,7 @@ export function buildAdaptiveDailyMission(opts: {
       slot: "challenge",
       id: `ad-blend-${challenge.word}`,
       emoji: "🎵",
-      label: `Blend: ${challenge.word}`,
+      label: formatMissionWordLabel("Blend", challenge.word),
       word: challenge.word,
       completed: false,
     });

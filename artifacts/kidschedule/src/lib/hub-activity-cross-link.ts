@@ -1,7 +1,7 @@
 /** Deep links from routines → Parent Hub activity tiles. */
 
 export type HubDeepLinkTarget = {
-  group: "creativity" | "learning" | "stories" | "today";
+  group: "creativity" | "learning" | "stories" | "support" | "today";
   tileId: string;
   /** Infant Hub subsection id (e.g. infant-cry) when deep-linking into a module. */
   sectionId?: string;
@@ -23,6 +23,7 @@ const TILE_NAV: Record<string, HubDeepLinkTarget> = {
   phonics: { group: "learning", tileId: "phonics" },
   "event-prep": { group: "creativity", tileId: "event-prep" },
   "story-hub": { group: "stories", tileId: "story-hub" },
+  nutrition: { group: "support", tileId: "nutrition" },
 };
 
 const PLAY_CATEGORIES = new Set([

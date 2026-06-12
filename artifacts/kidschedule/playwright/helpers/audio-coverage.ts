@@ -1,5 +1,11 @@
 import type { Page } from "@playwright/test";
 import {
+  certSleepTileLocator,
+  dismissBlockingOverlays,
+  selectBlendingAgeChild,
+  waitForSleepTrackPlayer,
+} from "./cert-preconditions";
+import {
   expandHubGroup,
   expandHubSection,
   expandInfantHubUntil,
@@ -247,39 +253,30 @@ async function triggerAudioLesson(page: Page): Promise<void> {
 }
 
 export async function triggerRhymes(page: Page): Promise<void> {
-  await page.goto("/rhymes", { waitUntil: "domcontentloaded", timeout: 120_000 });
-  await page.waitForTimeout(1_500);
+  await dismissBlockingOverlays(page);
+  await page.goto("/rhymes", { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.waitForTimeout(1_000);
   await primeUserGesture(page);
-  await page.getByTestId("rhymes-page").waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByTestId("rhymes-page").waitFor({ state: "visible", timeout: 20_000 });
 
-  const tile = page.locator('[data-testid^="rhyme-tile-"]').first();
-  await tile.waitFor({ state: "visible", timeout: 30_000 });
-  await tile.scrollIntoViewIfNeeded({ timeout: 15_000 });
+  const tile = certSleepTileLocator(page, "rhyme-tile");
+  await tile.waitFor({ state: "visible", timeout: 20_000 });
+  await tile.scrollIntoViewIfNeeded({ timeout: 10_000 });
+  await primeUserGesture(page);
+  await tile.dispatchEvent("pointerdown");
   await tile.click({ timeout: 15_000 });
-  await page.waitForTimeout(1_200);
-
-  const player = page.getByTestId("sleep-track-fullscreen-player");
-  if (await player.isVisible({ timeout: 8_000 }).catch(() => false)) {
-    await primeUserGesture(page);
-    await player.locator("button.h-16.w-16").click({ timeout: 8_000 }).catch(() => {});
-    await page.waitForTimeout(1_500);
-  }
+  await waitForSleepTrackPlayer(page);
 }
 
 export async function triggerInfantLullaby(page: Page): Promise<void> {
   const hubReady = await openInfantSleepModule(page);
   if (hubReady) {
     await selectSleepModuleTab(page, "lullabies");
-    const tile = page.locator('[data-testid^="sleep-track-tile-"]').first();
+    const tile = certSleepTileLocator(page, "sleep-track-tile");
     if (await tile.isVisible({ timeout: 8_000 }).catch(() => false)) {
+      await primeUserGesture(page);
       await tile.click({ timeout: 15_000 });
-      await page.waitForTimeout(1_200);
-      const player = page.getByTestId("sleep-track-fullscreen-player");
-      if (await player.isVisible({ timeout: 5_000 }).catch(() => false)) {
-        await primeUserGesture(page);
-        await player.locator("button.h-16.w-16").click({ timeout: 8_000 }).catch(() => {});
-        await page.waitForTimeout(1_500);
-      }
+      await waitForSleepTrackPlayer(page);
       return;
     }
   }
@@ -287,39 +284,49 @@ export async function triggerInfantLullaby(page: Page): Promise<void> {
 }
 
 export async function triggerPhonics(page: Page): Promise<void> {
+  await dismissBlockingOverlays(page);
   await page.goto("/phonics", { waitUntil: "domcontentloaded", timeout: 120_000 });
   await page.waitForTimeout(2_000);
   await primeUserGesture(page);
+  await dismissBlockingOverlays(page);
 
-  const toddler = page.getByRole("button", { name: /Audit-Toddler/i });
-  if (await toddler.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await toddler.click({ timeout: 8_000 });
-    await page.waitForTimeout(800);
+  await selectBlendingAgeChild(page);
+
+  const library = page.getByTestId("phonics-full-library");
+  if (await library.isVisible({ timeout: 4_000 }).catch(() => false)) {
+    const collapsed = library.locator('button[aria-expanded="false"]').first();
+    if (await collapsed.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await collapsed.click({ timeout: 5_000, noWaitAfter: true });
+      await page.waitForTimeout(500);
+    }
   }
 
-  const mainScroll = page.locator("main.scroll-safe").first();
-  if (await mainScroll.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await mainScroll.click({ position: { x: 16, y: 120 }, force: true });
-    await page.waitForTimeout(300);
-  }
+  const practice = page.getByTestId("phonics-practice-sounds").first();
+  await practice.scrollIntoViewIfNeeded({ timeout: 45_000 });
+  await practice.waitFor({ state: "visible", timeout: 45_000 });
 
-  const cta = page.getByTestId("phonics-primary-cta");
-  if (await cta.isVisible({ timeout: 8_000 }).catch(() => false)) {
-    await cta.click({ timeout: 10_000 });
-    await page.waitForTimeout(1_000);
+  let playByTestId = page.getByTestId("audio-play-cat").first();
+  if (!(await playByTestId.isVisible({ timeout: 5_000 }).catch(() => false))) {
+    playByTestId = page.locator('[data-testid^="audio-play-"]').first();
   }
-
-  const practice = page.getByTestId("phonics-practice-sounds");
-  const practiceVisible = await practice.isVisible({ timeout: 12_000 }).catch(() => false);
-  if (practiceVisible) {
-    await practice.scrollIntoViewIfNeeded({ timeout: 45_000 });
-    await practice.waitFor({ state: "visible", timeout: 45_000 });
-  }
-
-  let playByTestId = page.locator('[data-testid^="audio-play-"]').first();
   if (!(await playByTestId.isVisible({ timeout: 8_000 }).catch(() => false))) {
-    await openParentingHubTile(page, { group: "learning", tileId: "phonics" });
-    await page.getByTestId("phonics-practice-sounds").scrollIntoViewIfNeeded({ timeout: 30_000 });
+    const cvc = page.getByTestId("cvc-blending-practice");
+    if (await cvc.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await cvc.scrollIntoViewIfNeeded({ timeout: 20_000 });
+      const catBtn = cvc.getByRole("button", { name: "cat", exact: true });
+      if (await catBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+        await catBtn.click({ timeout: 10_000, noWaitAfter: true });
+        await page.waitForTimeout(800);
+        const panel = page.getByTestId("cvc-blend-panel");
+        const playBlend = panel.getByRole("button", { name: /Play blend/i });
+        if (await playBlend.isVisible({ timeout: 3_000 }).catch(() => false)) {
+          await playBlend.dispatchEvent("pointerdown");
+          await playBlend.click({ timeout: 10_000, noWaitAfter: true });
+          await page.waitForTimeout(1_000);
+          return;
+        }
+      }
+    }
     playByTestId = page.locator('[data-testid^="audio-play-"]').first();
   }
   await playByTestId.waitFor({ state: "visible", timeout: 25_000 });

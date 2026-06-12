@@ -1,0 +1,32 @@
+{
+  "validatedAt": "2026-06-12T11:16:20.246Z",
+  "baseURL": "https://www.amynest.in",
+  "deployVersion": "2026-06-12-ceeb255",
+  "blockers": {
+    "C_infant_audio": {
+      "hasInfantChild": true,
+      "infantHubReached": false,
+      "childrenPageSnippet": "Notifications are blocked\n\nChrome → tap the lock icon next to the URL → Permissions → Notifications → Allow\n\nChildren\n\nManage profiles and goals\n\nAdd Child\nChild 1\nUnder 1 year\nAt Home\n🥦 Veg\nChild 2\n5 years old\nUKG\n🥦 Veg\nChild 3\n8+ years old\nSchool (Class 1+) · Class 7\n🥦 Veg\nAudit-Toddler\n2 years (estimated)\nAt Home\n🥦 Veg",
+      "story": {
+        "attempted": true,
+        "playback": {
+          "ok": false,
+          "reason": "no_audio_element",
+          "checks": {
+            "elementExists": false,
+            "playResolved": false,
+            "playingEventFired": false,
+            "currentTimeGt0": false
+          }
+        }
+      },
+      "poem": {
+        "attempted": false,
+        "reason": "no_infant_section"
+      },
+      "testFixtureIssue": false,
+      "realBug": true,
+      "category": "real_production_defect"
+    }
+  }
+}

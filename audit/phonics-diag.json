@@ -1,0 +1,369 @@
+{
+  "testid": "audio-play-cat",
+  "beforeUrl": "https://www.amynest.in/phonics",
+  "afterUrl": "https://www.amynest.in/phonics",
+  "navigatedAway": false,
+  "pre": {
+    "label": "pre_click",
+    "url": "https://www.amynest.in/phonics",
+    "mgr": {
+      "speechPlaying": false,
+      "anyPlaying": false,
+      "lastErr": null
+    },
+    "audios": []
+  },
+  "afterClick": {
+    "label": "1.5s_after_click",
+    "url": "https://www.amynest.in/phonics",
+    "mgr": {
+      "speechPlaying": false,
+      "anyPlaying": false,
+      "lastErr": null
+    },
+    "audios": []
+  },
+  "after5s": {
+    "label": "5.3s",
+    "url": "https://www.amynest.in/phonics",
+    "mgr": {
+      "speechPlaying": false,
+      "anyPlaying": false,
+      "lastErr": null
+    },
+    "audios": []
+  },
+  "verifyResult": {
+    "ok": false,
+    "reason": "no_audio_element",
+    "checks": {
+      "elementExists": false,
+      "playResolved": false,
+      "playingEventFired": false,
+      "currentTimeGt0": false
+    }
+  },
+  "verifyError": null,
+  "logs": [
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] operation_ok {label: static_audio_health, url: https://www.amynest.in/api/static-audio/health, status: 200, timeoutMs: 15000, durationMs: 491}"
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] audioInitSuccess {metric: audioInitSuccess, voiceUnavailable: false, retryGeneration: 0}"
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] audioInitDuration {metric: audioInitDuration, durationMs: 2254, voiceUnavailable: false, retryGeneration: 0, succeeded: true}"
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "debug",
+      "t": "[amynest:audio-coordinator] app lifecycle: hidden {userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false, isMiui: false}"
+    },
+    {
+      "type": "debug",
+      "t": "[amynest:audio-coordinator] stopAllPlayback {userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false, isMiui: false}"
+    },
+    {
+      "type": "debug",
+      "t": "[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null}"
+    },
+    {
+      "type": "info",
+      "t": "[amynest:boot] Pre-React {hostname: www.amynest.in, href: https://www.amynest.in/phonics, pwa: false}"
+    },
+    {
+      "type": "info",
+      "t": "[AudioCertification] Ready — window.__amynestAudioCertification.report()"
+    },
+    {
+      "type": "info",
+      "t": "[amynest:boot] Boot context {hostname: www.amynest.in, origin: https://www.amynest.in, pathname: /phonics, href: https://www.amynest.in/phonics, userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36}"
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] audioInitStart {metric: audioInitStart, voiceUnavailable: false, retryGeneration: 0}"
+    },
+    {
+      "type": "warning",
+      "t": "The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio"
+    },
+    {
+      "type": "debug",
+      "t": "[amynest:audio-coordinator] audio session lifecycle installed {userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false, isMiui: false}"
+    },
+    {
+      "type": "log",
+      "t": "[onboarding-finish] BOOTSTRAP_ONBOARDING_DECISION {timestamp: 2026-06-12T12:09:17.739Z, onboardingRunId: null, route: /phonics, step: undefined, userId: null}"
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] operation_ok {label: audio_api_health, url: https://www.amynest.in/api/healthz/audio, status: 200, timeoutMs: 12000, durationMs: 3677}"
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] operation_ok {label: static_audio_health, url: https://www.amynest.in/api/static-audio/health, status: 200, timeoutMs: 15000, durationMs: 157}"
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] audioInitSuccess {metric: audioInitSuccess, voiceUnavailable: false, retryGeneration: 0}"
+    },
+    {
+      "type": "info",
+      "t": "[AUDIO BOOT] audioInitDuration {metric: audioInitDuration, durationMs: 3878, voiceUnavailable: false, retryGeneration: 0, succeeded: true}"
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "warning",
+      "t": "A preload for 'https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute."
+    },
+    {
+      "type": "debug",
+      "t": "[amynest:audio-coordinator] stopAllPlayback {userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null, isSamsung: false, isMiui: false}"
+    },
+    {
+      "type": "debug",
+      "t": "[amynest:audio-coordinator] playback ended {source: stopAll, msSinceStart: null, userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ap…Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36, webViewHint: Chrome/148.0.7778.96, androidVersion: null}"
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/20ccf010450267bfff3fb54c9f09820c.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/eaa62d79ff1b0ad4113486a1d896ed22.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/0fde14ae8655067be381f7c61a38a45a.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/42a747267dff9916993b9cae5e7d4a2a.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/f63ef626f5f82a20bc4db45a29122ada.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/1a9b0567d68fd30c0609eeea88d015ee.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/26310270981ddec4788b86bafe91262d.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "t": "The resource https://www.amynest.in/api/static-audio/1a8d7e171be89f2fbcecf59dc3bffea6.mp3 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    }
+  ]
+}

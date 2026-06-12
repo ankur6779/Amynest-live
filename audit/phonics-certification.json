@@ -1,0 +1,110 @@
+{
+  "validatedAt": "2026-06-12T15:09:03.836Z",
+  "baseUrl": "https://www.amynest.in",
+  "words": [
+    "cat",
+    "bat",
+    "mat"
+  ],
+  "report": {
+    "preconditionsOk": true,
+    "selectedChild": "Child 5",
+    "words": [
+      {
+        "word": "cat",
+        "clickOk": false,
+        "audioManagerPlayInvoked": false,
+        "mediaElementExists": false,
+        "currentTimeAdvances": false,
+        "endedEventFired": false,
+        "sourceUrl": null,
+        "duration": null,
+        "events": [],
+        "peakCurrentTime": 0,
+        "error": "No play target for \"cat\" on page"
+      },
+      {
+        "word": "bat",
+        "clickOk": true,
+        "audioManagerPlayInvoked": true,
+        "mediaElementExists": true,
+        "currentTimeAdvances": true,
+        "endedEventFired": true,
+        "sourceUrl": "https://www.amynest.in/api/static-audio/b462f103e1da22d6250ce2a0143631b7.mp3",
+        "duration": 2.304,
+        "events": [
+          "playing",
+          "ended",
+          "playback_evidence"
+        ],
+        "peakCurrentTime": 2.304,
+        "playPath": "tile:bl-bat"
+      },
+      {
+        "word": "mat",
+        "clickOk": false,
+        "audioManagerPlayInvoked": false,
+        "mediaElementExists": false,
+        "currentTimeAdvances": false,
+        "endedEventFired": false,
+        "sourceUrl": null,
+        "duration": null,
+        "events": [],
+        "peakCurrentTime": 0,
+        "playPath": "tile:bl-mat",
+        "error": "locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('phonics-tile-bl-mat').first().locator('[data-testid=\"audio-play-mat\"]').first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" aria-label=\"Play mat\" data-testid=\"audio-play-mat\" class=\"inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2 border-primary-border min-h-9 rounded-full p-0 border-0 shadow-sm premium-press touch-manipulation transition-transform duration-1…>…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <button type=\"button\" id=\"amynest-safe-retry\">Try Again</button> from <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <button type=\"button\" id=\"amynest-safe-retry\">Try Again</button> from <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" id=\"amynest-safe-retry\">Try Again</button> from <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div role=\"alert\" id=\"amynest-safe-recovery-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n"
+      }
+    ],
+    "reloadWords": [
+      {
+        "word": "cat",
+        "clickOk": false,
+        "audioManagerPlayInvoked": false,
+        "mediaElementExists": false,
+        "currentTimeAdvances": false,
+        "endedEventFired": false,
+        "sourceUrl": null,
+        "duration": null,
+        "events": [],
+        "peakCurrentTime": 0,
+        "error": "No play target for \"cat\" on page"
+      },
+      {
+        "word": "bat",
+        "clickOk": false,
+        "audioManagerPlayInvoked": false,
+        "mediaElementExists": false,
+        "currentTimeAdvances": false,
+        "endedEventFired": false,
+        "sourceUrl": null,
+        "duration": null,
+        "events": [],
+        "peakCurrentTime": 0,
+        "error": "No play target for \"bat\" on page"
+      },
+      {
+        "word": "mat",
+        "clickOk": false,
+        "audioManagerPlayInvoked": false,
+        "mediaElementExists": false,
+        "currentTimeAdvances": false,
+        "endedEventFired": false,
+        "sourceUrl": null,
+        "duration": null,
+        "events": [],
+        "peakCurrentTime": 0,
+        "error": "No play target for \"mat\" on page"
+      }
+    ],
+    "allWordsPass": false,
+    "reloadPass": false
+  },
+  "verdict": {
+    "productDefect": "YES",
+    "harnessDefect": "NO",
+    "phonicsPlayback": "FAIL",
+    "audioCoveragePct": 83,
+    "launchScore": 81.3,
+    "recommendation": "CONDITIONAL — phonics product defect remains; investigate playback pipeline."
+  }
+}

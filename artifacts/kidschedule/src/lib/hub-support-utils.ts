@@ -3,6 +3,7 @@ import { ageBandForLifeSkills, L, pickDailyLifeSkillTasks } from "@workspace/lif
 import { STORAGE_KEY_DRAFT, STAGE_LABELS, type PtmSession } from "@workspace/ptm-prep";
 
 export const SUPPORT_TILE_ORDER = [
+  "nutrition",
   "articles",
   "emotional",
   "life-skills",
@@ -50,7 +51,7 @@ export function sortSupportTileIds(
   opts: { ptmSeason?: boolean } = {},
 ): string[] {
   const base = opts.ptmSeason
-    ? (["articles", "emotional", "ptm-prep", "life-skills", "new-parent-tips"] as const)
+    ? (["nutrition", "articles", "emotional", "ptm-prep", "life-skills", "new-parent-tips"] as const)
     : SUPPORT_TILE_ORDER;
   const set = new Set(ids);
   return base.filter(id => set.has(id));

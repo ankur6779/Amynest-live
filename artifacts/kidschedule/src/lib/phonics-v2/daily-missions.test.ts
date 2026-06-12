@@ -8,6 +8,16 @@ const items: DisplayPhonicsItem[] = [
   { id: "3", symbol: "dog", type: "word", sound: "dog" },
 ];
 
+const itemsWithSentence: DisplayPhonicsItem[] = [
+  ...items,
+  {
+    id: "4",
+    symbol: "the little bird flew up to the sky.",
+    type: "sentence",
+    sound: "the little bird flew up to the sky.",
+  },
+];
+
 const emptyProgress: PhonicsProgressMap = { practiced: {}, mastered: {} };
 
 describe("daily-missions", () => {
@@ -22,6 +32,17 @@ describe("daily-missions", () => {
     expect(mission.tasks.some((t) => t.slot === "challenge")).toBe(true);
     expect(mission.tasks.some((t) => t.slot === "story")).toBe(true);
     expect(mission.estimatedMinutes).toBeGreaterThanOrEqual(3);
+  });
+
+  it("excludes sentences from new-word mission labels", () => {
+    const mission = buildDailyReadingMission({
+      childId: 99,
+      items: itemsWithSentence,
+      progress: emptyProgress,
+    });
+    const newTask = mission.tasks.find((t) => t.slot === "new_word");
+    expect(newTask?.label).not.toContain("little bird");
+    expect(newTask?.label).toMatch(/^New: [a-z]{2,6}$/);
   });
 
   it("marks task complete without dropping other tasks", () => {

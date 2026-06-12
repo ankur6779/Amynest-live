@@ -1,0 +1,31 @@
+{
+  "investigatedAt": "2026-06-12",
+  "audioId": "how-much-is-that-doggie-in-the-window",
+  "rootCause": {
+    "summary": "writeCache used SIGNED_URL_CACHE_TTL_MS * 1000, treating milliseconds as seconds. Server cache TTL inflated to ~8.3 days while GCS V4 signatures expire after 45 minutes.",
+    "cacheKey": "audioId.trim().toLowerCase()",
+    "intendedCacheTtlMs": 720000,
+    "buggyCacheTtlMs": 720000000,
+    "gcsSignatureTtlMs": 2700000,
+    "symptom": "API returned cached=true, expiresIn≈707885; GCS returned ExpiredToken"
+  },
+  "fix": {
+    "files": [
+      "artifacts/api-server/src/services/rhymesSignedUrlCache.ts",
+      "artifacts/api-server/src/services/rhymesAudioSignedUrlService.ts",
+      "lib/rhymes-audio/src/gcs-signed-url-expiry.ts",
+      "artifacts/kidschedule/src/lib/lullaby-gcs-audio.ts"
+    ],
+    "changes": [
+      "Remove erroneous * 1000 on cache TTL",
+      "Store signedUrlExpiresAt parsed from X-Goog-Date + X-Goog-Expires",
+      "Purge cache entry when signature expired or within 30s buffer",
+      "Return expiresIn as min(cache remaining, signature remaining)",
+      "Client cache validates GCS signature before reuse"
+    ]
+  },
+  "tests": {
+    "lib/rhymes-audio": "8/8 pass (gcs-signed-url-expiry + registry)",
+    "api-server/rhymesSignedUrlCache": "3/3 pass (expired purge, TTL inflation regression, expiresIn cap)"
+  }
+}

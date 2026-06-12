@@ -1,0 +1,189 @@
+{
+  "config": {
+    "configFile": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright.config.full-app-cert.ts",
+    "rootDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "full-app-certification.spec.ts"
+        ],
+        "timeout": 600000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright/full-app-cert-artifacts/playwright-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "full-app-certification.spec.ts",
+      "file": "full-app-certification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Full app certification",
+          "file": "full-app-certification.spec.ts",
+          "line": 60,
+          "column": 6,
+          "specs": [
+            {
+              "title": "traverse major routes without crash, 404, or fatal console errors",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 600000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 601685,
+                      "error": {
+                        "message": "Error: /speech-coach navigation\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31m\"page.goto: Timeout 90000ms exceeded.\u001b[39m\n\u001b[31mCall log:\u001b[39m\n\u001b[31m\u001b[2m  - navigating to \\\"https://www.amynest.in/speech-coach\\\", waiting until \\\"domcontentloaded\\\"\u001b[22m\u001b[39m\n\u001b[31m\"\u001b[39m",
+                        "stack": "Error: /speech-coach navigation\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31m\"page.goto: Timeout 90000ms exceeded.\u001b[39m\n\u001b[31mCall log:\u001b[39m\n\u001b[31m\u001b[2m  - navigating to \\\"https://www.amynest.in/speech-coach\\\", waiting until \\\"domcontentloaded\\\"\u001b[22m\u001b[39m\n\u001b[31m\"\u001b[39m\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts:144:49",
+                        "location": {
+                          "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts",
+                          "column": 49,
+                          "line": 144
+                        },
+                        "snippet": "  142 |       writeReport(results, globalConsoleErrors);\n  143 |\n> 144 |       expect.soft(error, `${route} navigation`).toBeNull();\n      |                                                 ^\n  145 |       expect.soft(crashOverlay, `Crash overlay on ${route}`).toBe(0);\n  146 |     }\n  147 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts",
+                            "column": 49,
+                            "line": 144
+                          },
+                          "message": "Error: /speech-coach navigation\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31m\"page.goto: Timeout 90000ms exceeded.\u001b[39m\n\u001b[31mCall log:\u001b[39m\n\u001b[31m\u001b[2m  - navigating to \\\"https://www.amynest.in/speech-coach\\\", waiting until \\\"domcontentloaded\\\"\u001b[22m\u001b[39m\n\u001b[31m\"\u001b[39m\n\n  142 |       writeReport(results, globalConsoleErrors);\n  143 |\n> 144 |       expect.soft(error, `${route} navigation`).toBeNull();\n      |                                                 ^\n  145 |       expect.soft(crashOverlay, `Crash overlay on ${route}`).toBe(0);\n  146 |     }\n  147 |\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts:144:49"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts",
+                            "column": 49,
+                            "line": 144
+                          },
+                          "message": "Error: /phonics navigation\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31m\"page.goto: Timeout 90000ms exceeded.\u001b[39m\n\u001b[31mCall log:\u001b[39m\n\u001b[31m\u001b[2m  - navigating to \\\"https://www.amynest.in/phonics\\\", waiting until \\\"domcontentloaded\\\"\u001b[22m\u001b[39m\n\u001b[31m\"\u001b[39m\n\n  142 |       writeReport(results, globalConsoleErrors);\n  143 |\n> 144 |       expect.soft(error, `${route} navigation`).toBeNull();\n      |                                                 ^\n  145 |       expect.soft(crashOverlay, `Crash overlay on ${route}`).toBe(0);\n  146 |     }\n  147 |\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts:144:49"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts",
+                            "column": 49,
+                            "line": 144
+                          },
+                          "message": "Error: /routines navigation\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31m\"page.goto: Navigation to \\\"https://www.amynest.in/routines\\\" is interrupted by another navigation to \\\"https://www.amynest.in/phonics\\\"\u001b[39m\n\u001b[31mCall log:\u001b[39m\n\u001b[31m\u001b[2m  - navigating to \\\"https://www.amynest.in/routines\\\", waiting until \\\"domcontentloaded\\\"\u001b[22m\u001b[39m\n\u001b[31m\"\u001b[39m\n\n  142 |       writeReport(results, globalConsoleErrors);\n  143 |\n> 144 |       expect.soft(error, `${route} navigation`).toBeNull();\n      |                                                 ^\n  145 |       expect.soft(crashOverlay, `Crash overlay on ${route}`).toBe(0);\n  146 |     }\n  147 |\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts:144:49"
+                        },
+                        {
+                          "message": "\u001b[31mTest timeout of 600000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts",
+                            "column": 56,
+                            "line": 148
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  146 |     }\n  147 |\n> 148 |     expect(results.every((r) => r.verdict === \"PASS\")).toBe(true);\n      |                                                        ^\n  149 |   });\n  150 | });\n  151 |\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts:148:56"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T09:15:55.417Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/full-app-certification-Ful-bb2ae-404-or-fatal-console-errors/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/full-app-certification-Ful-bb2ae-404-or-fatal-console-errors/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results/full-app-certification-Ful-bb2ae-404-or-fatal-console-errors/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/full-app-certification.spec.ts",
+                        "column": 49,
+                        "line": 144
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "93b3e80388a7cfa4d571-5135967a893506cc5a74",
+              "file": "full-app-certification.spec.ts",
+              "line": 65,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-12T09:15:54.321Z",
+    "duration": 603603.877,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

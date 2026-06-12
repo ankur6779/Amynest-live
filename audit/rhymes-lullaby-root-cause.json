@@ -1,0 +1,151 @@
+{
+  "validatedAt": "2026-06-12T16:30:00.000Z",
+  "baseUrl": "https://www.amynest.in",
+  "verdict": {
+    "productBug": true,
+    "harnessBug": true,
+    "signedUrlIssue": true,
+    "authIssue": false,
+    "confidencePct": 88
+  },
+  "summary": "Cert failures are driven by stale server-side signed-URL cache for the default first tile (how-much-is-that-doggie-in-the-window). GCS returns ExpiredToken (HTTP 400) while API reports cached:true with inflated expiresIn. Automation always clicks .first() tile, guaranteeing fail. Other rhymes/lullabies play correctly when URL is valid.",
+  "signedUrlRequests": [
+    {
+      "at": "2026-06-12T16:24:01.087Z",
+      "audioId": "how-much-is-that-doggie-in-the-window",
+      "requestUrl": "https://[redacted]/api/audio/signed-url/how-much-is-that-doggie-in-the-window",
+      "status": 200,
+      "latencyMs": null,
+      "success": true,
+      "cached": true,
+      "expiresIn": 707885,
+      "signedUrlHost": "storage.googleapis.com",
+      "gcsGetStatus": 400,
+      "gcsError": "ExpiredToken (signature expired 2026-06-12T13:47:06Z)"
+    },
+    {
+      "at": "2026-06-12T16:28:00.000Z",
+      "audioId": "a-dream-is-a-wish-your-heart-makes",
+      "requestUrl": "https://[redacted]/api/audio/signed-url/a-dream-is-a-wish-your-heart-makes",
+      "status": 200,
+      "success": true,
+      "cached": true,
+      "expiresIn": 719941,
+      "signedUrlHost": "storage.googleapis.com",
+      "gcsGetStatus": 200,
+      "contentType": "audio/mpeg",
+      "contentLength": 4292797
+    },
+    {
+      "at": "2026-06-12T16:28:00.000Z",
+      "audioId": "twinkle-twinkle-little-star",
+      "requestUrl": "https://[redacted]/api/audio/signed-url/twinkle-twinkle-little-star",
+      "status": 200,
+      "success": true,
+      "cached": true,
+      "expiresIn": 719922,
+      "signedUrlHost": "storage.googleapis.com",
+      "gcsGetStatus": 200,
+      "contentType": "audio/mpeg"
+    }
+  ],
+  "signedUrlValidation": [
+    {
+      "audioId": "how-much-is-that-doggie-in-the-window",
+      "gcsGetFull": 400,
+      "gcsHead": 400,
+      "gcsRange": 400,
+      "playable": false,
+      "note": "ExpiredToken in XML body"
+    },
+    {
+      "audioId": "a-dream-is-a-wish-your-heart-makes",
+      "gcsGetFull": 200,
+      "contentType": "audio/mpeg",
+      "contentLength": 4292797,
+      "playable": true
+    }
+  ],
+  "mediaRegistration": {
+    "rhymesFirstTile": {
+      "audioId": "how-much-is-that-doggie-in-the-window",
+      "mgrExists": true,
+      "recentElRegistered": true,
+      "readyState": 0,
+      "currentTime": 0,
+      "paused": true,
+      "domAudios": 0,
+      "playerPlayVisible": true,
+      "consoleError": "NotSupportedError: The element has no supported sources"
+    },
+    "rhymesSecondTile": {
+      "audioId": "a-dream-is-a-wish-your-heart-makes",
+      "readyState": 4,
+      "currentTime": 1.817592,
+      "peakCurrentTime": 1.817592,
+      "paused": false,
+      "pauseBtnVisible": true,
+      "playbackStarted": true
+    },
+    "infantLullabyFirstTile": {
+      "audioId": "how-much-is-that-doggie-in-the-window",
+      "readyState": 0,
+      "currentTime": 0,
+      "peakCurrentTime": 0,
+      "sameAsRhymesFirstTile": true
+    }
+  },
+  "headlessVsHeaded": {
+    "headlessRhymesReason": "currentTime_zero",
+    "headedRhymesReason": "currentTime_zero",
+    "headlessOnlyFailure": false,
+    "timingSensitiveRace": false,
+    "note": "Both modes fail identically on default first tile"
+  },
+  "manualProductCheck": {
+    "method": "Playwright signed-in session, 3 rhyme tiles",
+    "results": [
+      {
+        "tile": "rhyme-tile-twinkle-twinkle-little-star",
+        "outcome": "not_visible_without_load_more"
+      },
+      {
+        "tile": "rhyme-tile-a-dream-is-a-wish-your-heart-makes",
+        "outcome": "PASS",
+        "currentTime": 1.817592,
+        "readyState": 4
+      },
+      {
+        "tile": "rhyme-tile-how-much-is-that-doggie-in-the-window",
+        "outcome": "FAIL",
+        "currentTime": 0,
+        "readyState": 0,
+        "reason": "expired_signed_url"
+      }
+    ]
+  },
+  "authCheck": {
+    "catalogStatus": 200,
+    "catalogCount": 168,
+    "signedUrlPublicAccess": true,
+    "signedUrlStatusForValidId": 200,
+    "signInLatencyMs": 16085,
+    "appCoreReady": true,
+    "authBlocksPlayback": false,
+    "note": "Initial probe false 404 used wrong id twinkle-twinkle; correct id twinkle-twinkle-little-star returns 200"
+  },
+  "certRunCorrelation": {
+    "postFixCertRhymesReason": "no_audio_element",
+    "postFixCertInfantLullabyReason": "no_audio_element",
+    "rootCauseInCert": "triggerRhymes/triggerInfantLullaby click .first() tile = expired doggie URL"
+  },
+  "consoleSignals": [
+    "BLOCKED: Direct GCS Audio usage (static-audio-guard constructor — logs but .src assignment still proceeds)",
+    "[AudioManager] NotSupportedError: The element has no supported sources (when GCS URL expired)",
+    "Failed to load resource: 401 (unrelated onboarding/static-audio catalog gaps)"
+  ],
+  "probeArtifacts": {
+    "script": "artifacts/kidschedule/playwright/run-rhymes-lullaby-root-cause.mjs",
+    "fullProbeJson": "audit/rhymes-lullaby-root-cause.json"
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "validatedAt": "2026-06-12T11:56:00.000Z",
+  "target": "https://www.amynest.in",
+  "credentials": "demo@amynest.in (signed-in checks only)",
+  "deploymentVerified": true,
+  "overallVerdict": "FAIL",
+  "certificationBand": "70-84",
+  "weightedLaunchScore": 74.8,
+  "launchProbabilityPct": 56,
+  "thirtyDayFailurePct": 44,
+  "severityCounts": {
+    "critical": 2,
+    "high": 1,
+    "medium": 2,
+    "low": 2
+  },
+  "phase1_deployment": {
+    "verdict": "PASS",
+    "deployVerified": true,
+    "indexBundleHash": "CsvyOEjd",
+    "priorIndexHash": "Cdu12y8L",
+    "indexHashChanged": true,
+    "appCoreBundleHash": "Dh4PtQbE",
+    "priorAppCoreHash": "Cdu12y8L",
+    "appCoreHashChanged": true,
+    "appCoreUrl": "https://www.amynest.in/assets/AppCore-Dh4PtQbE.js",
+    "appCoreBytes": 658962,
+    "deployMeta": "2026-06-12-04fcb1f",
+    "DevRouteRedirectInBundle": 0,
+    "apiHealth": { "ok": true, "timestamp": 1781264335380 },
+    "rhymeCatalogCount": 168,
+    "evidence": [
+      "index.html meta amynest-deploy=2026-06-12-04fcb1f",
+      "AppCore-Dh4PtQbE.js loaded after signed-in /dashboard (was AppCore-Cdu12y8L)",
+      "/api/health ok:true",
+      "/api/audio/rhymes/catalog count:168"
+    ]
+  },
+  "phase2_security_guest": {
+    "verdict": "PASS",
+    "method": "playwright_guest_pixel5",
+    "routes": [
+      {
+        "path": "/debug-parity",
+        "finalUrl": "https://www.amynest.in/sign-in",
+        "devContentRendered": false,
+        "verdict": "PASS"
+      },
+      {
+        "path": "/dev/phonics-audio-preview",
+        "finalUrl": "https://www.amynest.in/sign-in",
+        "devContentRendered": false,
+        "verdict": "PASS"
+      },
+      {
+        "path": "/dev/rhymes-audio-ab",
+        "finalUrl": "https://www.amynest.in/sign-in",
+        "devContentRendered": false,
+        "verdict": "PASS"
+      },
+      {
+        "path": "/debug/learning",
+        "finalUrl": "https://www.amynest.in/sign-in",
+        "devContentRendered": false,
+        "verdict": "PASS"
+      }
+    ],
+    "note": "All dev/debug routes redirect unauthenticated guests to /sign-in; no dev UI text observed. Prior audit exposed full dev surfaces — fixed on live.",
+    "screenshots": [
+      "audit/screenshots/final-live-cert/guest-security-_debug-parity.png",
+      "audit/screenshots/final-live-cert/guest-security-_dev_phonics-audio-preview.png",
+      "audit/screenshots/final-live-cert/guest-security-_dev_rhymes-audio-ab.png",
+      "audit/screenshots/final-live-cert/guest-security-_debug_learning.png"
+    ]
+  },
+  "phase3_audioCertification": {
+    "verdict": "FAIL",
+    "method": "playwright audio-coverage.spec.ts + targeted probes",
+    "requiredFeatures": 8,
+    "passCount": 5,
+    "failCount": 2,
+    "notTestedCount": 1,
+    "audioCoveragePct": 62.5,
+    "features": [
+      {
+        "feature": "Amy Coach",
+        "verdict": "PASS",
+        "evidence": "currentTime 2.68s advancing, blob audio src",
+        "screenshot": "audit/screenshots/final-live-cert/amy_coach.png"
+      },
+      {
+        "feature": "Conversation Coach",
+        "verdict": "PASS",
+        "evidence": "currentTime 4.99s advancing, TTS mp3",
+        "screenshot": "audit/screenshots/final-live-cert/conversation_coach.png"
+      },
+      {
+        "feature": "Story Hub",
+        "verdict": "PASS",
+        "evidence": "video currentTime 3.11s advancing, /api/stories/stream",
+        "screenshot": "audit/screenshots/final-live-cert/parent_hub_story.png"
+      },
+      {
+        "feature": "Phonics",
+        "verdict": "FAIL",
+        "evidence": "audio-play-cat visible and clicked; no audio/video element with src after 30s",
+        "screenshot": "audit/screenshots/final-live-cert/phonics-probe.png"
+      },
+      {
+        "feature": "Infant Story",
+        "verdict": "NOT_TESTED",
+        "evidence": "Coverage harness opened lullabies tab under infant_story id; stories tab tiles not independently probed",
+        "note": "Missing test is not a failure per certification rules"
+      },
+      {
+        "feature": "Infant Poem",
+        "verdict": "PASS",
+        "evidence": "currentTime 9.74s advancing despite navigation trigger error in harness",
+        "screenshot": "audit/screenshots/final-live-cert/infant_poem.png"
+      },
+      {
+        "feature": "Infant Lullaby",
+        "verdict": "PASS",
+        "evidence": "currentTime 2.09s advancing, GCS signed URL tail in infant_story harness path (lullabies tab)",
+        "screenshot": "audit/screenshots/final-live-cert/infant_story.png"
+      },
+      {
+        "feature": "Rhymes",
+        "verdict": "FAIL",
+        "evidence": "/rhymes renders error UI ('Try Again', 'Go Home'); zero audio elements; API assets OK but in-app surface broken",
+        "screenshot": "audit/screenshots/final-live-cert/rhymes-probe.png"
+      }
+    ]
+  },
+  "phase4_rhymeCertification": {
+    "verdict": "PASS",
+    "registryCount": 168,
+    "expectedCount": 168,
+    "countMatch": true,
+    "removedIdsAbsent": true,
+    "removedIdsChecked": [
+      "beneath-the-moss-blanket",
+      "beyond-the-rainbow",
+      "little-star-shine-bright",
+      "london-bridge-piano-version"
+    ],
+    "randomSampleSize": 20,
+    "randomSamplePass": 20,
+    "randomSampleAllHttp200": true,
+    "randomSampleAllMimeAudioMpeg": true,
+    "note": "API/GCS layer healthy; in-app /rhymes page fails separately (Phase 3)"
+  },
+  "phase5_coreJourneys": {
+    "verdict": "PARTIAL",
+    "guest": {
+      "landing": { "path": "/", "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/guest-landing.png" },
+      "signIn": { "path": "/sign-in", "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/guest-sign-in.png" }
+    },
+    "parent": {
+      "dashboard": { "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/parent-dashboard.png" },
+      "parentingHub": { "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/parent-parenting-hub.png" },
+      "routines": { "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/parent-routines.png" },
+      "amyCoach": { "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/parent-amy-coach.png" }
+    },
+    "child": {
+      "phonics": { "verdict": "PASS_NAV_FAIL_AUDIO", "screenshot": "audit/screenshots/final-live-cert/child-phonics.png" },
+      "stories": { "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/child-parenting-hub-tile-story-hub.png" },
+      "rhymes": { "verdict": "FAIL", "screenshot": "audit/screenshots/final-live-cert/child-rhymes.png" },
+      "discoveryWorlds": { "verdict": "PASS", "screenshot": "audit/screenshots/final-live-cert/child-discovery-worlds.png" }
+    },
+    "consoleErrorsObserved": [],
+    "networkFailuresObserved": []
+  },
+  "phase6_regression": {
+    "verdict": "PARTIAL",
+    "devRoutesGuestBlocked": true,
+    "phonicsPlayback": false,
+    "infantLullabyPlayback": true,
+    "infantPoemPlayback": true,
+    "rhymeCorruptionRemovedFromCatalog": true,
+    "rhymesInAppSurface": false,
+    "notes": "Security + rhyme registry regressions fixed; phonics playback and /rhymes UI regressions remain"
+  },
+  "phase7_launchScore": {
+    "componentScores": {
+      "audio": { "score": 62, "weight": 0.25, "weighted": 15.5, "verdict": "FAIL" },
+      "crash": { "score": 84, "weight": 0.2, "weighted": 16.8, "verdict": "PASS" },
+      "content": { "score": 86, "weight": 0.15, "weighted": 12.9, "verdict": "PASS" },
+      "infra": { "score": 90, "weight": 0.15, "weighted": 13.5, "verdict": "PASS" },
+      "navigation": { "score": 70, "weight": 0.1, "weighted": 7.0, "verdict": "FAIL" },
+      "performance": { "score": 50, "weight": 0.1, "weighted": 5.0, "verdict": "FAIL" },
+      "security": { "score": 92, "weight": 0.05, "weighted": 4.6, "verdict": "PASS" }
+    },
+    "weightedTotal": 74.8,
+    "launchProbabilityPct": 56,
+    "thirtyDayFailurePct": 44,
+    "certificationBand": "70-84"
+  },
+  "defects": [
+    {
+      "severity": "critical",
+      "id": "rhymes-page-error",
+      "summary": "/rhymes shows Try Again error state; zero playback despite 168/168 API assets healthy"
+    },
+    {
+      "severity": "critical",
+      "id": "phonics-no-audio",
+      "summary": "Phonics audio-play button clicks but no media element receives src or plays"
+    },
+    {
+      "severity": "high",
+      "id": "infant-story-unverified",
+      "summary": "Infant stories tab not independently verified on live production"
+    },
+    {
+      "severity": "medium",
+      "id": "cwv-unmeasured",
+      "summary": "LCP/CLS/INP not measured on live production during this cert run"
+    },
+    {
+      "severity": "medium",
+      "id": "devroute-component-absent",
+      "summary": "DevRouteRedirect string absent from AppCore-Dh4PtQbE.js (0 matches); protection appears auth-gated instead"
+    },
+    {
+      "severity": "low",
+      "id": "speech-coach-pause",
+      "summary": "Speech Coach audio loaded but paused/not advancing in coverage run (not in required 8-feature list)"
+    },
+    {
+      "severity": "low",
+      "id": "parenting-hub-timeout",
+      "summary": "Intermittent 120s timeout navigating to /parenting-hub#tile-story-hub in automated probe"
+    }
+  ],
+  "artifacts": [
+    "audit/final-live-certification.md",
+    "audit/final-live-certification.json",
+    "audit/screenshots/final-live-cert/",
+    "artifacts/kidschedule/playwright/audio-coverage-artifacts/report.json"
+  ]
+}

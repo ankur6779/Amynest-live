@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-03T03:59:57.746Z",
+  "generatedAt": "2026-06-12T07:33:48.297Z",
   "bucket": "amynest-audio-storage",
   "totalAssets": 795,
   "entries": [
     {
-      "gcsPath": "animal-world/farm/cow/hero.webp",
+      "gcsPath": "animal-world/farm/cow/hero-real.webp",
       "kind": "hero",
       "itemId": "cow",
       "itemName": "Cow",
@@ -37,7 +37,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/horse/hero.webp",
+      "gcsPath": "animal-world/farm/horse/hero-real.webp",
       "kind": "hero",
       "itemId": "horse",
       "itemName": "Horse",
@@ -70,7 +70,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/sheep/hero.webp",
+      "gcsPath": "animal-world/farm/sheep/hero-real.webp",
       "kind": "hero",
       "itemId": "sheep",
       "itemName": "Sheep",
@@ -103,7 +103,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/pig/hero.webp",
+      "gcsPath": "animal-world/farm/pig/hero-real.webp",
       "kind": "hero",
       "itemId": "pig",
       "itemName": "Pig",
@@ -136,7 +136,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/chicken/hero.webp",
+      "gcsPath": "animal-world/farm/chicken/hero-real.webp",
       "kind": "hero",
       "itemId": "chicken",
       "itemName": "Chicken",
@@ -169,7 +169,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/rooster/hero.webp",
+      "gcsPath": "animal-world/farm/rooster/hero-real.webp",
       "kind": "hero",
       "itemId": "rooster",
       "itemName": "Rooster",
@@ -202,7 +202,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/duck/hero.webp",
+      "gcsPath": "animal-world/farm/duck/hero-real.webp",
       "kind": "hero",
       "itemId": "duck",
       "itemName": "Duck",
@@ -235,7 +235,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/goat/hero.webp",
+      "gcsPath": "animal-world/farm/goat/hero-real.webp",
       "kind": "hero",
       "itemId": "goat",
       "itemName": "Goat",
@@ -268,7 +268,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/turkey/hero.webp",
+      "gcsPath": "animal-world/farm/turkey/hero-real.webp",
       "kind": "hero",
       "itemId": "turkey",
       "itemName": "Turkey",
@@ -301,7 +301,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/donkey/hero.webp",
+      "gcsPath": "animal-world/farm/donkey/hero-real.webp",
       "kind": "hero",
       "itemId": "donkey",
       "itemName": "Donkey",
@@ -334,7 +334,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/rabbit/hero.webp",
+      "gcsPath": "animal-world/farm/rabbit/hero-real.webp",
       "kind": "hero",
       "itemId": "rabbit",
       "itemName": "Rabbit",
@@ -367,7 +367,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/goose/hero.webp",
+      "gcsPath": "animal-world/farm/goose/hero-real.webp",
       "kind": "hero",
       "itemId": "goose",
       "itemName": "Goose",
@@ -400,7 +400,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/farm/llama/hero.webp",
+      "gcsPath": "animal-world/farm/llama/hero-real.webp",
       "kind": "hero",
       "itemId": "llama",
       "itemName": "Llama",
@@ -433,7 +433,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/lion/hero.webp",
+      "gcsPath": "animal-world/wild/lion/hero-real.webp",
       "kind": "hero",
       "itemId": "lion",
       "itemName": "Lion",
@@ -466,7 +466,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/elephant/hero.webp",
+      "gcsPath": "animal-world/wild/elephant/hero-real.webp",
       "kind": "hero",
       "itemId": "elephant",
       "itemName": "Elephant",
@@ -499,7 +499,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/bear/hero.webp",
+      "gcsPath": "animal-world/wild/bear/hero-real.webp",
       "kind": "hero",
       "itemId": "bear",
       "itemName": "Bear",
@@ -532,7 +532,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/wolf/hero.webp",
+      "gcsPath": "animal-world/wild/wolf/hero-real.webp",
       "kind": "hero",
       "itemId": "wolf",
       "itemName": "Wolf",
@@ -565,7 +565,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/fox/hero.webp",
+      "gcsPath": "animal-world/wild/fox/hero-real.webp",
       "kind": "hero",
       "itemId": "fox",
       "itemName": "Fox",
@@ -598,7 +598,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/zebra/hero.webp",
+      "gcsPath": "animal-world/wild/zebra/hero-real.webp",
       "kind": "hero",
       "itemId": "zebra",
       "itemName": "Zebra",
@@ -631,7 +631,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/giraffe/hero.webp",
+      "gcsPath": "animal-world/wild/giraffe/hero-real.webp",
       "kind": "hero",
       "itemId": "giraffe",
       "itemName": "Giraffe",
@@ -664,7 +664,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/hippo/hero.webp",
+      "gcsPath": "animal-world/wild/hippo/hero-real.webp",
       "kind": "hero",
       "itemId": "hippo",
       "itemName": "Hippo",
@@ -697,7 +697,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/rhino/hero.webp",
+      "gcsPath": "animal-world/wild/rhino/hero-real.webp",
       "kind": "hero",
       "itemId": "rhino",
       "itemName": "Rhino",
@@ -730,7 +730,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/leopard/hero.webp",
+      "gcsPath": "animal-world/wild/leopard/hero-real.webp",
       "kind": "hero",
       "itemId": "leopard",
       "itemName": "Leopard",
@@ -763,7 +763,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/cheetah/hero.webp",
+      "gcsPath": "animal-world/wild/cheetah/hero-real.webp",
       "kind": "hero",
       "itemId": "cheetah",
       "itemName": "Cheetah",
@@ -796,7 +796,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/kangaroo/hero.webp",
+      "gcsPath": "animal-world/wild/kangaroo/hero-real.webp",
       "kind": "hero",
       "itemId": "kangaroo",
       "itemName": "Kangaroo",
@@ -829,7 +829,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/wild/panda/hero.webp",
+      "gcsPath": "animal-world/wild/panda/hero-real.webp",
       "kind": "hero",
       "itemId": "panda",
       "itemName": "Panda",
@@ -862,7 +862,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/dolphin/hero.webp",
+      "gcsPath": "animal-world/sea/dolphin/hero-real.webp",
       "kind": "hero",
       "itemId": "dolphin",
       "itemName": "Dolphin",
@@ -895,7 +895,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/whale/hero.webp",
+      "gcsPath": "animal-world/sea/whale/hero-real.webp",
       "kind": "hero",
       "itemId": "whale",
       "itemName": "Whale",
@@ -928,7 +928,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/shark/hero.webp",
+      "gcsPath": "animal-world/sea/shark/hero-real.webp",
       "kind": "hero",
       "itemId": "shark",
       "itemName": "Shark",
@@ -961,7 +961,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/seal/hero.webp",
+      "gcsPath": "animal-world/sea/seal/hero-real.webp",
       "kind": "hero",
       "itemId": "seal",
       "itemName": "Seal",
@@ -994,7 +994,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/octopus/hero.webp",
+      "gcsPath": "animal-world/sea/octopus/hero-real.webp",
       "kind": "hero",
       "itemId": "octopus",
       "itemName": "Octopus",
@@ -1027,7 +1027,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/crab/hero.webp",
+      "gcsPath": "animal-world/sea/crab/hero-real.webp",
       "kind": "hero",
       "itemId": "crab",
       "itemName": "Crab",
@@ -1060,7 +1060,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/seahorse/hero.webp",
+      "gcsPath": "animal-world/sea/seahorse/hero-real.webp",
       "kind": "hero",
       "itemId": "seahorse",
       "itemName": "Seahorse",
@@ -1093,7 +1093,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/starfish/hero.webp",
+      "gcsPath": "animal-world/sea/starfish/hero-real.webp",
       "kind": "hero",
       "itemId": "starfish",
       "itemName": "Starfish",
@@ -1126,7 +1126,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/jellyfish/hero.webp",
+      "gcsPath": "animal-world/sea/jellyfish/hero-real.webp",
       "kind": "hero",
       "itemId": "jellyfish",
       "itemName": "Jellyfish",
@@ -1159,7 +1159,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/sea-turtle/hero.webp",
+      "gcsPath": "animal-world/sea/sea-turtle/hero-real.webp",
       "kind": "hero",
       "itemId": "sea-turtle",
       "itemName": "Sea Turtle",
@@ -1192,7 +1192,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/clownfish/hero.webp",
+      "gcsPath": "animal-world/sea/clownfish/hero-real.webp",
       "kind": "hero",
       "itemId": "clownfish",
       "itemName": "Clownfish",
@@ -1225,7 +1225,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/walrus/hero.webp",
+      "gcsPath": "animal-world/sea/walrus/hero-real.webp",
       "kind": "hero",
       "itemId": "walrus",
       "itemName": "Walrus",
@@ -1258,7 +1258,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/sea/orca/hero.webp",
+      "gcsPath": "animal-world/sea/orca/hero-real.webp",
       "kind": "hero",
       "itemId": "orca",
       "itemName": "Orca",
@@ -1291,7 +1291,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/owl/hero.webp",
+      "gcsPath": "animal-world/birds/owl/hero-real.webp",
       "kind": "hero",
       "itemId": "owl",
       "itemName": "Owl",
@@ -1324,7 +1324,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/parrot/hero.webp",
+      "gcsPath": "animal-world/birds/parrot/hero-real.webp",
       "kind": "hero",
       "itemId": "parrot",
       "itemName": "Parrot",
@@ -1357,7 +1357,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/eagle/hero.webp",
+      "gcsPath": "animal-world/birds/eagle/hero-real.webp",
       "kind": "hero",
       "itemId": "eagle",
       "itemName": "Eagle",
@@ -1390,7 +1390,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/crow/hero.webp",
+      "gcsPath": "animal-world/birds/crow/hero-real.webp",
       "kind": "hero",
       "itemId": "crow",
       "itemName": "Crow",
@@ -1423,7 +1423,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/peacock/hero.webp",
+      "gcsPath": "animal-world/birds/peacock/hero-real.webp",
       "kind": "hero",
       "itemId": "peacock",
       "itemName": "Peacock",
@@ -1456,7 +1456,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/flamingo/hero.webp",
+      "gcsPath": "animal-world/birds/flamingo/hero-real.webp",
       "kind": "hero",
       "itemId": "flamingo",
       "itemName": "Flamingo",
@@ -1489,7 +1489,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/robin/hero.webp",
+      "gcsPath": "animal-world/birds/robin/hero-real.webp",
       "kind": "hero",
       "itemId": "robin",
       "itemName": "Robin",
@@ -1522,7 +1522,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/swan/hero.webp",
+      "gcsPath": "animal-world/birds/swan/hero-real.webp",
       "kind": "hero",
       "itemId": "swan",
       "itemName": "Swan",
@@ -1555,7 +1555,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/woodpecker/hero.webp",
+      "gcsPath": "animal-world/birds/woodpecker/hero-real.webp",
       "kind": "hero",
       "itemId": "woodpecker",
       "itemName": "Woodpecker",
@@ -1588,7 +1588,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/pelican/hero.webp",
+      "gcsPath": "animal-world/birds/pelican/hero-real.webp",
       "kind": "hero",
       "itemId": "pelican",
       "itemName": "Pelican",
@@ -1621,7 +1621,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/hawk/hero.webp",
+      "gcsPath": "animal-world/birds/hawk/hero-real.webp",
       "kind": "hero",
       "itemId": "hawk",
       "itemName": "Hawk",
@@ -1654,7 +1654,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/canary/hero.webp",
+      "gcsPath": "animal-world/birds/canary/hero-real.webp",
       "kind": "hero",
       "itemId": "canary",
       "itemName": "Canary",
@@ -1687,7 +1687,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/birds/pigeon/hero.webp",
+      "gcsPath": "animal-world/birds/pigeon/hero-real.webp",
       "kind": "hero",
       "itemId": "pigeon",
       "itemName": "Pigeon",
@@ -1720,7 +1720,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/bee/hero.webp",
+      "gcsPath": "animal-world/insects/bee/hero-real.webp",
       "kind": "hero",
       "itemId": "bee",
       "itemName": "Bee",
@@ -1753,7 +1753,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/butterfly/hero.webp",
+      "gcsPath": "animal-world/insects/butterfly/hero-real.webp",
       "kind": "hero",
       "itemId": "butterfly",
       "itemName": "Butterfly",
@@ -1786,7 +1786,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/cricket/hero.webp",
+      "gcsPath": "animal-world/insects/cricket/hero-real.webp",
       "kind": "hero",
       "itemId": "cricket",
       "itemName": "Cricket",
@@ -1819,7 +1819,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/ant/hero.webp",
+      "gcsPath": "animal-world/insects/ant/hero-real.webp",
       "kind": "hero",
       "itemId": "ant",
       "itemName": "Ant",
@@ -1852,7 +1852,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/mosquito/hero.webp",
+      "gcsPath": "animal-world/insects/mosquito/hero-real.webp",
       "kind": "hero",
       "itemId": "mosquito",
       "itemName": "Mosquito",
@@ -1885,7 +1885,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/dragonfly/hero.webp",
+      "gcsPath": "animal-world/insects/dragonfly/hero-real.webp",
       "kind": "hero",
       "itemId": "dragonfly",
       "itemName": "Dragonfly",
@@ -1918,7 +1918,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/grasshopper/hero.webp",
+      "gcsPath": "animal-world/insects/grasshopper/hero-real.webp",
       "kind": "hero",
       "itemId": "grasshopper",
       "itemName": "Grasshopper",
@@ -1951,7 +1951,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/ladybug/hero.webp",
+      "gcsPath": "animal-world/insects/ladybug/hero-real.webp",
       "kind": "hero",
       "itemId": "ladybug",
       "itemName": "Ladybug",
@@ -1984,7 +1984,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/cicada/hero.webp",
+      "gcsPath": "animal-world/insects/cicada/hero-real.webp",
       "kind": "hero",
       "itemId": "cicada",
       "itemName": "Cicada",
@@ -2017,7 +2017,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/moth/hero.webp",
+      "gcsPath": "animal-world/insects/moth/hero-real.webp",
       "kind": "hero",
       "itemId": "moth",
       "itemName": "Moth",
@@ -2050,7 +2050,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/beetle/hero.webp",
+      "gcsPath": "animal-world/insects/beetle/hero-real.webp",
       "kind": "hero",
       "itemId": "beetle",
       "itemName": "Beetle",
@@ -2083,7 +2083,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/firefly/hero.webp",
+      "gcsPath": "animal-world/insects/firefly/hero-real.webp",
       "kind": "hero",
       "itemId": "firefly",
       "itemName": "Firefly",
@@ -2116,7 +2116,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/insects/wasp/hero.webp",
+      "gcsPath": "animal-world/insects/wasp/hero-real.webp",
       "kind": "hero",
       "itemId": "wasp",
       "itemName": "Wasp",
@@ -2149,7 +2149,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/dog/hero.webp",
+      "gcsPath": "animal-world/pets/dog/hero-real.webp",
       "kind": "hero",
       "itemId": "dog",
       "itemName": "Dog",
@@ -2182,7 +2182,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/cat/hero.webp",
+      "gcsPath": "animal-world/pets/cat/hero-real.webp",
       "kind": "hero",
       "itemId": "cat",
       "itemName": "Cat",
@@ -2215,7 +2215,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/hamster/hero.webp",
+      "gcsPath": "animal-world/pets/hamster/hero-real.webp",
       "kind": "hero",
       "itemId": "hamster",
       "itemName": "Hamster",
@@ -2248,7 +2248,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/guinea-pig/hero.webp",
+      "gcsPath": "animal-world/pets/guinea-pig/hero-real.webp",
       "kind": "hero",
       "itemId": "guinea-pig",
       "itemName": "Guinea Pig",
@@ -2281,7 +2281,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/parakeet/hero.webp",
+      "gcsPath": "animal-world/pets/parakeet/hero-real.webp",
       "kind": "hero",
       "itemId": "parakeet",
       "itemName": "Parakeet",
@@ -2314,7 +2314,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/goldfish/hero.webp",
+      "gcsPath": "animal-world/pets/goldfish/hero-real.webp",
       "kind": "hero",
       "itemId": "goldfish",
       "itemName": "Goldfish",
@@ -2347,7 +2347,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/ferret/hero.webp",
+      "gcsPath": "animal-world/pets/ferret/hero-real.webp",
       "kind": "hero",
       "itemId": "ferret",
       "itemName": "Ferret",
@@ -2380,7 +2380,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/gecko/hero.webp",
+      "gcsPath": "animal-world/pets/gecko/hero-real.webp",
       "kind": "hero",
       "itemId": "gecko",
       "itemName": "Gecko",
@@ -2413,7 +2413,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/puppy/hero.webp",
+      "gcsPath": "animal-world/pets/puppy/hero-real.webp",
       "kind": "hero",
       "itemId": "puppy",
       "itemName": "Puppy",
@@ -2446,7 +2446,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/kitten/hero.webp",
+      "gcsPath": "animal-world/pets/kitten/hero-real.webp",
       "kind": "hero",
       "itemId": "kitten",
       "itemName": "Kitten",
@@ -2479,7 +2479,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/bunny/hero.webp",
+      "gcsPath": "animal-world/pets/bunny/hero-real.webp",
       "kind": "hero",
       "itemId": "bunny",
       "itemName": "Bunny",
@@ -2512,7 +2512,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/turtle-pet/hero.webp",
+      "gcsPath": "animal-world/pets/turtle-pet/hero-real.webp",
       "kind": "hero",
       "itemId": "turtle-pet",
       "itemName": "Pet Turtle",
@@ -2545,7 +2545,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/pets/parrotlet/hero.webp",
+      "gcsPath": "animal-world/pets/parrotlet/hero-real.webp",
       "kind": "hero",
       "itemId": "parrotlet",
       "itemName": "Parrotlet",
@@ -2578,7 +2578,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/monkey/hero.webp",
+      "gcsPath": "animal-world/jungle/monkey/hero-real.webp",
       "kind": "hero",
       "itemId": "monkey",
       "itemName": "Monkey",
@@ -2611,7 +2611,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/tiger/hero.webp",
+      "gcsPath": "animal-world/jungle/tiger/hero-real.webp",
       "kind": "hero",
       "itemId": "tiger",
       "itemName": "Tiger",
@@ -2644,7 +2644,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/gorilla/hero.webp",
+      "gcsPath": "animal-world/jungle/gorilla/hero-real.webp",
       "kind": "hero",
       "itemId": "gorilla",
       "itemName": "Gorilla",
@@ -2677,7 +2677,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/chameleon/hero.webp",
+      "gcsPath": "animal-world/jungle/chameleon/hero-real.webp",
       "kind": "hero",
       "itemId": "chameleon",
       "itemName": "Chameleon",
@@ -2710,7 +2710,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/sloth/hero.webp",
+      "gcsPath": "animal-world/jungle/sloth/hero-real.webp",
       "kind": "hero",
       "itemId": "sloth",
       "itemName": "Sloth",
@@ -2743,7 +2743,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/frog/hero.webp",
+      "gcsPath": "animal-world/jungle/frog/hero-real.webp",
       "kind": "hero",
       "itemId": "frog",
       "itemName": "Frog",
@@ -2776,7 +2776,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/snake/hero.webp",
+      "gcsPath": "animal-world/jungle/snake/hero-real.webp",
       "kind": "hero",
       "itemId": "snake",
       "itemName": "Snake",
@@ -2809,7 +2809,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/jaguar/hero.webp",
+      "gcsPath": "animal-world/jungle/jaguar/hero-real.webp",
       "kind": "hero",
       "itemId": "jaguar",
       "itemName": "Jaguar",
@@ -2842,7 +2842,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/capybara/hero.webp",
+      "gcsPath": "animal-world/jungle/capybara/hero-real.webp",
       "kind": "hero",
       "itemId": "capybara",
       "itemName": "Capybara",
@@ -2875,7 +2875,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/iguana/hero.webp",
+      "gcsPath": "animal-world/jungle/iguana/hero-real.webp",
       "kind": "hero",
       "itemId": "iguana",
       "itemName": "Iguana",
@@ -2908,7 +2908,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/tapir/hero.webp",
+      "gcsPath": "animal-world/jungle/tapir/hero-real.webp",
       "kind": "hero",
       "itemId": "tapir",
       "itemName": "Tapir",
@@ -2941,7 +2941,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/lemur/hero.webp",
+      "gcsPath": "animal-world/jungle/lemur/hero-real.webp",
       "kind": "hero",
       "itemId": "lemur",
       "itemName": "Lemur",
@@ -2974,7 +2974,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/jungle/ocelot/hero.webp",
+      "gcsPath": "animal-world/jungle/ocelot/hero-real.webp",
       "kind": "hero",
       "itemId": "ocelot",
       "itemName": "Ocelot",
@@ -3007,7 +3007,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/penguin/hero.webp",
+      "gcsPath": "animal-world/arctic/penguin/hero-real.webp",
       "kind": "hero",
       "itemId": "penguin",
       "itemName": "Penguin",
@@ -3040,7 +3040,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/polar-bear/hero.webp",
+      "gcsPath": "animal-world/arctic/polar-bear/hero-real.webp",
       "kind": "hero",
       "itemId": "polar-bear",
       "itemName": "Polar Bear",
@@ -3073,7 +3073,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/arctic-fox/hero.webp",
+      "gcsPath": "animal-world/arctic/arctic-fox/hero-real.webp",
       "kind": "hero",
       "itemId": "arctic-fox",
       "itemName": "Arctic Fox",
@@ -3106,7 +3106,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/moose/hero.webp",
+      "gcsPath": "animal-world/arctic/moose/hero-real.webp",
       "kind": "hero",
       "itemId": "moose",
       "itemName": "Moose",
@@ -3139,7 +3139,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/reindeer/hero.webp",
+      "gcsPath": "animal-world/arctic/reindeer/hero-real.webp",
       "kind": "hero",
       "itemId": "reindeer",
       "itemName": "Reindeer",
@@ -3172,7 +3172,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/snowy-owl/hero.webp",
+      "gcsPath": "animal-world/arctic/snowy-owl/hero-real.webp",
       "kind": "hero",
       "itemId": "snowy-owl",
       "itemName": "Snowy Owl",
@@ -3205,7 +3205,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/husky/hero.webp",
+      "gcsPath": "animal-world/arctic/husky/hero-real.webp",
       "kind": "hero",
       "itemId": "husky",
       "itemName": "Husky",
@@ -3238,7 +3238,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/narwhal/hero.webp",
+      "gcsPath": "animal-world/arctic/narwhal/hero-real.webp",
       "kind": "hero",
       "itemId": "narwhal",
       "itemName": "Narwhal",
@@ -3271,7 +3271,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/puffin/hero.webp",
+      "gcsPath": "animal-world/arctic/puffin/hero-real.webp",
       "kind": "hero",
       "itemId": "puffin",
       "itemName": "Puffin",
@@ -3304,7 +3304,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/ermine/hero.webp",
+      "gcsPath": "animal-world/arctic/ermine/hero-real.webp",
       "kind": "hero",
       "itemId": "ermine",
       "itemName": "Ermine",
@@ -3337,7 +3337,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/beluga/hero.webp",
+      "gcsPath": "animal-world/arctic/beluga/hero-real.webp",
       "kind": "hero",
       "itemId": "beluga",
       "itemName": "Beluga",
@@ -3370,7 +3370,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/muskox/hero.webp",
+      "gcsPath": "animal-world/arctic/muskox/hero-real.webp",
       "kind": "hero",
       "itemId": "muskox",
       "itemName": "Muskox",
@@ -3403,7 +3403,7 @@
       "present": true
     },
     {
-      "gcsPath": "animal-world/arctic/seal-arctic/hero.webp",
+      "gcsPath": "animal-world/arctic/seal-arctic/hero-real.webp",
       "kind": "hero",
       "itemId": "seal-arctic",
       "itemName": "Arctic Seal",

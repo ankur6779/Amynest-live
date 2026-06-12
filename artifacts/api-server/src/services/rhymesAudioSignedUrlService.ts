@@ -4,7 +4,6 @@
 import {
   getRhymesRegistryEntry,
   isValidRhymesGcsObjectPath,
-  type RhymesGcsRegistryEntry,
 } from "@workspace/rhymes-audio";
 import { logger } from "../lib/logger.js";
 import {
@@ -12,6 +11,7 @@ import {
   gcsObjectExists,
   legacyGcsConfigured,
 } from "./ttsAudioStore.js";
+import { createRhymesSignedUrlCache } from "./rhymesSignedUrlCache.js";
 
 /** Signed URL lifetime presented to clients (45 min). Override via RHYMES_SIGNED_URL_TTL_MS for audits. */
 export const RHYMES_SIGNED_URL_TTL_MS = Number(process.env.RHYMES_SIGNED_URL_TTL_MS) > 0
@@ -19,19 +19,14 @@ export const RHYMES_SIGNED_URL_TTL_MS = Number(process.env.RHYMES_SIGNED_URL_TTL
   : 45 * 60 * 1000;
 
 /** Server-side cache for signed URL responses (12 min). Override via RHYMES_SIGNED_URL_CACHE_TTL_MS. */
-const SIGNED_URL_CACHE_TTL_MS = Number(process.env.RHYMES_SIGNED_URL_CACHE_TTL_MS) > 0
+export const RHYMES_SIGNED_URL_CACHE_TTL_MS = Number(process.env.RHYMES_SIGNED_URL_CACHE_TTL_MS) > 0
   ? Number(process.env.RHYMES_SIGNED_URL_CACHE_TTL_MS)
   : 12 * 60 * 1000;
 
-type CachedSignedUrl = {
-  signedUrl: string;
-  title: string;
-  objectPath: string;
-  expiresAt: number;
-  expiresInSec: number;
-};
-
-const signedUrlCache = new Map<string, CachedSignedUrl>();
+const signedUrlCache = createRhymesSignedUrlCache({
+  signedUrlTtlMs: RHYMES_SIGNED_URL_TTL_MS,
+  cacheTtlMs: RHYMES_SIGNED_URL_CACHE_TTL_MS,
+});
 
 export type RhymesSignedUrlResult =
   | {
@@ -50,31 +45,7 @@ export function clearRhymesSignedUrlCacheForTests(): void {
 }
 
 export function getRhymesSignedUrlCacheSizeForTests(): number {
-  return signedUrlCache.size;
-}
-
-function cacheKey(audioId: string): string {
-  return audioId.trim().toLowerCase();
-}
-
-function readCache(audioId: string): CachedSignedUrl | null {
-  const hit = signedUrlCache.get(cacheKey(audioId));
-  if (!hit) return null;
-  if (Date.now() >= hit.expiresAt) {
-    signedUrlCache.delete(cacheKey(audioId));
-    return null;
-  }
-  return hit;
-}
-
-function writeCache(entry: RhymesGcsRegistryEntry, signedUrl: string, expiresInSec: number): void {
-  signedUrlCache.set(cacheKey(entry.id), {
-    signedUrl,
-    title: entry.title,
-    objectPath: entry.objectPath,
-    expiresAt: Date.now() + SIGNED_URL_CACHE_TTL_MS * 1000,
-    expiresInSec,
-  });
+  return signedUrlCache.size();
 }
 
 export async function resolveRhymesSignedUrl(audioId: string): Promise<RhymesSignedUrlResult> {
@@ -94,7 +65,7 @@ export async function resolveRhymesSignedUrl(audioId: string): Promise<RhymesSig
     return { ok: false, reason: "invalid_path" };
   }
 
-  const cached = readCache(id);
+  const cached = signedUrlCache.read(id);
   if (cached) {
     logger.info({
       evt: "rhymes.signed_url_generated",
@@ -109,7 +80,7 @@ export async function resolveRhymesSignedUrl(audioId: string): Promise<RhymesSig
       audioId: id,
       title: cached.title,
       signedUrl: cached.signedUrl,
-      expiresIn: Math.max(60, Math.floor((cached.expiresAt - Date.now()) / 1000)),
+      expiresIn: signedUrlCache.remainingExpiresInSec(cached),
       cached: true,
       gcsObjectPath: cached.objectPath,
     };
@@ -140,7 +111,7 @@ export async function resolveRhymesSignedUrl(audioId: string): Promise<RhymesSig
   }
 
   const expiresInSec = Math.floor(RHYMES_SIGNED_URL_TTL_MS / 1000);
-  writeCache(registryEntry, signedUrl, expiresInSec);
+  signedUrlCache.write(registryEntry, signedUrl, expiresInSec);
 
   logger.info({
     evt: "rhymes.signed_url_generated",

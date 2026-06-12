@@ -12,3 +12,8 @@ export {
   listRhymesRegistryEntries,
   isValidRhymesGcsObjectPath,
 } from "./registry.js";
+export {
+  GCS_SIGNED_URL_EXPIRY_BUFFER_MS,
+  isGcsSignedUrlValid,
+  parseGcsV4SignedUrlExpiresAtMs,
+} from "./gcs-signed-url-expiry.js";

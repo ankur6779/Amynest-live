@@ -1,0 +1,18 @@
+[
+  {
+    "path": "/dashboard",
+    "lcpMs": 1664,
+    "cls": 0,
+    "fcpMs": 1336,
+    "ttfbMs": 369,
+    "inpMs": null
+  },
+  {
+    "path": "/parenting-hub",
+    "lcpMs": 1380,
+    "cls": 0,
+    "fcpMs": 548,
+    "ttfbMs": 497,
+    "inpMs": null
+  }
+]

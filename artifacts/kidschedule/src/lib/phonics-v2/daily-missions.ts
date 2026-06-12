@@ -41,17 +41,36 @@ function hashChildDay(childId: number, dateKey: string): number {
   return Math.abs(h);
 }
 
+/** Short decodable words only — excludes sentences, stories, and long symbols. */
+export function isMissionWordItem(item: DisplayPhonicsItem): boolean {
+  if (item.type === "sentence" || item.type === "story" || item.type === "sound") {
+    return false;
+  }
+  const word = item.symbol.trim().toLowerCase();
+  if (!word || word.includes(" ")) return false;
+  return getCvcWordEntry(word) !== undefined || (item.type === "word" && word.length <= 6);
+}
+
+export function filterMissionWordItems(items: DisplayPhonicsItem[]): DisplayPhonicsItem[] {
+  return items.filter(isMissionWordItem);
+}
+
+export function formatMissionWordLabel(prefix: string, word: string): string {
+  return `${prefix}: ${word.trim().toLowerCase()}`;
+}
+
 function pickKnownWord(
   items: DisplayPhonicsItem[],
   progress: PhonicsProgressMap,
   seed: number,
 ): DisplayPhonicsItem | null {
-  const known = items.filter(
+  const missionItems = filterMissionWordItems(items);
+  const known = missionItems.filter(
     (it) =>
       (progress.practiced[it.id] ?? 0) > 0 ||
       progress.mastered[it.id],
   );
-  if (known.length === 0) return items[0] ?? null;
+  if (known.length === 0) return missionItems[0] ?? null;
   return known[seed % known.length] ?? null;
 }
 
@@ -60,15 +79,16 @@ function pickNewWord(
   progress: PhonicsProgressMap,
   seed: number,
 ): DisplayPhonicsItem | null {
-  const fresh = items.filter(
+  const missionItems = filterMissionWordItems(items);
+  const fresh = missionItems.filter(
     (it) => !progress.practiced[it.id] && !progress.mastered[it.id],
   );
-  const pool = fresh.length > 0 ? fresh : items;
+  const pool = fresh.length > 0 ? fresh : missionItems;
   return pool[seed % pool.length] ?? null;
 }
 
 function pickCvcWords(items: DisplayPhonicsItem[], count: number, seed: number): string[] {
-  const words = items
+  const words = filterMissionWordItems(items)
     .map((it) => it.symbol.trim().toLowerCase())
     .filter((w) => getCvcWordEntry(w));
   if (words.length === 0) {
@@ -101,7 +121,9 @@ export function buildDailyReadingMission(opts: {
       slot: "review",
       id: `review-${reviewItem?.id ?? "warmup"}`,
       emoji: "🔄",
-      label: reviewItem ? `Review: ${reviewItem.symbol}` : "Warm-up sound",
+      label: reviewItem
+        ? formatMissionWordLabel("Review", reviewItem.symbol)
+        : "Warm-up sound",
       word: reviewItem?.symbol.trim().toLowerCase(),
       completed: false,
     },
@@ -109,7 +131,7 @@ export function buildDailyReadingMission(opts: {
       slot: "practice" as const,
       id: `practice-${w}-${i}`,
       emoji: "🎯",
-      label: `Practice: ${w}`,
+      label: formatMissionWordLabel("Practice", w),
       word: w,
       completed: false,
     })),
@@ -117,7 +139,7 @@ export function buildDailyReadingMission(opts: {
       slot: "new_word",
       id: `new-${newItem?.id ?? "word"}`,
       emoji: "✨",
-      label: newItem ? `New: ${newItem.symbol}` : "New word",
+      label: newItem ? formatMissionWordLabel("New", newItem.symbol) : "New word",
       word: newItem?.symbol.trim().toLowerCase(),
       completed: false,
     },
@@ -125,7 +147,7 @@ export function buildDailyReadingMission(opts: {
       slot: "challenge",
       id: `blend-${challengeWord}`,
       emoji: "🎵",
-      label: `Blend: ${challengeWord}`,
+      label: formatMissionWordLabel("Blend", challengeWord),
       word: challengeWord,
       familyId: family?.id,
       completed: false,

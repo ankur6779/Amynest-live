@@ -1,0 +1,102 @@
+{
+  "validatedAt": "2026-06-12T09:35:00.000Z",
+  "certificationVerdict": "FAIL",
+  "certificationBand": "<85",
+  "weightedLaunchScore": 58.4,
+  "launchProbabilityPct": 22,
+  "thirtyDayFailurePct": 68,
+  "dauRisk": "HIGH",
+  "componentScores": {
+    "audio": { "score": 68, "weight": 0.25, "weighted": 17.0, "verdict": "FAIL" },
+    "crash": { "score": 62, "weight": 0.20, "weighted": 12.4, "verdict": "FAIL" },
+    "content": { "score": 72, "weight": 0.15, "weighted": 10.8, "verdict": "FAIL" },
+    "infra": { "score": 78, "weight": 0.15, "weighted": 11.7, "verdict": "FAIL" },
+    "navigation": { "score": 65, "weight": 0.10, "weighted": 6.5, "verdict": "FAIL" },
+    "performance": { "score": 35, "weight": 0.10, "weighted": 3.5, "verdict": "FAIL" },
+    "security": { "score": 15, "weight": 0.05, "weighted": 0.75, "verdict": "FAIL" }
+  },
+  "phaseResults": {
+    "A_productionReality": {
+      "verdict": "FAIL",
+      "routesProbed": 62,
+      "httpNon200": ["/pricing (timeout in batch probe; 200 on retry)"],
+      "signedInTraversal": "partial — see full-app-cert-report.json"
+    },
+    "B_audioCertification": {
+      "verdict": "FAIL",
+      "required": 4468,
+      "playable": 4466,
+      "coveragePct": 99.9552,
+      "playbackFeaturesPass": "4/8",
+      "note": "Coverage % passes threshold but 2 probe timeouts + 4 Playwright playback FAILs"
+    },
+    "C_contentParity": {
+      "verdict": "FAIL",
+      "staticAudioKeys": 4434,
+      "infantSleepItems": 34,
+      "rhymesRegistry": 172,
+      "rhymesUnplayable": 4,
+      "discoveryWorldsClaimed": "795/795 unverified live"
+    },
+    "D_appTraversal": {
+      "verdict": "FAIL",
+      "routesPass": 13,
+      "routesFail": 3,
+      "failRoutes": ["/speech-coach", "/phonics", "/routines"],
+      "overall": "FAIL"
+    },
+    "E_gcsCertification": {
+      "verdict": "FAIL",
+      "storyHubObjects": 224,
+      "rhymesFfprobeFail": 4
+    },
+    "F_performance": {
+      "verdict": "FAIL",
+      "mainChunkBytes": 3513396,
+      "mainChunkMb": 3.35,
+      "appCoreBytes": 850179,
+      "lcp": "MISSING",
+      "cls": "MISSING",
+      "inp": "MISSING"
+    },
+    "G_security": {
+      "verdict": "FAIL",
+      "apiAdminBlocked": true,
+      "devRoutesRedirect": false,
+      "devRoutesExposed": ["/debug-parity", "/dev/phonics-audio-preview", "/dev/rhymes-audio-ab", "/debug/learning"]
+    },
+    "H_chaos": {
+      "verdict": "NOT_RUN",
+      "gaps": ["slow network", "offline", "memory leak"]
+    },
+    "I_regression": {
+      "verdict": "FAIL",
+      "amyCoach": "PASS",
+      "conversationCoach": "FAIL",
+      "storyHub": "PASS",
+      "rhymes": "NOT_E2E_TESTED",
+      "phonics": "FAIL",
+      "routineGenerator": "FAIL_NAV",
+      "cryInsights": "NOT_TESTED",
+      "talkingAmy": "NOT_TESTED"
+    }
+  },
+  "topBlockers": [
+    "Dev/debug routes publicly accessible — ceeb2553 redirect NOT live (4/4 Playwright FAIL)",
+    "Phonics + Speech Coach navigation timeouts under signed-in traversal",
+    "4/8 audio playback features FAIL in production Playwright (Conversation Coach, Infant Story/Poem, Phonics)",
+    "Main JS chunk 3.35 MB exceeds 2.5 MB gate",
+    "4 rhymes GCS objects fail ffprobe (likely corrupt/unplayable)",
+    "Core Web Vitals (LCP/CLS/INP) not measured — performance gate incomplete"
+  ],
+  "artifacts": [
+    "audit/final-certification-board-review.md",
+    "audit/final-certification-summary.json",
+    "audit/audio-cert-final.json",
+    "audit/gcs-certification.md",
+    "audit/final-cert/production-routes-probe.json",
+    "audit/final-cert/security-probe.txt",
+    "audit/final-cert/full-app-cert-report.json",
+    "audit/screenshots/final-cert/"
+  ]
+}
