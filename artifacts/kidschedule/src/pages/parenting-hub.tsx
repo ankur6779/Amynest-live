@@ -1255,8 +1255,8 @@ function ParentingHubPage() {
         <FeatureGate reason="hub_locked" locked={isHubLocked("hub_health_lab")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/health-lab"
-            title="Amy Health Lab™"
-            description="Play, move, breathe & discover wellness superpowers"
+            title={t("parent_hub.web_tiles.health-lab.title")}
+            description={t("parent_hub.web_tiles.health-lab.description")}
             icon={<FlaskConical className="h-5 w-5 text-white" />}
             accentClass="bg-gradient-to-br from-violet-500 to-cyan-500"
             cardClass="bg-gradient-to-br from-violet-500/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(34,211,238,0.45)]"
