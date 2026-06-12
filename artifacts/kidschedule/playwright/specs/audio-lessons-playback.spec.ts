@@ -55,25 +55,31 @@ test("audio lessons: play paragraph without tts_background failure", async ({ pa
   await expect(playBtn).toBeVisible({ timeout: 20_000 });
   await playBtn.click();
 
-  await expect
-    .poll(
-      () => synthesizeBody !== null,
-      { timeout: 90_000, message: "waiting for /api/tts/synthesize response" },
-    )
-    .toBe(true);
-
-  // Legacy prod API may return background:true once; client polls until cache is ready.
+  // Static-audio hits skip /api/tts/synthesize — wait for audible playback instead.
   const pauseBtn = page.getByRole("button", { name: "Pause" });
-  await expect(pauseBtn).toBeVisible({ timeout: 75_000 });
+  await expect(pauseBtn).toBeVisible({ timeout: 90_000 });
 
   await page.waitForTimeout(2_000);
   expect(consoleWarnings, `console warnings: ${consoleWarnings.join("; ")}`).toHaveLength(0);
 
-  const finalSuccess =
+  const audioPlaying = await page.evaluate(() => {
+    const mgr = (window as Window & {
+      __amynestAudioManagerRef?: { isSpeechPlaying?: () => boolean };
+    }).__amynestAudioManagerRef;
+    const media = document.querySelector("audio[src],video[src]") as HTMLMediaElement | null;
+    return (
+      mgr?.isSpeechPlaying?.() === true ||
+      (media != null && !media.paused && media.currentTime > 0)
+    );
+  });
+  const synthesizeOk =
     synthesizeBody?.success === true ||
     synthesizeBody?.ok === true ||
-    (await pauseBtn.isVisible());
-  expect(finalSuccess, `playback failed: ${JSON.stringify(synthesizeBody)}`).toBe(true);
+    synthesizeBody?.background === true;
+  expect(
+    audioPlaying || synthesizeOk,
+    `playback failed: synthesize=${JSON.stringify(synthesizeBody)} audioPlaying=${audioPlaying}`,
+  ).toBe(true);
 
   const crashOverlay = await page.locator("#amynest-crash-overlay").count();
   expect(crashOverlay).toBe(0);

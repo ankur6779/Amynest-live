@@ -7408,6 +7408,54 @@
     "source": "phonics_sounds"
   },
   {
+    "text": "hat",
+    "mode": "phonics",
+    "normalizedKey": "hat",
+    "hash": "4662c9a363b92e05f89b22a4439a476a",
+    "objectKey": "4662c9a363b92e05f89b22a4439a476a",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "rat",
+    "mode": "phonics",
+    "normalizedKey": "rat",
+    "hash": "e97dadaabb5dd51441d06a8f0b2c7aa9",
+    "objectKey": "e97dadaabb5dd51441d06a8f0b2c7aa9",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "can",
+    "mode": "phonics",
+    "normalizedKey": "can",
+    "hash": "c3b68ddba9036687de9310fe6adb62ec",
+    "objectKey": "c3b68ddba9036687de9310fe6adb62ec",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "fan",
+    "mode": "phonics",
+    "normalizedKey": "fan",
+    "hash": "00b1df238ba3e217f9314190232d0a6c",
+    "objectKey": "00b1df238ba3e217f9314190232d0a6c",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "man",
+    "mode": "phonics",
+    "normalizedKey": "man",
+    "hash": "cea99c98853dd6048417e73f60b662aa",
+    "objectKey": "cea99c98853dd6048417e73f60b662aa",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "pan",
+    "mode": "phonics",
+    "normalizedKey": "pan",
+    "hash": "eb38202e171efedd8c341a3c0716802b",
+    "objectKey": "eb38202e171efedd8c341a3c0716802b",
+    "source": "phonics_sounds"
+  },
+  {
     "text": "dog",
     "mode": "phonics",
     "normalizedKey": "dog",
@@ -7456,6 +7504,14 @@
     "source": "phonics_sounds"
   },
   {
+    "text": "bed",
+    "mode": "phonics",
+    "normalizedKey": "bed",
+    "hash": "70c8354f90a2f587df799e15f5e6fa62",
+    "objectKey": "70c8354f90a2f587df799e15f5e6fa62",
+    "source": "phonics_sounds"
+  },
+  {
     "text": "sit",
     "mode": "phonics",
     "normalizedKey": "sit",
@@ -7469,6 +7525,62 @@
     "normalizedKey": "hit",
     "hash": "71adddfefc0703446ae3813345e2a25a",
     "objectKey": "71adddfefc0703446ae3813345e2a25a",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "pin",
+    "mode": "phonics",
+    "normalizedKey": "pin",
+    "hash": "de0d973a0a986d1621b508702021ecfa",
+    "objectKey": "de0d973a0a986d1621b508702021ecfa",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "win",
+    "mode": "phonics",
+    "normalizedKey": "win",
+    "hash": "827e36935e5f4d5a5820e1da9ba0af59",
+    "objectKey": "827e36935e5f4d5a5820e1da9ba0af59",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "fin",
+    "mode": "phonics",
+    "normalizedKey": "fin",
+    "hash": "bd6ee3bd15c8bae44742485d97f01917",
+    "objectKey": "bd6ee3bd15c8bae44742485d97f01917",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "pig",
+    "mode": "phonics",
+    "normalizedKey": "pig",
+    "hash": "36b84f222ad5c8f6639acd4710c10451",
+    "objectKey": "36b84f222ad5c8f6639acd4710c10451",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "sip",
+    "mode": "phonics",
+    "normalizedKey": "sip",
+    "hash": "df68b27c3aae5023f0ef160b4146d37d",
+    "objectKey": "df68b27c3aae5023f0ef160b4146d37d",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "lip",
+    "mode": "phonics",
+    "normalizedKey": "lip",
+    "hash": "e7bcd17655323105bf56559b4e25429e",
+    "objectKey": "e7bcd17655323105bf56559b4e25429e",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "tip",
+    "mode": "phonics",
+    "normalizedKey": "tip",
+    "hash": "d7fda6d5fd2d4f03d408aaf32c9a855d",
+    "objectKey": "d7fda6d5fd2d4f03d408aaf32c9a855d",
     "source": "phonics_sounds"
   },
   {
@@ -7488,43 +7600,19 @@
     "source": "phonics_sounds"
   },
   {
-    "text": "hat",
-    "mode": "phonics",
-    "normalizedKey": "hat",
-    "hash": "4662c9a363b92e05f89b22a4439a476a",
-    "objectKey": "4662c9a363b92e05f89b22a4439a476a",
-    "source": "phonics_sounds"
-  },
-  {
-    "text": "rat",
-    "mode": "phonics",
-    "normalizedKey": "rat",
-    "hash": "e97dadaabb5dd51441d06a8f0b2c7aa9",
-    "objectKey": "e97dadaabb5dd51441d06a8f0b2c7aa9",
-    "source": "phonics_sounds"
-  },
-  {
-    "text": "pig",
-    "mode": "phonics",
-    "normalizedKey": "pig",
-    "hash": "36b84f222ad5c8f6639acd4710c10451",
-    "objectKey": "36b84f222ad5c8f6639acd4710c10451",
-    "source": "phonics_sounds"
-  },
-  {
-    "text": "bed",
-    "mode": "phonics",
-    "normalizedKey": "bed",
-    "hash": "70c8354f90a2f587df799e15f5e6fa62",
-    "objectKey": "70c8354f90a2f587df799e15f5e6fa62",
-    "source": "phonics_sounds"
-  },
-  {
     "text": "bus",
     "mode": "phonics",
     "normalizedKey": "bus",
     "hash": "ce3e5af38ee1f154ded50b624b8ad651",
     "objectKey": "ce3e5af38ee1f154ded50b624b8ad651",
+    "source": "phonics_sounds"
+  },
+  {
+    "text": "pot",
+    "mode": "phonics",
+    "normalizedKey": "pot",
+    "hash": "e60894f539faf813b3efb06fddcd6ec5",
+    "objectKey": "e60894f539faf813b3efb06fddcd6ec5",
     "source": "phonics_sounds"
   },
   {
@@ -7632,6 +7720,198 @@
     "source": "phonics_curriculum_words"
   },
   {
+    "text": "bump",
+    "mode": "default",
+    "normalizedKey": "bump",
+    "hash": "c3bc691b09d4d6f9084b402d0f434f3b",
+    "objectKey": "c3bc691b09d4d6f9084b402d0f434f3b",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "camp",
+    "mode": "default",
+    "normalizedKey": "camp",
+    "hash": "124f40a807e7c5bcd5b533da26fc089f",
+    "objectKey": "124f40a807e7c5bcd5b533da26fc089f",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "damp",
+    "mode": "default",
+    "normalizedKey": "damp",
+    "hash": "856c166a29e13da279147e3cdda42928",
+    "objectKey": "856c166a29e13da279147e3cdda42928",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "jump",
+    "mode": "default",
+    "normalizedKey": "jump",
+    "hash": "ea7a71e7ec19b939620509dc6cac1faf",
+    "objectKey": "ea7a71e7ec19b939620509dc6cac1faf",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "lamp",
+    "mode": "default",
+    "normalizedKey": "lamp",
+    "hash": "5c2ed819b60c051d20dc52400f2c7b21",
+    "objectKey": "5c2ed819b60c051d20dc52400f2c7b21",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "nest",
+    "mode": "default",
+    "normalizedKey": "nest",
+    "hash": "f9036b644af032cee26b4c57e2337db2",
+    "objectKey": "f9036b644af032cee26b4c57e2337db2",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "tent",
+    "mode": "default",
+    "normalizedKey": "tent",
+    "hash": "36a7255c4d0421707c566d9ae10e17b2",
+    "objectKey": "36a7255c4d0421707c566d9ae10e17b2",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "best",
+    "mode": "default",
+    "normalizedKey": "best",
+    "hash": "a3b2b3c36b2e1d664af39e504618b74c",
+    "objectKey": "a3b2b3c36b2e1d664af39e504618b74c",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "belt",
+    "mode": "default",
+    "normalizedKey": "belt",
+    "hash": "ae27536f1af4d58be86e44341d96b297",
+    "objectKey": "ae27536f1af4d58be86e44341d96b297",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "silk",
+    "mode": "default",
+    "normalizedKey": "silk",
+    "hash": "f0c39bcbc04646030a8cb6061b025104",
+    "objectKey": "f0c39bcbc04646030a8cb6061b025104",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "hand",
+    "mode": "default",
+    "normalizedKey": "hand",
+    "hash": "2a21000759dacc08423f2ca1919ee51f",
+    "objectKey": "2a21000759dacc08423f2ca1919ee51f",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "land",
+    "mode": "default",
+    "normalizedKey": "land",
+    "hash": "e6aa356b0fc04f1612687745acb65422",
+    "objectKey": "e6aa356b0fc04f1612687745acb65422",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "gift",
+    "mode": "default",
+    "normalizedKey": "gift",
+    "hash": "7a779b68656471154ebf6f1ce415348a",
+    "objectKey": "7a779b68656471154ebf6f1ce415348a",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "lost",
+    "mode": "default",
+    "normalizedKey": "lost",
+    "hash": "c6082b20eafd4746543809968bb85b7a",
+    "objectKey": "c6082b20eafd4746543809968bb85b7a",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "fast",
+    "mode": "default",
+    "normalizedKey": "fast",
+    "hash": "5b11c6d39f06d180851ebda7c3cd7c7f",
+    "objectKey": "5b11c6d39f06d180851ebda7c3cd7c7f",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "mask",
+    "mode": "default",
+    "normalizedKey": "mask",
+    "hash": "8907e91384c7cd4e29db5a4a4b57c86c",
+    "objectKey": "8907e91384c7cd4e29db5a4a4b57c86c",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "desk",
+    "mode": "default",
+    "normalizedKey": "desk",
+    "hash": "6f99d636ab19124c273b968fb516926b",
+    "objectKey": "6f99d636ab19124c273b968fb516926b",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "list",
+    "mode": "default",
+    "normalizedKey": "list",
+    "hash": "2437a43c929de353740fdfb86f9dbea3",
+    "objectKey": "2437a43c929de353740fdfb86f9dbea3",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "fist",
+    "mode": "default",
+    "normalizedKey": "fist",
+    "hash": "f65dc5feb78852deb2c956a23d7f4db4",
+    "objectKey": "f65dc5feb78852deb2c956a23d7f4db4",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "hunt",
+    "mode": "default",
+    "normalizedKey": "hunt",
+    "hash": "d44dd71aff600af0f09ce26e060a41bb",
+    "objectKey": "d44dd71aff600af0f09ce26e060a41bb",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "sent",
+    "mode": "default",
+    "normalizedKey": "sent",
+    "hash": "8c462386c0d0b1f85425338f73bd9de5",
+    "objectKey": "8c462386c0d0b1f85425338f73bd9de5",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "went",
+    "mode": "default",
+    "normalizedKey": "went",
+    "hash": "bc622d61f5cf9df5d3dc9d4dacf05d21",
+    "objectKey": "bc622d61f5cf9df5d3dc9d4dacf05d21",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "pond",
+    "mode": "default",
+    "normalizedKey": "pond",
+    "hash": "0939d7dbdcadb3de6475956293edcbbf",
+    "objectKey": "0939d7dbdcadb3de6475956293edcbbf",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "wind",
+    "mode": "default",
+    "normalizedKey": "wind",
+    "hash": "643f98b0f2b35e106bd5c3a90a41c6b0",
+    "objectKey": "643f98b0f2b35e106bd5c3a90a41c6b0",
+    "source": "phonics_curriculum_words"
+  },
+  {
     "text": "ship",
     "mode": "default",
     "normalizedKey": "ship",
@@ -7712,6 +7992,286 @@
     "source": "phonics_curriculum_words"
   },
   {
+    "text": "shell",
+    "mode": "default",
+    "normalizedKey": "shell",
+    "hash": "09530dd985bee66c671299f365c89b0a",
+    "objectKey": "09530dd985bee66c671299f365c89b0a",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "wish",
+    "mode": "default",
+    "normalizedKey": "wish",
+    "hash": "b98e6412e357572eb9cd86f01596b36f",
+    "objectKey": "b98e6412e357572eb9cd86f01596b36f",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "shut",
+    "mode": "default",
+    "normalizedKey": "shut",
+    "hash": "c608c987fc97508415b71397e0ece9f6",
+    "objectKey": "c608c987fc97508415b71397e0ece9f6",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "rush",
+    "mode": "default",
+    "normalizedKey": "rush",
+    "hash": "e9d37d366473425aa52c8badba7b69bc",
+    "objectKey": "e9d37d366473425aa52c8badba7b69bc",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "bench",
+    "mode": "default",
+    "normalizedKey": "bench",
+    "hash": "0aa567dc697761cceff7b0d5e17f58e6",
+    "objectKey": "0aa567dc697761cceff7b0d5e17f58e6",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "lunch",
+    "mode": "default",
+    "normalizedKey": "lunch",
+    "hash": "8226c47b29a43ac26cc59c08720fb2cb",
+    "objectKey": "8226c47b29a43ac26cc59c08720fb2cb",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "rich",
+    "mode": "default",
+    "normalizedKey": "rich",
+    "hash": "507cf351c1dd564186b5e78cfe0baac1",
+    "objectKey": "507cf351c1dd564186b5e78cfe0baac1",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "much",
+    "mode": "default",
+    "normalizedKey": "much",
+    "hash": "453a9e22da368efe6f2ea6471712671f",
+    "objectKey": "453a9e22da368efe6f2ea6471712671f",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "peach",
+    "mode": "default",
+    "normalizedKey": "peach",
+    "hash": "6185d4122dae288fc092735ca2bbf9b2",
+    "objectKey": "6185d4122dae288fc092735ca2bbf9b2",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "bath",
+    "mode": "default",
+    "normalizedKey": "bath",
+    "hash": "afe759903387ba16d49cd4eef039db33",
+    "objectKey": "afe759903387ba16d49cd4eef039db33",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "path",
+    "mode": "default",
+    "normalizedKey": "path",
+    "hash": "6c49f730f14277c204eacb3369af0811",
+    "objectKey": "6c49f730f14277c204eacb3369af0811",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "with",
+    "mode": "default",
+    "normalizedKey": "with",
+    "hash": "409b54cdf8b556ae89657ed37ba44968",
+    "objectKey": "409b54cdf8b556ae89657ed37ba44968",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "then",
+    "mode": "default",
+    "normalizedKey": "then",
+    "hash": "2021e098e4fc6315012ebefdc9d13a44",
+    "objectKey": "2021e098e4fc6315012ebefdc9d13a44",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "when",
+    "mode": "default",
+    "normalizedKey": "when",
+    "hash": "e84bada98960e72d3446f6b0bf9d0d85",
+    "objectKey": "e84bada98960e72d3446f6b0bf9d0d85",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "whip",
+    "mode": "default",
+    "normalizedKey": "whip",
+    "hash": "ed8fd944117b9010259551d1df2991f6",
+    "objectKey": "ed8fd944117b9010259551d1df2991f6",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "whale",
+    "mode": "default",
+    "normalizedKey": "whale",
+    "hash": "283765dc66895d4b8db96c460c694c75",
+    "objectKey": "283765dc66895d4b8db96c460c694c75",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "which",
+    "mode": "default",
+    "normalizedKey": "which",
+    "hash": "9304a597a1c4e47bbfbfd857da4a90f0",
+    "objectKey": "9304a597a1c4e47bbfbfd857da4a90f0",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "wheel",
+    "mode": "default",
+    "normalizedKey": "wheel",
+    "hash": "39b94fa32855de19cf1bf05d079efea5",
+    "objectKey": "39b94fa32855de19cf1bf05d079efea5",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "duck",
+    "mode": "default",
+    "normalizedKey": "duck",
+    "hash": "7d6918ce020c92b6aef218fd0cf26c53",
+    "objectKey": "7d6918ce020c92b6aef218fd0cf26c53",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "sock",
+    "mode": "default",
+    "normalizedKey": "sock",
+    "hash": "036f31b564fe2bb5246f22d504824bd9",
+    "objectKey": "036f31b564fe2bb5246f22d504824bd9",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "back",
+    "mode": "default",
+    "normalizedKey": "back",
+    "hash": "3bf5e89ed01102a75c403121117b077a",
+    "objectKey": "3bf5e89ed01102a75c403121117b077a",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "pack",
+    "mode": "default",
+    "normalizedKey": "pack",
+    "hash": "7335245661fa7dca15a50b026b37bc9e",
+    "objectKey": "7335245661fa7dca15a50b026b37bc9e",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "sick",
+    "mode": "default",
+    "normalizedKey": "sick",
+    "hash": "e8f5f5e225b77ac8fac76a0b8e7ca0f0",
+    "objectKey": "e8f5f5e225b77ac8fac76a0b8e7ca0f0",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "pick",
+    "mode": "default",
+    "normalizedKey": "pick",
+    "hash": "7ad26ea020b2bbd40fdfa11f5be7f34a",
+    "objectKey": "7ad26ea020b2bbd40fdfa11f5be7f34a",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "kick",
+    "mode": "default",
+    "normalizedKey": "kick",
+    "hash": "f70026c4d82d15629939dc9d45216bc6",
+    "objectKey": "f70026c4d82d15629939dc9d45216bc6",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "rock",
+    "mode": "default",
+    "normalizedKey": "rock",
+    "hash": "6083f4184ab7971d8037d96f6215a0b6",
+    "objectKey": "6083f4184ab7971d8037d96f6215a0b6",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "lock",
+    "mode": "default",
+    "normalizedKey": "lock",
+    "hash": "8be6a9603e1e9c8c21c0349c99c09bed",
+    "objectKey": "8be6a9603e1e9c8c21c0349c99c09bed",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "ring",
+    "mode": "default",
+    "normalizedKey": "ring",
+    "hash": "375d789c8a43a46400723c6ef9ff433f",
+    "objectKey": "375d789c8a43a46400723c6ef9ff433f",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "sing",
+    "mode": "default",
+    "normalizedKey": "sing",
+    "hash": "d254327400a6de511dc434fd2e39317a",
+    "objectKey": "d254327400a6de511dc434fd2e39317a",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "long",
+    "mode": "default",
+    "normalizedKey": "long",
+    "hash": "b776dc0a8270fde1a4fc2e7a38d3bc88",
+    "objectKey": "b776dc0a8270fde1a4fc2e7a38d3bc88",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "song",
+    "mode": "default",
+    "normalizedKey": "song",
+    "hash": "eabdf39c047414c49630eb5526d5b892",
+    "objectKey": "eabdf39c047414c49630eb5526d5b892",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "bang",
+    "mode": "default",
+    "normalizedKey": "bang",
+    "hash": "533090ebdf67d418b2f1afae084ead3e",
+    "objectKey": "533090ebdf67d418b2f1afae084ead3e",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "hang",
+    "mode": "default",
+    "normalizedKey": "hang",
+    "hash": "b73398aca40c055bc1dd202e4b76a184",
+    "objectKey": "b73398aca40c055bc1dd202e4b76a184",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "king",
+    "mode": "default",
+    "normalizedKey": "king",
+    "hash": "b5b14abeff0765f48792dac2819dc451",
+    "objectKey": "b5b14abeff0765f48792dac2819dc451",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "wing",
+    "mode": "default",
+    "normalizedKey": "wing",
+    "hash": "22bc7cd44e233eea64f8b7233f677e82",
+    "objectKey": "22bc7cd44e233eea64f8b7233f677e82",
+    "source": "phonics_curriculum_words"
+  },
+  {
     "text": "flag",
     "mode": "default",
     "normalizedKey": "flag",
@@ -7781,6 +8341,70 @@
     "normalizedKey": "crab",
     "hash": "373187470f2c4facbf8892b98083d624",
     "objectKey": "373187470f2c4facbf8892b98083d624",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "snap",
+    "mode": "default",
+    "normalizedKey": "snap",
+    "hash": "ba1e5829ac4131814e1f46c311acc2ef",
+    "objectKey": "ba1e5829ac4131814e1f46c311acc2ef",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "spin",
+    "mode": "default",
+    "normalizedKey": "spin",
+    "hash": "c1452c690af49585a3ea98c507b08495",
+    "objectKey": "c1452c690af49585a3ea98c507b08495",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "stem",
+    "mode": "default",
+    "normalizedKey": "stem",
+    "hash": "a76ec50b33d975412d052526e7b93059",
+    "objectKey": "a76ec50b33d975412d052526e7b93059",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "skit",
+    "mode": "default",
+    "normalizedKey": "skit",
+    "hash": "2003f2108f3ca3521f62e2c60c031e76",
+    "objectKey": "2003f2108f3ca3521f62e2c60c031e76",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "slim",
+    "mode": "default",
+    "normalizedKey": "slim",
+    "hash": "70741650bf865d8642c1924147144ad9",
+    "objectKey": "70741650bf865d8642c1924147144ad9",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "grin",
+    "mode": "default",
+    "normalizedKey": "grin",
+    "hash": "492fb8f4c81b9a7ed978b989c00cbc41",
+    "objectKey": "492fb8f4c81b9a7ed978b989c00cbc41",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "plot",
+    "mode": "default",
+    "normalizedKey": "plot",
+    "hash": "6b38713e1a487f3a7bfb6b6acde86e8e",
+    "objectKey": "6b38713e1a487f3a7bfb6b6acde86e8e",
+    "source": "phonics_curriculum_words"
+  },
+  {
+    "text": "from",
+    "mode": "default",
+    "normalizedKey": "from",
+    "hash": "1f89cae4b6335d69c3aefa7a7cc94919",
+    "objectKey": "1f89cae4b6335d69c3aefa7a7cc94919",
     "source": "phonics_curriculum_words"
   },
   {
@@ -8193,26 +8817,10 @@
   },
   {
     "text": "pin",
-    "mode": "phonics",
-    "normalizedKey": "pin",
-    "hash": "de0d973a0a986d1621b508702021ecfa",
-    "objectKey": "de0d973a0a986d1621b508702021ecfa",
-    "source": "phonics_test"
-  },
-  {
-    "text": "pin",
     "mode": "default",
     "normalizedKey": "pin",
     "hash": "53617cc55053004dde05896579b501de",
     "objectKey": "53617cc55053004dde05896579b501de",
-    "source": "phonics_test"
-  },
-  {
-    "text": "pot",
-    "mode": "phonics",
-    "normalizedKey": "pot",
-    "hash": "e60894f539faf813b3efb06fddcd6ec5",
-    "objectKey": "e60894f539faf813b3efb06fddcd6ec5",
     "source": "phonics_test"
   },
   {
@@ -8293,6 +8901,206 @@
     "normalizedKey": "wig",
     "hash": "a55df794d509cb8abf3525d5af2e779e",
     "objectKey": "a55df794d509cb8abf3525d5af2e779e",
+    "source": "phonics_test"
+  },
+  {
+    "text": "bump",
+    "mode": "phonics",
+    "normalizedKey": "bump",
+    "hash": "3d3ff185e1c4920a2a87583ba19ea34d",
+    "objectKey": "3d3ff185e1c4920a2a87583ba19ea34d",
+    "source": "phonics_test"
+  },
+  {
+    "text": "camp",
+    "mode": "phonics",
+    "normalizedKey": "camp",
+    "hash": "1ffdcefc920dfe4df7146b7d62abb405",
+    "objectKey": "1ffdcefc920dfe4df7146b7d62abb405",
+    "source": "phonics_test"
+  },
+  {
+    "text": "damp",
+    "mode": "phonics",
+    "normalizedKey": "damp",
+    "hash": "f85539410ef892ca09832740425e4ce0",
+    "objectKey": "f85539410ef892ca09832740425e4ce0",
+    "source": "phonics_test"
+  },
+  {
+    "text": "jump",
+    "mode": "phonics",
+    "normalizedKey": "jump",
+    "hash": "238cc3526127ceea7d64a91482b72f2b",
+    "objectKey": "238cc3526127ceea7d64a91482b72f2b",
+    "source": "phonics_test"
+  },
+  {
+    "text": "lamp",
+    "mode": "phonics",
+    "normalizedKey": "lamp",
+    "hash": "0268444cb238e75e5ca6fd11dee31dac",
+    "objectKey": "0268444cb238e75e5ca6fd11dee31dac",
+    "source": "phonics_test"
+  },
+  {
+    "text": "nest",
+    "mode": "phonics",
+    "normalizedKey": "nest",
+    "hash": "4f8c41f306e0adbe358fae82668d95ff",
+    "objectKey": "4f8c41f306e0adbe358fae82668d95ff",
+    "source": "phonics_test"
+  },
+  {
+    "text": "tent",
+    "mode": "phonics",
+    "normalizedKey": "tent",
+    "hash": "1878f5657e3f28b8ec2b70ddd32cdf9b",
+    "objectKey": "1878f5657e3f28b8ec2b70ddd32cdf9b",
+    "source": "phonics_test"
+  },
+  {
+    "text": "best",
+    "mode": "phonics",
+    "normalizedKey": "best",
+    "hash": "a8505c5b4a8aa764645206131802dde4",
+    "objectKey": "a8505c5b4a8aa764645206131802dde4",
+    "source": "phonics_test"
+  },
+  {
+    "text": "belt",
+    "mode": "phonics",
+    "normalizedKey": "belt",
+    "hash": "45a6869f606c8c567c6eb60eb4b3d9af",
+    "objectKey": "45a6869f606c8c567c6eb60eb4b3d9af",
+    "source": "phonics_test"
+  },
+  {
+    "text": "milk",
+    "mode": "phonics",
+    "normalizedKey": "milk",
+    "hash": "5533c750340eb248ac90d35a987dc7d0",
+    "objectKey": "5533c750340eb248ac90d35a987dc7d0",
+    "source": "phonics_test"
+  },
+  {
+    "text": "silk",
+    "mode": "phonics",
+    "normalizedKey": "silk",
+    "hash": "0d92e8e1ffccbf2e09ab04d13d2ac53e",
+    "objectKey": "0d92e8e1ffccbf2e09ab04d13d2ac53e",
+    "source": "phonics_test"
+  },
+  {
+    "text": "hand",
+    "mode": "phonics",
+    "normalizedKey": "hand",
+    "hash": "021aa663749559fa0e20a8839d801626",
+    "objectKey": "021aa663749559fa0e20a8839d801626",
+    "source": "phonics_test"
+  },
+  {
+    "text": "land",
+    "mode": "phonics",
+    "normalizedKey": "land",
+    "hash": "44d583957257857a9998ac071f874bf7",
+    "objectKey": "44d583957257857a9998ac071f874bf7",
+    "source": "phonics_test"
+  },
+  {
+    "text": "gift",
+    "mode": "phonics",
+    "normalizedKey": "gift",
+    "hash": "ec7004f27f0f3d5967b0664a962be4f2",
+    "objectKey": "ec7004f27f0f3d5967b0664a962be4f2",
+    "source": "phonics_test"
+  },
+  {
+    "text": "lost",
+    "mode": "phonics",
+    "normalizedKey": "lost",
+    "hash": "203621643e4fcb559dfeaaf3a50bdd36",
+    "objectKey": "203621643e4fcb559dfeaaf3a50bdd36",
+    "source": "phonics_test"
+  },
+  {
+    "text": "fast",
+    "mode": "phonics",
+    "normalizedKey": "fast",
+    "hash": "7791c14aa31deff7ad4aecc8055b32ab",
+    "objectKey": "7791c14aa31deff7ad4aecc8055b32ab",
+    "source": "phonics_test"
+  },
+  {
+    "text": "mask",
+    "mode": "phonics",
+    "normalizedKey": "mask",
+    "hash": "ac9d9d13ef790979f064c4811a94e919",
+    "objectKey": "ac9d9d13ef790979f064c4811a94e919",
+    "source": "phonics_test"
+  },
+  {
+    "text": "desk",
+    "mode": "phonics",
+    "normalizedKey": "desk",
+    "hash": "9146f8e1957e4ceec3457e2c83b42fe5",
+    "objectKey": "9146f8e1957e4ceec3457e2c83b42fe5",
+    "source": "phonics_test"
+  },
+  {
+    "text": "list",
+    "mode": "phonics",
+    "normalizedKey": "list",
+    "hash": "dbe7e2d2f9590897d5b4f065bd8f4baf",
+    "objectKey": "dbe7e2d2f9590897d5b4f065bd8f4baf",
+    "source": "phonics_test"
+  },
+  {
+    "text": "fist",
+    "mode": "phonics",
+    "normalizedKey": "fist",
+    "hash": "79bccd714b293c0fd088bd9dcb38e43c",
+    "objectKey": "79bccd714b293c0fd088bd9dcb38e43c",
+    "source": "phonics_test"
+  },
+  {
+    "text": "hunt",
+    "mode": "phonics",
+    "normalizedKey": "hunt",
+    "hash": "84cce5a2d66eea1fe507fb67c968a65a",
+    "objectKey": "84cce5a2d66eea1fe507fb67c968a65a",
+    "source": "phonics_test"
+  },
+  {
+    "text": "sent",
+    "mode": "phonics",
+    "normalizedKey": "sent",
+    "hash": "b19f7b1395fc09ad9a1d8ec7de857b2a",
+    "objectKey": "b19f7b1395fc09ad9a1d8ec7de857b2a",
+    "source": "phonics_test"
+  },
+  {
+    "text": "went",
+    "mode": "phonics",
+    "normalizedKey": "went",
+    "hash": "09a6299735892883ff586521cc593695",
+    "objectKey": "09a6299735892883ff586521cc593695",
+    "source": "phonics_test"
+  },
+  {
+    "text": "pond",
+    "mode": "phonics",
+    "normalizedKey": "pond",
+    "hash": "faa59b7a5b3e240bde7c866af97bfb4c",
+    "objectKey": "faa59b7a5b3e240bde7c866af97bfb4c",
+    "source": "phonics_test"
+  },
+  {
+    "text": "wind",
+    "mode": "phonics",
+    "normalizedKey": "wind",
+    "hash": "c649eef258e0535b43efeb9673667955",
+    "objectKey": "c649eef258e0535b43efeb9673667955",
     "source": "phonics_test"
   },
   {
@@ -8381,6 +9189,294 @@
     "normalizedKey": "chop",
     "hash": "45b38abe6b91c13bd2c54cf489b11af0",
     "objectKey": "45b38abe6b91c13bd2c54cf489b11af0",
+    "source": "phonics_test"
+  },
+  {
+    "text": "shell",
+    "mode": "phonics",
+    "normalizedKey": "shell",
+    "hash": "55f31c77ce8858ee93820be71fcbfdfd",
+    "objectKey": "55f31c77ce8858ee93820be71fcbfdfd",
+    "source": "phonics_test"
+  },
+  {
+    "text": "wish",
+    "mode": "phonics",
+    "normalizedKey": "wish",
+    "hash": "8aaeb8692c0b26cea86434c3a64e83b6",
+    "objectKey": "8aaeb8692c0b26cea86434c3a64e83b6",
+    "source": "phonics_test"
+  },
+  {
+    "text": "shut",
+    "mode": "phonics",
+    "normalizedKey": "shut",
+    "hash": "0234b8abbfa741d7609dfc34e0c988e5",
+    "objectKey": "0234b8abbfa741d7609dfc34e0c988e5",
+    "source": "phonics_test"
+  },
+  {
+    "text": "rush",
+    "mode": "phonics",
+    "normalizedKey": "rush",
+    "hash": "43aacb3f0ecf1cc744087d68297ce4d1",
+    "objectKey": "43aacb3f0ecf1cc744087d68297ce4d1",
+    "source": "phonics_test"
+  },
+  {
+    "text": "bench",
+    "mode": "phonics",
+    "normalizedKey": "bench",
+    "hash": "117a042f28670d887f3b5c0c08a2b93f",
+    "objectKey": "117a042f28670d887f3b5c0c08a2b93f",
+    "source": "phonics_test"
+  },
+  {
+    "text": "lunch",
+    "mode": "phonics",
+    "normalizedKey": "lunch",
+    "hash": "083c0c789bb6ea8ab4b813609259ca73",
+    "objectKey": "083c0c789bb6ea8ab4b813609259ca73",
+    "source": "phonics_test"
+  },
+  {
+    "text": "rich",
+    "mode": "phonics",
+    "normalizedKey": "rich",
+    "hash": "fc0c011b8ec7d7778b55840afc926dbf",
+    "objectKey": "fc0c011b8ec7d7778b55840afc926dbf",
+    "source": "phonics_test"
+  },
+  {
+    "text": "much",
+    "mode": "phonics",
+    "normalizedKey": "much",
+    "hash": "c640a4a692a29b75e954816d153d7d14",
+    "objectKey": "c640a4a692a29b75e954816d153d7d14",
+    "source": "phonics_test"
+  },
+  {
+    "text": "peach",
+    "mode": "phonics",
+    "normalizedKey": "peach",
+    "hash": "51206f258790ee583246403ca85405a2",
+    "objectKey": "51206f258790ee583246403ca85405a2",
+    "source": "phonics_test"
+  },
+  {
+    "text": "bath",
+    "mode": "phonics",
+    "normalizedKey": "bath",
+    "hash": "111ff4057eb0909ee95a8cff46ed7a36",
+    "objectKey": "111ff4057eb0909ee95a8cff46ed7a36",
+    "source": "phonics_test"
+  },
+  {
+    "text": "path",
+    "mode": "phonics",
+    "normalizedKey": "path",
+    "hash": "2eac527e7761101db74ad7a5ae6af339",
+    "objectKey": "2eac527e7761101db74ad7a5ae6af339",
+    "source": "phonics_test"
+  },
+  {
+    "text": "with",
+    "mode": "phonics",
+    "normalizedKey": "with",
+    "hash": "8c328ed1032baad34d4445694fc6d1f7",
+    "objectKey": "8c328ed1032baad34d4445694fc6d1f7",
+    "source": "phonics_test"
+  },
+  {
+    "text": "then",
+    "mode": "phonics",
+    "normalizedKey": "then",
+    "hash": "637c3f36c8f90ac7e924fd349d553d63",
+    "objectKey": "637c3f36c8f90ac7e924fd349d553d63",
+    "source": "phonics_test"
+  },
+  {
+    "text": "when",
+    "mode": "phonics",
+    "normalizedKey": "when",
+    "hash": "d11084b50f2df90e84b30046eafc39ca",
+    "objectKey": "d11084b50f2df90e84b30046eafc39ca",
+    "source": "phonics_test"
+  },
+  {
+    "text": "whip",
+    "mode": "phonics",
+    "normalizedKey": "whip",
+    "hash": "37ed7d4e48230969755f53b3d18088d8",
+    "objectKey": "37ed7d4e48230969755f53b3d18088d8",
+    "source": "phonics_test"
+  },
+  {
+    "text": "whale",
+    "mode": "phonics",
+    "normalizedKey": "whale",
+    "hash": "ff917a403dbbfbae46163b8983510e73",
+    "objectKey": "ff917a403dbbfbae46163b8983510e73",
+    "source": "phonics_test"
+  },
+  {
+    "text": "which",
+    "mode": "phonics",
+    "normalizedKey": "which",
+    "hash": "95924c86b973d86a034aed49f071879c",
+    "objectKey": "95924c86b973d86a034aed49f071879c",
+    "source": "phonics_test"
+  },
+  {
+    "text": "white",
+    "mode": "phonics",
+    "normalizedKey": "white",
+    "hash": "4e01ad1635d4978cf3649f987b026217",
+    "objectKey": "4e01ad1635d4978cf3649f987b026217",
+    "source": "phonics_test"
+  },
+  {
+    "text": "wheel",
+    "mode": "phonics",
+    "normalizedKey": "wheel",
+    "hash": "d4ab3b8837ecc55306aa5226948adab6",
+    "objectKey": "d4ab3b8837ecc55306aa5226948adab6",
+    "source": "phonics_test"
+  },
+  {
+    "text": "duck",
+    "mode": "phonics",
+    "normalizedKey": "duck",
+    "hash": "9768a0c929a1e5a3fb67ff26a5ceddbf",
+    "objectKey": "9768a0c929a1e5a3fb67ff26a5ceddbf",
+    "source": "phonics_test"
+  },
+  {
+    "text": "sock",
+    "mode": "phonics",
+    "normalizedKey": "sock",
+    "hash": "40899a533aec719dd9e7bfecfc73713a",
+    "objectKey": "40899a533aec719dd9e7bfecfc73713a",
+    "source": "phonics_test"
+  },
+  {
+    "text": "back",
+    "mode": "phonics",
+    "normalizedKey": "back",
+    "hash": "e91f5a69e9cd76ead2fbdacf0a61cbd5",
+    "objectKey": "e91f5a69e9cd76ead2fbdacf0a61cbd5",
+    "source": "phonics_test"
+  },
+  {
+    "text": "pack",
+    "mode": "phonics",
+    "normalizedKey": "pack",
+    "hash": "365689badddc75cd63c6f0b3a90a6fb7",
+    "objectKey": "365689badddc75cd63c6f0b3a90a6fb7",
+    "source": "phonics_test"
+  },
+  {
+    "text": "sick",
+    "mode": "phonics",
+    "normalizedKey": "sick",
+    "hash": "25a64be8475d9aa29ab559300fbc6441",
+    "objectKey": "25a64be8475d9aa29ab559300fbc6441",
+    "source": "phonics_test"
+  },
+  {
+    "text": "pick",
+    "mode": "phonics",
+    "normalizedKey": "pick",
+    "hash": "cdee08f4757c78e52d294667e98780f7",
+    "objectKey": "cdee08f4757c78e52d294667e98780f7",
+    "source": "phonics_test"
+  },
+  {
+    "text": "kick",
+    "mode": "phonics",
+    "normalizedKey": "kick",
+    "hash": "f220be52a99cce3f2a065dafa29e421c",
+    "objectKey": "f220be52a99cce3f2a065dafa29e421c",
+    "source": "phonics_test"
+  },
+  {
+    "text": "rock",
+    "mode": "phonics",
+    "normalizedKey": "rock",
+    "hash": "481f32943648c9b799947968bfd3a75d",
+    "objectKey": "481f32943648c9b799947968bfd3a75d",
+    "source": "phonics_test"
+  },
+  {
+    "text": "lock",
+    "mode": "phonics",
+    "normalizedKey": "lock",
+    "hash": "9101ccf976c7b18d99303ace12dc101d",
+    "objectKey": "9101ccf976c7b18d99303ace12dc101d",
+    "source": "phonics_test"
+  },
+  {
+    "text": "ring",
+    "mode": "phonics",
+    "normalizedKey": "ring",
+    "hash": "07865eb3d30fa46bdf3129d7cd54eaf8",
+    "objectKey": "07865eb3d30fa46bdf3129d7cd54eaf8",
+    "source": "phonics_test"
+  },
+  {
+    "text": "sing",
+    "mode": "phonics",
+    "normalizedKey": "sing",
+    "hash": "289189b9e9d67f9fd8bb6d167d8acc66",
+    "objectKey": "289189b9e9d67f9fd8bb6d167d8acc66",
+    "source": "phonics_test"
+  },
+  {
+    "text": "long",
+    "mode": "phonics",
+    "normalizedKey": "long",
+    "hash": "a0923cce6a2e7e4381dd882326ad8bfb",
+    "objectKey": "a0923cce6a2e7e4381dd882326ad8bfb",
+    "source": "phonics_test"
+  },
+  {
+    "text": "song",
+    "mode": "phonics",
+    "normalizedKey": "song",
+    "hash": "ece961ac4d2eac14d3dc7146c2c82f65",
+    "objectKey": "ece961ac4d2eac14d3dc7146c2c82f65",
+    "source": "phonics_test"
+  },
+  {
+    "text": "bang",
+    "mode": "phonics",
+    "normalizedKey": "bang",
+    "hash": "04c081affe6d1ba0204cf6a6b1ecd801",
+    "objectKey": "04c081affe6d1ba0204cf6a6b1ecd801",
+    "source": "phonics_test"
+  },
+  {
+    "text": "hang",
+    "mode": "phonics",
+    "normalizedKey": "hang",
+    "hash": "092854dfbbf9fa2223a892f668438ab3",
+    "objectKey": "092854dfbbf9fa2223a892f668438ab3",
+    "source": "phonics_test"
+  },
+  {
+    "text": "king",
+    "mode": "phonics",
+    "normalizedKey": "king",
+    "hash": "cc901282e4de3462ddac4683f099c205",
+    "objectKey": "cc901282e4de3462ddac4683f099c205",
+    "source": "phonics_test"
+  },
+  {
+    "text": "wing",
+    "mode": "phonics",
+    "normalizedKey": "wing",
+    "hash": "bd81b539b087d578816e199a27d31cb7",
+    "objectKey": "bd81b539b087d578816e199a27d31cb7",
     "source": "phonics_test"
   },
   {
@@ -8477,6 +9573,70 @@
     "normalizedKey": "crab",
     "hash": "4f49c2bc117d51dc6ded9e1da1e69a6d",
     "objectKey": "4f49c2bc117d51dc6ded9e1da1e69a6d",
+    "source": "phonics_test"
+  },
+  {
+    "text": "snap",
+    "mode": "phonics",
+    "normalizedKey": "snap",
+    "hash": "9c3d08bcfd78b07bbb7ade104d9c06b0",
+    "objectKey": "9c3d08bcfd78b07bbb7ade104d9c06b0",
+    "source": "phonics_test"
+  },
+  {
+    "text": "spin",
+    "mode": "phonics",
+    "normalizedKey": "spin",
+    "hash": "d3661ce297e150e2de90cf8fe384bd0f",
+    "objectKey": "d3661ce297e150e2de90cf8fe384bd0f",
+    "source": "phonics_test"
+  },
+  {
+    "text": "stem",
+    "mode": "phonics",
+    "normalizedKey": "stem",
+    "hash": "f7190a83c604f877a5291a7a3d204303",
+    "objectKey": "f7190a83c604f877a5291a7a3d204303",
+    "source": "phonics_test"
+  },
+  {
+    "text": "skit",
+    "mode": "phonics",
+    "normalizedKey": "skit",
+    "hash": "16c22779a2bf7f7c5a8c48a84f46f81b",
+    "objectKey": "16c22779a2bf7f7c5a8c48a84f46f81b",
+    "source": "phonics_test"
+  },
+  {
+    "text": "slim",
+    "mode": "phonics",
+    "normalizedKey": "slim",
+    "hash": "03fa3161067af838ac5443fc3d9ee756",
+    "objectKey": "03fa3161067af838ac5443fc3d9ee756",
+    "source": "phonics_test"
+  },
+  {
+    "text": "grin",
+    "mode": "phonics",
+    "normalizedKey": "grin",
+    "hash": "1fe9966e655e78c65cd344b55a5f6570",
+    "objectKey": "1fe9966e655e78c65cd344b55a5f6570",
+    "source": "phonics_test"
+  },
+  {
+    "text": "plot",
+    "mode": "phonics",
+    "normalizedKey": "plot",
+    "hash": "423cb9bc66b79ef1d6fdde7ebbbaaa59",
+    "objectKey": "423cb9bc66b79ef1d6fdde7ebbbaaa59",
+    "source": "phonics_test"
+  },
+  {
+    "text": "from",
+    "mode": "phonics",
+    "normalizedKey": "from",
+    "hash": "02307dfa2de0f05a135563f12f414972",
+    "objectKey": "02307dfa2de0f05a135563f12f414972",
     "source": "phonics_test"
   },
   {
@@ -9872,14 +11032,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "back",
-    "mode": "default",
-    "normalizedKey": "back",
-    "hash": "3bf5e89ed01102a75c403121117b077a",
-    "objectKey": "3bf5e89ed01102a75c403121117b077a",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "ck",
     "mode": "default",
     "normalizedKey": "ck",
@@ -10688,14 +11840,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "duck",
-    "mode": "default",
-    "normalizedKey": "duck",
-    "hash": "7d6918ce020c92b6aef218fd0cf26c53",
-    "objectKey": "7d6918ce020c92b6aef218fd0cf26c53",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "du",
     "mode": "default",
     "normalizedKey": "du",
@@ -10813,14 +11957,6 @@
     "normalizedKey": "ll",
     "hash": "f9a9cca9e0dbf0fb3c8c3d75a2628278",
     "objectKey": "f9a9cca9e0dbf0fb3c8c3d75a2628278",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "hand",
-    "mode": "default",
-    "normalizedKey": "hand",
-    "hash": "2a21000759dacc08423f2ca1919ee51f",
-    "objectKey": "2a21000759dacc08423f2ca1919ee51f",
     "source": "spelling_mastery"
   },
   {
@@ -11144,14 +12280,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "wind",
-    "mode": "default",
-    "normalizedKey": "wind",
-    "hash": "643f98b0f2b35e106bd5c3a90a41c6b0",
-    "objectKey": "643f98b0f2b35e106bd5c3a90a41c6b0",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "wi",
     "mode": "default",
     "normalizedKey": "wi",
@@ -11408,27 +12536,11 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "nest",
-    "mode": "default",
-    "normalizedKey": "nest",
-    "hash": "f9036b644af032cee26b4c57e2337db2",
-    "objectKey": "f9036b644af032cee26b4c57e2337db2",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "ne",
     "mode": "default",
     "normalizedKey": "ne",
     "hash": "de6cb394280506c9e12bad171e21eb44",
     "objectKey": "de6cb394280506c9e12bad171e21eb44",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "wing",
-    "mode": "default",
-    "normalizedKey": "wing",
-    "hash": "22bc7cd44e233eea64f8b7233f677e82",
-    "objectKey": "22bc7cd44e233eea64f8b7233f677e82",
     "source": "spelling_mastery"
   },
   {
@@ -11744,14 +12856,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "snap",
-    "mode": "default",
-    "normalizedKey": "snap",
-    "hash": "ba1e5829ac4131814e1f46c311acc2ef",
-    "objectKey": "ba1e5829ac4131814e1f46c311acc2ef",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "step",
     "mode": "default",
     "normalizedKey": "step",
@@ -11784,14 +12888,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "jump",
-    "mode": "default",
-    "normalizedKey": "jump",
-    "hash": "ea7a71e7ec19b939620509dc6cac1faf",
-    "objectKey": "ea7a71e7ec19b939620509dc6cac1faf",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "ju",
     "mode": "default",
     "normalizedKey": "ju",
@@ -11808,35 +12904,11 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "kick",
-    "mode": "default",
-    "normalizedKey": "kick",
-    "hash": "f70026c4d82d15629939dc9d45216bc6",
-    "objectKey": "f70026c4d82d15629939dc9d45216bc6",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "ki",
     "mode": "default",
     "normalizedKey": "ki",
     "hash": "0e1053e450abb56035f0822483251edb",
     "objectKey": "0e1053e450abb56035f0822483251edb",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "pick",
-    "mode": "default",
-    "normalizedKey": "pick",
-    "hash": "7ad26ea020b2bbd40fdfa11f5be7f34a",
-    "objectKey": "7ad26ea020b2bbd40fdfa11f5be7f34a",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "pack",
-    "mode": "default",
-    "normalizedKey": "pack",
-    "hash": "7335245661fa7dca15a50b026b37bc9e",
-    "objectKey": "7335245661fa7dca15a50b026b37bc9e",
     "source": "spelling_mastery"
   },
   {
@@ -11888,35 +12960,11 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "rock",
-    "mode": "default",
-    "normalizedKey": "rock",
-    "hash": "6083f4184ab7971d8037d96f6215a0b6",
-    "objectKey": "6083f4184ab7971d8037d96f6215a0b6",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "ro",
     "mode": "default",
     "normalizedKey": "ro",
     "hash": "980c4b5847d907b1d81be1bf8bafc706",
     "objectKey": "980c4b5847d907b1d81be1bf8bafc706",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "sock",
-    "mode": "default",
-    "normalizedKey": "sock",
-    "hash": "036f31b564fe2bb5246f22d504824bd9",
-    "objectKey": "036f31b564fe2bb5246f22d504824bd9",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "lock",
-    "mode": "default",
-    "normalizedKey": "lock",
-    "hash": "8be6a9603e1e9c8c21c0349c99c09bed",
-    "objectKey": "8be6a9603e1e9c8c21c0349c99c09bed",
     "source": "spelling_mastery"
   },
   {
@@ -12264,14 +13312,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "tent",
-    "mode": "default",
-    "normalizedKey": "tent",
-    "hash": "36a7255c4d0421707c566d9ae10e17b2",
-    "objectKey": "36a7255c4d0421707c566d9ae10e17b2",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "nt",
     "mode": "default",
     "normalizedKey": "nt",
@@ -12296,27 +13336,11 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "went",
-    "mode": "default",
-    "normalizedKey": "went",
-    "hash": "bc622d61f5cf9df5d3dc9d4dacf05d21",
-    "objectKey": "bc622d61f5cf9df5d3dc9d4dacf05d21",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "we",
     "mode": "default",
     "normalizedKey": "we",
     "hash": "b39c04d3eb972a8a9c8d4b9d1447574c",
     "objectKey": "b39c04d3eb972a8a9c8d4b9d1447574c",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "sent",
-    "mode": "default",
-    "normalizedKey": "sent",
-    "hash": "8c462386c0d0b1f85425338f73bd9de5",
-    "objectKey": "8c462386c0d0b1f85425338f73bd9de5",
     "source": "spelling_mastery"
   },
   {
@@ -12648,14 +13672,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "bench",
-    "mode": "default",
-    "normalizedKey": "bench",
-    "hash": "0aa567dc697761cceff7b0d5e17f58e6",
-    "objectKey": "0aa567dc697761cceff7b0d5e17f58e6",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "wrench",
     "mode": "default",
     "normalizedKey": "wrench",
@@ -12725,14 +13741,6 @@
     "normalizedKey": "stench",
     "hash": "746f1bdaec33b3fc2d6fb2e5af190cc1",
     "objectKey": "746f1bdaec33b3fc2d6fb2e5af190cc1",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "lunch",
-    "mode": "default",
-    "normalizedKey": "lunch",
-    "hash": "8226c47b29a43ac26cc59c08720fb2cb",
-    "objectKey": "8226c47b29a43ac26cc59c08720fb2cb",
     "source": "spelling_mastery"
   },
   {
@@ -14021,14 +15029,6 @@
     "normalizedKey": "grunt",
     "hash": "c99e597fe1fbef2095cd87a9f9023815",
     "objectKey": "c99e597fe1fbef2095cd87a9f9023815",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "hunt",
-    "mode": "default",
-    "normalizedKey": "hunt",
-    "hash": "d44dd71aff600af0f09ce26e060a41bb",
-    "objectKey": "d44dd71aff600af0f09ce26e060a41bb",
     "source": "spelling_mastery"
   },
   {
@@ -15344,14 +16344,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "stem",
-    "mode": "default",
-    "normalizedKey": "stem",
-    "hash": "a76ec50b33d975412d052526e7b93059",
-    "objectKey": "a76ec50b33d975412d052526e7b93059",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "em",
     "mode": "default",
     "normalizedKey": "em",
@@ -15496,14 +16488,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "pond",
-    "mode": "default",
-    "normalizedKey": "pond",
-    "hash": "0939d7dbdcadb3de6475956293edcbbf",
-    "objectKey": "0939d7dbdcadb3de6475956293edcbbf",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "stream",
     "mode": "default",
     "normalizedKey": "stream",
@@ -15533,14 +16517,6 @@
     "normalizedKey": "sand",
     "hash": "cf135fb36e8c1cf7afbbbb2960186314",
     "objectKey": "cf135fb36e8c1cf7afbbbb2960186314",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "shell",
-    "mode": "default",
-    "normalizedKey": "shell",
-    "hash": "09530dd985bee66c671299f365c89b0a",
-    "objectKey": "09530dd985bee66c671299f365c89b0a",
     "source": "spelling_mastery"
   },
   {
@@ -15613,14 +16589,6 @@
     "normalizedKey": "vale",
     "hash": "867f38bd23b3dc5a1c823525ffb860ae",
     "objectKey": "867f38bd23b3dc5a1c823525ffb860ae",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "path",
-    "mode": "default",
-    "normalizedKey": "path",
-    "hash": "6c49f730f14277c204eacb3369af0811",
-    "objectKey": "6c49f730f14277c204eacb3369af0811",
     "source": "spelling_mastery"
   },
   {
@@ -16640,14 +17608,6 @@
     "source": "spelling_mastery"
   },
   {
-    "text": "song",
-    "mode": "default",
-    "normalizedKey": "song",
-    "hash": "eabdf39c047414c49630eb5526d5b892",
-    "objectKey": "eabdf39c047414c49630eb5526d5b892",
-    "source": "spelling_mastery"
-  },
-  {
     "text": "dance",
     "mode": "default",
     "normalizedKey": "dance",
@@ -16901,14 +17861,6 @@
     "normalizedKey": "rr",
     "hash": "c5ee324ed8a895d93afc3760a2792757",
     "objectKey": "c5ee324ed8a895d93afc3760a2792757",
-    "source": "spelling_mastery"
-  },
-  {
-    "text": "lamp",
-    "mode": "default",
-    "normalizedKey": "lamp",
-    "hash": "5c2ed819b60c051d20dc52400f2c7b21",
-    "objectKey": "5c2ed819b60c051d20dc52400f2c7b21",
     "source": "spelling_mastery"
   },
   {

@@ -15,7 +15,7 @@ import {
 } from "../lib/env";
 import { getOpenAiTtsConfigSummary } from "../lib/openai-tts-config.js";
 import { amynestEnvLabel, resolveAmynestEnv } from "../lib/loadEnv";
-import { driveFilesList } from "../lib/googleDrive";
+import { driveFilesListAll } from "../lib/googleDrive";
 import { getQueueHealthSnapshot } from "../queue/bootstrap.js";
 import { getTtsCacheStats } from "../services/ttsCacheStats";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
@@ -315,20 +315,19 @@ router.get("/healthz/drive", async (_req, res) => {
   }
 
   try {
-    const page = await driveFilesList({
+    const files = await driveFilesListAll(
       apiKey,
-      q: `'${STORY_PROBE_FOLDER_ID}' in parents and mimeType contains 'video' and trashed = false`,
-      fields: "nextPageToken,files(id,name,mimeType)",
-      pageSize: 3,
-    });
+      `'${STORY_PROBE_FOLDER_ID}' in parents and mimeType contains 'video' and trashed = false`,
+      "nextPageToken,files(id,name,mimeType)",
+    );
     res.json({
       ok: true,
       driveConfigured: true,
       activeVar: driveDiag.activeVar,
-      storyFolderVideoCount: page.files.length,
-      sampleFileId: page.files[0]?.id ?? null,
+      storyFolderVideoCount: files.length,
+      sampleFileId: files[0]?.id ?? null,
       hint:
-        page.files.length === 0
+        files.length === 0
           ? "API key works but folder has no videos. Share folders as Anyone with the link can view."
           : undefined,
     });

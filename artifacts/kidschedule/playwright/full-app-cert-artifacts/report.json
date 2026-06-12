@@ -1,0 +1,174 @@
+{
+  "validatedAt": "2026-06-11T19:07:31.675Z",
+  "baseURL": "https://www.amynest.in",
+  "routes": [
+    {
+      "route": "/dashboard",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/parenting-hub",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/audio-lessons",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/amy-coach",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/speech-coach",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/phonics",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/routines",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [
+        "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <ta>\n      <div className=\"parent-hub...\">\n        <header>\n        <Tabs defaultValue=\"sch",
+        "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. button <button>"
+      ],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/insights",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/progress",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/games",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/nutrition",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/parent-profile",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/pricing",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/learn-with-amy",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/study",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    },
+    {
+      "route": "/environment",
+      "verdict": "PASS",
+      "httpStatus": 200,
+      "crashOverlay": 0,
+      "notFound": 0,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "error": null
+    }
+  ],
+  "overall": "PASS",
+  "consoleErrorSample": [
+    "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <ta>\n      <div className=\"parent-hub...\">\n        <header>\n        <Tabs defaultValue=\"schedule\" className=\"w-full\">\n          <TabsProvider scope={undefined} baseId=\"radix-«rc»\" value=\"sche",
+    "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. button <button>"
+  ]
+}

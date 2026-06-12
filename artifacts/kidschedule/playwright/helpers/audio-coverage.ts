@@ -106,7 +106,18 @@ async function triggerConversationCoach(page: Page): Promise<void> {
   if (await start.isVisible({ timeout: 12_000 }).catch(() => false)) {
     await start.click({ timeout: 12_000 });
   }
-  await page.waitForTimeout(12_000);
+  await page
+    .waitForFunction(
+      () => {
+        const mgr = (window as Window & {
+          __amynestAudioManagerRef?: { isSpeechPlaying?: () => boolean };
+        }).__amynestAudioManagerRef;
+        return mgr?.isSpeechPlaying?.() === true || !!document.querySelector("audio[src],video[src]");
+      },
+      { timeout: 45_000 },
+    )
+    .catch(() => {});
+  await page.waitForTimeout(3_000);
 }
 
 async function triggerSpeechCoach(page: Page): Promise<void> {

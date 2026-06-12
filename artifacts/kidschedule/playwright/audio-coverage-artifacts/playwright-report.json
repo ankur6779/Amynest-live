@@ -87,7 +87,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 214156,
+                      "duration": 263708,
                       "error": {
                         "message": "Error: Infant Story: no_audio_element {\"elementExists\":false,\"playResolved\":false,\"playingEventFired\":false,\"currentTimeGt0\":false}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
                         "stack": "Error: Infant Story: no_audio_element {\"elementExists\":false,\"playResolved\":false,\"playingEventFired\":false,\"currentTimeGt0\":false}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/audio-coverage.spec.ts:83:98",
@@ -126,14 +126,6 @@
                         {
                           "location": {
                             "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/audio-coverage.spec.ts",
-                            "column": 64,
-                            "line": 82
-                          },
-                          "message": "Error: Phonics navigation\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31m\"locator.waitFor: Timeout 20000ms exceeded.\u001b[39m\n\u001b[31mCall log:\u001b[39m\n\u001b[31m\u001b[2m  - waiting for locator('[data-testid^=\\\"audio-play-\\\"]').first() to be visible\u001b[22m\u001b[39m\n\u001b[31m\"\u001b[39m\n\n  80 |       writeReport(detail);\n  81 |\n> 82 |       expect.soft(triggerError, `${feature.label} navigation`).toBeNull();\n     |                                                                ^\n  83 |       expect.soft(audio.ok, `${feature.label}: ${audio.reason} ${JSON.stringify(audio.checks)}`).toBe(true);\n  84 |     }\n  85 |   });\n    at /Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/audio-coverage.spec.ts:82:64"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs/audio-coverage.spec.ts",
                             "column": 98,
                             "line": 83
                           },
@@ -143,7 +135,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-10T11:11:10.504Z",
+                      "startTime": "2026-06-11T19:08:03.087Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -184,8 +176,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-10T11:11:09.068Z",
-    "duration": 221511.68600000002,
+    "startTime": "2026-06-11T19:08:01.484Z",
+    "duration": 292727.84400000004,
     "expected": 0,
     "skipped": 0,
     "unexpected": 1,

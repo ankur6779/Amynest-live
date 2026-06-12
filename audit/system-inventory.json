@@ -1,0 +1,349 @@
+{
+  "generatedAt": "2026-06-11T18:45:00.000Z",
+  "auditVersion": "1.0.0",
+  "repository": "/Users/macbook/AmyNestProject/AmyNest-AI",
+  "productionOrigin": "https://www.amynest.in",
+  "summary": {
+    "routes": 72,
+    "pageComponents": 94,
+    "uiComponents": 539,
+    "apiEndpointsApprox": 360,
+    "cronJobsInProcess": 12,
+    "backgroundWorkers": 1,
+    "edgeFunctions": 1,
+    "serverActions": 0,
+    "riveAssets": 0
+  },
+  "frontend": {
+    "app": "artifacts/kidschedule",
+    "router": {
+      "library": "wouter",
+      "entryFile": "artifacts/kidschedule/src/AppCore.tsx",
+      "shellFile": "artifacts/kidschedule/src/App.tsx"
+    },
+    "routes": [
+      { "path": "/", "page": "landing.tsx (HomeRedirect)", "auth": "public", "source": "AppCore.tsx" },
+      { "path": "/privacy", "page": "privacy.tsx", "auth": "public" },
+      { "path": "/terms", "page": "terms.tsx", "auth": "public" },
+      { "path": "/delete-account", "page": "delete-account.tsx", "auth": "public" },
+      { "path": "/billing-dispute", "page": "billing-dispute.tsx", "auth": "public" },
+      { "path": "/support", "page": "support.tsx", "auth": "public" },
+      { "path": "/get-app", "page": "social-landing.tsx", "auth": "public" },
+      { "path": "/app", "page": "store-tap.tsx", "auth": "public" },
+      { "path": "/features/:slug", "page": "feature-seo-landing.tsx", "auth": "public" },
+      { "path": "/guides", "page": "guides-index.tsx", "auth": "public" },
+      { "path": "/guides/:slug", "page": "guide-article.tsx", "auth": "public" },
+      { "path": "/sign-in", "page": "sign-in.tsx", "auth": "public" },
+      { "path": "/sign-up", "page": "sign-up.tsx", "auth": "public" },
+      { "path": "/verify-email", "page": "verify-email.tsx", "auth": "public" },
+      { "path": "/reset-password", "page": "reset-password.tsx", "auth": "public" },
+      { "path": "/verify", "page": "auth-callback.tsx", "auth": "public" },
+      { "path": "/auth/callback", "page": "auth-callback.tsx", "auth": "public" },
+      { "path": "/auth/action", "page": "auth-action-page.tsx", "auth": "public" },
+      { "path": "/auth/apple/callback", "page": "apple-auth-callback.tsx", "auth": "public" },
+      { "path": "/onboarding", "page": "onboarding.tsx", "auth": "guard" },
+      { "path": "/notify-prompt", "page": "notify-prompt.tsx", "auth": "guard" },
+      { "path": "/subscription-trial", "page": "subscription-trial.tsx", "auth": "conditional" },
+      { "path": "/referral/:code", "page": "referral-deep-link.tsx", "auth": "public" },
+      { "path": "/dashboard", "page": "dashboard.tsx", "auth": "protected" },
+      { "path": "/children", "page": "children/index.tsx", "auth": "protected" },
+      { "path": "/children/new", "page": "children/form.tsx", "auth": "protected" },
+      { "path": "/children/:id", "page": "children/form.tsx", "auth": "protected" },
+      { "path": "/routines", "page": "routines/index.tsx", "auth": "protected" },
+      { "path": "/routines/generate", "page": "routines/generate.tsx", "auth": "protected" },
+      { "path": "/routines/:id", "page": "routines/detail.tsx", "auth": "protected" },
+      { "path": "/behavior", "page": "behavior/index.tsx", "auth": "protected" },
+      { "path": "/parent-profile", "page": "parent-profile.tsx", "auth": "protected" },
+      { "path": "/notification-settings", "page": "notification-settings.tsx", "auth": "protected" },
+      { "path": "/notification-diagnostics", "page": "notification-diagnostics.tsx", "auth": "protected" },
+      { "path": "/assistant", "page": "assistant.tsx", "auth": "protected" },
+      { "path": "/amy-ai-tutor", "page": "amy-ai-tutor.tsx", "auth": "protected" },
+      { "path": "/learn-with-amy", "page": "amy-learning-tutor.tsx", "auth": "protected" },
+      { "path": "/progress", "page": "progress.tsx", "auth": "protected" },
+      { "path": "/parenting-hub", "page": "parenting-hub.tsx", "auth": "protected" },
+      { "path": "/parent-growth", "page": "parent-growth.tsx", "auth": "protected" },
+      { "path": "/phonics", "page": "phonics.tsx", "auth": "protected" },
+      { "path": "/phonics/test", "page": "phonics.tsx", "auth": "protected" },
+      { "path": "/phonics/test/play", "page": "phonics-test-play.tsx", "auth": "protected" },
+      { "path": "/study", "page": "study.tsx", "auth": "protected" },
+      { "path": "/smart-math-tricks", "page": "smart-math-tricks.tsx", "auth": "protected" },
+      { "path": "/abacus", "page": "abacus.tsx", "auth": "protected" },
+      { "path": "/spelling", "page": "spelling.tsx", "auth": "protected" },
+      { "path": "/olympiad", "page": "olympiad.tsx", "auth": "protected" },
+      { "path": "/event-prep", "page": "event-prep.tsx", "auth": "protected" },
+      { "path": "/school-morning-flow", "page": "school-morning-flow.tsx", "auth": "protected" },
+      { "path": "/life-skills", "page": "life-skills.tsx", "auth": "protected" },
+      { "path": "/audio-lessons", "page": "audio-lessons.tsx", "auth": "protected" },
+      { "path": "/speech-coach", "page": "speech-coach/index.tsx", "auth": "protected" },
+      { "path": "/speech-coach/live-session", "page": "speech-coach/live-speech-coach.tsx", "auth": "protected" },
+      { "path": "/speech-coach/talk", "page": "speech-coach/conversation-coach.tsx", "auth": "protected" },
+      { "path": "/talking-amy", "page": "talking-amy/index.tsx", "auth": "protected" },
+      { "path": "/discovery-worlds", "page": "discovery-worlds-hub.tsx", "auth": "protected" },
+      { "path": "/animal-world", "page": "animal-world.tsx", "auth": "protected" },
+      { "path": "/worlds/:slug", "page": "discovery-world-live.tsx", "auth": "protected", "slugs": ["vehicles", "nature", "home", "instruments"] },
+      { "path": "/answer-to-kids-how", "page": "answer-to-kids-how.tsx", "auth": "protected" },
+      { "path": "/answer-to-kids-how/read/:bookId", "page": "answer-to-kids-how-reader.tsx", "auth": "protected" },
+      { "path": "/amy-coach", "page": "ai-coach.tsx", "auth": "protected" },
+      { "path": "/amy-coach/progress", "page": "ai-coach-progress.tsx", "auth": "protected" },
+      { "path": "/recipes", "page": "recipes.tsx", "auth": "protected" },
+      { "path": "/nutrition", "page": "nutrition/index.tsx", "auth": "protected" },
+      { "path": "/games", "page": "games.tsx", "auth": "protected" },
+      { "path": "/kids-control-center", "page": "kids-control-center.tsx", "auth": "protected", "status": "badge Soon" },
+      { "path": "/insights", "page": "insights.tsx", "auth": "protected" },
+      { "path": "/rewards", "page": "rewards.tsx", "auth": "protected" },
+      { "path": "/pricing", "page": "pricing.tsx", "auth": "protected" },
+      { "path": "/referrals", "page": "referrals.tsx", "auth": "protected" },
+      { "path": "/feedback", "page": "feedback.tsx", "auth": "protected" },
+      { "path": "/environment", "page": "environment.tsx", "auth": "protected" },
+      { "path": "/debug/learning", "page": "debug-learning.tsx", "auth": "protected" },
+      { "path": "/debug-parity", "page": "debug-parity.tsx", "auth": "none" },
+      { "path": "/dev/phonics-audio-preview", "page": "phonics-audio-preview.tsx", "auth": "none" },
+      { "path": "/dev/rhymes-audio-ab", "page": "rhymes-audio-ab.tsx", "auth": "none" },
+      { "path": "/admin/dashboard", "page": "admin-dashboard.tsx", "auth": "protected+admin" },
+      { "path": "/admin/feedback", "page": "admin-feedback.tsx", "auth": "protected+admin" },
+      { "path": "/admin/infant-parenting", "page": "admin-infant-parenting.tsx", "auth": "protected+admin" },
+      { "path": "/admin/audio-health", "page": "admin-audio-health.tsx", "auth": "redirects to /admin/dashboard" }
+    ],
+    "orphanPages": [
+      {
+        "file": "artifacts/kidschedule/src/pages/discovery-world-preview.tsx",
+        "issue": "DiscoveryWorldPreviewRoute defined in AppCore.tsx but no matching Route path"
+      },
+      {
+        "file": "artifacts/kidschedule/src/pages/verify-email-action.tsx",
+        "issue": "Superseded by auth-action-page.tsx; no imports found"
+      },
+      {
+        "file": "artifacts/kidschedule/src/pages/not-found.tsx",
+        "issue": "Imported in AppCore.tsx but unused; catch-all uses route-failed.tsx"
+      }
+    ],
+    "redirects": [
+      { "from": "/login", "to": "/sign-in" },
+      { "from": "/profile", "to": "/parent-profile" },
+      { "from": "/babysitters", "to": "/dashboard" },
+      { "from": "/download", "to": "/get-app" },
+      { "from": "/speech-coach/live", "to": "/speech-coach/live-session" },
+      { "from": "/parenting-hub/speech-coach", "to": "/speech-coach" },
+      { "from": "/parenting-hub/talking-amy", "to": "/talking-amy" },
+      { "from": "/admin/audio-health", "to": "/admin/dashboard" }
+    ]
+  },
+  "backend": {
+    "apiServer": "artifacts/api-server/src",
+    "mountPrefix": "/api",
+    "healthEndpoints": ["/health", "/healthz", "/api/health", "/api/healthz"],
+    "routeModulesApprox": 95,
+    "endpointCountApprox": 360,
+    "cronJobs": [
+      { "name": "globalNotificationTick", "schedule": "* * * * *", "file": "lib/notificationCron.ts" },
+      { "name": "routineItemSweep", "schedule": "* * * * *", "file": "lib/notificationCron.ts" },
+      { "name": "infantNotificationTick", "schedule": "* * * * *", "file": "lib/notificationCron.ts" },
+      { "name": "featureNotificationTick", "schedule": "* * * * *", "file": "lib/notificationCron.ts" },
+      { "name": "stalePendingSweep", "schedule": "*/5 * * * *", "file": "lib/notificationCron.ts" },
+      { "name": "tokenSweep", "schedule": "0 3 * * *", "file": "lib/notificationCron.ts" },
+      { "name": "phonicsCurriculumDailyPlans", "schedule": "0 5 * * *", "file": "lib/phonicsCurriculumCron.ts" },
+      { "name": "phonicsContentDrip", "schedule": "0 4 * * 0", "file": "lib/phonicsContentDripCron.ts" },
+      { "name": "storyGcsMirror", "schedule": "30 3 * * *", "file": "lib/storyGcsCron.ts" },
+      { "name": "ttsOrphanCleanup", "schedule": "0 4 * * 0", "file": "lib/ttsOrphanCleanupCron.ts" },
+      { "name": "learningContentSeed", "schedule": "30 3 * * 0", "file": "lib/learningContentSeedCron.ts" },
+      { "name": "weeklyRecapPush", "schedule": "0 9 * * 0", "file": "lib/weeklyRecapCron.ts" },
+      { "name": "adminHealthDigest", "schedule": "0 */4 * * *", "file": "lib/adminHealthDigestCron.ts" }
+    ],
+    "workers": [
+      {
+        "name": "amynest-ai-worker",
+        "queue": "ai-jobs",
+        "entry": "artifacts/api-server/src/worker/index.ts",
+        "deploy": "render.yaml Docker worker"
+      }
+    ],
+    "edgeFunctions": [
+      {
+        "name": "amynest-api-proxy",
+        "platform": "cloudflare-workers",
+        "path": "infra/cloudflare/amynest-api-proxy/src/worker.js",
+        "routes": ["www.amynest.in/api/*", "amynest.in/api/*"]
+      }
+    ]
+  },
+  "featureSystems": {
+    "parentHub": {
+      "route": "/parenting-hub",
+      "page": "artifacts/kidschedule/src/pages/parenting-hub.tsx",
+      "libs": ["lib/parent-hub-speak", "lib/parenting-articles", "lib/infant-hub"]
+    },
+    "amyCoach": {
+      "route": "/amy-coach",
+      "page": "artifacts/kidschedule/src/pages/ai-coach.tsx",
+      "api": "/api/ai-coach/*",
+      "audio": "dynamic TTS + coach-audio-playback.ts"
+    },
+    "conversationCoach": {
+      "route": "/speech-coach/talk",
+      "page": "artifacts/kidschedule/src/pages/speech-coach/conversation-coach.tsx",
+      "lib": "lib/speech-coach"
+    },
+    "storyHub": {
+      "component": "artifacts/kidschedule/src/components/story-hub.tsx",
+      "api": "/api/stories/*",
+      "videoSource": "Google Drive → GCS mirror story-hub/"
+    },
+    "infantSection": {
+      "components": ["infant-mode.tsx", "infant-sleep-module.tsx", "infant-poems.tsx"],
+      "api": "/api/infant-*",
+      "bundledAudio": "public/infant-sleep-audio/manifest.json (34 assets, binaries not in repo)"
+    },
+    "toddlerSection": {
+      "content": "lib/parent-hub-speak/src/data/toddler-stories.ts (5 stories)",
+      "educationStages": "lib/education-stages"
+    },
+    "preschoolSection": {
+      "content": "lib/parent-hub-speak/src/data/toddler-stories.ts (6 preschool stories)",
+      "phonics": "/phonics V1/V2/V3"
+    },
+    "phonics": {
+      "routes": ["/phonics", "/phonics/test", "/phonics/test/play"],
+      "v1": "components/phonics-learning.tsx",
+      "v2": "components/phonics-v2/PhonicsV2.tsx",
+      "v3": "lib/phonics-v3/",
+      "audioAssets": 1393,
+      "manifest": "artifacts/kidschedule/src/data/phonics-audio-map.json"
+    },
+    "smartMath": {
+      "route": "/smart-math-tricks",
+      "page": "smart-math-tricks.tsx",
+      "libs": ["lib/math-tricks", "lib/math-playground"]
+    },
+    "cryInsights": {
+      "component": "artifacts/kidschedule/src/components/cry-insight.tsx",
+      "api": "/api/cry-insight/*"
+    },
+    "routineGenerator": {
+      "routes": ["/routines/generate", "/routines/:id"],
+      "api": "/api/routines/generate*, /api/routines/generate-ai"
+    },
+    "talkingAmy": {
+      "route": "/talking-amy",
+      "page": "talking-amy/index.tsx",
+      "avatar": "public/amy-3d/amy.glb"
+    },
+    "discoveryWorlds": {
+      "routes": ["/discovery-worlds", "/animal-world", "/worlds/:slug"],
+      "worlds": ["animal_world", "vehicle_world", "nature_world", "home_sounds", "instrument_world"],
+      "totalAssets": 795
+    },
+    "aiSystems": {
+      "assistant": "/assistant",
+      "amyAiTutor": "/amy-ai-tutor",
+      "learnWithAmy": "/learn-with-amy",
+      "contentOrchestration": "/api/content/*",
+      "openaiIntegration": "lib/integrations-openai-ai-*"
+    },
+    "contentSystems": {
+      "contentBank": "content-bank/ (1100 items)",
+      "audioLessons": "lib/audio-lessons (46 lessons)",
+      "studyZone": "/study",
+      "lifeSkills": "/life-skills",
+      "olympiad": "/olympiad",
+      "spelling": "/spelling"
+    }
+  },
+  "audioSystems": {
+    "staticTts": {
+      "map": "artifacts/kidschedule/src/data/static-audio-map.json",
+      "corpus": "artifacts/kidschedule/src/data/speakable-phrase-corpus.json",
+      "defaultEntries": 4171,
+      "phonicsModeEntries": 144,
+      "api": "/api/static-audio/:hash.mp3"
+    },
+    "phonicsLibrary": {
+      "assets": 1393,
+      "gcsPrefix": "phonics/",
+      "api": "/api/phonics-library/*"
+    },
+    "spelling": {
+      "manifest": "artifacts/kidschedule/src/data/spelling-audio-manifest.json",
+      "uniqueWords": 1731,
+      "gcsPrefix": "spelling/v2/"
+    },
+    "rhymesLullabies": {
+      "registry": "lib/rhymes-audio/src/rhymes-gcs-registry.json",
+      "count": 172,
+      "gcsPrefix": "Rhymes/"
+    },
+    "discoveryWorldsAudio": {
+      "coverageFile": "artifacts/kidschedule/public/discovery-worlds-coverage.json",
+      "coveragePct": 100,
+      "totalAssets": 795
+    },
+    "infantSleepBundled": {
+      "manifest": "artifacts/kidschedule/public/infant-sleep-audio/manifest.json",
+      "items": 34
+    },
+    "uiSounds": {
+      "type": "procedural",
+      "file": "lib/procedural-sfx.ts"
+    },
+    "achievementSounds": {
+      "type": "procedural + static TTS phrases",
+      "note": "No dedicated achievement MP3 library"
+    }
+  },
+  "videoSystems": {
+    "storyHub": {
+      "stream": "/api/stories/stream/:driveFileId",
+      "gcsPrefix": "story-hub/",
+      "productionVideoCount": 3
+    },
+    "reels": {
+      "app": "artifacts/reels/",
+      "api": "/api/reels/*",
+      "driveFolder": "1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3"
+    },
+    "artCraftReels": {
+      "component": "artifacts/kidschedule/src/components/art-craft-reels.tsx"
+    }
+  },
+  "assets": {
+    "gcsBucketDefault": "amynest-audio-storage",
+    "gcsPathPrefixes": [
+      "static-audio/",
+      "phonics/",
+      "spelling/v2/",
+      "Rhymes/",
+      "story-hub/",
+      "content-bank/",
+      "animal-world/",
+      "worlds/"
+    ],
+    "riveAssets": [],
+    "amy3d": [
+      "artifacts/kidschedule/public/amy-3d/amy.glb",
+      "artifacts/kidschedule/public/amy-3d/amy-avatar.png"
+    ],
+    "googleDriveReferences": {
+      "fileCount": 47,
+      "files": [
+        "artifacts/kidschedule/src/components/daily-kids-activity.tsx",
+        "artifacts/kidschedule/src/components/art-craft-reels.tsx",
+        "artifacts/kidschedule/src/components/printable-worksheets.tsx",
+        "artifacts/api-server/src/lib/googleDrive.ts",
+        "artifacts/api-server/src/routes/stories.ts",
+        "artifacts/api-server/src/routes/coloring.ts",
+        "artifacts/api-server/src/routes/funsheets.ts",
+        "artifacts/api-server/src/routes/worksheets.ts",
+        "artifacts/api-server/src/routes/reels.ts"
+      ],
+      "folderIds": [
+        "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj",
+        "1pSrec0X4nD3cTwf68qylNCFlKJbACjA4",
+        "1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3"
+      ]
+    }
+  },
+  "serverActions": {
+    "count": 0,
+    "note": "Vite SPA — no Next.js use server directives in repository"
+  }
+}

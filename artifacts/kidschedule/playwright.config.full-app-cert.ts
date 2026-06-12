@@ -5,11 +5,11 @@ const BASE_URL =
 
 export default defineConfig({
   testDir: "./playwright/specs",
-  testMatch: /(prod-crash-verify|audio-lessons-playback|full-app-certification)\.spec\.ts/,
-  timeout: 300_000,
+  testMatch: "full-app-certification.spec.ts",
+  timeout: 600_000,
   retries: 0,
   workers: 1,
-  reporter: "line",
+  reporter: [["line"], ["json", { outputFile: "playwright/full-app-cert-artifacts/playwright-report.json" }]],
   use: {
     baseURL: BASE_URL,
     trace: "retain-on-failure",

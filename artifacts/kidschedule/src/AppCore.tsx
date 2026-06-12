@@ -148,6 +148,7 @@ import { ReferralAttributionBridge } from "@/components/referral-attribution-bri
 import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
 import { useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
+import { IS_PROD } from "@/lib/is-dev";
 import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
@@ -445,6 +446,11 @@ const AdminFeedbackRoute = makeProtectedRoute(AdminFeedbackPage);
 const AdminAudioHealthRoute = makeProtectedRoute(AdminAudioHealthPage);
 const AdminDashboardRoute = makeProtectedRoute(AdminDashboardPage);
 const AdminInfantParentingRoute = makeProtectedRoute(AdminInfantParentingPage);
+
+/** Dev/QA routes must not render in production bundles — redirect to dashboard. */
+function DevRouteRedirect() {
+  return <Redirect to="/dashboard" replace />;
+}
 
 function FirebaseAuthBootstrap() {
   const { getToken, isSignedIn } = useAuth();
@@ -761,9 +767,19 @@ function AppRoutes() {
           <Route path="/referrals" component={ReferralsRoute} />
           <Route path="/insights" component={InsightsRoute} />
           <Route path="/rewards" component={RewardsRoute} />
-          <Route path="/debug-parity" component={DebugParityPage} />
-          <Route path="/dev/phonics-audio-preview" component={PhonicsAudioPreviewPage} />
-          <Route path="/dev/rhymes-audio-ab" component={RhymesAudioAbPage} />
+          {IS_PROD ? (
+            <>
+              <Route path="/debug-parity" component={DevRouteRedirect} />
+              <Route path="/dev/phonics-audio-preview" component={DevRouteRedirect} />
+              <Route path="/dev/rhymes-audio-ab" component={DevRouteRedirect} />
+            </>
+          ) : (
+            <>
+              <Route path="/debug-parity" component={DebugParityPage} />
+              <Route path="/dev/phonics-audio-preview" component={PhonicsAudioPreviewPage} />
+              <Route path="/dev/rhymes-audio-ab" component={RhymesAudioAbPage} />
+            </>
+          )}
           <Route path="/environment" component={EnvironmentRoute} />
           <Route path="/feedback" component={FeedbackRoute} />
           <Route path="/admin/feedback" component={AdminFeedbackRoute} />
