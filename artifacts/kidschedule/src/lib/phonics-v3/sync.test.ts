@@ -25,7 +25,7 @@ vi.stubGlobal("navigator", { onLine: true });
 
 function mockServer(progress: ReturnType<typeof mergePhonicsV3Bundle> extends never ? never : object) {
   let serverState = progress;
-  return vi.fn(async (url: string | URL, init?: RequestInit) => {
+  const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const path = String(url);
     if (path.includes("/sync") && init?.method === "POST") {
       const body = JSON.parse(String(init.body));
@@ -43,6 +43,9 @@ function mockServer(progress: ReturnType<typeof mergePhonicsV3Bundle> extends ne
       return new Response(JSON.stringify({ ok: true, progress: serverState }), { status: 200 });
     }
     return new Response(JSON.stringify({ error: "not_found" }), { status: 404 });
+  });
+  return Object.assign(fetchMock, {
+    getServerState: () => serverState,
   });
 }
 
@@ -105,6 +108,8 @@ describe("phonics-v3 sync", () => {
     const merged = JSON.parse(store.get("amynest:phonics-v3-mastery:7") ?? "{}");
     expect(merged.words?.cat).toBeTruthy();
     expect(merged.words?.dog).toBeTruthy();
+    expect(server.getServerState().mastery?.payload.words?.cat).toBeTruthy();
+    expect(server.getServerState().mastery?.payload.words?.dog).toBeTruthy();
   });
 
   it("offline writes queue then sync when online", async () => {
