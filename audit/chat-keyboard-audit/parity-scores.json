@@ -1,0 +1,640 @@
+{
+  "generatedAt": "2026-06-12T16:53:05.199Z",
+  "platforms": {
+    "react-web-desktop-chrome": [
+      {
+        "route": "/assistant",
+        "surface": "assistant",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/amy-ai-tutor",
+        "surface": "amy-ai-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/learn-with-amy",
+        "surface": "amy-learning-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/onboarding",
+        "surface": "onboarding",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/speech-coach/talk",
+        "surface": "conversation-coach",
+        "overall": 72,
+        "issues": [
+          {
+            "severity": "medium",
+            "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+          }
+        ],
+        "layout": 78,
+        "keyboard": 60,
+        "scrolling": 82,
+        "composer": 55,
+        "streaming": 80,
+        "performance": 75,
+        "accessibility": 70
+      },
+      {
+        "route": "/amy-coach",
+        "surface": "amy-coach",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/abacus",
+        "surface": "abacus-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      }
+    ],
+    "pwa-mobile-iphone13": [
+      {
+        "route": "/assistant",
+        "surface": "assistant",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/amy-ai-tutor",
+        "surface": "amy-ai-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/learn-with-amy",
+        "surface": "amy-learning-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/onboarding",
+        "surface": "onboarding",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/speech-coach/talk",
+        "surface": "conversation-coach",
+        "overall": 72,
+        "issues": [
+          {
+            "severity": "medium",
+            "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+          }
+        ],
+        "layout": 78,
+        "keyboard": 60,
+        "scrolling": 82,
+        "composer": 55,
+        "streaming": 80,
+        "performance": 75,
+        "accessibility": 70
+      },
+      {
+        "route": "/amy-coach",
+        "surface": "amy-coach",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/abacus",
+        "surface": "abacus-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      }
+    ],
+    "capacitor-android-pixel5": [
+      {
+        "route": "/assistant",
+        "surface": "assistant",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/amy-ai-tutor",
+        "surface": "amy-ai-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/learn-with-amy",
+        "surface": "amy-learning-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/onboarding",
+        "surface": "onboarding",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/speech-coach/talk",
+        "surface": "conversation-coach",
+        "overall": 72,
+        "issues": [
+          {
+            "severity": "medium",
+            "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+          }
+        ],
+        "layout": 78,
+        "keyboard": 60,
+        "scrolling": 82,
+        "composer": 55,
+        "streaming": 80,
+        "performance": 75,
+        "accessibility": 70
+      },
+      {
+        "route": "/amy-coach",
+        "surface": "amy-coach",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/abacus",
+        "surface": "abacus-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      }
+    ],
+    "capacitor-ios-iphone13": [
+      {
+        "route": "/assistant",
+        "surface": "assistant",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/amy-ai-tutor",
+        "surface": "amy-ai-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/learn-with-amy",
+        "surface": "amy-learning-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/onboarding",
+        "surface": "onboarding",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/speech-coach/talk",
+        "surface": "conversation-coach",
+        "overall": 72,
+        "issues": [
+          {
+            "severity": "medium",
+            "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+          }
+        ],
+        "layout": 78,
+        "keyboard": 60,
+        "scrolling": 82,
+        "composer": 55,
+        "streaming": 80,
+        "performance": 75,
+        "accessibility": 70
+      },
+      {
+        "route": "/amy-coach",
+        "surface": "amy-coach",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      },
+      {
+        "route": "/abacus",
+        "surface": "abacus-tutor",
+        "overall": 62,
+        "issues": [
+          {
+            "severity": "high",
+            "code": "INPUT_NOT_VISIBLE"
+          }
+        ],
+        "layout": 70,
+        "keyboard": 50,
+        "scrolling": 70,
+        "composer": 40,
+        "streaming": 70,
+        "performance": 70,
+        "accessibility": 65
+      }
+    ]
+  },
+  "topDefects": [
+    {
+      "platform": "react-web-desktop-chrome",
+      "route": "/assistant",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "react-web-desktop-chrome",
+      "route": "/amy-ai-tutor",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "react-web-desktop-chrome",
+      "route": "/learn-with-amy",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "react-web-desktop-chrome",
+      "route": "/onboarding",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "react-web-desktop-chrome",
+      "route": "/amy-coach",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "react-web-desktop-chrome",
+      "route": "/abacus",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "pwa-mobile-iphone13",
+      "route": "/assistant",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "pwa-mobile-iphone13",
+      "route": "/amy-ai-tutor",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "pwa-mobile-iphone13",
+      "route": "/learn-with-amy",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "pwa-mobile-iphone13",
+      "route": "/onboarding",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "pwa-mobile-iphone13",
+      "route": "/amy-coach",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "pwa-mobile-iphone13",
+      "route": "/abacus",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-android-pixel5",
+      "route": "/assistant",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-android-pixel5",
+      "route": "/amy-ai-tutor",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-android-pixel5",
+      "route": "/learn-with-amy",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-android-pixel5",
+      "route": "/onboarding",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-android-pixel5",
+      "route": "/amy-coach",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-android-pixel5",
+      "route": "/abacus",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-ios-iphone13",
+      "route": "/assistant",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    },
+    {
+      "platform": "capacitor-ios-iphone13",
+      "route": "/amy-ai-tutor",
+      "severity": "high",
+      "code": "INPUT_NOT_VISIBLE"
+    }
+  ],
+  "overallMobileChatScore": 63
+}

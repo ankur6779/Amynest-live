@@ -1,0 +1,150 @@
+{
+  "idle": {
+    "innerHeight": 727,
+    "vv": {
+      "height": 727,
+      "offsetTop": 0,
+      "inset": 0
+    },
+    "composer": {
+      "top": 662,
+      "bottom": 702,
+      "height": 40,
+      "width": 287
+    },
+    "send": {
+      "top": 666,
+      "bottom": 702,
+      "height": 36,
+      "width": 36
+    },
+    "messages": {
+      "top": 137,
+      "bottom": 636,
+      "height": 499,
+      "width": 393,
+      "scrollTop": 31,
+      "scrollHeight": 549
+    },
+    "platform": {
+      "top": 57,
+      "bottom": 727,
+      "height": 670,
+      "width": 393,
+      "pos": "static"
+    },
+    "composerOffscreenPx": 0,
+    "keyboardOpenClass": false
+  },
+  "keyboardOpen": {
+    "innerHeight": 727,
+    "vv": {
+      "height": 407,
+      "offsetTop": 0,
+      "inset": 320
+    },
+    "composer": {
+      "top": 342,
+      "bottom": 382,
+      "height": 40,
+      "width": 287
+    },
+    "send": {
+      "top": 346,
+      "bottom": 382,
+      "height": 36,
+      "width": 36
+    },
+    "messages": {
+      "top": 80,
+      "bottom": 316,
+      "height": 236,
+      "width": 393,
+      "scrollTop": 294,
+      "scrollHeight": 549
+    },
+    "platform": {
+      "top": 0,
+      "bottom": 407,
+      "height": 407,
+      "width": 393,
+      "pos": "fixed"
+    },
+    "composerOffscreenPx": 0,
+    "keyboardOpenClass": true
+  },
+  "longText": {
+    "innerHeight": 727,
+    "vv": {
+      "height": 407,
+      "offsetTop": 0,
+      "inset": 320
+    },
+    "composer": {
+      "top": 342,
+      "bottom": 382,
+      "height": 40,
+      "width": 287
+    },
+    "send": {
+      "top": 346,
+      "bottom": 382,
+      "height": 36,
+      "width": 36
+    },
+    "messages": {
+      "top": 80,
+      "bottom": 316,
+      "height": 236,
+      "width": 393,
+      "scrollTop": 367,
+      "scrollHeight": 622
+    },
+    "platform": {
+      "top": 0,
+      "bottom": 407,
+      "height": 407,
+      "width": 393,
+      "pos": "fixed"
+    },
+    "composerOffscreenPx": 0,
+    "keyboardOpenClass": true
+  },
+  "stress200": {
+    "innerHeight": 727,
+    "vv": {
+      "height": 407,
+      "offsetTop": 0,
+      "inset": 320
+    },
+    "composer": {
+      "top": 342,
+      "bottom": 382,
+      "height": 40,
+      "width": 287
+    },
+    "send": {
+      "top": 346,
+      "bottom": 382,
+      "height": 36,
+      "width": 36
+    },
+    "messages": {
+      "top": 80,
+      "bottom": 316,
+      "height": 236,
+      "width": 393,
+      "scrollTop": 3963,
+      "scrollHeight": 18222
+    },
+    "platform": {
+      "top": 0,
+      "bottom": 407,
+      "height": 407,
+      "width": 393,
+      "pos": "fixed"
+    },
+    "composerOffscreenPx": 0,
+    "keyboardOpenClass": true
+  }
+}

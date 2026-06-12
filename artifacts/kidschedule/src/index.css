@@ -4,6 +4,7 @@
 
 :root {
   --sab: 0px;
+  --sat: 0px;
 }
 
 /* ── Amy Mascot Logo — header animated icon ─────────────────────── */
@@ -1580,12 +1581,12 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 }
 
 /* Utility classes for manual safe-area spacing */
-.pt-safe  { padding-top:    env(safe-area-inset-top,    0px); }
+.pt-safe  { padding-top:    calc(0.75rem + var(--sat, env(safe-area-inset-top, 0px))); }
 .pr-safe  { padding-right:  env(safe-area-inset-right,  0px); }
-.pb-safe  { padding-bottom: var(--sab); }
+.pb-safe  { padding-bottom: calc(1rem + var(--sab, env(safe-area-inset-bottom, 0px))); }
 .pl-safe  { padding-left:   env(safe-area-inset-left,   0px); }
-.mt-safe  { margin-top:     env(safe-area-inset-top,    0px); }
-.mb-safe  { margin-bottom: var(--sab); }
+.mt-safe  { margin-top:     var(--sat, env(safe-area-inset-top, 0px)); }
+.mb-safe  { margin-bottom: var(--sab, env(safe-area-inset-bottom, 0px)); }
 
 /* ─── Light-mode legacy-color safety net ────────────────────────────────
  * The app was originally authored assuming the always-dark theme, so many
@@ -1681,6 +1682,10 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 .onboarding-chat-input {
   flex-shrink: 0;
   box-sizing: border-box;
+}
+
+.kb-safe-header {
+  padding-top: calc(0.75rem + var(--sat, env(safe-area-inset-top, 0px)));
 }
 
 .chat-thread-page--keyboard-open .chat-thread-messages,

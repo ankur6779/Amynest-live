@@ -1,0 +1,250 @@
+{
+  "$schema": "./chat-screen-inventory.schema.json",
+  "generatedAt": "2026-06-12T22:30:00.000Z",
+  "routerFile": "artifacts/kidschedule/src/AppCore.tsx",
+  "sharedInfrastructure": {
+    "chatPlatform": "artifacts/kidschedule/src/components/chat-platform.tsx",
+    "keyboardHook": "artifacts/kidschedule/src/hooks/use-keyboard-chat-layout.ts",
+    "viewportEngine": "artifacts/kidschedule/src/lib/chat-platform/viewport.ts",
+    "visibilityEngine": "artifacts/kidschedule/src/lib/chat-platform/visibility.ts",
+    "composer": "artifacts/kidschedule/src/components/chat-thread/persistent-composer.tsx",
+    "chatThread": "artifacts/kidschedule/src/components/chat-thread/chat-thread.tsx"
+  },
+  "platformNotes": {
+    "reactWeb": "Vite SPA at https://www.amynest.in — visualViewport fixed overlay when keyboard open",
+    "pwa": "Same bundle as React Web; add-to-home-screen uses Safari/Chrome mobile keyboard",
+    "capacitorIos": "artifacts/amynest-capacitor/ bundles kidschedule www; Keyboard plugin resize=body",
+    "capacitorAndroid": "User request label — shipped Android is WebView wrapper (android/ + artifacts/kidschedule-android/), NOT Capacitor android tree"
+  },
+  "screens": [
+    {
+      "route": "/assistant",
+      "component": "artifacts/kidschedule/src/pages/assistant.tsx",
+      "chatPlatformSurface": "assistant",
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "text",
+      "composerComponent": "PersistentComposer",
+      "keyboardOwner": "ChatPlatform",
+      "layoutMode": "embedded",
+      "auth": "protected",
+      "description": "Primary Ask Amy parenting assistant — full ChatThread with tab modes (parenting/teach/practice/quiz/doubt)"
+    },
+    {
+      "route": "/amy-ai-tutor",
+      "component": "artifacts/kidschedule/src/pages/amy-ai-tutor.tsx",
+      "chatPlatformSurface": "amy-ai-tutor",
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "text",
+      "composerComponent": "PersistentComposer",
+      "keyboardOwner": "ChatPlatform",
+      "layoutMode": "embedded",
+      "auth": "protected",
+      "description": "Quick Amy AI Tutor — teach/practice/quiz/doubt with subject picker and MCQ bubbles"
+    },
+    {
+      "route": "/learn-with-amy",
+      "component": "artifacts/kidschedule/src/pages/amy-learning-tutor.tsx",
+      "chatPlatformSurface": "amy-learning-tutor",
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "text+voice",
+      "composerComponent": "PersistentComposer",
+      "keyboardOwner": "ChatPlatform",
+      "layoutMode": "embedded",
+      "auth": "protected",
+      "description": "Guided Learn with Amy — text answers + Amy TTS/voiceUrl with Repeat/Continue buttons"
+    },
+    {
+      "route": "/onboarding",
+      "component": "artifacts/kidschedule/src/pages/onboarding.tsx",
+      "chatPlatformSurface": "onboarding",
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "text",
+      "composerComponent": "PersistentComposer",
+      "keyboardOwner": "ChatPlatform",
+      "layoutMode": "fullscreen",
+      "auth": "mixed",
+      "description": "Conversational onboarding wizard — composer shown only on name steps; chip/button interactions dominate"
+    },
+    {
+      "route": "/speech-coach/talk",
+      "component": "artifacts/kidschedule/src/pages/speech-coach/conversation-coach.tsx",
+      "chatPlatformSurface": null,
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "voice",
+      "composerComponent": null,
+      "keyboardOwner": "none",
+      "layoutMode": "custom-min-h-dvh",
+      "auth": "protected",
+      "description": "Live Talk with Amy — voice-only STT/TTS transcript UI; mic button footer; NOT ChatPlatform"
+    },
+    {
+      "route": "/speech-coach/live-session",
+      "component": "artifacts/kidschedule/src/pages/speech-coach/live-speech-coach.tsx",
+      "chatPlatformSurface": null,
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "voice",
+      "composerComponent": null,
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Live pronunciation coaching — mic STT + Amy TTS + 3D avatar"
+    },
+    {
+      "route": "/speech-coach",
+      "component": "artifacts/kidschedule/src/pages/speech-coach/index.tsx",
+      "chatPlatformSurface": null,
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "voice",
+      "composerComponent": null,
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Speech Coach hub — embedded pronunciation companion and speech games with mic"
+    },
+    {
+      "route": "/amy-coach",
+      "component": "artifacts/kidschedule/src/pages/ai-coach.tsx",
+      "chatPlatformSurface": "amy-coach",
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "text+voice",
+      "composerComponent": "native-input-search",
+      "keyboardOwner": "none",
+      "layoutMode": "custom-scroll-page",
+      "auth": "protected",
+      "description": "Amy Coach goal wizard — search inputs + tap answers + ListenButton TTS; NOT ChatThread despite surface enum"
+    },
+    {
+      "route": "/amy-coach (understanding)",
+      "component": "artifacts/kidschedule/src/pages/coach-understanding-screen.tsx",
+      "inputType": "none",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Amy Coach understanding summary sub-phase"
+    },
+    {
+      "route": "/amy-coach (graduation)",
+      "component": "artifacts/kidschedule/src/pages/coach-graduation-screen.tsx",
+      "inputType": "none",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Amy Coach graduation celebration sub-phase"
+    },
+    {
+      "route": "/amy-coach/progress",
+      "component": "artifacts/kidschedule/src/pages/ai-coach-progress.tsx",
+      "inputType": "none",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Amy Coach progress dashboard — read-only"
+    },
+    {
+      "route": "/abacus",
+      "component": "artifacts/kidschedule/src/components/abacus-zone.tsx",
+      "chatPlatformSurface": null,
+      "platforms": ["react-web", "pwa", "capacitor-ios", "android-webview"],
+      "inputType": "text+voice",
+      "composerComponent": "raw-textarea",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Abacus Amy tutor panel — plain textarea + TTS playback; no ChatPlatform keyboard handling"
+    },
+    {
+      "route": "/smart-math-tricks",
+      "component": "artifacts/kidschedule/src/components/math-playground/MathPlayground.tsx",
+      "inputType": "text+voice",
+      "composerComponent": "VoiceMathRound",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Math playground voice mode — mic STT rounds"
+    },
+    {
+      "route": "/phonics",
+      "component": "artifacts/kidschedule/src/components/phonics-v2/PhonicsV2.tsx",
+      "inputType": "voice",
+      "composerComponent": "VoicePhonicsRound",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Phonics voice practice rounds — mic STT"
+    },
+    {
+      "route": "/talking-amy",
+      "component": "artifacts/kidschedule/src/pages/talking-amy/index.tsx",
+      "inputType": "voice",
+      "composerComponent": "hold-to-record",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "On-device voice morphing — hold-to-record, no text chat"
+    },
+    {
+      "route": "/parenting-hub (cry-insight)",
+      "component": "artifacts/kidschedule/src/components/cry-insight.tsx",
+      "inputType": "text+voice",
+      "composerComponent": "form+mic",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "Cry analysis — context form + 5–15s mic recording"
+    },
+    {
+      "route": "/parenting-hub (ptm-prep)",
+      "component": "artifacts/kidschedule/src/components/ptm-prep.tsx",
+      "inputType": "text",
+      "composerComponent": "notes-textarea",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "PTM prep notes textarea — AI generate, not chat thread"
+    },
+    {
+      "route": "/routines/generate",
+      "component": "artifacts/kidschedule/src/pages/routines/generate.tsx",
+      "inputType": "text",
+      "composerComponent": "multi-textarea",
+      "keyboardOwner": "use-native-auth-keyboard",
+      "auth": "protected",
+      "description": "AI routine wizard — multiple Textarea fields (auth keyboard shell, not chat)"
+    },
+    {
+      "route": "/feedback",
+      "component": "artifacts/kidschedule/src/pages/feedback.tsx",
+      "inputType": "text",
+      "composerComponent": "feedback-textarea",
+      "keyboardOwner": "none",
+      "auth": "protected",
+      "description": "User feedback form — not AI chat"
+    },
+    {
+      "route": "/sign-in",
+      "component": "artifacts/kidschedule/src/pages/sign-in.tsx",
+      "inputType": "text",
+      "composerComponent": "auth-form",
+      "keyboardOwner": "use-native-auth-keyboard",
+      "auth": "guest",
+      "description": "Auth email/password — separate auth keyboard shell"
+    }
+  ],
+  "embeddedCTAs": [
+    {
+      "component": "artifacts/kidschedule/src/components/amy-fab.tsx",
+      "route": "global",
+      "inputType": "none",
+      "description": "Floating Ask Amy FAB → /assistant"
+    },
+    {
+      "component": "artifacts/kidschedule/src/components/amy-coach-check-in-card.tsx",
+      "route": "/dashboard",
+      "inputType": "none",
+      "description": "Amy Coach check-in card with tap responses"
+    },
+    {
+      "component": "artifacts/kidschedule/src/components/infant/infant-ask-amy-cta.tsx",
+      "route": "/parenting-hub",
+      "inputType": "none",
+      "description": "Deep-link to /assistant with prefilled baby question"
+    }
+  ],
+  "summary": {
+    "fullChatThreadRoutes": 4,
+    "chatPlatformSurfacesInCode": ["onboarding", "assistant", "amy-ai-tutor", "amy-learning-tutor", "speech-coach", "amy-coach"],
+    "actuallyUsesChatThread": 4,
+    "outsideChatPlatformTextInputs": 6,
+    "voicePrimaryRoutes": 5,
+    "deviceCertificationStatus": "scripts/chat-platform-device-certification.json — 5/5 devices pending, 0 videoUrl"
+  }
+}

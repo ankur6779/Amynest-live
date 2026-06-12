@@ -1,0 +1,1412 @@
+{
+  "auditedAt": "2026-06-12T16:53:05.199Z",
+  "baseUrl": "https://www.amynest.in",
+  "method": "Playwright headless + visualViewport keyboard simulation (NOT real device IME)",
+  "disclaimer": "Real iOS/Android IME, emoji keyboard, predictive bar, and hardware keyboard require physical device certification. scripts/chat-platform-device-certification.json is still pending.",
+  "platforms": {
+    "react-web-desktop-chrome": {
+      "device": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "screen": {
+          "width": 1920,
+          "height": 1080
+        },
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "defaultBrowserType": "chromium"
+      },
+      "screens": [
+        {
+          "route": "/assistant",
+          "surface": "assistant",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-ai-tutor",
+          "surface": "amy-ai-tutor",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/learn-with-amy",
+          "surface": "amy-learning-tutor",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/onboarding",
+          "surface": "onboarding",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/speech-coach/talk",
+          "surface": "conversation-coach",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": true,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardOpen": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardClose": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "note": "Voice-only surface — no text composer keyboard certification applicable",
+          "score": {
+            "layout": 78,
+            "keyboard": 60,
+            "scrolling": 82,
+            "composer": 55,
+            "streaming": 80,
+            "performance": 75,
+            "accessibility": 70,
+            "overall": 72,
+            "issues": [
+              {
+                "severity": "medium",
+                "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-coach",
+          "surface": "amy-coach",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/abacus",
+          "surface": "abacus-tutor",
+          "platform": "react-web-desktop-chrome",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 720,
+            "visualViewport": {
+              "height": 720,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "pwa-mobile-iphone13": {
+      "device": {
+        "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1",
+        "viewport": {
+          "width": 390,
+          "height": 664
+        },
+        "screen": {
+          "width": 390,
+          "height": 844
+        },
+        "deviceScaleFactor": 3,
+        "isMobile": true,
+        "hasTouch": true,
+        "defaultBrowserType": "webkit"
+      },
+      "screens": [
+        {
+          "route": "/assistant",
+          "surface": "assistant",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-ai-tutor",
+          "surface": "amy-ai-tutor",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/learn-with-amy",
+          "surface": "amy-learning-tutor",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/onboarding",
+          "surface": "onboarding",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/speech-coach/talk",
+          "surface": "conversation-coach",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": true,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardOpen": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardClose": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "note": "Voice-only surface — no text composer keyboard certification applicable",
+          "score": {
+            "layout": 78,
+            "keyboard": 60,
+            "scrolling": 82,
+            "composer": 55,
+            "streaming": 80,
+            "performance": 75,
+            "accessibility": 70,
+            "overall": 72,
+            "issues": [
+              {
+                "severity": "medium",
+                "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-coach",
+          "surface": "amy-coach",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/abacus",
+          "surface": "abacus-tutor",
+          "platform": "pwa-mobile-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "capacitor-android-pixel5": {
+      "device": {
+        "userAgent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Mobile Safari/537.36 AmyNestAndroid/1.0",
+        "viewport": {
+          "width": 393,
+          "height": 727
+        },
+        "screen": {
+          "width": 393,
+          "height": 851
+        },
+        "deviceScaleFactor": 2.75,
+        "isMobile": true,
+        "hasTouch": true,
+        "defaultBrowserType": "chromium"
+      },
+      "screens": [
+        {
+          "route": "/assistant",
+          "surface": "assistant",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-ai-tutor",
+          "surface": "amy-ai-tutor",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/learn-with-amy",
+          "surface": "amy-learning-tutor",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/onboarding",
+          "surface": "onboarding",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/speech-coach/talk",
+          "surface": "conversation-coach",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": true,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardOpen": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardClose": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "note": "Voice-only surface — no text composer keyboard certification applicable",
+          "score": {
+            "layout": 78,
+            "keyboard": 60,
+            "scrolling": 82,
+            "composer": 55,
+            "streaming": 80,
+            "performance": 75,
+            "accessibility": 70,
+            "overall": 72,
+            "issues": [
+              {
+                "severity": "medium",
+                "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-coach",
+          "surface": "amy-coach",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/abacus",
+          "surface": "abacus-tutor",
+          "platform": "capacitor-android-pixel5",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 727,
+            "visualViewport": {
+              "height": 727,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "capacitor-ios-iphone13": {
+      "device": {
+        "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1",
+        "viewport": {
+          "width": 390,
+          "height": 664
+        },
+        "screen": {
+          "width": 390,
+          "height": 844
+        },
+        "deviceScaleFactor": 3,
+        "isMobile": true,
+        "hasTouch": true,
+        "defaultBrowserType": "webkit"
+      },
+      "screens": [
+        {
+          "route": "/assistant",
+          "surface": "assistant",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-ai-tutor",
+          "surface": "amy-ai-tutor",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/learn-with-amy",
+          "surface": "amy-learning-tutor",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/onboarding",
+          "surface": "onboarding",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/speech-coach/talk",
+          "surface": "conversation-coach",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": true,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardOpen": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "keyboardClose": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "note": "Voice-only surface — no text composer keyboard certification applicable",
+          "score": {
+            "layout": 78,
+            "keyboard": 60,
+            "scrolling": 82,
+            "composer": 55,
+            "streaming": 80,
+            "performance": 75,
+            "accessibility": 70,
+            "overall": 72,
+            "issues": [
+              {
+                "severity": "medium",
+                "code": "VOICE_ONLY_NO_KEYBOARD_PATH"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/amy-coach",
+          "surface": "amy-coach",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        },
+        {
+          "route": "/abacus",
+          "surface": "abacus-tutor",
+          "platform": "capacitor-ios-iphone13",
+          "voiceOnly": false,
+          "idle": {
+            "innerHeight": 664,
+            "visualViewport": {
+              "height": 664,
+              "offsetTop": 0,
+              "keyboardInset": 0
+            },
+            "cssVars": {
+              "sab": "0px",
+              "nativeInset": ""
+            },
+            "composer": null,
+            "send": null,
+            "messages": null,
+            "platform": null,
+            "composerOffscreenPx": 0,
+            "keyboardOpenClass": false,
+            "activeElement": "body"
+          },
+          "error": "INPUT_NOT_VISIBLE",
+          "score": {
+            "layout": 70,
+            "keyboard": 50,
+            "scrolling": 70,
+            "composer": 40,
+            "streaming": 70,
+            "performance": 70,
+            "accessibility": 65,
+            "overall": 62,
+            "issues": [
+              {
+                "severity": "high",
+                "code": "INPUT_NOT_VISIBLE"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { ArrowLeft, ArrowRight, Loader2, Mic, PhoneOff, Sparkles, Star, Trophy, Volume2 } from "lucide-react";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
+import { KeyboardSafeShell } from "@/components/chat-platform";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
@@ -532,6 +533,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   const startListening = useCallback(async () => {
     if (!sessionActiveRef.current) return;
     if (startingMicRef.current) return;
+    (document.activeElement as HTMLElement | null)?.blur?.();
     startingMicRef.current = true;
     setStartingMic(true);
     stt.reset();
@@ -744,218 +746,239 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   const minutesLabel = Math.max(1, Math.round(budgetSeconds / 60));
   const progressPct = Math.min(100, Math.max(0, ((budgetSeconds - remaining) / budgetSeconds) * 100));
 
-  return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#070812] text-white" data-testid="conversation-coach-page">
-      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/30 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
-      <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
-        <header className="flex items-center gap-3">
-          <AppLink href="/speech-coach" replace source="conversation-coach-back">
-            <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
-              <ArrowLeft className="h-5 w-5" />
+  const voiceFooter = (
+    <section className="space-y-4" data-testid="conversation-coach-voice-footer">
+      <p className="min-h-6 text-center text-sm font-bold text-white/75" aria-live="polite">
+        {getSpeechCoachMicStatusMessage({ error: stt.error, sessionStatus: stt.status, fallbackStatus: status })}
+      </p>
+
+      {phase === "idle" && (
+        <div className="flex justify-center">
+          {trialExpired ? (
+            <Button
+              type="button"
+              size="lg"
+              className="h-16 rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(217,70,239,0.4)]"
+              onClick={goPremium}
+            >
+              <Sparkles className="h-5 w-5" />
+              Upgrade to Premium
             </Button>
-          </AppLink>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">Live Talk with Amy</p>
-            <h1 className="truncate font-quicksand text-xl font-black">{child.name}'s chat</h1>
-          </div>
-          <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black tabular-nums">
-            {fmtClock(remaining)} left
-          </div>
-        </header>
-
-        {active || phase === "ended" ? (
-          <div className="mt-3">
-            <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/55">
-              <span>{PHASE_LABEL[serverPhase]}</span>
-              <span>Session {Math.round(progressPct)}%</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-yellow-300 transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-        ) : null}
-
-        <section className="mt-4 flex flex-1 flex-col rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(168,85,247,0.75)] backdrop-blur-xl">
-          <ConversationAmyHero listening={listening} speaking={speaking} thinking={thinking} />
-
-          {phase === "idle" && (
-            <div className="space-y-2 text-center">
-              <p className="font-quicksand text-2xl font-black">
-                {trialExpired
-                  ? "Your free trial has ended"
-                  : welcomeBack
-                    ? `Welcome back, ${child.name}!`
-                    : `Hi ${child.name}!`}
-              </p>
-              <p className="text-sm text-white/70">
-                {trialExpired
-                  ? "Upgrade to Premium to keep talking with Amy — 10 minutes of live practice every day."
-                  : welcomeBack && displayMem.lastNextFocus
-                    ? `Last time we said we'd work on ${displayMem.lastNextFocus}. Ready for a ${minutesLabel}-minute chat?`
-                    : `Let's have a fun ${minutesLabel}-minute talk. Amy will chat and help you say words clearly!`}
-              </p>
-              {!trialExpired && isPremium ? (
-                <p className="text-xs font-black uppercase tracking-wider text-amber-200/80">
-                  Premium · {minutesLabel} minutes a day
-                </p>
-              ) : null}
-              {!trialExpired && !isPremium ? (
-                <p className="text-xs font-black uppercase tracking-wider text-cyan-200/70">
-                  Free trial · {minutesLabel} minutes a day
-                </p>
-              ) : null}
-            </div>
+          ) : (
+            <Button
+              type="button"
+              size="lg"
+              className="h-16 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(34,211,238,0.35)]"
+              onClick={start}
+            >
+              <Sparkles className="h-5 w-5" />
+              Start Talking
+            </Button>
           )}
+        </div>
+      )}
 
-          {(lastAmy || lastChild) && active && (
-            <div className="space-y-2 text-center">
-              {lastAmy && (
-                <p className="font-quicksand text-lg font-black leading-snug text-white drop-shadow">{lastAmy.text}</p>
-              )}
-              {lastChild && <p className="text-sm text-cyan-100/70">You said: "{lastChild.text}"</p>}
-            </div>
-          )}
+      {active && (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            type="button"
+            disabled={startingMic || thinking || listening}
+            onPointerDown={() => (document.activeElement as HTMLElement | null)?.blur?.()}
+            onClick={() => void startListening()}
+            className={[
+              "grid h-20 w-20 place-items-center rounded-full border text-white transition-all",
+              listening
+                ? "animate-pulse border-cyan-200 bg-cyan-400/30 shadow-[0_0_45px_rgba(34,211,238,0.65)]"
+                : "border-fuchsia-200/70 bg-fuchsia-500/30 shadow-[0_0_40px_rgba(217,70,239,0.45)]",
+              startingMic || thinking || listening ? "opacity-60" : "active:scale-95",
+            ].join(" ")}
+            aria-label="Talk to Amy"
+            data-testid="conversation-coach-mic"
+          >
+            {thinking || startingMic ? <Loader2 className="h-8 w-8 animate-spin" /> : <Mic className="h-9 w-9" />}
+          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+            onClick={() => endConversation("user")}
+          >
+            <PhoneOff className="h-4 w-4" />
+            End
+          </Button>
+        </div>
+      )}
 
-          {phase === "ended" && (
-            <div className="space-y-3 text-center">
-              {endedReason === "trial" ? (
-                <Sparkles className="mx-auto h-10 w-10 text-fuchsia-300" />
-              ) : endedReason === "budget" ? (
-                <Star className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />
-              ) : (
-                <Trophy className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />
-              )}
-              <p className="font-quicksand text-2xl font-black">
-                {endedReason === "trial"
-                  ? "Free trial ended"
-                  : endedReason === "budget"
-                    ? "Time's up for today!"
-                    : "Great session!"}
-              </p>
-              {endedReason === "trial" ? (
-                <p className="text-sm text-white/75">
-                  Upgrade to Premium for 10 minutes of live talk with Amy every day.
-                </p>
-              ) : null}
-              {report?.summary && <p className="text-sm text-white/75">{report.summary}</p>}
-              {report?.focusWords?.length ? (
-                <div className="flex flex-wrap justify-center gap-2 pt-1">
-                  {report.focusWords.slice(0, 6).map((f) => (
-                    <span
-                      key={f.word}
-                      className={[
-                        "rounded-full px-3 py-1 text-xs font-black",
-                        f.score >= 80 ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/15 text-amber-200",
-                      ].join(" ")}
-                    >
-                      {f.word} · {Math.round(f.score)}%
-                    </span>
-                  ))}
+      {phase === "ended" && (
+        <div className="flex justify-center gap-3">
+          {endedReason === "trial" ? (
+            <Button
+              type="button"
+              className="rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 font-black text-white hover:opacity-90"
+              onClick={goPremium}
+            >
+              <Sparkles className="h-4 w-4" />
+              Upgrade
+            </Button>
+          ) : null}
+          {endedReason !== "budget" && endedReason !== "trial" && remaining > CLOSING_AT ? (
+            <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={start}>
+              <Volume2 className="h-4 w-4" />
+              Talk Again
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+            onClick={() => setLocation("/speech-coach")}
+          >
+            Back to Speech Coach
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+
+  return (
+    <>
+      <div
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#070812] text-white"
+        data-testid="conversation-coach-page"
+      >
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/30 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
+        <KeyboardSafeShell
+          surface="conversation-coach"
+          layout="fullscreen"
+          className="relative z-10 bg-transparent"
+          scrollDeps={[phase, messages, stt.status, stt.error, remaining, report, status]}
+          header={
+            <div className="max-w-3xl mx-auto w-full px-4 py-4">
+              <header className="flex items-center gap-3">
+                <AppLink href="/speech-coach" replace source="conversation-coach-back">
+                  <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </AppLink>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">Live Talk with Amy</p>
+                  <h1 className="truncate font-quicksand text-xl font-black">{child.name}'s chat</h1>
+                </div>
+                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black tabular-nums">
+                  {fmtClock(remaining)} left
+                </div>
+              </header>
+
+              {active || phase === "ended" ? (
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/55">
+                    <span>{PHASE_LABEL[serverPhase]}</span>
+                    <span>Session {Math.round(progressPct)}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-yellow-300 transition-all duration-500"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
                 </div>
               ) : null}
-              {report?.nextFocus && (
-                <p className="pt-1 text-sm text-cyan-100/80">
-                  <span className="font-black">Next time:</span> {report.nextFocus}
+            </div>
+          }
+          footer={voiceFooter}
+          contentClassName="max-w-3xl mx-auto w-full px-4 py-4 space-y-4"
+          footerClassName="max-w-3xl mx-auto w-full px-4 pt-2 pb-safe bg-[#070812]/95 backdrop-blur-md border-t border-white/10"
+          contentAriaLabel="Conversation with Amy"
+        >
+          <section className="flex flex-col rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(168,85,247,0.75)] backdrop-blur-xl">
+            <ConversationAmyHero listening={listening} speaking={speaking} thinking={thinking} />
+
+            {phase === "idle" && (
+              <div className="space-y-2 text-center">
+                <p className="font-quicksand text-2xl font-black">
+                  {trialExpired
+                    ? "Your free trial has ended"
+                    : welcomeBack
+                      ? `Welcome back, ${child.name}!`
+                      : `Hi ${child.name}!`}
                 </p>
-              )}
-            </div>
-          )}
-        </section>
+                <p className="text-sm text-white/70">
+                  {trialExpired
+                    ? "Upgrade to Premium to keep talking with Amy — 10 minutes of live practice every day."
+                    : welcomeBack && displayMem.lastNextFocus
+                      ? `Last time we said we'd work on ${displayMem.lastNextFocus}. Ready for a ${minutesLabel}-minute chat?`
+                      : `Let's have a fun ${minutesLabel}-minute talk. Amy will chat and help you say words clearly!`}
+                </p>
+                {!trialExpired && isPremium ? (
+                  <p className="text-xs font-black uppercase tracking-wider text-amber-200/80">
+                    Premium · {minutesLabel} minutes a day
+                  </p>
+                ) : null}
+                {!trialExpired && !isPremium ? (
+                  <p className="text-xs font-black uppercase tracking-wider text-cyan-200/70">
+                    Free trial · {minutesLabel} minutes a day
+                  </p>
+                ) : null}
+              </div>
+            )}
 
-        <section className="mt-4 space-y-4 pb-4">
-          <p className="min-h-6 text-center text-sm font-bold text-white/75" aria-live="polite">
-            {getSpeechCoachMicStatusMessage({ error: stt.error, sessionStatus: stt.status, fallbackStatus: status })}
-          </p>
+            {(lastAmy || lastChild) && active && (
+              <div className="space-y-2 text-center">
+                {lastAmy && (
+                  <p className="font-quicksand text-lg font-black leading-snug text-white drop-shadow">{lastAmy.text}</p>
+                )}
+                {lastChild && <p className="text-sm text-cyan-100/70">You said: "{lastChild.text}"</p>}
+              </div>
+            )}
 
-          {phase === "idle" && (
-            <div className="flex justify-center">
-              {trialExpired ? (
-                <Button
-                  type="button"
-                  size="lg"
-                  className="h-16 rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(217,70,239,0.4)]"
-                  onClick={goPremium}
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Upgrade to Premium
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  size="lg"
-                  className="h-16 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(34,211,238,0.35)]"
-                  onClick={start}
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Start Talking
-                </Button>
-              )}
-            </div>
-          )}
-
-          {active && (
-            <div className="flex items-center justify-center gap-4">
-              <button
-                type="button"
-                disabled={startingMic || thinking || listening}
-                onClick={() => void startListening()}
-                className={[
-                  "grid h-20 w-20 place-items-center rounded-full border text-white transition-all",
-                  listening
-                    ? "animate-pulse border-cyan-200 bg-cyan-400/30 shadow-[0_0_45px_rgba(34,211,238,0.65)]"
-                    : "border-fuchsia-200/70 bg-fuchsia-500/30 shadow-[0_0_40px_rgba(217,70,239,0.45)]",
-                  startingMic || thinking || listening ? "opacity-60" : "active:scale-95",
-                ].join(" ")}
-                aria-label="Talk to Amy"
-              >
-                {thinking || startingMic ? <Loader2 className="h-8 w-8 animate-spin" /> : <Mic className="h-9 w-9" />}
-              </button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
-                onClick={() => endConversation("user")}
-              >
-                <PhoneOff className="h-4 w-4" />
-                End
-              </Button>
-            </div>
-          )}
-
-          {phase === "ended" && (
-            <div className="flex justify-center gap-3">
-              {endedReason === "trial" ? (
-                <Button
-                  type="button"
-                  className="rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 font-black text-white hover:opacity-90"
-                  onClick={goPremium}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Upgrade
-                </Button>
-              ) : null}
-              {endedReason !== "budget" && endedReason !== "trial" && remaining > CLOSING_AT ? (
-                <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={start}>
-                  <Volume2 className="h-4 w-4" />
-                  Talk Again
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="ghost"
-                className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
-                onClick={() => setLocation("/speech-coach")}
-              >
-                Back to Speech Coach
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </section>
+            {phase === "ended" && (
+              <div className="space-y-3 text-center">
+                {endedReason === "trial" ? (
+                  <Sparkles className="mx-auto h-10 w-10 text-fuchsia-300" />
+                ) : endedReason === "budget" ? (
+                  <Star className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />
+                ) : (
+                  <Trophy className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />
+                )}
+                <p className="font-quicksand text-2xl font-black">
+                  {endedReason === "trial"
+                    ? "Free trial ended"
+                    : endedReason === "budget"
+                      ? "Time's up for today!"
+                      : "Great session!"}
+                </p>
+                {endedReason === "trial" ? (
+                  <p className="text-sm text-white/75">
+                    Upgrade to Premium for 10 minutes of live talk with Amy every day.
+                  </p>
+                ) : null}
+                {report?.summary && <p className="text-sm text-white/75">{report.summary}</p>}
+                {report?.focusWords?.length ? (
+                  <div className="flex flex-wrap justify-center gap-2 pt-1">
+                    {report.focusWords.slice(0, 6).map((f) => (
+                      <span
+                        key={f.word}
+                        className={[
+                          "rounded-full px-3 py-1 text-xs font-black",
+                          f.score >= 80 ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/15 text-amber-200",
+                        ].join(" ")}
+                      >
+                        {f.word} · {Math.round(f.score)}%
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {report?.nextFocus && (
+                  <p className="pt-1 text-sm text-cyan-100/80">
+                    <span className="font-black">Next time:</span> {report.nextFocus}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        </KeyboardSafeShell>
       </div>
 
       <Dialog open={micSettingsOpen} onOpenChange={setMicSettingsOpen}>
@@ -973,7 +996,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </>
   );
 }
 

@@ -13,11 +13,10 @@ import { cn } from "@/lib/utils";
 function useChatDebugFlag(): boolean {
   const [on, setOn] = useState(false);
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
     try {
       const w = window as unknown as { __amynestChatDebug?: boolean };
       const query = new URLSearchParams(window.location.search).get("chatDebug") === "1";
-      // Hash works inside the WebView SPA where appending a query string is hard:
-      // navigate to e.g. `/assistant#chatDebug` once to latch it on.
       const hash = window.location.hash.includes("chatDebug");
       if (query || hash) {
         localStorage.setItem("amynest:chat-debug", "1");
@@ -215,7 +214,26 @@ export type ChatPlatformSurface =
   | "amy-ai-tutor"
   | "amy-learning-tutor"
   | "speech-coach"
-  | "amy-coach";
+  | "amy-coach"
+  | "abacus-tutor"
+  | "conversation-coach"
+  | "cry-insight"
+  | "ptm-prep";
+
+export interface KeyboardSafeShellProps {
+  surface: ChatPlatformSurface;
+  header?: ReactNode;
+  footer?: ReactNode | null;
+  children: ReactNode;
+  scrollDeps?: unknown[];
+  layout?: ChatLayoutMode;
+  className?: string;
+  style?: CSSProperties;
+  contentClassName?: string;
+  footerClassName?: string;
+  contentRole?: "main" | "log";
+  contentAriaLabel?: string;
+}
 
 export interface ChatPlatformProps {
   /** Telemetry + dev-guard identifier for this conversational surface. */
@@ -303,7 +321,7 @@ export function ChatPlatform({
         />
       ) : null}
 
-      <div className="chat-thread-header shrink-0">{header}</div>
+      <div className="chat-thread-header kb-safe-header shrink-0">{header}</div>
 
       <div ref={messagesWrapperRef} className="chat-thread-messages-wrapper min-h-0 flex-1">
         <div
@@ -327,7 +345,101 @@ export function ChatPlatform({
         <div
           ref={inputBarRef}
           className={cn(
-            "chat-thread-input mx-auto w-full shrink-0 px-4 pt-4 pb-[calc(1rem+var(--sab,env(safe-area-inset-bottom,0px)))]",
+            "chat-thread-input mx-auto w-full shrink-0 px-4 pt-4 pb-safe",
+            footerClassName,
+          )}
+        >
+          {footer}
+        </div>
+      ) : (
+        <div ref={inputBarRef} className="h-0 overflow-hidden" aria-hidden="true" />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Keyboard-safe scroll shell for search, forms, and voice controls outside ChatThread.
+ * Uses the same viewport / IME handling as ChatPlatform — single architecture owner.
+ */
+export function KeyboardSafeShell({
+  surface,
+  header,
+  footer,
+  children,
+  scrollDeps = [],
+  layout = "embedded",
+  className,
+  style,
+  contentClassName,
+  footerClassName,
+  contentRole = "main",
+  contentAriaLabel,
+}: KeyboardSafeShellProps) {
+  const [location] = useLocation();
+
+  const {
+    containerRef,
+    messagesWrapperRef,
+    messagesRef,
+    inputBarRef,
+    endRef,
+    keyboardOpen,
+    containerStyle,
+  } = useKeyboardChatLayout(scrollDeps, {
+    layout,
+    activePromptId: null,
+    surface,
+    route: location,
+  });
+
+  const debugEnabled = useChatDebugFlag();
+
+  return (
+    <div
+      ref={containerRef}
+      data-chat-platform={surface}
+      data-keyboard-safe-shell
+      className={cn(
+        "chat-thread-page flex w-full flex-col overflow-hidden",
+        layout === "embedded" && "min-h-0 flex-1",
+        keyboardOpen && "chat-thread-page--keyboard-open",
+        className,
+      )}
+      style={{ ...containerStyle, ...style }}
+    >
+      {debugEnabled ? (
+        <ChatDebugOverlay
+          surface={surface}
+          containerRef={containerRef}
+          messagesRef={messagesRef}
+          inputBarRef={inputBarRef}
+          endRef={endRef}
+        />
+      ) : null}
+
+      {header ? <div className="chat-thread-header kb-safe-header shrink-0">{header}</div> : null}
+
+      <div ref={messagesWrapperRef} className="chat-thread-messages-wrapper min-h-0 flex-1">
+        <div
+          ref={messagesRef}
+          role={contentRole}
+          aria-label={contentAriaLabel}
+          className={cn(
+            "chat-thread-messages mx-auto flex w-full flex-col overflow-y-auto",
+            contentClassName,
+          )}
+        >
+          {children}
+          <div ref={endRef} aria-hidden="true" />
+        </div>
+      </div>
+
+      {footer ? (
+        <div
+          ref={inputBarRef}
+          className={cn(
+            "chat-thread-input mx-auto w-full shrink-0 px-4 pt-3 pb-safe",
             footerClassName,
           )}
         >

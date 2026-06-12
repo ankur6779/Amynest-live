@@ -25,6 +25,7 @@ import {
   type AbacusState,
   type LevelId,
 } from "@workspace/abacus";
+import { AbacusTutorKeyboardPanel } from "@/components/abacus/abacus-tutor-keyboard-panel";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   scheduleLearningZoneAudioPrewarm,
@@ -1179,121 +1180,7 @@ function MentalMode({ level }: { level: LevelId }) {
   );
 }
 
-function TutorMode({
-  childId,
-  level,
-  ageYears,
-  voice,
-}: {
-  childId: number;
-  level: LevelId;
-  ageYears: number;
-  voice: ReturnType<typeof useAbacusAmyVoice>;
-}) {
-  const { t, i18n } = useAbacusTranslation();
-  void ageYears;
-  const authFetch = useAuthFetch();
-  const [question, setQuestion] = useState("");
-  const [reply, setReply] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const tutorVisual = useMemo(
-    () => (reply ? inferTutorAbacusVisual(reply, level) : null),
-    [reply, level],
-  );
-
-  const ask = async () => {
-    if (!question.trim()) return;
-    setLoading(true);
-    setErr(null);
-    setReply("");
-    try {
-      const res = await authFetch("/api/abacus/tutor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          childId,
-          level,
-          language: resolveAbacusLanguage(i18n.language),
-          question: question.trim(),
-        }),
-      });
-      if (!res.ok) {
-        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errBody?.error ?? "ai_failed");
-      }
-      const { readResolvedApiJson } = await import("@/lib/poll-result");
-      const data = await readResolvedApiJson<{ reply?: string; error?: string }>(res, authFetch);
-      if (!data?.reply) throw new Error(data?.error ?? "ai_failed");
-      setReply(data.reply);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "ai_failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{t("abacus.tutor_intro")}</p>
-      <textarea
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        placeholder={t("abacus.tutor_placeholder")}
-        rows={3}
-        className="w-full rounded-lg border-2 border-border bg-background px-3 py-2 text-sm"
-        data-testid="abacus-tutor-question"
-      />
-      <button
-        type="button"
-        onClick={ask}
-        disabled={loading || !question.trim()}
-        className="w-full rounded-lg bg-primary hover:bg-primary disabled:opacity-40 text-primary-foreground text-sm font-bold py-2 inline-flex items-center justify-center gap-1"
-        data-testid="abacus-tutor-ask"
-      >
-        <Sparkles className="h-4 w-4" />
-        {loading ? t("abacus.thinking") : t("abacus.ask_amy")}
-      </button>
-      {err && <p className="text-xs text-foreground text-center">⚠️ {err}</p>}
-      {reply && (
-        <div className="rounded-xl bg-muted p-3 space-y-2" data-testid="abacus-tutor-reply">
-          {tutorVisual && (
-            <div className="space-y-1.5" data-testid="abacus-tutor-visual">
-              <p className="text-[11px] font-semibold text-muted-foreground">
-                {t("abacus.tutor_visual_caption")}: {tutorVisual.caption}
-              </p>
-              <AbacusBoard
-                state={tutorVisual.state}
-                onChange={() => {}}
-                highlightRod={tutorVisual.highlightRod}
-                disabled
-                learnMode
-                valueSize="md"
-              />
-            </div>
-          )}
-          <p className="text-sm leading-relaxed">{reply}</p>
-          <button
-            type="button"
-            onPointerDown={() => voice.prime(reply)}
-            onClick={() =>
-              voice.isActiveFor(reply) ? voice.stop() : void voice.speak(reply)
-            }
-            className="inline-flex items-center gap-1 text-xs font-semibold text-foreground"
-          >
-            {voice.isActiveFor(reply) ? (
-              <VolumeX className="h-3.5 w-3.5" />
-            ) : (
-              <Volume2 className="h-3.5 w-3.5" />
-            )}
-            {voice.isActiveFor(reply) ? t("abacus.stop_voice") : t("abacus.amy_voice")}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
+// TutorMode moved to AbacusTutorKeyboardPanel (KeyboardSafeShell)
 
 // ─── Top-level component ────────────────────────────────────────────────
 
@@ -1699,7 +1586,12 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
             )}
             {mode === "mental" && <MentalMode level={level} />}
             {mode === "tutor" && (
-              <TutorMode childId={childId} level={level} ageYears={ageYears} voice={voice} />
+              <AbacusTutorKeyboardPanel
+                childId={childId}
+                level={level}
+                ageYears={ageYears}
+                voice={voice}
+              />
             )}
           </div>
         </>

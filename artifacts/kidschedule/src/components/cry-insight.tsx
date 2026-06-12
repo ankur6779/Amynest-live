@@ -431,7 +431,7 @@ export function CryInsight({
       {/* Recorder */}
       <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={recording ? stopRecording : startRecording} disabled={analysing} className={["h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all", recording ? "bg-primary hover:bg-primary animate-pulse" : "bg-gradient-to-br from-primary to-primary hover:from-primary hover:to-primary", analysing ? "opacity-50 cursor-not-allowed" : ""].join(" ")} data-testid={recording ? "stop-recording" : "start-recording"} aria-label={recording ? "Stop recording" : "Start recording"}>
+          <button type="button" onPointerDown={() => (document.activeElement as HTMLElement | null)?.blur?.()} onClick={recording ? stopRecording : startRecording} disabled={analysing} className={["h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all", recording ? "bg-primary hover:bg-primary animate-pulse" : "bg-gradient-to-br from-primary to-primary hover:from-primary hover:to-primary", analysing ? "opacity-50 cursor-not-allowed" : ""].join(" ")} data-testid={recording ? "stop-recording" : "start-recording"} aria-label={recording ? "Stop recording" : "Start recording"}>
             {analysing ? <Loader2 className="h-6 w-6 animate-spin" /> : recording ? <Square className="h-5 w-5" fill="currentColor" /> : <Mic className="h-6 w-6" />}
           </button>
           <div className="min-w-0 flex-1">

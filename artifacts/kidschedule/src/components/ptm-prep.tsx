@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   MAX_HISTORY,
@@ -64,6 +64,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
 
 interface ChildLite {
   id: string;
@@ -735,6 +736,43 @@ function PrepareStage({
   );
 }
 
+function PtmAutoGrowTextarea({
+  value,
+  onChange,
+  placeholder,
+  testId,
+  rows = 3,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  testId: string;
+  rows?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useAutoGrowTextarea(ref, value, { maxHeightPx: 120, minHeightPx: 52 });
+
+  return (
+    <div data-chat-answer="true">
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className={
+          className ??
+          "w-full px-2.5 py-2 rounded-lg border border-border bg-white dark:bg-card text-[12.5px] resize-none overflow-y-auto focus:outline-none focus:border-border"
+        }
+        style={{ minHeight: 52 }}
+        data-testid={testId}
+      />
+    </div>
+  );
+}
+
 function AttendStage({
   session,
   setSession,
@@ -761,17 +799,13 @@ function AttendStage({
             <label className="block text-[11px] font-bold text-muted-foreground mb-1">
               {t(`components.ptm_prep.${labelKey}`)}
             </label>
-            <textarea
+            <PtmAutoGrowTextarea
               value={session.notes[k]}
-              onChange={(e) =>
-                setSession((s) =>
-                  s ? setNotes(s, { [k]: e.target.value.slice(0, 800) }) : s,
-                )
+              onChange={(v) =>
+                setSession((s) => (s ? setNotes(s, { [k]: v.slice(0, 800) }) : s))
               }
               placeholder={t(`components.ptm_prep.${phKey}`)}
-              rows={3}
-              className="w-full px-2.5 py-2 rounded-lg border border-border bg-white dark:bg-card text-[12.5px] resize-none focus:outline-none focus:border-border"
-              data-testid={`ptm-note-${k}`}
+              testId={`ptm-note-${k}`}
             />
           </div>
         ))}
@@ -805,16 +839,18 @@ function AttendStage({
                   </p>
                 </div>
                 {q.asked && (
-                  <input
-                    value={q.response ?? ""}
-                    onChange={(e) =>
-                      setSession((s) =>
-                        s ? setQuestionResponse(s, q.id, e.target.value.slice(0, 200)) : s,
-                      )
-                    }
-                    placeholder={t("components.ptm_prep.what_did_the_teacher_say")}
-                    className="ml-6 w-[calc(100%-1.5rem)] h-8 px-2 rounded-md border border-border bg-white dark:bg-card text-[11.5px] focus:outline-none focus:border-border"
-                  />
+                  <div className="ml-6 w-[calc(100%-1.5rem)]" data-chat-answer="true">
+                    <input
+                      value={q.response ?? ""}
+                      onChange={(e) =>
+                        setSession((s) =>
+                          s ? setQuestionResponse(s, q.id, e.target.value.slice(0, 200)) : s,
+                        )
+                      }
+                      placeholder={t("components.ptm_prep.what_did_the_teacher_say")}
+                      className="h-8 w-full px-2 rounded-md border border-border bg-white dark:bg-card text-[11.5px] focus:outline-none focus:border-border"
+                    />
+                  </div>
                 )}
               </li>
             ))}

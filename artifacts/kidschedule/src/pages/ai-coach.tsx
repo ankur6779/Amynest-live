@@ -15,7 +15,12 @@ import {
   trackCoachLockedClick,
   trackCoachPremiumItemViewed,
 } from "@/lib/content-gating-analytics";
-import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
+import { KeyboardSafeShell } from "@/components/chat-platform";
+import {
+  AmyCoachGoalsKeyboardShell,
+  AmyCoachSearchInput,
+} from "@/components/amy-coach/coach-keyboard-shell";
+import { Sparkles, ArrowLeft, ArrowRight, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
@@ -1868,156 +1873,227 @@ export default function AICoachPage() {
 
     // ── Search mode: flat results across all categories ──────────────
     if (searchQuery) {
-      return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back")}
-            </Link>
-            {coachEligible ? (
+      const goalsHeader = (
+        <div className="flex items-center justify-between px-4 pt-2">
+          <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back")}
+          </Link>
+          {coachEligible ? (
             <Link href="/amy-coach/progress">
-              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
+              <button className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-bold text-primary dark:bg-card dark:text-muted-foreground">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress")}
               </button>
             </Link>
-            ) : null}
-          </div>
+          ) : null}
+        </div>
+      );
+
+      return (
+        <AmyCoachGoalsKeyboardShell
+          header={goalsHeader}
+          search={
+            <AmyCoachSearchInput
+              autoFocus
+              value={goalSearch}
+              onChange={setGoalSearch}
+              placeholder={t("pages.ai_coach.search_goals")}
+            />
+          }
+          scrollDeps={[goalSearch, filteredCategories, totalMatches]}
+        >
           {journeyBanner}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input autoFocus type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
-          </div>
           <div className="space-y-6">
-            {filteredCategories.map(cat => <section key={cat.id}>
-                <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-white/50 mb-2 flex items-center gap-1.5 px-1">
+            {filteredCategories.map((cat) => (
+              <section key={cat.id}>
+                <h2 className="mb-2 flex items-center gap-1.5 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-white/50">
                   <span>{cat.emoji}</span> {cat.title}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {cat.items.map(g => {
-                const access = getGoalAccess(g.id);
-                return <button key={g.id} onClick={() => handlePickGoal(g.id)} className="relative rounded-2xl p-4 border text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-3 overflow-hidden" style={{
-                  background: "linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%)",
-                  boxShadow: "0 0 15px rgba(139,92,246,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
-                  borderColor: access === "locked" ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.18)",
-                  opacity: access === "locked" ? 0.8 : 1
-                }}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {cat.items.map((g) => {
+                    const access = getGoalAccess(g.id);
+                    return (
+                      <button
+                        key={g.id}
+                        onClick={() => handlePickGoal(g.id)}
+                        className="relative flex items-center gap-3 overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-md transition-all hover:scale-[1.01] active:scale-[0.98]"
+                        style={{
+                          background:
+                            "linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%)",
+                          boxShadow: "0 0 15px rgba(139,92,246,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
+                          borderColor: access === "locked" ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.18)",
+                          opacity: access === "locked" ? 0.8 : 1,
+                        }}
+                      >
                         <GoalBadge access={access} />
-                        <span className="text-2xl shrink-0">{g.emoji}</span>
+                        <span className="shrink-0 text-2xl">{g.emoji}</span>
                         <div className="pr-14">
-                          <p className="font-quicksand font-bold text-sm text-white leading-tight">{g.title}</p>
-                          <p className="text-[11px] mt-0.5" style={{
-                      color: access === "locked" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.5)"
-                    }}>
+                          <p className="font-quicksand text-sm font-bold leading-tight text-white">{g.title}</p>
+                          <p
+                            className="mt-0.5 text-[11px]"
+                            style={{
+                              color: access === "locked" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.5)",
+                            }}
+                          >
                             {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
                           </p>
                         </div>
-                      </button>;
-              })}
+                      </button>
+                    );
+                  })}
                 </div>
-              </section>)}
-            {totalMatches === 0 && <p className="text-center py-8 text-sm text-white/40">{t("pages.ai_coach.no_goals_match")}{goalSearch}"</p>}
+              </section>
+            ))}
+            {totalMatches === 0 && (
+              <p className="py-8 text-center text-sm text-white/40">
+                {t("pages.ai_coach.no_goals_match")}
+                {goalSearch}"
+              </p>
+            )}
           </div>
-        </div>;
+        </AmyCoachGoalsKeyboardShell>
+      );
     }
 
     // ── Sub-goal view: goals inside selected category ─────────────────
     if (activeCat) {
       const categoryHint = coachAgeBand ? getCategoryHint(activeCat.id, coachAgeBand) : null;
       const isForYouEntry = activeCat.id === COACH_FOR_YOU_CATEGORY_ID;
-      return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <button onClick={() => setSelectedCategoryId(null)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ChevronLeft className="h-4 w-4" /> {isForYouEntry && !coachAgeBand ? t("pages.ai_coach.back_2") : t("pages.ai_coach.categories")}
-            </button>
-            {coachEligible ? (
-            <Link href="/amy-coach/progress">
-              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
-                <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_2")}
+      return (
+        <AmyCoachGoalsKeyboardShell
+          header={
+            <div className="flex items-center justify-between px-4 pt-2">
+              <button
+                onClick={() => setSelectedCategoryId(null)}
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />{" "}
+                {isForYouEntry && !coachAgeBand ? t("pages.ai_coach.back_2") : t("pages.ai_coach.categories")}
               </button>
-            </Link>
-            ) : null}
-          </div>
-
-          {selectedAgeOption && !isForYouEntry && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
+              {coachEligible ? (
+                <Link href="/amy-coach/progress">
+                  <button className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-bold text-primary dark:bg-card dark:text-muted-foreground">
+                    <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_2")}
+                  </button>
+                </Link>
+              ) : null}
+            </div>
+          }
+          search={
+            <AmyCoachSearchInput
+              value={goalSearch}
+              onChange={setGoalSearch}
+              placeholder={`Search in ${activeCat.title}…`}
+            />
+          }
+          scrollDeps={[goalSearch, paginatedCategoryGoals.visible, activeCat.id]}
+        >
+          {selectedAgeOption && !isForYouEntry && (
+            <button
+              type="button"
+              onClick={() => setCoachAgeBand(null)}
+              className="flex w-fit items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground dark:bg-card"
+            >
               <span>{selectedAgeOption.emoji}</span>
               <span>{selectedAgeOption.label}</span>
               <span className="text-primary">{t("pages.ai_coach.change_age")}</span>
-            </button>}
+            </button>
+          )}
 
-          {categoryHint && <button type="button" onClick={() => setSelectedCategoryId(categoryHint.targetCategoryId)} className="w-full text-left rounded-2xl px-4 py-3 border border-primary/30 bg-primary/10 text-sm text-foreground hover:bg-primary/15 transition-colors">
-              <span className="font-semibold text-primary">{t("pages.ai_coach.try_instead")}</span> {categoryHint.message}
-            </button>}
+          {categoryHint && (
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryId(categoryHint.targetCategoryId)}
+              className="w-full rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-primary/15"
+            >
+              <span className="font-semibold text-primary">{t("pages.ai_coach.try_instead")}</span>{" "}
+              {categoryHint.message}
+            </button>
+          )}
 
           {journeyBanner}
 
-          <div className="relative rounded-[18px] overflow-hidden backdrop-blur-md p-4" style={{
-          background: coachCategoryGradient(activeCat.id),
-          border: COACH_TILE_BORDER,
-          boxShadow: "0 0 35px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)"
-        }}>
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: "rgba(255,255,255,0.04)" }}
-            />
-            <div className="flex items-center gap-3 relative">
+          <div
+            className="relative overflow-hidden rounded-[18px] p-4 backdrop-blur-md"
+            style={{
+              background: coachCategoryGradient(activeCat.id),
+              border: COACH_TILE_BORDER,
+              boxShadow: "0 0 35px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+          >
+            <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(255,255,255,0.04)" }} />
+            <div className="relative flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-[14px] flex items-center justify-center text-3xl shrink-0"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-3xl"
                 style={{ background: "rgba(255,255,255,0.12)" }}
               >
                 {activeCat.emoji}
               </div>
               <div>
                 <h1 className="font-quicksand text-xl font-bold text-white">{activeCat.title}</h1>
-                <p className="text-xs" style={{ color: "rgba(199,192,232,0.9)" }}>{categoryGoalCount(activeCat.id, activeCat.items.length)} {t("pages.ai_coach.goals_pick_one_to_start")}</p>
+                <p className="text-xs" style={{ color: "rgba(199,192,232,0.9)" }}>
+                  {categoryGoalCount(activeCat.id, activeCat.items.length)}{" "}
+                  {t("pages.ai_coach.goals_pick_one_to_start")}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={`Search in ${activeCat.title}…`} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {paginatedCategoryGoals.visible.map(g => {
-            const access = getGoalAccess(g.id);
-            return <button key={g.id} data-on-dark onClick={() => handlePickGoal(g.id)} className="relative rounded-[18px] p-5 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden" style={{
-              background: coachCategoryGradient(activeCat.id),
-              border: COACH_TILE_BORDER,
-              boxShadow: "0 0 18px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
-              opacity: access === "locked" ? 0.85 : 1
-            }}>
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: "rgba(255,255,255,0.04)" }}
-                  />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {paginatedCategoryGoals.visible.map((g) => {
+              const access = getGoalAccess(g.id);
+              return (
+                <button
+                  key={g.id}
+                  data-on-dark
+                  onClick={() => handlePickGoal(g.id)}
+                  className="relative flex items-center gap-4 overflow-hidden rounded-[18px] p-5 text-left backdrop-blur-md transition-all hover:scale-[1.01] active:scale-[0.98]"
+                  style={{
+                    background: coachCategoryGradient(activeCat.id),
+                    border: COACH_TILE_BORDER,
+                    boxShadow: "0 0 18px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+                    opacity: access === "locked" ? 0.85 : 1,
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(255,255,255,0.04)" }} />
                   <GoalBadge access={access} />
                   <div
-                    className="w-11 h-11 rounded-[14px] flex items-center justify-center text-2xl shrink-0 relative"
+                    className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-2xl"
                     style={{ background: "rgba(255,255,255,0.12)" }}
                   >
                     {g.emoji}
                   </div>
-                  <div className="flex-1 pr-14 relative">
-                    <p className="font-quicksand font-bold text-base text-white leading-tight">{g.title}</p>
-                    <p className="text-[11px] mt-1" style={{
-                  color: access === "locked" ? "rgba(255,255,255,0.55)" : "rgba(199,192,232,0.9)"
-                }}>
+                  <div className="relative flex-1 pr-14">
+                    <p className="font-quicksand text-base font-bold leading-tight text-white">{g.title}</p>
+                    <p
+                      className="mt-1 text-[11px]"
+                      style={{
+                        color: access === "locked" ? "rgba(255,255,255,0.55)" : "rgba(199,192,232,0.9)",
+                      }}
+                    >
                       {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
                     </p>
                   </div>
-                </button>;
-          })}
+                </button>
+              );
+            })}
           </div>
-          {paginatedCategoryGoals.hasMore && <div className="flex justify-center pt-2">
-              <button type="button" onClick={paginatedCategoryGoals.loadMore} className="text-sm font-semibold px-4 py-2 rounded-full bg-muted dark:bg-card text-primary">
+          {paginatedCategoryGoals.hasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={paginatedCategoryGoals.loadMore}
+                className="rounded-full bg-muted px-4 py-2 text-sm font-semibold text-primary dark:bg-card"
+              >
                 {t("pages.ai_coach.load_more_goals", {
                   defaultValue: "Load more ({{shown}} of {{total}})",
                   shown: paginatedCategoryGoals.visible.length,
                   total: paginatedCategoryGoals.total,
                 })}
               </button>
-            </div>}
-        </div>;
+            </div>
+          )}
+        </AmyCoachGoalsKeyboardShell>
+      );
     }
 
     // ── Age band picker (step 1) ──────────────────────────────────────
@@ -2134,29 +2210,48 @@ export default function AICoachPage() {
         </div>
       </button>;
 
-    return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
-          </Link>
-          {coachEligible ? (
-          <Link href="/amy-coach/progress">
-            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
-              <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
-            </button>
-          </Link>
-          ) : null}
-        </div>
-
-        <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
-        background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
-        boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
-      }}>
+    return (
+      <AmyCoachGoalsKeyboardShell
+        header={
+          <div className="flex items-center justify-between px-4 pt-2">
+            <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
+            </Link>
+            {coachEligible ? (
+              <Link href="/amy-coach/progress">
+                <button className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-bold text-primary dark:bg-card dark:text-muted-foreground">
+                  <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
+                </button>
+              </Link>
+            ) : null}
+          </div>
+        }
+        search={
+          <AmyCoachSearchInput
+            value={goalSearch}
+            onChange={setGoalSearch}
+            placeholder={t("pages.ai_coach.search_all_goals")}
+          />
+        }
+        scrollDeps={[goalSearch, groupedCategories, forYouCategory, coachEligible]}
+      >
+        <div
+          data-on-dark
+          className="relative overflow-hidden rounded-3xl border border-border p-5 backdrop-blur-md"
+          style={{
+            background:
+              "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
+            boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)",
+          }}
+        >
           <div className="relative flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{
-            background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
-            boxShadow: "0 0 20px rgba(139,92,246,0.7)"
-          }}>
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+              style={{
+                background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
+                boxShadow: "0 0 20px rgba(139,92,246,0.7)",
+              }}
+            >
               <Sparkles className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -2165,7 +2260,9 @@ export default function AICoachPage() {
                 <span className="text-white">{t("pages.ai_coach.co_parent")}</span>{" "}
                 <span className="text-muted-foreground">AI</span>
               </h1>
-              <p className="text-xs text-white/85 mt-0.5">{t("pages.ai_coach.choose_a_goal_i_ll_build_your_12_step_science_plan")}</p>
+              <p className="mt-0.5 text-xs text-white/85">
+                {t("pages.ai_coach.choose_a_goal_i_ll_build_your_12_step_science_plan")}
+              </p>
             </div>
           </div>
         </div>
@@ -2175,12 +2272,12 @@ export default function AICoachPage() {
         {!coachEligible && (
           <div
             data-testid="coach-goals-preview-banner"
-            className="rounded-2xl px-4 py-3 text-sm border border-violet-400/30 bg-violet-500/10 text-violet-100"
+            className="rounded-2xl border border-violet-400/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-100"
           >
             <p className="font-semibold text-white">
               {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
             </p>
-            <p className="text-white/75 mt-1 leading-snug">
+            <p className="mt-1 leading-snug text-white/75">
               {t(
                 "pages.ai_coach.preview_age_gate_body",
                 "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
@@ -2189,74 +2286,106 @@ export default function AICoachPage() {
           </div>
         )}
 
-        {selectedAgeOption && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
+        {selectedAgeOption && (
+          <button
+            type="button"
+            onClick={() => setCoachAgeBand(null)}
+            className="flex w-fit items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground dark:bg-card"
+          >
             <span>{selectedAgeOption.emoji}</span>
             <span>{selectedAgeOption.label}</span>
             <span className="text-primary">{t("pages.ai_coach.change_age")}</span>
-          </button>}
+          </button>
+        )}
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_all_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
-        </div>
-
-        <button data-on-dark onClick={() => {
-          const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
-          setLocation(`/audio-lessons${q}`);
-        }} className="relative w-full rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
-        background: AGE_TILE_META[0]!.gradient,
-        border: COACH_TILE_BORDER,
-        boxShadow: "0 0 24px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)"
-      }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
-          <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{ background: "rgba(255,255,255,0.12)" }}>
+        <button
+          data-on-dark
+          onClick={() => {
+            const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
+            setLocation(`/audio-lessons${q}`);
+          }}
+          className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left backdrop-blur-md transition-all hover:scale-[1.01] active:scale-[0.98]"
+          style={{
+            background: AGE_TILE_META[0]!.gradient,
+            border: COACH_TILE_BORDER,
+            boxShadow: "0 0 24px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}
+        >
+          <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(255,255,255,0.04)" }} />
+          <div
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-2xl"
+            style={{ background: "rgba(255,255,255,0.12)" }}
+          >
             🎙️
           </div>
-          <div className="flex-1 relative min-w-0">
-            <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{t("pages.ai_coach.amy_audio_lessons")}</p>
-            <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(199,192,232,0.9)" }}>{t("pages.ai_coach.hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e")}</p>
+          <div className="relative min-w-0 flex-1">
+            <p className="font-quicksand text-[15px] font-bold leading-tight text-white">
+              {t("pages.ai_coach.amy_audio_lessons")}
+            </p>
+            <p className="mt-1 text-[12px] leading-snug" style={{ color: "rgba(199,192,232,0.9)" }}>
+              {t("pages.ai_coach.hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e")}
+            </p>
           </div>
-          <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 relative" />
+          <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="relative shrink-0" />
         </button>
 
-        {forYouCategory && <section>
-            <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-muted-foreground mb-2 px-1">
+        {forYouCategory && (
+          <section>
+            <h2 className="mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {t("pages.ai_coach.for_you_section")}
             </h2>
-            <button type="button" data-on-dark onClick={openForYouCategory} className="relative w-full rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
-          background: coachCategoryGradient(COACH_FOR_YOU_CATEGORY_ID),
-          border: "1px solid rgba(236,72,153,0.35)",
-          boxShadow: "0 0 28px rgba(236,72,153,0.22), inset 0 1px 0 rgba(255,255,255,0.1)",
-        }}>
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.05)" }} />
-              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{ background: "rgba(255,255,255,0.15)" }}>
+            <button
+              type="button"
+              data-on-dark
+              onClick={openForYouCategory}
+              className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left backdrop-blur-md transition-all hover:scale-[1.01] active:scale-[0.98]"
+              style={{
+                background: coachCategoryGradient(COACH_FOR_YOU_CATEGORY_ID),
+                border: "1px solid rgba(236,72,153,0.35)",
+                boxShadow: "0 0 28px rgba(236,72,153,0.22), inset 0 1px 0 rgba(255,255,255,0.1)",
+              }}
+            >
+              <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(255,255,255,0.05)" }} />
+              <div
+                className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-2xl"
+                style={{ background: "rgba(255,255,255,0.15)" }}
+              >
                 {forYouCategory.emoji}
               </div>
-              <div className="flex-1 relative min-w-0">
-                <p className="font-quicksand font-bold text-[16px] text-white leading-tight">{t("pages.ai_coach.for_you_entry_title")}</p>
-                <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(255,220,235,0.92)" }}>{t("pages.ai_coach.for_you_entry_sub")}</p>
-                <p className="text-[11px] mt-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
-                  {categoryGoalCount(forYouCategory.id, forYouCategory.items.length)} {t("pages.ai_coach.goals_parent")}
+              <div className="relative min-w-0 flex-1">
+                <p className="font-quicksand text-[16px] font-bold leading-tight text-white">
+                  {t("pages.ai_coach.for_you_entry_title")}
+                </p>
+                <p className="mt-1 text-[12px] leading-snug" style={{ color: "rgba(255,220,235,0.92)" }}>
+                  {t("pages.ai_coach.for_you_entry_sub")}
+                </p>
+                <p className="mt-1.5 text-[11px] font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
+                  {categoryGoalCount(forYouCategory.id, forYouCategory.items.length)}{" "}
+                  {t("pages.ai_coach.goals_parent")}
                 </p>
               </div>
-              <ChevronRight size={18} color="rgba(255,255,255,0.55)" className="shrink-0 relative" />
+              <ChevronRight size={18} color="rgba(255,255,255,0.55)" className="relative shrink-0" />
             </button>
-          </section>}
+          </section>
+        )}
 
         <div className="space-y-6">
-          {groupedCategories.length > 0 && <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-muted-foreground px-1 -mb-3">
+          {groupedCategories.length > 0 && (
+            <h2 className="-mb-3 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {t("pages.ai_coach.for_your_child")}
-            </h2>}
-          {groupedCategories.map(({ group, categories }) => <section key={group.id}>
-              <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-muted-foreground mb-2 px-1">
+            </h2>
+          )}
+          {groupedCategories.map(({ group, categories }) => (
+            <section key={group.id}>
+              <h2 className="mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
                 {group.label}
               </h2>
-              <div className="grid grid-cols-2 gap-3">
-                {categories.map((cat) => renderCategoryTile(cat))}
-              </div>
-            </section>)}
+              <div className="grid grid-cols-2 gap-3">{categories.map((cat) => renderCategoryTile(cat))}</div>
+            </section>
+          ))}
         </div>
-      </div>;
+      </AmyCoachGoalsKeyboardShell>
+    );
   }
 
   // ── PHASE: QUESTIONS ────────────────────────────────────────────────
