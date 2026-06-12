@@ -1,0 +1,44 @@
+{
+  "validatedAt": "2026-06-12T11:19:22.656Z",
+  "results": [
+    {
+      "id": "infant_story",
+      "label": "Infant Story",
+      "triggerError": null,
+      "playback": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false,
+          "playResolved": false,
+          "playingEventFired": false,
+          "currentTimeGt0": false
+        }
+      },
+      "pass": false
+    },
+    {
+      "id": "infant_poem",
+      "label": "Infant Poem",
+      "triggerError": "infant_poem_requires_infant_child_or_fixture",
+      "playback": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false,
+          "playResolved": false,
+          "playingEventFired": false,
+          "currentTimeGt0": false
+        }
+      },
+      "pass": false
+    },
+    {
+      "id": "infant_lullaby",
+      "label": "Infant Lullaby",
+      "pass": false,
+      "triggerError": "locator.click: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('tab', { name: /^lullabies$/i })\u001b[22m\n\u001b[2m    - locator resolved to <button role=\"tab\" aria-selected=\"true\" class=\"sleep-tab-btn flex items-center justify-center gap-1 rounded-xl py-2.5 text-[11px] font-bold transition-all duration-200 sleep-tab-btn--lullabies\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <p class=\"text-2xl font-bold text-center\">(How Much Is That) Doggie In The Window</p> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"flex-1 flex flex-col items-center justify-center min-h-[180px]\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  3 × retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"flex-1 flex flex-col items-center justify-center min-h-[180px]\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"relative w-full max-w-md mx-auto flex flex-col px-5 py-6 text-white\">…</div> from <div role=\"dialog\" aria-modal=\"true\" data-testid=\"sleep-track-fullscreen-player\" class=\"fixed inset-0 z-[100] flex items-stretch justify-center\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n",
+      "playback": null
+    }
+  ]
+}

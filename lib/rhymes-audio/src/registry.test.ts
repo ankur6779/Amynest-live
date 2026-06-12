@@ -8,8 +8,8 @@ import {
 } from "./registry.js";
 
 describe("rhymes-gcs-registry", () => {
-  it("loads 170+ entries from GCS manifest", () => {
-    assert.ok(getRhymesRegistryCount() >= 170);
+  it("loads 168+ entries from GCS manifest", () => {
+    assert.ok(getRhymesRegistryCount() >= 168);
   });
 
   it("resolves known lullaby ids", () => {

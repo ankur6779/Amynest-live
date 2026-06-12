@@ -9,7 +9,8 @@ cd "$ROOT"
 
 corepack enable
 corepack prepare pnpm@9.15.0 --activate
-export NODE_ENV=development
+# Must be production so Vite sets import.meta.env.PROD=true and compiles dev-route redirects.
+export NODE_ENV=production
 export PNPM_CONFIG_PRODUCTION=false
 
 # pnpm install --frozen-lockfile is the pnpm equivalent of npm ci.

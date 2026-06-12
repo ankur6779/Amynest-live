@@ -277,6 +277,8 @@ class AudioManagerImpl {
   private wasPausedForBackground = false;
   private appInitiatedPause = false;
   private externalPauseDetected = false;
+  /** Recently played element — short phonics clips finish before Playwright probes. */
+  private lastMediaRef: { element: HTMLAudioElement; at: number } | null = null;
   private silentOutputStreak = 0;
   private totalSuccessfulPlays = 0;
   private pendingFocusReplay: PendingFocusReplay | null = null;
@@ -1094,6 +1096,7 @@ class AudioManagerImpl {
     state.playToken = token;
     state.current = audio;
     state.playing = true;
+    this.lastMediaRef = { element: audio, at: Date.now() };
 
     const blobUrl = audio.src.startsWith("blob:") ? audio.src : null;
 
@@ -1539,6 +1542,33 @@ class AudioManagerImpl {
 
   getCurrentElement(): HTMLAudioElement | null {
     return this.channels.speech.current;
+  }
+
+  getUiCurrentElement(): HTMLAudioElement | null {
+    return this.channels.ui.current;
+  }
+
+  /** Speech or UI channel — infant sleep lullabies use UI channel. */
+  getActiveMediaElement(): HTMLAudioElement | null {
+    return this.channels.speech.current ?? this.channels.ui.current;
+  }
+
+  /** Element that played within the last few seconds (covers short phonics clips). */
+  getRecentMediaElement(withinMs = 8_000): HTMLAudioElement | null {
+    const active = this.getActiveMediaElement();
+    if (active?.src) return active;
+    const recent = this.lastMediaRef;
+    if (!recent) return null;
+    if (Date.now() - recent.at > withinMs) return null;
+    return recent.element?.src ? recent.element : null;
+  }
+
+  isAnyChannelPlaying(): boolean {
+    return (
+      this.channels.speech.playing ||
+      this.channels.ui.playing ||
+      this.playInFlight
+    );
   }
 
   isSpeechPlaying(): boolean {

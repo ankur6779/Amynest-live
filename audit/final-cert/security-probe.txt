@@ -1,0 +1,17 @@
+Security probe 2026-06-12T09:13:17Z
+/api/admin/dashboard -> HTTP 401 
+/api/admin/users -> HTTP 401 
+/api/admin/feedback -> HTTP 401 
+/api/admin/audio-health -> HTTP 401 
+/api/admin/infant-parenting -> HTTP 401 
+/api/debug/health -> HTTP 401 
+/api/dev/phonics -> HTTP 401 
+/debug/learning -> HTTP 200 
+/debug-parity -> HTTP 200 
+/dev/phonics-audio-preview -> HTTP 200 
+/dev/rhymes-audio-ab -> HTTP 200 
+/api/health -> HTTP 200 
+/api/healthz -> HTTP 200 
+/admin/dashboard -> HTTP 200 
+/admin/feedback -> HTTP 200 
+/admin/audio-health -> HTTP 200 

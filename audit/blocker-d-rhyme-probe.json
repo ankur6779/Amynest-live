@@ -1,0 +1,115 @@
+{
+  "validatedAt": "2026-06-12T09:16:26.067Z",
+  "failingAssetCount": 4,
+  "totalAuditedFailures": 4,
+  "assets": [
+    {
+      "id": "beneath-the-moss-blanket",
+      "title": "Beneath the Moss Blanket",
+      "objectPath": "Rhymes/Beneath the Moss Blanket.mp3",
+      "auditError": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-au",
+      "auditSizeBytes": 137958,
+      "publicUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3",
+      "publicProbe": {
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3",
+        "status": 403,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 410,
+        "ok": false
+      },
+      "signedProbe": {
+        "apiUrl": "https://www.amynest.in/api/audio/signed-url/beneath-the-moss-blanket",
+        "apiStatus": 200,
+        "signedUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091624Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=5110cfca11138167dbf90c858b2df76e0284cf66f114fc010f11ebdf55cb2b01dea0ca2af989fdae2fc8f4ae1ee9f66872e279f907db13289df050d0f1a85275ceeef7205d9d6fc5b599cea719e1330cf0832ed8e1307a19775091f1a0919f0e89182a0b588ae85ab2d47260ec095784321ad23ac9b29c8c4d89538177d2e10cd5d01e1572ae7864cd86498c0c0595c4c68db4c4e2a28a23b1f6137be23162a1d19cffadc5b55e6c0b795af133f26a07e362e5570e2568d51a4df794467fc62bc1bb0b9aed57add9605b466309d9a0631de11b2712944254fe1d2f57f21efd2e93d052a3afbaed1e28da106905709e5f3399e67563a952f36ec1c55f6eec2c10",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091624Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=5110cfca11138167dbf90c858b2df76e0284cf66f114fc010f11ebdf55cb2b01dea0ca2af989fdae2fc8f4ae1ee9f66872e279f907db13289df050d0f1a85275ceeef7205d9d6fc5b599cea719e1330cf0832ed8e1307a19775091f1a0919f0e89182a0b588ae85ab2d47260ec095784321ad23ac9b29c8c4d89538177d2e10cd5d01e1572ae7864cd86498c0c0595c4c68db4c4e2a28a23b1f6137be23162a1d19cffadc5b55e6c0b795af133f26a07e362e5570e2568d51a4df794467fc62bc1bb0b9aed57add9605b466309d9a0631de11b2712944254fe1d2f57f21efd2e93d052a3afbaed1e28da106905709e5f3399e67563a952f36ec1c55f6eec2c10",
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "bytes": 137958,
+        "ok": true
+      },
+      "livePlayable": false,
+      "ffprobeLikelyCorrupt": false
+    },
+    {
+      "id": "beyond-the-rainbow",
+      "title": "Beyond the Rainbow",
+      "objectPath": "Rhymes/Beyond the Rainbow.mp3",
+      "auditError": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-au",
+      "auditSizeBytes": 87096,
+      "publicUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3",
+      "publicProbe": {
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3",
+        "status": 403,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 404,
+        "ok": false
+      },
+      "signedProbe": {
+        "apiUrl": "https://www.amynest.in/api/audio/signed-url/beyond-the-rainbow",
+        "apiStatus": 200,
+        "signedUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091624Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=3c7eab499ca2ddaff364c7f186ceb488d2616e20e2b9b106c5e9f805db1fdc2b06e041eb56a52f46c85b289a29d8d22f7bf5eac7b75f4de1c15c153b69340ea849c3c2ee63a5f8d09f9bb7afb7172674c12e92dceabf87b67477ac03a5547fa870f468f4734e0dde39ee9e5e12865b875787739a66ecaec5766a287871c01fed5d7b89e0278829082fe42c50b3ae5397b958ba46f96db4a828c9f1f31db0b88b2b6089c6d2ab15e3f09ae6733ab664896a7d057a05686ef16561f4bc996424f811db310c5af7ac950efac48a03cc8189570047b8aedda421d6ca03a24b62e8ad33228db1c24a6c15464ace21bd7b5fc9f52417d235e8afdd227eb4f7014fabac",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091624Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=3c7eab499ca2ddaff364c7f186ceb488d2616e20e2b9b106c5e9f805db1fdc2b06e041eb56a52f46c85b289a29d8d22f7bf5eac7b75f4de1c15c153b69340ea849c3c2ee63a5f8d09f9bb7afb7172674c12e92dceabf87b67477ac03a5547fa870f468f4734e0dde39ee9e5e12865b875787739a66ecaec5766a287871c01fed5d7b89e0278829082fe42c50b3ae5397b958ba46f96db4a828c9f1f31db0b88b2b6089c6d2ab15e3f09ae6733ab664896a7d057a05686ef16561f4bc996424f811db310c5af7ac950efac48a03cc8189570047b8aedda421d6ca03a24b62e8ad33228db1c24a6c15464ace21bd7b5fc9f52417d235e8afdd227eb4f7014fabac",
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "bytes": 87096,
+        "ok": true
+      },
+      "livePlayable": false,
+      "ffprobeLikelyCorrupt": false
+    },
+    {
+      "id": "little-star-shine-bright",
+      "title": "Little Star, Shine Bright",
+      "objectPath": "Rhymes/Little Star, Shine Bright.mp3",
+      "auditError": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-au",
+      "auditSizeBytes": 140399,
+      "publicUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3",
+      "publicProbe": {
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3",
+        "status": 403,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 411,
+        "ok": false
+      },
+      "signedProbe": {
+        "apiUrl": "https://www.amynest.in/api/audio/signed-url/little-star-shine-bright",
+        "apiStatus": 200,
+        "signedUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091625Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=5de3db52d049c6f1c7a8ff30a37d9395e2768df23a2129ed846ec2ddbd6583cd5c9fb07d6f3b909f8dfcbcc8455a6ff62f9927be68b84d7007842b3cb319772bbf5b0f21018023f4f452159c5846b02f35da8e452343714f76e19dfe24bd54cbb4b8ddbf1cf347f276bd2ab464d01e056e8d268d1516fa3abae68729c8de682842d4ac4e6f671615136fc64bf5ac8fbd0aeefca3e9fbd5576af94156963400e3e85567042e747a304dc2d073f56e5e6c64dfdf9e3b53a0bc512a2361ab7054413860cb08f540bf15814db6316e444c2af0ff3fa1bba13105f260e507a3d919b2d20bc07ce90a7fd7afa021fa79f041095adad05834562790afb78e8b86b35988",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091625Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=5de3db52d049c6f1c7a8ff30a37d9395e2768df23a2129ed846ec2ddbd6583cd5c9fb07d6f3b909f8dfcbcc8455a6ff62f9927be68b84d7007842b3cb319772bbf5b0f21018023f4f452159c5846b02f35da8e452343714f76e19dfe24bd54cbb4b8ddbf1cf347f276bd2ab464d01e056e8d268d1516fa3abae68729c8de682842d4ac4e6f671615136fc64bf5ac8fbd0aeefca3e9fbd5576af94156963400e3e85567042e747a304dc2d073f56e5e6c64dfdf9e3b53a0bc512a2361ab7054413860cb08f540bf15814db6316e444c2af0ff3fa1bba13105f260e507a3d919b2d20bc07ce90a7fd7afa021fa79f041095adad05834562790afb78e8b86b35988",
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "bytes": 140399,
+        "ok": true
+      },
+      "livePlayable": false,
+      "ffprobeLikelyCorrupt": false
+    },
+    {
+      "id": "london-bridge-piano-version",
+      "title": "London Bridge (Piano Version)",
+      "objectPath": "Rhymes/London Bridge (Piano Version).mp3",
+      "auditError": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-au",
+      "auditSizeBytes": 100652,
+      "publicUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20(Piano%20Version).mp3",
+      "publicProbe": {
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20(Piano%20Version).mp3",
+        "status": 403,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 415,
+        "ok": false
+      },
+      "signedProbe": {
+        "apiUrl": "https://www.amynest.in/api/audio/signed-url/london-bridge-piano-version",
+        "apiStatus": 200,
+        "signedUrl": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20%28Piano%20Version%29.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091625Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=0b8d4626598cec29329b2347b9d400be70a2b8caa207a5539083b8003f789ab3af472db8515ae92172d5e02b5638fdb041224e6b94a8a4fb0f4931960e2c7b99099cb1b771a16d7262acf92ada4f5723da364b81ce90f66b275d5867121ef853aca8535ea694f515596c154f92f3d2818e544f5e69b94dbb0ee2a380ea7a031cf9c8db8de918dfcc96c07b522c5d260e318330d7c7ac6941a3d06751d8dcea3f373ac0f9cb440459a559ae9e70691d43e85e0461c45b022b75900784db5bc294079da134240cb34ee881baf4975b6b5f70af17e4c1d0b20e93b09538378b366accf04f6204f5b79c4201d2327c1b461c129142fe2e4c859d2f2c4eaa66e59933",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20%28Piano%20Version%29.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T091625Z&X-Goog-Expires=2700&X-Goog-SignedHeaders=host&X-Goog-Signature=0b8d4626598cec29329b2347b9d400be70a2b8caa207a5539083b8003f789ab3af472db8515ae92172d5e02b5638fdb041224e6b94a8a4fb0f4931960e2c7b99099cb1b771a16d7262acf92ada4f5723da364b81ce90f66b275d5867121ef853aca8535ea694f515596c154f92f3d2818e544f5e69b94dbb0ee2a380ea7a031cf9c8db8de918dfcc96c07b522c5d260e318330d7c7ac6941a3d06751d8dcea3f373ac0f9cb440459a559ae9e70691d43e85e0461c45b022b75900784db5bc294079da134240cb34ee881baf4975b6b5f70af17e4c1d0b20e93b09538378b366accf04f6204f5b79c4201d2327c1b461c129142fe2e4c859d2f2c4eaa66e59933",
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "bytes": 100652,
+        "ok": true
+      },
+      "livePlayable": false,
+      "ffprobeLikelyCorrupt": false
+    }
+  ]
+}

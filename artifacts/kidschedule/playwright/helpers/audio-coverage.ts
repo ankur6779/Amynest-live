@@ -187,6 +187,7 @@ async function triggerInfantStory(page: Page): Promise<void> {
       await page.waitForTimeout(1_200);
       const player = page.getByTestId("sleep-track-fullscreen-player");
       if (await player.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await primeUserGesture(page);
         await player.locator("button.h-16.w-16").click({ timeout: 8_000 }).catch(() => {});
         await page.waitForTimeout(1_500);
       }

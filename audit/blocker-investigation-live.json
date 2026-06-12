@@ -1,0 +1,92 @@
+{
+  "validatedAt": "2026-06-12T09:29:34.924Z",
+  "baseURL": "https://www.amynest.in",
+  "blockers": {
+    "A_dev_routes": {
+      "routes": [
+        {
+          "path": "/debug-parity",
+          "finalUrl": "https://www.amynest.in/debug-parity",
+          "redirectedToDashboard": false,
+          "hasDevSurface": false
+        },
+        {
+          "path": "/dev/phonics-audio-preview",
+          "finalUrl": "https://www.amynest.in/dev/phonics-audio-preview",
+          "redirectedToDashboard": false,
+          "hasDevSurface": true
+        },
+        {
+          "path": "/dev/rhymes-audio-ab",
+          "finalUrl": "https://www.amynest.in/dev/rhymes-audio-ab",
+          "redirectedToDashboard": false,
+          "hasDevSurface": false
+        },
+        {
+          "path": "/debug/learning",
+          "finalUrl": "https://www.amynest.in/sign-in",
+          "guest": true
+        }
+      ],
+      "realSecurityIssue": true,
+      "bundleEvidence": "AppCore-Cdu12y8L.js lineNumber:778 wires DebugParityPage (dev branch), not DevRouteRedirect"
+    },
+    "B_phonics_audio": {
+      "guest": {
+        "label": "guest",
+        "signedIn": false,
+        "playVisible": false,
+        "playback": {
+          "ok": false,
+          "reason": "no_audio_element",
+          "checks": {
+            "elementExists": false
+          }
+        }
+      },
+      "parent": {
+        "label": "parent",
+        "signedIn": true,
+        "playVisible": false,
+        "playback": {
+          "ok": false,
+          "reason": "no_audio_element",
+          "checks": {
+            "elementExists": false
+          }
+        }
+      },
+      "anyOk": false,
+      "realBug": true
+    },
+    "C_infant_audio": {
+      "hasInfantChild": true,
+      "infantHubReached": true,
+      "infantPoemsVisible": false,
+      "testFixtureIssue": false,
+      "realBug": false,
+      "note": "Demo account lacks infant child; infant poem section not reachable"
+    },
+    "E_performance": {
+      "pages": [
+        {
+          "path": "/dashboard",
+          "lcpMs": null,
+          "cls": 0,
+          "fcpMs": 756,
+          "ttfbMs": 327,
+          "inpMs": null
+        },
+        {
+          "path": "/parenting-hub",
+          "lcpMs": null,
+          "cls": 0,
+          "fcpMs": 1268,
+          "ttfbMs": 493,
+          "inpMs": null
+        }
+      ],
+      "measured": true
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-09T19:06:07.907Z",
+  "generatedAt": "2026-06-12T07:34:48.401Z",
   "bucket": "amynest-audio-storage",
   "prefix": "Rhymes/",
   "summary": {
@@ -432,7 +432,7 @@
       "title": "Beneath the Moss Blanket",
       "objectPath": "Rhymes/Beneath the Moss Blanket.mp3",
       "sizeBytes": 137958,
-      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260609%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260609T190551Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=6bf422350b01bf25d5618f1ec6c876654b9320ef03bee6b76c1974289945c6c4785a01f45043eda19d87f1d31743dbc68ac2ab5749ebc82c8973093a03a7912ab6d40ed2574a52ff183fceb1dd575a3c086e76f930c047ce7eade96669351afb7254f3c28b9e1518d5bd77081df795c36d4308292e3cac634e5c39323ec0e006e84ac7397760804b6689bb2f11fc37f730da58e8af62a81507115ca60d260df3275c6b75f6eb3433a7f5c42b48781eeb36fb12702e2a7cd7225f6fd936228b270e225e3b5eae9fbf97161a00630e247c3395f928c64ef3f486331935d3fde7545aa531e847b7c2861e934a96ea5844376980844411270901561692fa58541629\n"
+      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T073431Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=23f250ac894f859c71a7468e2630ce2541f9c165c6b40fe94a0a709bfe529d7d4210d2bf9a0c8c6acea9a079c23ba2290d0250c21767e50f3882303ac2f2f42e163bb9b5625cd4d692650441b5f3f2491c6e86f924cbd6a85ecc4ec614cee9c6665b6e8c1805cd0053bf8d5002a5d74b3a5b6498895c533d8dae758f2f8829ae53e22e1988e341fc9f276d2fb9452fd1a1b4865886d4ce45bfcca383625fffbc3aa570e703a62e7b8798f2bbf33fc21315d3b917a634c308436349a769ac59e964b8ee9bc487047cfdf1a9889febf0bbf30a3a69d1fbec1abfd6ac45e3320b5f8cbc055e9924d6ea455d7cda3343a66ba77fdad776eb878a403183e3f38cd9db\n"
     },
     {
       "id": "best-friends",
@@ -462,7 +462,7 @@
       "title": "Beyond the Rainbow",
       "objectPath": "Rhymes/Beyond the Rainbow.mp3",
       "sizeBytes": 87096,
-      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260609%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260609T190551Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=44a593f475f1b635c286f43ca9701e4f7b5beb1d3171593681792cee3b9fb095141494d5e7be14b891def78e679a5d86c9bc6d7f946ddfafb510d3bf6a90cc764e41dca1e362b503d9882d4c06f5127a94498eae9f1c5634f444d25eb6d0b50b4bda29e9d3474c477299553f50052c887b5bc566ec08f5c8b559fd1631497d12febe71e5ac14c40c2c6c0773763bfa5b08c0d7509e50b5fec1bed02804a14d3f6b4cf4b0f0c90e91521aee7dbff3f6318ce0919e68d40a8d69345f329d823d9f546adf3eb78f29ef558259e47d73acab8f87f70af82dbd5f5661434682b64658657f51861134cb4c485b232da10a0f5614cd91c2de79dca27cc581847b77c072\n"
+      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T073431Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=b9ba86087cfcb81d2b30cf67cf77e1265b8cba8b5f3bb903a21c02a20fe4e0da5b1c2e6b68a713b422b2248f9a575389b75c594d552d2028ab3d2b6d232eeb5e192d8a05a346a6f071fedf1e73b7076bf77f4a0b8240b2e2e935f28f24cffb0928d0446255a56a1b0017879334e9b0a68ea6785ced9fb969ea3e727b974b582036f74e36590aa3adcf02ff3d7ec28fad749b88ddf5427e33ce26569b3343ed5ee5b819f1d0a10cb6bf646665a5f52a238dcadd8fc0a1cfeb3453214700a4fa5ca76c0f71ea738122d5b5bcb1c00486e537f001966058d756191a42aed16b02812411948cc2be1540f65115893198b8d504256421ca3c2d24ff65913289aecfaa\n"
     },
     {
       "id": "blue-world",
@@ -1573,7 +1573,7 @@
       "title": "Little Star, Shine Bright",
       "objectPath": "Rhymes/Little Star, Shine Bright.mp3",
       "sizeBytes": 140399,
-      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260609%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260609T190556Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=1a01f46f564c970fd8bec81564885d6fe130e79dcccd445f5e98039b90dcae3c76fc471211c4e1612c0e1e53228eae2758695694b5b4362a951391f85800da3a4b5d0178884ba0fd334ca2c8a8bd4192afdbf4aef46a207dd7b859efdf23d196d4b1272750a9db97516b258b24d80ac12c524a7ddc82eeca976de5690103983bb0b27a352f57e2d2b3b7aced17beec14b9c5b7c793ece482e2d5bb56dc20b24d5d3a56bbf917cba09395f70f01d1dfefe72c7b98f1befeadf9d7764b05187e00c8c591c8262eed72a89e13e13f70b76214e6aed17fac42fe45dad24d632c4997ff6fc1443bda9f2158c3202ee0897d0a0748ef83c317eceb7e4c78646e2e06f8\n"
+      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T073436Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=53d10b8b8a4dd954233a216eeed3b5ef7410711c5452c77e8d37b35c29ca3007a363a43412d88dee6b37247fd1f170f53acb0d315f3b3985ca48a0e6832ceb653786535a2b1f8bbacc195b1d09a62c05ba809e4d27a5eb237ec69e05c5c26c572319f2b36301d76005893915bd7eb2d5a7a60b23865b03d84040223fec14d7c50eca80ef0d39dd9c4ad6d2a8612e35c38bdbdc60bd531eb204a53fdd83edb6526e4ceeaef5ce7c257ac2bd3d15b31e82cd79902e4addea884385ee44dc69bdb94b04ca9dfe447c27b3b9277e527797b0b588fa32a0e07e979a0119f0dbfd01d56f2440e249a4b3d079f57010df633c8d04e561eab43d1647a093660bba63d7e9\n"
     },
     {
       "id": "little-steps",
@@ -1626,7 +1626,7 @@
       "title": "London Bridge (Piano Version)",
       "objectPath": "Rhymes/London Bridge (Piano Version).mp3",
       "sizeBytes": 100652,
-      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20%28Piano%20Version%29.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260609%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260609T190556Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=dd0df52db4acda2a6caf40efa3f00a3a86b0844819e20c128fa0855eb797d0c60cfa1c1068af0f3518cf87de7f6a6cc38f75f3304fc5501473340bf83faf1ee6a5b3d209ff245412190bce263c118b3a0d8b5819ad5e2a10c29b777b59ea3bd1257722526f5bec9a3b7c3a084f5e5b977ed526903107b36e77f73dbad0283e6825944d8b39b2b23d0e1b4623fd04508ca19acb8eedcdca41f50595eee7f9e636a4b381ad17adb539e95d9b2c0a1b87e6765c25d7fd157f8d09608206d2dfbfde92dbe330c9191e6100200403511a79530d58802160f410ac96d7e46582a852bdf3402f725e9f02dceb2a71040d31c14490328b35a91daccb1b3243cda72a57f1\n"
+      "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20%28Piano%20Version%29.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=amynest-storage%40amynest-836ff.iam.gserviceaccount.com%2F20260612%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260612T073436Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=db18d5fb0ee34c4b0ef0c7bb223678c9417a6628435c3f89bd64e3d1d843d9e9526abe95903f42c8ccdfbfc018879480a625d17b6c66e1ade3a21574ffb8f4ca85534d35c5740b17704c93bab16bfbff40269878a09ab77f429e449a6215d2d0aa093b004d4b4f35bdb498e59c9a9c09b90e631b795b6f91710d587cb827c463fff3b3b46cf4026aa511a81fc016dc65b56e25ad3b884752aa596572eb431e7fa8943bf08367073d394258405c53381371e64ea87bc0939a8d863395dec3315fc1fd343ec489c8be50ce38cb90c87b1b294821002820c5949fec48fc53394730e7b2836aa696006eb546a1758e71d477c29ae9ac393840bd7f7709f67125a6a5\n"
     },
     {
       "id": "love-you-always",

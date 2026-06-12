@@ -29,13 +29,21 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
     const mgr = (window as Window & {
       __amynestAudioManagerRef?: {
         getCurrentElement?: () => HTMLAudioElement | null;
+        getActiveMediaElement?: () => HTMLAudioElement | null;
+        getRecentMediaElement?: (withinMs?: number) => HTMLAudioElement | null;
+        getUiCurrentElement?: () => HTMLAudioElement | null;
         isSpeechPlaying?: () => boolean;
+        isAnyChannelPlaying?: () => boolean;
       };
     }).__amynestAudioManagerRef;
 
     const pickMedia = (): HTMLMediaElement | null => {
-      const fromMgr = mgr?.getCurrentElement?.() ?? null;
-      if (fromMgr?.src) return fromMgr;
+      const fromRecent = mgr?.getRecentMediaElement?.(8_000) ?? null;
+      if (fromRecent?.src) return fromRecent;
+      const fromActive = mgr?.getActiveMediaElement?.() ?? mgr?.getCurrentElement?.() ?? null;
+      if (fromActive?.src) return fromActive;
+      const fromUi = mgr?.getUiCurrentElement?.() ?? null;
+      if (fromUi?.src) return fromUi;
       const audio = Array.from(document.querySelectorAll("audio")).find((a) => !!a.src);
       if (audio) return audio;
       return Array.from(document.querySelectorAll("video")).find((v) => !!v.src) ?? null;
@@ -43,7 +51,7 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
 
     let media: HTMLMediaElement | null = null;
     for (let i = 0; i < 40; i++) {
-      if (mgr?.isSpeechPlaying?.()) {
+      if (mgr?.isAnyChannelPlaying?.() || mgr?.isSpeechPlaying?.()) {
         media = pickMedia();
         if (media?.src) break;
       }
@@ -91,7 +99,7 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
     await new Promise((r) => setTimeout(r, 500));
     const t2 = media.currentTime;
 
-    const speechPlaying = mgr?.isSpeechPlaying?.() ?? false;
+    const speechPlaying = mgr?.isAnyChannelPlaying?.() ?? mgr?.isSpeechPlaying?.() ?? false;
     const currentTimeGt0 = t1 > 0;
     const advancing = t2 > t1 || (!media.paused && t1 > 0.02);
     const playingOk = playingEventFired || !media.paused || speechPlaying;
@@ -123,7 +131,7 @@ export async function verifyAudioPlayback(page: Page): Promise<AudioPlaybackResu
         mediaKind: media instanceof HTMLVideoElement ? "video" : "audio",
         srcTail: (media.src ?? "").slice(-80),
         readyState: media.readyState,
-        speechPlaying: mgr?.isSpeechPlaying?.() ?? null,
+        speechPlaying: mgr?.isAnyChannelPlaying?.() ?? mgr?.isSpeechPlaying?.() ?? null,
       },
     };
   });

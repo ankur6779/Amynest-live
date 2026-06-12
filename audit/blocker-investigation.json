@@ -1,0 +1,210 @@
+{
+  "validatedAt": "2026-06-12T09:40:00.000Z",
+  "productionUrl": "https://www.amynest.in",
+  "deployVersion": "2026-06-12-ceeb255",
+  "investigationMethod": "live_verification",
+  "priorAuditTrusted": false,
+  "blockers": {
+    "A_dev_routes": {
+      "verdict": "real_production_defect",
+      "realSecurityIssue": true,
+      "routes": [
+        {
+          "path": "/debug-parity",
+          "curlHttpStatus": 200,
+          "redirectMechanism": "client-side SPA",
+          "serverRedirect": false,
+          "finalUrlGuest": "https://www.amynest.in/debug-parity",
+          "devContentVisible": true,
+          "authRequired": false
+        },
+        {
+          "path": "/dev/phonics-audio-preview",
+          "curlHttpStatus": 200,
+          "redirectMechanism": "client-side SPA",
+          "serverRedirect": false,
+          "finalUrlGuest": "https://www.amynest.in/dev/phonics-audio-preview",
+          "devContentVisible": true,
+          "authRequired": false
+        },
+        {
+          "path": "/dev/rhymes-audio-ab",
+          "curlHttpStatus": 200,
+          "redirectMechanism": "client-side SPA",
+          "serverRedirect": false,
+          "finalUrlGuest": "https://www.amynest.in/dev/rhymes-audio-ab",
+          "devContentVisible": "inconclusive_headless_timeout",
+          "authRequired": false,
+          "bundleWiring": "same dev branch as debug-parity (AppCore line 778)"
+        },
+        {
+          "path": "/debug/learning",
+          "curlHttpStatus": 200,
+          "finalUrlGuest": "https://www.amynest.in/sign-in",
+          "devContentVisible": false,
+          "authRequired": true,
+          "verdict": "false_positive_for_anonymous_access"
+        }
+      ],
+      "bundleEvidence": {
+        "chunk": "AppCore-Cdu12y8L.js",
+        "compiledBranch": "dev (DebugParityPage at AppCore.tsx:778)",
+        "expectedBranch": "IS_PROD DevRouteRedirect at AppCore.tsx:772",
+        "commitClaimedFixed": "ceeb255",
+        "actuallyFixedInBundle": false
+      },
+      "screenshots": [
+        "audit/screenshots/blocker-investigation/debug-parity-live.png"
+      ]
+    },
+    "B_phonics_audio": {
+      "verdict": "real_production_defect",
+      "category": "missing_audio_playback",
+      "realBug": true,
+      "attempts": {
+        "guest": { "playButtonVisible": false, "playbackOk": false, "reason": "no_audio_element" },
+        "parentSignedIn": {
+          "playButtonClicked": true,
+          "playbackOk": false,
+          "reason": "no_audio_element",
+          "source": "audio-coverage Playwright 2026-06-12T07:38Z and 2026-06-12T09:36Z"
+        }
+      },
+      "screenshots": ["audit/screenshots/blocker-investigation/phonics.png"]
+    },
+    "C_infant_audio": {
+      "verdict": "partial_real_defect",
+      "realBugInfantStory": true,
+      "realBugInfantPoem": null,
+      "testFixtureIssueInfantPoem": true,
+      "demoAccountHasInfantChild": true,
+      "infantChildEvidence": "Child 1, 1 month on /dashboard",
+      "infantStory": {
+        "playbackOk": false,
+        "reason": "no_audio_element",
+        "triggerError": null
+      },
+      "infantPoem": {
+        "playbackOk": false,
+        "reason": "infant_poem_requires_infant_child_or_fixture",
+        "note": "Infant child exists but hub test does not select infant child before poem section"
+      },
+      "screenshots": ["audit/screenshots/blocker-investigation/infant_story.png"]
+    },
+    "D_rhyme_assets": {
+      "verdict": "real_production_defect",
+      "failingAssetCountLive": 4,
+      "failureMode": "corrupt_mp3_ffprobe_invalid",
+      "assets": [
+        {
+          "id": "beneath-the-moss-blanket",
+          "objectPath": "Rhymes/Beneath the Moss Blanket.mp3",
+          "signedUrlStatus": 200,
+          "contentType": "audio/mpeg",
+          "bytes": 137958,
+          "ffprobeOk": false
+        },
+        {
+          "id": "beyond-the-rainbow",
+          "objectPath": "Rhymes/Beyond the Rainbow.mp3",
+          "signedUrlStatus": 200,
+          "contentType": "audio/mpeg",
+          "bytes": 87096,
+          "ffprobeOk": false
+        },
+        {
+          "id": "little-star-shine-bright",
+          "objectPath": "Rhymes/Little Star, Shine Bright.mp3",
+          "signedUrlStatus": 200,
+          "contentType": "audio/mpeg",
+          "bytes": 140399,
+          "ffprobeOk": false
+        },
+        {
+          "id": "london-bridge-piano-version",
+          "objectPath": "Rhymes/London Bridge (Piano Version).mp3",
+          "signedUrlStatus": 200,
+          "contentType": "audio/mpeg",
+          "bytes": 100652,
+          "ffprobeOk": false
+        }
+      ],
+      "detailFiles": [
+        "audit/blocker-d-rhyme-probe.json",
+        "audit/blocker-d-rhyme-ffprobe.json"
+      ]
+    },
+    "E_performance": {
+      "verdict": "partial_fail",
+      "bundle": {
+        "file": "main-BP5gGGAB.js",
+        "bytes": 3513396,
+        "mb": 3.35,
+        "gateMb": 2.5,
+        "pass": false
+      },
+      "cwv": {
+        "measured": true,
+        "pages": [
+          {
+            "path": "/dashboard",
+            "lcpMs": 1664,
+            "cls": 0,
+            "fcpMs": 1336,
+            "ttfbMs": 369,
+            "inpMs": null,
+            "lcpPass": true,
+            "clsPass": true
+          },
+          {
+            "path": "/parenting-hub",
+            "lcpMs": 1380,
+            "cls": 0,
+            "fcpMs": 548,
+            "ttfbMs": 497,
+            "inpMs": null,
+            "lcpPass": true,
+            "clsPass": true
+          }
+        ],
+        "inpNote": "Event Timing not captured in headless Playwright; field INP requires real interaction lab"
+      },
+      "detailFile": "audit/cwv-measurement.json"
+    }
+  },
+  "trueBlockers": [
+    "Dev/debug routes exposed — production bundle compiled dev branch (IS_PROD redirect not active)",
+    "Phonics playback broken for signed-in parent",
+    "Four corrupt rhyme MP3 assets (ffprobe invalid)",
+    "Main JS bundle 3.35 MB exceeds 2.5 MB gate",
+    "Infant story playback failure (likely real)"
+  ],
+  "falsePositives": [
+    "/debug/learning anonymous access — guests redirect to sign-in",
+    "ceeb255 deploy fixes dev route redirects — bundle still has dev branch",
+    "Demo account lacks infant child — Child 1 is 1 month"
+  ],
+  "auditErrors": [
+    "IS_PROD source guard trusted without bundle verification",
+    "Public GCS 403 counted as missing asset (signed URLs work; files corrupt)",
+    "CWV marked missing without PerformanceObserver measurement",
+    "Infant poem failure misattributed to missing infant child",
+    "curl HTTP 200 alone insufficient for SPA route security assessment"
+  ],
+  "launchScore": {
+    "weightedTotal": 65.0,
+    "band": "FAIL",
+    "threshold": 85,
+    "components": {
+      "audio": { "weight": 0.25, "score": 57, "weighted": 14.25 },
+      "crashStability": { "weight": 0.2, "score": 74, "weighted": 14.8 },
+      "contentParity": { "weight": 0.15, "score": 76, "weighted": 11.4 },
+      "infrastructure": { "weight": 0.15, "score": 82, "weighted": 12.3 },
+      "navigation": { "weight": 0.1, "score": 58, "weighted": 5.8 },
+      "performance": { "weight": 0.1, "score": 58, "weighted": 5.8 },
+      "security": { "weight": 0.05, "score": 12, "weighted": 0.6 }
+    }
+  },
+  "launchProbability30Day": 0.42,
+  "certificationRecommendation": "DO_NOT_RELEASE"
+}

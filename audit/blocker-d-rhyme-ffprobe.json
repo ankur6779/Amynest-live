@@ -1,0 +1,62 @@
+{
+  "validatedAt": "2026-06-12T11:18:05.573Z",
+  "corruptCount": 4,
+  "assets": [
+    {
+      "id": "beneath-the-moss-blanket",
+      "apiStatus": 200,
+      "signedUrlTail": "fe1d2f57f21efd2e93d052a3afbaed1e28da106905709e5f3399e67563a952f36ec1c55f6eec2c10",
+      "head": {
+        "status": 400,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 220
+      },
+      "ffprobe": {
+        "ok": false,
+        "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beneath%20the%20Moss%20Blanket.mp3?X-Goog-Algorithm=GOOG4-RSA"
+      }
+    },
+    {
+      "id": "beyond-the-rainbow",
+      "apiStatus": 200,
+      "signedUrlTail": "d6ca03a24b62e8ad33228db1c24a6c15464ace21bd7b5fc9f52417d235e8afdd227eb4f7014fabac",
+      "head": {
+        "status": 400,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 220
+      },
+      "ffprobe": {
+        "ok": false,
+        "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Beyond%20the%20Rainbow.mp3?X-Goog-Algorithm=GOOG4-RSA-SHA256&"
+      }
+    },
+    {
+      "id": "little-star-shine-bright",
+      "apiStatus": 200,
+      "signedUrlTail": "f260e507a3d919b2d20bc07ce90a7fd7afa021fa79f041095adad05834562790afb78e8b86b35988",
+      "head": {
+        "status": 400,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 220
+      },
+      "ffprobe": {
+        "ok": false,
+        "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/Little%20Star%2C%20Shine%20Bright.mp3?X-Goog-Algorithm=GOOG4-"
+      }
+    },
+    {
+      "id": "london-bridge-piano-version",
+      "apiStatus": 200,
+      "signedUrlTail": "93b09538378b366accf04f6204f5b79c4201d2327c1b461c129142fe2e4c859d2f2c4eaa66e59933",
+      "head": {
+        "status": 400,
+        "contentType": "application/xml; charset=UTF-8",
+        "bytes": 220
+      },
+      "ffprobe": {
+        "ok": false,
+        "error": "Command failed: ffprobe -v quiet -print_format json -show_format -show_streams https://storage.googleapis.com/amynest-audio-storage/Rhymes/London%20Bridge%20%28Piano%20Version%29.mp3?X-Goog-Algorithm="
+      }
+    }
+  ]
+}

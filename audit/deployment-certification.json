@@ -1,0 +1,180 @@
+{
+  "validatedAt": "2026-06-12T11:20:00.000Z",
+  "target": "https://www.amynest.in",
+  "credentials": "demo@amynest.in (signed-in checks only)",
+  "overallVerdict": "FAIL",
+  "certificationDecision": "FAIL — FIXES NOT DEPLOYED",
+  "deploymentScore": 8,
+  "audioScore": 28,
+  "securityScore": 10,
+  "revisedLaunchScore": 51.2,
+  "launchScoreWeights": {
+    "audio": 0.25,
+    "crash": 0.2,
+    "content": 0.15,
+    "infrastructure": 0.15,
+    "navigation": 0.1,
+    "performance": 0.1,
+    "security": 0.05
+  },
+  "launchScoreComponents": {
+    "audio": { "score": 38, "weighted": 9.5, "note": "Phonics + infant playback fail; 4 corrupt rhymes remain in catalog" },
+    "crash": { "score": 74, "weighted": 14.8, "note": "No crash overlay observed during probes" },
+    "content": { "score": 58, "weighted": 8.7, "note": "Registry still 172 not 168; corrupt rhyme assets live" },
+    "infrastructure": { "score": 72, "weighted": 10.8, "note": "API health OK; signed URLs work for valid rhymes" },
+    "navigation": { "score": 12, "weighted": 1.2, "note": "Dev routes expose full dev UI to guests" },
+    "performance": { "score": 58, "weighted": 5.8, "note": "Prior LCP pass; bundle unchanged AppCore-Cdu12y8L.js" },
+    "security": { "score": 8, "weighted": 0.4, "note": "Dev/debug surfaces publicly reachable" }
+  },
+  "checks": {
+    "1_dev_routes": {
+      "verdict": "FAIL",
+      "method": ["playwright_guest", "curl_head"],
+      "curlNote": "HTTP 200 SPA shell for all three paths (expected); client-side routing determines exposure",
+      "routes": [
+        {
+          "path": "/debug-parity",
+          "curlStatus": 200,
+          "playwrightFinalUrl": "https://www.amynest.in/debug-parity",
+          "redirected": false,
+          "devUiVisible": true,
+          "devUiEvidence": "Heading 'Debug Parity Report', Export JSON button"
+        },
+        {
+          "path": "/dev/phonics-audio-preview",
+          "curlStatus": 200,
+          "playwrightFinalUrl": "https://www.amynest.in/dev/phonics-audio-preview",
+          "redirected": false,
+          "devUiVisible": true,
+          "devUiEvidence": "Phonics sound demo / A-B preview UI"
+        },
+        {
+          "path": "/dev/rhymes-audio-ab",
+          "curlStatus": 200,
+          "playwrightFinalUrl": "https://www.amynest.in/dev/rhymes-audio-ab",
+          "redirected": false,
+          "devUiVisible": true,
+          "devUiEvidence": "Rhymes A/B dev surface loads (no redirect to /dashboard)"
+        }
+      ],
+      "playwrightResult": "3/3 failed redirect expectation; 1/1 /debug/learning auth gate passed",
+      "screenshots": [
+        "audit/screenshots/final-cert/test-results/dev-route-redirect-Dev-rou-7f4e9-rity-redirects-to-dashboard/test-failed-1.png",
+        "audit/screenshots/final-cert/test-results/dev-route-redirect-Dev-rou-b7ec6-view-redirects-to-dashboard/test-failed-1.png",
+        "audit/screenshots/final-cert/test-results/dev-route-redirect-Dev-rou-546ce-o-ab-redirects-to-dashboard/test-failed-1.png"
+      ]
+    },
+    "2_phonics_playback": {
+      "verdict": "FAIL",
+      "method": "playwright_signed_in",
+      "account": "demo@amynest.in",
+      "finalUrl": "https://www.amynest.in/phonics",
+      "playback": {
+        "ok": false,
+        "reason": "no_audio_element",
+        "checks": {
+          "elementExists": false,
+          "playResolved": false,
+          "playingEventFired": false,
+          "currentTimeGt0": false
+        }
+      },
+      "screenshots": [
+        "audit/screenshots/deployment-cert/phonics-signed-in.png",
+        "audit/screenshots/blocker-investigation/phonics-signed-in.png"
+      ],
+      "artifact": "audit/phonics-probe-result.json"
+    },
+    "3_infant_playback": {
+      "verdict": "FAIL",
+      "method": "playwright_signed_in",
+      "results": [
+        {
+          "surface": "infant_story",
+          "pass": false,
+          "triggerError": null,
+          "playbackReason": "no_audio_element"
+        },
+        {
+          "surface": "infant_poem",
+          "pass": false,
+          "triggerError": "infant_poem_requires_infant_child_or_fixture",
+          "playbackReason": "no_audio_element"
+        },
+        {
+          "surface": "infant_lullaby",
+          "pass": false,
+          "triggerError": "sleep player overlay blocked tab switch after story attempt",
+          "note": "Lullaby fullscreen player opened during story probe ('Doggie In The Window') but playback not verified"
+        }
+      ],
+      "screenshots": [
+        "audit/screenshots/deployment-cert/infant_story.png",
+        "audit/screenshots/deployment-cert/infant_poem.png"
+      ],
+      "artifact": "audit/deployment-cert-infant.json"
+    },
+    "4_rhyme_registry": {
+      "verdict": "FAIL",
+      "apiEndpoint": "https://www.amynest.in/api/audio/rhymes/catalog",
+      "liveCount": 172,
+      "expectedCount": 168,
+      "countMatch": false,
+      "removedIdsStillPresent": [
+        "beneath-the-moss-blanket",
+        "beyond-the-rainbow",
+        "little-star-shine-bright",
+        "london-bridge-piano-version"
+      ],
+      "removedIdsSignedUrlStatus": {
+        "beneath-the-moss-blanket": 200,
+        "beyond-the-rainbow": 200,
+        "little-star-shine-bright": 200,
+        "london-bridge-piano-version": 200
+      },
+      "sampleProbe": [
+        { "id": "twinkle-twinkle-little-star", "signedUrlStatus": 200, "headStatus": 200, "playable": true },
+        { "id": "a-dream-in-the-clearing", "signedUrlStatus": 200, "headStatus": 200, "playable": true },
+        { "id": "how-much-is-that-doggie-in-the-window", "signedUrlStatus": 200, "headStatus": 400, "playable": false }
+      ],
+      "corruptAssetsFfprobe": {
+        "count": 4,
+        "artifact": "audit/blocker-d-rhyme-ffprobe.json"
+      }
+    },
+    "5_build_verification": {
+      "verdict": "FAIL",
+      "appCoreBundle": "https://www.amynest.in/assets/AppCore-Cdu12y8L.js",
+      "bundleBytes": 849793,
+      "bundleUnchangedFromPriorAudit": true,
+      "DevRouteRedirectInBundle": false,
+      "DevRouteRedirectCount": 0,
+      "productionBranchCompiled": false,
+      "routeWiringEvidence": "path:\"/debug-parity\",component:p7 — source map lineNumber:778 (dev branch, DebugParityPage not DevRouteRedirect)",
+      "lazyDevChunksLoaded": [
+        "debug-parity-1ObKuTiY.js"
+      ],
+      "deployVersionMarker": null,
+      "sourceExpectation": "import.meta.env.PROD ? DevRouteRedirect : DebugParityPage (AppCore.tsx L769-780)",
+      "artifact": "audit/deployment-cert-probe.json"
+    }
+  },
+  "remainingProductionDefects": [
+    "DevRouteRedirect NOT in live bundle — /debug-parity, /dev/phonics-audio-preview, /dev/rhymes-audio-ab render dev UI to guests",
+    "AppCore bundle hash unchanged (AppCore-Cdu12y8L.js) — production build still compiles dev route branch",
+    "Phonics playback fails on /phonics for demo account (no audio element after play tap)",
+    "Infant story/poem/lullaby playback not verified — story probe no_audio_element; poem section unreachable in test flow",
+    "Rhymes catalog count 172 not 168 — four corrupt/removed IDs still served by API",
+    "Four rhyme GCS assets fail ffprobe (signed URL HEAD 400 / corrupt MP3)"
+  ],
+  "artifacts": [
+    "audit/deployment-certification.md",
+    "audit/deployment-certification.json",
+    "audit/deployment-cert-probe.json",
+    "audit/deployment-cert-infant.json",
+    "audit/phonics-probe-result.json",
+    "audit/blocker-d-rhyme-ffprobe.json",
+    "audit/screenshots/deployment-cert/",
+    "audit/screenshots/final-cert/test-results/"
+  ]
+}

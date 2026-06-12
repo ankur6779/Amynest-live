@@ -2,7 +2,7 @@
   "generatedAt": "2026-06-09T18:38:50.859Z",
   "bucket": "amynest-audio-storage",
   "prefix": "Rhymes/",
-  "count": 172,
+  "count": 168,
   "entries": [
     {
       "id": "how-much-is-that-doggie-in-the-window",
@@ -158,30 +158,12 @@
       "contentType": "audio/mpeg"
     },
     {
-      "id": "beneath-the-moss-blanket",
-      "title": "Beneath the Moss Blanket",
-      "objectPath": "Rhymes/Beneath the Moss Blanket.mp3",
-      "durationSec": null,
-      "category": "lullaby",
-      "sizeBytes": 137958,
-      "contentType": "audio/mpeg"
-    },
-    {
       "id": "best-friends",
       "title": "Best friends",
       "objectPath": "Rhymes/Best friends.mp3",
       "durationSec": null,
       "category": "lullaby",
       "sizeBytes": 2887212,
-      "contentType": "audio/mpeg"
-    },
-    {
-      "id": "beyond-the-rainbow",
-      "title": "Beyond the Rainbow",
-      "objectPath": "Rhymes/Beyond the Rainbow.mp3",
-      "durationSec": null,
-      "category": "lullaby",
-      "sizeBytes": 87096,
       "contentType": "audio/mpeg"
     },
     {
@@ -617,15 +599,6 @@
       "contentType": "audio/mpeg"
     },
     {
-      "id": "little-star-shine-bright",
-      "title": "Little Star, Shine Bright",
-      "objectPath": "Rhymes/Little Star, Shine Bright.mp3",
-      "durationSec": null,
-      "category": "lullaby",
-      "sizeBytes": 140399,
-      "contentType": "audio/mpeg"
-    },
-    {
       "id": "little-steps",
       "title": "Little Steps",
       "objectPath": "Rhymes/Little Steps.mp3",
@@ -641,15 +614,6 @@
       "durationSec": null,
       "category": "lullaby",
       "sizeBytes": 5636653,
-      "contentType": "audio/mpeg"
-    },
-    {
-      "id": "london-bridge-piano-version",
-      "title": "London Bridge (Piano Version)",
-      "objectPath": "Rhymes/London Bridge (Piano Version).mp3",
-      "durationSec": null,
-      "category": "lullaby",
-      "sizeBytes": 100652,
       "contentType": "audio/mpeg"
     },
     {

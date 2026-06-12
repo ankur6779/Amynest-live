@@ -148,7 +148,6 @@ import { ReferralAttributionBridge } from "@/components/referral-attribution-bri
 import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
 import { useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
-import { IS_PROD } from "@/lib/is-dev";
 import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
@@ -767,7 +766,7 @@ function AppRoutes() {
           <Route path="/referrals" component={ReferralsRoute} />
           <Route path="/insights" component={InsightsRoute} />
           <Route path="/rewards" component={RewardsRoute} />
-          {IS_PROD ? (
+          {import.meta.env.PROD ? (
             <>
               <Route path="/debug-parity" component={DevRouteRedirect} />
               <Route path="/dev/phonics-audio-preview" component={DevRouteRedirect} />

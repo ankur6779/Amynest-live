@@ -174,7 +174,7 @@ function amynestServiceWorkerPlugin() {
   };
 }
 
-export default defineConfig({
+export default defineConfig(async ({ command }) => ({
   envDir: repoRoot,
   base: basePath,
   cacheDir: path.resolve(artifactDir, "node_modules/.vite"),
@@ -290,6 +290,14 @@ export default defineConfig({
     ],
   },
   root: path.resolve(import.meta.dirname),
+  ...(command === "build"
+    ? {
+        define: {
+          "import.meta.env.PROD": JSON.stringify(true),
+          "import.meta.env.DEV": JSON.stringify(false),
+        },
+      }
+    : {}),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
@@ -329,4 +337,4 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
   },
-});
+}));
