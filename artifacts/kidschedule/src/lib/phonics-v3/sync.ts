@@ -224,6 +224,12 @@ export async function hydratePhonicsV3Progress(
         merged = uploaded ?? local;
       } else {
         merged = mergePhonicsV3Bundle(local, server);
+        // Push union back when this device has offline progress — otherwise merged
+        // keys never reach the server and are lost on the next device or reinstall.
+        if (bundleHasLocalData(local)) {
+          const uploaded = await postSyncBatch(childId, authFetch, merged);
+          merged = uploaded ?? merged;
+        }
       }
       saveQueue(childId, []);
     }
