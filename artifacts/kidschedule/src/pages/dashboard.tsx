@@ -37,8 +37,14 @@ import {
 } from "@/lib/dashboard-data-cache";
 import { useDashboardShellReady } from "@/hooks/use-dashboard-shell-ready";
 import { Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { lazyPage } from "@/lib/safe-import";
 import { isAndroidLiteClient } from "@/lib/device-lite";
+import {
+  generateHeroGreeting,
+  heroGreetingRefreshKey,
+  type HeroGreeting,
+} from "@/lib/generate-hero-greeting";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -62,9 +68,9 @@ import {
   DASHBOARD_TINTS,
 } from "@/lib/dashboard-premium";
 
-const HeroAmbientLayer = lazyPage(() =>
-  import("@/components/hero-ambient-layer").then((m) => ({
-    default: m.HeroAmbientLayer,
+const HeroWeatherAmbient = lazyPage(() =>
+  import("@/components/HeroWeatherAmbient").then((m) => ({
+    default: m.HeroWeatherAmbient,
   })),
 );
 const POLL_INTERVAL_MS = 30_000;
@@ -300,16 +306,24 @@ function extractCountryFromCtxLabel(label: string): string | null {
 }
 
 function SmartHeroSection({
-  displayName, hasChildren, lastUpdated, childProfiles,
+  displayName,
+  hasChildren,
+  childProfiles,
+  journeyStreak = 0,
+  routineStreak = 0,
+  behaviorLoggedToday,
 }: {
-  displayName: string; hasChildren: boolean; lastUpdated: number; childProfiles: ChildBasic[];
+  displayName: string;
+  hasChildren: boolean;
+  childProfiles: ChildBasic[];
+  journeyStreak?: number;
+  routineStreak?: number;
+  behaviorLoggedToday?: boolean;
 }) {
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
-  const greeting = t(getGreetingKey());
-  const heading  = displayName
-    ? t("dashboard.greeting_with_name", { name: displayName })
-    : t("dashboard.greeting_no_name");
+  const timeLabel = t(getGreetingKey());
+  const reducedMotion = useReducedMotion() ?? false;
 
   const [geo, setGeo]           = useState<{ lat: number; lng: number } | null>(null);
   const [geoReady, setGeoReady] = useState(false);
@@ -400,7 +414,36 @@ function SmartHeroSection({
   const heroTags = ctx ? getHeroTags(aqiBucket, outdoorSuitability, snap) : [];
   const weatherEmoji = WEATHER_EMOJI_MAP[weatherCondition ?? ""] ?? "🌤️";
   const nowTime = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  const isNight = (() => { const h = new Date().getHours(); return h >= 20 || h < 6; })();
+  const isDay = (() => {
+    const h = new Date().getHours();
+    return h >= 6 && h < 20;
+  })();
+
+  const greetingRefreshKey = heroGreetingRefreshKey({ weatherCondition });
+  const [heroGreeting, setHeroGreeting] = useState<HeroGreeting>(() =>
+    generateHeroGreeting({
+      displayName: displayName || undefined,
+      weatherCondition,
+      isDay,
+      journeyStreak,
+      routineStreak,
+      behaviorLoggedToday,
+    }),
+  );
+
+  useEffect(() => {
+    setHeroGreeting(
+      generateHeroGreeting({
+        displayName: displayName || undefined,
+        weatherCondition,
+        isDay,
+        journeyStreak,
+        routineStreak,
+        behaviorLoggedToday,
+      }),
+    );
+    // Refresh only when the day or weather classification changes (not mid-read).
+  }, [greetingRefreshKey, displayName]);
 
   return (
     <div
@@ -415,18 +458,16 @@ function SmartHeroSection({
       {/* Weather-reactive ambient layer — skipped on Android PWA (GPU / memory). */}
       {!isAndroidLiteClient() && (
         <Suspense fallback={null}>
-          <HeroAmbientLayer
+          <HeroWeatherAmbient
             weatherCondition={weatherCondition}
-            aqiBucket={aqiBucket}
-            heroTags={heroTags}
-            isNight={isNight}
+            isDay={isDay}
           />
         </Suspense>
       )}
 
       {/* Row 1: greeting label + weather condition pill (temp lives in the metrics bar) */}
       <div className="relative flex items-center justify-between gap-2">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-white/65">{greeting}</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-white/65">{timeLabel}</p>
         {ctx && weatherCondition && (
           <div className="shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20 text-[11px] font-bold text-white/90 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.25)" }}>
             <span>{weatherEmoji}</span>
@@ -435,10 +476,24 @@ function SmartHeroSection({
         )}
       </div>
 
-      {/* Heading */}
-      <h1 className="relative font-quicksand text-2xl sm:text-[27px] font-black text-white mt-1.5 leading-[1.12] tracking-tight">
-        👋 {heading}
-      </h1>
+      {/* Dynamic greeting — refreshes on day / weather change only */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={heroGreeting.id}
+          className="relative mt-1.5"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: reducedMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <h1 className="font-quicksand text-2xl sm:text-[27px] font-black text-white leading-[1.12] tracking-tight">
+            {heroGreeting.title}
+          </h1>
+          <p className="mt-1 text-[13px] sm:text-sm text-white/78 font-medium leading-snug max-w-xl">
+            {heroGreeting.subtitle}
+          </p>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Rotating insight — highlighted glass chip with accent bar */}
       <div className="relative mt-3 min-h-[44px]">
@@ -1163,8 +1218,14 @@ export default function Dashboard() {
             <SmartHeroSection
               displayName={displayName}
               hasChildren={childrenSafe.length > 0}
-              lastUpdated={lastUpdated}
               childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
+              journeyStreak={journeyStatus?.completedDays?.length ?? 0}
+              routineStreak={streak}
+              behaviorLoggedToday={
+                summary && (summary as CachedDashboardSummary).fallback !== true
+                  ? (summary.positiveBehaviorsToday ?? 0) + (summary.negativeBehaviorsToday ?? 0) > 0
+                  : undefined
+              }
             />
           </ContentReveal.Hero>
 
