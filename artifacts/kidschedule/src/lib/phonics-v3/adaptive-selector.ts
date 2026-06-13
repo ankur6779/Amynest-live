@@ -3,6 +3,7 @@
  */
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import { WORD_FAMILIES, getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
 import type { PhonicsMasteryState } from "./mastery-engine";
 import { getWeakestWords } from "./mastery-engine";
@@ -72,7 +73,9 @@ export function buildWeakSkillProfile(
   }
 
   if (weakWords.length === 0) {
-    const practiced = items.filter((it) => (progress.practiced[it.id] ?? 0) > 0);
+    const practiced = sanitizeDisplayPhonicsItems(items).filter(
+      (it) => (progress.practiced[it.id] ?? 0) > 0,
+    );
     weakWords.push(
       ...practiced.slice(0, 5).map((it) => it.symbol.toLowerCase()),
     );
@@ -154,9 +157,9 @@ export function selectAdaptiveLessons(opts: {
   );
   const newPool = fresh.length > 0 ? fresh : missionItems;
   for (let i = 0; i < newSlots; i++) {
-    const item = newPool[(seed + i + 7) % newPool.length]!;
+    const item = newPool[(seed + i + 7) % Math.max(1, newPool.length)];
     picks.push({
-      word: item.symbol.trim().toLowerCase(),
+      word: (item?.symbol ?? "cat").trim().toLowerCase(),
       reason: "new",
       skillTag: "new",
     });

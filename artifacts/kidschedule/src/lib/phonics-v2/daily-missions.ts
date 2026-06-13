@@ -1,5 +1,9 @@
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
+import {
+  isValidDisplayPhonicsItem,
+  sanitizeDisplayPhonicsItems,
+} from "@/lib/phonics-item-guards";
 import { WORD_FAMILIES } from "./content/word-families";
 import { getFamilyForWord } from "./content/word-families";
 
@@ -42,7 +46,10 @@ function hashChildDay(childId: number, dateKey: string): number {
 }
 
 /** Short decodable words only — excludes sentences, stories, and long symbols. */
-export function isMissionWordItem(item: DisplayPhonicsItem): boolean {
+export function isMissionWordItem(
+  item: DisplayPhonicsItem | null | undefined,
+): item is DisplayPhonicsItem {
+  if (!isValidDisplayPhonicsItem(item)) return false;
   if (item.type === "sentence" || item.type === "story" || item.type === "sound") {
     return false;
   }
@@ -52,7 +59,7 @@ export function isMissionWordItem(item: DisplayPhonicsItem): boolean {
 }
 
 export function filterMissionWordItems(items: DisplayPhonicsItem[]): DisplayPhonicsItem[] {
-  return items.filter(isMissionWordItem);
+  return sanitizeDisplayPhonicsItems(items).filter(isMissionWordItem);
 }
 
 export function formatMissionWordLabel(prefix: string, word: string): string {

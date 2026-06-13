@@ -508,6 +508,9 @@ export function usePhonicsData(
     dailyItems = [];
   }
 
+  items = sanitizeDisplayPhonicsItems(items);
+  dailyItems = sanitizeDisplayPhonicsItems(dailyItems);
+
   // ── Mutations ───────────────────────────────────────────────────────────
 
   const recordPlay = useCallback(

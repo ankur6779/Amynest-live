@@ -1,4 +1,5 @@
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import {
   buildWeakSoundsProfile,
   sortItemsForSmartReview,
@@ -25,7 +26,8 @@ export function buildParentPhonicsInsights(opts: {
   familyProgress: PhonicsV2FamilyProgress;
   pronunciation?: PhonicsV2PronunciationScores;
 }): ParentPhonicsInsight {
-  const weak = buildWeakSoundsProfile([], opts.progress, opts.items);
+  const safeItems = sanitizeDisplayPhonicsItems(opts.items);
+  const weak = buildWeakSoundsProfile([], opts.progress, safeItems);
   const needsPracticeSounds = weak.sounds.slice(0, 3);
 
   const strongSounds = STRONG_PHONEMES.filter(
@@ -44,7 +46,7 @@ export function buildParentPhonicsInsights(opts: {
   }
 
   const recommended = sortItemsForSmartReview(
-    opts.items,
+    safeItems,
     opts.progress,
     needsPracticeSounds,
     "balanced",

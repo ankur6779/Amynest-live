@@ -133,13 +133,14 @@ export function PhonicsV2({
   const karaokeAttemptsRef = useRef<Record<string, number>>({});
   const voiceAttemptsRef = useRef<Record<string, number>>({});
 
+  const safeItems = useMemo(() => sanitizeDisplayPhonicsItems(items), [items]);
   const practiceWords = useMemo(
     () =>
-      sanitizeDisplayPhonicsItems(items)
+      safeItems
         .filter((it) => it.type === "word" || /^[a-z]{3}$/.test(it.symbol))
         .map((it) => it.symbol.toLowerCase())
         .slice(0, 6),
-    [items],
+    [safeItems],
   );
 
   useEffect(() => {
@@ -297,7 +298,7 @@ export function PhonicsV2({
 
       <DailyMissionPanel
         childId={childId}
-        items={items}
+        items={safeItems}
         progress={progress}
         mastery={mastery}
         retention={retention}
@@ -497,7 +498,7 @@ export function PhonicsV2({
       />
 
       <ParentInsightsV3Card
-        items={items}
+        items={safeItems}
         progress={progress}
         familyProgress={familyProgress}
         pronunciation={pronunciation}
@@ -507,7 +508,7 @@ export function PhonicsV2({
       />
 
       <ParentInsightsCard
-        items={items}
+        items={safeItems}
         progress={progress}
         familyProgress={familyProgress}
         pronunciation={pronunciation}
