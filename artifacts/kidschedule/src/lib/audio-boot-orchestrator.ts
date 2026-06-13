@@ -241,7 +241,7 @@ async function runWarmupPhase(): Promise<void> {
   const { preloadSpeechSynthesisVoices } = await import("@/lib/emergency-audio");
   const { initPhonicsManifestValidation } = await import("@/lib/phonics-manifest-validation");
 
-  initPhonicsManifestValidation();
+  await initPhonicsManifestValidation();
   initGlobalAudioWarmup();
   preloadSpeechSynthesisVoices();
 }

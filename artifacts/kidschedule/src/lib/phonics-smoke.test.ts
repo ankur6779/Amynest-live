@@ -170,10 +170,10 @@ describe("phonics runtime smoke", () => {
   });
 
   it("manifest validates and core clips play without throwing", async () => {
-    const { validatePhonicsManifest, isPhonicsModuleAvailable } = await import(
+    const { ensurePhonicsManifestLoaded, isPhonicsModuleAvailable } = await import(
       "@/lib/phonics-manifest-validation"
     );
-    const validation = validatePhonicsManifest();
+    const validation = await ensurePhonicsManifestLoaded();
     expect(validation.ok).toBe(true);
     expect(isPhonicsModuleAvailable()).toBe(true);
 

@@ -88,10 +88,29 @@ export default function PhonicsPage() {
     window.setTimeout(() => scrollToSection(target), 150);
   }, [location, search]);
 
+  const [manifestReady, setManifestReady] = useState(false);
+
   useEffect(() => {
-    if (!isPhonicsModuleAvailable() || locked) return;
+    let cancelled = false;
+    void import("@/lib/phonics-manifest-validation").then(({ ensurePhonicsManifestLoaded, isPhonicsModuleAvailable }) =>
+      ensurePhonicsManifestLoaded().then(() => {
+        if (!cancelled) setManifestReady(isPhonicsModuleAvailable());
+      }),
+    );
+    const onReady = () => setManifestReady(isPhonicsModuleAvailable());
+    window.addEventListener("amynest:phonics-manifest-ready", onReady);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("amynest:phonics-manifest-ready", onReady);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isPhonicsModuleAvailable() || locked || !manifestReady) return;
     warmPhonicsRouteOnOpen();
-  }, [locked]);
+  }, [locked, manifestReady]);
+
+  const phonicsAvailable = manifestReady && isPhonicsModuleAvailable();
 
   const goBack = () => {
     back("phonics-back");
@@ -188,8 +207,15 @@ export default function PhonicsPage() {
               </section>
             )}
 
-            {!isPhonicsModuleAvailable() ? (
+            {!phonicsAvailable ? (
+              manifestReady ? (
               <PhonicsUnavailableFallback childName={activeChild.name} />
+              ) : (
+              <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading phonics library...
+              </div>
+              )
             ) : (
             <PhonicsLearning
               childQuery={search}

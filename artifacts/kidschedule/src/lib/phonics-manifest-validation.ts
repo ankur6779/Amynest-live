@@ -1,7 +1,6 @@
 /**
  * Boot-time phonics library manifest validation — never throws.
  */
-import audioMap from "@/data/phonics-audio-map.json";
 import type { PhonicsAudioLibraryManifest } from "@workspace/phonics-sounds";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 
@@ -17,13 +16,31 @@ export type PhonicsManifestValidation = {
   errors: string[];
 };
 
-const bundledManifest = audioMap as PhonicsAudioLibraryManifest;
-
+let bundledManifest: PhonicsAudioLibraryManifest | null = null;
+let manifestLoadPromise: Promise<PhonicsAudioLibraryManifest> | null = null;
 let cachedValidation: PhonicsManifestValidation | null = null;
 let bootInitialized = false;
 
+function loadBundledManifest(): Promise<PhonicsAudioLibraryManifest> {
+  if (bundledManifest) return Promise.resolve(bundledManifest);
+  if (!manifestLoadPromise) {
+    manifestLoadPromise = import("@/data/phonics-audio-map.json").then((mod) => {
+      bundledManifest = mod.default as PhonicsAudioLibraryManifest;
+      return bundledManifest;
+    });
+  }
+  return manifestLoadPromise;
+}
+
+/** Await manifest chunk (split from main bundle) before availability checks. */
+export async function ensurePhonicsManifestLoaded(): Promise<PhonicsManifestValidation> {
+  const manifest = await loadBundledManifest();
+  if (bootInitialized && cachedValidation) return cachedValidation;
+  return finalizePhonicsManifestValidation(manifest);
+}
+
 export function validatePhonicsManifest(
-  manifest: PhonicsAudioLibraryManifest = bundledManifest,
+  manifest: PhonicsAudioLibraryManifest,
 ): PhonicsManifestValidation {
   const errors: string[] = [];
 
@@ -70,12 +87,11 @@ export function validatePhonicsManifest(
   };
 }
 
-/** Sync boot hook — safe before React mount; records telemetry once. */
-export function initPhonicsManifestValidation(): PhonicsManifestValidation {
-  if (bootInitialized && cachedValidation) return cachedValidation;
+function finalizePhonicsManifestValidation(
+  manifest: PhonicsAudioLibraryManifest,
+): PhonicsManifestValidation {
   bootInitialized = true;
-
-  const result = validatePhonicsManifest();
+  const result = validatePhonicsManifest(manifest);
   cachedValidation = result;
 
   if (result.ok) {
@@ -95,11 +111,31 @@ export function initPhonicsManifestValidation(): PhonicsManifestValidation {
     console.error("[phonics-library] manifest validation failed", result.errors);
   }
 
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("amynest:phonics-manifest-ready"));
+  }
+
   return result;
 }
 
+/** Boot hook — loads split manifest chunk; safe before React mount. */
+export async function initPhonicsManifestValidation(): Promise<PhonicsManifestValidation> {
+  if (bootInitialized && cachedValidation) return cachedValidation;
+  const manifest = await loadBundledManifest();
+  return finalizePhonicsManifestValidation(manifest);
+}
+
 export function getPhonicsManifestValidation(): PhonicsManifestValidation {
-  return cachedValidation ?? validatePhonicsManifest();
+  if (cachedValidation) return cachedValidation;
+  if (bundledManifest) return validatePhonicsManifest(bundledManifest);
+  return {
+    ok: false,
+    assetCount: 0,
+    missingUrlCount: 0,
+    manifestVersion: 0,
+    libraryVersion: 0,
+    errors: ["manifest_not_loaded"],
+  };
 }
 
 /**
@@ -117,6 +153,8 @@ export function isPhonicsManifestStrictlyValid(): boolean {
 
 /** Test-only reset */
 export function resetPhonicsManifestValidationForTests(): void {
+  bundledManifest = null;
+  manifestLoadPromise = null;
   cachedValidation = null;
   bootInitialized = false;
 }
