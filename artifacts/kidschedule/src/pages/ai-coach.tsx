@@ -15,9 +15,8 @@ import {
   trackCoachLockedClick,
   trackCoachPremiumItemViewed,
 } from "@/lib/content-gating-analytics";
-import { KeyboardSafeShell } from "@/components/chat-platform";
 import {
-  AmyCoachGoalsKeyboardShell,
+  AmyCoachGoalsShell,
   AmyCoachSearchInput,
 } from "@/components/amy-coach/coach-keyboard-shell";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
@@ -1889,7 +1888,7 @@ export default function AICoachPage() {
       );
 
       return (
-        <AmyCoachGoalsKeyboardShell
+        <AmyCoachGoalsShell
           header={goalsHeader}
           search={
             <AmyCoachSearchInput
@@ -1899,7 +1898,6 @@ export default function AICoachPage() {
               placeholder={t("pages.ai_coach.search_goals")}
             />
           }
-          scrollDeps={[goalSearch, filteredCategories, totalMatches]}
         >
           {journeyBanner}
           <div className="space-y-6">
@@ -1950,7 +1948,7 @@ export default function AICoachPage() {
               </p>
             )}
           </div>
-        </AmyCoachGoalsKeyboardShell>
+        </AmyCoachGoalsShell>
       );
     }
 
@@ -1959,7 +1957,7 @@ export default function AICoachPage() {
       const categoryHint = coachAgeBand ? getCategoryHint(activeCat.id, coachAgeBand) : null;
       const isForYouEntry = activeCat.id === COACH_FOR_YOU_CATEGORY_ID;
       return (
-        <AmyCoachGoalsKeyboardShell
+        <AmyCoachGoalsShell
           header={
             <div className="flex items-center justify-between px-4 pt-2">
               <button
@@ -1985,7 +1983,6 @@ export default function AICoachPage() {
               placeholder={`Search in ${activeCat.title}…`}
             />
           }
-          scrollDeps={[goalSearch, paginatedCategoryGoals.visible, activeCat.id]}
         >
           {selectedAgeOption && !isForYouEntry && (
             <button
@@ -2092,7 +2089,7 @@ export default function AICoachPage() {
               </button>
             </div>
           )}
-        </AmyCoachGoalsKeyboardShell>
+        </AmyCoachGoalsShell>
       );
     }
 
@@ -2211,7 +2208,7 @@ export default function AICoachPage() {
       </button>;
 
     return (
-      <AmyCoachGoalsKeyboardShell
+      <AmyCoachGoalsShell
         header={
           <div className="flex items-center justify-between px-4 pt-2">
             <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -2233,11 +2230,10 @@ export default function AICoachPage() {
             placeholder={t("pages.ai_coach.search_all_goals")}
           />
         }
-        scrollDeps={[goalSearch, groupedCategories, forYouCategory, coachEligible]}
       >
         <div
           data-on-dark
-          className="relative overflow-hidden rounded-3xl border border-border p-5 backdrop-blur-md"
+          className="relative overflow-hidden rounded-3xl border border-border p-5"
           style={{
             background:
               "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
@@ -2304,7 +2300,7 @@ export default function AICoachPage() {
             const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
             setLocation(`/audio-lessons${q}`);
           }}
-          className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left backdrop-blur-md transition-all hover:scale-[1.01] active:scale-[0.98]"
+          className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.98]"
           style={{
             background: AGE_TILE_META[0]!.gradient,
             border: COACH_TILE_BORDER,
@@ -2338,7 +2334,7 @@ export default function AICoachPage() {
               type="button"
               data-on-dark
               onClick={openForYouCategory}
-              className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left backdrop-blur-md transition-all hover:scale-[1.01] active:scale-[0.98]"
+              className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.98]"
               style={{
                 background: coachCategoryGradient(COACH_FOR_YOU_CATEGORY_ID),
                 border: "1px solid rgba(236,72,153,0.35)",
@@ -2384,7 +2380,7 @@ export default function AICoachPage() {
             ))}
           </section>
         )}
-      </AmyCoachGoalsKeyboardShell>
+      </AmyCoachGoalsShell>
     );
   }
 

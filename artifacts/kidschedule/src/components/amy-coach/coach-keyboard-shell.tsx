@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
-import { KeyboardSafeShell } from "@/components/chat-platform";
 import { cn } from "@/lib/utils";
 
 export function AmyCoachSearchInput({
@@ -33,31 +32,33 @@ export function AmyCoachSearchInput({
   );
 }
 
-export function AmyCoachGoalsKeyboardShell({
+/**
+ * Amy Coach goals catalog — plain document scroll under the app header.
+ * Avoids KeyboardSafeShell nested flex + explicit pixel heights that clip content on iOS WKWebView.
+ */
+export function AmyCoachGoalsShell({
   header,
   search,
   children,
-  scrollDeps,
   className,
 }: {
   header: ReactNode;
   search: ReactNode;
   children: ReactNode;
-  scrollDeps?: unknown[];
   className?: string;
 }) {
   return (
-    <KeyboardSafeShell
-      surface="amy-coach"
-      layout="embedded"
-      scrollDeps={scrollDeps ?? [search, children]}
-      header={header}
-      footer={search}
-      className={cn("amy-coach-goals-shell min-h-0 flex-1", className)}
-      contentClassName="px-4 pt-3 pb-2 space-y-5 max-w-2xl mx-auto w-full"
-      footerClassName="px-4 pt-3 pb-safe max-w-2xl mx-auto w-full bg-background/95 backdrop-blur-sm border-t border-border/40"
-    >
-      {children}
-    </KeyboardSafeShell>
+    <>
+      <div className={cn("amy-coach-goals-shell mx-auto w-full max-w-2xl pb-28", className)}>
+        {header ? <div className="shrink-0">{header}</div> : null}
+        <div className="space-y-5 px-4 py-3">{children}</div>
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/40 bg-background px-4 pt-3 pb-safe">
+        <div className="mx-auto w-full max-w-2xl">{search}</div>
+      </div>
+    </>
   );
 }
+
+/** @deprecated Use AmyCoachGoalsShell — kept for call-site compatibility. */
+export const AmyCoachGoalsKeyboardShell = AmyCoachGoalsShell;

@@ -287,12 +287,12 @@ export function Layout({
 
         <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip">
           <ScreenContainer
-            noOffset={isImmersiveRoute || isAssistantRoute || isAmyCoachRoute}
+            noOffset={isImmersiveRoute || isAssistantRoute}
             className={
               isImmersiveRoute || isAssistantRoute
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
                 : isAmyCoachRoute
-                  ? "mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0 amy-coach-route-content h-full"
+                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:p-8"
                 : showDashboardChrome || isParentHubRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:max-w-5xl md:p-8"
                   : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
