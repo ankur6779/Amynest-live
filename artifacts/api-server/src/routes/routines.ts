@@ -2095,6 +2095,10 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     );
     return;
   } catch (err) {
+    if (res.headersSent) {
+      console.error("[generate-ai] handler failed after response sent", err);
+      return;
+    }
     console.error("ROUTINE_GENERATION_FAILED", err);
     if (err instanceof Error && err.stack) {
       console.error("[generate-ai] stack:", err.stack);
@@ -2123,10 +2127,12 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
         childId: parsed.data.childId,
         err: fallbackErr,
       });
-      res.status(422).json({
-        error: "routine_validation_failed",
-        message: "We couldn't build a safe routine right now. Please try again.",
-      });
+      if (!res.headersSent) {
+        res.status(422).json({
+          error: "routine_validation_failed",
+          message: "We couldn't build a safe routine right now. Please try again.",
+        });
+      }
     }
   }
   });

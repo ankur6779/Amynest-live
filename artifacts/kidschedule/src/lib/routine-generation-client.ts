@@ -184,7 +184,16 @@ async function postRoutineEndpoint(
   }
 
   if (!res.ok) {
-    throw new Error(`Routine generation failed (${res.status})`);
+    const err = new Error(`Routine generation failed (${res.status})`) as Error & {
+      status?: number;
+      retryableWithStandard?: boolean;
+    };
+    err.status = res.status;
+    // Server/proxy timeouts on AI — client should fall back to rule-based generate.
+    if (res.status === 504 || res.status === 502 || res.status === 503) {
+      err.retryableWithStandard = true;
+    }
+    throw err;
   }
 
   const resolved = await resolveAiApiData<RoutineGenerateResult>(body, authFetch);
@@ -228,6 +237,20 @@ async function runAmyAiRoutineInner(
     }
   };
 
+  const runStandardFallback = (label: string): Promise<RoutineGenerateResult> => {
+    logRoutineGen(label);
+    return postRoutineEndpoint(authFetch, "/api/routines/generate", payload);
+  };
+
+  let standardFallbackPromise: Promise<RoutineGenerateResult> | null = null;
+  const ensureStandardFallback = (label: string): Promise<RoutineGenerateResult> => {
+    if (!standardFallbackPromise) {
+      options?.onSlow?.();
+      standardFallbackPromise = runStandardFallback(label);
+    }
+    return standardFallbackPromise;
+  };
+
   const runAiWithRetries = async (): Promise<RoutineGenerateResult> => {
     let lastError: unknown;
     for (let attempt = 0; attempt < MAX_AI_ATTEMPTS; attempt++) {
@@ -242,6 +265,13 @@ async function runAmyAiRoutineInner(
           throw err;
         }
         logRoutineGenError(`AI attempt ${attempt + 1} failed`, err);
+        if (
+          err instanceof Error &&
+          (err as Error & { retryableWithStandard?: boolean }).retryableWithStandard
+        ) {
+          logRoutineGen("AI gateway timeout — switching to standard routine immediately");
+          return ensureStandardFallback("proxy timeout — starting standard routine fallback");
+        }
         if (attempt < MAX_AI_ATTEMPTS - 1) {
           logRoutineGen("retrying AI generation");
         }
@@ -258,9 +288,7 @@ async function runAmyAiRoutineInner(
     slowFallbackTimer = setTimeout(() => {
       slowFallbackTimer = null;
       if (settled) return;
-      options?.onSlow?.();
-      logRoutineGen("8s elapsed — starting standard routine fallback");
-      postRoutineEndpoint(authFetch, "/api/routines/generate", payload)
+      ensureStandardFallback("8s elapsed — starting standard routine fallback")
         .then((result) => {
           if (!settled) resolve(result);
         })
@@ -285,6 +313,6 @@ async function runAmyAiRoutineInner(
       throw raceErr;
     }
     logRoutineGenError("race failed, final standard fallback", raceErr);
-    return postRoutineEndpoint(authFetch, "/api/routines/generate", payload);
+    return ensureStandardFallback("race failed — starting standard routine fallback");
   }
 }

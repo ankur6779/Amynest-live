@@ -1,12 +1,16 @@
 {
   "audio": {
-    "ok": false,
-    "reason": "no_audio_element",
+    "ok": true,
+    "reason": "ok",
     "checks": {
-      "elementExists": false,
-      "playResolved": false,
-      "playingEventFired": false,
-      "currentTimeGt0": false
+      "elementExists": true,
+      "playResolved": true,
+      "playingEventFired": true,
+      "currentTimeGt0": true,
+      "currentTimeAfter2s": 0.96,
+      "currentTimeAdvancing": true,
+      "srcTail": "https://www.amynest.in/api/static-audio/f07ced2f9c0201b4d7d1214514b276b7.mp3",
+      "speechPlaying": false
     }
   },
   "url": "https://www.amynest.in/phonics"
