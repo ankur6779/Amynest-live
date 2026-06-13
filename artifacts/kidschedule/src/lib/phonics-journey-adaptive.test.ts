@@ -40,6 +40,21 @@ describe("phonics-journey-adaptive", () => {
     expect(profile.focusMessage).toContain("SH");
   });
 
+  it("ignores malformed items without symbol during weak-sound inference", () => {
+    const progress: PhonicsProgressMap = {
+      practiced: { bad: 5, sh1: 4 },
+      mastered: {},
+    };
+    const malformed = [
+      ...items,
+      { id: "bad", symbol: "", sound: "x", type: "word" } as DisplayPhonicsItem,
+      { id: "worse", sound: "y", type: "word" } as DisplayPhonicsItem,
+    ];
+    expect(() => buildWeakSoundsProfile([], progress, malformed)).not.toThrow();
+    const profile = buildWeakSoundsProfile([], progress, malformed);
+    expect(profile.sounds.length).toBeGreaterThan(0);
+  });
+
   it("generates adaptive mission goals", () => {
     const progress: PhonicsProgressMap = { practiced: { sh1: 4 }, mastered: {} };
     const profile = buildWeakSoundsProfile(["ʃ"], progress, items);

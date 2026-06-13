@@ -51,6 +51,7 @@ import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
 import { recordPhonicsHabitActivity } from "@/lib/phonics-journey-habit";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 
 const PHONICS_STAGE_ORDER: PhonicsAgeGroup[] = [
   "12_24m",
@@ -75,7 +76,8 @@ function pickTodaysItem(items: DisplayPhonicsItem[], tick = 0): DisplayPhonicsIt
 // ─── Local insight builder (used only when API insights aren't available) ────
 
 function buildLocalInsights(items: DisplayPhonicsItem[], progress: PhonicsProgressMap, shortLabel: string): PhonicsInsight[] {
-  if (!items) {
+  const safeItems = sanitizeDisplayPhonicsItems(items);
+  if (safeItems.length === 0) {
     return [];
   }
   const ins: PhonicsInsight[] = [];
@@ -90,15 +92,15 @@ function buildLocalInsights(items: DisplayPhonicsItem[], progress: PhonicsProgre
     });
     return ins;
   }
-  const coveragePct = items.length > 0 ? Math.round(playedIds.length / items.length * 100) : 0;
+  const coveragePct = safeItems.length > 0 ? Math.round(playedIds.length / safeItems.length * 100) : 0;
   if (coveragePct >= 80) {
     ins.push({
       tone: "good",
       emoji: "🎉",
-      text: `Strong coverage! Practised ${playedIds.length}/${items.length} sounds (${coveragePct}%). Time to introduce the next level soon.`
+      text: `Strong coverage! Practised ${playedIds.length}/${safeItems.length} sounds (${coveragePct}%). Time to introduce the next level soon.`
     });
   } else if (coveragePct >= 40) {
-    const unseen = items.filter(i => !progress.practiced[i.id]);
+    const unseen = safeItems.filter(i => !progress.practiced[i.id]);
     const next = unseen.slice(0, 3).map(i => i.symbol).join(", ");
     if (next) {
       ins.push({
@@ -121,7 +123,7 @@ function buildLocalInsights(items: DisplayPhonicsItem[], progress: PhonicsProgre
       text: `${masteredIds.length} sound${masteredIds.length !== 1 ? "s" : ""} marked mastered — celebrate the win with your child!`
     });
   }
-  const stuck = items.filter(i => (progress.practiced[i.id] ?? 0) >= 5 && !progress.mastered[i.id]);
+  const stuck = safeItems.filter(i => (progress.practiced[i.id] ?? 0) >= 5 && !progress.mastered[i.id]);
   if (stuck.length > 0) {
     const list = stuck.slice(0, 3).map(i => i.symbol).join(", ");
     ins.push({

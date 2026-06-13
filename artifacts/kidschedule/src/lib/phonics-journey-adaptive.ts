@@ -52,10 +52,30 @@ export type PhonicsAdaptiveState = {
 const STORAGE_PREFIX = "amynest:phonics-adaptive:";
 
 const DIGRAPH_PATTERNS: { display: string; test: (item: DisplayPhonicsItem) => boolean }[] = [
-  { display: "SH", test: (i) => /sh/i.test(i.symbol) || /ʃ/.test(i.phoneme ?? "") },
-  { display: "TH", test: (i) => /th/i.test(i.symbol) || /[θð]/.test(i.phoneme ?? "") },
-  { display: "CH", test: (i) => /ch/i.test(i.symbol) || /tʃ|dʒ/.test(i.phoneme ?? "") },
-  { display: "NG", test: (i) => /ng/i.test(i.symbol) || /ŋ/.test(i.phoneme ?? "") },
+  {
+    display: "SH",
+    test: (i) =>
+      typeof i.symbol === "string" &&
+      (/sh/i.test(i.symbol) || /ʃ/.test(i.phoneme ?? "")),
+  },
+  {
+    display: "TH",
+    test: (i) =>
+      typeof i.symbol === "string" &&
+      (/th/i.test(i.symbol) || /[θð]/.test(i.phoneme ?? "")),
+  },
+  {
+    display: "CH",
+    test: (i) =>
+      typeof i.symbol === "string" &&
+      (/ch/i.test(i.symbol) || /tʃ|dʒ/.test(i.phoneme ?? "")),
+  },
+  {
+    display: "NG",
+    test: (i) =>
+      typeof i.symbol === "string" &&
+      (/ng/i.test(i.symbol) || /ŋ/.test(i.phoneme ?? "")),
+  },
 ];
 
 const PHONEME_DISPLAY: Record<string, string> = {
@@ -122,7 +142,8 @@ export function inferWeakSoundsFromProgress(
   progress: PhonicsProgressMap,
   items: DisplayPhonicsItem[],
 ): string[] {
-  const struggling = items.filter((i) => {
+  const safeItems = sanitizeDisplayPhonicsItems(items);
+  const struggling = safeItems.filter((i) => {
     const plays = progress.practiced[i.id] ?? 0;
     return plays >= 3 && !progress.mastered[i.id];
   });
@@ -152,8 +173,9 @@ export function buildWeakSoundsProfile(
   progress: PhonicsProgressMap,
   items: DisplayPhonicsItem[],
 ): WeakSoundsProfile {
+  const safeItems = sanitizeDisplayPhonicsItems(items);
   const fromApi = apiWeakPhonemes.map(phonemeDisplayName);
-  const fromProgress = inferWeakSoundsFromProgress(progress, items);
+  const fromProgress = inferWeakSoundsFromProgress(progress, safeItems);
   const sounds = [...new Set([...fromApi, ...fromProgress])].slice(0, 5);
   const primary = sounds[0] ?? null;
 
@@ -168,7 +190,7 @@ export function getMissedWords(
   progress: PhonicsProgressMap,
   items: DisplayPhonicsItem[],
 ): DisplayPhonicsItem[] {
-  return items.filter(
+  return sanitizeDisplayPhonicsItems(items).filter(
     (i) =>
       (i.type === "word" || i.type === "letter") &&
       (progress.practiced[i.id] ?? 0) >= 2 &&
@@ -180,12 +202,13 @@ function itemsMatchingWeakSound(
   sound: string,
   items: DisplayPhonicsItem[],
 ): DisplayPhonicsItem[] {
+  const safeItems = sanitizeDisplayPhonicsItems(items);
   const pattern = DIGRAPH_PATTERNS.find((p) => p.display === sound);
   if (pattern) {
-    return items.filter(pattern.test);
+    return safeItems.filter(pattern.test);
   }
   const lower = sound.toLowerCase();
-  return items.filter(
+  return safeItems.filter(
     (i) =>
       i.symbol.toLowerCase() === lower ||
       (i.phoneme ?? "").toLowerCase() === lower,
