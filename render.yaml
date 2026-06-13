@@ -208,6 +208,15 @@ services:
     buildCommand: bash scripts/render-frontend-build.sh
     staticPublishPath: ./artifacts/kidschedule/dist/public
     routes:
+      - type: redirect
+        source: /debug-parity
+        destination: /dashboard
+      - type: redirect
+        source: /dev/phonics-audio-preview
+        destination: /dashboard
+      - type: redirect
+        source: /dev/rhymes-audio-ab
+        destination: /dashboard
       - type: rewrite
         source: /*
         destination: /index.html
