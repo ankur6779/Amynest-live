@@ -722,7 +722,11 @@ function AppRoutes() {
           <Route path="/progress" component={ProgressRoute} />
           <Route path="/parenting-hub" component={ParentingHubRoute} />
           <Route path="/parent-growth" component={ParentGrowthRoute} />
-          <Route path="/debug/learning" component={DebugLearningRoute} />
+          {import.meta.env.PROD ? (
+            <Route path="/debug/learning" component={DevRouteRedirect} />
+          ) : (
+            <Route path="/debug/learning" component={DebugLearningRoute} />
+          )}
           <Route path="/phonics/test/play" component={PhonicsTestPlayRoute} />
           <Route path="/phonics/test" component={PhonicsRoute} />
           <Route path="/phonics" component={PhonicsRoute} />

@@ -217,6 +217,9 @@ services:
       - type: redirect
         source: /dev/rhymes-audio-ab
         destination: /dashboard
+      - type: redirect
+        source: /debug/learning
+        destination: /dashboard
       - type: rewrite
         source: /*
         destination: /index.html
