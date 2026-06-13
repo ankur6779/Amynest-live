@@ -6,6 +6,7 @@ import { useStoriesData, type StoryDto } from "@/hooks/use-stories-data";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { StoryFlowPlayer } from "@/components/story-player";
 import { SubItemGate } from "@/components/sub-item-gate";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 
 // ─── Per-child index persistence ─────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -180,6 +181,14 @@ export function StoryHub({
     setShowLoopBanner(false);
     refresh();
   }, [clearCountdown, refresh]);
+
+  usePageBackHandler(() => {
+    if (isPlaying) {
+      handleClose();
+      return true;
+    }
+    return false;
+  }, [isPlaying, handleClose]);
 
   // ── Derived ──
   const currentStory = stories[flowIndex] ?? null;

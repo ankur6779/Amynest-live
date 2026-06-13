@@ -10,6 +10,7 @@ import {
   isIosUa,
   isAndroidAmyNestAudioClient,
 } from "@/lib/device-lite";
+import { prepareIosAudioSessionForPlayback } from "@/lib/mic-permission-capacitor";
 
 /** crossOrigin on remote MP3 often breaks playback in installed PWA / WebView shells. */
 function shouldSetAudioCrossOrigin(audioSrc?: string): boolean {
@@ -79,6 +80,9 @@ function unlockAudio(fromUserGesture = false): void {
   audioUnlocked = true;
   if (fromUserGesture) {
     resumeUnlockAudioContext();
+    if (isCapacitorIosShell()) {
+      void prepareIosAudioSessionForPlayback();
+    }
   }
   void import("@/lib/static-audio-telemetry").then((m) => m.resetClientStaticAudioCircuit());
   if (fromUserGesture) {

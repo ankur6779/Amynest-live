@@ -19,6 +19,7 @@ import {
   recordSoundPlayed,
   toggleFavorite,
 } from "@/lib/animal-world-storage";
+import { primeWorldLibrarySoundUrl } from "@/lib/world-library-audio-prewarm";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
 import { grantXp, loadAnimalWorldProgress, recordMonthlyOpen } from "@/lib/animal-world-progress";
 import { resolveCollectionStatus } from "@workspace/animal-world";
@@ -63,6 +64,7 @@ export function AnimalDetail({
 
   const playSound = async (soundId: string, url: string, label: string) => {
     animalAudioManager.unlockFromGesture();
+    primeWorldLibrarySoundUrl(url);
     setPlayingId(soundId);
     await animalAudioManager.play(url, { animalId: animal.id, soundId, label });
     recordSoundPlayed(childId, animal.id, soundId);

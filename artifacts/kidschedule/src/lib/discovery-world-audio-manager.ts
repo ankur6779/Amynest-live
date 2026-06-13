@@ -5,9 +5,14 @@ import {
   WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX,
   worldsLibraryPlaybackCandidates,
 } from "@workspace/world-engine";
-import { resolveApiMediaUrl } from "@/lib/api";
 import { audioManager } from "@/lib/audio-manager";
-import { recordTtsUserGesture } from "@/lib/tts-guard";
+import {
+  deepPreloadWorldLibraryUrls,
+  prepareWorldLibraryPlayback,
+  primeWorldLibrarySoundUrl,
+  resolveWorldLibraryPlaybackUrl,
+  scheduleWorldLibraryDeepPreload,
+} from "@/lib/world-library-audio-prewarm";
 
 export type DiscoveryWorldPlayMeta = {
   worldId: string;
@@ -27,18 +32,19 @@ const preloadPool = new Map<string, { url: string; warmedAt: number }>();
 const inFlightPlay = new Map<string, Promise<boolean>>();
 
 /** Resolve playback URL — API proxy vs same-origin local mirror. */
-function resolvePlaybackUrl(url: string): string {
+function resolvePlaybackCandidates(url: string): string[] {
   const u = (url ?? "").trim();
-  if (!u) return u;
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  if (u.startsWith(`${WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX}/`)) return u;
-  return resolveApiMediaUrl(u);
+  if (!u) return [];
+  if (u.startsWith("http://") || u.startsWith("https://")) return [u];
+  if (u.startsWith(`${WORLDS_LIBRARY_LOCAL_MIRROR_WEB_PREFIX}/`)) {
+    return worldsLibraryPlaybackCandidates(u).map(resolveWorldLibraryPlaybackUrl);
+  }
+  return worldsLibraryPlaybackCandidates(u).map(resolveWorldLibraryPlaybackUrl);
 }
 
 export class DiscoveryWorldAudioManager {
   unlockFromGesture(): void {
-    recordTtsUserGesture();
-    audioManager.unlockFromUserGesture();
+    void prepareWorldLibraryPlayback();
   }
 
   setMuted(next: boolean): void {
@@ -60,14 +66,25 @@ export class DiscoveryWorldAudioManager {
 
   preload(urls: string[]): void {
     const unique = [
-      ...new Set(urls.flatMap((url) => worldsLibraryPlaybackCandidates(url).map(resolvePlaybackUrl))),
+      ...new Set(
+        urls
+          .flatMap((url) => resolvePlaybackCandidates(url))
+          .filter((u) => /\.(mp3|m4a|wav|ogg|aac)(\?|$)/i.test(u) || u.includes("/api/worlds-library/")),
+      ),
     ].slice(0, POOL_MAX * 2);
+
     for (const url of unique) {
       if (preloadPool.has(url)) continue;
       preloadPool.set(url, { url, warmedAt: Date.now() });
       audioManager.getCached(url, { forceReload: false });
-      audioManager.primeSpeechUrlInUserGesture(url);
+      primeWorldLibrarySoundUrl(url);
     }
+    scheduleWorldLibraryDeepPreload(unique, POOL_MAX * 2);
+  }
+
+  async preloadReady(urls: string[], max = 8): Promise<void> {
+    const resolved = urls.flatMap((url) => resolvePlaybackCandidates(url));
+    await deepPreloadWorldLibraryUrls(resolved, max);
   }
 
   release(): void {
@@ -79,7 +96,7 @@ export class DiscoveryWorldAudioManager {
   async play(url: string, meta: DiscoveryWorldPlayMeta): Promise<boolean> {
     if (muted) return false;
 
-    const candidates = worldsLibraryPlaybackCandidates(url).map(resolvePlaybackUrl);
+    const candidates = resolvePlaybackCandidates(url);
     const playKey = `${meta.worldId}:${meta.itemId}:${meta.soundId}:${candidates[0] ?? url}`;
     const now = Date.now();
     if (playKey === lastPlayKey && now - lastPlayAt < TAP_DEBOUNCE_MS) {
@@ -90,7 +107,7 @@ export class DiscoveryWorldAudioManager {
     const pending = inFlightPlay.get(playKey);
     if (pending) return pending;
 
-    this.unlockFromGesture();
+    await prepareWorldLibraryPlayback();
     ownershipToken += 1;
     const token = ownershipToken;
     lastPlayKey = playKey;
@@ -101,12 +118,20 @@ export class DiscoveryWorldAudioManager {
       for (const resolved of candidates) {
         if (!resolved) continue;
         preloadPool.set(resolved, { url: resolved, warmedAt: now });
-        audioManager.getCached(resolved, { forceReload: false });
-        const ok = await audioManager.playUrl(resolved, {
-          source: "discovery_world",
-          phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
-          interrupt: true,
-        });
+        const audio = audioManager.getCached(resolved, { forceReload: false });
+        primeWorldLibrarySoundUrl(resolved);
+        const ok = await audioManager.play(
+          audio,
+          {
+            proxyUrl: resolved,
+            source: "discovery_world",
+            phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
+            interrupt: true,
+            srcType: "static",
+            channel: "speech",
+          },
+          { channel: "speech", interrupt: true, maxRetries: 1 },
+        );
         if (token !== ownershipToken) return false;
         if (ok) return true;
       }

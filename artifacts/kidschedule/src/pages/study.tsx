@@ -18,6 +18,7 @@ import {
   getAdvancedSubjectsForChild,
   isAdaptivePracticeTopic,
   getPlayItemSpeakParts,
+  getPlayItemCatalogSpeakOpts,
   getTopicNotesCatalogSpeakOpts,
   getTopicAmyCatalogSpeakOpts,
   type StudyMode, type PlayCategory, type PlayItem,
@@ -53,7 +54,13 @@ import { StudyCurriculumVisibility } from "@/components/study-curriculum-visibil
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
-import { catalogPlaybackSpeakOptions } from "@/lib/unified-catalog-playback";
+import {
+  buildSmartStudyPrewarmContext,
+  collectSmartStudyCategoryTexts,
+  scheduleSmartStudyCategoryPrewarm,
+  speakPlayItemCue,
+} from "@/lib/study-zone-play-audio";
+import { scheduleLearningZoneAudioPrewarm, buildLearningZoneAudioStateKey } from "@/lib/learning-zone-audio-prewarm";
 import {
   loadProgress, markPlayItem, markTopicResult,
   categoryPercent, subjectPercent, mergePlayProgressWithServer, type StudyProgress,
@@ -241,6 +248,7 @@ export default function StudyPage() {
           )}
           {progress && <EngagementStrip engagement={progress.engagement} />}
           <PlayHome
+            childId={view.childId}
             country={country}
             childAge={child?.age}
             journeyDay={journeyDay}
@@ -552,6 +560,7 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
 }
 
 function PlayHome({
+  childId,
   country,
   childAge,
   journeyDay,
@@ -561,6 +570,7 @@ function PlayHome({
   recordActivity: _recordActivity,
   onOpen,
 }: {
+  childId: number;
   country: string;
   childAge?: number;
   journeyDay: number;
@@ -571,12 +581,39 @@ function PlayHome({
   onOpen: (catId: string) => void;
 }) {
   const { t } = useTranslation();
+  const authFetch = useAuthFetch();
   const categories = useMemo(() => {
     if (unlocks) {
       return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks, { isPremium });
     }
     return getPlayCategoriesForChild(country, childAge, journeyDay);
   }, [country, childAge, journeyDay, unlocks, isPremium]);
+  const ageYears = Math.max(1, childAge ?? 5);
+
+  useEffect(() => {
+    const texts: string[] = [];
+    for (const cat of categories) {
+      for (const text of collectSmartStudyCategoryTexts(cat.items, cat.id, 4)) {
+        texts.push(text);
+        if (texts.length >= 24) break;
+      }
+      if (texts.length >= 24) break;
+    }
+    if (texts.length === 0) return;
+    enqueueBehaviorWarmup(authFetch, "study_zone", { studyTexts: texts });
+    scheduleLearningZoneAudioPrewarm(authFetch, {
+      module: "learn_with_amy",
+      texts,
+      sequenceTexts: texts,
+      ageGroup: String(ageYears),
+      stateKey: buildLearningZoneAudioStateKey({
+        module: "learn_with_amy",
+        ageGroup: String(ageYears),
+        revision: `smart-study-home:${childId}`,
+      }),
+    });
+  }, [authFetch, categories, childId, ageYears]);
+
   const numbersTomorrow = isPremium
     ? 0
     : playUnlocksTomorrowForCategory("numbers", journeyDay);
@@ -633,7 +670,20 @@ function PlayCategoryView({
   }, [country, childAge, journeyDay, unlocks, isPremium]);
   const cat = categories.find((c) => c.id === (categoryId as PlayCategory["id"]));
   const authFetch = useAuthFetch();
-  const { speak, primeSpeakGesture } = useAmyVoice();
+  const ageYears = Math.max(1, childAge ?? 5);
+  const prewarmCtx = useMemo(
+    () => buildSmartStudyPrewarmContext(childId, categoryId, ageYears),
+    [childId, categoryId, ageYears],
+  );
+  const { speak, playPreparedUrl, primeSpeakGesture } = useAmyVoice();
+  const playCancelledRef = useRef(false);
+
+  useEffect(() => {
+    playCancelledRef.current = false;
+    return () => {
+      playCancelledRef.current = true;
+    };
+  }, [categoryId]);
 
   useEffect(() => {
     if (categoryId === "rhymes") {
@@ -644,13 +694,11 @@ function PlayCategoryView({
       return;
     }
     if (cat?.items?.length) {
-      const texts = cat.items
-        .slice(0, 8)
-        .flatMap((item) => getPlayItemSpeakParts(item, cat.id));
-      enqueueBehaviorWarmup(authFetch, "study_zone", { studyTexts: texts });
+      scheduleSmartStudyCategoryPrewarm(authFetch, childId, categoryId, ageYears, cat.items);
+      const texts = collectSmartStudyCategoryTexts(cat.items, cat.id);
+      enqueueBehaviorWarmup(authFetch, "study_zone", { studyTexts: texts.slice(0, 12) });
     }
-  }, [authFetch, categoryId, cat?.id, cat?.items]);
-  const fx = useStudyFx();
+  }, [authFetch, childId, categoryId, cat?.id, cat?.items, ageYears]);
   const { toast } = useToast();
   const [poppedId, setPoppedId] = useState<string | null>(null);
   const [xpTrigger, setXpTrigger] = useState(0);
@@ -673,16 +721,15 @@ function PlayCategoryView({
   const hideTileBadge = cat.id === "numbers";
 
   const playItemAudio = async (item: PlayItem) => {
-    const parts = getPlayItemSpeakParts(item, cat.id);
-    for (const part of parts) {
-      const result = await speak(part, catalogPlaybackSpeakOptions(part));
-      if (!result.success) break;
-    }
+    await speakPlayItemCue(item, cat.id, prewarmCtx, {
+      speak,
+      playPreparedUrl,
+      isCancelled: () => playCancelledRef.current,
+    });
   };
 
   const handleTap = (item: PlayItem) => {
     void playItemAudio(item);
-    fx.play("tap");
     setPoppedId(item.id);
     window.setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 350);
     const { progress: nextP, engagement: result } = markPlayItem(childId, cat.id, item.id);
@@ -713,7 +760,8 @@ function PlayCategoryView({
       <motion.button
         key={item.id}
         onPointerDown={() => {
-          primeSpeakGesture(speakParts[0]!, catalogPlaybackSpeakOptions(speakParts[0]!));
+          const catalogOpts = getPlayItemCatalogSpeakOpts(item, cat.id);
+          primeSpeakGesture(speakParts[0]!, catalogOpts);
         }}
         onClick={() => handleTap(item)}
         animate={popping ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 10px rgba(99,102,241,0.18)", "0 0 0 0 rgba(99,102,241,0)"] } : { scale: 1 }}

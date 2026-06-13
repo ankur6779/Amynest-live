@@ -209,9 +209,5 @@
     <string>UIInterfaceOrientationLandscapeRight</string>
   </array>
 
-  <!-- ── Inline media (audio autoplay without user gesture) ── -->
-  <key>WKAudiovisualMediaTypes</key>
-  <string>none</string>
-
 </dict>
 </plist>

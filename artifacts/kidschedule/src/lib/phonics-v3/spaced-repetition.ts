@@ -90,7 +90,7 @@ export function retentionStateToPayload(state: PhonicsRetentionState): PhonicsRe
 
 export function retentionPayloadToState(payload: PhonicsRetentionPayload): PhonicsRetentionState {
   const tracks: PhonicsRetentionState["tracks"] = {};
-  for (const [key, track] of Object.entries(payload.tracks)) {
+  for (const [key, track] of Object.entries(payload?.tracks ?? {})) {
     tracks[key] = {
       id: track.id,
       type: track.type,

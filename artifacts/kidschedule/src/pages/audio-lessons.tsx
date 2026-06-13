@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Headphones, LifeBuoy, Lock, RotateCcw } from "lucide-react";
+import { Headphones, LifeBuoy, Lock, RotateCcw } from "lucide-react";
+import { PageStickyHeader } from "@/components/page-sticky-header";
 import { useAppNavigate } from "@/components/app-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import {
@@ -370,59 +371,20 @@ export default function AudioLessonsPage() {
         color: "#fff",
       }}
     >
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          background: "linear-gradient(180deg, rgba(15,12,41,0.95) 0%, rgba(15,12,41,0.7) 100%)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid rgba(139,92,246,0.2)",
-        }}
+      <PageStickyHeader
+        onBack={handleBack}
+        backLabel={t("pages.audio_lessons.back")}
+        className="z-20 border-b border-violet-500/20 bg-[rgba(15,12,41,0.95)] backdrop-blur-md"
+        innerClassName="amynest-page-inset max-w-[720px] mx-auto gap-3 !px-0"
+        backButtonClassName="h-9 w-9 border-none bg-violet-400/15 text-[hsl(var(--brand-violet-300))] shadow-none"
       >
-        <div
-          className="amynest-page-inset"
-          style={{
-            paddingTop: 14,
-            paddingBottom: 14,
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-        <button
-          onClick={handleBack}
-          style={{
-            color: "hsl(var(--brand-violet-300))",
-            background: "rgba(167,139,250,0.15)",
-            borderRadius: 999,
-            width: 36,
-            height: 36,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "none",
-            cursor: "pointer",
-          }}
-          aria-label={t("pages.audio_lessons.back")}
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Headphones size={20} color="hsl(var(--brand-violet-300))" />
-          <h1
-            style={{
-              fontFamily: "Quicksand, sans-serif",
-              fontSize: 18,
-              fontWeight: 800,
-              margin: 0,
-            }}
-          >
+        <div className="flex min-w-0 items-center gap-2">
+          <Headphones size={20} color="hsl(var(--brand-violet-300))" aria-hidden />
+          <h1 className="m-0 font-quicksand text-lg font-extrabold text-white">
             {t("pages.audio_lessons.amy_audio_lessons")}
           </h1>
         </div>
-        </div>
-      </div>
+      </PageStickyHeader>
 
       {!selectedAge ? (
         <>

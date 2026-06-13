@@ -2369,21 +2369,21 @@ export default function AICoachPage() {
           </section>
         )}
 
-        <div className="space-y-6">
-          {groupedCategories.length > 0 && (
-            <h2 className="-mb-3 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        {groupedCategories.length > 0 && (
+          <section className="space-y-6">
+            <h2 className="px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {t("pages.ai_coach.for_your_child")}
             </h2>
-          )}
-          {groupedCategories.map(({ group, categories }) => (
-            <section key={group.id}>
-              <h2 className="mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {group.label}
-              </h2>
-              <div className="grid grid-cols-2 gap-3">{categories.map((cat) => renderCategoryTile(cat))}</div>
-            </section>
-          ))}
-        </div>
+            {groupedCategories.map(({ group, categories }) => (
+              <div key={group.id}>
+                <h3 className="mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">{categories.map((cat) => renderCategoryTile(cat))}</div>
+              </div>
+            ))}
+          </section>
+        )}
       </AmyCoachGoalsKeyboardShell>
     );
   }

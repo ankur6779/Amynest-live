@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { playInfantSleepBundledMp3 } from "@/lib/infant-sleep-bundled-playback";
 import { audioManager } from "@/lib/audio-manager";
 import { recordTtsUserGesture, isAudioUnlocked } from "@/lib/tts-guard";
+import { prepareIosAudioSessionForPlayback } from "@/lib/mic-permission-capacitor";
 
 export type Mp3LoopEngine = {
   activeId: string | null;
@@ -65,6 +66,7 @@ export function useMp3LoopEngine(): Mp3LoopEngine {
       const trimmed = (url ?? "").trim();
       if (!trimmed) return;
       recordTtsUserGesture();
+      await prepareIosAudioSessionForPlayback();
       if (!isAudioUnlocked()) return;
 
       if (activeIdRef.current === id && audioRef.current && !audioRef.current.paused) {

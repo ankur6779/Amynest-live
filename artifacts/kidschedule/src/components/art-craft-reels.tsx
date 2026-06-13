@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import { SubItemGate } from "@/components/sub-item-gate";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 interface Video {
   id: string;
   name: string;
@@ -296,6 +297,12 @@ function ReelOverlay({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [activeIndex, onClose]);
+  const handleCloseTap = useCallback((e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  }, [onClose]);
+
   return <div style={{
     position: "fixed",
     inset: 0,
@@ -304,6 +311,56 @@ function ReelOverlay({
     display: "flex",
     flexDirection: "column"
   }}>
+      {/* Close + counter — absolute within fixed shell (nested fixed breaks iOS WKWebView taps) */}
+      <div style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 50,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      padding: "14px",
+      paddingTop: "max(14px, env(safe-area-inset-top, 0px))",
+      pointerEvents: "none"
+    }}>
+        <button type="button" onClick={handleCloseTap} style={{
+        pointerEvents: "auto",
+        touchAction: "manipulation",
+        WebkitTapHighlightColor: "transparent",
+        width: 38,
+        height: 38,
+        borderRadius: "50%",
+        background: "rgba(0,0,0,0.6)",
+        border: "1px solid rgba(255,255,255,0.2)",
+        color: "#fff",
+        fontSize: 18,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backdropFilter: "blur(8px)"
+      }} title={t("components.art_craft_reels.close_esc")} aria-label={t("components.art_craft_reels.close_esc")}>
+          ✕
+        </button>
+        <div style={{
+        pointerEvents: "auto",
+        background: "rgba(0,0,0,0.5)",
+        borderRadius: 20,
+        padding: "5px 12px",
+        backdropFilter: "blur(8px)"
+      }}>
+          <span style={{
+          color: "#fff",
+          fontSize: 12,
+          fontWeight: 600
+        }}>
+            {activeIndex + 1} / {videos.length}
+          </span>
+        </div>
+      </div>
+
       {/* Feed */}
       <div ref={feedRef} className="reel-container" style={{
       flex: 1,
@@ -356,48 +413,6 @@ function ReelOverlay({
               {t("components.art_craft_reels.you_ve_seen_all")} {videos.length} {t("components.art_craft_reels.videos")}
             </p>
           </div>}
-      </div>
-
-      {/* Close button — top-left */}
-      <button onClick={onClose} style={{
-      position: "fixed",
-      top: 14,
-      left: 14,
-      zIndex: 10000,
-      width: 38,
-      height: 38,
-      borderRadius: "50%",
-      background: "rgba(0,0,0,0.6)",
-      border: "1px solid rgba(255,255,255,0.2)",
-      color: "#fff",
-      fontSize: 18,
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      backdropFilter: "blur(8px)"
-    }} title={t("components.art_craft_reels.close_esc")}>
-        ✕
-      </button>
-
-      {/* Counter — top-right */}
-      <div style={{
-      position: "fixed",
-      top: 18,
-      right: 14,
-      zIndex: 10000,
-      background: "rgba(0,0,0,0.5)",
-      borderRadius: 20,
-      padding: "5px 12px",
-      backdropFilter: "blur(8px)"
-    }}>
-        <span style={{
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: 600
-      }}>
-          {activeIndex + 1} / {videos.length}
-        </span>
       </div>
     </div>;
 }
@@ -543,6 +558,16 @@ export function ArtCraftReels() {
     if (hasMore && !loadingRef.current) loadMore(offset);
   }, [hasMore, offset, loadMore]);
 
+  const closeOverlay = useCallback(() => setOverlayIndex(null), []);
+
+  usePageBackHandler(() => {
+    if (overlayIndex !== null) {
+      closeOverlay();
+      return true;
+    }
+    return false;
+  }, [overlayIndex, closeOverlay]);
+
   // Lock body scroll while overlay is open
   useEffect(() => {
     if (overlayIndex === null) return;
@@ -627,7 +652,7 @@ export function ArtCraftReels() {
       {/* Overlay player — rendered via portal so position:fixed covers the full viewport
           even when a parent has overflow/transform creating a stacking context */}
       {overlayIndex !== null && createPortal(
-        <ReelOverlay videos={videos} initialIndex={overlayIndex} onClose={() => setOverlayIndex(null)} onLoadMore={handleLoadMore} loadingMore={loadingMore} hasMore={hasMore} />,
+        <ReelOverlay videos={videos} initialIndex={overlayIndex} onClose={closeOverlay} onLoadMore={handleLoadMore} loadingMore={loadingMore} hasMore={hasMore} />,
         document.body
       )}
 

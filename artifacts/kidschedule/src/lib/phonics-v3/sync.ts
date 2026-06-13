@@ -16,6 +16,7 @@ import type { DailyReadingMission } from "@/lib/phonics-v2/daily-missions";
 import {
   defaultRetentionPayload,
   mergePhonicsV3Bundle,
+  coercePhonicsV3ProgressBundle,
   type PhonicsV3Domain,
   type PhonicsV3ProgressBundle,
 } from "@workspace/phonics-v3-progress";
@@ -83,7 +84,7 @@ function bundleFromLocal(childId: number): PhonicsV3ProgressBundle {
     }
   }
 
-  return {
+  return coercePhonicsV3ProgressBundle({
     mastery: {
       payload: loadMasteryState(childId) as PhonicsMasteryState,
       clientUpdatedAt: readMeta(childId, "mastery"),
@@ -101,7 +102,7 @@ function bundleFromLocal(childId: number): PhonicsV3ProgressBundle {
       payload: retentionStateToPayload(loadRetentionState(childId)),
       clientUpdatedAt: readMeta(childId, "retention"),
     },
-  };
+  });
 }
 
 function readMeta(childId: number, domain: PhonicsV3Domain): number {
@@ -213,23 +214,34 @@ export async function hydratePhonicsV3Progress(
 ): Promise<void> {
   if (authFetch) globalAuthFetch = authFetch;
 
-  const local = bundleFromLocal(childId);
-  let merged = local;
+  try {
+    const local = bundleFromLocal(childId);
+    let merged = local;
 
-  if (authFetch && isOnline()) {
-    const server = await fetchServerBundle(childId, authFetch);
-    if (server) {
-      if (serverBundleEmpty(server) && bundleHasLocalData(local)) {
-        const uploaded = await postSyncBatch(childId, authFetch, local);
-        merged = uploaded ?? local;
-      } else {
-        merged = mergePhonicsV3Bundle(local, server);
+    if (authFetch && isOnline()) {
+      const server = await fetchServerBundle(childId, authFetch);
+      if (server) {
+        const safeServer = coercePhonicsV3ProgressBundle(server);
+        if (serverBundleEmpty(safeServer) && bundleHasLocalData(local)) {
+          const uploaded = await postSyncBatch(childId, authFetch, local);
+          merged = uploaded ? coercePhonicsV3ProgressBundle(uploaded) : local;
+        } else {
+          merged = mergePhonicsV3Bundle(local, safeServer);
+        }
+        saveQueue(childId, []);
       }
-      saveQueue(childId, []);
+    }
+
+    applyBundleToLocal(childId, merged);
+  } catch (err) {
+    console.warn("[phonics-v3] hydrate failed — keeping local progress", err);
+    try {
+      applyBundleToLocal(childId, bundleFromLocal(childId));
+    } catch {
+      /* last-resort — route must stay usable */
     }
   }
 
-  applyBundleToLocal(childId, merged);
   hydratedChildren.add(childId);
 }
 

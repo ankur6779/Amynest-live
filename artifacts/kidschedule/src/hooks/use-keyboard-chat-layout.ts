@@ -169,8 +169,14 @@ export function useKeyboardChatLayout(
       // composer in view. This stick-to-bottom path is the core auto-scroll
       // contract and must always run — it is NOT gated behind remote config.
       const messagesEl = messagesRef.current;
+      // Embedded goal/search surfaces (Amy Coach) should keep content anchored at the
+      // top — not pinned to the scroll end like a live chat thread.
+      const embeddedNonChatSurface =
+        layoutMode === "embedded" &&
+        (surfaceRef.current === "amy-coach" || surfaceRef.current === "abacus-tutor");
       const stickToBottom =
-        !activePromptIdRef.current || (messagesEl ? isNearBottom(messagesEl) : true);
+        !embeddedNonChatSurface &&
+        (!activePromptIdRef.current || (messagesEl ? isNearBottom(messagesEl) : true));
       if (stickToBottom) {
         healRef.current?.cancel();
         scheduleEndScroll(forcePromptVisibilityMode ? "instant" : behavior);

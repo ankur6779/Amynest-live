@@ -5,7 +5,11 @@
  * NotReadableError in WebView often means stale playback focus, not another app.
  */
 
-import { isCapacitorIosNative, prepareIosAudioSessionForRecording } from "@/lib/mic-permission-capacitor";
+import {
+  isCapacitorIosNative,
+  prepareIosAudioSessionForPlayback,
+  prepareIosAudioSessionForRecording,
+} from "@/lib/mic-permission-capacitor";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 
 /** Wait after TTS/playback ends before mic acquire (Samsung WebView needs this). */
@@ -154,6 +158,18 @@ async function prepareNativeForRecording(): Promise<void> {
     getAndroidAudioBridge()?.prepareForRecording?.();
   } catch (err) {
     log("native prepareForRecording failed", err);
+  }
+}
+
+/** Switch native session to speaker playback (after mic capture or before Web Audio). */
+export async function prepareNativeForPlayback(): Promise<void> {
+  try {
+    if (isCapacitorIosNative()) {
+      await prepareIosAudioSessionForPlayback();
+    }
+    releaseNativeAndroidAudioFocus();
+  } catch (err) {
+    log("native prepareForPlayback failed", err);
   }
 }
 

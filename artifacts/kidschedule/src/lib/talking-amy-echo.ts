@@ -7,6 +7,7 @@ import {
   closeAudioContext,
   notifyPlaybackEnded,
   notifyPlaybackStarted,
+  prepareNativeForPlayback,
   registerPlaybackStopper,
   trackAudioContext,
 } from "@/lib/audio-session-coordinator";
@@ -569,9 +570,78 @@ export type PlayTalkingAmyEchoOptions = {
   onPlaybackStart?: () => void;
 };
 
+const ECHO_DECODE_TIMEOUT_MS = 8_000;
+const ECHO_POST_MIC_SETTLE_MS = 80;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function decodeViaMediaElement(ctx: AudioContext, blob: Blob): Promise<AudioBuffer> {
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio();
+  audio.src = url;
+  audio.preload = "auto";
+  audio.muted = true;
+  audio.setAttribute("playsinline", "true");
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(new Error("echo_decode_timeout"));
+    }, ECHO_DECODE_TIMEOUT_MS);
+    const cleanup = () => window.clearTimeout(timeout);
+    const onReady = () => {
+      cleanup();
+      audio.removeEventListener("error", onError);
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      audio.removeEventListener("canplaythrough", onReady);
+      reject(new Error("echo_media_decode_failed"));
+    };
+    if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+      cleanup();
+      resolve();
+      return;
+    }
+    audio.addEventListener("canplaythrough", onReady, { once: true });
+    audio.addEventListener("error", onError, { once: true });
+    audio.load();
+  });
+
+  const duration = audio.duration;
+  if (!Number.isFinite(duration) || duration <= 0) {
+    URL.revokeObjectURL(url);
+    throw new Error("echo_invalid_duration");
+  }
+
+  const sampleRate = ctx.sampleRate;
+  const length = Math.min(Math.ceil(duration * sampleRate), sampleRate * 30);
+  const offline = new OfflineAudioContext(1, length, sampleRate);
+  const source = (offline as unknown as AudioContext).createMediaElementSource(audio);
+  source.connect(offline.destination);
+
+  try {
+    await audio.play();
+  } catch {
+    /* Offline render may still succeed without audible play */
+  }
+
+  const buffer = await offline.startRendering();
+  audio.pause();
+  URL.revokeObjectURL(url);
+  return buffer;
+}
+
 async function decodeBlob(ctx: AudioContext, blob: Blob): Promise<AudioBuffer> {
   const buf = await blob.arrayBuffer();
-  return ctx.decodeAudioData(buf.slice(0));
+  if (buf.byteLength < 32) throw new Error("echo_empty_buffer");
+  try {
+    return await ctx.decodeAudioData(buf.slice(0));
+  } catch {
+    return await decodeViaMediaElement(ctx, blob);
+  }
 }
 
 /**
@@ -594,6 +664,9 @@ export async function playTalkingAmyEcho(
 
   stopTalkingAmyEcho();
   const gen = ++generation;
+
+  await prepareNativeForPlayback();
+  await sleep(ECHO_POST_MIC_SETTLE_MS);
 
   let ctx: AudioContext;
   try {

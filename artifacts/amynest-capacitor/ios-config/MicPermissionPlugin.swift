@@ -10,6 +10,7 @@ public class MicPermissionPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getMicrophoneStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "requestMicrophonePermission", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prepareAudioSessionForRecording", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "prepareAudioSessionForPlayback", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise)
     ]
 
@@ -19,6 +20,12 @@ public class MicPermissionPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func prepareAudioSessionForRecording(_ call: CAPPluginCall) {
         activateRecordingSession()
+        call.resolve(["ok": true])
+    }
+
+    /// White noise, lullabies, and Web Audio need an active playback session in WKWebView.
+    @objc func prepareAudioSessionForPlayback(_ call: CAPPluginCall) {
+        activatePlaybackSession()
         call.resolve(["ok": true])
     }
 
@@ -69,6 +76,16 @@ public class MicPermissionPlugin: CAPPlugin, CAPBridgedPlugin {
             try session.setActive(true, options: [])
         } catch {
             NSLog("[MicPermission] AVAudioSession activate failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func activatePlaybackSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true, options: [])
+        } catch {
+            NSLog("[MicPermission] AVAudioSession playback activate failed: \(error.localizedDescription)")
         }
     }
 

@@ -170,6 +170,7 @@ export function Layout({
     safePathStartsWithSegment(location, "/assistant") ||
     safePathStartsWithSegment(location, "/amy-ai-tutor") ||
     safePathStartsWithSegment(location, "/learn-with-amy");
+  const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
   const isDashboard = location === "/" || location === "/dashboard";
   const showDashboardChrome = location === "/dashboard";
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
@@ -217,7 +218,7 @@ export function Layout({
                   type="button"
                   onClick={handleBack}
                   aria-label="Back"
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+                  className="page-back-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
@@ -286,10 +287,12 @@ export function Layout({
 
         <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip">
           <ScreenContainer
-            noOffset={isImmersiveRoute || isAssistantRoute}
+            noOffset={isImmersiveRoute || isAssistantRoute || isAmyCoachRoute}
             className={
               isImmersiveRoute || isAssistantRoute
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
+                : isAmyCoachRoute
+                  ? "mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0 amy-coach-route-content h-full"
                 : showDashboardChrome || isParentHubRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:max-w-5xl md:p-8"
                   : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"

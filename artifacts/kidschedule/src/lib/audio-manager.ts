@@ -603,10 +603,27 @@ class AudioManagerImpl {
    * rejects audio.play() after await fetch/prepare even when gestures are unlocked.
    */
   primeSpeechUrlInUserGesture(proxyUrl: string): void {
-    if (!isAndroidAmyNestAudioClient()) return;
     const trimmed = (proxyUrl ?? "").trim();
     if (!trimmed) return;
     recordTtsUserGesture();
+    void import("@/lib/mic-permission-capacitor").then(({ prepareIosAudioSessionForPlayback, isCapacitorIosNative }) => {
+      if (isCapacitorIosNative()) void prepareIosAudioSessionForPlayback();
+    });
+    if (!isAndroidAmyNestAudioClient() && !trimmed.startsWith("blob:")) {
+      try {
+        const Ctx =
+          window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (Ctx) {
+          const ctx = new Ctx();
+          if (ctx.state === "suspended") void ctx.resume().catch(() => undefined);
+          void ctx.close().catch(() => undefined);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!isAndroidAmyNestAudioClient()) return;
     try {
       const resolved = trimmed.startsWith("blob:") ? trimmed : resolveApiMediaUrl(trimmed);
       let prime = this.gesturePrimeElements.get(resolved);

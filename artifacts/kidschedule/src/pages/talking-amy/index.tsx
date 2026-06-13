@@ -11,12 +11,15 @@ import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { AchievementUnlockCard } from "@/components/talking-amy/achievement-unlock-card";
 import { TalkingAmyHero } from "@/components/talking-amy/talking-amy-hero";
+import { PAGE_BACK_BTN, PAGE_SAFE_TOP } from "@/lib/page-sticky-header";
 import { Button } from "@/components/ui/button";
 import { useListChildren } from "@workspace/api-client-react";
 import { ArrowLeft, Dices, Hand, Mic, RefreshCw, Sparkles, Star, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { microphoneSessionManager } from "@/lib/microphone-session-manager";
+import { prepareNativeForPlayback } from "@/lib/audio-session-coordinator";
 import { playTalkingAmyEcho, stopTalkingAmyEcho } from "@/lib/talking-amy-echo";
+import { cn } from "@/lib/utils";
 import {
   mergeUnlockedAchievements,
   type TalkingAmyAchievement,
@@ -206,6 +209,10 @@ function ModeSelector({
 
 export default function TalkingAmyPage() {
   usePrimeIosMicrophone();
+
+  useEffect(() => {
+    void prepareNativeForPlayback();
+  }, []);
   const reducedMotion = useReducedMotion();
   const dailySpecialId = useMemo(() => getDailySpecialAmyModeId(), []);
   const dailySpecial = useMemo(() => getDailySpecialAmyMode(), []);
@@ -741,13 +748,17 @@ export default function TalkingAmyPage() {
       <div className={["pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full blur-3xl", mode.theme.pageAccent].join(" ")} />
       <div className="pointer-events-none absolute -right-16 bottom-24 h-80 w-80 rounded-full bg-fuchsia-500/15 blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
+      <div className={cn("relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pb-4", PAGE_SAFE_TOP)}>
         <header className="flex items-center gap-3">
           <AppLink href="/parenting-hub" replace source="talking-amy-back">
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+              className={cn(
+                PAGE_BACK_BTN,
+                "rounded-full border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white",
+              )}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>

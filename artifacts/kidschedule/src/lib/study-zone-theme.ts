@@ -3,6 +3,7 @@
  */
 
 import { cn } from "@/lib/utils";
+import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import {
   getHubFeatureTileAccent,
   HUB_GLASS_SURFACE,
@@ -16,9 +17,8 @@ export const STUDY_ACCENT = getHubFeatureTileAccent("smart-study");
 export const STUDY_PAGE = "study-zone-premium flex min-h-dvh w-full flex-col";
 
 export const STUDY_HEADER = cn(
-  "sticky top-0 z-50 shrink-0 border-b border-white/[0.08]",
-  "bg-[rgba(7,17,38,0.88)] backdrop-blur-md",
-  "px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]",
+  PAGE_STICKY_HEADER_BASE,
+  "border-white/[0.08] bg-[rgba(7,17,38,0.88)]",
 );
 
 export const STUDY_MAIN =

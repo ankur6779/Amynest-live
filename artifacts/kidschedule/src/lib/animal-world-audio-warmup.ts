@@ -9,6 +9,7 @@ import {
   type AnimalCategory,
 } from "@workspace/animal-world";
 import { animalAudioManager } from "@/lib/animal-world-audio-manager";
+import { scheduleWorldLibraryDeepPreload } from "@/lib/world-library-audio-prewarm";
 
 let warmed = false;
 
@@ -23,6 +24,7 @@ export function warmAnimalWorldOnOpen(category?: AnimalCategory): void {
     quiz: collectLikelyQuizSoundUrls(animals, 8),
     discovery: collectLikelyDiscoveryUrls(animals, 6),
   });
+  scheduleWorldLibraryDeepPreload(current, 12);
   warmed = true;
 }
 
@@ -33,6 +35,7 @@ export function warmAnimalDetail(animal: Animal): void {
     adjacent: collectAdjacentAnimalUrls(animals, animal.id),
     quiz: collectLikelyQuizSoundUrls(animals, 4),
   });
+  void animalAudioManager.preloadReady(collectAnimalSoundUrls(animal), 6);
 }
 
 export function isAnimalWorldWarmed(): boolean {

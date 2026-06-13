@@ -10,6 +10,8 @@ import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { isExploreNextStageHubFeature, isHealthLabPreviewAge } from "@/lib/hub-visibility";
+import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
+import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -90,7 +92,7 @@ export function HubModulePageShell({
   if (!activeChild) {
     return (
       <div className="flex min-h-dvh flex-col bg-background">
-        <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <header className={PAGE_STICKY_HEADER_BASE}>
           <button
             type="button"
             onClick={goBack}
@@ -138,7 +140,7 @@ export function HubModulePageShell({
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">
-      <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur">
+      <header className={cn(PAGE_STICKY_HEADER_BASE, "backdrop-blur")}>
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
             type="button"

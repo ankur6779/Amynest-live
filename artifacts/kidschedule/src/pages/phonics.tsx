@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
+import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
+import { cn } from "@/lib/utils";
 import { getPhonicsLevel } from "@/lib/phonics-content";
 import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
 import { preloadPhonicsBundledManifest } from "@/lib/phonics-bundled-manifest";
@@ -115,7 +117,7 @@ export default function PhonicsPage() {
     const noEligibleChild = childList.length > 0 && eligibleChildren.length === 0;
     return (
       <div className="flex min-h-screen flex-col bg-background">
-        <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <header className={PAGE_STICKY_HEADER_BASE}>
           <button type="button" onClick={goBack} className="inline-flex items-center gap-2 text-sm font-bold text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -143,7 +145,7 @@ export default function PhonicsPage() {
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">
-      <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur">
+      <header className={cn(PAGE_STICKY_HEADER_BASE, "backdrop-blur")}>
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
             type="button"

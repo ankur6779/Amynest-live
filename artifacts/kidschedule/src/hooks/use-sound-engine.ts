@@ -25,6 +25,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getProceduralAudioContext } from "@/lib/procedural-sfx";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { prepareIosAudioSessionForPlayback } from "@/lib/mic-permission-capacitor";
 
 export type SoundId =
   | "shush"
@@ -523,6 +525,8 @@ export function useSoundEngine(): SoundEngine {
 
   const play = useCallback(async (id: SoundId) => {
     if (activeRef.current.has(id)) return; // already playing
+    recordTtsUserGesture();
+    await prepareIosAudioSessionForPlayback();
     const ctx = ensureContext();
     const masterGain = masterGainRef.current!;
     const buffers = buffersRef.current!;

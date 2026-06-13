@@ -55,13 +55,15 @@ function mergeMasteryRecords(
 }
 
 function mergeMasteryBucket(
-  local: Record<string, MasteryRecordJson>,
-  remote: Record<string, MasteryRecordJson>,
+  local: Record<string, MasteryRecordJson> | undefined,
+  remote: Record<string, MasteryRecordJson> | undefined,
 ): Record<string, MasteryRecordJson> {
-  const ids = new Set([...Object.keys(local), ...Object.keys(remote)]);
+  const l = local ?? {};
+  const r = remote ?? {};
+  const ids = new Set([...Object.keys(l), ...Object.keys(r)]);
   const out: Record<string, MasteryRecordJson> = {};
   for (const id of ids) {
-    const merged = mergeMasteryRecords(local[id], remote[id]);
+    const merged = mergeMasteryRecords(l[id], r[id]);
     if (merged) out[id] = merged;
   }
   return out;
@@ -72,12 +74,14 @@ export function mergeMasteryPayload(
   local: PhonicsMasteryPayload,
   remote: PhonicsMasteryPayload,
 ): PhonicsMasteryPayload {
+  const safeLocal = coerceMasteryPayload(local);
+  const safeRemote = coerceMasteryPayload(remote);
   return {
     version: 3,
-    words: mergeMasteryBucket(local.words, remote.words),
-    letters: mergeMasteryBucket(local.letters, remote.letters),
-    phonemes: mergeMasteryBucket(local.phonemes, remote.phonemes),
-    families: mergeMasteryBucket(local.families, remote.families),
+    words: mergeMasteryBucket(safeLocal.words, safeRemote.words),
+    letters: mergeMasteryBucket(safeLocal.letters, safeRemote.letters),
+    phonemes: mergeMasteryBucket(safeLocal.phonemes, safeRemote.phonemes),
+    families: mergeMasteryBucket(safeLocal.families, safeRemote.families),
   };
 }
 
@@ -107,17 +111,19 @@ export function mergeFluencyPayload(
   local: PhonicsFluencyPayload,
   remote: PhonicsFluencyPayload,
 ): PhonicsFluencyPayload {
-  const daily = mergeDailySnapshots(local.daily, remote.daily);
+  const safeLocal = coerceFluencyPayload(local);
+  const safeRemote = coerceFluencyPayload(remote);
+  const daily = mergeDailySnapshots(safeLocal.daily, safeRemote.daily);
   return {
     version: 3,
-    streakDays: max(local.streakDays, remote.streakDays),
+    streakDays: max(safeLocal.streakDays, safeRemote.streakDays),
     lastActiveDate:
-      local.lastActiveDate >= remote.lastActiveDate
-        ? local.lastActiveDate
-        : remote.lastActiveDate,
-    wordsAttemptedTotal: max(local.wordsAttemptedTotal, remote.wordsAttemptedTotal),
-    wordsCompletedTotal: max(local.wordsCompletedTotal, remote.wordsCompletedTotal),
-    storiesCompletedTotal: max(local.storiesCompletedTotal, remote.storiesCompletedTotal),
+      safeLocal.lastActiveDate >= safeRemote.lastActiveDate
+        ? safeLocal.lastActiveDate
+        : safeRemote.lastActiveDate,
+    wordsAttemptedTotal: max(safeLocal.wordsAttemptedTotal, safeRemote.wordsAttemptedTotal),
+    wordsCompletedTotal: max(safeLocal.wordsCompletedTotal, safeRemote.wordsCompletedTotal),
+    storiesCompletedTotal: max(safeLocal.storiesCompletedTotal, safeRemote.storiesCompletedTotal),
     daily,
   };
 }
@@ -126,8 +132,10 @@ export function mergeStoryProgressPayload(
   local: PhonicsStoryProgressPayload,
   remote: PhonicsStoryProgressPayload,
 ): PhonicsStoryProgressPayload {
-  const completed = { ...remote.completed };
-  for (const [id, rec] of Object.entries(local.completed)) {
+  const safeLocal = coerceStoryProgressPayload(local);
+  const safeRemote = coerceStoryProgressPayload(remote);
+  const completed = { ...safeRemote.completed };
+  for (const [id, rec] of Object.entries(safeLocal.completed)) {
     const prev = completed[id];
     if (!prev) {
       completed[id] = rec;
@@ -220,11 +228,13 @@ export function mergeRetentionPayload(
   local: PhonicsRetentionPayload,
   remote: PhonicsRetentionPayload,
 ): PhonicsRetentionPayload {
-  const keys = new Set([...Object.keys(local.tracks), ...Object.keys(remote.tracks)]);
+  const safeLocal = coerceRetentionPayload(local);
+  const safeRemote = coerceRetentionPayload(remote);
+  const keys = new Set([...Object.keys(safeLocal.tracks), ...Object.keys(safeRemote.tracks)]);
   const tracks: Record<string, RetentionTrackPayload> = {};
   for (const key of keys) {
-    const l = local.tracks[key];
-    const r = remote.tracks[key];
+    const l = safeLocal.tracks[key];
+    const r = safeRemote.tracks[key];
     if (l && r) tracks[key] = mergeRetentionTrack(l, r);
     else if (l) tracks[key] = l;
     else if (r) tracks[key] = r;
@@ -232,34 +242,126 @@ export function mergeRetentionPayload(
   return { version: 3, tracks };
 }
 
+/** Coerce partial API/local payloads before merge or persistence. */
+export function coerceMasteryPayload(
+  payload: PhonicsMasteryPayload | null | undefined,
+): PhonicsMasteryPayload {
+  if (!payload || typeof payload !== "object") return defaultMasteryPayload();
+  return {
+    version: 3,
+    words: payload.words ?? {},
+    letters: payload.letters ?? {},
+    phonemes: payload.phonemes ?? {},
+    families: payload.families ?? {},
+  };
+}
+
+export function coerceFluencyPayload(
+  payload: PhonicsFluencyPayload | null | undefined,
+): PhonicsFluencyPayload {
+  if (!payload || typeof payload !== "object") return defaultFluencyPayload();
+  return {
+    version: 3,
+    streakDays: payload.streakDays ?? 0,
+    lastActiveDate: payload.lastActiveDate ?? "",
+    wordsAttemptedTotal: payload.wordsAttemptedTotal ?? 0,
+    wordsCompletedTotal: payload.wordsCompletedTotal ?? 0,
+    storiesCompletedTotal: payload.storiesCompletedTotal ?? 0,
+    daily: Array.isArray(payload.daily) ? payload.daily : [],
+  };
+}
+
+export function coerceStoryProgressPayload(
+  payload: PhonicsStoryProgressPayload | null | undefined,
+): PhonicsStoryProgressPayload {
+  if (!payload || typeof payload !== "object") return defaultStoryProgressPayload();
+  return {
+    version: 3,
+    completed: payload.completed ?? {},
+  };
+}
+
+export function coerceRetentionPayload(
+  payload: PhonicsRetentionPayload | null | undefined,
+): PhonicsRetentionPayload {
+  if (!payload || typeof payload !== "object") return defaultRetentionPayload();
+  return {
+    version: 3,
+    tracks: payload.tracks ?? {},
+  };
+}
+
+export function coercePhonicsV3ProgressBundle(
+  bundle: PhonicsV3ProgressBundle | null | undefined,
+): PhonicsV3ProgressBundle {
+  if (!bundle || typeof bundle !== "object") {
+    return {
+      mastery: null,
+      fluency: null,
+      stories: null,
+      missions: null,
+      retention: null,
+    };
+  }
+  return {
+    mastery: bundle.mastery
+      ? {
+          payload: coerceMasteryPayload(bundle.mastery.payload),
+          clientUpdatedAt: bundle.mastery.clientUpdatedAt ?? 0,
+        }
+      : null,
+    fluency: bundle.fluency
+      ? {
+          payload: coerceFluencyPayload(bundle.fluency.payload),
+          clientUpdatedAt: bundle.fluency.clientUpdatedAt ?? 0,
+        }
+      : null,
+    stories: bundle.stories
+      ? {
+          payload: coerceStoryProgressPayload(bundle.stories.payload),
+          clientUpdatedAt: bundle.stories.clientUpdatedAt ?? 0,
+        }
+      : null,
+    missions: bundle.missions ?? null,
+    retention: bundle.retention
+      ? {
+          payload: coerceRetentionPayload(bundle.retention.payload),
+          clientUpdatedAt: bundle.retention.clientUpdatedAt ?? 0,
+        }
+      : null,
+  };
+}
+
 export function mergePhonicsV3Bundle(
   local: PhonicsV3ProgressBundle,
   remote: PhonicsV3ProgressBundle,
 ): PhonicsV3ProgressBundle {
-  const mastery = mergeDomainEnvelope(local.mastery, remote.mastery, mergeMasteryPayload);
-  const fluency = mergeDomainEnvelope(local.fluency, remote.fluency, mergeFluencyPayload);
-  const stories = mergeDomainEnvelope(local.stories, remote.stories, mergeStoryProgressPayload);
-  const retention = mergeDomainEnvelope(local.retention, remote.retention, mergeRetentionPayload);
+  const safeLocal = coercePhonicsV3ProgressBundle(local);
+  const safeRemote = coercePhonicsV3ProgressBundle(remote);
+  const mastery = mergeDomainEnvelope(safeLocal.mastery, safeRemote.mastery, mergeMasteryPayload);
+  const fluency = mergeDomainEnvelope(safeLocal.fluency, safeRemote.fluency, mergeFluencyPayload);
+  const stories = mergeDomainEnvelope(safeLocal.stories, safeRemote.stories, mergeStoryProgressPayload);
+  const retention = mergeDomainEnvelope(safeLocal.retention, safeRemote.retention, mergeRetentionPayload);
 
   let missions: PhonicsV3ProgressBundle["missions"] = null;
-  if (local.missions && remote.missions) {
+  if (safeLocal.missions && safeRemote.missions) {
     const merged = mergeMissionPayload(
-      local.missions.payload,
-      remote.missions.payload,
-      local.missions.clientUpdatedAt,
-      remote.missions.clientUpdatedAt,
+      safeLocal.missions.payload,
+      safeRemote.missions.payload,
+      safeLocal.missions.clientUpdatedAt,
+      safeRemote.missions.clientUpdatedAt,
     );
     if (merged) {
       missions = {
         payload: merged,
-        clientUpdatedAt: max(local.missions.clientUpdatedAt, remote.missions.clientUpdatedAt),
+        clientUpdatedAt: max(safeLocal.missions.clientUpdatedAt, safeRemote.missions.clientUpdatedAt),
       };
     }
   } else {
-    missions = local.missions ?? remote.missions;
+    missions = safeLocal.missions ?? safeRemote.missions;
   }
 
-  return { mastery, fluency, stories, missions, retention };
+  return coercePhonicsV3ProgressBundle({ mastery, fluency, stories, missions, retention });
 }
 
 export function defaultMasteryPayload(): PhonicsMasteryPayload {

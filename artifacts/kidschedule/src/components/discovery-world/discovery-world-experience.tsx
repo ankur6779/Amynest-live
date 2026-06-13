@@ -40,7 +40,10 @@ import { WorldHeroImage } from "./world-hero-image";
 import { DelightBurst } from "./delight-burst";
 import { DiscoveryEmptyState } from "./discovery-world-polish";
 import { PlayableInstrument } from "./playable-instrument";
-import { resolveApiMediaUrl } from "@/lib/api";
+import {
+  primeWorldLibrarySoundUrl,
+  resolveWorldLibraryPlaybackUrl,
+} from "@/lib/world-library-audio-prewarm";
 
 type ModeId =
   | "explore"
@@ -97,17 +100,13 @@ export function DiscoveryWorldExperience({
 
   useEffect(() => {
     onEngage?.();
-    discoveryWorldAudioManager.unlockFromGesture();
-    const preloadItems = config.manifest.items.slice(0, 8);
-    const imageUrls = preloadItems.flatMap((item) => {
-      const v = worldItemVisualPaths(item, config.resolveAssetUrl);
-      return [v.card, v.thumbnail, v.hero];
-    });
+    void discoveryWorldAudioManager.unlockFromGesture();
+    const preloadItems = config.manifest.items.slice(0, 10);
     const soundUrls = preloadItems.flatMap((item) => {
       const s = config.getPrimarySound(item);
       return s ? [config.resolveAssetUrl(s.gcsPath)] : [];
     });
-    discoveryWorldAudioManager.preloadSmart({ current: [...imageUrls, ...soundUrls] });
+    discoveryWorldAudioManager.preloadSmart({ current: soundUrls });
     trackDiscoveryWorldsEvent(config.worldId, "world_opened", { childId });
     if (needsDiscoveryOfflineRefresh(config.worldId, childId)) {
       void warmDiscoveryWorldOfflineCache({
@@ -128,6 +127,15 @@ export function DiscoveryWorldExperience({
       discoveryWorldAudioManager.release();
     };
   }, [childId, config, onEngage]);
+
+  useEffect(() => {
+    if (!selected || mode !== "explore") return;
+    const urls = selected.sounds.map((s) => config.resolveAssetUrl(s.gcsPath));
+    const primary = config.getPrimarySound(selected);
+    if (primary) urls.unshift(config.resolveAssetUrl(primary.gcsPath));
+    discoveryWorldAudioManager.preloadSmart({ current: urls });
+    void discoveryWorldAudioManager.preloadReady(urls, urls.length);
+  }, [selected, mode, config]);
 
   useEffect(() => {
     discoveryWorldAudioManager.setMuted(muted);
@@ -329,6 +337,7 @@ function WorldItemDetail({
 
   const play = async (soundId: string, url: string, label: string) => {
     discoveryWorldAudioManager.unlockFromGesture();
+    primeWorldLibrarySoundUrl(url);
     setPlayError(false);
     const ok = await discoveryWorldAudioManager.play(url, {
       worldId: config.worldId,
@@ -385,6 +394,7 @@ function WorldItemDetail({
         <button
           type="button"
           className="w-full rounded-2xl bg-primary py-4 font-bold text-primary-foreground"
+          onPointerDown={() => primary && primeWorldLibrarySoundUrl(config.resolveAssetUrl(primary.gcsPath))}
           onClick={() => void play(primary.id, config.resolveAssetUrl(primary.gcsPath), primary.label)}
         >
           Tap to hear {primary.label}
@@ -395,6 +405,7 @@ function WorldItemDetail({
           key={sound.id}
           type="button"
           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left font-semibold"
+          onPointerDown={() => primeWorldLibrarySoundUrl(config.resolveAssetUrl(sound.gcsPath))}
           onClick={() => void play(sound.id, config.resolveAssetUrl(sound.gcsPath), sound.label)}
         >
           🔊 {sound.label}
@@ -424,6 +435,10 @@ function ToddlerGrid({
             key={item.id}
             type="button"
             className="flex aspect-square flex-col items-center justify-center gap-2 rounded-[24px] border border-white/10 bg-[rgba(18,28,60,0.78)] p-3"
+            onPointerDown={() => {
+              if (!sound) return;
+              primeWorldLibrarySoundUrl(config.resolveAssetUrl(sound.gcsPath));
+            }}
             onClick={() => {
               if (!sound) return;
               discoveryWorldAudioManager.unlockFromGesture();
@@ -471,7 +486,7 @@ function PlayMode({
   if (selected) {
     const primary = config.getPrimarySound(selected);
     const sampleUrl = primary
-      ? resolveApiMediaUrl(config.resolveAssetUrl(primary.gcsPath))
+      ? resolveWorldLibraryPlaybackUrl(config.resolveAssetUrl(primary.gcsPath))
       : null;
     return (
       <div className="space-y-4 px-2">

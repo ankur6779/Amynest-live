@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import type { StoryDto } from "@/hooks/use-stories-data";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { useTranslation } from "react-i18next";
+import { isCapacitorIosShell } from "@/lib/device-lite";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { cn } from "@/lib/utils";
 interface StoryFlowPlayerProps {
   story: StoryDto;
   storyIndex: number;
@@ -124,11 +127,20 @@ export function StoryFlowPlayer({
   const videoCls = fullScreen
     ? "w-full flex-1 bg-black object-contain"
     : "aspect-video w-full bg-black";
+  const showNativeVideoControls = !isCapacitorIosShell() && !isNativeAmyNestShell();
+  const handleCloseTap = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  };
 
   return <div data-on-dark className={rootCls} data-testid={`story-flow-player-${story.id}`}>
       {/* Top bar: progress dots + close */}
-      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className={cn(
+        "absolute left-0 right-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3 pointer-events-none",
+        fullScreen && "pt-[max(12px,env(safe-area-inset-top,0px))]"
+      )}>
+        <div className="flex items-center gap-2 pointer-events-auto">
           {/* Dot indicators — capped at 20 visible dots */}
           <div className="flex gap-1">
             {Array.from({
@@ -139,7 +151,7 @@ export function StoryFlowPlayer({
             {storyIndex + 1}&thinsp;/&thinsp;{totalStories}
           </span>
         </div>
-        <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/30" aria-label={t("components.story_player.close_player")}>
+        <button type="button" onClick={handleCloseTap} className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/30 touch-manipulation" aria-label={t("components.story_player.close_player")}>
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -149,7 +161,7 @@ export function StoryFlowPlayer({
           <AlertCircle className="h-10 w-10 text-primary" />
           <p className="text-sm font-semibold text-white">{t("components.story_player.couldn_t_load_this_story")}</p>
           <p className="text-xs text-white/50">{t("components.story_player.skipping_to_next")}</p>
-        </div> : <video data-on-dark key={story.id} ref={videoRef} src={resolveApiMediaUrl(story.streamUrl)} controls autoPlay playsInline className={videoCls} />}
+        </div> : <video data-on-dark key={story.id} ref={videoRef} src={resolveApiMediaUrl(story.streamUrl)} controls={showNativeVideoControls} autoPlay playsInline className={videoCls} />}
 
       {/* Auto-advance countdown overlay */}
       {autoAdvanceIn !== null && !showLoopBanner && <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/75 backdrop-blur-sm">
@@ -179,12 +191,15 @@ export function StoryFlowPlayer({
         </div>}
 
       {/* Bottom bar: title + controls */}
-      <div className="flex items-end justify-between gap-4 bg-gradient-to-t from-black to-black/0 px-4 pb-safe pt-8">
-        <div className="min-w-0">
+      <div className={cn(
+        "flex items-end justify-between gap-4 bg-gradient-to-t from-black to-black/0 px-4 pb-safe pt-8",
+        fullScreen && "absolute bottom-0 left-0 right-0 z-50 pointer-events-none"
+      )}>
+        <div className="min-w-0 pointer-events-auto">
           <p className="truncate text-base font-semibold text-white">{story.title}</p>
           <p className="mt-0.5 text-xs capitalize text-white/50">{story.category}</p>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 gap-2 pointer-events-auto">
           <Button size="sm" variant="ghost" onClick={onReplay} className="h-8 gap-1.5 text-xs text-white/70 hover:bg-white/10 hover:text-white">
             <RotateCcw className="h-3.5 w-3.5" />
             {t("components.story_player.replay")}

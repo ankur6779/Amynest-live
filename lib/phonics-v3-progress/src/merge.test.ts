@@ -139,4 +139,35 @@ describe("phonics-v3-progress merge", () => {
     assert.equal(merged.tracks["word:cat"]!.nextReviewAt, 3000);
     assert.equal(merged.tracks["word:cat"]!.retentionScore, 72);
   });
+
+  it("merges partial server payloads without throwing", () => {
+    const merged = mergePhonicsV3Bundle(
+      {
+        mastery: { payload: defaultMasteryPayload(), clientUpdatedAt: 100 },
+        fluency: null,
+        stories: null,
+        missions: null,
+        retention: null,
+      },
+      {
+        mastery: { payload: { version: 3 } as typeof defaultMasteryPayload, clientUpdatedAt: 200 },
+        fluency: {
+          payload: { version: 3 } as Parameters<typeof mergeFluencyPayload>[0],
+          clientUpdatedAt: 200,
+        },
+        stories: {
+          payload: { version: 3 } as Parameters<typeof mergeStoryProgressPayload>[0],
+          clientUpdatedAt: 200,
+        },
+        missions: null,
+        retention: { payload: { version: 3 } as typeof defaultRetentionPayload, clientUpdatedAt: 200 },
+      },
+    );
+    assert.ok(merged.mastery);
+    assert.ok(merged.fluency);
+    assert.ok(merged.stories);
+    assert.ok(merged.retention);
+    assert.equal(typeof merged.mastery!.payload.words, "object");
+    assert.equal(typeof merged.retention!.payload.tracks, "object");
+  });
 });

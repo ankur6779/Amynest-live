@@ -144,25 +144,37 @@ export function PhonicsV2({
   );
 
   useEffect(() => {
-    prefetchCvcWordList(practiceWords.length > 0 ? practiceWords : ["cat", "hat", "dog"]);
-    const plan = buildOfflinePrefetchPlan({
-      missionWords: practiceWords,
-      includeDigraphs: avgMasteryScore(mastery) >= 60,
-    });
-    prefetchOfflinePhonicsPack(plan);
-    auditOfflineCache(plan);
-  }, [practiceWords, mastery]);
+    ensurePhonicsV3OnlineSync(authFetch);
+    void hydratePhonicsV3Progress(childId, authFetch)
+      .then(() => {
+        const nextMastery = loadMasteryState(childId);
+        setMastery(nextMastery);
+        setFluency(loadFluencyState(childId));
+        const nextRetention = syncMasteredTracks(loadRetentionState(childId), nextMastery);
+        setRetention(nextRetention);
+      })
+      .catch((err) => {
+        console.warn("[phonics-v2] progress hydrate failed", err);
+      });
+  }, [childId, authFetch]);
 
   useEffect(() => {
-    ensurePhonicsV3OnlineSync(authFetch);
-    void hydratePhonicsV3Progress(childId, authFetch).then(() => {
-      const nextMastery = loadMasteryState(childId);
-      setMastery(nextMastery);
-      setFluency(loadFluencyState(childId));
-      const nextRetention = syncMasteredTracks(loadRetentionState(childId), nextMastery);
-      setRetention(nextRetention);
-    });
-  }, [childId, authFetch]);
+    const runPrefetch = () => {
+      prefetchCvcWordList(practiceWords.length > 0 ? practiceWords : ["cat", "hat", "dog"]);
+      const plan = buildOfflinePrefetchPlan({
+        missionWords: practiceWords,
+        includeDigraphs: avgMasteryScore(mastery) >= 60,
+      });
+      prefetchOfflinePhonicsPack(plan);
+      auditOfflineCache(plan);
+    };
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(runPrefetch, { timeout: 2500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = setTimeout(runPrefetch, 400);
+    return () => clearTimeout(timer);
+  }, [practiceWords, mastery]);
 
   useEffect(() => {
     setFamilyProgress(loadFamilyProgress(childId));

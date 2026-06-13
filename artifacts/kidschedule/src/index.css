@@ -827,7 +827,8 @@ html[data-theme="dark"] {
   box-sizing: border-box;
 }
 
-.app-scroll:has(.assistant-chat-page) {
+.app-scroll:has(.assistant-chat-page),
+.app-scroll:has(.amy-coach-route-content) {
   overflow: hidden;
   padding-bottom: 0;
   display: flex;
@@ -837,7 +838,8 @@ html[data-theme="dark"] {
   height: 100%;
 }
 
-.app-scroll:has(.assistant-chat-page) [data-error-boundary] {
+.app-scroll:has(.assistant-chat-page) [data-error-boundary],
+.app-scroll:has(.amy-coach-route-content) [data-error-boundary] {
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -845,7 +847,8 @@ html[data-theme="dark"] {
   overflow: hidden;
 }
 
-.app-scroll:has(.assistant-chat-page) .main-container {
+.app-scroll:has(.assistant-chat-page) .main-container,
+.app-scroll:has(.amy-coach-route-content) .main-container {
   flex: 1;
   min-height: 0;
   height: 100%;
@@ -853,25 +856,29 @@ html[data-theme="dark"] {
   overflow: hidden;
 }
 
-.app-scroll:has(.assistant-chat-page) .main-container > main {
+.app-scroll:has(.assistant-chat-page) .main-container > main,
+.app-scroll:has(.amy-coach-route-content) .main-container > main {
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-.app-scroll:has(.assistant-chat-page) .main-container main > .flex.flex-1 {
+.app-scroll:has(.assistant-chat-page) .main-container main > .flex.flex-1,
+.app-scroll:has(.amy-coach-route-content) .main-container main > .flex.flex-1 {
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-.app-scroll:has(.assistant-chat-page) .main-container main > .flex.flex-1 > .flex.flex-1 {
+.app-scroll:has(.assistant-chat-page) .main-container main > .flex.flex-1 > .flex.flex-1,
+.app-scroll:has(.amy-coach-route-content) .main-container main > .flex.flex-1 > .flex.flex-1 {
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-.app-scroll:has(.assistant-chat-page) .assistant-route-content {
+.app-scroll:has(.assistant-chat-page) .assistant-route-content,
+.app-scroll:has(.amy-coach-route-content) .amy-coach-route-content {
   flex: 1;
   min-height: 0;
   height: 100%;
@@ -894,6 +901,36 @@ html[data-theme="dark"] {
   min-height: 0;
   height: 100%;
   max-height: 100%;
+}
+
+.amy-coach-route-content .chat-thread-page {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+}
+
+/* Amy Coach goals — embedded under the app header (not fullscreen chat). */
+.amy-coach-route-content .amy-coach-goals-shell .kb-safe-header {
+  padding-top: 0.5rem;
+  background: hsl(var(--background) / 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid hsl(var(--border) / 0.35);
+}
+
+.amy-coach-route-content .amy-coach-goals-shell .chat-thread-messages {
+  padding-bottom: calc(0.75rem + var(--sab, env(safe-area-inset-bottom, 0px)));
+}
+
+/* Fixed full-bleed coach phases (questions, wins) start below the mobile header. */
+@media (max-width: 767px) {
+  .app-fixed-below-header {
+    top: var(--app-header-height, 3.5rem);
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
 }
 
 .app-shell,
@@ -1040,7 +1077,9 @@ html.amynest-android-shell .app-header__bar {
   z-index: 1;
 }
 html.amynest-native-shell .app-header__bar button,
-html.amynest-android-shell .app-header__bar button {
+html.amynest-android-shell .app-header__bar button,
+html.amynest-native-shell .page-back-btn,
+html.amynest-android-shell .page-back-btn {
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(168, 85, 247, 0.18);
 }

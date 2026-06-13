@@ -8,6 +8,7 @@ import {
   isAudioUnlocked,
   recordTtsUserGesture,
 } from "@/lib/tts-guard";
+import { prepareIosAudioSessionForPlayback } from "@/lib/mic-permission-capacitor";
 
 const BUNDLED_FADE_SECONDS = 0.6;
 
@@ -29,6 +30,7 @@ export async function playInfantSleepBundledMp3(
   if (!trimmed) return false;
 
   recordTtsUserGesture();
+  await prepareIosAudioSessionForPlayback();
   if (!isAudioUnlocked()) return false;
 
   audio.loop = opts.loop ?? false;

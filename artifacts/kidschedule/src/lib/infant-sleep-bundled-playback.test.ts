@@ -16,6 +16,10 @@ vi.mock("@/lib/tts-guard", () => ({
   recordTtsUserGesture: vi.fn(),
 }));
 
+vi.mock("@/lib/mic-permission-capacitor", () => ({
+  prepareIosAudioSessionForPlayback: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe("playInfantSleepBundledMp3", () => {
   beforeEach(() => {
     playMock.mockReset();

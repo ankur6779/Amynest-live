@@ -21,6 +21,7 @@ import {
   DISCOVERY_CATALOG_SIZES,
 } from "@/lib/discovery-worlds-unified-insights";
 import { Progress } from "@/components/ui/progress";
+import { warmDiscoveryWorldsHubOnOpen } from "@/lib/discovery-worlds-hub-audio-warmup";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -47,6 +48,10 @@ export default function DiscoveryWorldsHubPage() {
     back("discovery-worlds-hub-back");
     return true;
   }, [back]);
+
+  useEffect(() => {
+    warmDiscoveryWorldsHubOnOpen();
+  }, []);
 
   useEffect(() => {
     if (!activeChild) return;

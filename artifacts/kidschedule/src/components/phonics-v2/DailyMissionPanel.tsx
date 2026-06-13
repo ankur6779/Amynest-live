@@ -46,7 +46,9 @@ export function DailyMissionPanel({
   const [activeStory, setActiveStory] = useState<string | null>(null);
 
   useEffect(() => {
-    void hydratePhonicsV3Progress(childId, authFetch);
+    void hydratePhonicsV3Progress(childId, authFetch).catch((err) => {
+      console.warn("[phonics-v2] daily mission hydrate failed", err);
+    });
   }, [childId, authFetch]);
 
   useEffect(() => {

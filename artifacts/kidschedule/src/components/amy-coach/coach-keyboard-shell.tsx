@@ -53,8 +53,8 @@ export function AmyCoachGoalsKeyboardShell({
       scrollDeps={scrollDeps ?? [search, children]}
       header={header}
       footer={search}
-      className={cn("min-h-0 flex-1", className)}
-      contentClassName="px-4 py-4 space-y-5 max-w-2xl mx-auto w-full"
+      className={cn("amy-coach-goals-shell min-h-0 flex-1", className)}
+      contentClassName="px-4 pt-3 pb-2 space-y-5 max-w-2xl mx-auto w-full"
       footerClassName="px-4 pt-3 pb-safe max-w-2xl mx-auto w-full bg-background/95 backdrop-blur-sm border-t border-border/40"
     >
       {children}

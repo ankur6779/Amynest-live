@@ -7,7 +7,7 @@
  * - HTMLAudioElement "ended" cannot be trusted for partial streams
  *
  * Layer 1: Static then cache — staged race (static first, cache after ~130ms)
- * Layer 2: OpenAI first → ElevenLabs only on failure (no overlap)
+ * Layer 2: ElevenLabs live TTS only (no OpenAI TTS fallback)
  * Layer 3–6: Phonics → word split → emergency → synthesis → visual
  */
 
@@ -1205,7 +1205,7 @@ function resolveOpenAiAudibleSuccess(): PlayAttemptResult | null {
 }
 
 /**
- * Layer 2 — OpenAI first; ElevenLabs only after OpenAI fully fails (no parallel race).
+ * Layer 2 — ElevenLabs live TTS only (OpenAI TTS is never used as fallback).
  */
 async function tryDynamicSequentialLayer(
   text: string,
@@ -1214,57 +1214,16 @@ async function tryDynamicSequentialLayer(
   waitUntilEnd: boolean,
   dynamicTimeoutMs = OPENAI_DYNAMIC_TIMEOUT_MS,
 ): Promise<PlayAttemptResult> {
-  const openAiAbort = new AbortController();
-  const elevenAbort = new AbortController();
-  const openAiTimeoutMs = Math.max(dynamicTimeoutMs, OPENAI_DYNAMIC_TIMEOUT_MS);
-  const elevenTimeoutMs = Math.max(openAiTimeoutMs + 3_000, ELEVENLABS_DYNAMIC_TIMEOUT_MS);
+  const elevenTimeoutMs = Math.max(dynamicTimeoutMs, ELEVENLABS_DYNAMIC_TIMEOUT_MS);
 
-  const canUseOpenAi = !shouldSkipLiveTtsApi();
-  const canUseEleven = !isAmyVoiceOffline() && !shouldDeferElevenLabsFallback();
-
-  if (!canUseOpenAi && !canUseEleven) {
+  if (isAmyVoiceOffline() || shouldDeferElevenLabsFallback()) {
     return { ok: false, error: "dynamic_skipped" };
   }
 
-  logTtsClient("Layer2 sequential", {
-    canUseOpenAi,
-    canUseEleven,
-    openAiTimeoutMs,
+  logTtsClient("Layer2 elevenlabs", {
     elevenTimeoutMs,
     adaptive: getAdaptiveSnapshot(),
   });
-
-  if (canUseOpenAi) {
-    console.log("[AmyTTS] Using OpenAI");
-    const openaiResult = await tryPlayWithWatchdog(
-      "openai",
-      text,
-      opts,
-      ctx,
-      waitUntilEnd,
-      openAiTimeoutMs,
-      openAiAbort.signal,
-    );
-
-    if (openaiResult.ok) {
-      elevenAbort.abort();
-      return openaiResult;
-    }
-
-    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-
-    const recovered = resolveOpenAiAudibleSuccess();
-    if (recovered) {
-      elevenAbort.abort();
-      return recovered;
-    }
-
-    console.log("[AmyTTS] OpenAI failed, falling back to ElevenLabs");
-  }
-
-  if (!canUseEleven) {
-    return { ok: false, error: canUseOpenAi ? "dynamic_failed" : "dynamic_skipped" };
-  }
 
   if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
 
@@ -1277,7 +1236,6 @@ async function tryDynamicSequentialLayer(
     ctx,
     waitUntilEnd,
     elevenTimeoutMs,
-    elevenAbort.signal,
   );
 
   return elevenResult.ok ? elevenResult : { ok: false, error: elevenResult.error ?? "dynamic_failed" };
@@ -1585,7 +1543,18 @@ async function tryLearnableLayerPlay(
     case "api":
     case "elevenlabs":
       if (phonicsOnly || policy.forcePhonicsOnly) return null;
-      if (isSlowNetwork() || shouldSkipLiveTtsApi()) return null;
+      if (isAmyVoiceOffline() || shouldDeferElevenLabsFallback()) return null;
+      if (!policy.preferDynamicTts) {
+        return tryPlayWithWatchdog(
+          "elevenlabs",
+          text,
+          opts,
+          ctx,
+          waitUntilEnd,
+          policy.dynamicTimeoutMs,
+        );
+      }
+      if (isSlowNetwork()) return null;
       return tryDynamicSequentialLayer(
         text,
         opts,
@@ -1843,12 +1812,28 @@ export async function speakAmyVoice(
       if (staticOnly.ok) {
         return finishAttempt(staticOnly);
       }
-      console.warn("[AudioPlaybackRecovery] static_only_failed — falling back to live TTS", {
+      console.warn("[AudioPlaybackRecovery] static_only_failed — falling back to ElevenLabs", {
         error: staticOnly.error,
         text: text.slice(0, 80),
       });
       pushFailure(failureChain, staticOnly, "static", cacheKey);
       fallbackUsed = true;
+      if (!shouldDeferElevenLabsFallback() && !isAmyVoiceOffline()) {
+        beginLayerTry(telemetry, "elevenlabs_catalog_fallback");
+        const elevenFallback = await tryPlayWithWatchdog(
+          "elevenlabs",
+          text,
+          opts,
+          pipelineCtx,
+          waitUntilEnd,
+          ELEVENLABS_DYNAMIC_TIMEOUT_MS,
+        );
+        telemetry?.recordTry("elevenlabs_catalog_fallback", elevenFallback.ok);
+        if (elevenFallback.ok) {
+          return finishAttempt(elevenFallback, true);
+        }
+        pushFailure(failureChain, elevenFallback, "elevenlabs", cacheKey);
+      }
     }
   }
 
@@ -1876,8 +1861,8 @@ export async function speakAmyVoice(
 
   const runDynamic = async (): Promise<PlayAttemptResult | null> => {
     if (policy.forcePhonicsOnly || shallow) return null;
-    if (isApiGloballyDegraded()) return null;
-    if (isSlowNetwork() && strategy !== "dynamic_first") return null;
+    if (isAmyVoiceOffline() || shouldDeferElevenLabsFallback()) return null;
+    if (isSlowNetwork() && strategy !== "dynamic_first" && policy.preferDynamicTts) return null;
     pipelineFlags.dynamicAttempted = true;
     beginLayerTry(telemetry, "dynamic");
     let result = await tryDynamicSequentialLayer(

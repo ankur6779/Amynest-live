@@ -7,6 +7,7 @@ interface MicPermissionPlugin {
   getMicrophoneStatus(): Promise<{ status: MicNativeStatus }>;
   requestMicrophonePermission(): Promise<{ status: MicNativeStatus }>;
   prepareAudioSessionForRecording(): Promise<{ ok: boolean }>;
+  prepareAudioSessionForPlayback(): Promise<{ ok: boolean }>;
   openAppSettings(): Promise<void>;
 }
 
@@ -15,12 +16,14 @@ export const MicPermissionCapacitor = registerPlugin<MicPermissionPlugin>("MicPe
     getMicrophoneStatus: async () => ({ status: "unknown" as const }),
     requestMicrophonePermission: async () => ({ status: "unknown" as const }),
     prepareAudioSessionForRecording: async () => ({ ok: false }),
+    prepareAudioSessionForPlayback: async () => ({ ok: false }),
     openAppSettings: async () => undefined,
   },
   android: {
     getMicrophoneStatus: async () => ({ status: "unknown" as const }),
     requestMicrophonePermission: async () => ({ status: "unknown" as const }),
     prepareAudioSessionForRecording: async () => ({ ok: false }),
+    prepareAudioSessionForPlayback: async () => ({ ok: false }),
     openAppSettings: async () => undefined,
   },
 });
@@ -30,6 +33,16 @@ export async function prepareIosAudioSessionForRecording(): Promise<void> {
   if (!isCapacitorIosNative()) return;
   try {
     await MicPermissionCapacitor.prepareAudioSessionForRecording();
+  } catch {
+    /* plugin missing on old builds */
+  }
+}
+
+/** Activates AVAudioSession playback for white noise, lullabies, and Web Audio in WKWebView. */
+export async function prepareIosAudioSessionForPlayback(): Promise<void> {
+  if (!isCapacitorIosNative()) return;
+  try {
+    await MicPermissionCapacitor.prepareAudioSessionForPlayback();
   } catch {
     /* plugin missing on old builds */
   }

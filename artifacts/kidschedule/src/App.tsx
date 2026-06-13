@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { markAppShellReady, trackStartupEvent } from "@/lib/startup-orchestrator";
 import { devLog } from "@/lib/dev-log";
 import { initAudioUnlock } from "@/lib/tts-guard";
+import { initNativeShell } from "@/lib/native-shell";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
@@ -92,6 +93,7 @@ function App() {
   useEffect(() => {
     devLog("APP MOUNTED");
     markAppShellReady();
+    initNativeShell();
     initAudioUnlock();
   }, []);
 
