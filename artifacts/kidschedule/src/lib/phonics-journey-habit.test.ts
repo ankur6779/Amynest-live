@@ -5,6 +5,7 @@ import {
   commitmentLabel,
   isCommitmentAchieved,
   isComeback,
+  inferTodayFromProgress,
   loadPhonicsHabitState,
   resolveReadingIdentity,
   resolveStreakChainMessage,
@@ -83,5 +84,16 @@ describe("phonics-journey-habit", () => {
     );
     const state = loadPhonicsHabitState(99);
     expect(state.lastSession?.summaryLines).toEqual([]);
+  });
+
+  it("inferTodayFromProgress ignores malformed practice rows", () => {
+    const progress = { practiced: { a: 2 }, mastered: { a: true } };
+    const items = [
+      { id: "a", symbol: "A", sound: "A", type: "letter" as const },
+      { id: "bad", symbol: "", sound: "x", type: "letter" as const },
+      undefined as unknown as import("@/hooks/use-phonics-data").DisplayPhonicsItem,
+    ];
+    expect(() => inferTodayFromProgress(progress, items)).not.toThrow();
+    expect(inferTodayFromProgress(progress, items).masteredSymbols).toEqual(["A"]);
   });
 });

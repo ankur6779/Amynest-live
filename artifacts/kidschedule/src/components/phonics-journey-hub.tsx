@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
 import type { DisplayPhonicsItem, PhonicsInsight, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsLevel } from "@/lib/phonics-content";
 import type { PhonicsPrimaryCta } from "@/lib/phonics-journey-roadmap";
 import {
@@ -111,6 +112,10 @@ export function PhonicsJourneyHub({
   dailyQuizComplete = false,
   onPrimaryCtaChange,
 }: PhonicsJourneyHubProps) {
+  const safePracticeItems = useMemo(
+    () => sanitizeDisplayPhonicsItems(practiceItems),
+    [practiceItems],
+  );
   const [whyOpen, setWhyOpen] = useState(false);
   const [habitState, setHabitState] = useState(() => loadPhonicsHabitState(childId));
   const [adaptiveState, setAdaptiveState] = useState(() =>
@@ -146,7 +151,7 @@ export function PhonicsJourneyHub({
     curriculumLevel,
     masteryScore,
     progress,
-    practiceItems.length,
+    safePracticeItems.length,
   );
 
   const masteredCount = Object.keys(progress.mastered).length;
@@ -155,8 +160,8 @@ export function PhonicsJourneyHub({
   const ageBand = readingAgeBand(totalAgeMonths);
 
   const inferredToday = useMemo(
-    () => inferTodayFromProgress(progress, practiceItems),
-    [progress, practiceItems],
+    () => inferTodayFromProgress(progress, safePracticeItems),
+    [progress, safePracticeItems],
   );
   const todayUniqueSounds = Math.max(
     habitState.today.uniqueItemIds.length,
@@ -172,8 +177,8 @@ export function PhonicsJourneyHub({
   const sessionsLeft = sessionsUntilNextMilestone(masteryScore);
 
   const weakProfile = useMemo(
-    () => buildWeakSoundsProfile(weakPhonemes, progress, practiceItems),
-    [weakPhonemes, progress, practiceItems],
+    () => buildWeakSoundsProfile(weakPhonemes, progress, safePracticeItems),
+    [weakPhonemes, progress, safePracticeItems],
   );
 
   const missionGoals = useMemo(
@@ -181,13 +186,13 @@ export function PhonicsJourneyHub({
       buildAdaptiveMissionGoals(
         plan ?? null,
         progress,
-        practiceItems,
+        safePracticeItems,
         weakProfile,
         dailyQuizComplete || (plan?.test.completed ?? false),
         todayUniqueSounds,
         todayMastered,
       ),
-    [plan, progress, practiceItems, weakProfile, dailyQuizComplete, todayUniqueSounds, todayMastered],
+    [plan, progress, safePracticeItems, weakProfile, dailyQuizComplete, todayUniqueSounds, todayMastered],
   );
 
   const missionComplete = isMissionComplete(missionGoals);
@@ -199,7 +204,7 @@ export function PhonicsJourneyHub({
       : 0;
 
   const quizComplete = dailyQuizComplete || (plan?.test.completed ?? false);
-  const reviewNeeded = hasReviewItems(progress, practiceItems);
+  const reviewNeeded = hasReviewItems(progress, safePracticeItems);
 
   const commitmentAchieved = isCommitmentAchieved(habitState.commitment, {
     missionComplete,

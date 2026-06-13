@@ -1,4 +1,5 @@
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsJourneyStage } from "./phonics-journey-roadmap";
 import { PHONICS_JOURNEY_STAGES, MISSION_READING_POINTS } from "./phonics-journey-roadmap";
 
@@ -519,9 +520,10 @@ export function inferTodayFromProgress(
   progress: PhonicsProgressMap,
   items: DisplayPhonicsItem[],
 ): Pick<PhonicsHabitState["today"], "playCount" | "uniqueItemIds" | "masteredSymbols"> {
+  const safeItems = sanitizeDisplayPhonicsItems(items);
   const uniqueItemIds = Object.keys(progress.practiced);
   const playCount = Object.values(progress.practiced).reduce((a, b) => a + b, 0);
-  const masteredSymbols = items
+  const masteredSymbols = safeItems
     .filter((i) => progress.mastered[i.id])
     .map((i) => i.symbol);
   return { playCount, uniqueItemIds, masteredSymbols };
