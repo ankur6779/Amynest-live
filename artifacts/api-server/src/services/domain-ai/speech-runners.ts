@@ -5,6 +5,19 @@ import {
 } from "../elevenLabsScribe.js";
 import { logger } from "../../lib/logger";
 
+function resolveCompatibleAudio(
+  buffer: Buffer,
+  mimeType: string,
+): Promise<{ buffer: Buffer; format: "wav" | "mp3" }> {
+  if (mimeType === "audio/wav" || mimeType === "audio/x-wav") {
+    return Promise.resolve({ buffer, format: "wav" });
+  }
+  if (mimeType === "audio/mpeg" || mimeType === "audio/mp3") {
+    return Promise.resolve({ buffer, format: "mp3" });
+  }
+  return ensureCompatibleFormat(buffer);
+}
+
 export async function runSpeechTranscribe(input: {
   audioBase64: string;
   mimeType: string;
@@ -12,7 +25,7 @@ export async function runSpeechTranscribe(input: {
   provider?: "whisper" | "elevenlabs";
 }): Promise<{ text: string }> {
   const buffer = Buffer.from(input.audioBase64, "base64");
-  const compatible = await ensureCompatibleFormat(buffer);
+  const compatible = await resolveCompatibleAudio(buffer, input.mimeType);
 
   if (input.provider === "elevenlabs" && isElevenLabsScribeEnabled()) {
     try {

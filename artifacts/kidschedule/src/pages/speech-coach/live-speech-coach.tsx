@@ -538,6 +538,7 @@ export function LiveSpeechCoach({
     setHasStarted(true);
     setLastResult(null);
     sessionAttemptsRef.current = [];
+    void stt.warm();
     if (!current) return;
     const ctx = createCoachDialogueContext({
       childName: child.name,
@@ -580,7 +581,6 @@ export function LiveSpeechCoach({
     listenStartedRef.current = false;
     setState("processing");
     setStatus("Amy is thinking...");
-    await new Promise((resolve) => window.setTimeout(resolve, 450));
     const ctx = dialogueContext(idx, streak);
     const result = evaluateCoachResponse(current, stt.transcript, ctx);
     setLastResult(result);
@@ -616,9 +616,11 @@ export function LiveSpeechCoach({
   const stopListeningAndProcess = useCallback(() => {
     if (stateRef.current !== "listening") return;
     stt.stop();
+    // Whisper/mobile: useEffect waits for transcribing to finish. Native STT finalizes quickly.
+    if (stt.mode !== "native") return;
     window.setTimeout(() => {
       if (stateRef.current === "listening") void processResponse();
-    }, 400);
+    }, 250);
   }, [processResponse, stt]);
 
   const startListening = useCallback(async () => {
@@ -665,9 +667,11 @@ export function LiveSpeechCoach({
     const id = window.setTimeout(() => {
       if (stateRef.current !== "listening") return;
       stt.stop();
-      window.setTimeout(() => {
-        if (stateRef.current === "listening") void processResponse();
-      }, 350);
+      if (stt.mode === "native") {
+        window.setTimeout(() => {
+          if (stateRef.current === "listening") void processResponse();
+        }, 250);
+      }
     }, 8000);
     return () => window.clearTimeout(id);
   }, [processResponse, state, stt]);

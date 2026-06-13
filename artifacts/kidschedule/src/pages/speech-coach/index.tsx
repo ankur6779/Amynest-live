@@ -96,6 +96,12 @@ import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SPEECH_COACH_SESSION_FEATURE } from "@/lib/feature-usage-limits";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
+import {
+  auditSpeechCoachStaticCache,
+  preloadSpeechCoachSessionAudio,
+  speakCoachFeedbackLines,
+} from "@/lib/speech-coach-audio-warmup";
+import { speechCoachPerf } from "@/lib/speech-coach-perf-trace";
 
 type AnyChild = {
   id: number;
@@ -496,7 +502,11 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
       return null;
     }
   }, []);
-  const stt = useSpeechRecognition("en-US", { getAuthToken });
+  const stt = useSpeechRecognition("en-US", {
+    getAuthToken,
+    onTranscribeStart: () => speechCoachPerf.mark("stt_start"),
+    onTranscribeEnd: () => speechCoachPerf.mark("stt_end"),
+  });
 
   const [kind, setKind] = useState<SpeechPromptKind>("word");
   const [difficulty, setDifficulty] = useState<SessionDifficulty>("easy");
@@ -577,7 +587,9 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     const final = stt.transcript.trim();
     if (!item) return;
     const ctx = makeDialogueCtx(sessionIdx, streak, item.kind);
+    speechCoachPerf.mark("evaluation_start");
     const evaluated = evaluateCoachResponse(item, final, ctx);
+    speechCoachPerf.mark("evaluation_end");
     setCurrentResult({
       feedback: evaluated.feedback,
       score: evaluated.score,
@@ -591,14 +603,12 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     });
     setTurnIndex((n) => n + 1);
     setPromptPhase("result");
-    void (async () => {
-      for (const line of evaluated.spokenLines) {
-        await voice.speak(line);
-      }
-    })();
+    void speakCoachFeedbackLines(voice, evaluated.spokenLines, item);
   }, [bestStreak, makeDialogueCtx, sessionIdx, stt.listening, stt.transcribing, stt.transcript, streak, turnIndex, voice]);
 
   const startSession = useCallback(() => {
+    speechCoachPerf.startSession();
+    speechCoachPerf.mark("session_start");
     const history = weakSoundsToHistory(progress.data?.weakSounds ?? []);
     const items = buildPracticeSession(ageMonths, kind, difficulty, SESSION_SIZE, Date.now(), history);
     const seed = Date.now();
@@ -615,6 +625,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     setSessionPhase("practice");
     stt.reset();
     voice.pause();
+    void stt.warm();
     if (items[0]) {
       const ctx = createCoachDialogueContext({
         childName: child.name,
@@ -634,16 +645,21 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
         ...buildActivityIntro(ctx),
         ...buildItemPromptLines(ctx, items[0]),
       ];
+      preloadSpeechCoachSessionAudio(opening);
+      speechCoachPerf.recordCacheAudit(auditSpeechCoachStaticCache("opening", opening));
       const firstLine = opening.find((line) => line.trim());
       if (firstLine) {
         const mode = (items[0]!.kind === "phonic" || items[0]!.kind === "letter") ? "phonics" : "default";
         voice.primeSpeakGesture(firstLine, { mode: mode as "phonics" | "default" });
       }
       void (async () => {
+        speechCoachPerf.mark("opening_audio_start");
         for (const line of opening) {
           const mode = (items[0]!.kind === "phonic" || items[0]!.kind === "letter") ? "phonics" : "default";
           await voice.speak(line, { mode: mode as "phonics" | "default" });
         }
+        speechCoachPerf.mark("opening_audio_end");
+        speechCoachPerf.logSummary("opening_complete");
         setPromptPhase("heard");
       })();
     }
@@ -681,11 +697,13 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     stt.reset();
     setCurrentResult(null);
     setPromptPhase("recording");
+    speechCoachPerf.mark("recording_start");
     void stt.start();
   };
 
   const handleStop = () => {
     stt.stop();
+    speechCoachPerf.mark("recording_stop");
     setPromptPhase("analyzing");
   };
 
@@ -755,6 +773,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
   };
 
   const handleNewSession = () => {
+    speechCoachPerf.reset();
     setSessionPhase("setup");
     setSessionItems([]);
     stt.reset();

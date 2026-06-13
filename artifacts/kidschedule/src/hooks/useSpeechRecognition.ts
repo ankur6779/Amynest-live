@@ -13,6 +13,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
+import { resolveAiApiData } from "@/lib/poll-result";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { prepareForMicrophoneAcquisition } from "@/lib/audio-session-coordinator";
 import { requestMicrophoneAccess, resetMicrophonePermissionCache, queryOsMicrophonePermissionState, isOsMicrophonePermissionDenied, classifyMicrophoneFailure, type MicrophoneRuntimeErrorCode } from "@/lib/microphone-permission";
@@ -131,6 +132,8 @@ export interface SpeechRecognitionState {
   start: () => Promise<boolean>;
   stop: () => void;
   reset: () => void;
+  /** Prefetch auth + mic while Amy speaks so the first child response is faster. */
+  warm: () => Promise<void>;
   status: MicrophoneSessionState;
 }
 
@@ -152,6 +155,9 @@ export interface UseSpeechRecognitionOptions {
    * use Scribe v1; the native Web Speech path (desktop) is unaffected.
    */
   transcribeProvider?: "whisper" | "elevenlabs";
+  /** Dev perf trace hooks (Speech Coach Practice). */
+  onTranscribeStart?: () => void;
+  onTranscribeEnd?: () => void;
 }
 
 function micAccessError(reason: "denied" | "blocked" | "unavailable"): MicrophoneRuntimeErrorCode {
@@ -195,6 +201,10 @@ export function useSpeechRecognition(
   getAuthTokenRef.current = options?.getAuthToken;
   const transcribeProviderRef = useRef(options?.transcribeProvider);
   transcribeProviderRef.current = options?.transcribeProvider;
+  const onTranscribeStartRef = useRef(options?.onTranscribeStart);
+  onTranscribeStartRef.current = options?.onTranscribeStart;
+  const onTranscribeEndRef = useRef(options?.onTranscribeEnd);
+  onTranscribeEndRef.current = options?.onTranscribeEnd;
 
   const Cls = getNativeSpeechRecognition();
   const mode = resolveRecognitionMode(Cls);
@@ -217,6 +227,26 @@ export function useSpeechRecognition(
     });
     return unsub;
   }, [mode]);
+
+  const warm = useCallback(async () => {
+    if (mode !== "whisper") return;
+    try {
+      await getAuthTokenRef.current?.();
+    } catch {
+      /* best-effort */
+    }
+    try {
+      await prepareForMicrophoneAcquisition();
+    } catch {
+      /* best-effort */
+    }
+  }, [mode]);
+
+  // Whisper path: prefetch auth while the Speech Coach page is open.
+  useEffect(() => {
+    if (mode !== "whisper") return;
+    void warm();
+  }, [mode, warm]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -369,6 +399,7 @@ export function useSpeechRecognition(
         const base64 = arrayBufferToBase64(arrayBuffer);
 
         setTranscribing(true);
+        onTranscribeStartRef.current?.();
         try {
           const headers: Record<string, string> = {
             "Content-Type": "application/json",
@@ -380,13 +411,13 @@ export function useSpeechRecognition(
             /* ignore — Whisper may still work with cookies on web */
           }
           const provider = transcribeProviderRef.current;
+          const payload: Record<string, string> = { audioBase64: base64, mimeType };
+          if (provider) payload.provider = provider;
           const r = await fetch(getApiUrl("/api/speech/transcribe"), {
             method: "POST",
             headers,
             credentials: "include",
-            body: JSON.stringify(
-              provider ? { audioBase64: base64, provider } : { audioBase64: base64 },
-            ),
+            body: JSON.stringify(payload),
           });
           if (!r.ok) {
             if (r.status === 401) setError("transcription_auth_failed");
@@ -402,13 +433,16 @@ export function useSpeechRecognition(
               credentials: "include",
             });
           };
-          const { resolveAiApiData } = await import("@/lib/poll-result");
-          const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch);
+          // Poll faster than default 2s when BullMQ returns async jobId.
+          const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch, {
+            poll: { maxAttempts: 30, intervalMs: 500, requestTimeoutMs: 15_000 },
+          });
           setTranscript(j?.transcript ?? "");
         } catch (err) {
           logSpeechRecognition("transcription failed", err);
           setError("transcription_failed");
         } finally {
+          onTranscribeEndRef.current?.();
           setTranscribing(false);
         }
       }
@@ -444,6 +478,7 @@ export function useSpeechRecognition(
     start,
     stop,
     reset,
+    warm,
     status,
   };
 }

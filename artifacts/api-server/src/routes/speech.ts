@@ -17,7 +17,6 @@ import {
   getPromptsForAgeMonths,
   monthsToBand,
 } from "@workspace/speech-coach";
-import { ensureCompatibleFormat } from "@workspace/integrations-openai-ai-server";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
@@ -527,6 +526,8 @@ router.post("/speech/expert-waitlist", async (req, res): Promise<void> => {
 
 const transcribeBodySchema = z.object({
   audioBase64: z.string().min(1),
+  /** MediaRecorder mime (e.g. audio/mp4 on iOS). Conversion runs once in the worker. */
+  mimeType: z.string().min(1).max(128).optional(),
   // Live "Talk with Amy" coach opts into ElevenLabs Scribe v1; everything else uses Whisper.
   provider: z.enum(["whisper", "elevenlabs"]).optional(),
 });
@@ -550,25 +551,13 @@ router.post("/speech/transcribe", speechTranscribeGate(), async (req, res): Prom
     return;
   }
 
-  let compatBuffer: Buffer;
-  let compatFormat: "wav" | "mp3";
-  try {
-    const result = await ensureCompatibleFormat(rawBuffer);
-    compatBuffer = result.buffer;
-    compatFormat = result.format;
-  } catch (err) {
-    req.log.warn({ err, userId }, "speech.transcribe format conversion failed");
-    res.status(422).json({ error: "audio_format_unsupported" });
-    return;
-  }
-
   await submitRouteAiJob({
     routeName: "speech/transcribe",
     type: "speech.transcribe",
     userId,
     input: {
-      audioBase64: compatBuffer.toString("base64"),
-      mimeType: compatFormat === "wav" ? "audio/wav" : "audio/mpeg",
+      audioBase64: parsed.data.audioBase64,
+      mimeType: parsed.data.mimeType ?? "application/octet-stream",
       provider: parsed.data.provider,
     },
     waitMs: 30_000,
