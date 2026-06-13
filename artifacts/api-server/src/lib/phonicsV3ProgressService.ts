@@ -29,7 +29,7 @@ import {
 } from "@workspace/phonics-v3-progress";
 import { withSafeDb } from "./db-safe.js";
 
-function emptyPhonicsV3Bundle(): PhonicsV3ProgressBundle {
+function nullPhonicsV3ProgressBundle(): PhonicsV3ProgressBundle {
   return {
     mastery: null,
     fluency: null,
@@ -82,7 +82,7 @@ export async function getPhonicsV3ProgressBundle(
           : null,
       };
     },
-    emptyPhonicsV3Bundle(),
+    nullPhonicsV3ProgressBundle(),
   );
 }
 
