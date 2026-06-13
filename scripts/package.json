@@ -40,6 +40,7 @@
     "upload-discovery-worlds-catalog": "node ./upload-discovery-worlds-catalog.mjs",
     "check-phonics-library": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./check-phonics-library.ts",
     "check-phonics-interaction-gate": "tsx ./check-phonics-interaction-gate.ts",
+    "check-phonics-route-gate": "tsx ./check-phonics-route-gate.ts",
     "check-phonics-audio-certification": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./check-phonics-audio-certification.ts",
     "phonics-audio-audit": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./phonics-audio-audit.ts",
     "phonics-audio-generate-missing": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./phonics-audio-generate-missing.ts",

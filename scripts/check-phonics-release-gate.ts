@@ -26,6 +26,18 @@ async function assertLibrary(): Promise<void> {
   }
 }
 
+function runRouteGate(): void {
+  console.log("[check:phonics-release-gate] Running route permanent-fix gate…\n");
+  const result = spawnSync("pnpm", ["--filter", "@workspace/scripts", "run", "check-phonics-route-gate"], {
+    cwd: REPO_ROOT,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    console.error("\n[check:phonics-release-gate] FAIL — route gate failed.\n");
+    process.exit(result.status ?? 1);
+  }
+}
+
 function runInteractionGate(): void {
   console.log("[check:phonics-release-gate] Running interaction gate…\n");
   const result = spawnSync("pnpm", ["--filter", "@workspace/scripts", "run", "check-phonics-interaction-gate"], {
@@ -50,6 +62,10 @@ function runSmokeTests(): void {
       "run",
       "src/lib/phonics-smoke.test.ts",
       "src/lib/phonics-manifest-validation.test.ts",
+      "src/lib/phonics-bundled-manifest.test.ts",
+      "src/lib/phonics-item-guards.test.ts",
+      "src/lib/phonics-journey-habit.test.ts",
+      "src/lib/phonics-journey-adaptive.test.ts",
       "src/lib/static-audio-guard.test.ts",
       "src/lib/phonics-circuit-breaker.test.ts",
       "src/lib/phonics-safe-audio.test.ts",
@@ -94,6 +110,7 @@ void (async () => {
   await assertLibrary();
   await runAudioCoverageCertify();
   runAudioCertification();
+  runRouteGate();
   runInteractionGate();
   runSmokeTests();
 })();
