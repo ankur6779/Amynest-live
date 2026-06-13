@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.3",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.3.zip",
-  "checksum": "42e1a2f72ceaf57be81d8cc60be91276973381502613c3a7170b19d6a7928744",
+  "bundleVersion": "1.0.5",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.5.zip",
+  "checksum": "eb5418e0ecda33ac1088c3d1cec5158dbd4a8450978b33f6c8d55004473b2ea5",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Fix: premium only for paid/trial users. Startup reliability hardening (deploy version, watchdog, pre-auth telemetry).",
+  "releaseNotes": "Revert Amy 2D lip-sync; restore static portrait while speaking.",
   "changeClasses": [
     "bugfix",
     "ui-copy"
