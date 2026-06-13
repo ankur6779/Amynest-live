@@ -79,7 +79,7 @@ function makeTheme(
 }
 
 /** Section 1 category groups. */
-export type HubGroupKey = "today" | "learning" | "creativity" | "stories" | "support";
+export type HubGroupKey = "today" | "learning" | "creativity" | "stories" | "health" | "support";
 
 export const HUB_GROUP_ACCENTS: Record<HubGroupKey, HubAccentTheme> = {
   today: makeTheme(
@@ -121,6 +121,16 @@ export const HUB_GROUP_ACCENTS: Record<HubGroupKey, HubAccentTheme> = {
     0,
     209,
     255,
+  ),
+  health: makeTheme(
+    "border-[1.5px] border-[rgba(52,211,153,0.55)]",
+    "bg-gradient-to-b from-emerald-400 via-teal-500 to-cyan-500",
+    "shadow-[0_0_14px_rgba(52,211,153,0.50)]",
+    "border-[rgba(52,211,153,0.45)]",
+    "shadow-[0_0_16px_rgba(52,211,153,0.38)]",
+    52,
+    211,
+    153,
   ),
   support: makeTheme(
     "border-[1.5px] border-[rgba(255,64,140,0.55)]",
@@ -440,14 +450,14 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
     248,
   ),
   "discovery-worlds": makeTheme(
-    "border-[1.5px] border-[rgba(139,92,246,0.50)]",
-    "bg-gradient-to-b from-indigo-400 via-violet-500 to-fuchsia-500",
-    "shadow-[0_0_14px_rgba(139,92,246,0.45)]",
-    "border-[rgba(139,92,246,0.40)]",
-    "shadow-[0_0_14px_rgba(139,92,246,0.32)]",
-    139,
-    92,
-    246,
+    "border-[1.5px] border-[rgba(20,184,166,0.55)]",
+    "bg-gradient-to-b from-teal-400 via-cyan-500 to-emerald-500",
+    "shadow-[0_0_14px_rgba(20,184,166,0.50)]",
+    "border-[rgba(20,184,166,0.45)]",
+    "shadow-[0_0_16px_rgba(20,184,166,0.38)]",
+    20,
+    184,
+    166,
   ),
   "spelling-mastery": makeTheme(
     "border-[1.5px] border-[rgba(52,211,153,0.50)]",
@@ -478,8 +488,26 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
   "gaming-rewards": HUB_GROUP_ACCENTS.learning,
   "art-craft": HUB_GROUP_ACCENTS.today,
   worksheets: HUB_GROUP_ACCENTS.stories,
-  "story-hub": HUB_GROUP_ACCENTS.creativity,
-  "speech-coach": HUB_GROUP_ACCENTS.creativity,
+  "story-hub": makeTheme(
+    "border-[1.5px] border-[rgba(244,114,182,0.55)]",
+    "bg-gradient-to-b from-rose-400 via-pink-500 to-fuchsia-600",
+    "shadow-[0_0_14px_rgba(244,114,182,0.50)]",
+    "border-[rgba(244,114,182,0.45)]",
+    "shadow-[0_0_16px_rgba(244,114,182,0.38)]",
+    244,
+    114,
+    182,
+  ),
+  "speech-coach": makeTheme(
+    "border-[1.5px] border-[rgba(56,189,248,0.55)]",
+    "bg-gradient-to-b from-sky-400 via-blue-500 to-indigo-600",
+    "shadow-[0_0_14px_rgba(56,189,248,0.50)]",
+    "border-[rgba(56,189,248,0.45)]",
+    "shadow-[0_0_16px_rgba(56,189,248,0.38)]",
+    56,
+    189,
+    248,
+  ),
   "talking-amy": makeTheme(
     "border-[1.5px] border-[rgba(251,146,60,0.50)]",
     "bg-gradient-to-b from-amber-300 via-orange-400 to-rose-500",

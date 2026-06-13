@@ -38,6 +38,9 @@ import {
   useNutritionRegion, RegionConfig, RegionalFoodSource,
 } from "@/lib/nutrition-region";
 import { LockedBlock } from "@/components/locked-block";
+import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
+import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import { isHealthZoneJourneyEligible } from "@/lib/hub-visibility";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -960,6 +963,11 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
   const { t } = useTranslation();
+  const nutritionGate = useHubModuleGate("hub_nutrition");
+  const journeyChildName = nutritionGate.childName ?? t("parent_hub.journey.your_child", { defaultValue: "your child" });
+  const showHealthZoneJourneyGate =
+    nutritionGate.childAgeMonths != null &&
+    isHealthZoneJourneyEligible(nutritionGate.childAgeMonths);
   const { config: regionConfig, getRegional, localizeNote } = useNutritionRegion();
   const authFetch = useAuthFetch();
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");
@@ -1000,8 +1008,8 @@ export default function NutritionHubPage() {
     setDialogOpen(true);
   };
 
-  return (
-    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-3 sm:space-y-4 pb-24 overflow-x-clip")}>
+  const pageBody = (
+    <>
       {/* ── Hero Header (compact on mobile) ── */}
       <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
         <div className="flex">
@@ -1246,6 +1254,22 @@ export default function NutritionHubPage() {
         regionalSources={selectedNutrient ? getRegional(selectedNutrient.id) : null}
         localizeNote={localizeNote}
       />
+    </>
+  );
+
+  return (
+    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-3 sm:space-y-4 pb-24 overflow-x-clip")}>
+      {showHealthZoneJourneyGate && nutritionGate.journeySoft ? (
+        <JourneyPreviewContent childName={journeyChildName}>
+          {pageBody}
+        </JourneyPreviewContent>
+      ) : showHealthZoneJourneyGate ? (
+        <LockedBlock locked={nutritionGate.locked} reason="hub_journey" journeySoft={nutritionGate.journeySoft}>
+          {pageBody}
+        </LockedBlock>
+      ) : (
+        pageBody
+      )}
     </div>
   );
 }

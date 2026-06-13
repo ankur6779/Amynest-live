@@ -273,7 +273,7 @@ const STAGES = [
     label: "Early Discovery",
     icon: Compass,
     gradient: "linear-gradient(135deg,#a855f7,#6366f1)",
-    items: ["Speech Coach", "Discovery Worlds", "Phonics", "Stories"],
+    items: ["Speech Coach", "Amy Sound World", "Phonics", "Stories"],
   },
   {
     range: "5–8 Years",
@@ -343,7 +343,7 @@ const COMPARISON_ROWS = [
   { label: "Speech Development", them: false },
   { label: "Learning Activities", them: true },
   { label: "Worksheets & Stories", them: false },
-  { label: "Discovery Worlds", them: false },
+  { label: "Amy Sound World", them: false },
   { label: "Amy Coach", them: false },
   { label: "Age-Based Recommendations", them: false },
   { label: "One App For Ages 0–10+", them: false },
@@ -449,7 +449,7 @@ const SCREENSHOTS: Screenshot[] = [
   { id: "nutrition", title: "Nutrition Hub", benefit: "Know what to feed your child with balanced daily meal plans.", accent: "#22c55e", image: "/promo/social/reels/nutrition-hub.png", rows: ["Breakfast idea", "Balanced lunch", "Healthy snacks", "Hydration"] },
   { id: "speech", title: "Speech Coach", benefit: "Help your child speak clearly and confidently with guided practice.", accent: "#f59e0b", image: "/promo/social/reels/speech-coach.png", rows: ["Warm-up sounds", "Practice words", "Confidence streak", "Parent summary"] },
   { id: "study", title: "Smart Study Zone", benefit: "Keep learning focused with the right activity at the right time.", accent: "#3b82f6", image: "/promo/social/reels/learning-zone.png", rows: ["Daily study path", "Focus session", "Skill builder", "Progress saved"] },
-  { id: "discovery", title: "Discovery Worlds", benefit: "Spark curiosity with immersive, child-safe worlds of exploration.", accent: "#06b6d4", rows: ["Explore a world", "Guided discovery", "Fun challenges", "Earn rewards"] },
+  { id: "discovery", title: "Amy Sound World", benefit: "Spark curiosity with immersive, child-safe worlds of exploration.", accent: "#06b6d4", rows: ["Explore a world", "Guided discovery", "Fun challenges", "Earn rewards"] },
 ];
 
 function PhoneFrame({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -1118,7 +1118,7 @@ export default function SocialLandingPage() {
             "Speech Coach",
             "Smart Study Zone",
             "Phonics, Spelling and Abacus",
-            "Discovery Worlds, Worksheets and Stories",
+            "Amy Sound World, Worksheets and Stories",
           ],
         },
         {

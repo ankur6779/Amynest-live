@@ -145,6 +145,7 @@ describe("parent-hub-journey", () => {
     assert.equal(getSectionLifetimeLimit("hub_art_craft"), HUB_CONTENT_QUOTAS.artCraftLifetimeVideos);
     assert.equal(HUB_CONTENT_QUOTAS.worksheetDaily, 2);
     assert.equal(HUB_CONTENT_QUOTAS.coloringLifetime, 6);
+    assert.equal(HUB_CONTENT_QUOTAS.kidsHowLifetimePdfs, 3);
     assert.equal(HUB_CONTENT_QUOTAS.speechCoachSessions, 3);
     assert.equal(HUB_CONTENT_QUOTAS.premiumDownloadDaily, 5);
   });

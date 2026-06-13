@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Salad, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HUB_EXPANDED_CONTENT_STACK, HUB_BODY } from "@/lib/parent-hub-premium";
+import { isHealthZoneJourneyEligible } from "@/lib/hub-visibility";
 
 type NutritionHubParentContentProps = {
   childAgeMonths: number;
@@ -43,7 +44,7 @@ export function NutritionHubParentContent({
         <p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground">
           {t("parent_hub.web_tiles.nutrition.access_title")}
         </p>
-        {isFreeJourneyPeriod && !isPremium ? (
+        {isFreeJourneyPeriod && !isPremium && isHealthZoneJourneyEligible(childAgeMonths) ? (
           <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
             {t("parent_hub.web_tiles.nutrition.journey_access")}
           </p>

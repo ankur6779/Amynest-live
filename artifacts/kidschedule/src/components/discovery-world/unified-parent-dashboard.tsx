@@ -64,7 +64,7 @@ export function UnifiedParentDashboard({ childId }: UnifiedParentDashboardProps)
             Parent insights
           </p>
           <h2 id="unified-parent-insights-heading" className="text-xl font-bold text-foreground">
-            All Discovery Worlds
+            All sound worlds
           </h2>
         </div>
         <button

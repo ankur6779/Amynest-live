@@ -81,7 +81,7 @@ export default function DiscoveryWorldLivePage() {
               className="rounded-full"
               onClick={() => back("discovery-world-live-back")}
             >
-              Back to Discovery Worlds
+              Back to Amy Sound World
             </Button>
           }
         />
@@ -118,11 +118,11 @@ export default function DiscoveryWorldLivePage() {
           <button
             type="button"
             onClick={() => back("discovery-world-live-back")}
-            aria-label="Back to Discovery Worlds"
+            aria-label="Back to Amy Sound World"
             className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
-            Discovery Worlds
+            Amy Sound World
           </button>
         </div>
         <DiscoveryWorldExperience

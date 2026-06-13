@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useHubJourney } from "@/hooks/use-hub-journey";
 import { readStoredActiveChildId } from "@/lib/coach-age-nav";
+import { isHealthZoneFeature, isHealthZoneJourneyEligible } from "@/lib/hub-visibility";
 
 /**
  * Activity-gated freemium for full-screen Parent Hub modules.
@@ -13,8 +14,19 @@ export function useHubModuleGate(featureId: string, childId?: number | null) {
   const hubJourney = useHubJourney(resolvedChildId);
   const engagedRef = useRef(false);
 
+  const childAgeMonths = hubJourney.status?.child
+    ? hubJourney.status.child.age * 12 + hubJourney.status.child.ageMonths
+    : null;
+
+  const journeyApplies =
+    childAgeMonths == null ||
+    !isHealthZoneFeature(featureId) ||
+    isHealthZoneJourneyEligible(childAgeMonths);
+
   const journeyLocked =
-    !!hubJourney.access && hubJourney.isHubFeatureLocked(featureId);
+    journeyApplies &&
+    !!hubJourney.access &&
+    hubJourney.isHubFeatureLocked(featureId);
   const legacyLocked = usage.isFeatureLocked(featureId);
   const locked = hubJourney.access ? journeyLocked : legacyLocked;
 
@@ -23,7 +35,10 @@ export function useHubModuleGate(featureId: string, childId?: number | null) {
     (hubJourney.access ? !journeyLocked : usage.tryFreeFor(featureId));
 
   const journeySoft =
-    !!hubJourney.access && hubJourney.isJourneyLocked && journeyLocked;
+    journeyApplies &&
+    !!hubJourney.access &&
+    hubJourney.isJourneyLocked &&
+    journeyLocked;
 
   const onEngage = useCallback(() => {
     if (engagedRef.current) return;
@@ -40,5 +55,7 @@ export function useHubModuleGate(featureId: string, childId?: number | null) {
     tryFree,
     onEngage,
     isPremium: usage.isPremium,
+    childAgeMonths,
+    childName: hubJourney.status?.child.name,
   };
 }

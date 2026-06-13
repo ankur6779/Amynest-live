@@ -30,9 +30,9 @@ export function DiscoveryWorldsHubLaunchCard({
 }: DiscoveryWorldsHubLaunchCardProps) {
   const stats = buildDiscoveryHubTileStats(childId);
   const theme = getHubFeatureTileAccent("discovery-worlds");
-  const accentClass = "bg-gradient-to-br from-indigo-400 via-violet-500 to-fuchsia-500";
+  const accentClass = "bg-gradient-to-br from-teal-400 via-cyan-500 to-emerald-500";
   const cardClass =
-    "bg-gradient-to-br from-indigo-400/25 via-violet-500/15 to-fuchsia-500/10 hover:shadow-[0_10px_36px_-10px_rgba(139,92,246,0.45)]";
+    "bg-gradient-to-br from-teal-400/25 via-cyan-500/15 to-emerald-500/10 hover:shadow-[0_10px_36px_-10px_rgba(20,184,166,0.45)]";
 
   return (
     <AppLink
@@ -59,7 +59,7 @@ export function DiscoveryWorldsHubLaunchCard({
               </div>
               <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
             </div>
-            <span className="inline-flex h-7 shrink-0 items-center self-start rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(139,92,246,0.35)] transition-transform group-active:scale-95">
+            <span className="inline-flex h-7 shrink-0 items-center self-start rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(20,184,166,0.35)] transition-transform group-active:scale-95">
               Open
             </span>
           </div>

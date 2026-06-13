@@ -9,6 +9,42 @@ export type HubSectionVisibilityInput = {
   bands?: AgeBand[];
 };
 
+/** Amy Health Lab™ — full access from 23 months; preview below. */
+export const HEALTH_LAB_MIN_AGE_MONTHS = 23;
+export const HEALTH_LAB_MAX_AGE_MONTHS = 156;
+
+export function isHealthLabPreviewAge(childAgeMonths: number): boolean {
+  return childAgeMonths < HEALTH_LAB_MIN_AGE_MONTHS;
+}
+
+export function isHealthLabEligibleAge(childAgeMonths: number): boolean {
+  return (
+    childAgeMonths >= HEALTH_LAB_MIN_AGE_MONTHS &&
+    childAgeMonths < HEALTH_LAB_MAX_AGE_MONTHS
+  );
+}
+
+/** Parent Hub feature ids grouped under Health Zone. */
+export const HEALTH_ZONE_FEATURE_IDS = ["hub_nutrition", "hub_health_lab"] as const;
+
+export type HealthZoneFeatureId = (typeof HEALTH_ZONE_FEATURE_IDS)[number];
+
+export function isHealthZoneFeature(featureId: string): featureId is HealthZoneFeatureId {
+  return (HEALTH_ZONE_FEATURE_IDS as readonly string[]).includes(featureId);
+}
+
+/** Health Zone tiles follow the 3-day journey paywall from 23+ months only. */
+export function isHealthZoneJourneyEligible(childAgeMonths: number): boolean {
+  return childAgeMonths >= HEALTH_LAB_MIN_AGE_MONTHS;
+}
+
+export function shouldApplyHealthZoneJourneyLock(
+  featureId: string,
+  childAgeMonths: number,
+): boolean {
+  return isHealthZoneFeature(featureId) && isHealthZoneJourneyEligible(childAgeMonths);
+}
+
 /** Per-tile month bounds for infants (<24m). Inclusive min, exclusive max. */
 export const HUB_TILE_MONTH_GATES: Record<string, { min?: number; max?: number }> = {
   phonics: { min: 12, max: 72 },

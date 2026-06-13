@@ -9,7 +9,7 @@ import { LockedBlock } from "@/components/locked-block";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
-import { isExploreNextStageHubFeature } from "@/lib/hub-visibility";
+import { isExploreNextStageHubFeature, isHealthLabPreviewAge } from "@/lib/hub-visibility";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -126,8 +126,15 @@ export function HubModulePageShell({
   }
 
   const headerSubtitle = subtitle?.(activeChild, totalAgeMonths) ?? activeChild.name;
+  const healthLabPreview =
+    featureId === "hub_health_lab" && isHealthLabPreviewAge(totalAgeMonths);
   const infantExplorePreview =
-    totalAgeMonths < 24 && isExploreNextStageHubFeature(featureId);
+    healthLabPreview ||
+    (totalAgeMonths < 24 && isExploreNextStageHubFeature(featureId));
+  const previewBannerKey =
+    featureId === "hub_health_lab"
+      ? "parent_hub.web_tiles.health-lab.preview_banner"
+      : "parent_hub.explore_next.preview_banner";
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">
@@ -173,7 +180,7 @@ export function HubModulePageShell({
       <main className="scroll-safe min-h-0 flex-1 px-4 py-4">
         <div className="mx-auto max-w-4xl">
           {infantExplorePreview ? (
-            <InfantExplorePreviewBanner className="mb-4" />
+            <InfantExplorePreviewBanner className="mb-4" messageKey={previewBannerKey} />
           ) : null}
           {journeySoft && !infantExplorePreview ? (
             <JourneyPreviewContent childName={activeChild.name}>
@@ -189,6 +196,7 @@ export function HubModulePageShell({
           ) : (
             <LockedBlock
               locked={locked && !infantExplorePreview}
+              reason="hub_journey"
               rounded="rounded-2xl"
             >
               <div

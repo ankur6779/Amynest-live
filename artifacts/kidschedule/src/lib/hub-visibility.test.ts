@@ -8,6 +8,12 @@ import {
   shouldShowPreviousStageSection,
   getPreviousStageTileIds,
   PREVIOUS_STAGE_INFANT_TILE_IDS,
+  isHealthLabPreviewAge,
+  isHealthLabEligibleAge,
+  HEALTH_LAB_MIN_AGE_MONTHS,
+  isHealthZoneFeature,
+  isHealthZoneJourneyEligible,
+  shouldApplyHealthZoneJourneyLock,
 } from "./hub-visibility";
 
 describe("isHubSectionVisible", () => {
@@ -59,6 +65,35 @@ describe("isHubSectionVisible", () => {
         18,
       ),
     ).toBe(false);
+  });
+});
+
+describe("health zone journey gates", () => {
+  it("applies journey lock only from 23 months for health zone features", () => {
+    expect(isHealthZoneFeature("hub_nutrition")).toBe(true);
+    expect(isHealthZoneFeature("hub_health_lab")).toBe(true);
+    expect(isHealthZoneFeature("hub_abacus")).toBe(false);
+    expect(isHealthZoneJourneyEligible(22)).toBe(false);
+    expect(isHealthZoneJourneyEligible(23)).toBe(true);
+    expect(shouldApplyHealthZoneJourneyLock("hub_health_lab", 22)).toBe(false);
+    expect(shouldApplyHealthZoneJourneyLock("hub_health_lab", 23)).toBe(true);
+    expect(shouldApplyHealthZoneJourneyLock("hub_abacus", 30)).toBe(false);
+  });
+});
+
+describe("health lab age gates", () => {
+  it("treats under 23 months as preview", () => {
+    expect(isHealthLabPreviewAge(22)).toBe(true);
+    expect(isHealthLabPreviewAge(0)).toBe(true);
+    expect(isHealthLabPreviewAge(23)).toBe(false);
+  });
+
+  it("unlocks full access from 23 months up to max age", () => {
+    expect(isHealthLabEligibleAge(22)).toBe(false);
+    expect(isHealthLabEligibleAge(23)).toBe(true);
+    expect(isHealthLabEligibleAge(155)).toBe(true);
+    expect(isHealthLabEligibleAge(156)).toBe(false);
+    expect(HEALTH_LAB_MIN_AGE_MONTHS).toBe(23);
   });
 });
 

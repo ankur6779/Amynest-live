@@ -113,7 +113,7 @@ export function HubDailyAdventureTeaser({ childId }: { childId: number }) {
     <PremiumCard tier="glow" className="p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">Today&apos;s adventure</p>
       <p className="mt-1 text-sm text-muted-foreground">
-        Open any Discovery World to earn stars, stickers, and XP.
+        Open any sound world to earn stars, stickers, and XP.
       </p>
       <Progress value={pct} className="mt-2 h-2" />
     </PremiumCard>

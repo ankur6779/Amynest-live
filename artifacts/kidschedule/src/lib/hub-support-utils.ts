@@ -3,7 +3,6 @@ import { ageBandForLifeSkills, L, pickDailyLifeSkillTasks } from "@workspace/lif
 import { STORAGE_KEY_DRAFT, STAGE_LABELS, type PtmSession } from "@workspace/ptm-prep";
 
 export const SUPPORT_TILE_ORDER = [
-  "nutrition",
   "articles",
   "emotional",
   "life-skills",
@@ -12,6 +11,10 @@ export const SUPPORT_TILE_ORDER = [
 ] as const;
 
 export type SupportTileId = (typeof SUPPORT_TILE_ORDER)[number];
+
+export const HEALTH_TILE_ORDER = ["nutrition", "health-lab"] as const;
+
+export type HealthTileId = (typeof HEALTH_TILE_ORDER)[number];
 export type EmotionalCardId = "overwhelmed" | "anxious" | "connect" | "break";
 
 /** Sep–Nov — common PTM window in Indian schools. */
@@ -51,10 +54,15 @@ export function sortSupportTileIds(
   opts: { ptmSeason?: boolean } = {},
 ): string[] {
   const base = opts.ptmSeason
-    ? (["nutrition", "articles", "emotional", "ptm-prep", "life-skills", "new-parent-tips"] as const)
+    ? (["articles", "emotional", "ptm-prep", "life-skills", "new-parent-tips"] as const)
     : SUPPORT_TILE_ORDER;
   const set = new Set(ids);
   return base.filter(id => set.has(id));
+}
+
+export function sortHealthTileIds(ids: readonly string[]): string[] {
+  const set = new Set(ids);
+  return HEALTH_TILE_ORDER.filter(id => set.has(id));
 }
 
 export function getLifeSkillPreviewText(

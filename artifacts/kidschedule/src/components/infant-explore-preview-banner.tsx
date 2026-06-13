@@ -1,8 +1,14 @@
 import { Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-/** Shown when an infant parent opens a future-stage module from Explore What's Next. */
-export function InfantExplorePreviewBanner({ className = "" }: { className?: string }) {
+/** Shown when a parent opens a future-stage module in preview mode. */
+export function InfantExplorePreviewBanner({
+  className = "",
+  messageKey = "parent_hub.explore_next.preview_banner",
+}: {
+  className?: string;
+  messageKey?: string;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -17,7 +23,7 @@ export function InfantExplorePreviewBanner({ className = "" }: { className?: str
       <div className="flex items-start gap-2">
         <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
         <p className="text-[11px] leading-snug text-muted-foreground">
-          {t("parent_hub.explore_next.preview_banner")}
+          {t(messageKey)}
         </p>
       </div>
     </div>

@@ -39,6 +39,7 @@ export const PARENT_HUB_FEATURES = [
   "hub_story_hub",
   "hub_smart_math_tricks",
   "hub_abacus",
+  "hub_health_lab",
   "hub_coloring_books",
   "hub_fun_sheets",
   "hub_answer_to_kids_how",

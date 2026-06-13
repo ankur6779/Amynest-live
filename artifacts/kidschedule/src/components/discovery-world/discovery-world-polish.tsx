@@ -45,7 +45,7 @@ export const DISCOVERY_COPY = {
   noChild: {
     emoji: "👶",
     title: "Add a child to begin",
-    message: "Discovery Worlds saves progress per child so you can see what they love in Parent insights.",
+    message: "Amy Sound World saves progress per child so you can see what they love in Parent insights.",
   },
   noChildHub: {
     emoji: "👨‍👩‍👧",
@@ -65,7 +65,7 @@ export const DISCOVERY_COPY = {
   worldNotFound: {
     emoji: "🗺️",
     title: "This world is not ready yet",
-    message: "Head back to Discovery Worlds and pick a world from the list.",
+    message: "Head back to Amy Sound World and pick a world from the list.",
   },
   audioFailed: {
     emoji: "🔇",

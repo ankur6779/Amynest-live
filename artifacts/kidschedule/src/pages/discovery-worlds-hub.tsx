@@ -87,7 +87,7 @@ export default function DiscoveryWorldsHubPage() {
         className="mx-auto max-w-2xl px-4 py-8 md:max-w-3xl md:px-6"
       >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          Discovery Worlds
+          Amy Sound World
         </p>
         <h1 className="mt-1 text-2xl font-bold text-foreground">Sound learning worlds</h1>
         <p className="mt-2 text-sm text-muted-foreground">

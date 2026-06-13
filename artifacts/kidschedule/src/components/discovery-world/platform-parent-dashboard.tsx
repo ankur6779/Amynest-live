@@ -56,7 +56,7 @@ export function PlatformParentDashboard({ config, childId }: PlatformParentDashb
         <h1 className="text-xl font-bold">
           {config.emoji} {config.title} — Learning report
         </h1>
-        <p className="text-sm text-muted-foreground">AmyNest Discovery Worlds</p>
+        <p className="text-sm text-muted-foreground">Amy Sound World</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">

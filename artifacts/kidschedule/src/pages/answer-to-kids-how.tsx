@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Lightbulb, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, Search } from "lucide-react";
 import { useAppNavigate } from "@/components/app-link";
+import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
+import { LockedBlock } from "@/components/locked-block";
+import { KidsHowBookCard } from "@/components/kids-how/kids-how-book-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KidsHowBookCard } from "@/components/kids-how/kids-how-book-card";
+import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import {
   filterKidsHowBooks,
   KIDS_HOW_BOOKS,
@@ -16,12 +21,20 @@ import {
   trackKidsHowCategorySelected,
   trackKidsHowEvent,
 } from "@/lib/kids-how-analytics";
+import {
+  canOpenKidsHowBook,
+  KIDS_HOW_HUB_FEATURE,
+  kidsHowFreeBooksRemaining,
+} from "@/lib/kids-how-pdf-access";
 import { HUB_QUICK_CHIP, hubQuickChipTint, PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
 export default function AnswerToKidsHowPage() {
   const { t } = useTranslation();
   const { back } = useAppNavigate();
+  const { userId } = useAuth();
+  const { isPremium } = useSubscription();
+  const hubGate = useHubModuleGate(KIDS_HOW_HUB_FEATURE);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<KidsHowCategory | "all">("all");
 
@@ -39,13 +52,15 @@ export default function AnswerToKidsHowPage() {
     [query, category],
   );
 
+  const freeBooksLeft = kidsHowFreeBooksRemaining(userId, isPremium);
+
   const selectCategory = (next: KidsHowCategory | "all") => {
     setCategory(next);
     trackKidsHowCategorySelected(next);
   };
 
-  return (
-    <div className={cn(PARENT_HUB_PAGE, "min-h-screen bg-background pb-10")}>
+  const pageBody = (
+    <>
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur md:px-6">
         <button
           type="button"
@@ -60,7 +75,7 @@ export default function AnswerToKidsHowPage() {
       <main className="mx-auto max-w-3xl px-4 py-6 md:px-6">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_0_20px_rgba(251,191,36,0.35)]">
-            <Lightbulb className="h-6 w-6 text-white" aria-hidden />
+            <BookOpen className="h-6 w-6 text-white" aria-hidden />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400/90">
@@ -72,6 +87,13 @@ export default function AnswerToKidsHowPage() {
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {t("parent_hub.web_tiles.answer-to-kids-how.library_description")}
             </p>
+            {!isPremium && hubGate.tryFree && freeBooksLeft > 0 ? (
+              <p className="mt-2 text-xs font-semibold text-amber-400/90">
+                {t("parent_hub.web_tiles.answer-to-kids-how.free_books_remaining", {
+                  count: freeBooksLeft,
+                })}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -151,12 +173,33 @@ export default function AnswerToKidsHowPage() {
                 <KidsHowBookCard
                   book={book}
                   readHref={`/answer-to-kids-how/read/${book.id}`}
+                  locked={!canOpenKidsHowBook(book.id, userId, isPremium)}
                 />
               </li>
             ))}
           </ul>
         )}
       </main>
+    </>
+  );
+
+  return (
+    <div
+      className={cn(PARENT_HUB_PAGE, "min-h-screen bg-background pb-10")}
+      onPointerDownCapture={() => hubGate.onEngage()}
+      onKeyDownCapture={(e) => {
+        if (e.key === "Enter" || e.key === " ") hubGate.onEngage();
+      }}
+    >
+      {hubGate.journeySoft ? (
+        <JourneyPreviewContent childName={hubGate.childName ?? "your child"}>
+          {pageBody}
+        </JourneyPreviewContent>
+      ) : (
+        <LockedBlock locked={hubGate.locked} reason="hub_journey" journeySoft={hubGate.journeySoft}>
+          {pageBody}
+        </LockedBlock>
+      )}
     </div>
   );
 }

@@ -3249,7 +3249,8 @@
       },
       "health-lab": {
         "title": "Amy Health Lab™",
-        "description": "Play, move, breathe & discover wellness superpowers"
+        "description": "Play, move, breathe & discover wellness superpowers",
+        "preview_banner": "Amy Health Lab unlocks at 23 months. You can preview how it works today."
       },
       "amy-ai": {
         "title": "Ask Amy AI",
@@ -3353,12 +3354,14 @@
         "description": "Printable activity & learning PDFs — preview, then download (2/day)"
       },
       "answer-to-kids-how": {
-        "title": "❓ Answer To Kids How",
+        "title": "Curiosity library",
         "description": "Explore amazing answers, science, animals, history, inventions, the human body, math, chess and more.",
-        "eyebrow": "Curiosity library",
+        "eyebrow": "Books & visual learning",
         "library_description": "Discover fascinating answers to curious questions through books, facts and visual learning.",
         "search_placeholder": "Search books, topics, or keywords",
         "book_count": "{{count}} of {{total}} books",
+        "free_books_remaining": "{{count}} free books left to read",
+        "book_locked": "You've read your 3 free books. Upgrade to unlock the full Curiosity library.",
         "empty_quote": "Every great discovery starts with a question.",
         "empty_cta": "Explore Books"
       },
@@ -3387,7 +3390,7 @@
         "description": "Animal sounds, listening games & toddler narration — build early communication"
       },
       "discovery-worlds": {
-        "title": "🧭 Discovery Worlds",
+        "title": "Amy Sound World",
         "description": "Animals, vehicles, nature & more — five sound worlds with daily adventures, stickers & parent insights"
       }
     },
@@ -3526,7 +3529,7 @@
         "description": "Animal sounds, listening games & toddler narration — build early communication"
       },
       "discovery-worlds": {
-        "title": "🧭 Discovery Worlds",
+        "title": "Amy Sound World",
         "description": "Animals, vehicles, nature & more — five sound worlds with daily adventures, stickers & parent insights"
       },
       "coloring-books": {
@@ -3578,6 +3581,7 @@
       "learning": "Learning Zone",
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
+      "health": "Health Zone",
       "support": "Parent Support"
     },
     "quick_actions": {

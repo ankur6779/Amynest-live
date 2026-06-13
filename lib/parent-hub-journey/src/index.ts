@@ -17,6 +17,8 @@ export const HUB_CONTENT_QUOTAS = {
   funsheetDaily: 2,
   funsheetLifetime: 6,
   speechCoachSessions: 3,
+  /** Curiosity library — unique PDF books free users may open (lifetime). */
+  kidsHowLifetimePdfs: 3,
   /** Daily download cap for premium users (worksheets, coloring, fun sheets). */
   premiumDownloadDaily: 5,
 } as const;

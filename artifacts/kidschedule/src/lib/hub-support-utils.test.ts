@@ -3,6 +3,7 @@ import {
   isPtmSeason,
   orderEmotionalCards,
   sortSupportTileIds,
+  sortHealthTileIds,
 } from "./hub-support-utils";
 
 describe("hub-support-utils", () => {
@@ -19,5 +20,10 @@ describe("hub-support-utils", () => {
     const ids = ["life-skills", "articles", "ptm-prep", "emotional"];
     const sorted = sortSupportTileIds(ids, { ptmSeason: true });
     expect(sorted.slice(0, 3)).toEqual(["articles", "emotional", "ptm-prep"]);
+  });
+
+  it("sorts health zone tiles with nutrition first", () => {
+    const ids = ["health-lab", "nutrition"];
+    expect(sortHealthTileIds(ids)).toEqual(["nutrition", "health-lab"]);
   });
 });
