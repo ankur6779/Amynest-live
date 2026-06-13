@@ -6,15 +6,12 @@
 //                            every state change (no hard jumps).
 //   • Life layer  (inner) — looping breathing (scale) and, while speaking, a
 //                            gentle talking nod.
-//   • Lip-sync (2D)       — while speaking, swaps mouth sprite frames from
-//                            /amy-3d/amy-mouth-frames/ (procedural viseme cycle;
-//                            audio-free per speech-coach-engine-freeze.mdc).
 //   • Eyelids             — random blink (rate varies by state).
 //   • Halo                — one rAF loop drives scale + opacity; on LISTENING it
 //                            reacts to live mic volume (haloScale = 1 + lvl*0.05).
 //
-// prefers-reduced-motion → tilt, pulses, nod, lip-sync and blink are all
-// disabled; only a soft static state-coloured halo remains as a visibility cue.
+// prefers-reduced-motion → tilt, pulses, nod and blink are all disabled; only a
+// soft static state-coloured halo remains as a visibility cue.
 
 import {
   type CSSProperties,
@@ -26,10 +23,6 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import { AMY_PORTRAIT_SRC } from "@/lib/amy-3d/baked-avatar";
-import { mouthFrameSrc, PORTRAIT_LIP_CYCLE } from "@/lib/amy-3d/amy-mouth-sprites";
-import { useAmyMouthSpritesAvailable } from "@/lib/amy-3d/use-amy-mouth-sprites-available";
-import { usePortraitLipSync } from "@/lib/amy-3d/use-portrait-lip-sync";
-import { isMouthMoving } from "@/lib/amy-3d/use-amy-3d-state";
 import { prefersReducedMotion } from "@/lib/amy-3d/webgl-support";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 
@@ -42,27 +35,12 @@ export interface AmyPortraitProps {
    * LISTENING Amy reacts to the child's voice without triggering re-renders.
    */
   audioLevelRef?: RefObject<number>;
-  /**
-   * Override lip-sync drive. Defaults to `isMouthMoving(state)` (speaking).
-   * Speech Coach + Talking Amy hero pass state only; set explicitly when needed.
-   */
-  lipSync?: boolean;
 }
 
 // Eye positions as fractions of the square portrait. Measured from
 // amy-avatar-square.png (eye centers ~y 0.625, x 0.365 / 0.635) and verified
 // with an overlay preview so the blink lids sit exactly on Amy's eyes.
 const EYE = { y: 0.625, h: 0.145, w: 0.165, lX: 0.365, rX: 0.635 };
-
-// Shared portrait framing — static square art and mouth sprites use the same crop.
-const PORTRAIT_IMG_STYLE: CSSProperties = {
-  width: "92%",
-  height: "92%",
-  margin: "4% auto 0",
-  objectFit: "cover",
-  objectPosition: "center 36%",
-  display: "block",
-};
 
 // Per-state halo glow colour (mirrors the 3D rim-light tokens).
 function haloGlow(state: Amy3DState): string {
@@ -120,28 +98,9 @@ export function AmyPortrait({
   size,
   className,
   audioLevelRef,
-  lipSync: lipSyncProp,
 }: AmyPortraitProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const speaking = state === "speaking";
-  const mouthSpritesAvailable = useAmyMouthSpritesAvailable();
-  const lipSyncActive =
-    mouthSpritesAvailable &&
-    !reduced &&
-    (lipSyncProp ?? isMouthMoving(state));
-  const viseme = usePortraitLipSync({ active: lipSyncActive, reduced });
-  const portraitSrc = lipSyncActive ? mouthFrameSrc(viseme) : AMY_PORTRAIT_SRC;
-
-  // Warm mouth frames before the first swap so hero lip-sync does not flash.
-  useEffect(() => {
-    if (!lipSyncActive || typeof Image === "undefined") return;
-    for (const v of PORTRAIT_LIP_CYCLE) {
-      const img = new Image();
-      img.src = mouthFrameSrc(v);
-    }
-    const rest = new Image();
-    rest.src = mouthFrameSrc("REST");
-  }, [lipSyncActive]);
 
   // Random tilt direction, re-rolled whenever Amy enters a "posed" state.
   const [tiltDir, setTiltDir] = useState(1);
@@ -373,10 +332,17 @@ export function AmyPortrait({
           transition={life.transition}
         >
           <img
-            src={portraitSrc}
+            src={AMY_PORTRAIT_SRC}
             alt="Amy"
             draggable={false}
-            style={PORTRAIT_IMG_STYLE}
+            style={{
+              width: "92%",
+              height: "92%",
+              margin: "4% auto 0",
+              objectFit: "cover",
+              objectPosition: "center 36%",
+              display: "block",
+            }}
           />
           {/* Soft eyelid overlays for a 2D blink. */}
           {!reduced && <span style={lidStyle(EYE.lX)} />}

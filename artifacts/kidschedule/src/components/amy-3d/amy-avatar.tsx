@@ -44,8 +44,6 @@ export interface AmyAvatarProps {
   className?: string;
   /** Live mic level (0..1) ref → reactive listening halo on the hero portrait. */
   audioLevelRef?: RefObject<number>;
-  /** Override 2D lip-sync drive on the hero portrait (defaults to speaking state). */
-  lipSync?: boolean;
 }
 
 // ── Error boundary: any failure inside the 3D stage drops to the 2D fallback ──
@@ -74,7 +72,6 @@ export function AmyAvatar({
   bounce = false,
   className,
   audioLevelRef,
-  lipSync,
 }: AmyAvatarProps) {
   const modelAvailable = useAmyModelAvailable();
   const iconFallback = (
@@ -94,7 +91,6 @@ export function AmyAvatar({
       size={size}
       className={className}
       audioLevelRef={audioLevelRef}
-      lipSync={lipSync}
     />
   );
 

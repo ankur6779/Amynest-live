@@ -17,7 +17,6 @@ import {
   writeFileSync,
   existsSync,
   mkdirSync,
-  rmSync,
 } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,23 +46,9 @@ if (!existsSync(wwwDir)) {
 
 mkdirSync(outDir, { recursive: true });
 const zipPath = resolve(outDir, `amynest-www-${version}.zip`);
-if (existsSync(zipPath)) {
-  rmSync(zipPath);
-}
-
-/**
- * Paths excluded from OTA zips (web-only / duplicate assets). Native store builds
- * still ship the full www/ from copy-www.mjs — only the OTA patch bundle is slimmed
- * so it stays under GitHub's 100 MB blob limit.
- */
-const OTA_ZIP_EXCLUDE = [
-  "promo/*",
-  "amy-3d/amy-mouth-spritesheet.png",
-];
 
 console.log(`📦  Zipping www → ${zipPath}`);
-const zipArgs = ["-r", "-9", "-q", zipPath, ".", ...OTA_ZIP_EXCLUDE.flatMap((x) => ["-x", x])];
-const zip = spawnSync("zip", zipArgs, { cwd: wwwDir, stdio: "inherit" });
+const zip = spawnSync("zip", ["-r", "-q", zipPath, "."], { cwd: wwwDir, stdio: "inherit" });
 if (zip.status !== 0) {
   console.error("❌  zip failed — install zip CLI or zip manually.");
   process.exit(zip.status ?? 1);
