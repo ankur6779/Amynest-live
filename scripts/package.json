@@ -56,6 +56,8 @@
     "generate:content-bank": "tsx ./generate-learning-zone-content-bank.ts",
     "upload:content-bank": "tsx ./upload-content-bank.ts",
     "map:story-hub-gcs": "tsx ./map-story-hub-gcs.ts",
+    "generate:reels-catalog": "tsx ./generate-reels-catalog.ts",
+    "verify:reels-phase2b": "node ./verify-reels-phase2b.mjs",
     "build:content-bank-audio-map": "tsx ./build-content-bank-audio-map.ts",
     "scan-speakable-phrases": "tsx ./scan-speakable-phrases.ts",
     "check-amy-voice-usage": "tsx ./check-amy-voice-usage.ts",

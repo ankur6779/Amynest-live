@@ -345,4 +345,59 @@ router.get("/healthz/drive", async (_req, res) => {
   }
 });
 
+/** Art & Craft reels GCS mirror progress (Drive catalog vs reels-hub/* objects). */
+router.get("/healthz/reels-gcs", async (_req, res) => {
+  try {
+    const { getReelsGcsMirrorStats } = await import("../services/reelsGcsMirror.js");
+    const stats = await getReelsGcsMirrorStats();
+    const pctMirrored =
+      stats.driveVideoCount > 0
+        ? Math.round((stats.gcsMirroredCount / stats.driveVideoCount) * 1000) / 10
+        : 0;
+
+    res.json({
+      ok: stats.gcsConfigured && stats.mirrorEnabled,
+      ...stats,
+      percentMirrored: pctMirrored,
+      hint: !stats.gcsConfigured
+        ? "Set DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON on Render."
+        : !stats.mirrorEnabled
+          ? "Set REELS_GCS_MIRROR_ENABLED=1 or ensure GCS is configured."
+          : stats.pending > 0
+            ? "Mirror in progress — POST /api/reels/gcs-sync/cron with x-cron-secret or wait for boot/daily cron."
+            : undefined,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ ok: false, error: message.slice(0, 500) });
+  }
+});
+
+/** Art & Craft reels GCS catalog integrity (Phase 2A). */
+router.get("/healthz/reels-catalog", async (_req, res) => {
+  try {
+    const { certifyReelsCatalogV1, REELS_CATALOG_V1_GCS_PATH } = await import(
+      "../services/reelsCatalog.js"
+    );
+    const report = await certifyReelsCatalogV1();
+    res.status(report.pass ? 200 : 503).json({
+      ok: report.pass,
+      catalogPath: REELS_CATALOG_V1_GCS_PATH,
+      catalogEntries: report.catalogEntries,
+      activeEntries: report.activeEntries,
+      missingObjects: report.missingObjects.length,
+      duplicateIds: report.duplicateIds.length,
+      invalidObjectReferences: report.invalidObjectReferences.length,
+      catalogIntegrityPercent: report.catalogIntegrityPercent,
+      pass: report.pass,
+      missingSample: report.missingObjects.slice(0, 10),
+      duplicateIdSample: report.duplicateIds.slice(0, 10),
+      invalidSample: report.invalidObjectReferences.slice(0, 10),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ ok: false, error: message.slice(0, 500) });
+  }
+});
+
 export default router;

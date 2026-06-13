@@ -1,82 +1,28 @@
 import { Router } from "express";
-import {
-  driveFilesListAll,
-  fetchDriveStream,
-  getDriveApiKey,
-} from "../lib/googleDrive";
+import { z } from "zod";
 import { logger } from "../lib/logger";
+import {
+  listActiveReelsForApi,
+  resolveReelStreamPath,
+} from "../services/reelsCatalog";
+import { streamReelVideo } from "../services/reelsGcsMirror";
 
 const router = Router();
 
-const FOLDER_ID = "1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3";
 const BATCH_SIZE = 5;
-
-interface DriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-}
-
-let cachedVideoIds: DriveFile[] = [];
-let cacheTimestamp = 0;
-const CACHE_TTL_MS = 10 * 60 * 1000;
-
-const PLAYABLE_MIME_TYPES = new Set([
-  "video/mp4",
-  "video/webm",
-  "video/ogg",
-  "video/quicktime",
-  "video/x-m4v",
-  "video/3gpp",
-  "video/3gpp2",
-  "video/mpeg",
-]);
-
-function shuffle<T>(arr: T[]): void {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
-  }
-}
-
-async function fetchAllVideos(): Promise<DriveFile[]> {
-  const apiKey = getDriveApiKey();
-  if (!apiKey) {
-    throw new Error(
-      "GOOGLE_API_KEY or GOOGLE_DRIVE_API_KEY environment variable is not set",
-    );
-  }
-
-  const now = Date.now();
-  if (cachedVideoIds.length > 0 && now - cacheTimestamp < CACHE_TTL_MS) {
-    return cachedVideoIds;
-  }
-
-  const raw = await driveFilesListAll(
-    apiKey,
-    `'${FOLDER_ID}' in parents and mimeType contains 'video' and trashed = false`,
-    "nextPageToken,files(id,name,mimeType)",
-  );
-  const allFiles = raw.filter((f) => PLAYABLE_MIME_TYPES.has(f.mimeType));
-
-  shuffle(allFiles);
-  cachedVideoIds = allFiles;
-  cacheTimestamp = Date.now();
-  logger.info({ count: allFiles.length }, "Drive video cache built");
-  return allFiles;
-}
 
 router.get("/videos", async (req, res) => {
   try {
-    const videos = await fetchAllVideos();
+    const videos = await listActiveReelsForApi();
     const offset = parseInt((req.query["offset"] as string) || "0", 10);
     const batch = parseInt((req.query["batch"] as string) || String(BATCH_SIZE), 10);
 
-    const slice = videos.slice(offset, offset + batch).map((f) => ({
-      id: f.id,
-      name: f.name,
-      mimeType: f.mimeType,
-      streamUrl: `/api/reels/stream/${f.id}`,
+    const slice = videos.slice(offset, offset + batch).map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      name: entry.title,
+      mimeType: entry.contentType,
+      streamUrl: resolveReelStreamPath(entry.id),
     }));
 
     res.json({
@@ -87,23 +33,31 @@ router.get("/videos", async (req, res) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.error({ err, message }, "Failed to list videos");
-    const status = message.includes("not set") ? 503 : 502;
+    logger.error({ err, message }, "Failed to list reels catalog videos");
+    const status =
+      message === "gcs_not_configured" || message === "catalog_not_found" ? 503 : 502;
     res.status(status).json({
-      error: status === 503 ? "drive_not_configured" : "drive_list_failed",
+      error:
+        message === "gcs_not_configured"
+          ? "gcs_not_configured"
+          : message === "catalog_not_found"
+            ? "catalog_not_found"
+            : "catalog_list_failed",
     });
   }
 });
 
-function normalizeVideoContentType(raw: string | null, fallbackMime?: string): string {
-  const ct = (raw ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
-  if (ct.startsWith("video/")) return ct;
-  const fallback = (fallbackMime ?? "").trim().toLowerCase();
-  if (fallback.startsWith("video/")) return fallback;
-  return "video/mp4";
-}
-
+/** Playback: Worker → GCS when REELS_GCS_ORIGIN=1; legacy Drive path otherwise. */
 router.get("/stream/:fileId", async (req, res) => {
+  const reelsGcsOrigin = process.env["REELS_GCS_ORIGIN"]?.trim().toLowerCase();
+  if (reelsGcsOrigin === "1" || reelsGcsOrigin === "true") {
+    res.status(410).json({
+      error: "reels_stream_on_worker",
+      hint: "Video bytes are served by Cloudflare Worker → GCS. Do not call Render for /api/reels/stream/*.",
+    });
+    return;
+  }
+
   const { fileId } = req.params;
   if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
     res.status(400).json({ error: "Invalid file ID" });
@@ -111,53 +65,42 @@ router.get("/stream/:fileId", async (req, res) => {
   }
 
   try {
-    const rangeHeader = req.headers["range"];
-    const driveRes = await fetchDriveStream(fileId, rangeHeader);
-
-    if (!driveRes.ok && driveRes.status !== 206) {
-      logger.warn({ fileId, status: driveRes.status }, "Drive stream failed");
-      res.status(driveRes.status === 404 ? 404 : 403).json({ error: "File not accessible" });
-      return;
-    }
-
-    const fileMeta = cachedVideoIds.find((f) => f.id === fileId);
-    const contentType = normalizeVideoContentType(
-      driveRes.headers.get("content-type"),
-      fileMeta?.mimeType,
-    );
-    const contentLength = driveRes.headers.get("content-length");
-    const contentRange = driveRes.headers.get("content-range");
-    const acceptRanges = driveRes.headers.get("accept-ranges");
-
-    res.status(driveRes.status);
-    res.set("Content-Type", contentType);
-    res.set("Accept-Ranges", acceptRanges || "bytes");
-    if (contentLength) res.set("Content-Length", contentLength);
-    if (contentRange) res.set("Content-Range", contentRange);
-    res.set("Cache-Control", "public, max-age=3600");
-
-    if (!driveRes.body) { res.end(); return; }
-
-    const reader = driveRes.body.getReader();
-    const pump = async () => {
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (!res.write(value)) {
-            await new Promise((resolve) => res.once("drain", resolve));
-          }
-        }
-        res.end();
-      } catch {
-        reader.cancel();
-        res.destroy();
-      }
-    };
-    pump();
+    await streamReelVideo(fileId, req, res);
   } catch (err) {
-    logger.error({ err }, "Stream error");
+    logger.error({ err, fileId }, "Stream error");
     if (!res.headersSent) res.status(500).json({ error: "Stream failed" });
+  }
+});
+
+/** Cron / scheduler — mounted before requireAuth (see routes/index.ts). */
+router.post("/gcs-sync/cron", async (req, res) => {
+  const expected =
+    process.env["REELS_GCS_CRON_SECRET"] ??
+    process.env["STORY_GCS_CRON_SECRET"] ??
+    process.env["NOTIFICATION_CRON_SECRET"];
+  const provided = req.headers["x-cron-secret"];
+  if (!expected || provided !== expected) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const parsed = z
+    .object({
+      limit: z.coerce.number().int().min(1).max(20).optional(),
+      force: z.coerce.boolean().optional(),
+    })
+    .safeParse(req.body ?? {});
+
+  try {
+    const { runReelsGcsMirrorPing } = await import("../lib/reelsGcsCron.js");
+    const result = await runReelsGcsMirrorPing({
+      limit: parsed.success ? parsed.data.limit : undefined,
+      force: parsed.success ? parsed.data.force : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, "Reel GCS cron ping failed");
+    res.status(500).json({ error: "cron_failed" });
   }
 });
 

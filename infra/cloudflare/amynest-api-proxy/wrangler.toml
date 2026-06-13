@@ -24,5 +24,12 @@ routes = [
 
 [vars]
 BACKEND_ORIGIN = "https://amynest-backend-dykj.onrender.com"
+GCS_BUCKET = "amynest-audio-storage"
+REELS_CATALOG_GCS_PATH = "reels-hub/phase1/catalog.v1.json"
+# Set to "1" after Phase 2B certification. Rollback: set to "0" and redeploy Worker.
+REELS_GCS_ORIGIN = "1"
 workers_dev = false
 preview_urls = false
+
+# Required secret (wrangler secret put GCS_SERVICE_ACCOUNT_JSON):
+#   Full Google service account JSON with storage.objects.get on amynest-audio-storage

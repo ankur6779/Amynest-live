@@ -9,9 +9,16 @@
  *   /api/worlds-library/*
  *   /api/animal-world-library/*
  *   /api/stories/stream/{id}  (full GET only; Range proxied to origin)
+ *   /api/reels/stream/{id}    (Phase 2B — GCS via Worker when REELS_GCS_ORIGIN=1)
  *
  * Deploy: wrangler deploy (see wrangler.toml)
  */
+import {
+  fetchReelsStreamWithEdgeCache,
+  isReelsGcsOriginEnabled,
+  REELS_STREAM_RE,
+} from "./reels-gcs-origin.js";
+
 const DEFAULT_BACKEND = "https://amynest-backend-dykj.onrender.com";
 
 const TTS_AUDIO_RE = /^\/api\/tts\/audio\/[a-f0-9]{64}\.mp3$/i;
@@ -24,6 +31,35 @@ const STORIES_STREAM_RE = /^\/api\/stories\/stream\/[a-zA-Z0-9_-]+$/;
 
 const MEDIA_CACHE_TTL_FALLBACK =
   "public, max-age=31536000, stale-while-revalidate=86400, immutable";
+
+/** Match Express cors-origins.ts — Capacitor iOS/Android cross-origin API calls. */
+const ALLOWED_CORS_ORIGINS = new Set([
+  "https://www.amynest.in",
+  "https://amynest.in",
+  "capacitor://localhost",
+  "ionic://localhost",
+  "http://localhost",
+  "https://localhost",
+]);
+
+/** @param {Request} request @param {URL} url */
+function resolveAccessControlOrigin(request, url) {
+  const clientOrigin = request.headers.get("Origin");
+  if (clientOrigin && ALLOWED_CORS_ORIGINS.has(clientOrigin)) {
+    return clientOrigin;
+  }
+  if (clientOrigin) {
+    try {
+      const host = new URL(clientOrigin).hostname.toLowerCase();
+      if (host === "amynest.in" || host.endsWith(".amynest.in")) {
+        return clientOrigin;
+      }
+    } catch {
+      /* ignore malformed Origin */
+    }
+  }
+  return url.origin;
+}
 
 /** @param {string} pathname */
 function isCacheableAudioPath(pathname) {
@@ -92,7 +128,8 @@ async function proxyToBackend(request, env, url) {
   const response = await fetch(target.toString(), init);
 
   const out = new Headers(response.headers);
-  out.set("Access-Control-Allow-Origin", url.origin);
+  const corsOrigin = resolveAccessControlOrigin(request, url);
+  out.set("Access-Control-Allow-Origin", corsOrigin);
   out.set("Access-Control-Allow-Credentials", "true");
 
   if (isCacheableMediaPath(url.pathname) && response.ok) {
@@ -114,10 +151,11 @@ async function proxyToBackend(request, env, url) {
  * @param {URL} url
  * @param {"HIT" | "MISS"} edgeLabel
  */
-function withEdgeCacheHeaders(cached, url, edgeLabel) {
+function withEdgeCacheHeaders(cached, url, edgeLabel, request) {
   const headers = new Headers(cached.headers);
   headers.set("X-AmyNest-Edge-Cache", edgeLabel);
-  headers.set("Access-Control-Allow-Origin", url.origin);
+  const corsOrigin = resolveAccessControlOrigin(request, url);
+  headers.set("Access-Control-Allow-Origin", corsOrigin);
   headers.set("Access-Control-Allow-Credentials", "true");
   return new Response(cached.body, {
     status: cached.status,
@@ -139,7 +177,7 @@ async function fetchWithEdgeCache(request, env, ctx, url) {
   if (!hasRange) {
     const cached = await cache.match(cacheKey);
     if (cached) {
-      return withEdgeCacheHeaders(cached, url, "HIT");
+      return withEdgeCacheHeaders(cached, url, "HIT", request);
     }
   }
 
@@ -172,6 +210,14 @@ export default {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) {
       return fetch(request);
+    }
+
+    if (
+      isReelsGcsOriginEnabled(env) &&
+      REELS_STREAM_RE.test(url.pathname) &&
+      (request.method === "GET" || request.method === "HEAD")
+    ) {
+      return fetchReelsStreamWithEdgeCache(request, env, ctx, url);
     }
 
     if (

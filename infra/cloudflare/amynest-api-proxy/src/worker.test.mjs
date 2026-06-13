@@ -6,6 +6,12 @@ const SPELLING_LIBRARY_RE = /^\/api\/spelling-library\/.+\.mp3$/i;
 const WORLDS_LIBRARY_RE = /^\/api\/worlds-library\/.+$/i;
 const ANIMAL_WORLD_LIBRARY_RE = /^\/api\/animal-world-library\/.+$/i;
 const STORIES_STREAM_RE = /^\/api\/stories\/stream\/[a-zA-Z0-9_-]+$/;
+const REELS_STREAM_RE = /^\/api\/reels\/stream\/[a-zA-Z0-9_-]+$/;
+
+function isReelsGcsOriginEnabled(env) {
+  const raw = (env?.REELS_GCS_ORIGIN ?? "").trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+}
 
 function isCacheableAudioPath(pathname) {
   return (
@@ -53,5 +59,11 @@ assert.equal(
   true,
 );
 assert.equal(isCacheableMediaPath("/api/nutrition-library/preview-url"), false);
+
+assert.equal(REELS_STREAM_RE.test("/api/reels/stream/artcraft-42"), true);
+assert.equal(REELS_STREAM_RE.test("/api/reels/stream/../evil"), false);
+assert.equal(isReelsGcsOriginEnabled({ REELS_GCS_ORIGIN: "1" }), true);
+assert.equal(isReelsGcsOriginEnabled({ REELS_GCS_ORIGIN: "0" }), false);
+assert.equal(isReelsGcsOriginEnabled({}), false);
 
 console.log("worker.test.mjs OK");
