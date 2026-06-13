@@ -1,6 +1,6 @@
 /**
- * GCS-native Art & Craft reels catalog (Phase 2A).
- * Playback bytes still use legacy Drive path until Phase 2B.
+ * GCS-native Art & Craft reels catalog (Phase 1 production baseline).
+ * Catalog: reels-hub/phase1/catalog.v1.json — playback via Cloudflare Worker → GCS.
  */
 import { z } from "zod";
 import { readEnv } from "../lib/env";
@@ -240,5 +240,114 @@ export async function certifyReelsCatalogV1(options?: {
     missingObjects,
     catalogIntegrityPercent,
     pass,
+  };
+}
+
+const HEALTH_SAMPLE_SIZE = 5;
+
+function pickHealthSampleIds(entries: ReelsCatalogEntry[]): string[] {
+  if (entries.length === 0) return [];
+  const indices = new Set<number>([0, entries.length - 1, Math.floor(entries.length / 2)]);
+  while (indices.size < Math.min(HEALTH_SAMPLE_SIZE, entries.length)) {
+    indices.add(Math.floor((indices.size / HEALTH_SAMPLE_SIZE) * entries.length));
+  }
+  return [...indices]
+    .sort((a, b) => a - b)
+    .map((i) => entries[i]!.id);
+}
+
+/** Fast health probe — no full-bucket object scan (avoids Render request timeouts). */
+export async function healthCheckReelsCatalogV1(): Promise<{
+  ok: boolean;
+  pass: boolean;
+  catalogPath: string;
+  catalogExists: boolean;
+  catalogReadable: boolean;
+  catalogEntries: number;
+  activeEntries: number;
+  objectCount: number;
+  duplicateIds: number;
+  invalidReferences: number;
+  sampleChecked: number;
+  sampleMissing: number;
+  sampleIds: string[];
+}> {
+  const base = {
+    catalogPath: REELS_CATALOG_V1_GCS_PATH,
+    catalogExists: false,
+    catalogReadable: false,
+    catalogEntries: 0,
+    activeEntries: 0,
+    objectCount: 0,
+    duplicateIds: 0,
+    invalidReferences: 0,
+    sampleChecked: 0,
+    sampleMissing: 0,
+    sampleIds: [] as string[],
+    ok: false,
+    pass: false,
+  };
+
+  if (!legacyGcsConfigured()) {
+    return base;
+  }
+
+  const buffer = await readGcsObjectBytes(REELS_CATALOG_V1_GCS_PATH);
+  if (!buffer) return { ...base, catalogExists: false };
+
+  let catalog: ReelsCatalogV1;
+  try {
+    catalog = parseReelsCatalogV1(JSON.parse(buffer.toString("utf8")));
+  } catch {
+    return { ...base, catalogExists: true, catalogReadable: false };
+  }
+
+  const seenIds = new Set<string>();
+  let duplicateIds = 0;
+  let invalidReferences = 0;
+  for (const entry of catalog.entries) {
+    if (seenIds.has(entry.id)) duplicateIds += 1;
+    seenIds.add(entry.id);
+    if (
+      !REEL_ID_RE.test(entry.id) ||
+      !isValidObjectKey(entry.objectKey, catalog.prefix) ||
+      entry.objectKey !== `${catalog.prefix}${entry.id}.mp4` ||
+      entry.contentType !== "video/mp4"
+    ) {
+      invalidReferences += 1;
+    }
+  }
+
+  const sampleIds = pickHealthSampleIds(catalog.entries);
+  let sampleMissing = 0;
+  if (legacyGcsConfigured()) {
+    for (const id of sampleIds) {
+      const entry = catalog.entries.find((e) => e.id === id);
+      if (!entry) continue;
+      const exists = await gcsObjectExists(entry.objectKey);
+      if (!exists) sampleMissing += 1;
+    }
+  }
+
+  const pass =
+    catalog.entries.length > 0 &&
+    duplicateIds === 0 &&
+    invalidReferences === 0 &&
+    sampleMissing === 0;
+
+  return {
+    ok: pass,
+    pass,
+    catalogPath: REELS_CATALOG_V1_GCS_PATH,
+    catalogExists: true,
+    catalogReadable: true,
+    catalogEntries: catalog.entries.length,
+    activeEntries: catalog.entries.filter((e) => e.active).length,
+    objectCount: catalog.entries.length,
+    duplicateIds,
+    invalidReferences,
+    sampleChecked: sampleIds.length,
+    sampleMissing,
+    sampleIds,
   };
 }

@@ -345,26 +345,27 @@ router.get("/healthz/drive", async (_req, res) => {
   }
 });
 
-/** Art & Craft reels GCS catalog integrity (Phase 2A). */
+/** Art & Craft reels catalog health (lightweight — no full GCS object scan). */
 router.get("/healthz/reels-catalog", async (_req, res) => {
   try {
-    const { certifyReelsCatalogV1, REELS_CATALOG_V1_GCS_PATH } = await import(
+    const { healthCheckReelsCatalogV1, REELS_CATALOG_V1_GCS_PATH } = await import(
       "../services/reelsCatalog.js"
     );
-    const report = await certifyReelsCatalogV1();
+    const report = await healthCheckReelsCatalogV1();
     res.status(report.pass ? 200 : 503).json({
-      ok: report.pass,
+      ok: report.ok,
+      pass: report.pass,
       catalogPath: REELS_CATALOG_V1_GCS_PATH,
+      catalogExists: report.catalogExists,
+      catalogReadable: report.catalogReadable,
       catalogEntries: report.catalogEntries,
       activeEntries: report.activeEntries,
-      missingObjects: report.missingObjects.length,
-      duplicateIds: report.duplicateIds.length,
-      invalidObjectReferences: report.invalidObjectReferences.length,
-      catalogIntegrityPercent: report.catalogIntegrityPercent,
-      pass: report.pass,
-      missingSample: report.missingObjects.slice(0, 10),
-      duplicateIdSample: report.duplicateIds.slice(0, 10),
-      invalidSample: report.invalidObjectReferences.slice(0, 10),
+      objectCount: report.objectCount,
+      duplicateIds: report.duplicateIds,
+      invalidReferences: report.invalidReferences,
+      sampleChecked: report.sampleChecked,
+      sampleMissing: report.sampleMissing,
+      sampleIds: report.sampleIds,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -27,9 +27,6 @@ async function fetchBatch(offset: number): Promise<ApiResponse> {
   }
   return res.json();
 }
-function driveThumbnail(id: string) {
-  return `https://drive.google.com/thumbnail?id=${id}&sz=w480`;
-}
 function displayName(name: string) {
   return name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
 }
@@ -414,7 +411,6 @@ function ThumbnailCard({
   video: Video;
   onPlay: () => void;
 }) {
-  const [imgFailed, setImgFailed] = useState(false);
   const title = displayName(video.name);
   return <button onClick={onPlay} style={{
     all: "unset",
@@ -435,21 +431,16 @@ function ThumbnailCard({
     (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
     (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
   }}>
-      {/* Thumbnail */}
-      {!imgFailed ? <img src={driveThumbnail(video.id)} alt={title} onError={() => setImgFailed(true)} style={{
-      position: "absolute",
-      inset: 0,
-      width: "100%",
-      height: "100%",
-      objectFit: "cover"
-    }} /> : <div style={{
+      {/* Poster placeholder — playback is Worker → GCS; no Drive thumbnails */}
+      <div style={{
       position: "absolute",
       inset: 0,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontSize: 32
-    }}>🎬</div>}
+      fontSize: 32,
+      background: "linear-gradient(135deg, #1a1033 0%, #2d1b69 50%, #1a1033 100%)"
+    }}>🎬</div>
 
       {/* Dark overlay */}
       <div style={{

@@ -2,10 +2,8 @@ import { Router } from "express";
 import { logger } from "../lib/logger";
 import {
   listActiveReelsForApi,
-  loadReelsCatalogV1,
   resolveReelStreamPath,
 } from "../services/reelsCatalog";
-import { pipeGcsObjectToResponse } from "../services/ttsAudioStore";
 
 const router = Router();
 
@@ -47,50 +45,12 @@ router.get("/videos", async (req, res) => {
   }
 });
 
-/** Playback: Worker → GCS when REELS_GCS_ORIGIN=1; legacy Drive path otherwise. */
-router.get("/stream/:fileId", async (req, res) => {
-  const reelsGcsOrigin = process.env["REELS_GCS_ORIGIN"]?.trim().toLowerCase();
-  if (reelsGcsOrigin === "1" || reelsGcsOrigin === "true") {
-    res.status(410).json({
-      error: "reels_stream_on_worker",
-      hint: "Video bytes are served by Cloudflare Worker → GCS. Do not call Render for /api/reels/stream/*.",
-    });
-    return;
-  }
-
-  const { fileId } = req.params;
-  if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
-    res.status(400).json({ error: "Invalid file ID" });
-    return;
-  }
-
-  try {
-    const catalog = await loadReelsCatalogV1();
-    const entry = catalog.entries.find((e) => e.id === fileId && e.active !== false);
-    if (!entry) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
-
-    const rangeHeader = req.headers.range;
-    const result = await pipeGcsObjectToResponse({
-      objectName: entry.objectKey,
-      rangeHeader: typeof rangeHeader === "string" ? rangeHeader : undefined,
-      res,
-      contentType: entry.contentType,
-    });
-
-    if (result === "not_found") {
-      if (!res.headersSent) res.status(404).json({ error: "not_found" });
-      return;
-    }
-    if (result === "error" && !res.headersSent) {
-      res.status(502).json({ error: "stream_failed" });
-    }
-  } catch (err) {
-    logger.error({ err, fileId }, "Stream error");
-    if (!res.headersSent) res.status(500).json({ error: "Stream failed" });
-  }
+/** Playback bytes are served exclusively by Cloudflare Worker → GCS (Phase 2B). */
+router.get("/stream/:fileId", (_req, res) => {
+  res.status(410).json({
+    error: "reels_stream_on_worker",
+    hint: "Video bytes are served by Cloudflare Worker → GCS. Do not call Render for /api/reels/stream/*.",
+  });
 });
 
 export default router;
