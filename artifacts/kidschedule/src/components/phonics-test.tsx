@@ -1534,7 +1534,7 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
             Sounds to revisit
           </div>
           <div className="flex flex-wrap gap-2">
-            {weakConcepts.map((wc) => (
+            {weakConcepts.filter((wc) => wc?.symbol?.trim()).map((wc) => (
               <Badge
                 key={wc.id}
                 variant="secondary"

@@ -56,10 +56,12 @@ if (zip.status !== 0) {
 
 const buf = readFileSync(zipPath);
 const checksum = createHash("sha256").update(buf).digest("hex");
+const PRODUCTION_WORKER_API_ORIGIN = "https://www.amynest.in";
+
 const apiOrigin =
   arg("--api-origin")?.replace(/\/$/, "") ||
   process.env.VITE_APP_API_ORIGIN?.replace(/\/$/, "") ||
-  "https://amynest-backend-dykj.onrender.com";
+  PRODUCTION_WORKER_API_ORIGIN;
 
 const bundleUrl =
   arg("--bundle-url") ||

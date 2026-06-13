@@ -15,6 +15,7 @@ import {
   type PhonicsAgeGroup,
   type PhonicsLevel,
 } from "@/lib/phonics-content";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsJourneyMeta, PhonicsPremiumMeta } from "@/lib/phonics-journey-access";
 
 // ─── Types mirrored from the API ─────────────────────────────────────────────
@@ -403,21 +404,28 @@ export function usePhonicsData(
           throw new Error("phonics_api_fallback");
         }
 
-        const mapItem = (it: PhonicsApiItem): DisplayPhonicsItem => ({
-          id: String(it.id),
-          contentId: it.id,
-          symbol: it.symbol,
-          sound: it.sound,
-          phoneme: it.phoneme ?? undefined,
-          example: it.example ?? undefined,
-          examples: it.examples ?? undefined,
-          emoji: it.emoji ?? undefined,
-          hint: it.hint ?? undefined,
-          type: it.type,
-        });
+        const mapItem = (it: PhonicsApiItem): DisplayPhonicsItem | null => {
+          if (!it?.symbol?.trim() || !it?.sound?.trim()) return null;
+          return {
+            id: String(it.id),
+            contentId: it.id,
+            symbol: it.symbol.trim(),
+            sound: it.sound.trim(),
+            phoneme: it.phoneme ?? undefined,
+            example: it.example ?? undefined,
+            examples: it.examples ?? undefined,
+            emoji: it.emoji ?? undefined,
+            hint: it.hint ?? undefined,
+            type: it.type,
+          };
+        };
 
-        const apiItemsMapped = (data?.items ?? []).map(mapItem);
-        const apiDailyMapped = (data?.dailyItems ?? data?.items ?? []).map(mapItem);
+        const apiItemsMapped = sanitizeDisplayPhonicsItems(
+          (data?.items ?? []).map(mapItem),
+        );
+        const apiDailyMapped = sanitizeDisplayPhonicsItems(
+          (data?.dailyItems ?? data?.items ?? []).map(mapItem),
+        );
         const serverProgress = progressArrayToMap(data?.progress ?? []);
 
         // FIX (architect #3): merge any offline writes still living in
@@ -481,17 +489,19 @@ export function usePhonicsData(
     items = apiItems;
     dailyItems = apiDaily.length > 0 ? apiDaily : apiItems;
   } else if (level) {
-    items = (level.items ?? []).map((it) => ({
-      id: it.id,
-      symbol: it.symbol,
-      sound: it.sound,
-      phoneme: it.phoneme,
-      example: it.example,
-      examples: it.examples,
-      emoji: it.emoji,
-      hint: it.hint,
-      type: inferType(it.id, level.ageGroup),
-    }));
+    items = sanitizeDisplayPhonicsItems(
+      (level.items ?? []).map((it) => ({
+        id: it.id,
+        symbol: it.symbol,
+        sound: it.sound,
+        phoneme: it.phoneme,
+        example: it.example,
+        examples: it.examples,
+        emoji: it.emoji,
+        hint: it.hint,
+        type: inferType(it.id, level.ageGroup),
+      })),
+    );
     dailyItems = items.slice(0, 10);
   } else {
     items = [];

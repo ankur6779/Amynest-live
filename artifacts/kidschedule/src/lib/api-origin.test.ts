@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { resolveProductionSameOriginApi } from "@/config";
-import { getAppApiBaseOrigin, resolveApiMediaUrl } from "@/lib/api";
+import { resolveProductionSameOriginApi, resolveProductionWorkerApiOrigin } from "@/config";
+import {
+  getAppApiBaseOrigin,
+  mergeAmyNestApiClientHeaders,
+  resolveApiMediaUrl,
+  usesCloudflareWorkerApiPath,
+} from "@/lib/api";
 
 describe("resolveProductionSameOriginApi", () => {
   afterEach(() => {
@@ -45,6 +50,94 @@ describe("getAppApiBaseOrigin", () => {
     });
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0" });
     expect(getAppApiBaseOrigin()).toBe("https://www.amynest.in");
+  });
+
+  it("uses Cloudflare Worker origin for Capacitor iOS in production", () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_AMYNEST_ENV", "production");
+    vi.stubEnv("VITE_APP_API_ORIGIN", "");
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "localhost",
+        protocol: "capacitor:",
+        origin: "capacitor://localhost",
+      },
+      Capacitor: { isNativePlatform: () => true, getPlatform: () => "ios" },
+    });
+    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0" });
+    expect(getAppApiBaseOrigin()).toBe("https://www.amynest.in");
+    expect(getAppApiBaseOrigin()).not.toContain("onrender.com");
+  });
+
+  it("still uses Render direct for Capacitor in development", () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_AMYNEST_ENV", "development");
+    vi.stubEnv("VITE_APP_API_ORIGIN", "");
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "localhost",
+        protocol: "capacitor:",
+        origin: "capacitor://localhost",
+      },
+      Capacitor: { isNativePlatform: () => true, getPlatform: () => "ios" },
+    });
+    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0" });
+    expect(getAppApiBaseOrigin()).toBe("https://amynest-dev.onrender.com");
+  });
+});
+
+describe("resolveProductionWorkerApiOrigin", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns www.amynest.in in production", () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_AMYNEST_ENV", "production");
+    expect(resolveProductionWorkerApiOrigin()).toBe("https://www.amynest.in");
+  });
+
+  it("returns null in dev", () => {
+    vi.stubEnv("PROD", false);
+    expect(resolveProductionWorkerApiOrigin()).toBeNull();
+  });
+});
+
+describe("mergeAmyNestApiClientHeaders", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("adds worker + ios headers for Capacitor iOS on worker origin", () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_AMYNEST_ENV", "production");
+    vi.stubEnv("VITE_APP_API_ORIGIN", "https://www.amynest.in");
+    vi.stubGlobal("window", {
+      location: { hostname: "localhost", origin: "capacitor://localhost" },
+      Capacitor: { isNativePlatform: () => true, getPlatform: () => "ios" },
+    });
+    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0" });
+
+    const merged = mergeAmyNestApiClientHeaders({});
+    const headers = new Headers(merged.headers);
+    expect(headers.get("x-amynest-api-path")).toBe("worker");
+    expect(headers.get("x-amynest-platform")).toBe("ios");
+  });
+
+  it("skips headers when API origin is Render direct", () => {
+    vi.stubEnv("VITE_APP_API_ORIGIN", "https://amynest-backend-dykj.onrender.com");
+    const merged = mergeAmyNestApiClientHeaders({});
+    const headers = new Headers(merged.headers);
+    expect(headers.get("x-amynest-api-path")).toBeNull();
+  });
+});
+
+describe("usesCloudflareWorkerApiPath", () => {
+  it("detects worker origin", () => {
+    expect(usesCloudflareWorkerApiPath("https://www.amynest.in")).toBe(true);
+    expect(usesCloudflareWorkerApiPath("https://amynest-backend-dykj.onrender.com")).toBe(
+      false,
+    );
   });
 });
 

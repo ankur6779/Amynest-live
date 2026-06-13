@@ -308,8 +308,26 @@ export default defineConfig(async ({ command }) => ({
         entryFileNames: "assets/[name]-[hash].js",
         chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
-        // Default chunking — explicit so deploys don't inherit stale manual split config.
-        manualChunks: undefined,
+        // Default chunking — split heavy vendors so main entry stays under 2.5 MB.
+        manualChunks(id) {
+          if (id.includes("phonics-audio-map.json")) return "phonics-audio-map";
+          if (id.includes("static-audio-map.json")) return "static-audio-map";
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("three") || id.includes("@react-three")) return "vendor-three";
+          if (id.includes("firebase")) return "vendor-firebase";
+          if (id.includes("framer-motion")) return "vendor-motion";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
+          if (id.includes("@tanstack/react-query")) return "vendor-query";
+          if (id.includes("i18next") || id.includes("react-i18next")) return "vendor-i18n";
+          if (id.includes("lucide-react")) return "vendor-icons";
+          if (id.includes("react-dom")) return "vendor-react-dom";
+          if (id.includes("/react/")) return "vendor-react";
+          if (id.includes("wouter")) return "vendor-router";
+          if (id.includes("zod")) return "vendor-zod";
+          if (id.includes("date-fns")) return "vendor-date-fns";
+          return "vendor-misc";
+        },
       },
     },
     // Explicitly target Safari 14+ so esbuild transpiles ES2022 syntax

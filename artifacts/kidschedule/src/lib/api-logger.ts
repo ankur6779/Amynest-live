@@ -1,4 +1,4 @@
-import { resolveApiRequestInput } from "@/lib/api";
+import { mergeAmyNestApiClientHeaders, resolveApiRequestInput } from "@/lib/api";
 import { logError } from "@/lib/crash-logger";
 import { isBenignRuntimeError } from "@/lib/runtime-crash-policy";
 import { reportSlowApi } from "@/lib/client-logs";
@@ -100,8 +100,10 @@ export async function loggedFetch(
     if (typeof init.body === "string") reqPayload = JSON.parse(init.body);
   } catch { /* binary/form body */ }
 
+  const initWithClientHeaders = mergeAmyNestApiClientHeaders(init);
+
   try {
-    const res = await fn(resolvedInput, init);
+    const res = await fn(resolvedInput, initWithClientHeaders);
     const responseTime = Date.now() - t0;
 
     let resPayload: unknown = null;

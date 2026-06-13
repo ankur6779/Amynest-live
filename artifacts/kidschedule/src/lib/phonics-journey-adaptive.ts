@@ -1,4 +1,5 @@
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
 import {
   type GuidedMissionGoal,
@@ -352,7 +353,8 @@ export function sortItemsForSmartReview(
   weakSounds: string[],
   mode: AdaptiveDifficulty,
 ): DisplayPhonicsItem[] {
-  const sorted = [...items].sort(
+  const safeItems = sanitizeDisplayPhonicsItems(items);
+  const sorted = [...safeItems].sort(
     (a, b) =>
       reviewPriority(b, progress, weakSounds) - reviewPriority(a, progress, weakSounds),
   );

@@ -77,6 +77,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 
 function avgMasteryScore(state: PhonicsMasteryState): number {
   const all = [
@@ -134,7 +135,7 @@ export function PhonicsV2({
 
   const practiceWords = useMemo(
     () =>
-      items
+      sanitizeDisplayPhonicsItems(items)
         .filter((it) => it.type === "word" || /^[a-z]{3}$/.test(it.symbol))
         .map((it) => it.symbol.toLowerCase())
         .slice(0, 6),

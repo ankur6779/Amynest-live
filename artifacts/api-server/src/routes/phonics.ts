@@ -256,16 +256,18 @@ router.get("/phonics", async (req, res): Promise<void> => {
       return;
     }
 
-    const allItems = await db
-      .select()
-      .from(phonicsContentTable)
-      .where(
-        and(
-          eq(phonicsContentTable.ageGroup, ageGroup),
-          eq(phonicsContentTable.active, true),
-        ),
-      )
-      .orderBy(asc(phonicsContentTable.level));
+    const allItems = (
+      await db
+        .select()
+        .from(phonicsContentTable)
+        .where(
+          and(
+            eq(phonicsContentTable.ageGroup, ageGroup),
+            eq(phonicsContentTable.active, true),
+          ),
+        )
+        .orderBy(asc(phonicsContentTable.level))
+    ).filter((row) => row.symbol?.trim() && row.sound?.trim());
 
     const today = new Date();
     const todaySeed =

@@ -27,6 +27,17 @@ import {
   type PhonicsV3DomainEnvelope,
   type PhonicsV3ProgressBundle,
 } from "@workspace/phonics-v3-progress";
+import { withSafeDb } from "./db-safe.js";
+
+function emptyPhonicsV3Bundle(): PhonicsV3ProgressBundle {
+  return {
+    mastery: null,
+    fluency: null,
+    stories: null,
+    missions: null,
+    retention: null,
+  };
+}
 
 function rowToEnvelope<T>(
   payload: T,
@@ -38,35 +49,41 @@ function rowToEnvelope<T>(
 export async function getPhonicsV3ProgressBundle(
   childId: number,
 ): Promise<PhonicsV3ProgressBundle> {
-  const [masteryRow, fluencyRow, storiesRow, missionsRow, retentionRow] = await Promise.all([
-    db.select().from(phonicsV3MasteryTable).where(eq(phonicsV3MasteryTable.childId, childId)).limit(1),
-    db.select().from(phonicsV3FluencyTable).where(eq(phonicsV3FluencyTable.childId, childId)).limit(1),
-    db
-      .select()
-      .from(phonicsV3StoryProgressTable)
-      .where(eq(phonicsV3StoryProgressTable.childId, childId))
-      .limit(1),
-    db.select().from(phonicsV3MissionsTable).where(eq(phonicsV3MissionsTable.childId, childId)).limit(1),
-    db.select().from(phonicsV3RetentionTable).where(eq(phonicsV3RetentionTable.childId, childId)).limit(1),
-  ]);
+  return withSafeDb(
+    "phonics.v3.getBundle",
+    async () => {
+      const [masteryRow, fluencyRow, storiesRow, missionsRow, retentionRow] = await Promise.all([
+        db.select().from(phonicsV3MasteryTable).where(eq(phonicsV3MasteryTable.childId, childId)).limit(1),
+        db.select().from(phonicsV3FluencyTable).where(eq(phonicsV3FluencyTable.childId, childId)).limit(1),
+        db
+          .select()
+          .from(phonicsV3StoryProgressTable)
+          .where(eq(phonicsV3StoryProgressTable.childId, childId))
+          .limit(1),
+        db.select().from(phonicsV3MissionsTable).where(eq(phonicsV3MissionsTable.childId, childId)).limit(1),
+        db.select().from(phonicsV3RetentionTable).where(eq(phonicsV3RetentionTable.childId, childId)).limit(1),
+      ]);
 
-  return {
-    mastery: masteryRow[0]
-      ? rowToEnvelope(masteryRow[0].payload, masteryRow[0].clientUpdatedAt)
-      : null,
-    fluency: fluencyRow[0]
-      ? rowToEnvelope(fluencyRow[0].payload, fluencyRow[0].clientUpdatedAt)
-      : null,
-    stories: storiesRow[0]
-      ? rowToEnvelope(storiesRow[0].payload, storiesRow[0].clientUpdatedAt)
-      : null,
-    missions: missionsRow[0]
-      ? rowToEnvelope(missionsRow[0].payload, missionsRow[0].clientUpdatedAt)
-      : null,
-    retention: retentionRow[0]
-      ? rowToEnvelope(retentionRow[0].payload, retentionRow[0].clientUpdatedAt)
-      : null,
-  };
+      return {
+        mastery: masteryRow[0]
+          ? rowToEnvelope(masteryRow[0].payload, masteryRow[0].clientUpdatedAt)
+          : null,
+        fluency: fluencyRow[0]
+          ? rowToEnvelope(fluencyRow[0].payload, fluencyRow[0].clientUpdatedAt)
+          : null,
+        stories: storiesRow[0]
+          ? rowToEnvelope(storiesRow[0].payload, storiesRow[0].clientUpdatedAt)
+          : null,
+        missions: missionsRow[0]
+          ? rowToEnvelope(missionsRow[0].payload, missionsRow[0].clientUpdatedAt)
+          : null,
+        retention: retentionRow[0]
+          ? rowToEnvelope(retentionRow[0].payload, retentionRow[0].clientUpdatedAt)
+          : null,
+      };
+    },
+    emptyPhonicsV3Bundle(),
+  );
 }
 
 async function upsertMastery(

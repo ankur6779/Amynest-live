@@ -85,7 +85,7 @@
 			"directUpdate": false,
 			"allowModifyUrl": false,
 			"statsUrl": "",
-			"updateUrl": "https://amynest-backend-dykj.onrender.com/api/app/ota/check",
+			"updateUrl": "https://www.amynest.in/api/app/ota/check",
 			"version": "1.0.0",
 			"defaultChannel": "production"
 		}

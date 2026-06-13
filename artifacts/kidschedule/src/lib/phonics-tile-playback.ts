@@ -15,7 +15,8 @@ export type PhonicsTileLike = {
   phoneme?: string;
 };
 
-export function isPhonicsCvcOrWordTile(item: PhonicsTileLike): boolean {
+export function isPhonicsCvcOrWordTile(item: PhonicsTileLike | null | undefined): boolean {
+  if (!item || typeof item.symbol !== "string") return false;
   const sym = item.symbol.trim().toLowerCase();
   if (item.type === "word") return true;
   if (getCvcWordEntry(sym)) return true;
@@ -31,7 +32,10 @@ function isVerboseLessonSoundLine(sound: string): boolean {
   return /audio lesson|listen with amy|newborn sleep|parent needs|paragraph/i.test(t);
 }
 
-export function phonicsTilePlaybackText(item: PhonicsTileLike): string {
+export function phonicsTilePlaybackText(item: PhonicsTileLike | null | undefined): string {
+  if (!item || typeof item.symbol !== "string" || !item.symbol.trim()) {
+    return "";
+  }
   if (item.type === "sentence" || item.type === "story") {
     return (item.sound || item.symbol).trim();
   }

@@ -31,6 +31,19 @@ export function getDefaultApiOrigin(): string {
 
 const PRODUCTION_SAME_ORIGIN_HOSTS = new Set(["www.amynest.in", "amynest.in"]);
 
+/** Production API via Cloudflare Worker (Capacitor iOS + explicit overrides). */
+export const PRODUCTION_WORKER_API_ORIGIN = "https://www.amynest.in";
+
+/**
+ * Cloudflare Worker API origin for native/bundled shells that are not on amynest.in.
+ * Capacitor iOS loads bundled www/ (capacitor://localhost) — same Worker path as web.
+ */
+export function resolveProductionWorkerApiOrigin(): string | null {
+  if (!import.meta.env.PROD) return null;
+  if (resolveAmynestEnvFromVite() !== "production") return null;
+  return PRODUCTION_WORKER_API_ORIGIN;
+}
+
 /**
  * When the app runs on amynest.in / www.amynest.in, route `/api/*` through the
  * same origin (Cloudflare Worker → Render backend). Applies to browser and

@@ -69,12 +69,15 @@ if (!revenueCatIosKey) {
   );
 }
 
+const PRODUCTION_WORKER_API_ORIGIN = "https://www.amynest.in";
+
 run("pnpm", ["run", "build:web"], {
   env: {
     BASE_PATH: "/",
     PORT: "3000",
     VITE_AMYNEST_ENV: "production",
     VITE_AMYNEST_CAPACITOR_IOS_BUILD: "true",
+    VITE_APP_API_ORIGIN: PRODUCTION_WORKER_API_ORIGIN,
     VITE_FIREBASE_API_KEY: capacitorEnv.VITE_FIREBASE_API_KEY,
     VITE_FIREBASE_AUTH_DOMAIN: capacitorEnv.VITE_FIREBASE_AUTH_DOMAIN,
     VITE_FIREBASE_PROJECT_ID: capacitorEnv.VITE_FIREBASE_PROJECT_ID,
@@ -91,7 +94,7 @@ run("node", [resolve(__dirname, "copy-www.mjs")], {
 run("node", [resolve(__dirname, "patch-capacitor-ota-config.mjs")], {
   cwd: resolve(__dirname, ".."),
   env: {
-    VITE_APP_API_ORIGIN: process.env.VITE_APP_API_ORIGIN,
+    VITE_APP_API_ORIGIN: PRODUCTION_WORKER_API_ORIGIN,
     OTA_UPDATE_API_ORIGIN: process.env.OTA_UPDATE_API_ORIGIN,
     OTA_BUILTIN_BUNDLE_VERSION: process.env.OTA_BUILTIN_BUNDLE_VERSION,
   },

@@ -6,6 +6,7 @@ import { AudioPlayButton } from "@/components/audio-play-button";
 import { cn } from "@/lib/utils";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import type { PhonicsLevel } from "@/lib/phonics-content";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import {
   phonicsTilePlaybackText,
   phonicsTileCvcWordKey,
@@ -67,7 +68,7 @@ function groupIntoPacks(items: DisplayPhonicsItem[]): LearningPack[] {
     reading: [],
   };
 
-  for (const item of items) {
+  for (const item of sanitizeDisplayPhonicsItems(items)) {
     if (item.type === "sound") buckets.sounds.push(item);
     else if (item.type === "letter") buckets.letters.push(item);
     else if (item.type === "word") buckets.words.push(item);

@@ -9,10 +9,14 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = resolve(root, "capacitor.config.json");
 
+const PRODUCTION_WORKER_API_ORIGIN =
+  process.env.PRODUCTION_WORKER_API_ORIGIN?.trim()?.replace(/\/$/, "") ||
+  "https://www.amynest.in";
+
 const apiOrigin =
   process.env.VITE_APP_API_ORIGIN?.trim()?.replace(/\/$/, "") ||
   process.env.OTA_UPDATE_API_ORIGIN?.trim()?.replace(/\/$/, "") ||
-  "https://amynest-backend-dykj.onrender.com";
+  PRODUCTION_WORKER_API_ORIGIN;
 
 const bundleVersion =
   process.env.OTA_BUILTIN_BUNDLE_VERSION?.trim() || "1.0.0";
