@@ -2,7 +2,7 @@
   "enabled": true,
   "channel": "production",
   "bundleVersion": "1.0.3",
-  "bundleUrl": "https://amynest-backend-dykj.onrender.com/api/app/ota/bundle/amynest-www-1.0.3.zip",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.3.zip",
   "checksum": "42e1a2f72ceaf57be81d8cc60be91276973381502613c3a7170b19d6a7928744",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
