@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, Loader2, Play, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
-import { AppLink, useAppNavigate } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
+import { useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
@@ -11,7 +11,9 @@ import { PhonicsLearning } from "@/components/phonics-learning";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { getPhonicsLevel } from "@/lib/phonics-content";
 import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
+import { preloadPhonicsBundledManifest } from "@/lib/phonics-bundled-manifest";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import {
   resolvePrimaryCta,
   type PhonicsPrimaryCta,
@@ -41,6 +43,7 @@ export default function PhonicsPage() {
   const { back } = useAppNavigate();
   const search = useSearch();
   const { locked, onEngage } = useHubModuleGate("hub_phonics");
+  const phonicsShipped = isPhonicsModuleAvailable();
   const [primaryCta, setPrimaryCta] = useState<PhonicsPrimaryCta>(DEFAULT_CTA);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
@@ -87,37 +90,13 @@ export default function PhonicsPage() {
     window.setTimeout(() => scrollToSection(target), 150);
   }, [location, search]);
 
-  const [manifestLoaded, setManifestLoaded] = useState(false);
-  const [phonicsAvailable, setPhonicsAvailable] = useState(false);
-
   useEffect(() => {
-    let cancelled = false;
-    void import("@/lib/phonics-manifest-validation").then(async (mod) => {
-      await mod.ensurePhonicsManifestLoaded();
-      if (!cancelled) {
-        setManifestLoaded(true);
-        setPhonicsAvailable(mod.isPhonicsModuleAvailable());
-      }
+    if (locked || !phonicsShipped) return;
+    void preloadPhonicsBundledManifest().catch(() => {
+      /* audio layer degrades; route stays usable */
     });
-    const onReady = () => {
-      void import("@/lib/phonics-manifest-validation").then((mod) => {
-        if (!cancelled) {
-          setManifestLoaded(true);
-          setPhonicsAvailable(mod.isPhonicsModuleAvailable());
-        }
-      });
-    };
-    window.addEventListener("amynest:phonics-manifest-ready", onReady);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("amynest:phonics-manifest-ready", onReady);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!phonicsAvailable || locked) return;
     warmPhonicsRouteOnOpen();
-  }, [locked, phonicsAvailable]);
+  }, [locked, phonicsShipped]);
 
   const goBack = () => {
     back("phonics-back");
@@ -214,15 +193,8 @@ export default function PhonicsPage() {
               </section>
             )}
 
-            {!phonicsAvailable ? (
-              manifestLoaded ? (
+            {!phonicsShipped ? (
               <PhonicsUnavailableFallback childName={activeChild.name} />
-              ) : (
-              <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading phonics library...
-              </div>
-              )
             ) : (
             <PhonicsLearning
               childQuery={search}

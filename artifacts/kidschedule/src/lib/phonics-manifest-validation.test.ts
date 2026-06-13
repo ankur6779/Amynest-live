@@ -3,15 +3,18 @@ import {
   PHONICS_MANIFEST_MIN_ASSETS,
   validatePhonicsManifest,
 } from "@/lib/phonics-manifest-validation";
+import { isPhonicsBundledManifestShipped } from "@/lib/phonics-bundled-manifest";
+import audioMap from "@/data/phonics-audio-map.json";
 import type { PhonicsAudioLibraryManifest } from "@workspace/phonics-sounds";
 
 describe("validatePhonicsManifest", () => {
   it("passes for the shipped manifest", () => {
-    const result = validatePhonicsManifest();
+    const result = validatePhonicsManifest(audioMap as PhonicsAudioLibraryManifest);
     expect(result.ok).toBe(true);
     expect(result.assetCount).toBeGreaterThanOrEqual(PHONICS_MANIFEST_MIN_ASSETS);
     expect(result.missingUrlCount).toBe(0);
     expect(result.errors).toHaveLength(0);
+    expect(isPhonicsBundledManifestShipped()).toBe(true);
   });
 
   it("fails when assets are missing gcsPath", () => {

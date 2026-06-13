@@ -2,6 +2,12 @@
  * Boot-time phonics library manifest validation — never throws.
  */
 import type { PhonicsAudioLibraryManifest } from "@workspace/phonics-sounds";
+import {
+  getPhonicsBundledManifestSync,
+  getPhonicsBundledMeta,
+  isPhonicsBundledManifestShipped,
+  preloadPhonicsBundledManifest,
+} from "@/lib/phonics-bundled-manifest";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 
 /** Minimum shipped assets — release gate enforces the same floor. */
@@ -16,49 +22,16 @@ export type PhonicsManifestValidation = {
   errors: string[];
 };
 
-let bundledManifest: PhonicsAudioLibraryManifest | null = null;
-let manifestLoadPromise: Promise<PhonicsAudioLibraryManifest> | null = null;
-let cachedValidation: PhonicsManifestValidation | null = null;
-let bootInitialized = false;
+const VALIDATION_CACHE_KEY = "__amynestPhonicsManifestValidation";
 
-const MANIFEST_CACHE_KEY = "__amynestPhonicsManifestValidation";
-
-function readSharedValidation(): PhonicsManifestValidation | null {
-  if (typeof globalThis !== "undefined") {
-    const shared = (globalThis as Record<string, unknown>)[MANIFEST_CACHE_KEY];
-    if (shared && typeof shared === "object") {
-      return shared as PhonicsManifestValidation;
-    }
-  }
-  return cachedValidation;
+function readCachedValidation(): PhonicsManifestValidation | null {
+  const shared = (globalThis as Record<string, unknown>)[VALIDATION_CACHE_KEY];
+  return shared && typeof shared === "object" ? (shared as PhonicsManifestValidation) : null;
 }
 
-function writeSharedValidation(result: PhonicsManifestValidation): PhonicsManifestValidation {
-  cachedValidation = result;
-  if (typeof globalThis !== "undefined") {
-    (globalThis as Record<string, unknown>)[MANIFEST_CACHE_KEY] = result;
-  }
+function writeCachedValidation(result: PhonicsManifestValidation): PhonicsManifestValidation {
+  (globalThis as Record<string, unknown>)[VALIDATION_CACHE_KEY] = result;
   return result;
-}
-
-function loadBundledManifest(): Promise<PhonicsAudioLibraryManifest> {
-  if (bundledManifest) return Promise.resolve(bundledManifest);
-  if (!manifestLoadPromise) {
-    manifestLoadPromise = import("@/data/phonics-audio-map.json").then((mod) => {
-      bundledManifest = mod.default as PhonicsAudioLibraryManifest;
-      return bundledManifest;
-    });
-  }
-  return manifestLoadPromise;
-}
-
-/** Await manifest chunk (split from main bundle) before availability checks. */
-export async function ensurePhonicsManifestLoaded(): Promise<PhonicsManifestValidation> {
-  const shared = readSharedValidation();
-  if (bootInitialized && shared) return shared;
-  const manifest = await loadBundledManifest();
-  if (bootInitialized && readSharedValidation()) return readSharedValidation()!;
-  return finalizePhonicsManifestValidation(manifest);
 }
 
 export function validatePhonicsManifest(
@@ -112,9 +85,8 @@ export function validatePhonicsManifest(
 function finalizePhonicsManifestValidation(
   manifest: PhonicsAudioLibraryManifest,
 ): PhonicsManifestValidation {
-  bootInitialized = true;
   const result = validatePhonicsManifest(manifest);
-  writeSharedValidation(result);
+  writeCachedValidation(result);
 
   if (result.ok) {
     recordPhonicsTelemetry("phonics_manifest_loaded", {
@@ -140,48 +112,59 @@ function finalizePhonicsManifestValidation(
   return result;
 }
 
-/** Boot hook — loads split manifest chunk; safe before React mount. */
-export async function initPhonicsManifestValidation(): Promise<PhonicsManifestValidation> {
-  const shared = readSharedValidation();
-  if (bootInitialized && shared) return shared;
-  const manifest = await loadBundledManifest();
+/** Load JSON chunk + validate; safe to call from boot and route open. */
+export async function ensurePhonicsManifestLoaded(): Promise<PhonicsManifestValidation> {
+  const cached = readCachedValidation();
+  if (cached) return cached;
+
+  const manifest = await preloadPhonicsBundledManifest();
   return finalizePhonicsManifestValidation(manifest);
 }
 
+/** Boot hook — loads split manifest chunk; safe before React mount. */
+export async function initPhonicsManifestValidation(): Promise<PhonicsManifestValidation> {
+  return ensurePhonicsManifestLoaded();
+}
+
 export function getPhonicsManifestValidation(): PhonicsManifestValidation {
-  const shared = readSharedValidation();
-  if (shared) return shared;
-  if (bundledManifest) return validatePhonicsManifest(bundledManifest);
+  const cached = readCachedValidation();
+  if (cached) return cached;
+
+  const manifest = getPhonicsBundledManifestSync();
+  if (manifest) return validatePhonicsManifest(manifest);
+
+  const meta = getPhonicsBundledMeta();
+  const shipped = isPhonicsBundledManifestShipped();
   return {
-    ok: false,
-    assetCount: 0,
+    ok: shipped,
+    assetCount: meta.assetCount,
     missingUrlCount: 0,
-    manifestVersion: 0,
-    libraryVersion: 0,
-    errors: ["manifest_not_loaded"],
+    manifestVersion: meta.version,
+    libraryVersion: meta.libraryVersion,
+    errors: shipped ? ["manifest_chunk_not_loaded"] : ["manifest_not_shipped"],
   };
 }
 
 /**
- * True when the shipped phonics library manifest is present (≥ min assets).
- * Does not block on non-fatal validation warnings — audio layer degrades safely.
+ * True when the shipped phonics library is present in this build.
+ * Uses build-time metadata so route gates never depend on async chunk load order.
  */
 export function isPhonicsModuleAvailable(): boolean {
-  return getPhonicsManifestValidation().assetCount >= PHONICS_MANIFEST_MIN_ASSETS;
+  return isPhonicsBundledManifestShipped();
 }
 
 /** Strict gate for prefetch/warmup only. */
 export function isPhonicsManifestStrictlyValid(): boolean {
-  return getPhonicsManifestValidation().ok;
+  const cached = readCachedValidation();
+  if (cached) return cached.ok;
+  const manifest = getPhonicsBundledManifestSync();
+  if (manifest) return validatePhonicsManifest(manifest).ok;
+  return false;
 }
 
 /** Test-only reset */
 export function resetPhonicsManifestValidationForTests(): void {
-  bundledManifest = null;
-  manifestLoadPromise = null;
-  cachedValidation = null;
-  bootInitialized = false;
-  if (typeof globalThis !== "undefined") {
-    delete (globalThis as Record<string, unknown>)[MANIFEST_CACHE_KEY];
-  }
+  delete (globalThis as Record<string, unknown>)[VALIDATION_CACHE_KEY];
+  delete (globalThis as Record<string, unknown>).__amynestPhonicsBundledManifest;
+  delete (globalThis as Record<string, unknown>).__amynestPhonicsManifestLoadPromise;
 }

@@ -4,8 +4,8 @@
  *
  * Browser playback uses /api/phonics-library/* proxy URLs (not direct GCS).
  */
-import audioMap from "@/data/phonics-audio-map.json";
 import { getApiUrl } from "@/lib/api";
+import { getPhonicsBundledManifestSync } from "@/lib/phonics-bundled-manifest";
 import {
   getPhonicsCatalogKey,
   getPhonicsLetterCacheKey,
@@ -21,9 +21,11 @@ import {
 } from "@workspace/phonics-sounds";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 
-const manifest = audioMap as PhonicsAudioLibraryManifest;
-
 const missingReported = new Set<string>();
+
+function manifest(): PhonicsAudioLibraryManifest {
+  return getPhonicsBundledManifestSync() ?? { assets: {} } as PhonicsAudioLibraryManifest;
+}
 
 /** Resolve manifest gcsPath → API stream URL (same-origin / backend origin). */
 export function resolvePhonicsLibraryPlaybackUrl(
@@ -35,7 +37,7 @@ export function resolvePhonicsLibraryPlaybackUrl(
 }
 
 export function getPhonicsLibraryManifest(): PhonicsAudioLibraryManifest {
-  return manifest;
+  return manifest();
 }
 
 export function lookupPhonicsLibraryAsset(
@@ -43,7 +45,7 @@ export function lookupPhonicsLibraryAsset(
 ): PhonicsAudioManifestAsset | null {
   const key = (catalogKey ?? "").trim();
   if (!key) return null;
-  const asset = manifest.assets?.[key];
+  const asset = manifest().assets?.[key];
   if (!asset) {
     if (import.meta.env.DEV) {
       console.warn("[phonics-library] missing asset", key);
@@ -144,7 +146,7 @@ function memoryCacheKeyForAsset(type: PhonicsAssetType, id: string, catalogKey: 
 /** Every manifest asset with tier + cache keys for full-library prewarm. */
 export function listPhonicsLibraryPrewarmItems(): PhonicsLibraryPrewarmItem[] {
   const items: PhonicsLibraryPrewarmItem[] = [];
-  for (const [catalogKey, asset] of Object.entries(manifest.assets ?? {})) {
+  for (const [catalogKey, asset] of Object.entries(manifest().assets ?? {})) {
     const playbackUrl = resolvePhonicsLibraryPlaybackUrl(asset);
     if (!playbackUrl) continue;
     const type = asset.type;
