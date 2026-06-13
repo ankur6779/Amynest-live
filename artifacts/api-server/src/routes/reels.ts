@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { z } from "zod";
 import { logger } from "../lib/logger";
 import {
   listActiveReelsForApi,
+  loadReelsCatalogV1,
   resolveReelStreamPath,
 } from "../services/reelsCatalog";
-import { streamReelVideo } from "../services/reelsGcsMirror";
+import { pipeGcsObjectToResponse } from "../services/ttsAudioStore";
 
 const router = Router();
 
@@ -65,42 +65,31 @@ router.get("/stream/:fileId", async (req, res) => {
   }
 
   try {
-    await streamReelVideo(fileId, req, res);
+    const catalog = await loadReelsCatalogV1();
+    const entry = catalog.entries.find((e) => e.id === fileId && e.active !== false);
+    if (!entry) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+
+    const rangeHeader = req.headers.range;
+    const result = await pipeGcsObjectToResponse({
+      objectName: entry.objectKey,
+      rangeHeader: typeof rangeHeader === "string" ? rangeHeader : undefined,
+      res,
+      contentType: entry.contentType,
+    });
+
+    if (result === "not_found") {
+      if (!res.headersSent) res.status(404).json({ error: "not_found" });
+      return;
+    }
+    if (result === "error" && !res.headersSent) {
+      res.status(502).json({ error: "stream_failed" });
+    }
   } catch (err) {
     logger.error({ err, fileId }, "Stream error");
     if (!res.headersSent) res.status(500).json({ error: "Stream failed" });
-  }
-});
-
-/** Cron / scheduler — mounted before requireAuth (see routes/index.ts). */
-router.post("/gcs-sync/cron", async (req, res) => {
-  const expected =
-    process.env["REELS_GCS_CRON_SECRET"] ??
-    process.env["STORY_GCS_CRON_SECRET"] ??
-    process.env["NOTIFICATION_CRON_SECRET"];
-  const provided = req.headers["x-cron-secret"];
-  if (!expected || provided !== expected) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
-  const parsed = z
-    .object({
-      limit: z.coerce.number().int().min(1).max(20).optional(),
-      force: z.coerce.boolean().optional(),
-    })
-    .safeParse(req.body ?? {});
-
-  try {
-    const { runReelsGcsMirrorPing } = await import("../lib/reelsGcsCron.js");
-    const result = await runReelsGcsMirrorPing({
-      limit: parsed.success ? parsed.data.limit : undefined,
-      force: parsed.success ? parsed.data.force : undefined,
-    });
-    res.json(result);
-  } catch (err) {
-    logger.error({ err }, "Reel GCS cron ping failed");
-    res.status(500).json({ error: "cron_failed" });
   }
 });
 
