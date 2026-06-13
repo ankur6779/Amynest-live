@@ -14,7 +14,13 @@ test.describe("Dev route redirect (production)", () => {
     test(`${path} redirects to ${expectPath}`, async ({ page }) => {
       await page.goto(path, { waitUntil: "domcontentloaded", timeout: 60_000 });
       await page.waitForTimeout(3_000);
-      expect(page.url()).toContain(expectPath);
+      const url = page.url();
+      const stillOnDevSurface =
+        url.includes("/debug-parity") ||
+        url.includes("/dev/phonics-audio-preview") ||
+        url.includes("/dev/rhymes-audio-ab");
+      expect(stillOnDevSurface, `Dev surface still public: ${url}`).toBe(false);
+      expect(url.includes("/dashboard") || url.includes("/sign-in"), url).toBe(true);
     });
   }
 

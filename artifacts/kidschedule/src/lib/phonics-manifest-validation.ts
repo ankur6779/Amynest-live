@@ -21,6 +21,26 @@ let manifestLoadPromise: Promise<PhonicsAudioLibraryManifest> | null = null;
 let cachedValidation: PhonicsManifestValidation | null = null;
 let bootInitialized = false;
 
+const MANIFEST_CACHE_KEY = "__amynestPhonicsManifestValidation";
+
+function readSharedValidation(): PhonicsManifestValidation | null {
+  if (typeof globalThis !== "undefined") {
+    const shared = (globalThis as Record<string, unknown>)[MANIFEST_CACHE_KEY];
+    if (shared && typeof shared === "object") {
+      return shared as PhonicsManifestValidation;
+    }
+  }
+  return cachedValidation;
+}
+
+function writeSharedValidation(result: PhonicsManifestValidation): PhonicsManifestValidation {
+  cachedValidation = result;
+  if (typeof globalThis !== "undefined") {
+    (globalThis as Record<string, unknown>)[MANIFEST_CACHE_KEY] = result;
+  }
+  return result;
+}
+
 function loadBundledManifest(): Promise<PhonicsAudioLibraryManifest> {
   if (bundledManifest) return Promise.resolve(bundledManifest);
   if (!manifestLoadPromise) {
@@ -34,8 +54,10 @@ function loadBundledManifest(): Promise<PhonicsAudioLibraryManifest> {
 
 /** Await manifest chunk (split from main bundle) before availability checks. */
 export async function ensurePhonicsManifestLoaded(): Promise<PhonicsManifestValidation> {
+  const shared = readSharedValidation();
+  if (bootInitialized && shared) return shared;
   const manifest = await loadBundledManifest();
-  if (bootInitialized && cachedValidation) return cachedValidation;
+  if (bootInitialized && readSharedValidation()) return readSharedValidation()!;
   return finalizePhonicsManifestValidation(manifest);
 }
 
@@ -92,7 +114,7 @@ function finalizePhonicsManifestValidation(
 ): PhonicsManifestValidation {
   bootInitialized = true;
   const result = validatePhonicsManifest(manifest);
-  cachedValidation = result;
+  writeSharedValidation(result);
 
   if (result.ok) {
     recordPhonicsTelemetry("phonics_manifest_loaded", {
@@ -120,13 +142,15 @@ function finalizePhonicsManifestValidation(
 
 /** Boot hook — loads split manifest chunk; safe before React mount. */
 export async function initPhonicsManifestValidation(): Promise<PhonicsManifestValidation> {
-  if (bootInitialized && cachedValidation) return cachedValidation;
+  const shared = readSharedValidation();
+  if (bootInitialized && shared) return shared;
   const manifest = await loadBundledManifest();
   return finalizePhonicsManifestValidation(manifest);
 }
 
 export function getPhonicsManifestValidation(): PhonicsManifestValidation {
-  if (cachedValidation) return cachedValidation;
+  const shared = readSharedValidation();
+  if (shared) return shared;
   if (bundledManifest) return validatePhonicsManifest(bundledManifest);
   return {
     ok: false,
@@ -157,4 +181,7 @@ export function resetPhonicsManifestValidationForTests(): void {
   manifestLoadPromise = null;
   cachedValidation = null;
   bootInitialized = false;
+  if (typeof globalThis !== "undefined") {
+    delete (globalThis as Record<string, unknown>)[MANIFEST_CACHE_KEY];
+  }
 }

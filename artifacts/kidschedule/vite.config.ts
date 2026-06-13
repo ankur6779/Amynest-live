@@ -312,6 +312,7 @@ export default defineConfig(async ({ command }) => ({
         manualChunks(id) {
           if (id.includes("phonics-audio-map.json")) return "phonics-audio-map";
           if (id.includes("static-audio-map.json")) return "static-audio-map";
+          if (id.includes("phonics-manifest-validation")) return "phonics-manifest";
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("three") || id.includes("@react-three")) return "vendor-three";
           if (id.includes("firebase")) return "vendor-firebase";

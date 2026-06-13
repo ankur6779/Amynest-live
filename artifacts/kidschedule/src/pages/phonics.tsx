@@ -10,7 +10,6 @@ import { LockedBlock } from "@/components/locked-block";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { getPhonicsLevel } from "@/lib/phonics-content";
-import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import {
@@ -88,16 +87,26 @@ export default function PhonicsPage() {
     window.setTimeout(() => scrollToSection(target), 150);
   }, [location, search]);
 
-  const [manifestReady, setManifestReady] = useState(false);
+  const [manifestLoaded, setManifestLoaded] = useState(false);
+  const [phonicsAvailable, setPhonicsAvailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    void import("@/lib/phonics-manifest-validation").then(({ ensurePhonicsManifestLoaded, isPhonicsModuleAvailable }) =>
-      ensurePhonicsManifestLoaded().then(() => {
-        if (!cancelled) setManifestReady(isPhonicsModuleAvailable());
-      }),
-    );
-    const onReady = () => setManifestReady(isPhonicsModuleAvailable());
+    void import("@/lib/phonics-manifest-validation").then(async (mod) => {
+      await mod.ensurePhonicsManifestLoaded();
+      if (!cancelled) {
+        setManifestLoaded(true);
+        setPhonicsAvailable(mod.isPhonicsModuleAvailable());
+      }
+    });
+    const onReady = () => {
+      void import("@/lib/phonics-manifest-validation").then((mod) => {
+        if (!cancelled) {
+          setManifestLoaded(true);
+          setPhonicsAvailable(mod.isPhonicsModuleAvailable());
+        }
+      });
+    };
     window.addEventListener("amynest:phonics-manifest-ready", onReady);
     return () => {
       cancelled = true;
@@ -106,11 +115,9 @@ export default function PhonicsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isPhonicsModuleAvailable() || locked || !manifestReady) return;
+    if (!phonicsAvailable || locked) return;
     warmPhonicsRouteOnOpen();
-  }, [locked, manifestReady]);
-
-  const phonicsAvailable = manifestReady && isPhonicsModuleAvailable();
+  }, [locked, phonicsAvailable]);
 
   const goBack = () => {
     back("phonics-back");
@@ -208,7 +215,7 @@ export default function PhonicsPage() {
             )}
 
             {!phonicsAvailable ? (
-              manifestReady ? (
+              manifestLoaded ? (
               <PhonicsUnavailableFallback childName={activeChild.name} />
               ) : (
               <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
