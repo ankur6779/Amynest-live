@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.3",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.3.zip",
-  "checksum": "42e1a2f72ceaf57be81d8cc60be91276973381502613c3a7170b19d6a7928744",
+  "bundleVersion": "1.0.4",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.4.zip",
+  "checksum": "eed03c483343d43c7b7cc444d0b6c1c88606f073df15b3ff44e7cd4b3cb3d87a",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Fix: premium only for paid/trial users. Startup reliability hardening (deploy version, watchdog, pre-auth telemetry).",
+  "releaseNotes": "Amy 2D lip-sync: mouth sprite frames for Speech Coach and Talking Amy while speaking.",
   "changeClasses": [
     "bugfix",
     "ui-copy"
