@@ -257,6 +257,7 @@ export function getCategoryHint(
 }
 
 export const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
+export const ACTIVE_CHILD_CHANGE_EVENT = "amynest:active-child-changed";
 
 /** Hub active child from localStorage (`amynest:hub:activeChildId`). */
 export function readStoredActiveChildId(): number | null {

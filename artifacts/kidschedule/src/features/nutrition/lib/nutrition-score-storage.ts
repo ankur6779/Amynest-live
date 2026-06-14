@@ -4,6 +4,10 @@ import {
   type ScoreChecklistId,
 } from "@/features/nutrition/lib/nutrition-score";
 import { computeMinDayMet } from "@/features/nutrition/lib/nutrition-streak";
+import {
+  shouldApplyServerToLocal,
+  type MergeOutcome,
+} from "@/features/nutrition/lib/nutrition-sync-merge";
 
 export const NUTRITION_DAILY_SCORE_KEY = "nutrition:daily-score";
 /** Sprint 2 legacy key — global, not child-scoped. */
@@ -26,6 +30,22 @@ interface NutritionScoreStoreV2 {
   history: Record<string, StoredDaySnapshot>;
   serverMigrated?: boolean;
 }
+
+/** Canonical per-day checklists — never derive from counts. */
+interface NutritionScoreStoreV3 {
+  version: 3;
+  childId: number;
+  dateKey: string;
+  checklist: Record<string, boolean>;
+  history: Record<string, StoredDaySnapshot>;
+  /** Exact checklist payload per dateKey for sync and history. */
+  dayChecklists: Record<string, Record<string, boolean>>;
+  /** Per-day LWW timestamps (ms since epoch). */
+  dayUpdatedAt: Record<string, number>;
+  serverMigrated?: boolean;
+}
+
+type NutritionScoreStore = NutritionScoreStoreV3;
 
 /** @deprecated Sprint 2 shape — used for legacy import only. */
 interface NutritionScoreStoreV1 {
@@ -59,8 +79,36 @@ export function dateKeyLocal(d = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-function defaultStore(childId: number, dateKey = dateKeyLocal()): NutritionScoreStoreV2 {
-  return { version: 2, childId, dateKey, checklist: {}, history: {} };
+function defaultStore(childId: number, dateKey = dateKeyLocal()): NutritionScoreStoreV3 {
+  return {
+    version: 3,
+    childId,
+    dateKey,
+    checklist: {},
+    history: {},
+    dayChecklists: {},
+    dayUpdatedAt: {},
+  };
+}
+
+function upgradeV2ToV3(v2: NutritionScoreStoreV2): NutritionScoreStoreV3 {
+  const dayChecklists: Record<string, Record<string, boolean>> = {};
+  const dayUpdatedAt: Record<string, number> = {};
+  const todayChecklist = sanitizeChecklist(v2.checklist);
+  if (v2.dateKey && Object.keys(todayChecklist).length > 0) {
+    dayChecklists[v2.dateKey] = todayChecklist;
+    dayUpdatedAt[v2.dateKey] = Date.now();
+  }
+  return {
+    version: 3,
+    childId: v2.childId,
+    dateKey: v2.dateKey,
+    checklist: todayChecklist,
+    history: { ...v2.history },
+    dayChecklists,
+    dayUpdatedAt,
+    serverMigrated: v2.serverMigrated,
+  };
 }
 
 function isValidSnapshot(v: unknown): v is StoredDaySnapshot {
@@ -81,12 +129,57 @@ function enrichSnapshot(snapshot: StoredDaySnapshot): StoredDaySnapshot {
   };
 }
 
-function parseStoreV2(raw: string | null, childId: number): NutritionScoreStoreV2 {
+function parseDayChecklists(raw: unknown): Record<string, Record<string, boolean>> {
+  const out: Record<string, Record<string, boolean>> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof key === "string" && val && typeof val === "object") {
+      const checklist = sanitizeChecklist(val);
+      if (Object.keys(checklist).length > 0) out[key] = checklist;
+    }
+  }
+  return out;
+}
+
+function parseDayUpdatedAt(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof key === "string" && typeof val === "number" && Number.isFinite(val)) {
+      out[key] = val;
+    }
+  }
+  return out;
+}
+
+function parseStoreV3(raw: string | null, childId: number): NutritionScoreStoreV3 {
   if (!raw) return defaultStore(childId);
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object") return defaultStore(childId);
     const o = parsed as Record<string, unknown>;
+
+    if (o.version === 3 && typeof o.dateKey === "string") {
+      const checklist = sanitizeChecklist(o.checklist);
+      const history: Record<string, StoredDaySnapshot> = {};
+      if (o.history && typeof o.history === "object") {
+        for (const [key, val] of Object.entries(o.history as Record<string, unknown>)) {
+          if (typeof key === "string" && isValidSnapshot(val)) {
+            history[key] = enrichSnapshot(val);
+          }
+        }
+      }
+      return {
+        version: 3,
+        childId,
+        dateKey: o.dateKey,
+        checklist,
+        history,
+        dayChecklists: parseDayChecklists(o.dayChecklists),
+        dayUpdatedAt: parseDayUpdatedAt(o.dayUpdatedAt),
+        serverMigrated: o.serverMigrated === true,
+      };
+    }
 
     if (o.version === 2 && typeof o.dateKey === "string") {
       const checklist = sanitizeChecklist(o.checklist);
@@ -98,18 +191,18 @@ function parseStoreV2(raw: string | null, childId: number): NutritionScoreStoreV
           }
         }
       }
-      return {
+      return upgradeV2ToV3({
         version: 2,
         childId,
         dateKey: o.dateKey,
         checklist,
         history,
         serverMigrated: o.serverMigrated === true,
-      };
+      });
     }
 
     if (o.version === 1 && typeof o.dateKey === "string") {
-      return importLegacyV1(o as unknown as NutritionScoreStoreV1, childId);
+      return upgradeV2ToV3(importLegacyV1(o as unknown as NutritionScoreStoreV1, childId));
     }
 
     return defaultStore(childId);
@@ -149,7 +242,7 @@ export function readLegacyGlobalStore(): NutritionScoreStoreV1 | null {
   }
 }
 
-export function mergeLegacyIntoStore(childId: number): NutritionScoreStoreV2 {
+export function mergeLegacyIntoStore(childId: number): NutritionScoreStoreV3 {
   const current = readRawStore(childId);
   const legacy = readLegacyGlobalStore();
   if (!legacy) return current;
@@ -170,31 +263,46 @@ export function mergeLegacyIntoStore(childId: number): NutritionScoreStoreV2 {
     dateKey = legacy.dateKey;
   }
 
+  const dayChecklists = { ...current.dayChecklists };
+  const dayUpdatedAt = { ...current.dayUpdatedAt };
+
+  if (legacy.dateKey === today && Object.keys(checklist).length > 0) {
+    dayChecklists[today] = checklist;
+    dayUpdatedAt[today] = Math.max(dayUpdatedAt[today] ?? 0, Date.now());
+  }
+
   if (legacy.dateKey !== today && legacy.dateKey && !history[legacy.dateKey]) {
-    const snap = computeNutritionScore(sanitizeChecklist(legacy.checklist));
+    const legacyChecklist = sanitizeChecklist(legacy.checklist);
+    const snap = computeNutritionScore(legacyChecklist);
     if (snap.checked > 0) {
       history[legacy.dateKey] = { ...snap, minDayMet: computeMinDayMet(snap.checked) };
+      if (Object.keys(legacyChecklist).length > 0) {
+        dayChecklists[legacy.dateKey] = legacyChecklist;
+        dayUpdatedAt[legacy.dateKey] = Math.max(dayUpdatedAt[legacy.dateKey] ?? 0, Date.now());
+      }
     }
   }
 
-  const merged: NutritionScoreStoreV2 = {
-    version: 2,
+  const merged: NutritionScoreStoreV3 = {
+    version: 3,
     childId,
     dateKey,
     checklist,
     history,
+    dayChecklists,
+    dayUpdatedAt,
     serverMigrated: current.serverMigrated,
   };
   writeStore(childId, merged);
   return merged;
 }
 
-function readRawStore(childId: number): NutritionScoreStoreV2 {
+function readRawStore(childId: number): NutritionScoreStoreV3 {
   if (typeof localStorage === "undefined") return defaultStore(childId);
-  return parseStoreV2(localStorage.getItem(storageKeyForChild(childId)), childId);
+  return parseStoreV3(localStorage.getItem(storageKeyForChild(childId)), childId);
 }
 
-function writeStore(childId: number, store: NutritionScoreStoreV2): void {
+function writeStore(childId: number, store: NutritionScoreStoreV3): void {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(storageKeyForChild(childId), JSON.stringify(store));
@@ -205,14 +313,20 @@ function writeStore(childId: number, store: NutritionScoreStoreV2): void {
 }
 
 /** Align store to today — resets checklist when the calendar day changes. */
-export function alignStoreToToday(store: NutritionScoreStoreV2): NutritionScoreStoreV2 {
+export function alignStoreToToday(store: NutritionScoreStoreV3): NutritionScoreStoreV3 {
   const today = dateKeyLocal();
   if (store.dateKey === today) return store;
 
-  const { score, checked, total } = computeNutritionScore(store.checklist);
+  const sanitized = sanitizeChecklist(store.checklist);
+  const { score, checked, total } = computeNutritionScore(sanitized);
   const history = { ...store.history };
+  const dayChecklists = { ...store.dayChecklists };
+  const dayUpdatedAt = { ...store.dayUpdatedAt };
+
   if (store.dateKey && checked > 0) {
     history[store.dateKey] = { score, checked, total, minDayMet: computeMinDayMet(checked) };
+    dayChecklists[store.dateKey] = sanitized;
+    dayUpdatedAt[store.dateKey] = Math.max(dayUpdatedAt[store.dateKey] ?? 0, Date.now());
   }
 
   return {
@@ -220,10 +334,12 @@ export function alignStoreToToday(store: NutritionScoreStoreV2): NutritionScoreS
     dateKey: today,
     checklist: {},
     history,
+    dayChecklists,
+    dayUpdatedAt,
   };
 }
 
-export function loadNutritionScoreStore(childId: number): NutritionScoreStoreV2 {
+export function loadNutritionScoreStore(childId: number): NutritionScoreStoreV3 {
   return alignStoreToToday(readRawStore(childId));
 }
 
@@ -231,20 +347,38 @@ export function readTodayChecklist(childId: number): Record<string, boolean> {
   return { ...loadNutritionScoreStore(childId).checklist };
 }
 
+export function getDayUpdatedAt(childId: number, dateKey: string): number {
+  return readRawStore(childId).dayUpdatedAt[dateKey] ?? 0;
+}
+
+export function readDayChecklist(childId: number, dateKey: string): Record<string, boolean> {
+  const store = loadNutritionScoreStore(childId);
+  const today = dateKeyLocal();
+  if (dateKey === today && store.dateKey === today) {
+    return { ...store.checklist };
+  }
+  const canonical = store.dayChecklists[dateKey];
+  return canonical ? { ...canonical } : {};
+}
+
 export function persistTodayChecklist(childId: number, checklist: Record<string, boolean>): void {
   const aligned = alignStoreToToday(readRawStore(childId));
-  const { score, checked, total } = computeNutritionScore(checklist);
+  const sanitized = sanitizeChecklist(checklist);
+  const { score, checked, total } = computeNutritionScore(sanitized);
   const today = dateKeyLocal();
+  const now = Date.now();
 
   writeStore(childId, {
-    version: 2,
+    version: 3,
     childId,
     dateKey: today,
-    checklist: sanitizeChecklist(checklist),
+    checklist: sanitized,
     history: {
       ...aligned.history,
       [today]: { score, checked, total, minDayMet: computeMinDayMet(checked) },
     },
+    dayChecklists: { ...aligned.dayChecklists, [today]: sanitized },
+    dayUpdatedAt: { ...aligned.dayUpdatedAt, [today]: now },
     serverMigrated: aligned.serverMigrated,
   });
 }
@@ -254,16 +388,21 @@ export function mergeServerDay(
   dateKey: string,
   checklist: Record<string, boolean>,
   updatedAtMs: number,
-): boolean {
+): MergeOutcome {
   const local = readRawStore(childId);
   const today = dateKeyLocal();
   const isToday = dateKey === today;
+  const sanitized = sanitizeChecklist(checklist);
+  const hasServerChecklist = Object.keys(sanitized).length > 0;
 
-  if (isToday && Object.keys(local.checklist).length > 0) {
-    return false;
+  if (!hasServerChecklist) return "skipped_empty";
+
+  const localUpdatedAt = local.dayUpdatedAt[dateKey] ?? 0;
+  if (!shouldApplyServerToLocal(localUpdatedAt, updatedAtMs, hasServerChecklist)) {
+    return "kept_local";
   }
 
-  const { score, checked, total } = computeNutritionScore(checklist);
+  const { score, checked, total } = computeNutritionScore(sanitized);
   const snapshot: StoredDaySnapshot = {
     score,
     checked,
@@ -272,18 +411,20 @@ export function mergeServerDay(
   };
 
   const history = { ...local.history, [dateKey]: snapshot };
-  const nextChecklist = isToday ? sanitizeChecklist(checklist) : local.checklist;
+  const dayChecklists = { ...local.dayChecklists, [dateKey]: sanitized };
+  const dayUpdatedAt = { ...local.dayUpdatedAt, [dateKey]: updatedAtMs };
 
   writeStore(childId, {
     ...local,
-    checklist: isToday ? nextChecklist : local.checklist,
+    checklist: isToday && local.dateKey === today ? sanitized : local.checklist,
     dateKey: local.dateKey,
     history,
+    dayChecklists,
+    dayUpdatedAt,
     serverMigrated: local.serverMigrated,
   });
 
-  void updatedAtMs;
-  return true;
+  return "applied_server";
 }
 
 export function markServerMigrated(childId: number): void {

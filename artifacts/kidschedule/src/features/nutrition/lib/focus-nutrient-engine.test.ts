@@ -38,7 +38,22 @@ describe("focus-nutrient-engine", () => {
     expect(hits.noJunk).toBeUndefined();
   });
 
-  it("aggregates weekly and today checklist hits", () => {
+  it("uses canonical dayChecklists when available", () => {
+    const { checklistHits, daysLogged } = aggregateChecklistHits(
+      [
+        { dateKey: "2026-06-13", score: 50, minDayMet: true, checked: 2 },
+        { dateKey: "2026-06-14", score: 25, minDayMet: true, checked: 2 },
+      ],
+      { breakfast: true, fruit: true },
+      "2026-06-14",
+      { "2026-06-13": { protein: true, dairy: true } },
+    );
+    expect(daysLogged).toBe(2);
+    expect(checklistHits.protein).toBe(1);
+    expect(checklistHits.breakfast).toBe(1);
+  });
+
+  it("skips historical days without canonical checklist", () => {
     const { checklistHits, daysLogged } = aggregateChecklistHits(
       [
         { dateKey: "2026-06-13", score: 50, minDayMet: true, checked: 4 },
@@ -46,9 +61,11 @@ describe("focus-nutrient-engine", () => {
       ],
       { breakfast: true, fruit: true },
       "2026-06-14",
+      {},
     );
-    expect(daysLogged).toBe(2);
-    expect(checklistHits.breakfast).toBeGreaterThanOrEqual(2);
+    expect(daysLogged).toBe(1);
+    expect(checklistHits.breakfast).toBe(1);
+    expect(checklistHits.protein).toBeUndefined();
   });
 
   it("formats nutrient display names", () => {

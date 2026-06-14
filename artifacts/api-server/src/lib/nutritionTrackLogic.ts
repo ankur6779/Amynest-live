@@ -63,10 +63,18 @@ export interface WeeklyTrendDay {
   score: number;
   minDayMet: boolean;
   checked: number;
+  checklist?: Record<string, boolean>;
+  updatedAt?: string;
 }
 
 export function buildWeeklyTrend(
-  rows: Array<{ dateKey: string; score: number; minDayMet: boolean; checklist: Record<string, boolean> }>,
+  rows: Array<{
+    dateKey: string;
+    score: number;
+    minDayMet: boolean;
+    checklist: Record<string, boolean>;
+    updatedAt?: string;
+  }>,
   endDateKey: string,
 ): WeeklyTrendDay[] {
   function parseDateKey(key: string): Date {
@@ -97,6 +105,8 @@ export function buildWeeklyTrend(
       score: row?.score ?? 0,
       minDayMet: row?.minDayMet ?? false,
       checked,
+      checklist: Object.keys(checklist).length > 0 ? checklist : undefined,
+      updatedAt: row?.updatedAt,
     });
   }
 

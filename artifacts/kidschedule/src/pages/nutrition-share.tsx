@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
+import { useTranslation } from "react-i18next";
 import { getApiUrl } from "@/lib/api";
 
 interface SharePayload {
@@ -15,6 +16,7 @@ interface SharePayload {
 }
 
 export default function NutritionSharePage() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/nutrition/share/:token");
   const token = params?.token ?? "";
   const [data, setData] = useState<{
@@ -45,9 +47,7 @@ export default function NutritionSharePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-        <p className="text-muted-foreground">
-          {error === "expired" ? "This share link has expired." : "Share link not found."}
-        </p>
+        <p className="text-muted-foreground">{t(`nutrition_share.${error}`)}</p>
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function NutritionSharePage() {
   if (!data) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-        <p className="text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground">{t("nutrition_share.loading")}</p>
       </div>
     );
   }
@@ -63,9 +63,13 @@ export default function NutritionSharePage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 max-w-2xl mx-auto space-y-6">
       <header className="space-y-1">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">AmyNest Nutrition — read only</p>
-        <h1 className="text-2xl font-bold">Household meal plan</h1>
-        <p className="text-sm text-muted-foreground">Valid until {new Date(data.expiresAt).toLocaleString()}</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          {t("nutrition_share.read_only_badge")}
+        </p>
+        <h1 className="text-2xl font-bold">{t("nutrition_share.title")}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t("nutrition_share.valid_until")} {new Date(data.expiresAt).toLocaleString()}
+        </p>
       </header>
 
       {data.payload.children.map((child) => (
@@ -74,13 +78,17 @@ export default function NutritionSharePage() {
           {child.dayLabel && <p className="text-xs text-muted-foreground">{child.dayLabel}</p>}
           {child.tonightMeal && (
             <div>
-              <p className="text-xs font-semibold text-muted-foreground">Tonight&apos;s meal</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                {t("nutrition_share.tonight_meal")}
+              </p>
               <p className="text-base font-medium">{child.tonightMeal}</p>
             </div>
           )}
           {child.familyPortionMeal && (
             <div>
-              <p className="text-xs font-semibold text-muted-foreground">Family portions</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                {t("nutrition_share.family_portions")}
+              </p>
               <p className="text-sm">{child.familyPortionMeal}</p>
             </div>
           )}

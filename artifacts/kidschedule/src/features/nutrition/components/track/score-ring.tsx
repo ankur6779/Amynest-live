@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { scoreColor, scoreRingGlow, scoreRingStroke } from "@/features/nutrition/lib/score-colors";
 
@@ -12,6 +13,7 @@ export function ScoreRing({
   strokeWidth?: number;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const clamped = Math.max(0, Math.min(100, score));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -23,7 +25,7 @@ export function ScoreRing({
       className={cn("relative inline-flex shrink-0 items-center justify-center", scoreRingGlow(clamped), className)}
       style={{ width: size, height: size }}
       role="img"
-      aria-label={`Nutrition score ${clamped} percent`}
+      aria-label={t("nutrition_hub.score.ring_aria", { score: clamped })}
     >
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
         <circle

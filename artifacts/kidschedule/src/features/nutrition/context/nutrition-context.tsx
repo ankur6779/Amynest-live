@@ -29,6 +29,9 @@ export type NutritionContextValue = {
   setSelectedDay: (day: number) => void;
   planSource: PlanSource;
   setPlanSource: (source: PlanSource) => void;
+  /** Classic meal plan diet toggle — drives grocery list integrity (C4). */
+  classicPlanIsVeg: boolean;
+  setClassicPlanIsVeg: (isVeg: boolean) => void;
   suggestedMeal: string;
   setSuggestedMeal: (meal: string) => void;
   foodStyle: string;
@@ -62,6 +65,7 @@ export function NutritionProvider({
   const [ageGroupOverride, setAgeGroupOverride] = useState<AgeGroupId | null>(null);
   const [selectedDay, setSelectedDay] = useState(getMondayBasedDayIndex);
   const [planSource, setPlanSource] = useState<PlanSource>("classic");
+  const [classicPlanIsVeg, setClassicPlanIsVeg] = useState(true);
   const [suggestedMeal, setSuggestedMeal] = useState("");
   const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
   const [nutrientDialogOpen, setNutrientDialogOpen] = useState(false);
@@ -96,6 +100,8 @@ export function NutritionProvider({
       setSelectedDay,
       planSource,
       setPlanSource,
+      classicPlanIsVeg,
+      setClassicPlanIsVeg,
       suggestedMeal,
       setSuggestedMeal,
       foodStyle,
@@ -118,6 +124,7 @@ export function NutritionProvider({
       activeAgeGroup,
       selectedDay,
       planSource,
+      classicPlanIsVeg,
       suggestedMeal,
       foodStyle,
       regionConfig,

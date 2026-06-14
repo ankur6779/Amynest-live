@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CalendarDays } from "lucide-react";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
@@ -6,6 +6,7 @@ import { useMealMemory } from "@/features/nutrition/hooks/use-meal-memory";
 import { useNutritionTrackMeta } from "@/features/nutrition/hooks/use-nutrition-track-meta";
 import { buildMonthlyNutritionReview } from "@/features/nutrition/lib/monthly-nutrition-review";
 import { getStoreHistory } from "@/features/nutrition/lib/nutrition-score-storage";
+import { trackMonthlyReviewViewed } from "@/features/nutrition/lib/nutrition-hub-analytics";
 
 export function MonthlyNutritionReview() {
   const { t } = useTranslation();
@@ -22,6 +23,12 @@ export function MonthlyNutritionReview() {
       streak,
     });
   }, [childId, entries, ageGroupId, streak]);
+
+  useEffect(() => {
+    if (review?.hasData && childId) {
+      trackMonthlyReviewViewed(childId, review.monthLabel);
+    }
+  }, [review?.hasData, review?.monthLabel, childId]);
 
   if (!review?.hasData) return null;
 

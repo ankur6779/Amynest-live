@@ -121,11 +121,12 @@ export function aggregateChecklistHits(
   weeklyTrend: WeeklyTrendDay[],
   todayChecklist: Record<string, boolean>,
   todayKey: string,
+  dayChecklists?: Record<string, Record<string, boolean>>,
 ): { checklistHits: Record<string, number>; daysLogged: number } {
   const checklistHits: Record<string, number> = {};
   let daysLogged = 0;
 
-  function addDayHits(hits: Record<string, number | boolean>) {
+  function addDayHits(hits: Record<string, boolean | number>) {
     daysLogged++;
     for (const [id, val] of Object.entries(hits)) {
       if (val) checklistHits[id] = (checklistHits[id] ?? 0) + 1;
@@ -139,7 +140,9 @@ export function aggregateChecklistHits(
       continue;
     }
     if (day.checked <= 0) continue;
-    addDayHits(inferChecklistHitsFromCount(day.checked));
+    const canonical = dayChecklists?.[day.dateKey];
+    if (!canonical || Object.keys(canonical).length === 0) continue;
+    addDayHits(canonical);
   }
 
   return { checklistHits, daysLogged };

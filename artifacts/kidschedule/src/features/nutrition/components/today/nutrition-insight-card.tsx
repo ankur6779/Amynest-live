@@ -10,7 +10,8 @@ import {
 import { aggregateChecklistHits } from "@/features/nutrition/lib/focus-nutrient-engine";
 import { useNutritionDailyScore } from "@/features/nutrition/hooks/use-nutrition-daily-score";
 import { useNutritionTrackMeta } from "@/features/nutrition/hooks/use-nutrition-track-meta";
-import { dateKeyLocal } from "@/features/nutrition/lib/nutrition-score-storage";
+import { dateKeyLocal, loadNutritionScoreStore } from "@/features/nutrition/lib/nutrition-score-storage";
+import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 
 const INSIGHT_SESSION_KEY = "nutrition:insight-shown";
 
@@ -20,6 +21,7 @@ function sessionInsightKey(): string {
 
 export function NutritionInsightCard() {
   const { t } = useTranslation();
+  const { childId } = useNutritionContext();
   const { confidence, focus } = useNutritionConfidence();
   const { checkList } = useNutritionDailyScore();
   const { streak, weeklyTrend } = useNutritionTrackMeta();
@@ -34,10 +36,12 @@ export function NutritionInsightCard() {
     }
 
     const todayKey = dateKeyLocal();
+    const dayChecklists = childId ? loadNutritionScoreStore(childId).dayChecklists : undefined;
     const { checklistHits, daysLogged } = aggregateChecklistHits(
       weeklyTrend,
       checkList,
       todayKey,
+      dayChecklists,
     );
 
     const candidates = buildInsightCandidates({
@@ -55,7 +59,7 @@ export function NutritionInsightCard() {
       setVisible(true);
       sessionStorage.setItem(sessionInsightKey(), "1");
     }
-  }, [weeklyTrend, streak, checkList, focus.nutrientId, confidence.confidenceLevel]);
+  }, [childId, weeklyTrend, streak, checkList, focus.nutrientId, confidence.confidenceLevel]);
 
   if (!visible || !message) return null;
 

@@ -1861,9 +1861,14 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
 
 @media (prefers-reduced-motion: reduce) {
   .parent-hub-premium .hub-page-enter,
-  .hub-progress-fill {
+  .hub-progress-fill,
+  .parent-hub-premium .nutrition-hub-tab-panel {
     animation: none !important;
   }
+}
+
+.parent-hub-premium .nutrition-hub-tab-panel {
+  animation: parentHubFadeUp 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ── Smart Study Zone premium surface ─────────────────────────────── */

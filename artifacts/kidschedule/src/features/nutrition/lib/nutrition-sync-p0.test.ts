@@ -95,6 +95,7 @@ describe("nutrition-sync P0 regression", () => {
     persistTodayChecklist(CHILD_ID, { breakfast: true, protein: true });
     const store = JSON.parse(localStorage.getItem(`nutrition:daily-score:${CHILD_ID}`)!);
     store.history["2026-06-13"] = { score: 40, checked: 3, total: 8, minDayMet: true };
+    store.dayChecklists["2026-06-13"] = { breakfast: true, fruit: true, water: true };
     localStorage.setItem(`nutrition:daily-score:${CHILD_ID}`, JSON.stringify(store));
 
     const puts: string[] = [];
@@ -117,14 +118,15 @@ describe("nutrition-sync P0 regression", () => {
     expect(puts).toContain("2026-06-13");
   });
 
-  it("resolveChecklistForSyncDate reads history for past dates", () => {
+  it("resolveChecklistForSyncDate reads canonical history for past dates", () => {
     persistTodayChecklist(CHILD_ID, { breakfast: true });
     const raw = JSON.parse(localStorage.getItem(`nutrition:daily-score:${CHILD_ID}`)!);
     raw.history["2026-06-12"] = { score: 50, checked: 4, total: 8, minDayMet: true };
+    raw.dayChecklists["2026-06-12"] = { protein: true, dairy: true, fruit: true, water: true };
     localStorage.setItem(`nutrition:daily-score:${CHILD_ID}`, JSON.stringify(raw));
 
     const checklist = resolveChecklistForSyncDate(CHILD_ID, "2026-06-12");
-    expect(Object.keys(checklist).length).toBe(4);
+    expect(checklist).toEqual({ protein: true, dairy: true, fruit: true, water: true });
     expect(readTodayChecklist(CHILD_ID).breakfast).toBe(true);
   });
 
@@ -132,6 +134,7 @@ describe("nutrition-sync P0 regression", () => {
     persistTodayChecklist(CHILD_ID, { breakfast: true });
     const store = JSON.parse(localStorage.getItem(`nutrition:daily-score:${CHILD_ID}`)!);
     store.history["2026-06-13"] = { score: 40, checked: 2, total: 8, minDayMet: true };
+    store.dayChecklists["2026-06-13"] = { breakfast: true, fruit: true };
     localStorage.setItem(`nutrition:daily-score:${CHILD_ID}`, JSON.stringify(store));
 
     let allowHistorical = false;

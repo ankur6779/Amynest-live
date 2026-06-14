@@ -2,6 +2,10 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth.js";
 import {
+  getOrCreateSubscription,
+  isPremiumNow,
+} from "../services/subscriptionService.js";
+import {
   getMealMemory,
   recordMealOutcome,
   saveMealMemory,
@@ -31,6 +35,15 @@ router.get("/nutrition/meal-memory", async (req, res): Promise<void> => {
   const parsed = z.object({ childId: z.coerce.number().int().positive() }).safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_query" });
+    return;
+  }
+
+  const sub = await getOrCreateSubscription(userId);
+  if (!isPremiumNow(sub)) {
+    res.status(403).json({
+      error: "premium_required",
+      message: "Meal memory history is available for Premium Families.",
+    });
     return;
   }
 

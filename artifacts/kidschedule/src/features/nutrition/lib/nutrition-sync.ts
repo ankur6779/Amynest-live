@@ -1,5 +1,7 @@
 /**
  * Nutrition Hub — offline-first server sync (health-lab / phonics-v3 pattern).
+ *
+ * Merge rules: see nutrition-sync-merge.ts
  */
 import { getApiUrl } from "@/lib/api";
 import {
@@ -8,17 +10,22 @@ import {
 } from "@/features/nutrition/lib/nutrition-score";
 import {
   dateKeyLocal,
+  getDayUpdatedAt,
   loadNutritionScoreStore,
   markServerMigrated,
   mergeLegacyIntoStore,
   mergeServerDay,
   persistTodayChecklist,
+  readDayChecklist,
   readLegacyGlobalStore,
   readTodayChecklist,
   clearLegacyNutritionScoreStorage,
   isServerMigrated,
   getStoreHistory,
 } from "@/features/nutrition/lib/nutrition-score-storage";
+import {
+  shouldPushLocalToServer,
+} from "@/features/nutrition/lib/nutrition-sync-merge";
 
 export type AuthFetchFn = (
   input: RequestInfo | URL,
@@ -54,7 +61,7 @@ function saveQueue(childId: number, q: QueueEntry[]): void {
   }
 }
 
-function readMeta(childId: number): number {
+export function readMeta(childId: number): number {
   try {
     return Number(localStorage.getItem(`${META_KEY}${childId}`) ?? 0);
   } catch {
@@ -62,7 +69,7 @@ function readMeta(childId: number): number {
   }
 }
 
-function writeMeta(childId: number, ts: number): void {
+export function writeMeta(childId: number, ts: number): void {
   try {
     localStorage.setItem(`${META_KEY}${childId}`, String(ts));
   } catch {
@@ -102,35 +109,24 @@ async function migrateLocalHistoryToServer(childId: number): Promise<boolean> {
 
   mergeLegacyIntoStore(childId);
   const store = loadNutritionScoreStore(childId);
-  const today = dateKeyLocal();
 
   const daysToUpload = new Map<string, Record<string, boolean>>();
 
-  for (const [dateKey, snap] of Object.entries(store.history)) {
-    if (snap.checked > 0) {
-      daysToUpload.set(dateKey, {});
+  for (const [dateKey, checklist] of Object.entries(store.dayChecklists)) {
+    if (Object.keys(checklist).length > 0) {
+      daysToUpload.set(dateKey, checklist);
     }
   }
 
+  const today = dateKeyLocal();
   if (store.dateKey === today && Object.keys(store.checklist).length > 0) {
     daysToUpload.set(today, store.checklist);
   }
 
   let allOk = true;
-  for (const [dateKey] of daysToUpload) {
-    let checklist: Record<string, boolean> = {};
-    if (dateKey === today) {
-      checklist = store.checklist;
-    } else {
-      const snap = store.history[dateKey];
-      if (snap && snap.checked > 0) {
-        checklist = reconstructChecklistFromCount(snap.checked);
-      }
-    }
-    if (Object.keys(checklist).length > 0) {
-      const ok = await putDailyScore(childId, dateKey, checklist);
-      if (!ok) allOk = false;
-    }
+  for (const [dateKey, checklist] of daysToUpload) {
+    const ok = await putDailyScore(childId, dateKey, checklist);
+    if (!ok) allOk = false;
   }
 
   if (!allOk) return false;
@@ -140,25 +136,6 @@ async function migrateLocalHistoryToServer(childId: number): Promise<boolean> {
     clearLegacyNutritionScoreStorage();
   }
   return true;
-}
-
-/** Best-effort reconstruction when only snapshot counts exist in legacy history. */
-function reconstructChecklistFromCount(checked: number): Record<string, boolean> {
-  const ids = [
-    "breakfast",
-    "protein",
-    "dairy",
-    "greens",
-    "fruit",
-    "water",
-    "noJunk",
-    "wholegrains",
-  ] as const;
-  const out: Record<string, boolean> = {};
-  for (let i = 0; i < Math.min(checked, ids.length); i++) {
-    out[ids[i]!] = true;
-  }
-  return out;
 }
 
 export async function hydrateNutritionScore(
@@ -177,6 +154,8 @@ export async function hydrateNutritionScore(
     await migrateLocalHistoryToServer(childId);
 
     const today = dateKeyLocal();
+    const localMeta = readMeta(childId);
+
     const res = await fetcher(
       getApiUrl(`/api/nutrition/daily-score?childId=${childId}&date=${today}`),
     );
@@ -190,22 +169,23 @@ export async function hydrateNutritionScore(
       };
       if (json.log?.checklist) {
         const serverChecklist = sanitizeChecklist(json.log.checklist);
+        const serverTs = json.log.updatedAt ? Date.parse(json.log.updatedAt) : 0;
         const localChecklist = readTodayChecklist(childId);
-        const localHasData = Object.keys(localChecklist).length > 0;
-        const serverHasData = Object.keys(serverChecklist).length > 0;
+        const localDayTs = getDayUpdatedAt(childId, today);
 
-        if (serverHasData && !localHasData) {
-          persistTodayChecklist(childId, serverChecklist);
-        } else if (localHasData) {
+        if (
+          shouldPushLocalToServer(
+            localDayTs,
+            serverTs,
+            Object.keys(localChecklist).length > 0,
+          )
+        ) {
           await putDailyScore(childId, today, localChecklist);
+        } else {
+          mergeServerDay(childId, json.log.dateKey, serverChecklist, serverTs || Date.now());
         }
 
-        mergeServerDay(
-          childId,
-          json.log.dateKey,
-          serverChecklist,
-          json.log.updatedAt ? Date.parse(json.log.updatedAt) : Date.now(),
-        );
+        writeMeta(childId, Math.max(localMeta, serverTs, localDayTs, Date.now()));
       }
     }
 
@@ -214,16 +194,23 @@ export async function hydrateNutritionScore(
     );
     if (trendRes.ok) {
       const trendJson = (await trendRes.json()) as {
-        days?: Array<{ dateKey: string; score: number; checked: number; minDayMet: boolean }>;
+        days?: Array<{
+          dateKey: string;
+          score: number;
+          checked: number;
+          minDayMet: boolean;
+          checklist?: Record<string, boolean>;
+          updatedAt?: string;
+        }>;
       };
       for (const day of trendJson.days ?? []) {
-        if (day.checked > 0 && day.dateKey !== today) {
-          mergeServerDay(childId, day.dateKey, reconstructChecklistFromCount(day.checked), Date.now());
-        }
+        if (!day.checklist || day.dateKey === today) continue;
+        const serverTs = day.updatedAt ? Date.parse(day.updatedAt) : 0;
+        mergeServerDay(childId, day.dateKey, day.checklist, serverTs || Date.now());
       }
     }
 
-    writeMeta(childId, Date.now());
+    writeMeta(childId, Math.max(readMeta(childId), Date.now()));
     await flushNutritionSync(childId);
   } catch {
     /* offline — local cache remains */
@@ -239,19 +226,12 @@ export function enqueueNutritionSync(childId: number, dateKey = dateKeyLocal()):
   if (isOnline() && globalFetch) void flushNutritionSync(childId);
 }
 
-/** Resolve checklist payload for a queued sync date (today from live checklist, history otherwise). */
+/** Resolve canonical checklist payload for a queued sync date. */
 export function resolveChecklistForSyncDate(
   childId: number,
   dateKey: string,
 ): Record<string, boolean> {
-  const today = dateKeyLocal();
-  if (dateKey === today) {
-    return readTodayChecklist(childId);
-  }
-  const store = loadNutritionScoreStore(childId);
-  const snap = store.history[dateKey];
-  if (!snap || snap.checked <= 0) return {};
-  return reconstructChecklistFromCount(snap.checked);
+  return readDayChecklist(childId, dateKey);
 }
 
 export async function flushNutritionSync(childId: number): Promise<boolean> {
@@ -303,10 +283,19 @@ export async function fetchNutritionStreak(
   }
 }
 
+export type WeeklyTrendDayPayload = {
+  dateKey: string;
+  score: number;
+  checked: number;
+  minDayMet: boolean;
+  checklist?: Record<string, boolean>;
+  updatedAt?: string;
+};
+
 export async function fetchNutritionWeeklyTrend(
   childId: number,
   authFetch?: AuthFetchFn | null,
-): Promise<Array<{ dateKey: string; score: number; checked: number; minDayMet: boolean }> | null> {
+): Promise<WeeklyTrendDayPayload[] | null> {
   const fetcher = authFetch ?? globalFetch;
   if (!fetcher || !isOnline()) return null;
 
@@ -316,12 +305,25 @@ export async function fetchNutritionWeeklyTrend(
       getApiUrl(`/api/nutrition/weekly-trend?childId=${childId}&date=${today}`),
     );
     if (!res.ok) return null;
-    const json = (await res.json()) as {
-      days?: Array<{ dateKey: string; score: number; checked: number; minDayMet: boolean }>;
-    };
+    const json = (await res.json()) as { days?: WeeklyTrendDayPayload[] };
     return json.days ?? null;
   } catch {
     return null;
+  }
+}
+
+/** Merge server weekly trend into local store (canonical checklists). */
+export async function mergeWeeklyTrendFromServer(
+  childId: number,
+  authFetch?: AuthFetchFn | null,
+): Promise<void> {
+  const days = await fetchNutritionWeeklyTrend(childId, authFetch);
+  if (!days) return;
+  const today = dateKeyLocal();
+  for (const day of days) {
+    if (!day.checklist || day.dateKey === today) continue;
+    const serverTs = day.updatedAt ? Date.parse(day.updatedAt) : 0;
+    mergeServerDay(childId, day.dateKey, day.checklist, serverTs || Date.now());
   }
 }
 

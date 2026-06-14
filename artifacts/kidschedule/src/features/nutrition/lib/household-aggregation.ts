@@ -47,6 +47,7 @@ export function buildChildNutritionSnapshot(input: {
     weeklyTrend,
     store.checklist,
     input.todayKey,
+    store.dayChecklists,
   );
 
   const focus = selectFocusNutrient({

@@ -1,21 +1,41 @@
-import { getMealPlan, type AgeGroupId } from "@/lib/nutrition-data";
+import { getMealPlan } from "@/lib/nutrition-data";
 import { cn } from "@/lib/utils";
 import { Drumstick, Leaf } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
-import { MealFeedbackButtons } from "@/features/nutrition/components/plan/meal-feedback-buttons";
+import { useMemo } from "react";
 import { useMealMemory } from "@/features/nutrition/hooks/use-meal-memory";
-import { MealNutrientBenefits } from "@/features/nutrition/components/shared/meal-nutrient-benefits";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
-
+import { MealPlanDaySelector } from "@/features/nutrition/components/plan/meal-plan-day-selector";
+import { MealPlanSlotCard } from "@/features/nutrition/components/plan/meal-plan-slot-card";
+import { PlanExportActions } from "@/features/nutrition/components/plan/plan-export-actions";
 import { filterPlanDayMeals } from "@/features/nutrition/lib/meal-recommendation";
+import type { MealPlanDayExport } from "@/features/nutrition/lib/plan-meal-export";
 
 export function MealPlanSection() {
   const { t } = useTranslation();
-  const { ageGroupId, foodStyle, selectedDay, setSelectedDay } = useNutritionContext();
+  const { ageGroupId, foodStyle, selectedDay, setSelectedDay, classicPlanIsVeg, setClassicPlanIsVeg } =
+    useNutritionContext();
   const { entries } = useMealMemory();
   const plan = getMealPlan(ageGroupId, foodStyle);
-  const [isVeg, setIsVeg] = useState(true);
+  const isVeg = classicPlanIsVeg;
+
+  const exportDays = useMemo((): MealPlanDayExport[] => {
+    if (!plan) return [];
+    return plan.days.map((d) => {
+      const raw = isVeg ? d.veg : d.nonVeg;
+      const filtered = filterPlanDayMeals(raw as Record<string, string | undefined>, entries);
+      return {
+        dayLabel: d.day,
+        meals: {
+          breakfast: filtered.breakfast,
+          midMorning: filtered.midMorning,
+          lunch: filtered.lunch,
+          snack: filtered.snack,
+          dinner: filtered.dinner,
+        },
+      };
+    });
+  }, [plan, isVeg, entries]);
 
   if (!plan) {
     return (
@@ -42,14 +62,16 @@ export function MealPlanSection() {
     { time: `🌙 ${t("nutrition_hub.meals.dinner")}`, key: "dinner", color: "bg-muted border-border text-foreground" },
   ];
 
+  const dayLabels = plan.days.map((d) => d.day.slice(0, 3));
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-bold text-lg">{plan.ageCategory}</h3>
         <div className="flex rounded-full border overflow-hidden">
           <button
             type="button"
-            onClick={() => setIsVeg(true)}
+            onClick={() => setClassicPlanIsVeg(true)}
             className={cn(
               "flex items-center gap-1 px-4 py-1.5 text-sm font-medium transition-colors",
               isVeg ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground",
@@ -59,7 +81,7 @@ export function MealPlanSection() {
           </button>
           <button
             type="button"
-            onClick={() => setIsVeg(false)}
+            onClick={() => setClassicPlanIsVeg(false)}
             className={cn(
               "flex items-center gap-1 px-4 py-1.5 text-sm font-medium transition-colors",
               !isVeg ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground",
@@ -76,37 +98,26 @@ export function MealPlanSection() {
         </p>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-        {plan.days.map((d, i) => (
-          <button
-            key={d.day}
-            type="button"
-            onClick={() => setSelectedDay(i)}
-            className={cn(
-              "shrink-0 rounded-full px-3 py-1 text-xs font-semibold border transition-colors",
-              dayIdx === i
-                ? "border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.14)] text-foreground"
-                : "border-white/[0.08] bg-white/[0.04] text-muted-foreground hover:bg-white/[0.06]",
-            )}
-          >
-            {d.day.slice(0, 3)}
-          </button>
-        ))}
-      </div>
+      <PlanExportActions ageCategory={plan.ageCategory} isVeg={isVeg} days={exportDays} />
+
+      <MealPlanDaySelector
+        labels={dayLabels}
+        selectedIndex={dayIdx}
+        onSelect={setSelectedDay}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 min-w-0">
         {mealTimes.filter(Boolean).map((item) => {
           const m = item as { time: string; key: string; color: string };
           const mealText = (meal as Record<string, string | undefined>)[m.key];
           return (
-            <div key={m.key} className={cn("rounded-xl border p-3", m.color)}>
-              <p className="text-xs font-bold mb-1.5">{m.time}</p>
-              <p className="text-sm leading-snug">{mealText ?? "—"}</p>
-              {mealText ? <MealNutrientBenefits mealName={mealText} compact /> : null}
-              {mealText ? (
-                <MealFeedbackButtons mealName={mealText.replace(/ \(try a smaller portion\)$/, "")} mealSlot={m.key} compact />
-              ) : null}
-            </div>
+            <MealPlanSlotCard
+              key={m.key}
+              time={m.time}
+              mealText={mealText}
+              mealSlot={m.key}
+              colorClass={m.color}
+            />
           );
         })}
       </div>

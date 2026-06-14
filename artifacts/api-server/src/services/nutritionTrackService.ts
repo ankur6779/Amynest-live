@@ -175,6 +175,7 @@ export async function getWeeklyTrend(
       score: r.score,
       minDayMet: r.minDayMet,
       checklist: r.checklist,
+      updatedAt: r.updatedAt.toISOString(),
     })),
     endDateKey,
   );

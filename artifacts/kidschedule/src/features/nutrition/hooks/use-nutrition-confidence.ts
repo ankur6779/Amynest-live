@@ -16,7 +16,7 @@ import {
   generateWeeklyNutritionStory,
   type WeeklyNutritionStory,
 } from "@/features/nutrition/lib/nutrition-story";
-import { dateKeyLocal } from "@/features/nutrition/lib/nutrition-score-storage";
+import { dateKeyLocal, loadNutritionScoreStore } from "@/features/nutrition/lib/nutrition-score-storage";
 
 export interface NutritionIntelligence {
   confidence: NutritionConfidenceResult;
@@ -25,17 +25,19 @@ export interface NutritionIntelligence {
 }
 
 export function useNutritionConfidence(): NutritionIntelligence {
-  const { ageGroupId } = useNutritionContext();
+  const { ageGroupId, childId } = useNutritionContext();
   const { score, checkList } = useNutritionDailyScore();
   const { streak, weeklyTrend } = useNutritionTrackMeta();
   const todayKey = dateKeyLocal();
 
   return useMemo(() => {
+    const dayChecklists = childId ? loadNutritionScoreStore(childId).dayChecklists : undefined;
     const mealConsistency = computeMealConsistency(weeklyTrend);
     const { checklistHits, daysLogged } = aggregateChecklistHits(
       weeklyTrend,
       checkList,
       todayKey,
+      dayChecklists,
     );
 
     const focus = selectFocusNutrient({
@@ -62,5 +64,5 @@ export function useNutritionConfidence(): NutritionIntelligence {
     });
 
     return { confidence, focus, story };
-  }, [ageGroupId, score, checkList, streak, weeklyTrend, todayKey]);
+  }, [ageGroupId, childId, score, checkList, streak, weeklyTrend, todayKey]);
 }

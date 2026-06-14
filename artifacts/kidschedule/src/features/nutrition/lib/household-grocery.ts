@@ -1,5 +1,5 @@
 import type { GroupedGroceryList } from "@/features/nutrition/lib/grocery-generator";
-import { generateGroceryList, mergeGroceryLists } from "@/features/nutrition/lib/grocery-generator";
+import { generateGroceryList } from "@/features/nutrition/lib/grocery-generator";
 import type { MealMemoryEntry } from "@/features/nutrition/lib/nutrition-memory";
 import { getMealPlan, type AgeGroupId } from "@/lib/nutrition-data";
 import type { TiffinDay } from "@/features/nutrition/lib/tiffin-planner";
@@ -13,7 +13,11 @@ export interface HouseholdChildPlan {
   memoryEntries: MealMemoryEntry[];
 }
 
-function collectWeekMeals(ageGroupId: AgeGroupId, foodStyle: string, isVeg = true): string[] {
+export function collectWeekMeals(
+  ageGroupId: AgeGroupId,
+  foodStyle: string,
+  isVeg: boolean,
+): string[] {
   const plan = getMealPlan(ageGroupId, foodStyle);
   if (!plan) return [];
   const meals: string[] = [];
@@ -26,7 +30,11 @@ function collectWeekMeals(ageGroupId: AgeGroupId, foodStyle: string, isVeg = tru
   return meals;
 }
 
-function collectWeekLunches(ageGroupId: AgeGroupId, foodStyle: string, isVeg = true): string[] {
+export function collectWeekLunches(
+  ageGroupId: AgeGroupId,
+  foodStyle: string,
+  isVeg: boolean,
+): string[] {
   const plan = getMealPlan(ageGroupId, foodStyle);
   if (!plan) return [];
   return plan.days
@@ -34,22 +42,36 @@ function collectWeekLunches(ageGroupId: AgeGroupId, foodStyle: string, isVeg = t
     .filter((v): v is string => !!v);
 }
 
+/** Union of unique meal strings across children — single aggregation pass (C3). */
+export function collectHouseholdWeekMeals(
+  children: HouseholdChildPlan[],
+  isVeg: boolean,
+): string[] {
+  const seen = new Set<string>();
+  const meals: string[] = [];
+  for (const child of children) {
+    for (const meal of collectWeekMeals(child.ageGroupId, child.foodStyle, isVeg)) {
+      if (seen.has(meal)) continue;
+      seen.add(meal);
+      meals.push(meal);
+    }
+  }
+  return meals;
+}
+
 export function buildHouseholdGrocery(
   children: HouseholdChildPlan[],
   familySize: number,
+  isVeg: boolean,
 ): GroupedGroceryList[] {
-  const lists = children.map((c) =>
-    generateGroceryList({
-      weekMeals: collectWeekMeals(c.ageGroupId, c.foodStyle),
-      familySize: Math.max(2, Math.ceil(familySize / Math.max(1, children.length))),
-      memoryEntries: c.memoryEntries,
-    }),
-  );
-  return mergeGroceryLists(lists);
+  const weekMeals = collectHouseholdWeekMeals(children, isVeg);
+  const memoryEntries = children.flatMap((c) => c.memoryEntries);
+  return generateGroceryList({ weekMeals, familySize, memoryEntries });
 }
 
 export function buildHouseholdTiffinPlans(
   children: HouseholdChildPlan[],
+  isVeg: boolean,
 ): Array<{ childId: number; name: string; days: TiffinDay[] }> {
   return children
     .map((c) => ({
@@ -58,11 +80,9 @@ export function buildHouseholdTiffinPlans(
       days: planSchoolTiffinWeek({
         ageGroupId: c.ageGroupId,
         foodStyle: c.foodStyle,
-        weekLunches: collectWeekLunches(c.ageGroupId, c.foodStyle),
+        weekLunches: collectWeekLunches(c.ageGroupId, c.foodStyle, isVeg),
         memoryEntries: c.memoryEntries,
       }),
     }))
     .filter((p) => p.days.length > 0);
 }
-
-export { collectWeekMeals, collectWeekLunches };

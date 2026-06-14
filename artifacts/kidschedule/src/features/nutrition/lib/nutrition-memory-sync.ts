@@ -10,6 +10,9 @@ import { getApiUrl } from "@/lib/api";
 
 type MemoryListener = () => void;
 const listeners = new Set<MemoryListener>();
+const hydrated = new Set<number>();
+let globalFetch: AuthFetchFn | null = null;
+let onlineListenerAttached = false;
 
 export function subscribeMealMemory(listener: MemoryListener): () => void {
   listeners.add(listener);
@@ -18,6 +21,10 @@ export function subscribeMealMemory(listener: MemoryListener): () => void {
 
 function notify(): void {
   listeners.forEach((fn) => fn());
+}
+
+function isOnline(): boolean {
+  return typeof navigator === "undefined" || navigator.onLine !== false;
 }
 
 interface MealMemoryStoreV1 {
@@ -98,20 +105,88 @@ export function recordLocalMealOutcome(
 
 const QUEUE_KEY = "amynest:nutrition-memory-queue:";
 
-function enqueueSync(childId: number): void {
+type PendingOutcome = {
+  dateKey: string;
+  mealSlot: string;
+  mealName: string;
+  outcome: MealOutcome;
+  enqueuedAt: number;
+};
+
+function pendingKey(input: Pick<PendingOutcome, "dateKey" | "mealSlot" | "mealName">): string {
+  return `${input.dateKey}:${input.mealSlot}:${normalizeMealKey(input.mealName)}`;
+}
+
+function loadMemoryQueue(childId: number): PendingOutcome[] {
   try {
-    localStorage.setItem(`${QUEUE_KEY}${childId}`, String(Date.now()));
+    const raw = localStorage.getItem(`${QUEUE_KEY}${childId}`);
+    return raw ? (JSON.parse(raw) as PendingOutcome[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMemoryQueue(childId: number, q: PendingOutcome[]): void {
+  try {
+    localStorage.setItem(`${QUEUE_KEY}${childId}`, JSON.stringify(q.slice(-100)));
   } catch {
     /* quota */
   }
+}
+
+function enqueueOutcome(
+  childId: number,
+  input: {
+    dateKey: string;
+    mealSlot: string;
+    mealName: string;
+    outcome: MealOutcome;
+  },
+): void {
+  const key = pendingKey(input);
+  const q = loadMemoryQueue(childId).filter((e) => pendingKey(e) !== key);
+  q.push({ ...input, enqueuedAt: Date.now() });
+  saveMemoryQueue(childId, q);
+}
+
+export function configureMealMemorySync(fetcher: AuthFetchFn): void {
+  globalFetch = fetcher;
+  if (typeof window === "undefined") return;
+  if (!onlineListenerAttached) {
+    window.addEventListener("online", () => {
+      for (const id of hydrated) void flushMealMemorySync(id);
+    });
+    onlineListenerAttached = true;
+  }
+}
+
+async function postMealOutcome(
+  childId: number,
+  input: {
+    dateKey: string;
+    mealSlot: string;
+    mealName: string;
+    outcome: MealOutcome;
+  },
+  authFetch: AuthFetchFn,
+): Promise<boolean> {
+  const res = await authFetch(getApiUrl("/api/nutrition/meal-outcome"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ childId, ...input }),
+  });
+  return res.ok;
 }
 
 export async function hydrateMealMemory(
   childId: number,
   authFetch?: AuthFetchFn | null,
 ): Promise<MealMemoryEntry[]> {
+  if (authFetch) globalFetch = authFetch;
+  hydrated.add(childId);
+
   const local = loadMealMemoryEntries(childId);
-  if (!authFetch || typeof navigator !== "undefined" && navigator.onLine === false) {
+  if (!authFetch || !isOnline()) {
     return local;
   }
 
@@ -135,29 +210,37 @@ export async function flushMealMemorySync(
   childId: number,
   authFetch?: AuthFetchFn | null,
 ): Promise<boolean> {
-  if (!authFetch || (typeof navigator !== "undefined" && navigator.onLine === false)) {
-    return false;
+  const fetcher = authFetch ?? globalFetch;
+  if (!fetcher || !isOnline()) return false;
+
+  const queue = loadMemoryQueue(childId);
+  const remaining: PendingOutcome[] = [];
+
+  for (const item of queue) {
+    const ok = await postMealOutcome(childId, item, fetcher);
+    if (!ok) remaining.push(item);
   }
+  saveMemoryQueue(childId, remaining);
 
   const entries = loadMealMemoryEntries(childId);
   try {
-    const res = await authFetch(getApiUrl("/api/nutrition/meal-memory"), {
+    const res = await fetcher(getApiUrl("/api/nutrition/meal-memory"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ childId, entries }),
     });
-    if (res.ok) {
+    if (!res.ok) return remaining.length === 0 ? false : false;
+    if (remaining.length === 0) {
       try {
         localStorage.removeItem(`${QUEUE_KEY}${childId}`);
       } catch {
         /* ignore */
       }
-      return true;
     }
+    return remaining.length === 0;
   } catch {
-    /* offline */
+    return false;
   }
-  return false;
 }
 
 export async function persistMealOutcome(
@@ -171,17 +254,16 @@ export async function persistMealOutcome(
   authFetch?: AuthFetchFn | null,
 ): Promise<MealMemoryEntry[]> {
   const entries = recordLocalMealOutcome(childId, input);
-  enqueueSync(childId);
+  enqueueOutcome(childId, input);
 
-  if (authFetch && (typeof navigator === "undefined" || navigator.onLine !== false)) {
-    try {
-      await authFetch(getApiUrl("/api/nutrition/meal-outcome"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId, ...input }),
-      });
-    } catch {
-      void flushMealMemorySync(childId, authFetch);
+  const fetcher = authFetch ?? globalFetch;
+  if (fetcher && isOnline()) {
+    const ok = await postMealOutcome(childId, input, fetcher);
+    if (ok) {
+      const q = loadMemoryQueue(childId).filter((e) => pendingKey(e) !== pendingKey(input));
+      saveMemoryQueue(childId, q);
+    } else {
+      void flushMealMemorySync(childId, fetcher);
     }
   }
 
@@ -191,5 +273,6 @@ export async function persistMealOutcome(
 export function clearMealMemoryStorage(childId: number): void {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(mealMemoryStorageKey(childId));
+  localStorage.removeItem(`${QUEUE_KEY}${childId}`);
   notify();
 }

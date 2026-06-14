@@ -1,6 +1,7 @@
 import type { GroceryCategory } from "@/features/nutrition/lib/operations-constants";
 import { GROCERY_CATEGORIES } from "@/features/nutrition/lib/operations-constants";
-import { extractIngredientsFromWeek } from "@/features/nutrition/lib/grocery-ingredients";
+import type { GroceryUnit } from "@/features/nutrition/lib/grocery-ingredients";
+import { computeWeeklyGroceryQuantities } from "@/features/nutrition/lib/grocery-quantity-engine";
 import type { MealMemoryEntry } from "@/features/nutrition/lib/nutrition-memory";
 import { isMealDeprioritized, mealPreferenceScore } from "@/features/nutrition/lib/meal-recommendation";
 
@@ -9,8 +10,8 @@ export interface GroceryItem {
   name: string;
   category: GroceryCategory;
   quantity: number;
+  unit: GroceryUnit;
   display: string;
-  heavyUnit?: "kg";
 }
 
 export interface GroupedGroceryList {
@@ -46,39 +47,51 @@ function memoryScaleFactor(entries: MealMemoryEntry[], weekMeals: string[]): num
   return 1;
 }
 
-function formatQuantity(name: string, qty: number, heavyUnit?: "kg"): string {
-  const rounded = Math.max(1, Math.round(qty));
-  if (heavyUnit === "kg" && rounded >= 3) {
-    const kg = Math.max(1, Math.round(rounded / 3));
+/** Format quantity with explicit units (C2/H3). */
+export function formatGroceryDisplay(name: string, quantity: number, unit: GroceryUnit): string {
+  if (unit === "kg") {
+    const kg = Number.isInteger(quantity) ? quantity : quantity.toFixed(1).replace(/\.0$/, "");
     return `${name} × ${kg} kg`;
   }
-  return `${name} × ${rounded}`;
+  if (unit === "L") {
+    const liters = Number.isInteger(quantity) ? quantity : quantity.toFixed(1).replace(/\.0$/, "");
+    return `${name} × ${liters} L`;
+  }
+  return `${name} × ${Math.round(quantity)}`;
 }
 
 function itemId(name: string, category: GroceryCategory): string {
   return `${category}:${name.toLowerCase().replace(/\s+/g, "-")}`;
 }
 
+function applyMemoryScale(quantity: number, factor: number, unit: GroceryUnit): number {
+  if (factor === 1) return quantity;
+  if (unit === "kg" || unit === "L") {
+    return Math.max(unit === "kg" ? 0.5 : 1, Math.round(quantity * factor * 2) / 2);
+  }
+  return Math.max(1, Math.round(quantity * factor));
+}
+
 export function generateGroceryList(input: GroceryGeneratorInput): GroupedGroceryList[] {
   const { weekMeals, familySize, memoryEntries = [] } = input;
-  const scale = Math.max(1, familySize) * memoryScaleFactor(memoryEntries, weekMeals);
-  const raw = extractIngredientsFromWeek(weekMeals);
+  const memoryFactor = memoryScaleFactor(memoryEntries, weekMeals);
+  const scaled = computeWeeklyGroceryQuantities(weekMeals, familySize);
 
   const byCategory = new Map<GroceryCategory, GroceryItem[]>();
 
-  for (const ing of raw) {
-    const quantity = Math.max(1, Math.round(ing.qty * scale));
+  for (const line of scaled) {
+    const quantity = applyMemoryScale(line.quantity, memoryFactor, line.unit);
     const item: GroceryItem = {
-      id: itemId(ing.item, ing.category),
-      name: ing.item,
-      category: ing.category,
+      id: itemId(line.item, line.category),
+      name: line.item,
+      category: line.category,
       quantity,
-      heavyUnit: ing.heavyUnit,
-      display: formatQuantity(ing.item, quantity, ing.heavyUnit),
+      unit: line.unit,
+      display: formatGroceryDisplay(line.item, quantity, line.unit),
     };
-    const list = byCategory.get(ing.category) ?? [];
+    const list = byCategory.get(line.category) ?? [];
     list.push(item);
-    byCategory.set(ing.category, list);
+    byCategory.set(line.category, list);
   }
 
   return GROCERY_CATEGORIES.map((category) => ({
@@ -96,7 +109,7 @@ export function mergeGroceryLists(listSets: GroupedGroceryList[][]): GroupedGroc
       const existing = map.get(item.id);
       if (existing) {
         existing.quantity += item.quantity;
-        existing.display = formatQuantity(existing.name, existing.quantity, existing.heavyUnit);
+        existing.display = formatGroceryDisplay(existing.name, existing.quantity, existing.unit);
       } else {
         map.set(item.id, { ...item });
       }

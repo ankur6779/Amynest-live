@@ -13,13 +13,11 @@ import {
   computeMinDayMet,
   historyToStreakRows,
 } from "@/features/nutrition/lib/nutrition-streak";
-import {
-  fetchNutritionStreak,
-  fetchNutritionWeeklyTrend,
-} from "@/features/nutrition/lib/nutrition-sync";
+import { mergeWeeklyTrendFromServer } from "@/features/nutrition/lib/nutrition-sync";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 import type { WeeklyTrendDay } from "@/features/nutrition/lib/nutrition-streak";
 
+/** Local store is authoritative; server merges in via hydrate/mergeWeeklyTrendFromServer. */
 function computeLocalMeta(childId: number) {
   const store = loadNutritionScoreStore(childId);
   const today = dateKeyLocal();
@@ -61,31 +59,15 @@ export function useNutritionTrackMeta() {
 
   useEffect(() => {
     if (!childId) return;
-
     let cancelled = false;
-    const activeChildId = childId;
 
-    async function refreshServer() {
-      const [serverStreak, serverTrend] = await Promise.all([
-        fetchNutritionStreak(activeChildId, authFetch),
-        fetchNutritionWeeklyTrend(activeChildId, authFetch),
-      ]);
-      if (cancelled) return;
+    void mergeWeeklyTrendFromServer(childId, authFetch).then(() => {
+      if (cancelled || !childId) return;
+      const meta = computeLocalMeta(childId);
+      setStreak(meta.streak);
+      setWeeklyTrend(meta.days);
+    });
 
-      if (serverStreak != null) setStreak(serverStreak);
-      if (serverTrend?.length) {
-        setWeeklyTrend(
-          serverTrend.map((d) => ({
-            dateKey: d.dateKey,
-            score: d.score,
-            minDayMet: d.minDayMet,
-            checked: d.checked,
-          })),
-        );
-      }
-    }
-
-    void refreshServer();
     return () => {
       cancelled = true;
     };

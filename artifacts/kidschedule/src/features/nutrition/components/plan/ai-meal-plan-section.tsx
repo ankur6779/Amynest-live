@@ -24,6 +24,7 @@ import type { DayPlan, WeatherType } from "@/features/nutrition/types/nutrition-
 import { NUTRITION_WEEK_PLAN_FEATURE } from "@/features/nutrition/lib/constants";
 import { MEAL_TIME_KEYS } from "@/features/nutrition/lib/meal-slots";
 import { MealCard } from "@/features/nutrition/components/plan/meal-card";
+import { MealPlanDaySelector } from "@/features/nutrition/components/plan/meal-plan-day-selector";
 import { NutritionPill } from "@/features/nutrition/components/plan/nutrition-pill";
 import { PlanLoadingSkeleton } from "@/features/nutrition/components/plan/plan-loading-skeleton";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
@@ -174,23 +175,11 @@ export function AIMealPlanSection() {
 
         {plan && !loading && (
           <>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {plan.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setSelectedDay(i)}
-                  className={cn(
-                    "shrink-0 rounded-full px-3 py-1 text-xs font-semibold border transition-colors",
-                    dayIdx === i
-                      ? "border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.14)] text-foreground"
-                      : "border-white/[0.08] bg-white/[0.04] text-muted-foreground hover:bg-white/[0.06]",
-                  )}
-                >
-                  {Array.isArray(dayShorts) ? dayShorts[i] : ""}
-                </button>
-              ))}
-            </div>
+            <MealPlanDaySelector
+              labels={plan.map((_, i) => (Array.isArray(dayShorts) ? dayShorts[i] : "") ?? "")}
+              selectedIndex={dayIdx}
+              onSelect={setSelectedDay}
+            />
 
             {day && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

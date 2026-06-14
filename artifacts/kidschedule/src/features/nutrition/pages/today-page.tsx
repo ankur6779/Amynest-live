@@ -1,4 +1,4 @@
-import { NutritionHero, AgeInfoCard } from "@/features/nutrition/components/shared/nutrition-hero";
+import { AgeInfoCard } from "@/features/nutrition/components/shared/nutrition-hero";
 import { ChildContextChip } from "@/features/nutrition/components/today/child-context-chip";
 import { TodayScoreSummary } from "@/features/nutrition/components/today/today-score-summary";
 import { NutritionInsightCard } from "@/features/nutrition/components/today/nutrition-insight-card";
@@ -14,7 +14,6 @@ import { NutritionPremiumPreview } from "@/features/nutrition/components/premium
 export function TodayPage() {
   return (
     <div className="space-y-3 sm:space-y-4 hub-page-enter">
-      <NutritionHero />
       <ChildContextChip />
       <TodayScoreSummary />
       <NutritionPremiumPreview />

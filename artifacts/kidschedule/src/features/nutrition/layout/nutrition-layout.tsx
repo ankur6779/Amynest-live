@@ -6,21 +6,42 @@ import { LockedBlock } from "@/components/locked-block";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useActiveChildId } from "@/hooks/use-active-child-id";
 import { isHealthZoneJourneyEligible } from "@/lib/hub-visibility";
-import { readStoredActiveChildId } from "@/lib/coach-age-nav";
 import { NutritionProvider, useNutritionContext } from "@/features/nutrition/context/nutrition-context";
-import { hydrateNutritionScore, configureNutritionSync } from "@/features/nutrition/lib/nutrition-sync";
-import { hydrateMealMemory } from "@/features/nutrition/lib/nutrition-memory-sync";
-import { NutritionBottomNav, NutritionTopNav } from "@/features/nutrition/layout/nutrition-bottom-nav";
+import {
+  hydrateNutritionScore,
+  configureNutritionSync,
+} from "@/features/nutrition/lib/nutrition-sync";
+import {
+  configureMealMemorySync,
+  hydrateMealMemory,
+} from "@/features/nutrition/lib/nutrition-memory-sync";
+import { NutritionTopNav } from "@/features/nutrition/layout/nutrition-top-nav";
+import { NutritionSectionPanel } from "@/features/nutrition/layout/nutrition-section-panel";
+import { NutritionHero } from "@/features/nutrition/components/shared/nutrition-hero";
 import { NutrientDetailDialog } from "@/features/nutrition/components/learn/nutrient-detail-dialog";
 import { NutritionDiscoveryHints } from "@/features/nutrition/components/shared/nutrition-discovery-hints";
 import { NutritionDisclaimer } from "@/features/nutrition/components/shared/nutrition-disclaimer";
 import { NutritionGrowthLink } from "@/features/nutrition/components/shared/nutrition-growth-link";
-import { TodayPage } from "@/features/nutrition/pages/today-page";
-import { PlanPage } from "@/features/nutrition/pages/plan-page";
-import { TrackPage } from "@/features/nutrition/pages/track-page";
-import { LearnPage } from "@/features/nutrition/pages/learn-page";
-import { FamilyPage } from "@/features/nutrition/pages/family-page";
+import {
+  trackNutritionHubOpen,
+  trackNutritionTabOpen,
+} from "@/features/nutrition/lib/nutrition-hub-analytics";
+
+function NutritionHubSessionAnalytics() {
+  const { activeTab, childId } = useNutritionContext();
+
+  useEffect(() => {
+    trackNutritionHubOpen(childId);
+  }, [childId]);
+
+  useEffect(() => {
+    trackNutritionTabOpen(activeTab, childId);
+  }, [activeTab, childId]);
+
+  return null;
+}
 
 function NutritionSyncBootstrap() {
   const { childId } = useNutritionContext();
@@ -28,6 +49,7 @@ function NutritionSyncBootstrap() {
 
   useEffect(() => {
     configureNutritionSync(authFetch);
+    configureMealMemorySync(authFetch);
   }, [authFetch]);
 
   useEffect(() => {
@@ -40,27 +62,23 @@ function NutritionSyncBootstrap() {
 }
 
 function NutritionHubContent() {
-  const { activeTab, ageGroupId, regionConfig, getRegional, localizeNote, selectedNutrient, nutrientDialogOpen, setNutrientDialogOpen, setSelectedNutrient } =
+  const { ageGroupId, regionConfig, getRegional, localizeNote, selectedNutrient, nutrientDialogOpen, setNutrientDialogOpen, setSelectedNutrient } =
     useNutritionContext();
 
   return (
     <>
+      <NutritionHubSessionAnalytics />
       <NutritionSyncBootstrap />
+      <NutritionHero />
       <NutritionTopNav />
 
       <div className="space-y-3 sm:space-y-4 pb-2">
         <NutritionDiscoveryHints />
-        {activeTab === "today" && <TodayPage />}
-        {activeTab === "plan" && <PlanPage />}
-        {activeTab === "track" && <TrackPage />}
-        {activeTab === "learn" && <LearnPage />}
-        {activeTab === "family" && <FamilyPage />}
+        <NutritionSectionPanel />
 
         <NutritionGrowthLink />
         <NutritionDisclaimer />
       </div>
-
-      <NutritionBottomNav />
 
       <NutrientDetailDialog
         nutrient={selectedNutrient}
@@ -80,8 +98,8 @@ function NutritionHubContent() {
 
 export default function NutritionLayout() {
   const { t } = useTranslation();
-  const nutritionGate = useHubModuleGate("hub_nutrition");
-  const childId = readStoredActiveChildId();
+  const childId = useActiveChildId();
+  const nutritionGate = useHubModuleGate("hub_nutrition", childId);
   const journeyChildName =
     nutritionGate.childName ?? t("parent_hub.journey.your_child", { defaultValue: "your child" });
   const showHealthZoneJourneyGate =
@@ -98,7 +116,7 @@ export default function NutritionLayout() {
   );
 
   return (
-    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-3 sm:space-y-4 pb-24 overflow-x-clip")}>
+    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-3 sm:space-y-4 pb-4 overflow-x-clip")}>
       {showHealthZoneJourneyGate && nutritionGate.journeySoft ? (
         <JourneyPreviewContent childName={journeyChildName}>{pageBody}</JourneyPreviewContent>
       ) : showHealthZoneJourneyGate ? (

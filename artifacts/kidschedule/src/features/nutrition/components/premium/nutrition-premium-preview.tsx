@@ -10,6 +10,7 @@ import { useMealMemory } from "@/features/nutrition/hooks/use-meal-memory";
 import { monthsToAgeGroupId } from "@/features/nutrition/lib/age-band-map";
 import { buildChildNutritionSnapshot } from "@/features/nutrition/lib/household-aggregation";
 import { buildNutritionPremiumPreview } from "@/features/nutrition/lib/nutrition-premium-preview";
+import { resolveHouseholdSize } from "@/features/nutrition/lib/grocery-household-size";
 import { loadMealMemoryEntries } from "@/features/nutrition/lib/nutrition-memory-sync";
 import { dateKeyLocal } from "@/features/nutrition/lib/nutrition-score-storage";
 import { useParentNutritionProfile } from "@/features/nutrition/hooks/use-parent-nutrition-profile";
@@ -21,7 +22,7 @@ function childAgeMonths(c: { age: number; ageMonths?: number | null }): number {
 
 export function NutritionPremiumPreview() {
   const { t } = useTranslation();
-  const { childId, ageGroupId } = useNutritionContext();
+  const { childId, ageGroupId, classicPlanIsVeg } = useNutritionContext();
   const { foodStyle } = useParentNutritionProfile();
   const { entries } = useMealMemory();
   const { data: children = [] } = useListChildren();
@@ -45,9 +46,10 @@ export function NutritionPremiumPreview() {
       ageGroupId,
       foodStyle,
       memoryEntries: entries,
-      familySize: Math.max(2, children.length + 2),
+      familySize: resolveHouseholdSize(children.length),
+      isVeg: classicPlanIsVeg,
     });
-  }, [children, todayKey, ageGroupId, foodStyle, entries]);
+  }, [children, todayKey, ageGroupId, foodStyle, entries, classicPlanIsVeg]);
 
   useEffect(() => {
     if (!isPremium && preview.hasData && childId) {

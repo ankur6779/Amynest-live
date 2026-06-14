@@ -20,10 +20,11 @@ export function buildNutritionPremiumPreview(input: {
   foodStyle: string;
   memoryEntries: MealMemoryEntry[];
   familySize: number;
+  isVeg?: boolean;
 }): NutritionPremiumPreviewData {
-  const { householdRows, ageGroupId, foodStyle, memoryEntries, familySize } = input;
+  const { householdRows, ageGroupId, foodStyle, memoryEntries, familySize, isVeg = true } = input;
 
-  const weekMeals = collectWeekMeals(ageGroupId, foodStyle);
+  const weekMeals = collectWeekMeals(ageGroupId, foodStyle, isVeg);
   const groceryGroups = generateGroceryList({
     weekMeals,
     familySize,
@@ -38,7 +39,7 @@ export function buildNutritionPremiumPreview(input: {
   let shareMealPreview: string | null = null;
   if (plan) {
     const dayIdx = getMondayBasedDayIndex();
-    const picked = pickTonightDinner(plan.days, dayIdx, true, memoryEntries);
+    const picked = pickTonightDinner(plan.days, dayIdx, isVeg, memoryEntries);
     shareMealPreview = picked.mealName;
   }
 

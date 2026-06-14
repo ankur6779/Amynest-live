@@ -6203,7 +6203,12 @@
     },
     "plan": {
       "classic": "Classic Plan",
-      "smart": "Smart Plan"
+      "smart": "Smart Plan",
+      "export_whatsapp": "WhatsApp",
+      "export_pdf": "PDF",
+      "export_share_title": "AmyNest Meal Plan",
+      "expand_meal_details": "Show meal nutrition details",
+      "collapse_meal_details": "Hide meal nutrition details"
     },
     "today": {
       "for_child": "Personalized for",
@@ -6263,6 +6268,13 @@
     "operations": {
       "title": "Grocery & meal prep",
       "subtitle": "Turn your meal plan into shopping lists, school tiffin ideas, and weekend prep.",
+      "tab_groceries": "Groceries",
+      "tab_tiffin": "Tiffin",
+      "tab_prep": "Prep",
+      "tab_household": "Household",
+      "tiffin_school_only": "School tiffin is available for school-age children (6+ years).",
+      "prep_empty": "No weekend prep tasks for this week's meals yet.",
+      "household_multi_child": "Add another child to your family to use the household grocery board.",
       "grocery_title": "Grocery list",
       "grocery_empty": "Add meals to your plan to generate a grocery list.",
       "grocery_premium": "Premium — smart grocery list from your meal plan",
@@ -6439,7 +6451,8 @@
       "ai_tip_mid": "You're on the right track! Make sure to include green leafy vegetables — spinach, kale, or broccoli are excellent choices.",
       "ai_tip_high": "Almost there! Swap refined snacks for a handful of roasted chana or nuts to get that final boost.",
       "outstanding": "Outstanding nutrition day!",
-      "keep_it_up": "Keep it up tomorrow too. Consistency is the key to health."
+      "keep_it_up": "Keep it up tomorrow too. Consistency is the key to health.",
+      "ring_aria": "Nutrition score {{score}} percent"
     },
     "growth": {
       "title": "Track Growth Progress",
@@ -6451,6 +6464,16 @@
       "hide_refs": "Hide References",
       "show_refs": "Show References"
     }
+  },
+  "nutrition_share": {
+    "read_only_badge": "AmyNest Nutrition — read only",
+    "title": "Household meal plan",
+    "valid_until": "Valid until",
+    "tonight_meal": "Tonight's meal",
+    "family_portions": "Family portions",
+    "loading": "Loading…",
+    "expired": "This share link has expired.",
+    "not_found": "Share link not found."
   },
   "walkthrough": {
     "aria_label": "App feature tour",

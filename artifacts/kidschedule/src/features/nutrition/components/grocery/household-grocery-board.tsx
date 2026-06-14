@@ -8,6 +8,8 @@ import { NUTRITION_HUB_ACCENT, hubSectionCardClasses } from "@/lib/parent-hub-pr
 import { monthsToAgeGroupId } from "@/features/nutrition/lib/age-band-map";
 import { shouldShowHouseholdBoard } from "@/features/nutrition/lib/household-aggregation";
 import { buildHouseholdGrocery, buildHouseholdTiffinPlans } from "@/features/nutrition/lib/household-grocery";
+import { resolveHouseholdSize } from "@/features/nutrition/lib/grocery-household-size";
+import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 import { loadMealMemoryEntries } from "@/features/nutrition/lib/nutrition-memory-sync";
 import { useParentNutritionProfile } from "@/features/nutrition/hooks/use-parent-nutrition-profile";
 import { GroceryList } from "@/features/nutrition/components/grocery/grocery-list";
@@ -24,6 +26,7 @@ export function HouseholdGroceryBoard() {
   const { foodStyle } = useParentNutritionProfile();
   const { isPremium } = useSubscription();
   const { openPaywall } = usePaywall();
+  const { classicPlanIsVeg } = useNutritionContext();
 
   const childPlans = useMemo(
     () =>
@@ -38,11 +41,14 @@ export function HouseholdGroceryBoard() {
   );
 
   const groceryGroups = useMemo(
-    () => buildHouseholdGrocery(childPlans, Math.max(2, children.length + 2)),
-    [childPlans, children.length],
+    () => buildHouseholdGrocery(childPlans, resolveHouseholdSize(children.length), classicPlanIsVeg),
+    [childPlans, children.length, classicPlanIsVeg],
   );
 
-  const tiffinPlans = useMemo(() => buildHouseholdTiffinPlans(childPlans), [childPlans]);
+  const tiffinPlans = useMemo(
+    () => buildHouseholdTiffinPlans(childPlans, classicPlanIsVeg),
+    [childPlans, classicPlanIsVeg],
+  );
 
   if (!shouldShowHouseholdBoard(children.length)) return null;
 

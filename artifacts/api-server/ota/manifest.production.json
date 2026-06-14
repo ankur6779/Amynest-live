@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.11",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.11.zip",
-  "checksum": "7665e87c222d23abb83750a40857271dba25283edd238de67c522b4b1e82f40b",
+  "bundleVersion": "1.0.12",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.12.zip",
+  "checksum": "dc20d53f088ab1ab9faf84f1ae8ac57aeb51c2b8ea02dc1d22e43eadeb0fa55b",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Routine Engine v1.0 certified, per-child routine switching, feedback UX polish, Gaming Hub nav, and FCM background notifications.",
+  "releaseNotes": "Nutrition Hub v1.0: grocery intelligence repairs, premium top journey navigation, plan export UX, sync and telemetry hardening, and Hindi/Hinglish coverage.",
   "changeClasses": [
     "bugfix",
     "ui-copy"
