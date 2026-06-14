@@ -60,10 +60,13 @@ import {
   saveCoachJourneySnapshot,
   weakSoundsToHistory,
   type SessionAttemptInput,
+  parseSpeechSessionPreset,
+  getSessionPresetPatch,
+  type SpeechSessionPreset,
 } from "./speech-coach-utils";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { useListChildren } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SPEECH_COACH_SESSION_FEATURE } from "@/lib/feature-usage-limits";
@@ -122,7 +125,7 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
   return items;
 }
 
-function getAgeMode(months: number): AgeMode {
+function getBaseAgeMode(months: number): AgeMode {
   if (months < 12) {
     return { label: "Infant", intro: "Parent-led vowels — celebrate any sound.", kind: "phonic", difficulty: "easy", sessionSize: 4, toddler: true };
   }
@@ -156,8 +159,34 @@ function getAgeMode(months: number): AgeMode {
   };
 }
 
-function buildTasks(months: number, history: ReturnType<typeof weakSoundsToHistory>): PronouncePrompt[] {
-  const mode = getAgeMode(months);
+function getAgeMode(months: number, preset: SpeechSessionPreset | null): AgeMode {
+  const base = getBaseAgeMode(months);
+  const patch = getSessionPresetPatch(preset);
+  if (!patch) return base;
+  const sessionSize =
+    patch.sessionSize != null
+      ? Math.min(patch.sessionSize, base.sessionSize)
+      : base.sessionSize;
+  let kind = patch.kind ?? base.kind;
+  if (preset === "school" && base.kind === "phonic") {
+    kind = base.kind;
+  }
+  if (preset === "emotion" && base.kind === "phonic") {
+    kind = base.kind;
+  }
+  return {
+    ...base,
+    kind,
+    difficulty: patch.difficulty ?? base.difficulty,
+    sessionSize,
+  };
+}
+
+function buildTasks(
+  months: number,
+  history: ReturnType<typeof weakSoundsToHistory>,
+  mode: AgeMode,
+): PronouncePrompt[] {
   const primary = buildPracticeSession(months, mode.kind, mode.difficulty, mode.sessionSize + 4, Date.now(), history);
   if (primary.length >= mode.sessionSize) return [...primary].slice(0, mode.sessionSize);
   const secondary =
@@ -270,8 +299,13 @@ export function LiveSpeechCoach({
   onOpenParentTools?: () => void;
 }) {
   const authFetch = useAuthFetch();
+  const search = useSearch();
+  const preset = useMemo(
+    () => parseSpeechSessionPreset(new URLSearchParams(search).get("preset")),
+    [search],
+  );
   const ageMonths = totalMonths(child);
-  const mode = useMemo(() => getAgeMode(ageMonths), [ageMonths]);
+  const mode = useMemo(() => getAgeMode(ageMonths, preset), [ageMonths, preset]);
 
   useEffect(() => {
     enqueueBehaviorWarmup(authFetch, "speech_coach", { ageMonths });
@@ -281,7 +315,7 @@ export function LiveSpeechCoach({
   const speechLocked = featureUsage.isFeatureLocked(SPEECH_COACH_SESSION_FEATURE);
   const { recordActivity } = useRecordLearningActivity(child.id);
   const practiceHistory = useMemo(() => weakSoundsToHistory(progress.data?.weakSounds ?? []), [progress.data?.weakSounds]);
-  const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths, practiceHistory));
+  const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths, practiceHistory, mode));
   const [idx, setIdx] = useState(0);
   const [state, setState] = useState<CoachState>("idle");
   const [lastResult, setLastResult] = useState<Result | null>(null);
@@ -397,7 +431,7 @@ export function LiveSpeechCoach({
   }, [dialogueContext, tasks]);
 
   useEffect(() => {
-    setTasks(buildTasks(ageMonths, practiceHistory));
+    setTasks(buildTasks(ageMonths, practiceHistory, mode));
     setIdx(0);
     setState("idle");
     setLastResult(null);
@@ -413,7 +447,7 @@ export function LiveSpeechCoach({
     stt.reset();
     voice.pause();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [child.id, ageMonths, practiceHistory]);
+  }, [child.id, ageMonths, practiceHistory, mode]);
 
   useEffect(() => {
     if (state !== "listening") return;
@@ -741,7 +775,7 @@ export function LiveSpeechCoach({
   }, [current, dialogueContext, idx, speakSequence, streak, stt]);
 
   const restart = useCallback(() => {
-    const fresh = buildTasks(ageMonths, practiceHistory);
+    const fresh = buildTasks(ageMonths, practiceHistory, mode);
     setTasks(fresh);
     setIdx(0);
     setScore(0);
@@ -757,7 +791,7 @@ export function LiveSpeechCoach({
     setHasStarted(false);
     stt.reset();
     voice.pause();
-  }, [ageMonths, practiceHistory, stt, voice]);
+  }, [ageMonths, mode, practiceHistory, stt, voice]);
 
   if (!current && state !== "complete") {
     return (

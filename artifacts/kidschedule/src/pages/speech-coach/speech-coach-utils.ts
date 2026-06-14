@@ -55,6 +55,69 @@ export function parseSpeechCoachPageTab(
   return value === "hub" ? "hub" : "practice";
 }
 
+export type SpeechSessionPreset =
+  | "quick"
+  | "bedtime"
+  | "school"
+  | "warmup"
+  | "emotion";
+
+const SESSION_PRESETS = new Set<SpeechSessionPreset>([
+  "quick",
+  "bedtime",
+  "school",
+  "warmup",
+  "emotion",
+]);
+
+export function parseSpeechSessionPreset(
+  raw: string | null | undefined,
+): SpeechSessionPreset | null {
+  if (!raw || !SESSION_PRESETS.has(raw as SpeechSessionPreset)) return null;
+  return raw as SpeechSessionPreset;
+}
+
+import type { PronouncePromptKind, PronouncePromptDifficulty } from "@workspace/speech-coach";
+
+export type SessionPresetModePatch = {
+  kind?: PronouncePromptKind;
+  difficulty?: PronouncePromptDifficulty;
+  sessionSize?: number;
+};
+
+export function getSessionPresetPatch(
+  preset: SpeechSessionPreset | null,
+): SessionPresetModePatch | null {
+  if (!preset) return null;
+  switch (preset) {
+    case "quick":
+      return { sessionSize: 3 };
+    case "bedtime":
+      return { sessionSize: 5, difficulty: "easy" };
+    case "school":
+      return { difficulty: "medium", sessionSize: 6 };
+    case "warmup":
+      return { sessionSize: 4 };
+    case "emotion":
+      return { kind: "sentence", difficulty: "easy", sessionSize: 5 };
+    default:
+      return null;
+  }
+}
+
+export type SessionTypeAction =
+  | { type: "live"; preset: SpeechSessionPreset }
+  | { type: "scroll"; anchor: string };
+
+export function getSessionTypeAction(key: string): SessionTypeAction {
+  if (key === "pronounce") {
+    return { type: "scroll", anchor: "speech-section-practice" };
+  }
+  const preset = parseSpeechSessionPreset(key);
+  if (preset) return { type: "live", preset };
+  return { type: "live", preset: "quick" };
+}
+
 /** Short success/retry cue used by Live Coach and speech games. */
 export function playSpeechCue(type: "success" | "retry"): void {
   if (typeof window === "undefined") return;
