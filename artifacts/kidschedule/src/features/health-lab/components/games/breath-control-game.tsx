@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Fingerprint } from "lucide-react";
@@ -6,6 +7,18 @@ import { computeBreathScore } from "../../scoring";
 import { validateBreathSession, applyCheatMultiplier } from "../../anti-cheat";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
+import {
+  HealthLabGameStage,
+  HealthLabGameTopBar,
+  HealthLabGameTimer,
+  HealthLabHoldOrb,
+} from "../health-lab-game-ui";
+import {
+  HealthLabAltitudeBadge,
+  HealthLabFilmGrain,
+  HealthLabPhaseFlash,
+  HealthLabStarfield,
+} from "../health-lab-cinematic";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
@@ -108,34 +121,55 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
   }, [finished, holding, onComplete, playSuccess, releasePointer]);
 
   return (
-    <div
-      className="relative flex min-h-[70dvh] flex-col items-center justify-center px-4"
+    <HealthLabGameStage
+      gameId="breath-control"
+      className="items-center justify-center px-4 pb-8"
       style={{
         background: `linear-gradient(180deg, 
           hsl(${120 - bgProgress * 80}, 60%, ${45 - bgProgress * 25}%) 0%, 
           hsl(${220 + bgProgress * 40}, 70%, ${25 + bgProgress * 15}%) 100%)`,
-      }}
+      } as CSSProperties}
     >
       <HealthLabLiveRegion message={liveMsg} />
-      <button type="button" onClick={onExit} className="absolute left-4 top-4 z-10 min-h-[48px] text-sm text-white/70 underline">
-        Exit
-      </button>
+      <HealthLabGameTopBar onExit={onExit} title="Balloon Journey" />
+      <HealthLabStarfield count={bgProgress > 0.35 ? 50 : 24} />
+      <HealthLabFilmGrain />
+      <HealthLabPhaseFlash active={!!celebrateMilestone} color="rgba(251,191,36,0.4)" />
 
       {/* Journey map */}
-      <div className="mb-3 flex w-full max-w-xs justify-between px-2">
-        {BREATH_MILESTONES.map((m) => (
-          <span
-            key={m.label}
-            className={cn("text-lg transition-opacity", elapsed >= m.seconds ? "opacity-100" : "opacity-30")}
-            aria-hidden
-          >
-            {m.emoji}
-          </span>
-        ))}
+      <div className="relative z-[3] mb-4 w-full max-w-sm rounded-2xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-md">
+        <div className="flex justify-between">
+          {BREATH_MILESTONES.map((m) => (
+            <div key={m.label} className="flex flex-col items-center gap-1">
+              <span
+                className={cn(
+                  "text-lg transition-all duration-500",
+                  elapsed >= m.seconds ? "scale-110 opacity-100 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" : "opacity-25 grayscale",
+                )}
+                aria-hidden
+              >
+                {m.emoji}
+              </span>
+              <span className={cn("text-[9px] font-medium uppercase tracking-wide", elapsed >= m.seconds ? "text-amber-200/90" : "text-white/30")}>
+                {m.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
+      {milestone && (
+        <div className="relative z-[3] mb-3 w-full max-w-xs px-2">
+          <HealthLabAltitudeBadge
+            label={milestone.label}
+            emoji={milestone.emoji}
+            progress={bgProgress}
+          />
+        </div>
+      )}
+
       {!reduced && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
           {[...Array(5)].map((_, i) => (
             <motion.span
               key={`bird-${i}`}
@@ -173,25 +207,24 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
         </div>
       )}
 
-      <p className="mb-2 text-center text-sm text-white/80">Balloon Journey Adventure</p>
+      <p className="relative z-[3] mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
+        Balloon Journey Adventure
+      </p>
       <AnimatePresence>
         {celebrateMilestone && (
           <motion.p
-            className="mb-4 text-xl font-bold text-amber-200"
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="relative z-[3] mb-4 rounded-2xl border border-amber-300/30 bg-amber-500/15 px-5 py-2 text-xl font-bold text-amber-100 shadow-[0_0_40px_-8px_rgba(251,191,36,0.5)]"
+            initial={{ scale: 0.5, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
           >
             {celebrateMilestone}
           </motion.p>
         )}
       </AnimatePresence>
-      {milestone && !celebrateMilestone && (
-        <p className="mb-4 text-lg font-bold text-amber-200">{milestone.emoji} {milestone.label}</p>
-      )}
 
       <motion.div
-        className="relative mb-6 flex flex-col items-center"
+        className="relative z-[3] mb-6 flex flex-col items-center"
         animate={reduced ? {} : { y: -rise }}
         transition={{ type: "spring", stiffness: 120, damping: 18 }}
       >
@@ -258,20 +291,14 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
         </svg>
       </motion.div>
 
-      <p className="mb-4 font-mono text-3xl font-bold text-white" aria-label={`${elapsed.toFixed(1)} seconds`}>
-        {elapsed.toFixed(1)}s
-      </p>
+      <HealthLabGameTimer value={`${elapsed.toFixed(1)}s`} label="Hold time" className="relative z-[3] mb-4" />
 
-      <button
-        ref={holdButtonRef}
-        type="button"
+      <div className="relative z-[3]">
+        <HealthLabHoldOrb
+        holding={holding}
         disabled={finished}
-        className={cn(
-          "relative flex h-32 w-32 items-center justify-center rounded-full touch-none select-none",
-          "bg-gradient-to-br from-cyan-400 to-violet-600 health-lab-glow-pulse",
-          "shadow-[0_0_40px_rgba(139,92,246,0.7)]",
-          holding && "scale-95 shadow-[0_0_60px_rgba(34,211,238,0.9)]",
-        )}
+        buttonRef={holdButtonRef}
+        ariaLabel="Hold to inflate balloon"
         onPointerDown={(e) => {
           if (finished || !e.isPrimary) return;
           playTap();
@@ -302,21 +329,21 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
           if (activePointerRef.current !== e.pointerId) return;
           handleEnd(e.pointerId);
         }}
-        aria-label="Hold to inflate balloon"
       >
         <Fingerprint
           className={cn(
-            "h-14 w-14 text-white/90 drop-shadow-md",
-            holding ? "opacity-100" : "opacity-80",
+            "h-14 w-14 text-white/95 drop-shadow-md",
+            holding ? "opacity-100" : "opacity-85",
           )}
           strokeWidth={1.5}
           aria-hidden
         />
-      </button>
+      </HealthLabHoldOrb>
+      </div>
 
-      <p className="mt-6 max-w-xs text-center text-xs text-white/60">
+      <p className="relative z-[3] mt-6 max-w-xs text-center text-xs leading-relaxed text-white/55">
         Place your finger on the circle and hold — gentle micro-movements only!
       </p>
-    </div>
+    </HealthLabGameStage>
   );
 }

@@ -3,11 +3,12 @@ import { GAMES, getLevelForXp, getNextLevel, DAILY_QUESTS, BADGES, getPrestigeTi
 import { getSeasonalTheme, getWeeklyChallenge, isGoldenChallengeDay, isDoubleXpDay, MONTHLY_MEGA_QUEST } from "../retention";
 import { filterHistoryByRange, dateKeyLocal } from "../storage";
 import { monthlySessionCount } from "../dashboard-utils";
-import { HEALTH_LAB_GAME_BTN, HEALTH_LAB_HERO, HEALTH_LAB_THEME } from "../theme";
+import { HEALTH_LAB_HERO, HEALTH_LAB_THEME } from "../theme";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import type { HealthLabPersistedState } from "../types";
 import { HealthLabAvatar } from "./health-lab-avatar";
 import { HealthLabDisclaimer } from "./health-lab-disclaimer";
+import { HealthLabGameCard, HealthLabChallengesSection } from "./health-lab-game-ui";
 import { cn } from "@/lib/utils";
 import { Flame, Coins, Trophy, Sparkles, ChevronRight, Gift, ShoppingBag, Star, Target } from "lucide-react";
 
@@ -197,33 +198,22 @@ export function HealthLabHome({
         </div>
       </section>
 
-      <section aria-labelledby="challenges-heading">
-        <h2 id="challenges-heading" className="mb-3 text-sm font-semibold text-white">{t("wellness_challenges", "Wellness Challenges")}</h2>
-        <div className="grid gap-3">
-          {GAMES.map((game) => (
-            <button
-              key={game.id}
-              type="button"
-              onClick={() => onSelectGame(game.id)}
-              className={cn(HEALTH_LAB_GAME_BTN, `bg-gradient-to-r ${game.theme} bg-opacity-20`)}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-3xl" aria-hidden>{game.emoji}</span>
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="font-semibold text-white">{game.title}</p>
-                  <p className="text-xs text-white/70">{game.subtitle}</p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-white/50" />
-              </div>
-              {state.personalBests[game.id] != null && (
-                <p className="mt-2 text-[11px] text-amber-200/80">
-                  {t("best", "Best")}: {state.personalBests[game.id]} · {game.durationHint}
-                </p>
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
+      <HealthLabChallengesSection
+        eyebrow={t("pick_a_challenge", "Pick a challenge")}
+        title={t("wellness_challenges", "Wellness Challenges")}
+        hint={t("wellness_challenges_hint", "Tap any adventure — earn XP, coins & badges")}
+      >
+        {GAMES.map((game, index) => (
+          <HealthLabGameCard
+            key={game.id}
+            game={game}
+            index={index}
+            personalBest={state.personalBests[game.id]}
+            bestLabel={t("best", "Best")}
+            onSelect={() => onSelectGame(game.id)}
+          />
+        ))}
+      </HealthLabChallengesSection>
 
       <button type="button" onClick={onOpenDashboard} className={cn(HEALTH_LAB_THEME.cardGlass, "flex w-full items-center gap-3 p-4 text-left min-h-[48px]")}>
         <Trophy className="h-8 w-8 text-amber-400" />

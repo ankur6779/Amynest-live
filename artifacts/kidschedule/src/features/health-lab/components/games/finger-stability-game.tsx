@@ -3,7 +3,21 @@ import { computeFingerStabilityScore } from "../../scoring";
 import { validateFingerSession, applyCheatMultiplier } from "../../anti-cheat";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
-import { cn } from "@/lib/utils";
+import {
+  HealthLabGameStage,
+  HealthLabGameTopBar,
+  HealthLabGameHero,
+  HealthLabGameCta,
+  HealthLabGameChips,
+  HealthLabGameTimer,
+} from "../health-lab-game-ui";
+import {
+  HealthLabFilmGrain,
+  HealthLabMissionBanner,
+  HealthLabReactorChamber,
+  HealthLabStarfield,
+} from "../health-lab-cinematic";
+import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
 
 const BASE_DURATION = 20;
@@ -28,6 +42,7 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
   const touchMovesRef = useRef<number[]>([]);
   const pointerCountRef = useRef(0);
   const { playTap, playSuccess } = useHealthLabAudio();
+  const reduced = useReducedMotion();
 
   const ringScale = Math.max(0.5, 1 - elapsed / BASE_DURATION * 0.35);
 
@@ -93,38 +108,50 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
   const brightness = Math.max(0.3, 1 - crackLevel * 0.7);
 
   return (
-    <div className="flex min-h-[70dvh] flex-col items-center justify-center px-4">
+    <HealthLabGameStage gameId="finger-stability" className="items-center justify-center px-4 pb-10">
       <HealthLabLiveRegion message={liveMsg} />
-      <button type="button" onClick={onExit} className="absolute left-4 top-4 min-h-[48px] text-sm text-white/70 underline">
-        Exit
-      </button>
-
-      <h2 className="text-xl font-bold text-white">Crystal Core Reactor</h2>
-      <p className="mt-2 text-sm text-violet-200/80">Keep your finger on the glowing core</p>
+      <HealthLabGameTopBar onExit={onExit} title="Crystal Core" />
+      <HealthLabStarfield count={36} />
+      <HealthLabFilmGrain />
 
       {!active && (
-        <div className="mt-4 flex gap-2">
-          {DIFFICULTIES.map((d, i) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => { setDifficulty(i); playTap(); }}
-              className={cn(
-                "min-h-[48px] rounded-full px-3 py-2 text-xs",
-                difficulty === i ? "bg-violet-500 text-white" : "bg-white/10 text-violet-200",
-              )}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
+        <HealthLabGameHero
+          gameId="finger-stability"
+          emoji="💎"
+          title="Crystal Core Reactor"
+          subtitle="Keep your finger on the glowing core — don't let it crack"
+          className="relative z-[3] mt-2"
+        />
       )}
 
-      <p className="mt-2 font-mono text-2xl text-white">{Math.max(0, BASE_DURATION - elapsed).toFixed(1)}s</p>
+      {active && (
+        <HealthLabMissionBanner
+          eyebrow="Reactor online"
+          title="Stabilize the core"
+          subtitle={`Integrity ${Math.round((1 - crackLevel) * 100)}% · stay centered`}
+          tone={crackLevel > 0.5 ? "danger" : "neutral"}
+          className="relative z-[3] mx-auto mt-2 max-w-sm"
+        />
+      )}
+
+      {!active && (
+        <HealthLabGameChips
+          options={DIFFICULTIES}
+          selected={difficulty}
+          onSelect={(i) => { setDifficulty(i); playTap(); }}
+          className="relative z-[3] mt-4"
+        />
+      )}
+
+      <HealthLabGameTimer
+        value={`${Math.max(0, BASE_DURATION - elapsed).toFixed(1)}s`}
+        label="Time remaining"
+        className="relative z-[3] mt-4"
+      />
 
       <div
         ref={containerRef}
-        className="relative mt-6 h-64 w-64 touch-none"
+        className="relative z-[3] mt-4 touch-none"
         onPointerDown={(e) => {
           if (active || !e.isPrimary) return;
           playTap();
@@ -141,32 +168,21 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
         onPointerMove={(e) => active && handleMove(e.clientX, e.clientY, e.movementX, e.movementY)}
         onPointerUp={() => active && finish()}
       >
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-violet-400/50 transition-all"
-          style={{
-            width: 200 * ringScale,
-            height: 200 * ringScale,
-            background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(217,70,239,0.1))",
-          }}
+        <HealthLabReactorChamber
+          active={active}
+          ringScale={ringScale}
+          brightness={brightness}
+          crackLevel={crackLevel}
+          targetOffset={targetOffset}
+          offset={offset}
+          reduced={reduced}
         />
-        <div
-          className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            background: `radial-gradient(circle, rgba(167,139,250,${brightness}) 0%, rgba(139,92,246,0.3) 70%)`,
-            boxShadow: `0 0 ${30 * brightness}px rgba(167,139,250,0.8)`,
-            transform: `translate(calc(-50% + ${targetOffset.x + offset.x * 0.1}px), calc(-50% + ${targetOffset.y + offset.y * 0.1}px))`,
-          }}
-        />
-        {crackLevel > 0.3 && (
-          <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-60" aria-hidden>
-            💔
-          </div>
-        )}
       </div>
 
       {!active && elapsed === 0 && (
-        <button
-          type="button"
+        <HealthLabGameCta
+          variant="violet"
+          className="relative z-[3] mt-6"
           onClick={() => {
             playTap();
             pointerCountRef.current = 1;
@@ -176,11 +192,10 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
             setMaxDrift(0);
             setLiveMsg("Stabilize the core!");
           }}
-          className="mt-6 min-h-[48px] rounded-2xl bg-violet-600 px-8 py-3 font-bold text-white"
         >
           Touch to Start
-        </button>
+        </HealthLabGameCta>
       )}
-    </div>
+    </HealthLabGameStage>
   );
 }

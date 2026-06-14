@@ -7,6 +7,13 @@ import { progressStory, weeklySummary } from "../../dashboard-utils";
 import type { HealthLabPersistedState } from "../../types";
 import { HealthLabAvatar } from "../health-lab-avatar";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
+import {
+  HealthLabGameStage,
+  HealthLabGameTopBar,
+  HealthLabGameHero,
+  HealthLabGameCta,
+  HealthLabGamePanel,
+} from "../health-lab-game-ui";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { cn } from "@/lib/utils";
 
@@ -53,74 +60,69 @@ export function CalmnessMeterGame({ state, onComplete, onExit }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-8">
+    <HealthLabGameStage gameId="calmness-meter" className="pb-10">
       <HealthLabLiveRegion message="Amy Wellness Report" />
-      <button type="button" onClick={onExit} className="mb-4 min-h-[48px] text-sm text-white/70 underline">
-        Exit
-      </button>
+      <HealthLabGameTopBar onExit={onExit} title="Wellness Report" />
 
-      <div className="text-center">
-        <span className="text-5xl">✨</span>
-        <h2 className="mt-3 text-2xl font-bold text-white">Amy Wellness Report</h2>
-        <p className="mt-2 text-sm text-violet-200/80">
-          Your wellness signature — powered by all your Health Lab adventures
-        </p>
-      </div>
+      <div className="mx-auto max-w-lg px-4">
+        <HealthLabGameHero
+          gameId="calmness-meter"
+          emoji="✨"
+          title="Amy Wellness Report"
+          subtitle="Your wellness signature — powered by all your Health Lab adventures"
+        />
 
-      <div className={cn(HEALTH_LAB_THEME.cardGlass, "mt-6 flex flex-col items-center p-6")}>
-        <HealthLabAvatar avatarId={state.avatarId} level={state.level} size="lg" glowing equippedItems={state.equippedItems} />
-        <p className="mt-3 text-4xl font-bold text-amber-300">{scores?.overall ?? "—"}</p>
-        <p className="text-sm text-violet-200/70">Overall Wellness Score</p>
-        <p className="mt-3 text-center text-sm text-violet-100/80">{narrative}</p>
-      </div>
-
-      {scores ? (
-        <div className="mt-4 space-y-3">
-          {METRICS.map((m) => (
-            <div key={m.key} className={cn(HEALTH_LAB_THEME.cardGlass, "p-4")}>
-              <div className="flex items-center justify-between">
-                <span className="text-base text-white">
-                  {m.emoji} {m.label}
-                </span>
-                <span className="text-lg font-bold text-white">{scores[m.key]}</span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className={cn("h-full rounded-full bg-gradient-to-r", m.gradient)}
-                  style={{ width: `${scores[m.key]}%` }}
-                />
-              </div>
-            </div>
-          ))}
+        <div className={cn(HEALTH_LAB_THEME.cardGlass, "mt-6 flex flex-col items-center border-white/[0.12] bg-white/[0.05] p-6 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.5)]")}>
+          <HealthLabAvatar avatarId={state.avatarId} level={state.level} size="lg" glowing equippedItems={state.equippedItems} />
+          <p className="mt-3 text-5xl font-bold tabular-nums text-amber-300">{scores?.overall ?? "—"}</p>
+          <p className="text-xs uppercase tracking-wider text-violet-200/60">Overall Wellness Score</p>
+          <p className="mt-3 text-center text-sm leading-relaxed text-violet-100/80">{narrative}</p>
         </div>
-      ) : (
-        <p className="mt-4 text-center text-amber-300/80">
-          Play at least one challenge to unlock your wellness report!
-        </p>
-      )}
 
-      <div className={cn(HEALTH_LAB_THEME.cardGlass, "mt-4 p-4")}>
-        <p className="text-xs font-semibold uppercase text-violet-300/70">Weekly insight</p>
-        <p className="mt-1 text-sm text-white/90">{weekInsight}</p>
-      </div>
-
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-sm text-violet-200/80">
-        {canReward ? (
-          <p>✅ Daily snapshot available ({gamesPlayed}/3 games played). Earn XP once today!</p>
-        ) : state.calmnessRewardedToday ? (
-          <p>Snapshot saved today. You can view again anytime — no extra XP.</p>
+        {scores ? (
+          <div className="mt-4 space-y-3">
+            {METRICS.map((m) => (
+              <div key={m.key} className={cn(HEALTH_LAB_THEME.cardGlass, "border-white/[0.1] bg-white/[0.04] p-4")}>
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-medium text-white">
+                    {m.emoji} {m.label}
+                  </span>
+                  <span className="text-lg font-bold tabular-nums text-white">{scores[m.key]}</span>
+                </div>
+                <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className={cn("h-full rounded-full bg-gradient-to-r shadow-[0_0_12px_-2px_rgba(255,255,255,0.3)]", m.gradient)}
+                    style={{ width: `${scores[m.key]}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
-          <p>Play {3 - gamesPlayed} more different challenge{3 - gamesPlayed !== 1 ? "s" : ""} today to earn snapshot XP.</p>
+          <HealthLabGamePanel className="mt-4 text-center text-amber-300/90">
+            Play at least one challenge to unlock your wellness report!
+          </HealthLabGamePanel>
         )}
-      </div>
 
-      <button
-        type="button"
-        onClick={handleReveal}
-        className={cn("mt-6 w-full min-h-[48px] rounded-2xl py-3.5 text-lg font-bold", HEALTH_LAB_THEME.ctaPrimary)}
-      >
-        {canReward ? "Save Wellness Snapshot" : "View Wellness Snapshot"}
-      </button>
-    </div>
+        <HealthLabGamePanel className="mt-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-violet-300/70">Weekly insight</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-white/90">{weekInsight}</p>
+        </HealthLabGamePanel>
+
+        <HealthLabGamePanel className="mt-4 text-sm leading-relaxed text-violet-200/80">
+          {canReward ? (
+            <p>✅ Daily snapshot available ({gamesPlayed}/3 games played). Earn XP once today!</p>
+          ) : state.calmnessRewardedToday ? (
+            <p>Snapshot saved today. You can view again anytime — no extra XP.</p>
+          ) : (
+            <p>Play {3 - gamesPlayed} more different challenge{3 - gamesPlayed !== 1 ? "s" : ""} today to earn snapshot XP.</p>
+          )}
+        </HealthLabGamePanel>
+
+        <HealthLabGameCta variant="amber" className="mt-6 w-full min-w-0" onClick={handleReveal}>
+          {canReward ? "Save Wellness Snapshot" : "View Wellness Snapshot"}
+        </HealthLabGameCta>
+      </div>
+    </HealthLabGameStage>
   );
 }

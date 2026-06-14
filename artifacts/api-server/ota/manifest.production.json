@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.5",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.5.zip",
-  "checksum": "eb5418e0ecda33ac1088c3d1cec5158dbd4a8450978b33f6c8d55004473b2ea5",
+  "bundleVersion": "1.0.6",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.6.zip",
+  "checksum": "89c9bb0a5336903ff7b7aaf0fff6bfbfe989e4d8482a1104b81450e12bb7b967",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Revert Amy 2D lip-sync; restore static portrait while speaking.",
+  "releaseNotes": "Premium cinematic Health Lab game UI — glass cards, mission banners, and starfield effects.",
   "changeClasses": [
     "bugfix",
     "ui-copy"

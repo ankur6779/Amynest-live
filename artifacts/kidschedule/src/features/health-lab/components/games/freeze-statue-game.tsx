@@ -1,11 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { computeFreezeScore } from "../../scoring";
 import { validateFreezeSession } from "../../anti-cheat";
 import { useMotionSensor } from "../../hooks/use-motion-sensor";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
-import { cn } from "@/lib/utils";
+import {
+  HealthLabGameStage,
+  HealthLabGameTopBar,
+  HealthLabGameCta,
+  HealthLabGamePanel,
+} from "../health-lab-game-ui";
+import {
+  HealthLabFilmGrain,
+  HealthLabFreezeOverlay,
+  HealthLabGardenStage,
+  HealthLabMissionBanner,
+  HealthLabPhaseFlash,
+  HealthLabRoundRail,
+  HealthLabStarfield,
+} from "../health-lab-cinematic";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
 
@@ -93,16 +107,28 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
   }, [phase, sensor, roundIndex, successes, beginRound, onComplete, playSuccess, playMiss]);
 
   return (
-    <div className="flex min-h-[70dvh] flex-col items-center justify-center bg-gradient-to-b from-emerald-500/30 to-teal-800 px-4">
+    <HealthLabGameStage gameId="freeze-statue" className="items-center justify-center px-4 pb-10">
       <HealthLabLiveRegion message={liveMsg} />
-      <button type="button" onClick={onExit} className="absolute left-4 top-4 min-h-[48px] text-sm text-white/70 underline">
-        Exit
-      </button>
+      <HealthLabGameTopBar onExit={onExit} title="Crystal Garden" />
+      <HealthLabStarfield count={24} />
+      <HealthLabFilmGrain />
+      <HealthLabFreezeOverlay active={phase === "freeze"} />
+      <HealthLabPhaseFlash active={phase === "freeze"} color="rgba(34,211,238,0.3)" />
+      <HealthLabPhaseFlash active={!!feedback?.includes("Perfect")} color="rgba(52,211,153,0.35)" />
 
       {sensor.simulated && (
-        <p className="mb-2 rounded-lg bg-amber-500/20 px-3 py-1 text-xs text-amber-200">
+        <HealthLabGamePanel className="relative z-[3] mb-4 text-xs text-amber-200">
           ⚠️ Simulation mode — badges disabled
-        </p>
+        </HealthLabGamePanel>
+      )}
+
+      {phase !== "intro" && (
+        <HealthLabRoundRail
+          current={Math.min(roundIndex, ROUNDS - 1)}
+          total={ROUNDS}
+          label="Crystal rounds"
+          className="relative z-[3] mb-4 w-full"
+        />
       )}
 
       <motion.div
@@ -112,30 +138,41 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
             : { rotate: 0, scale: 1 }
         }
         transition={{ duration: 0.6, repeat: phase === "dance" ? Infinity : 0 }}
-        className="text-7xl"
+        className="relative z-[3] flex h-28 w-28 items-center justify-center rounded-[1.75rem] border border-white/20 bg-gradient-to-br from-emerald-500/20 to-teal-900/30 text-6xl shadow-[0_16px_48px_-12px_rgba(45,212,191,0.45)] backdrop-blur-md"
         aria-hidden
       >
         🧑‍🔬
+        {phase === "dance" && !reduced && (
+          <motion.div
+            className="absolute -inset-3 rounded-[2rem] border border-emerald-300/20"
+            animate={{ opacity: [0.3, 0.8, 0.3], scale: [1, 1.08, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          />
+        )}
       </motion.div>
 
-      <h2 className="mt-4 text-xl font-bold text-white">Crystal Garden Challenge</h2>
+      <h2 className="relative z-[3] mt-5 text-2xl font-bold tracking-tight health-lab-title-shine sm:text-3xl">
+        Crystal Garden Challenge
+      </h2>
 
-      {/* Flower / crystal grid */}
-      <div className="mt-4 grid grid-cols-5 gap-2" aria-hidden>
-        {Array.from({ length: ROUNDS }).map((_, i) => (
-          <span key={i} className="text-2xl">
-            {i < crystals ? "💎" : phase === "dance" && i === roundIndex ? "🌸" : "🌱"}
-          </span>
-        ))}
+      <div className="relative z-[3] mt-5 w-full max-w-sm">
+        <HealthLabGardenStage
+          phase={phase}
+          crystals={crystals}
+          roundIndex={roundIndex}
+          total={ROUNDS}
+          reduced={reduced}
+        />
       </div>
 
       {phase === "intro" && (
         <>
-          <p className="mt-3 max-w-sm text-center text-sm text-violet-100">
+          <p className="relative z-[3] mt-4 max-w-sm text-center text-sm leading-relaxed text-violet-100/80">
             Amy dances — when she shouts FREEZE, hold completely still! ({ROUNDS} rounds)
           </p>
-          <button
-            type="button"
+          <HealthLabGameCta
+            variant="emerald"
+            className="relative z-[3] mt-8"
             onClick={() => {
               playTap();
               startRef.current = Date.now();
@@ -144,26 +181,48 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
               setCrystals(0);
               beginRound();
             }}
-            className="mt-6 min-h-[48px] rounded-2xl bg-emerald-500 px-8 py-3 font-bold text-white"
           >
             Start Dancing
-          </button>
+          </HealthLabGameCta>
         </>
       )}
 
-      {phase === "dance" && <p className="mt-4 text-lg text-white">🎵 Dance with Amy…</p>}
-      {phase === "freeze" && (
-        <p className={cn("mt-4 text-3xl font-black text-amber-300", !reduced && "animate-pulse")}>
-          FREEZE!
-        </p>
-      )}
-      {feedback && <p className="mt-4 text-center text-lg text-white">{feedback}</p>}
+      <div className="relative z-[3] mt-5 w-full max-w-sm">
+        <AnimatePresence mode="wait">
+          {phase === "dance" && (
+            <HealthLabMissionBanner
+              key="dance"
+              eyebrow="Dance phase"
+              title="🎵 Dance with Amy…"
+              subtitle="Get ready to freeze!"
+              tone="neutral"
+            />
+          )}
+          {phase === "freeze" && (
+            <HealthLabMissionBanner
+              key="freeze"
+              eyebrow="Statue mode"
+              title="FREEZE!"
+              subtitle="Hold completely still"
+              tone="freeze"
+            />
+          )}
+          {feedback && phase !== "dance" && phase !== "freeze" && (
+            <HealthLabMissionBanner
+              key="feedback"
+              eyebrow={feedback.includes("Perfect") ? "Crystal grown" : "Keep trying"}
+              title={feedback}
+              tone={feedback.includes("Perfect") ? "success" : "neutral"}
+            />
+          )}
+        </AnimatePresence>
+      </div>
 
       {roundIndex > 0 && phase !== "intro" && (
-        <p className="mt-6 text-sm text-white/70">
+        <p className="relative z-[3] mt-6 rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-sm text-white/65">
           Round {Math.min(roundIndex + 1, ROUNDS)}/{ROUNDS} · Crystals: {crystals}
         </p>
       )}
-    </div>
+    </HealthLabGameStage>
   );
 }

@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { REACTION_TIERS } from "../../constants";
 import { computeReactionScoreWithPenalties } from "../../scoring";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
+import { HealthLabGameStage, HealthLabGameTopBar } from "../health-lab-game-ui";
+import {
+  HealthLabFilmGrain,
+  HealthLabLaunchPad,
+  HealthLabMissionBanner,
+  HealthLabPhaseFlash,
+  HealthLabRoundRail,
+  HealthLabStarfield,
+} from "../health-lab-cinematic";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
@@ -24,7 +33,6 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
   const [times, setTimes] = useState<number[]>([]);
   const [falseStarts, setFalseStarts] = useState(0);
   const [showTier, setShowTier] = useState<string | null>(null);
-  const [rocketLaunch, setRocketLaunch] = useState(false);
   const [liveMsg, setLiveMsg] = useState("Rocket Launch Academy — wait for the rocket signal");
   const goTimeRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -43,7 +51,6 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
     clearTimer();
     setPhase("wait");
     setShowTier(null);
-    setRocketLaunch(false);
     goTimeRef.current = null;
     setLiveMsg(`Round ${round || 1}: Wait for launch signal`);
     const delay = 2000 + Math.random() * 6000;
@@ -62,7 +69,6 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
       const avg = allTimes.reduce((a, b) => a + b, 0) / ROUNDS;
       const score = computeReactionScoreWithPenalties(avg, fs);
       setPhase("result");
-      setRocketLaunch(true);
       setLiveMsg(`Mission complete! Average ${Math.round(avg)} milliseconds`);
       setTimeout(() => onComplete(score, Date.now() - startRef.current), 1500);
     },
@@ -89,7 +95,6 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
       const ms = Date.now() - goTimeRef.current;
       const tier = REACTION_TIERS.find((t) => ms < t.maxMs)!;
       setShowTier(`${tier.emoji} ${tier.label}!`);
-      setRocketLaunch(true);
       const nextTimes = [...times, ms];
       setTimes(nextTimes);
       void playSuccess(ms < 300);
@@ -106,79 +111,120 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
     }
   };
 
-  const phaseIcon =
+  const phaseStyles =
     phase === "wait" || phase === "intro" || phase === "too-early"
-      ? "🛑"
+      ? "from-red-950/95 via-rose-950/90 to-slate-950/95"
       : phase === "go"
-        ? "🚀"
-        : "✅";
-
-  const bg =
-    phase === "wait" || phase === "intro" || phase === "too-early"
-      ? "bg-red-700"
-      : phase === "go"
-        ? "bg-emerald-600"
-        : "bg-indigo-900";
+        ? "from-emerald-950/95 via-teal-900/90 to-cyan-950/95"
+        : "from-indigo-950/95 via-violet-950/90 to-slate-950/95";
 
   return (
-    <div className={cn("relative flex min-h-[70dvh] w-full flex-col items-center justify-center transition-colors duration-150", bg)}>
+    <HealthLabGameStage className={cn("transition-colors duration-500", `bg-gradient-to-b ${phaseStyles}`)}>
       <HealthLabLiveRegion message={liveMsg} />
-      <button
-        type="button"
-        onClick={onExit}
-        className="absolute left-4 top-4 z-20 min-h-[48px] rounded-lg px-2 text-sm text-white/80 underline"
-      >
-        Exit
-      </button>
+      <HealthLabGameTopBar onExit={onExit} title="Rocket Launch" />
+      <HealthLabStarfield count={32} />
+      <HealthLabFilmGrain />
+      <HealthLabPhaseFlash
+        active={phase === "go"}
+        color="rgba(16,185,129,0.45)"
+      />
+      <HealthLabPhaseFlash
+        active={phase === "too-early"}
+        color="rgba(244,63,94,0.35)"
+      />
+
+      {round > 0 && phase !== "intro" && (
+        <HealthLabRoundRail
+          current={Math.min(round - 1, ROUNDS - 1)}
+          total={ROUNDS}
+          label="Mission progress"
+          className="relative z-[3] pt-2"
+        />
+      )}
 
       <button
         type="button"
-        className="flex min-h-[70dvh] w-full flex-col items-center justify-center touch-manipulation select-none"
+        className="relative z-[3] flex flex-1 w-full flex-col items-center justify-center touch-manipulation select-none px-6 pb-10"
         onClick={handleTap}
         aria-label={phase === "go" ? "Tap now — rocket launch" : "Reaction tap zone"}
       >
-        <motion.span
-          className="text-6xl"
-          animate={rocketLaunch && !reduced ? { y: [0, -80, -200], opacity: [1, 1, 0] } : {}}
-          transition={{ duration: 0.8 }}
-          aria-hidden
-        >
-          {phaseIcon}
-        </motion.span>
-        <h2 className="mt-4 text-xl font-bold text-white">Rocket Launch Academy</h2>
+        <HealthLabLaunchPad phase={phase} reduced={reduced} />
 
-        {phase === "intro" && (
-          <p className="mt-4 px-6 text-center text-lg text-white/90">
-            Tap to start — wait for 🚀, then tap fast! ({ROUNDS} rounds)
-          </p>
+        <h2 className="mt-8 text-2xl font-bold tracking-tight health-lab-title-shine sm:text-3xl">
+          Rocket Launch Academy
+        </h2>
+
+        <div className="mt-5 w-full max-w-sm">
+          <AnimatePresence mode="wait">
+            {phase === "intro" && (
+              <HealthLabMissionBanner
+                key="intro"
+                eyebrow="Mission briefing"
+                title="Await the launch signal"
+                subtitle={`Tap to start — then tap fast when 🚀 appears (${ROUNDS} rounds)`}
+              />
+            )}
+            {phase === "wait" && (
+              <HealthLabMissionBanner
+                key="wait"
+                eyebrow="T-minus hold"
+                title="🛑 Stand by…"
+                subtitle="Do not tap until the rocket turns green"
+                tone="danger"
+              />
+            )}
+            {phase === "go" && (
+              <HealthLabMissionBanner
+                key="go"
+                eyebrow="Launch authorized"
+                title="🚀 LAUNCH — TAP NOW!"
+                subtitle="Reaction window open"
+                tone="go"
+              />
+            )}
+            {phase === "too-early" && (
+              <HealthLabMissionBanner
+                key="early"
+                eyebrow="Abort sequence"
+                title="Too early!"
+                subtitle="Wait for the rocket — tap to retry"
+                tone="danger"
+              />
+            )}
+            {phase === "result" && (
+              <HealthLabMissionBanner
+                key="result"
+                eyebrow="Mission complete"
+                title="✅ All launches successful"
+                subtitle="Calculating pilot score…"
+                tone="success"
+              />
+            )}
+          </AnimatePresence>
+        </div>
+
+        {showTier && (
+          <motion.p
+            className="mt-5 text-2xl font-bold text-amber-200 health-lab-score-reveal"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            {showTier}
+          </motion.p>
         )}
-        {phase === "wait" && (
-          <p className="mt-4 flex items-center gap-2 text-2xl font-bold text-white">
-            <span aria-hidden>🛑</span> Hold… wait for rocket
-          </p>
-        )}
-        {phase === "go" && (
-          <p className="mt-4 flex items-center gap-2 text-3xl font-bold text-white">
-            <span aria-hidden>🚀</span> LAUNCH — TAP!
-          </p>
-        )}
-        {phase === "too-early" && (
-          <p className="mt-4 text-xl text-white">Too early! Wait for 🚀</p>
-        )}
-        {showTier && <p className="mt-4 text-2xl font-bold text-amber-200 health-lab-score-reveal">{showTier}</p>}
 
         {ghostBestMs != null && ghostBestMs > 0 && (
-          <p className="mt-2 text-xs text-white/60">Ghost best: {ghostBestMs}ms — beat it!</p>
+          <p className="mt-3 text-xs text-white/50">Ghost best: {ghostBestMs}ms — beat it!</p>
         )}
 
         {round > 0 && phase !== "intro" && (
-          <p className="absolute bottom-8 text-sm text-white/70">
+          <p className="mt-auto pt-8 text-sm text-white/50">
             Round {Math.min(round, ROUNDS)}/{ROUNDS}
             {times.length > 0 && ` · Last: ${times[times.length - 1]}ms`}
             {falseStarts > 0 && ` · False starts: ${falseStarts}`}
           </p>
         )}
       </button>
-    </div>
+    </HealthLabGameStage>
   );
 }

@@ -7,7 +7,7 @@ export const HEALTH_LAB_THEME = {
   heroGradient:
     "bg-gradient-to-br from-violet-600/40 via-indigo-600/30 to-cyan-500/20",
   cardGlass:
-    "rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md shadow-[0_8px_32px_-8px_rgba(99,102,241,0.35)]",
+    "rounded-2xl border border-white/[0.12] bg-white/[0.06] backdrop-blur-xl shadow-[0_12px_40px_-12px_rgba(99,102,241,0.4)]",
   cardGlow:
     "shadow-[0_0_24px_-4px_rgba(139,92,246,0.45)]",
   ctaPrimary:
@@ -39,11 +39,18 @@ export const HEALTH_LAB_HERO = cn(
 );
 
 export const HEALTH_LAB_GAME_BTN = cn(
-  "relative overflow-hidden rounded-2xl p-4 text-left",
-  "border border-white/10 transition-all duration-300",
-  "hover:border-violet-400/40 hover:shadow-[0_8px_28px_-8px_rgba(139,92,246,0.5)]",
-  "active:scale-[0.98]",
-  "min-h-[88px] touch-manipulation",
+  "relative overflow-hidden rounded-[1.25rem] p-4 text-left",
+  "border transition-all duration-300 ease-out",
+  "active:scale-[0.985]",
+  "min-h-[92px] touch-manipulation",
+);
+
+export const HEALTH_LAB_SECTION_TITLE = cn(
+  "text-sm font-semibold tracking-tight text-white",
+);
+
+export const HEALTH_LAB_SECTION_EYEBROW = cn(
+  "text-[11px] font-medium uppercase tracking-[0.14em] text-violet-300/60",
 );
 
 export const HEALTH_LAB_TOUCH_TARGET = "min-h-[48px] min-w-[48px] touch-manipulation";

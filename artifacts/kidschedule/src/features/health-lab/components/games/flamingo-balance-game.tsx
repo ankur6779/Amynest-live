@@ -1,12 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { FLAMINGO_DIFFICULTIES, FLAMINGO_MIN_DURATION } from "../../constants";
 import { computeBalanceScore } from "../../scoring";
 import { validateFlamingoSession, applyCheatMultiplier } from "../../anti-cheat";
 import { useMotionSensor } from "../../hooks/use-motion-sensor";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
-import { cn } from "@/lib/utils";
+import {
+  HealthLabGameStage,
+  HealthLabGameTopBar,
+  HealthLabGameHero,
+  HealthLabGameCta,
+  HealthLabGameChips,
+  HealthLabGameTimer,
+  HealthLabGamePanel,
+} from "../health-lab-game-ui";
+import {
+  HealthLabFilmGrain,
+  HealthLabMissionBanner,
+  HealthLabSkyIslandScene,
+  HealthLabStarfield,
+} from "../health-lab-cinematic";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
 
@@ -94,38 +107,29 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
 
   if (phase === "intro") {
     return (
-      <div className="flex min-h-[70dvh] flex-col items-center justify-center px-4">
+      <HealthLabGameStage gameId="flamingo-balance" className="items-center justify-center px-4 pb-10">
         <HealthLabLiveRegion message={liveMsg} />
-        <button type="button" onClick={onExit} className="absolute left-4 top-4 min-h-[48px] text-sm text-white/70 underline">
-          Exit
-        </button>
-        <span className="text-6xl">🦩</span>
-        <h2 className="mt-4 text-xl font-bold text-white">Sky Island Survival</h2>
-        <p className="mt-2 max-w-sm text-center text-sm text-violet-200/80">
-          Stand on one leg. Hold the phone steady. Survive wind gusts for at least {minDuration}s!
-        </p>
+        <HealthLabGameTopBar onExit={onExit} title="Sky Island" />
+        <HealthLabGameHero
+          gameId="flamingo-balance"
+          emoji="🦩"
+          title="Sky Island Survival"
+          subtitle={`Stand on one leg. Hold the phone steady. Survive wind gusts for at least ${minDuration}s!`}
+        />
         {sensor.simulated && (
-          <p className="mt-2 rounded-lg bg-amber-500/20 px-3 py-2 text-xs text-amber-200">
+          <HealthLabGamePanel className="mx-4 mt-4 max-w-sm text-center text-xs text-amber-200">
             ⚠️ Simulation mode — badge rewards disabled. Enable motion sensors for full experience.
-          </p>
+          </HealthLabGamePanel>
         )}
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {FLAMINGO_DIFFICULTIES.map((d, i) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => { setDifficulty(i); playTap(); }}
-              className={cn(
-                "min-h-[48px] rounded-full px-4 py-2 text-sm",
-                difficulty === i ? "bg-violet-500 text-white" : "bg-white/10 text-violet-200",
-              )}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
+        <HealthLabGameChips
+          options={FLAMINGO_DIFFICULTIES}
+          selected={difficulty}
+          onSelect={(i) => { setDifficulty(i); playTap(); }}
+          className="mt-8"
+        />
+        <HealthLabGameCta
+          variant="rose"
+          className="mt-8"
           onClick={() => {
             playTap();
             startRef.current = Date.now();
@@ -135,57 +139,49 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
             setPhase("playing");
             setLiveMsg("Keep the island steady!");
           }}
-          className="mt-8 min-h-[48px] rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-8 py-3.5 font-bold text-white"
         >
           Start Survival
-        </button>
-      </div>
+        </HealthLabGameCta>
+      </HealthLabGameStage>
     );
   }
 
   return (
-    <div className="relative flex min-h-[70dvh] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-sky-400 to-indigo-700 px-4">
+    <HealthLabGameStage gameId="flamingo-balance" className="items-center justify-center px-4 pb-8">
       <HealthLabLiveRegion message={liveMsg} />
-      <button type="button" onClick={onExit} className="absolute left-4 top-4 z-10 min-h-[48px] text-sm text-white/70 underline">
-        Exit
-      </button>
+      <HealthLabGameTopBar onExit={onExit} title="Sky Island" />
+      <HealthLabStarfield count={28} />
+      <HealthLabFilmGrain />
 
       {weather === "wind" && !reduced && (
-        <p className="absolute top-16 text-sm font-bold text-amber-200 animate-pulse" aria-hidden>💨 Wind gust!</p>
+        <HealthLabMissionBanner
+          eyebrow="Weather alert"
+          title="💨 Wind gust!"
+          subtitle="Hold steady — the island is shaking"
+          tone="danger"
+          className="absolute left-4 right-4 top-20 z-[3] max-w-sm mx-auto"
+        />
       )}
 
-      {!reduced && (
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          {[...Array(6)].map((_, i) => (
-            <motion.span
-              key={i}
-              className="absolute text-xs opacity-50"
-              style={{ left: `${i * 18}%`, top: `${20 + (i % 3) * 25}%` }}
-              animate={{ y: [0, -30, 0], opacity: [0.3, 0.7, 0.3] }}
-              transition={{ duration: 3 + i * 0.5, repeat: Infinity }}
-            >
-              ✨
-            </motion.span>
-          ))}
-        </div>
-      )}
+      <div className="relative z-[3] mt-4">
+        <HealthLabSkyIslandScene wobble={wobble} weather={weather} reduced={reduced} />
+      </div>
 
-      <motion.div
-        className="relative h-40 w-64 rounded-[50%] bg-gradient-to-br from-emerald-400/80 to-teal-600/80 shadow-xl"
-        animate={{ rotate: wobble, x: wobble * 2, y: wobble }}
-        transition={{ type: "spring", stiffness: 200, damping: 10 }}
-      >
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl">🦩</span>
-      </motion.div>
-
-      <p className="mt-6 font-mono text-3xl font-bold text-white">{elapsed.toFixed(1)}s</p>
-      <p className="mt-2 text-sm text-white/80">
-        Stability: {Math.round(sensor.stabilityPercent)}% · Need {minDuration}s
-      </p>
+      <HealthLabGameTimer
+        value={`${elapsed.toFixed(1)}s`}
+        label={`Stability ${Math.round(sensor.stabilityPercent)}% · Need ${minDuration}s`}
+        className="relative z-[3] mt-8"
+      />
 
       {elapsed < minDuration && (
-        <p className="mt-4 text-xs text-amber-200">Keep balancing… {(minDuration - elapsed).toFixed(0)}s to go</p>
+        <HealthLabMissionBanner
+          eyebrow="Survival clock"
+          title={`${(minDuration - elapsed).toFixed(0)}s remaining`}
+          subtitle="Keep the island steady to survive"
+          tone="neutral"
+          className="relative z-[3] mt-4 max-w-xs"
+        />
       )}
-    </div>
+    </HealthLabGameStage>
   );
 }
