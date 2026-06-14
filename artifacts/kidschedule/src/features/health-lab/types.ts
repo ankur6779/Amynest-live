@@ -124,6 +124,11 @@ export interface HealthLabPersistedState {
   monthlyMegaQuestClaimedMonthKey: string | null;
 }
 
+export type SessionCelebration = {
+  type: "level-up" | "streak" | "badge" | "quest" | "treasure" | "surprise";
+  payload: unknown;
+};
+
 export type HealthLabView =
   | "home"
   | "progress"
@@ -131,8 +136,8 @@ export type HealthLabView =
   | "shop"
   | "game-select"
   | { kind: "game"; gameId: HealthGameId }
-  | { kind: "results"; result: GameSessionResult }
-  | { kind: "celebration"; type: "level-up" | "streak" | "badge" | "quest" | "treasure" | "surprise"; payload: unknown };
+  | { kind: "session-rewards"; result: GameSessionResult; celebrations: SessionCelebration[] }
+  | { kind: "celebration"; type: SessionCelebration["type"]; payload: unknown };
 
 export interface MotionSample {
   x: number;
@@ -140,6 +145,10 @@ export interface MotionSample {
   z: number;
   timestamp: number;
 }
+
+export type BalanceZone = "balanced" | "wobbling" | "unstable";
+export type TrackingQuality = "excellent" | "good" | "fair" | "poor";
+export type SensorHealth = "healthy" | "noisy" | "unstable";
 
 export interface MotionSensorState {
   available: boolean;
@@ -149,6 +158,16 @@ export interface MotionSensorState {
   latest: MotionSample | null;
   variance: number;
   stabilityPercent: number;
+  /** Calibrated tilt from baseline (degrees-equivalent units) */
+  tiltX: number;
+  tiltY: number;
+  confidence: number;
+  trackingQuality: TrackingQuality;
+  sensorHealth: SensorHealth;
+  balanceZone: BalanceZone;
+  calibrated: boolean;
+  calibrating: boolean;
+  calibrationProgress: number;
 }
 
 export interface SessionCompleteOptions {

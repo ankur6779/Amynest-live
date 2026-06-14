@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { REACTION_TIERS } from "../../constants";
+import { GUIDANCE_MESSAGES, REACTION_TIERS } from "../../constants";
 import { computeReactionScoreWithPenalties } from "../../scoring";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
 import { HealthLabGameStage, HealthLabGameTopBar } from "../health-lab-game-ui";
 import {
-  HealthLabFilmGrain,
   HealthLabLaunchPad,
   HealthLabMissionBanner,
   HealthLabPhaseFlash,
   HealthLabRoundRail,
   HealthLabStarfield,
 } from "../health-lab-cinematic";
+import { HealthLabGameOnboarding } from "../health-lab-onboarding";
+import { HealthLabGuidance } from "../health-lab-amy-character";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
@@ -25,19 +26,21 @@ interface Props {
   ghostBestMs?: number;
 }
 
-type Phase = "intro" | "wait" | "go" | "too-early" | "result";
+type Phase = "onboarding" | "countdown" | "wait" | "go" | "too-early" | "result";
 
 export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
   const [round, setRound] = useState(0);
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>("onboarding");
   const [times, setTimes] = useState<number[]>([]);
   const [falseStarts, setFalseStarts] = useState(0);
+  const [comboStreak, setComboStreak] = useState(0);
   const [showTier, setShowTier] = useState<string | null>(null);
-  const [liveMsg, setLiveMsg] = useState("Rocket Launch Academy — wait for the rocket signal");
+  const [countdown, setCountdown] = useState(3);
+  const [liveMsg, setLiveMsg] = useState("Rocket Launch Academy");
   const goTimeRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const startRef = useRef(Date.now());
-  const { playTap, playSuccess, playMiss } = useHealthLabAudio();
+  const { playTap, playSuccess, playMiss, playCombo, playCelebration } = useHealthLabAudio();
   const reduced = useReducedMotion();
 
   const clearTimer = () => {
@@ -53,7 +56,7 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
     setShowTier(null);
     goTimeRef.current = null;
     setLiveMsg(`Round ${round || 1}: Wait for launch signal`);
-    const delay = 2000 + Math.random() * 6000;
+    const delay = 2000 + Math.random() * 5000;
     timeoutRef.current = window.setTimeout(() => {
       goTimeRef.current = Date.now();
       setPhase("go");
@@ -62,6 +65,25 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
     }, delay);
   }, [playTap, round]);
 
+  const beginGame = useCallback(() => {
+    playTap();
+    startRef.current = Date.now();
+    setRound(1);
+    setPhase("countdown");
+    setCountdown(3);
+    setLiveMsg("Get ready for launch!");
+  }, [playTap]);
+
+  useEffect(() => {
+    if (phase !== "countdown") return;
+    if (countdown <= 0) {
+      startRound();
+      return;
+    }
+    const id = window.setTimeout(() => setCountdown((c) => c - 1), 800);
+    return () => clearTimeout(id);
+  }, [phase, countdown, startRound]);
+
   useEffect(() => () => clearTimer(), []);
 
   const finishGame = useCallback(
@@ -69,24 +91,22 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
       const avg = allTimes.reduce((a, b) => a + b, 0) / ROUNDS;
       const score = computeReactionScoreWithPenalties(avg, fs);
       setPhase("result");
+      void playCelebration();
       setLiveMsg(`Mission complete! Average ${Math.round(avg)} milliseconds`);
       setTimeout(() => onComplete(score, Date.now() - startRef.current), 1500);
     },
-    [onComplete],
+    [onComplete, playCelebration],
   );
 
   const handleTap = () => {
-    if (phase === "intro") {
-      playTap();
-      startRef.current = Date.now();
-      setRound(1);
-      startRound();
-      return;
-    }
+    if (phase === "onboarding") return;
+    if (phase === "countdown") return;
+
     if (phase === "wait") {
       clearTimer();
       playMiss();
       setFalseStarts((f) => f + 1);
+      setComboStreak(0);
       setPhase("too-early");
       setLiveMsg("Too early! Wait for the rocket signal");
       return;
@@ -97,7 +117,18 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
       setShowTier(`${tier.emoji} ${tier.label}!`);
       const nextTimes = [...times, ms];
       setTimes(nextTimes);
-      void playSuccess(ms < 300);
+
+      if (ms < 300) {
+        setComboStreak((s) => {
+          const next = s + 1;
+          if (next >= 2) playCombo(next);
+          return next;
+        });
+      } else {
+        setComboStreak(0);
+      }
+
+      void playSuccess(ms < 250);
       if (round >= ROUNDS) {
         finishGame(nextTimes, falseStarts);
       } else {
@@ -111,29 +142,35 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
     }
   };
 
+  const megaLaunch = comboStreak >= 3;
   const phaseStyles =
-    phase === "wait" || phase === "intro" || phase === "too-early"
+    phase === "wait" || phase === "countdown" || phase === "too-early"
       ? "from-red-950/95 via-rose-950/90 to-slate-950/95"
       : phase === "go"
         ? "from-emerald-950/95 via-teal-900/90 to-cyan-950/95"
         : "from-indigo-950/95 via-violet-950/90 to-slate-950/95";
 
+  if (phase === "onboarding") {
+    return (
+      <HealthLabGameOnboarding
+        gameId="reaction-time"
+        onExit={onExit}
+        onStart={beginGame}
+        startLabel="Launch Mission"
+        ctaVariant="amber"
+      />
+    );
+  }
+
   return (
     <HealthLabGameStage className={cn("transition-colors duration-500", `bg-gradient-to-b ${phaseStyles}`)}>
       <HealthLabLiveRegion message={liveMsg} />
       <HealthLabGameTopBar onExit={onExit} title="Rocket Launch" />
-      <HealthLabStarfield count={32} />
-      <HealthLabFilmGrain />
-      <HealthLabPhaseFlash
-        active={phase === "go"}
-        color="rgba(16,185,129,0.45)"
-      />
-      <HealthLabPhaseFlash
-        active={phase === "too-early"}
-        color="rgba(244,63,94,0.35)"
-      />
+      <HealthLabStarfield count={16} />
+      <HealthLabPhaseFlash active={phase === "go"} color="rgba(16,185,129,0.45)" />
+      <HealthLabPhaseFlash active={phase === "too-early"} color="rgba(244,63,94,0.35)" />
 
-      {round > 0 && phase !== "intro" && (
+      {round > 0 && (
         <HealthLabRoundRail
           current={Math.min(round - 1, ROUNDS - 1)}
           total={ROUNDS}
@@ -144,26 +181,38 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
 
       <button
         type="button"
-        className="relative z-[3] flex flex-1 w-full flex-col items-center justify-center touch-manipulation select-none px-6 pb-10"
+        className="relative z-[3] flex w-full flex-1 flex-col items-center justify-center touch-manipulation select-none px-6 pb-10"
         onClick={handleTap}
         aria-label={phase === "go" ? "Tap now — rocket launch" : "Reaction tap zone"}
       >
-        <HealthLabLaunchPad phase={phase} reduced={reduced} />
+        <HealthLabLaunchPad
+          phase={phase === "countdown" ? "countdown" : phase}
+          reduced={reduced}
+          comboStreak={comboStreak}
+          megaLaunch={megaLaunch}
+        />
+
+        {phase === "countdown" && (
+          <motion.p
+            className="mt-6 text-6xl font-bold text-amber-300"
+            key={countdown}
+            initial={{ scale: 1.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            {countdown > 0 ? countdown : "GO!"}
+          </motion.p>
+        )}
 
         <h2 className="mt-8 text-2xl font-bold tracking-tight health-lab-title-shine sm:text-3xl">
           Rocket Launch Academy
         </h2>
 
+        <div className="mt-4">
+          <HealthLabGuidance messages={GUIDANCE_MESSAGES.tap} intervalMs={3500} />
+        </div>
+
         <div className="mt-5 w-full max-w-sm">
           <AnimatePresence mode="wait">
-            {phase === "intro" && (
-              <HealthLabMissionBanner
-                key="intro"
-                eyebrow="Mission briefing"
-                title="Await the launch signal"
-                subtitle={`Tap to start — then tap fast when 🚀 appears (${ROUNDS} rounds)`}
-              />
-            )}
             {phase === "wait" && (
               <HealthLabMissionBanner
                 key="wait"
@@ -217,7 +266,7 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
           <p className="mt-3 text-xs text-white/50">Ghost best: {ghostBestMs}ms — beat it!</p>
         )}
 
-        {round > 0 && phase !== "intro" && (
+        {round > 0 && (
           <p className="mt-auto pt-8 text-sm text-white/50">
             Round {Math.min(round, ROUNDS)}/{ROUNDS}
             {times.length > 0 && ` · Last: ${times[times.length - 1]}ms`}

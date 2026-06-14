@@ -1,27 +1,34 @@
+import { memo, useMemo } from "react";
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 
 export function HealthLabFilmGrain({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn("health-lab-film-grain pointer-events-none absolute inset-0 z-[1] opacity-[0.18]", className)}
-      aria-hidden
-    />
-  );
+  return null;
 }
 
-export function HealthLabStarfield({ count = 40, className }: { count?: number; className?: string }) {
+export const HealthLabStarfield = memo(function HealthLabStarfield({
+  count = 24,
+  className,
+}: {
+  count?: number;
+  className?: string;
+}) {
   const reduced = useReducedMotion();
-  const stars = Array.from({ length: reduced ? Math.min(count, 12) : count }, (_, i) => ({
-    id: i,
-    left: `${(i * 29 + 11) % 100}%`,
-    top: `${(i * 37 + 5) % 100}%`,
-    size: 1 + (i % 3),
-    delay: (i % 8) * 0.35,
-    duration: 2.5 + (i % 5),
-  }));
+  const effectiveCount = reduced ? Math.min(count, 8) : Math.min(count, 24);
+  const stars = useMemo(
+    () =>
+      Array.from({ length: effectiveCount }, (_, i) => ({
+        id: i,
+        left: `${(i * 29 + 11) % 100}%`,
+        top: `${(i * 37 + 5) % 100}%`,
+        size: 1 + (i % 3),
+        delay: (i % 8) * 0.35,
+        duration: 2.5 + (i % 5),
+      })),
+    [effectiveCount],
+  );
 
   return (
     <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden>
@@ -50,7 +57,7 @@ export function HealthLabStarfield({ count = 40, className }: { count?: number; 
       )}
     </div>
   );
-}
+});
 
 export function HealthLabPhaseFlash({
   active,
@@ -198,51 +205,103 @@ export function HealthLabAltitudeBadge({
 export function HealthLabLaunchPad({
   phase,
   reduced,
+  comboStreak = 0,
+  megaLaunch = false,
 }: {
-  phase: "intro" | "wait" | "go" | "too-early" | "result";
+  phase: "intro" | "wait" | "go" | "too-early" | "result" | "countdown";
   reduced: boolean;
+  comboStreak?: number;
+  megaLaunch?: boolean;
 }) {
   const glow =
-    phase === "go"
+    phase === "go" || megaLaunch
       ? "from-emerald-400/50 via-cyan-400/30 to-transparent"
-      : phase === "wait" || phase === "too-early"
+      : phase === "wait" || phase === "too-early" || phase === "countdown"
         ? "from-rose-500/35 via-orange-500/20 to-transparent"
         : "from-violet-500/30 via-indigo-500/15 to-transparent";
 
   return (
     <div className="relative flex flex-col items-center" aria-hidden>
-      {!reduced && phase === "go" && (
+      {!reduced && (phase === "go" || megaLaunch) && (
         <>
-          {[0, 1, 2].map((i) => (
+          {[0, 1, 2, 3].map((i) => (
             <motion.div
               key={i}
               className="absolute bottom-16 h-24 w-24 rounded-full bg-emerald-400/20 blur-2xl"
-              animate={{ scale: [1, 2.2, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.25 }}
+              animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ duration: megaLaunch ? 0.8 : 1.2, repeat: Infinity, delay: i * 0.2 }}
             />
           ))}
+          {megaLaunch &&
+            [...Array(6)].map((_, i) => (
+              <motion.span
+                key={`firework-${i}`}
+                className="absolute text-2xl"
+                style={{ left: `${20 + i * 12}%`, bottom: `${30 + (i % 3) * 15}%` }}
+                animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
+                transition={{ duration: 0.8, delay: i * 0.15 }}
+              >
+                🎆
+              </motion.span>
+            ))}
         </>
       )}
+      {/* Countdown display */}
+      {phase === "countdown" && !reduced && (
+        <motion.p
+          className="absolute -top-8 text-4xl font-bold text-amber-300"
+          animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+          transition={{ duration: 1, repeat: Infinity }}
+        >
+          🚀
+        </motion.p>
+      )}
+      {/* Launch pad structure */}
       <div
         className={cn(
-          "relative flex h-28 w-28 items-center justify-center rounded-[2rem] border border-white/20",
-          "bg-gradient-to-br from-slate-700/80 via-slate-800/90 to-slate-950/95",
+          "relative flex h-32 w-36 items-center justify-center rounded-[2rem] border border-white/20",
+          "bg-gradient-to-br from-slate-600/90 via-slate-700/95 to-slate-950/95",
           "shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]",
         )}
       >
         <div className={cn("absolute -inset-4 rounded-[2.4rem] bg-gradient-to-t blur-2xl", glow)} />
+        {/* Engine glow */}
+        {!reduced && (phase === "go" || phase === "wait") && (
+          <motion.div
+            className="absolute bottom-2 h-6 w-16 rounded-full bg-orange-400/40 blur-md"
+            animate={{ opacity: phase === "go" ? [0.5, 1, 0.5] : [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
+            transition={{ duration: phase === "go" ? 0.3 : 1, repeat: Infinity }}
+          />
+        )}
         <span className="relative text-5xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]">
-          {phase === "go" ? "🚀" : phase === "wait" || phase === "too-early" ? "🛑" : phase === "result" ? "✅" : "🚀"}
+          {phase === "go" || megaLaunch ? "🚀" : phase === "wait" || phase === "too-early" || phase === "countdown" ? "🛑" : phase === "result" ? "✅" : "🚀"}
         </span>
       </div>
-      <div className="mt-3 h-3 w-40 rounded-full bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 shadow-inner" />
-      <div className="mt-1 h-8 w-48 rounded-b-[2rem] bg-gradient-to-b from-orange-500/25 to-transparent blur-sm" />
-      {!reduced && (phase === "wait" || phase === "too-early") && (
-        <motion.div
-          className="absolute -bottom-2 h-16 w-16 rounded-full bg-orange-400/20 blur-xl"
-          animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.9, 1.1, 0.9] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
+      {/* Pad base */}
+      <div className="mt-2 h-4 w-44 rounded-full bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 shadow-inner" />
+      <div className="mt-1 h-10 w-52 rounded-b-[2rem] bg-gradient-to-b from-orange-500/30 to-transparent blur-sm" />
+      {/* Smoke particles */}
+      {!reduced && (phase === "go" || phase === "wait" || phase === "countdown") && (
+        <>
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={`smoke-${i}`}
+              className="absolute bottom-0 h-12 w-12 rounded-full bg-slate-400/20 blur-xl"
+              style={{ left: `${35 + i * 15}%` }}
+              animate={{ y: [0, -30, -60], opacity: [0.6, 0.3, 0], scale: [0.8, 1.5, 2] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4 }}
+            />
+          ))}
+        </>
+      )}
+      {comboStreak >= 2 && (
+        <motion.p
+          className="mt-2 text-sm font-bold text-amber-300"
+          animate={!reduced ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ duration: 0.5, repeat: Infinity }}
+        >
+          🔥 {comboStreak}x Combo!
+        </motion.p>
       )}
     </div>
   );
@@ -252,62 +311,171 @@ export function HealthLabSkyIslandScene({
   wobble,
   weather,
   reduced,
+  balanceZone = "balanced",
+  showCelebration = false,
 }: {
   wobble: number;
   weather: "calm" | "wind";
   reduced: boolean;
+  balanceZone?: "balanced" | "wobbling" | "unstable";
+  showCelebration?: boolean;
 }) {
+  const isStable = balanceZone === "balanced";
+  const isUnstable = balanceZone === "unstable";
+
   return (
     <div className="relative flex flex-col items-center">
       {!reduced && (
         <>
           <motion.div
-            className="pointer-events-none absolute -top-8 left-0 text-3xl opacity-40"
-            animate={{ x: [0, 30, 0] }}
-            transition={{ duration: 12, repeat: Infinity }}
+            className="pointer-events-none absolute -top-12 left-0 text-4xl opacity-50"
+            animate={{ x: [0, 40, 0] }}
+            transition={{ duration: 14, repeat: Infinity }}
           >
             ☁️
           </motion.div>
           <motion.div
-            className="pointer-events-none absolute -top-4 right-0 text-2xl opacity-30"
-            animate={{ x: [0, -24, 0] }}
-            transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+            className="pointer-events-none absolute -top-8 right-0 text-3xl opacity-40"
+            animate={{ x: [0, -30, 0] }}
+            transition={{ duration: 11, repeat: Infinity, delay: 1 }}
           >
             ☁️
           </motion.div>
           {weather === "wind" && (
-            <motion.div
-              className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-300/10 to-transparent"
-              animate={{ opacity: [0.2, 0.5, 0.2] }}
-              transition={{ duration: 0.8, repeat: Infinity }}
-            />
+            <>
+              <motion.div
+                className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-slate-200/15 to-transparent"
+                animate={{ opacity: [0.2, 0.6, 0.2], x: [-10, 10, -10] }}
+                transition={{ duration: 0.6, repeat: Infinity }}
+              />
+              {[...Array(4)].map((_, i) => (
+                <motion.span
+                  key={`wind-${i}`}
+                  className="pointer-events-none absolute text-lg opacity-40"
+                  style={{ top: `${20 + i * 15}%`, left: `${10 + i * 20}%` }}
+                  animate={{ x: [0, 60, 0], opacity: [0, 0.6, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
+                >
+                  💨
+                </motion.span>
+              ))}
+            </>
           )}
+          {isStable && (
+            <>
+              {[...Array(3)].map((_, i) => (
+                <motion.span
+                  key={`star-${i}`}
+                  className="pointer-events-none absolute text-sm"
+                  style={{ top: `${5 + i * 12}%`, left: `${20 + i * 25}%` }}
+                  animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
+                >
+                  ⭐
+                </motion.span>
+              ))}
+              {[...Array(2)].map((_, i) => (
+                <motion.span
+                  key={`butterfly-${i}`}
+                  className="pointer-events-none absolute text-xl"
+                  style={{ top: `${30 + i * 20}%`, left: `${60 + i * 10}%` }}
+                  animate={{ x: [0, 15, -10, 0], y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: i * 1.5 }}
+                >
+                  🦋
+                </motion.span>
+              ))}
+            </>
+          )}
+          {isUnstable &&
+            [...Array(3)].map((_, i) => (
+              <motion.span
+                key={`leaf-${i}`}
+                className="pointer-events-none absolute text-lg"
+                style={{ top: `${40 + i * 10}%`, left: `${30 + i * 15}%` }}
+                animate={{ y: [0, 40], opacity: [1, 0], rotate: [0, 180] }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4 }}
+              >
+                🍃
+              </motion.span>
+            ))}
         </>
       )}
 
       <motion.div
         className="relative"
-        animate={{ rotate: wobble, x: wobble * 2, y: wobble * 0.5 }}
-        transition={{ type: "spring", stiffness: 180, damping: 12 }}
+        animate={{
+          rotate: wobble,
+          x: wobble * 2,
+          y: wobble * 0.5,
+          ...(isUnstable && !reduced ? { x: [wobble * 2, wobble * 2 + 3, wobble * 2 - 3, wobble * 2] } : {}),
+        }}
+        transition={
+          isUnstable && !reduced
+            ? { duration: 0.15, repeat: Infinity }
+            : { type: "spring", stiffness: 180, damping: 12 }
+        }
       >
-        <div className="absolute -top-16 left-1/2 h-16 w-0.5 -translate-x-1/2 bg-gradient-to-b from-transparent to-white/20" aria-hidden />
+        {/* Island glow when stable */}
+        {isStable && !reduced && (
+          <motion.div
+            className="pointer-events-none absolute -inset-6 rounded-[50%] bg-emerald-400/20 blur-2xl"
+            animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            aria-hidden
+          />
+        )}
+
         <div
           className={cn(
-            "relative h-44 w-72 rounded-[50%] border border-white/25",
+            "relative h-48 w-80 rounded-[50%] border border-white/25",
             "bg-gradient-to-br from-emerald-300/95 via-teal-500/90 to-cyan-700/85",
-            "shadow-[0_28px_70px_-20px_rgba(16,185,129,0.65),inset_0_8px_24px_rgba(255,255,255,0.15)]",
+            isStable
+              ? "shadow-[0_28px_70px_-20px_rgba(16,185,129,0.75),inset_0_8px_24px_rgba(255,255,255,0.2)]"
+              : "shadow-[0_28px_70px_-20px_rgba(16,185,129,0.45),inset_0_8px_24px_rgba(255,255,255,0.1)]",
+            showCelebration && "health-lab-island-rise",
           )}
         >
           <div className="absolute inset-x-8 top-4 h-8 rounded-full bg-white/10 blur-md" aria-hidden />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl drop-shadow-lg">
-            🦩
-          </span>
+          {/* Flowers when stable */}
+          {isStable && (
+            <>
+              <span className="absolute left-6 top-8 text-xl" aria-hidden>🌸</span>
+              <span className="absolute right-8 top-10 text-lg" aria-hidden>🌼</span>
+              <span className="absolute bottom-10 left-12 text-lg" aria-hidden>🌺</span>
+            </>
+          )}
+          {/* Amy flamingo */}
+          <motion.div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            animate={!reduced && isStable ? { y: [0, -4, 0] } : {}}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <span className="text-6xl drop-shadow-lg" aria-hidden>🦩</span>
+          </motion.div>
         </div>
         <div
-          className="absolute -bottom-3 left-1/2 h-8 w-56 -translate-x-1/2 rounded-[100%] bg-black/25 blur-xl"
+          className="absolute -bottom-3 left-1/2 h-10 w-64 -translate-x-1/2 rounded-[100%] bg-black/30 blur-xl"
           aria-hidden
         />
       </motion.div>
+
+      {showCelebration && !reduced && (
+        <>
+          {[...Array(4)].map((_, i) => (
+            <motion.span
+              key={`confetti-${i}`}
+              className="pointer-events-none absolute text-lg"
+              style={{ left: `${20 + i * 8}%`, top: "10%" }}
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ y: -120, opacity: 0, rotate: 360 }}
+              transition={{ duration: 1.5, delay: i * 0.1 }}
+            >
+              {["🎉", "⭐", "✨", "🌟"][i % 4]}
+            </motion.span>
+          ))}
+        </>
+      )}
     </div>
   );
 }

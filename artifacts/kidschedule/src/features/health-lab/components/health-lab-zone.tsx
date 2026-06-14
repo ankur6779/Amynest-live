@@ -12,7 +12,7 @@ import { HealthLabHome } from "./health-lab-home";
 import { HealthLabProgress } from "./health-lab-progress";
 import { HealthLabDashboard } from "./health-lab-dashboard";
 import { HealthLabShop } from "./health-lab-shop";
-import { HealthLabResults } from "./health-lab-results";
+import { HealthLabSessionRewards } from "./health-lab-session-rewards";
 import { HealthLabCelebration } from "./health-lab-celebration";
 import { BreathControlGame } from "./games/breath-control-game";
 import { FlamingoBalanceGame } from "./games/flamingo-balance-game";
@@ -74,13 +74,23 @@ export function HealthLabZone({ childId, childName }: Props) {
     else if (c.type === "treasure" || c.type === "surprise") audio.playCelebration();
   }, [pendingCelebrations, audio]);
 
+  useEffect(() => {
+    if (typeof view !== "object" || view.kind !== "session-rewards") return;
+    const { celebrations } = view;
+    if (celebrations.some((c) => c.type === "level-up")) audio.playLevelUp();
+    else if (celebrations.some((c) => c.type === "badge")) audio.playAchievement();
+    else if (celebrations.some((c) => c.type === "streak")) audio.playCelebration();
+    else if (celebrations.some((c) => c.type === "quest")) audio.playQuestComplete();
+    else audio.playCelebration();
+  }, [view, audio]);
+
   usePageBackHandler(() => {
     if (pendingCelebrations.length > 0) {
       dismissCelebration();
       return true;
     }
     if (typeof view === "object") {
-      if (view.kind === "results") {
+      if (view.kind === "session-rewards") {
         setView("home");
         return true;
       }
@@ -150,8 +160,10 @@ export function HealthLabZone({ childId, childName }: Props) {
     view === "shop" ||
     (typeof view === "object" && view.kind === "game");
 
+  const inGame = typeof view === "object" && view.kind === "game";
+
   return (
-    <HealthLabShell>
+    <HealthLabShell showParticles={!inGame}>
       {showHeader && (
         <header className={cn(GAMES_HEADER_SHELL, "border-violet-500/20")}>
           <div className="mx-auto flex max-w-lg items-center gap-3">
@@ -217,11 +229,12 @@ export function HealthLabZone({ childId, childName }: Props) {
 
       {typeof view === "object" && view.kind === "game" && renderGame(view.gameId)}
 
-      {typeof view === "object" && view.kind === "results" && (
-        <HealthLabResults
+      {typeof view === "object" && view.kind === "session-rewards" && (
+        <HealthLabSessionRewards
           result={view.result}
-          onPlayAgain={() => setView({ kind: "game", gameId: view.result.gameId })}
-          onHome={() => setView("home")}
+          celebrations={view.celebrations}
+          state={state}
+          onContinue={() => setView("home")}
         />
       )}
 

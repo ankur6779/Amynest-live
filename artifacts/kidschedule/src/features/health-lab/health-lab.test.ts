@@ -290,3 +290,47 @@ describe("finger validation", () => {
     expect(v.flags.length).toBeGreaterThan(0);
   });
 });
+
+describe("session rewards", () => {
+  it("detects simulation when score is zero but xp granted", async () => {
+    const { isSimulationResult } = await import("./lib/session-rewards-utils");
+    expect(
+      isSimulationResult({
+        gameId: "flamingo-balance",
+        timestamp: 1,
+        durationMs: 1000,
+        xpEarned: 25,
+        xpTier: "bronze",
+        score: 0,
+        metrics: {},
+        personalBest: false,
+        simulated: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("aggregates badge and quest celebrations", async () => {
+    const { buildRewardSummary } = await import("./lib/session-rewards-utils");
+    const state = defaultHealthLabState(1);
+    const summary = buildRewardSummary(
+      {
+        gameId: "reaction-time",
+        timestamp: 1,
+        durationMs: 1000,
+        xpEarned: 40,
+        xpTier: "silver",
+        score: 72,
+        metrics: {},
+        personalBest: false,
+      },
+      [
+        { type: "badge", payload: { id: "first-challenge" } },
+        { type: "quest", payload: { id: "complete-3" } },
+      ],
+      state,
+    );
+    expect(summary.badges).toHaveLength(1);
+    expect(summary.quests).toHaveLength(1);
+    expect(summary.starsEarned).toBe(72);
+  });
+});

@@ -69,7 +69,7 @@ export function HealthLabHome({
             <h1 className="mt-1 text-xl font-bold leading-tight text-white sm:text-2xl">
               {t("subtitle")}
             </h1>
-            <p className="mt-1 text-sm text-violet-200/70">{t("child_playground", `${childName}'s wellness playground`)}</p>
+            <p className="mt-1 text-sm text-violet-200/70">{t("child_playground", `${childName}'s wellness playground`, { name: childName })}</p>
           </div>
         </div>
 

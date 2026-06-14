@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Fingerprint } from "lucide-react";
-import { BREATH_MILESTONES } from "../../constants";
+import { BREATH_MILESTONES, GUIDANCE_MESSAGES } from "../../constants";
 import { computeBreathScore } from "../../scoring";
 import { validateBreathSession, applyCheatMultiplier } from "../../anti-cheat";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
@@ -15,10 +15,11 @@ import {
 } from "../health-lab-game-ui";
 import {
   HealthLabAltitudeBadge,
-  HealthLabFilmGrain,
   HealthLabPhaseFlash,
   HealthLabStarfield,
 } from "../health-lab-cinematic";
+import { HealthLabGameOnboarding } from "../health-lab-onboarding";
+import { HealthLabGuidance } from "../health-lab-amy-character";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function BreathControlGame({ onComplete, onExit }: Props) {
+  const [phase, setPhase] = useState<"onboarding" | "playing">("onboarding");
   const [holding, setHolding] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -40,8 +42,15 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
   const lastMilestoneRef = useRef(0);
   const holdButtonRef = useRef<HTMLButtonElement>(null);
   const activePointerRef = useRef<number | null>(null);
-  const { playTap, playSuccess } = useHealthLabAudio();
+  const { playTap, playSuccess, playMilestone } = useHealthLabAudio();
   const reduced = useReducedMotion();
+
+  const touchStability =
+    touchMovesRef.current.length < 2
+      ? 100
+      : Math.max(0, 100 - (Math.max(...touchMovesRef.current) - Math.min(...touchMovesRef.current)) * 150);
+  const goldenMode = holding && touchStability >= 85 && elapsed >= 10;
+  const showRainbow = goldenMode && !reduced;
 
   useEffect(() => {
     if (!holding || finished) return;
@@ -54,13 +63,14 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
             lastMilestoneRef.current = m.seconds;
             setCelebrateMilestone(`${m.emoji} ${m.label} level!`);
             setLiveMsg(`Reached ${m.label} level`);
+            void playMilestone();
             setTimeout(() => setCelebrateMilestone(null), 2000);
           }
         }
       }
     }, 50);
     return () => clearInterval(id);
-  }, [holding, finished]);
+  }, [holding, finished, playMilestone]);
 
   const milestone = [...BREATH_MILESTONES].reverse().find((m) => elapsed >= m.seconds);
   const bgProgress = Math.min(1, elapsed / 60);
@@ -120,6 +130,18 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
     });
   }, [finished, holding, onComplete, playSuccess, releasePointer]);
 
+  if (phase === "onboarding") {
+    return (
+      <HealthLabGameOnboarding
+        gameId="breath-control"
+        onExit={onExit}
+        onStart={() => { playTap(); setPhase("playing"); }}
+        startLabel="Start Journey"
+        ctaVariant="primary"
+      />
+    );
+  }
+
   return (
     <HealthLabGameStage
       gameId="breath-control"
@@ -132,8 +154,7 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
     >
       <HealthLabLiveRegion message={liveMsg} />
       <HealthLabGameTopBar onExit={onExit} title="Balloon Journey" />
-      <HealthLabStarfield count={bgProgress > 0.35 ? 50 : 24} />
-      <HealthLabFilmGrain />
+      <HealthLabStarfield count={bgProgress > 0.35 ? 20 : 16} />
       <HealthLabPhaseFlash active={!!celebrateMilestone} color="rgba(251,191,36,0.4)" />
 
       {/* Journey map */}
@@ -210,6 +231,20 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
       <p className="relative z-[3] mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
         Balloon Journey Adventure
       </p>
+
+      <div className="relative z-[3] mb-3">
+        <HealthLabGuidance messages={GUIDANCE_MESSAGES.hold} intervalMs={4500} />
+      </div>
+
+      {goldenMode && (
+        <motion.p
+          className="relative z-[3] mb-2 rounded-full border border-amber-300/40 bg-amber-500/20 px-4 py-1 text-sm font-bold text-amber-100"
+          animate={!reduced ? { scale: [1, 1.05, 1] } : {}}
+          transition={{ duration: 1, repeat: Infinity }}
+        >
+          ✨ Golden Balloon Mode!
+        </motion.p>
+      )}
       <AnimatePresence>
         {celebrateMilestone && (
           <motion.p
@@ -247,13 +282,26 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
         >
           {/* Balloon body */}
           <div
-            className="absolute inset-0 shadow-[0_8px_24px_rgba(244,63,94,0.45)]"
+            className={cn(
+              "absolute inset-0 shadow-[0_8px_24px_rgba(244,63,94,0.45)]",
+              goldenMode && "shadow-[0_8px_32px_rgba(251,191,36,0.6)]",
+            )}
             style={{
               borderRadius: "50% 50% 50% 50% / 58% 58% 42% 42%",
-              background:
-                "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 18%, transparent 42%), radial-gradient(circle at 70% 75%, rgba(190,24,93,0.35) 0%, transparent 55%), linear-gradient(155deg, #fda4af 0%, #fb7185 38%, #f43f5e 72%, #e11d48 100%)",
+              background: goldenMode
+                ? "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.6) 0%, transparent 42%), linear-gradient(155deg, #fde68a 0%, #fbbf24 38%, #f59e0b 72%, #d97706 100%)"
+                : "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 18%, transparent 42%), radial-gradient(circle at 70% 75%, rgba(190,24,93,0.35) 0%, transparent 55%), linear-gradient(155deg, #fda4af 0%, #fb7185 38%, #f43f5e 72%, #e11d48 100%)",
             }}
           />
+          {showRainbow && (
+            <motion.div
+              className="pointer-events-none absolute -inset-4 rounded-full opacity-60"
+              style={{ background: "conic-gradient(from 0deg, red, orange, yellow, green, blue, violet, red)" }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              aria-hidden
+            />
+          )}
           {/* Surface shine */}
           <div
             className="pointer-events-none absolute left-[18%] top-[14%] rounded-full bg-white/45 blur-[0.5px]"

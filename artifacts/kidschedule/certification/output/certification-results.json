@@ -1,0 +1,401 @@
+{
+  "generatedAt": "2026-06-14T10:09:37.077Z",
+  "overallPass": true,
+  "maze": {
+    "pass": true,
+    "issues": [],
+    "stats": {
+      "count": 100,
+      "pathLength": {
+        "min": 16,
+        "avg": 40.54,
+        "max": 102
+      },
+      "deadEnds": {
+        "min": 8,
+        "avg": 22.45,
+        "max": 51
+      },
+      "branches": {
+        "min": 6,
+        "avg": 18.2,
+        "max": 43
+      },
+      "complexity": {
+        "min": 64,
+        "avg": 140.04,
+        "max": 257
+      },
+      "gateFailures": 0,
+      "almostDirectCount": 0,
+      "obviousCount": 0,
+      "accidentalWinRate": 0,
+      "accidentalWins": 0,
+      "accidentalTrials": 5000,
+      "difficultyCompare": [
+        {
+          "difficulty": "easy",
+          "size": 5,
+          "pathLength": 12,
+          "deadEnds": 5,
+          "branches": 3,
+          "complexityScore": 31,
+          "solutionPath": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              2
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              4,
+              4
+            ]
+          ]
+        },
+        {
+          "difficulty": "normal",
+          "size": 7,
+          "pathLength": 12,
+          "deadEnds": 16,
+          "branches": 14,
+          "complexityScore": 86,
+          "solutionPath": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              2,
+              5
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              6,
+              6
+            ]
+          ]
+        },
+        {
+          "difficulty": "hard",
+          "size": 10,
+          "pathLength": 18,
+          "deadEnds": 33,
+          "branches": 25,
+          "complexityScore": 159,
+          "solutionPath": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              3,
+              1
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              4,
+              4
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              5,
+              7
+            ],
+            [
+              5,
+              8
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              8,
+              9
+            ],
+            [
+              9,
+              9
+            ]
+          ]
+        }
+      ]
+    },
+    "performance": {
+      "mazeGenerationMs": {
+        "avg": 0.44080442999999947,
+        "p95": 1.392910000000029,
+        "max": 4.420647000000031
+      },
+      "heapDeltaMb": 2.13262939453125
+    },
+    "samples": [
+      {
+        "size": 9,
+        "pathLength": 30,
+        "deadEnds": 12,
+        "branches": 10,
+        "complexityScore": 84,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 10,
+        "pathLength": 22,
+        "deadEnds": 37,
+        "branches": 28,
+        "complexityScore": 180,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 11,
+        "pathLength": 28,
+        "deadEnds": 13,
+        "branches": 11,
+        "complexityScore": 87,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 12,
+        "pathLength": 24,
+        "deadEnds": 46,
+        "branches": 33,
+        "complexityScore": 215,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 9,
+        "pathLength": 32,
+        "deadEnds": 11,
+        "branches": 9,
+        "complexityScore": 81,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 10,
+        "pathLength": 46,
+        "deadEnds": 12,
+        "branches": 10,
+        "complexityScore": 100,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 11,
+        "pathLength": 46,
+        "deadEnds": 13,
+        "branches": 11,
+        "complexityScore": 105,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 12,
+        "pathLength": 22,
+        "deadEnds": 49,
+        "branches": 43,
+        "complexityScore": 249,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 9,
+        "pathLength": 16,
+        "deadEnds": 27,
+        "branches": 23,
+        "complexityScore": 139,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      },
+      {
+        "size": 10,
+        "pathLength": 18,
+        "deadEnds": 36,
+        "branches": 30,
+        "complexityScore": 180,
+        "passedGate": true,
+        "almostDirect": false,
+        "visuallyObvious": false
+      }
+    ]
+  },
+  "colorFill": {
+    "pass": true,
+    "issues": [],
+    "stats": {
+      "wrongChecks": 100,
+      "wrongModalReady": 100,
+      "wrongHighlightOk": 100,
+      "wrongPercentOk": 100,
+      "correctChecks": 100,
+      "silentFailures": 0,
+      "edgeCases": {
+        "emptyBoard": {
+          "pass": true,
+          "detail": "allFilled=false, wrongCount=16"
+        },
+        "partialBoard": {
+          "pass": true,
+          "detail": "allFilled=false"
+        },
+        "allSameColor": {
+          "pass": true,
+          "detail": "wrongCount=12"
+        },
+        "rapidCheck": {
+          "pass": true,
+          "detail": "stable=true"
+        },
+        "hintPenalty": {
+          "pass": true,
+          "detail": "score floor at 0 enforced in component logic"
+        }
+      }
+    },
+    "performance": {
+      "colorFillCheckMs": {
+        "avg": 0.03686215000000402,
+        "p95": 0.20093699999995351,
+        "max": 0.9112569999999778
+      },
+      "heapDeltaMb": -3.25506591796875
+    }
+  }
+}

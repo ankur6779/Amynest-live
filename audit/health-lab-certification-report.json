@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-06-14T10:12:19.940Z",
+  "console": {
+    "errors": [
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer.",
+      "The AudioContext encountered an error from the audio device or the WebAudio renderer."
+    ],
+    "warnings": []
+  },
+  "fps": [
+    {
+      "label": "sky-island",
+      "fps": 31,
+      "metrics": {
+        "fps": 31,
+        "jsHeapUsedMb": 43,
+        "jsHeapTotalMb": 58
+      }
+    },
+    {
+      "label": "balloon",
+      "fps": 31,
+      "metrics": {
+        "fps": 31,
+        "jsHeapUsedMb": 43,
+        "jsHeapTotalMb": 58
+      }
+    },
+    {
+      "label": "rocket",
+      "fps": 37,
+      "metrics": {
+        "fps": 37,
+        "jsHeapUsedMb": 43,
+        "jsHeapTotalMb": 58
+      }
+    }
+  ],
+  "motionStill": {
+    "tiltX": "0.000",
+    "tiltY": "0.000",
+    "confidence": "0%",
+    "tracking": "fair",
+    "stability": "100%",
+    "mode": "live"
+  }
+}

@@ -316,8 +316,7 @@ export function useHealthLabState(childId: number) {
       }
 
       persist(next);
-      setPendingCelebrations(celebrations);
-      setView({ kind: "results", result });
+      setView({ kind: "session-rewards", result, celebrations });
       return result;
     },
     [state, persist, childId, processQuests],

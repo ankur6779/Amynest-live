@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { cn } from "@/lib/utils";
 
-export function HealthLabParticles({ className }: { className?: string }) {
+export const HealthLabParticles = memo(function HealthLabParticles({ className }: { className?: string }) {
   const reduced = useReducedMotion();
 
   const particles = useMemo(
     () =>
-      Array.from({ length: reduced ? 8 : 24 }, (_, i) => ({
+      Array.from({ length: reduced ? 4 : 12 }, (_, i) => ({
         id: i,
         left: `${(i * 17 + 7) % 100}%`,
         top: `${(i * 23 + 11) % 100}%`,
@@ -67,4 +67,4 @@ export function HealthLabParticles({ className }: { className?: string }) {
       ))}
     </div>
   );
-}
+});

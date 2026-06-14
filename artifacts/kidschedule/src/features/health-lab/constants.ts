@@ -35,6 +35,61 @@ export const STREAK_MILESTONES = [1, 3, 7, 14, 30, 60, 100] as const;
 
 export const FLAMINGO_MIN_DURATION = [15, 20, 25, 30, 45] as const;
 
+export interface GameOnboarding {
+  mission: string;
+  instruction: string;
+  reward: string;
+  demoAction: "balance" | "hold" | "tap" | "freeze" | "reactor" | "report";
+}
+
+export const GAME_ONBOARDING: Record<HealthGameId, GameOnboarding> = {
+  "breath-control": {
+    mission: "Hold the balloon steady and soar through the sky!",
+    instruction: "Place your finger on the circle and hold still",
+    reward: "Sky Explorer Stars",
+    demoAction: "hold",
+  },
+  "flamingo-balance": {
+    mission: "Stand on one leg and keep your balance on the floating island.",
+    instruction: "Hold your phone steady like a flamingo!",
+    reward: "Balance Stars",
+    demoAction: "balance",
+  },
+  "reaction-time": {
+    mission: "Launch rockets — tap when the signal turns green!",
+    instruction: "Wait… then tap FAST when you see GO!",
+    reward: "Pilot Badges",
+    demoAction: "tap",
+  },
+  "freeze-statue": {
+    mission: "Dance with Amy — freeze like a statue when she says FREEZE!",
+    instruction: "Move when dancing, hold perfectly still when frozen",
+    reward: "Crystal Flowers",
+    demoAction: "freeze",
+  },
+  "finger-stability": {
+    mission: "Keep your finger on the glowing crystal core.",
+    instruction: "Don't let the energy core drift off center!",
+    reward: "Reactor Energy",
+    demoAction: "reactor",
+  },
+  "calmness-meter": {
+    mission: "See how your wellness adventures add up!",
+    instruction: "Play games first, then check your report",
+    reward: "Wellness Badges",
+    demoAction: "report",
+  },
+};
+
+export const GUIDANCE_MESSAGES = {
+  balance: ["Great balance!", "Keep going!", "Almost there!", "Amazing!", "Steady as a flamingo!"],
+  hold: ["Nice and steady!", "You're soaring!", "Keep holding!", "Almost to the next level!", "Perfect focus!"],
+  tap: ["Ready pilot?", "Wait for green…", "Great reflexes!", "Lightning fast!", "Combo streak!"],
+  freeze: ["Dance with Amy!", "Get ready to freeze!", "Perfect statue!", "Crystal growing!", "Hold still!"],
+  reactor: ["Stabilize the core!", "Energy rising!", "Keep centered!", "Almost charged!", "Reactor stable!"],
+  general: ["You can do it!", "Keep going!", "Almost there!", "Amazing work!", "Super scientist!"],
+} as const;
+
 export const GAMES: {
   id: HealthGameId;
   title: string;

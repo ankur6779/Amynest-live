@@ -4,7 +4,7 @@ const PORT = Number(process.env.PLAYWRIGHT_HEALTH_LAB_PORT ?? "5195");
 
 export default defineConfig({
   testDir: "./playwright/specs",
-  testMatch: "health-lab-certification.spec.ts",
+  testMatch: ["health-lab-certification*.spec.ts"],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

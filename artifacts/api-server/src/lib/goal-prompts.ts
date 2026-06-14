@@ -4,7 +4,7 @@
 // already ships the base rules + JSON schema; this module returns the
 // goal-specific section that is appended to differentiate output.
 
-type GoalFamily =
+export type GoalFamily =
   | "tantrum" | "aggression" | "defiance" | "emotional" | "separation"
   | "screen" | "focus" | "learning"
   | "eating"
@@ -539,10 +539,12 @@ const GOAL_TO_FAMILY: Record<string, GoalFamily> = {
   "favouritism-feelings": "siblings",
   // Parent Self-Care
   "parent-burnout": "selfcare",
-  "anger-management-parent": "selfcare",
+  "stay-calm-anger": "selfcare",
+  "guilt-after-yelling": "selfcare",
   "find-me-time": "selfcare",
-  "parent-sleep": "selfcare",
-  "mom-guilt": "selfcare",
+  "improve-own-sleep": "selfcare",
+  "couple-time-balance": "selfcare",
+  "manage-overwhelm": "selfcare",
   // Special Situations
   "travel-with-kids": "transitions",
   "hospital-doctor-visit": "transitions",
@@ -559,11 +561,15 @@ const GOAL_TO_FAMILY: Record<string, GoalFamily> = {
 };
 
 
+export function getGoalFamily(goalId: string): GoalFamily {
+  return GOAL_TO_FAMILY[goalId] ?? "generic";
+}
+
 export function getGoalPromptSection(
   goalId: string,
   goalLabel: string,
 ): string {
-  const family = GOAL_TO_FAMILY[goalId] ?? "generic";
+  const family = getGoalFamily(goalId);
   const f: FamilyPrompt = FAMILIES[family];
 
   const bullets = (arr: string[]) => arr.map((x) => `- ${x}`).join("\n");

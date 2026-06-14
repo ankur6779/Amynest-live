@@ -76,6 +76,7 @@ export async function runCoachInitialWins(input: {
   const payload = JSON.parse(input.userPrompt) as {
     input: import("../coachWinGenerationService.js").CoachInput;
     goalLabel: string;
+    goalBrief?: string;
     topicBlock: string;
     intelligenceBlock?: string;
   };
@@ -83,7 +84,7 @@ export async function runCoachInitialWins(input: {
   const { plan } = await generateInitialCoachWins(
     payload.input,
     payload.goalLabel,
-    "",
+    payload.goalBrief ?? "",
     () => payload.topicBlock,
     payload.intelligenceBlock,
   );
@@ -99,6 +100,7 @@ export async function runCoachNextWin(input: {
   nextWinNumber: number;
   topicBlock: string;
   intelligenceBlock?: string;
+  feedbackHistory?: import("../coachWinAntiRepetition.js").CoachWinFeedbackEntry[];
 }): Promise<{ win: import("../coachWinGenerationService.js").CoachWin; aiOk: boolean }> {
   const svc = await import("../coachWinGenerationService.js");
   return svc.generateNextCoachWin(
@@ -110,6 +112,7 @@ export async function runCoachNextWin(input: {
     input.nextWinNumber,
     () => input.topicBlock,
     input.intelligenceBlock,
+    input.feedbackHistory ?? [],
   );
 }
 

@@ -22,10 +22,10 @@ export function setGameDifficulty(level: GameDifficulty): void {
   localStorage.setItem(DIFFICULTY_KEY, level);
 }
 
-export const MAZE_CONFIG: Record<GameDifficulty, { size: number; maxMoves: number }> = {
-  easy: { size: 5, maxMoves: 45 },
-  normal: { size: 5, maxMoves: 40 },
-  hard: { size: 7, maxMoves: 60 },
+export const MAZE_CONFIG: Record<GameDifficulty, { minSize: number; maxSize: number }> = {
+  easy: { minSize: 5, maxSize: 6 },
+  normal: { minSize: 7, maxSize: 8 },
+  hard: { minSize: 9, maxSize: 12 },
 };
 
 export const SPEED_MATH_CONFIG: Record<

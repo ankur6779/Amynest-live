@@ -8,6 +8,15 @@ import {
 } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 import { startCoachPerfSpan, withCoachPerf } from "../lib/coach-performance.js";
+import {
+  buildAntiRepetitionPromptBlock,
+  buildDiversityPromptBlock,
+  buildFeedbackPromptBlock,
+  isWinTooSimilar,
+  type CoachWinFeedbackEntry,
+} from "./coachWinAntiRepetition.js";
+import { buildGoalSpecificInitialFallback, buildGoalSpecificFallbackWin } from "./coachGoalFallbackLibrary.js";
+import { recordCoachObservabilityEvent } from "./coachObservabilityService.js";
 
 export const COACH_TOTAL_WINS = 12;
 export const COACH_INITIAL_WINS = 2;
@@ -16,7 +25,7 @@ export const COACH_SOURCE = "amy_coach";
 const NAMESPACE = "ai_coach_v4";
 const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /** Hard cap on initial OpenAI call — response must not wait longer. */
-export const INITIAL_AI_TIMEOUT_MS = 4000;
+export const INITIAL_AI_TIMEOUT_MS = 10_000;
 /** Per lazy win (win 3–12) — one call when parent advances. */
 export const NEXT_WIN_AI_TIMEOUT_MS = 22_000;
 
@@ -26,57 +35,9 @@ function aiCallTimeout(ms: number): Promise<never> {
   });
 }
 
-/** Fast static 2-win plan when AI times out or fails (avoids loading full 12-win fallback). */
+/** Fast static 2-win plan when AI times out or fails — goal-family specific. */
 export function staticInitialWinsFallback(goalLabel: string, input: CoachInput): CoachPlan {
-  const age = input.ageGroup ?? "5-7";
-  return {
-    title: `${goalLabel} — start here`,
-    root_cause:
-      `Children in the ${age} age range are still building self-regulation. ` +
-      `Stress around ${goalLabel.toLowerCase()} often reflects an unmet need or skill gap, not defiance.`,
-    summary:
-      "Two starter wins below; mark each step and tap Next — Amy will load the next win when you're ready.",
-    wins: [
-      {
-        win: 1,
-        title: "Pause and name what you see",
-        objective: "Lower escalation before you coach",
-        deep_explanation:
-          "A brief pause helps your child feel seen. Naming the feeling (e.g. you look frustrated) " +
-          "activates co-regulation pathways described in Gottman's emotion coaching research.",
-        actions: [
-          "Stop talking for 3 breaths",
-          "Say one feeling word you notice",
-          "Ask one short question: what do you need?",
-        ],
-        example:
-          "Parent: 'You look really upset about shoes.' Child nods. Parent waits. Child says 'They're too tight.'",
-        mistake_to_avoid: "Explaining or lecturing before the child feels heard.",
-        micro_task: "Use one feeling word at the next hard moment today.",
-        duration: "3–5 days",
-        science_reference: "Gottman emotion coaching",
-      },
-      {
-        win: 2,
-        title: "Pick one tiny next step",
-        objective: "Make progress without a full lecture",
-        deep_explanation:
-          "Small, repeatable steps build habit loops (BJ Fogg, Tiny Habits). " +
-          "One clear action beats a long list when everyone is already stressed.",
-        actions: [
-          "Choose one behaviour to practice (not three)",
-          "Write it on a sticky note where you'll see it",
-          "Celebrate any attempt, even partial",
-        ],
-        example:
-          "Instead of a 10-minute talk about bedtime, parent says: 'Tonight we try pajamas before the story.'",
-        mistake_to_avoid: "Changing the whole routine at once.",
-        micro_task: "Post one sticky-note reminder tonight.",
-        duration: "5–7 days",
-        science_reference: "BJ Fogg — Tiny Habits",
-      },
-    ],
-  };
+  return buildGoalSpecificInitialFallback(input.goal ?? "generic", goalLabel, input);
 }
 
 export interface CoachWin {
@@ -190,9 +151,9 @@ function minimalCoachFallbackWin(winNumber: number, goalLabel: string): CoachWin
   };
 }
 
-async function loadFallbackPlan(input: CoachInput): Promise<CoachPlan> {
-  const mod = await import("../routes/ai-coach.js");
-  return mod.fallbackPlan(input);
+async function loadFallbackPlan(input: CoachInput, goalLabel: string): Promise<CoachPlan> {
+  const { buildGoalSpecificFullFallback } = await import("./coachGoalFallbackLibrary.js");
+  return buildGoalSpecificFullFallback(input.goal ?? "generic", goalLabel, input);
 }
 
 export async function upsertCoachGeneration(params: {
@@ -386,18 +347,19 @@ function buildPromptContext(
 async function callInitialCoachAi(
   input: CoachInput,
   goalLabel: string,
+  goalBrief: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
   intelligenceBlock?: string,
 ): Promise<CoachPlan | null> {
   const { triggers, topicBlock } = buildPromptContext(
     input,
     goalLabel,
-    "",
+    goalBrief,
     renderTopicAnswersBlock,
   );
 
   const systemPrompt =
-    "Parenting coach. Generate exactly 2 simple, actionable wins. Keep output short. No explanation. Valid JSON only.";
+    "Parenting coach. Generate exactly 2 simple, actionable wins tailored to the SPECIFIC goal. Keep output short. No explanation. Valid JSON only.";
 
   const userPrompt = `Generate exactly 2 simple, actionable wins. Keep output short. No explanation.
 
@@ -409,6 +371,7 @@ Routine: ${input.routine}
 ${topicBlock}
 JSON only:
 {"title":"...","root_cause":"2 sentences","summary":"1 sentence","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"2-3 lines","actions":["a","b","c"],"example":"1 sentence","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"..."},{"win":2,...}]}
+${goalBrief}
 ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
 
   const { chatCompletionWithTimeout } = await import("./openai-chat.js");
@@ -434,26 +397,44 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
 export async function generateInitialCoachWins(
   input: CoachInput,
   goalLabel: string,
-  _goalBrief: string,
+  goalBrief: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
   intelligenceBlock?: string,
 ): Promise<{ plan: CoachPlan; aiOk: boolean }> {
   const aiSpan = startCoachPerfSpan("AI_CALL_INITIAL", { goal: input.goal });
   try {
     const plan = await Promise.race([
-      callInitialCoachAi(input, goalLabel, renderTopicAnswersBlock, intelligenceBlock),
+      callInitialCoachAi(input, goalLabel, goalBrief, renderTopicAnswersBlock, intelligenceBlock),
       aiCallTimeout(INITIAL_AI_TIMEOUT_MS),
     ]);
     if (plan) {
-      aiSpan.end({ aiOk: true, wins: COACH_INITIAL_WINS });
-      return { plan, aiOk: true };
+      const dup = plan.wins.some((w, i) =>
+        plan.wins.slice(0, i).some((prior) => isWinTooSimilar(w, [prior])),
+      );
+      if (!dup) {
+        aiSpan.end({ aiOk: true, wins: COACH_INITIAL_WINS });
+        return { plan, aiOk: true };
+      }
+      recordCoachObservabilityEvent("coach_semantic_duplicate_detected", { goal: input.goal, phase: "initial" });
+      recordCoachObservabilityEvent("coach_duplicate_prevented", { goal: input.goal, phase: "initial" });
+      aiSpan.end({ aiOk: false, reason: "duplicate_initial_wins" });
+    } else {
+      aiSpan.end({ aiOk: false, reason: "validation_failed" });
     }
-    aiSpan.end({ aiOk: false, reason: "validation_failed" });
   } catch (err) {
     const timedOut = err instanceof Error && err.message === "initial_ai_timeout";
     aiSpan.end({ aiOk: false, error: true, timedOut });
+    if (timedOut) {
+      void import("./coachObservabilityService.js").then(({ recordCoachObservabilityEvent }) =>
+        recordCoachObservabilityEvent("coach_ai_timeout", { goal: input.goal, phase: "initial" }),
+      );
+    }
     if (!timedOut) logger.error({ err }, "ai-coach initial wins OpenAI error");
   }
+
+  void import("./coachObservabilityService.js").then(({ recordCoachObservabilityEvent }) =>
+    recordCoachObservabilityEvent("coach_fallback_used", { goal: input.goal, phase: "initial" }),
+  );
 
   return { plan: staticInitialWinsFallback(goalLabel, input), aiOk: false };
 }
@@ -476,6 +457,7 @@ export async function generateNextCoachWin(
   nextWinNumber: number,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
   intelligenceBlock?: string,
+  feedbackHistory: CoachWinFeedbackEntry[] = [],
 ): Promise<{ win: CoachWin; aiOk: boolean }> {
   if (
     nextWinNumber < COACH_INITIAL_WINS + 1 ||
@@ -496,6 +478,10 @@ export async function generateNextCoachWin(
     .map((w) => `#${w.win} "${w.title}" — ${w.objective}`)
     .join("\n");
 
+  const antiRepeatBlock = buildAntiRepetitionPromptBlock(existingWins);
+  const feedbackBlock = buildFeedbackPromptBlock(feedbackHistory);
+  const diversityBlock = buildDiversityPromptBlock(nextWinNumber);
+
   const systemPrompt =
     "Parenting coach. Generate exactly ONE next win in a 12-win plan. Valid JSON only. No markdown.";
 
@@ -513,7 +499,11 @@ Write win #${nextWinNumber} of ${COACH_TOTAL_WINS}. Phase: ${phase}.
 Return ONLY:
 {"win":{"win":${nextWinNumber},"title":"3-6 words","objective":"one sentence","deep_explanation":"4-5 lines","actions":["a","b","c"],"example":"2 sentences","mistake_to_avoid":"one sentence","micro_task":"under 5 min today","duration":"e.g. 3-5 days","science_reference":"named researcher/theory"}}
 STRICT: win number must be ${nextWinNumber}; 3-5 actions; no overlap with prior wins.
-${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
+${goalBrief}
+${antiRepeatBlock}
+${feedbackBlock}
+${diversityBlock}
+${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
 
   const aiSpan = startCoachPerfSpan("AI_CALL_NEXT_WIN", {
     goal: input.goal,
@@ -539,8 +529,21 @@ ${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
       const parsed = JSON.parse(rawContent) as { win?: unknown };
       const w = parsed.win;
       if (validateWin(w) && (w as CoachWin).win === nextWinNumber) {
-        aiSpan.end({ aiOk: true, win: nextWinNumber });
-        return { win: w as CoachWin, aiOk: true };
+        const candidate = w as CoachWin;
+        if (!isWinTooSimilar(candidate, existingWins)) {
+          aiSpan.end({ aiOk: true, win: nextWinNumber });
+          return { win: candidate, aiOk: true };
+        }
+        recordCoachObservabilityEvent("coach_semantic_duplicate_detected", {
+          goal: input.goal,
+          win: nextWinNumber,
+          title: candidate.title,
+        });
+        recordCoachObservabilityEvent("coach_duplicate_prevented", {
+          goal: input.goal,
+          win: nextWinNumber,
+        });
+        aiSpan.end({ aiOk: false, reason: "duplicate_win" });
       }
     } catch {
       /* fall through */
@@ -551,11 +554,19 @@ ${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
     logger.error({ err, win: nextWinNumber }, "ai-coach next win OpenAI error");
   }
 
-  const full = await loadFallbackPlan(input);
-  const fallback = full.wins[nextWinNumber - 1];
-  if (fallback && validateWin(fallback)) {
-    return { win: { ...fallback, win: nextWinNumber }, aiOk: false };
+  const fallbackWin = buildGoalSpecificFallbackWin(
+    input.goal ?? "generic",
+    goalLabel,
+    input,
+    nextWinNumber,
+    existingWins,
+    feedbackHistory,
+  );
+  if (validateWin(fallbackWin)) {
+    recordCoachObservabilityEvent("coach_fallback_used", { goal: input.goal, win: nextWinNumber });
+    return { win: fallbackWin, aiOk: false };
   }
+
   logger.warn({ win: nextWinNumber, goal: input.goal }, "ai-coach next win using minimal fallback");
   return {
     win: minimalCoachFallbackWin(nextWinNumber, goalLabel),
@@ -647,7 +658,7 @@ ${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
     logger.error({ err }, "ai-coach background wins OpenAI error");
   }
 
-  const full = await loadFallbackPlan(input);
+  const full = await loadFallbackPlan(input, goalLabel);
   return { wins: full.wins.slice(COACH_INITIAL_WINS), aiOk: false };
 }
 
@@ -692,7 +703,7 @@ export function generateRemainingCoachWins(job: BackgroundCoachJob): void {
         const fullPlan = mergeCoachPlan(job.partialPlan, job.partialPlan.wins, remaining);
         if (!validatePlan(fullPlan)) {
           logger.warn({ generationId }, "ai-coach background merge validation failed — using fallback slice");
-          const fallback = await loadFallbackPlan(job.input);
+          const fallback = await loadFallbackPlan(job.input, job.goalLabel);
           Object.assign(fullPlan, fallback);
         }
 

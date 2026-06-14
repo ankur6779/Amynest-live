@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.8",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.8.zip",
-  "checksum": "86e223f37045197cd390a61a31b93bf8e7842e11bc09adef756083a7b95ab0f1",
+  "bundleVersion": "1.0.9",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.9.zip",
+  "checksum": "d74abfdea963e2f0d19411019f959429ab9826ac1d9240bf955646b6e36da48a",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Fix notification settings save on iOS/Android, add push notification sounds toggle.",
+  "releaseNotes": "Health Lab polish: unified rewards, simulation UX, performance optimizations, Gaming Hub cert, and coach personalization improvements.",
   "changeClasses": [
     "bugfix",
     "ui-copy"

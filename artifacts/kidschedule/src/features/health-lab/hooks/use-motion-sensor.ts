@@ -1,23 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { trackPermissionDenied } from "../health-lab-analytics";
+import {
+  calibrateBaseline,
+  createDefaultBaseline,
+  createSmoothingState,
+  processMotionSample,
+  type MotionBaseline,
+} from "../lib/motion-engine";
 import type { MotionSample, MotionSensorState } from "../types";
 
-function variance(samples: MotionSample[]): number {
-  if (samples.length < 2) return 0;
-  const xs = samples.map((s) => s.x);
-  const ys = samples.map((s) => s.y);
-  const meanX = xs.reduce((a, b) => a + b, 0) / xs.length;
-  const meanY = ys.reduce((a, b) => a + b, 0) / ys.length;
-  const varX = xs.reduce((a, v) => a + (v - meanX) ** 2, 0) / xs.length;
-  const varY = ys.reduce((a, v) => a + (v - meanY) ** 2, 0) / ys.length;
-  return Math.sqrt(varX + varY);
-}
+const CALIBRATION_MS = 3000;
+const CALIBRATION_SAMPLE_INTERVAL = 50;
+const UI_UPDATE_MS = 100;
 
-function stabilityFromVariance(v: number): number {
-  return Math.max(0, Math.min(100, 100 - v * 800));
-}
-
-/** Accelerometer / gyroscope with graceful desktop simulation fallback. */
+/** Accelerometer with calibration, smoothing, and graceful desktop simulation. */
 export function useMotionSensor(
   active: boolean,
   trackingChildId?: number,
@@ -25,6 +21,7 @@ export function useMotionSensor(
   start: () => Promise<boolean>;
   stop: () => void;
   resetSamples: () => void;
+  runCalibration: () => Promise<boolean>;
   peakVariance: number;
 } {
   const [state, setState] = useState<MotionSensorState>({
@@ -35,56 +32,109 @@ export function useMotionSensor(
     latest: null,
     variance: 0,
     stabilityPercent: 100,
+    tiltX: 0,
+    tiltY: 0,
+    confidence: 0,
+    trackingQuality: "fair",
+    sensorHealth: "healthy",
+    balanceZone: "balanced",
+    calibrated: false,
+    calibrating: false,
+    calibrationProgress: 0,
   });
 
-  const samplesRef = useRef<MotionSample[]>([]);
+  const bufferRef = useRef<MotionSample[]>([]);
+  const calibSamplesRef = useRef<MotionSample[]>([]);
+  const baselineRef = useRef<MotionBaseline>(createDefaultBaseline());
+  const smoothingRef = useRef(createSmoothingState());
+  const driftRef = useRef({ x: 0, y: 0 });
   const peakVarianceRef = useRef(0);
   const simRef = useRef<number | null>(null);
+  const calibRef = useRef<number | null>(null);
+  const calibProgressRef = useRef<number | null>(null);
   const handlerRef = useRef<((e: DeviceMotionEvent) => void) | null>(null);
+  const activeRef = useRef(active);
+  const calibratingRef = useRef(false);
+  const calibratedRef = useRef(false);
+  const lastUiUpdateRef = useRef(0);
 
-  const updateFromSample = useCallback((sample: MotionSample) => {
-    const buf = samplesRef.current;
-    buf.push(sample);
-    if (buf.length > 60) buf.shift();
-    const v = variance(buf);
-    peakVarianceRef.current = Math.max(peakVarianceRef.current, v);
+  activeRef.current = active;
+
+  const applyProcessed = useCallback((sample: MotionSample, processed: ReturnType<typeof processMotionSample>) => {
+    peakVarianceRef.current = Math.max(peakVarianceRef.current, processed.variance);
+    const now = Date.now();
+    if (now - lastUiUpdateRef.current < UI_UPDATE_MS) return;
+    lastUiUpdateRef.current = now;
     setState((prev) => ({
       ...prev,
       latest: sample,
-      variance: v,
-      stabilityPercent: stabilityFromVariance(v),
+      variance: processed.variance,
+      stabilityPercent: processed.stabilityPercent,
+      tiltX: processed.tiltX,
+      tiltY: processed.tiltY,
+      confidence: processed.confidence,
+      trackingQuality: processed.trackingQuality,
+      sensorHealth: processed.sensorHealth,
+      balanceZone: processed.balanceZone,
     }));
   }, []);
 
-  const startSimulation = useCallback((denied = false) => {
-    if (denied && trackingChildId != null) {
-      trackPermissionDenied(trackingChildId, "devicemotion");
-    }
-    setState((prev) => ({
-      ...prev,
-      available: true,
-      simulated: true,
-      permissionGranted: !denied,
-      permissionDenied: denied,
-    }));
-    let t = 0;
-    const tick = () => {
-      if (document.hidden) {
-        simRef.current = window.setTimeout(tick, 200);
+  const ingestSample = useCallback(
+    (sample: MotionSample, duringCalibration = false) => {
+      if (duringCalibration) {
+        calibSamplesRef.current.push(sample);
         return;
       }
-      t += 0.05;
-      const wobble = Math.sin(t * 3) * 0.02 + Math.sin(t * 7) * 0.01;
-      updateFromSample({
-        x: wobble,
-        y: Math.cos(t * 2) * 0.015,
-        z: 0,
-        timestamp: Date.now(),
-      });
-      simRef.current = window.setTimeout(tick, 100);
-    };
-    tick();
-  }, [updateFromSample, trackingChildId]);
+      if (!state.calibrated && !state.calibrating) return;
+      const processed = processMotionSample(
+        sample,
+        baselineRef.current,
+        bufferRef.current,
+        smoothingRef.current,
+        driftRef.current,
+      );
+      applyProcessed(sample, processed);
+    },
+    [applyProcessed, state.calibrated, state.calibrating],
+  );
+
+  const startSimulation = useCallback(
+    (denied = false) => {
+      if (denied && trackingChildId != null) {
+        trackPermissionDenied(trackingChildId, "devicemotion");
+      }
+      setState((prev) => ({
+        ...prev,
+        available: true,
+        simulated: true,
+        permissionGranted: !denied,
+        permissionDenied: denied,
+      }));
+      let t = 0;
+      const tick = () => {
+        if (document.hidden) {
+          simRef.current = window.setTimeout(tick, 200);
+          return;
+        }
+        t += 0.05;
+        const wobble = Math.sin(t * 3) * 0.02 + Math.sin(t * 7) * 0.01;
+        const sample: MotionSample = {
+          x: wobble,
+          y: Math.cos(t * 2) * 0.015,
+          z: 9.8,
+          timestamp: Date.now(),
+        };
+        if (calibratingRef.current) {
+          calibSamplesRef.current.push(sample);
+        } else if (calibratedRef.current) {
+          ingestSample(sample);
+        }
+        simRef.current = window.setTimeout(tick, CALIBRATION_SAMPLE_INTERVAL);
+      };
+      tick();
+    },
+    [ingestSample, trackingChildId],
+  );
 
   const stopSimulation = useCallback(() => {
     if (simRef.current != null) {
@@ -93,9 +143,68 @@ export function useMotionSensor(
     }
   }, []);
 
+  const stopCalibrationTimers = useCallback(() => {
+    if (calibRef.current != null) {
+      clearTimeout(calibRef.current);
+      calibRef.current = null;
+    }
+    if (calibProgressRef.current != null) {
+      clearInterval(calibProgressRef.current);
+      calibProgressRef.current = null;
+    }
+  }, []);
+
+  const finishCalibration = useCallback(() => {
+    stopCalibrationTimers();
+    baselineRef.current = calibrateBaseline(calibSamplesRef.current);
+    bufferRef.current = [];
+    smoothingRef.current = createSmoothingState();
+    driftRef.current = { x: 0, y: 0 };
+    calibSamplesRef.current = [];
+    setState((prev) => ({
+      ...prev,
+      calibrating: false,
+      calibrated: true,
+      calibrationProgress: 100,
+    }));
+    calibratingRef.current = false;
+    calibratedRef.current = true;
+    return true;
+  }, [stopCalibrationTimers]);
+
+  const runCalibration = useCallback((): Promise<boolean> => {
+    return new Promise((resolve) => {
+      calibSamplesRef.current = [];
+      setState((prev) => ({
+        ...prev,
+        calibrating: true,
+        calibrated: false,
+        calibrationProgress: 0,
+      }));
+      calibratingRef.current = true;
+      calibratedRef.current = false;
+
+      const startTime = Date.now();
+      calibProgressRef.current = window.setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(100, (elapsed / CALIBRATION_MS) * 100);
+        setState((prev) => ({ ...prev, calibrationProgress: progress }));
+      }, 100);
+
+      calibRef.current = window.setTimeout(() => {
+        finishCalibration();
+        resolve(true);
+      }, CALIBRATION_MS);
+    });
+  }, [finishCalibration]);
+
   const start = useCallback(async (): Promise<boolean> => {
-    samplesRef.current = [];
+    bufferRef.current = [];
+    calibSamplesRef.current = [];
     peakVarianceRef.current = 0;
+    baselineRef.current = createDefaultBaseline();
+    smoothingRef.current = createSmoothingState();
+    driftRef.current = { x: 0, y: 0 };
 
     if (typeof window === "undefined") return false;
 
@@ -121,11 +230,42 @@ export function useMotionSensor(
         if (document.hidden) return;
         const acc = e.accelerationIncludingGravity;
         if (!acc) return;
-        updateFromSample({
+        const sample: MotionSample = {
           x: acc.x ?? 0,
           y: acc.y ?? 0,
           z: acc.z ?? 0,
           timestamp: Date.now(),
+        };
+
+        setState((prev) => {
+          if (prev.calibrating) {
+            calibSamplesRef.current.push(sample);
+            return prev;
+          }
+        if (!prev.calibrated) return prev;
+        const processed = processMotionSample(
+          sample,
+          baselineRef.current,
+          bufferRef.current,
+          smoothingRef.current,
+          driftRef.current,
+        );
+        peakVarianceRef.current = Math.max(peakVarianceRef.current, processed.variance);
+        const now = Date.now();
+        if (now - lastUiUpdateRef.current < UI_UPDATE_MS) return prev;
+        lastUiUpdateRef.current = now;
+        return {
+            ...prev,
+            latest: sample,
+            variance: processed.variance,
+            stabilityPercent: processed.stabilityPercent,
+            tiltX: processed.tiltX,
+            tiltY: processed.tiltY,
+            confidence: processed.confidence,
+            trackingQuality: processed.trackingQuality,
+            sensorHealth: processed.sensorHealth,
+            balanceZone: processed.balanceZone,
+          };
         });
       };
 
@@ -143,20 +283,30 @@ export function useMotionSensor(
       startSimulation(true);
       return true;
     }
-  }, [startSimulation, updateFromSample]);
+  }, [startSimulation]);
 
   const stop = useCallback(() => {
     stopSimulation();
+    stopCalibrationTimers();
     if (handlerRef.current) {
       window.removeEventListener("devicemotion", handlerRef.current);
       handlerRef.current = null;
     }
-  }, [stopSimulation]);
+  }, [stopCalibrationTimers, stopSimulation]);
 
   const resetSamples = useCallback(() => {
-    samplesRef.current = [];
+    bufferRef.current = [];
     peakVarianceRef.current = 0;
-    setState((prev) => ({ ...prev, variance: 0, stabilityPercent: 100 }));
+    smoothingRef.current = createSmoothingState();
+    driftRef.current = { x: 0, y: 0 };
+    setState((prev) => ({
+      ...prev,
+      variance: 0,
+      stabilityPercent: 100,
+      tiltX: 0,
+      tiltY: 0,
+      balanceZone: "balanced",
+    }));
   }, []);
 
   useEffect(() => {
@@ -173,6 +323,7 @@ export function useMotionSensor(
     start,
     stop,
     resetSamples,
+    runCalibration,
     peakVariance: peakVarianceRef.current,
   };
 }

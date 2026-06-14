@@ -78,34 +78,72 @@ test.describe("Health Lab home", () => {
 });
 
 test.describe("Game launch", () => {
-  test("launches Breath Control", async ({ page }) => {
+  test("launches Breath Control onboarding", async ({ page }) => {
     await page.getByText("Balloon Journey Adventure").click();
-    await expect(page.getByText("Hold the glowing button")).toBeVisible();
+    await expect(page.getByText("Mission Briefing")).toBeVisible();
+    await expect(page.getByText("Place your finger on the circle and hold still")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Start Journey/i })).toBeVisible();
   });
 
-  test("launches Flamingo Balance", async ({ page }) => {
+  test("launches Flamingo Balance onboarding", async ({ page }) => {
     await page.getByText("Sky Island Survival").click();
-    await expect(page.getByText("Start Survival")).toBeVisible();
+    await expect(page.getByText("Mission Briefing")).toBeVisible();
+    await expect(page.getByText("Hold your phone steady like a flamingo!")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Start Survival/i })).toBeVisible();
   });
 
-  test("launches Reaction Time", async ({ page }) => {
+  test("launches Reaction Time onboarding", async ({ page }) => {
     await page.getByText("Rocket Launch Academy").click();
-    await expect(page.getByText("Rocket Launch Academy").first()).toBeVisible();
+    await expect(page.getByText("Mission Briefing")).toBeVisible();
+    await expect(page.getByText("Wait… then tap FAST when you see GO!")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Launch Mission/i })).toBeVisible();
   });
 
-  test("launches Freeze Statue", async ({ page }) => {
+  test("launches Freeze Statue onboarding", async ({ page }) => {
     await page.getByText("Crystal Garden Challenge").click();
-    await expect(page.getByText("Start Dancing")).toBeVisible();
+    await expect(page.getByText("Mission Briefing")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Start Dancing/i })).toBeVisible();
   });
 
-  test("launches Finger Stability", async ({ page }) => {
+  test("launches Finger Stability onboarding", async ({ page }) => {
     await page.getByText("Crystal Core Reactor").click();
-    await expect(page.getByText("Touch to Start")).toBeVisible();
+    await expect(page.getByText("Mission Briefing")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Power Up Reactor/i })).toBeVisible();
   });
 
-  test("launches Calmness Meter", async ({ page }) => {
+  test("launches Calmness Meter onboarding", async ({ page }) => {
     await page.getByText("Amy Wellness Report").click();
-    await expect(page.getByText("Overall Wellness Score")).toBeVisible();
+    await expect(page.getByText("Mission Briefing")).toBeVisible();
+    await expect(page.getByRole("button", { name: /View Report|Open Dashboard/i })).toBeVisible();
+  });
+});
+
+test.describe("Onboarding and calibration flows", () => {
+  test("Sky Island shows calibration overlay after start", async ({ page }) => {
+    await page.getByText("Sky Island Survival").click();
+    await page.getByRole("button", { name: /Start Survival/i }).click({ force: true });
+    await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
+  });
+
+  test("Sky Island shows progress ring during gameplay", async ({ page }) => {
+    await page.getByText("Sky Island Survival").click();
+    await page.getByRole("button", { name: /Start Survival/i }).click({ force: true });
+    await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(3500);
+    await expect(page.getByText("to go")).toBeVisible({ timeout: 5000 });
+  });
+
+  test("Balloon Journey reaches gameplay after onboarding", async ({ page }) => {
+    await page.getByText("Balloon Journey Adventure").click();
+    await page.getByRole("button", { name: /Start Journey/i }).click();
+    await expect(page.getByText("Hold time")).toBeVisible();
+    await expect(page.getByLabel("Hold to inflate balloon")).toBeVisible();
+  });
+
+  test("Rocket Launch reaches countdown after onboarding", async ({ page }) => {
+    await page.getByText("Rocket Launch Academy").click();
+    await page.getByRole("button", { name: /Launch Mission/i }).click({ force: true });
+    await expect(page.getByText("3").or(page.getByText("GO!"))).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -367,12 +405,14 @@ test.describe("Retention UI", () => {
 test.describe("Accessibility", () => {
   test("live region component exists in breath game", async ({ page }) => {
     await page.getByText("Balloon Journey Adventure").click();
+    await page.getByRole("button", { name: /Start Journey/i }).click();
     const live = page.locator('[role="status"]');
     await expect(live.first()).toBeAttached();
   });
 
   test("reaction uses icon not color alone", async ({ page }) => {
     await page.getByText("Rocket Launch Academy").click();
+    await page.getByRole("button", { name: /Launch Mission/i }).click();
     await expect(page.getByText("🚀").first()).toBeVisible();
   });
 });

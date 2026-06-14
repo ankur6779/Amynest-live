@@ -1,3 +1,5 @@
+import type { GameDifficulty } from "@/lib/game-difficulty";
+
 /** Standard session length — all round-based mini games ramp across these rounds. */
 export const GAME_SESSION_ROUNDS = 8;
 
@@ -78,15 +80,28 @@ export function sessionMathConfig(roundIndex: number, total = GAME_SESSION_ROUND
   };
 }
 
-export function sessionMazeSize(roundIndex: number, total = GAME_SESSION_ROUNDS): number {
-  if (roundIndex < 2) return 5;
-  if (roundIndex < 5) return 5;
-  if (roundIndex < 7) return 6;
-  return 7;
+export function sessionMazeSize(
+  roundIndex: number,
+  difficulty: GameDifficulty = "normal",
+  total = GAME_SESSION_ROUNDS,
+): number {
+  switch (difficulty) {
+    case "easy":
+      return sessionScale(roundIndex, 5, 6, total);
+    case "hard":
+      return sessionScale(roundIndex, 9, 12, total);
+    default:
+      return sessionScale(roundIndex, 7, 8, total);
+  }
 }
 
-export function sessionMazeMaxMoves(size: number, roundIndex: number): number {
-  return size * size * 2 + roundIndex * 2;
+export function sessionMazeMaxMoves(
+  size: number,
+  roundIndex: number,
+  shortestPath = size * 2,
+): number {
+  const explorationRoom = Math.floor(size * size * 0.4) + roundIndex * 2;
+  return Math.max(shortestPath * 2 + explorationRoom, size * 3);
 }
 
 export interface TargetTapWaveConfig {

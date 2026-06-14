@@ -28,7 +28,16 @@ import {
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
 import { buildCoachProgressViewModel, type CoachPlanRef } from "@workspace/coach-journey";
 import { fallbackExtensionWin } from "../services/coachExtensionFallback.js";
-import { buildCoachPlanCacheKey, COACH_PLAN_NAMESPACE } from "../services/coachPlanCacheKey.js";
+import { buildCoachPlanCacheKey, COACH_PLAN_NAMESPACE, shouldBypassCoachPlanCache } from "../services/coachPlanCacheKey.js";
+import { buildGoalSpecificFullFallback, buildGoalSpecificFallbackWin } from "../services/coachGoalFallbackLibrary.js";
+import {
+  recordCoachGenerateAttempt,
+  recordCoachFeedbackEvent,
+  recordCoachObservabilityEvent,
+  recordCoachNextWinAttempt,
+  getCoachObservabilityDashboard,
+} from "../services/coachObservabilityService.js";
+import { computeCoachProgressPct } from "../services/coachProgressUtils.js";
 import {
   generateAndCacheCoachWinAudio,
   pregenerateCoachPlanAudio,
@@ -378,132 +387,7 @@ const GOAL_LABELS: Record<string, string> = {
 
 export function fallbackPlan(input: CoachInput): CoachPlan {
   const label = GOAL_LABELS[input.goal ?? ""] ?? "Your Parenting Goal";
-  const ageGroup = input.ageGroup || "your child's age";
-  const mk = (
-    n: number, title: string, objective: string, deep: string,
-    actions: string[], example: string, mistake: string, micro: string, dur: string, sci: string
-  ): Win => ({
-    win: n, title, objective, deep_explanation: deep, actions,
-    example, mistake_to_avoid: mistake, micro_task: micro, duration: dur,
-    science_reference: sci,
-  });
-  return {
-    title: label,
-    root_cause:
-      `At ${ageGroup}, the prefrontal cortex (the brain's brake pedal) is still developing — kids physically cannot self-regulate the way adults can. What looks like 'misbehaviour' is usually a nervous system that's overloaded, an unmet need (sleep, hunger, connection), or a developmental skill that hasn't been built yet.`,
-    summary:
-      `This is a structured 12-step plan that moves from connection → consistent expectations → skill-building → repair → habit lock-in. Don't rush — each win is a complete module designed to actually shift the underlying pattern, not just paper over it.`,
-    wins: [
-      mk(1, "Connect before you correct",
-         "Open communication so your child listens",
-         "Children's brains literally cannot access logic when they feel disconnected or threatened. Connection lowers cortisol, activates the prefrontal cortex, and tells the nervous system 'I'm safe' — only THEN can a child receive guidance. Skip this step and every other strategy will feel like pushing a boulder uphill.",
-         ["Get on eye level before speaking — physically lower yourself", "Name what you see without judgment ('I see you're upset, your body is moving fast')", "Wait 10 full seconds in silence before giving any instruction", "Touch shoulder or offer hand if welcomed"],
-         "Sara's 4-year-old was throwing toys. Instead of 'Stop that!', she knelt down and said 'Looks like something is really frustrating.' He paused, said 'I wanted the red one.' Connection took 30 seconds; the meltdown was avoided.",
-         "Talking to your child from across the room or while distracted by your phone — they read this as 'not safe to listen' even if your words are kind.",
-         "Today: try 5 minutes of 'special time' — child picks the activity, phone away, fully present.",
-         "2–3 days",
-         "Connection-based discipline (Daniel Siegel & Tina Payne Bryson, 'The Whole-Brain Child')"),
-      mk(2, "Identify the real trigger",
-         "Stop guessing — find the actual root",
-         "90% of recurring behaviour has a predictable trigger: hunger, tired, transition, sensory overload, or unmet emotional need. When you can name the trigger, you stop fighting the behaviour and start solving the cause. This is the single biggest shift parents make.",
-         ["Track for 3 days: what time, what happened just before, last meal, last sleep", "Look for patterns (4pm meltdown = hunger; pre-bath = transition)", "Ask your child softly when calm: 'What was hardest today?'"],
-         "Maya tracked her 5-year-old's tantrums for 3 days — every single one happened between 5–6pm. Earlier dinner = problem solved.",
-         "Treating every meltdown as 'bad behaviour' rather than data — the behaviour IS the message.",
-         "Today: keep a 3-line note in your phone every time the behaviour shows up — time, situation, what was happening 30 min before.",
-         "3 days",
-         "Behavioural ABC analysis (Antecedent–Behaviour–Consequence, applied behaviour science)"),
-      mk(3, "Set ONE clear expectation",
-         "Reduce confusion and decision fatigue",
-         `Children at ${ageGroup} can hold 1–2 rules in working memory at a time. When parents juggle 10 expectations, kids freeze, comply randomly, or push back hard. ONE clear, repeated, positively-phrased rule beats 10 vague ones every time.`,
-         ["Pick the single most important rule for this week", "Phrase positively ('We use gentle hands') not negatively ('Don't hit')", "Repeat it the same exact way every time it applies"],
-         "Instead of 'Don't run, don't yell, don't hit your sister' — Anna chose ONE: 'In our home we keep our bodies safe.' Repeated that line for a week.",
-         "Adding a new rule each time something annoys you — kids tune out the noise.",
-         "Write ONE rule on a sticky note. Stick it on the fridge. Use it when needed.",
-         "3–4 days",
-         "Working-memory limits in early childhood (Cowan's capacity research)"),
-      mk(4, "Offer two real choices",
-         "Give autonomy without losing the limit",
-         "Autonomy is a core developmental need (self-determination theory). When children feel they have NO control, they create some — by resisting. Two limited choices give them genuine agency while you keep the boundary that matters.",
-         ["'Do you want X or Y?' — both options must be acceptable to you", "Never offer a choice during a full meltdown — wait for calm", "Honour the choice once made"],
-         "Bath fight every night. Dad switched from 'Time for bath' to 'Bath now or in 5 minutes?' — fights stopped in 2 days.",
-         "Offering fake choices ('Do you want to do X or do you want a time-out?') — kids feel tricked.",
-         "At one transition today, swap a command for a choice.",
-         "3–4 days",
-         "Self-Determination Theory — autonomy as a core need (Deci & Ryan)"),
-      mk(5, "Co-regulate before correcting",
-         "Lend your calm — borrow theirs later",
-         "Children regulate through their parent's nervous system before they can do it alone. When you're activated, they amplify; when you're calm, they slowly settle. This is biological co-regulation (Stephen Porges' Polyvagal Theory) — not a parenting trick.",
-         ["Lower your voice instead of raising it", "Drop your shoulders, soften your face", "Breathe slowly and visibly — they will mirror you", "Validate first ('This is hard'), correct later"],
-         "Priya started doing 4-7-8 breathing audibly when her son melted down. Within a week he was breathing with her.",
-         "Trying to teach a regulation skill mid-meltdown — the lesson can only land afterward.",
-         "Practice 4-in / 7-hold / 8-out breathing twice today, before any tough moment.",
-         "1 week",
-         "Polyvagal Theory & co-regulation (Stephen Porges)"),
-      mk(6, "Hold the limit kindly",
-         "Stay warm AND firm — they aren't opposites",
-         "Kids feel safer when limits hold even under pressure. A wobbling limit teaches 'if I push hard enough, the rule changes' — which makes future pushes louder. Holding the limit while staying warm is the gentle-discipline gold standard.",
-         ["Validate the feeling, hold the limit: 'I know — and the answer is still no'", "Stay nearby, don't lecture, don't punish in heat", "Repeat the rule once, then stop talking"],
-         "'I see you really want more screen time. Screen time is done for today. I'm right here if you want a hug.' Said calmly, on repeat.",
-         "Caving when the meltdown gets loud — this teaches escalation works.",
-         "Today: pick ONE limit you've been wobbling on. Hold it warmly today.",
-         "1 week",
-         "Authoritative parenting style — high warmth + high structure (Diana Baumrind)"),
-      mk(7, "Build the missing skill",
-         "Don't punish what hasn't been taught",
-         "Most repeated behaviour problems are missing skills, not missing motivation. A child who can't transition needs transition practice; a child who lashes out needs anger-language practice. Skills are built through low-stakes repetition, not consequences.",
-         ["Name the skill out loud ('We're learning how to wait')", "Practice during calm moments, not during crisis", "Praise the attempt, not just the success"],
-         "5-year-old kept hitting when frustrated. Mom made a 'feelings poster' and practiced naming feelings during car rides — hitting dropped in 2 weeks.",
-         "Expecting a child to do something they've never been taught to do.",
-         "Pick ONE skill (waiting, sharing, transitioning) — practice for 3 minutes during calm time today.",
-         "1–2 weeks",
-         "Collaborative & Proactive Solutions — 'kids do well if they can' (Ross Greene)"),
-      mk(8, "Repair after rupture",
-         "Repair > perfection — every time",
-         "Every parent loses it sometimes. What matters is what happens next. Repair (owning your part, reconnecting) builds attachment security and teaches your child that mistakes are recoverable — one of the most important life skills they'll ever learn.",
-         ["When you lose your cool, return when calm", "Take ownership: 'I yelled. That wasn't your fault. I'm sorry.'", "Reconnect physically — hug, sit together, read a book"],
-         "After yelling at her son, Lina sat next to him 10 minutes later: 'I yelled. That was about my stress, not you. I love you.' He hugged her back.",
-         "Pretending the rupture didn't happen, OR over-apologising in a way that puts the child in a parental role.",
-         "Tonight: bedtime check-in — 'Best part of today? Hardest part?'",
-         "Ongoing",
-         "Attachment repair & rupture-and-repair cycles (John Gottman, Edward Tronick)"),
-      mk(9, "Track tiny wins daily",
-         "Notice progress so you don't give up",
-         "Behaviour change is invisible day-to-day but obvious week-to-week. Without a tracking system, your brain remembers only the bad moments and concludes 'nothing is working' — when real progress is happening underneath.",
-         ["Each evening, write ONE thing that went 5% better", "Look for partial wins — '20 sec less screaming' is a win", "Share the win with your child the next morning"],
-         "Raj's wins jar: 'Bedtime took 25 min instead of 40.' After 2 weeks, the jar full of small wins kept him going.",
-         "Comparing to other families' kids — your only baseline is YOUR child last week.",
-         "Tonight: text yourself or a partner ONE small win.",
-         "1 week",
-         "Behavioural Activation & self-monitoring (cognitive-behavioural research)"),
-      mk(10, "Hold consistency for 14 days",
-         "Lock in the new pattern",
-         "Behaviours rewire after 14–21 days of consistent response. Most parents quit at day 5 because that's when kids ESCALATE — testing whether the new boundary is real. Holding through the day-5 burst is when the real change happens.",
-         ["Use the same response every time, every day, even when tired", "Expect a 'protest burst' around day 5 — this means it's working", "Resist switching strategies — give it the full 14 days"],
-         "Asha gave up at day 6 every time. The 7th time she pushed through — by day 12 her daughter was sleeping through the night.",
-         "Switching tactics mid-stream because 'it's not working yet' — change needs runway.",
-         "Mark a calendar each day you held the new approach — visible streak.",
-         "2 weeks",
-         "Habit formation & extinction bursts (BJ Fogg, Tiny Habits)"),
-      mk(11, "Maintain through setbacks",
-         "Regression is part of the path, not the end of it",
-         "Kids regress before big developmental leaps and during stress (illness, new sibling, school changes). A regression isn't failure — it's a sign your child is reorganising. Return to the basics: connect first, hold the limit, repair.",
-         ["Expect regression around big transitions", "Drop expectations slightly — return to win 1 (connect)", "Don't restart the plan — resume from where you were"],
-         "Two months in, a stomach bug + new school caused a setback. Parents went back to extra connection time for 4 days — pattern returned.",
-         "Treating regression as evidence the plan failed and abandoning it.",
-         "When setback hits: extra 5 min of special time daily for 3 days.",
-         "Ongoing",
-         "Developmental regression around growth spurts (Brazelton's Touchpoints)"),
-      mk(12, "Make it a family value",
-         "Move from rules to identity",
-         "The deepest behaviour change happens when 'we don't hit' becomes 'we are a gentle family' — when the behaviour expresses identity, not just compliance. This is what makes change last into the teen years and beyond.",
-         ["Use 'we' language: 'In our home we…'", "Tell stories of family identity: 'We're the family that talks it out'", "Notice and name when your child lives the value"],
-         "Family motto on the fridge: 'We are kind, we are brave, we try again.' Kids quoted it back during arguments.",
-         "Skipping this final step — without identity, behaviour reverts to baseline under stress.",
-         "Tonight at dinner: ask 'What's one thing our family is really good at?'",
-         "Ongoing",
-         "Identity-based behaviour change (James Clear, Atomic Habits)"),
-    ],
-  };
+  return buildGoalSpecificFullFallback(input.goal ?? "generic", label, input);
 }
 
 // ─── DB cache helpers ────────────────────────────────────────────────────
@@ -570,6 +454,28 @@ function parseCoachInput(raw: CoachInput): { input: CoachInput; goal: string } |
   };
 }
 
+async function userHasCoachFeedbackForGoal(userId: string, goalId: string): Promise<boolean> {
+  try {
+    const rows = await db
+      .select({ sessionId: userProgressTable.sessionId })
+      .from(userProgressTable)
+      .where(and(eq(userProgressTable.userId, userId), eq(userProgressTable.goalId, goalId)))
+      .limit(1);
+    return rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function isAdminUser(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const list = (process.env["ADMIN_USER_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(userId);
+}
+
 async function handleCoachGenerate(req: import("express").Request, res: import("express").Response): Promise<void> {
   pruneMem();
   const requestStart = Date.now();
@@ -609,6 +515,11 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   }
 
   const cacheKey = buildCacheKey(input);
+  const hasSessionFeedback = userId ? await userHasCoachFeedbackForGoal(userId, goal) : false;
+  const bypassCache = shouldBypassCoachPlanCache({ hasSessionFeedback });
+  if (bypassCache) {
+    recordCoachObservabilityEvent("coach_cache_bypass", { goal, userId, reason: "session_feedback" });
+  }
 
   const completePayload = (plan: CoachPlan, planCacheKey: string, extra: Record<string, unknown>) => ({
     plan,
@@ -622,11 +533,12 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
 
   const cacheSpan = startCoachPerfSpan("CACHE_LOOKUP", { userId, cacheKey: cacheKey.slice(0, 8) });
 
-  // L1 — full cached plan
-  const mem = memCache.get(cacheKey);
+  // L1 — full cached plan (skipped when user has personalized session progress)
+  const mem = !bypassCache ? memCache.get(cacheKey) : undefined;
   if (mem && Date.now() - mem.ts < MEMORY_TTL_MS && mem.plan.wins.length >= COACH_TOTAL_WINS) {
     cacheSpan.end({ hit: "memory" });
     memStats.hits++;
+    recordCoachGenerateAttempt("cache");
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "memory", stats: memStats }, "ai-coach cache hit");
     const memPayload = completePayload(mem.plan, cacheKey, { cached: true, source: "memory" });
     const responseMs = Date.now() - requestStart;
@@ -643,12 +555,13 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     return;
   }
 
-  // L2 — full cached plan
-  const dbHit = await dbGetCoachCache(cacheKey);
+  // L2 — full cached plan (skipped when user has personalized session progress)
+  const dbHit = !bypassCache ? await dbGetCoachCache(cacheKey) : null;
   if (dbHit && validateFullCoachPlan(dbHit)) {
     cacheSpan.end({ hit: "db" });
     memCache.set(cacheKey, { plan: dbHit, ts: Date.now() });
     memStats.dbHits++;
+    recordCoachGenerateAttempt("cache");
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "db", stats: memStats }, "ai-coach cache hit");
     const dbPayload = completePayload(dbHit, cacheKey, { cached: true, source: "db" });
     const responseMsDb = Date.now() - requestStart;
@@ -672,6 +585,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   logger.info({ cacheKey: cacheKey.slice(0, 8), goal, stats: memStats }, "ai-coach cache miss — fast initial wins");
 
   const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
+  const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
 
   const topicBlock = renderTopicAnswersBlock(input.topicAnswers);
   const { enqueueAiJob, isBullMqActive } = await import("../queue/ai-job-queue.js");
@@ -694,7 +608,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
       userId,
       wrapJobInput("ai-coach/initial", {
         systemPrompt: "coach-initial",
-        userPrompt: JSON.stringify({ input, goalLabel, topicBlock, intelligenceBlock }),
+        userPrompt: JSON.stringify({ input, goalLabel, goalBrief, topicBlock, intelligenceBlock }),
       }),
     );
     if (enqueued.jobId) {
@@ -715,6 +629,8 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
       }
     }
   }
+
+  recordCoachGenerateAttempt(aiOk ? "ai" : "fallback");
 
   const effectiveSessionId = randomUUID();
 
@@ -826,6 +742,32 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
     /* non-fatal */
   }
 
+  let feedbackHistory: { winNumber: number; title: string; feedback: "yes" | "somewhat" | "no" }[] = [];
+  try {
+    const feedbackRows = await db
+      .select({
+        winNumber: userProgressTable.winNumber,
+        feedback: userProgressTable.feedback,
+      })
+      .from(userProgressTable)
+      .where(
+        and(
+          eq(userProgressTable.userId, userId),
+          eq(userProgressTable.sessionId, sessionId),
+        ),
+      )
+      .orderBy(userProgressTable.winNumber);
+    feedbackHistory = feedbackRows
+      .filter((r) => ["yes", "somewhat", "no"].includes(r.feedback))
+      .map((r) => ({
+        winNumber: r.winNumber,
+        title: existingWins.find((w) => w.win === r.winNumber)?.title ?? `Win ${r.winNumber}`,
+        feedback: r.feedback as "yes" | "somewhat" | "no",
+      }));
+  } catch {
+    /* non-fatal */
+  }
+
   const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
   await submitRouteAiJob({
     routeName: "ai-coach/next-win",
@@ -840,19 +782,28 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
       nextWinNumber,
       topicBlock,
       intelligenceBlock,
+      feedbackHistory,
     },
     waitMs: 25_000,
     buildSyncBody: (result) => {
       const body = result as { win: Win; aiOk: boolean };
       const win = body.win;
       if (!validateWin(win) || win.win !== nextWinNumber) {
-        const fallbackSlice = fallbackPlan(input).wins[nextWinNumber - 1];
-        if (!fallbackSlice) {
+        const fallbackSlice = buildGoalSpecificFallbackWin(
+          input.goal ?? "generic",
+          goalLabel!,
+          input,
+          nextWinNumber,
+          existingWins,
+          feedbackHistory,
+        );
+        if (!validateWin(fallbackSlice)) {
           return { error: "next_win_failed" };
         }
         const mergedWins = [...existingWins, fallbackSlice];
         const plan: CoachPlan = { ...meta, wins: mergedWins };
         void updateCoachSessionPlan(userId, sessionId, plan as ServiceCoachPlan);
+        recordCoachNextWinAttempt("fallback");
         return {
           win: fallbackSlice,
           status: mergedWins.length >= COACH_TOTAL_WINS ? "complete" : "partial",
@@ -869,6 +820,7 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
         void dbSetCoachCache(cacheKey, input, plan as ServiceCoachPlan);
       }
 
+      recordCoachNextWinAttempt(body.aiOk ? "ai" : "fallback");
       return {
         win,
         status: mergedWins.length >= COACH_TOTAL_WINS ? "complete" : "partial",
@@ -879,6 +831,21 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
     res,
   });
 }
+
+// ─── GET /ai-coach/observability — admin dashboard for Phase 2 metrics ───
+router.get("/ai-coach/observability", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const { describeCoachCacheLayers } = await import("../services/coachPlanCacheKey.js");
+  res.json({
+    ok: true,
+    dashboard: getCoachObservabilityDashboard(),
+    cacheLayers: describeCoachCacheLayers(),
+  });
+});
 
 // ─── POST /ai-coach (2 wins now; wins 3–12 lazy on /coach/next-win) ───────
 router.post("/ai-coach", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
@@ -1297,6 +1264,30 @@ router.post("/ai-coach/feedback", infantCoachPreviewGate(), async (req, res): Pr
       target: [userProgressTable.sessionId, userProgressTable.winNumber],
       set: { feedback, planTitle, totalWins: Math.floor(totalWins), createdAt: new Date() },
     });
+
+    const priorRows = await db
+      .select({ winNumber: userProgressTable.winNumber, feedback: userProgressTable.feedback })
+      .from(userProgressTable)
+      .where(and(eq(userProgressTable.sessionId, sessionId), eq(userProgressTable.userId, userId)));
+    const feedbackMap: Record<number, "yes" | "somewhat" | "no"> = {};
+    for (const r of priorRows) {
+      if (["yes", "somewhat", "no"].includes(r.feedback)) {
+        feedbackMap[r.winNumber] = r.feedback as "yes" | "somewhat" | "no";
+      }
+    }
+    const beforePct = computeCoachProgressPct(
+      Object.fromEntries(
+        Object.entries(feedbackMap).filter(([k]) => Number(k) !== Math.floor(winNumber)),
+      ) as Record<number, "yes" | "somewhat" | "no">,
+      Math.floor(totalWins),
+    );
+    feedbackMap[Math.floor(winNumber)] = feedback as "yes" | "somewhat" | "no";
+    const afterPct = computeCoachProgressPct(feedbackMap, Math.floor(totalWins));
+    recordCoachFeedbackEvent(feedback as "yes" | "somewhat" | "no", { goalId, sessionId, winNumber });
+    recordCoachProgressDelta(beforePct, afterPct, { goalId, sessionId, winNumber });
+    if (feedback === "no") {
+      recordCoachObservabilityEvent("coach_strategy_switch", { goalId, sessionId, winNumber });
+    }
 
     try {
       const { applyCoachIntelligenceEventForUser } = await import("../services/coachIntelligenceService.js");
