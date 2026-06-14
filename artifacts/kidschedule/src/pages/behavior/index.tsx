@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useListChildren, getListChildrenQueryKey, useListBehaviors, getListBehaviorsQueryKey, useCreateBehaviorLog, useDeleteBehaviorLog, getGetBehaviorStatsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -80,6 +80,18 @@ export default function BehaviorTracker() {
   // another child (e.g. before upgrading), force the scope back to child #1.
   const firstChildId = children[0]?.id ?? null;
   const effectiveChildId = isPremium ? selectedChild : selectedChild && selectedChild === firstChildId ? selectedChild : firstChildId;
+  const logChildId =
+    selectedChild ??
+    effectiveChildId ??
+    (children.length === 1 ? (children[0]?.id ?? null) : null);
+
+  // Auto-select when there is only one child so quick log works without an extra tap.
+  useEffect(() => {
+    if (children.length !== 1) return;
+    const onlyId = children[0]?.id;
+    if (onlyId == null) return;
+    setSelectedChild((prev) => (prev === onlyId ? prev : onlyId));
+  }, [children]);
   const todayParams = effectiveChildId ? {
     date: today,
     childId: effectiveChildId
@@ -105,7 +117,7 @@ export default function BehaviorTracker() {
   const deleteMutation = useDeleteBehaviorLog();
   const toggle = (id: string) => setOpenBlock(c => c === id ? null : id);
   function quickLog(key: QuickBehaviorKey) {
-    if (!selectedChild) {
+    if (!logChildId) {
       toast({
         title: t("toasts.behavior.select_child"),
         variant: "destructive"
@@ -115,7 +127,7 @@ export default function BehaviorTracker() {
     const def = QUICK_BEHAVIORS[key];
     createMutation.mutate({
       data: {
-        childId: selectedChild,
+        childId: logChildId,
         date: today,
         type: def.type === "neutral" ? "neutral" : def.type,
         behavior: def.behaviorText.en,

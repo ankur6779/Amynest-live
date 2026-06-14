@@ -1,6 +1,12 @@
 import type { DifficultyLevel } from "../types.js";
 import type { TopicContext } from "./types.js";
 import type { TutorMemory } from "./types.js";
+import {
+  pickBankQuestion,
+  type BankQuestion,
+  type LearnAmyAgeGroup,
+  resolveLearnAmyAgeGroup,
+} from "./learnWithAmyQuestionBank.js";
 
 export type GeneratedQuestion = {
   prompt: string;
@@ -8,35 +14,12 @@ export type GeneratedQuestion = {
   difficulty: DifficultyLevel;
   hint: string;
   variationId: string;
+  options: [string, string, string, string];
+  correctIndex: number;
+  bankId: string;
+  ageGroup: LearnAmyAgeGroup;
+  topicKey: string;
 };
-
-const TOPIC_BANK: Record<string, { easy: string; medium: string; hard: string }> = {
-  phonics: {
-    easy: "What sound does the letter A make?",
-    medium: "Which word starts with the B sound: ball or cat?",
-    hard: "Can you blend the sounds in C-A-T?",
-  },
-  motor_skills: {
-    easy: "Can you tap your nose?",
-    medium: "Can you clap two times?",
-    hard: "Can you hop once and freeze?",
-  },
-  cognitive: {
-    easy: "Which is bigger: an elephant or a mouse?",
-    medium: "What comes next: red, blue, red, blue, ___?",
-    hard: "If you have two apples and get one more, how many?",
-  },
-  default: {
-    easy: "Can you try this with me?",
-    medium: "What do you think happens next?",
-    hard: "Can you explain it in your own words?",
-  },
-};
-
-function topicKey(moduleId: string): string {
-  if (moduleId in TOPIC_BANK) return moduleId;
-  return "default";
-}
 
 export function pickDifficultyForLevel(
   skillLevel: number,
@@ -47,60 +30,95 @@ export function pickDifficultyForLevel(
   return "medium";
 }
 
+function bankToGenerated(
+  bank: BankQuestion,
+  memory: TutorMemory,
+  ageGroup: LearnAmyAgeGroup,
+): GeneratedQuestion {
+  const correctAnswer = bank.options[bank.correctIndex] ?? "";
+  const weakHint =
+    memory.weakAreas.length > 0
+      ? `Remember: take your time with ${memory.weakAreas[memory.weakAreas.length - 1]}.`
+      : "Listen, then pick the best answer.";
+
+  return {
+    prompt: bank.prompt,
+    expectedKeywords: extractKeywords(correctAnswer, bank.prompt),
+    difficulty: bank.difficulty,
+    hint: weakHint,
+    variationId: bank.id,
+    options: bank.options,
+    correctIndex: bank.correctIndex,
+    bankId: bank.id,
+    ageGroup,
+    topicKey: bank.topic,
+  };
+}
+
 export function generateQuestion(
   ctx: TopicContext,
   memory: TutorMemory,
   mistakeCount = 0,
+  ageYears = 6,
+  excludeIds: string[] = [],
 ): GeneratedQuestion {
-  const bank = TOPIC_BANK[topicKey(ctx.moduleId)] ?? TOPIC_BANK.default!;
   const difficulty = pickDifficultyForLevel(ctx.skillLevel, mistakeCount);
-  const prompt =
-    difficulty === "easy"
-      ? bank.easy
-      : difficulty === "hard"
-        ? bank.hard
-        : bank.medium;
-
-  const weakHint =
-    memory.weakAreas.length > 0
-      ? `Remember: take your time with ${memory.weakAreas[memory.weakAreas.length - 1]}.`
-      : "Listen, then try your best.";
-
-  return {
-    prompt: personalizePrompt(prompt, ctx.topic),
-    expectedKeywords: extractKeywords(prompt),
+  const ageGroup = resolveLearnAmyAgeGroup(ageYears);
+  const bank = pickBankQuestion({
+    ageYears,
+    topic: ctx.topic,
+    moduleId: ctx.moduleId,
     difficulty,
-    hint: weakHint,
-    variationId: `q_${ctx.moduleId}_${difficulty}_${Date.now() % 1000}`,
-  };
+    excludeIds,
+  });
+  return bankToGenerated(bank, memory, ageGroup);
 }
 
 export function generateRetryQuestion(
   original: GeneratedQuestion,
   attempt: number,
+  ageYears = 6,
 ): GeneratedQuestion {
-  const simpler =
+  const simplerDifficulty: DifficultyLevel =
     original.difficulty === "hard"
-      ? "Let's try an easier one. " + softenPrompt(original.prompt)
-      : softenPrompt(original.prompt);
+      ? "medium"
+      : original.difficulty === "medium"
+        ? "easy"
+        : "easy";
+
+  const bank = pickBankQuestion({
+    ageYears,
+    topic: original.topicKey,
+    moduleId: original.topicKey,
+    difficulty: simplerDifficulty,
+    excludeIds: [original.bankId],
+  });
+
+  const generated = bankToGenerated(
+    bank,
+    { mistakesHistory: [], strengths: [], weakAreas: [] },
+    resolveLearnAmyAgeGroup(ageYears),
+  );
+
   return {
-    ...original,
-    prompt: simpler,
-    variationId: `${original.variationId}_retry_${attempt}`,
-    hint: "Here's a tiny clue — " + original.hint.toLowerCase(),
+    ...generated,
+    prompt:
+      attempt >= 2
+        ? `Let's try an easier one. ${generated.prompt}`
+        : `Good try! ${generated.prompt}`,
+    variationId: `${generated.variationId}_retry_${attempt}`,
+    hint: "Here's a tiny clue — " + generated.hint.toLowerCase(),
   };
 }
 
-function personalizePrompt(prompt: string, topic: string): string {
-  if (!topic || topic === "learning") return prompt;
-  return prompt.replace("this", topic);
-}
+function extractKeywords(correctAnswer: string, prompt: string): string[] {
+  const fromAnswer = correctAnswer
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 1);
+  if (fromAnswer.length > 0) return fromAnswer.slice(0, 4);
 
-function softenPrompt(prompt: string): string {
-  return prompt.replace("Can you", "Let's try — can you").replace("?", "?");
-}
-
-function extractKeywords(prompt: string): string[] {
   return prompt
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, "")
@@ -109,18 +127,36 @@ function extractKeywords(prompt: string): string[] {
     .slice(0, 4);
 }
 
+function normalizeAnswer(text: string): string {
+  return text.toLowerCase().trim().replace(/[^a-z0-9\s]/g, "");
+}
+
 export function evaluateChildAnswer(
   answer: string,
   question: GeneratedQuestion,
 ): import("./types.js").ChildAnswerEvaluation {
-  const normalized = answer.toLowerCase().trim();
+  const normalized = normalizeAnswer(answer);
   if (normalized.length < 1) {
     return { correct: false, partial: false, confidence: 0 };
   }
 
+  const correctOption = question.options[question.correctIndex];
+  if (correctOption && normalizeAnswer(correctOption) === normalized) {
+    return { correct: true, partial: false, confidence: 1 };
+  }
+
+  for (let i = 0; i < question.options.length; i++) {
+    const opt = question.options[i];
+    if (opt && normalizeAnswer(opt) === normalized) {
+      return i === question.correctIndex
+        ? { correct: true, partial: false, confidence: 1 }
+        : { correct: false, partial: false, confidence: 0.15 };
+    }
+  }
+
   const hits = question.expectedKeywords.filter((k) => normalized.includes(k));
   if (hits.length >= Math.max(1, question.expectedKeywords.length - 1)) {
-    return { correct: true, partial: false, confidence: 0.9 };
+    return { correct: true, partial: false, confidence: 0.85 };
   }
   if (hits.length > 0 || normalized.length > 8) {
     return { correct: false, partial: true, confidence: 0.45 };

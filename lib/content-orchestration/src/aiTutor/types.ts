@@ -50,6 +50,10 @@ export type TutorResponsePayload = {
   mode: TeachingMode;
   nextExpectedResponse: "listen" | "answer" | "repeat" | "continue";
   slowMode?: boolean;
+  /** MCQ prompt (separate from intro `message` when Amy is asking). */
+  question?: string;
+  options?: string[];
+  correctIndex?: number;
 };
 
 export type TutorApiPayload = {

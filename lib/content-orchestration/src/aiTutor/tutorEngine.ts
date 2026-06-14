@@ -51,6 +51,7 @@ import { TUTOR_SAFETY } from "./types.js";
 const tutorByChild = new Map<string, TutorState>();
 const wrongAttempts = new Map<string, number>();
 const lastQuestion = new Map<string, import("./questionEngine.js").GeneratedQuestion>();
+const seenQuestionIds = new Map<string, string[]>();
 
 export type TutorContext = {
   personality?: PersonalityProfile;
@@ -90,10 +91,12 @@ export function clearTutorState(childId?: string): void {
     tutorByChild.delete(childId);
     wrongAttempts.delete(childId);
     lastQuestion.delete(childId);
+    seenQuestionIds.delete(childId);
   } else {
     tutorByChild.clear();
     wrongAttempts.clear();
     lastQuestion.clear();
+    seenQuestionIds.clear();
   }
 }
 
@@ -104,9 +107,14 @@ async function toApiPayload(
   nextExpectedResponse: TutorResponsePayload["nextExpectedResponse"],
   tutorCtx?: TutorContext,
   voiceOpts?: { slowMode?: boolean; repeatMode?: boolean },
+  mcq?: { question?: string; options?: string[]; correctIndex?: number },
 ): Promise<TutorApiPayload> {
+  const speakText =
+    mcq?.question && mcq.question.trim().length > 0
+      ? truncateForSafety(`${message} ${mcq.question}`)
+      : message;
   const voice = await textToSpeech(
-    message,
+    speakText,
     resolveVoiceSettings({
       slowMode: voiceOpts?.slowMode,
       repeatMode: voiceOpts?.repeatMode,
@@ -123,8 +131,34 @@ async function toApiPayload(
       mode,
       nextExpectedResponse,
       slowMode: voiceOpts?.slowMode,
+      question: mcq?.question,
+      options: mcq?.options,
+      correctIndex: mcq?.correctIndex,
     },
   };
+}
+
+function rememberQuestion(childId: string, question: import("./questionEngine.js").GeneratedQuestion): void {
+  lastQuestion.set(childId, question);
+  const seen = seenQuestionIds.get(childId) ?? [];
+  seenQuestionIds.set(childId, [...seen, question.bankId].slice(-12));
+}
+
+function nextQuestion(
+  childId: string,
+  ctx: TopicContext,
+  memory: TutorState["memory"],
+  ageYears: number,
+): import("./questionEngine.js").GeneratedQuestion {
+  const question = generateQuestion(
+    ctx,
+    memory,
+    wrongAttempts.get(childId) ?? 0,
+    ageYears,
+    seenQuestionIds.get(childId) ?? [],
+  );
+  rememberQuestion(childId, question);
+  return question;
 }
 
 /**
@@ -138,10 +172,12 @@ export async function processTutorTurn(
     contentItem?: SessionPlanItem;
     childAnswer?: string;
     audioInput?: string;
+    childAgeYears?: number;
   },
   tutorCtx: TutorContext = {},
 ): Promise<{ state: TutorState; response: TutorApiPayload; goalMet: boolean }> {
   let state = getTutorState(childId);
+  const ageYears = Math.max(2, Math.min(15, input.childAgeYears ?? 6));
   const ctx =
     input.topic ??
     (input.contentItem
@@ -185,12 +221,17 @@ export async function processTutorTurn(
   if (input.action === "repeat") {
     const last = [...state.conversationHistory].reverse().find((t) => t.role === "amy");
     const text = last?.text ?? "Let's try again.";
+    const question = lastQuestion.get(childId);
     return {
       state,
-      response: await toApiPayload(state, text, state.teachingMode, "listen", tutorCtx, {
+      response: await toApiPayload(state, text, state.teachingMode, question ? "answer" : "listen", tutorCtx, {
         repeatMode: true,
         slowMode: true,
-      }),
+      }, question ? {
+        question: question.prompt,
+        options: [...question.options],
+        correctIndex: question.correctIndex,
+      } : undefined),
       goalMet: false,
     };
   }
@@ -267,12 +308,16 @@ export async function processTutorTurn(
 
     const step = nextCorrectionStep(attempts);
     const correction = buildCorrectionResponse(question, step, attempts);
+    let mcq: { question?: string; options?: string[]; correctIndex?: number } | undefined;
     if (step === "retry") {
-      const retryQ = generateRetryQuestion(question, attempts);
-      lastQuestion.set(childId, retryQ);
-      correction.message = truncateForSafety(
-        `${correction.message} ${retryQ.prompt}`,
-      );
+      const retryQ = generateRetryQuestion(question, attempts, ageYears);
+      rememberQuestion(childId, retryQ);
+      correction.message = truncateForSafety(`${correction.message} ${retryQ.prompt}`);
+      mcq = {
+        question: retryQ.prompt,
+        options: [...retryQ.options],
+        correctIndex: retryQ.correctIndex,
+      };
     }
     state = appendTurn(state, "amy", correction.message, correction.mode);
     state.teachingMode = correction.mode;
@@ -286,6 +331,7 @@ export async function processTutorTurn(
         correction.nextExpectedResponse,
         tutorCtx,
         { slowMode: true },
+        mcq,
       ),
       goalMet: false,
     };
@@ -297,37 +343,36 @@ export async function processTutorTurn(
     state = appendTurn(state, "amy", explain.text, explain.mode);
     state.teachingMode = "explain";
 
-    const question = generateQuestion(
-      ctx,
-      state.memory,
-      wrongAttempts.get(childId) ?? 0,
-    );
-    lastQuestion.set(childId, question);
+    const question = nextQuestion(childId, ctx, state.memory, ageYears);
     const ask = buildAskMessage(question, adaptation);
-    const combined = truncateForSafety(`${explain.text} ${ask.text}`);
     state = appendTurn(state, "amy", ask.text, ask.mode);
     state.teachingMode = "ask";
     tutorByChild.set(childId, markMicroCycle(state));
 
     return {
       state,
-      response: await toApiPayload(state, combined, "ask", "answer", tutorCtx),
+      response: await toApiPayload(state, explain.text, "ask", "answer", tutorCtx, undefined, {
+        question: question.prompt,
+        options: [...question.options],
+        correctIndex: question.correctIndex,
+      }),
       goalMet: false,
     };
   }
 
-  const askOnly = buildAskMessage(
-    generateQuestion(ctx, state.memory, wrongAttempts.get(childId) ?? 0),
-    adaptation,
-  );
-  lastQuestion.set(childId, generateQuestion(ctx, state.memory));
+  const question = nextQuestion(childId, ctx, state.memory, ageYears);
+  const askOnly = buildAskMessage(question, adaptation);
   state = appendTurn(state, "amy", askOnly.text, "ask");
   state.teachingMode = "ask";
   tutorByChild.set(childId, state);
 
   return {
     state,
-    response: await toApiPayload(state, askOnly.text, "ask", "answer", tutorCtx),
+    response: await toApiPayload(state, askOnly.text, "ask", "answer", tutorCtx, undefined, {
+      question: question.prompt,
+      options: [...question.options],
+      correctIndex: question.correctIndex,
+    }),
     goalMet: false,
   };
 }

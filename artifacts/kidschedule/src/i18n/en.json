@@ -1338,7 +1338,16 @@
       "stat_points_this_week": "this week",
       "stat_levels": "Levels",
       "stat_levels_new_this_week": "+{{count}} this week",
-      "stat_levels_no_new_this_week": "no new this week"
+      "stat_levels_no_new_this_week": "no new this week",
+      "load_error_title": "Couldn't load insights",
+      "load_error_text": "Something went wrong while fetching your activity trends. Please try again.",
+      "retry": "Try again",
+      "abacus_section_title": "Abacus this week",
+      "abacus_level": "Level {{level}} · {{label}}",
+      "abacus_no_sessions": "No abacus sessions yet — open the Abacus PRO Zone in the Parent Hub to get started.",
+      "abacus_next_up": "Next up",
+      "abacus_accuracy": "Accuracy",
+      "abacus_lifetime_accuracy": "Lifetime accuracy"
     },
     "kids_control_center": {
       "coming_soon_badge": "Coming Soon 🚀",
@@ -5616,7 +5625,14 @@
       "analyzing": "Analyzing...",
       "cached_this_week_generated": "Cached this week · generated",
       "click_generate_to_get_amy_ai_insights_based_on_your_family_s": "Click \"Generate\" to get Amy AI insights based on your family's routine patterns, completion rates, and behavior trends.",
-      "insights_are_cached_for_the_week_generated_once_shown_all_we": "Insights are cached for the week — generated once, shown all week."
+      "insights_are_cached_for_the_week_generated_once_shown_all_we": "Insights are cached for the week — generated once, shown all week.",
+      "streak_start": "Start your streak! Generate a routine today.",
+      "streak_day_one": "Streak started! Keep it going tomorrow.",
+      "streak_building": "{{count}}-day streak! You're building momentum.",
+      "streak_legend": "🏆 {{count}}-day streak! Incredible consistency!",
+      "insights_generate": "Generate",
+      "insights_view": "View",
+      "insights_load_error": "Couldn't generate insights. Please try again."
     },
     "recipes": {
       "my_recipes": "My Recipes",
@@ -6092,6 +6108,11 @@
       "start_learning": "Start Learning",
       "thinking": "Amy is thinking…",
       "answer_placeholder": "Type your answer…",
+      "voice_answer": "Voice answer",
+      "voice_listening": "Listening…",
+      "voice_processing": "Processing…",
+      "voice_tap_to_answer": "Tap the mic to say your answer",
+      "session_goal_met": "Session goal reached — great work!",
       "continue": "Continue",
       "goal_met_continue": "Great job — keep going",
       "repeat": "Repeat",

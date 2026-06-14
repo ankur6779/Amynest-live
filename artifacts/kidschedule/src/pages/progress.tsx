@@ -74,6 +74,7 @@ export default function ProgressPage() {
     insights: Insight[];
   } | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
+  const [insightsError, setInsightsError] = useState(false);
   const [insightsCached, setInsightsCached] = useState(false);
   const [insightsCachedAt, setInsightsCachedAt] = useState<string | null>(null);
   useEffect(() => {
@@ -167,6 +168,7 @@ export default function ProgressPage() {
       }
     }
     setLoadingInsights(true);
+    setInsightsError(false);
     try {
       const res = await authFetch("/api/insights", {
         method: "POST"
@@ -177,9 +179,11 @@ export default function ProgressPage() {
         saveCachedInsights(data);
         setInsightsCached(false);
         setInsightsCachedAt(new Date().toISOString());
+      } else {
+        setInsightsError(true);
       }
     } catch {
-      // ignore
+      setInsightsError(true);
     } finally {
       setLoadingInsights(false);
     }
@@ -189,6 +193,15 @@ export default function ProgressPage() {
     setInsightsCached(false);
     handleGenerateInsights(true);
   };
+  const streakMessage =
+    streak === 0
+      ? t("pages.progress.streak_start")
+      : streak === 1
+        ? t("pages.progress.streak_day_one")
+        : streak < 5
+          ? t("pages.progress.streak_building", { count: streak })
+          : t("pages.progress.streak_legend", { count: streak });
+
   if (isLoading) {
     return <div className="space-y-4">
         <Skeleton className="h-32 rounded-3xl" />
@@ -218,7 +231,7 @@ export default function ProgressPage() {
               {streak} {t("pages.progress.day")}{streak !== 1 ? "s" : ""}
             </div>
             <p className={`font-bold text-sm mt-0.5 ${streak >= 3 ? "text-white/80" : "text-primary"}`}>
-              {streak === 0 ? "Start your streak! Generate a routine today." : streak === 1 ? "Streak started! Keep it going tomorrow." : streak < 5 ? `${streak}-day streak! You're building momentum.` : `🏆 ${streak}-day streak! Incredible consistency!`}
+              {streakMessage}
             </p>
           </div>
           <div className={`text-right ${streak >= 3 ? "text-white/70" : "text-primary"}`}>
@@ -372,7 +385,7 @@ export default function ProgressPage() {
                   {t("pages.progress.refresh")}
                 </Button>}
               <Button onClick={() => handleGenerateInsights(false)} disabled={loadingInsights} size="sm" className="rounded-full">
-                {loadingInsights ? <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 animate-spin" />{t("pages.progress.analyzing")}</span> : <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />{insights ? "View" : "Generate"}</span>}
+                {loadingInsights ? <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 animate-spin" />{t("pages.progress.analyzing")}</span> : <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />{insights ? t("pages.progress.insights_view") : t("pages.progress.insights_generate")}</span>}
               </Button>
             </div>
           </div>
@@ -386,12 +399,20 @@ export default function ProgressPage() {
           })}
             </p>}
 
-          {!insights && !loadingInsights && <div className="text-center py-6">
+          {!insights && !loadingInsights && !insightsError && <div className="text-center py-6">
               <div className="bg-primary/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Lightbulb className="h-7 w-7 text-primary" />
               </div>
               <p className="text-muted-foreground text-sm">{t("pages.progress.click_generate_to_get_amy_ai_insights_based_on_your_family_s")}</p>
               <p className="text-xs text-muted-foreground mt-2 opacity-70">{t("pages.progress.insights_are_cached_for_the_week_generated_once_shown_all_we")}</p>
+            </div>}
+
+          {insightsError && !loadingInsights && <div className="text-center py-6">
+              <AlertTriangle className="h-8 w-8 text-amber-400 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{t("pages.progress.insights_load_error")}</p>
+              <Button onClick={() => handleGenerateInsights(true)} size="sm" variant="outline" className="rounded-full mt-3">
+                {t("screens.insights.retry")}
+              </Button>
             </div>}
 
           {loadingInsights && <div className="space-y-3">

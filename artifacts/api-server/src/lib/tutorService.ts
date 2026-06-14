@@ -1,6 +1,7 @@
 import {
   processTutorTurn,
   startTutorForContent,
+  computeAge,
   type TutorApiPayload,
   type TutorContext,
 } from "@workspace/content-orchestration";
@@ -50,6 +51,9 @@ export async function handleTutorTurn(params: {
     attention: params.attention,
   };
 
+  const age = computeAge({ childDOB: params.childDOB, countryCode: params.countryCode });
+  const childAgeYears = Math.max(2, Math.min(15, Math.floor(age.ageInMonths / 12) || 6));
+
   const result = await processTutorTurn(
     params.childId,
     {
@@ -57,6 +61,7 @@ export async function handleTutorTurn(params: {
       childAnswer: params.childAnswer,
       audioInput: params.audioInput,
       contentItem: params.contentItem,
+      childAgeYears,
     },
     tutorCtx,
   );

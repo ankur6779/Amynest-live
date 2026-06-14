@@ -85,6 +85,36 @@ function emptyDayOfWeek(): { day: string; count: number }[] {
   return DAY_LABELS.map((day) => ({ day, count: 0 }));
 }
 
+const EMPTY_SUMMARY = {
+  routinesThisPeriod: 0,
+  routinesPreviousPeriod: 0,
+  routinesChangePct: 0,
+  behaviorsThisPeriod: 0,
+  behaviorsPreviousPeriod: 0,
+  positiveRateThisPeriod: 0,
+  positiveRatePreviousPeriod: 0,
+  positiveRateChangePts: 0,
+};
+
+/** Safe empty payload when insights cannot be computed (circuit breaker / DB error). */
+export function buildInsightsFallback(range: InsightsRange = "week"): InsightsResponse & { fallback: true } {
+  return {
+    range,
+    generatedAt: new Date().toISOString(),
+    hasChildren: false,
+    hasActivity: false,
+    emptyReason: null,
+    fallback: true,
+    summary: { ...EMPTY_SUMMARY },
+    perChild: [],
+    siblingHighlights: [],
+    activityMix: [],
+    dayOfWeek: emptyDayOfWeek(),
+    timeOfDay: { morning: 0, afternoon: 0, evening: 0 },
+    behaviorTypes: { positive: 0, negative: 0, neutral: 0, milestone: 0 },
+  };
+}
+
 function pctChange(current: number, previous: number): number {
   if (previous === 0) return current === 0 ? 0 : 100;
   return Math.round(((current - previous) / previous) * 100);

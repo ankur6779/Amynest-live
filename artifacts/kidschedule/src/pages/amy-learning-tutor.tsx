@@ -6,9 +6,10 @@ import { Link } from "wouter";
 import { AddChildLink } from "@/components/add-child-link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RotateCcw, ArrowRight, Sparkles } from "lucide-react";
+import { RotateCcw, ArrowRight, Sparkles, Mic, MicOff, Loader2 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { audioManager } from "@/lib/audio-manager";
@@ -16,6 +17,7 @@ import { scheduleLearningZoneAudioPrewarm } from "@/lib/learning-zone-audio-prew
 import { readResolvedApiJson } from "@/lib/poll-result";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { getFirebaseAuth } from "@/lib/firebase";
 
 type TutorAction = "start" | "answer" | "repeat" | "next_content";
 type TeachingMode = "explain" | "ask" | "encourage" | "correct";
@@ -27,6 +29,9 @@ interface TutorPayload {
   mode: TeachingMode;
   nextExpectedResponse: NextExpected;
   slowMode?: boolean;
+  question?: string;
+  options?: string[];
+  correctIndex?: number;
 }
 
 interface TutorTurnResponse {
@@ -43,6 +48,9 @@ interface ChatTurn {
   voiceUrl?: string;
   nextExpected?: NextExpected;
   goalMet?: boolean;
+  question?: string;
+  options?: string[];
+  correctIndex?: number;
 }
 
 interface ChildRow {
@@ -74,12 +82,31 @@ function tutorSpeakOpts(text: string) {
   };
 }
 
+function hasMcqOptions(payload: Pick<TutorPayload, "question" | "options"> | null | undefined): boolean {
+  return Boolean(
+    payload?.question &&
+      Array.isArray(payload.options) &&
+      payload.options.length === 4,
+  );
+}
+
 export default function AmyLearningTutorPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
   const { speak, pause, primeSpeakGesture, speaking, loading: voiceLoading, activePhrase } =
     useAmyVoice();
+
+  const getAuthToken = useCallback(async () => {
+    try {
+      return (await getFirebaseAuth().currentUser?.getIdToken()) ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const stt = useSpeechRecognition("en-US", { getAuthToken });
+  const voiceSubmitRef = useRef(false);
 
   const [sessionStarted, setSessionStarted] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -124,8 +151,8 @@ export default function AmyLearningTutorPage() {
   }, [scheduleTutorAudioPrewarm]);
 
   const playTutorMessage = useCallback(
-    (message: string) => {
-      const text = message.trim();
+    (message: string, question?: string) => {
+      const text = [message, question].filter(Boolean).join(" ").trim();
       if (!text) return;
       const opts = tutorSpeakOpts(text);
       if (activePhrase === text.toLowerCase() && (speaking || voiceLoading)) {
@@ -138,13 +165,14 @@ export default function AmyLearningTutorPage() {
   );
 
   const primeTutorAudioGesture = useCallback(
-    (message?: string) => {
+    (message?: string, question?: string) => {
       audioManager.unlockFromUserGesture();
       recordTtsUserGesture();
       const warmText = (message ?? TUTOR_WARM_PHRASES[0] ?? "Let's learn together!").trim();
-      if (warmText) {
-        primeStaticAudioInUserGesture(warmText, "default");
-        primeSpeakGesture(warmText, tutorSpeakOpts(warmText));
+      const full = [warmText, question].filter(Boolean).join(" ").trim();
+      if (full) {
+        primeStaticAudioInUserGesture(full, "default");
+        primeSpeakGesture(full, tutorSpeakOpts(full));
       }
     },
     [primeSpeakGesture],
@@ -158,8 +186,11 @@ export default function AmyLearningTutorPage() {
       }
       setPending(tutor);
       setGoalMet(Boolean(data.goalMet));
-      scheduleTutorAudioPrewarm([tutor.message, ...TUTOR_WARM_PHRASES]);
-      playTutorMessage(tutor.message);
+      const prewarmTexts = [tutor.message, tutor.question, ...(tutor.options ?? []), ...TUTOR_WARM_PHRASES].filter(
+        Boolean,
+      ) as string[];
+      scheduleTutorAudioPrewarm(prewarmTexts);
+      playTutorMessage(tutor.message, tutor.question);
     },
     [playTutorMessage, scheduleTutorAudioPrewarm],
   );
@@ -215,27 +246,39 @@ export default function AmyLearningTutorPage() {
         voiceUrl: pending.voiceUrl,
         nextExpected: pending.nextExpectedResponse,
         goalMet,
+        question: pending.question,
+        options: pending.options,
+        correctIndex: pending.correctIndex,
       },
     ]);
     setPending(null);
   }, [goalMet, pending]);
+
+  const submitAnswerWithText = useCallback(
+    async (text: string) => {
+      const answer = text.trim();
+      if (!answer || loading) return;
+      setTurns((prev) => [...prev, { id: `c-${Date.now()}`, role: "child", text: answer }]);
+      setInput("");
+      commitPendingAsTurn();
+      await callTutor("answer", answer);
+    },
+    [callTutor, commitPendingAsTurn, loading],
+  );
 
   const startSession = useCallback(async () => {
     primeTutorAudioGesture();
     setTurns([]);
     setGoalMet(false);
     setPending(null);
+    voiceSubmitRef.current = false;
+    stt.reset();
     await callTutor("start");
-  }, [callTutor, primeTutorAudioGesture]);
+  }, [callTutor, primeTutorAudioGesture, stt]);
 
   const submitAnswer = useCallback(async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    setTurns((prev) => [...prev, { id: `c-${Date.now()}`, role: "child", text }]);
-    setInput("");
-    commitPendingAsTurn();
-    await callTutor("answer", text);
-  }, [callTutor, commitPendingAsTurn, input, loading]);
+    await submitAnswerWithText(input);
+  }, [input, submitAnswerWithText]);
 
   const onContinue = useCallback(async () => {
     commitPendingAsTurn();
@@ -243,22 +286,60 @@ export default function AmyLearningTutorPage() {
   }, [callTutor, commitPendingAsTurn]);
 
   const onRepeat = useCallback(async () => {
-    primeTutorAudioGesture(pending?.message);
+    primeTutorAudioGesture(pending?.message, pending?.question);
     await callTutor("repeat");
-  }, [callTutor, pending?.message, primeTutorAudioGesture]);
+  }, [callTutor, pending?.message, pending?.question, primeTutorAudioGesture]);
 
   const handleInteraction = useCallback(
     (event: InteractionEvent) => {
       if (event.type === "start-session" && event.actionId === "start") {
         void startSession();
+        return;
+      }
+      if (
+        event.type === "mcq" &&
+        event.pickedIndex !== undefined &&
+        pending?.options?.[event.pickedIndex]
+      ) {
+        void submitAnswerWithText(pending.options[event.pickedIndex]!);
       }
     },
-    [startSession],
+    [pending?.options, startSession, submitAnswerWithText],
   );
+
+  const toggleVoiceAnswer = useCallback(async () => {
+    if (stt.listening) {
+      stt.stop();
+      return;
+    }
+    if (stt.transcribing || loading) return;
+    voiceSubmitRef.current = false;
+    stt.reset();
+    primeTutorAudioGesture(pending?.message, pending?.question);
+    const started = await stt.start();
+    if (!started && stt.error) {
+      toast({
+        title: t("pages.amy_learning_tutor.error_title"),
+        description: t("pages.amy_learning_tutor.voice_tap_to_answer"),
+        variant: "destructive",
+      });
+    }
+  }, [loading, pending?.message, pending?.question, primeTutorAudioGesture, stt, t, toast]);
+
+  useEffect(() => {
+    if (!stt.transcript.trim() || stt.listening || stt.transcribing || loading) return;
+    if (voiceSubmitRef.current) return;
+    voiceSubmitRef.current = true;
+    void submitAnswerWithText(stt.transcript).finally(() => {
+      stt.reset();
+      voiceSubmitRef.current = false;
+    });
+  }, [loading, stt, stt.transcript, stt.listening, stt.transcribing, submitAnswerWithText]);
 
   const expectsAnswer = pending?.nextExpectedResponse === "answer";
   const expectsListen = pending?.nextExpectedResponse === "listen";
   const expectsContinue = pending?.nextExpectedResponse === "continue";
+  const pendingMcq = hasMcqOptions(pending);
   const showActionFooter =
     sessionStarted && pending != null && !expectsAnswer && (expectsListen || expectsContinue);
 
@@ -287,33 +368,81 @@ export default function AmyLearningTutorPage() {
         items.push({ kind: "user", id: turn.id, text: turn.text });
         continue;
       }
+
+      if (hasMcqOptions(turn)) {
+        items.push({
+          kind: "amy-rich",
+          id: `${turn.id}-intro`,
+          text: turn.text,
+          badge: MODE_LABEL.explain,
+          onListen: () => playTutorMessage(turn.text, turn.question),
+          onPrimeListen: () => primeTutorAudioGesture(turn.text, turn.question),
+        });
+        items.push({
+          kind: "interactive",
+          id: `${turn.id}-mcq`,
+          interaction: {
+            type: "mcq",
+            question: turn.question ?? "",
+            options: turn.options ?? [],
+            correctIndex: turn.correctIndex ?? null,
+          },
+          state: { status: "resolved", pickedIndex: undefined },
+        });
+        continue;
+      }
+
       items.push({
         kind: "amy-rich",
         id: turn.id,
         text: turn.text,
         badge: turn.mode ? MODE_LABEL[turn.mode] : undefined,
-        onListen: () => playTutorMessage(turn.text),
-        onPrimeListen: () => primeTutorAudioGesture(turn.text),
+        onListen: () => playTutorMessage(turn.text, turn.question),
+        onPrimeListen: () => primeTutorAudioGesture(turn.text, turn.question),
       });
     }
 
     if (pending) {
-      items.push({
-        kind: "amy-rich",
-        id: "amy-learning-pending",
-        text: pending.message,
-        badge: MODE_LABEL[pending.mode],
-        onListen: () => playTutorMessage(pending.message),
-        onPrimeListen: () => primeTutorAudioGesture(pending.message),
-        highlight: true,
-      });
+      if (pendingMcq) {
+        items.push({
+          kind: "amy-rich",
+          id: "amy-learning-pending-intro",
+          text: pending.message,
+          badge: MODE_LABEL.explain,
+          onListen: () => playTutorMessage(pending.message, pending.question),
+          onPrimeListen: () => primeTutorAudioGesture(pending.message, pending.question),
+          highlight: true,
+        });
+        items.push({
+          kind: "interactive",
+          id: "amy-learning-mcq",
+          interaction: {
+            type: "mcq",
+            question: pending.question ?? "",
+            options: pending.options ?? [],
+            correctIndex: pending.correctIndex ?? null,
+          },
+          state: { status: "pending" },
+        });
+      } else {
+        items.push({
+          kind: "amy-rich",
+          id: "amy-learning-pending",
+          text: pending.message,
+          badge: MODE_LABEL[pending.mode],
+          onListen: () => playTutorMessage(pending.message, pending.question),
+          onPrimeListen: () => primeTutorAudioGesture(pending.message, pending.question),
+          highlight: true,
+        });
+      }
+
       if (goalMet) {
         items.push({
           kind: "system",
           id: "goal-met",
           content: (
             <p className="text-center text-xs font-semibold text-primary">
-              Session goal reached — great work!
+              {t("pages.amy_learning_tutor.session_goal_met")}
             </p>
           ),
         });
@@ -325,6 +454,7 @@ export default function AmyLearningTutorPage() {
     goalMet,
     loading,
     pending,
+    pendingMcq,
     playTutorMessage,
     primaryChild?.id,
     primaryChild?.name,
@@ -333,6 +463,42 @@ export default function AmyLearningTutorPage() {
     t,
     turns,
   ]);
+
+  const voiceFooter =
+    sessionStarted && expectsAnswer ? (
+      <div className="mb-2 flex w-full flex-col gap-2">
+        <Button
+          type="button"
+          variant={stt.listening ? "default" : "outline"}
+          className="w-full rounded-full"
+          disabled={loading || stt.transcribing}
+          onClick={() => void toggleVoiceAnswer()}
+          data-testid="amy-learning-tutor-voice"
+        >
+          {stt.transcribing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t("pages.amy_learning_tutor.voice_processing")}
+            </>
+          ) : stt.listening ? (
+            <>
+              <MicOff className="mr-2 h-4 w-4" />
+              {t("pages.amy_learning_tutor.voice_listening")}
+            </>
+          ) : (
+            <>
+              <Mic className="mr-2 h-4 w-4" />
+              {t("pages.amy_learning_tutor.voice_answer")}
+            </>
+          )}
+        </Button>
+        {!pendingMcq ? (
+          <p className="text-center text-[11px] text-muted-foreground">
+            {t("pages.amy_learning_tutor.voice_tap_to_answer")}
+          </p>
+        ) : null}
+      </div>
+    ) : undefined;
 
   return (
     <div
@@ -376,24 +542,24 @@ export default function AmyLearningTutorPage() {
           onSend={() => void submitAnswer()}
           onInteraction={handleInteraction}
           loading={loading}
-          composerHidden={!sessionStarted || !expectsAnswer}
-          composerDisabled={loading}
+          composerHidden={!sessionStarted || !expectsAnswer || pendingMcq}
+          composerDisabled={loading || stt.listening || stt.transcribing}
           composerPlaceholder={t("pages.amy_learning_tutor.answer_placeholder")}
-          scrollDeps={[turns, loading, pending, sessionStarted, input, goalMet]}
+          scrollDeps={[turns, loading, pending, sessionStarted, input, goalMet, stt.listening]}
           className="min-h-0 flex-1"
           messagesClassName="space-y-3 pr-5 md:px-0"
           footerClassName="border-t border-border/50 bg-background/95 backdrop-blur px-0 py-3"
           textareaRef={textareaRef}
           header={null}
           footerExtra={
-            showActionFooter ? (
+            voiceFooter ?? (showActionFooter ? (
               <div className="mb-2 flex w-full gap-2">
                 {(expectsListen || pending?.nextExpectedResponse === "repeat") && (
                   <Button
                     variant="outline"
                     className="rounded-full"
                     disabled={loading}
-                    onPointerDown={() => primeTutorAudioGesture(pending?.message)}
+                    onPointerDown={() => primeTutorAudioGesture(pending?.message, pending?.question)}
                     onClick={() => void onRepeat()}
                     data-testid="amy-learning-tutor-repeat"
                   >
@@ -413,7 +579,7 @@ export default function AmyLearningTutorPage() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
-            ) : undefined
+            ) : undefined)
           }
         />
       )}

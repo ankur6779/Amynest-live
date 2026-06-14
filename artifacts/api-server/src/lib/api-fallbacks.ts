@@ -118,7 +118,9 @@ export const ONBOARDING_PARENT_SAVE_FALLBACK = {
   success: false as const,
 };
 
-const DASHBOARD_INSIGHTS_FALLBACK = { insights: [], fallback: true as const };
+import { buildInsightsFallback } from "../services/insightsService.js";
+
+const DASHBOARD_INSIGHTS_FALLBACK = buildInsightsFallback("week");
 
 /** Static fallback when a repeated request loop has no cached response. */
 export function getDashboardFallbackForPath(path: string): unknown {

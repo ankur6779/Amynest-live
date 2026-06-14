@@ -29,10 +29,16 @@ describe("conversation flow", () => {
   beforeEach(() => clearTutorState());
 
   it("explain → ask flow on start", async () => {
-    const { response } = await processTutorTurn("t1", { action: "start", topic: TOPIC });
+    const { response } = await processTutorTurn("t1", {
+      action: "start",
+      topic: TOPIC,
+      childAgeYears: 6,
+    });
     assert.equal(response.tutor.mode, "ask");
     assert.equal(response.tutor.nextExpectedResponse, "answer");
     assert.ok(response.tutor.message.length > 0);
+    assert.equal(response.tutor.options?.length, 4);
+    assert.ok(response.tutor.question);
   });
 
   it("advances phase after evaluation", () => {
@@ -122,12 +128,17 @@ describe("error correction", () => {
 
   it("celebrates correct answer", async () => {
     clearTutorState();
-    await processTutorTurn("tc", { action: "start", topic: TOPIC });
-    const q = generateQuestion(TOPIC, { mistakesHistory: [], strengths: [], weakAreas: [] });
-    const keywords = q.expectedKeywords.join(" ");
+    const start = await processTutorTurn("tc", {
+      action: "start",
+      topic: TOPIC,
+      childAgeYears: 6,
+    });
+    const correctAnswer =
+      start.response.tutor.options?.[start.response.tutor.correctIndex ?? 0] ?? "Ah";
     const { response } = await processTutorTurn("tc", {
       action: "answer",
-      childAnswer: keywords || "blend sounds phonics",
+      childAnswer: correctAnswer,
+      childAgeYears: 6,
     });
     assert.equal(response.tutor.mode, "encourage");
   });

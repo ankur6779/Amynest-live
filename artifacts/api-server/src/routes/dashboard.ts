@@ -3,7 +3,7 @@ import { eq, desc, inArray } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, routinesTable, behaviorsTable } from "@workspace/db";
 import { GetDashboardSummaryResponse, GetRecentRoutinesResponse, GetBehaviorStatsResponse } from "@workspace/api-zod";
-import { buildInsights, type RoutineItem } from "../services/insightsService";
+import { buildInsights, buildInsightsFallback, type RoutineItem } from "../services/insightsService";
 import {
   DASHBOARD_BEHAVIOR_STATS_FALLBACK,
   DASHBOARD_RECENT_ROUTINES_FALLBACK,
@@ -188,7 +188,8 @@ router.get("/dashboard/insights", async (req, res): Promise<void> => {
     }
     res.json(insights);
   } catch {
-    res.status(200).json({ insights: [], fallback: true });
+    const range = req.query.range === "month" ? "month" : "week";
+    res.status(200).json(buildInsightsFallback(range));
   }
 });
 

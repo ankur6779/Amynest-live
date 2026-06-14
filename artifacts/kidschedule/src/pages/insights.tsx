@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Calendar, Smile, Heart, Trophy, Flame, Sun, Moon, Sparkles, Calculator } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, Minus, Calendar, Smile, Heart, Trophy, Flame, Sun, Moon, Sparkles, Calculator, RefreshCw } from "lucide-react";
 
 type Range = "week" | "month";
 
@@ -79,6 +80,7 @@ interface InsightsResponse {
   };
   perChild: PerChildInsights[];
   siblingHighlights: SiblingHighlight[];
+  fallback?: boolean;
 }
 
 function ChangeChip({ pct, pts }: { pct?: number; pts?: number }) {
@@ -112,7 +114,7 @@ export default function InsightsPage() {
   const [range, setRange] = useState<Range>("week");
   const authFetch = useAuthFetch();
 
-  const { data, isLoading } = useQuery<InsightsResponse>({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery<InsightsResponse>({
     queryKey: ["insights", range],
     queryFn: async () => {
       const res = await authFetch(getApiUrl(`/api/dashboard/insights?range=${range}`));
@@ -121,6 +123,8 @@ export default function InsightsPage() {
     },
     staleTime: 5 * 60_000,
   });
+
+  const loadFailed = isError || data?.fallback === true;
 
   // Abacus weekly summary is independent of the week/month toggle — the
   // underlying schema only stores per-level best scores, so we can only
@@ -166,7 +170,26 @@ export default function InsightsPage() {
           </div>
         )}
 
-        {!isLoading && data && !data.hasChildren && (
+        {!isLoading && loadFailed && (
+          <Card className="rounded-3xl">
+            <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl">⚠️</div>
+              <h2 className="font-bold text-lg">{t("screens.insights.load_error_title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("screens.insights.load_error_text")}</p>
+              <Button
+                onClick={() => void refetch()}
+                disabled={isFetching}
+                className="rounded-full"
+                size="sm"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+                {t("screens.insights.retry")}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && !loadFailed && data && !data.hasChildren && (
           <Card className="rounded-3xl">
             <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl">👶</div>
@@ -179,7 +202,7 @@ export default function InsightsPage() {
           </Card>
         )}
 
-        {!isLoading && data?.hasChildren && !data.hasActivity && (
+        {!isLoading && !loadFailed && data?.hasChildren && !data.hasActivity && (
           <Card className="rounded-3xl">
             <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl">📊</div>
@@ -192,7 +215,7 @@ export default function InsightsPage() {
           </Card>
         )}
 
-        {!isLoading && data?.hasActivity && (
+        {!isLoading && !loadFailed && data?.hasActivity && (
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-3">
@@ -308,11 +331,11 @@ export default function InsightsPage() {
         {/* Abacus weekly progress (per-child) — rendered independently of
             the routines/behaviour activity gate above, so parents whose
             child is only active in the Abacus PRO Zone still see it. */}
-        {!isLoading && data?.hasChildren && abacus && (abacus.children ?? []).length > 0 && (
+        {!isLoading && !loadFailed && data?.hasChildren && abacus && (abacus.children ?? []).length > 0 && (
           <div className="space-y-3">
             <h2 className="font-quicksand font-bold text-base text-foreground flex items-center gap-2">
               <Calculator className="h-4 w-4 text-primary" />
-              Abacus this week
+              {t("screens.insights.abacus_section_title")}
             </h2>
             {(abacus.children ?? []).map((c) => (
               <Card key={c.childId} className="rounded-2xl">
@@ -320,19 +343,19 @@ export default function InsightsPage() {
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-foreground">{c.childName}</p>
                     <span className="text-xs text-muted-foreground">
-                      Level {c.currentLevel} · {c.currentLevelLabel}
+                      {t("screens.insights.abacus_level", { level: c.currentLevel, label: c.currentLevelLabel })}
                     </span>
                   </div>
                   {!c.hasProgress ? (
                     <>
                       <p className="text-sm text-muted-foreground">
-                        No abacus sessions yet — open the Abacus PRO Zone in the Parent Hub to get started.
+                        {t("screens.insights.abacus_no_sessions")}
                       </p>
                       <div className="flex items-start gap-2 rounded-xl bg-primary/10 px-3 py-2">
                         <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <div>
                           <p className="text-[11px] font-bold text-primary uppercase tracking-wide">
-                            Next up
+                            {t("screens.insights.abacus_next_up")}
                           </p>
                           <p className="text-sm font-semibold text-foreground">
                             {c.nextRecommendedAction}
@@ -345,7 +368,7 @@ export default function InsightsPage() {
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="bg-gradient-to-br from-sky-500/15 to-sky-500/5 border border-sky-500/25 rounded-lg px-3 py-2">
                           <p className="text-[11px] text-sky-300/90 uppercase font-semibold">
-                            {c.accuracyIsWeekly ? "Accuracy" : "Lifetime accuracy"}
+                            {c.accuracyIsWeekly ? t("screens.insights.abacus_accuracy") : t("screens.insights.abacus_lifetime_accuracy")}
                           </p>
                           <p className="text-lg font-extrabold text-sky-300">{c.accuracyPct}%</p>
                         </div>
@@ -370,7 +393,7 @@ export default function InsightsPage() {
                         <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <div>
                           <p className="text-[11px] font-bold text-primary uppercase tracking-wide">
-                            Next up
+                            {t("screens.insights.abacus_next_up")}
                           </p>
                           <p className="text-sm font-semibold text-foreground">
                             {c.nextRecommendedAction}
