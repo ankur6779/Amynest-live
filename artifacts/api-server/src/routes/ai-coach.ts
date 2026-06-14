@@ -35,6 +35,7 @@ import {
   recordCoachFeedbackEvent,
   recordCoachObservabilityEvent,
   recordCoachNextWinAttempt,
+  recordCoachProgressDelta,
   getCoachObservabilityDashboard,
 } from "../services/coachObservabilityService.js";
 import { computeCoachProgressPct } from "../services/coachProgressUtils.js";
