@@ -27,7 +27,7 @@ describe("getCountryRoutineProfile", () => {
     const p = getCountryRoutineProfile("US");
     assert.equal(p.extracurricularCulture, "high");
     assert.equal(p.independenceLevel, "high");
-    assert.ok(p.dinnerWindow[1] <= 19 * 60);
+    assert.ok(p.dinnerWindow[1] <= 19 * 60 + 30);
     assert.ok(p.sleepWindow[1] <= 21 * 60 + 30);
   });
 

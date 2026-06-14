@@ -1,3 +1,15 @@
+/**
+ * ============================================
+ * PRODUCTION CERTIFIED — FROZEN (generation entry)
+ * ============================================
+ *
+ * Routine Engine Version: v1.0 Certified (June 2026)
+ * Registry: docs/routine-engine/ROUTINE_ENGINE_FROZEN_FILES.md
+ *
+ * Do not modify routine timing behavior without architecture approval
+ * and full recertification.
+ * ============================================
+ */
 import { Router, type IRouter } from "express";
 import type { ZodError } from "zod";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";

@@ -1,0 +1,65 @@
+# Routine Engine v1.0 — freeze protection + certification guard.
+name: Routine Engine Gates
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  freeze-and-certify:
+    name: Freeze check + certification
+    runs-on: ubuntu-latest
+    env:
+      ROUTINE_ENGINE_CHANGE: ${{ contains(github.event.pull_request.labels.*.name, 'routine-engine-change') && 'true' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: frozen
+        with:
+          filters: |
+            frozen:
+              - 'artifacts/api-server/src/lib/routine-country-profile.ts'
+              - 'artifacts/api-server/src/lib/routine-meal-dinner-integrity.ts'
+              - 'artifacts/api-server/src/lib/routine-input-validation.ts'
+              - 'artifacts/api-server/src/lib/routine-templates.ts'
+              - 'artifacts/api-server/src/lib/routine-intelligence-pipeline.ts'
+              - 'artifacts/api-server/src/routes/routines.ts'
+              - 'artifacts/api-server/src/lib/routine-scheduler.ts'
+              - 'artifacts/api-server/src/lib/routine-trust-validators.ts'
+              - 'artifacts/api-server/src/lib/routine-meal-integration.ts'
+              - 'artifacts/api-server/src/lib/routine-meal-day-type.ts'
+              - 'artifacts/api-server/src/lib/routine-safety-gate.ts'
+              - 'artifacts/api-server/src/lib/routine-content-integrity.ts'
+              - 'artifacts/api-server/src/lib/routine-meal-options-safety.ts'
+              - 'artifacts/api-server/src/lib/routine-infant-schedule-validation.ts'
+              - 'artifacts/api-server/src/lib/routine-aqi.ts'
+              - 'artifacts/api-server/src/lib/sleepPredict.ts'
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Enforce routine engine freeze
+        if: steps.frozen.outputs.frozen == 'true'
+        env:
+          ROUTINE_ENGINE_CHANGE: ${{ env.ROUTINE_ENGINE_CHANGE == 'true' && 'true' || vars.ROUTINE_ENGINE_CHANGE || '' }}
+        run: bash scripts/check-routine-engine-freeze.sh "origin/${{ github.base_ref }}"
+
+      - name: Routine engine certification suite
+        if: steps.frozen.outputs.frozen == 'true' || github.event_name == 'workflow_dispatch'
+        run: bash scripts/check-routine-engine-certification.sh
+
+      - name: Freeze status (no frozen changes)
+        if: steps.frozen.outputs.frozen != 'true'
+        run: echo "No frozen routine-engine files changed — certification skipped."

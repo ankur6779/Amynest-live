@@ -1,4 +1,27 @@
 /**
+ * ============================================
+ * PRODUCTION CERTIFIED — FROZEN
+ * ============================================
+ *
+ * Certification:
+ * - 54 scenario matrix
+ * - 0 FAIL
+ * - 0 health regressions
+ * - 0 status regressions
+ *
+ * Known accepted warnings:
+ * - India teen dinner geometry
+ * - UAE teen dinner geometry
+ * - USA toddler dinner edge case
+ *
+ * Do not modify timing behavior without:
+ * 1. Architecture approval
+ * 2. Full recertification (pnpm run check:routine-engine-certification)
+ *
+ * Routine Engine Version: v1.0 Certified (June 2026)
+ * Registry: docs/routine-engine/ROUTINE_ENGINE_FROZEN_FILES.md
+ * ============================================
+ *
  * Safe intelligence pipeline — behavior, difficulty, culture, explainability.
  * Core scheduling: scheduleRoutineItems + validateRoutineSchedule (final).
  */

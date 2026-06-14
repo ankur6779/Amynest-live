@@ -87,6 +87,8 @@
     "check:phonics-release-gate": "pnpm --filter @workspace/scripts run check-phonics-release-gate",
     "check:phonics-interaction-gate": "pnpm --filter @workspace/scripts run check-phonics-interaction-gate",
     "check:crash-launch-gate": "pnpm --filter @workspace/scripts run check-crash-launch-gate",
+    "check:routine-engine-freeze": "bash scripts/check-routine-engine-freeze.sh",
+    "check:routine-engine-certification": "bash scripts/check-routine-engine-certification.sh",
     "check:audio-health-gate": "pnpm --filter @workspace/scripts run check-audio-health-gate",
     "crash:engineering-audit": "pnpm --filter @workspace/scripts run crash-engineering-audit",
     "crash:generate-review-packages": "pnpm --filter @workspace/scripts run generate-crash-review-packages",

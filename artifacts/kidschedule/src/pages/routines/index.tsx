@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-react";
+import {
+  useListRoutines,
+  getListRoutinesQueryKey,
+  useListChildren,
+  getListChildrenQueryKey,
+} from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,6 +20,7 @@ import { AmyTrustLayer } from "@/components/routines/amy-trust-layer";
 import { CollapsibleRoutinesSection } from "@/components/routines/collapsible-routines-section";
 import { RoutinePremiumCta } from "@/components/routines/routine-premium-cta";
 import { TodayRoutineSection } from "@/components/routines/today-routine-section";
+import { RoutineChildChips } from "@/components/routines/routine-child-chips";
 import { RoutineStickyPill } from "@/components/routines/routine-sticky-pill";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -78,6 +84,7 @@ interface WeekCalendarProps {
   routines: Routine[];
   isPremium: boolean;
   routinesMax: number;
+  activeChildId?: number | null;
   onGatedNavigate: (path: string) => void;
   onLockedRoutineTap: () => void;
 }
@@ -85,6 +92,7 @@ function WeekCalendar({
   routines,
   isPremium,
   routinesMax,
+  activeChildId,
   onGatedNavigate,
   onLockedRoutineTap
 }: WeekCalendarProps) {
@@ -159,15 +167,21 @@ function WeekCalendar({
               setLocation(`/routines/${dayRoutines[0].id}`);
             }
           } else if (dayRoutines.length > 1) {
-            const first =
-              dayRoutines.find((r) => !isRoutineLocked(r.id)) ?? dayRoutines[0];
-            if (isRoutineLocked(first.id)) {
+            const preferred =
+              (activeChildId != null
+                ? dayRoutines.find((r) => r.childId === activeChildId)
+                : undefined) ??
+              dayRoutines.find((r) => !isRoutineLocked(r.id)) ??
+              dayRoutines[0];
+            if (isRoutineLocked(preferred.id)) {
               onLockedRoutineTap();
             } else {
-              setLocation(`/routines/${first.id}`);
+              setLocation(`/routines/${preferred.id}`);
             }
           } else {
-            onGatedNavigate(`/routines/generate?date=${dateStr}`);
+            const query =
+              activeChildId != null ? `?date=${dateStr}&childId=${activeChildId}` : `?date=${dateStr}`;
+            onGatedNavigate(`/routines/generate${query}`);
           }
         }} className={cn(
           "relative flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[76px] justify-between",
@@ -235,6 +249,9 @@ export default function RoutinesList() {
       queryKey: getListRoutinesQueryKey()
     }
   });
+  const { data: childrenData } = useListChildren({
+    query: { queryKey: getListChildrenQueryKey() },
+  });
   const {
     isPremium,
     entitlements,
@@ -243,6 +260,8 @@ export default function RoutinesList() {
     openPaywall
   } = usePaywall();
   const allRoutines = (routines ?? []) as Routine[];
+  const childrenList = (childrenData ?? []) as Array<{ id: number; name: string }>;
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const routinesMax = entitlements?.limits.routinesMax ?? 2;
   const generateLocked =
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
@@ -254,9 +273,23 @@ export default function RoutinesList() {
   const isRoutineLocked = (id: number) => !isPremium && lockedRoutineIds.has(id);
 
   const todayRoutines = allRoutines.filter((r) => r.date.slice(0, 10) === todayStr);
-  const primaryTodayRoutine =
-    todayRoutines.find((r) => !isRoutineLocked(r.id)) ?? todayRoutines[0] ?? null;
-  const hasTodayRoutine = todayRoutines.length > 0;
+  const childIdsWithTodayRoutine = new Set(todayRoutines.map((r) => r.childId));
+
+  const defaultChildId =
+    todayRoutines.find((r) => !isRoutineLocked(r.id))?.childId ??
+    todayRoutines[0]?.childId ??
+    childrenList[0]?.id ??
+    null;
+  const activeChildId =
+    selectedChildId != null && childrenList.some((c) => c.id === selectedChildId)
+      ? selectedChildId
+      : defaultChildId;
+  const activeChildName =
+    childrenList.find((c) => c.id === activeChildId)?.name ??
+    todayRoutines.find((r) => r.childId === activeChildId)?.childName;
+  const activeTodayRoutine =
+    todayRoutines.find((r) => r.childId === activeChildId) ?? null;
+  const activeChildHasRoutine = activeTodayRoutine != null;
 
   function openRoutineById(id: number) {
     if (isRoutineLocked(id)) {
@@ -266,20 +299,22 @@ export default function RoutinesList() {
     setLocation(`/routines/${id}`);
   }
 
-  function handlePrimaryCta() {
-    if (hasTodayRoutine && primaryTodayRoutine) {
-      openRoutineById(primaryTodayRoutine.id);
-      return;
-    }
-    handleGenerateClick();
-  }
-
-  function handleGenerateClick() {
+  function handleGenerateClick(childId?: number) {
     if (generateLocked) {
       openPaywall("routines_limit");
-    } else {
-      setLocation("/routines/generate");
+      return;
     }
+    const targetChildId = childId ?? activeChildId ?? undefined;
+    const query = targetChildId ? `?childId=${targetChildId}` : "";
+    setLocation(`/routines/generate${query}`);
+  }
+
+  function handlePrimaryCta() {
+    if (activeChildHasRoutine && activeTodayRoutine) {
+      openRoutineById(activeTodayRoutine.id);
+      return;
+    }
+    handleGenerateClick(activeChildId ?? undefined);
   }
 
   function handleGatedNavigate(path: string) {
@@ -329,54 +364,127 @@ export default function RoutinesList() {
         <TabsContent value="safety" className="mt-4"><SafetyPanel /></TabsContent>
 
         <TabsContent value="schedule" className="mt-4 flex flex-col gap-5">
+          {childrenList.length > 1 && (
+            <RoutineChildChips
+              children={childrenList}
+              activeChildId={activeChildId ?? childrenList[0].id}
+              onSelect={setSelectedChildId}
+              childIdsWithRoutine={childIdsWithTodayRoutine}
+            />
+          )}
+
           {/* Primary CTA — single path: Smart Amy AI routine */}
           <div className="space-y-2 hub-page-enter">
             <RoutinePremiumCta
-              variant={hasTodayRoutine ? "view" : "generate"}
+              variant={activeChildHasRoutine ? "view" : "generate"}
               onClick={handlePrimaryCta}
               testId="routines-primary-cta"
               title={
-                hasTodayRoutine
-                  ? t("pages.routines.index.view_todays_routine", {
-                      defaultValue: "View today's routine",
-                    })
-                  : t("pages.routines.index.generate_smart_amy", {
-                      defaultValue: "Generate Smart Amy Routine",
-                    })
+                activeChildHasRoutine
+                  ? childrenList.length > 1 && activeChildName
+                    ? t("pages.routines.index.view_childs_routine", {
+                        name: activeChildName,
+                        defaultValue: "View {{name}}'s routine",
+                      })
+                    : t("pages.routines.index.view_todays_routine", {
+                        defaultValue: "View today's routine",
+                      })
+                  : childrenList.length > 1 && activeChildName
+                    ? t("pages.routines.index.generate_for_child", {
+                        name: activeChildName,
+                        defaultValue: "Generate routine for {{name}}",
+                      })
+                    : t("pages.routines.index.generate_smart_amy", {
+                        defaultValue: "Generate Smart Amy Routine",
+                      })
               }
               subtext={
-                hasTodayRoutine
+                activeChildHasRoutine
                   ? t("pages.routines.index.open_in_one_tap", {
                       defaultValue: "Your schedule is ready — open in one tap",
                     })
-                  : t("pages.routines.index.ai_powered_subtext", {
-                      defaultValue: "AI-powered personalized routine",
-                    })
+                  : childrenList.length > 1 && activeChildName
+                    ? t("pages.routines.index.no_routine_for_child_today", {
+                        name: activeChildName,
+                        defaultValue: "No routine yet for {{name}} today",
+                      })
+                    : t("pages.routines.index.ai_powered_subtext", {
+                        defaultValue: "AI-powered personalized routine",
+                      })
               }
             />
-            {hasTodayRoutine && (
+            {activeChildHasRoutine && (
               <button
                 type="button"
-                onClick={handleGenerateClick}
+                onClick={() => handleGenerateClick(activeChildId ?? undefined)}
                 className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-amber-200/90 py-1 transition-colors"
               >
-                {t("pages.routines.index.regenerate_secondary", {
-                  defaultValue: "Regenerate routine",
-                })}
+                {childrenList.length > 1 && activeChildName
+                  ? t("pages.routines.index.regenerate_for_child", {
+                      name: activeChildName,
+                      defaultValue: "Regenerate {{name}}'s routine",
+                    })
+                  : t("pages.routines.index.regenerate_secondary", {
+                      defaultValue: "Regenerate routine",
+                    })}
               </button>
             )}
           </div>
 
           {/* Today's generated routine preview */}
-          {primaryTodayRoutine && (
+          {activeTodayRoutine && (
             <TodayRoutineSection
-              childName={primaryTodayRoutine.childName}
-              title={primaryTodayRoutine.title}
-              createdAt={primaryTodayRoutine.createdAt}
-              items={primaryTodayRoutine.items}
-              onView={() => openRoutineById(primaryTodayRoutine.id)}
-              onRegenerate={handleGenerateClick}
+              childName={activeTodayRoutine.childName}
+              title={activeTodayRoutine.title}
+              createdAt={activeTodayRoutine.createdAt}
+              items={activeTodayRoutine.items}
+              onView={() => openRoutineById(activeTodayRoutine.id)}
+              onRegenerate={() => handleGenerateClick(activeChildId ?? undefined)}
             />
+          )}
+
+          {!activeChildHasRoutine && activeChildId != null && childrenList.length > 1 && (
+            <div
+              className={cn(
+                hubSectionCardClasses(ROUTINES_HUB_ACCENT),
+                "hub-page-enter overflow-hidden border-dashed border-white/15",
+              )}
+            >
+              <div className="flex">
+                <div className={hubAccentBarClasses(ROUTINES_HUB_ACCENT)} />
+                <div className="flex-1 p-4 sm:p-5 space-y-3 text-center">
+                  <p className="font-quicksand font-bold text-base text-foreground">
+                    {t("pages.routines.index.empty_child_routine_title", {
+                      name: activeChildName ?? t("pages.routines.index.this_child", {
+                        defaultValue: "This child",
+                      }),
+                      defaultValue: "No routine for {{name}} today",
+                    })}
+                  </p>
+                  <p className={cn(HUB_BODY, "opacity-100 text-xs")}>
+                    {t("pages.routines.index.empty_child_routine_body", {
+                      defaultValue:
+                        "Switch between children above, or generate a personalized schedule for this child.",
+                    })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateClick(activeChildId)}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5",
+                      "text-sm font-bold text-foreground",
+                      "bg-[rgba(255,184,0,0.14)] border border-[rgba(255,184,0,0.45)]",
+                      "hover:bg-[rgba(255,184,0,0.22)] transition-all active:scale-[0.985]",
+                    )}
+                  >
+                    {t("pages.routines.index.generate_for_child_cta", {
+                      name: activeChildName,
+                      defaultValue: "Generate for {{name}}",
+                    })}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* AI insights & context */}
@@ -406,6 +514,7 @@ export default function RoutinesList() {
                     routines={allRoutines}
                     isPremium={isPremium}
                     routinesMax={routinesMax}
+                    activeChildId={activeChildId}
                     onGatedNavigate={handleGatedNavigate}
                     onLockedRoutineTap={() => openPaywall("routines_limit")}
                   />
@@ -443,10 +552,10 @@ export default function RoutinesList() {
             {t("patent_pending.microcopy_routine")}
           </p>
 
-          {primaryTodayRoutine && (
+          {activeTodayRoutine && (
             <RoutineStickyPill
-              childName={primaryTodayRoutine.childName}
-              onView={() => openRoutineById(primaryTodayRoutine.id)}
+              childName={activeTodayRoutine.childName}
+              onView={() => openRoutineById(activeTodayRoutine.id)}
             />
           )}
 

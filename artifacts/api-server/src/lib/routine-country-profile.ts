@@ -1,4 +1,27 @@
 /**
+ * ============================================
+ * PRODUCTION CERTIFIED — FROZEN
+ * ============================================
+ *
+ * Certification:
+ * - 54 scenario matrix
+ * - 0 FAIL
+ * - 0 health regressions
+ * - 0 status regressions
+ *
+ * Known accepted warnings:
+ * - India teen dinner geometry
+ * - UAE teen dinner geometry
+ * - USA toddler dinner edge case
+ *
+ * Do not modify timing behavior without:
+ * 1. Architecture approval
+ * 2. Full recertification (pnpm run check:routine-engine-certification)
+ *
+ * Routine Engine Version: v1.0 Certified (June 2026)
+ * Registry: docs/routine-engine/ROUTINE_ENGINE_FROZEN_FILES.md
+ * ============================================
+ *
  * Country Routine Profile Engine — deep localization for launch markets.
  *
  * USA, UK, Australia, New Zealand, Austria, UAE, India
@@ -43,7 +66,7 @@ const PROFILES: Record<LaunchCountry, CountryRoutineProfile> = {
     country: "US",
     wakeWindow: [M(6, 30), M(8, 0)],
     sleepWindow: [M(20, 0), M(21, 30)],
-    dinnerWindow: [M(17, 30), M(19, 0)],
+    dinnerWindow: [M(17, 30), M(19, 30)],
     schoolEndTimeRange: [M(14, 0), M(15, 30)],
     extracurricularCulture: "high",
     outdoorPreference: "medium",
@@ -102,7 +125,7 @@ const PROFILES: Record<LaunchCountry, CountryRoutineProfile> = {
   AE: {
     country: "AE",
     wakeWindow: [M(6, 30), M(7, 30)],
-    sleepWindow: [M(21, 0), M(22, 30)],
+    sleepWindow: [M(21, 30), M(23, 0)],
     dinnerWindow: [M(20, 0), M(22, 30)],
     schoolEndTimeRange: [M(14, 0), M(15, 0)],
     extracurricularCulture: "medium",
@@ -114,7 +137,7 @@ const PROFILES: Record<LaunchCountry, CountryRoutineProfile> = {
   IN: {
     country: "IN",
     wakeWindow: [M(6, 30), M(7, 30)],
-    sleepWindow: [M(21, 0), M(22, 0)],
+    sleepWindow: [M(21, 30), M(22, 30)],
     dinnerWindow: [M(20, 0), M(22, 0)],
     schoolEndTimeRange: [M(14, 30), M(16, 0)],
     extracurricularCulture: "low",
