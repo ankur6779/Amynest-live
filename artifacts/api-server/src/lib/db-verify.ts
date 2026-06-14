@@ -30,6 +30,7 @@ const CRITICAL_TABLES: readonly string[] = [
   "onboarding_profiles",
   "razorpay_webhook_events",
   "health_lab_progress",
+  "user_devices",
 ];
 
 /** Columns that commonly drift and crash onboarding if missing. */
@@ -40,6 +41,8 @@ const CRITICAL_COLUMNS: ReadonlyArray<{ table: string; column: string }> = [
   { table: "parent_profiles", column: "free_slots" },
   { table: "subscriptions", column: "bonus_expires_at" },
   { table: "push_tokens", column: "last_seen_at" },
+  { table: "user_devices", column: "browser" },
+  { table: "user_devices", column: "last_ip_hash" },
 ];
 
 export interface DbVerificationResult {
