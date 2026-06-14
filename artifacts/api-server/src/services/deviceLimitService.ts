@@ -14,6 +14,9 @@ import { canAddNewDevice } from "./deviceLimitLogic.js";
 
 export { canAddNewDevice, isDeviceLimitExempt } from "./deviceLimitLogic.js";
 
+/** Drizzle transaction shares the same query API as `db`. */
+type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export const DEVICE_ID_HEADER = "x-amynest-device-id";
 export const DEVICE_NAME_HEADER = "x-amynest-device-name";
 export const DEVICE_PLATFORM_HEADER = "x-amynest-platform";
@@ -74,13 +77,13 @@ async function resolveDeviceLimit(userId: string, email?: string | null): Promis
   return resolveDevicesMax(isPremiumNow(sub), email);
 }
 
-async function advisoryLockUser(tx: typeof db, userId: string): Promise<void> {
+async function advisoryLockUser(tx: DbExec, userId: string): Promise<void> {
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`device:${userId}`}))`);
 }
 
 export async function countActiveDevices(
   userId: string,
-  dbExec: typeof db = db,
+  dbExec: DbExec = db,
 ): Promise<number> {
   const [{ n }] = await dbExec
     .select({ n: sql<number>`count(*)::int` })

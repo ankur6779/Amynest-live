@@ -68,6 +68,7 @@ const ALLOWLIST = new Set([
   "lib/amy-voice-pipeline-types.ts",
   "lib/amy-voice-pipeline-fallback-layers.ts",
   "lib/procedural-sfx.ts",
+  "lib/talking-amy-echo.ts",
   "hooks/use-sound-engine.ts",
   "pages/phonics-audio-preview.tsx",
 ]);
