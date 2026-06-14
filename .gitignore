@@ -74,6 +74,7 @@ artifacts/amynest-capacitor/ios/App/App/public/
 artifacts/amynest-capacitor/ios/App/App/capacitor.config.json
 artifacts/amynest-capacitor/ios/App/App/config.xml
 artifacts/amynest-capacitor/ios/**/xcuserdata/
+artifacts/amynest-capacitor/ios/build/
 artifacts/amynest-capacitor/ios/capacitor-cordova-ios-plugins/
 artifacts/amynest-capacitor/www/
 artifacts/amynest-capacitor/build/

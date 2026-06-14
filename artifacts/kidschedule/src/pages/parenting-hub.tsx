@@ -166,11 +166,11 @@ const HUB_SECTION_REWARD_POINTS = 5;
 
 const WEB_HUB_GROUPS = [
   { key: "today",      emoji: "✨", i18n: "parent_hub.section_groups.today"      },
-  { key: "parent",     emoji: "🏠", i18n: "parent_hub.section_groups.parent"     },
   { key: "learning",   emoji: "📚", i18n: "parent_hub.section_groups.learning"   },
   { key: "creativity", emoji: "🎨", i18n: "parent_hub.section_groups.creativity" },
   { key: "stories",    emoji: "📖", i18n: "parent_hub.section_groups.stories"    },
   { key: "health",     emoji: "🌿", i18n: "parent_hub.section_groups.health"     },
+  { key: "parent",     emoji: "🎮", i18n: "parent_hub.section_groups.parent"     },
   { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
 ] as const;
 
