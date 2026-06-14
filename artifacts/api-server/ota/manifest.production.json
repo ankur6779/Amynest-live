@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.10",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.10.zip",
-  "checksum": "2e1d085c4dac9aed658691d589f501d326bc14529aa87df1000065b01bfd0aaf",
+  "bundleVersion": "1.0.11",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.11.zip",
+  "checksum": "7665e87c222d23abb83750a40857271dba25283edd238de67c522b4b1e82f40b",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Device limit management, Manage Devices screen, premium child cap (2 children), and registration reliability improvements.",
+  "releaseNotes": "Routine Engine v1.0 certified, per-child routine switching, feedback UX polish, Gaming Hub nav, and FCM background notifications.",
   "changeClasses": [
     "bugfix",
     "ui-copy"
