@@ -21,7 +21,7 @@ import {
 import {
   getOrCreateSubscription,
   isPremiumNow,
-  FREE_LIMITS,
+  resolveChildrenMax,
 } from "../services/subscriptionService";
 import { tryMarkReferralValidForUser } from "../services/referralService";
 import { ONBOARDING_CHILD_SAVE_FALLBACK } from "../lib/api-fallbacks.js";
@@ -82,22 +82,24 @@ router.post(
         }
       }
 
-      // Enforce child limit for free users during onboarding and normal create.
+      // Enforce child limit (free: 1, premium: 2; demo@amynest.in exempt).
       try {
         const sub = await getOrCreateSubscription(userId);
-        if (!isPremiumNow(sub)) {
-          const [{ n }] = await db
-            .select({ n: sql<number>`count(*)::int` })
-            .from(childrenTable)
-            .where(eq(childrenTable.userId, userId));
-          if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
-            res.status(402).json({
-              error: "child_limit_reached",
-              message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
-              limit: FREE_LIMITS.childrenMax,
-            });
-            return;
-          }
+        const premium = isPremiumNow(sub);
+        const childMax = resolveChildrenMax(premium, auth.email);
+        const [{ n }] = await db
+          .select({ n: sql<number>`count(*)::int` })
+          .from(childrenTable)
+          .where(eq(childrenTable.userId, userId));
+        if ((n ?? 0) >= childMax) {
+          res.status(402).json({
+            error: "child_limit_reached",
+            message: premium
+              ? "Premium includes support for up to 2 children. Need more profiles? Family plans coming soon."
+              : `Free plan supports up to ${childMax} child. Upgrade to add more.`,
+            limit: childMax,
+          });
+          return;
         }
       } catch (err) {
         if (isSchemaMismatchError(err)) {

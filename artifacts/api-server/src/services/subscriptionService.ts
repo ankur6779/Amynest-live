@@ -12,6 +12,7 @@ import {
   hasValidPaidPeriodEnd,
   isPremiumNow,
 } from "./subscription-premium-gate.js";
+import { UNLIMITED_DEVICES_EMAILS } from "./deviceLimitLogic.js";
 
 export { hasValidPaidPeriodEnd, isPremiumNow } from "./subscription-premium-gate.js";
 
@@ -65,10 +66,45 @@ export const FREE_LIMITS = {
   /** Infant Baby Expert — separate pool for children under 24 months. */
   infantAiQueriesPerDay: INFANT_AI_DAILY_LIMIT,
   childrenMax: 1,
+  devicesMax: 1,
   routinesMax: 2,
   hubArticlesMax: 3,
   trialDays: 3,
 };
+
+export const PREMIUM_LIMITS = {
+  childrenMax: 2,
+  devicesMax: 3,
+} as const;
+
+/** Future family plan — configurable default device cap. */
+export const FAMILY_PLAN_LIMITS = {
+  devicesMax: 6,
+} as const;
+
+export function resolveDevicesMax(isPremium: boolean, email?: string | null): number {
+  if (email && UNLIMITED_DEVICES_EMAILS.has(email.toLowerCase().trim())) {
+    return 999;
+  }
+  if (isPremium) return PREMIUM_LIMITS.devicesMax;
+  return FREE_LIMITS.devicesMax;
+}
+
+/** Demo / QA accounts exempt from the premium child cap. */
+export const UNLIMITED_CHILDREN_EMAILS = new Set([
+  "demo@amynest.in",
+]);
+
+export function resolveChildrenMax(
+  isPremium: boolean,
+  email?: string | null,
+): number {
+  if (email && UNLIMITED_CHILDREN_EMAILS.has(email.toLowerCase().trim())) {
+    return 999;
+  }
+  if (isPremium) return PREMIUM_LIMITS.childrenMax;
+  return FREE_LIMITS.childrenMax;
+}
 
 /**
  * Per-feature free-use cap. Global Paywall rule:
@@ -369,7 +405,10 @@ export async function healStaleSubscriptionRecord(
   return updated ?? sub;
 }
 
-export async function getEntitlements(userId: string): Promise<EntitlementSummary> {
+export async function getEntitlements(
+  userId: string,
+  email?: string | null,
+): Promise<EntitlementSummary> {
   const featureKeys = Object.keys(FREE_FEATURE_LIMITS) as FeatureKey[];
   let sub = await getOrCreateSubscription(userId);
   sub = await healStaleSubscriptionRecord(sub);
@@ -418,7 +457,11 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
     currentPeriodEnd: sub.currentPeriodEnd ? sub.currentPeriodEnd.toISOString() : null,
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
     provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
-    limits: FREE_LIMITS,
+    limits: {
+      ...FREE_LIMITS,
+      childrenMax: resolveChildrenMax(isPremium, email),
+      devicesMax: resolveDevicesMax(isPremium, email),
+    },
     usage: {
       aiQueriesToday: features.ai_query.used,
       aiQueriesRemaining: features.ai_query.remaining,

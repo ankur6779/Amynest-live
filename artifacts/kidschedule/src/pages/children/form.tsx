@@ -223,8 +223,8 @@ function ChildForm() {
     }
   });
 
-  const { blocked, existingCount, isLoading: addChildGateLoading, tryAddChild } = useAddChildGate();
-  const isAtFreeLimit = !isEditing && blocked;
+  const { blocked, existingCount, isPremium, isLoading: addChildGateLoading, tryAddChild } = useAddChildGate();
+  const isAtChildLimit = !isEditing && blocked;
 
   useEffect(() => {
     if (!isEditing && !addChildGateLoading && blocked) {
@@ -663,18 +663,32 @@ function ChildForm() {
                 <Crown className="h-7 w-7 text-primary" />
               </div>
             </div>
-            <AlertDialogTitle className="text-center text-xl">{t("pages.children.form.upgrade_to_premium")}</AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-xl">
+              {isPremium
+                ? t("toasts.children.child_limit_reached_title")
+                : t("pages.children.form.upgrade_to_premium")}
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              {t("pages.children.form.the_free_plan_supports")} <strong>{t("pages.children.form.1_child")}</strong>{t("pages.children.form.upgrade_to_premium_to_add_unlimited_children_and_unlock_all_")}
+              {isPremium ? (
+                t("toasts.children.child_limit_reached_premium")
+              ) : (
+                <>
+                  {t("pages.children.form.the_free_plan_supports")}{" "}
+                  <strong>{t("pages.children.form.1_child")}</strong>
+                  {t("pages.children.form.upgrade_to_premium_to_add_unlimited_children_and_unlock_all_")}
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <Link href="/pricing">
-              <AlertDialogAction className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white rounded-2xl h-12 font-bold text-base">
-                <Sparkles className="h-4 w-4 mr-2" />
-                {t("pages.children.form.see_upgrade_plans")}
-              </AlertDialogAction>
-            </Link>
+            {!isPremium && (
+              <Link href="/pricing">
+                <AlertDialogAction className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white rounded-2xl h-12 font-bold text-base">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {t("pages.children.form.see_upgrade_plans")}
+                </AlertDialogAction>
+              </Link>
+            )}
             <AlertDialogCancel className="w-full rounded-2xl">{t("pages.children.form.maybe_later")}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -744,21 +758,34 @@ function ChildForm() {
         </div>
       </div>
 
-      {/* Upfront banner when user is already at the free limit */}
-      {isAtFreeLimit && <div className="rounded-2xl bg-gradient-to-r from-muted to-muted border border-border p-4 flex items-start gap-3">
+      {/* Upfront banner when user is already at the child limit */}
+      {isAtChildLimit && <div className="rounded-2xl bg-gradient-to-r from-muted to-muted border border-border p-4 flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
             <Crown className="h-4 w-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-primary text-sm">{t("pages.children.form.free_plan_1_child_only")}</p>
-            <p className="text-primary text-xs mt-1">
-              {t("pages.children.form.you_already_have")} {existingCount} {t("pages.children.form.child_profile_upgrade_to_premium_to_add_more_children_and_un")}
-            </p>
-            <Link href="/pricing">
-              <button className="mt-2 text-xs font-bold text-primary underline underline-offset-2 hover:text-primary">
-                {t("pages.children.form.view_upgrade_plans")}
-              </button>
-            </Link>
+            {isPremium ? (
+              <p className="font-bold text-primary text-sm">
+                {t("toasts.children.child_limit_reached_premium")}
+              </p>
+            ) : (
+              <>
+                <p className="font-bold text-primary text-sm">
+                  {t("pages.children.form.free_plan_1_child_only")}
+                </p>
+                <p className="text-primary text-xs mt-1">
+                  {t("pages.children.form.you_already_have")} {existingCount}{" "}
+                  {t("pages.children.form.child_profile_upgrade_to_premium_to_add_more_children_and_un")}
+                </p>
+              </>
+            )}
+            {!isPremium && (
+              <Link href="/pricing">
+                <button className="mt-2 text-xs font-bold text-primary underline underline-offset-2 hover:text-primary">
+                  {t("pages.children.form.view_upgrade_plans")}
+                </button>
+              </Link>
+            )}
           </div>
         </div>}
 

@@ -35,6 +35,7 @@ const EXACT_ROUTE_LOADERS: Record<string, ChunkLoader> = {
   "/olympiad": () => import("@/pages/olympiad"),
   "/kids-control-center": () => import("@/pages/kids-control-center"),
   "/notification-settings": () => import("@/pages/notification-settings"),
+  "/manage-devices": () => import("@/pages/manage-devices"),
 };
 
 const PREFIX_ROUTE_LOADERS: Array<{ prefix: string; load: ChunkLoader }> = [
@@ -112,7 +113,7 @@ const LIKELY_NEXT_ROUTES: Record<string, readonly string[]> = {
   "/parenting-hub": ["/dashboard", "/nutrition", "/games"],
   "/nutrition": ["/parenting-hub", "/recipes"],
   "/games": ["/parenting-hub", "/rewards"],
-  "/parent-profile": ["/dashboard", "/notification-settings"],
+  "/parent-profile": ["/dashboard", "/notification-settings", "/manage-devices"],
 };
 
 /** Warm routes the user is likely to open next (from tab bar / hub flow). */

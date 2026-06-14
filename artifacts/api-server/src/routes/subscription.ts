@@ -61,7 +61,7 @@ router.get(
         /* best-effort — never block subscription read */
       }
       const [ent, prices] = await Promise.all([
-        getEntitlements(userId),
+        getEntitlements(userId, email),
         getLivePlanPrices(),
       ]);
       const marketing = buildPlanCardsForApi();

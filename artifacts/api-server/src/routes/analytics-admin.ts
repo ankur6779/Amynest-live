@@ -41,4 +41,29 @@ router.get("/admin/analytics/quality", (req, res): void => {
   res.json({ ok: true, ...getAnalyticsQuality() });
 });
 
+/** GET /api/admin/analytics/device-metrics?period=day|week */
+router.get("/admin/analytics/device-metrics", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const period = req.query["period"] === "week" ? "week" : "day";
+  const { computeDeviceMetrics } = await import("../services/deviceMetricsService.js");
+  const report = await computeDeviceMetrics(period);
+  res.json({ ok: true, ...report });
+});
+
+/** GET /api/admin/analytics/device-strict-readiness */
+router.get("/admin/analytics/device-strict-readiness", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const { assessStrictReadiness } = await import("../services/deviceMetricsService.js");
+  const snapshot = await assessStrictReadiness();
+  res.json({ ok: true, ...snapshot });
+});
+
 export default router;

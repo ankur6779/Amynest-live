@@ -92,6 +92,30 @@ const EVENT_PROP_SCHEMAS = {
   premium_cta_clicked: z.object({
     source: z.string().max(64).optional(),
   }),
+
+  // ── device limits ──────────────────────────────────────────────────────
+  device_registered: z.object({
+    platform: z.string().max(32).optional(),
+  }),
+  device_removed: z.object({
+    deviceId: z.string().max(128).optional(),
+  }),
+  device_limit_reached: z.object({
+    limit: z.number().int().positive().optional(),
+    activeCount: z.number().int().nonnegative().optional(),
+    platform: z.string().max(32).optional(),
+  }),
+  device_replaced: z.object({
+    removedDeviceId: z.string().max(128).optional(),
+    platform: z.string().max(32).optional(),
+  }),
+  device_limit_bypass_attempt: z.object({
+    plan: z.string().max(32).optional(),
+    activeDeviceCount: z.number().int().nonnegative().optional(),
+    attemptedDevicePlatform: z.string().max(32).optional(),
+    appVersion: z.string().max(32).nullable().optional(),
+    reason: z.enum(["register_rejected", "replace_initiated", "missing_header"]).optional(),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -106,6 +130,11 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   routine_feedback_submitted: "feedback",
   premium_paywall_viewed: "premium",
   premium_cta_clicked: "premium",
+  device_registered: "premium",
+  device_removed: "premium",
+  device_limit_reached: "premium",
+  device_replaced: "premium",
+  device_limit_bypass_attempt: "premium",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

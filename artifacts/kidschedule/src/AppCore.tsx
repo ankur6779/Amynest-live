@@ -54,6 +54,7 @@ import {
 import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
+import { useDeviceRegistration } from "@/contexts/device-registration-context";
 import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
 import { AmyVoiceRouteGuard } from "@/components/amy-voice-route-guard";
 import { AppInitGate } from "@/components/app-init-gate";
@@ -129,6 +130,7 @@ const ReferralDeepLinkPage = lazyPage(() => import("@/pages/referral-deep-link")
 const InsightsPage = lazyPage(() => import("@/pages/insights"));
 const RewardsPage = lazyPage(() => import("@/pages/rewards"));
 const NotificationSettingsPage = lazyPage(() => import("@/pages/notification-settings"));
+const ManageDevicesPage = lazyPage(() => import("@/pages/manage-devices"));
 const NotificationDiagnosticsPage = lazyPage(() => import("@/pages/notification-diagnostics"));
 const NotifyPromptPage = lazyPage(() => import("@/pages/notify-prompt"));
 const DebugParityPage = lazyPage(() => import("@/pages/debug-parity"));
@@ -159,6 +161,8 @@ import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
 import { useIntentInterruptionTracker } from "@/hooks/use-intent-interruption-tracker";
 import { PaywallProvider } from "@/contexts/paywall-context";
+import { DeviceRegistrationProvider } from "@/contexts/device-registration-context";
+import { DeviceLimitGate } from "@/components/device-limit-dialog";
 import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
 import { SubscriptionFunnelOrchestrator } from "@/components/subscription-funnel-orchestrator";
@@ -308,6 +312,7 @@ const CHILD_OPTIONAL_ROUTE_PREFIXES = [
   "/profile",
   "/pricing",
   "/notification-settings",
+  "/manage-devices",
   "/notification-diagnostics",
   "/children",
   "/referrals",
@@ -349,6 +354,10 @@ function ProtectedRoute({
   });
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
+  const { status: deviceStatus } = useDeviceRegistration();
+  const deviceGateLoading = deviceStatus === "loading" || deviceStatus === "idle";
+  const deviceBlocked =
+    deviceStatus === "blocked" && !location.startsWith("/manage-devices");
   const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
 
   // Hard guard: never decide signed-in / signed-out until Firebase has
@@ -359,10 +368,14 @@ function ProtectedRoute({
   if (authLoading) return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (authBlocked) return <RouteLoadingShell />;
+  if (deviceGateLoading) return <RouteLoadingShell />;
+  if (deviceBlocked) return <RouteLoadingShell />;
   if (isError) {
     return <ApiRetryShell onRetry={() => void refetch()} />;
   }
-  if (!setupDone) return <Redirect to="/onboarding" />;
+  if (!setupDone && !location.startsWith("/manage-devices")) {
+    return <Redirect to="/onboarding" />;
+  }
   if (childrenError) {
     return <ApiRetryShell onRetry={() => void refetchChildren()} />;
   }
@@ -400,6 +413,7 @@ const RoutineDetailRoute = makeProtectedRoute(RoutineDetail, "RoutineDetail");
 const BehaviorTrackerRoute = makeProtectedRoute(BehaviorTracker);
 const ParentProfileRoute = makeProtectedRoute(ParentProfile, "ParentProfile");
 const NotificationSettingsRoute = makeProtectedRoute(NotificationSettingsPage, "NotificationSettings");
+const ManageDevicesRoute = makeProtectedRoute(ManageDevicesPage, "ManageDevices");
 const NotificationDiagnosticsRoute = makeProtectedRoute(NotificationDiagnosticsPage);
 const AssistantRoute = makeProtectedRoute(AssistantPage);
 const AmyAiTutorRoute = makeProtectedRoute(AmyAiTutorPage);
@@ -645,6 +659,8 @@ function AppRoutes() {
         <TooltipProvider>
           <DebugProvider>
           <PaywallProvider>
+            <DeviceRegistrationProvider>
+            <DeviceLimitGate />
             <ReactMountMarker />
             <NativeApiBaseUrlBootstrap />
             <FirebaseAuthBootstrap />
@@ -711,6 +727,7 @@ function AppRoutes() {
           </Route>
           <Route path="/parent-profile" component={ParentProfileRoute} />
           <Route path="/notification-settings" component={NotificationSettingsRoute} />
+          <Route path="/manage-devices" component={ManageDevicesRoute} />
           <Route path="/notification-diagnostics" component={NotificationDiagnosticsRoute} />
           <Route path="/notify-prompt" component={NotifyPromptRouteGuard} />
           <Route path="/babysitters">
@@ -806,6 +823,7 @@ function AppRoutes() {
             <AudioVoiceStatusHint />
             <DebugPanel />
             <AudioHealthOverlay />
+          </DeviceRegistrationProvider>
           </PaywallProvider>
           </DebugProvider>
         </TooltipProvider>

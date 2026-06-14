@@ -1090,7 +1090,9 @@
       "profile_added": "Child added successfully — taking you to your dashboard",
       "profile_add_failed": "Failed to add child",
       "profile_deleted": "Profile deleted",
-      "profile_delete_failed": "Failed to delete profile"
+      "profile_delete_failed": "Failed to delete profile",
+      "child_limit_reached_title": "Child limit reached",
+      "child_limit_reached_premium": "Premium includes support for up to 2 children. Need more profiles? Family plans coming soon."
     },
     "routines_detail": {
       "undone": "↩️ Action undone",
@@ -5244,7 +5246,7 @@
         "upgrade_to_premium": "Upgrade to Premium",
         "the_free_plan_supports": "The free plan supports",
         "1_child": "1 child",
-        "upgrade_to_premium_to_add_unlimited_children_and_unlock_all_": ". Upgrade to Premium to add unlimited children and unlock all AmyNest features.",
+        "upgrade_to_premium_to_add_unlimited_children_and_unlock_all_": ". Upgrade to Premium to add up to 2 children and unlock all AmyNest features.",
         "see_upgrade_plans": "See Upgrade Plans",
         "maybe_later": "Maybe Later",
         "edit_profile_label": "Child profile",
@@ -5260,7 +5262,7 @@
         "add_child_cta": "Add Child",
         "free_plan_1_child_only": "Free plan: 1 child only",
         "you_already_have": "You already have",
-        "child_profile_upgrade_to_premium_to_add_more_children_and_un": "child profile. Upgrade to Premium to add more children and unlock all features.",
+        "child_profile_upgrade_to_premium_to_add_more_children_and_un": "child profile. Upgrade to Premium to add up to 2 children and unlock all features.",
         "view_upgrade_plans": "View upgrade plans →",
         "child_s_photo": "Child's Photo",
         "child_photo": "Child photo",
@@ -5533,7 +5535,25 @@
       "food_style": "Food Style",
       "food_restrictions_allergies": "Food Restrictions / Allergies",
       "other_restrictions_placeholder": "Other restrictions, e.g. peanuts, shellfish, sesame...",
-      "notification_settings": "Notification Settings"
+      "notification_settings": "Notification Settings",
+      "manage_devices": "Manage Devices"
+    },
+    "manage_devices": {
+      "title": "Manage Devices",
+      "back": "Back to profile",
+      "premium_limit": "Premium supports up to {{count}} active devices.",
+      "free_limit": "Free plan supports {{count}} active device.",
+      "blocked_hint": "Remove a device below, then tap \"Use this device\" to continue on this phone.",
+      "current_badge": "This device",
+      "last_active": "Last active",
+      "remove": "Remove",
+      "use_this_device": "Use this device",
+      "empty": "No active devices registered yet.",
+      "load_failed": "Could not load devices",
+      "removed": "Device removed",
+      "remove_failed": "Could not remove device",
+      "replaced": "This device is now active",
+      "replace_failed": "Could not switch device"
     },
     "pricing": {
       "cancels": "· Cancels",

@@ -17,7 +17,7 @@ type AddChildLinkProps = {
   "data-tour"?: string;
 };
 
-/** Navigates to /children/new, or opens the child-limit paywall for free users at the cap. */
+/** Navigates to /children/new, or blocks when the child profile cap is reached. */
 export function AddChildLink({
   source,
   onClick,

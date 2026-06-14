@@ -110,7 +110,9 @@ import eventPrepRouter from "./event-prep";
 import ptmPrepRouter from "./ptm-prep";
 import contentBankRouter from "./content-bank";
 import { audioSignedUrlPublicRouter } from "./audio-signed-url";
+import devicesRouter from "./devices";
 import { requireAuth } from "../middlewares/requireAuth";
+import { requireRegisteredDevice } from "../middlewares/requireRegisteredDevice";
 
 const router: IRouter = Router();
 
@@ -162,6 +164,8 @@ router.use(learningSeedPublicRouter);
 router.use(startupTelemetryPublicRouter);
 router.use(remoteConfigRouter);
 router.use(requireAuth);
+router.use(devicesRouter);
+router.use(requireRegisteredDevice);
 router.use(staticAudioAuthRouter);
 router.use(chatPlatformHealthRouter);
 router.use(startupTelemetryAdminRouter);

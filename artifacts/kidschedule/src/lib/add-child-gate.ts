@@ -1,6 +1,6 @@
-/** Free plan allows one child profile; premium users may add more. */
+/** Free plan allows one child profile; premium allows two (demo account exempt on server). */
 export const FREE_CHILD_LIMIT = 1;
 
-export function isAddChildBlocked(isPremium: boolean, existingCount: number): boolean {
-  return !isPremium && existingCount >= FREE_CHILD_LIMIT;
+export function isAddChildBlocked(childrenMax: number, existingCount: number): boolean {
+  return existingCount >= childrenMax;
 }

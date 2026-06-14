@@ -27,6 +27,7 @@ export type Entitlements = {
     aiQueriesPerDay: number;
     infantAiQueriesPerDay?: number;
     childrenMax: number;
+    devicesMax: number;
     routinesMax: number;
     hubArticlesMax: number;
     trialDays: number;

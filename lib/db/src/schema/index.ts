@@ -35,6 +35,7 @@ export * from "./coach_win_generations";
 export * from "./coach_audio_cache";
 export * from "./user_ai_messages";
 export * from "./push_tokens";
+export * from "./user_devices";
 export * from "./feature_feedback";
 export * from "./custom_recipes";
 export * from "./admin_premium_grants";

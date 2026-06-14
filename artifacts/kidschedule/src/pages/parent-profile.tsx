@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell, Briefcase, MapPin } from "lucide-react";
+import { Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell, Briefcase, MapPin, Smartphone } from "lucide-react";
 import { ProfileSkeleton } from "@/components/route-skeletons/profile-skeleton";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -718,6 +718,14 @@ export default function ParentProfilePage() {
         >
           <Bell className="h-4 w-4 mr-2" />
           {t("pages.parent_profile.notification_settings")}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/manage-devices")}
+          className="w-full rounded-full h-11 border-border/60"
+        >
+          <Smartphone className="h-4 w-4 mr-2" />
+          {t("pages.parent_profile.manage_devices")}
         </Button>
       </div>
 
