@@ -11,6 +11,7 @@ import {
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
+import { NutritionHeroParticles } from "@/features/nutrition/components/shared/nutrition-hero-particles";
 
 export function NutritionHero() {
   const { t } = useTranslation();
@@ -22,17 +23,30 @@ export function NutritionHero() {
       <div className="flex">
         <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
         <div className="relative flex-1 min-w-0 px-3 py-3 sm:px-4 sm:py-6">
+          {/* Depth layers */}
           <div
-            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
             style={{
               backgroundImage:
                 "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
               backgroundSize: "40px 40px",
             }}
+            aria-hidden
           />
-          <div className="relative">
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-amber-500/[0.03]"
+            aria-hidden
+          />
+          <NutritionHeroParticles />
+
+          <div className="relative z-[1]">
             <div className="flex items-center gap-2">
-              <div className={cn(NUTRITION_HUB_ACCENT.emojiShell, "w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl")}>
+              <div
+                className={cn(
+                  NUTRITION_HUB_ACCENT.emojiShell,
+                  "w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl nutrition-hero-icon-float",
+                )}
+              >
                 🥗
               </div>
               <div className="min-w-0 flex-1">

@@ -13,7 +13,7 @@ import { NutritionPremiumPreview } from "@/features/nutrition/components/premium
 
 export function TodayPage() {
   return (
-    <div className="space-y-3 sm:space-y-4 hub-page-enter">
+    <div className="space-y-3 sm:space-y-4 hub-page-enter hub-today-stack">
       <ChildContextChip />
       <TodayScoreSummary />
       <NutritionPremiumPreview />

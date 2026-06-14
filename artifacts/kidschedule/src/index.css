@@ -1871,6 +1871,84 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   animation: parentHubFadeUp 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* ── Nutrition Hub premium motion ─────────────────────────────────── */
+@keyframes nutritionRingPulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.95); }
+  50% { opacity: 0.5; transform: scale(1.02); }
+}
+
+@keyframes nutritionTodayPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.25); }
+  50% { box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12); }
+}
+
+@keyframes nutritionDayGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(52, 211, 153, 0.35); }
+  50% { box-shadow: 0 0 12px rgba(52, 211, 153, 0.55); }
+}
+
+@keyframes nutritionHeroFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes nutritionEmptyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes nutritionAchievementUnlock {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+@keyframes nutritionCtaGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.15); }
+  50% { box-shadow: 0 0 16px rgba(251, 191, 36, 0.2); }
+}
+
+.nutrition-today-pulse {
+  animation: nutritionTodayPulse 2.4s ease-in-out infinite;
+}
+
+.nutrition-day-glow {
+  animation: nutritionDayGlow 2.8s ease-in-out infinite;
+}
+
+.nutrition-hero-icon-float {
+  animation: nutritionHeroFloat 4s ease-in-out infinite;
+}
+
+.nutrition-empty-bounce {
+  animation: nutritionEmptyBounce 3s ease-in-out infinite;
+}
+
+.nutrition-achievement-unlock {
+  animation: nutritionAchievementUnlock 0.8s ease-out both;
+}
+
+.nutrition-cta-glow {
+  animation: nutritionCtaGlow 2.5s ease-in-out infinite;
+}
+
+.nutrition-streak-line {
+  transform-origin: left center;
+  animation: hubProgressFill 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutrition-today-pulse,
+  .nutrition-day-glow,
+  .nutrition-hero-icon-float,
+  .nutrition-empty-bounce,
+  .nutrition-achievement-unlock,
+  .nutrition-cta-glow,
+  .nutrition-streak-line {
+    animation: none !important;
+  }
+}
+
 /* ── Smart Study Zone premium surface ─────────────────────────────── */
 .study-zone-premium {
   width: 100%;

@@ -94,6 +94,7 @@
       "start_checkin": "चेक-इन शुरू करें",
       "continue_checkin": "चेक-इन जारी रखें",
       "meal_empty_hint": "उम्र मार्गदर्शन देखें या भोजन योजनाकार खोलें।",
+      "meal_empty_title": "Aapki meal recommendation aane wali hai",
       "meal_empty_learn": "उम्र मार्गदर्शन",
       "meal_empty_plan": "भोजन योजनाकार खोलें"
     },
@@ -319,7 +320,10 @@
       "ai_tip_high": "लगभग हो गया! रिफाइंड स्नैक की जगह भुनी चना या मेवे लें।",
       "outstanding": "शानदार पोषण दिन!",
       "keep_it_up": "कल भी जारी रखें। निरंतरता स्वास्थ्य की कुंजी है।",
-      "ring_aria": "Nutrition score {{score}} percent"
+      "ring_aria": "Nutrition score {{score}} percent",
+      "ring_empty_aria": "Aaj ka nourishment score abhi start nahi hua",
+      "build_invitation": "Chalo aaj ka nourishment score banate hain",
+      "build_invitation_short": "Start"
     },
     "growth": {
       "title": "विकास प्रगति ट्रैक करें",

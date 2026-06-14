@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import { useListChildren } from "@workspace/api-client-react";
 import { Trophy } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 import { useMealMemory } from "@/features/nutrition/hooks/use-meal-memory";
 import { useNutritionTrackMeta } from "@/features/nutrition/hooks/use-nutrition-track-meta";
+import { nutritionFadeUp, NUTRITION_TRANSITION } from "@/features/nutrition/lib/nutrition-motion";
 import {
   ACHIEVEMENT_DEFINITIONS,
   evaluateAchievements,
@@ -85,8 +86,13 @@ export function NutritionAchievementCard() {
   const defFor = (id: string) => ACHIEVEMENT_DEFINITIONS.find((d) => d.id === id);
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+    <motion.div
+      className="rounded-xl border border-amber-400/20 bg-gradient-to-br from-amber-500/[0.06] to-emerald-500/[0.04] p-4 space-y-3"
+      variants={nutritionFadeUp}
+      initial="initial"
+      animate="animate"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/70 flex items-center gap-1.5">
         <Trophy className="h-3.5 w-3.5" />
         {t("nutrition_hub.achievements.title")}
       </p>
@@ -95,15 +101,18 @@ export function NutritionAchievementCard() {
         const def = defFor(u.id);
         if (!def) return null;
         return (
-          <div
+          <motion.div
             key={u.id}
-            className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5"
+            className="rounded-lg border border-amber-400/35 bg-gradient-to-r from-amber-500/15 to-emerald-500/10 px-3 py-2.5 nutrition-achievement-unlock"
+            initial={{ opacity: 0, scale: 0.95, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={NUTRITION_TRANSITION.unlock}
           >
             <p className="text-sm font-semibold text-foreground">
               {def.emoji} {t(def.titleKey)} — {t("nutrition_hub.achievements.unlocked")}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">{t(def.descriptionKey)}</p>
-          </div>
+          </motion.div>
         );
       })}
 
@@ -121,9 +130,11 @@ export function NutritionAchievementCard() {
                   {def.emoji} {t(def.titleKey)}
                 </p>
                 <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full bg-primary transition-all")}
-                    style={{ width: `${next.progress}%` }}
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${next.progress}%` }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">{next.progressLabel}</p>
@@ -132,6 +143,6 @@ export function NutritionAchievementCard() {
           })()}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
