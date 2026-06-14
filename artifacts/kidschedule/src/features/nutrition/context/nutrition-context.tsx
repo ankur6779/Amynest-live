@@ -1,0 +1,141 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { AGE_GROUPS, type AgeGroup, type AgeGroupId, type Nutrient } from "@/lib/nutrition-data";
+import {
+  useNutritionRegion,
+  type RegionConfig,
+  type RegionalFoodSource,
+} from "@/lib/nutrition-region";
+import { getMondayBasedDayIndex, monthsToAgeGroupId } from "@/features/nutrition/lib/age-band-map";
+import { useParentNutritionProfile } from "@/features/nutrition/hooks/use-parent-nutrition-profile";
+import type { NutritionTab, PlanSource } from "@/features/nutrition/types/nutrition-hub.types";
+
+export type NutritionContextValue = {
+  childId: number | null;
+  activeTab: NutritionTab;
+  setActiveTab: (tab: NutritionTab) => void;
+  activeChild: { ageMonths: number | null; name: string | null };
+  ageGroupId: AgeGroupId;
+  ageGroupOverride: AgeGroupId | null;
+  setAgeGroupOverride: (id: AgeGroupId | null) => void;
+  activeAgeGroup: AgeGroup;
+  selectedDay: number;
+  setSelectedDay: (day: number) => void;
+  planSource: PlanSource;
+  setPlanSource: (source: PlanSource) => void;
+  suggestedMeal: string;
+  setSuggestedMeal: (meal: string) => void;
+  foodStyle: string;
+  regionConfig: RegionConfig;
+  getRegional: (nutrientId: string) => RegionalFoodSource[] | null;
+  localizeNote: (note?: string) => string | undefined;
+  selectedNutrient: Nutrient | null;
+  setSelectedNutrient: (nutrient: Nutrient | null) => void;
+  nutrientDialogOpen: boolean;
+  setNutrientDialogOpen: (open: boolean) => void;
+  openNutrientDetail: (nutrient: Nutrient) => void;
+};
+
+const NutritionContext = createContext<NutritionContextValue | null>(null);
+
+export function NutritionProvider({
+  childId,
+  childAgeMonths,
+  childName,
+  children,
+}: {
+  childId: number | null;
+  childAgeMonths: number | null;
+  childName: string | null;
+  children: ReactNode;
+}) {
+  const { foodStyle } = useParentNutritionProfile();
+  const { config: regionConfig, getRegional, localizeNote } = useNutritionRegion();
+
+  const [activeTab, setActiveTab] = useState<NutritionTab>("today");
+  const [ageGroupOverride, setAgeGroupOverride] = useState<AgeGroupId | null>(null);
+  const [selectedDay, setSelectedDay] = useState(getMondayBasedDayIndex);
+  const [planSource, setPlanSource] = useState<PlanSource>("classic");
+  const [suggestedMeal, setSuggestedMeal] = useState("");
+  const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
+  const [nutrientDialogOpen, setNutrientDialogOpen] = useState(false);
+
+  const syncedAgeGroupId = useMemo(
+    () => monthsToAgeGroupId(childAgeMonths),
+    [childAgeMonths],
+  );
+
+  const ageGroupId = ageGroupOverride ?? syncedAgeGroupId;
+  const activeAgeGroup = useMemo(
+    () => AGE_GROUPS.find((a) => a.id === ageGroupId) ?? AGE_GROUPS[2],
+    [ageGroupId],
+  );
+
+  const openNutrientDetail = useCallback((nutrient: Nutrient) => {
+    setSelectedNutrient(nutrient);
+    setNutrientDialogOpen(true);
+  }, []);
+
+  const value = useMemo<NutritionContextValue>(
+    () => ({
+      childId,
+      activeTab,
+      setActiveTab,
+      activeChild: { ageMonths: childAgeMonths, name: childName },
+      ageGroupId,
+      ageGroupOverride,
+      setAgeGroupOverride,
+      activeAgeGroup,
+      selectedDay,
+      setSelectedDay,
+      planSource,
+      setPlanSource,
+      suggestedMeal,
+      setSuggestedMeal,
+      foodStyle,
+      regionConfig,
+      getRegional,
+      localizeNote,
+      selectedNutrient,
+      setSelectedNutrient,
+      nutrientDialogOpen,
+      setNutrientDialogOpen,
+      openNutrientDetail,
+    }),
+    [
+      childId,
+      activeTab,
+      childAgeMonths,
+      childName,
+      ageGroupId,
+      ageGroupOverride,
+      activeAgeGroup,
+      selectedDay,
+      planSource,
+      suggestedMeal,
+      foodStyle,
+      regionConfig,
+      getRegional,
+      localizeNote,
+      selectedNutrient,
+      nutrientDialogOpen,
+      openNutrientDetail,
+    ],
+  );
+
+  return <NutritionContext.Provider value={value}>{children}</NutritionContext.Provider>;
+}
+
+export function useNutritionContext(): NutritionContextValue {
+  const ctx = useContext(NutritionContext);
+  if (!ctx) {
+    throw new Error("useNutritionContext must be used within NutritionProvider");
+  }
+  return ctx;
+}

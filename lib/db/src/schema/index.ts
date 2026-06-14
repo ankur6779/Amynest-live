@@ -89,6 +89,8 @@ export * from "./infant_notification_prefs";
 export * from "./infant_product_analytics_events";
 export * from "./parent_task_completions";
 export * from "./daily_puzzle_progress";
+export * from "./nutrition_daily_log";
+export * from "./nutrition_meal_memory";
 export * from "./life_skills_progress";
 export * from "./ptm_prep_data";
 export * from "./feature_notification_schedules";

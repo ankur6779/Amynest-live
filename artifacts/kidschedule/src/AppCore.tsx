@@ -113,6 +113,7 @@ const AmyCoachPage = lazyPage(() => import("@/pages/ai-coach"));
 const AmyCoachProgressPage = lazyPage(() => import("@/pages/ai-coach-progress"));
 const RecipesPage = lazyPage(() => import("@/pages/recipes"));
 const NutritionHubPage = lazyPage(() => import("@/pages/nutrition"));
+const NutritionSharePage = lazyPage(() => import("@/pages/nutrition-share"));
 const AudioLessonsPage = lazyPage(() => import("@/pages/audio-lessons"));
 const RhymesPage = lazyPage(() => import("@/pages/rhymes"));
 const GamesPage = lazyPage(() => import("@/pages/games"));
@@ -776,6 +777,7 @@ function AppRoutes() {
           <Route path="/amy-coach" component={AmyCoachRoute} />
           <Route path="/amy-coach/progress" component={AmyCoachProgressRoute} />
           <Route path="/recipes" component={RecipesRoute} />
+          <Route path="/nutrition/share/:token" component={NutritionSharePage} />
           <Route path="/nutrition" component={NutritionHubRoute} />
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
           <Route path="/rhymes" component={RhymesRoute} />
