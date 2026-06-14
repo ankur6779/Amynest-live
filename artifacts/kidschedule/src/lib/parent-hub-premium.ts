@@ -79,7 +79,7 @@ function makeTheme(
 }
 
 /** Section 1 category groups. */
-export type HubGroupKey = "today" | "learning" | "creativity" | "stories" | "health" | "support";
+export type HubGroupKey = "today" | "parent" | "learning" | "creativity" | "stories" | "health" | "support";
 
 export const HUB_GROUP_ACCENTS: Record<HubGroupKey, HubAccentTheme> = {
   today: makeTheme(
@@ -91,6 +91,16 @@ export const HUB_GROUP_ACCENTS: Record<HubGroupKey, HubAccentTheme> = {
     255,
     184,
     0,
+  ),
+  parent: makeTheme(
+    "border-[1.5px] border-[rgba(168,85,247,0.55)]",
+    "bg-gradient-to-b from-violet-400 via-purple-500 to-fuchsia-600",
+    "shadow-[0_0_14px_rgba(168,85,247,0.50)]",
+    "border-[rgba(168,85,247,0.45)]",
+    "shadow-[0_0_16px_rgba(168,85,247,0.38)]",
+    168,
+    85,
+    247,
   ),
   learning: makeTheme(
     "border-[1.5px] border-[rgba(122,92,255,0.55)]",
@@ -422,7 +432,7 @@ export const ROUTINES_HUB_ACCENT = HUB_GROUP_ACCENTS.today;
 export const HUB_PAGE_CHIP_ACTIVE = NUTRITION_HUB_CHIP_ACTIVE;
 export const HUB_PAGE_CHIP_INACTIVE = NUTRITION_HUB_CHIP_INACTIVE;
 
-/** Gaming Reward — learning violet accent on Parent Hub glass surfaces. */
+/** Gaming Hub — learning violet accent on Parent Hub glass surfaces. */
 export const GAMING_HUB_ACCENT = HUB_GROUP_ACCENTS.learning;
 
 const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {

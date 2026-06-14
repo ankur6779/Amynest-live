@@ -1,4 +1,4 @@
-// Gaming Reward — unlock + daily-limit + skill-tracking, layered on lib/rewards.ts.
+// Gaming Hub — unlock + daily-limit + skill-tracking, layered on lib/rewards.ts.
 import { getTotalPoints } from "./rewards";
 import { canUnlockGameWithStreak, getCachedRoutineStreak, STREAK_UNLOCK_DAYS } from "./routine-streak-cache";
 

@@ -91,6 +91,9 @@ npx cap open ios
 ```
 
 #### Inside Xcode:
+
+> **Important:** Open `ios/App/App.xcworkspace`, not `App.xcodeproj`. The `.xcodeproj` alone cannot see CocoaPods modules and will fail with `No such module 'FBSDKCoreKit'` / `Capacitor` / `FirebaseCore`. Use `npm run open:ios` from `artifacts/amynest-capacitor/`.
+
 1. Select the **App** target → **General** tab
    - Bundle Identifier: `com.amynest.app`
    - Version: `1.0.0`

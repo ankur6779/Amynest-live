@@ -7,12 +7,14 @@ export const HubRenderContext = createContext<{
   isInfant: boolean;
   /** Health Lab preview on the main hub for children under 23 months. */
   healthLabPreview?: boolean;
+  /** Gaming Hub preview on the main hub for children under 23 months. */
+  gamingHubPreview?: boolean;
 }>({ surface: "main", isInfant: false });
 
 /** Infant parent browsing Section 2 ("Explore What's Next") — preview-only UX. */
 export function useInfantDiscoveryPreview(): boolean {
-  const { surface, isInfant, healthLabPreview } = useContext(HubRenderContext);
-  return (isInfant && surface === "early") || !!healthLabPreview;
+  const { surface, isInfant, healthLabPreview, gamingHubPreview } = useContext(HubRenderContext);
+  return (isInfant && surface === "early") || !!healthLabPreview || !!gamingHubPreview;
 }
 
 /**

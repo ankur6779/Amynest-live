@@ -164,7 +164,7 @@
     "amy_ai": "Amy AI",
     "amy_learning_tutor": "Learn with Amy",
     "amy_quick_tutor": "Quick Tutor",
-    "games": "Gaming Reward",
+    "games": "Gaming Hub",
     "my_recipes": "My Recipes",
     "nutrition_hub": "Nutrition Hub",
     "profile": "My Profile",
@@ -1745,7 +1745,7 @@
     },
     "games": {
       "back": "Back",
-      "title": "Gaming Reward",
+      "title": "Gaming Hub",
       "dev_grant_title": "DEV only — grant 1000 test points",
       "dev_grant_label": "1000 pts",
       "dev_label": "(DEV)",
@@ -3175,7 +3175,7 @@
     },
     "tiles_activity": {
       "gaming_reward": {
-        "title": "Gaming Reward",
+        "title": "Gaming Hub",
         "desc": "10 educational mini-games · earn points"
       },
       "rewards_shop": {
@@ -3307,8 +3307,9 @@
         "description": "Age-based games, stories & skills"
       },
       "gaming-rewards": {
-        "title": "🎮 Gaming Reward",
-        "description": "15 educational mini-games · earn points & unlock rewards"
+        "title": "🎮 Gaming Hub",
+        "description": "15 educational mini-games · earn points & unlock rewards",
+        "preview_banner": "Gaming Hub unlocks at 23 months. You can preview how it works today."
       },
       "art-craft": {
         "title": "🎨 Art & Craft Videos",
@@ -3587,6 +3588,7 @@
     },
     "section_groups": {
       "today": "Today For You",
+      "parent": "Parent Hub",
       "learning": "Learning Zone",
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
@@ -3603,7 +3605,7 @@
       "phonics": "Phonics",
       "routine": "Routine",
       "activities": "Activities",
-      "gaming_reward": "Games",
+      "gaming_reward": "Gaming Hub",
       "worksheets": "Worksheets",
       "see_all": "See all"
     },
@@ -5395,7 +5397,7 @@
       "log_behavior": "Log behavior",
       "no_behavior_logged_yet": "No behavior logged yet.",
       "track_a_behavior": "Track a behavior",
-      "gaming_reward": "Gaming Reward",
+      "gaming_reward": "Gaming Hub",
       "earn_points_from_routines_unlock_mini_games_and_redeem_real_": "Earn points from routines, unlock mini-games, and redeem real rewards.",
       "generate_today_s_routine": "Generate Today's Routine"
     },

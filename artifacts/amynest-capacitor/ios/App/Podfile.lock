@@ -138,6 +138,8 @@ DEPENDENCIES:
   - "CapacitorStatusBar (from `../../../../node_modules/.pnpm/@capacitor+status-bar@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/status-bar`)"
   - "CapgoCapacitorUpdater (from `../../../../node_modules/.pnpm/@capgo+capacitor-updater@6.45.10_@capacitor+core@6.2.1/node_modules/@capgo/capacitor-updater`)"
   - "CodetrixStudioCapacitorGoogleAuth (from `../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth`)"
+  - FBSDKCoreKit (= 17.4.0)
+  - FBSDKLoginKit (= 17.4.0)
   - Firebase/CoreOnly
   - Firebase/Messaging
   - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
@@ -239,6 +241,6 @@ SPEC CHECKSUMS:
   Version: de5907f2c5d0f3cf21708db7801d1d5401139486
   ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
 
-PODFILE CHECKSUM: e07ab0ac514e66266d54dffc1fc16510a4e0e354
+PODFILE CHECKSUM: fde37c357408c34fa56bc24e6490eaa104a6e355
 
 COCOAPODS: 1.16.2

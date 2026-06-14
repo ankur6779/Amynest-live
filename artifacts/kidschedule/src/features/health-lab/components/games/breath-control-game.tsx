@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Fingerprint } from "lucide-react";
 import { BREATH_MILESTONES } from "../../constants";
 import { computeBreathScore } from "../../scoring";
 import { validateBreathSession, applyCheatMultiplier } from "../../anti-cheat";
@@ -24,6 +25,8 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
   const touchMovesRef = useRef<number[]>([]);
   const pointerCountRef = useRef(0);
   const lastMilestoneRef = useRef(0);
+  const holdButtonRef = useRef<HTMLButtonElement>(null);
+  const activePointerRef = useRef<number | null>(null);
   const { playTap, playSuccess } = useHealthLabAudio();
   const reduced = useReducedMotion();
 
@@ -48,12 +51,38 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
 
   const milestone = [...BREATH_MILESTONES].reverse().find((m) => elapsed >= m.seconds);
   const bgProgress = Math.min(1, elapsed / 60);
+  const inflate = Math.min(elapsed / 60, 1);
+  const balloonW = 56 + inflate * 52;
+  const balloonH = 72 + inflate * 68;
+  const rise = reduced ? 0 : inflate * 40;
 
-  const handleEnd = useCallback(() => {
-    if (finished) return;
+  const releasePointer = useCallback((pointerId?: number) => {
+    const btn = holdButtonRef.current;
+    const id = pointerId ?? activePointerRef.current;
+    if (btn && id != null) {
+      try {
+        if (btn.hasPointerCapture(id)) btn.releasePointerCapture(id);
+      } catch {
+        /* pointer may already be released */
+      }
+    }
+    activePointerRef.current = null;
+  }, []);
+
+  const handleEnd = useCallback((pointerId?: number) => {
+    if (finished || !holding) return;
+    const durationMs = startRef.current ? Date.now() - startRef.current : 0;
+    if (durationMs < 200) {
+      releasePointer(pointerId);
+      setHolding(false);
+      startRef.current = null;
+      setElapsed(0);
+      setLiveMsg("Place your finger on the glowing circle and hold steady");
+      return;
+    }
+    releasePointer(pointerId);
     setHolding(false);
     setFinished(true);
-    const durationMs = startRef.current ? Date.now() - startRef.current : 0;
     const holdSeconds = durationMs / 1000;
     const moves = touchMovesRef.current;
     const totalMovement = moves.reduce((a, b) => a + b, 0);
@@ -76,7 +105,7 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
       eligibleForBadges: verdict.eligibleForBadges,
       eligibleForXp: verdict.eligibleForXp,
     });
-  }, [finished, onComplete, playSuccess]);
+  }, [finished, holding, onComplete, playSuccess, releasePointer]);
 
   return (
     <div
@@ -162,18 +191,71 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
       )}
 
       <motion.div
-        className="relative mb-6 flex items-end justify-center"
-        animate={reduced ? {} : { y: -Math.min(elapsed / 60, 1) * 40 }}
+        className="relative mb-6 flex flex-col items-center"
+        animate={reduced ? {} : { y: -rise }}
+        transition={{ type: "spring", stiffness: 120, damping: 18 }}
       >
         <motion.div
-          className="rounded-full bg-gradient-to-br from-rose-300 to-rose-500 shadow-lg"
-          animate={reduced ? {} : { scale: 1 + Math.min(elapsed / 60, 1) * 0.4 }}
-          style={{
-            width: 60 + Math.min(elapsed / 60, 1) * 80,
-            height: 70 + Math.min(elapsed / 60, 1) * 100,
-          }}
-        />
-        <div className="ml-1 h-16 w-1 rounded bg-white/40" />
+          className="relative"
+          style={{ width: balloonW, height: balloonH }}
+          animate={
+            reduced
+              ? {}
+              : {
+                  scale: 1 + inflate * 0.15,
+                  rotate: holding ? [-1.5, 1.5, -1.5] : 0,
+                }
+          }
+          transition={
+            holding && !reduced
+              ? { rotate: { duration: 2.8, repeat: Infinity, ease: "easeInOut" }, scale: { duration: 0.4 } }
+              : { duration: 0.4 }
+          }
+        >
+          {/* Balloon body */}
+          <div
+            className="absolute inset-0 shadow-[0_8px_24px_rgba(244,63,94,0.45)]"
+            style={{
+              borderRadius: "50% 50% 50% 50% / 58% 58% 42% 42%",
+              background:
+                "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 18%, transparent 42%), radial-gradient(circle at 70% 75%, rgba(190,24,93,0.35) 0%, transparent 55%), linear-gradient(155deg, #fda4af 0%, #fb7185 38%, #f43f5e 72%, #e11d48 100%)",
+            }}
+          />
+          {/* Surface shine */}
+          <div
+            className="pointer-events-none absolute left-[18%] top-[14%] rounded-full bg-white/45 blur-[0.5px]"
+            style={{ width: balloonW * 0.22, height: balloonH * 0.28 }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute left-[30%] top-[22%] rounded-full bg-white/25"
+            style={{ width: balloonW * 0.1, height: balloonH * 0.12 }}
+            aria-hidden
+          />
+          {/* Knot */}
+          <div
+            className="absolute bottom-0 left-1/2 h-3 w-3 -translate-x-1/2 translate-y-[38%] rotate-45 rounded-sm bg-rose-700 shadow-sm"
+            style={{ borderRadius: "2px 2px 6px 2px" }}
+            aria-hidden
+          />
+        </motion.div>
+
+        {/* String hangs below the balloon */}
+        <svg
+          width={Math.max(24, balloonW * 0.35)}
+          height={48 + inflate * 12}
+          viewBox="0 0 40 60"
+          className="-mt-1 text-rose-200/80"
+          aria-hidden
+        >
+          <path
+            d="M20 0 C22 12, 18 22, 20 32 C22 42, 16 50, 20 58"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
       </motion.div>
 
       <p className="mb-4 font-mono text-3xl font-bold text-white" aria-label={`${elapsed.toFixed(1)} seconds`}>
@@ -181,38 +263,59 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
       </p>
 
       <button
+        ref={holdButtonRef}
         type="button"
+        disabled={finished}
         className={cn(
-          "h-32 w-32 rounded-full touch-manipulation select-none",
+          "relative flex h-32 w-32 items-center justify-center rounded-full touch-none select-none",
           "bg-gradient-to-br from-cyan-400 to-violet-600 health-lab-glow-pulse",
           "shadow-[0_0_40px_rgba(139,92,246,0.7)]",
           holding && "scale-95 shadow-[0_0_60px_rgba(34,211,238,0.9)]",
         )}
         onPointerDown={(e) => {
-          if (e.isPrimary === false) return;
-          e.preventDefault();
+          if (finished || !e.isPrimary) return;
           playTap();
           pointerCountRef.current = 1;
+          activePointerRef.current = e.pointerId;
           startRef.current = Date.now();
           touchMovesRef.current = [0.01];
           setHolding(true);
           setElapsed(0);
           lastMilestoneRef.current = 0;
           setLiveMsg("Holding steady — balloon rising");
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            /* older WebViews may not support capture */
+          }
         }}
         onPointerMove={(e) => {
-          if (!holding) return;
+          if (!holding || activePointerRef.current !== e.pointerId) return;
           const delta = Math.abs(e.movementX) + Math.abs(e.movementY);
           touchMovesRef.current.push(Math.max(0.01, delta));
         }}
-        onPointerUp={handleEnd}
-        onPointerLeave={() => holding && handleEnd()}
-        onPointerCancel={handleEnd}
+        onPointerUp={(e) => {
+          if (activePointerRef.current !== e.pointerId) return;
+          handleEnd(e.pointerId);
+        }}
+        onPointerCancel={(e) => {
+          if (activePointerRef.current !== e.pointerId) return;
+          handleEnd(e.pointerId);
+        }}
         aria-label="Hold to inflate balloon"
-      />
+      >
+        <Fingerprint
+          className={cn(
+            "h-14 w-14 text-white/90 drop-shadow-md",
+            holding ? "opacity-100" : "opacity-80",
+          )}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      </button>
 
       <p className="mt-6 max-w-xs text-center text-xs text-white/60">
-        Keep gentle micro-movements — taped fingers won't count!
+        Place your finger on the circle and hold — gentle micro-movements only!
       </p>
     </div>
   );

@@ -9,7 +9,7 @@ import { LockedBlock } from "@/components/locked-block";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
-import { isExploreNextStageHubFeature, isHealthLabPreviewAge } from "@/lib/hub-visibility";
+import { isExploreNextStageHubFeature, isHealthLabPreviewAge, isGamingHubPreviewAge } from "@/lib/hub-visibility";
 import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import { cn } from "@/lib/utils";
 
@@ -130,13 +130,18 @@ export function HubModulePageShell({
   const headerSubtitle = subtitle?.(activeChild, totalAgeMonths) ?? activeChild.name;
   const healthLabPreview =
     featureId === "hub_health_lab" && isHealthLabPreviewAge(totalAgeMonths);
+  const gamingHubPreview =
+    featureId === "hub_gaming_rewards" && isGamingHubPreviewAge(totalAgeMonths);
   const infantExplorePreview =
     healthLabPreview ||
+    gamingHubPreview ||
     (totalAgeMonths < 24 && isExploreNextStageHubFeature(featureId));
   const previewBannerKey =
     featureId === "hub_health_lab"
       ? "parent_hub.web_tiles.health-lab.preview_banner"
-      : "parent_hub.explore_next.preview_banner";
+      : featureId === "hub_gaming_rewards"
+        ? "parent_hub.web_tiles.gaming-rewards.preview_banner"
+        : "parent_hub.explore_next.preview_banner";
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">

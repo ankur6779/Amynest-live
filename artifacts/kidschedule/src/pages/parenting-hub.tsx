@@ -66,6 +66,7 @@ import {
   getPreviousStageTileIds,
   SECTION_2_EARLY_ACCESS_TILE_IDS,
   isHealthLabPreviewAge,
+  isGamingHubPreviewAge,
   isHealthZoneFeature,
   isHealthZoneJourneyEligible,
 } from "@/lib/hub-visibility";
@@ -139,12 +140,13 @@ import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
 
-// ── 6-section grouping for the "For You" content ────────────────────────────
+// ── 7-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
+  parent:     ["gaming-rewards"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
-  creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
+  creativity: ["activities", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
   stories:    ["story-hub", "talking-amy", "speech-coach", "discovery-worlds"],
   health:     ["nutrition", "health-lab"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
@@ -164,6 +166,7 @@ const HUB_SECTION_REWARD_POINTS = 5;
 
 const WEB_HUB_GROUPS = [
   { key: "today",      emoji: "✨", i18n: "parent_hub.section_groups.today"      },
+  { key: "parent",     emoji: "🏠", i18n: "parent_hub.section_groups.parent"     },
   { key: "learning",   emoji: "📚", i18n: "parent_hub.section_groups.learning"   },
   { key: "creativity", emoji: "🎨", i18n: "parent_hub.section_groups.creativity" },
   { key: "stories",    emoji: "📖", i18n: "parent_hub.section_groups.stories"    },
@@ -361,7 +364,7 @@ const HUB_QUICK_ACTIONS = [
   { id: "phonics",    group: "learning",   tileId: "phonics",         emoji: "🔤", i18n: "parent_hub.quick_actions.phonics" },
   { id: "routine",    group: "today",      tileId: "generate-routine", emoji: "📅", i18n: "parent_hub.quick_actions.routine" },
   { id: "activities", group: "creativity", tileId: "activities",      emoji: "🎨", i18n: "parent_hub.quick_actions.activities" },
-  { id: "gaming",     group: "creativity", tileId: "gaming-rewards", emoji: "🎮", i18n: "parent_hub.quick_actions.gaming_reward" },
+  { id: "gaming",     group: "parent",     tileId: "gaming-rewards", emoji: "🎮", i18n: "parent_hub.quick_actions.gaming_reward" },
   { id: "worksheets", group: "creativity", tileId: "worksheets",      emoji: "📄", i18n: "parent_hub.quick_actions.worksheets" },
 ] as const;
 
@@ -1422,8 +1425,8 @@ function ParentingHubPage() {
     id: "gaming-rewards",
     alwaysCurrent: true,
     render: () => {
-      if (!ageGroup && !isTwoPlus) return null;
-      return (
+      const gamingHubPreview = isGamingHubPreviewAge(totalAgeMonths);
+      const card = (
         <FeatureGate reason="hub_locked" locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubLaunchCard
             href="/games"
@@ -1438,6 +1441,18 @@ function ParentingHubPage() {
             onNavigate={() => markHubUsed("hub_gaming_rewards")}
           />
         </FeatureGate>
+      );
+
+      if (!gamingHubPreview) return card;
+
+      return (
+        <HubRenderContext.Provider
+          value={{ surface: hubSurface.current, isInfant, gamingHubPreview: true }}
+        >
+          <ComingNextWrapper band="2-4">
+            {card}
+          </ComingNextWrapper>
+        </HubRenderContext.Provider>
       );
     }
   },

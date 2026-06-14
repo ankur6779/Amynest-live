@@ -11,6 +11,8 @@ import {
   isHealthLabPreviewAge,
   isHealthLabEligibleAge,
   HEALTH_LAB_MIN_AGE_MONTHS,
+  isGamingHubPreviewAge,
+  GAMING_HUB_MIN_AGE_MONTHS,
   isHealthZoneFeature,
   isHealthZoneJourneyEligible,
   shouldApplyHealthZoneJourneyLock,
@@ -94,6 +96,15 @@ describe("health lab age gates", () => {
     expect(isHealthLabEligibleAge(155)).toBe(true);
     expect(isHealthLabEligibleAge(156)).toBe(false);
     expect(HEALTH_LAB_MIN_AGE_MONTHS).toBe(23);
+  });
+});
+
+describe("gaming hub age gates", () => {
+  it("treats under 23 months as preview", () => {
+    expect(isGamingHubPreviewAge(22)).toBe(true);
+    expect(isGamingHubPreviewAge(0)).toBe(true);
+    expect(isGamingHubPreviewAge(23)).toBe(false);
+    expect(GAMING_HUB_MIN_AGE_MONTHS).toBe(23);
   });
 });
 

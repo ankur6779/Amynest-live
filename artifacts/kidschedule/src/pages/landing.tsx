@@ -123,7 +123,7 @@ const PLATFORM_CATEGORIES = [
       "Daily Brain Puzzles",
       "landing.new_coloring_title",
       "landing.new_funsheets_title",
-      "Gaming Reward Zone",
+      "Gaming Hub Zone",
     ],
   },
 ];

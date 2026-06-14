@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppNavigate } from "@/components/app-link";
+import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
   Trophy, X, Coins, Gift, Plus, Trash2, Check,
 } from "lucide-react";
@@ -50,6 +51,10 @@ import { ConfettiBurst } from "@/components/study-engagement";
 import { AnimatedPoints } from "@/components/games/AnimatedPoints";
 import { cn } from "@/lib/utils";
 import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
+import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
+import { isGamingHubPreviewAge } from "@/lib/hub-visibility";
+
+const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
 type ActiveGame =
   | { kind: "play"; game: GameDef }
@@ -69,6 +74,24 @@ export default function GamesPage() {
   const [active, setActive] = useState<ActiveGame>(null);
   const [showRedeem, setShowRedeem] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: childProfiles = [] } = useListChildren({
+    query: {
+      queryKey: getListChildrenQueryKey(),
+      refetchOnWindowFocus: false,
+    },
+  });
+
+  const previewAgeMonths = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
+    const child = (childProfiles as Array<{ id: number; age: number; ageMonths?: number | null }>)
+      .find((c) => c.id === saved) ?? (childProfiles[0] as { id: number; age: number; ageMonths?: number | null } | undefined);
+    if (!child) return null;
+    return child.age * 12 + (child.ageMonths ?? 0);
+  }, [childProfiles]);
+
+  const showGamingPreview = previewAgeMonths != null && isGamingHubPreviewAge(previewAgeMonths);
 
   useEffect(() => {
     ensureStarterUnlocks();
@@ -224,6 +247,11 @@ export default function GamesPage() {
       />
 
       <div className="hub-today-stack">
+        {showGamingPreview ? (
+          <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-4">
+            <InfantExplorePreviewBanner messageKey="parent_hub.web_tiles.gaming-rewards.preview_banner" />
+          </div>
+        ) : null}
         <div className="hub-page-enter mx-auto max-w-[720px] space-y-3 px-4 pb-1 pt-4">
           <GamesStatusCard
             playedToday={playedToday}

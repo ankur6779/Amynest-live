@@ -13,8 +13,15 @@ export type HubSectionVisibilityInput = {
 export const HEALTH_LAB_MIN_AGE_MONTHS = 23;
 export const HEALTH_LAB_MAX_AGE_MONTHS = 156;
 
+/** Gaming Hub — full access from 23 months; preview below. */
+export const GAMING_HUB_MIN_AGE_MONTHS = 23;
+
 export function isHealthLabPreviewAge(childAgeMonths: number): boolean {
   return childAgeMonths < HEALTH_LAB_MIN_AGE_MONTHS;
+}
+
+export function isGamingHubPreviewAge(childAgeMonths: number): boolean {
+  return childAgeMonths < GAMING_HUB_MIN_AGE_MONTHS;
 }
 
 export function isHealthLabEligibleAge(childAgeMonths: number): boolean {
@@ -125,6 +132,7 @@ export const EXPLORE_NEXT_STAGE_HUB_FEATURES = [
   "hub_smart_math_tricks",
   "hub_abacus",
   "hub_health_lab",
+  "hub_gaming_rewards",
   "hub_smart_study",
   "hub_ptm_prep",
   "hub_phonics",
