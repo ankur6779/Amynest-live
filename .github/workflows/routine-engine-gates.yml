@@ -50,11 +50,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Freeze enforcement applies to PRs only — merged main pushes run certification, not thaw checks.
       - name: Enforce routine engine freeze
-        if: steps.frozen.outputs.frozen == 'true'
+        if: github.event_name == 'pull_request' && steps.frozen.outputs.frozen == 'true'
         env:
           ROUTINE_ENGINE_CHANGE: ${{ env.ROUTINE_ENGINE_CHANGE == 'true' && 'true' || vars.ROUTINE_ENGINE_CHANGE || '' }}
-        run: bash scripts/check-routine-engine-freeze.sh "origin/${{ github.base_ref }}"
+        run: bash scripts/check-routine-engine-freeze.sh "origin/${{ github.event.pull_request.base.ref || 'main' }}"
 
       - name: Routine engine certification suite
         if: steps.frozen.outputs.frozen == 'true' || github.event_name == 'workflow_dispatch'
