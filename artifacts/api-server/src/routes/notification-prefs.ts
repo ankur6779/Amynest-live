@@ -62,6 +62,7 @@ router.get("/notifications/categories", async (req, res): Promise<void> => {
     countryCode: prefs.countryCode,
     preferredEngagementHour: prefs.preferredEngagementHour,
     smartDeliveryEnabled: prefs.smartDeliveryEnabled,
+    pushSoundsEnabled: prefs.pushSoundsEnabled,
     pushConsentAt: prefs.pushConsentAt?.toISOString() ?? null,
   });
 });
@@ -108,6 +109,7 @@ const PatchSchema = z.object({
   locale: z.string().min(2).max(16).optional(),
   countryCode: z.string().length(2).optional(),
   smartDeliveryEnabled: z.boolean().optional(),
+  pushSoundsEnabled: z.boolean().optional(),
   marketingOptIn: z.boolean().optional(),
 });
 
@@ -162,6 +164,7 @@ router.patch("/notifications/categories", async (req, res): Promise<void> => {
     countryCode: updated.countryCode,
     preferredEngagementHour: updated.preferredEngagementHour,
     smartDeliveryEnabled: updated.smartDeliveryEnabled,
+    pushSoundsEnabled: updated.pushSoundsEnabled,
     pushConsentAt: updated.pushConsentAt?.toISOString() ?? null,
   });
 });

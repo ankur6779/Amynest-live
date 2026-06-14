@@ -22,7 +22,9 @@ import {
   syncCapacitorPushRegistrationWithOs,
 } from "@/lib/native-push-bridge";
 import { getApiUrl } from "@/lib/api";
+import { extractApiErrorMessage } from "@/lib/api-error-message";
 import { useUiSoundsSetting } from "@/hooks/use-ui-sounds-setting";
+import { playUiSound } from "@/lib/ui-sounds";
 import { Volume2, VolumeX } from "lucide-react";
 type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
 
@@ -45,6 +47,7 @@ type Prefs = {
   dailyCap: number;
   notificationIntensity: NotificationIntensity;
   engagementScore: number;
+  pushSoundsEnabled: boolean;
 };
 type TestCategory =
   | "routine" | "routine_item" | "nutrition" | "insights" | "weekly"
@@ -161,6 +164,18 @@ function initialWrapperState(): WrapperState {
   if (getNativePushBridge()) return "ready";
   if (isAmyNestWrapper()) return "detecting";
   return "browser";
+}
+
+function isNativePushShell(): boolean {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const p = Capacitor.getPlatform();
+      if (p === "ios" || p === "android") return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  return isCapacitorIOS() || isAmyNestWrapper();
 }
 
 function WebPushCard() {
@@ -413,7 +428,12 @@ export default function NotificationSettingsPage() {
   });
   const [local, setLocal] = useState<Prefs | null>(null);
   useEffect(() => {
-    if (data && !local) setLocal(data);
+    if (data && !local) {
+      setLocal({
+        ...data,
+        pushSoundsEnabled: data.pushSoundsEnabled ?? true,
+      });
+    }
   }, [data, local]);
 
   // Capacitor iOS: permission can be granted in Settings while the FCM token was never posted.
@@ -434,9 +454,19 @@ export default function NotificationSettingsPage() {
     mutationFn: async (next: Partial<Prefs>) => {
       const r = await authFetch("/api/notifications/categories", {
         method: "PATCH",
-        body: JSON.stringify(next)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
       });
-      if (!r.ok) throw new Error("Failed to save");
+      if (!r.ok) {
+        let detail = "Failed to save";
+        try {
+          const body = (await r.json()) as { error?: string; message?: string };
+          detail = extractApiErrorMessage({ data: body, status: r.status }, detail);
+        } catch {
+          /* ignore */
+        }
+        throw new Error(detail);
+      }
       return r.json() as Promise<Prefs>;
     },
     onSuccess: saved => {
@@ -653,7 +683,83 @@ export default function NotificationSettingsPage() {
           })}
         </div>
 
-        {isAmyNestWrapper() && (
+        <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
+          Sounds
+        </h2>
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-3">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                {local.pushSoundsEnabled ? (
+                  <Volume2 className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                ) : (
+                  <VolumeX className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Push notification sounds
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    AmyNest&apos;s custom chimes when a reminder arrives on your phone.
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={local.pushSoundsEnabled}
+                onCheckedChange={(on) => toggle("pushSoundsEnabled", on)}
+                aria-label="Push notification sounds"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!local.pushSoundsEnabled}
+              onClick={() => void playUiSound("complete")}
+              className="border-border text-white hover:bg-white/10"
+            >
+              Preview notification sound
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-6">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                {uiSoundsMuted ? (
+                  <VolumeX className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                ) : (
+                  <Volume2 className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    In-app UI sounds
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    Tab taps and learning celebrations inside the app.
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={!uiSoundsMuted}
+                onCheckedChange={(on) => setUiSoundsMuted(!on)}
+                aria-label="In-app UI sounds"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uiSoundsMuted}
+              onClick={previewSound}
+              className="border-border text-white hover:bg-white/10"
+            >
+              Preview celebration sound
+            </Button>
+          </CardContent>
+        </Card>
+
+        {isNativePushShell() && (
           <>
             <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
               {t("pages.notification_settings.this_browser")}
@@ -804,46 +910,6 @@ export default function NotificationSettingsPage() {
             <div className="text-muted-foreground text-sm mt-1">
               {t("pages.notification_settings.timezone")} {local.timezone}{t("pages.notification_settings.we_never_send_notifications_during_this_window")}
             </div>
-          </CardContent>
-        </Card>
-
-        <h2 className="text-xs uppercase tracking-widest text-primary mt-8 mb-3">
-          In-app sounds
-        </h2>
-        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-6">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0">
-                {uiSoundsMuted ? (
-                  <VolumeX className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-                ) : (
-                  <Volume2 className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <div className="text-sm font-semibold text-white">
-                    UI sounds in the app
-                  </div>
-                  <div className="text-xs text-muted-foreground leading-relaxed">
-                    Tab taps and learning celebrations. Push notification sounds are separate.
-                  </div>
-                </div>
-              </div>
-              <Switch
-                checked={!uiSoundsMuted}
-                onCheckedChange={(on) => setUiSoundsMuted(!on)}
-                aria-label="In-app UI sounds"
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={uiSoundsMuted}
-              onClick={previewSound}
-              className="border-border text-white hover:bg-white/10"
-            >
-              Preview celebration sound
-            </Button>
           </CardContent>
         </Card>
 

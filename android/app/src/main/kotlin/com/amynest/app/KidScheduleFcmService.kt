@@ -102,11 +102,9 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val soundUri = Uri.parse(
-            "android.resource://$packageName/${category.soundResId()}",
-        )
+        val soundEnabled = remoteMessage.data["soundEnabled"] != "false"
 
-        val notification = NotificationCompat.Builder(this, category.channelId)
+        val builder = NotificationCompat.Builder(this, category.channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(getColor(R.color.notification_accent))
             .setContentTitle(title)
@@ -115,8 +113,17 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setPriority(category.priority)
-            .setSound(soundUri)
-            .build()
+
+        if (soundEnabled) {
+            val soundUri = Uri.parse(
+                "android.resource://$packageName/${category.soundResId()}",
+            )
+            builder.setSound(soundUri)
+        } else {
+            builder.setSilent(true)
+        }
+
+        val notification = builder.build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(notificationId, notification)

@@ -93,6 +93,8 @@ export const notificationPreferencesTable = pgTable("notification_preferences", 
   /** Learned preferred open hour 0–23 for smart delivery windows. */
   preferredEngagementHour: integer("preferred_engagement_hour"),
   smartDeliveryEnabled: boolean("smart_delivery_enabled").notNull().default(true),
+  /** When false, push payloads omit custom sounds (silent alert on device). */
+  pushSoundsEnabled: boolean("push_sounds_enabled").notNull().default(true),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

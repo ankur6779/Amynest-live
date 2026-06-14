@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.7",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.7.zip",
-  "checksum": "1e7e4d1b955125f7a24dcaee47b12c96c90d2feaca5d615e590adf1ee9f9e6cd",
+  "bundleVersion": "1.0.8",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.8.zip",
+  "checksum": "86e223f37045197cd390a61a31b93bf8e7842e11bc09adef756083a7b95ab0f1",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Learn with Amy MCQ + voice answers, Progress/Insights/Behavior fixes, age-wise question bank.",
+  "releaseNotes": "Fix notification settings save on iOS/Android, add push notification sounds toggle.",
   "changeClasses": [
     "bugfix",
     "ui-copy"

@@ -431,6 +431,7 @@ async function sendFcmAndroidPush(
   token: string,
   input: DispatchInput,
   fingerprint: string,
+  pushSoundsEnabled: boolean,
 ): Promise<void> {
   const notificationId = stableNotificationId(fingerprint);
   // Data-only so KidScheduleFcmService always builds the tray notification with
@@ -446,6 +447,7 @@ async function sendFcmAndroidPush(
       url: input.deepLink ?? "",
       fingerprint,
       notificationId: String(notificationId),
+      soundEnabled: pushSoundsEnabled ? "true" : "false",
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
@@ -471,6 +473,7 @@ function formatFcmError(err: unknown): string {
 async function sendFcmIosPush(
   token: string,
   input: DispatchInput,
+  pushSoundsEnabled: boolean,
 ): Promise<void> {
   // iOS: alert payload via APNs only (top-level `notification` can break delivery on some builds).
   await getMessaging(adminApp()).send({
@@ -486,7 +489,9 @@ async function sendFcmIosPush(
             title: input.title,
             body: input.body,
           },
-          sound: iosNotificationSound(input.category),
+          ...(pushSoundsEnabled
+            ? { sound: iosNotificationSound(input.category) }
+            : {}),
         },
       },
     },
@@ -719,7 +724,12 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     const results = await Promise.allSettled(
       androidFcmTokens.map(async (t) => {
         try {
-          await sendFcmAndroidPush(t.token, input, input.dedupKey ?? input.title);
+          await sendFcmAndroidPush(
+            t.token,
+            input,
+            input.dedupKey ?? input.title,
+            prefs.pushSoundsEnabled,
+          );
           return true;
         } catch (err) {
           if (isFcmInvalidTokenError(err)) {
@@ -745,7 +755,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     const results = await Promise.allSettled(
       iosFcmTokens.map(async (t) => {
         try {
-          await sendFcmIosPush(t.token, input);
+          await sendFcmIosPush(t.token, input, prefs.pushSoundsEnabled);
           return true;
         } catch (err) {
           lastIosFcmError = formatFcmError(err);
