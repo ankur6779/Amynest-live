@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.9",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.9.zip",
-  "checksum": "d74abfdea963e2f0d19411019f959429ab9826ac1d9240bf955646b6e36da48a",
+  "bundleVersion": "1.0.10",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.10.zip",
+  "checksum": "2e1d085c4dac9aed658691d589f501d326bc14529aa87df1000065b01bfd0aaf",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Health Lab polish: unified rewards, simulation UX, performance optimizations, Gaming Hub cert, and coach personalization improvements.",
+  "releaseNotes": "Device limit management, Manage Devices screen, premium child cap (2 children), and registration reliability improvements.",
   "changeClasses": [
     "bugfix",
     "ui-copy"
