@@ -16,14 +16,21 @@ import {
   Moon,
   CalendarClock,
   Inbox,
-  Wifi,
 } from "lucide-react";
 import {
   ensureNativePushReady,
   getNativePushBridge,
-  getWrapperVersion,
   isAmyNestWrapper,
+  isCapacitorIOS,
 } from "@/lib/native-push-bridge";
+import {
+  friendlyDeliveryIssue,
+  friendlyDeliveryStatus,
+  friendlyDeviceLabel,
+  friendlyPlatformLabel,
+  notificationCategoryLabel,
+  permissionLabel,
+} from "@/lib/notification-display-labels";
 
 /**
  * Live snapshot of the native wrapper bridge state. Refreshed every 1s
@@ -31,8 +38,6 @@ import {
  */
 type WrapperDiag = {
   inWrapper: boolean;
-  uaHasMarker: boolean;
-  wrapperVersion: string | null;
   bridgePresent: boolean;
   permission: string;
   fcmEnabled: boolean;
@@ -40,13 +45,10 @@ type WrapperDiag = {
 };
 
 function readWrapperDiag(): WrapperDiag {
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const facade = getNativePushBridge();
   const token = facade?.getToken() ?? null;
   return {
-    inWrapper: isAmyNestWrapper(),
-    uaHasMarker: /AmyNestAndroid/.test(ua),
-    wrapperVersion: getWrapperVersion(),
+    inWrapper: isAmyNestWrapper() || isCapacitorIOS() || facade !== null,
     bridgePresent: facade !== null,
     permission: facade?.getPermissionStatus() ?? "n/a",
     fcmEnabled: facade?.getFcmEnabled() ?? false,
@@ -76,17 +78,33 @@ function WrapperDiagnosticsCard() {
     };
   }, []);
 
-  // Hide entirely when the page is not inside the wrapper AND the UA does
-  // not claim to be the wrapper — this card is purely a wrapper diagnostic.
-  if (!diag.inWrapper && !diag.uaHasMarker) return null;
+  if (!diag.inWrapper) return null;
 
-  const Row = ({ label, value, ok }: { label: string; value: string; ok?: boolean }) => (
-    <div className="flex items-center justify-between py-1.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="flex items-center gap-1.5 font-mono text-xs text-white">
-        {ok === true && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
-        {ok === false && <XCircle className="w-3.5 h-3.5 text-destructive" />}
-        {value}
+  const notificationsAllowed = diag.permission === "granted";
+  const connected = diag.bridgePresent && diag.tokenPrefix !== null;
+  const ready = notificationsAllowed && connected && diag.fcmEnabled;
+
+  const StatusRow = ({
+    label,
+    ok,
+    detail,
+  }: {
+    label: string;
+    ok: boolean;
+    detail: string;
+  }) => (
+    <div className="flex items-start justify-between gap-3 py-2 text-sm">
+      <div className="min-w-0">
+        <div className="text-white">{label}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">{detail}</div>
+      </div>
+      <span className="flex items-center gap-1.5 shrink-0 text-xs font-semibold text-white">
+        {ok ? (
+          <CheckCircle2 className="w-4 h-4 text-primary" />
+        ) : (
+          <XCircle className="w-4 h-4 text-destructive" />
+        )}
+        {ok ? "Yes" : "No"}
       </span>
     </div>
   );
@@ -95,18 +113,38 @@ function WrapperDiagnosticsCard() {
     <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">
       <CardHeader className="pb-2">
         <CardTitle className="text-base text-white flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-muted-foreground" />
-          App wrapper status
+          <Smartphone className="w-4 h-4 text-muted-foreground" />
+          This device
         </CardTitle>
       </CardHeader>
       <CardContent className="divide-y divide-border">
-        <Row label="Detected as AmyNest app" value={diag.inWrapper ? "yes" : "no"} ok={diag.inWrapper} />
-        <Row label="User-Agent marker" value={diag.uaHasMarker ? "AmyNestAndroid" : "missing"} ok={diag.uaHasMarker} />
-        <Row label="Document marker version" value={diag.wrapperVersion ?? "missing"} ok={diag.wrapperVersion !== null} />
-        <Row label="JS message bridge" value={diag.bridgePresent ? "live" : "not wired"} ok={diag.bridgePresent} />
-        <Row label="Notification permission" value={diag.permission} ok={diag.permission === "granted"} />
-        <Row label="FCM enabled" value={diag.fcmEnabled ? "yes" : "no"} ok={diag.fcmEnabled} />
-        <Row label="FCM token" value={diag.tokenPrefix ? `${diag.tokenPrefix}…` : "none"} ok={diag.tokenPrefix !== null} />
+        <StatusRow
+          label="Notifications allowed"
+          ok={notificationsAllowed}
+          detail={
+            notificationsAllowed
+              ? permissionLabel(diag.permission)
+              : "Open phone Settings → AmyNest → Notifications and turn them on."
+          }
+        />
+        <StatusRow
+          label="Connected to AmyNest"
+          ok={connected}
+          detail={
+            connected
+              ? "This phone is registered to receive alerts."
+              : "Stay on this screen for a few seconds, then tap Refresh."
+          }
+        />
+        <StatusRow
+          label="Ready to receive alerts"
+          ok={ready}
+          detail={
+            ready
+              ? "Everything looks good on this device."
+              : "Enable notifications above, then reopen the app if needed."
+          }
+        />
       </CardContent>
     </Card>
   );
@@ -170,16 +208,7 @@ function formatMinutesUntil(min: number): string {
 }
 
 function categoryLabel(cat: string): string {
-  switch (cat) {
-    case "routine": return "Routine reminders";
-    case "routine_item": return "Per-task reminder";
-    case "nutrition": return "Nutrition";
-    case "insights": return "Amy AI insights";
-    case "weekly": return "Weekly report";
-    case "engagement": return "Friendly nudge";
-    case "good_night": return "Good night";
-    default: return cat;
-  }
+  return notificationCategoryLabel(cat);
 }
 
 export default function NotificationDiagnosticsPage() {
@@ -257,8 +286,8 @@ export default function NotificationDiagnosticsPage() {
           </h1>
         </div>
         <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-          A quick health check of your devices, recent deliveries and quiet
-          hours. Most missed notifications fall into one of the buckets below.
+          See which devices are set up, whether quiet hours are blocking alerts,
+          and what AmyNest tried to send recently.
         </p>
 
         <div className="flex justify-end mb-4">
@@ -306,21 +335,20 @@ export default function NotificationDiagnosticsPage() {
               <ul className="divide-y divide-border">
                 {data.tokens.map((tok) => {
                   const Icon =
-                    tok.platform === "ios" || tok.platform === "android"
+                    tok.platform === "ios" ||
+                    tok.platform === "ios-capacitor" ||
+                    tok.platform === "android"
                       ? Smartphone
                       : Monitor;
+                  const label = friendlyDeviceLabel(tok.deviceName, tok.platform);
+                  const typeLabel = friendlyPlatformLabel(tok.platform);
                   return (
                     <li key={tok.id} className="py-3 flex items-start gap-3">
                       <Icon className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-white">
-                          {tok.deviceName ?? tok.platform}
-                          <span className="text-muted-foreground ml-2 text-xs uppercase">
-                            {tok.platform}
-                          </span>
-                        </div>
+                        <div className="text-sm text-white">{label}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          Last active {formatRelative(tok.lastSeenAt)} · added{" "}
+                          {typeLabel} · Last active {formatRelative(tok.lastSeenAt)} · added{" "}
                           {formatRelative(tok.createdAt)}
                         </div>
                       </div>
@@ -361,7 +389,7 @@ export default function NotificationDiagnosticsPage() {
               </div>
             )}
             <div className="text-muted-foreground">
-              Daily cap: up to {data.dailyCap} notifications per day.
+              Up to {data.dailyCap} notifications per day with your current intensity setting.
             </div>
           </CardContent>
         </Card>
@@ -416,9 +444,9 @@ export default function NotificationDiagnosticsPage() {
               <div className="flex items-start gap-3 text-sm text-muted-foreground">
                 <Inbox className="w-4 h-4 text-muted-foreground mt-0.5" />
                 <div>
-                  We haven't tried to send you anything recently. Use{" "}
-                  <span className="text-muted-foreground">Send test</span> on the {/* i18n-ok: refers to literal label of the Send-test button on the settings page */}
-                  settings page to confirm your device is wired up.
+                  We haven't sent anything recently. Tap{" "}
+                  <span className="text-muted-foreground">Send test</span> on the
+                  notification settings page to confirm this device is working.
                 </div>
               </div>
             ) : failures.length === 0 ? (
@@ -429,23 +457,26 @@ export default function NotificationDiagnosticsPage() {
               </div>
             ) : (
               <ul className="divide-y divide-border">
-                {failures.map((row) => (
-                  <li key={row.id} className="py-3 flex items-start gap-3">
-                    <XCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white truncate">
-                        {row.title || categoryLabel(row.category)}
+                {failures.map((row) => {
+                  const issue = friendlyDeliveryIssue(row.status, row.errorMessage);
+                  return (
+                    <li key={row.id} className="py-3 flex items-start gap-3">
+                      <XCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white truncate">
+                          {row.title || categoryLabel(row.category)}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {categoryLabel(row.category)} · {friendlyDeliveryStatus(row.status)}
+                          {issue ? ` · ${issue}` : ""}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {categoryLabel(row.category)} · {row.status}
-                        {row.errorMessage ? ` · ${row.errorMessage}` : ""}
+                      <div className="text-xs text-muted-foreground shrink-0">
+                        {formatRelative(row.sentAt)}
                       </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground shrink-0">
-                      {formatRelative(row.sentAt)}
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>

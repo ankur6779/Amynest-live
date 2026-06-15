@@ -53,7 +53,7 @@ export function usePushRegistration(): void {
 
     // Determine platform for the API call
     const platform = isCapacitorIOS() ? "ios-capacitor" : "android";
-    const deviceName = isCapacitorIOS() ? "AmyNest iOS" : "KidSchedule Android";
+    const deviceName = isCapacitorIOS() ? "AmyNest on iPhone" : "AmyNest on Android";
 
     const registerToken = async (token: string) => {
       if (isCapacitorIOS() && !isDeliverableIosPushToken(token)) return;

@@ -968,7 +968,7 @@ export async function registerNativePushToken(
       body: JSON.stringify({
         token,
         platform: facade.platform === "ios" ? "ios-capacitor" : "android",
-        deviceName: facade.platform === "ios" ? "AmyNest iOS" : "KidSchedule Android",
+        deviceName: facade.platform === "ios" ? "AmyNest on iPhone" : "AmyNest on Android",
       }),
     });
     return res.ok;

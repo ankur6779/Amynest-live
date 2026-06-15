@@ -5488,7 +5488,16 @@
       "smart_categories_desc": "Context-aware notifications powered by Amy AI — adapts to your child's age and routine.",
       "smart_badge": "SMART",
       "sending": "Sending…",
-      "send_test": "Send test"
+      "send_test": "Send test",
+      "diagnostics_title": "Why didn't I get my notification?",
+      "diagnostics_desc": "See your devices, quiet hours, and recent delivery status.",
+      "sounds_heading": "Sounds",
+      "push_sounds_title": "Push notification sounds",
+      "push_sounds_desc": "AmyNest's custom chimes when a reminder arrives on your phone.",
+      "ui_sounds_title": "In-app UI sounds",
+      "ui_sounds_desc": "Tab taps and learning celebrations inside the app.",
+      "preview_notification_sound": "Preview notification sound",
+      "preview_celebration_sound": "Preview celebration sound"
     },
     "parenting_hub": {
       "viewing": "Viewing",

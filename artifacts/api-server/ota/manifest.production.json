@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.14",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.14.zip",
-  "checksum": "08afbcd9878d755af7a8252fd8bc8d2d4b2b4c72e6c7f32cac06f2c07ec2dc36",
+  "bundleVersion": "1.0.15",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.15.zip",
+  "checksum": "8c526abadda6f05da25d589477def2bec2a5669e06d90a3808904879253ca7e5",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Nutrition Hub global country localization: SG profile, country-aware premium preview and caregiver share, school lunch terminology by country, Hindi UI no longer forces India content.",
+  "releaseNotes": "User-friendly notification settings: plain-language device labels, simplified troubleshooting, no technical platform jargon.",
   "changeClasses": [
     "bugfix",
     "ui-copy"

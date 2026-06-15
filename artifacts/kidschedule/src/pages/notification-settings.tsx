@@ -25,6 +25,11 @@ import { getApiUrl } from "@/lib/api";
 import { extractApiErrorMessage } from "@/lib/api-error-message";
 import { useUiSoundsSetting } from "@/hooks/use-ui-sounds-setting";
 import { playUiSound } from "@/lib/ui-sounds";
+import {
+  friendlyDeliveryIssue,
+  friendlyDeliveryStatus,
+  notificationCategoryLabel,
+} from "@/lib/notification-display-labels";
 import { Volume2, VolumeX } from "lucide-react";
 type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
 
@@ -141,7 +146,7 @@ function noRegisteredPushDeviceHint(): string {
     if (Capacitor.isNativePlatform()) {
       const p = Capacitor.getPlatform();
       if (p === "ios") {
-        return "Stay on this screen for a few seconds so the device can register, then tap Send Test again. On Simulator, use a real iPhone. If it still fails, ensure Firebase has an iOS app (com.amynest.app) with a valid GoogleService-Info.plist.";
+        return "Allow notifications for AmyNest in iPhone Settings, then return to the app and wait a few seconds before trying again.";
       }
       if (p === "android") {
         return "Allow notifications for AmyNest in Android Settings, reopen the app, wait a few seconds, then try again.";
@@ -151,12 +156,12 @@ function noRegisteredPushDeviceHint(): string {
     /* ignore */
   }
   if (isCapacitorIOS()) {
-    return "Allow notifications in the App Notifications section above, or open Settings → AmyNest → Notifications. Wait a few seconds after enabling, then try again.";
+    return "Turn on notifications in the App Notifications section above, or open Settings → AmyNest → Notifications. Wait a few seconds after enabling, then try again.";
   }
   if (isAmyNestWrapper()) {
-    return "Open AmyNest on your Android device, allow notifications, then try again.";
+    return "Open AmyNest on your Android phone, allow notifications, then try again.";
   }
-  return "Enable notifications above, or open AmyNest on your phone.";
+  return "Turn on notifications above, or open AmyNest on your phone.";
 }
 
 function initialWrapperState(): WrapperState {
@@ -546,16 +551,16 @@ export default function NotificationSettingsPage() {
         });
       } else if (status === "failed" && result.reason === "all_tokens_failed") {
         toast({
-          title: "Push delivery failed",
+          title: "Could not deliver test",
           description:
-            result.detail ??
-            "FCM could not deliver to this device. Use a real iPhone (not Simulator), delete and reinstall the app, then test again. Confirm APNs key is uploaded in Firebase → Cloud Messaging.",
+            "AmyNest could not reach this device. Make sure notifications are allowed, reopen the app, wait a few seconds, then try again.",
           variant: "destructive",
         });
       } else {
         toast({
           title: "Not sent",
-          description: `${status}${result.reason ? ` — ${result.reason}` : ""}${result.detail ? ` (${result.detail})` : ""}`,
+          description: friendlyDeliveryIssue(status, result.detail ?? result.reason ?? null)
+            ?? "Please check notification settings on this device and try again.",
           variant: "destructive",
         });
       }
@@ -599,7 +604,9 @@ export default function NotificationSettingsPage() {
       } else {
         toast({
           title: "Not sent",
-          description: `${status}${result.reason ? ` — ${result.reason}` : ""}`
+          description:
+            friendlyDeliveryIssue(status, result.reason ?? null)
+            ?? "Please check notification settings on this device and try again.",
         });
       }
     },
@@ -684,7 +691,7 @@ export default function NotificationSettingsPage() {
         </div>
 
         <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
-          Sounds
+          {t("pages.notification_settings.sounds_heading")}
         </h2>
         <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-3">
           <CardContent className="p-4 space-y-3">
@@ -697,10 +704,10 @@ export default function NotificationSettingsPage() {
                 )}
                 <div>
                   <div className="text-sm font-semibold text-white">
-                    Push notification sounds
+                    {t("pages.notification_settings.push_sounds_title")}
                   </div>
                   <div className="text-xs text-muted-foreground leading-relaxed">
-                    AmyNest&apos;s custom chimes when a reminder arrives on your phone.
+                    {t("pages.notification_settings.push_sounds_desc")}
                   </div>
                 </div>
               </div>
@@ -718,7 +725,7 @@ export default function NotificationSettingsPage() {
               onClick={() => void playUiSound("complete")}
               className="border-border text-white hover:bg-white/10"
             >
-              Preview notification sound
+              {t("pages.notification_settings.preview_notification_sound")}
             </Button>
           </CardContent>
         </Card>
@@ -733,10 +740,10 @@ export default function NotificationSettingsPage() {
                 )}
                 <div>
                   <div className="text-sm font-semibold text-white">
-                    In-app UI sounds
+                    {t("pages.notification_settings.ui_sounds_title")}
                   </div>
                   <div className="text-xs text-muted-foreground leading-relaxed">
-                    Tab taps and learning celebrations inside the app.
+                    {t("pages.notification_settings.ui_sounds_desc")}
                   </div>
                 </div>
               </div>
@@ -754,7 +761,7 @@ export default function NotificationSettingsPage() {
               onClick={previewSound}
               className="border-border text-white hover:bg-white/10"
             >
-              Preview celebration sound
+              {t("pages.notification_settings.preview_celebration_sound")}
             </Button>
           </CardContent>
         </Card>
@@ -793,7 +800,7 @@ export default function NotificationSettingsPage() {
                           ? "this device"
                           : "this browser"}
                   </span>
-                  . Bypasses quiet hours, daily limits, and category settings.
+                  . Bypasses quiet hours and daily limits for this test only.
                 </div>
                 <Button
                   type="button"
@@ -921,10 +928,10 @@ export default function NotificationSettingsPage() {
           <HelpCircle className="w-5 h-5 text-muted-foreground shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-white">
-              Why didn't I get my notification?
+              {t("pages.notification_settings.diagnostics_title")}
             </div>
             <div className="text-xs text-muted-foreground">
-              Check token health, quiet hours and recent failures.
+              {t("pages.notification_settings.diagnostics_desc")}
             </div>
           </div>
           <ChevronLeft className="w-4 h-4 text-muted-foreground rotate-180 shrink-0" />
@@ -957,8 +964,7 @@ export default function NotificationSettingsPage() {
                           {row.title}
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {row.category} · {row.status}
-                          {row.errorMessage ? ` · ${row.errorMessage}` : ""}
+                          {notificationCategoryLabel(row.category)} · {friendlyDeliveryStatus(row.status)}
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground shrink-0">
