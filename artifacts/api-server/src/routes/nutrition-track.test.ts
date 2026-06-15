@@ -88,12 +88,17 @@ describe("nutrition-track routes — smoke", { skip: !dbIntegrationOk }, () => {
         childId,
         dateKey: TODAY,
         checklist: { breakfast: true, protein: true, dairy: true, greens: true },
+        clientUpdatedAt: Date.now(),
       }),
     });
     assert.equal(putRes.status, 200);
-    const putJson = (await putRes.json()) as { log: { score: number; minDayMet: boolean } };
+    const putJson = (await putRes.json()) as {
+      log: { score: number; minDayMet: boolean };
+      merged: boolean;
+    };
     assert.equal(putJson.log.score, 50);
     assert.equal(putJson.log.minDayMet, true);
+    assert.equal(putJson.merged, true);
 
     const getRes = await fetch(
       `${baseUrl}/nutrition/daily-score?childId=${childId}&date=${TODAY}`,
@@ -101,6 +106,52 @@ describe("nutrition-track routes — smoke", { skip: !dbIntegrationOk }, () => {
     assert.equal(getRes.status, 200);
     const getJson = (await getRes.json()) as { log: { score: number } | null };
     assert.equal(getJson.log?.score, 50);
+  });
+
+  it("rejects stale client write without overwriting newer server log", async () => {
+    const freshAt = Date.now();
+    const freshRes = await fetch(`${baseUrl}/nutrition/daily-score`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        childId,
+        dateKey: TODAY,
+        checklist: {
+          breakfast: true,
+          protein: true,
+          dairy: true,
+          greens: true,
+          fruit: true,
+          water: true,
+        },
+        clientUpdatedAt: freshAt,
+      }),
+    });
+    assert.equal(freshRes.status, 200);
+    const freshJson = (await freshRes.json()) as { log: { score: number }; merged: boolean };
+    assert.equal(freshJson.log.score, 75);
+    assert.equal(freshJson.merged, true);
+
+    const staleRes = await fetch(`${baseUrl}/nutrition/daily-score`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        childId,
+        dateKey: TODAY,
+        checklist: { breakfast: true },
+        clientUpdatedAt: freshAt - 60_000,
+      }),
+    });
+    assert.equal(staleRes.status, 200);
+    const staleJson = (await staleRes.json()) as { log: { score: number }; merged: boolean };
+    assert.equal(staleJson.merged, false);
+    assert.equal(staleJson.log.score, 75);
+
+    const getRes = await fetch(
+      `${baseUrl}/nutrition/daily-score?childId=${childId}&date=${TODAY}`,
+    );
+    const getJson = (await getRes.json()) as { log: { score: number } | null };
+    assert.equal(getJson.log?.score, 75);
   });
 
   it("returns weekly trend with seven days", async () => {
