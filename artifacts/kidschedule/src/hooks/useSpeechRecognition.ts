@@ -14,6 +14,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
 import { resolveAiApiData } from "@/lib/poll-result";
+import { uploadSpeechTranscribe } from "@/lib/transcribe-audio-upload";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { prepareForMicrophoneAcquisition } from "@/lib/audio-session-coordinator";
 import { requestMicrophoneAccess, resetMicrophonePermissionCache, queryOsMicrophonePermissionState, isOsMicrophonePermissionDenied, classifyMicrophoneFailure, type MicrophoneRuntimeErrorCode } from "@/lib/microphone-permission";
@@ -108,16 +109,6 @@ function pickRecorderMimeType(): string {
     }
   }
   return isIOSWebKit() ? "audio/mp4" : "audio/webm";
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  const chunk = 0x8000;
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
 }
 
 export type RecognitionMode = "native" | "whisper" | "unsupported";
@@ -395,29 +386,16 @@ export function useSpeechRecognition(
 
         const mimeType = pickRecorderMimeType();
         const blob = new Blob(chunks, { type: mimeType });
-        const arrayBuffer = await blob.arrayBuffer();
-        const base64 = arrayBufferToBase64(arrayBuffer);
 
         setTranscribing(true);
         onTranscribeStartRef.current?.();
         try {
-          const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-          };
-          try {
-            const tok = await getAuthTokenRef.current?.();
-            if (tok) headers.Authorization = `Bearer ${tok}`;
-          } catch {
-            /* ignore — Whisper may still work with cookies on web */
-          }
           const provider = transcribeProviderRef.current;
-          const payload: Record<string, string> = { audioBase64: base64, mimeType };
-          if (provider) payload.provider = provider;
-          const r = await fetch(getApiUrl("/api/speech/transcribe"), {
-            method: "POST",
-            headers,
-            credentials: "include",
-            body: JSON.stringify(payload),
+          const r = await uploadSpeechTranscribe({
+            blob,
+            mimeType,
+            provider,
+            getAuthToken: getAuthTokenRef.current,
           });
           if (!r.ok) {
             if (r.status === 401) setError("transcription_auth_failed");
@@ -425,6 +403,13 @@ export function useSpeechRecognition(
             return;
           }
           const raw = await r.json();
+          const headers: Record<string, string> = {};
+          try {
+            const tok = await getAuthTokenRef.current?.();
+            if (tok) headers.Authorization = `Bearer ${tok}`;
+          } catch {
+            /* ignore */
+          }
           const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
             const url = typeof input === "string" ? getApiUrl(input) : input;
             return fetch(url, {

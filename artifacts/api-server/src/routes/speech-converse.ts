@@ -20,6 +20,10 @@ import {
   recordConversationSession,
   type ConversationPromptMemory,
 } from "../services/speechConversationMemoryService.js";
+import {
+  recordConvoLatencySamples,
+  type ConvoLatencySample,
+} from "../services/speechConverseMetrics.js";
 
 /**
  * Amy Live Speech Coach — conversational "talk bot" for kids.
@@ -194,30 +198,24 @@ async function loadOwnedChild(childId: number, userId: string): Promise<Child | 
   return rows[0] ?? null;
 }
 
+/** Compact memory brief — capped to limit prompt tokens on every turn. */
 function buildMemoryBrief(memory: Memory | undefined): string {
   if (!memory || !memory.isReturning) {
-    return "This looks like one of the child's first chats — be extra welcoming and gentle.";
+    return "First chat — be extra welcoming and gentle.";
   }
-  const lines: string[] = ["What you remember about this child (use it naturally, do not list it):"];
-  if (typeof memory.totalSessions === "number" && memory.totalSessions > 0) {
-    lines.push(`- You have talked together about ${memory.totalSessions} time(s) before.`);
+  const parts: string[] = [];
+  if (memory.lastNextFocus) {
+    parts.push(`Planned focus: ${memory.lastNextFocus.slice(0, 80)}.`);
+  } else if (memory.lastSummary) {
+    parts.push(`Last session: ${memory.lastSummary.slice(0, 100)}.`);
   }
-  if (memory.daysSinceLast != null) {
-    lines.push(
-      memory.daysSinceLast <= 1
-        ? "- You spoke very recently."
-        : `- It has been ${memory.daysSinceLast} days since you last talked.`,
-    );
-  }
-  if (memory.lastSummary) lines.push(`- Last session: ${memory.lastSummary}`);
-  if (memory.lastNextFocus) lines.push(`- You planned to work on: ${memory.lastNextFocus}.`);
   if (memory.targetSounds?.length) {
-    lines.push(`- Sounds/words still tricky for them (gently weave these into the chat): ${memory.targetSounds.join(", ")}.`);
+    parts.push(`Tricky sounds (weave in gently): ${memory.targetSounds.slice(0, 4).join(", ")}.`);
   }
-  if (memory.masteredSounds?.length) {
-    lines.push(`- Sounds they already do well (celebrate, don't over-drill): ${memory.masteredSounds.join(", ")}.`);
+  if (parts.length === 0 && typeof memory.totalSessions === "number" && memory.totalSessions > 0) {
+    parts.push(`Returning visitor (${memory.totalSessions} prior chat(s)).`);
   }
-  return lines.join("\n");
+  return parts.slice(0, 3).join(" ");
 }
 
 function buildSystemPrompt(args: {
@@ -323,32 +321,34 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
     return;
   }
 
-  // Resolve child name + age band.
-  let childName: string | null = null;
+  const hasChildId = body.childId != null;
+
+  const [child, serverMemoryRow, budgetResult, usedBefore] = await Promise.all([
+    hasChildId ? loadOwnedChild(body.childId!, userId) : Promise.resolve(null),
+    hasChildId
+      ? loadConversationMemory(userId, body.childId!).catch(() => null)
+      : Promise.resolve(null),
+    resolveConversationBudget(userId),
+    getFeatureUsage(userId, "speech_conversation_seconds"),
+  ]);
+
+  if (hasChildId && !child) {
+    res.status(404).json({ error: "child_not_found" });
+    return;
+  }
+
+  let childName: string | null = child?.name ?? null;
   let derivedAgeBand: AgeBand | null = null;
-  if (body.childId != null) {
-    const child = await loadOwnedChild(body.childId, userId);
-    if (!child) {
-      res.status(404).json({ error: "child_not_found" });
-      return;
-    }
-    childName = child.name ?? null;
+  if (child) {
     derivedAgeBand = ageBandFromMonths((child.age ?? 0) * 12 + (child.ageMonths ?? 0));
   } else if (body.childAge != null) {
     derivedAgeBand = ageBandFromMonths(body.childAge * 12);
   }
   const ageBand: AgeBand = derivedAgeBand ?? "5-7";
 
-  // ── Cross-device memory (server-authoritative, enriched by client) ──────
-  let serverMemoryRow: Awaited<ReturnType<typeof loadConversationMemory>> = null;
-  if (body.childId != null) {
-    serverMemoryRow = await loadConversationMemory(userId, body.childId).catch(() => null);
-  }
   const effectiveMemory = mergeMemory(buildPromptMemory(serverMemoryRow), body.memory);
 
-  // ── Cost guard: premium 10 min/day, free 5 min/day during a 3-day trial ──
-  const { dailyBudget, isPremium, trialExpired, trialDaysLeft } =
-    await resolveConversationBudget(userId);
+  const { dailyBudget, isPremium, trialExpired, trialDaysLeft } = budgetResult;
 
   if (trialExpired) {
     res.status(402).json({
@@ -366,7 +366,6 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
     return;
   }
 
-  const usedBefore = await getFeatureUsage(userId, "speech_conversation_seconds");
   if (usedBefore >= dailyBudget) {
     res.status(402).json({
       error: "conversation_limit_reached",
@@ -393,7 +392,7 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
   const remainingSeconds = Math.max(0, dailyBudget - usedAfter);
   const resetsAt = nextResetAtFor("speech_conversation_seconds");
 
-  const historyMessages = (body.history ?? []).slice(-8).map((h) => ({
+  const historyMessages = (body.history ?? []).slice(-4).map((h) => ({
     role: (h.role === "amy" ? "assistant" : "user") as "assistant" | "user",
     content: h.text,
   }));
@@ -413,7 +412,7 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
       ...historyMessages,
       { role: "user", content: turnInstruction },
     ],
-    max_completion_tokens: phase === "closing" ? 320 : 200,
+    max_completion_tokens: phase === "closing" ? 320 : 120,
     temperature: 0.7,
     json: true,
   };
@@ -453,6 +452,7 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
     userId,
     type: "openai.chat_json",
     payload: openAiPayload,
+    waitMs: 30_000,
     buildSyncBody: (result) => buildReplyFromAi(result),
     // Async (BullMQ) path: budget info is returned now; the spoken reply is
     // fetched by polling /api/result/:jobId and parsed client-side.
@@ -541,6 +541,38 @@ router.post("/speech/converse/complete", async (req, res): Promise<void> => {
     logger.warn(`speech-converse complete failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "could_not_save_memory" });
   }
+});
+
+const ConvoMetricsBody = z.object({
+  samples: z
+    .array(
+      z.object({
+        platform: z.enum(["ios", "android", "web"]),
+        sttMs: z.number().int().min(0).nullable(),
+        llmMs: z.number().int().min(0).nullable(),
+        ttsMs: z.number().int().min(0).nullable(),
+        ttfaMs: z.number().int().min(0).nullable(),
+        e2eMs: z.number().int().min(0),
+        error: z.string().max(120).optional(),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
+router.post("/speech/converse/metrics", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = ConvoMetricsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+  const accepted = recordConvoLatencySamples(parsed.data.samples as ConvoLatencySample[]);
+  res.status(202).json({ ok: true, accepted });
 });
 
 export default router;

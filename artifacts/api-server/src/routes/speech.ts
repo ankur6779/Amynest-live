@@ -18,6 +18,7 @@ import {
   monthsToBand,
 } from "@workspace/speech-coach";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { isMultipartFormData, parseMultipartFields } from "../lib/parse-multipart-fields.js";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { featureGate } from "../middlewares/featureGate";
@@ -539,13 +540,39 @@ router.post("/speech/transcribe", speechTranscribeGate(), async (req, res): Prom
     return;
   }
 
-  const parsed = transcribeBodySchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
-    return;
+  let audioBase64: string;
+  let mimeType: string;
+  let provider: "whisper" | "elevenlabs" | undefined;
+
+  if (isMultipartFormData(req)) {
+    try {
+      const { files, fields } = await parseMultipartFields(req);
+      const audioBuf = files.get("audio");
+      if (!audioBuf || audioBuf.length < 100) {
+        res.status(422).json({ error: "audio_too_short" });
+        return;
+      }
+      audioBase64 = audioBuf.toString("base64");
+      mimeType = fields.get("mimeType") ?? "application/octet-stream";
+      const prov = fields.get("provider");
+      provider = prov === "elevenlabs" || prov === "whisper" ? prov : undefined;
+    } catch (err) {
+      const code = err instanceof Error && err.message === "payload_too_large" ? 413 : 400;
+      res.status(code).json({ error: "invalid_multipart" });
+      return;
+    }
+  } else {
+    const parsed = transcribeBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+      return;
+    }
+    audioBase64 = parsed.data.audioBase64;
+    mimeType = parsed.data.mimeType ?? "application/octet-stream";
+    provider = parsed.data.provider;
   }
 
-  const rawBuffer = Buffer.from(parsed.data.audioBase64, "base64");
+  const rawBuffer = Buffer.from(audioBase64, "base64");
   if (rawBuffer.length < 100) {
     res.status(422).json({ error: "audio_too_short" });
     return;
@@ -556,9 +583,9 @@ router.post("/speech/transcribe", speechTranscribeGate(), async (req, res): Prom
     type: "speech.transcribe",
     userId,
     input: {
-      audioBase64: parsed.data.audioBase64,
-      mimeType: parsed.data.mimeType ?? "application/octet-stream",
-      provider: parsed.data.provider,
+      audioBase64,
+      mimeType,
+      provider,
     },
     waitMs: 30_000,
     buildSyncBody: (result) => {

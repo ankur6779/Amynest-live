@@ -1,15 +1,15 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.15",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.15.zip",
-  "checksum": "8c526abadda6f05da25d589477def2bec2a5669e06d90a3808904879253ca7e5",
+  "bundleVersion": "1.0.16",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.16.zip",
+  "checksum": "0994929f2ab1c21c3518b55e014c3d4f064958ec0248af1c02f987bdca5aa0b0",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "User-friendly notification settings: plain-language device labels, simplified troubleshooting, no technical platform jargon.",
+  "releaseNotes": "Talk with Amy: faster turns with streaming voice, smarter silence detection, barge-in, and lighter uploads.",
   "changeClasses": [
     "bugfix",
-    "ui-copy"
+    "performance"
   ]
 }

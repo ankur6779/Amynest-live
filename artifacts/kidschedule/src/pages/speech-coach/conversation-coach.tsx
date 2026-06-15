@@ -37,10 +37,11 @@ import { getApiUrl } from "@/lib/api";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
-  generateElevenLabsFallbackTts,
   ELEVENLABS_VOICE_EN_FEMALE,
   ELEVENLABS_MODEL_EN,
 } from "@/lib/elevenlabs-fallback-tts";
+import { playStreamingTts } from "@/lib/amy-voice-stream-player";
+import { audioManager } from "@/lib/audio-manager";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import {
@@ -48,6 +49,12 @@ import {
   loadCoachLocalSnapshot,
   saveCoachJourneySnapshot,
 } from "./speech-coach-utils";
+import { useConversationSilenceStop } from "./conversation-silence-detector";
+import {
+  ConvoTurnTimer,
+  flushConvoTurnMetrics,
+  recordConvoTurnMetric,
+} from "./conversation-coach-metrics";
 
 /**
  * Big, responsive hero size — width-based only (capped for tablets/desktop).
@@ -177,8 +184,6 @@ type MemoryPayload = {
 
 /** Default budget before the server reports the user's real allowance (premium 10 min / free 5 min). */
 const DEFAULT_BUDGET_SECONDS = 300;
-const MAX_LISTEN_MS = 9000;
-/** ElevenLabs Flash v2.5 — lowest-latency model for instant live conversation. */
 /** Below this remaining time, Amy starts wrapping up. */
 const WIND_DOWN_AT = 80;
 /** Below this remaining time, Amy gives the closing goodbye + report. */
@@ -290,8 +295,6 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   }, [progress.data, localSnapshot]);
 
   const memoryPayload = useMemo(() => buildMemoryPayload(coachMemory, convoMemory), [coachMemory, convoMemory]);
-  const memoryRef = useRef(memoryPayload);
-  memoryRef.current = memoryPayload;
 
   const [serverMem, setServerMem] = useState<MemoryPayload | null>(null);
   const [phase, setPhase] = useState<UiPhase>("idle");
@@ -316,6 +319,8 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   const listenStartedRef = useRef(false);
   const startingMicRef = useRef(false);
   const sessionActiveRef = useRef(false);
+  const ttsAbortRef = useRef<AbortController | null>(null);
+  const listenActiveRef = useRef(false);
 
   const getAuthToken = useCallback(async () => {
     try {
@@ -339,6 +344,12 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   useEffect(() => {
     remainingRef.current = remaining;
   }, [remaining]);
+
+  // Prefetch auth + mic while Amy speaks so the next child turn starts faster.
+  useEffect(() => {
+    if (phase !== "amy_speaking") return;
+    void stt.warm();
+  }, [phase, stt]);
 
   useEffect(() => {
     warmSpeechCoach([`Hi ${child.name}! I'm so happy to talk with you today.`, "What did you do today?"]);
@@ -390,50 +401,56 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     };
   }, [authFetch, child.id]);
 
-  const speakLines = useCallback(
-    async (lines: (string | null)[]): Promise<boolean> => {
-      let spokeAny = false;
-      for (const line of lines) {
-        const text = (line ?? "").trim();
-        if (!text) continue;
+  const speakAmyText = useCallback(
+    async (text: string, turnTimer?: ConvoTurnTimer): Promise<boolean> => {
+      const phrase = text.trim();
+      if (!phrase) return false;
 
-        // Primary: ElevenLabs Flash v2.5 for an instant, natural Amy voice.
-        // Generated once, then served from the shared cache for everyone.
-        let played = false;
-        try {
-          const el = await generateElevenLabsFallbackTts(apiFetch, text, {
+      ttsAbortRef.current?.abort();
+      const controller = new AbortController();
+      ttsAbortRef.current = controller;
+      turnTimer?.markTtsStart();
+
+      let played = false;
+      try {
+        const streamed = await playStreamingTts(
+          apiFetch,
+          {
+            text: phrase,
             voiceId: ELEVENLABS_VOICE_EN_FEMALE,
             modelId: ELEVENLABS_MODEL_EN,
-          });
-          if (el.success && el.audioUrl) {
-            const res = await voice.playPreparedUrl(el.audioUrl, {
-              source: "amy_voice",
-              phrase: text,
-              srcType: "tts",
-            });
-            played = res.success;
+            mode: "default",
+          },
+          {
+            signal: controller.signal,
+            feature: "talk_with_amy",
+            earlyPlayback: true,
+          },
+        );
+        if (streamed.ok) {
+          turnTimer?.markTtfa();
+          if (!controller.signal.aborted) {
+            const ended = await audioManager.waitUntilEnd(
+              streamed.audio,
+              () => controller.signal.aborted,
+            );
+            played = ended.ok;
           }
-        } catch {
-          /* fall through to the OpenAI safety net */
         }
-
-        // Safety net: never let Amy go silent — fall back to the default voice.
-        // Freeform conversational text has no coach audioIdentity, so use the
-        // default speak path (coach:true would fail with coach_identity_missing).
-        if (!played) {
-          let result = await voice.speak(text, { mode: "default" });
-          if (!result.success) {
-            // Live TTS for dynamic text can be flaky on mobile — one quick retry.
-            await new Promise((r) => setTimeout(r, 250));
-            result = await voice.speak(text, { mode: "default" });
-          }
-          played = result.success;
-        }
-
-        // Don't break on a single failure — still try the follow-up question.
-        if (played) spokeAny = true;
+      } catch {
+        /* fall through to the OpenAI safety net */
       }
-      return spokeAny;
+
+      if (!played && !controller.signal.aborted) {
+        let result = await voice.speak(phrase, { mode: "default" });
+        if (!result.success) {
+          await new Promise((r) => setTimeout(r, 250));
+          result = await voice.speak(phrase, { mode: "default" });
+        }
+        played = result.success;
+      }
+
+      return played;
     },
     [voice, apiFetch],
   );
@@ -505,6 +522,8 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     (reason: "completed" | "budget" | "user" | "trial", rep?: SessionReport | null) => {
       sessionActiveRef.current = false;
       listenStartedRef.current = false;
+      listenActiveRef.current = false;
+      ttsAbortRef.current?.abort();
       stt.stop();
       if (rep) {
         setReport(rep);
@@ -536,8 +555,11 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     (document.activeElement as HTMLElement | null)?.blur?.();
     startingMicRef.current = true;
     setStartingMic(true);
-    stt.reset();
+
+    ttsAbortRef.current?.abort();
     voice.pause();
+
+    stt.reset();
     setStatus("Listening... your turn to talk!");
     const ok = await stt.start();
     startingMicRef.current = false;
@@ -553,8 +575,16 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       return;
     }
     listenStartedRef.current = true;
+    listenActiveRef.current = true;
     setPhase("listening");
   }, [stt, voice]);
+
+  useConversationSilenceStop({
+    active: phase === "listening",
+    enabled: stt.mode === "whisper",
+    onSilenceStop: () => stt.stop(),
+    onMaxTimeout: () => stt.stop(),
+  });
 
   // When the model/network hiccups, Amy should still SAY something friendly
   // and keep the conversation going instead of going silent.
@@ -570,10 +600,10 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       setMessages((prev) => [...prev, { role: "amy", text: line }]);
       setPhase("amy_speaking");
       setStatus(statusMsg);
-      await speakLines([line]);
+      await speakAmyText(line);
       if (sessionActiveRef.current) void startListening();
     },
-    [speakLines, startListening],
+    [speakAmyText, startListening],
   );
 
   const pickPhase = useCallback((kickoff: boolean): ServerPhase => {
@@ -585,7 +615,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   }, []);
 
   const sendTurn = useCallback(
-    async (message: string, kickoff: boolean) => {
+    async (message: string, kickoff: boolean, turnTimer?: ConvoTurnTimer) => {
       if (!sessionActiveRef.current && !kickoff) return;
       const turnPhase = pickPhase(kickoff);
       lastServerPhaseRef.current = turnPhase;
@@ -598,9 +628,10 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       lastTurnTsRef.current = now;
 
       const history = messagesRef.current
-        .slice(-8)
+        .slice(-4)
         .map((m) => ({ role: m.role === "amy" ? "amy" : "child", text: m.text }));
 
+      let metricError: string | undefined;
       try {
         const res = await authFetch(
           getApiUrl("/api/speech/converse"),
@@ -613,7 +644,6 @@ function ConversationCoach({ child }: { child: AnyChild }) {
               phase: turnPhase,
               message: kickoff ? undefined : message,
               elapsedSeconds: Math.round(elapsedSeconds),
-              memory: memoryRef.current,
               history,
             }),
           },
@@ -656,17 +686,19 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         const reply = resolved.reply ?? parseReply(resolved.content);
 
         if (!reply) {
+          metricError = "empty_reply";
           await recoverWithFallback("Let's keep talking!");
           return;
         }
 
+        turnTimer?.markLlmEnd();
         setRemaining(remainingSeconds);
         const amyText = [reply.say, reply.question].filter(Boolean).join(" ");
         setMessages((prev) => [...prev, { role: "amy", text: amyText }]);
 
         setPhase("amy_speaking");
         setStatus(reply.say);
-        await speakLines([reply.say, reply.question]);
+        await speakAmyText(amyText, turnTimer);
 
         if (turnPhase === "closing") {
           endConversation("completed", reply.report ?? null);
@@ -680,10 +712,16 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           void startListening();
         }
       } catch {
+        metricError = "turn_failed";
         await recoverWithFallback("Let's try again!");
+      } finally {
+        if (turnTimer) {
+          recordConvoTurnMetric(turnTimer.finish(metricError));
+          void flushConvoTurnMetrics(apiFetch);
+        }
       }
     },
-    [apiFetch, authFetch, child.id, endConversation, pickPhase, speakLines, startListening, recoverWithFallback],
+    [apiFetch, authFetch, child.id, endConversation, pickPhase, speakAmyText, startListening, recoverWithFallback],
   );
 
   // When the child stops talking, send their transcript as the next turn.
@@ -693,6 +731,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     if (stt.listening || stt.transcribing) return;
     const transcript = stt.transcript.trim();
     listenStartedRef.current = false;
+    listenActiveRef.current = false;
     if (!transcript) {
       if (sessionActiveRef.current) {
         setStatus("I didn't hear you — try again!");
@@ -701,18 +740,18 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       return;
     }
     setMessages((prev) => [...prev, { role: "child", text: transcript }]);
-    void sendTurn(transcript, false);
+    const turnTimer = new ConvoTurnTimer();
+    turnTimer.markSttEnd();
+    void sendTurn(transcript, false, turnTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, stt.listening, stt.transcribing, stt.transcript]);
 
-  // Auto stop listening after a pause so the turn advances.
   useEffect(() => {
-    if (phase !== "listening") return;
-    const id = window.setTimeout(() => {
-      if (phaseRef.current === "listening") stt.stop();
-    }, MAX_LISTEN_MS);
-    return () => window.clearTimeout(id);
-  }, [phase, stt]);
+    return () => {
+      ttsAbortRef.current?.abort();
+      void flushConvoTurnMetrics(apiFetch);
+    };
+  }, [apiFetch]);
 
   useEffect(() => {
     if (stt.error === "microphone_blocked") {
@@ -731,7 +770,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     setReport(null);
     setEndedReason(null);
     setPhase("thinking");
-    void sendTurn("", true);
+    void sendTurn("", true, new ConvoTurnTimer());
   }, [sendTurn]);
 
   const lastAmy = [...messages].reverse().find((m) => m.role === "amy");

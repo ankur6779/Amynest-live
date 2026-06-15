@@ -15,8 +15,8 @@ import {
 } from "@/lib/tts-user-perceived-metrics";
 import { getAdminAudioOps, isAdminMseStreamingDisabled } from "@/lib/admin-audio-ops";
 
-export const STREAM_MIN_START_BYTES = 2048;
-export const STREAM_PREFETCH_BYTES = 8192;
+export const STREAM_MIN_START_BYTES = 1536;
+export const STREAM_PREFETCH_BYTES = 6144;
 export const TTFA_TARGET_MS = 300;
 
 export type StreamPlayMetrics = {
@@ -310,18 +310,75 @@ async function playViaFullBlob(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   ctx: ProgressiveCtx,
   signal?: AbortSignal,
+  earlyPlayback = false,
 ): Promise<{
   audio: HTMLAudioElement;
   objectUrl: string;
   monitor: ReturnType<typeof attachBufferMonitor>;
   blob: Blob;
 }> {
-  logMseTransition("blob_fallback", { path: "full_blob" });
-  const blob = await drainReaderToBlob(reader, ctx, signal);
-  const objectUrl = URL.createObjectURL(blob);
-  const audio = audioManager.create(objectUrl);
+  logMseTransition("blob_fallback", { path: earlyPlayback ? "progressive_blob" : "full_blob" });
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  let audio: HTMLAudioElement | null = null;
+  let objectUrl: string | null = null;
+  let monitor: ReturnType<typeof attachBufferMonitor> = { getCount: () => 0 };
+  let playbackStarted = false;
+
+  while (true) {
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    const { done, value } = await reader.read();
+    if (done) {
+      ctx.downloadCompleteMs = Date.now() - ctx.startedAt;
+      break;
+    }
+    if (value?.length) {
+      markFirstByte(ctx);
+      chunks.push(value);
+      total += value.length;
+      ctx.totalBytes += value.length;
+
+      if (
+        earlyPlayback &&
+        !playbackStarted &&
+        total >= STREAM_MIN_START_BYTES
+      ) {
+        const partial = new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
+        objectUrl = URL.createObjectURL(partial);
+        audio = audioManager.create(objectUrl);
+        configureMobileAudioElement(audio);
+        monitor = attachBufferMonitor(audio);
+        void audioManager
+          .play(
+            audio,
+            { source: "tts_stream_blob_early", proxyUrl: objectUrl, srcType: "tts" },
+            { channel: "speech", interrupt: true, maxRetries: 1 },
+          )
+          .then((played) => {
+            if (played && ctx.userPlaybackStartMs == null) {
+              ctx.userPlaybackStartMs = Date.now() - ctx.startedAt;
+            }
+          });
+        playbackStarted = true;
+      }
+    }
+  }
+
+  const blob = new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
+  if (total < 256) throw new Error("stream_too_short");
+
+  if (playbackStarted && audio && objectUrl) {
+    const fullUrl = URL.createObjectURL(blob);
+    audio.src = fullUrl;
+    URL.revokeObjectURL(objectUrl);
+    objectUrl = fullUrl;
+    return { audio, objectUrl, monitor, blob };
+  }
+
+  objectUrl = URL.createObjectURL(blob);
+  audio = audioManager.create(objectUrl);
   configureMobileAudioElement(audio);
-  const monitor = attachBufferMonitor(audio);
+  monitor = attachBufferMonitor(audio);
   const played = await audioManager.play(
     audio,
     { source: "tts_stream_blob", proxyUrl: objectUrl, srcType: "tts" },
@@ -444,6 +501,8 @@ export async function playStreamingTts(
     prefetchOnly?: boolean;
     playbackMode?: PlaybackMode;
     feature?: string;
+    /** Talk with Amy — try MSE / progressive blob for lower TTFA. */
+    earlyPlayback?: boolean;
   },
 ): Promise<StreamPlayResult> {
   const startedAt = Date.now();
@@ -511,7 +570,7 @@ export async function playStreamingTts(
   try {
     let { reader, cacheKey } = await fetchTtsStream(authFetch, body, opts?.signal);
 
-    if (isMseStreamingEnabled()) {
+    if (isMseStreamingEnabled() || opts?.earlyPlayback) {
       try {
         const { audio, objectUrl, monitor } = await playViaMediaSource(reader, ctx, opts?.signal);
         const heardMs = await waitForAudibleStart(audio);
@@ -540,7 +599,12 @@ export async function playStreamingTts(
       logMseTransition("mse_skipped", { reason: "phase1_full_blob" });
     }
 
-    const { audio, objectUrl, monitor, blob } = await playViaFullBlob(reader, ctx, opts?.signal);
+    const { audio, objectUrl, monitor, blob } = await playViaFullBlob(
+      reader,
+      ctx,
+      opts?.signal,
+      opts?.earlyPlayback === true,
+    );
     if (cacheKey) {
       storeCompletePrefetch(cacheKey, blob);
     }
