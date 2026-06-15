@@ -1,5 +1,6 @@
 import type { GroceryCategory } from "@/features/nutrition/lib/operations-constants";
 import { normalizeMealName } from "@/features/nutrition/lib/meal-nutrient-map";
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
 
 export type GroceryUnit = "kg" | "L" | "count";
 
@@ -49,6 +50,16 @@ export const INGREDIENT_RULES: IngredientRule[] = [
   { keywords: ["ghee", "butter"], item: "Ghee / Butter", category: "dairy", unit: "count", perMention: 0.15 },
 ];
 
+export function getIngredientRulesForProfile(profile: NutritionCountryProfile): IngredientRule[] {
+  return profile.groceryKeywordPack.map((pack) => ({
+    keywords: pack.keywords,
+    item: pack.item,
+    category: pack.category,
+    unit: pack.unit,
+    perMention: pack.perMention,
+  }));
+}
+
 export interface IngredientMentionTotals {
   /** Item → number of meal slots that mentioned this ingredient. */
   mentionCounts: Map<string, { item: string; category: GroceryCategory; unit: GroceryUnit; perMention: number; mentions: number }>;
@@ -64,7 +75,10 @@ function mealMentionsMilk(normalized: string): boolean {
   return /\bmilk\b/.test(normalized);
 }
 
-export function countIngredientMentions(weekMeals: string[]): IngredientMentionTotals {
+export function countIngredientMentions(
+  weekMeals: string[],
+  rules: IngredientRule[] = INGREDIENT_RULES,
+): IngredientMentionTotals {
   const mentionCounts = new Map<
     string,
     { item: string; category: GroceryCategory; unit: GroceryUnit; perMention: number; mentions: number }
@@ -79,7 +93,7 @@ export function countIngredientMentions(weekMeals: string[]): IngredientMentionT
     if (mealMentionsMilk(normalized)) milkMealDays += 1;
 
     const matchedThisMeal = new Set<string>();
-    for (const rule of INGREDIENT_RULES) {
+    for (const rule of rules) {
       if (!rule.keywords.some((kw) => normalized.includes(kw))) continue;
       if (matchedThisMeal.has(rule.item)) continue;
       matchedThisMeal.add(rule.item);

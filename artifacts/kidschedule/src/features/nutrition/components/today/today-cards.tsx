@@ -80,8 +80,8 @@ export function FocusNutrientCard() {
 
 export function TonightMealHero() {
   const { t } = useTranslation();
-  const { ageGroupId, foodStyle, setSuggestedMeal, setActiveTab, childId } = useNutritionContext();
-  const tonight = useTonightMeal(ageGroupId, foodStyle, childId);
+  const { ageGroupId, foodStyle, setSuggestedMeal, setActiveTab, childId, countryProfile } = useNutritionContext();
+  const tonight = useTonightMeal(ageGroupId, foodStyle, childId, true, countryProfile);
 
   const handleCookTonight = () => {
     if (tonight.mealName) setSuggestedMeal(tonight.mealName);
@@ -186,8 +186,8 @@ export function TonightMealHero() {
 
 export function FamilyMealShortcut() {
   const { t } = useTranslation();
-  const { suggestedMeal, setActiveTab, ageGroupId, foodStyle, setSuggestedMeal, childId } = useNutritionContext();
-  const tonight = useTonightMeal(ageGroupId, foodStyle, childId);
+  const { suggestedMeal, setActiveTab, ageGroupId, foodStyle, setSuggestedMeal, childId, countryProfile } = useNutritionContext();
+  const tonight = useTonightMeal(ageGroupId, foodStyle, childId, true, countryProfile);
   const meal = suggestedMeal || tonight.mealName;
 
   if (!meal) return null;

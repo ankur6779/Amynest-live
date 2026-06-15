@@ -588,18 +588,48 @@ export type AgeGroupPlan = {
 export function getMealPlan(
   ageGroupId: AgeGroupId,
   foodStyle: string | null | undefined,
+  countryProfile?: import("@workspace/nutrition-localization").NutritionCountryProfile | null,
 ): AgeGroupPlan | undefined {
   const style = (foodStyle ?? "mixed").toLowerCase();
-  const candidates = MEAL_PLANS.filter(p => p.applies.includes(ageGroupId));
+  const candidates = MEAL_PLANS.filter((p) => p.applies.includes(ageGroupId));
   if (!candidates.length) return undefined;
-  // 1. Exact cuisine match
-  const exact = candidates.find(p => p.cuisines.some(c => style.includes(c) || c.includes(style)));
-  if (exact) return exact;
-  // 2. "mixed" / "global" fallback
-  const mixed = candidates.find(p => p.cuisines.includes("mixed"));
-  if (mixed) return mixed;
-  // 3. First available (safety net)
-  return candidates[0];
+
+  const isIndian = style.includes("indian") || ["north_indian", "south_indian", "pan_indian", "gujarati", "maharashtrian", "punjabi", "bengali"].some((c) => style.includes(c));
+  const countryCuisines = countryProfile?.mealPlanCuisines ?? [];
+  const preferIndian = countryProfile?.country === "IN" || isIndian;
+
+  const scorePlan = (plan: AgeGroupPlan): number => {
+    let score = 0;
+    const primaryCountryCuisine = countryCuisines.find(
+      (c) => !["mixed", "global"].includes(c),
+    );
+    if (primaryCountryCuisine && plan.cuisines.includes(primaryCountryCuisine)) {
+      score += 150;
+    }
+    for (const cuisine of plan.cuisines) {
+      if (style.includes(cuisine) || cuisine.includes(style)) score += 100;
+      if (countryCuisines.includes(cuisine)) score += 10;
+      if (cuisine === "mixed" || cuisine === "global") score += 5;
+    }
+    const planIsIndian = plan.cuisines.some((c) => c.includes("indian") || c === "pan_indian");
+    if (planIsIndian && !preferIndian) score -= 50;
+    if (!planIsIndian && preferIndian && isIndian) score += 20;
+    return score;
+  };
+
+  const ranked = [...candidates].sort((a, b) => scorePlan(b) - scorePlan(a));
+  const best = ranked[0];
+  if (best && scorePlan(best) > 0) return best;
+
+  if (preferIndian) {
+    return candidates.find((p) => p.cuisines.some((c) => c.includes("indian"))) ?? ranked[0];
+  }
+
+  return (
+    candidates.find((p) => p.cuisines.includes("mixed") || p.cuisines.includes("western") || p.cuisines.includes("global"))
+    ?? ranked.find((p) => !p.cuisines.some((c) => c.includes("indian")))
+    ?? ranked[0]
+  );
 }
 
 export const MEAL_PLANS: AgeGroupPlan[] = [
@@ -724,6 +754,57 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
       { day: "Friday", veg: { breakfast: "Pancakes + maple syrup + berries + milk", lunch: "Veggie sushi / Buddha bowl + miso soup", snack: "Banana + peanut butter", dinner: "Margherita pizza + rocket & tomato salad" }, nonVeg: { breakfast: "Smoked salmon scrambled eggs + toast + OJ", lunch: "Sushi platter + edamame + miso soup", snack: "Tuna + crackers + fruit", dinner: "Fish & chips (baked) + mushy peas + salad" } },
       { day: "Saturday", veg: { breakfast: "Full veg breakfast: eggs + beans + grilled tomato + mushrooms + toast + OJ", lunch: "Shakshuka + crusty bread + side salad", snack: "Fruit smoothie + nuts", dinner: "Thai green curry (tofu) + jasmine rice + spring rolls" }, nonVeg: { breakfast: "Full cooked breakfast: eggs + bacon + beans + toast + OJ", lunch: "Grilled chicken + roast veg + quinoa", snack: "Chicken soup + nuts", dinner: "Thai chicken curry + jasmine rice + spring rolls" } },
       { day: "Sunday", veg: { breakfast: "Brunch: avocado toast + eggs + fruit + coffee/tea", lunch: "Roasted veg pasta bake + garlic bread + salad", snack: "Fruit platter + yoghurt dip", dinner: "Light vegetable soup + whole-grain roll + fruit" }, nonVeg: { breakfast: "Brunch: smoked salmon + eggs + toast + fruit + coffee", lunch: "Sunday roast: chicken + roast potatoes + veg + gravy", snack: "Chicken sandwich + juice", dinner: "Light chicken broth + bread + salad" } },
+    ],
+  },
+
+  // ── UK plans ──
+  {
+    ageCategory: "School Age (6–15 years)",
+    portionNote: "3 main meals + 1–2 snacks. Use child-sized portions — about half an adult plate.",
+    applies: ["school_6_10", "preteen_10_15"],
+    cuisines: ["uk"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Porridge + banana + milk", lunch: "Cheese sandwich + apple + water", snack: "Banana + yogurt", dinner: "Vegetable pasta bake + side salad" }, nonVeg: { breakfast: "Scrambled eggs + toast + milk", lunch: "Ham sandwich + fruit", snack: "Boiled egg + fruit", dinner: "Grilled chicken + rice + peas" } },
+      { day: "Tuesday", veg: { breakfast: "Weetabix-style cereal + berries + milk", lunch: "Hummus wrap + carrot sticks", snack: "Apple slices", dinner: "Bean chilli + jacket potato + salad" }, nonVeg: { breakfast: "Egg on toast + milk", lunch: "Tuna sandwich + cucumber", snack: "Cheese + crackers", dinner: "Salmon fillet + new potatoes + broccoli" } },
+      { day: "Wednesday", veg: { breakfast: "Porridge + honey + milk", lunch: "Cheese & tomato sandwich + fruit", snack: "Yogurt + berries", dinner: "Lentil soup + crusty bread + salad" }, nonVeg: { breakfast: "Boiled egg + soldiers + milk", lunch: "Chicken wrap + salad", snack: "Fruit + nuts", dinner: "Fish pie + peas + carrots" } },
+      { day: "Thursday", veg: { breakfast: "Whole-grain toast + peanut butter + milk", lunch: "Pasta salad + fruit", snack: "Banana", dinner: "Vegetable curry (mild) + rice + yogurt" }, nonVeg: { breakfast: "Omelette + toast + milk", lunch: "Egg sandwich + apple", snack: "Cheese stick + fruit", dinner: "Fish pie + mashed peas" } },
+      { day: "Friday", veg: { breakfast: "Porridge + sliced pear + milk", lunch: "Cheese sandwich + cucumber sticks", snack: "Fruit pot", dinner: "Margherita pizza + side salad" }, nonVeg: { breakfast: "Scrambled egg + toast + milk", lunch: "Chicken sandwich + fruit", snack: "Yogurt + banana", dinner: "Fish fingers + chips (oven) + peas" } },
+      { day: "Saturday", veg: { breakfast: "Pancakes + berries + milk (special)", lunch: "Falafel wrap + salad", snack: "Fruit smoothie", dinner: "Vegetable stir-fry + noodles" }, nonVeg: { breakfast: "Full English (small): egg + beans + toast", lunch: "Sausage roll + salad + fruit", snack: "Cheese + apple", dinner: "Roast chicken + roast veg" } },
+      { day: "Sunday", veg: { breakfast: "Porridge + stewed apple + milk", lunch: "Cheese toastie + tomato soup", snack: "Fruit salad", dinner: "Light vegetable soup + bread" }, nonVeg: { breakfast: "Eggs + bacon + toast + OJ", lunch: "Roast dinner: chicken + potatoes + veg", snack: "Fruit + yogurt", dinner: "Fish pie (light portion) + salad" } },
+    ],
+  },
+
+  // ── Australia / NZ plans ──
+  {
+    ageCategory: "School Age (6–15 years)",
+    portionNote: "3 main meals + 1–2 snacks. Lunchbox-friendly portions for school days.",
+    applies: ["school_6_10", "preteen_10_15"],
+    cuisines: ["au"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Weet-Bix + banana + milk", lunch: "Cheese wrap + fruit tub", snack: "Apple slices", dinner: "Vegetable fried rice + edamame" }, nonVeg: { breakfast: "Eggs on toast + milk", lunch: "Chicken wrap + apple", snack: "Yogurt + berries", dinner: "Grilled chicken + rice bowl + salad" } },
+      { day: "Tuesday", veg: { breakfast: "Porridge + honey + milk", lunch: "Vegemite sandwich + fruit tub", snack: "Banana", dinner: "Lentil bolognese + pasta + salad" }, nonVeg: { breakfast: "Scrambled eggs + toast + milk", lunch: "Ham & cheese wrap + grapes", snack: "Cheese + crackers", dinner: "Fish + mashed potato + peas" } },
+      { day: "Wednesday", veg: { breakfast: "Smoothie (milk + banana + spinach)", lunch: "Hummus wrap + cucumber", snack: "Fruit tub", dinner: "Bean tacos + avocado + salad" }, nonVeg: { breakfast: "Boiled egg + toast + milk", lunch: "Tuna wrap + fruit", snack: "Yogurt + mango", dinner: "Beef mince + pasta + salad" } },
+      { day: "Thursday", veg: { breakfast: "Weet-Bix + berries + milk", lunch: "Cheese & salad sandwich + fruit", snack: "Carrot sticks + hummus", dinner: "Vegetable soup + bread roll" }, nonVeg: { breakfast: "Egg omelette + toast + milk", lunch: "Chicken sandwich + apple", snack: "Boiled egg + fruit", dinner: "Salmon + rice + steamed broccoli" } },
+      { day: "Friday", veg: { breakfast: "Pancakes + fruit + milk", lunch: "Veggie wrap + fruit tub", snack: "Greek yogurt + berries", dinner: "Veggie pizza + side salad" }, nonVeg: { breakfast: "Eggs + toast + milk", lunch: "Chicken wrap + grapes", snack: "Cheese stick + fruit", dinner: "Fish tacos + coleslaw" } },
+      { day: "Saturday", veg: { breakfast: "Smoothie bowl + granola + fruit", lunch: "Falafel wrap + salad", snack: "Fruit smoothie", dinner: "Stir-fry tofu + rice + greens" }, nonVeg: { breakfast: "Weekend omelette + toast + milk", lunch: "BBQ chicken wrap + salad", snack: "Cheese + apple", dinner: "Grilled sausages + mash + veg" } },
+      { day: "Sunday", veg: { breakfast: "Porridge + stewed fruit + milk", lunch: "Pasta bake + salad", snack: "Fruit platter", dinner: "Light soup + bread + fruit" }, nonVeg: { breakfast: "Big breakfast: eggs + bacon + toast", lunch: "Roast chicken + roast veg", snack: "Yogurt + fruit", dinner: "Chicken noodle soup + roll" } },
+    ],
+  },
+
+  // ── Singapore plans ──
+  {
+    ageCategory: "School Age (6–15 years)",
+    portionNote: "3 main meals + 1–2 snacks. School-friendly portions for hawker-style home cooking.",
+    applies: ["school_6_10", "preteen_10_15"],
+    cuisines: ["sg"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Wholegrain toast + kaya + milk", lunch: "Vegetable mee soup + fruit", snack: "Banana", dinner: "Tofu stir-fry + jasmine rice + bok choy" }, nonVeg: { breakfast: "Soft-boiled eggs + toast + milk", lunch: "Chicken rice + cucumber slices", snack: "Apple slices", dinner: "Steamed fish + rice + chye sim" } },
+      { day: "Tuesday", veg: { breakfast: "Oats + mango + milk", lunch: "Egg sandwich + cherry tomatoes", snack: "Papaya cubes", dinner: "Vegetable fried rice + tofu" }, nonVeg: { breakfast: "Scrambled eggs + toast + milk", lunch: "Fish soup noodle + fruit", snack: "Yogurt + berries", dinner: "Chicken rice bowl + Asian greens" } },
+      { day: "Wednesday", veg: { breakfast: "Smoothie (milk + banana + spinach)", lunch: "Hummus wrap + cucumber", snack: "Mango slices", dinner: "Lentil curry (mild) + rice + salad" }, nonVeg: { breakfast: "Boiled egg + toast + milk", lunch: "Chicken wrap + fruit", snack: "Cheese + crackers", dinner: "Steamed fish + rice + vegetables" } },
+      { day: "Thursday", veg: { breakfast: "Peanut butter toast + milk", lunch: "Tofu rice bowl + fruit", snack: "Banana", dinner: "Vegetable noodle soup + side salad" }, nonVeg: { breakfast: "Egg omelette + toast + milk", lunch: "Chicken rice + cucumber", snack: "Yogurt + tropical fruit", dinner: "Chicken stir-fry + jasmine rice" } },
+      { day: "Friday", veg: { breakfast: "Pancakes + fruit + milk", lunch: "Cheese sandwich + fruit", snack: "Apple slices", dinner: "Vegetable pizza + side salad" }, nonVeg: { breakfast: "Eggs + toast + milk", lunch: "Mee soup + fruit", snack: "Boiled egg + fruit", dinner: "Fish tacos + coleslaw" } },
+      { day: "Saturday", veg: { breakfast: "Smoothie bowl + granola + fruit", lunch: "Falafel wrap + salad", snack: "Fruit smoothie", dinner: "Tofu laksa (mild) + rice noodles" }, nonVeg: { breakfast: "Weekend omelette + toast + milk", lunch: "Chicken rice + soup + fruit", snack: "Cheese + apple", dinner: "Chicken noodle soup + greens" } },
+      { day: "Sunday", veg: { breakfast: "Porridge + stewed fruit + milk", lunch: "Vegetable fried rice + salad", snack: "Fruit platter", dinner: "Light vegetable soup + bread" }, nonVeg: { breakfast: "Soft-boiled eggs + kaya toast + milk", lunch: "Steamed fish + rice + vegetables", snack: "Yogurt + mango", dinner: "Chicken broth + rice + greens" } },
     ],
   },
 ];

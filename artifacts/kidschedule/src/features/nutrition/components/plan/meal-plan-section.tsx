@@ -1,4 +1,5 @@
 import { getMealPlan } from "@/lib/nutrition-data";
+import { localizePortionNote } from "@workspace/nutrition-localization";
 import { cn } from "@/lib/utils";
 import { Drumstick, Leaf } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -13,10 +14,10 @@ import type { MealPlanDayExport } from "@/features/nutrition/lib/plan-meal-expor
 
 export function MealPlanSection() {
   const { t } = useTranslation();
-  const { ageGroupId, foodStyle, selectedDay, setSelectedDay, classicPlanIsVeg, setClassicPlanIsVeg } =
+  const { ageGroupId, foodStyle, selectedDay, setSelectedDay, classicPlanIsVeg, setClassicPlanIsVeg, countryProfile } =
     useNutritionContext();
   const { entries } = useMealMemory();
-  const plan = getMealPlan(ageGroupId, foodStyle);
+  const plan = getMealPlan(ageGroupId, foodStyle, countryProfile);
   const isVeg = classicPlanIsVeg;
 
   const exportDays = useMemo((): MealPlanDayExport[] => {
@@ -94,7 +95,7 @@ export function MealPlanSection() {
 
       <div className="rounded-xl bg-muted border border-border p-3 text-sm">
         <p className="text-foreground">
-          📏 <strong>{t("nutrition_hub.portions_label")}</strong> {plan.portionNote}
+          📏 <strong>{t("nutrition_hub.portions_label")}</strong> {localizePortionNote(plan.portionNote, countryProfile)}
         </p>
       </div>
 

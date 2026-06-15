@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
+import { schoolLunchTermI18nKey } from "@workspace/nutrition-localization";
+import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 import type { TiffinDay } from "@/features/nutrition/lib/tiffin-planner";
 
 interface TiffinWeekViewProps {
@@ -14,6 +16,7 @@ export function TiffinWeekView({ days, className, premiumLocked }: TiffinWeekVie
   const { t } = useTranslation();
   const { isPremium } = useSubscription();
   const { openPaywall } = usePaywall();
+  const { countryProfile } = useNutritionContext();
   const locked = premiumLocked ?? !isPremium;
 
   if (days.length === 0) return null;
@@ -27,7 +30,7 @@ export function TiffinWeekView({ days, className, premiumLocked }: TiffinWeekVie
           onClick={() => openPaywall("hub_nutrition")}
         >
           <span className="text-sm font-medium text-foreground">
-            {t("nutrition_hub.operations.tiffin_premium")}
+            {t(schoolLunchTermI18nKey(countryProfile.schoolLunchTerm, "premium"))}
           </span>
         </button>
       )}

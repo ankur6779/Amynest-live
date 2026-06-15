@@ -11,6 +11,7 @@ import { buildHouseholdGrocery, buildHouseholdTiffinPlans } from "@/features/nut
 import { resolveHouseholdSize } from "@/features/nutrition/lib/grocery-household-size";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 import { loadMealMemoryEntries } from "@/features/nutrition/lib/nutrition-memory-sync";
+import { schoolLunchTermI18nKey } from "@workspace/nutrition-localization";
 import { useParentNutritionProfile } from "@/features/nutrition/hooks/use-parent-nutrition-profile";
 import { GroceryList } from "@/features/nutrition/components/grocery/grocery-list";
 import { ShoppingMode } from "@/features/nutrition/components/grocery/shopping-mode";
@@ -23,7 +24,7 @@ function childAgeMonths(c: { age: number; ageMonths?: number | null }): number {
 export function HouseholdGroceryBoard() {
   const { t } = useTranslation();
   const { data: children = [] } = useListChildren();
-  const { foodStyle } = useParentNutritionProfile();
+  const { foodStyle, countryProfile } = useParentNutritionProfile();
   const { isPremium } = useSubscription();
   const { openPaywall } = usePaywall();
   const { classicPlanIsVeg } = useNutritionContext();
@@ -35,14 +36,15 @@ export function HouseholdGroceryBoard() {
         name: c.name,
         ageGroupId: monthsToAgeGroupId(childAgeMonths(c)),
         foodStyle,
+        countryProfile,
         memoryEntries: loadMealMemoryEntries(c.id),
       })),
-    [children, foodStyle],
+    [children, foodStyle, countryProfile],
   );
 
   const groceryGroups = useMemo(
-    () => buildHouseholdGrocery(childPlans, resolveHouseholdSize(children.length), classicPlanIsVeg),
-    [childPlans, children.length, classicPlanIsVeg],
+    () => buildHouseholdGrocery(childPlans, resolveHouseholdSize(children.length), classicPlanIsVeg, countryProfile),
+    [childPlans, children.length, classicPlanIsVeg, countryProfile],
   );
 
   const tiffinPlans = useMemo(
@@ -74,7 +76,7 @@ export function HouseholdGroceryBoard() {
             {t("nutrition_hub.operations.household_grocery_title")}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            {t("nutrition_hub.operations.household_grocery_desc")}
+            {t(schoolLunchTermI18nKey(countryProfile.schoolLunchTerm, "household_grocery_desc"))}
           </p>
         </div>
 
@@ -90,7 +92,7 @@ export function HouseholdGroceryBoard() {
           {tiffinPlans.length > 1 && (
             <div className="mt-6 space-y-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("nutrition_hub.operations.household_tiffin")}
+                {t(schoolLunchTermI18nKey(countryProfile.schoolLunchTerm, "household"))}
               </p>
               {tiffinPlans.map((plan) => (
                 <div key={plan.childId}>

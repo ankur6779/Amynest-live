@@ -19,7 +19,7 @@ function childAgeMonths(c: { age: number; ageMonths?: number | null }): number {
 
 export function CaregiverSharePanel() {
   const { t } = useTranslation();
-  const { foodStyle, suggestedMeal } = useNutritionContext();
+  const { foodStyle, suggestedMeal, countryProfile } = useNutritionContext();
   const { data: children = [] } = useListChildren();
   const authFetch = useAuthFetch();
   const { isPremium } = useSubscription();
@@ -41,7 +41,7 @@ export function CaregiverSharePanel() {
         foodStyle,
         children: children.map((c) => {
           const ageGroupId = monthsToAgeGroupId(childAgeMonths(c)) as AgeGroupId;
-          const plan = getMealPlan(ageGroupId, foodStyle);
+          const plan = getMealPlan(ageGroupId, foodStyle, countryProfile);
           const day = plan?.days[dayIdx] ?? plan?.days[0];
           const meal = day?.veg;
           const slots = [

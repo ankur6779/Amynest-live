@@ -1,5 +1,6 @@
 import type { AgeGroupId } from "@/lib/nutrition-data";
 import { getMealPlan } from "@/lib/nutrition-data";
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
 import { generateGroceryList } from "@/features/nutrition/lib/grocery-generator";
 import { collectWeekMeals } from "@/features/nutrition/lib/household-grocery";
 import type { HouseholdChildRow } from "@/features/nutrition/lib/household-aggregation";
@@ -21,21 +22,23 @@ export function buildNutritionPremiumPreview(input: {
   memoryEntries: MealMemoryEntry[];
   familySize: number;
   isVeg?: boolean;
+  countryProfile: NutritionCountryProfile;
 }): NutritionPremiumPreviewData {
-  const { householdRows, ageGroupId, foodStyle, memoryEntries, familySize, isVeg = true } = input;
+  const { householdRows, ageGroupId, foodStyle, memoryEntries, familySize, isVeg = true, countryProfile } = input;
 
-  const weekMeals = collectWeekMeals(ageGroupId, foodStyle, isVeg);
+  const weekMeals = collectWeekMeals(ageGroupId, foodStyle, isVeg, countryProfile);
   const groceryGroups = generateGroceryList({
     weekMeals,
     familySize,
     memoryEntries,
+    countryProfile,
   });
   const groceryHighlights = groceryGroups
     .flatMap((g) => g.items)
     .slice(0, 4)
     .map((i) => i.display);
 
-  const plan = getMealPlan(ageGroupId, foodStyle);
+  const plan = getMealPlan(ageGroupId, foodStyle, countryProfile);
   let shareMealPreview: string | null = null;
   if (plan) {
     const dayIdx = getMondayBasedDayIndex();

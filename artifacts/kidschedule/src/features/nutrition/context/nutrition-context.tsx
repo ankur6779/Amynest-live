@@ -9,9 +9,13 @@ import {
 import { AGE_GROUPS, type AgeGroup, type AgeGroupId, type Nutrient } from "@/lib/nutrition-data";
 import {
   useNutritionRegion,
+  REGION_CONFIGS,
+  getRegionalSources,
   type RegionConfig,
   type RegionalFoodSource,
+  type RegionCode,
 } from "@/lib/nutrition-region";
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
 import { getMondayBasedDayIndex, monthsToAgeGroupId } from "@/features/nutrition/lib/age-band-map";
 import { useParentNutritionProfile } from "@/features/nutrition/hooks/use-parent-nutrition-profile";
 import type { NutritionTab, PlanSource } from "@/features/nutrition/types/nutrition-hub.types";
@@ -35,6 +39,8 @@ export type NutritionContextValue = {
   suggestedMeal: string;
   setSuggestedMeal: (meal: string) => void;
   foodStyle: string;
+  countryProfile: NutritionCountryProfile;
+  regionCode: RegionCode;
   regionConfig: RegionConfig;
   getRegional: (nutrientId: string) => RegionalFoodSource[] | null;
   localizeNote: (note?: string) => string | undefined;
@@ -58,8 +64,20 @@ export function NutritionProvider({
   childName: string | null;
   children: ReactNode;
 }) {
-  const { foodStyle } = useParentNutritionProfile();
-  const { config: regionConfig, getRegional, localizeNote } = useNutritionRegion();
+  const { foodStyle, countryProfile, regionCode } = useParentNutritionProfile();
+  const timezoneRegion = useNutritionRegion();
+  const regionConfig = REGION_CONFIGS[regionCode] ?? timezoneRegion.config;
+  const getRegional = useCallback(
+    (nutrientId: string) => getRegionalSources(nutrientId, regionCode),
+    [regionCode],
+  );
+  const localizeNote = useCallback(
+    (note?: string) => {
+      if (!note || regionCode === "IN") return note;
+      return note.replace(/ICMR-NIN\s*20\d\d/g, regionConfig.authorityShort);
+    },
+    [regionCode, regionConfig.authorityShort],
+  );
 
   const [activeTab, setActiveTab] = useState<NutritionTab>("today");
   const [ageGroupOverride, setAgeGroupOverride] = useState<AgeGroupId | null>(null);
@@ -105,6 +123,8 @@ export function NutritionProvider({
       suggestedMeal,
       setSuggestedMeal,
       foodStyle,
+      countryProfile,
+      regionCode,
       regionConfig,
       getRegional,
       localizeNote,
@@ -127,6 +147,8 @@ export function NutritionProvider({
       classicPlanIsVeg,
       suggestedMeal,
       foodStyle,
+      countryProfile,
+      regionCode,
       regionConfig,
       getRegional,
       localizeNote,

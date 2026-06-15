@@ -14,6 +14,7 @@ import {
   markAchievementsSeen,
   newlyUnlockedAchievements,
   pickNextMilestone,
+  resolveAchievementI18nKeys,
 } from "@/features/nutrition/lib/nutrition-achievements";
 import {
   dateKeyLocal,
@@ -28,7 +29,7 @@ import {
 
 export function NutritionAchievementCard() {
   const { t } = useTranslation();
-  const { childId, ageGroupId } = useNutritionContext();
+  const { childId, ageGroupId, countryProfile } = useNutritionContext();
   const { entries } = useMealMemory();
   const { streak } = useNutritionTrackMeta();
   const { data: children = [] } = useListChildren();
@@ -100,6 +101,7 @@ export function NutritionAchievementCard() {
       {unlocked.map((u) => {
         const def = defFor(u.id);
         if (!def) return null;
+        const copy = resolveAchievementI18nKeys(def, countryProfile);
         return (
           <motion.div
             key={u.id}
@@ -109,9 +111,9 @@ export function NutritionAchievementCard() {
             transition={NUTRITION_TRANSITION.unlock}
           >
             <p className="text-sm font-semibold text-foreground">
-              {def.emoji} {t(def.titleKey)} — {t("nutrition_hub.achievements.unlocked")}
+              {def.emoji} {t(copy.titleKey)} — {t("nutrition_hub.achievements.unlocked")}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t(def.descriptionKey)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t(copy.descriptionKey)}</p>
           </motion.div>
         );
       })}
@@ -124,10 +126,11 @@ export function NutritionAchievementCard() {
           {(() => {
             const def = defFor(next.id);
             if (!def) return null;
+            const copy = resolveAchievementI18nKeys(def, countryProfile);
             return (
               <>
                 <p className="text-xs text-muted-foreground">
-                  {def.emoji} {t(def.titleKey)}
+                  {def.emoji} {t(copy.titleKey)}
                 </p>
                 <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden">
                   <motion.div

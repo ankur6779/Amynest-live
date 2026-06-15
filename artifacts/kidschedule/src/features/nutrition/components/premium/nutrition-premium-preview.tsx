@@ -23,7 +23,7 @@ function childAgeMonths(c: { age: number; ageMonths?: number | null }): number {
 export function NutritionPremiumPreview() {
   const { t } = useTranslation();
   const { childId, ageGroupId, classicPlanIsVeg } = useNutritionContext();
-  const { foodStyle } = useParentNutritionProfile();
+  const { foodStyle, countryProfile } = useParentNutritionProfile();
   const { entries } = useMealMemory();
   const { data: children = [] } = useListChildren();
   const { isPremium } = useSubscription();
@@ -48,8 +48,9 @@ export function NutritionPremiumPreview() {
       memoryEntries: entries,
       familySize: resolveHouseholdSize(children.length),
       isVeg: classicPlanIsVeg,
+      countryProfile,
     });
-  }, [children, todayKey, ageGroupId, foodStyle, entries, classicPlanIsVeg]);
+  }, [children, todayKey, ageGroupId, foodStyle, entries, classicPlanIsVeg, countryProfile]);
 
   useEffect(() => {
     if (!isPremium && preview.hasData && childId) {

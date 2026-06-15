@@ -1,8 +1,10 @@
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
 import type { AgeGroupId } from "@/lib/nutrition-data";
 import type { MealMemoryEntry } from "@/features/nutrition/lib/nutrition-memory";
 import { isMealDeprioritized, mealPreferenceScore, pickPreferredMeal } from "@/features/nutrition/lib/meal-recommendation";
-import { getIndiaSeason, prioritizeMealsBySeason } from "@/features/nutrition/lib/seasonal-foods";
+import { getSeasonForCountry, prioritizeMealsBySeason } from "@/features/nutrition/lib/seasonal-foods";
 import { normalizeMealKey } from "@/features/nutrition/lib/nutrition-memory";
+import { isIndianFoodStyle } from "@workspace/nutrition-localization";
 
 export interface TiffinDay {
   dayLabel: string;
@@ -14,13 +16,6 @@ export interface TiffinDay {
 const SCHOOL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
 
 const REGION_TIFFIN_FALLBACK: Record<string, string[]> = {
-  indian: [
-    "Vegetable paratha + fruit",
-    "Idli with chutney",
-    "Poha with peanuts",
-    "Roti roll with paneer",
-    "Curd rice with pickle",
-  ],
   south_indian: [
     "Mini idli + sambar",
     "Lemon rice + papad",
@@ -35,25 +30,19 @@ const REGION_TIFFIN_FALLBACK: Record<string, string[]> = {
     "Besan chilla",
     "Dal paratha + fruit",
   ],
-  default: [
-    "Whole grain wrap + veggies",
-    "Rice + dal in insulated box",
-    "Pasta with vegetables",
-    "Hummus wrap + fruit",
-    "Egg or paneer sandwich",
-  ],
 };
 
 function lunchCandidatesFromPlan(weekLunches: string[]): string[] {
   return weekLunches.filter(Boolean);
 }
 
-function fallbackForRegion(foodStyle: string): string[] {
+function fallbackForProfile(profile: NutritionCountryProfile, foodStyle: string): string[] {
   const key = foodStyle.toLowerCase();
-  if (key.includes("south")) return REGION_TIFFIN_FALLBACK.south_indian!;
-  if (key.includes("north") || key === "indian" || key === "pan_indian") return REGION_TIFFIN_FALLBACK.north_indian!;
-  if (REGION_TIFFIN_FALLBACK[key]) return REGION_TIFFIN_FALLBACK[key]!;
-  return REGION_TIFFIN_FALLBACK.default!;
+  if (isIndianFoodStyle(key)) {
+    if (key.includes("south")) return REGION_TIFFIN_FALLBACK.south_indian!;
+    return REGION_TIFFIN_FALLBACK.north_indian!;
+  }
+  return profile.tiffinFallbacks;
 }
 
 function ageAppropriateNote(ageGroupId: AgeGroupId): string | undefined {
@@ -67,15 +56,23 @@ export interface TiffinPlannerInput {
   ageGroupId: AgeGroupId;
   foodStyle: string;
   weekLunches: string[];
+  countryProfile: NutritionCountryProfile;
   memoryEntries?: MealMemoryEntry[];
   refDate?: Date;
 }
 
 export function planSchoolTiffinWeek(input: TiffinPlannerInput): TiffinDay[] {
-  const { ageGroupId, foodStyle, weekLunches, memoryEntries = [], refDate = new Date() } = input;
-  const season = getIndiaSeason(refDate);
-  const planPool = prioritizeMealsBySeason(lunchCandidatesFromPlan(weekLunches), season);
-  const fallbacks = fallbackForRegion(foodStyle);
+  const {
+    ageGroupId,
+    foodStyle,
+    weekLunches,
+    countryProfile,
+    memoryEntries = [],
+    refDate = new Date(),
+  } = input;
+  const season = getSeasonForCountry(countryProfile, refDate);
+  const planPool = prioritizeMealsBySeason(lunchCandidatesFromPlan(weekLunches), season, countryProfile);
+  const fallbacks = fallbackForProfile(countryProfile, foodStyle);
   const usedKeys = new Set<string>();
   const ageNote = ageAppropriateNote(ageGroupId);
 
@@ -110,4 +107,8 @@ export function isSchoolAgeBand(ageGroupId: AgeGroupId): boolean {
     ageGroupId === "school_6_10" ||
     ageGroupId === "preteen_10_15"
   );
+}
+
+export function schoolLunchLabel(profile: NutritionCountryProfile): string {
+  return profile.schoolLunchLabel;
 }

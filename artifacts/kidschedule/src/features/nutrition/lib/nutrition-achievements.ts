@@ -3,6 +3,10 @@ import type { MealMemoryEntry } from "@/features/nutrition/lib/nutrition-memory"
 import type { StoredDaySnapshot } from "@/features/nutrition/lib/nutrition-score-storage";
 import { isStreakQualifyingDay } from "@/features/nutrition/lib/nutrition-streak";
 import { isSchoolAgeBand } from "@/features/nutrition/lib/tiffin-planner";
+import {
+  schoolLunchTermI18nKey,
+  type NutritionCountryProfile,
+} from "@workspace/nutrition-localization";
 
 export type AchievementId =
   | "first_nourishing_week"
@@ -16,6 +20,19 @@ export interface AchievementDefinition {
   titleKey: string;
   descriptionKey: string;
   emoji: string;
+}
+
+export function resolveAchievementI18nKeys(
+  def: AchievementDefinition,
+  countryProfile: NutritionCountryProfile,
+): { titleKey: string; descriptionKey: string } {
+  if (def.id === "healthy_tiffin_week") {
+    return {
+      titleKey: schoolLunchTermI18nKey(countryProfile.schoolLunchTerm, "achievement_title"),
+      descriptionKey: schoolLunchTermI18nKey(countryProfile.schoolLunchTerm, "achievement_desc"),
+    };
+  }
+  return { titleKey: def.titleKey, descriptionKey: def.descriptionKey };
 }
 
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [

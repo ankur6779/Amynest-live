@@ -61,6 +61,7 @@
     "@workspace/action-routing": "workspace:*",
     "@workspace/family-intelligence": "workspace:*",
     "@workspace/notification-engine": "workspace:*",
+    "@workspace/nutrition-localization": "workspace:*",
     "@workspace/event-prep": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",

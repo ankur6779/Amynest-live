@@ -9,11 +9,13 @@ import { collectWeekLunches, collectWeekMeals } from "@/features/nutrition/lib/h
 import { generateGroceryList } from "@/features/nutrition/lib/grocery-generator";
 import { generateMealPrepSuggestions } from "@/features/nutrition/lib/meal-prep";
 import {
-  getIndiaSeason,
+  getSeasonForCountry,
   getSeasonalFoodTips,
   seasonalHighlight,
+  seasonDisplayKey,
 } from "@/features/nutrition/lib/seasonal-foods";
-import { planSchoolTiffinWeek, isSchoolAgeBand } from "@/features/nutrition/lib/tiffin-planner";
+import { planSchoolTiffinWeek, isSchoolAgeBand, schoolLunchLabel } from "@/features/nutrition/lib/tiffin-planner";
+import { schoolLunchTermI18nKey } from "@workspace/nutrition-localization";
 import { GroceryList } from "@/features/nutrition/components/grocery/grocery-list";
 import { ShoppingMode } from "@/features/nutrition/components/grocery/shopping-mode";
 import { TiffinWeekView } from "@/features/nutrition/components/tiffin/tiffin-week-view";
@@ -33,20 +35,20 @@ const TAB_IDS: OperationsTab[] = ["groceries", "tiffin", "prep", "household"];
 
 export function MealOperationsSection() {
   const { t } = useTranslation();
-  const { ageGroupId, foodStyle, childId, classicPlanIsVeg } = useNutritionContext();
+  const { ageGroupId, foodStyle, childId, classicPlanIsVeg, countryProfile } = useNutritionContext();
   const { entries } = useMealMemory();
   const { data: children = [] } = useListChildren();
   const { isPremium } = useSubscription();
   const [activeTab, setActiveTab] = useState<OperationsTab>("groceries");
 
   const weekMeals = useMemo(
-    () => collectWeekMeals(ageGroupId, foodStyle, classicPlanIsVeg),
-    [ageGroupId, foodStyle, classicPlanIsVeg],
+    () => collectWeekMeals(ageGroupId, foodStyle, classicPlanIsVeg, countryProfile),
+    [ageGroupId, foodStyle, classicPlanIsVeg, countryProfile],
   );
 
   const weekLunches = useMemo(
-    () => collectWeekLunches(ageGroupId, foodStyle, classicPlanIsVeg),
-    [ageGroupId, foodStyle, classicPlanIsVeg],
+    () => collectWeekLunches(ageGroupId, foodStyle, classicPlanIsVeg, countryProfile),
+    [ageGroupId, foodStyle, classicPlanIsVeg, countryProfile],
   );
 
   const familySize = resolveHouseholdSize(children.length);
@@ -57,8 +59,9 @@ export function MealOperationsSection() {
         weekMeals,
         familySize,
         memoryEntries: entries,
+        countryProfile,
       }),
-    [weekMeals, familySize, entries],
+    [weekMeals, familySize, entries, countryProfile],
   );
 
   const tiffinDays = useMemo(
@@ -67,16 +70,27 @@ export function MealOperationsSection() {
         ageGroupId,
         foodStyle,
         weekLunches,
+        countryProfile,
         memoryEntries: entries,
       }),
-    [ageGroupId, foodStyle, weekLunches, entries],
+    [ageGroupId, foodStyle, weekLunches, entries, countryProfile],
   );
 
-  const prepTasks = useMemo(() => generateMealPrepSuggestions(weekMeals), [weekMeals]);
+  const prepTasks = useMemo(
+    () => generateMealPrepSuggestions(weekMeals, countryProfile),
+    [weekMeals, countryProfile],
+  );
 
-  const season = getIndiaSeason();
-  const seasonTips = getSeasonalFoodTips(season);
-  const seasonSample = weekMeals.find((m) => seasonalHighlight(m, season));
+  const season = getSeasonForCountry(countryProfile);
+  const seasonTips = getSeasonalFoodTips(season, countryProfile);
+  const seasonSample = weekMeals.find((m) => seasonalHighlight(m, season, countryProfile));
+  const lunchLabel = schoolLunchLabel(countryProfile);
+  const lunchTerm = countryProfile.schoolLunchTerm;
+
+  const operationsTabLabel = (tab: OperationsTab) => {
+    if (tab === "tiffin") return t(schoolLunchTermI18nKey(lunchTerm, "tab"));
+    return t(`nutrition_hub.operations.tab_${tab}`);
+  };
 
   const shoppingKey = childId ? `child-${childId}` : "default";
   const groceryOpenedRef = useRef(false);
@@ -108,7 +122,7 @@ export function MealOperationsSection() {
           {t("nutrition_hub.operations.title")}
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
-          {t("nutrition_hub.operations.subtitle")}
+          {t(schoolLunchTermI18nKey(lunchTerm, "operations_subtitle"))}
         </p>
       </div>
 
@@ -133,7 +147,7 @@ export function MealOperationsSection() {
             )}
             data-testid={`meal-operations-tab-${tab}`}
           >
-            {t(`nutrition_hub.operations.tab_${tab}`)}
+            {operationsTabLabel(tab)}
           </button>
         ))}
       </div>
@@ -143,7 +157,7 @@ export function MealOperationsSection() {
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t("nutrition_hub.operations.season_title", {
-                season: t(`nutrition_hub.operations.season_${season}`),
+                season: t(`nutrition_hub.operations.season_${seasonDisplayKey(season)}`),
               })}
             </p>
             <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
@@ -151,9 +165,9 @@ export function MealOperationsSection() {
                 <li key={tip}>{tip}</li>
               ))}
             </ul>
-            {seasonSample && seasonalHighlight(seasonSample, season) && (
+            {seasonSample && seasonalHighlight(seasonSample, season, countryProfile) && (
               <p className="text-xs text-primary/90 italic">
-                {seasonSample}: {seasonalHighlight(seasonSample, season)}
+                {seasonSample}: {seasonalHighlight(seasonSample, season, countryProfile)}
               </p>
             )}
           </div>
@@ -171,13 +185,13 @@ export function MealOperationsSection() {
       {activeTab === "tiffin" && (
         <section className="space-y-3" role="tabpanel" data-testid="meal-operations-panel-tiffin">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("nutrition_hub.operations.tiffin_title")}
+            {lunchLabel}
           </p>
-          <p className="text-sm text-muted-foreground">{t("nutrition_hub.operations.tiffin_desc")}</p>
+          <p className="text-sm text-muted-foreground">{t(schoolLunchTermI18nKey(lunchTerm, "desc"))}</p>
           {isSchoolAgeBand(ageGroupId) ? (
             <TiffinWeekView days={tiffinDays} />
           ) : (
-            <p className="text-sm text-muted-foreground">{t("nutrition_hub.operations.tiffin_school_only")}</p>
+            <p className="text-sm text-muted-foreground">{t(schoolLunchTermI18nKey(lunchTerm, "school_only"))}</p>
           )}
         </section>
       )}

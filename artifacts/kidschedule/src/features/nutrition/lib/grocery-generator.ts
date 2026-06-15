@@ -4,6 +4,11 @@ import type { GroceryUnit } from "@/features/nutrition/lib/grocery-ingredients";
 import { computeWeeklyGroceryQuantities } from "@/features/nutrition/lib/grocery-quantity-engine";
 import type { MealMemoryEntry } from "@/features/nutrition/lib/nutrition-memory";
 import { isMealDeprioritized, mealPreferenceScore } from "@/features/nutrition/lib/meal-recommendation";
+import {
+  formatGroceryQuantityLabel,
+  NUTRITION_COUNTRY_PROFILES,
+  type NutritionCountryProfile,
+} from "@workspace/nutrition-localization";
 
 export interface GroceryItem {
   id: string;
@@ -32,6 +37,7 @@ export interface GroceryGeneratorInput {
   weekMeals: string[];
   familySize: number;
   memoryEntries?: MealMemoryEntry[];
+  countryProfile?: NutritionCountryProfile;
 }
 
 function memoryScaleFactor(entries: MealMemoryEntry[], weekMeals: string[]): number {
@@ -47,17 +53,14 @@ function memoryScaleFactor(entries: MealMemoryEntry[], weekMeals: string[]): num
   return 1;
 }
 
-/** Format quantity with explicit units (C2/H3). */
-export function formatGroceryDisplay(name: string, quantity: number, unit: GroceryUnit): string {
-  if (unit === "kg") {
-    const kg = Number.isInteger(quantity) ? quantity : quantity.toFixed(1).replace(/\.0$/, "");
-    return `${name} × ${kg} kg`;
-  }
-  if (unit === "L") {
-    const liters = Number.isInteger(quantity) ? quantity : quantity.toFixed(1).replace(/\.0$/, "");
-    return `${name} × ${liters} L`;
-  }
-  return `${name} × ${Math.round(quantity)}`;
+/** Format quantity with country-aware units (C2/H3). */
+export function formatGroceryDisplay(
+  name: string,
+  quantity: number,
+  unit: GroceryUnit,
+  countryProfile: NutritionCountryProfile = NUTRITION_COUNTRY_PROFILES.GLOBAL,
+): string {
+  return formatGroceryQuantityLabel(name, quantity, unit, countryProfile);
 }
 
 function itemId(name: string, category: GroceryCategory): string {
@@ -73,9 +76,15 @@ function applyMemoryScale(quantity: number, factor: number, unit: GroceryUnit): 
 }
 
 export function generateGroceryList(input: GroceryGeneratorInput): GroupedGroceryList[] {
-  const { weekMeals, familySize, memoryEntries = [] } = input;
+  const {
+    weekMeals,
+    familySize,
+    memoryEntries = [],
+    countryProfile,
+  } = input;
+  const displayProfile = countryProfile ?? NUTRITION_COUNTRY_PROFILES.GLOBAL;
   const memoryFactor = memoryScaleFactor(memoryEntries, weekMeals);
-  const scaled = computeWeeklyGroceryQuantities(weekMeals, familySize);
+  const scaled = computeWeeklyGroceryQuantities(weekMeals, familySize, countryProfile);
 
   const byCategory = new Map<GroceryCategory, GroceryItem[]>();
 
@@ -87,7 +96,7 @@ export function generateGroceryList(input: GroceryGeneratorInput): GroupedGrocer
       category: line.category,
       quantity,
       unit: line.unit,
-      display: formatGroceryDisplay(line.item, quantity, line.unit),
+      display: formatGroceryDisplay(line.item, quantity, line.unit, displayProfile),
     };
     const list = byCategory.get(line.category) ?? [];
     list.push(item);
@@ -101,7 +110,11 @@ export function generateGroceryList(input: GroceryGeneratorInput): GroupedGrocer
   })).filter((g) => g.items.length > 0);
 }
 
-export function mergeGroceryLists(listSets: GroupedGroceryList[][]): GroupedGroceryList[] {
+export function mergeGroceryLists(
+  listSets: GroupedGroceryList[][],
+  countryProfile?: NutritionCountryProfile,
+): GroupedGroceryList[] {
+  const displayProfile = countryProfile ?? NUTRITION_COUNTRY_PROFILES.GLOBAL;
   const map = new Map<string, GroceryItem>();
 
   for (const group of listSets.flat()) {
@@ -109,7 +122,7 @@ export function mergeGroceryLists(listSets: GroupedGroceryList[][]): GroupedGroc
       const existing = map.get(item.id);
       if (existing) {
         existing.quantity += item.quantity;
-        existing.display = formatGroceryDisplay(existing.name, existing.quantity, existing.unit);
+        existing.display = formatGroceryDisplay(existing.name, existing.quantity, existing.unit, displayProfile);
       } else {
         map.set(item.id, { ...item });
       }

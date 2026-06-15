@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { getNutritionCountryProfile } from "@workspace/nutrition-localization";
 import { isSchoolAgeBand, planSchoolTiffinWeek } from "@/features/nutrition/lib/tiffin-planner";
 
 describe("tiffin-planner", () => {
+  const india = getNutritionCountryProfile("IN");
   const memory = [
     {
       dateKey: "2026-06-01",
@@ -34,6 +36,7 @@ describe("tiffin-planner", () => {
       ageGroupId: "school_6_10",
       foodStyle: "south_indian",
       weekLunches: ["Idli with chutney", "Lemon rice", "Curd rice"],
+      countryProfile: india,
       memoryEntries: memory,
     });
     expect(days).toHaveLength(5);
@@ -45,6 +48,7 @@ describe("tiffin-planner", () => {
       ageGroupId: "preschool_3_6",
       foodStyle: "indian",
       weekLunches: ["Dal rice", "Vegetable khichdi", "Roti sabzi", "Poha", "Upma"],
+      countryProfile: india,
     });
     const keys = days.map((d) => d.suggestion.toLowerCase());
     expect(new Set(keys).size).toBe(5);
@@ -55,6 +59,7 @@ describe("tiffin-planner", () => {
       ageGroupId: "school_6_10",
       foodStyle: "south_indian",
       weekLunches: ["Idli with chutney", "Lemon rice"],
+      countryProfile: india,
       memoryEntries: memory,
     });
     expect(days.some((d) => d.suggestion.toLowerCase().includes("idli"))).toBe(true);

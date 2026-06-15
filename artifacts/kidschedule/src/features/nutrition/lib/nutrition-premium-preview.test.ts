@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getNutritionCountryProfile } from "@workspace/nutrition-localization";
 import { buildNutritionPremiumPreview } from "@/features/nutrition/lib/nutrition-premium-preview";
 
 describe("nutrition-premium-preview", () => {
@@ -19,6 +20,7 @@ describe("nutrition-premium-preview", () => {
       foodStyle: "south_indian",
       memoryEntries: [],
       familySize: 4,
+      countryProfile: getNutritionCountryProfile("IN"),
     });
 
     expect(preview.hasData).toBe(true);
@@ -34,6 +36,7 @@ describe("nutrition-premium-preview", () => {
       foodStyle: "indian",
       memoryEntries: [],
       familySize: 2,
+      countryProfile: getNutritionCountryProfile("IN"),
     });
     expect(preview.hasData).toBe(false);
   });

@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "channel": "production",
-  "bundleVersion": "1.0.13",
-  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.13.zip",
-  "checksum": "f0f335a0f4a11aab0e115a67746e89f8ca78bc543d1a51a614e4c09981102c8f",
+  "bundleVersion": "1.0.14",
+  "bundleUrl": "https://www.amynest.in/api/app/ota/bundle/amynest-www-1.0.14.zip",
+  "checksum": "08afbcd9878d755af7a8252fd8bc8d2d4b2b4c72e6c7f32cac06f2c07ec2dc36",
   "minNativeBuild": 9,
   "maxNativeBuild": null,
   "policy": "patch-only",
-  "releaseNotes": "Nutrition Hub premium visual polish: distinct section identities, living score ring, weekly progress glow, hero particles, microinteractions, and inviting empty states.",
+  "releaseNotes": "Nutrition Hub global country localization: SG profile, country-aware premium preview and caregiver share, school lunch terminology by country, Hindi UI no longer forces India content.",
   "changeClasses": [
     "bugfix",
     "ui-copy"

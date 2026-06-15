@@ -1,6 +1,8 @@
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
 import type { GroceryCategory } from "@/features/nutrition/lib/operations-constants";
 import {
   countIngredientMentions,
+  getIngredientRulesForProfile,
   type GroceryUnit,
   type IngredientMentionTotals,
 } from "@/features/nutrition/lib/grocery-ingredients";
@@ -87,6 +89,8 @@ export function scaleMentionTotals(
 export function computeWeeklyGroceryQuantities(
   weekMeals: string[],
   familySize: number,
+  countryProfile?: NutritionCountryProfile,
 ): ScaledGroceryLine[] {
-  return scaleMentionTotals(countIngredientMentions(weekMeals), familySize);
+  const rules = countryProfile ? getIngredientRulesForProfile(countryProfile) : undefined;
+  return scaleMentionTotals(countIngredientMentions(weekMeals, rules), familySize);
 }

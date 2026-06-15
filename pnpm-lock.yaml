@@ -310,6 +310,9 @@ importers:
       '@workspace/notification-engine':
         specifier: workspace:*
         version: link:../../lib/notification-engine
+      '@workspace/nutrition-localization':
+        specifier: workspace:*
+        version: link:../../lib/nutrition-localization
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
@@ -578,6 +581,9 @@ importers:
       '@workspace/morning-flow':
         specifier: workspace:*
         version: link:../../lib/morning-flow
+      '@workspace/nutrition-localization':
+        specifier: workspace:*
+        version: link:../../lib/nutrition-localization
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
@@ -1621,6 +1627,8 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../db
+
+  lib/nutrition-localization: {}
 
   lib/olympiad: {}
 

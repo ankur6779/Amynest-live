@@ -4,6 +4,8 @@ import type { MealMemoryEntry } from "@/features/nutrition/lib/nutrition-memory"
 import { getMealPlan, type AgeGroupId } from "@/lib/nutrition-data";
 import type { TiffinDay } from "@/features/nutrition/lib/tiffin-planner";
 import { planSchoolTiffinWeek } from "@/features/nutrition/lib/tiffin-planner";
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
+import { NUTRITION_COUNTRY_PROFILES } from "@workspace/nutrition-localization";
 
 export interface HouseholdChildPlan {
   childId: number;
@@ -11,14 +13,16 @@ export interface HouseholdChildPlan {
   ageGroupId: AgeGroupId;
   foodStyle: string;
   memoryEntries: MealMemoryEntry[];
+  countryProfile?: NutritionCountryProfile;
 }
 
 export function collectWeekMeals(
   ageGroupId: AgeGroupId,
   foodStyle: string,
   isVeg: boolean,
+  countryProfile?: NutritionCountryProfile,
 ): string[] {
-  const plan = getMealPlan(ageGroupId, foodStyle);
+  const plan = getMealPlan(ageGroupId, foodStyle, countryProfile);
   if (!plan) return [];
   const meals: string[] = [];
   for (const day of plan.days) {
@@ -34,8 +38,9 @@ export function collectWeekLunches(
   ageGroupId: AgeGroupId,
   foodStyle: string,
   isVeg: boolean,
+  countryProfile?: NutritionCountryProfile,
 ): string[] {
-  const plan = getMealPlan(ageGroupId, foodStyle);
+  const plan = getMealPlan(ageGroupId, foodStyle, countryProfile);
   if (!plan) return [];
   return plan.days
     .map((d) => (isVeg ? d.veg.lunch : d.nonVeg.lunch))
@@ -50,7 +55,7 @@ export function collectHouseholdWeekMeals(
   const seen = new Set<string>();
   const meals: string[] = [];
   for (const child of children) {
-    for (const meal of collectWeekMeals(child.ageGroupId, child.foodStyle, isVeg)) {
+    for (const meal of collectWeekMeals(child.ageGroupId, child.foodStyle, isVeg, child.countryProfile)) {
       if (seen.has(meal)) continue;
       seen.add(meal);
       meals.push(meal);
@@ -63,10 +68,12 @@ export function buildHouseholdGrocery(
   children: HouseholdChildPlan[],
   familySize: number,
   isVeg: boolean,
+  countryProfile?: NutritionCountryProfile,
 ): GroupedGroceryList[] {
   const weekMeals = collectHouseholdWeekMeals(children, isVeg);
   const memoryEntries = children.flatMap((c) => c.memoryEntries);
-  return generateGroceryList({ weekMeals, familySize, memoryEntries });
+  const profile = countryProfile ?? children[0]?.countryProfile;
+  return generateGroceryList({ weekMeals, familySize, memoryEntries, countryProfile: profile });
 }
 
 export function buildHouseholdTiffinPlans(
@@ -80,7 +87,8 @@ export function buildHouseholdTiffinPlans(
       days: planSchoolTiffinWeek({
         ageGroupId: c.ageGroupId,
         foodStyle: c.foodStyle,
-        weekLunches: collectWeekLunches(c.ageGroupId, c.foodStyle, isVeg),
+        weekLunches: collectWeekLunches(c.ageGroupId, c.foodStyle, isVeg, c.countryProfile),
+        countryProfile: c.countryProfile ?? NUTRITION_COUNTRY_PROFILES.GLOBAL,
         memoryEntries: c.memoryEntries,
       }),
     }))

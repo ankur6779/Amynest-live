@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { getMealPlan } from "@/lib/nutrition-data";
 import type { AgeGroupId } from "@/lib/nutrition-data";
+import type { NutritionCountryProfile } from "@workspace/nutrition-localization";
 import { getMondayBasedDayIndex } from "@/features/nutrition/lib/age-band-map";
 import { pickTonightDinner } from "@/features/nutrition/lib/meal-recommendation";
 import { loadMealMemoryEntries } from "@/features/nutrition/lib/nutrition-memory-sync";
@@ -10,9 +11,10 @@ export function useTonightMeal(
   foodStyle: string,
   childId?: number | null,
   isVeg = true,
+  countryProfile?: NutritionCountryProfile | null,
 ) {
   return useMemo(() => {
-    const plan = getMealPlan(ageGroupId, foodStyle);
+    const plan = getMealPlan(ageGroupId, foodStyle, countryProfile);
     if (!plan) {
       return { mealName: null as string | null, lunchName: null as string | null, hasPlan: false };
     }
@@ -28,5 +30,5 @@ export function useTonightMeal(
       hasPlan: true,
       dayLabel: picked.dayLabel ?? day!.day,
     };
-  }, [ageGroupId, foodStyle, childId, isVeg]);
+  }, [ageGroupId, foodStyle, childId, isVeg, countryProfile]);
 }

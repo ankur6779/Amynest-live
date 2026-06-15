@@ -16,6 +16,11 @@ import {
 } from "../lib/meal-safety.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { buildMealsAiGenerateApiBody } from "../lib/meals-ai-generate-response.js";
+import {
+  resolveNutritionCountryProfile,
+  resolveEffectiveFoodStyle,
+  type NutritionCountryProfile,
+} from "@workspace/nutrition-localization";
 
 const router: IRouter = Router();
 
@@ -72,7 +77,7 @@ function parseMealIdList(raw: unknown): string[] {
 //   &fridge=milk,bread,paneer&childAge=5&isVeg=true
 router.get("/meals/suggest", (req, res) => {
   const regionRaw = String(req.query.region ?? "").toLowerCase().trim();
-  const region: MealRegion = (ALLOWED_REGIONS.has(regionRaw) ? regionRaw : "pan_indian") as MealRegion;
+  const region: MealRegion = (ALLOWED_REGIONS.has(regionRaw) ? regionRaw : "global") as MealRegion;
 
   const audienceRaw = String(req.query.audience ?? "").toLowerCase().trim();
   const audience: "kids_tiffin" | "parent_healthy" =
@@ -452,14 +457,24 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   const subCuisine: string | undefined =
     (child as any)?.subCuisine ?? (pp as any)?.subCuisine ?? undefined;
 
-  // Region: DB profile wins over frontend hint
-  const regionRaw = String(pp?.region ?? req.body?.region ?? "pan_indian").toLowerCase().trim();
+  const countryRaw = pp?.country ?? req.body?.country ?? null;
+  const nutritionProfile = resolveNutritionCountryProfile({
+    country: countryRaw,
+    region: pp?.region ?? foodStyle,
+    foodStyle,
+  });
+  const effectiveFoodStyle = resolveEffectiveFoodStyle(nutritionProfile, foodStyle);
+  const regionFromProfile = nutritionProfile.mealPlanCuisines[0] ?? "global";
+  const regionRaw = String(pp?.region ?? req.body?.region ?? effectiveFoodStyle ?? regionFromProfile).toLowerCase().trim();
   const region = parseCuisines(regionRaw)
     .filter((c) => ALLOWED_REGIONS.has(c))
-    .join(",") || "pan_indian";
+    .join(",") || regionFromProfile;
 
-  // Country: frontend hint (ISO code)
-  const country = typeof req.body?.country === "string" ? req.body.country.toUpperCase().slice(0, 3) : undefined;
+  const country = countryRaw
+    ? String(countryRaw).toUpperCase().slice(0, 3)
+    : nutritionProfile.country === "GLOBAL"
+      ? undefined
+      : nutritionProfile.country;
 
   // Child age: DB first (years), then frontend hint
   let childAge: number | undefined = child?.age != null ? Math.max(0, Math.min(MAX_AGE, Math.floor(Number(child.age)))) : undefined;
@@ -751,10 +766,16 @@ router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"),
   }
   const childName = child?.name ? String(child.name).trim().slice(0, 40) : undefined;
   const dietType: string = child?.dietType ?? pp?.dietType ?? pp?.foodType ?? "veg";
-  const foodStyle: string = child?.foodStyle ?? pp?.foodStyle ?? "indian";
+  const countryRaw = pp?.country ?? req.body?.country ?? null;
+  const nutritionProfile = resolveNutritionCountryProfile({
+    country: countryRaw,
+    region: pp?.region ?? pp?.foodStyle,
+    foodStyle: child?.foodStyle ?? pp?.foodStyle,
+  });
+  const foodStyle: string = resolveEffectiveFoodStyle(nutritionProfile, child?.foodStyle ?? pp?.foodStyle);
   const subCuisine: string | null = child?.subCuisine ?? pp?.subCuisine ?? null;
   const allergies: string = child?.allergies ?? pp?.allergies ?? "";
-  const country = String(req.body?.country ?? "United States").slice(0, 50);
+  const country = countryRaw ? String(countryRaw).slice(0, 50) : nutritionProfile.country;
 
   // Environmental / routine context
   const isSchoolGoing = child?.isSchoolGoing ?? undefined;
@@ -850,8 +871,10 @@ function buildFamilyPortionsPrompt(opts: {
   dietType: string;
   allergies: string;
   country: string;
+  profile?: NutritionCountryProfile;
 }): string {
-  const { mealName, dietType, allergies, country } = opts;
+  const { mealName, dietType, allergies, country, profile } = opts;
+  const resolvedProfile = profile ?? resolveNutritionCountryProfile({ country });
 
   const ft = dietType.toLowerCase().replace(/-/g, "_");
   const dietRule =
@@ -868,13 +891,14 @@ function buildFamilyPortionsPrompt(opts: {
     return list.length ? `ALLERGIES (avoid completely, note any modification needed): ${list.join(", ")}` : "";
   })();
 
-  const c = country.toLowerCase();
   const unitInstruction =
-    c.includes("india") || c === "in"
+    resolvedProfile.portionTerminology === "katori"
       ? "Use Indian measurements: katori (150ml), cup, tbsp, tsp, small bowl, handful"
-      : ["us", "usa", "united states", "canada", "australia", "uk", "england"].some(x => c.includes(x))
+      : resolvedProfile.groceryUnitSystem === "us_imperial"
       ? "Use US/Imperial measurements: cup (240ml), tablespoon, teaspoon, ounce"
-      : "Use metric measurements: grams (g), millilitres (ml), tablespoon";
+      : resolvedProfile.portionTerminology === "portion"
+      ? "Use UK-style portions: child-sized portion, tablespoon, grams (g), millilitres (ml)"
+      : "Use metric measurements: grams (g), millilitres (ml), cup, tablespoon";
 
   return `You are a pediatric nutrition expert. Given a dish, generate age-appropriate portion sizes for a family meal.
 
@@ -922,7 +946,6 @@ router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family
     return;
   }
 
-  const country = String(req.body?.country ?? "United States").slice(0, 50);
   const forceRefresh = req.body?.forceRefresh === true;
 
   const [children, parentProfiles] = await Promise.all([
@@ -931,6 +954,14 @@ router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family
   ]);
   const pp = parentProfiles[0];
   const child = children[0];
+
+  const countryRaw = pp?.country ?? req.body?.country ?? null;
+  const nutritionProfile = resolveNutritionCountryProfile({
+    country: countryRaw,
+    region: pp?.region ?? pp?.foodStyle,
+    foodStyle: child?.foodStyle ?? pp?.foodStyle,
+  });
+  const country = countryRaw ? String(countryRaw).slice(0, 50) : nutritionProfile.country;
   const dietType: string = child?.dietType ?? pp?.dietType ?? pp?.foodType ?? "veg";
   const allergies: string = child?.allergies ?? pp?.allergies ?? "";
 
@@ -945,7 +976,7 @@ router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family
 
   req.log.info({ mealName, country, dietType }, "[meals/family-portions] generating");
 
-  const prompt = buildFamilyPortionsPrompt({ mealName, dietType, allergies, country });
+  const prompt = buildFamilyPortionsPrompt({ mealName, dietType, allergies, country, profile: nutritionProfile });
 
   await submitRouteAiJob({
     routeName: "meals/family-portions",
