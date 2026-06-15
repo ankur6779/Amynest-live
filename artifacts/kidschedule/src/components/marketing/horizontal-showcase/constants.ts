@@ -93,4 +93,4 @@ export const PHONE_SHOWCASE_SLIDES: PhoneShowcaseSlide[] = [
   },
 ];
 
-export const AUTOPLAY_MS = 4500;
+export const AUTOPLAY_MS = 5000;

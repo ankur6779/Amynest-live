@@ -8,10 +8,14 @@
 
 .ps-glow {
   position: absolute;
+  width: 420px;
+  height: 420px;
+  top: 12%;
+  right: 0;
   border-radius: 50%;
-  filter: blur(100px);
+  opacity: 0.28;
   pointer-events: none;
-  transition: background 0.8s ease;
+  transition: background 0.5s ease, opacity 0.5s ease;
 }
 
 .ps-layout {
@@ -61,16 +65,6 @@
   align-items: center;
 }
 
-.ps-phone-glow {
-  position: absolute;
-  inset: 10% 5%;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.7;
-  transition: background 0.9s ease;
-  pointer-events: none;
-}
-
 .ps-iphone {
   position: relative;
   width: min(300px, 82vw);
@@ -78,13 +72,13 @@
   border-radius: 52px;
   border: 11px solid #1c1238;
   background: #080512;
-  box-shadow:
-    0 50px 100px rgba(0, 0, 0, 0.55),
-    0 0 60px rgba(123, 63, 242, 0.2),
-    inset 0 0 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 28px 56px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   z-index: 2;
   flex-shrink: 0;
+  will-change: transform;
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .ps-iphone-notch {
@@ -105,6 +99,24 @@
   top: 12px;
   overflow: hidden;
   background: #050b1f;
+}
+
+.ps-screen-frame {
+  position: absolute;
+  inset: 0;
+}
+
+.ps-screen-frame {
+  position: absolute;
+  inset: 0;
+}
+
+.ps-screen picture {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .ps-screen-img {
@@ -136,14 +148,13 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.06);
   color: white;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  transition: border-color 0.2s, background 0.2s, opacity 0.2s;
   cursor: pointer;
 }
 
 .ps-nav-btn:hover {
   border-color: rgba(224, 34, 255, 0.45);
   background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
 }
 
 .ps-dots {
@@ -159,7 +170,7 @@
   padding: 0;
   background: rgba(255, 255, 255, 0.25);
   cursor: pointer;
-  transition: background 0.3s, transform 0.3s, width 0.3s;
+  transition: background 0.3s, width 0.3s;
 }
 
 .ps-dot.active {
@@ -240,9 +251,30 @@
   min-height: 280px;
 }
 
+/* Lite mode — low RAM devices */
+.ps-lite .ps-glow {
+  opacity: 0.18;
+  transition: none;
+}
+
+.ps-lite .ps-iphone {
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+}
+
+.ps-reduced-motion .ps-glow {
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ps-glow,
-  .ps-phone-glow {
+  .ps-glow {
+    transition: none;
+  }
+
+  .ps-nav-btn {
+    transition: none;
+  }
+
+  .ps-dot {
     transition: none;
   }
 }

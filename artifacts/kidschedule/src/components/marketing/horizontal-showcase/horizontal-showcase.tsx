@@ -1,47 +1,71 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { PatentPendingPill } from "@/components/marketing/patent-pending-pill";
 import { AUTOPLAY_MS, PHONE_SHOWCASE_SLIDES } from "./constants";
+import {
+  showcaseScreenshotSources,
+  useShowcasePerformance,
+} from "./showcase-performance";
 import "./horizontal-showcase.css";
 
-function usePreloadScreenshots() {
+function usePreloadScreenshots(lite: boolean) {
   useEffect(() => {
     PHONE_SHOWCASE_SLIDES.forEach((slide) => {
+      const { src, fallback } = showcaseScreenshotSources(slide.screenshot, lite);
       const img = new Image();
-      img.src = slide.screenshot;
+      img.src = src;
+      const fb = new Image();
+      fb.src = fallback;
     });
-  }, []);
+  }, [lite]);
 }
 
-function SyncedContent({ index }: { index: number }) {
+function SyncedContent({
+  index,
+  animate,
+}: {
+  index: number;
+  animate: boolean;
+}) {
   const slide = PHONE_SHOWCASE_SLIDES[index];
+
+  if (!animate) {
+    return (
+      <div className="ps-content-inner">
+        <p className="ps-eyebrow">{slide.eyebrow}</p>
+        <h3 className="ps-headline font-quicksand">{slide.headline}</h3>
+        <p className="ps-description">{slide.description}</p>
+        <ul className="ps-bullets">
+          {slide.bullets.map((bullet) => (
+            <li key={bullet} className="ps-bullet">
+              <span className="ps-bullet-check">✓</span>
+              {bullet}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div className="ps-content-inner">
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
-          initial={{ opacity: 0, x: -24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 24 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
           <p className="ps-eyebrow">{slide.eyebrow}</p>
           <h3 className="ps-headline font-quicksand">{slide.headline}</h3>
           <p className="ps-description">{slide.description}</p>
           <ul className="ps-bullets">
-            {slide.bullets.map((bullet, i) => (
-              <motion.li
-                key={bullet}
-                className="ps-bullet"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 + i * 0.08, duration: 0.4 }}
-              >
+            {slide.bullets.map((bullet) => (
+              <li key={bullet} className="ps-bullet">
                 <span className="ps-bullet-check">✓</span>
                 {bullet}
-              </motion.li>
+              </li>
             ))}
           </ul>
         </motion.div>
@@ -50,25 +74,51 @@ function SyncedContent({ index }: { index: number }) {
   );
 }
 
-function PhoneScreen({ index }: { index: number }) {
+function PhoneScreen({
+  index,
+  lite,
+  animate,
+}: {
+  index: number;
+  lite: boolean;
+  animate: boolean;
+}) {
   const slide = PHONE_SHOWCASE_SLIDES[index];
+  const sources = showcaseScreenshotSources(slide.screenshot, lite);
+
+  const picture = (
+    <picture>
+      <source type="image/webp" srcSet={sources.srcSet} sizes={sources.sizes} />
+      <img
+        src={sources.fallback}
+        alt={slide.headline}
+        className="ps-screen-img"
+        loading={index === 0 ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={index === 0 ? "high" : "auto"}
+        width={450}
+        height={975}
+      />
+    </picture>
+  );
+
+  if (!animate) {
+    return <div className="ps-screen">{picture}</div>;
+  }
 
   return (
     <div className="ps-screen">
       <AnimatePresence mode="wait">
-        <motion.img
+        <motion.div
           key={slide.id}
-          src={slide.screenshot}
-          alt={slide.headline}
-          className="ps-screen-img"
-          loading="eager"
-          decoding="sync"
-          fetchPriority="high"
-          initial={{ opacity: 0, y: 48, scale: 0.94 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -48, scale: 1.03 }}
-          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-        />
+          className="ps-screen-frame"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          {picture}
+        </motion.div>
       </AnimatePresence>
     </div>
   );
@@ -108,19 +158,19 @@ function ShowcaseControls({
       <button type="button" className="ps-nav-btn" onClick={onNext} aria-label="Next screen">
         <ChevronRight className="h-5 w-5" />
       </button>
-      {paused ? (
-        <span className="sr-only">Autoplay paused</span>
-      ) : null}
+      {paused ? <span className="sr-only">Autoplay paused</span> : null}
     </div>
   );
 }
 
 export function SeeAmyNestInActionSection() {
+  const { lite, reducedMotion } = useShowcasePerformance();
+  const animate = !lite && !reducedMotion;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  usePreloadScreenshots();
+  usePreloadScreenshots(lite);
 
   const slide = PHONE_SHOWCASE_SLIDES[index];
   const total = PHONE_SHOWCASE_SLIDES.length;
@@ -133,7 +183,7 @@ export function SeeAmyNestInActionSection() {
   const goPrev = useCallback(() => goTo(index - 1), [goTo, index]);
 
   useEffect(() => {
-    if (paused) {
+    if (paused || reducedMotion) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -145,68 +195,36 @@ export function SeeAmyNestInActionSection() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [paused, total]);
+  }, [paused, reducedMotion, total]);
 
   return (
     <section
       id="see-amynest-in-action"
-      className="ps-section relative z-10"
+      className={`ps-section relative z-10${lite ? " ps-lite" : ""}${reducedMotion ? " ps-reduced-motion" : ""}`}
       aria-label="See AmyNest in action"
       aria-roledescription="carousel"
     >
       <div
         className="ps-glow"
-        style={{
-          width: 500,
-          height: 500,
-          top: "10%",
-          right: "5%",
-          background: slide.glow,
-        }}
+        style={{ background: slide.glow }}
         aria-hidden
       />
 
       <div className="px-4 pb-6 pt-16 text-center md:pt-20">
-        <motion.p
-          className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-purple-300/80"
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-purple-300/80">
           Product tour
-        </motion.p>
-        <motion.h2
-          className="font-quicksand text-3xl font-black sm:text-4xl md:text-5xl"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.05 }}
-        >
+        </p>
+        <h2 className="font-quicksand text-3xl font-black sm:text-4xl md:text-5xl">
           See AmyNest In Action
-        </motion.h2>
-        <motion.p
-          className="mx-auto mt-4 max-w-2xl text-base text-white/65 sm:text-lg"
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-        >
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-base text-white/65 sm:text-lg">
           Everything your family needs, powered by Amy AI.
-        </motion.p>
-        <motion.div
-          className="mt-4 flex justify-center"
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.15 }}
-        >
-          <PatentPendingPill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
-        </motion.div>
+        </p>
       </div>
 
       <div className="ps-layout">
         <div className="ps-content">
-          <SyncedContent index={index} />
+          <SyncedContent index={index} animate={animate} />
         </div>
 
         <div
@@ -216,19 +234,10 @@ export function SeeAmyNestInActionSection() {
           onFocus={() => setPaused(true)}
           onBlur={() => setPaused(false)}
         >
-          <div
-            className="ps-phone-glow"
-            style={{ background: slide.glow }}
-            aria-hidden
-          />
-          <motion.div
-            className="ps-iphone"
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          >
+          <div className="ps-iphone">
             <div className="ps-iphone-notch" />
-            <PhoneScreen index={index} />
-          </motion.div>
+            <PhoneScreen index={index} lite={lite} animate={animate} />
+          </div>
           <ShowcaseControls
             index={index}
             paused={paused}
