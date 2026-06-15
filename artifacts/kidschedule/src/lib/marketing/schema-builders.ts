@@ -133,6 +133,35 @@ export function buildFeaturePageSchema(page: FeaturePageConfig) {
   return { "@context": "https://schema.org", "@graph": graph };
 }
 
+export function buildAsOLandingPageSchema(input: {
+  path: string;
+  metaDescription: string;
+  heroImage: string;
+  headlineAccent: string;
+  primaryKeyword: string;
+  faqs: { question: string; answer: string }[];
+}) {
+  const graph = [
+    {
+      "@type": "SoftwareApplication",
+      name: "AmyNest AI",
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Android, iOS, Web",
+      description: input.metaDescription,
+      url: buildCanonicalUrl(input.path),
+      image: buildCanonicalUrl(input.heroImage),
+      offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+    },
+    buildFaqSchema(input.faqs),
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: input.primaryKeyword, path: input.path },
+    ]),
+  ].filter(Boolean);
+
+  return { "@context": "https://schema.org", "@graph": graph };
+}
+
 export function buildGuideArticleSchema(guide: GuideArticle) {
   const path = `/guides/${guide.slug}`;
   const author = guide.authorId ? getEeatAuthor(guide.authorId) : undefined;

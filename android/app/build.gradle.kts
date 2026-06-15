@@ -211,4 +211,8 @@ dependencies {
 
     // JSON parsing for the message bus
     implementation("org.json:json:20240303")
+
+    // Google Play In-App Review + Install Referrer (ASO growth)
+    implementation("com.google.android.play:review-ktx:2.0.2")
+    implementation("com.android.installreferrer:installreferrer:2.2")
 }

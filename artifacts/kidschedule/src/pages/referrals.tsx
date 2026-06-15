@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useReferrals, type GiftToken } from "@/hooks/use-referrals";
-import { buildGiftShareLink, buildReferralShareLink } from "@/lib/referral-links";
+import { buildGiftShareLink, buildReferralShareLink, trackReferralShare } from "@/lib/referral-links";
 import { AmyIcon } from "@/components/amy-icon";
 function buildLink(code: string): string {
   return buildReferralShareLink(code);
@@ -224,6 +224,7 @@ export default function ReferralsPage() {
     } catch {/* ignore */}
   };
   const share = async () => {
+    trackReferralShare(stats.code, "native_share");
     const text = t("screens.referrals.share_text", {
       code: stats.code,
       link

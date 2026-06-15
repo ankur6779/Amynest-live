@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pushBridge: PushBridge
     private var billingBridge: BillingBridge? = null
     private var authBridge: AuthBridge? = null
+    private var reviewBridge: ReviewBridge? = null
     private var paywallLauncher: PaywallActivityLauncher? = null
 
     /** Notification tap payload waiting for onPageFinished to deliver to the web page. */
@@ -224,6 +225,8 @@ class MainActivity : AppCompatActivity() {
         )
         pushBridge.install(webView)
         installMicrophoneBridge(webView)
+        reviewBridge = ReviewBridge.installOn(this, webView)
+        InstallReferrerBridge.fetchOn(this, webView)
 
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             if (token != null && pushBridge.getToken() == null) {
@@ -442,7 +445,8 @@ class MainActivity : AppCompatActivity() {
 
                 view.evaluateJavascript(
                     "window.dispatchEvent(new Event('amynest-billing-bridge-ready'));" +
-                        "window.dispatchEvent(new Event('amynest-auth-bridge-ready'));",
+                        "window.dispatchEvent(new Event('amynest-auth-bridge-ready'));" +
+                        "window.dispatchEvent(new Event('amynest-review-bridge-ready'));",
                     null,
                 )
                 if (pendingWebCachePurge) {

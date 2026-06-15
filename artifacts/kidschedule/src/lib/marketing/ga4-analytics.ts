@@ -18,7 +18,17 @@ export type MarketingFunnelEvent =
   | "screenshot_carousel_engagement"
   | "scroll_cta_shown"
   | "exit_intent_shown"
-  | "demo_question_click";
+  | "demo_question_click"
+  | "install_source"
+  | "review_prompt_shown"
+  | "review_completed"
+  | "referral_sent"
+  | "referral_accepted"
+  | "play_store_click"
+  | "premium_conversion"
+  | "signup_completed"
+  | "first_routine_created"
+  | "first_amy_chat";
 
 export type MarketingEventParams = Record<string, string | number | boolean | undefined>;
 

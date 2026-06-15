@@ -117,6 +117,12 @@ export function trackAchievementViewed(childId: number | null, achievementId: Ac
 
 export function trackAchievementUnlocked(childId: number | null, achievementId: AchievementId): void {
   trackNutritionHubEvent("achievement_unlocked", childId, { achievementId });
+  import("@/lib/review-service").then(({ notifyReviewTrigger }) => {
+    notifyReviewTrigger("nutrition_goal_completed", { achievementId });
+  });
+  import("@/lib/retention-engine").then(({ unlockBadge }) => {
+    unlockBadge("nutrition_week", "nutrition_hub");
+  });
 }
 
 export function trackGroceryOpened(childId: number | null): void {

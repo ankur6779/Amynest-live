@@ -35,6 +35,9 @@ export function ReferralAttributionBridge() {
     attribute.mutate(code, {
       onSuccess: () => {
         clearPendingReferralCode();
+        import("@/lib/growth-analytics").then(({ trackGrowthEvent }) => {
+          trackGrowthEvent("referral_accepted", { code });
+        });
       },
       onError: (err) => {
         const reason = err instanceof Error ? err.message : "";

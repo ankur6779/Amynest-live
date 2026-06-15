@@ -9,10 +9,20 @@ export function getReferralShareOrigin(): string {
   return "https://amynest.app";
 }
 
-export function buildReferralShareLink(code: string): string {
+export function buildReferralShareLink(code: string, channel = "share"): string {
   const url = new URL(getReferralShareOrigin());
   url.searchParams.set("ref", code.trim().toUpperCase());
+  url.searchParams.set("utm_source", "referral");
+  url.searchParams.set("utm_medium", channel);
+  url.searchParams.set("utm_campaign", "parent_invite");
   return url.toString();
+}
+
+/** Track referral share for growth analytics. */
+export function trackReferralShare(code: string, channel: string): void {
+  import("@/lib/growth-analytics").then(({ trackGrowthEvent }) => {
+    trackGrowthEvent("referral_sent", { code, channel });
+  });
 }
 
 export function buildGiftShareLink(giftCode: string): string {

@@ -1,4 +1,5 @@
 import { listFeaturePageSlugs } from "@/lib/marketing/feature-pages";
+import { listAsOLandingPaths } from "@/lib/marketing/aso-landing-pages";
 import { listGuideSlugs } from "@/lib/marketing/guides-content";
 import {
   listFeedingPlanSlugs,
@@ -53,8 +54,16 @@ export function listAllSeoRoutes(): SeoRouteEntry[] {
     prerender: true,
   }));
 
+  const asoRoutes: SeoRouteEntry[] = listAsOLandingPaths().map((path) => ({
+    path,
+    changefreq: "weekly" as const,
+    priority: 0.9,
+    prerender: true,
+  }));
+
   return [
     ...STATIC_MARKETING_ROUTES,
+    ...asoRoutes,
     ...featureRoutes,
     ...guideRoutes,
     ...routineRoutes,

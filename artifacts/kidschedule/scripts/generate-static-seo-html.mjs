@@ -351,6 +351,30 @@ function writeRouteHtml(baseHtml, page) {
   fs.writeFileSync(outPath, html, "utf8");
 }
 
+function parseAsOLandingPages() {
+  const text = fs.readFileSync(path.join(ROOT, "src/lib/marketing/aso-landing-pages.ts"), "utf8");
+  const pages = [];
+  const slugRe = /^    slug: "([^"]+)"/gm;
+  const slugHits = [...text.matchAll(slugRe)];
+  for (let i = 0; i < slugHits.length; i++) {
+    const slug = slugHits[i][1];
+    const start = slugHits[i].index;
+    const end = i + 1 < slugHits.length ? slugHits[i + 1].index : text.length;
+    const block = text.slice(start, end);
+    const pathMatch = block.match(/path: "([^"]+)"/);
+    pages.push({
+      slug,
+      path: pathMatch ? pathMatch[1] : `/${slug}`,
+      title: parseQuotedField(block, "title"),
+      description: parseQuotedField(block, "metaDescription"),
+      keywords: parseQuotedField(block, "keywords"),
+      h1: `${parseQuotedField(block, "headline")} ${parseQuotedField(block, "headlineAccent")}`.trim(),
+      subheadline: parseQuotedField(block, "subheadline"),
+    });
+  }
+  return pages;
+}
+
 function collectPages() {
   const guidesDir = path.join(ROOT, "src/lib/marketing");
   const guides = [
@@ -374,10 +398,11 @@ function collectPages() {
   ).values()];
 
   const featurePages = parseFeaturePages();
+  const asoPages = parseAsOLandingPages();
   const routinePages = Array.from({ length: 12 }, (_, i) => buildRoutineMeta(i + 1));
   const feedingPages = [6, 8, 10, 12].map(buildFeedingMeta);
 
-  return [...STATIC_PAGES, ...featurePages, ...guidePages, ...routinePages, ...feedingPages];
+  return [...STATIC_PAGES, ...asoPages, ...featurePages, ...guidePages, ...routinePages, ...feedingPages];
 }
 
 if (!fs.existsSync(DIST)) {

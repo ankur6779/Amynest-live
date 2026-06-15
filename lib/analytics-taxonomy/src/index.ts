@@ -20,6 +20,7 @@ export const ANALYTICS_EVENT_CATEGORIES = [
   "routine",
   "feedback",
   "premium",
+  "growth",
 ] as const;
 
 export type AnalyticsEventCategory = (typeof ANALYTICS_EVENT_CATEGORIES)[number];
@@ -116,6 +117,59 @@ const EVENT_PROP_SCHEMAS = {
     appVersion: z.string().max(32).nullable().optional(),
     reason: z.enum(["register_rejected", "replace_initiated", "missing_header"]).optional(),
   }),
+
+  // ── growth / ASO ─────────────────────────────────────────────────────
+  install_source: z.object({
+    source: z.string().max(64).optional(),
+    utm_source: z.string().max(128).optional(),
+    utm_medium: z.string().max(128).optional(),
+    utm_campaign: z.string().max(128).optional(),
+    ref: z.string().max(32).optional(),
+    landing_path: z.string().max(256).optional(),
+    play_referrer: z.string().max(512).optional(),
+  }),
+  review_prompt_shown: z.object({
+    trigger: z.string().max(64).optional(),
+  }),
+  review_completed: z.object({
+    trigger: z.string().max(64).optional(),
+  }),
+  review_prompt_dismissed: z.object({
+    trigger: z.string().max(64).optional(),
+    reason: z.string().max(64).optional(),
+  }),
+  referral_sent: z.object({
+    channel: z.string().max(32).optional(),
+    code: z.string().max(32).optional(),
+  }),
+  referral_accepted: z.object({
+    code: z.string().max(32).optional(),
+  }),
+  play_store_click: z.object({
+    location: z.string().max(64).optional(),
+    page: z.string().max(64).optional(),
+    utm_source: z.string().max(128).optional(),
+    utm_campaign: z.string().max(128).optional(),
+  }),
+  premium_conversion: z.object({
+    source: z.string().max(64).optional(),
+  }),
+  growth_milestone_reached: z.object({
+    milestone: z.string().max(64).optional(),
+    source: z.string().max(64).optional(),
+  }),
+  streak_updated: z.object({
+    streak_days: z.number().int().nonnegative().optional(),
+    source: z.string().max(64).optional(),
+  }),
+  achievement_unlocked: z.object({
+    badge: z.string().max(64).optional(),
+    label: z.string().max(128).optional(),
+    source: z.string().max(64).optional(),
+  }),
+  onboarding_milestone: z.object({
+    milestone: z.string().max(64).optional(),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -135,6 +189,18 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   device_limit_reached: "premium",
   device_replaced: "premium",
   device_limit_bypass_attempt: "premium",
+  install_source: "growth",
+  review_prompt_shown: "growth",
+  review_completed: "growth",
+  review_prompt_dismissed: "growth",
+  referral_sent: "growth",
+  referral_accepted: "growth",
+  play_store_click: "growth",
+  premium_conversion: "growth",
+  growth_milestone_reached: "growth",
+  streak_updated: "growth",
+  achievement_unlocked: "growth",
+  onboarding_milestone: "growth",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

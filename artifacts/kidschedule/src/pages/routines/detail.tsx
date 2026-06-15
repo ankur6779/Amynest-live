@@ -1067,6 +1067,18 @@ export default function RoutineDetail() {
           activityKey: feedbackActivityKey(trackedItem?.activity) ?? undefined,
           category: trackedItem?.category ?? undefined,
         });
+        if (status === "completed") {
+          const nextItems = prev.map((item, i) => (i === index ? { ...item, status } : item));
+          const allDone = nextItems.every((item) => item.status === "completed" || item.status === "skipped");
+          if (allDone && nextItems.some((item) => item.status === "completed")) {
+            import("@/lib/review-service").then(({ notifyReviewTrigger }) => {
+              notifyReviewTrigger("routine_completed", { routineId: routine?.id ?? 0 });
+            });
+            import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
+              trackOnboardingMilestone("first_routine_created", { routineId: routine?.id ?? 0 });
+            });
+          }
+        }
       }
       let updated = prev.map((item, i) => i === index ? {
         ...item,

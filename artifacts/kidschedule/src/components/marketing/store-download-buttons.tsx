@@ -67,6 +67,11 @@ export function StoreDownloadButton({
       onClick={() => {
         trackMarketingEvent("install_intent", { store: target, location, page });
         trackMarketingEvent("store_button_click", { store: target, location, page });
+        if (target === "android") {
+          import("@/lib/growth-analytics").then(({ trackGrowthEvent }) => {
+            trackGrowthEvent("play_store_click", { location, page, store: target });
+          });
+        }
       }}
       className={`inline-flex items-center gap-3 ${pad} rounded-2xl transition-all hover:scale-[1.02]`}
       style={{

@@ -144,6 +144,7 @@ const AdminAudioHealthPage = lazyPage(() => import("@/pages/admin-audio-health")
 const AdminDashboardPage = lazyPage(() => import("@/pages/admin-dashboard"));
 const AdminInfantParentingPage = lazyPage(() => import("@/pages/admin-infant-parenting"));
 const FeatureSeoLandingPage = lazyPage(() => import("@/pages/feature-seo-landing"));
+const AsOLandingPage = lazyPage(() => import("@/pages/aso-landing-page"));
 const GuidesIndexPage = lazyPage(() => import("@/pages/guides-index"));
 const GuideArticlePage = lazyPage(() => import("@/pages/guide-article"));
 const RoutineByAgePage = lazyPage(() =>
@@ -156,6 +157,8 @@ const FeedingPlanPage = lazyPage(() =>
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
+import { CampaignAttributionBridge } from "@/components/campaign-attribution-bridge";
+import { GrowthBootstrap } from "@/components/growth-bootstrap";
 import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
 import { useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
@@ -681,6 +684,8 @@ function AppRoutes() {
             <QueryClientCacheInvalidator />
             <LearningSyncBootstrap />
             <ReferralAttributionBridge />
+            <CampaignAttributionBridge />
+            <GrowthBootstrap />
             <GiftAttributionBridge />
             <FcmForegroundHandler />
             <NotificationDeepLinkBridge />
@@ -700,6 +705,11 @@ function AppRoutes() {
           <Route path="/billing-dispute" component={BillingDisputePage} />
           <Route path="/support" component={SupportPage} />
           <Route path="/get-app" component={SocialLandingPage} />
+          <Route path="/amy" component={AsOLandingPage} />
+          <Route path="/parenting-app" component={AsOLandingPage} />
+          <Route path="/speech-coach-app" component={AsOLandingPage} />
+          <Route path="/child-routine-planner" component={AsOLandingPage} />
+          <Route path="/kids-nutrition-app" component={AsOLandingPage} />
           <Route path="/features/:slug" component={FeatureSeoLandingPage} />
           <Route path="/guides" component={GuidesIndexPage} />
           <Route path="/guides/:slug" component={GuideArticlePage} />

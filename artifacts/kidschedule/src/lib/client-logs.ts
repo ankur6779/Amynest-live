@@ -10,6 +10,7 @@ export type ClientLogType =
   | "subscription_funnel"
   | "onboarding_funnel"
   | "infant_parenting"
+  | "growth_analytics"
   | `amy_voice_${string}`
   | `learning_progress_${string}`;
 

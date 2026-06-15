@@ -541,6 +541,14 @@ function ConversationCoach({ child }: { child: AnyChild }) {
               ? "Great session! Amy is proud of you."
               : "Chat ended. Come back soon!",
       );
+      if (reason === "completed") {
+        import("@/lib/review-service").then(({ notifyReviewTrigger }) => {
+          notifyReviewTrigger("speech_coach_success");
+        });
+        import("@/lib/retention-engine").then(({ unlockBadge }) => {
+          unlockBadge("speech_practice", "speech_coach");
+        });
+      }
     },
     [persistSession, stt],
   );

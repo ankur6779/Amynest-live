@@ -78,6 +78,12 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     meta,
   });
 
+  if (payload.event === "purchase_success") {
+    import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
+      trackPremiumConversion(payload.source ?? "subscription");
+    });
+  }
+
   if (import.meta.env.DEV) {
     console.info("[subscription-analytics]", meta);
   }

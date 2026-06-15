@@ -1,0 +1,86 @@
+/**
+ * Unified growth analytics — dashboard-ready events for ASO, referrals,
+ * reviews, attribution, and retention. Sends to product taxonomy, GA4, and
+ * client logs for maximum observability.
+ */
+
+import { track } from "@/lib/analytics";
+import { queueClientLog } from "@/lib/client-logs";
+import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
+import type { AnalyticsEventName, AnalyticsEventProps } from "@workspace/analytics-taxonomy";
+
+export type GrowthEventName =
+  | "install_source"
+  | "review_prompt_shown"
+  | "review_completed"
+  | "review_prompt_dismissed"
+  | "review_prompt_blocked"
+  | "referral_sent"
+  | "referral_accepted"
+  | "play_store_click"
+  | "premium_conversion"
+  | "growth_milestone_reached"
+  | "streak_updated"
+  | "achievement_unlocked"
+  | "onboarding_milestone"
+  | "signup_completed"
+  | "first_routine_created"
+  | "first_amy_chat";
+
+export type GrowthEventParams = Record<string, string | number | boolean | undefined>;
+
+const GROWTH_TO_TAXONOMY: Partial<Record<GrowthEventName, AnalyticsEventName>> = {
+  review_prompt_shown: "review_prompt_shown",
+  review_completed: "review_completed",
+  review_prompt_dismissed: "review_prompt_dismissed",
+  referral_sent: "referral_sent",
+  referral_accepted: "referral_accepted",
+  play_store_click: "play_store_click",
+  premium_conversion: "premium_conversion",
+  install_source: "install_source",
+  growth_milestone_reached: "growth_milestone_reached",
+  streak_updated: "streak_updated",
+  achievement_unlocked: "achievement_unlocked",
+  onboarding_milestone: "onboarding_milestone",
+};
+
+const GA4_GROWTH_EVENTS = new Set<GrowthEventName>([
+  "install_source",
+  "review_prompt_shown",
+  "review_completed",
+  "referral_sent",
+  "referral_accepted",
+  "play_store_click",
+  "premium_conversion",
+  "signup_completed",
+  "first_routine_created",
+  "first_amy_chat",
+]);
+
+export function trackGrowthEvent(
+  event: GrowthEventName,
+  params: GrowthEventParams = {},
+): void {
+  const at = new Date().toISOString();
+  const payload = { ...params, at };
+
+  queueClientLog({
+    type: "growth_analytics",
+    message: event,
+    context: "growth",
+    meta: payload,
+  });
+
+  const taxonomyEvent = GROWTH_TO_TAXONOMY[event];
+  if (taxonomyEvent) {
+    track(taxonomyEvent, params as AnalyticsEventProps<typeof taxonomyEvent>);
+  }
+
+  if (GA4_GROWTH_EVENTS.has(event)) {
+    trackMarketingEvent(event as Parameters<typeof trackMarketingEvent>[0], payload);
+  }
+
+  if (import.meta.env.DEV) {
+    console.info("[growth]", event, payload);
+  }
+}

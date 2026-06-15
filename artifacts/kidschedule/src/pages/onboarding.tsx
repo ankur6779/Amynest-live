@@ -1066,6 +1066,9 @@ export default function OnboardingPage() {
         step: "done",
         ...buildOnboardingAnalyticsContext({ country: countryCode, children }),
       });
+      import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
+        trackOnboardingMilestone("signup_completed");
+      });
       setDonePhase("summary");
       scheduleOnboardingTimeout(() => setStep("done"), 600);
     } catch (e) {
