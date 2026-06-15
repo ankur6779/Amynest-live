@@ -880,6 +880,33 @@ function ScrollCta() {
   );
 }
 
+function HeroAmyChatShowcase({ className = "" }: { className?: string }) {
+  return (
+    <div className={`sl-fade-2 flex justify-center lg:justify-end ${className}`}>
+      <div className="relative w-full max-w-[400px]">
+        <div
+          className="sl-glass rounded-[2rem] p-5 shadow-2xl sl-float"
+          style={{ boxShadow: "0 28px 70px rgba(0,0,0,0.5), 0 0 50px rgba(168,85,247,0.18)" }}
+        >
+          <div className="flex items-center gap-2.5 mb-4 pb-4 border-b border-white/10">
+            <span
+              className="h-9 w-9 rounded-full flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}
+            >
+              <Sparkles className="h-4 w-4 text-white" />
+            </span>
+            <div>
+              <p className="font-quicksand font-black text-sm text-white">Chat with AMY</p>
+              <p className="text-[11px] text-emerald-300">● Online · your parenting co-pilot</p>
+            </div>
+          </div>
+          <AmyConversation turns={AMY_CHAT.slice(0, 2)} compact />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AmyConversation({ turns, compact = false }: { turns: ChatTurn[]; compact?: boolean }) {
   return (
     <div className={`flex flex-col ${compact ? "gap-3" : "gap-4"}`}>
@@ -1298,23 +1325,8 @@ export default function SocialLandingPage() {
             </div>
           </div>
 
-          {/* AMY AI showcase */}
-          <div className="sl-fade-2 flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[400px]">
-              <div className="sl-glass rounded-[2rem] p-5 shadow-2xl sl-float" style={{ boxShadow: "0 28px 70px rgba(0,0,0,0.5), 0 0 50px rgba(168,85,247,0.18)" }}>
-                <div className="flex items-center gap-2.5 mb-4 pb-4 border-b border-white/10">
-                  <span className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}>
-                    <Sparkles className="h-4 w-4 text-white" />
-                  </span>
-                  <div>
-                    <p className="font-quicksand font-black text-sm text-white">Chat with AMY</p>
-                    <p className="text-[11px] text-emerald-300">● Online · your parenting co-pilot</p>
-                  </div>
-                </div>
-                <AmyConversation turns={AMY_CHAT.slice(0, 2)} compact />
-              </div>
-            </div>
-          </div>
+          {/* AMY chat preview — desktop hero only; mobile shows after product tour */}
+          <HeroAmyChatShowcase className="hidden lg:flex" />
         </div>
       </section>
 
@@ -1331,6 +1343,11 @@ export default function SocialLandingPage() {
       </section>
 
       <SeeAmyNestInActionSection />
+
+      {/* AMY chat preview — mobile: after product tour, before interactive demo */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 pt-2 pb-6 lg:hidden">
+        <HeroAmyChatShowcase />
+      </section>
 
       <TryAmyDemoSection />
 
