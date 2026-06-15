@@ -17,10 +17,6 @@ export PNPM_CONFIG_PRODUCTION=false
 pnpm fetch --frozen-lockfile
 pnpm install --frozen-lockfile --offline --filter "@workspace/kidschedule..."
 
-# SEO prerender requires Playwright Chromium (not bundled in @playwright/test).
-echo "[render-frontend-build] Installing Playwright Chromium for SEO prerender…"
-pnpm --filter @workspace/kidschedule exec playwright install chromium --with-deps
-
 BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build
 pnpm --filter @workspace/kidschedule validate:seo
 
