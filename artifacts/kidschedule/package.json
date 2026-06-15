@@ -182,6 +182,7 @@
     "@workspace/subscription-marketing": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
     "firebase": "^12.12.1",
+    "gsap": "^3.14.2",
     "i18next": "^26.0.5",
     "i18next-browser-languagedetector": "^8.2.1",
     "pdf-lib": "^1.17.1",
