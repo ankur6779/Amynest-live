@@ -9,6 +9,7 @@ export const SCREENSHOTS = {
   audioLessons: "/landing/screenshots/audio-lessons.png",
   healthZone: "/landing/screenshots/health-zone.png",
   familyGoals: "/landing/screenshots/family-goals.png",
+  creativity: "/landing/screenshots/creativity.png",
 } as const;
 
 export const AMY_QUESTIONS = [

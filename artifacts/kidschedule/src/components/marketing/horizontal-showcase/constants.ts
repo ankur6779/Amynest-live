@@ -1,105 +1,96 @@
-import { SCREENSHOTS, GAMING_STATS } from "../cinematic-landing/constants";
-
-export type ShowcaseScene = {
+export type PhoneShowcaseSlide = {
   id: string;
+  eyebrow: string;
   headline: string;
-  subtitle: string;
-  screenshot?: string;
-  highlights: string[];
-  accent: "purple" | "magenta" | "orange" | "green" | "cyan" | "gold";
-  variant?: "splash" | "gaming" | "audio" | "goals" | "final";
+  description: string;
+  bullets: string[];
+  screenshot: string;
+  glow: string;
 };
 
-export const SHOWCASE_SCENES: ShowcaseScene[] = [
+export const PHONE_SHOWCASE_SLIDES: PhoneShowcaseSlide[] = [
   {
     id: "meet-amy",
+    eyebrow: "Meet Amy",
     headline: "Meet Amy",
-    subtitle: "Your AI parenting companion.",
-    screenshot: SCREENSHOTS.meetAmy,
-    highlights: [],
-    accent: "purple",
-    variant: "splash",
+    description: "Your AI parenting companion — warm, smart, and always ready to help.",
+    bullets: ["Patent-pending adaptive AI", "Personalized for your family", "Available 24/7"],
+    screenshot: "/landing/screenshots/meet-amy.png",
+    glow: "rgba(224, 34, 255, 0.4)",
   },
   {
     id: "dashboard",
+    eyebrow: "Dashboard",
     headline: "Your Family Command Center",
-    subtitle: "Weather, routines, and AI guidance in one place.",
-    screenshot: SCREENSHOTS.dashboard,
-    highlights: [
-      "Weather-aware guidance",
-      "Child-specific recommendations",
-      "AI insights",
-      "Daily routines",
-    ],
-    accent: "orange",
+    description:
+      "Weather-aware insights, routines and personalized guidance for every child.",
+    bullets: ["Live weather & safety alerts", "7-day parenting journey", "Child-specific AI insights"],
+    screenshot: "/landing/screenshots/dashboard.png",
+    glow: "rgba(255, 107, 53, 0.35)",
   },
   {
     id: "parenting-hub",
+    eyebrow: "Parenting Hub",
     headline: "Science Meets Parenting",
-    subtitle: "Research-backed support for every parenting moment.",
-    screenshot: SCREENSHOTS.parentingHub,
-    highlights: [
-      "Parenting articles",
-      "Emotional support",
-      "Nutrition guidance",
-      "Life skills",
-    ],
-    accent: "magenta",
+    description: "Articles, emotional support, nutrition and life skills in one place.",
+    bullets: ["Research-backed articles", "Emotional support", "Life skills mode"],
+    screenshot: "/landing/screenshots/parenting-hub.png",
+    glow: "rgba(224, 34, 255, 0.35)",
   },
   {
     id: "gaming-hub",
+    eyebrow: "Gaming Hub",
     headline: "Screen Time That Builds Skills",
-    subtitle: "Games that grow brain, memory, focus, and behavior.",
-    screenshot: SCREENSHOTS.gamingHub,
-    highlights: ["Brain", "Memory", "Focus", "Math", "Behavior"],
-    accent: "orange",
-    variant: "gaming",
+    description: "Fun educational games that improve focus, memory and problem solving.",
+    bullets: ["Brain & logic games", "Skill progress tracking", "Amy's daily picks"],
+    screenshot: "/landing/screenshots/gaming-hub.png",
+    glow: "rgba(255, 140, 0, 0.35)",
+  },
+  {
+    id: "health-zone",
+    eyebrow: "Health Zone",
+    headline: "Healthy Kids. Peaceful Parents.",
+    description: "Nutrition plans, wellness activities and WHO-backed health guidance.",
+    bullets: ["Nutrition Hub", "Amy Health Lab™", "Age-wise meal guidance"],
+    screenshot: "/landing/screenshots/health-zone.png",
+    glow: "rgba(0, 255, 156, 0.3)",
+  },
+  {
+    id: "creativity",
+    eyebrow: "Creativity",
+    headline: "Creativity & Activities",
+    description: "Art, crafts, worksheets, coloring books and curiosity-driven learning.",
+    bullets: ["Art & craft videos", "Printable worksheets", "Curiosity library"],
+    screenshot: "/landing/screenshots/creativity.png",
+    glow: "rgba(168, 85, 247, 0.35)",
   },
   {
     id: "learning-zone",
+    eyebrow: "Learning Zone",
     headline: "An Entire Learning Ecosystem",
-    subtitle: "Phonics to olympiad prep — adaptive for every age.",
-    screenshot: SCREENSHOTS.learningZone,
-    highlights: ["Phonics", "Abacus", "Study Zone", "Spelling", "Olympiad"],
-    accent: "cyan",
-  },
-  {
-    id: "audio-lessons",
-    headline: "Parenting Wisdom On Demand",
-    subtitle: "Listen while you multitask — expert guidance on tap.",
-    screenshot: SCREENSHOTS.audioLessons,
-    highlights: ["Daily picks", "Age-based lessons", "Quick play", "Premium content"],
-    accent: "purple",
-    variant: "audio",
-  },
-  {
-    id: "health",
-    headline: "Healthy Kids. Peaceful Parents.",
-    subtitle: "Nutrition, wellness, and WHO-backed guidance.",
-    screenshot: SCREENSHOTS.healthZone,
-    highlights: [
-      "Nutrition Hub",
-      "Health Lab",
-      "Wellness activities",
-      "WHO-backed guidance",
-    ],
-    accent: "green",
+    description: "Phonics, abacus, study zone, spelling and olympiad prep — all adaptive.",
+    bullets: ["Smart Study Zone", "Phonics learning", "Olympiad prep"],
+    screenshot: "/landing/screenshots/learning-zone.png",
+    glow: "rgba(0, 212, 255, 0.3)",
   },
   {
     id: "goals",
+    eyebrow: "Goals",
     headline: "Because Parents Need Support Too",
-    subtitle: "Goals for your child — and for you.",
-    screenshot: SCREENSHOTS.familyGoals,
-    highlights: ["Sleep", "Eating", "Screen time", "Behavior", "Parent self-care"],
-    accent: "magenta",
-    variant: "goals",
+    description: "Track sleep, eating, screen time, behavior — plus parent self-care goals.",
+    bullets: ["Child development goals", "Parent self-care plans", "Progress tracking"],
+    screenshot: "/landing/screenshots/family-goals.png",
+    glow: "rgba(236, 72, 153, 0.35)",
+  },
+  {
+    id: "audio-lessons",
+    eyebrow: "Audio Lessons",
+    headline: "Parenting Wisdom On Demand",
+    description: "Age-based audio lessons, daily picks and quick play for busy parents.",
+    bullets: ["Age-based lessons", "Daily picks by Amy", "Quick play mode"],
+    screenshot: "/landing/screenshots/audio-lessons.png",
+    glow: "rgba(124, 58, 237, 0.4)",
   },
 ];
 
-export const SHOWCASE_FINAL = {
-  headline: "Everything Your Family Needs.\nOne App.",
-  subtitle:
-    "From infancy to teenage years,\nAmy grows with your child.",
-};
-
-export { GAMING_STATS };
+export const AUTOPLAY_MS = 4500;
