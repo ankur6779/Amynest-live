@@ -924,8 +924,10 @@
     "new_infant_desc": "Pediatrician-aligned guidance on sleep, feeding, milestones and daily care for babies under 12 months.",
     "infant_parenting": {
       "eyebrow": "0–24 months",
+      "free_badge": "Full app · 100% free for infants",
       "heading": "Infant Parenting, Simplified",
       "subheading": "From crying clues to sleep predictions, vaccines, growth charts, and shareable weekly reports — AmyNest supports you through the hardest months.",
+      "free_note": "Full AmyNest app — 100% free for infants (0–24 months). Cry insight, sleep, vaccines, growth tracking — all included free. No premium required.",
       "cry_title": "Cry Insight",
       "cry_desc": "Record a few seconds — get instant guidance on hunger, sleep, or discomfort.",
       "sleep_title": "Sleep Predictions",
@@ -936,7 +938,7 @@
       "growth_desc": "Log weight and height, track milestones, and see progress charts.",
       "weekly_title": "Weekly Reports",
       "weekly_desc": "Share beautiful progress cards with family every week.",
-      "cta": "Start your infant journey free"
+      "cta": "Start your infant journey — 100% free"
     },
     "new_abacus_title": "Abacus Zone",
     "new_abacus_desc": "Step-by-step abacus lessons that build mental math and concentration — perfect for ages 5–12.",

@@ -20,8 +20,10 @@ import {
   ListChecks,
   TrendingUp,
   ZoomIn,
+  Award,
 } from "lucide-react";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
+import { PatentPendingPill, PATENT_TRUST_LINE } from "@/components/marketing/patent-pending-pill";
 import { SeeAmyNestInActionSection } from "@/components/marketing/horizontal-showcase/horizontal-showcase";
 import { trackGetAppFunnelEvent } from "@/lib/marketing/ga4-analytics";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
@@ -116,9 +118,10 @@ function StoreButton({
   children?: React.ReactNode;
 }) {
   const store = getStoreMeta(target);
-  const pad = size === "large" ? "px-7 py-4" : size === "compact" ? "px-4 py-2.5" : "px-6 py-3.5";
-  const icon = size === "large" ? "h-8 w-8" : "h-7 w-7";
-  const title = size === "large" ? "text-lg" : "text-base";
+  const pad = size === "large" ? "px-7 py-4" : size === "compact" ? "px-3 py-2" : "px-6 py-3.5";
+  const icon = size === "large" ? "h-8 w-8" : size === "compact" ? "h-5 w-5" : "h-7 w-7";
+  const title = size === "large" ? "text-lg" : size === "compact" ? "text-xs" : "text-base";
+  const eyebrow = size === "compact" ? "hidden" : "text-[10px] font-semibold uppercase tracking-wide";
   const onClick = () => {
     trackLandingEvent("install_intent", { store: target, location });
     trackLandingEvent("store_button_click", { store: target, location });
@@ -137,13 +140,13 @@ function StoreButton({
       rel="noopener noreferrer"
       data-testid={store.testId}
       onClick={onClick}
-      className={`flex flex-1 items-center justify-center sm:justify-start gap-3 ${pad} rounded-2xl transition-all hover:scale-[1.02]`}
+      className={`flex flex-1 items-center justify-center sm:justify-start gap-2 ${pad} rounded-xl transition-all hover:scale-[1.02]`}
       style={{ ...bg, textDecoration: "none" }}
     >
       <StoreIcon target={target} className={`${icon} shrink-0 ${textClass}`} />
       {children ?? (
         <div className="text-left leading-tight">
-          <p className={`text-[10px] font-semibold uppercase tracking-wide ${subClass}`}>{store.eyebrow}</p>
+          <p className={`${eyebrow} ${subClass}`}>{store.eyebrow}</p>
           <p className={`font-bold ${title} ${textClass}`}>{store.label}</p>
         </div>
       )}
@@ -155,14 +158,16 @@ function StoreButton({
 function StoreButtonRow({
   size = "default",
   location,
+  variant = "glass",
 }: {
-  size?: "default" | "large";
+  size?: "default" | "large" | "compact";
   location: string;
+  variant?: "glass" | "solid";
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full">
-      <StoreButton target="android" size={size} location={`${location}_android`} />
-      <StoreButton target="ios" size={size} location={`${location}_ios`} />
+    <div className={`flex ${size === "compact" ? "flex-row" : "flex-col sm:flex-row"} items-stretch gap-2 sm:gap-3 w-full`}>
+      <StoreButton target="android" size={size} location={`${location}_android`} variant={variant} />
+      <StoreButton target="ios" size={size} location={`${location}_ios`} variant={variant} />
     </div>
   );
 }
@@ -189,12 +194,26 @@ function setMetaTag(selector: string, attr: "content" | "href", value: string) {
 
 const TRUST_BAR = [
   { icon: Sparkles, label: "AI Parenting Guidance" },
+  { icon: Award, label: "Patent-Pending AI" },
   { icon: Calendar, label: "Daily Routines" },
-  { icon: Baby, label: "Infant Support" },
+  { icon: Baby, label: "Infant Hub · 100% Free" },
   { icon: Mic, label: "Speech Development" },
   { icon: BookOpen, label: "Learning Activities" },
   { icon: ShieldCheck, label: "Child-Safe Experience" },
 ] as const;
+
+
+function InfantFreePill({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-200 ${className}`}
+      style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(52,211,153,0.35)" }}
+    >
+      <Baby className="h-3 w-3 shrink-0" aria-hidden />
+      100% free for infants
+    </span>
+  );
+}
 
 type ChatTurn = { parent: string; amy: string };
 
@@ -227,7 +246,7 @@ const DEMO_EXCHANGES: DemoExchange[] = [
     id: "crying",
     question: "My baby keeps crying",
     answer:
-      "Check hunger, sleep and comfort cues first. Babies often communicate these needs through crying.",
+      "Check hunger, sleep and comfort cues first. The Infant Hub helps decode cries — and the full app is 100% free for infants.",
   },
   {
     id: "bedtime",
@@ -267,7 +286,7 @@ const STAGES = [
     label: "The Newborn Years",
     icon: Baby,
     gradient: "linear-gradient(135deg,#f472b6,#a855f7)",
-    items: ["Cry Insight", "Feeding Support", "Sleep Guidance", "Milestones"],
+    items: ["Cry Insight", "Feeding Support", "Sleep Guidance", "Full app · 100% free"],
   },
   {
     range: "2–5 Years",
@@ -338,7 +357,7 @@ const PARENT_AMY_QUESTIONS: ChatTurn[] = [
 /** `them` = whether a typical learning app usually offers this. AmyNest offers all. */
 const COMPARISON_ROWS = [
   { label: "AI Parenting Assistant", them: false },
-  { label: "Infant Parenting Support", them: false },
+  { label: "Infant Parenting — Full App Free", them: false },
   { label: "Daily Routine Generator", them: false },
   { label: "Nutrition Guidance", them: false },
   { label: "Speech Development", them: false },
@@ -357,7 +376,7 @@ const PAIN_SOLUTIONS = [
   },
   {
     pain: "I don't know if my baby is developing normally.",
-    solution: "The Infant Hub tracks milestones and decodes cries, sleep and feeding with clear guidance.",
+    solution: "The Infant Hub tracks milestones and decodes cries, sleep and feeding — the full app is 100% free for infants.",
   },
   {
     pain: "My child struggles with speech.",
@@ -405,7 +424,7 @@ const OUTCOME_FEATURES = [
   {
     icon: Baby,
     title: "Feel Calm and Capable In The Newborn Years",
-    desc: "The Infant Hub decodes cries and guides feeding, sleep and milestones with confidence.",
+    desc: "The Infant Hub decodes cries and guides feeding, sleep and milestones — the entire app is free for infants.",
     gradient: "linear-gradient(135deg,#6366f1,#06b6d4)",
   },
   {
@@ -420,14 +439,14 @@ const OUTCOME_FEATURES = [
 const HERO_APP_SCREENSHOTS = [
   { id: "amy", title: "AMY Assistant", image: "/promo/get-app/screenshots/amy-assistant.jpg" },
   { id: "routine", title: "Daily Routine Generator", image: "/promo/get-app/screenshots/daily-routine.jpg" },
-  { id: "infant", title: "Infant Hub", image: "/promo/get-app/screenshots/infant-hub.jpg" },
+  { id: "infant", title: "Infant Hub", image: "/promo/get-app/screenshots/infant-hub.jpg", free: true },
   { id: "speech", title: "Speech Coach", image: "/promo/get-app/screenshots/speech-coach.png" },
   { id: "study", title: "Smart Study Zone", image: "/promo/get-app/screenshots/smart-study-zone.jpg" },
 ] as const;
 
 const INSTALL_ONBOARDING_STEPS = [
   { icon: UserPlus, title: "Create your child's profile", desc: "Add age and goals so every recommendation fits your child." },
-  { icon: Target, title: "Tell AMY your biggest challenge", desc: "Sleep, meals, speech, study or infant care — share what matters most today." },
+  { icon: Target, title: "Tell AMY your biggest challenge", desc: "Sleep, meals, speech, study or infant care — share what matters most today. Infant features are 100% free." },
   { icon: Sparkles, title: "Get a personalized parenting and learning plan", desc: "AMY builds routines, activities and guidance tailored to your family." },
   { icon: ListChecks, title: "Start age-appropriate activities", desc: "Open the right hub and follow simple daily actions you can actually finish." },
   { icon: TrendingUp, title: "Track growth and progress", desc: "See milestones, streaks and wins update as your child grows." },
@@ -446,7 +465,7 @@ const SCREENSHOTS: Screenshot[] = [
   { id: "amy", title: "AMY Assistant", benefit: "Your always-on parenting co-pilot for instant, personalized answers.", accent: "#a855f7", image: "/promo/social/reels/amy-coach.png", rows: ["Ask Amy anything", "Next best step", "Parenting guidance", "Daily check-in"] },
   { id: "coach", title: "Amy Coach", benefit: "Guided coaching and audio lessons your child can learn from anywhere.", accent: "#38bdf8", rows: ["Today's lesson", "Listen and repeat", "Story-led learning", "Hands-free play"] },
   { id: "routine", title: "Routine Generator", benefit: "End daily chaos with calm, personalized routines for the whole day.", accent: "#7c3aed", image: "/promo/social/reels/daily-routines.png", rows: ["Morning plan", "School prep", "Study block", "Wind-down"] },
-  { id: "infant", title: "Infant Hub", benefit: "Decode cries and guide feeding, sleep and milestones with confidence.", accent: "#f472b6", image: "/promo/infant-parenting/appstore-02-baby-today.jpg", rows: ["Cry insight", "Feeding support", "Sleep guidance", "Milestones"] },
+  { id: "infant", title: "Infant Hub", benefit: "Decode cries and guide feeding, sleep and milestones — the full AmyNest app is 100% free for infants.", accent: "#f472b6", image: "/promo/infant-parenting/appstore-02-baby-today.jpg", rows: ["Cry insight", "Feeding support", "Sleep guidance", "100% free"] },
   { id: "nutrition", title: "Nutrition Hub", benefit: "Know what to feed your child with balanced daily meal plans.", accent: "#22c55e", image: "/promo/social/reels/nutrition-hub.png", rows: ["Breakfast idea", "Balanced lunch", "Healthy snacks", "Hydration"] },
   { id: "speech", title: "Speech Coach", benefit: "Help your child speak clearly and confidently with guided practice.", accent: "#f59e0b", image: "/promo/social/reels/speech-coach.png", rows: ["Warm-up sounds", "Practice words", "Confidence streak", "Parent summary"] },
   { id: "study", title: "Smart Study Zone", benefit: "Keep learning focused with the right activity at the right time.", accent: "#3b82f6", image: "/promo/social/reels/learning-zone.png", rows: ["Daily study path", "Focus session", "Skill builder", "Progress saved"] },
@@ -570,6 +589,11 @@ function AppScreenshotStrip() {
             <p className="mt-3 font-quicksand font-bold text-[13px] sm:text-sm text-white text-center leading-tight px-0.5">
               {shot.title}
             </p>
+            {"free" in shot && shot.free ? (
+              <p className="mt-1.5 flex justify-center">
+                <InfantFreePill />
+              </p>
+            ) : null}
           </button>
         ))}
       </div>
@@ -634,6 +658,9 @@ function InstallOnboardingSection({ onStartFree }: { onStartFree: () => void }) 
           <ArrowRight className="h-4 w-4" />
         </button>
         <p className="mt-3 text-white/45 text-xs">Free to start · Android &amp; iOS · No credit card</p>
+        <p className="mt-2 flex justify-center">
+          <PatentPendingPill className="text-[10px] normal-case tracking-normal px-2.5 py-1" />
+        </p>
       </div>
     </section>
   );
@@ -693,6 +720,7 @@ function ScreenshotCarousel() {
         </div>
         <div>
           <h3 className="font-quicksand font-black text-2xl sm:text-3xl mb-2">{shot.title}</h3>
+          {shot.id === "infant" ? <div className="mb-3"><InfantFreePill /></div> : null}
           <p className="text-white/64 text-base leading-relaxed mb-6">{shot.benefit}</p>
           <div className="grid grid-cols-2 gap-2.5">
             {SCREENSHOTS.map((s, index) => (
@@ -728,6 +756,11 @@ function ParentAmyQuestionsSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {PARENT_AMY_QUESTIONS.map((turn) => (
           <div key={turn.parent} className="sl-card rounded-2xl p-5 md:p-6">
+            {turn.parent.toLowerCase().includes("baby") ? (
+              <div className="mb-3">
+                <InfantFreePill />
+              </div>
+            ) : null}
             <AmyConversation turns={[turn]} compact />
           </div>
         ))}
@@ -810,7 +843,7 @@ function ExitIntentModal() {
   );
 }
 
-function ScrollCta({ target }: { target: StoreTarget }) {
+function ScrollCta() {
   const [visible, setVisible] = useState(false);
   const shownRef = useRef(false);
   useEffect(() => {
@@ -833,15 +866,15 @@ function ScrollCta({ target }: { target: StoreTarget }) {
     <div
       className={`hidden md:block fixed bottom-6 right-6 z-40 transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}
     >
-      <div className="sl-glass rounded-2xl p-3 flex items-center gap-3 shadow-2xl" style={{ borderColor: "rgba(168,85,247,0.4)" }}>
-        <img src={OFFICIAL_LOGO} alt="" className="h-11 w-11 rounded-xl object-cover" />
-        <div className="leading-tight pr-1">
-          <p className="font-quicksand font-black text-sm text-white">Start free today</p>
-          <p className="text-[11px] text-white/55">Android &amp; iOS · Free</p>
+      <div className="sl-glass rounded-2xl p-3 shadow-2xl w-[min(100vw-3rem,20rem)]" style={{ borderColor: "rgba(168,85,247,0.4)" }}>
+        <div className="flex items-center gap-3 mb-2.5">
+          <img src={OFFICIAL_LOGO} alt="" className="h-10 w-10 rounded-xl object-cover shrink-0" />
+          <div className="leading-tight min-w-0">
+            <p className="font-quicksand font-black text-sm text-white">Start free today</p>
+            <p className="text-[11px] text-white/55">Android &amp; iOS · Free</p>
+          </div>
         </div>
-        <StoreButton target={target} location="scroll_cta" size="compact" variant="solid">
-          <span className="text-xs font-bold text-slate-900">Install</span>
-        </StoreButton>
+        <StoreButtonRow size="compact" location="scroll_cta" variant="solid" />
       </div>
     </div>
   );
@@ -936,6 +969,12 @@ function TryAmyDemoSection() {
         <p className="inline-flex items-center justify-center gap-2 mt-4 text-xs font-semibold text-emerald-300/90">
           <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
           Free preview · No sign-up · Works offline
+        </p>
+        <p className="mt-3 flex justify-center">
+          <InfantFreePill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
+        </p>
+        <p className="mt-2 flex justify-center">
+          <PatentPendingPill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
         </p>
       </div>
 
@@ -1214,12 +1253,14 @@ export default function SocialLandingPage() {
             <img src={OFFICIAL_LOGO} alt="AmyNest AI" className="h-10 w-10 rounded-xl object-cover shrink-0" />
             <div className="min-w-0">
               <span className="font-quicksand font-black text-base sm:text-lg truncate block">AmyNest</span>
-              <span className="hidden sm:block text-[10px] uppercase tracking-widest text-purple-200/70 font-bold">AI Parenting Operating System</span>
+              <span className="hidden sm:block text-[10px] uppercase tracking-widest text-purple-200/70 font-bold">
+                Patent-Pending · AI Parenting OS
+              </span>
             </div>
           </div>
-          <StoreButton target={target} location="header" size="compact" variant="solid">
-            <span className="text-xs sm:text-sm font-bold text-slate-900">Install Free</span>
-          </StoreButton>
+          <div className="shrink-0 w-[min(100%,17.5rem)] sm:w-auto sm:max-w-xs">
+            <StoreButtonRow size="compact" location="header" variant="solid" />
+          </div>
         </div>
       </header>
 
@@ -1227,16 +1268,22 @@ export default function SocialLandingPage() {
       <section className="relative z-10 max-w-6xl mx-auto px-4 pt-8 pb-10 md:pt-14 md:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           <div className="text-center lg:text-left">
-            <p className="sl-fade inline-flex items-center gap-2 sl-glass px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200 mb-5">
+            <p className="sl-fade inline-flex items-center gap-2 sl-glass px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200 mb-3">
               <Sparkles className="h-3.5 w-3.5 text-purple-300" />
               AI-Powered Parenting Operating System
             </p>
+            <div className="sl-fade mb-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              <PatentPendingPill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
+            </div>
             <h1 className="sl-fade-1 font-quicksand font-black text-[2.1rem] sm:text-5xl lg:text-[3.1rem] leading-[1.08] tracking-tight mb-4">
               {HERO_HEADLINE_LEAD}{" "}
               <span className="sl-gradient-text">{HERO_HEADLINE_ACCENT}</span>
             </h1>
-            <p className="sl-fade-2 text-white/70 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 mb-6">
+            <p className="sl-fade-2 text-white/70 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 mb-4">
               Meet AMY — clear next steps for routines, infant care, meals, speech and learning, from birth through age 10+.
+            </p>
+            <p className="sl-fade-2 mb-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              <InfantFreePill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
             </p>
 
             <div className="sl-fade-3 max-w-lg mx-auto lg:mx-0 mb-5">
@@ -1283,6 +1330,8 @@ export default function SocialLandingPage() {
         </div>
       </section>
 
+      <SeeAmyNestInActionSection />
+
       <TryAmyDemoSection />
 
       <AppScreenshotStrip />
@@ -1293,6 +1342,9 @@ export default function SocialLandingPage() {
       <section className="relative z-10 max-w-6xl mx-auto px-4 py-14 md:py-20">
         <div className="text-center mb-10">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">The heart of AmyNest</p>
+          <div className="mb-3 flex justify-center">
+            <PatentPendingPill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
+          </div>
           <h2 className="font-quicksand font-black text-3xl sm:text-4xl md:text-5xl mb-3">Meet AMY — Your AI Parenting Co-Pilot</h2>
           <p className="text-white/65 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Ask anything, any time. AMY turns your real parenting moments into clear, personalized next steps.
@@ -1307,6 +1359,9 @@ export default function SocialLandingPage() {
             <p className="text-white/64 text-base leading-relaxed mb-6">
               From a crying newborn to a child who won&apos;t study, AMY understands the moment and responds with a plan you can use right now — no searching, no guesswork.
             </p>
+            <div className="mb-6">
+              <InfantFreePill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
+            </div>
             <div className="max-w-sm mx-auto lg:mx-0">
               <StoreButtonRow location="flagship_amy" />
             </div>
@@ -1327,6 +1382,11 @@ export default function SocialLandingPage() {
           <div aria-hidden className="hidden md:block absolute top-7 left-[12%] right-[12%] h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.5),rgba(34,197,94,0.5),transparent)" }} />
           {STAGES.map((stage) => (
             <div key={stage.range} className="sl-card rounded-2xl p-5 relative">
+              {stage.range === "0–2 Years" ? (
+                <div className="absolute top-3 right-3 z-20">
+                  <InfantFreePill />
+                </div>
+              ) : null}
               <div className="h-14 w-14 rounded-2xl flex items-center justify-center mb-4 relative z-10" style={{ background: stage.gradient, boxShadow: "0 12px 30px rgba(0,0,0,0.3)" }}>
                 <stage.icon className="h-6 w-6 text-white" />
               </div>
@@ -1382,6 +1442,7 @@ export default function SocialLandingPage() {
           ))}
           <div className="px-4 sm:px-6 py-4 text-center border-t border-white/10" style={{ background: "linear-gradient(135deg,rgba(168,85,247,0.1),rgba(236,72,153,0.06))" }}>
             <p className="font-quicksand font-bold text-sm sm:text-base text-white">One app for parenting, learning and child development — ages 0–10+.</p>
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-purple-300/80">{PATENT_TRUST_LINE}</p>
           </div>
         </div>
         <div className="mt-9 max-w-lg mx-auto">
@@ -1401,6 +1462,11 @@ export default function SocialLandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {PAIN_SOLUTIONS.map((row) => (
             <div key={row.pain} className="sl-card rounded-2xl p-5 sm:p-6">
+              {row.pain.toLowerCase().includes("baby") ? (
+                <div className="mb-3">
+                  <InfantFreePill />
+                </div>
+              ) : null}
               <div className="flex items-start gap-3 mb-4 pb-4 border-b border-white/10">
                 <span className="h-7 w-7 rounded-lg bg-rose-500/15 flex items-center justify-center shrink-0"><X className="h-4 w-4 text-rose-400" /></span>
                 <p className="text-white/70 text-sm font-medium pt-0.5">{row.pain}</p>
@@ -1426,6 +1492,11 @@ export default function SocialLandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {OUTCOME_FEATURES.map((f) => (
             <div key={f.title} className="sl-card rounded-2xl p-5 md:p-6">
+              {f.icon === Baby ? (
+                <div className="mb-3">
+                  <InfantFreePill />
+                </div>
+              ) : null}
               <div className="h-11 w-11 rounded-xl flex items-center justify-center mb-4" style={{ background: f.gradient, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}>
                 <f.icon className="h-5 w-5 text-white" />
               </div>
@@ -1442,8 +1513,6 @@ export default function SocialLandingPage() {
 
       <BuiltForFamiliesSection />
 
-      <SeeAmyNestInActionSection />
-
       {/* FINAL CTA */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 pb-28 md:pb-16">
         <div
@@ -1455,6 +1524,9 @@ export default function SocialLandingPage() {
           <p className="text-white/65 text-base sm:text-lg max-w-xl mx-auto mb-7 leading-relaxed">
             Parenting, Learning and Daily Guidance — all powered by AMY.
           </p>
+          <div className="mb-6 flex justify-center">
+            <PatentPendingPill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
+          </div>
           <div className="max-w-lg mx-auto mb-4">
             <StoreButtonRow size="large" location="final_cta" />
           </div>
@@ -1463,24 +1535,17 @@ export default function SocialLandingPage() {
       </section>
 
       {/* STICKY MOBILE INSTALL BAR */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden sl-glass border-t border-white/10 px-4 py-2.5">
-        <div className="flex items-center gap-3">
-          <img src={OFFICIAL_LOGO} alt="" className="h-10 w-10 rounded-xl object-cover shrink-0" />
-          <div className="min-w-0 flex-1 leading-tight">
-            <p className="font-quicksand font-black text-sm truncate">AmyNest AI</p>
-            <p className="text-[10px] text-white/55">AI parenting &amp; learning · Free</p>
-          </div>
-          <StoreButton target={target} location="sticky_mobile" size="compact" variant="solid">
-            <span className="text-sm font-bold text-slate-900">Install</span>
-          </StoreButton>
-        </div>
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden sl-glass border-t border-white/10 px-3 py-2">
+        <StoreButtonRow size="compact" location="sticky_mobile" variant="solid" />
       </div>
 
-      <ScrollCta target={target} />
+      <ScrollCta />
       <ExitIntentModal />
 
       <footer className="relative z-10 px-4 py-6 border-t border-white/10 text-center">
-        <p className="text-xs text-white/35">© {new Date().getFullYear()} AmyNest AI · Patent Pending · Privacy First · Free To Start</p>
+        <p className="text-xs text-white/45 text-center">
+          © {new Date().getFullYear()} AmyNest AI · <span className="text-purple-300/80 font-semibold">Patent Pending Technology</span> · Privacy First · Free To Start
+        </p>
       </footer>
     </div>
   );

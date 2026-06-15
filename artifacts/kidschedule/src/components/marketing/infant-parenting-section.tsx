@@ -56,6 +56,41 @@ const FEATURES = [
   },
 ];
 
+/** Hardcoded English for /get-app — marketing page stays English regardless of i18n locale. */
+const GET_APP_INFANT_COPY = {
+  freeBadge: "Full app · 100% free for infants",
+  eyebrow: "0–24 months",
+  heading: "Infant Parenting, Simplified",
+  subheading:
+    "From crying clues to sleep predictions, vaccines, growth charts, and shareable weekly reports — AmyNest supports you through the hardest months.",
+  freeHeadline: "Full AmyNest app — 100% free for infants (0–24 months)",
+  freeDetail:
+    "Cry insight, sleep, vaccines, growth tracking — all included free. No premium required.",
+  cta: "Start your infant journey — 100% free",
+  features: {
+    cry_insight: {
+      title: "Cry Insight",
+      desc: "Record a few seconds — get instant guidance on hunger, sleep, or discomfort.",
+    },
+    baby_today: {
+      title: "Sleep Predictions",
+      desc: "Know the next nap and feed before they happen with Baby Today.",
+    },
+    vaccines: {
+      title: "Vaccine Timeline",
+      desc: "Never miss a dose with age-based schedules and reminders.",
+    },
+    growth: {
+      title: "Growth Tracking",
+      desc: "Log weight and height, track milestones, and see progress charts.",
+    },
+    weekly_share: {
+      title: "Weekly Reports",
+      desc: "Share beautiful progress cards with family every week.",
+    },
+  },
+} as const;
+
 const SCREENSHOTS: Record<string, string> = {
   cry_insight: "/promo/infant-parenting/appstore-01-cry-insight.jpg",
   baby_today: "/promo/infant-parenting/appstore-02-baby-today.jpg",
@@ -212,8 +247,17 @@ function AnimatedMockScreen({
   );
 }
 
-export function InfantParentingSection({ page = "landing" }: { page?: "landing" | "get-app" }) {
+export type InfantFreePromo = string | { headline: string; detail: string };
+
+export function InfantParentingSection({
+  page = "landing",
+  freePromo,
+}: {
+  page?: "landing" | "get-app";
+  freePromo?: InfantFreePromo;
+}) {
   const { t } = useTranslation();
+  const isGetApp = page === "get-app";
   const sectionRef = useRef<HTMLElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const trackedRef = useRef(false);
@@ -278,6 +322,18 @@ export function InfantParentingSection({ page = "landing" }: { page?: "landing" 
       <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <div
+            className="inline-flex items-center gap-1.5 mb-3 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white"
+            style={{
+              background: "linear-gradient(135deg,rgba(16,185,129,0.28),rgba(52,211,153,0.15))",
+              border: "1px solid rgba(52,211,153,0.4)",
+            }}
+          >
+            <Sparkles className="h-3 w-3 text-emerald-300" />
+            {isGetApp
+              ? GET_APP_INFANT_COPY.freeBadge
+              : t("landing.infant_parenting.free_badge", "Full app · 100% free for infants")}
+          </div>
+          <div
             className="inline-flex items-center gap-1.5 mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white"
             style={{
               background: "linear-gradient(135deg,rgba(251,191,36,0.25),rgba(236,72,153,0.18))",
@@ -285,17 +341,42 @@ export function InfantParentingSection({ page = "landing" }: { page?: "landing" 
             }}
           >
             <Baby className="h-3 w-3" />
-            {t("landing.infant_parenting.eyebrow", "0–24 months")}
+            {isGetApp ? GET_APP_INFANT_COPY.eyebrow : t("landing.infant_parenting.eyebrow", "0–24 months")}
           </div>
           <h2 className="font-quicksand font-bold text-3xl md:text-5xl text-white mb-4 leading-tight">
-            {t("landing.infant_parenting.heading", "Infant Parenting, Simplified")}
+            {isGetApp
+              ? GET_APP_INFANT_COPY.heading
+              : t("landing.infant_parenting.heading", "Infant Parenting, Simplified")}
           </h2>
-          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-xl">
-            {t(
-              "landing.infant_parenting.subheading",
-              "From crying clues to sleep predictions, vaccines, growth charts, and shareable weekly reports — AmyNest supports you through the hardest months.",
-            )}
+          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-4 max-w-xl">
+            {isGetApp
+              ? GET_APP_INFANT_COPY.subheading
+              : t(
+                  "landing.infant_parenting.subheading",
+                  "From crying clues to sleep predictions, vaccines, growth charts, and shareable weekly reports — AmyNest supports you through the hardest months.",
+                )}
           </p>
+          <div className="text-emerald-200/90 text-sm md:text-base leading-relaxed mb-8 max-w-xl font-medium space-y-2">
+            {isGetApp ? (
+              <>
+                <p>{GET_APP_INFANT_COPY.freeHeadline}</p>
+                <p>{GET_APP_INFANT_COPY.freeDetail}</p>
+              </>
+            ) : typeof freePromo === "object" ? (
+              <>
+                <p>{freePromo.headline}</p>
+                <p>{freePromo.detail}</p>
+              </>
+            ) : (
+              <p>
+                {freePromo ??
+                  t(
+                    "landing.infant_parenting.free_note",
+                    "The entire AmyNest app is free for infants — cry insight, sleep predictions, vaccines, growth tracking and more. No premium required.",
+                  )}
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2 mb-8">
             {FEATURES.map((f, i) => {
@@ -330,8 +411,16 @@ export function InfantParentingSection({ page = "landing" }: { page?: "landing" 
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white text-sm">{t(f.titleKey)}</p>
-                    <p className="text-xs text-white/55 leading-snug mt-0.5">{t(f.descKey)}</p>
+                    <p className="font-semibold text-white text-sm">
+                      {isGetApp
+                        ? GET_APP_INFANT_COPY.features[f.id].title
+                        : t(f.titleKey)}
+                    </p>
+                    <p className="text-xs text-white/55 leading-snug mt-0.5">
+                      {isGetApp
+                        ? GET_APP_INFANT_COPY.features[f.id].desc
+                        : t(f.descKey)}
+                    </p>
                   </div>
                 </button>
               );
@@ -348,7 +437,9 @@ export function InfantParentingSection({ page = "landing" }: { page?: "landing" 
               }}
             >
               <Sparkles className="h-4 w-4" />
-              {t("landing.infant_parenting.cta", "Start your infant journey free")}
+              {isGetApp
+                ? GET_APP_INFANT_COPY.cta
+                : t("landing.infant_parenting.cta", "Start your infant journey — 100% free")}
               <ArrowRight className="h-4 w-4" />
             </button>
           </Link>
@@ -362,7 +453,11 @@ export function InfantParentingSection({ page = "landing" }: { page?: "landing" 
           >
             <div className="flex items-center gap-2 text-amber-300/90">
               <ActiveIcon className="h-4 w-4" />
-              <p className="text-xs font-bold uppercase tracking-widest">{t(active.titleKey)}</p>
+              <p className="text-xs font-bold uppercase tracking-widest">
+                {isGetApp
+                  ? GET_APP_INFANT_COPY.features[active.id].title
+                  : t(active.titleKey)}
+              </p>
             </div>
             <PhoneMockup
               featureId={active.id}

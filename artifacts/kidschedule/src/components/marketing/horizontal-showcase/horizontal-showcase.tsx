@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PatentPendingPill } from "@/components/marketing/patent-pending-pill";
 import { AUTOPLAY_MS, PHONE_SHOWCASE_SLIDES } from "./constants";
 import "./horizontal-showcase.css";
 
@@ -192,6 +193,15 @@ export function SeeAmyNestInActionSection() {
         >
           Everything your family needs, powered by Amy AI.
         </motion.p>
+        <motion.div
+          className="mt-4 flex justify-center"
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.15 }}
+        >
+          <PatentPendingPill className="text-[11px] normal-case tracking-normal px-3 py-1.5" />
+        </motion.div>
       </div>
 
       <div className="ps-layout">
