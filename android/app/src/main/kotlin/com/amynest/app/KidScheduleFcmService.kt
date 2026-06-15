@@ -67,7 +67,15 @@ class KidScheduleFcmService : FirebaseMessagingService() {
 
         Log.d(TAG, "Notification: category=$categoryStr deepLink=$deepLink channel=${category.channelId} id=$stableId")
 
-        showNotification(title, body, deepLink, categoryStr, category, stableId)
+        showNotification(
+            title,
+            body,
+            deepLink,
+            categoryStr,
+            category,
+            stableId,
+            soundEnabled = remoteMessage.data["soundEnabled"] != "false",
+        )
     }
 
     private fun stableNotificationId(title: String, body: String, deepLink: String): Int {
@@ -89,6 +97,7 @@ class KidScheduleFcmService : FirebaseMessagingService() {
         categoryStr: String,
         category: NotifCategory,
         notificationId: Int,
+        soundEnabled: Boolean = true,
     ) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -101,8 +110,6 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-
-        val soundEnabled = remoteMessage.data["soundEnabled"] != "false"
 
         val builder = NotificationCompat.Builder(this, category.channelId)
             .setSmallIcon(R.drawable.ic_notification)
