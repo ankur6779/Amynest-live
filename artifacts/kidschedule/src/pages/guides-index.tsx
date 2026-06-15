@@ -3,8 +3,10 @@ import { Link } from "wouter";
 import { Clock } from "lucide-react";
 import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
-import { GUIDE_ARTICLES } from "@/lib/marketing/guides-content";
+import { ALL_GUIDE_ARTICLES } from "@/lib/marketing/guides-content";
+import { listFeedingPlanSlugs, listRoutineByAgeSlugs } from "@/lib/marketing/programmatic-pages";
 import { MarketingSiteFooter } from "@/components/marketing/marketing-site-footer";
+import { BreadcrumbNav, SeoImage } from "@/components/marketing/seo-components";
 import { StoreDownloadRow } from "@/components/marketing/store-download-buttons";
 
 const LOGO = "/amynest-logo-new.png";
@@ -31,7 +33,7 @@ export default function GuidesIndexPage() {
       <header className="mx-auto flex max-w-4xl items-center justify-between px-5 py-5">
         <Link href="/">
           <span className="flex cursor-pointer items-center gap-2">
-            <img src={LOGO} alt="AmyNest AI" className="h-9 w-9 rounded-xl" />
+            <SeoImage src={LOGO} alt="AmyNest AI logo" width={36} height={36} className="h-9 w-9 rounded-xl" priority />
             <span className="font-quicksand text-lg font-black">AmyNest AI</span>
           </span>
         </Link>
@@ -41,6 +43,13 @@ export default function GuidesIndexPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-5 pb-12">
+        <BreadcrumbNav
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Guides", path: "/guides" },
+          ]}
+          className="mb-4"
+        />
         <h1 className="mb-3 font-quicksand text-4xl font-black">Parenting Guides</h1>
         <p className="mb-10 text-lg text-white/70 max-w-2xl">
           Evidence-informed, practical articles for real parents — no fluff, no guilt trips. Each guide connects
@@ -48,7 +57,7 @@ export default function GuidesIndexPage() {
         </p>
 
         <ul className="space-y-5">
-          {GUIDE_ARTICLES.map((guide) => (
+          {ALL_GUIDE_ARTICLES.map((guide) => (
             <li key={guide.slug}>
               <Link href={`/guides/${guide.slug}`}>
                 <article
@@ -69,6 +78,32 @@ export default function GuidesIndexPage() {
             </li>
           ))}
         </ul>
+
+        <section className="mt-12">
+          <h2 className="mb-4 text-xl font-bold">Routines by age</h2>
+          <div className="flex flex-wrap gap-2">
+            {listRoutineByAgeSlugs().map((age) => (
+              <Link key={age} href={`/routine-by-age/${age}`}>
+                <span className="inline-block rounded-full px-4 py-2 text-sm bg-white/5 border border-white/10 hover:border-purple-400/40">
+                  Age {age}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <h2 className="mb-4 text-xl font-bold">Feeding plans by month</h2>
+          <div className="flex flex-wrap gap-2">
+            {listFeedingPlanSlugs().map((months) => (
+              <Link key={months} href={`/feeding-plan/${months}`}>
+                <span className="inline-block rounded-full px-4 py-2 text-sm bg-white/5 border border-white/10 hover:border-purple-400/40">
+                  {months.replace("-", " ")}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <section className="mt-12 rounded-3xl p-8 text-center" style={{ border: "1px solid rgba(168,85,247,0.25)" }}>
           <h2 className="mb-2 text-xl font-bold">Put these guides into practice</h2>

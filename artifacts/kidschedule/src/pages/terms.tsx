@@ -1,5 +1,7 @@
 import { Link } from "wouter";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 const sections = [{
   title: "1. Acceptance of Terms",
   body: `By accessing or using AmyNest AI ("the Service") available at amynest.in, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service. These Terms apply to all visitors, users, and others who access or use the Service.`
@@ -59,6 +61,17 @@ export default function TermsOfServicePage() {
   const {
     t
   } = useTranslation();
+
+  useEffect(() => {
+    applySeoMeta({
+      path: "/terms",
+      title: "Terms of Service | AmyNest AI",
+      description:
+        "Terms of Service for AmyNest AI — AI-powered parenting platform for routines, nutrition, speech, and learning.",
+      keywords: "AmyNest terms of service, parenting app terms, subscription terms",
+    });
+  }, []);
+
   return <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card shadow-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">

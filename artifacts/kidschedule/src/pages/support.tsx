@@ -1,6 +1,8 @@
 import { Link } from "wouter";
+import { useEffect } from "react";
 import { Mail, MessageCircle, CreditCard, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 
 const SUPPORT_EMAIL = "support@amynest.in";
 
@@ -24,6 +26,16 @@ const topics = [
 
 export default function SupportPage() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    applySeoMeta({
+      path: "/support",
+      title: "Support & Help | AmyNest AI",
+      description:
+        "Contact AmyNest support for account help, billing questions, and feature requests. Email support@amynest.in.",
+      keywords: "AmyNest support, parenting app help, contact AmyNest",
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

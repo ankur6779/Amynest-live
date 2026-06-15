@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { FEATURE_PAGES } from "@/lib/marketing/feature-pages";
-import { GUIDE_ARTICLES } from "@/lib/marketing/guides-content";
+import { ALL_GUIDE_ARTICLES } from "@/lib/marketing/guides-content";
 
 export function MarketingSiteFooter() {
   return (
@@ -59,7 +59,7 @@ export function MarketingSiteFooter() {
         </div>
       </div>
       <p className="mx-auto mt-8 max-w-6xl text-center text-xs text-white/40">
-        © {new Date().getFullYear()} AmyNest AI · {GUIDE_ARTICLES.length} guides for parents
+        © {new Date().getFullYear()} AmyNest AI · {ALL_GUIDE_ARTICLES.length} guides for parents
       </p>
     </footer>
   );

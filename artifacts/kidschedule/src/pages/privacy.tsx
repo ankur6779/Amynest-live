@@ -1,5 +1,7 @@
 import { Link } from "wouter";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 
 const PRIVACY_CONTENT = {
   title: "Privacy Policy — AmyNest AI",
@@ -56,6 +58,16 @@ const PRIVACY_CONTENT = {
 
 export default function PrivacyPolicyPage() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    applySeoMeta({
+      path: "/privacy",
+      title: "Privacy Policy | AmyNest AI",
+      description:
+        "How AmyNest AI collects, uses, and protects your family data. Privacy-first parenting app with no ads shown to children.",
+      keywords: "AmyNest privacy policy, parenting app privacy, child data protection",
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

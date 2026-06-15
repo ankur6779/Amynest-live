@@ -1,42 +1,23 @@
 # AmyNest AI — robots.txt
-# https://www.amynest.in/
-
 User-agent: *
 Allow: /
 Allow: /get-app
 Allow: /features/
-Allow: /guides
 Allow: /guides/
-Allow: /sign-in
-Allow: /sign-up
+Allow: /routine-by-age/
+Allow: /feeding-plan/
 Allow: /privacy
 Allow: /terms
 Allow: /support
-Allow: /opengraph.jpg
-Allow: /pwa-icon-192.png
-Allow: /pwa-icon-512.png
-Allow: /favicon.svg
-Allow: /manifest.json
-
-# Auth-gated app pages — no crawl budget waste
+Allow: /llms.txt
+Allow: /humans.txt
 Disallow: /dashboard
-Disallow: /routines
 Disallow: /parenting-hub
-Disallow: /amy-coach
-Disallow: /progress
-Disallow: /behavior
-Disallow: /nutrition
-Disallow: /study-zone
-Disallow: /life-skills
-Disallow: /speech-coach
-Disallow: /children
-Disallow: /spelling-mastery
-Disallow: /settings
-Disallow: /profile
-
-# Internal / API paths
 Disallow: /api/
-Disallow: /debug-parity
-Disallow: /debug-logs
+
+User-agent: GPTBot
+Allow: /guides/
+Allow: /features/
+Disallow: /dashboard
 
 Sitemap: https://www.amynest.in/sitemap.xml

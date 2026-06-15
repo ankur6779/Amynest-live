@@ -9,6 +9,9 @@
     <!-- SEO: allow indexing, canonical URL -->
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://www.amynest.in/" />
+    <link rel="alternate" hreflang="en-IN" href="https://www.amynest.in/" />
+    <link rel="alternate" hreflang="hi-IN" href="https://www.amynest.in/hi" />
+    <link rel="alternate" hreflang="x-default" href="https://www.amynest.in/" />
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
@@ -1276,7 +1279,7 @@
           "applicationSubCategory": "Parenting",
           "operatingSystem": "Web, Android, iOS",
           "browserRequirements": "Requires JavaScript. Requires HTML5.",
-          "inLanguage": ["en"],
+          "inLanguage": ["en", "hi"],
           "offers": {
             "@type": "Offer",
             "price": "0",
@@ -1319,7 +1322,13 @@
             "width": 512,
             "height": 512
           },
-          "sameAs": ["https://twitter.com/AmyNestAI"],
+          "brand": {
+            "@type": "Brand",
+            "@id": "https://www.amynest.in/#brand",
+            "name": "AmyNest AI",
+            "logo": "https://www.amynest.in/pwa-icon-512.png"
+          },
+          "sameAs": ["https://twitter.com/AmyNestAI", "https://www.linkedin.com/company/amynest"],
           "areaServed": {
             "@type": "Country",
             "name": "India"
@@ -1329,8 +1338,19 @@
             "contactType": "customer support",
             "email": "support@amynest.in",
             "url": "https://www.amynest.in/support",
-            "availableLanguage": ["English"]
+            "availableLanguage": ["English", "Hindi"]
           }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://www.amynest.in/"
+            }
+          ]
         },
         {
           "@type": "FAQPage",

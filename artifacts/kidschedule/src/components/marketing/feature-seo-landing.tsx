@@ -5,13 +5,26 @@ import type { FeaturePageConfig } from "@/lib/marketing/feature-pages";
 import { applySeoMeta, buildCanonicalUrl } from "@/lib/marketing/canonical-seo";
 import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
 import { getGuideArticle } from "@/lib/marketing/guides-content";
-import { PLAY_STORE_URL } from "@/lib/geo";
+import {
+  getFeatureAnchorText,
+  getGuideAnchorText,
+  getRelatedFeaturesForFeature,
+} from "@/lib/marketing/internal-links";
 import {
   detectStoreTarget,
   StoreDownloadButton,
   StoreDownloadRow,
 } from "@/components/marketing/store-download-buttons";
+import {
+  BreadcrumbNav,
+  RelatedContentPanel,
+  RelatedLinkList,
+  SeoImage,
+  SeoJsonLd,
+  buildFeatureBreadcrumbs,
+} from "@/components/marketing/seo-components";
 import { MarketingSiteFooter } from "@/components/marketing/marketing-site-footer";
+import { buildFeaturePageSchema } from "@/lib/marketing/schema-builders";
 
 const LOGO = "/amynest-logo-new.png";
 
@@ -21,6 +34,7 @@ type FeatureSeoLandingProps = {
 
 export function FeatureSeoLanding({ page }: FeatureSeoLandingProps) {
   const target = detectStoreTarget();
+  const relatedFeatures = getRelatedFeaturesForFeature(page);
 
   useEffect(() => {
     const path = `/features/${page.slug}`;
@@ -34,29 +48,7 @@ export function FeatureSeoLanding({ page }: FeatureSeoLandingProps) {
     trackMarketingEvent("feature_page_view", { feature: page.slug, path });
   }, [page]);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        name: "AmyNest AI",
-        applicationCategory: "LifestyleApplication",
-        operatingSystem: "Android, iOS, Web",
-        description: page.metaDescription,
-        url: buildCanonicalUrl(`/features/${page.slug}`),
-        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-        downloadUrl: PLAY_STORE_URL,
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: page.faqs.map((faq) => ({
-          "@type": "Question",
-          name: faq.question,
-          acceptedAnswer: { "@type": "Answer", text: faq.answer },
-        })),
-      },
-    ],
-  };
+  const breadcrumbs = buildFeatureBreadcrumbs(page.headlineAccent, page.slug);
 
   return (
     <div
@@ -64,12 +56,12 @@ export function FeatureSeoLanding({ page }: FeatureSeoLandingProps) {
       className="min-h-screen text-white overflow-x-hidden"
       style={{ background: "linear-gradient(168deg,#05040c 0%,#0e0b1f 35%,#16122e 65%,#0a0816 100%)" }}
     >
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <SeoJsonLd data={buildFeaturePageSchema(page)} />
 
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
         <Link href="/">
           <span className="flex cursor-pointer items-center gap-2">
-            <img src={LOGO} alt="AmyNest AI" className="h-9 w-9 rounded-xl" />
+            <SeoImage src={LOGO} alt="AmyNest AI logo" width={36} height={36} className="h-9 w-9 rounded-xl" priority />
             <span className="font-quicksand text-lg font-black text-white">AmyNest AI</span>
           </span>
         </Link>
@@ -87,6 +79,8 @@ export function FeatureSeoLanding({ page }: FeatureSeoLandingProps) {
       </header>
 
       <main className="mx-auto max-w-6xl px-5 pb-16">
+        <BreadcrumbNav items={breadcrumbs} className="mb-6" />
+
         <section className="grid gap-10 lg:grid-cols-2 lg:items-center py-8 lg:py-14">
           <div>
             <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-purple-300">
@@ -123,11 +117,13 @@ export function FeatureSeoLanding({ page }: FeatureSeoLandingProps) {
               className="overflow-hidden rounded-3xl border border-white/10 shadow-2xl"
               style={{ background: "rgba(255,255,255,0.04)" }}
             >
-              <img
+              <SeoImage
                 src={page.heroImage}
                 alt={page.heroImageAlt}
+                width={800}
+                height={600}
                 className="w-full object-cover"
-                loading="eager"
+                priority
               />
             </div>
           </div>
@@ -172,24 +168,27 @@ export function FeatureSeoLanding({ page }: FeatureSeoLandingProps) {
         </section>
 
         {page.relatedGuideSlugs.length > 0 && (
-          <section className="py-10">
-            <h2 className="mb-4 font-quicksand text-2xl font-bold">Related guides</h2>
-            <ul className="space-y-2">
-              {page.relatedGuideSlugs.map((slug) => {
-                const guide = getGuideArticle(slug);
-                if (!guide) return null;
-                return (
-                  <li key={slug}>
-                    <Link href={`/guides/${slug}`}>
-                      <span className="text-purple-300 hover:text-purple-200 underline-offset-2 hover:underline">
-                        {guide.title}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+          <RelatedContentPanel title="Related parenting guides">
+            <RelatedLinkList
+              links={page.relatedGuideSlugs
+                .map((slug) => {
+                  const guide = getGuideArticle(slug);
+                  return guide ? { href: `/guides/${slug}`, label: getGuideAnchorText(guide) } : null;
+                })
+                .filter((item): item is { href: string; label: string } => item !== null)}
+            />
+          </RelatedContentPanel>
+        )}
+
+        {relatedFeatures.length > 0 && (
+          <RelatedContentPanel title="Explore more AmyNest features">
+            <RelatedLinkList
+              links={relatedFeatures.map((feature) => ({
+                href: `/features/${feature.slug}`,
+                label: getFeatureAnchorText(feature),
+              }))}
+            />
+          </RelatedContentPanel>
         )}
 
         <section

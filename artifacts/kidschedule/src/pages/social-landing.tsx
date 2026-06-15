@@ -21,6 +21,7 @@ import { InfantParentingSection } from "@/components/marketing/infant-parenting-
 import { PatentPendingPill, PATENT_TRUST_LINE } from "@/components/marketing/patent-pending-pill";
 import { SeeAmyNestInActionSection } from "@/components/marketing/horizontal-showcase/horizontal-showcase";
 import { trackGetAppFunnelEvent } from "@/lib/marketing/ga4-analytics";
+import { applySeoMeta, buildCanonicalUrl } from "@/lib/marketing/canonical-seo";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 
 const OFFICIAL_LOGO = "/amynest-logo-new.png";
@@ -189,26 +190,6 @@ function StoreButtonRow({
       <StoreButton target="ios" size={size} location={`${location}_ios`} variant={variant} />
     </div>
   );
-}
-
-function setMetaTag(selector: string, attr: "content" | "href", value: string) {
-  const existing = document.querySelector(selector);
-  if (existing) {
-    existing.setAttribute(attr, value);
-    return;
-  }
-  const tag = selector.includes("canonical") ? document.createElement("link") : document.createElement("meta");
-  if (selector.includes("canonical")) {
-    tag.setAttribute("rel", "canonical");
-    tag.setAttribute("href", value);
-  } else {
-    const propertyMatch = selector.match(/property="([^"]+)"/);
-    const nameMatch = selector.match(/name="([^"]+)"/);
-    if (propertyMatch) tag.setAttribute("property", propertyMatch[1]);
-    if (nameMatch) tag.setAttribute("name", nameMatch[1]);
-    tag.setAttribute("content", value);
-  }
-  document.head.appendChild(tag);
 }
 
 const TRUST_BAR = [
@@ -864,20 +845,14 @@ export default function SocialLandingPage() {
 
   useEffect(() => {
     const pageTitle = `${headline.lead} ${headline.accent} — AmyNest`;
-    document.title = pageTitle;
     const description =
       "AmyNest helps you turn chaotic days into calm wins. Meet AMY for routines, infant care, nutrition, speech and learning from birth through age 10+. Free on Android & iOS.";
-    setMetaTag('meta[name="description"]', "content", description);
-    setMetaTag('link[rel="canonical"]', "href", "https://www.amynest.in/get-app");
-    setMetaTag('meta[property="og:title"]', "content", pageTitle);
-    setMetaTag('meta[property="og:description"]', "content", description);
-    setMetaTag('meta[property="og:image"]', "content", `https://www.amynest.in${OG_IMAGE}`);
-    setMetaTag('meta[property="og:type"]', "content", "website");
-    setMetaTag('meta[property="og:url"]', "content", "https://www.amynest.in/get-app");
-    setMetaTag('meta[name="twitter:card"]', "content", "summary_large_image");
-    setMetaTag('meta[name="twitter:title"]', "content", pageTitle);
-    setMetaTag('meta[name="twitter:description"]', "content", description);
-    setMetaTag('meta[name="twitter:image"]', "content", `https://www.amynest.in${OG_IMAGE}`);
+    applySeoMeta({
+      path: "/get-app",
+      title: pageTitle,
+      description,
+      ogImage: buildCanonicalUrl(OG_IMAGE),
+    });
     trackLandingEvent("landing_page_view", { store_target: target, headline_variant: headline.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

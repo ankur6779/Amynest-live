@@ -1,7 +1,13 @@
+import { EXTRA_GUIDE_ARTICLES } from "@/lib/marketing/guides-content-extra";
+
 export type GuideSection =
   | { type: "paragraph"; text: string }
   | { type: "heading"; text: string }
   | { type: "list"; items: string[] };
+
+export type GuideFaq = { question: string; answer: string };
+
+export type GuideCitation = { title: string; url: string; publisher?: string };
 
 export type GuideArticle = {
   slug: string;
@@ -9,9 +15,16 @@ export type GuideArticle = {
   metaDescription: string;
   keywords: string;
   publishedAt: string;
+  updatedAt?: string;
   readMinutes: number;
   excerpt: string;
   relatedFeatureSlug?: string;
+  relatedGuideSlugs?: string[];
+  authorId?: string;
+  reviewedById?: string;
+  citations?: GuideCitation[];
+  heroImage?: string;
+  faqs?: GuideFaq[];
   sections: GuideSection[];
 };
 
@@ -325,12 +338,14 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
   },
 ];
 
-const GUIDE_BY_SLUG = new Map(GUIDE_ARTICLES.map((guide) => [guide.slug, guide]));
+export const ALL_GUIDE_ARTICLES: GuideArticle[] = [...GUIDE_ARTICLES, ...EXTRA_GUIDE_ARTICLES];
+
+const GUIDE_BY_SLUG = new Map(ALL_GUIDE_ARTICLES.map((guide) => [guide.slug, guide]));
 
 export function getGuideArticle(slug: string): GuideArticle | undefined {
   return GUIDE_BY_SLUG.get(slug);
 }
 
 export function listGuideSlugs(): string[] {
-  return GUIDE_ARTICLES.map((guide) => guide.slug);
+  return ALL_GUIDE_ARTICLES.map((guide) => guide.slug);
 }

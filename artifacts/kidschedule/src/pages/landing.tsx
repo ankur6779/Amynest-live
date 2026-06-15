@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { useEffect } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight,
@@ -31,6 +32,7 @@ import { StoreQrCode } from "@/components/store-qr-code";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
+import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
 
@@ -233,6 +235,17 @@ function SectionEyebrow({
 
 export default function LandingPage() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    applySeoMeta({
+      path: "/",
+      title: "AmyNest AI — Where Smart Parenting Begins",
+      description:
+        "AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child.",
+      keywords:
+        "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting India",
+    });
+  }, []);
 
   return (
     <div
@@ -882,7 +895,10 @@ export default function LandingPage() {
               <span className="text-[10px] text-white/40 font-medium tracking-wide">{t("patent_pending.footer_label")}</span>
             </div>
           </div>
-          <div className="flex items-center gap-6 text-xs text-white/40">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/40">
+            <Link href="/guides"><span className="hover:text-white/70 transition-colors cursor-pointer">Guides</span></Link>
+            <Link href="/get-app"><span className="hover:text-white/70 transition-colors cursor-pointer">Get the app</span></Link>
+            <Link href="/features/daily-routines"><span className="hover:text-white/70 transition-colors cursor-pointer">Daily routines</span></Link>
             <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_up")}</span></Link>
             <Link href="/sign-in"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_in")}</span></Link>
             <Link href="/privacy"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-privacy">{t("pages.landing.privacy_policy")}</span></Link>

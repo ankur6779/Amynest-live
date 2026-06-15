@@ -1,0 +1,14 @@
+/* TEAM */
+Editorial: AmyNest Editorial Team
+Medical Review: Dr. Priya Sharma (MD Pediatrics)
+Speech Review: Ananya Mehta (MSc Speech-Language Pathology)
+Support: support@amynest.in
+
+/* SITE */
+Last update: 2026-06-15
+Standards: HTML5, Schema.org JSON-LD, Open Graph, Twitter Cards
+Languages: English (en-IN), Hindi framework (hi-IN hreflang prepared)
+Location: India
+
+/* THANKS */
+Parents and beta families who shaped AmyNest routines and guides.

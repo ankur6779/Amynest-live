@@ -18,5 +18,6 @@ pnpm fetch --frozen-lockfile
 pnpm install --frozen-lockfile --offline --filter "@workspace/kidschedule..."
 
 BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build
+pnpm --filter @workspace/kidschedule validate:seo
 
 echo "[render-frontend-build] OK"

@@ -1,13 +1,28 @@
 import { useEffect } from "react";
 import { Link, useParams } from "wouter";
 import NotFound from "@/pages/not-found";
-import { applySeoMeta, buildCanonicalUrl } from "@/lib/marketing/canonical-seo";
-import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
-import { getFeaturePage } from "@/lib/marketing/feature-pages";
-import type { GuideSection } from "@/lib/marketing/guides-content";
-import { getGuideArticle } from "@/lib/marketing/guides-content";
+import { EeatByline } from "@/components/marketing/seo-components";
+import {
+  BreadcrumbNav,
+  RelatedContentPanel,
+  RelatedLinkList,
+  SeoImage,
+  SeoJsonLd,
+  buildGuideBreadcrumbs,
+} from "@/components/marketing/seo-components";
 import { MarketingSiteFooter } from "@/components/marketing/marketing-site-footer";
 import { StoreDownloadRow } from "@/components/marketing/store-download-buttons";
+import { applySeoMeta } from "@/lib/marketing/canonical-seo";
+import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
+import type { GuideSection } from "@/lib/marketing/guides-content";
+import { getGuideArticle } from "@/lib/marketing/guides-content";
+import {
+  getFeatureAnchorText,
+  getGuideAnchorText,
+  getRelatedFeaturesForGuide,
+  getRelatedGuides,
+} from "@/lib/marketing/internal-links";
+import { buildGuideArticleSchema } from "@/lib/marketing/schema-builders";
 
 const LOGO = "/amynest-logo-new.png";
 
@@ -47,25 +62,9 @@ export default function GuideArticlePage() {
     return <NotFound />;
   }
 
-  const relatedFeature = guide.relatedFeatureSlug
-    ? getFeaturePage(guide.relatedFeatureSlug)
-    : undefined;
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: guide.title,
-    description: guide.metaDescription,
-    datePublished: guide.publishedAt,
-    dateModified: guide.publishedAt,
-    author: { "@type": "Organization", name: "AmyNest AI" },
-    publisher: {
-      "@type": "Organization",
-      name: "AmyNest AI",
-      logo: { "@type": "ImageObject", url: buildCanonicalUrl("/pwa-icon-512.png") },
-    },
-    mainEntityOfPage: buildCanonicalUrl(`/guides/${guide.slug}`),
-  };
+  const relatedGuides = getRelatedGuides(guide);
+  const relatedFeatures = getRelatedFeaturesForGuide(guide);
+  const breadcrumbs = buildGuideBreadcrumbs(guide.title, guide.slug);
 
   return (
     <div
@@ -73,12 +72,12 @@ export default function GuideArticlePage() {
       className="min-h-screen text-white"
       style={{ background: "linear-gradient(168deg,#05040c 0%,#0e0b1f 35%,#16122e 65%,#0a0816 100%)" }}
     >
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <SeoJsonLd data={buildGuideArticleSchema(guide)} />
 
       <header className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5">
         <Link href="/">
           <span className="flex cursor-pointer items-center gap-2">
-            <img src={LOGO} alt="AmyNest AI" className="h-9 w-9 rounded-xl" />
+            <SeoImage src={LOGO} alt="AmyNest AI logo" width={36} height={36} className="h-9 w-9 rounded-xl" priority />
             <span className="font-quicksand text-lg font-black">AmyNest AI</span>
           </span>
         </Link>
@@ -88,35 +87,69 @@ export default function GuideArticlePage() {
       </header>
 
       <article className="mx-auto max-w-3xl px-5 pb-12">
+        <BreadcrumbNav items={breadcrumbs} className="mb-4" />
         <p className="mb-2 text-sm text-purple-300">{guide.readMinutes} min read</p>
-        <h1 className="mb-6 font-quicksand text-3xl font-black leading-tight sm:text-4xl">{guide.title}</h1>
+        <h1 className="mb-4 font-quicksand text-3xl font-black leading-tight sm:text-4xl">{guide.title}</h1>
+        <EeatByline authorId={guide.authorId} reviewedById={guide.reviewedById} updatedAt={guide.updatedAt} />
 
         {guide.sections.map((section, index) => (
           <GuideSectionBlock key={`${guide.slug}-${index}`} section={section} />
         ))}
 
-        {relatedFeature && (
-          <section
-            className="mt-10 rounded-2xl p-6"
-            style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)" }}
-          >
-            <h2 className="mb-2 text-lg font-semibold">Try this in AmyNest</h2>
-            <p className="mb-4 text-white/70">{relatedFeature.subheadline}</p>
-            <Link href={`/features/${relatedFeature.slug}`}>
-              <span
-                className="inline-flex cursor-pointer items-center rounded-xl px-5 py-3 text-sm font-semibold text-white"
-                style={{ background: "rgba(168,85,247,0.35)" }}
-                onClick={() =>
-                  trackMarketingEvent("guide_cta_click", {
-                    guide: guide.slug,
-                    target: `feature_${relatedFeature.slug}`,
-                  })
-                }
-              >
-                Explore {relatedFeature.headlineAccent}
-              </span>
-            </Link>
+        {guide.faqs && guide.faqs.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-4 text-xl font-semibold">Frequently asked questions</h2>
+            <div className="space-y-3">
+              {guide.faqs.map((faq) => (
+                <details
+                  key={faq.question}
+                  className="rounded-xl p-4"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <summary className="cursor-pointer font-medium text-white">{faq.question}</summary>
+                  <p className="mt-2 text-sm text-white/70">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
           </section>
+        )}
+
+        {guide.citations && guide.citations.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/50">References</h2>
+            <ul className="space-y-2 text-sm text-white/55">
+              {guide.citations.map((cite) => (
+                <li key={cite.url}>
+                  <a href={cite.url} target="_blank" rel="noopener noreferrer" className="hover:text-white underline">
+                    {cite.title}
+                  </a>
+                  {cite.publisher ? ` — ${cite.publisher}` : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {relatedFeatures.length > 0 && (
+          <RelatedContentPanel title="Try this in AmyNest">
+            <RelatedLinkList
+              links={relatedFeatures.map((feature) => ({
+                href: `/features/${feature.slug}`,
+                label: getFeatureAnchorText(feature),
+              }))}
+            />
+          </RelatedContentPanel>
+        )}
+
+        {relatedGuides.length > 0 && (
+          <RelatedContentPanel title="Related guides">
+            <RelatedLinkList
+              links={relatedGuides.map((related) => ({
+                href: `/guides/${related.slug}`,
+                label: getGuideAnchorText(related),
+              }))}
+            />
+          </RelatedContentPanel>
         )}
 
         <section className="mt-10 rounded-3xl p-8 text-center" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>

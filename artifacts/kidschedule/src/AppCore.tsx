@@ -146,6 +146,12 @@ const AdminInfantParentingPage = lazyPage(() => import("@/pages/admin-infant-par
 const FeatureSeoLandingPage = lazyPage(() => import("@/pages/feature-seo-landing"));
 const GuidesIndexPage = lazyPage(() => import("@/pages/guides-index"));
 const GuideArticlePage = lazyPage(() => import("@/pages/guide-article"));
+const RoutineByAgePage = lazyPage(() =>
+  import("@/pages/programmatic-seo-page").then((m) => ({ default: m.RoutineByAgePage })),
+);
+const FeedingPlanPage = lazyPage(() =>
+  import("@/pages/programmatic-seo-page").then((m) => ({ default: m.FeedingPlanPage })),
+);
 
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
@@ -697,6 +703,8 @@ function AppRoutes() {
           <Route path="/features/:slug" component={FeatureSeoLandingPage} />
           <Route path="/guides" component={GuidesIndexPage} />
           <Route path="/guides/:slug" component={GuideArticlePage} />
+          <Route path="/routine-by-age/:age" component={RoutineByAgePage} />
+          <Route path="/feeding-plan/:months" component={FeedingPlanPage} />
           <Route path="/app" component={StoreTapPage} />
           <Route path="/download">
             <Redirect to="/get-app" />
