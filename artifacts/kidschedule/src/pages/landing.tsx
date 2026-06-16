@@ -194,18 +194,15 @@ const TESTIMONIALS = [
 
 function AmyLandingAvatar({ size = 140, className = "" }: { size?: number; className?: string }) {
   return (
-    <picture>
-      <source srcSet="/amy-3d/amy-idle.webp" type="image/webp" />
-      <img
-        src="/amy-3d/amy-idle.png"
-        alt="Amy AI"
-        width={size}
-        height={size}
-        className={className}
-        decoding="async"
-        fetchPriority="high"
-      />
-    </picture>
+    <img
+      src="/amy-3d/amy-idle.webp"
+      alt="Amy AI"
+      width={size}
+      height={size}
+      className={className}
+      decoding="async"
+      fetchPriority="high"
+    />
   );
 }
 

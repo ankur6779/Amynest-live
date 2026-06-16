@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AMY_PORTRAIT_SRC } from "@/lib/amy-3d/baked-avatar";
 
 interface AmyCompanionBarProps {
   messageKey: string;
@@ -28,7 +29,7 @@ export function AmyCompanionBar({
       style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}
     >
       <motion.img
-        src="/amy-3d/amy-avatar-square.png"
+        src={AMY_PORTRAIT_SRC}
         alt="Amy"
         className="h-11 w-11 rounded-xl shrink-0 object-cover"
         animate={speaking ? { scale: [1, 1.04, 1] } : { scale: 1 }}

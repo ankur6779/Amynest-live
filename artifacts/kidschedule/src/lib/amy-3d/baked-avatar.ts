@@ -6,10 +6,10 @@ import { useEffect, useState } from "react";
 // live WebGL canvas. Until the PNG exists we transparently fall back to the 2D
 // SVG, so behaviour is unchanged on a fresh checkout.
 
-export const BAKED_AMY_SRC = "/amy-3d/amy-idle.png";
+export const BAKED_AMY_SRC = "/amy-3d/amy-idle.webp";
 
 // Full-resolution square portrait used by the animated hero avatar (AmyPortrait).
-export const AMY_PORTRAIT_SRC = "/amy-3d/amy-avatar-square.png";
+export const AMY_PORTRAIT_SRC = "/amy-3d/amy-avatar-square.webp";
 
 // Rigged 3D model. When this file is dropped in, the hero upgrades to a live
 // 3D Amy with viseme lip-sync + eye-tracking. See public/amy-3d/README.md.
