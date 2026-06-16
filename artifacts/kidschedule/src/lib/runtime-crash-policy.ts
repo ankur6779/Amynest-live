@@ -119,18 +119,23 @@ function isPreviewHost(): boolean {
   );
 }
 
-/** Benign — should be logged, not shown as a full-screen fatal crash. */
-export function isBenignRuntimeError(err: unknown): boolean {
-  if (errorName(err) === "AbortError" || errorName(err) === "FetchTimeoutError") return true;
-  const msg = messageFromUnknown(err);
-  if (!msg) return false;
-  return BENIGN_PATTERNS.some((p) => msg.includes(p));
-}
-
 export function isRecoverableRuntimeError(err: unknown): boolean {
   const msg = messageFromUnknown(err);
   if (!msg) return false;
   return RECOVERABLE_PATTERNS.some((p) => msg.includes(p));
+}
+
+/** Benign — should be logged, not shown as a full-screen fatal crash. */
+export function isBenignRuntimeError(err: unknown): boolean {
+  // Stale-deploy chunk / dynamic-import failures must drive cache-purge
+  // recovery (purge + reload), never be swallowed as benign. Chrome reports
+  // these as "Failed to fetch dynamically imported module: ..." which contains
+  // the benign substring "Failed to fetch", so this guard must run first.
+  if (isRecoverableRuntimeError(err)) return false;
+  if (errorName(err) === "AbortError" || errorName(err) === "FetchTimeoutError") return true;
+  const msg = messageFromUnknown(err);
+  if (!msg) return false;
+  return BENIGN_PATTERNS.some((p) => msg.includes(p));
 }
 
 /** Infinite render loops — log and navigate away; never show crash UI. */

@@ -2,11 +2,6 @@
 User-agent: *
 Allow: /
 Allow: /get-app
-Allow: /amy
-Allow: /parenting-app
-Allow: /speech-coach-app
-Allow: /child-routine-planner
-Allow: /kids-nutrition-app
 Allow: /features/
 Allow: /guides/
 Allow: /routine-by-age/

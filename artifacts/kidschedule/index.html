@@ -533,9 +533,28 @@
           catch (_e) { return null; }
         };
 
+        // Stale-deploy chunk failures must ALWAYS recover (purge + reload),
+        // never be swallowed as benign. Chrome reports these as
+        // "Failed to fetch dynamically imported module: ..." which contains
+        // the benign substring "Failed to fetch" — so this guard runs first.
+        function __amynestIsStaleAssetMsg(msg) {
+          if (!msg) return false;
+          var s = String(msg);
+          return (
+            s.indexOf("ChunkLoadError") >= 0 ||
+            s.indexOf("dynamically imported module") >= 0 ||
+            s.indexOf("Importing a module script failed") >= 0 ||
+            s.indexOf("Failed to load module script") >= 0 ||
+            s.indexOf("error loading dynamically imported module") >= 0 ||
+            s.indexOf("Loading chunk") >= 0 ||
+            s.indexOf("Loading CSS chunk") >= 0
+          );
+        }
+
         function __amynestIsBenignMsg(msg) {
           if (!msg) return false;
           var s = String(msg);
+          if (__amynestIsStaleAssetMsg(s)) return false;
           return (
             s.indexOf("ResizeObserver") >= 0 ||
             s.indexOf("AbortError") >= 0 ||
