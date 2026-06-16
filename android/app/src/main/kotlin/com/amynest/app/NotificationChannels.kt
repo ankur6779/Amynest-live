@@ -134,6 +134,7 @@ enum class NotifCategory(
                 ChannelSpec("parenting", R.string.channel_parenting, NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.SOFT_BELL),
                 ChannelSpec("learning",  R.string.channel_learning,  NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.LEARNING_POP),
                 ChannelSpec("milestone", R.string.channel_milestone, NotificationManager.IMPORTANCE_HIGH,   NotificationSounds.SPARKLE),
+                ChannelSpec("pre_signup_reengagement", R.string.channel_pre_signup, NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.SOFT_BELL),
                 ChannelSpec("default",   R.string.notification_channel_name, NotificationManager.IMPORTANCE_DEFAULT, NotificationSounds.NEST_CHIME),
             )
 

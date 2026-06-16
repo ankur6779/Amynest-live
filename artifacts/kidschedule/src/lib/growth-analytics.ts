@@ -25,7 +25,15 @@ export type GrowthEventName =
   | "onboarding_milestone"
   | "signup_completed"
   | "first_routine_created"
-  | "first_amy_chat";
+  | "first_amy_chat"
+  | "pre_signup_notification_scheduled"
+  | "pre_signup_notification_delivered"
+  | "pre_signup_notification_opened"
+  | "pre_signup_notification_dismissed"
+  | "pre_signup_signup_started"
+  | "pre_signup_signup_completed"
+  | "pre_signup_login_completed"
+  | "pre_signup_signup_conversion";
 
 export type GrowthEventParams = Record<string, string | number | boolean | undefined>;
 
@@ -42,6 +50,14 @@ const GROWTH_TO_TAXONOMY: Partial<Record<GrowthEventName, AnalyticsEventName>> =
   streak_updated: "streak_updated",
   achievement_unlocked: "achievement_unlocked",
   onboarding_milestone: "onboarding_milestone",
+  pre_signup_notification_scheduled: "pre_signup_notification_scheduled",
+  pre_signup_notification_delivered: "pre_signup_notification_delivered",
+  pre_signup_notification_opened: "pre_signup_notification_opened",
+  pre_signup_notification_dismissed: "pre_signup_notification_dismissed",
+  pre_signup_signup_started: "pre_signup_signup_started",
+  pre_signup_signup_completed: "pre_signup_signup_completed",
+  pre_signup_login_completed: "pre_signup_login_completed",
+  pre_signup_signup_conversion: "pre_signup_signup_conversion",
 };
 
 const GA4_GROWTH_EVENTS = new Set<GrowthEventName>([
@@ -55,6 +71,14 @@ const GA4_GROWTH_EVENTS = new Set<GrowthEventName>([
   "signup_completed",
   "first_routine_created",
   "first_amy_chat",
+  "pre_signup_notification_scheduled",
+  "pre_signup_notification_delivered",
+  "pre_signup_notification_opened",
+  "pre_signup_notification_dismissed",
+  "pre_signup_signup_started",
+  "pre_signup_signup_completed",
+  "pre_signup_login_completed",
+  "pre_signup_signup_conversion",
 ]);
 
 export function trackGrowthEvent(

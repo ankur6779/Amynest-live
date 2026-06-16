@@ -22,6 +22,8 @@ import {
 import { navigateAfterAuth } from "@/lib/auth-navigation";
 import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { onPreSignupSignupStarted } from "@/lib/pre-signup-reengagement/orchestrator";
+import { markPreSignupSignupFlowActive } from "@/lib/pre-signup-reengagement/storage";
 import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
@@ -361,6 +363,18 @@ export default function SignUpPage() {
   useEffect(() => {
     if (isLoaded && isSignedIn) setLocation("/");
   }, [isLoaded, isSignedIn, setLocation]);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("amynest_pre_signup_started") === "1") return;
+      sessionStorage.setItem("amynest_pre_signup_started", "1");
+    } catch {
+      /* ignore */
+    }
+    markPreSignupSignupFlowActive();
+    onPreSignupSignupStarted();
+  }, []);
+
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

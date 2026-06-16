@@ -12,6 +12,10 @@ import { patchBootDiagnostics } from "@/lib/boot-store";
 import { initNativeShell, registerWebServiceWorker } from "@/lib/native-shell";
 import { installNativeHardwareBackHandler } from "@/lib/navigation-orchestrator";
 import { initCapacitorPushTapHandling } from "@/lib/native-push-bridge";
+import {
+  initPreSignupLocalNotificationListeners,
+  wireAndroidPreSignupTapMetaHandler,
+} from "@/lib/pre-signup-reengagement/local-notifications";
 import { runPwaCacheSyncBackground, checkDeployVersionMismatch } from "@/lib/pwa-cache-sync";
 import {
   enterStartupPhase,
@@ -44,6 +48,9 @@ export async function runBackgroundStartup(): Promise<void> {
 
   if (typeof window !== "undefined") {
     patchBootDiagnostics({ hostname: window.location.hostname });
+
+    wireAndroidPreSignupTapMetaHandler();
+    void initPreSignupLocalNotificationListeners();
 
     void runPwaCacheSyncBackground();
 

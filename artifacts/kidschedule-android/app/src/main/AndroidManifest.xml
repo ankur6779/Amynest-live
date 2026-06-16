@@ -11,6 +11,10 @@
          Requested at runtime in MainActivity once the user is signed in. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Pre-signup local re-engagement alarms (exact schedule, battery-aware). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- Optional permissions (requested at runtime if website asks) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -70,6 +74,10 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".PreSignupNotifReceiver"
+            android:exported="false" />
 
         <!-- Default notification icon used by FCM when the data payload does
              not specify one. Must be a white-on-transparent silhouette per

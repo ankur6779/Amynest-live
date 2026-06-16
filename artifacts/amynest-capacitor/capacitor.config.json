@@ -57,6 +57,9 @@
 				"alert"
 			]
 		},
+		"LocalNotifications": {
+			"iconColor": "#a855f7"
+		},
 		"CapacitorHttp": {
 			"enabled": false
 		},
@@ -95,6 +98,7 @@
 		"GeolocationPlugin",
 		"KeyboardPlugin",
 		"PushNotificationsPlugin",
+		"LocalNotificationsPlugin",
 		"PurchasesPlugin",
 		"MicPermissionPlugin",
 		"SignInWithApple",

@@ -159,6 +159,7 @@ import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissi
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { CampaignAttributionBridge } from "@/components/campaign-attribution-bridge";
 import { GrowthBootstrap } from "@/components/growth-bootstrap";
+import { PreSignupReengagementOrchestrator } from "@/components/pre-signup-reengagement-orchestrator";
 import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
 import { useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
@@ -686,6 +687,7 @@ function AppRoutes() {
             <ReferralAttributionBridge />
             <CampaignAttributionBridge />
             <GrowthBootstrap />
+            <PreSignupReengagementOrchestrator />
             <GiftAttributionBridge />
             <FcmForegroundHandler />
             <NotificationDeepLinkBridge />

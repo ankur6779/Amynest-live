@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var pushBridge: PushBridge
+    private var localNotifBridge: LocalNotifBridge? = null
     private var billingBridge: BillingBridge? = null
     private var authBridge: AuthBridge? = null
     private var reviewBridge: ReviewBridge? = null
@@ -76,6 +77,9 @@ class MainActivity : AppCompatActivity() {
     /** Notification tap payload waiting for onPageFinished to deliver to the web page. */
     private var pendingNotifDeepLink: String? = null
     private var pendingNotifCategory: String? = null
+    private var pendingNotifNotificationId: String? = null
+    private var pendingNotifMilestone: String? = null
+    private var pendingNotifVariant: String? = null
 
     /** After a wrapper upgrade, purge web caches once the first page loads. */
     private var pendingWebCachePurge = false
@@ -179,6 +183,11 @@ class MainActivity : AppCompatActivity() {
         val (deepLink, category) = extractNotificationTapFromIntent(intent)
         pendingNotifDeepLink = deepLink
         pendingNotifCategory = category
+        if (category == LocalNotifBridge.CATEGORY) {
+            pendingNotifNotificationId = intent?.getStringExtra(LocalNotifBridge.EXTRA_NOTIFICATION_ID)
+            pendingNotifMilestone = intent?.getStringExtra(LocalNotifBridge.EXTRA_MILESTONE)
+            pendingNotifVariant = intent?.getStringExtra(LocalNotifBridge.EXTRA_VARIANT)
+        }
 
         webView = WebView(this).also { wv ->
             wv.id = View.generateViewId()
@@ -224,6 +233,7 @@ class MainActivity : AppCompatActivity() {
             permissionRequester = { askNotificationPermission() },
         )
         pushBridge.install(webView)
+        localNotifBridge = LocalNotifBridge.installOn(webView, this)
         installMicrophoneBridge(webView)
         reviewBridge = ReviewBridge.installOn(this, webView)
         InstallReferrerBridge.fetchOn(this, webView)
@@ -308,15 +318,27 @@ class MainActivity : AppCompatActivity() {
 
         val resolvedDeepLink = deepLink?.takeIf { it.isNotBlank() } ?: ""
         val resolvedCategory = category?.takeIf { it.isNotBlank() }
-        val url = deepLinkToUrl(resolvedDeepLink, resolvedCategory)
-        Log.d(TAG, "Deep link navigation (onNewIntent) → $url category=$resolvedCategory")
+        val isPreSignup = resolvedCategory == LocalNotifBridge.CATEGORY
+        val notificationId = intent.getStringExtra(LocalNotifBridge.EXTRA_NOTIFICATION_ID)
+        val milestone = intent.getStringExtra(LocalNotifBridge.EXTRA_MILESTONE)
+        val variant = intent.getStringExtra(LocalNotifBridge.EXTRA_VARIANT)
+        val js = buildNotifTapJs(
+            resolvedDeepLink,
+            resolvedCategory ?: "",
+            notificationId,
+            milestone,
+            variant,
+        )
 
-        // App is already running — call onNotificationTap directly
-        val js = buildNotifTapJs(resolvedDeepLink, resolvedCategory ?: "")
         webView.post {
-            // Navigate first, then signal the web page
-            webView.loadUrl(url)
-            webView.postDelayed({ webView.evaluateJavascript(js, null) }, 400)
+            if (!isPreSignup) {
+                val url = deepLinkToUrl(resolvedDeepLink, resolvedCategory)
+                Log.d(TAG, "Deep link navigation (onNewIntent) → $url category=$resolvedCategory")
+                webView.loadUrl(url)
+            } else {
+                Log.d(TAG, "Pre-signup tap (onNewIntent) — SPA route only category=$resolvedCategory")
+            }
+            webView.postDelayed({ webView.evaluateJavascript(js, null) }, if (isPreSignup) 0 else 400)
         }
     }
 
@@ -461,10 +483,23 @@ class MainActivity : AppCompatActivity() {
                 // Clear so subsequent page loads don't re-fire.
                 pendingNotifDeepLink = null
                 pendingNotifCategory = null
-                if (!hasNotificationTapPayload(dl, cat)) return
-                val js = buildNotifTapJs(dl ?: "", cat ?: "")
+                if (!hasNotificationTapPayload(dl, cat)) {
+                    drainPreSignupNativeEvents(view)
+                    return
+                }
+                val js = buildNotifTapJs(
+                    dl ?: "",
+                    cat ?: "",
+                    pendingNotifNotificationId,
+                    pendingNotifMilestone,
+                    pendingNotifVariant,
+                )
+                pendingNotifNotificationId = null
+                pendingNotifMilestone = null
+                pendingNotifVariant = null
                 view.evaluateJavascript(js, null)
                 Log.d(TAG, "Delivered onNotificationTap → deepLink=${dl ?: ""} category=${cat ?: ""}")
+                drainPreSignupNativeEvents(view)
             }
         }
 
@@ -661,10 +696,45 @@ class MainActivity : AppCompatActivity() {
      * Build a JS snippet that calls `window.onNotificationTap(deepLink, category)`
      * if the function is defined (i.e. the web app has mounted).
      */
-    private fun buildNotifTapJs(deepLink: String, category: String): String =
-        "if(typeof window.onNotificationTap==='function'){" +
-            "window.onNotificationTap(${JSONObject.quote(deepLink)},${JSONObject.quote(category)});" +
-        "}"
+    private fun buildNotifTapJs(
+        deepLink: String,
+        category: String,
+        notificationId: String? = null,
+        milestone: String? = null,
+        variant: String? = null,
+    ): String {
+        val tap =
+            "if(typeof window.onNotificationTap==='function'){" +
+                "window.onNotificationTap(${JSONObject.quote(deepLink)},${JSONObject.quote(category)});" +
+            "}"
+        val meta =
+            if (category == LocalNotifBridge.CATEGORY && !notificationId.isNullOrBlank()) {
+                "if(typeof window.onPreSignupNotificationTapMeta==='function'){" +
+                    "window.onPreSignupNotificationTapMeta(" +
+                    "${JSONObject.quote(notificationId)}," +
+                    "${JSONObject.quote(milestone ?: "")}," +
+                    "${JSONObject.quote(variant ?: "")}" +
+                    ");}"
+            } else {
+                ""
+            }
+        return tap + meta
+    }
+
+    /** Deliver queued pre-signup delivery/dismiss analytics from native receivers. */
+    private fun drainPreSignupNativeEvents(view: WebView) {
+        val js =
+            "(function(){try{" +
+                "if(!window.AndroidLocalNotif)return;" +
+                "var d=JSON.parse(window.AndroidLocalNotif.drainPendingDeliveries()||'[]');" +
+                "var x=JSON.parse(window.AndroidLocalNotif.drainPendingDismissals()||'[]');" +
+                "if((d&&d.length)||(x&&x.length)){" +
+                    "window.dispatchEvent(new CustomEvent('amynest-pre-signup-native-events'," +
+                        "{detail:{deliveries:d,dismissals:x}}));" +
+                "}" +
+            "}catch(e){}})();"
+        view.evaluateJavascript(js, null)
+    }
 
     // ── Microphone permission bridge ─────────────────────────────────────────
 

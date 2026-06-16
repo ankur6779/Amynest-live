@@ -28,7 +28,14 @@ export type MarketingFunnelEvent =
   | "premium_conversion"
   | "signup_completed"
   | "first_routine_created"
-  | "first_amy_chat";
+  | "first_amy_chat"
+  | "notification_scheduled"
+  | "notification_delivered"
+  | "notification_opened"
+  | "notification_dismissed"
+  | "signup_started"
+  | "login_completed"
+  | "signup_conversion_from_notification";
 
 export type MarketingEventParams = Record<string, string | number | boolean | undefined>;
 

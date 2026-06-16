@@ -170,6 +170,59 @@ const EVENT_PROP_SCHEMAS = {
   onboarding_milestone: z.object({
     milestone: z.string().max(64).optional(),
   }),
+
+  // ── pre-signup re-engagement (native local notifications) ─────────────
+  pre_signup_notification_scheduled: z.object({
+    variant: z.string().max(8).optional(),
+    count: z.number().int().nonnegative().optional(),
+    milestones: z.string().max(128).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_notification_delivered: z.object({
+    variant: z.string().max(8).optional(),
+    milestone: z.string().max(32).optional(),
+    notification_id: z.string().max(64).optional(),
+    source: z.string().max(32).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_notification_opened: z.object({
+    variant: z.string().max(8).optional(),
+    milestone: z.string().max(32).optional(),
+    notification_id: z.string().max(64).optional(),
+    source: z.string().max(32).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_notification_dismissed: z.object({
+    variant: z.string().max(8).optional(),
+    milestone: z.string().max(32).optional(),
+    notification_id: z.string().max(64).optional(),
+    source: z.string().max(32).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_signup_started: z.object({
+    had_attribution: z.boolean().optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_signup_completed: z.object({
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_login_completed: z.object({
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  pre_signup_signup_conversion: z.object({
+    variant: z.string().max(8).optional(),
+    milestone: z.string().max(32).optional(),
+    notification_id: z.string().max(64).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -201,6 +254,14 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   streak_updated: "growth",
   achievement_unlocked: "growth",
   onboarding_milestone: "growth",
+  pre_signup_notification_scheduled: "growth",
+  pre_signup_notification_delivered: "growth",
+  pre_signup_notification_opened: "growth",
+  pre_signup_notification_dismissed: "growth",
+  pre_signup_signup_started: "growth",
+  pre_signup_signup_completed: "growth",
+  pre_signup_login_completed: "growth",
+  pre_signup_signup_conversion: "growth",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

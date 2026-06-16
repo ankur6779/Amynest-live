@@ -56,6 +56,14 @@ class MainActivity : AppCompatActivity() {
     // Deep-link queued from a notification tap that arrived before the
     // WebView finished loading. Drained in onPageFinished.
     private var pendingDeepLink: String? = null
+    private var pendingPreSignupTap: PreSignupTapPayload? = null
+
+    private data class PreSignupTapPayload(
+        val deepLink: String,
+        val notificationId: String,
+        val milestone: String,
+        val variant: String,
+    )
 
     /**
      * Auto-reconnect: registered when the offline screen appears, unregistered
@@ -135,6 +143,7 @@ class MainActivity : AppCompatActivity() {
         // Stash any deep-link from the notification tap that launched us so
         // we can route the WebView to it after the initial page loads.
         pendingDeepLink = extractDeepLink(intent)
+        pendingPreSignupTap = extractPreSignupTap(intent)
 
         configureWebView()
 
@@ -356,6 +365,7 @@ class MainActivity : AppCompatActivity() {
         // rule pinned to BuildConfig.WRAPPER_URL — same security model as
         // BillingBridge.
         pushBridge = PushBridge.installOn(this, webView, BuildConfig.WRAPPER_URL)
+        LocalNotifBridge.installOn(webView, this)
 
         val s = webView.settings
         s.javaScriptEnabled = true
@@ -681,9 +691,14 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        val preSignup = extractPreSignupTap(intent)
+        if (preSignup != null) {
+            pendingPreSignupTap = preSignup
+        }
         val link = extractDeepLink(intent) ?: return
         if (::webView.isInitialized) {
             navigateToDeepLink(link)
+            preSignup?.let { dispatchPreSignupTapToWeb(it) }
         } else {
             pendingDeepLink = link
         }
@@ -804,6 +819,37 @@ class MainActivity : AppCompatActivity() {
         val link = pendingDeepLink ?: return
         pendingDeepLink = null
         navigateToDeepLink(link)
+        pendingPreSignupTap?.let {
+            dispatchPreSignupTapToWeb(it)
+            pendingPreSignupTap = null
+        }
+    }
+
+    private fun extractPreSignupTap(intent: Intent?): PreSignupTapPayload? {
+        if (intent == null) return null
+        val notifId = intent.getStringExtra("presignup.notificationId") ?: return null
+        return PreSignupTapPayload(
+            deepLink = intent.getStringExtra(KidScheduleFcmService.EXTRA_DEEP_LINK) ?: "/sign-up",
+            notificationId = notifId,
+            milestone = intent.getStringExtra("presignup.milestone") ?: "",
+            variant = intent.getStringExtra("presignup.variant") ?: "",
+        )
+    }
+
+    private fun dispatchPreSignupTapToWeb(payload: PreSignupTapPayload) {
+        if (!::webView.isInitialized) return
+        val js =
+            "(function(){try{" +
+                "window.dispatchEvent(new CustomEvent('amynest-pre-signup-notif-tap',{" +
+                    "detail:{" +
+                        "deepLink:${org.json.JSONObject.quote(payload.deepLink)}," +
+                        "milestone:${org.json.JSONObject.quote(payload.milestone)}," +
+                        "variant:${org.json.JSONObject.quote(payload.variant)}," +
+                        "notificationId:${org.json.JSONObject.quote(payload.notificationId)}" +
+                    "}" +
+                "}));" +
+            "}catch(e){}})();"
+        webView.post { webView.evaluateJavascript(js, null) }
     }
 
     private fun navigateToDeepLink(path: String) {

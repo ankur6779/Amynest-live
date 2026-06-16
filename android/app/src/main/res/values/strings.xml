@@ -15,4 +15,5 @@
     <string name="channel_parenting">Parenting Insights</string>
     <string name="channel_learning">Learning &amp; Activities</string>
     <string name="channel_milestone">Milestones</string>
+    <string name="channel_pre_signup">Account Setup Reminders</string>
 </resources>
