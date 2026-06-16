@@ -75,7 +75,7 @@ export async function runCoachInitialWins(
     userPrompt: string;
   },
   traceId?: string,
-): Promise<{ raw: string }> {
+): Promise<{ raw: string; aiOk: boolean }> {
   const payload = JSON.parse(input.userPrompt) as {
     input: import("../coachWinGenerationService.js").CoachInput;
     goalLabel: string;

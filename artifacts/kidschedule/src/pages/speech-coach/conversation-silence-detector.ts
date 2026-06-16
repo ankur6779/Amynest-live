@@ -13,7 +13,7 @@ export const CONVO_MIN_SPEECH_MS = 700;
 export const CONVO_MAX_LISTEN_MS = 9000;
 
 /**
- * Energy-based end-of-speech for Talk with Amy (MediaRecorder / whisper path only).
+ * Energy-based end-of-speech for Talk with Amy (browser recording / whisper path only).
  * Native Web Speech API callers should rely on the engine stop + max timeout.
  */
 export function useConversationSilenceStop(opts: {
