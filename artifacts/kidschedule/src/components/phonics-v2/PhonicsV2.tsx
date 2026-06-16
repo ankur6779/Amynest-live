@@ -290,14 +290,18 @@ export function PhonicsV2({
   }, []);
 
   const masteryAvg = avgMasteryScore(mastery);
-  const masteredFamilies = Object.values(mastery.families)
-    .filter((f) => f.isMastered)
-    .map((f) => f.id);
-  const unlockedStories = getUnlockedStoriesV3({
-    masteredFamilies,
-    masteryScoreAvg: masteryAvg,
-    currentLevel: curriculumLevel ?? 1,
-  });
+  const storyCatalogLevel = curriculumLevel ?? 1;
+  const unlockedStories = useMemo(() => {
+    const masteredFamilies = Object.values(mastery.families)
+      .filter((f) => f.isMastered)
+      .map((f) => f.id);
+    return getUnlockedStoriesV3({
+      masteredFamilies,
+      masteryScoreAvg: masteryAvg,
+      currentLevel: storyCatalogLevel,
+    });
+  }, [mastery, masteryAvg, storyCatalogLevel]);
+  const storyCount = useMemo(() => getStoryCount(), []);
 
   return (
     <div id="phonics-v2" data-testid="phonics-v2" className="space-y-4">
@@ -309,7 +313,7 @@ export function PhonicsV2({
           <div>
             <h2 className="font-quicksand text-base font-bold">Early Reading Journey</h2>
             <p className="text-[11px] text-muted-foreground">
-              True mastery tracking · {getStoryCount()}+ stories · adaptive missions.
+              True mastery tracking · {storyCount}+ stories · adaptive missions.
             </p>
             <Badge variant="secondary" className="mt-1 text-[9px]">
               Mastery avg {masteryAvg}%

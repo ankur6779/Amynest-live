@@ -40,7 +40,9 @@ export function migrateCurriculumLevel(stored: number): CurriculumLevel {
 }
 
 export function requiredLevelForSymbol(symbol: string, type?: string): CurriculumLevel {
+  if (symbol == null || typeof symbol !== "string") return 1;
   const s = symbol.trim().toLowerCase();
+  if (!s) return 1;
   if (type === "sound") return 1;
   if (type === "letter" || (s.length === 1 && s >= "a" && s <= "z")) return 1;
   if (SIGHT_WORD_SET.has(s)) return 7;

@@ -7,6 +7,7 @@ import {
   type CurriculumLevel,
 } from "@workspace/phonics-curriculum";
 import type { DisplayPhonicsItem } from "@/hooks/use-phonics-data";
+import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 
 export function resolveCurriculumLevel(
   level: number | null | undefined,
@@ -26,8 +27,9 @@ export function filterItemsByCurriculumLevel(
   items: DisplayPhonicsItem[],
   currentLevel: CurriculumLevel,
 ): DisplayPhonicsItem[] {
-  return items.filter((item) =>
-    isContentUnlocked(item.symbol, currentLevel, item.type),
+  const safeLevel = migrateCurriculumLevel(currentLevel);
+  return sanitizeDisplayPhonicsItems(items).filter((item) =>
+    isContentUnlocked(item.symbol, safeLevel, item.type),
   );
 }
 

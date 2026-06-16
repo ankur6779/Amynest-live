@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
+import { migrateCurriculumLevel } from "@workspace/phonics-curriculum";
 import type { DisplayPhonicsItem, PhonicsInsight, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsLevel } from "@/lib/phonics-content";
@@ -128,7 +129,11 @@ export function PhonicsJourneyHub({
 
   const plan = curriculumData?.plan;
   const curriculumProgress = curriculumData?.progress;
-  const curriculumLevel = plan?.currentLevel ?? curriculumProgress?.currentLevel;
+  const rawCurriculumLevel = plan?.currentLevel ?? curriculumProgress?.currentLevel;
+  const curriculumLevel =
+    rawCurriculumLevel != null && rawCurriculumLevel > 0
+      ? migrateCurriculumLevel(rawCurriculumLevel)
+      : rawCurriculumLevel;
   const masteryScore = plan?.masteryScore ?? curriculumProgress?.masteryScore ?? 0;
   const streak = plan?.streak ?? curriculumProgress?.streak ?? 0;
   const weakPhonemes = plan?.weakPhonemes ?? curriculumProgress?.weakPhonemes ?? [];
