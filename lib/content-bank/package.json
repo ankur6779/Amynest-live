@@ -7,7 +7,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@workspace/learning-progress-engine": "workspace:*"
+    "@workspace/learning-progress-engine": "workspace:*",
+    "@workspace/study-zone": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:"

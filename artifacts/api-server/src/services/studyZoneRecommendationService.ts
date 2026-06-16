@@ -3,6 +3,7 @@ import {
   db,
   childrenTable,
   learningProgressTable,
+  parentProfilesTable,
 } from "@workspace/db";
 import {
   filterUnlockedCatalog,
@@ -19,11 +20,19 @@ import {
   parseContentBankActivityId,
   buildFreshLessonSequence,
   resolveFreshLessonOnLogin,
+  emptyFreshLessonState,
+  assignFreshLesson,
+  computeLessonEligibilityStats,
+  pickFirstEligibleLessonId,
+  isFreshLessonStateValid,
+  validateLessonEligibility,
   type FreshLessonSummary,
   type ContentBankLessonVisibility,
   type FreshLessonProgressState,
   type FreshLessonProgressEvent,
+  type ContentBankUnlockContext,
 } from "@workspace/content-bank";
+import { resolveStudyMode, normalizeStudyCountry } from "@workspace/study-zone";
 import { logger } from "../lib/logger.js";
 import { getOrCreateSubscription, isPremiumNow } from "./subscriptionService.js";
 import { recordProgressAnalytics } from "./learningProgressService.js";
@@ -34,9 +43,8 @@ import {
 
 export type { FreshLessonSummary, ContentBankLessonVisibility, FreshLessonProgressState };
 
-export interface StudyZoneRecommendationContext {
+export interface StudyZoneRecommendationContext extends ContentBankUnlockContext {
   childId: number;
-  childAge: number;
   dateIso: string;
   isPremium: boolean;
   visibility: ContentBankLessonVisibility;
@@ -49,13 +57,26 @@ export interface StudyZoneRecommendationContext {
 }
 
 
-async function loadOwnedChildAge(childId: number, userId: string) {
+async function loadOwnedChildProfile(childId: number, userId: string) {
   const rows = await db
-    .select({ id: childrenTable.id, age: childrenTable.age })
+    .select({
+      id: childrenTable.id,
+      age: childrenTable.age,
+      childClass: childrenTable.childClass,
+    })
     .from(childrenTable)
     .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
     .limit(1);
   return rows[0] ?? null;
+}
+
+async function loadUserCountry(userId: string): Promise<string> {
+  const rows = await db
+    .select({ country: parentProfilesTable.country })
+    .from(parentProfilesTable)
+    .where(eq(parentProfilesTable.userId, userId))
+    .limit(1);
+  return normalizeStudyCountry(rows[0]?.country);
 }
 
 async function loadProgressRow(childId: number, userId: string) {
@@ -78,7 +99,7 @@ async function loadUnlockContextFields(
   dateIso: string,
   isPremium: boolean,
 ) {
-  const child = await loadOwnedChildAge(childId, userId);
+  const child = await loadOwnedChildProfile(childId, userId);
   if (!child) return null;
   const row = await loadProgressRow(childId, userId);
   const completed = Array.isArray(row?.completedActivities)
@@ -88,8 +109,13 @@ async function loadUnlockContextFields(
     row?.sectionProgress && typeof row.sectionProgress === "object"
       ? (row.sectionProgress as Record<string, unknown>)
       : {};
+  const studyMode = resolveStudyMode(child.age, child.childClass);
+  const country = await loadUserCountry(userId);
   return {
     childAge: child.age,
+    childClass: child.childClass,
+    studyMode,
+    country,
     learningLevel: row?.learningLevel ?? 1,
     masteryScore: row?.masteryScore ?? 0,
     journeyDay: row?.journeyDay ?? 1,
@@ -119,6 +145,10 @@ export async function loadStudyZoneRecommendationContext(
 
   try {
     const catalog = await loadContentBankCategory<SmartStudyLesson>("smart-study");
+    const stats = computeLessonEligibilityStats(childId, catalog, fields);
+    logger.info(
+      `daily-fresh-lesson catalog: childId=${stats.childId} age=${stats.childAge} class=${stats.childClass ?? "none"} mode=${stats.studyMode} total=${stats.totalLessons} eligible=${stats.eligibleLessons} filtered=${stats.filteredLessons} bands=${stats.minAgeBand}-${stats.maxAgeBand}`,
+    );
     unlockedLessons = filterUnlockedCatalog("smart-study", catalog, fields);
     contentBankAvailable = catalog.length > 0;
   } catch (err) {
@@ -130,11 +160,17 @@ export async function loadStudyZoneRecommendationContext(
   return {
     childId,
     childAge: fields.childAge,
+    childClass: fields.childClass,
+    studyMode: fields.studyMode,
+    country: fields.country,
+    learningLevel: fields.learningLevel,
+    masteryScore: fields.masteryScore,
+    journeyDay: fields.journeyDay,
+    completedActivityIds: fields.completedActivityIds,
     dateIso,
     isPremium,
     visibility,
     freshState,
-    completedActivityIds: fields.completedActivityIds,
     unlockedLessons,
     contentBankAvailable,
     sectionProgress: fields.sectionProgress,
@@ -212,16 +248,46 @@ export async function resolveAndPersistFreshLesson(
     return null;
   }
 
+  let freshState = ctx.freshState;
+  if (!isFreshLessonStateValid(freshState, ctx, ctx.unlockedLessons)) {
+    logger.warn(
+      `daily-fresh-lesson: discarding stale sequence for childId=${childId} lesson=${freshState.currentFreshLessonId ?? "none"}`,
+    );
+    freshState = emptyFreshLessonState();
+  }
+
   const sequence = buildFreshLessonSequence(
     ctx.unlockedLessons,
     ctx.visibility,
     ctx.completedActivityIds,
   );
-  const resolved = resolveFreshLessonOnLogin({
-    state: ctx.freshState,
+
+  let resolved = resolveFreshLessonOnLogin({
+    state: freshState,
     sequence,
     nowMs,
   });
+
+  let lessonId = resolved.lessonId;
+  if (lessonId) {
+    const lesson = ctx.unlockedLessons.find((l) => l.id === lessonId);
+    if (!lesson || !validateLessonEligibility(ctx, lesson)) {
+      logger.warn(
+        `daily-fresh-lesson: rejected ineligible lesson childId=${childId} lessonId=${lessonId} mode=${ctx.studyMode} class=${ctx.childClass ?? "none"}`,
+      );
+      const fallbackId = pickFirstEligibleLessonId(sequence, ctx, ctx.unlockedLessons);
+      if (!fallbackId) {
+        return { lesson: null, state: emptyFreshLessonState(), event: "reopened" };
+      }
+      const assignedAtIso = new Date(nowMs).toISOString();
+      resolved = {
+        state: assignFreshLesson(sequence, fallbackId, assignedAtIso),
+        lessonId: fallbackId,
+        event: "assigned",
+      };
+      lessonId = fallbackId;
+    }
+  }
 
   const stateChanged =
     resolved.state.currentFreshLessonId !== ctx.freshState.currentFreshLessonId
@@ -233,14 +299,14 @@ export async function resolveAndPersistFreshLesson(
   }
 
   if (resolved.event === "assigned" || resolved.event === "advanced") {
-    await emitFreshLessonAnalytics(userId, childId, resolved.event, resolved.lessonId);
+    await emitFreshLessonAnalytics(userId, childId, resolved.event, lessonId);
   } else if (resolved.event === "reopened") {
-    await emitFreshLessonAnalytics(userId, childId, "reopened", resolved.lessonId);
+    await emitFreshLessonAnalytics(userId, childId, "reopened", lessonId);
   }
 
-  const lesson = resolved.lessonId
+  const lesson = lessonId
     ? lessonSummaryFromId(
-        resolved.lessonId,
+        lessonId,
         ctx.unlockedLessons,
         ctx.visibility,
         ctx.completedActivityIds,
@@ -264,6 +330,10 @@ export function getDailyFreshLessonFromContext(
   ctx: StudyZoneRecommendationContext,
 ): FreshLessonSummary | null {
   if (!ctx.contentBankAvailable || !ctx.freshState.currentFreshLessonId) return null;
+  const lesson = ctx.unlockedLessons.find(
+    (l) => l.id === ctx.freshState.currentFreshLessonId,
+  );
+  if (!lesson || !validateLessonEligibility(ctx, lesson)) return null;
   return lessonSummaryFromId(
     ctx.freshState.currentFreshLessonId,
     ctx.unlockedLessons,

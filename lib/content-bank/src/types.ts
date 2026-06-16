@@ -91,6 +91,10 @@ export type ContentBankItem =
 
 export interface ContentBankUnlockContext {
   childAge: number;
+  childClass?: string | null;
+  /** Resolved study mode; computed from age/class when omitted. */
+  studyMode?: import("@workspace/study-zone").StudyMode;
+  country?: string | null;
   learningLevel: number;
   masteryScore: number;
   journeyDay: number;

@@ -3,26 +3,10 @@ import type {
   AgeBand,
   ContentBankCategory,
   ContentBankUnlockContext,
-  SmartStudyDifficulty,
 } from "./types.js";
+import { validateLessonEligibility } from "./lesson-eligibility.js";
 
 export const AGE_BANDS: AgeBand[] = ["2-4", "4-6", "6-8", "8-10", "10-12"];
-
-const AGE_BAND_INDEX: Record<AgeBand, number> = {
-  "2-4": 0,
-  "4-6": 1,
-  "6-8": 2,
-  "8-10": 3,
-  "10-12": 4,
-};
-
-const DIFFICULTY_ORDER: SmartStudyDifficulty[] = [
-  "starter",
-  "easy",
-  "medium",
-  "challenging",
-  "advanced",
-];
 
 export function ageBandFromChildAge(ageYears: number): AgeBand {
   if (ageYears <= 4) return "2-4";
@@ -50,46 +34,11 @@ export function parseContentBankActivityId(id: string): {
   return { category: m[1] as ContentBankCategory, itemId: m[2]! };
 }
 
-function maxAgeBandIndex(ctx: ContentBankUnlockContext): number {
-  const base = AGE_BAND_INDEX[ageBandFromChildAge(ctx.childAge)];
-  const bonus =
-    ctx.masteryScore >= 80 ? 1 : ctx.masteryScore >= 55 ? 0 : -1;
-  const premiumBonus = ctx.isPremium ? 1 : 0;
-  return Math.min(4, Math.max(0, base + bonus + premiumBonus));
-}
-
-function maxDifficultyIndex(ctx: ContentBankUnlockContext): number {
-  const fromLevel = Math.floor(ctx.learningLevel / 2);
-  const fromMastery = Math.floor(ctx.masteryScore / 20);
-  const fromJourney = Math.floor(ctx.journeyDay / 4);
-  return Math.min(
-    DIFFICULTY_ORDER.length - 1,
-    Math.max(0, fromLevel + fromMastery + fromJourney - 1),
-  );
-}
-
-function difficultyOf(item: Record<string, unknown>): SmartStudyDifficulty {
-  const d = item.difficulty ?? item.confidenceLevel;
-  if (d === "gentle") return "starter";
-  if (d === "building") return "medium";
-  if (d === "ready") return "advanced";
-  if (typeof d === "string" && DIFFICULTY_ORDER.includes(d as SmartStudyDifficulty)) {
-    return d as SmartStudyDifficulty;
-  }
-  return "easy";
-}
-
 function passesAgeAndDifficulty(
   item: Record<string, unknown>,
   ctx: ContentBankUnlockContext,
 ): boolean {
-  const ageBand = item.ageBand as AgeBand | undefined;
-  if (!ageBand || !(ageBand in AGE_BAND_INDEX)) return false;
-  if (AGE_BAND_INDEX[ageBand] > maxAgeBandIndex(ctx)) return false;
-
-  const diffIdx = DIFFICULTY_ORDER.indexOf(difficultyOf(item));
-  if (diffIdx > maxDifficultyIndex(ctx)) return false;
-  return true;
+  return validateLessonEligibility(ctx, item);
 }
 
 /** How many catalog items the child may access (progressive ceiling). */

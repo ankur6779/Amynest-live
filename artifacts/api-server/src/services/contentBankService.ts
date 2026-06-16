@@ -14,6 +14,7 @@ import {
   isItemAccessible,
   contentBankActivityId,
 } from "@workspace/content-bank";
+import { resolveStudyMode } from "@workspace/study-zone";
 import { enrichWithAudio } from "./contentBankAudio.js";
 import {
   loadContentBankCategory,
@@ -29,6 +30,7 @@ async function loadOwnedChild(userId: string, childId: number) {
     .select({
       id: childrenTable.id,
       age: childrenTable.age,
+      childClass: childrenTable.childClass,
     })
     .from(childrenTable)
     .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
@@ -57,6 +59,8 @@ async function loadUnlockContext(
 
   return {
     childAge: child.age,
+    childClass: child.childClass,
+    studyMode: resolveStudyMode(child.age, child.childClass),
     learningLevel: progress?.learningLevel ?? 1,
     masteryScore: progress?.masteryScore ?? 0,
     journeyDay: progress?.journeyDay ?? 1,

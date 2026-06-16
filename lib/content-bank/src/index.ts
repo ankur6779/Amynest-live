@@ -1,4 +1,5 @@
 export * from "./types.js";
+export * from "./lesson-eligibility.js";
 export * from "./unlock.js";
 export * from "./audio-texts.js";
 export * from "./lesson-visibility.js";
