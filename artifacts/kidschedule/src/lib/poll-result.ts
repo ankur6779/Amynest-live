@@ -1,3 +1,5 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
+
 export type AuthFetchFn = (
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -9,6 +11,8 @@ export type PollResultOptions = {
   intervalMs?: number;
   /** Per-poll GET timeout (defaults to 15s for slow mobile networks). */
   requestTimeoutMs?: number;
+  /** Propagate coach generate trace id on poll requests. */
+  traceHeaders?: Record<string, string>;
 };
 
 export type ResolveAiApiOptions = {
@@ -51,12 +55,23 @@ export async function pollResult(
   for (let i = 0; i < maxAttempts; i++) {
     if (i > 0) await wait(intervalMs);
     try {
-      const res = await authFetch(`/api/result/${jobId}`, { method: "GET" }, requestTimeoutMs);
-      const data = (await res.json()) as {
+      const res = await authFetch(
+        `/api/result/${jobId}`,
+        { method: "GET", headers: options?.traceHeaders },
+        requestTimeoutMs,
+      );
+      const parsed = await safeJsonResponse<{
         status?: string;
         result?: unknown;
         error?: string;
-      };
+      }>(res);
+      if (!parsed.ok) {
+        if (i === maxAttempts - 1) {
+          throw new PollTerminalError("failed", "gateway_response_not_json");
+        }
+        continue;
+      }
+      const data = parsed.data;
 
       if (data.status === "completed") return data.result;
 
@@ -102,13 +117,8 @@ export async function resolveAiApiData<T>(
 }
 
 export async function parseResponseJson(res: Response): Promise<unknown> {
-  const text = await res.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return null;
-  }
+  const parsed = await safeJsonResponse(res);
+  return parsed.ok ? parsed.data : null;
 }
 
 /** Parse a successful response body and unwrap async jobs when present. */
@@ -120,3 +130,5 @@ export async function readResolvedApiJson<T>(
   const raw = await parseResponseJson(res);
   return resolveAiApiData<T>(raw, authFetch, options);
 }
+
+export { safeJsonResponse };

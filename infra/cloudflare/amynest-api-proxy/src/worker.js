@@ -20,6 +20,18 @@ import {
 } from "./reels-gcs-origin.js";
 
 const DEFAULT_BACKEND = "https://amynest-backend-dykj.onrender.com";
+const COACH_GENERATE_TRACE_HEADER = "x-amynest-coach-trace-id";
+const COACH_TRACE_PATHS = ["/api/coach/generate", "/api/coach/generate-fallback", "/api/result/"];
+
+/** @param {string} pathname */
+function isCoachTracePath(pathname) {
+  return COACH_TRACE_PATHS.some((p) => pathname === p || pathname.startsWith(p));
+}
+
+/** @param {string} stage @param {Record<string, unknown>} event */
+function logCoachTrace(stage, event) {
+  console.log(JSON.stringify({ evt: "coach_generate_trace", stage, ...event }));
+}
 
 const TTS_AUDIO_RE = /^\/api\/tts\/audio\/[a-f0-9]{64}\.mp3$/i;
 const STATIC_AUDIO_RE = /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i;
@@ -111,9 +123,29 @@ function mediaCacheRequest(url) {
 async function proxyToBackend(request, env, url) {
   const backend = (env.BACKEND_ORIGIN ?? DEFAULT_BACKEND).replace(/\/$/, "");
   const target = new URL(`${url.pathname}${url.search}`, backend);
+  const cfStarted = Date.now();
+  const coachTrace = isCoachTracePath(url.pathname);
+  const traceId =
+    request.headers.get(COACH_GENERATE_TRACE_HEADER) ??
+    request.headers.get("x-request-id") ??
+    undefined;
+
+  if (coachTrace) {
+    logCoachTrace("cloudflare.request_received", {
+      traceId,
+      timestamp: new Date(cfStarted).toISOString(),
+      durationMs: 0,
+      layer: "cloudflare",
+      meta: { path: url.pathname, method: request.method },
+    });
+  }
 
   const headers = new Headers(request.headers);
   headers.delete("host");
+  if (traceId) {
+    headers.set(COACH_GENERATE_TRACE_HEADER, traceId);
+    headers.set("x-request-id", traceId);
+  }
 
   /** @type {RequestInit} */
   const init = {
@@ -125,12 +157,38 @@ async function proxyToBackend(request, env, url) {
     init.body = request.body;
   }
 
+  if (coachTrace) {
+    logCoachTrace("cloudflare.request_forwarded", {
+      traceId,
+      timestamp: new Date().toISOString(),
+      durationMs: Date.now() - cfStarted,
+      layer: "cloudflare",
+      meta: { backend: backend.replace(/^https?:\/\//, "").slice(0, 40) },
+    });
+  }
+
   const response = await fetch(target.toString(), init);
+  const cfMs = Date.now() - cfStarted;
+
+  if (coachTrace) {
+    const contentType = response.headers.get("content-type") ?? "";
+    logCoachTrace("cloudflare.response_returned", {
+      traceId,
+      timestamp: new Date().toISOString(),
+      durationMs: cfMs,
+      layer: "cloudflare",
+      httpStatus: response.status,
+      contentType: contentType.slice(0, 80),
+      meta: { cfMs },
+    });
+  }
 
   const out = new Headers(response.headers);
   const corsOrigin = resolveAccessControlOrigin(request, url);
   out.set("Access-Control-Allow-Origin", corsOrigin);
   out.set("Access-Control-Allow-Credentials", "true");
+  if (traceId) out.set(COACH_GENERATE_TRACE_HEADER, traceId);
+  out.set("x-amynest-trace-cf-ms", String(cfMs));
 
   if (isCacheableMediaPath(url.pathname) && response.ok) {
     const existing = out.get("Cache-Control");

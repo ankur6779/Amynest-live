@@ -101,8 +101,16 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       return runCoachStreamPlan(input as Parameters<typeof runCoachStreamPlan>[0]);
     }
     case "ai-coach.initial_wins": {
+      const { pollContext } = unwrapJobPayload(payload);
+      const traceId =
+        pollContext && typeof pollContext === "object"
+          ? (pollContext as { traceId?: string }).traceId
+          : undefined;
       const { runCoachInitialWins } = await import("../domain-ai/coach-runners.js");
-      return runCoachInitialWins(input as Parameters<typeof runCoachInitialWins>[0]);
+      return runCoachInitialWins(
+        input as Parameters<typeof runCoachInitialWins>[0],
+        traceId,
+      );
     }
     case "ai-coach.next_win": {
       const { runCoachNextWin } = await import("../domain-ai/coach-runners.js");

@@ -23,6 +23,28 @@ export {
 } from "./catalog.js";
 
 export {
+  COACH_OPENAI_TIMEOUT_MS,
+  COACH_WORKER_TIMEOUT_MS,
+  COACH_QUEUE_TIMEOUT_MS,
+  COACH_GATEWAY_TIMEOUT_MS,
+  COACH_CLIENT_POLL_REQUEST_TIMEOUT_MS,
+  COACH_CLIENT_POLL_INTERVAL_MS,
+  COACH_CLIENT_POLL_MAX_MS,
+  COACH_CLIENT_FETCH_TIMEOUT_MS,
+  COACH_CLIENT_SLOW_MESSAGE_MS,
+  COACH_TIMEOUT_STACK,
+} from "./ai-timeouts.js";
+
+export {
+  COACH_GENERATE_TRACE_HEADER,
+  COACH_GENERATE_TRACE_STAGES,
+  createCoachGenerateTraceId,
+  coachGenerateTraceHeaders,
+  type CoachGenerateTraceStage,
+  type CoachGenerateTraceEvent,
+} from "./generate-trace.js";
+
+export {
   buildCoachProgressViewModel,
   computeProgressTrend,
   type CoachProgressViewModel,

@@ -22,6 +22,7 @@ export type SubmitRouteAiJobOptions = Omit<SubmitAiJobOptions, "payload" | "type
   input: unknown;
   /** Serialized route context for GET /api/result poll shaping. */
   pollContext?: unknown;
+  deterministicJobId?: string;
 };
 
 /**

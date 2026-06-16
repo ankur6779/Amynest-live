@@ -14,8 +14,6 @@ import {
   COACH_TOTAL_WINS,
   dbGetCoachCache,
   dbSetCoachCache,
-  staticInitialWinsFallback,
-  INITIAL_AI_TIMEOUT_MS,
   validatePartialPlan,
   getCoachGenerationById,
   getCoachGenerationBySession,
@@ -25,6 +23,7 @@ import {
   type CoachPlan as ServiceCoachPlan,
   type CoachWin as ServiceCoachWin,
 } from "../services/coachWinGenerationService.js";
+import { saveCoachSession } from "../services/coachSessionService.js";
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
 import { buildCoachProgressViewModel, type CoachPlanRef } from "@workspace/coach-journey";
 import { fallbackExtensionWin } from "../services/coachExtensionFallback.js";
@@ -420,22 +419,7 @@ async function dbSet(cacheKey: string, input: CoachInput, plan: CoachPlan): Prom
 }
 
 // ─── helper: save session for "Continue plan" restore ────────────────────
-async function saveCoachSession(
-  userId: string,
-  sessionId: string,
-  goalId: string,
-  plan: CoachPlan,
-  inputs: CoachInput,
-): Promise<void> {
-  try {
-    await db
-      .insert(userCoachSessionsTable)
-      .values({ sessionId, userId, goalId, planJson: plan as unknown as Record<string, unknown>, inputs: inputs as unknown as Record<string, unknown> })
-      .onConflictDoNothing();
-  } catch (err) {
-    logger.warn({ err }, "ai-coach session save failed (non-fatal)");
-  }
-}
+// saveCoachSession lives in coachSessionService.ts (shared with async generate finalize).
 
 function parseCoachInput(raw: CoachInput): { input: CoachInput; goal: string } | null {
   const goal = norm(raw.goal);
@@ -480,9 +464,36 @@ function isAdminUser(userId: string | null | undefined): boolean {
 async function handleCoachGenerate(req: import("express").Request, res: import("express").Response): Promise<void> {
   pruneMem();
   const requestStart = Date.now();
+  const {
+    readCoachTraceIdFromHeaders,
+    logCoachGenerateTrace,
+    markCoachTraceStart,
+  } = await import("../lib/coach-generate-trace.js");
+  const traceId = readCoachTraceIdFromHeaders(req.headers) ?? randomUUID();
+  markCoachTraceStart(traceId, requestStart);
+  logCoachGenerateTrace("render.request_received", {
+    traceId,
+    requestId: req.requestId,
+    t0: requestStart,
+    meta: { path: req.path, method: req.method },
+  });
+  res.setHeader("x-amynest-coach-trace-id", traceId);
+  const sendCoachResponse = (status: number, body: unknown): void => {
+    const responseMs = Date.now() - requestStart;
+    res.setHeader("x-amynest-trace-render-ms", String(responseMs));
+    logCoachGenerateTrace("render.response_sent", {
+      traceId,
+      requestId: req.requestId,
+      httpStatus: status,
+      contentType: "application/json",
+      meta: { responseMs },
+    });
+    res.status(status).json(body);
+  };
   const requestSpan = startCoachPerfSpan("REQUEST_TOTAL", {
     path: req.path,
     method: req.method,
+    traceId,
   });
   const { userId } = getAuth(req);
   const parsed = parseCoachInput((req.body ?? {}) as CoachInput);
@@ -546,7 +557,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     console.log({ step: "RESPONSE_SENT", time: responseMs, status: "complete", cached: true });
     requestSpan.end({ status: "complete", cached: true, source: "memory", userId, responseMs });
     startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true, responseMs }).end();
-    res.json(memPayload);
+    sendCoachResponse(200, memPayload);
     if (userId) {
       void saveCoachSession(userId, memPayload.sessionId, goal, mem.plan, input);
       void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
@@ -569,7 +580,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     console.log({ step: "RESPONSE_SENT", time: responseMsDb, status: "complete", cached: true });
     requestSpan.end({ status: "complete", cached: true, source: "db", userId, responseMs: responseMsDb });
     startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true, responseMs: responseMsDb }).end();
-    res.json(dbPayload);
+    sendCoachResponse(200, dbPayload);
     if (userId) {
       void saveCoachSession(userId, dbPayload.sessionId, goal, dbHit, input);
       void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
@@ -583,90 +594,210 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
 
   memStats.misses++;
   memStats.aiCalls++;
-  logger.info({ cacheKey: cacheKey.slice(0, 8), goal, stats: memStats }, "ai-coach cache miss — fast initial wins");
+  logger.info({ cacheKey: cacheKey.slice(0, 8), goal, stats: memStats }, "ai-coach cache miss — async initial wins");
 
   const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
   const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
-
   const topicBlock = renderTopicAnswersBlock(input.topicAnswers);
-  const { enqueueAiJob, isBullMqActive } = await import("../queue/ai-job-queue.js");
-  const { wrapJobInput } = await import("../queue/ai-job-payload.js");
-  const { waitForJobResult } = await import("../queue/index.js");
-  const { waitForJob } = await import("../queue/ai-job-store.js");
-  let partialPlan: CoachPlan = staticInitialWinsFallback(goalLabel!, input);
-  let aiOk = false;
-  if (userId) {
-    console.log("Enqueue:", "ai-coach/initial");
-    let intelligenceBlock = "";
-    try {
-      const { getCoachIntelligencePromptBlock } = await import("../services/coachIntelligenceService.js");
-      intelligenceBlock = await getCoachIntelligencePromptBlock(userId, goal);
-    } catch {
-      /* non-fatal */
-    }
-    const enqueued = await enqueueAiJob(
-      "ai-coach.initial_wins",
-      userId,
-      wrapJobInput("ai-coach/initial", {
-        systemPrompt: "coach-initial",
-        userPrompt: JSON.stringify({ input, goalLabel, goalBrief, topicBlock, intelligenceBlock }),
-      }),
-    );
-    if (enqueued.jobId) {
-      const finished = isBullMqActive()
-        ? await waitForJobResult(enqueued.jobId, INITIAL_AI_TIMEOUT_MS)
-        : await waitForJob(enqueued.jobId, INITIAL_AI_TIMEOUT_MS);
-      if (finished?.status === "completed" && finished.result) {
-        const body = finished.result as { raw: string };
-        try {
-          const parsed = JSON.parse(body.raw);
-          if (validatePartialPlan(parsed)) {
-            partialPlan = parsed;
-            aiOk = true;
-          }
-        } catch {
-          /* fallback */
-        }
-      }
-    }
+
+  const {
+    buildCoachGenerateApiBody,
+    newCoachGeneratePollContext,
+    buildEmergencyCoachInitialPlan,
+  } = await import("../lib/coach-generate-response.js");
+
+  if (!userId) {
+    const plan = buildEmergencyCoachInitialPlan(goalLabel!, input);
+    recordCoachGenerateAttempt("emergency");
+    const sessionId = randomUUID();
+    const responseMs = Date.now() - requestStart;
+    requestSpan.end({ status: "partial", userId: null, sessionId, responseMs, source: "emergency" });
+    sendCoachResponse(200, {
+      plan,
+      wins: plan.wins,
+      status: "partial" as const,
+      totalWins: COACH_TOTAL_WINS,
+      initialWins: COACH_INITIAL_WINS,
+      sessionId,
+      planCacheKey: cacheKey,
+      cached: false,
+      source: "emergency",
+      fallback: true,
+      lazyWins: true,
+    });
+    return;
   }
 
-  recordCoachGenerateAttempt(aiOk ? "ai" : "fallback");
+  let intelligenceBlock = "";
+  try {
+    const { getCoachIntelligencePromptBlock } = await import("../services/coachIntelligenceService.js");
+    intelligenceBlock = await getCoachIntelligencePromptBlock(userId, goal);
+  } catch {
+    /* non-fatal */
+  }
 
-  const effectiveSessionId = randomUUID();
+  const pollContext = newCoachGeneratePollContext(userId, goal, goalLabel!, input, cacheKey, traceId);
+  const pendingJobId = randomUUID();
+
+  const { claimCoachActiveGeneration, clearCoachActiveGeneration } = await import(
+    "../lib/coach-active-generation.js"
+  );
+  const { getJobForApi } = await import("../queue/index.js");
+  const { active, reused } = await claimCoachActiveGeneration(userId, goal, {
+    jobId: pendingJobId,
+    sessionId: pollContext.sessionId,
+    planCacheKey: cacheKey,
+  });
+
+  if (reused) {
+    recordCoachObservabilityEvent("coach_duplicate_prevented", {
+      goal,
+      userId,
+      jobId: active.jobId,
+      traceId,
+    });
+    logCoachGenerateTrace("render.job_deduplicated", {
+      traceId,
+      requestId: req.requestId,
+      jobId: active.jobId,
+      layer: "render",
+      meta: { goal, reused: true },
+    });
+    const existingJob = await getJobForApi(active.jobId);
+    sendCoachResponse(202, {
+      jobId: active.jobId,
+      status: existingJob?.status ?? "processing",
+      sessionId: active.sessionId,
+      planCacheKey: active.planCacheKey,
+      pollUrl: `/api/result/${active.jobId}`,
+      legacyPollUrl: `/api/ai/jobs/${active.jobId}`,
+      message: "Amy is preparing your personalized coaching win.",
+      reused: true,
+    });
+    requestSpan.end({
+      status: "async_deduplicated",
+      userId,
+      sessionId: active.sessionId,
+      jobId: active.jobId,
+      traceId,
+    });
+    return;
+  }
+
+  recordCoachObservabilityEvent("coach_generate_async_enqueued", {
+    goal,
+    userId,
+    sessionId: pollContext.sessionId,
+    traceId,
+    jobId: pendingJobId,
+  });
+  logCoachGenerateTrace("render.job_enqueued", {
+    traceId,
+    requestId: req.requestId,
+    jobId: pendingJobId,
+    layer: "render",
+    meta: { goal },
+  });
+
+  const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
+  await submitRouteAiJob({
+    routeName: "ai-coach/generate",
+    type: "ai-coach.initial_wins",
+    userId,
+    deterministicJobId: pendingJobId,
+    input: {
+      input,
+      goalLabel,
+      goalBrief,
+      topicBlock,
+      intelligenceBlock,
+    },
+    pollContext,
+    waitMs: 0,
+    buildSyncBody: (result) => buildCoachGenerateApiBody(result, pollContext),
+    buildAsyncBody: (jobId) => ({
+      jobId,
+      status: "processing",
+      sessionId: pollContext.sessionId,
+      planCacheKey: cacheKey,
+      pollUrl: `/api/result/${jobId}`,
+      legacyPollUrl: `/api/ai/jobs/${jobId}`,
+      message: "Amy is preparing your personalized coaching win.",
+    }),
+    res,
+  });
+
+  if (res.statusCode >= 400) {
+    await clearCoachActiveGeneration(userId, goal);
+  }
 
   const responseMs = Date.now() - requestStart;
-  console.log({ step: "RESPONSE_SENT", time: responseMs, status: "partial", lazy: true });
+  res.setHeader("x-amynest-trace-render-ms", String(responseMs));
+  logCoachGenerateTrace("render.response_sent", {
+    traceId,
+    requestId: req.requestId,
+    httpStatus: res.statusCode,
+    contentType: res.getHeader("content-type")?.toString() ?? "application/json",
+    meta: { responseMs, async: true },
+  });
   requestSpan.end({
-    status: "partial",
+    status: "async_enqueued",
     userId,
-    sessionId: effectiveSessionId,
-    initialWins: partialPlan.wins.length,
-    aiOk,
+    sessionId: pollContext.sessionId,
     responseMs,
+    traceId,
   });
-  startCoachPerfSpan("RESPONSE_SENT", { status: "partial", responseMs }).end();
+  startCoachPerfSpan("RESPONSE_SENT", { status: "async_enqueued", responseMs }).end();
+}
 
-  res.json({
-    plan: partialPlan,
-    wins: partialPlan.wins,
-    status: "partial" as const,
-    totalWins: COACH_TOTAL_WINS,
-    initialWins: COACH_INITIAL_WINS,
-    sessionId: effectiveSessionId,
-    planCacheKey: cacheKey,
-    cached: false,
-    source: aiOk ? "ai" : "fallback",
-    fallback: !aiOk,
-    lazyWins: true,
+/** Guaranteed instant fallback — never depends on OpenAI or queue. */
+async function handleCoachGenerateFallback(
+  req: import("express").Request,
+  res: import("express").Response,
+): Promise<void> {
+  const { userId } = getAuth(req);
+  const parsed = parseCoachInput((req.body ?? {}) as CoachInput);
+  if (!parsed) {
+    res.status(400).json({ error: "invalid goal", validGoals: GOAL_IDS });
+    return;
+  }
+  const { input, goal } = parsed;
+  const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
+  const cacheKey = buildCacheKey(input);
+  const {
+    buildEmergencyCoachInitialPlan,
+    newCoachGeneratePollContext,
+    buildCoachGenerateApiBody,
+    runCoachGenerateSideEffects,
+  } = await import("../lib/coach-generate-response.js");
+
+  const sessionId = randomUUID();
+  const pollContext = userId
+    ? newCoachGeneratePollContext(userId, goal, goalLabel!, input, cacheKey)
+    : {
+        userId: userId ?? "anonymous",
+        sessionId,
+        goal,
+        goalLabel: goalLabel!,
+        input,
+        cacheKey,
+      };
+
+  pollContext.sessionId = sessionId;
+  const plan = buildEmergencyCoachInitialPlan(goalLabel!, input);
+  const body = buildCoachGenerateApiBody({ raw: JSON.stringify(plan), aiOk: false }, pollContext, {
+    failureReason: "client_fallback_endpoint",
+    skipTelemetry: true,
   });
+  body.source = "emergency";
+  body.fallback = true;
+  recordCoachGenerateAttempt("emergency");
 
   if (userId) {
-    void saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input);
-    void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
-      recordCoachPlanCompleted(userId, goal, effectiveSessionId),
-    );
+    void runCoachGenerateSideEffects(body, pollContext);
   }
+
+  res.json(body);
 }
 
 // ─── POST /coach/next-win — lazy win 3..12 on parent advance ─────────────
@@ -785,7 +916,7 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
       intelligenceBlock,
       feedbackHistory,
     },
-    waitMs: 25_000,
+    waitMs: 0,
     buildSyncBody: (result) => {
       const body = result as { win: Win; aiOk: boolean };
       const win = body.win;
@@ -851,6 +982,8 @@ router.get("/ai-coach/observability", async (req, res): Promise<void> => {
 // ─── POST /ai-coach (2 wins now; wins 3–12 lazy on /coach/next-win) ───────
 router.post("/ai-coach", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
 router.post("/coach/generate", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
+router.post("/coach/generate-fallback", infantCoachPreviewGate(), handleCoachGenerateFallback);
+router.post("/ai-coach/generate-fallback", infantCoachPreviewGate(), handleCoachGenerateFallback);
 router.post("/ai-coach/next-win", infantCoachPreviewGate(), aiUsageGate, handleCoachNextWin);
 router.post("/coach/next-win", infantCoachPreviewGate(), aiUsageGate, handleCoachNextWin);
 

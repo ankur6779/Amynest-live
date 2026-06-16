@@ -1,12 +1,18 @@
 import type { Request, Response, NextFunction } from "express";
+import { COACH_GATEWAY_TIMEOUT_MS } from "@workspace/coach-journey";
 import { logger } from "../lib/logger.js";
 
 const REQUEST_TIMEOUT_MS = Number(process.env.API_REQUEST_TIMEOUT_MS ?? "5000");
-const LONG_REQUEST_TIMEOUT_MS = Number(process.env.API_LONG_REQUEST_TIMEOUT_MS ?? "40000");
+const LONG_REQUEST_TIMEOUT_MS = Number(
+  process.env.API_LONG_REQUEST_TIMEOUT_MS ?? String(COACH_GATEWAY_TIMEOUT_MS),
+);
 
-/** AI / routine routes wait up to ~8s server-side; 5s global timeout caused 504s on iOS. */
+/** Routes that may wait on AI workers — must exceed worker timeout (45s). */
 const LONG_RUNNING_PATH_PREFIXES = [
   "/api/routines/generate-ai",
+  "/api/coach/",
+  "/api/ai-coach",
+  "/api/result/",
 ];
 
 function resolveTimeoutMs(req: Request): number {
@@ -19,25 +25,45 @@ function resolveTimeoutMs(req: Request): number {
 
 /**
  * Abort slow requests so hung DB/Redis/external calls cannot pile up and OOM the process.
+ * Coach paths use COACH_GATEWAY_TIMEOUT_MS (65s) so the gateway never fires before the worker (45s).
  */
 export function requestTimeout(req: Request, res: Response, next: NextFunction): void {
   const timeoutMs = resolveTimeoutMs(req);
   const timer = setTimeout(() => {
     if (res.headersSent) return;
-    logger.warn(
-      {
-        evt: "request.timeout",
-        method: req.method,
-        path: req.originalUrl?.split("?")[0],
-        timeoutMs,
-      },
-      "Request timed out",
-    );
-    res.status(504).json({
-      error: "request_timeout",
-      message: "Request took too long. Please retry.",
-      fallback: true,
-    });
+    void (async () => {
+      const { readCoachTraceIdFromHeaders, logCoachGenerateTrace } = await import(
+        "../lib/coach-generate-trace.js"
+      );
+      const traceId = readCoachTraceIdFromHeaders(req.headers);
+      const path = req.originalUrl?.split("?")[0] ?? "";
+      if (traceId && (path.startsWith("/api/coach/") || path.startsWith("/api/ai-coach"))) {
+        logCoachGenerateTrace("render.middleware.request_timeout", {
+          traceId,
+          requestId: req.requestId,
+          httpStatus: 504,
+          timeoutMs,
+          layer: "render.middleware",
+          contentType: "application/json",
+        });
+      }
+      logger.warn(
+        {
+          evt: "request.timeout",
+          method: req.method,
+          path,
+          timeoutMs,
+          traceId,
+        },
+        "Request timed out",
+      );
+      res.status(504).json({
+        error: "request_timeout",
+        message: "Request took too long. Please retry.",
+        fallback: true,
+        traceId,
+      });
+    })();
   }, timeoutMs);
 
   const clear = () => clearTimeout(timer);

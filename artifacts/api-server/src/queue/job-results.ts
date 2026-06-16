@@ -152,6 +152,14 @@ export async function patchJobRecord(
     updated.status === "timed_out"
   ) {
     await releaseUserSlot(updated.userId);
+    if (updated.type === "ai-coach.initial_wins") {
+      void (async () => {
+        const { clearCoachActiveGenerationForJob } = await import(
+          "../lib/coach-active-generation.js"
+        );
+        await clearCoachActiveGenerationForJob(updated.payload);
+      })();
+    }
     if (updated.status === "failed" || updated.status === "timed_out") {
       void maybeRefundLoadMoreQuota(updated);
     }

@@ -3,6 +3,7 @@ import { getMemorySnapshot } from "../utils/memory-monitor.js";
 import { parseEnvMs } from "../lib/env.js";
 import { getMealsAiWorkerTimeoutMs } from "../lib/meals-ai-timeouts.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
+import { COACH_WORKER_TIMEOUT_MS } from "@workspace/coach-journey";
 import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import type { AiJobQueuePayload } from "../queue/index.js";
 import { getJobRecord, patchJobRecord, saveJobRecord } from "../queue/job-results.js";
@@ -22,12 +23,23 @@ const AUDIO_JOB_TYPES = new Set([
   "ai-coach.pregenerate_infant_audio",
 ]);
 
+const COACH_JOB_TYPES = new Set([
+  "ai-coach.initial_wins",
+  "ai-coach.next_win",
+  "ai-coach.remaining_wins",
+  "ai-coach.extend",
+  "ai-coach.stream_plan",
+]);
+
 function resolveJobTimeoutMs(type: string): number {
   if (type === "meals.ai_generate") {
     return getMealsAiWorkerTimeoutMs();
   }
   if (type === "audio.warmup") {
     return AUDIO_WARMUP_JOB_TIMEOUT_MS;
+  }
+  if (COACH_JOB_TYPES.has(type)) {
+    return COACH_WORKER_TIMEOUT_MS;
   }
   const ms = Number.isFinite(JOB_TIMEOUT_MS) ? JOB_TIMEOUT_MS : 10_000;
   return ms > 0 ? ms : 10_000;
@@ -59,6 +71,11 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
   await saveJobRecord(processing);
 
   const timeoutMs = resolveJobTimeoutMs(type);
+  const traceId = (await import("../lib/coach-generate-trace.js")).extractCoachTraceIdFromPayload(payload);
+  if (traceId) {
+    const { logCoachGenerateTrace } = await import("../lib/coach-generate-trace.js");
+    logCoachGenerateTrace("bullmq.job_started", { traceId, jobId, layer: "bullmq" });
+  }
   const timeout = new Promise<"timeout">((resolve) =>
     setTimeout(() => resolve("timeout"), timeoutMs),
   );
@@ -67,6 +84,28 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
     const result = await Promise.race([runAiJobHandler(type, payload), timeout]);
 
     if (result === "timeout") {
+      if (COACH_JOB_TYPES.has(type)) {
+        const { buildCoachWorkerFallbackResult } = await import("../lib/coach-generate-response.js");
+        const fallback = await buildCoachWorkerFallbackResult(type, payload);
+        if (fallback) {
+          await patchJobRecord(jobId, { status: "completed", result: fallback });
+          if (traceId) {
+            const { logCoachGenerateTrace } = await import("../lib/coach-generate-trace.js");
+            logCoachGenerateTrace("bullmq.job_completed", {
+              traceId,
+              jobId,
+              layer: "bullmq",
+              timeoutMs,
+              meta: { durationMs: Date.now() - started, workerTimeoutFallback: true },
+            });
+          }
+          logger.warn(
+            { evt: "ai_worker.coach_timeout_fallback", jobId, type, timeoutMs },
+            "coach job timed out — completed with emergency fallback",
+          );
+          return fallback;
+        }
+      }
       await patchJobRecord(jobId, {
         status: "timed_out",
         timedOut: true,
@@ -88,6 +127,15 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
     }
 
     await patchJobRecord(jobId, { status: "completed", result });
+    if (traceId) {
+      const { logCoachGenerateTrace } = await import("../lib/coach-generate-trace.js");
+      logCoachGenerateTrace("bullmq.job_completed", {
+        traceId,
+        jobId,
+        layer: "bullmq",
+        meta: { durationMs: Date.now() - started },
+      });
+    }
     logger.info(
       {
         evt: "ai_worker.job_done",
@@ -101,6 +149,18 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
     return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    if (COACH_JOB_TYPES.has(type)) {
+      const { buildCoachWorkerFallbackResult } = await import("../lib/coach-generate-response.js");
+      const fallback = await buildCoachWorkerFallbackResult(type, payload);
+      if (fallback) {
+        await patchJobRecord(jobId, { status: "completed", result: fallback });
+        logger.warn(
+          { evt: "ai_worker.coach_error_fallback", jobId, type, message: message.slice(0, 200) },
+          "coach job failed — completed with emergency fallback",
+        );
+        return fallback;
+      }
+    }
     if (AUDIO_JOB_TYPES.has(type)) {
       logger.error(
         {

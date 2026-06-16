@@ -118,6 +118,18 @@ export async function enqueueBullMqJob(
       { jobId, type, userId: uid, payload },
       { jobId },
     );
+    const traceId =
+      type === "ai-coach.initial_wins"
+        ? (await import("../lib/coach-generate-trace.js")).extractCoachTraceIdFromPayload(payload)
+        : undefined;
+    if (traceId) {
+      const { logCoachGenerateTrace } = await import("../lib/coach-generate-trace.js");
+      logCoachGenerateTrace("bullmq.job_enqueued", {
+        traceId,
+        jobId,
+        layer: "bullmq",
+      });
+    }
     console.log("Enqueueing job:", jobId);
     logger.info(
       { evt: "ai_job.bullmq_enqueued", jobId, type, userId: uid },

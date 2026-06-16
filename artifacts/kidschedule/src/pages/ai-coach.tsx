@@ -66,8 +66,18 @@ import {
   saveCoachGraduation,
 } from "@/lib/coach-graduation-state";
 
-/** Lazy win generation can take ~25s server-side; default fetch timeout is 8s. */
-const COACH_AI_FETCH_TIMEOUT_MS = 90_000;
+import {
+  COACH_CLIENT_FETCH_TIMEOUT_MS,
+  COACH_CLIENT_SLOW_MESSAGE_MS,
+} from "@workspace/coach-journey";
+import { fetchCoachGeneratePlan, type CoachGeneratePlanResponse } from "@/lib/coach-generate-client";
+import {
+  COACH_USER_FACING_ERROR,
+  COACH_USER_FACING_LOADING,
+  COACH_USER_FACING_SLOW,
+} from "@/lib/safe-json-response";
+
+const COACH_AI_FETCH_TIMEOUT_MS = COACH_CLIENT_FETCH_TIMEOUT_MS;
 
 // ─── Goals (categorized) ───────────────────────────────────────────────────
 interface GoalItem {
@@ -791,6 +801,7 @@ export default function AICoachPage() {
   const [progressWinCount, setProgressWinCount] = useState(0);
   const [loadingNextWin, setLoadingNextWin] = useState(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
+  const [loadingUserMessage, setLoadingUserMessage] = useState(COACH_USER_FACING_LOADING);
   const [isFirstCoachingWin, setIsFirstCoachingWin] = useState(false);
   const fetchingNextRef = useRef(false);
   const extendingRef = useRef(false);
@@ -1255,12 +1266,20 @@ export default function AICoachPage() {
   useEffect(() => {
     if (phase !== "loading") {
       setLoadingMessageIdx(0);
+      setLoadingUserMessage(COACH_USER_FACING_LOADING);
       return;
     }
+    setLoadingUserMessage(COACH_USER_FACING_LOADING);
+    const slowTimer = window.setTimeout(() => {
+      setLoadingUserMessage(COACH_USER_FACING_SLOW);
+    }, COACH_CLIENT_SLOW_MESSAGE_MS);
     const id = window.setInterval(() => {
       setLoadingMessageIdx((i) => (i + 1) % COACH_LOADING_MESSAGES.length);
     }, 2200);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      window.clearTimeout(slowTimer);
+    };
   }, [phase]);
 
   const currentQ = QUESTIONS[qIndex];
@@ -1296,8 +1315,11 @@ export default function AICoachPage() {
   };
 
   // ─── Submit to API
+  const submitInFlightRef = useRef(false);
   const submitPlan = async () => {
     if (!coachEligible) return;
+    if (submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
     // Cancel any previous in-flight build (e.g. user retried) before starting.
     buildAbortRef.current?.abort();
     const ctrl = new AbortController();
@@ -1352,18 +1374,12 @@ export default function AICoachPage() {
       routine: payload.routine,
       topicAnswers: Object.keys(topicAnswers).length > 0 ? topicAnswers : undefined,
     };
-    const applyCoachResponse = (data: {
-      plan: Plan;
-      sessionId: string;
-      planCacheKey?: string;
-      status?: "partial" | "complete";
-      totalWins?: number;
-    }): void => {
+    const applyCoachResponse = (data: CoachGeneratePlanResponse): void => {
       if (!data?.plan?.wins?.length) {
         throw new Error("Empty plan from server");
       }
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
-      setPlan(data.plan);
+      setPlan(data.plan as Plan);
       setPlanCacheKey(data.planCacheKey ?? "");
       originalWinCountRef.current = data.totalWins ?? 12;
       setSessionId(data.sessionId);
@@ -1376,50 +1392,20 @@ export default function AICoachPage() {
     };
 
     const buildViaProgressive = async (body: string): Promise<void> => {
-      const res = await authFetch("/api/coach/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body,
-        signal: ctrl.signal
-      }, COACH_AI_FETCH_TIMEOUT_MS);
-      if (res.status === 402) {
-        const errBody = await res.json().catch(() => ({})) as { error?: string };
-        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-          detail: {
-            reason: errBody.error === "coach_locked" ? "coach_locked" : "ai_quota"
-          }
-        }));
-        setPhase("understanding");
-        return;
+      try {
+        const data = await fetchCoachGeneratePlan(authFetch, body, ctrl.signal);
+        applyCoachResponse(data);
+      } catch (err) {
+        const status = (err as Error & { status?: number }).status;
+        if (status === 402) {
+          window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
+            detail: { reason: (err as Error).message === "coach_locked" ? "coach_locked" : "ai_quota" },
+          }));
+          setPhase("understanding");
+          return;
+        }
+        throw err;
       }
-      if (!res.ok) {
-        let bodySnippet = "";
-        try {
-          bodySnippet = (await res.text()).slice(0, 200);
-        } catch {/* noop */}
-        const parsed = (() => {
-          try {
-            return JSON.parse(bodySnippet) as { message?: string; error?: string };
-          } catch {
-            return null;
-          }
-        })();
-        const detail =
-          parsed?.message ??
-          parsed?.error ??
-          (bodySnippet ? bodySnippet : undefined);
-        throw new Error(detail ? `Server ${res.status}: ${detail}` : `Server ${res.status}`);
-      }
-      const data = (await res.json()) as {
-        plan: Plan;
-        sessionId: string;
-        planCacheKey?: string;
-        status?: "partial" | "complete";
-        totalWins?: number;
-      };
-      applyCoachResponse(data);
     };
 
     try {
@@ -1438,20 +1424,20 @@ export default function AICoachPage() {
 
       await buildViaProgressive(body);
     } catch (err) {
-      // Aborts (component unmount, retry, navigate-away) are expected — silent.
       const isAbort = ctrl.signal.aborted || err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"));
       if (isAbort) return;
-      const msg = err instanceof Error ? err.message : String(err);
-      // eslint-disable-next-line no-console
-      console.error("[ai-coach] Build Plan failed:", msg, err);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error("[ai-coach] Build Plan failed:", err);
+      }
       toast({
-        title: "Something went wrong",
-        description: extractApiErrorMessage(err, "Please try again in a moment."),
-        variant: "destructive"
+        title: COACH_USER_FACING_LOADING,
+        description: COACH_USER_FACING_ERROR,
       });
       setPhase("understanding");
     } finally {
       if (buildAbortRef.current === ctrl) buildAbortRef.current = null;
+      submitInFlightRef.current = false;
     }
   };
 
@@ -2581,7 +2567,10 @@ export default function AICoachPage() {
   }
   if (phase === "loading") {
     return (
-      <CoachGeneratingScreen messageKey={COACH_LOADING_MESSAGES[loadingMessageIdx]!} />
+      <CoachGeneratingScreen
+        messageKey={COACH_LOADING_MESSAGES[loadingMessageIdx]!}
+        userMessage={loadingUserMessage}
+      />
     );
   }
 

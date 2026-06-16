@@ -280,8 +280,8 @@ describe("PHASE 2 — Amy Coach Production Certification", () => {
       assert.ok(dash.counters.coach_ai_timeout >= 1);
       assert.ok(dash.counters.coach_feedback_yes >= 1);
       assert.ok(dash.rates.feedbackDistribution.yes >= 1);
-      assert.equal(COACH_ALERT_THRESHOLDS.aiTimeoutRate, 0.15);
-      assert.equal(COACH_ALERT_THRESHOLDS.fallbackRate, 0.2);
+      assert.equal(COACH_ALERT_THRESHOLDS.aiTimeoutRate, 0.02);
+      assert.equal(COACH_ALERT_THRESHOLDS.fallbackRate, 0.1);
       assert.ok(Array.isArray(dash.alerts));
     });
   });

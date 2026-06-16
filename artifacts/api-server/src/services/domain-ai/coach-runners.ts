@@ -69,10 +69,13 @@ export async function runCoachStreamPlan(input: {
   return { raw: outcome.content };
 }
 
-export async function runCoachInitialWins(input: {
-  systemPrompt: string;
-  userPrompt: string;
-}): Promise<{ raw: string }> {
+export async function runCoachInitialWins(
+  input: {
+    systemPrompt: string;
+    userPrompt: string;
+  },
+  traceId?: string,
+): Promise<{ raw: string }> {
   const payload = JSON.parse(input.userPrompt) as {
     input: import("../coachWinGenerationService.js").CoachInput;
     goalLabel: string;
@@ -81,14 +84,15 @@ export async function runCoachInitialWins(input: {
     intelligenceBlock?: string;
   };
   const { generateInitialCoachWins } = await import("../coachWinGenerationService.js");
-  const { plan } = await generateInitialCoachWins(
+  const { plan, aiOk } = await generateInitialCoachWins(
     payload.input,
     payload.goalLabel,
     payload.goalBrief ?? "",
     () => payload.topicBlock,
     payload.intelligenceBlock,
+    traceId,
   );
-  return { raw: JSON.stringify(plan) };
+  return { raw: JSON.stringify(plan), aiOk };
 }
 
 export async function runCoachNextWin(input: {

@@ -43,6 +43,8 @@ export interface SubmitAiJobOptions {
   rateLimitKey?: string;
   /** Override default AI enqueue rate limit (30/min). TTS routes use a higher cap. */
   rateLimitOptions?: RateLimitOptions;
+  /** BullMQ job id — dedupes concurrent enqueues for the same logical work unit. */
+  deterministicJobId?: string;
 }
 
 async function respondQueueUnavailable(
@@ -117,7 +119,9 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     }
   }
 
-  const enqueued = await enqueueAiJob(opts.type, opts.userId, opts.payload);
+  const enqueued = await enqueueAiJob(opts.type, opts.userId, opts.payload, {
+    deterministicJobId: opts.deterministicJobId,
+  });
   if (!enqueued.jobId) {
     const queueUnavailable = (enqueued.retryAfterMs ?? 0) === 0;
     if (queueUnavailable) {

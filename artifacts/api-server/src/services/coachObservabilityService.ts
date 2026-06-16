@@ -15,14 +15,21 @@ export const COACH_OBSERVABILITY_EVENTS = [
   "coach_cache_bypass",
   "coach_cache_miss",
   "coach_next_win_generated",
+  "coach_generate_async_enqueued",
+  "coach_generate_completed",
+  "coach_generate_gateway_failure",
+  "coach_json_parse_failed",
+  "coach_content_type_mismatch",
+  "coach_emergency_fallback",
 ] as const;
 
 export type CoachObservabilityEvent = (typeof COACH_OBSERVABILITY_EVENTS)[number];
 
 export const COACH_ALERT_THRESHOLDS = {
-  aiTimeoutRate: 0.15,
-  fallbackRate: 0.2,
+  aiTimeoutRate: 0.02,
+  fallbackRate: 0.1,
   duplicateDetectionRate: 0.05,
+  gatewayFailureRate: 0.02,
 } as const;
 
 type CounterMap = Record<string, number>;
@@ -48,9 +55,33 @@ export function recordCoachObservabilityEvent(
   logger.info({ evt: event, coachObs: true, ...meta }, "coach observability");
 }
 
-export function recordCoachGenerateAttempt(outcome: "ai" | "fallback" | "cache" | "timeout"): void {
+export function recordCoachGenerateTelemetry(meta: {
+  durationMs: number;
+  queueMs?: number;
+  aiMs?: number;
+  source: "ai" | "fallback" | "cache" | "emergency";
+  asyncJob?: boolean;
+}): void {
+  logger.info(
+    {
+      evt: "coach_generate.telemetry",
+      coachObs: true,
+      ...meta,
+    },
+    "coach generate telemetry",
+  );
+  if (meta.source === "ai") {
+    recordCoachObservabilityEvent("coach_generate_completed", meta);
+  }
+}
+
+export function recordCoachGenerateAttempt(outcome: "ai" | "fallback" | "cache" | "timeout" | "emergency"): void {
   totalGenerateAttempts += 1;
-  if (outcome === "fallback") recordCoachObservabilityEvent("coach_fallback_used");
+  if (outcome === "fallback" || outcome === "emergency") {
+    recordCoachObservabilityEvent(
+      outcome === "emergency" ? "coach_emergency_fallback" : "coach_fallback_used",
+    );
+  }
   if (outcome === "timeout") recordCoachObservabilityEvent("coach_ai_timeout");
   if (outcome === "cache") recordCoachObservabilityEvent("coach_cache_hit");
   if (outcome === "ai") recordCoachObservabilityEvent("coach_cache_miss");
@@ -95,6 +126,7 @@ export function getCoachObservabilityDashboard(): {
   const duplicates =
     (counters.coach_duplicate_prevented ?? 0) + (counters.coach_semantic_duplicate_detected ?? 0);
   const cacheHits = counters.coach_cache_hit ?? 0;
+  const gatewayFailures = counters.coach_generate_gateway_failure ?? 0;
   const attempts = Math.max(1, totalGenerateAttempts + totalNextWinAttempts);
 
   const yes = counters.coach_feedback_yes ?? 0;
@@ -103,7 +135,8 @@ export function getCoachObservabilityDashboard(): {
   const feedbackTotal = Math.max(1, yes + somewhat + no);
 
   const aiTimeoutRate = aiTimeouts / attempts;
-  const fallbackRate = fallbacks / attempts;
+  const fallbackRate = (fallbacks + (counters.coach_emergency_fallback ?? 0)) / attempts;
+  const gatewayFailureRate = gatewayFailures / attempts;
   const duplicateDetectionRate = duplicates / attempts;
   const cacheHitRate = cacheHits / Math.max(1, totalGenerateAttempts);
   const progressAdvanceRate = (counters.coach_progress_advanced ?? 0) / feedbackTotal;
@@ -126,6 +159,12 @@ export function getCoachObservabilityDashboard(): {
       threshold: COACH_ALERT_THRESHOLDS.duplicateDetectionRate,
       actual: duplicateDetectionRate,
       triggered: duplicateDetectionRate > COACH_ALERT_THRESHOLDS.duplicateDetectionRate,
+    },
+    {
+      metric: "gatewayFailureRate",
+      threshold: COACH_ALERT_THRESHOLDS.gatewayFailureRate,
+      actual: gatewayFailureRate,
+      triggered: gatewayFailureRate > COACH_ALERT_THRESHOLDS.gatewayFailureRate,
     },
   ];
 

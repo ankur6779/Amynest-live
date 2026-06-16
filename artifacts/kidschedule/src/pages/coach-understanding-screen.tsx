@@ -200,7 +200,14 @@ export const COACH_LOADING_MESSAGES = [
   "pages.ai_coach.loading_state_preparing",
 ] as const;
 
-export function CoachGeneratingScreen({ messageKey }: { messageKey: string }) {
+export function CoachGeneratingScreen({
+  messageKey,
+  userMessage,
+}: {
+  messageKey: string;
+  /** Primary user-facing status line (never raw server errors). */
+  userMessage?: string;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -219,7 +226,7 @@ export function CoachGeneratingScreen({ messageKey }: { messageKey: string }) {
           <Sparkles className="w-8 h-8 animate-pulse" />
         </div>
         <h2 className="font-quicksand text-2xl font-bold">
-          {t("pages.ai_coach.loading_headline", "Amy is preparing your coaching")}
+          {userMessage ?? t("pages.ai_coach.loading_headline", "Amy is preparing your coaching")}
         </h2>
         <p className="text-sm text-white/75 min-h-[2.5rem] transition-opacity duration-500">
           {t(messageKey)}

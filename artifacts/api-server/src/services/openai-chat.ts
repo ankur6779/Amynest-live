@@ -15,6 +15,8 @@ export interface ChatCompletionParams {
   max_completion_tokens?: number;
   temperature?: number;
   response_format?: { type: "json_object" };
+  /** When set, emits coach_generate_trace openai.* stages. */
+  traceId?: string;
 }
 
 export interface ChatCompletionOutcome {
@@ -33,6 +35,17 @@ export async function chatCompletionWithTimeout(
 ): Promise<ChatCompletionOutcome> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const openaiStarted = Date.now();
+
+  if (params.traceId) {
+    void import("../lib/coach-generate-trace.js").then(({ logCoachGenerateTrace }) =>
+      logCoachGenerateTrace("openai.request_started", {
+        traceId: params.traceId!,
+        layer: "openai",
+        timeoutMs,
+      }),
+    );
+  }
 
   try {
     const openai = await getOpenAiClient();
@@ -48,6 +61,15 @@ export async function chatCompletionWithTimeout(
     );
 
     const choice = completion.choices[0];
+    if (params.traceId) {
+      void import("../lib/coach-generate-trace.js").then(({ logCoachGenerateTrace }) =>
+        logCoachGenerateTrace("openai.request_completed", {
+          traceId: params.traceId!,
+          layer: "openai",
+          meta: { durationMs: Date.now() - openaiStarted, finishReason: choice?.finish_reason },
+        }),
+      );
+    }
     return {
       content: choice?.message?.content?.trim() ?? null,
       finishReason: choice?.finish_reason ?? null,
@@ -57,6 +79,19 @@ export async function chatCompletionWithTimeout(
     const timedOut =
       err instanceof Error &&
       (err.name === "AbortError" || err.message.includes("aborted"));
+    if (params.traceId) {
+      void import("../lib/coach-generate-trace.js").then(({ logCoachGenerateTrace }) =>
+        logCoachGenerateTrace("openai.request_completed", {
+          traceId: params.traceId!,
+          layer: "openai",
+          meta: {
+            durationMs: Date.now() - openaiStarted,
+            timedOut,
+            error: timedOut ? "timeout" : err instanceof Error ? err.message.slice(0, 120) : String(err),
+          },
+        }),
+      );
+    }
     if (timedOut) {
       logger.warn({ evt: "openai.chat_timeout", timeoutMs }, "OpenAI chat timed out");
       return { content: null, finishReason: null, timedOut: true, error: "timeout" };

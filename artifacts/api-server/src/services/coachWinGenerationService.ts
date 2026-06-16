@@ -17,6 +17,7 @@ import {
 } from "./coachWinAntiRepetition.js";
 import { buildGoalSpecificInitialFallback, buildGoalSpecificFallbackWin } from "./coachGoalFallbackLibrary.js";
 import { recordCoachObservabilityEvent } from "./coachObservabilityService.js";
+import { COACH_OPENAI_TIMEOUT_MS } from "@workspace/coach-journey";
 
 export const COACH_TOTAL_WINS = 12;
 export const COACH_INITIAL_WINS = 2;
@@ -24,16 +25,10 @@ export const COACH_REMAINING_WINS = 10;
 export const COACH_SOURCE = "amy_coach";
 const NAMESPACE = "ai_coach_v4";
 const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-/** Hard cap on initial OpenAI call — response must not wait longer. */
-export const INITIAL_AI_TIMEOUT_MS = 10_000;
-/** Per lazy win (win 3–12) — one call when parent advances. */
-export const NEXT_WIN_AI_TIMEOUT_MS = 22_000;
-
-function aiCallTimeout(ms: number): Promise<never> {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("initial_ai_timeout")), ms);
-  });
-}
+/** @deprecated Use COACH_OPENAI_TIMEOUT_MS from @workspace/coach-journey */
+export const INITIAL_AI_TIMEOUT_MS = COACH_OPENAI_TIMEOUT_MS;
+/** @deprecated Use COACH_OPENAI_TIMEOUT_MS from @workspace/coach-journey */
+export const NEXT_WIN_AI_TIMEOUT_MS = COACH_OPENAI_TIMEOUT_MS;
 
 /** Fast static 2-win plan when AI times out or fails — goal-family specific. */
 export function staticInitialWinsFallback(goalLabel: string, input: CoachInput): CoachPlan {
@@ -350,6 +345,7 @@ async function callInitialCoachAi(
   goalBrief: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
   intelligenceBlock?: string,
+  traceId?: string,
 ): Promise<CoachPlan | null> {
   const { triggers, topicBlock } = buildPromptContext(
     input,
@@ -385,12 +381,19 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
       response_format: { type: "json_object" },
       max_completion_tokens: 900,
       temperature: 0.6,
+      traceId,
     },
-    INITIAL_AI_TIMEOUT_MS,
+    COACH_OPENAI_TIMEOUT_MS,
   );
+  if (outcome.timedOut) return null;
   const rawContent = outcome.content ?? "";
-  const parsed = JSON.parse(rawContent);
-  if (validatePartialPlan(parsed)) return parsed;
+  if (!rawContent) return null;
+  try {
+    const parsed = JSON.parse(rawContent);
+    if (validatePartialPlan(parsed)) return parsed;
+  } catch {
+    recordCoachObservabilityEvent("coach_json_parse_failed", { goal: input.goal, phase: "initial" });
+  }
   return null;
 }
 
@@ -400,13 +403,18 @@ export async function generateInitialCoachWins(
   goalBrief: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
   intelligenceBlock?: string,
+  traceId?: string,
 ): Promise<{ plan: CoachPlan; aiOk: boolean }> {
   const aiSpan = startCoachPerfSpan("AI_CALL_INITIAL", { goal: input.goal });
   try {
-    const plan = await Promise.race([
-      callInitialCoachAi(input, goalLabel, goalBrief, renderTopicAnswersBlock, intelligenceBlock),
-      aiCallTimeout(INITIAL_AI_TIMEOUT_MS),
-    ]);
+    const plan = await callInitialCoachAi(
+      input,
+      goalLabel,
+      goalBrief,
+      renderTopicAnswersBlock,
+      intelligenceBlock,
+      traceId,
+    );
     if (plan) {
       const dup = plan.wins.some((w, i) =>
         plan.wins.slice(0, i).some((prior) => isWinTooSimilar(w, [prior])),
@@ -422,14 +430,12 @@ export async function generateInitialCoachWins(
       aiSpan.end({ aiOk: false, reason: "validation_failed" });
     }
   } catch (err) {
-    const timedOut = err instanceof Error && err.message === "initial_ai_timeout";
-    aiSpan.end({ aiOk: false, error: true, timedOut });
-    if (timedOut) {
-      void import("./coachObservabilityService.js").then(({ recordCoachObservabilityEvent }) =>
-        recordCoachObservabilityEvent("coach_ai_timeout", { goal: input.goal, phase: "initial" }),
-      );
+    aiSpan.end({ aiOk: false, error: true });
+    if (err instanceof Error && err.message.includes("timeout")) {
+      recordCoachObservabilityEvent("coach_ai_timeout", { goal: input.goal, phase: "initial" });
+    } else {
+      logger.error({ err }, "ai-coach initial wins OpenAI error");
     }
-    if (!timedOut) logger.error({ err }, "ai-coach initial wins OpenAI error");
   }
 
   void import("./coachObservabilityService.js").then(({ recordCoachObservabilityEvent }) =>
@@ -524,29 +530,37 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
       },
       NEXT_WIN_AI_TIMEOUT_MS,
     );
+    if (outcome.timedOut) {
+      recordCoachObservabilityEvent("coach_ai_timeout", { goal: input.goal, win: nextWinNumber });
+    }
     const rawContent = outcome.content ?? "";
-    try {
-      const parsed = JSON.parse(rawContent) as { win?: unknown };
-      const w = parsed.win;
-      if (validateWin(w) && (w as CoachWin).win === nextWinNumber) {
-        const candidate = w as CoachWin;
-        if (!isWinTooSimilar(candidate, existingWins)) {
-          aiSpan.end({ aiOk: true, win: nextWinNumber });
-          return { win: candidate, aiOk: true };
+    if (rawContent) {
+      try {
+        const parsed = JSON.parse(rawContent) as { win?: unknown };
+        const w = parsed.win;
+        if (validateWin(w) && (w as CoachWin).win === nextWinNumber) {
+          const candidate = w as CoachWin;
+          if (!isWinTooSimilar(candidate, existingWins)) {
+            aiSpan.end({ aiOk: true, win: nextWinNumber });
+            return { win: candidate, aiOk: true };
+          }
+          recordCoachObservabilityEvent("coach_semantic_duplicate_detected", {
+            goal: input.goal,
+            win: nextWinNumber,
+            title: candidate.title,
+          });
+          recordCoachObservabilityEvent("coach_duplicate_prevented", {
+            goal: input.goal,
+            win: nextWinNumber,
+          });
+          aiSpan.end({ aiOk: false, reason: "duplicate_win" });
         }
-        recordCoachObservabilityEvent("coach_semantic_duplicate_detected", {
-          goal: input.goal,
-          win: nextWinNumber,
-          title: candidate.title,
-        });
-        recordCoachObservabilityEvent("coach_duplicate_prevented", {
+      } catch {
+        recordCoachObservabilityEvent("coach_json_parse_failed", {
           goal: input.goal,
           win: nextWinNumber,
         });
-        aiSpan.end({ aiOk: false, reason: "duplicate_win" });
       }
-    } catch {
-      /* fall through */
     }
     aiSpan.end({ aiOk: false, reason: "validation_failed" });
   } catch (err) {
@@ -643,14 +657,16 @@ ${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
       60_000,
     );
     const rawContent = outcome.content ?? "";
-    try {
-      const parsed = JSON.parse(rawContent) as { wins?: unknown };
-      if (validateRemainingWins(parsed.wins, startWin)) {
-        aiSpan.end({ aiOk: true, wins: COACH_REMAINING_WINS });
-        return { wins: parsed.wins, aiOk: true };
+    if (rawContent) {
+      try {
+        const parsed = JSON.parse(rawContent) as { wins?: unknown };
+        if (validateRemainingWins(parsed.wins, startWin)) {
+          aiSpan.end({ aiOk: true, wins: COACH_REMAINING_WINS });
+          return { wins: parsed.wins, aiOk: true };
+        }
+      } catch {
+        recordCoachObservabilityEvent("coach_json_parse_failed", { goal: input.goal, phase: "background" });
       }
-    } catch {
-      /* fall through */
     }
     aiSpan.end({ aiOk: false, reason: "validation_failed" });
   } catch (err) {

@@ -41,6 +41,18 @@ export async function shapePollApiResult(
         (wrapped?.pollContext ?? {}) as import("./meals-ai-generate-response.js").MealsAiGeneratePollContext,
       );
     }
+    case "ai-coach/generate":
+    case "ai-coach/initial": {
+      const { buildCoachGenerateApiBody, runCoachGenerateSideEffects } = await import(
+        "./coach-generate-response.js"
+      );
+      const ctx = (wrapped?.pollContext ?? {}) as import("./coach-generate-response.js").CoachGeneratePollContext;
+      const body = buildCoachGenerateApiBody(rawResult, ctx);
+      if (!skipSideEffects && ctx.userId) {
+        void runCoachGenerateSideEffects(body, ctx);
+      }
+      return body;
+    }
     case "tts/generate":
     case "tts/synthesize":
       return shapeTtsGeneratePoll(rawResult);
