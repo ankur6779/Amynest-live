@@ -91,6 +91,10 @@ run("node", [resolve(__dirname, "copy-www.mjs")], {
   cwd: resolve(__dirname, ".."),
 });
 
+run("node", [resolve(__dirname, "prune-ios-www.mjs")], {
+  cwd: resolve(__dirname, ".."),
+});
+
 run("node", [resolve(__dirname, "patch-capacitor-ota-config.mjs")], {
   cwd: resolve(__dirname, ".."),
   env: {
