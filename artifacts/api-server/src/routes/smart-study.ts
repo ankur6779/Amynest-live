@@ -847,7 +847,8 @@ router.get(
       return;
     }
     const childParsed = z.coerce.number().int().positive().safeParse(req.query.childId);
-    const lessonId = req.params.lessonId;
+    const lessonIdRaw = req.params.lessonId;
+    const lessonId = typeof lessonIdRaw === "string" ? lessonIdRaw : lessonIdRaw?.[0];
     if (!childParsed.success || !lessonId) {
       res.status(400).json({ error: "invalid_query" });
       return;
