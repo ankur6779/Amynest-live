@@ -66,6 +66,10 @@ COPY --from=build --chown=nodejs:nodejs /deploy/src/data ./src/data
 # Legacy loaders resolve ../data from dist/index.mjs — keep tts-cache + manifest JSONs together.
 COPY --from=build --chown=nodejs:nodejs /deploy/data ./data
 COPY --from=build --chown=nodejs:nodejs /deploy/src/data/*.json ./data/
+# Premium phonics workbook PDF (served by GET /api/phonics/workbook/download).
+COPY --from=build --chown=nodejs:nodejs \
+  /app/artifacts/kidschedule/public/phonics-mastery-15-sets.pdf \
+  ./assets/phonics-mastery-15-sets.pdf
 
 USER nodejs
 

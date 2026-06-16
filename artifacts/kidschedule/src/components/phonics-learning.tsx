@@ -17,6 +17,8 @@ import { useHubJourney } from "@/hooks/use-hub-journey";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useMountedRef } from "@/hooks/use-safe-async";
+import { isCapacitorIosNative } from "@/lib/mic-permission-capacitor";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { applyPhonicsJourneyCap, premiumPracticeItems, type PhonicsPremiumMeta } from "@/lib/phonics-journey-access";
 import type { PhonicsPrimaryCta } from "@/lib/phonics-journey-roadmap";
 import { Link } from "wouter";
@@ -1444,6 +1446,38 @@ const PHONICS_PDF = {
   fileKey: "phonics-mastery-15-sets",
   fileName: "Phonics-Mastery-15-Sets.pdf",
 } as const;
+
+/** WKWebView ignores `<a download>` — use Share sheet or in-app preview on native shells. */
+async function deliverWorkbookPdf(blob: Blob, fileName: string): Promise<boolean> {
+  const file = new File([blob], fileName, { type: "application/pdf" });
+  if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: fileName });
+      return true;
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return true;
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    if (isCapacitorIosNative() || isNativeAmyNestShell()) {
+      window.open(objectUrl, "_blank");
+      return true;
+    }
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = fileName;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return true;
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+  }
+}
+
 function PhonicsDownloadCard({
   childId
 }: {
@@ -1511,21 +1545,20 @@ function PhonicsDownloadCard({
         setError(
           downloadRes.status === 401
             ? "Please sign in again to download."
-            : "Couldn't download the workbook. Please try again.",
+            : downloadRes.status === 404
+              ? "Workbook is temporarily unavailable on the server. Please try again shortly."
+              : "Couldn't download the workbook. Please try again.",
         );
         return;
       }
 
       const blob = await downloadRes.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = PHONICS_PDF.fileName;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(objectUrl);
+      if (!blob.size || blob.type.includes("json")) {
+        setError("Workbook is temporarily unavailable on the server. Please try again shortly.");
+        return;
+      }
+
+      await deliverWorkbookPdf(blob, PHONICS_PDF.fileName);
 
       // Log every successful download to the DB (server also enforces premium).
       const logRes = await authFetch("/api/phonics/downloads", {

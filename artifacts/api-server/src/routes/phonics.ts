@@ -367,7 +367,12 @@ function resolvePhonicsWorkbookPath(meta: (typeof PHONICS_DOWNLOADABLE_FILES)[Ph
 
   const cwd = process.cwd();
   const candidates = [
+    // Production Docker (docker/backend/Dockerfile → /app/assets/)
+    path.join(cwd, "assets", meta.publicBasename),
+    // Monorepo root / full checkout
     path.join(cwd, "artifacts", "kidschedule", "public", meta.publicBasename),
+    // pnpm --filter @workspace/api-server dev (cwd = artifacts/api-server)
+    path.join(cwd, "..", "kidschedule", "public", meta.publicBasename),
     path.join(cwd, "public", meta.publicBasename),
     path.join(cwd, meta.publicBasename),
   ];
