@@ -34,6 +34,7 @@ jobs:
   typecheck-gate:
     name: TypeScript gate
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +54,7 @@ jobs:
   deploy-render:
     name: Trigger Render deploys
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [crash-release-gates, routine-engine-gates, audio-gates, chat-platform-gates, typecheck-gate]
     if: |
       !contains(needs.*.result, 'failure') &&
@@ -80,6 +82,7 @@ jobs:
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [crash-release-gates, routine-engine-gates, audio-gates, chat-platform-gates, typecheck-gate]
     if: |
       !contains(needs.*.result, 'failure') &&

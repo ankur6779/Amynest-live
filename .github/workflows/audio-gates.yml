@@ -18,10 +18,16 @@ on:
   workflow_dispatch:
   workflow_call:
 
+# Cancel superseded PR runs, but never cancel main/deploy runs (called via workflow_call).
+concurrency:
+  group: audio-gates-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   audio-health-gate:
     name: Audio Health Gate (deploy blocker)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -62,6 +68,7 @@ jobs:
     # but a failure no longer blocks the gated deploy workflow.
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -83,6 +90,7 @@ jobs:
     # but a failure no longer blocks the gated deploy workflow.
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -103,6 +111,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -121,6 +130,7 @@ jobs:
   audio-manifest-urls:
     name: Audio manifest proxy URLs
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -141,6 +151,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 

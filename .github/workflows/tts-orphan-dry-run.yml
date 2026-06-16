@@ -9,6 +9,7 @@ jobs:
   dry-run:
     name: Scan GCS tts-cache batch (dry-run)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 

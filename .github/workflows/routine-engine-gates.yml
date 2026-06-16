@@ -7,10 +7,16 @@ on:
   workflow_call:
   workflow_dispatch:
 
+# Cancel superseded PR runs, but never cancel main/deploy runs (called via workflow_call).
+concurrency:
+  group: routine-engine-gates-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   freeze-and-certify:
     name: Freeze check + certification
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       ROUTINE_ENGINE_CHANGE: ${{ contains(github.event.pull_request.labels.*.name, 'routine-engine-change') && 'true' || '' }}
     steps:

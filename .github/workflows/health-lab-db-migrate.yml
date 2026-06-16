@@ -12,6 +12,7 @@ jobs:
   migrate:
     name: Apply health_lab_progress schema
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.event.inputs.confirm == 'migrate'
     steps:
       - uses: actions/checkout@v4

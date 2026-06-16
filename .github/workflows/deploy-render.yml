@@ -14,6 +14,7 @@ jobs:
   deploy:
     name: Trigger Render deploys (manual)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.repository == 'ankur6779/Amynest-live'
 
     steps:

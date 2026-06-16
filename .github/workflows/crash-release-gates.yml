@@ -7,10 +7,16 @@ on:
   workflow_call:
   workflow_dispatch:
 
+# Cancel superseded PR runs, but never cancel main/deploy runs (called via workflow_call).
+concurrency:
+  group: crash-release-gates-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   gates:
     name: Crash launch + release intelligence
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       # GitHub secret: Render Postgres External Database URL (not internal).
       DATABASE_URL: ${{ secrets.DATABASE_URL }}

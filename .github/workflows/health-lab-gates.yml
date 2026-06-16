@@ -13,10 +13,15 @@ on:
       - "artifacts/api-server/src/services/health-lab-metrics-store.ts"
   workflow_dispatch:
 
+concurrency:
+  group: health-lab-gates-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   api-sync-tests:
     name: Health Lab API sync tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -32,6 +37,7 @@ jobs:
   unit-tests:
     name: Health Lab unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +56,7 @@ jobs:
   e2e:
     name: Health Lab Playwright certification
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
