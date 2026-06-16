@@ -100,6 +100,7 @@ describe("Digraph V3 Certification", () => {
       masteryAvg: 70,
       mastery: defaultMasteryState(),
       retention: defaultRetentionState(),
+      currentLevel: 4,
     });
     expect(picks.length).toBeGreaterThan(0);
     expect(picks.every((p) => CERTIFIED_DIGRAPH_IDS.includes(p.digraphId))).toBe(true);

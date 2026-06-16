@@ -1,15 +1,16 @@
 /**
- * Phonics V2 journey map — six visual stages for early-reading progression.
- * Maps to existing curriculum levels without replacing V1 PHONICS_JOURNEY_STAGES.
+ * Phonics V2 journey map — aligned to canonical curriculum levels 1–7.
  */
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 
 export type PhonicsV2StageId =
   | "letter_sounds"
-  | "blending_practice"
-  | "cvc_words"
+  | "cvc_decoding"
   | "word_families"
-  | "mini_sentences"
-  | "reading_stories";
+  | "digraphs"
+  | "consonant_blends"
+  | "cvcc"
+  | "fluency_stories";
 
 export type PhonicsV2StageStatus = "locked" | "available" | "completed";
 
@@ -19,10 +20,9 @@ export type PhonicsV2Stage = {
   title: string;
   subtitle: string;
   emoji: string;
-  /** Curriculum levels that satisfy this stage */
-  curriculumLevels: number[];
+  curriculumLevels: CurriculumLevel[];
   scrollTarget: string;
-  activityKind: "letters" | "blend" | "cvc" | "families" | "sentences" | "stories";
+  activityKind: "letters" | "cvc" | "families" | "digraphs" | "blends" | "cvcc" | "stories";
 };
 
 export const PHONICS_V2_STAGES: PhonicsV2Stage[] = [
@@ -33,56 +33,66 @@ export const PHONICS_V2_STAGES: PhonicsV2Stage[] = [
     subtitle: "Hear each letter sound",
     emoji: "🔤",
     curriculumLevels: [1],
-    scrollTarget: "phonics-v2-stage-letters",
+    scrollTarget: "phonics-practice-sounds",
     activityKind: "letters",
   },
   {
-    id: "blending_practice",
+    id: "cvc_decoding",
     order: 2,
-    title: "Blending Practice",
-    subtitle: "Blend sounds slowly",
-    emoji: "🎵",
+    title: "CVC Decoding",
+    subtitle: "Blend and read words",
+    emoji: "🧩",
     curriculumLevels: [2],
     scrollTarget: "phonics-v2-karaoke",
-    activityKind: "blend",
-  },
-  {
-    id: "cvc_words",
-    order: 3,
-    title: "CVC Words",
-    subtitle: "Read simple words",
-    emoji: "🧩",
-    curriculumLevels: [2, 3],
-    scrollTarget: "phonics-v2-cvc",
     activityKind: "cvc",
   },
   {
     id: "word_families",
-    order: 4,
+    order: 3,
     title: "Word Families",
     subtitle: "Spot the pattern",
     emoji: "👨‍👩‍👧‍👦",
-    curriculumLevels: [3, 4],
+    curriculumLevels: [3],
     scrollTarget: "phonics-v2-families",
     activityKind: "families",
   },
   {
-    id: "mini_sentences",
-    order: 5,
-    title: "Mini Sentences",
-    subtitle: "Short reads together",
-    emoji: "📝",
-    curriculumLevels: [4, 5],
-    scrollTarget: "phonics-v2-sentences",
-    activityKind: "sentences",
+    id: "digraphs",
+    order: 4,
+    title: "Digraphs",
+    subtitle: "sh, ch, th and more",
+    emoji: "🔡",
+    curriculumLevels: [4],
+    scrollTarget: "phonics-v2-digraphs",
+    activityKind: "digraphs",
   },
   {
-    id: "reading_stories",
+    id: "consonant_blends",
+    order: 5,
+    title: "Consonant Blends",
+    subtitle: "Read blend words",
+    emoji: "🌿",
+    curriculumLevels: [5],
+    scrollTarget: "phonics-v2-digraphs",
+    activityKind: "blends",
+  },
+  {
+    id: "cvcc",
     order: 6,
-    title: "Reading Stories",
-    subtitle: "Decodable story time",
+    title: "CVCC Words",
+    subtitle: "Four-letter words",
+    emoji: "📘",
+    curriculumLevels: [6],
+    scrollTarget: "phonics-v2-stories",
+    activityKind: "cvcc",
+  },
+  {
+    id: "fluency_stories",
+    order: 7,
+    title: "Fluency & Stories",
+    subtitle: "Read with confidence",
     emoji: "📚",
-    curriculumLevels: [5, 6],
+    curriculumLevels: [7],
     scrollTarget: "phonics-v2-stories",
     activityKind: "stories",
   },
@@ -97,8 +107,8 @@ export function resolveV2ActiveStage(
     if (totalAgeMonths < 24) level = 1;
     else if (totalAgeMonths < 36) level = 1;
     else if (totalAgeMonths < 48) level = 2;
-    else if (totalAgeMonths < 60) level = 4;
-    else level = 5;
+    else if (totalAgeMonths < 60) level = 3;
+    else level = 4;
   }
   const match =
     [...PHONICS_V2_STAGES].reverse().find((s) => s.curriculumLevels.some((l) => l <= level)) ??

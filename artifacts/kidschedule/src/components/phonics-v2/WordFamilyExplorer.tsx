@@ -10,10 +10,11 @@ import {
 } from "@/lib/phonics-v2/content/word-families";
 import type { PhonicsV2FamilyProgress } from "@/lib/phonics-v2/family-progress";
 import { KaraokeBlendRound } from "./KaraokeBlendRound";
-import { Award, ChevronRight } from "lucide-react";
+import { Award, ChevronRight, Lock } from "lucide-react";
 import { PRESS_FEEDBACK } from "@/lib/experience-system";
 
 type WordFamilyExplorerProps = {
+  curriculumLevel?: number | null;
   familyProgress: PhonicsV2FamilyProgress;
   onWordPractice: (familyId: WordFamilyId, word: string, mastered?: boolean) => void;
 };
@@ -52,11 +53,32 @@ function FamilyWordTile({
 }
 
 export function WordFamilyExplorer({
+  curriculumLevel = 1,
   familyProgress,
   onWordPractice,
 }: WordFamilyExplorerProps) {
   const [activeFamily, setActiveFamily] = useState<WordFamilyId>("at");
   const [blendWord, setBlendWord] = useState<string | null>(null);
+
+  const unlocked = (curriculumLevel ?? 1) >= 3;
+
+  if (!unlocked) {
+    return (
+      <div id="phonics-v2-families" data-testid="word-family-explorer" className="space-y-4">
+        <Card className="rounded-3xl border border-white/[0.08] bg-card/90 opacity-80">
+          <CardContent className="p-5 flex items-center gap-3">
+            <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div>
+              <h3 className="font-quicksand text-base font-bold">Word Families</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Unlocks at Level 3 after CVC decoding. Keep practicing blends!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const family = WORD_FAMILIES.find((f) => f.id === activeFamily)!;
   const fp = familyProgress[activeFamily];

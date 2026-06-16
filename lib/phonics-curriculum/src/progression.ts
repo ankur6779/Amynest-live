@@ -4,7 +4,7 @@ import type {
   TestOutcomeInput,
   TestOutcomeResult,
 } from "./types.js";
-import { clampCurriculumLevel } from "./levels.js";
+import { clampCurriculumLevel, MAX_CURRICULUM_LEVEL } from "./levels.js";
 
 const MASTERY_BOOST_PASS = 8;
 const MASTERY_PENALTY_FAIL = 12;
@@ -33,7 +33,7 @@ export function applyTestOutcome(
     mastery = Math.min(100, mastery + Math.round((score - 50) / 10));
   }
 
-  if (mastery >= LEVEL_UP_THRESHOLD && level < 6) {
+  if (mastery >= LEVEL_UP_THRESHOLD && level < MAX_CURRICULUM_LEVEL) {
     level = clampCurriculumLevel(level + 1);
     mastery = 40;
     levelChanged = true;

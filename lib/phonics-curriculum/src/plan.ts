@@ -13,6 +13,7 @@ import {
   pickRevisionPhoneme,
 } from "./personalize.js";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
+import { familyIdForAnchorWord } from "./levels.js";
 
 export interface GenerateDailyPlanInput {
   progress: ChildCurriculumProgress;
@@ -24,9 +25,11 @@ export interface GenerateDailyPlanInput {
 
 function activityKindForTarget(level: CurriculumLevel, target: string): PlanActivityKind {
   const t = target.trim().toLowerCase();
+  if (level === 3 && familyIdForAnchorWord(t)) return "read_word";
   if (getCvcWordEntry(t)) return "blend_word";
   if (level === 1 && t.length <= 2) return "letter_sound";
-  if (level >= 6 || t.includes(" ")) return "sentence";
+  if (level >= 7 || t.includes(" ")) return "sentence";
+  if (level >= 6 && getCvcWordEntry(t) === undefined && t.length >= 4) return "read_word";
   if (level >= 4 && ["sh", "ch", "th", "wh", "ph"].some((d) => t.startsWith(d))) {
     return "digraph";
   }
@@ -54,6 +57,8 @@ function makeActivity(
 }
 
 function formatLabel(kind: PlanActivityKind, target: string): string {
+  const familyId = familyIdForAnchorWord(target);
+  if (familyId) return `Practice ${familyId.toUpperCase()} family`;
   switch (kind) {
     case "blend_word":
       return `Blend ${target}`;

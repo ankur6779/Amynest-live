@@ -9,6 +9,7 @@ import {
   applyTestOutcome,
   defaultLevelForAgeMonths,
   generateDailyPlan,
+  migrateCurriculumLevel,
   planCompletionPct,
   recordActivityDay,
   weakPhonemesFromSymbols,
@@ -29,7 +30,7 @@ function rowToProgress(
   return {
     childId: row.childId,
     userId: row.userId,
-    currentLevel: Math.max(1, Math.min(6, row.currentLevel)) as ChildCurriculumProgress["currentLevel"],
+    currentLevel: migrateCurriculumLevel(row.currentLevel),
     masteryScore: row.masteryScore,
     weakPhonemes: Array.isArray(row.weakPhonemes) ? row.weakPhonemes : [],
     streak: row.streak,

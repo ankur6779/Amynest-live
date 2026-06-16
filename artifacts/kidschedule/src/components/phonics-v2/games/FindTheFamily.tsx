@@ -17,7 +17,7 @@ export function FindTheFamily({
 }: FindTheFamilyProps) {
   const [picked, setPicked] = useState<string | null>(null);
   const family = getFamilyForWord(
-    options.find((w) => getFamilyForWord(w)?.id === targetFamilyId) ?? "cat",
+    options.find((w) => getFamilyForWord(w)?.id === targetFamilyId) ?? options[0] ?? "",
   );
   const suffix = family?.suffix ?? `-${targetFamilyId}`;
 

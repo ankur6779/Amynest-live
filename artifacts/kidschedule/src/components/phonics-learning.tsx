@@ -42,7 +42,7 @@ import {
   phonicsTileCvcWordKey,
   phonicsTileUsesPhonicsMode,
 } from "@/lib/phonics-tile-playback";
-import { CvcBlendPanel, CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
+import { CvcBlendPanel } from "@/components/cvc-blend-panel";
 import { PhonicsStopButton } from "@/components/phonics-stop-button";
 import { stopPhonicsPlayback } from "@/lib/phonics-player";
 import { PhonicsJourneyHub } from "@/components/phonics-journey-hub";
@@ -53,6 +53,10 @@ import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
 import { recordPhonicsHabitActivity } from "@/lib/phonics-journey-habit";
 import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
+import {
+  filterItemsByCurriculumLevel,
+  resolveCurriculumLevel,
+} from "@/lib/phonics-curriculum-filter";
 
 const PHONICS_STAGE_ORDER: PhonicsAgeGroup[] = [
   "12_24m",
@@ -288,9 +292,23 @@ function PhonicsLearningContent({
     }
   };
 
+  const curriculumLevel = resolveCurriculumLevel(
+    phonicsCurriculum.data?.progress?.currentLevel ?? phonicsCurriculum.data?.plan?.currentLevel,
+    totalAgeMonths,
+  );
+
+  const curriculumFilteredItems = useMemo(
+    () => filterItemsByCurriculumLevel(items ?? [], curriculumLevel),
+    [items, curriculumLevel],
+  );
+  const curriculumFilteredDaily = useMemo(
+    () => filterItemsByCurriculumLevel(dailyItems ?? [], curriculumLevel),
+    [dailyItems, curriculumLevel],
+  );
+
   const journeyApplied = useMemo(
     () =>
-      applyPhonicsJourneyCap(items ?? [], dailyItems ?? [], {
+      applyPhonicsJourneyCap(curriculumFilteredItems, curriculumFilteredDaily, {
         isPremium,
         journeyDay,
         isFreePeriod: isFreeJourneyPeriod,
@@ -300,8 +318,8 @@ function PhonicsLearningContent({
         totalCatalog: totalCatalog || (items?.length ?? 0),
       }),
     [
-      items,
-      dailyItems,
+      curriculumFilteredItems,
+      curriculumFilteredDaily,
       isPremium,
       journeyDay,
       isFreeJourneyPeriod,
@@ -425,7 +443,9 @@ function PhonicsLearningContent({
           items={safeItems}
           progress={safeProgress}
           recordPlay={recordPlay}
-          curriculumLevel={phonicsCurriculum.data?.progress?.currentLevel ?? null}
+          curriculumLevel={curriculumLevel}
+          curriculumPlan={phonicsCurriculum.data?.plan ?? null}
+          onCompleteCurriculumActivity={phonicsCurriculum.completeActivity}
         />
       )}
 
@@ -459,9 +479,7 @@ function PhonicsLearningContent({
           lockedCount={isPremium ? 0 : activeJourneyMeta.lockedCount}
         />
         {showBlending && (
-          <>
-            <CvcBlendingPracticeCard level={level} recordPlay={recordPlay} />
-            <Card className="rounded-2xl border-dashed">
+          <Card className="rounded-2xl border-dashed">
               <CardContent className="p-3 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground">
                   {t("components.learning_load_more.extra_words")}
@@ -498,7 +516,6 @@ function PhonicsLearningContent({
                 />
               </CardContent>
             </Card>
-          </>
         )}
       </SubItemGate>
 

@@ -11,7 +11,7 @@ import {
   type DigraphMission,
 } from "./digraph-catalog";
 import type { DigraphId } from "./digraph-catalog";
-import { DIGRAPH_PATHWAY, getUnlockedDigraphs } from "./digraph-pathway";
+import { DIGRAPH_PATHWAY, getUnlockedDigraphs, isDigraphPathwayAvailable } from "./digraph-pathway";
 
 export type DigraphAdaptivePick = {
   digraphId: DigraphId;
@@ -32,10 +32,12 @@ export function selectDigraphAdaptiveLessons(opts: {
   retention?: PhonicsRetentionState;
   maxPicks?: number;
   now?: number;
+  currentLevel?: number;
 }): DigraphAdaptivePick[] {
-  if (opts.masteryAvg < 60) return [];
+  const level = (opts.currentLevel ?? 1) as import("@workspace/phonics-curriculum").CurriculumLevel;
+  if (!isDigraphPathwayAvailable(opts.masteryAvg, level)) return [];
 
-  const unlocked = getUnlockedDigraphs(opts.masteryAvg);
+  const unlocked = getUnlockedDigraphs(opts.masteryAvg, level);
   if (unlocked.length === 0) return [];
 
   const seed = opts.childId + opts.dateKey.split("").reduce((s, c) => s + c.charCodeAt(0), 0);

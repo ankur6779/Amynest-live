@@ -117,6 +117,57 @@ export const PHONICS_CURRICULUM_WORD_BANK: readonly string[] = [
   "from",
 ] as const;
 
+/** Digraph teaching vocabulary (explicit set — no substring matching). */
+export const DIGRAPH_WORD_IDS = [
+  "ship",
+  "shop",
+  "fish",
+  "dish",
+  "chat",
+  "chip",
+  "chin",
+  "thin",
+  "this",
+  "that",
+  "chop",
+  "shell",
+  "wish",
+  "shut",
+  "rush",
+  "bench",
+  "lunch",
+  "rich",
+  "much",
+  "peach",
+  "bath",
+  "path",
+  "with",
+  "then",
+  "when",
+  "whip",
+  "whale",
+  "which",
+  "white",
+  "wheel",
+  "duck",
+  "sock",
+  "back",
+  "pack",
+  "sick",
+  "pick",
+  "kick",
+  "rock",
+  "lock",
+  "ring",
+  "sing",
+  "long",
+  "song",
+  "bang",
+  "hang",
+  "king",
+  "wing",
+] as const;
+
 /** CVCC words taught in Phonics V3 after CVC mastery band. */
 export const CVCC_WORD_IDS = [
   "bump",
@@ -150,6 +201,8 @@ export const BLEND_WORD_IDS = [
   "plot",
   "grin",
   "plan",
+  "blue",
+  "tree",
 ] as const;
 
 /** Bare word lines for default static-audio map (tile tap playback). */

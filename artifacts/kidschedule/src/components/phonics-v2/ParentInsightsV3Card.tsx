@@ -17,6 +17,7 @@ type ParentInsightsV3CardProps = {
   mastery: PhonicsMasteryState;
   fluency: PhonicsFluencyState;
   retention?: PhonicsRetentionState;
+  curriculumLevel?: number;
 };
 
 export function ParentInsightsV3Card(props: ParentInsightsV3CardProps) {

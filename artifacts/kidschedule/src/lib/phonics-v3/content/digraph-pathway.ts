@@ -1,7 +1,11 @@
 /**
- * Digraph pathway — isolated from beginner CVC path.
- * sh, ch, th, wh, ck, ng — full learning loops in digraph-catalog.ts
+ * Digraph pathway — Level 4 canonical content (sh, ch, th, wh, ck, ng).
  */
+import {
+  getUnlockedDigraphIds,
+  isDigraphPathwayAvailable as isDigraphAvailable,
+  type CurriculumLevel,
+} from "@workspace/phonics-curriculum";
 import {
   getDigraphWordBank,
   type DigraphId,
@@ -17,7 +21,6 @@ export type DigraphStage = {
   exampleWord: string;
   emoji: string;
   words: DigraphWord[];
-  /** Minimum CVC mastery score avg to unlock */
   unlockMasteryAvg: number;
 };
 
@@ -35,10 +38,17 @@ export const DIGRAPH_PATHWAY: DigraphStage[] = PATHWAY_META.map((meta) => ({
   words: getDigraphWordBank(meta.id),
 }));
 
-export function getUnlockedDigraphs(avgMasteryScore: number): DigraphStage[] {
-  return DIGRAPH_PATHWAY.filter((d) => avgMasteryScore >= d.unlockMasteryAvg);
+export function getUnlockedDigraphs(
+  avgMasteryScore: number,
+  currentLevel: CurriculumLevel = 1,
+): DigraphStage[] {
+  const ids = new Set(getUnlockedDigraphIds(currentLevel, avgMasteryScore));
+  return DIGRAPH_PATHWAY.filter((d) => ids.has(d.id));
 }
 
-export function isDigraphPathwayAvailable(avgMasteryScore: number): boolean {
-  return avgMasteryScore >= 60;
+export function isDigraphPathwayAvailable(
+  avgMasteryScore: number,
+  currentLevel: CurriculumLevel = 1,
+): boolean {
+  return isDigraphAvailable(currentLevel, avgMasteryScore);
 }

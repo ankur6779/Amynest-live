@@ -1,6 +1,6 @@
 /** Curriculum engine types — pure data, no I/O. */
 
-export type CurriculumLevel = 1 | 2 | 3 | 4 | 5 | 6;
+export type CurriculumLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface ChildCurriculumProgress {
   childId: number;

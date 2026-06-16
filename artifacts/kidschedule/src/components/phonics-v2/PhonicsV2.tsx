@@ -7,11 +7,11 @@ import { WordFamilyExplorer } from "./WordFamilyExplorer";
 import { KaraokeBlendRound } from "./KaraokeBlendRound";
 import { PhonicsGamesHub } from "./games/PhonicsGamesHub";
 import { DecodableStoryReader } from "./DecodableStoryReader";
-import { ParentInsightsCard } from "./ParentInsightsCard";
 import { ParentInsightsV3Card } from "./ParentInsightsV3Card";
 import { DigraphPathwayPanel } from "./DigraphPathwayPanel";
 import { VoicePhonicsRound } from "./VoicePhonicsRound";
-import { CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
+import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
+import type { MissionSummary } from "./DailyMissionPanel";
 import {
   loadFamilyProgress,
   recordFamilyWordPractice,
@@ -98,6 +98,9 @@ export type PhonicsV2Props = {
   progress: PhonicsProgressMap;
   recordPlay: (id: string, contentId?: number) => void;
   curriculumLevel?: number | null;
+  curriculumPlan?: PhonicsDailyPlan | null;
+  onCompleteCurriculumActivity?: (activityId: string) => Promise<void>;
+  onMissionSummaryChange?: (summary: MissionSummary) => void;
 };
 
 export function PhonicsV2({
@@ -109,6 +112,9 @@ export function PhonicsV2({
   progress,
   recordPlay,
   curriculumLevel,
+  curriculumPlan,
+  onCompleteCurriculumActivity,
+  onMissionSummaryChange,
 }: PhonicsV2Props) {
   const authFetch = useAuthFetch();
   const [familyProgress, setFamilyProgress] = useState(() =>
@@ -120,7 +126,7 @@ export function PhonicsV2({
   const [pronunciation, setPronunciation] = useState<PhonicsV2PronunciationScores>(
     () => loadPronunciationScores(childId),
   );
-  const [karaokeWord, setKaraokeWord] = useState("cat");
+  const [karaokeWord, setKaraokeWord] = useState("");
   const [storyId, setStoryId] = useState<string | null>(null);
   const [mastery, setMastery] = useState(() => loadMasteryState(childId));
   const [fluency, setFluency] = useState(() => loadFluencyState(childId));
@@ -144,6 +150,16 @@ export function PhonicsV2({
   );
 
   useEffect(() => {
+    if (practiceWords.length === 0) {
+      setKaraokeWord("");
+      return;
+    }
+    setKaraokeWord((prev) =>
+      prev && practiceWords.includes(prev) ? prev : practiceWords[0]!,
+    );
+  }, [practiceWords]);
+
+  useEffect(() => {
     ensurePhonicsV3OnlineSync(authFetch);
     void hydratePhonicsV3Progress(childId, authFetch)
       .then(() => {
@@ -160,7 +176,7 @@ export function PhonicsV2({
 
   useEffect(() => {
     const runPrefetch = () => {
-      prefetchCvcWordList(practiceWords.length > 0 ? practiceWords : ["cat", "hat", "dog"]);
+      prefetchCvcWordList(practiceWords);
       const plan = buildOfflinePrefetchPlan({
         missionWords: practiceWords,
         includeDigraphs: avgMasteryScore(mastery) >= 60,
@@ -280,6 +296,7 @@ export function PhonicsV2({
   const unlockedStories = getUnlockedStoriesV3({
     masteredFamilies,
     masteryScoreAvg: masteryAvg,
+    currentLevel: curriculumLevel ?? 1,
   });
 
   return (
@@ -314,17 +331,21 @@ export function PhonicsV2({
         progress={progress}
         mastery={mastery}
         retention={retention}
+        curriculumLevel={curriculumLevel}
+        plan={curriculumPlan}
+        missionStoryId={unlockedStories[0]?.id}
+        onCompleteCurriculumActivity={onCompleteCurriculumActivity}
+        onMissionSummaryChange={onMissionSummaryChange}
         onTaskComplete={() => setPronunciation(loadPronunciationScores(childId))}
       />
 
-      <div id="phonics-v2-stage-letters" className="scroll-mt-24" />
-
+      {practiceWords.length > 0 && karaokeWord && (
       <div id="phonics-v2-karaoke" className="scroll-mt-24">
         <Card className="rounded-3xl border border-white/[0.08] bg-card/90">
           <CardContent className="p-5">
             <h3 className="font-quicksand text-base font-bold mb-3">Karaoke Blending</h3>
             <div className="flex flex-wrap gap-2 mb-4">
-              {(practiceWords.length > 0 ? practiceWords : ["cat", "hat", "dog"]).map((w) => (
+              {practiceWords.map((w) => (
                 <button
                   key={w}
                   type="button"
@@ -361,7 +382,7 @@ export function PhonicsV2({
                   applyFluency((prev) => recordWordAttempt(prev, true));
                   handleRetentionReview(karaokeWord, true);
                 }
-                const jp = markV2StageComplete(journeyProgress, "blending_practice");
+                const jp = markV2StageComplete(journeyProgress, "cvc_decoding");
                 setJourneyProgress(jp);
                 saveV2JourneyProgress(childId, jp);
               }}
@@ -394,17 +415,10 @@ export function PhonicsV2({
           </CardContent>
         </Card>
       </div>
-
-      <div id="phonics-v2-cvc" className="scroll-mt-24">
-        {level.features.blending && (
-          <CvcBlendingPracticeCard
-            level={level}
-            recordPlay={(id) => recordPlay(id)}
-          />
-        )}
-      </div>
+      )}
 
       <WordFamilyExplorer
+        curriculumLevel={curriculumLevel ?? 1}
         familyProgress={familyProgress}
         onWordPractice={(familyId, word, mastered) => {
           handleFamilyPractice(familyId, word, mastered);
@@ -421,11 +435,9 @@ export function PhonicsV2({
       />
 
       <PhonicsGamesHub
-        practiceWord={karaokeWord}
-        onGameComplete={() => recordPlay(`v2-game-${karaokeWord}`)}
+        practiceWords={practiceWords}
+        onGameComplete={() => recordPlay(`v2-game-${karaokeWord || practiceWords[0]}`)}
       />
-
-      <div id="phonics-v2-sentences" className="scroll-mt-24" />
 
       <div id="phonics-v2-stories" className="scroll-mt-24">
         <Card className="rounded-3xl border border-white/[0.08] bg-card/90">
@@ -460,7 +472,7 @@ export function PhonicsV2({
                     const stories = recordStoryCompleteLocal(loadStoryProgressLocal(childId), storyId);
                     persistPhonicsV3Stories(childId, stories);
                   }
-                  const jp = markV2StageComplete(journeyProgress, "reading_stories");
+                  const jp = markV2StageComplete(journeyProgress, "fluency_stories");
                   setJourneyProgress(jp);
                   saveV2JourneyProgress(childId, jp);
                 }}
@@ -470,12 +482,14 @@ export function PhonicsV2({
         </Card>
       </div>
 
-      <DigraphPathwayPanel
-        avgMasteryScore={masteryAvg}
-        childId={childId}
-        childName={childName}
-        totalAgeMonths={totalAgeMonths}
-        onWordPractice={(word, digraphId) => {
+      <div id="phonics-v2-digraphs" className="scroll-mt-24">
+        <DigraphPathwayPanel
+          avgMasteryScore={masteryAvg}
+          curriculumLevel={curriculumLevel ?? 1}
+          childId={childId}
+          childName={childName}
+          totalAgeMonths={totalAgeMonths}
+          onWordPractice={(word, digraphId) => {
           setKaraokeWord(word);
           trackSkillIntroduction(word);
           const ret = introduceSkill(loadRetentionState(childId), "phoneme", digraphId);
@@ -501,13 +515,14 @@ export function PhonicsV2({
             confidence,
           });
         }}
-        onStoryComplete={(id) => {
-          recordPlay(`v3-digraph-story-${id}`);
-          applyFluency((prev) => recordStoryComplete(prev));
-          const stories = recordStoryCompleteLocal(loadStoryProgressLocal(childId), id);
-          persistPhonicsV3Stories(childId, stories);
-        }}
-      />
+          onStoryComplete={(id) => {
+            recordPlay(`v3-digraph-story-${id}`);
+            applyFluency((prev) => recordStoryComplete(prev));
+            const stories = recordStoryCompleteLocal(loadStoryProgressLocal(childId), id);
+            persistPhonicsV3Stories(childId, stories);
+          }}
+        />
+      </div>
 
       <ParentInsightsV3Card
         items={safeItems}
@@ -517,13 +532,7 @@ export function PhonicsV2({
         mastery={mastery}
         fluency={fluency}
         retention={retention}
-      />
-
-      <ParentInsightsCard
-        items={safeItems}
-        progress={progress}
-        familyProgress={familyProgress}
-        pronunciation={pronunciation}
+        curriculumLevel={curriculumLevel ?? 1}
       />
     </div>
   );

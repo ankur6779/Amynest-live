@@ -18,9 +18,11 @@ import {
 import { VoicePhonicsRound } from "./VoicePhonicsRound";
 import { DecodableStoryReader } from "./DecodableStoryReader";
 import { Lock, Sparkles, BookOpen, Target, Mic } from "lucide-react";
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 
 type DigraphPathwayPanelProps = {
   avgMasteryScore: number;
+  curriculumLevel?: number;
   childId?: number;
   childName?: string;
   totalAgeMonths?: number;
@@ -31,6 +33,7 @@ type DigraphPathwayPanelProps = {
 
 export function DigraphPathwayPanel({
   avgMasteryScore,
+  curriculumLevel = 1,
   childId = 0,
   childName = "Reader",
   totalAgeMonths = 48,
@@ -42,7 +45,9 @@ export function DigraphPathwayPanel({
   const [assessWord, setAssessWord] = useState<string | null>(null);
   const [storyId, setStoryId] = useState<string | null>(null);
 
-  if (!isDigraphPathwayAvailable(avgMasteryScore)) {
+  const level = curriculumLevel as CurriculumLevel;
+
+  if (!isDigraphPathwayAvailable(avgMasteryScore, level)) {
     return (
       <Card className="rounded-3xl border border-white/[0.08] bg-card/90 opacity-80">
         <CardContent className="p-5 flex items-center gap-3">
@@ -50,7 +55,7 @@ export function DigraphPathwayPanel({
           <div>
             <h3 className="font-quicksand text-base font-bold">Digraph Pathway</h3>
             <p className="text-[11px] text-muted-foreground">
-              Unlocks when CVC mastery reaches 60%. Keep practicing blends!
+              Unlocks at Level 4 when CVC mastery reaches 60%. Keep practicing blends!
             </p>
           </div>
         </CardContent>
@@ -58,7 +63,7 @@ export function DigraphPathwayPanel({
     );
   }
 
-  const unlocked = getUnlockedDigraphs(avgMasteryScore);
+  const unlocked = getUnlockedDigraphs(avgMasteryScore, level);
   const stage = activeDigraph
     ? DIGRAPH_PATHWAY.find((d) => d.id === activeDigraph)
     : null;

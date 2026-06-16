@@ -10,8 +10,42 @@ import { getCvccStories } from "./cvcc-catalog";
 import { isBlendPathwayAvailable } from "./blend-catalog";
 import { isCvccPathwayAvailable } from "./cvcc-catalog";
 import { ensureCatalogLineUniqueness } from "./story-uniqueness";
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 
 export type StoryLevel = 1 | 2 | 3 | 4 | 5;
+
+/** Curriculum level + mastery required to unlock a catalog story tier. */
+export const STORY_LEVEL_GATES: Record<
+  StoryLevel,
+  { requiredCurriculumLevel: CurriculumLevel; masteryMin: number }
+> = {
+  1: { requiredCurriculumLevel: 2, masteryMin: 10 },
+  2: { requiredCurriculumLevel: 2, masteryMin: 20 },
+  3: { requiredCurriculumLevel: 3, masteryMin: 40 },
+  4: { requiredCurriculumLevel: 4, masteryMin: 60 },
+  5: { requiredCurriculumLevel: 7, masteryMin: 65 },
+};
+
+export function storyMeetsCurriculumGate(
+  story: DecodableStoryMeta,
+  curriculumLevel: CurriculumLevel,
+  masteryScoreAvg: number,
+  masteredFamilies: string[],
+): boolean {
+  const gate = STORY_LEVEL_GATES[story.level];
+  if (curriculumLevel < gate.requiredCurriculumLevel) return false;
+  if (masteryScoreAvg < gate.masteryMin) return false;
+  if (
+    story.requiredFamilies.length > 0 &&
+    gate.requiredCurriculumLevel >= 3
+  ) {
+    const familiesOk = story.requiredFamilies.every(
+      (f) => masteredFamilies.includes(f) || masteryScoreAvg >= 50,
+    );
+    if (!familiesOk) return false;
+  }
+  return true;
+}
 
 export type DecodableStoryLine = {
   text: string;
@@ -84,7 +118,9 @@ export function getStoriesForLevel(level: StoryLevel): DecodableStoryMeta[] {
 export function getUnlockedStoriesV3(opts: {
   masteredFamilies: string[];
   masteryScoreAvg: number;
+  currentLevel?: number;
 }): DecodableStoryMeta[] {
+  const curriculumLevel = (opts.currentLevel ?? 1) as import("@workspace/phonics-curriculum").CurriculumLevel;
   const catalog = getDecodableStoryCatalog();
   return catalog.filter((s) => {
     if (s.id.startsWith("dig-")) {
@@ -97,32 +133,23 @@ export function getUnlockedStoriesV3(opts: {
         ck: 68,
         ng: 75,
       };
-      return opts.masteryScoreAvg >= (unlockMap[digraphId ?? ""] ?? 65);
+      return (
+        curriculumLevel >= 4 &&
+        opts.masteryScoreAvg >= (unlockMap[digraphId ?? ""] ?? 65)
+      );
     }
     if (s.id.startsWith("blend-")) {
-      return isBlendPathwayAvailable(opts.masteryScoreAvg);
+      return isBlendPathwayAvailable(opts.masteryScoreAvg, curriculumLevel);
     }
     if (s.id.startsWith("cvcc-")) {
-      return isCvccPathwayAvailable(opts.masteryScoreAvg);
+      return isCvccPathwayAvailable(opts.masteryScoreAvg, curriculumLevel);
     }
-    if (s.level === 5 && s.id.startsWith("auth-")) {
-      return opts.masteryScoreAvg >= 65;
-    }
-    if (s.id.startsWith("auth-")) {
-      if (s.level === 1) return true;
-      if (s.level === 2) return opts.masteryScoreAvg >= 15;
-      if (s.level === 3) return opts.masteryScoreAvg >= 35;
-      if (s.level === 4) return opts.masteryScoreAvg >= 55;
-      return opts.masteryScoreAvg >= 70;
-    }
-    if (s.level === 1) return true;
-    if (s.level === 2) return opts.masteryScoreAvg >= 20;
-    if (s.level === 3) return opts.masteryScoreAvg >= 40;
-    if (s.level === 4) return opts.masteryScoreAvg >= 60;
-    const familiesOk = s.requiredFamilies.every(
-      (f) => opts.masteredFamilies.includes(f) || opts.masteryScoreAvg >= 50,
+    return storyMeetsCurriculumGate(
+      s,
+      curriculumLevel,
+      opts.masteryScoreAvg,
+      opts.masteredFamilies,
     );
-    return opts.masteryScoreAvg >= 70 && familiesOk;
   });
 }
 

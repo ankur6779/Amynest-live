@@ -14,17 +14,30 @@ const items = [
   { id: "3", symbol: "dog", type: "word" as const, contentId: 3 },
 ];
 
+function seededMastery() {
+  let mastery = defaultMasteryState();
+  mastery = recordMasteryEvent(mastery, "word", "cat", "heard");
+  mastery = recordMasteryEvent(mastery, "word", "hat", "heard");
+  mastery = recordMasteryEvent(mastery, "word", "dog", "heard");
+  return mastery;
+}
+
+const seededProgress = {
+  practiced: { "1": 2, "2": 1, "3": 1 },
+  mastered: {},
+};
+
 describe("adaptive-selector", () => {
   it("allocates 70/20/10 lesson mix", () => {
-    let mastery = defaultMasteryState();
-    mastery = recordMasteryEvent(mastery, "word", "cat", "heard");
+    const mastery = seededMastery();
     const picks = selectAdaptiveLessons({
       childId: 42,
       dateKey: "2026-06-11",
       mastery,
       items,
-      progress: { practiced: {}, mastered: {} },
+      progress: seededProgress,
       totalCount: 10,
+      currentLevel: 2,
     });
     const weak = picks.filter((p) => p.reason === "weak").length;
     const review = picks.filter((p) => p.reason === "review").length;
@@ -38,9 +51,10 @@ describe("adaptive-selector", () => {
     const mission = buildAdaptiveDailyMission({
       childId: 1,
       items,
-      progress: { practiced: {}, mastered: {} },
-      mastery: defaultMasteryState(),
+      progress: seededProgress,
+      mastery: seededMastery(),
       streakDay: 3,
+      curriculumLevel: 2,
     });
     expect(mission.tasks.length).toBeGreaterThan(0);
     expect(mission.adaptivePicks.length).toBe(6);
@@ -59,6 +73,7 @@ describe("adaptive-selector", () => {
       retention,
       totalCount: 6,
       now,
+      currentLevel: 2,
     });
     expect(picks.filter((p) => p.reason === "overdue").length).toBeGreaterThan(0);
     expect(picks.filter((p) => p.reason === "new").length).toBe(0);

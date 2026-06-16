@@ -3,6 +3,7 @@
  */
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
+import { isContentUnlocked, type CurriculumLevel } from "@workspace/phonics-curriculum";
 import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import { WORD_FAMILIES, getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
 import type { PhonicsMasteryState } from "./mastery-engine";
@@ -39,6 +40,18 @@ function hashChildDay(childId: number, dateKey: string): number {
   let h = childId;
   for (const c of dateKey) h = (h * 31 + c.charCodeAt(0)) | 0;
   return Math.abs(h);
+}
+
+function wordUnlocked(word: string, level: CurriculumLevel): boolean {
+  const w = word.trim().toLowerCase();
+  if (!/^[a-z]+$/.test(w)) return false;
+  return isContentUnlocked(w, level, "word");
+}
+
+function symbolFromItem(item: DisplayPhonicsItem | undefined): string | undefined {
+  if (!item) return undefined;
+  const w = item.symbol.trim().toLowerCase();
+  return /^[a-z]+$/.test(w) ? w : undefined;
 }
 
 export function buildWeakSkillProfile(
@@ -99,12 +112,16 @@ export function selectAdaptiveLessons(opts: {
   retention?: PhonicsRetentionState;
   totalCount?: number;
   now?: number;
+  currentLevel?: number;
 }): AdaptiveLessonPick[] {
+  const level = (opts.currentLevel ?? 1) as CurriculumLevel;
   const profile = buildWeakSkillProfile(opts.mastery, opts.items, opts.progress);
   const seed = hashChildDay(opts.childId, opts.dateKey);
   const total = opts.totalCount ?? 10;
   const now = opts.now ?? Date.now();
-  const overdueIds = opts.retention ? getOverdueWordIds(opts.retention, now) : [];
+  const overdueIds = (opts.retention ? getOverdueWordIds(opts.retention, now) : []).filter(
+    (w) => wordUnlocked(w, level),
+  );
   const overdueSlots = Math.min(overdueIds.length, total);
   const remaining = total - overdueSlots;
   const weakSlots = Math.floor(remaining * 0.7);
@@ -114,7 +131,8 @@ export function selectAdaptiveLessons(opts: {
   const picks: AdaptiveLessonPick[] = [];
 
   for (let i = 0; i < overdueSlots; i++) {
-    const word = overdueIds[i] ?? overdueIds[0] ?? "cat";
+    const word = overdueIds[i];
+    if (!word) break;
     picks.push({
       word,
       reason: "overdue",
@@ -122,16 +140,11 @@ export function selectAdaptiveLessons(opts: {
     });
   }
 
-  const weakPool = [
-    ...profile.weakWords,
-    ...profile.weakFamilies.flatMap((fid) => {
-      const f = WORD_FAMILIES.find((x) => x.id === fid);
-      return f ? f.words.map((w) => w.word) : [];
-    }),
-  ].filter(Boolean);
+  const weakPool = profile.weakWords.filter((w) => wordUnlocked(w, level));
 
   for (let i = 0; i < weakSlots; i++) {
-    const word = weakPool[(seed + i) % weakPool.length] ?? "cat";
+    if (weakPool.length === 0) break;
+    const word = weakPool[(seed + i) % weakPool.length]!;
     picks.push({
       word,
       reason: "weak",
@@ -144,9 +157,12 @@ export function selectAdaptiveLessons(opts: {
     (it) => (opts.progress.practiced[it.id] ?? 0) > 0 || opts.progress.mastered[it.id],
   );
   for (let i = 0; i < reviewSlots; i++) {
-    const item = reviewed[(seed + i + 3) % Math.max(1, reviewed.length)];
+    if (reviewed.length === 0) break;
+    const item = reviewed[(seed + i + 3) % reviewed.length];
+    const word = symbolFromItem(item);
+    if (!word || !wordUnlocked(word, level)) continue;
     picks.push({
-      word: (item?.symbol ?? "hat").trim().toLowerCase(),
+      word,
       reason: "review",
       skillTag: "review",
     });
@@ -157,9 +173,12 @@ export function selectAdaptiveLessons(opts: {
   );
   const newPool = fresh.length > 0 ? fresh : missionItems;
   for (let i = 0; i < newSlots; i++) {
-    const item = newPool[(seed + i + 7) % Math.max(1, newPool.length)];
+    if (newPool.length === 0) break;
+    const item = newPool[(seed + i + 7) % newPool.length];
+    const word = symbolFromItem(item);
+    if (!word || !wordUnlocked(word, level)) continue;
     picks.push({
-      word: (item?.symbol ?? "cat").trim().toLowerCase(),
+      word,
       reason: "new",
       skillTag: "new",
     });
@@ -178,8 +197,10 @@ export function buildAdaptiveDailyMission(opts: {
   streakDay: number;
   storyId?: string;
   now?: number;
+  curriculumLevel?: number;
 }): Omit<DailyReadingMission, "dateKey"> & { adaptivePicks: AdaptiveLessonPick[] } {
   const dateKey = new Date().toISOString().slice(0, 10);
+  const curriculumLevel = opts.curriculumLevel ?? 1;
   const masteryAvg =
     Object.values(opts.mastery.words).length > 0
       ? Math.round(
@@ -195,6 +216,7 @@ export function buildAdaptiveDailyMission(opts: {
     retention: opts.retention,
     maxPicks: 2,
     now: opts.now,
+    currentLevel: curriculumLevel,
   });
   const blendPicks = selectBlendAdaptiveLessons({
     childId: opts.childId,
@@ -204,6 +226,7 @@ export function buildAdaptiveDailyMission(opts: {
     retention: opts.retention,
     maxPicks: 1,
     now: opts.now,
+    currentLevel: curriculumLevel,
   });
   const picks = selectAdaptiveLessons({
     childId: opts.childId,
@@ -214,6 +237,7 @@ export function buildAdaptiveDailyMission(opts: {
     retention: opts.retention,
     totalCount: 6,
     now: opts.now,
+    currentLevel: curriculumLevel,
   });
 
   const overdue = picks.filter((p) => p.reason === "overdue");
@@ -274,11 +298,11 @@ export function buildAdaptiveDailyMission(opts: {
     });
   }
 
-  if (isCvccPathwayAvailable(masteryAvg)) {
+  if (isCvccPathwayAvailable(masteryAvg, curriculumLevel as import("@workspace/phonics-curriculum").CurriculumLevel)) {
     const cvccBank = getCvccWordBank();
     const cvccWord =
       cvccBank[(opts.childId + opts.streakDay) % cvccBank.length] ?? cvccBank[0];
-    if (cvccWord) {
+    if (cvccWord && wordUnlocked(cvccWord, curriculumLevel as CurriculumLevel)) {
       tasks.push({
         slot: "practice",
         id: `ad-cvcc-${cvccWord}`,
@@ -326,14 +350,16 @@ export function buildAdaptiveDailyMission(opts: {
     });
   }
 
-  tasks.push({
-    slot: "story",
-    id: `ad-story-${opts.storyId ?? "story-sam-hat"}`,
-    emoji: "📖",
-    label: "Mini story",
-    storyId: opts.storyId ?? "story-sam-hat",
-    completed: false,
-  });
+  if (opts.storyId) {
+    tasks.push({
+      slot: "story",
+      id: `ad-story-${opts.storyId}`,
+      emoji: "📖",
+      label: "Mini story",
+      storyId: opts.storyId,
+      completed: false,
+    });
+  }
 
   return {
     tasks,

@@ -5,31 +5,46 @@ import { FeedTheMonster } from "./FeedTheMonster";
 import { BuildTheWord } from "./BuildTheWord";
 import { FindTheFamily } from "./FindTheFamily";
 import { Gamepad2 } from "lucide-react";
+import { getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
+import type { WordFamilyId } from "@/lib/phonics-v2/content/word-families";
 
 type GameId = "feed" | "build" | "family";
 
 type PhonicsGamesHubProps = {
-  practiceWord?: string;
+  practiceWords: string[];
   onGameComplete?: (gameId: GameId) => void;
 };
 
 export function PhonicsGamesHub({
-  practiceWord = "cat",
+  practiceWords,
   onGameComplete,
 }: PhonicsGamesHubProps) {
   const [active, setActive] = useState<GameId>("feed");
 
-  const distractors = useMemo(() => {
-    const pool = ["dog", "pig", "sun", "pen", "bus"];
-    return pool.filter((w) => w !== practiceWord).slice(0, 2);
-  }, [practiceWord]);
+  const practiceWord = practiceWords[0] ?? "";
+
+  const distractors = useMemo(
+    () => practiceWords.filter((w) => w !== practiceWord).slice(0, 2),
+    [practiceWords, practiceWord],
+  );
 
   const familyOptions = useMemo(() => {
-    if (practiceWord.endsWith("at") || ["cat", "bat", "hat"].includes(practiceWord)) {
-      return ["cat", "dog", "pig"];
-    }
-    return [practiceWord, "dog", "pig"];
+    const sameFamily = practiceWords.filter((w) => {
+      const fam = getFamilyForWord(w);
+      const targetFam = getFamilyForWord(practiceWord);
+      return fam && targetFam && fam.id === targetFam.id;
+    });
+    const pool = sameFamily.length >= 2 ? sameFamily : practiceWords;
+    return pool.slice(0, 3);
+  }, [practiceWords, practiceWord]);
+
+  const targetFamilyId = useMemo((): WordFamilyId => {
+    return getFamilyForWord(practiceWord)?.id ?? "at";
   }, [practiceWord]);
+
+  if (practiceWords.length === 0 || !practiceWord) {
+    return null;
+  }
 
   return (
     <Card
@@ -64,7 +79,7 @@ export function PhonicsGamesHub({
           ))}
         </div>
 
-        {active === "feed" && (
+        {active === "feed" && distractors.length >= 1 && (
           <FeedTheMonster
             targetWord={practiceWord}
             distractors={distractors}
@@ -77,11 +92,9 @@ export function PhonicsGamesHub({
             onComplete={() => onGameComplete?.("build")}
           />
         )}
-        {active === "family" && (
+        {active === "family" && familyOptions.length >= 2 && (
           <FindTheFamily
-            targetFamilyId={
-              practiceWord.endsWith("at") || practiceWord === "cat" ? "at" : "og"
-            }
+            targetFamilyId={targetFamilyId}
             options={familyOptions}
             onCorrect={() => onGameComplete?.("family")}
           />

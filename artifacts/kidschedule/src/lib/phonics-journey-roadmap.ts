@@ -80,7 +80,7 @@ export const PHONICS_JOURNEY_STAGES: PhonicsJourneyStage[] = [
     milestoneName: "Fluent Reader",
     emoji: "🚀",
     outcomeLabel: "Reads confidently",
-    curriculumLevels: [5],
+    curriculumLevels: [5, 6],
     parentWhy:
       "Fluent readers spend less energy on each word and more on understanding the story.",
     skillsDeveloped: ["Smooth reading", "Expression", "Speed with accuracy"],
@@ -92,7 +92,7 @@ export const PHONICS_JOURNEY_STAGES: PhonicsJourneyStage[] = [
     milestoneName: "Story Master",
     emoji: "🏆",
     outcomeLabel: "Reads stories independently",
-    curriculumLevels: [6],
+    curriculumLevels: [7],
     parentWhy:
       "Story reading is the payoff — phonics working in real books your child can pick up on their own.",
     skillsDeveloped: ["Story fluency", "Comprehension", "Independent reading"],
@@ -172,7 +172,7 @@ export function computeJourneyCompletionPct(
   if (curriculumLevel != null) {
     const completedStages = Math.max(0, curriculumLevel - 1);
     const withinStage = Math.min(100, Math.max(0, masteryScore)) / 100;
-    return Math.round(Math.min(100, ((completedStages + withinStage) / 6) * 100));
+    return Math.round(Math.min(100, ((completedStages + withinStage) / 7) * 100));
   }
   if (progress && itemCount && itemCount > 0) {
     const mastered = Object.keys(progress.mastered).length;

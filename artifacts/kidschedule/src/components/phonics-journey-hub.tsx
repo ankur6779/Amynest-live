@@ -7,7 +7,6 @@ import {
   Flame,
   History,
   Lightbulb,
-  Lock,
   Sparkles,
   Star,
   Target,
@@ -24,25 +23,21 @@ import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsLevel } from "@/lib/phonics-content";
 import type { PhonicsPrimaryCta } from "@/lib/phonics-journey-roadmap";
 import {
-  PHONICS_JOURNEY_STAGES,
   MISSION_READING_POINTS,
   computeJourneyCompletionPct,
   estimateJourneyEta,
-  isMissionComplete,
-  isMissionStarted,
   nextJourneyStage,
   readingAgeBand,
   resolveActiveJourneyStage,
   resolvePrimaryCta,
-  stageStatus,
 } from "@/lib/phonics-journey-roadmap";
+import { loadPhonicsV3MissionLocal } from "@/lib/phonics-v3/sync";
 import {
   READING_POINTS,
   buildCelebrationBanners,
   computeTotalReadingPoints,
   computeWeeklyMomentum,
   hasReviewItems,
-  missionCompleteEmptyActions,
   resolveNextBestAction,
   resolveNextUnlock,
   resolveStreakMotivation,
@@ -73,7 +68,6 @@ import {
   daysSinceLastActive,
 } from "@/lib/phonics-journey-habit";
 import {
-  buildAdaptiveMissionGoals,
   buildMilestoneActionPlan,
   buildPredictiveMilestones,
   buildPersonalizedParentInsight,
@@ -181,26 +175,21 @@ export function PhonicsJourneyHub({
     [weakPhonemes, progress, safePracticeItems],
   );
 
-  const missionGoals = useMemo(
-    () =>
-      buildAdaptiveMissionGoals(
-        plan ?? null,
-        progress,
-        safePracticeItems,
-        weakProfile,
-        dailyQuizComplete || (plan?.test.completed ?? false),
-        todayUniqueSounds,
-        todayMastered,
-      ),
-    [plan, progress, safePracticeItems, weakProfile, dailyQuizComplete, todayUniqueSounds, todayMastered],
-  );
+  const v3Mission = useMemo(() => {
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const cached = loadPhonicsV3MissionLocal(childId);
+    if (!cached || cached.dateKey !== dateKey) return null;
+    return cached;
+  }, [childId, progress, habitState.today]);
 
-  const missionComplete = isMissionComplete(missionGoals);
-  const missionStarted = isMissionStarted(missionGoals, practicedCount);
-  const missionDoneCount = missionGoals.filter((g) => g.done).length;
+  const missionComplete = v3Mission?.completed ?? false;
+  const missionStarted =
+    (v3Mission?.tasks.some((t) => t.completed) ?? false) || practicedCount > 0;
+  const missionDoneCount = v3Mission?.tasks.filter((t) => t.completed).length ?? 0;
+  const missionTotalCount = v3Mission?.tasks.length ?? 0;
   const missionPct =
-    missionGoals.length > 0
-      ? Math.round((missionDoneCount / missionGoals.length) * 100)
+    missionTotalCount > 0
+      ? Math.round((missionDoneCount / missionTotalCount) * 100)
       : 0;
 
   const quizComplete = dailyQuizComplete || (plan?.test.completed ?? false);
@@ -799,64 +788,75 @@ export function PhonicsJourneyHub({
         </div>
       )}
 
-      {/* Journey map */}
-      <Card className={CARD_SURFACE} data-testid="phonics-journey-roadmap">
-        <CardContent className="p-5">
-          <h3 className="mb-3 font-quicksand text-sm font-bold text-foreground">
-            Your reading journey
-          </h3>
-          <div className="relative flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            {PHONICS_JOURNEY_STAGES.map((stage, idx) => {
-              const status = stageStatus(stage, activeStage);
-              return (
-                <div key={stage.id} className="flex shrink-0 items-center gap-2">
-                  {idx > 0 && (
-                    <div
-                      className={cn(
-                        "h-0.5 w-3 shrink-0 rounded-full transition-colors",
-                        status === "locked" ? "bg-border/60" : "bg-primary/35",
-                      )}
-                      aria-hidden
-                    />
-                  )}
-                  <div
-                    data-testid={`phonics-journey-stage-${stage.id}`}
-                    className={cn(
-                      "flex min-w-[76px] flex-col items-center gap-1 rounded-2xl border px-2 py-2.5 text-center transition-all duration-500",
-                      status === "current" &&
-                        "border-primary/60 bg-primary/10 shadow-[0_0_24px_-4px_hsl(var(--primary)/0.45)] animate-[pulse_4s_ease-in-out_infinite]",
-                      status === "completed" &&
-                        "border-emerald-500/40 bg-emerald-500/[0.08]",
-                      status === "locked" &&
-                        "border-border/50 bg-muted/15 opacity-50",
-                    )}
-                  >
-                    <span className="text-lg" aria-hidden>
-                      {stage.emoji}
-                    </span>
-                    <span className="text-[8px] font-bold leading-tight text-foreground">
-                      {stage.milestoneName}
-                    </span>
-                    {status === "completed" && (
-                      <CheckCircle2 className="h-3 w-3 text-emerald-500" aria-label="Completed" />
-                    )}
-                    {status === "current" && (
-                      <Badge className="h-4 border-0 bg-primary px-1.5 text-[7px] font-black text-primary-foreground">
-                        Current
-                      </Badge>
-                    )}
-                    {status === "locked" && (
-                      <Lock className="h-3 w-3 text-muted-foreground/50" aria-label="Locked" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+      {/* Today's Mission — summary only; DailyMissionPanel owns tasks */}
+      <Card
+        id="phonics-today-mission-summary"
+        className={cn(
+          "scroll-mt-24 transition-all duration-500",
+          CARD_SURFACE,
+          missionComplete
+            ? "border-emerald-400/30 bg-gradient-to-br from-emerald-500/[0.12] to-transparent"
+            : "border-amber-400/25 bg-gradient-to-br from-amber-500/[0.08] to-transparent",
+        )}
+        data-testid="phonics-todays-activity"
+      >
+        <CardContent className="space-y-4 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                Today&apos;s Mission
+              </p>
+              {missionComplete ? (
+                <>
+                  <h3 className="font-quicksand text-base font-black text-emerald-600 dark:text-emerald-400">
+                    Great job! Today&apos;s mission is complete.
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {level.focus} · come back tomorrow for a fresh mission
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-quicksand text-base font-bold text-foreground">
+                    {curriculumLoading && !v3Mission
+                      ? "Preparing mission…"
+                      : `${missionDoneCount}/${missionTotalCount || "—"} tasks`}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {v3Mission ? `~${v3Mission.estimatedMinutes} min` : "~5 min"} · {level.focus}
+                  </p>
+                </>
+              )}
+            </div>
+            {!missionComplete && (
+              <PointsChip points={MISSION_READING_POINTS} label="mission" />
+            )}
           </div>
+
+          <Progress
+            value={missionPct}
+            className={cn("h-2.5 transition-all duration-500", missionComplete && "[&>div]:bg-emerald-500")}
+          />
+
+          <Button
+            type="button"
+            className="w-full rounded-full"
+            onClick={() => scrollToJourneySection("phonics-today-mission")}
+          >
+            {missionComplete ? "Review mission" : missionStarted ? "Continue mission" : "Start mission"}
+          </Button>
+
+          {missionComplete && (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5">
+              <Sparkles className="h-4 w-4 text-emerald-600" />
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                Mission complete — +{MISSION_READING_POINTS} Reading Points
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Next unlock — future vision */}
       {nextUnlock && (
         <Card
           className={cn(CARD_SURFACE, "border-dashed border-primary/25 bg-primary/[0.04]")}
@@ -929,155 +929,6 @@ export function PhonicsJourneyHub({
                 <span className="font-semibold text-foreground">{confidenceTransform.now}</span>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Today's Mission */}
-      <Card
-        id="phonics-today-mission"
-        className={cn(
-          "scroll-mt-24 transition-all duration-500",
-          CARD_SURFACE,
-          missionComplete
-            ? "border-emerald-400/30 bg-gradient-to-br from-emerald-500/[0.12] to-transparent"
-            : "border-amber-400/25 bg-gradient-to-br from-amber-500/[0.08] to-transparent",
-        )}
-        data-testid="phonics-todays-activity"
-      >
-        <CardContent className="space-y-4 p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                Today&apos;s Mission
-              </p>
-              {missionComplete ? (
-                <>
-                  <h3 className="font-quicksand text-base font-black text-emerald-600 dark:text-emerald-400">
-                    Great job! Today&apos;s mission is complete.
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {level.focus} · come back tomorrow for a fresh mission
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h3 className="font-quicksand text-base font-bold text-foreground">
-                    {curriculumLoading && !plan
-                      ? "Preparing mission…"
-                      : `${missionDoneCount}/${missionGoals.length} goals`}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">{level.focus} · ~5 min</p>
-                </>
-              )}
-            </div>
-            {!missionComplete && (
-              <PointsChip points={MISSION_READING_POINTS} label="mission" />
-            )}
-          </div>
-
-          <Progress
-            value={missionPct}
-            className={cn("h-2.5 transition-all duration-500", missionComplete && "[&>div]:bg-emerald-500")}
-          />
-
-          {!missionComplete && (
-            <ul className="space-y-2">
-              {missionGoals.map((goal) => (
-                <li
-                  key={goal.id}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-300",
-                    goal.done
-                      ? "border-emerald-500/25 bg-emerald-500/[0.06]"
-                      : "border-white/[0.06] bg-card/60",
-                  )}
-                >
-                  <span className="text-lg" aria-hidden>
-                    {goal.emoji}
-                  </span>
-                  <span
-                    className={cn(
-                      "flex-1 text-sm font-medium",
-                      goal.done ? "text-muted-foreground line-through" : "text-foreground",
-                    )}
-                  >
-                    {goal.label}
-                  </span>
-                  {goal.done ? (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" />+{READING_POINTS.practice}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {fullSessionComplete && sessionCompletion ? (
-            <div className="space-y-3">
-              <div>
-                <h3 className="font-quicksand text-base font-black text-emerald-600 dark:text-emerald-400">
-                  Mission Complete
-                </h3>
-                <p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground mt-2">
-                  Today&apos;s wins
-                </p>
-                <ul className="mt-2 space-y-1">
-                  {sessionCompletion.wins.map((w) => (
-                    <li key={w} className="flex items-center gap-2 text-sm text-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />✓ {w}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex items-center gap-2 rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2.5">
-                <Star className="h-4 w-4 text-amber-600" />
-                <p className="text-sm font-semibold text-foreground">
-                  Reward earned: +{sessionCompletion.pointsEarned} Reading Points
-                </p>
-              </div>
-              <div className="rounded-xl border border-primary/20 bg-primary/[0.06] px-3 py-2.5">
-                <p className="text-[10px] text-muted-foreground">Next recommended action</p>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0 font-semibold text-primary"
-                  onClick={() => scrollToJourneySection(sessionCompletion.nextScrollTarget)}
-                >
-                  {sessionCompletion.nextAction} →
-                </Button>
-              </div>
-            </div>
-          ) : missionComplete ? (
-            <>
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5">
-                <Sparkles className="h-4 w-4 text-emerald-600" />
-                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  🎉 Mission Complete — You earned {MISSION_READING_POINTS} Reading Points
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {missionCompleteEmptyActions().map((action) => (
-                  <Button
-                    key={action.label}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full text-xs"
-                    onClick={() => scrollToJourneySection(action.scrollTarget)}
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {!missionComplete && (
-            <p className="text-center text-[10px] text-muted-foreground">
-              Complete all goals to earn +{MISSION_READING_POINTS} Reading Points
-            </p>
           )}
         </CardContent>
       </Card>

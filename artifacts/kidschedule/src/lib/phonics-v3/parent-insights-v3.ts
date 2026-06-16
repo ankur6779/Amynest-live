@@ -19,6 +19,7 @@ import {
 import { CERTIFIED_DIGRAPH_IDS } from "./content/digraph-catalog";
 import { getDigraphRetentionOverdue } from "./content/digraph-adaptive";
 import { getUnlockedDigraphs } from "./content/digraph-pathway";
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 
 export type ParentInsightV3 = {
   summaryLine: string;
@@ -58,6 +59,7 @@ export function buildParentInsightsV3(opts: {
   mastery: PhonicsMasteryState;
   fluency: PhonicsFluencyState;
   retention?: PhonicsRetentionState;
+  curriculumLevel?: number;
 }): ParentInsightV3 {
   const profile = buildWeakSkillProfile(opts.mastery, opts.items, opts.progress);
 
@@ -89,7 +91,10 @@ export function buildParentInsightsV3(opts: {
             Object.values(opts.mastery.words).length,
         )
       : 0;
-  const unlockedDigraphs = getUnlockedDigraphs(masteryAvg);
+  const unlockedDigraphs = getUnlockedDigraphs(
+    masteryAvg,
+    (opts.curriculumLevel ?? 1) as CurriculumLevel,
+  );
   const digraphProgress = CERTIFIED_DIGRAPH_IDS.map((id) => {
     const overdue = opts.retention ? getDigraphRetentionOverdue(id, opts.retention).length : 0;
     const weakWords = (opts.mastery.phonemes[id]?.score ?? 0) < 60 ? 1 : 0;

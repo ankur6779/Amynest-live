@@ -1,6 +1,11 @@
 import { CVC_WORDS, getCvcWordEntry } from "@workspace/phonics-sounds";
 import type { CurriculumLevel } from "./types.js";
-import { getCurriculumLevelDef } from "./levels.js";
+import {
+  WORD_FAMILY_ANCHOR_WORDS,
+  WORD_FAMILY_IDS,
+  getCurriculumLevelDef,
+} from "./levels.js";
+import { isContentUnlocked } from "./level-gating.js";
 
 /** Words that reinforce a weak vowel/consonant phoneme. */
 export function wordsForWeakPhoneme(phoneme: string, limit = 4): string[] {
@@ -22,16 +27,49 @@ const PHONICS_WEAK_FALLBACK: Record<string, string[]> = {
   a: ["cat", "bat", "mat"],
 };
 
+function pickFamilyPracticeTargets(
+  weakPhonemes: string[],
+  count: number,
+  seed: number,
+): string[] {
+  const anchors = WORD_FAMILY_IDS.map((id) => WORD_FAMILY_ANCHOR_WORDS[id]);
+  const pool = [...anchors];
+  for (const ph of weakPhonemes.slice(0, 2)) {
+    for (const w of wordsForWeakPhoneme(ph, 2)) {
+      if (isContentUnlocked(w, 3, "word")) pool.push(w);
+    }
+  }
+  const unique = [...new Set(pool.map((s) => s.trim().toLowerCase()))];
+  const shuffled = shuffle(unique, seed);
+  const out: string[] = [];
+  for (const word of shuffled) {
+    if (out.length >= count) break;
+    if (isContentUnlocked(word, 3, "word")) out.push(word);
+  }
+  while (out.length < count && unique.length > 0) {
+    const next = unique[out.length % unique.length]!;
+    if (!out.includes(next)) out.push(next);
+    else break;
+  }
+  return out.slice(0, count);
+}
+
 export function pickPracticeTargets(
   level: CurriculumLevel,
   weakPhonemes: string[],
   count: number,
   seed: number,
 ): string[] {
+  if (level === 3) {
+    return pickFamilyPracticeTargets(weakPhonemes, count, seed);
+  }
+
   const def = getCurriculumLevelDef(level);
   const pool = [...def.content];
   for (const ph of weakPhonemes.slice(0, 2)) {
-    pool.push(...wordsForWeakPhoneme(ph, 2));
+    for (const w of wordsForWeakPhoneme(ph, 2)) {
+      if (isContentUnlocked(w, level, "word")) pool.push(w);
+    }
   }
   const unique = [...new Set(pool.map((s) => s.trim().toLowerCase()).filter(Boolean))];
   const shuffled = shuffle(unique, seed);
@@ -39,10 +77,16 @@ export function pickPracticeTargets(
   for (const item of shuffled) {
     if (out.length >= count) break;
     const word = item.replace(/\.$/, "").split(/\s+/)[0]!;
-    if (word.length <= 12) out.push(word);
+    if (word.length <= 12 && isContentUnlocked(word, level)) out.push(word);
   }
   while (out.length < count && unique.length > 0) {
-    out.push(unique[out.length % unique.length]!);
+    const candidate = unique[out.length % unique.length]!;
+    const word = candidate.replace(/\.$/, "").split(/\s+/)[0]!;
+    if (word.length <= 12 && isContentUnlocked(word, level) && !out.includes(word)) {
+      out.push(word);
+    } else {
+      break;
+    }
   }
   return out.slice(0, count);
 }
@@ -60,7 +104,6 @@ export function pickRevisionPhoneme(
 }
 
 export function phonemeToRevisionLabel(phoneme: string): string {
-  const entry = getCvcWordEntry("sit");
   const map: Record<string, string> = {
     æ: "a as in apple",
     ɛ: "e as in egg",

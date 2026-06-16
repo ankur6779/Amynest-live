@@ -59,6 +59,8 @@
     "generate:phonics-library": "pnpm --filter @workspace/scripts run generate-phonics-library",
     "generate:rhymes-registry": "node scripts/generate-rhymes-audio-registry.mjs",
     "audit:rhymes-gcs-audio": "node scripts/audit-rhymes-gcs-audio.mjs",
+    "audit:phonics": "pnpm --filter @workspace/scripts run audit:phonics-curriculum && pnpm --filter @workspace/kidschedule exec vitest run src/lib/phonics-curriculum-invariants.test.ts src/lib/phonics-v3/story-validation.test.ts src/lib/phonics-v3/phase6-production-readiness.test.ts",
+    "audit:phonics:artifacts": "pnpm --filter @workspace/scripts run audit:phonics-artifacts",
     "reencode:rhymes-gcs-audio": "node scripts/reencode-rhymes-gcs-audio.mjs",
     "dev:rhymes-ab-api": "node scripts/gcs-lullaby-audit-api.mjs",
     "generate:animal-world-audio": "pnpm --filter @workspace/scripts run generate-animal-world-audio",

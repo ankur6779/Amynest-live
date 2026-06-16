@@ -31,8 +31,8 @@ describe("phonics-journey-roadmap", () => {
   });
 
   it("computes overall completion from level and mastery", () => {
-    expect(computeJourneyCompletionPct(3, 50)).toBe(42);
-    expect(computeJourneyCompletionPct(6, 100)).toBe(100);
+    expect(computeJourneyCompletionPct(3, 50)).toBe(36);
+    expect(computeJourneyCompletionPct(7, 100)).toBe(100);
   });
 
   it("marks prior stages completed and future locked", () => {

@@ -152,20 +152,15 @@ const LEVEL_3_4Y: PhonicsLevel = {
   ],
 };
 
-// ─── 4–5 years: Reading ──────────────────────────────────────────────────────
+// ─── 4–5 years: Reading (decodable sentences — sight words gated to L7) ───────
 const LEVEL_4_5Y: PhonicsLevel = {
   ageGroup: "4_5y",
   label: "4–5 years • Reading",
   shortLabel: "Reading",
-  description: "Read short words and tiny sentences with rising confidence.",
+  description: "Read short decodable sentences with rising confidence.",
   emoji: "📖",
   focus: "Read it → understand it → smile 😊",
   items: [
-    { id: "rd-the",  symbol: "the",  sound: "the",  example: "Sight word", emoji: "✨" },
-    { id: "rd-and",  symbol: "and",  sound: "and",  example: "Sight word", emoji: "✨" },
-    { id: "rd-is",   symbol: "is",   sound: "is",   example: "Sight word", emoji: "✨" },
-    { id: "rd-it",   symbol: "it",   sound: "it",   example: "Sight word", emoji: "✨" },
-    { id: "rd-to",   symbol: "to",   sound: "to",   example: "Sight word", emoji: "✨" },
     { id: "rd-s1",   symbol: "The cat is fat.", sound: "The cat is fat.", example: "Sentence", emoji: "🐱" },
     { id: "rd-s2",   symbol: "I see a dog.",    sound: "I see a dog.",    example: "Sentence", emoji: "🐶" },
     { id: "rd-s3",   symbol: "It is a red bus.", sound: "It is a red bus.", example: "Sentence", emoji: "🚌" },
@@ -181,7 +176,7 @@ const LEVEL_4_5Y: PhonicsLevel = {
   ],
 };
 
-// ─── 5–6 years: Fluency ──────────────────────────────────────────────────────
+// ─── 5–6 years: Fluency (sight words + longer sentences) ─────────────────────
 const LEVEL_5_6Y: PhonicsLevel = {
   ageGroup: "5_6y",
   label: "5–6 years • Fluency",
@@ -190,6 +185,11 @@ const LEVEL_5_6Y: PhonicsLevel = {
   emoji: "🚀",
   focus: "Read with feeling, not just words",
   items: [
+    { id: "fl-the",  symbol: "the",  sound: "the",  example: "Sight word", emoji: "✨" },
+    { id: "fl-and",  symbol: "and",  sound: "and",  example: "Sight word", emoji: "✨" },
+    { id: "fl-is",   symbol: "is",   sound: "is",   example: "Sight word", emoji: "✨" },
+    { id: "fl-it",   symbol: "it",   sound: "it",   example: "Sight word", emoji: "✨" },
+    { id: "fl-to",   symbol: "to",   sound: "to",   example: "Sight word", emoji: "✨" },
     { id: "fl-s1", symbol: "The big brown dog ran fast.",         sound: "The big brown dog ran fast.",         example: "Sentence", emoji: "🐕" },
     { id: "fl-s2", symbol: "I like to play in the park.",         sound: "I like to play in the park.",         example: "Sentence", emoji: "🛝" },
     { id: "fl-s3", symbol: "My mum makes the best food.",         sound: "My mum makes the best food.",         example: "Sentence", emoji: "🍲" },

@@ -7,6 +7,8 @@
     "migrate-database": "tsx ./src/migrate-database.ts",
     "hello": "tsx ./src/hello.ts",
     "audit:parent-hub-i18n": "tsx ./src/audit-parent-hub-i18n.ts",
+    "audit:phonics-curriculum": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./audit-phonics-curriculum.ts",
+    "audit:phonics-artifacts": "tsx --tsconfig ../artifacts/kidschedule/tsconfig.json ./generate-phonics-regression-artifacts.ts",
     "watch:openapi": "tsx ./src/watch-openapi.ts",
     "stress-amy-coach": "tsx ./stress-test-amy-coach.ts",
     "stability-load": "tsx ./src/stability-load-test.ts",

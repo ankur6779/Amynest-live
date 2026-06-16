@@ -1,6 +1,5 @@
-/**
- * Consonant blend pathway — stories and missions for CCVC blend words.
- */
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
+import { isBlendPathwayAvailable as isBlendAvailable } from "@workspace/phonics-curriculum";
 import { BLEND_IDS, BLEND_WORD_IDS } from "@workspace/phonics-sounds";
 import type { DecodableStoryMeta } from "./story-catalog";
 
@@ -22,6 +21,8 @@ const BLEND_EMOJI: Record<string, string> = {
   plot: "📖",
   grin: "😁",
   plan: "🗺️",
+  blue: "🔵",
+  tree: "🌳",
 };
 
 const BLEND_STORIES: Array<{
@@ -74,6 +75,9 @@ export function getBlendStories(): DecodableStoryMeta[] {
   }));
 }
 
-export function isBlendPathwayAvailable(masteryAvg: number): boolean {
-  return masteryAvg >= 55;
+export function isBlendPathwayAvailable(
+  masteryAvg: number,
+  currentLevel: CurriculumLevel = 1,
+): boolean {
+  return isBlendAvailable(currentLevel, masteryAvg);
 }

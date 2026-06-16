@@ -13,6 +13,8 @@ import {
   buildWeeklyTestMix,
   wordsForWeakPhoneme,
   clampCurriculumLevel,
+  isContentUnlocked,
+  type CurriculumLevel,
 } from "@workspace/phonics-curriculum";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -642,7 +644,7 @@ export interface GenerateOptions {
   gameMode?: GameMode;
   /** Drives weekly progressive difficulty when set. */
   testType?: TestType;
-  /** Curriculum level 1–6 for weekly 40/30/30 mix. */
+  /** Curriculum level 1–7 for daily/weekly generation. */
   curriculumLevel?: number;
   /** Weak IPA phonemes for weekly weak-bucket questions. */
   weakPhonemes?: string[];
@@ -661,6 +663,77 @@ function rowMatchesWeak(row: PhonicsContentRow, weakWords: Set<string>): boolean
   return weakWords.has(w) || weakWords.has(row.symbol.trim().toLowerCase());
 }
 
+function filterRowsForCurriculumLevel(
+  rows: PhonicsContentRow[],
+  level: CurriculumLevel,
+): PhonicsContentRow[] {
+  return rows.filter((r) =>
+    isContentUnlocked(r.symbol, level, r.type ?? undefined),
+  );
+}
+
+const CURRICULUM_QUESTION_TYPES: Record<CurriculumLevel, QuestionType[]> = {
+  1: ["letter_to_sound", "sound_to_letter"],
+  2: ["blending", "word_pic", "missing_letter", "build_word"],
+  3: ["blending", "word_pic", "missing_letter", "build_word"],
+  4: ["identify", "blending", "word_pic", "build_word"],
+  5: ["blending", "build_word", "missing_letter"],
+  6: ["blending", "build_word", "missing_letter"],
+  7: ["listening", "blending", "build_word", "word_pic"],
+};
+
+/** Daily test: curriculum-level pool only (not age-band driven). */
+function generateDailyCurriculumQuestions(opts: GenerateOptions): Question[] {
+  const {
+    ageGroup,
+    contentRows,
+    count,
+    recentItemIds = [],
+    seed,
+    curriculumLevel = 2,
+  } = opts;
+
+  const level = clampCurriculumLevel(curriculumLevel);
+  const filtered = filterRowsForCurriculumLevel(contentRows, level);
+  if (filtered.length === 0) return [];
+
+  const pool = filtered;
+  const mixedTypes = CURRICULUM_QUESTION_TYPES[level];
+  const rng = mulberry32(seed || 1);
+  const recent = new Set(recentItemIds);
+  const active = pool.filter((r) => r.active !== false);
+  const fresh = active.filter((r) => !recent.has(r.id));
+  const rowPool = fresh.length >= count ? fresh : active;
+
+  const ctx: BuildContext = {
+    rng,
+    letterRows: active.filter((r) => r.type === "letter"),
+    wordRows: active.filter((r) => Boolean(r.example || r.emoji)),
+    soundRows: active.filter((r) => r.type === "sound"),
+    cvcRows: active.filter((r) => isCvc(exampleWord(r))),
+  };
+
+  const out: Question[] = [];
+  let typeCursor = 0;
+  const ordered = shuffle(rowPool, rng);
+
+  for (const row of ordered) {
+    if (out.length >= count) break;
+    let built: Question | null = null;
+    for (let i = 0; i < mixedTypes.length; i++) {
+      const t = mixedTypes[(typeCursor + i) % mixedTypes.length]!;
+      built = BUILDERS[t](row, ctx, out.length);
+      if (built) break;
+    }
+    if (built) {
+      out.push(built);
+      typeCursor++;
+    }
+  }
+
+  return out.slice(0, count);
+}
+
 /** Weekly test: 40% current level, 30% previous, 30% weak-area words. */
 function generateWeeklyCurriculumQuestions(opts: GenerateOptions): Question[] {
   const {
@@ -675,6 +748,10 @@ function generateWeeklyCurriculumQuestions(opts: GenerateOptions): Question[] {
   } = opts;
 
   const level = clampCurriculumLevel(curriculumLevel);
+  const filtered = filterRowsForCurriculumLevel(contentRows, level);
+  if (filtered.length === 0) return [];
+
+  const poolRows = filtered;
   const mix = buildWeeklyTestMix({
     count,
     currentLevel: level,
@@ -688,7 +765,7 @@ function generateWeeklyCurriculumQuestions(opts: GenerateOptions): Question[] {
 
   const rng = mulberry32(seed || 1);
   const recent = new Set(recentItemIds);
-  const active = contentRows.filter((r) => r.active !== false);
+  const active = poolRows.filter((r) => r.active !== false);
   const pool = active.filter((r) => !recent.has(r.id));
   const ctx: BuildContext = {
     rng,
@@ -697,7 +774,7 @@ function generateWeeklyCurriculumQuestions(opts: GenerateOptions): Question[] {
     soundRows: active.filter((r) => r.type === "sound"),
     cvcRows: active.filter((r) => isCvc(exampleWord(r))),
   };
-  const mixedTypes: QuestionType[] = AGE_TYPES[ageGroup];
+  const mixedTypes: QuestionType[] = CURRICULUM_QUESTION_TYPES[level];
   const out: Question[] = [];
   let typeCursor = 0;
 
@@ -728,10 +805,6 @@ function generateWeeklyCurriculumQuestions(opts: GenerateOptions): Question[] {
     }
   }
 
-  if (out.length < count) {
-    const topUp = generateQuestions({ ...opts, testType: undefined, count: count - out.length });
-    out.push(...topUp);
-  }
   return out.slice(0, count);
 }
 
@@ -749,6 +822,10 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
 
   if (testType === "weekly" && curriculumLevel) {
     return generateWeeklyCurriculumQuestions(opts);
+  }
+
+  if (testType === "daily" && curriculumLevel) {
+    return generateDailyCurriculumQuestions(opts);
   }
 
   if (gameMode === "mixed") {

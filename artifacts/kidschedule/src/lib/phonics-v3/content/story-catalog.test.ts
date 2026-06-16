@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getDecodableStoryCatalog, getStoryCount, getStoriesForLevel } from "./story-catalog";
+import { getDecodableStoryCatalog, getStoryCount, getStoriesForLevel, getUnlockedStoriesV3 } from "./story-catalog";
 
 describe("story-catalog", () => {
   it("has 150+ decodable stories", () => {
@@ -18,5 +18,21 @@ describe("story-catalog", () => {
     expect(sample.difficulty).toBeGreaterThan(0);
     expect(sample.estimatedMinutes).toBeGreaterThan(0);
     expect(sample.lines.length).toBeGreaterThan(0);
+  });
+
+  it("gates auth stories by curriculum level and mastery", () => {
+    const atL1 = getUnlockedStoriesV3({
+      masteredFamilies: [],
+      masteryScoreAvg: 100,
+      currentLevel: 1,
+    });
+    expect(atL1.filter((s) => s.id.startsWith("auth-")).length).toBe(0);
+
+    const atL2 = getUnlockedStoriesV3({
+      masteredFamilies: [],
+      masteryScoreAvg: 25,
+      currentLevel: 2,
+    });
+    expect(atL2.some((s) => s.id.startsWith("auth-"))).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
 import {
   buildDailyReadingMission,
   completeMissionTask,
@@ -23,12 +24,24 @@ import { Target, Flame, CheckCircle2 } from "lucide-react";
 import { KaraokeBlendRound } from "./KaraokeBlendRound";
 import { DecodableStoryReader } from "./DecodableStoryReader";
 
+export type MissionSummary = {
+  doneCount: number;
+  totalCount: number;
+  completed: boolean;
+  streakDay: number;
+};
+
 type DailyMissionPanelProps = {
   childId: number;
   items: DisplayPhonicsItem[];
   progress: PhonicsProgressMap;
   mastery?: PhonicsMasteryState;
   retention?: PhonicsRetentionState;
+  curriculumLevel?: number | null;
+  plan?: PhonicsDailyPlan | null;
+  missionStoryId?: string;
+  onCompleteCurriculumActivity?: (activityId: string) => Promise<void>;
+  onMissionSummaryChange?: (summary: MissionSummary) => void;
   onTaskComplete?: (taskId: string) => void;
 };
 
@@ -39,6 +52,11 @@ export function DailyMissionPanel({
   onTaskComplete,
   mastery,
   retention,
+  curriculumLevel,
+  plan,
+  missionStoryId,
+  onCompleteCurriculumActivity,
+  onMissionSummaryChange,
 }: DailyMissionPanelProps) {
   const authFetch = useAuthFetch();
   const [mission, setMission] = useState<DailyReadingMission | null>(null);
@@ -61,13 +79,15 @@ export function DailyMissionPanel({
       (mastery
         ? {
             dateKey,
-            ...buildAdaptiveDailyMission({
+            ...            buildAdaptiveDailyMission({
               childId,
               items,
               progress,
               mastery,
               retention,
               streakDay: habit.weekly.practiceDays,
+              curriculumLevel: curriculumLevel ?? undefined,
+              storyId: missionStoryId,
             }),
           }
         : buildDailyReadingMission({
@@ -78,7 +98,24 @@ export function DailyMissionPanel({
           }));
     setMission(built);
     if (!existing) persistPhonicsV3Mission(childId, built);
-  }, [childId, items, progress, mastery, retention]);
+  }, [childId, items, progress, mastery, retention, curriculumLevel, missionStoryId]);
+
+  useEffect(() => {
+    if (!mission) return;
+    const doneCount = mission.tasks.filter((t) => t.completed).length;
+    onMissionSummaryChange?.({
+      doneCount,
+      totalCount: mission.tasks.length,
+      completed: mission.completed,
+      streakDay: mission.streakDay,
+    });
+  }, [mission, onMissionSummaryChange]);
+
+  const syncCurriculumActivity = useCallback(async () => {
+    if (!plan || !onCompleteCurriculumActivity) return;
+    const next = [...plan.practice, ...plan.revision].find((a) => !a.completed);
+    if (next) await onCompleteCurriculumActivity(next.id);
+  }, [plan, onCompleteCurriculumActivity]);
 
   const complete = useCallback(
     (taskId: string) => {
@@ -86,9 +123,10 @@ export function DailyMissionPanel({
       const next = completeMissionTask(mission, taskId);
       setMission(next);
       persistPhonicsV3Mission(childId, next);
+      void syncCurriculumActivity();
       onTaskComplete?.(taskId);
     },
-    [mission, childId, onTaskComplete],
+    [mission, childId, onTaskComplete, syncCurriculumActivity],
   );
 
   if (!mission) return null;
@@ -97,9 +135,9 @@ export function DailyMissionPanel({
 
   return (
     <Card
-      id="phonics-v2-daily-mission"
+      id="phonics-today-mission"
       data-testid="phonics-v2-daily-mission"
-      className="rounded-3xl border border-white/[0.08] bg-card/90"
+      className="rounded-3xl border border-white/[0.08] bg-card/90 scroll-mt-24"
     >
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">

@@ -5,6 +5,7 @@ import type { PhonicsMasteryState } from "../mastery-engine";
 import type { PhonicsRetentionState } from "../spaced-repetition";
 import { getOverdueWordIds } from "../spaced-repetition";
 import { getBlendWordBank, isBlendPathwayAvailable } from "./blend-catalog";
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 
 export type BlendAdaptivePick = {
   word: string;
@@ -20,8 +21,10 @@ export function selectBlendAdaptiveLessons(opts: {
   retention?: PhonicsRetentionState;
   maxPicks?: number;
   now?: number;
+  currentLevel?: number;
 }): BlendAdaptivePick[] {
-  if (!isBlendPathwayAvailable(opts.masteryAvg)) return [];
+  const level = (opts.currentLevel ?? 1) as CurriculumLevel;
+  if (!isBlendPathwayAvailable(opts.masteryAvg, level)) return [];
 
   const bank = getBlendWordBank();
   const seed = opts.childId + opts.dateKey.split("").reduce((s, c) => s + c.charCodeAt(0), 0);

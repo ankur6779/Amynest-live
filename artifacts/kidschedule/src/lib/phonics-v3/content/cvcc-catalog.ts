@@ -1,7 +1,11 @@
 /**
- * CVCC pathway — four-letter consonant-vowel-consonant-consonant words.
+ * CVCC pathway — Level 6 canonical content.
  */
 import { CVCC_WORD_IDS } from "@workspace/phonics-sounds";
+import {
+  isCvccPathwayAvailable as isCvccAvailable,
+  type CurriculumLevel,
+} from "@workspace/phonics-curriculum";
 import type { DecodableStoryMeta } from "./story-catalog";
 
 const CVCC_EMOJI: Record<string, string> = {
@@ -58,6 +62,9 @@ export function getCvccStories(): DecodableStoryMeta[] {
   }));
 }
 
-export function isCvccPathwayAvailable(masteryAvg: number): boolean {
-  return masteryAvg >= 50;
+export function isCvccPathwayAvailable(
+  masteryAvg: number,
+  currentLevel: CurriculumLevel = 1,
+): boolean {
+  return isCvccAvailable(currentLevel, masteryAvg);
 }

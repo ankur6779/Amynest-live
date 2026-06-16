@@ -170,6 +170,46 @@ describe("generateQuestions", () => {
     assert.equal(qs.length, 5, "still returns 5 instead of starving");
   });
 
+  it("curriculum daily test returns empty when no rows match level (no age-band fallback)", () => {
+    const qs = generateQuestions({
+      ageGroup: "4_5y",
+      contentRows: CVC_4_5Y,
+      count: 5,
+      seed: 1,
+      testType: "daily",
+      curriculumLevel: 1,
+    });
+    assert.equal(qs.length, 0);
+  });
+
+  it("curriculum weekly test returns empty when no rows match level", () => {
+    const qs = generateQuestions({
+      ageGroup: "4_5y",
+      contentRows: CVC_4_5Y,
+      count: 10,
+      seed: 1,
+      testType: "weekly",
+      curriculumLevel: 1,
+    });
+    assert.equal(qs.length, 0);
+  });
+
+  it("curriculum daily test only uses level-appropriate rows", () => {
+    const qs = generateQuestions({
+      ageGroup: "4_5y",
+      contentRows: CVC_4_5Y,
+      count: 5,
+      seed: 1,
+      testType: "daily",
+      curriculumLevel: 2,
+    });
+    assert.ok(qs.length > 0);
+    for (const q of qs) {
+      const row = CVC_4_5Y.find((r) => r.id === q.conceptId);
+      assert.ok(row, `conceptId ${q.conceptId} should be from filtered CVC pool`);
+    }
+  });
+
   it("uses age-appropriate question types for 12_24m", () => {
     const qs = generateQuestions({
       ageGroup: "12_24m",
