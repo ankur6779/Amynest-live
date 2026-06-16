@@ -545,6 +545,8 @@
             s.indexOf("Network request failed") >= 0 ||
             s.indexOf("auth/unauthorized") >= 0 ||
             s.indexOf("NotAllowedError") >= 0 ||
+            s.indexOf("Only the active worker can claim clients") >= 0 ||
+            s.indexOf("InvalidStateError") >= 0 ||
             s.indexOf("play_failed_") >= 0 ||
             s.indexOf("playback_blocked") >= 0 ||
             s.indexOf("tts_") >= 0
@@ -1449,9 +1451,30 @@
 
     <div id="recaptcha-container"></div>
     <div id="root"></div>
+    <!-- Purge stale SW/cache before the React bundle when a prior boot failed. -->
+    <script>
+      (function () {
+        if (window.__amynestDiagOnly) return;
+        if (!window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) return;
+        // One-shot guard: mark so the next load skips recovery (otherwise the
+        // boot record has no `splash-hidden` phase and prevCrashed stays true
+        // → infinite reload loop).
+        try { sessionStorage.setItem("amynest:cache-recovery-done", "1"); } catch (_eMark) { /* ignore */ }
+        try { sessionStorage.removeItem("amynest:cache-recovery-pending"); } catch (_eClear) { /* ignore */ }
+        // Reset prev boot record so a future genuine crash isn't masked, but
+        // an immediate reload doesn't see a half-finished boot trail.
+        try { localStorage.removeItem("__amynest_boot_v1"); } catch (_eRec) { /* ignore */ }
+        window.__amynestForceClearCaches()
+          .then(function () { location.reload(); })
+          .catch(function () { location.reload(); });
+      })();
+    </script>
     <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->
     <script type="module" id="amynest-entry">
       if (!/[?&]diag=1/.test(location.search || "")) {
+        if (window.__amynestNeedsCacheRecovery) {
+          /* cache-recovery script above is reloading — do not import the bundle */
+        } else {
         window.__amynestMark && window.__amynestMark("bundle-loading");
         import("/src/main.tsx?v=1001").catch(function (err) {
           var msg = String((err && err.message) || err || "Main module failed to load");
@@ -1475,38 +1498,13 @@
             });
           }
         });
+        }
       } else {
         window.__amynestDiagOnly = true;
         window.__amynestMark && window.__amynestMark("diag-only");
       }
     </script>
-    <script>
-      (function () {
-        if (window.__amynestDiagOnly) return;
-        if (!window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) return;
-        // One-shot guard: mark so the next load skips recovery (otherwise the
-        // boot record has no `splash-hidden` phase and prevCrashed stays true
-        // → infinite reload loop).
-        try { sessionStorage.setItem("amynest:cache-recovery-done", "1"); } catch (_eMark) { /* ignore */ }
-        try { sessionStorage.removeItem("amynest:cache-recovery-pending"); } catch (_eClear) { /* ignore */ }
-        // Reset prev boot record so a future genuine crash isn't masked, but
-        // an immediate reload doesn't see a half-finished boot trail.
-        try { localStorage.removeItem("__amynest_boot_v1"); } catch (_eRec) { /* ignore */ }
-        var entry = document.getElementById("amynest-entry");
-        if (entry) entry.remove();
-        window.__amynestForceClearCaches()
-          .then(function () { location.reload(); })
-          .catch(function () { location.reload(); });
-      })();
-    </script>
     <!-- Deploy version: single source amynest-deploy + sessionStorage (see deploy-version.ts). -->
     <script src="/boot-watchdog.js"></script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(function () {});
-        });
-      }
-    </script>
   </body>
 </html>

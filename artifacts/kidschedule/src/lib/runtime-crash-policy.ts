@@ -25,6 +25,8 @@ const BENIGN_PATTERNS = [
   "playback_blocked",
   "tts_",
   "NotAllowedError",
+  "Only the active worker can claim clients",
+  "InvalidStateError",
   "FetchTimeoutError",
   "Request timed out after",
   "static_audio",

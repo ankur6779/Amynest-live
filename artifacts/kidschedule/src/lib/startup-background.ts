@@ -9,7 +9,7 @@ import {
   runBootCacheRecoveryIfNeeded,
 } from "@/lib/boot-recovery";
 import { patchBootDiagnostics } from "@/lib/boot-store";
-import { initNativeShell } from "@/lib/native-shell";
+import { initNativeShell, registerWebServiceWorker } from "@/lib/native-shell";
 import { installNativeHardwareBackHandler } from "@/lib/navigation-orchestrator";
 import { initCapacitorPushTapHandling } from "@/lib/native-push-bridge";
 import { runPwaCacheSyncBackground, checkDeployVersionMismatch } from "@/lib/pwa-cache-sync";
@@ -58,6 +58,7 @@ export async function runBackgroundStartup(): Promise<void> {
     try {
       initNativeShell();
       installNativeHardwareBackHandler();
+      registerWebServiceWorker();
     } catch (err) {
       console.warn("[amynest:startup] native shell init failed", err);
     }

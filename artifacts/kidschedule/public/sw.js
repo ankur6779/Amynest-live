@@ -83,6 +83,14 @@ async function precacheAudioUrls(urls) {
   }
 }
 
+async function safeClaimClients() {
+  try {
+    await self.clients.claim();
+  } catch {
+    /* Superseded during skipWaiting/update — only the active worker can claim. */
+  }
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((names) =>
@@ -92,7 +100,7 @@ self.addEventListener("activate", (event) => {
           if (LEGACY_AUDIO_CACHE_NAMES.includes(name)) return caches.delete(name);
           return caches.delete(name);
         }),
-      ).then(() => self.clients.claim()),
+      ).then(() => safeClaimClients()),
     ),
   );
 });

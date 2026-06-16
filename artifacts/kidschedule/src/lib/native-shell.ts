@@ -210,7 +210,8 @@ function listenForServiceWorkerUpdates(
 /** When false, skips SW registration (recovery / debugging only). */
 const WEB_SERVICE_WORKER_ENABLED = true;
 
-function registerWebServiceWorker(): void {
+/** Register root SW after boot/cache recovery — not during pre-React recovery reloads. */
+export function registerWebServiceWorker(): void {
   if (!WEB_SERVICE_WORKER_ENABLED) return;
   if (!import.meta.env.PROD) return;
   if (!canUseBrowserServiceWorkers()) return;
@@ -265,5 +266,4 @@ export function initNativeShell(): void {
 
   configureAndroidMobileShell();
   configureStandalonePwaShell();
-  registerWebServiceWorker();
 }
