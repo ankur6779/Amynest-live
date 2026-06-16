@@ -166,4 +166,8 @@ export type ProgressAnalyticsEvent =
   | "comeback_started"
   | "streak_recovered"
   | "unlock_conversion"
-  | "session_quality_high";
+  | "session_quality_high"
+  | "fresh_lesson_assigned"
+  | "fresh_lesson_reopened"
+  | "fresh_lesson_advanced"
+  | "fresh_lesson_completed";

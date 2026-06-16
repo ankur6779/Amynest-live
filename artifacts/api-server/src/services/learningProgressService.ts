@@ -392,6 +392,22 @@ export async function completeLearningActivity(
     })
     .where(eq(learningProgressTable.childId, childId));
 
+  try {
+    const { notifyFreshLessonCompleted } = await import("./studyZoneRecommendationService.js");
+    await notifyFreshLessonCompleted(userId, childId, activityId);
+  } catch (err) {
+    logger.warn(
+      {
+        kind: "fresh_lesson_completed_analytics",
+        userId,
+        childId,
+        activityId,
+        error: err instanceof Error ? err.message : String(err),
+      },
+      "[learning_progress] fresh lesson completion analytics failed",
+    );
+  }
+
   const full = await getLearningProgressStatus(userId, childId);
   if (!full) return null;
   return { ...full, rewardEvents: phase3Result.rewardEvents };

@@ -226,6 +226,23 @@ describe("adaptive.buildDailyPlan", () => {
       assert.ok(ADVANCED_SUBJECTS.find((s) => s.id === it.subject));
     }
   });
+  it("includes discovery lesson when provided", () => {
+    const plan = buildDailyPlan({
+      childAge: 8,
+      dateIso: "2026-05-01",
+      subjects: [],
+      discoveryLesson: {
+        lessonId: "ss-6-8-addition-1",
+        title: "Fresh addition",
+        subject: "Addition",
+        subjectEmoji: "➕",
+        estimatedMinutes: 5,
+      },
+    });
+    const discovery = plan.items.find((i) => i.source === "discovery");
+    assert.ok(discovery);
+    assert.equal(discovery!.contentBankLessonId, "ss-6-8-addition-1");
+  });
 });
 
 describe("adaptive.planCompletionPct", () => {
@@ -240,5 +257,25 @@ describe("adaptive.planCompletionPct", () => {
     const halfDone = new Set(plan.items.slice(0, Math.ceil(plan.items.length / 2)).map((i) => i.topicId));
     const pct = planCompletionPct(plan, halfDone);
     assert.ok(pct >= 40 && pct <= 60, `got ${pct}`);
+  });
+  it("counts discovery items via content bank completion set", () => {
+    const plan = {
+      date: "2026-05-01",
+      mode: "basic" as const,
+      items: [{
+        id: "discovery:lesson-a",
+        subject: "discovery",
+        subjectTitle: "Addition",
+        subjectEmoji: "➕",
+        topicId: "lesson-a",
+        topicTitle: "Fresh",
+        difficulty: "medium" as const,
+        source: "discovery" as const,
+        mode: "basic" as const,
+        contentBankLessonId: "lesson-a",
+      }],
+    };
+    const pct = planCompletionPct(plan, new Set(), new Set(["lesson-a"]));
+    assert.equal(pct, 100);
   });
 });

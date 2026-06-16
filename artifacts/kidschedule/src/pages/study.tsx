@@ -26,7 +26,11 @@ import {
   type SubjectPack, type StudyTopic,
   type DailyPlan, type PlanItem,
 } from "@workspace/study-zone";
+import type { FreshLessonSummary } from "@workspace/content-bank";
 import { AdaptiveQuestionRunner } from "@/components/adaptive-question-runner";
+import { DailyFreshLessonCard } from "@/components/daily-fresh-lesson-card";
+import { ContentBankLessonView } from "@/components/content-bank-lesson-view";
+import { ContinueLearningCta } from "@/components/continue-learning-cta";
 import { useStudyCountry } from "@/hooks/use-study-country";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { Button } from "@/components/ui/button";
@@ -102,7 +106,8 @@ type View =
   | { kind: "study-subject"; childId: number; mode: "basic" | "advanced"; subjectId: string }
   | { kind: "study-topic"; childId: number; mode: "basic" | "advanced"; subjectId: string; topicId: string }
   | { kind: "smart-pick"; childId: number; mode: "basic" | "advanced" }
-  | { kind: "smart-run"; childId: number; mode: "basic" | "advanced"; subjectId: string };
+  | { kind: "smart-run"; childId: number; mode: "basic" | "advanced"; subjectId: string }
+  | { kind: "bank-lesson"; childId: number; lessonId: string; returnKind: "play-home" | "study-home" | "study-topic"; returnPayload?: { mode: "basic" | "advanced"; subjectId?: string; topicId?: string } };
 
 export default function StudyPage() {
   const { t } = useTranslation();
@@ -160,6 +165,27 @@ export default function StudyPage() {
     enqueueBehaviorWarmup(authFetch, "study_zone");
   }, [authFetch, view.kind]);
 
+  const openBankLesson = useCallback((lessonId: string, returnView: View) => {
+    if (!("childId" in returnView)) return;
+    const returnKind =
+      returnView.kind === "play-home" ? "play-home"
+        : returnView.kind === "study-home" ? "study-home"
+          : returnView.kind === "study-topic"
+            ? "study-topic"
+            : "study-home";
+    setView({
+      kind: "bank-lesson",
+      childId: returnView.childId,
+      lessonId,
+      returnKind,
+      returnPayload: returnView.kind === "study-topic"
+        ? { mode: returnView.mode, subjectId: returnView.subjectId, topicId: returnView.topicId }
+        : returnView.kind === "study-home"
+          ? { mode: returnView.mode }
+          : undefined,
+    });
+  }, []);
+
   const goBack = useCallback(() => {
     if (view.kind === "play-home" || view.kind === "study-home") {
       if (list.length > 1) setView({ kind: "child-pick" });
@@ -178,6 +204,28 @@ export default function StudyPage() {
     }
     if (view.kind === "smart-pick" || view.kind === "smart-run") {
       setView({ kind: "study-home", childId: view.childId, mode: view.mode });
+      return;
+    }
+    if (view.kind === "bank-lesson") {
+      if (view.returnKind === "play-home") {
+        setView({ kind: "play-home", childId: view.childId });
+      } else if (
+        view.returnKind === "study-topic"
+        && view.returnPayload?.subjectId
+        && view.returnPayload?.topicId
+      ) {
+        setView({
+          kind: "study-topic",
+          childId: view.childId,
+          mode: view.returnPayload.mode,
+          subjectId: view.returnPayload.subjectId,
+          topicId: view.returnPayload.topicId,
+        });
+      } else if (view.returnPayload?.mode) {
+        setView({ kind: "study-home", childId: view.childId, mode: view.returnPayload.mode });
+      } else {
+        setView({ kind: "play-home", childId: view.childId });
+      }
       return;
     }
     back("study-back");
@@ -248,6 +296,10 @@ export default function StudyPage() {
             />
           )}
           {progress && <EngagementStrip engagement={progress.engagement} />}
+          <DailyFreshLessonCard
+            childId={view.childId}
+            onStart={(lessonId) => openBankLesson(lessonId, { kind: "play-home", childId: view.childId })}
+          />
           <PlayHome
             childId={view.childId}
             country={country}
@@ -295,12 +347,27 @@ export default function StudyPage() {
           <TodaysPlanSection
             childId={view.childId}
             childName={child?.name ?? ""}
-            onOpen={(item) => setView({
-              kind: "study-topic",
+            onOpen={(item) => {
+              if (item.source === "discovery" && item.contentBankLessonId) {
+                openBankLesson(item.contentBankLessonId, {
+                  kind: "study-home",
+                  childId: view.childId,
+                  mode: view.mode,
+                });
+                return;
+              }
+              setView({
+                kind: "study-topic",
+                childId: view.childId,
+                mode: item.mode,
+                subjectId: item.subject,
+                topicId: item.topicId,
+              });
+            }}
+            onOpenFreshLesson={(lessonId) => openBankLesson(lessonId, {
+              kind: "study-home",
               childId: view.childId,
-              mode: item.mode,
-              subjectId: item.subject,
-              topicId: item.topicId,
+              mode: view.mode,
             })}
           />
           <SmartAdaptiveCta
@@ -352,6 +419,12 @@ export default function StudyPage() {
             />
           );
         })()
+      ) : view.kind === "bank-lesson" ? (
+        <ContentBankLessonView
+          childId={view.childId}
+          lessonId={view.lessonId}
+          onExit={goBack}
+        />
       ) : view.kind === "study-subject" ? (
         <SubjectTopicList
           mode={view.mode}
@@ -374,6 +447,7 @@ export default function StudyPage() {
           childClass={child?.childClass}
           childAge={child?.age}
           onScored={(p) => setProgress(p)}
+          onContinueLesson={(lessonId) => openBankLesson(lessonId, view)}
         />
       )}
       </HubModuleGateWrap>
@@ -383,17 +457,20 @@ export default function StudyPage() {
 }
 
 function TodaysPlanSection({
-  childId, childName, onOpen,
+  childId, childName, onOpen, onOpenFreshLesson,
 }: {
   childId: number;
   childName: string;
   onOpen: (item: PlanItem) => void;
+  onOpenFreshLesson: (lessonId: string) => void;
 }) {
   const { t } = useTranslation();
   const { getToken } = useAuth();
   const [plan, setPlan] = useState<DailyPlan | null>(null);
+  const [dailyFreshLesson, setDailyFreshLesson] = useState<FreshLessonSummary | null | undefined>(undefined);
   const [completionPct, setCompletionPct] = useState(0);
   const [doneTopicIds, setDoneTopicIds] = useState<Set<string>>(new Set());
+  const [doneBankLessonIds, setDoneBankLessonIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [planDate, setPlanDate] = useState(() => todayIso());
 
@@ -430,11 +507,15 @@ function TodaysPlanSection({
           plan: DailyPlan;
           completionPct: number;
           doneTopicIds: string[];
+          doneContentBankLessonIds?: string[];
+          dailyFreshLesson?: FreshLessonSummary | null;
         }>(res);
         if (cancelled) return;
         setPlan(data.plan);
         setCompletionPct(data.completionPct);
         setDoneTopicIds(new Set(data.doneTopicIds));
+        setDoneBankLessonIds(new Set(data.doneContentBankLessonIds ?? []));
+        setDailyFreshLesson(data.dailyFreshLesson ?? null);
       } catch {
         /* surface nothing — falls back to subject grid */
       } finally {
@@ -447,7 +528,14 @@ function TodaysPlanSection({
   if (loading || !plan) return <Skeleton className="h-32 w-full rounded-[24px]" />;
 
   return (
-    <div className={cn(studyPanelCard(), "mb-3")}>
+    <>
+      <DailyFreshLessonCard
+        childId={childId}
+        planDate={planDate}
+        initialLesson={dailyFreshLesson}
+        onStart={onOpenFreshLesson}
+      />
+      <div className={cn(studyPanelCard(), "mb-3")}>
       <div className="p-4">
         <div className="flex items-center justify-between mb-1">
           <div className="font-quicksand text-lg font-bold text-foreground flex items-center gap-2">
@@ -466,7 +554,9 @@ function TodaysPlanSection({
         ) : (
           <div className="grid gap-2">
             {plan.items.map((it) => {
-              const done = doneTopicIds.has(it.topicId);
+              const done = it.source === "discovery" && it.contentBankLessonId
+                ? doneBankLessonIds.has(it.contentBankLessonId)
+                : doneTopicIds.has(it.topicId);
               return (
                 <button
                   key={it.id}
@@ -489,8 +579,14 @@ function TodaysPlanSection({
                         {t(`screens.study.plan_difficulty_${it.difficulty}`)}
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-[hsl(var(--brand-amber-100))] dark:bg-[hsl(var(--brand-amber-900))] text-[hsl(var(--brand-amber-700))] dark:text-[hsl(var(--brand-amber-300))]">
-                        {t(`screens.study.plan_source_${it.source}`)}
+                        {t(`screens.study.plan_source_${it.source}`, it.source)}
                       </span>
+                      {it.estimatedMinutes ? (
+                        <>
+                          <span>·</span>
+                          <span>~{it.estimatedMinutes} min</span>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                   {done ? (
@@ -505,6 +601,7 @@ function TodaysPlanSection({
         )}
       </div>
     </div>
+    </>
   );
 }
 
@@ -925,7 +1022,7 @@ function SubjectTopicList({
 }
 
 function TopicDetail({
-  childId, mode, subjectId, topicId, country, childClass, childAge, onScored,
+  childId, mode, subjectId, topicId, country, childClass, childAge, onScored, onContinueLesson,
 }: {
   childId: number;
   mode: "basic" | "advanced";
@@ -935,6 +1032,7 @@ function TopicDetail({
   childClass?: string | null;
   childAge?: number;
   onScored: (p: StudyProgress) => void;
+  onContinueLesson: (lessonId: string) => void;
 }) {
   const subjects: SubjectPack[] = useMemo(
     () => (mode === "basic"
@@ -1207,6 +1305,14 @@ function TopicDetail({
           )}
         </div>
       </div>
+      {submitted && (
+        <ContinueLearningCta
+          childId={childId}
+          subjectId={subjectId}
+          topicId={topicId}
+          onStart={onContinueLesson}
+        />
+      )}
     </div>
   );
 }

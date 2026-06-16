@@ -43,6 +43,16 @@ import {
   type SmartQuestion,
   type SmartSubjectId,
 } from "@workspace/study-zone";
+import {
+  loadStudyZoneRecommendationContext,
+  resolveAndPersistFreshLesson,
+  getRecommendedNextLessonForTopic,
+  getUnseenLessonsForChild,
+  completedContentBankLessonIds,
+  recordContentBankLessonViewed,
+  loadSmartStudyLessonItem,
+} from "../services/studyZoneRecommendationService.js";
+import { enrichWithAudio } from "../services/contentBankAudio.js";
 
 const router: IRouter = Router();
 
@@ -158,15 +168,31 @@ router.post(
       weakTopics: parseWeakTopics(r.weakTopics),
     }));
 
+    const recCtx = await loadStudyZoneRecommendationContext(userId, childId, dateIso);
+    const freshResult = await resolveAndPersistFreshLesson(userId, childId, dateIso);
+    const dailyFreshLesson = freshResult?.lesson ?? null;
+    const completedBankIds = recCtx
+      ? completedContentBankLessonIds(recCtx.completedActivityIds)
+      : new Set<string>();
+
     const plan = buildDailyPlan({
       childAge: child.age ?? 0,
       childClass: child.childClass,
       country,
       dateIso,
       subjects,
+      discoveryLesson: dailyFreshLesson
+        ? {
+            lessonId: dailyFreshLesson.id,
+            title: dailyFreshLesson.title,
+            subject: dailyFreshLesson.subject,
+            subjectEmoji: dailyFreshLesson.subjectEmoji,
+            estimatedMinutes: dailyFreshLesson.estimatedMinutes,
+          }
+        : null,
     });
 
-    // Today's done-set: any attempt for a topic recorded today counts.
+    // Today's done-set: curriculum attempts today + completed content-bank lessons.
     const doneTopicIds = new Set<string>();
     for (const r of rows) {
       const attempts = parseAttempts(r.accuracyRecent);
@@ -174,14 +200,16 @@ router.post(
         if (a.ts.slice(0, 10) === dateIso) doneTopicIds.add(a.topicId);
       }
     }
-    const completionPct = planCompletionPct(plan, doneTopicIds);
+    const completionPct = planCompletionPct(plan, doneTopicIds, completedBankIds);
 
     res.json({
       child: { id: child.id, name: child.name, age: child.age, mode },
       country,
       plan,
+      dailyFreshLesson,
       completionPct,
       doneTopicIds: Array.from(doneTopicIds),
+      doneContentBankLessonIds: Array.from(completedBankIds),
     });
   } catch (err) {
     logger.error(
@@ -465,12 +493,14 @@ router.get(
       const y = new Date();
       y.setUTCDate(y.getUTCDate() - 1);
       const yIso = todayIsoUtc(y);
+      const yRecCtx = await loadStudyZoneRecommendationContext(userId, childId, yIso);
       const yPlan = buildDailyPlan({
         childAge: child.age ?? 0,
         childClass: child.childClass,
         country,
         dateIso: yIso,
         subjects: subjectsForPlan,
+        discoveryLesson: null,
       });
       const doneIds = new Set<string>();
       for (const r of rows) {
@@ -478,12 +508,19 @@ router.get(
           if (a.ts.slice(0, 10) === yIso) doneIds.add(a.topicId);
         }
       }
-      const doneCount = yPlan.items.filter((it) => doneIds.has(it.topicId)).length;
+      const yCompletedBank = yRecCtx
+        ? completedContentBankLessonIds(yRecCtx.completedActivityIds)
+        : new Set<string>();
+      const doneCount = yPlan.items.filter((it) =>
+        it.source === "discovery" && it.contentBankLessonId
+          ? yCompletedBank.has(it.contentBankLessonId)
+          : doneIds.has(it.topicId),
+      ).length;
       yesterday = {
         date: yIso,
         planSize: yPlan.items.length,
         doneCount,
-        completionPct: planCompletionPct(yPlan, doneIds),
+        completionPct: planCompletionPct(yPlan, doneIds, yCompletedBank),
       };
     }
 
@@ -678,5 +715,212 @@ router.post(
     res.status(500).json({ error: "server_error" });
   }
 });
+
+// ─── GET /api/smart-study/daily-fresh-lesson ─────────────────────────────────
+
+const FreshLessonQuery = z.object({
+  childId: z.coerce.number().int().positive(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+router.get(
+  "/smart-study/daily-fresh-lesson",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const parsed = FreshLessonQuery.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+      return;
+    }
+    const dateIso = parsed.data.date ?? todayIsoUtc();
+    try {
+      const result = await resolveAndPersistFreshLesson(
+        userId,
+        parsed.data.childId,
+        dateIso,
+      );
+      if (!result && !(await loadStudyZoneRecommendationContext(userId, parsed.data.childId, dateIso))) {
+        res.status(404).json({ error: "child_not_found" });
+        return;
+      }
+      res.json({
+        ok: true,
+        date: dateIso,
+        lesson: result?.lesson ?? null,
+        event: result?.event ?? null,
+        contentBankAvailable: Boolean(result?.lesson),
+      });
+    } catch (err) {
+      logger.error(
+        `smart-study daily-fresh-lesson failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      res.status(500).json({ error: "server_error" });
+    }
+  },
+);
+
+// ─── GET /api/smart-study/unseen-lessons ─────────────────────────────────────
+
+router.get(
+  "/smart-study/unseen-lessons",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const parsed = FreshLessonQuery.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+      return;
+    }
+    const dateIso = parsed.data.date ?? todayIsoUtc();
+    try {
+      const items = await getUnseenLessonsForChild(userId, parsed.data.childId, dateIso);
+      res.json({ ok: true, date: dateIso, items, count: items.length });
+    } catch (err) {
+      logger.error(
+        `smart-study unseen-lessons failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      res.status(500).json({ error: "server_error" });
+    }
+  },
+);
+
+// ─── GET /api/smart-study/recommended-next ───────────────────────────────────
+
+const RecommendedQuery = z.object({
+  childId: z.coerce.number().int().positive(),
+  topicId: z.string().min(1).max(80),
+  subjectId: z.string().min(1).max(40),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+router.get(
+  "/smart-study/recommended-next",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const parsed = RecommendedQuery.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+      return;
+    }
+    const dateIso = parsed.data.date ?? todayIsoUtc();
+    try {
+      const lesson = await getRecommendedNextLessonForTopic(
+        userId,
+        parsed.data.childId,
+        dateIso,
+        parsed.data.subjectId,
+        parsed.data.topicId,
+      );
+      res.json({ ok: true, lesson });
+    } catch (err) {
+      logger.error(
+        `smart-study recommended-next failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      res.status(500).json({ error: "server_error" });
+    }
+  },
+);
+
+// ─── GET /api/smart-study/lesson/:lessonId ───────────────────────────────────
+
+router.get(
+  "/smart-study/lesson/:lessonId",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const childParsed = z.coerce.number().int().positive().safeParse(req.query.childId);
+    const lessonId = req.params.lessonId;
+    if (!childParsed.success || !lessonId) {
+      res.status(400).json({ error: "invalid_query" });
+      return;
+    }
+    const dateIso = typeof req.query.date === "string"
+      ? req.query.date
+      : todayIsoUtc();
+    try {
+      const lesson = await loadSmartStudyLessonItem(
+        userId,
+        childParsed.data,
+        lessonId,
+        dateIso,
+      );
+      if (!lesson) {
+        res.status(404).json({ error: "lesson_not_found" });
+        return;
+      }
+      const [enriched] = enrichWithAudio("smart-study", [lesson]);
+      res.json({
+        ok: true,
+        item: enriched ?? lesson,
+        progressActivityId: `cb:smart-study:${lesson.id}`,
+      });
+    } catch (err) {
+      logger.error(
+        `smart-study lesson fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      res.status(500).json({ error: "server_error" });
+    }
+  },
+);
+
+// ─── POST /api/smart-study/lesson-view ────────────────────────────────────────
+
+const LessonViewBody = z.object({
+  childId: z.number().int().positive(),
+  lessonId: z.string().min(1).max(120),
+});
+
+router.post(
+  "/smart-study/lesson-view",
+  hubModuleGate("hub_smart_study"),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const parsed = LessonViewBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+      return;
+    }
+    try {
+      const ok = await recordContentBankLessonViewed(
+        userId,
+        parsed.data.childId,
+        parsed.data.lessonId,
+      );
+      if (!ok) {
+        res.status(404).json({ error: "child_not_found" });
+        return;
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error(
+        `smart-study lesson-view failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      res.status(500).json({ error: "server_error" });
+    }
+  },
+);
 
 export default router;

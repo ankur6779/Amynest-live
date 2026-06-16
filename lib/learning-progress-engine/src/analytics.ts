@@ -18,6 +18,10 @@ export const PROGRESS_ANALYTICS_EVENTS: ProgressAnalyticsEvent[] = [
   "streak_recovered",
   "unlock_conversion",
   "session_quality_high",
+  "fresh_lesson_assigned",
+  "fresh_lesson_reopened",
+  "fresh_lesson_advanced",
+  "fresh_lesson_completed",
 ];
 
 export interface AnalyticsPayload {

@@ -27,9 +27,12 @@ export interface PlanItem {
   topicId: string;
   topicTitle: string;
   difficulty: Difficulty;
-  /** "weak" — pulled from weak topics; "fresh" — new exposure. */
-  source: "weak" | "fresh";
+  /** weak = remediation; fresh = curriculum; discovery = content-bank lesson. */
+  source: "weak" | "fresh" | "discovery";
   mode: "basic" | "advanced";
+  /** Set when source === "discovery" — id in content-bank smart-study catalog. */
+  contentBankLessonId?: string;
+  estimatedMinutes?: number;
 }
 
 export interface DailyPlan {
@@ -139,6 +142,14 @@ function pickFreshTopic(
   return window[seed % window.length] ?? null;
 }
 
+export interface DiscoveryPlanInput {
+  lessonId: string;
+  title: string;
+  subject: string;
+  subjectEmoji: string;
+  estimatedMinutes?: number;
+}
+
 export interface BuildPlanInput {
   childAge: number;
   childClass?: string | null;
@@ -150,6 +161,8 @@ export interface BuildPlanInput {
   subjects: SubjectAttemptSummary[];
   /** Optional override of total item count (3–5). */
   size?: number;
+  /** Optional content-bank discovery slot (Today's Plan mix). */
+  discoveryLesson?: DiscoveryPlanInput | null;
 }
 
 /** Hash a string into a non-negative int for deterministic picking. */
@@ -180,7 +193,9 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
     ? getBasicSubjectsForCountry(input.country)
     : getAdvancedSubjectsForCountry(input.country);
   const classNum = parseChildClassNumber(input.childClass, input.childAge);
-  const target = Math.max(3, Math.min(5, input.size ?? 4));
+  const hasDiscovery = Boolean(input.discoveryLesson?.lessonId);
+  const target = Math.max(3, Math.min(5, (input.size ?? 4) + (hasDiscovery ? 0 : 0)));
+  const curriculumTarget = hasDiscovery ? Math.max(2, target - 1) : target;
   const seedBase = hash(`${input.dateIso}:${input.childAge}:${input.childClass ?? ""}:${input.country ?? ""}`);
   const items: PlanItem[] = [];
   const used = new Set<string>(); // "subject:topicId"
@@ -203,7 +218,7 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
   // Deterministic shuffle by seed.
   weakQueue.sort((a, b) => hash(`${seedBase}:${a.pack.id}:${a.topic.id}`) - hash(`${seedBase}:${b.pack.id}:${b.topic.id}`));
   for (const w of weakQueue) {
-    if (items.length >= target) break;
+    if (items.length >= curriculumTarget) break;
     const key = `${w.pack.id}:${w.topic.id}`;
     if (used.has(key)) continue;
     used.add(key);
@@ -225,10 +240,10 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
   // 2) Fill the rest with fresh, age-appropriate material — round-robin
   //    across subjects to keep variety. Difficulty per subject from accuracy.
   let guard = 0;
-  while (items.length < target && guard < target * packs.length * 2) {
+  while (items.length < curriculumTarget && guard < curriculumTarget * packs.length * 2) {
     guard++;
     for (const pack of packs) {
-      if (items.length >= target) break;
+      if (items.length >= curriculumTarget) break;
       const sum = summaryBySubject.get(pack.id);
       const diff = difficultyForAccuracy(sum?.attempts ?? []);
       const exclude = new Set<string>();
@@ -251,6 +266,24 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
         mode: planMode,
       });
     }
+  }
+
+  // 3) Discovery slot — one content-bank lesson for daily freshness.
+  if (input.discoveryLesson) {
+    const d = input.discoveryLesson;
+    items.push({
+      id: `discovery:${d.lessonId}`,
+      subject: "discovery",
+      subjectTitle: d.subject,
+      subjectEmoji: d.subjectEmoji,
+      topicId: d.lessonId,
+      topicTitle: d.title,
+      difficulty: "medium",
+      source: "discovery",
+      mode: planMode,
+      contentBankLessonId: d.lessonId,
+      estimatedMinutes: d.estimatedMinutes,
+    });
   }
 
   return { date: input.dateIso, mode: planMode, items };
@@ -282,11 +315,25 @@ export function accuracyPctForWindow(
 
 /** Completion percentage for a plan vs. an attempt history. An item counts
  *  as "done today" if any attempt for its topicId exists for today. */
+export function planItemDone(
+  item: PlanItem,
+  doneTopicIds: Set<string>,
+  completedContentBankLessonIds: Set<string>,
+): boolean {
+  if (item.source === "discovery" && item.contentBankLessonId) {
+    return completedContentBankLessonIds.has(item.contentBankLessonId);
+  }
+  return doneTopicIds.has(item.topicId);
+}
+
 export function planCompletionPct(
   plan: DailyPlan,
   doneTopicIds: Set<string>,
+  completedContentBankLessonIds: Set<string> = new Set(),
 ): number {
   if (plan.items.length === 0) return 0;
-  const done = plan.items.filter((it) => doneTopicIds.has(it.topicId)).length;
+  const done = plan.items.filter((it) =>
+    planItemDone(it, doneTopicIds, completedContentBankLessonIds),
+  ).length;
   return Math.round((done / plan.items.length) * 100);
 }
