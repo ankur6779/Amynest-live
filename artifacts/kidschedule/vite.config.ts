@@ -313,6 +313,12 @@ export default defineConfig(async ({ command }) => ({
           if (id.includes("phonics-audio-map.json")) return "phonics-audio-map";
           if (id.includes("static-audio-map.json")) return "static-audio-map";
           if (id.includes("phonics-bundled-manifest")) return "phonics-manifest";
+          // Shared CommonJS interop helpers are VIRTUAL modules (no
+          // "node_modules" in their id) that React's CJS build imports. Keep
+          // them in vendor-react so that chunk stays a dependency-free leaf —
+          // otherwise Rollup hoists them into the catch-all vendor-misc and
+          // vendor-react has to import vendor-misc back.
+          if (id.includes("commonjsHelpers")) return "vendor-react";
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("three") || id.includes("@react-three")) return "vendor-three";
           if (id.includes("firebase")) return "vendor-firebase";
@@ -322,8 +328,24 @@ export default defineConfig(async ({ command }) => ({
           if (id.includes("@tanstack/react-query")) return "vendor-query";
           if (id.includes("i18next") || id.includes("react-i18next")) return "vendor-i18n";
           if (id.includes("lucide-react")) return "vendor-icons";
-          if (id.includes("react-dom")) return "vendor-react-dom";
-          if (id.includes("/react/")) return "vendor-react";
+          // CRITICAL: match the REAL React packages only. A loose "/react/"
+          // test also matches "@sentry/react" (path .../node_modules/@sentry/
+          // react/...), which drags @sentry/react into vendor-react. That pulls
+          // Sentry core from vendor-misc while vendor-misc imports React back —
+          // a circular vendor-react <-> vendor-misc dependency. On boot React's
+          // CJS factory then runs before vendor-misc is initialized, its export
+          // target is `undefined`, and `o.Children = {...}` throws
+          // "Cannot set properties of undefined (setting 'Children')", killing
+          // the bundle before React mounts. Anchor on /node_modules/<pkg>/.
+          if (
+            id.includes("/node_modules/react-dom/") ||
+            id.includes("/node_modules/react/") ||
+            id.includes("/node_modules/scheduler/") ||
+            id.includes("/node_modules/react-is/") ||
+            id.includes("/node_modules/use-sync-external-store/")
+          ) {
+            return "vendor-react";
+          }
           if (id.includes("wouter")) return "vendor-router";
           if (id.includes("zod")) return "vendor-zod";
           if (id.includes("date-fns")) return "vendor-date-fns";
