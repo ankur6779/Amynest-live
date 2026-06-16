@@ -1473,6 +1473,12 @@ function runIntelligencePipelineOnItems(params: {
 
 const router: IRouter = Router();
 
+const ROUTINES_LIST_MAX_RAW = Number(process.env.ROUTINES_LIST_MAX ?? "100");
+const ROUTINES_LIST_MAX =
+  Number.isFinite(ROUTINES_LIST_MAX_RAW) && ROUTINES_LIST_MAX_RAW > 0
+    ? Math.min(500, Math.floor(ROUTINES_LIST_MAX_RAW))
+    : 100;
+
 // Returns true if the request should be blocked by the free-tier routinesMax cap.
 // Caller must already have verified child ownership.
 async function isOverFreeRoutineLimit(
@@ -2176,9 +2182,9 @@ router.get("/routines", async (req, res): Promise<void> => {
       res.json(ListRoutinesResponse.parse([]));
       return;
     }
-    results = await db.select().from(routinesTable).where(eq(routinesTable.childId, queryParams.data.childId)).orderBy(desc(routinesTable.createdAt));
+    results = await db.select().from(routinesTable).where(eq(routinesTable.childId, queryParams.data.childId)).orderBy(desc(routinesTable.createdAt)).limit(ROUTINES_LIST_MAX);
   } else if (childIds.length > 0) {
-    results = await db.select().from(routinesTable).where(inArray(routinesTable.childId, childIds)).orderBy(desc(routinesTable.createdAt));
+    results = await db.select().from(routinesTable).where(inArray(routinesTable.childId, childIds)).orderBy(desc(routinesTable.createdAt)).limit(ROUTINES_LIST_MAX);
   } else {
     results = [];
   }

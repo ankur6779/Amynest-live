@@ -1,3 +1,4 @@
+import { COACH_WORKER_TIMEOUT_MS } from "@workspace/coach-journey";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
 import { fallbackExtensionWin } from "../coachExtensionFallback.js";
 import { validateWin, type CoachWin } from "../coachWinGenerationService.js";
@@ -63,7 +64,7 @@ export async function runCoachStreamPlan(input: {
       response_format: { type: "json_object" },
       max_completion_tokens: 8000,
     },
-    90_000,
+    COACH_WORKER_TIMEOUT_MS,
   );
   if (!outcome.content) throw new Error(outcome.error ?? "ai_empty");
   return { raw: outcome.content };
@@ -141,7 +142,17 @@ export async function runCoachRemainingWins(job: {
     () => "",
     job.intelligenceBlock,
   );
+
   const fullPlan = svc.mergeCoachPlan(job.partialPlan, job.partialPlan.wins, remaining);
+  if (!svc.validatePlan(fullPlan)) {
+    const fallback = await svc.loadFallbackPlan(job.input, job.goalLabel);
+    Object.assign(fullPlan, {
+      title: fallback.title,
+      root_cause: fallback.root_cause,
+      summary: fallback.summary,
+    });
+  }
+
   if (aiOk) await svc.dbSetCoachCache(job.cacheKey, job.input, fullPlan);
   await svc.upsertCoachGeneration({
     generationId: job.generationId,

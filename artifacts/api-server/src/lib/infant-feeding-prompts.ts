@@ -163,3 +163,26 @@ export function sanitizeInfantFeedingPlan(raw: unknown): InfantFeedingPlan | nul
     days,
   };
 }
+
+/** Rule-based 7-day plan when OpenAI fails. */
+export function buildInfantFeedingPlanFallback(ctx: InfantFeedingPlanContext): InfantFeedingPlan {
+  const dayNames = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"];
+  const days: InfantFeedingDayPlan[] = dayNames.map((day) => ({
+    day,
+    meals: {
+      breakfast: { name: "Iron-fortified cereal or fruit puree", texture: "smooth puree", portion: "2–3 tsp" },
+      lunch: { name: "Vegetable puree", texture: "mashed", portion: "2–4 tbsp" },
+      dinner: { name: "Dal or soft khichdi", texture: "soft mash", portion: "2–4 tbsp" },
+    },
+  }));
+  return {
+    roadmapSummary: `A gentle 7-day solids roadmap for ${ctx.childName} at ${ctx.ageMonths} months.`,
+    allergyIntroTimeline: ["Week 1: iron-rich puree", "Week 2: single new vegetable", "Week 3: well-cooked egg (if cleared by clinician)"],
+    allergyIntroductionRoadmap: [
+      { week: 1, food: "Iron-fortified cereal", method: "Thin puree once daily when well." },
+      { week: 2, food: "Single vegetable", method: "One new veg every 3–5 days." },
+    ],
+    portionGuidance: "Offer small portions; follow baby's hunger and fullness cues.",
+    days,
+  };
+}

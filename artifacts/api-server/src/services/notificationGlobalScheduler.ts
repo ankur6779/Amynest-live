@@ -9,8 +9,8 @@ import {
   type ScheduledNotificationJob,
 } from "@workspace/notification-engine";
 import type { NotificationCategory } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { db, parentProfilesTable, pushTokensTable } from "@workspace/db";
+import { inArray } from "drizzle-orm";
+import { db, notificationPreferencesTable, parentProfilesTable, pushTokensTable } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 import { dispatchNotification, getOrCreatePreferences } from "./notificationDispatchService.js";
 import {
@@ -83,22 +83,52 @@ async function loadUserScheduleRows(): Promise<UserScheduleRow[]> {
     .selectDistinct({ userId: pushTokensTable.userId })
     .from(pushTokensTable);
 
-  const rows: UserScheduleRow[] = [];
-  for (const { userId } of tokenUsers) {
-    const prefs = await getOrCreatePreferences(userId);
-    const [profile] = await db
-      .select({ country: parentProfilesTable.country })
+  const userIds = tokenUsers.map((row) => row.userId);
+  if (userIds.length === 0) return [];
+
+  const [prefsRows, profileRows] = await Promise.all([
+    db
+      .select()
+      .from(notificationPreferencesTable)
+      .where(inArray(notificationPreferencesTable.userId, userIds)),
+    db
+      .select({ userId: parentProfilesTable.userId, country: parentProfilesTable.country })
       .from(parentProfilesTable)
-      .where(eq(parentProfilesTable.userId, userId))
-      .limit(1);
-    rows.push({
+      .where(inArray(parentProfilesTable.userId, userIds)),
+  ]);
+
+  const prefsMap = new Map(prefsRows.map((row) => [row.userId, row]));
+  const profileMap = new Map(profileRows.map((row) => [row.userId, row.country]));
+
+  const missingUserIds = userIds.filter((userId) => !prefsMap.has(userId));
+  if (missingUserIds.length > 0) {
+    await db
+      .insert(notificationPreferencesTable)
+      .values(missingUserIds.map((userId) => ({ userId })))
+      .onConflictDoNothing({ target: notificationPreferencesTable.userId });
+    const createdPrefs = await db
+      .select()
+      .from(notificationPreferencesTable)
+      .where(inArray(notificationPreferencesTable.userId, missingUserIds));
+    for (const prefs of createdPrefs) {
+      prefsMap.set(prefs.userId, prefs);
+    }
+    for (const userId of missingUserIds) {
+      if (!prefsMap.has(userId)) {
+        prefsMap.set(userId, await getOrCreatePreferences(userId));
+      }
+    }
+  }
+
+  return userIds.map((userId) => {
+    const prefs = prefsMap.get(userId)!;
+    return {
       userId,
       prefs,
-      countryCode: profile?.country ?? prefs.countryCode ?? null,
+      countryCode: profileMap.get(userId) ?? prefs.countryCode ?? null,
       childAgeYears: null,
-    });
-  }
-  return rows;
+    };
+  });
 }
 
 export async function runGlobalScheduleTick(now = new Date()): Promise<{

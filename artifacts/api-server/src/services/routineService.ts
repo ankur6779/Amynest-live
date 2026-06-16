@@ -1,4 +1,4 @@
-import { inArray, desc } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, routinesTable, type Routine } from "@workspace/db";
 
 type RoutineItem = {
@@ -38,16 +38,21 @@ export async function getRoutineForChildren(childIds: number[]): Promise<Routine
 
   const today = todayString();
 
-  // Get today's routines for these children; fallback to most recent
-  const routines = await db
+  const todayRoutines = await db
     .select()
     .from(routinesTable)
-    .where(inArray(routinesTable.childId, childIds))
+    .where(and(inArray(routinesTable.childId, childIds), eq(routinesTable.date, today)))
     .orderBy(desc(routinesTable.createdAt));
 
-  let pickedRoutines: Routine[] = routines.filter((r) => r.date === today);
-  if (pickedRoutines.length === 0 && routines.length > 0) {
-    pickedRoutines = [routines[0]!];
+  let pickedRoutines: Routine[] = todayRoutines;
+  if (pickedRoutines.length === 0) {
+    const [latest] = await db
+      .select()
+      .from(routinesTable)
+      .where(inArray(routinesTable.childId, childIds))
+      .orderBy(desc(routinesTable.createdAt))
+      .limit(1);
+    pickedRoutines = latest ? [latest] : [];
   }
 
   const tasks: RoutineTaskOut[] = pickedRoutines.flatMap((r) => {

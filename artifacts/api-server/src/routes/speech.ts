@@ -23,6 +23,7 @@ import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { featureGate } from "../middlewares/featureGate";
 import { speechTranscribeGate } from "../middlewares/speechTranscribeGate.js";
+import { asyncRoute } from "../middlewares/async-route.js";
 
 const router: IRouter = Router();
 
@@ -533,7 +534,7 @@ const transcribeBodySchema = z.object({
   provider: z.enum(["whisper", "elevenlabs"]).optional(),
 });
 
-router.post("/speech/transcribe", speechTranscribeGate(), async (req, res): Promise<void> => {
+router.post("/speech/transcribe", speechTranscribeGate(), asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -595,6 +596,6 @@ router.post("/speech/transcribe", speechTranscribeGate(), async (req, res): Prom
     },
     res,
   });
-});
+}));
 
 export default router;

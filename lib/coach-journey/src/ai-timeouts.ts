@@ -14,6 +14,15 @@ export const COACH_CLIENT_POLL_REQUEST_TIMEOUT_MS = 15_000;
 export const COACH_CLIENT_POLL_INTERVAL_MS = 2_000;
 /** Total poll budget — matches queue timeout. */
 export const COACH_CLIENT_POLL_MAX_MS = COACH_QUEUE_TIMEOUT_MS;
+export const COACH_CLIENT_POLL_MAX_ATTEMPTS = Math.ceil(
+  COACH_CLIENT_POLL_MAX_MS / COACH_CLIENT_POLL_INTERVAL_MS,
+);
+/** Shared poll options for coach async generate / next-win. */
+export const COACH_CLIENT_POLL_OPTIONS = {
+  maxAttempts: COACH_CLIENT_POLL_MAX_ATTEMPTS,
+  intervalMs: COACH_CLIENT_POLL_INTERVAL_MS,
+  requestTimeoutMs: COACH_CLIENT_POLL_REQUEST_TIMEOUT_MS,
+} as const;
 export const COACH_CLIENT_FETCH_TIMEOUT_MS = 90_000;
 
 /** Show “taking longer” copy after this elapsed time. */

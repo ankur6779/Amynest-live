@@ -12,6 +12,8 @@
  *   const data = await safeFetch<{ items: Item[] }>("/api/items");
  */
 
+import { safeJsonResponse } from "@/lib/safe-json-response";
+
 export type SafeFetchResult<T> =
   | (T & { fallback?: false })
   | { fallback: true; error: string };
@@ -28,8 +30,11 @@ export async function safeFetch<T = Record<string, unknown>>(
       console.error("safeFetch:", url, msg);
       return { fallback: true, error: msg };
     }
-    const data = (await res.json()) as T;
-    return data as T & { fallback?: false };
+    const parsed = await safeJsonResponse<T>(res);
+    if (!parsed.ok) {
+      return { fallback: true, error: `PARSE_ERROR ${parsed.kind}` };
+    }
+    return parsed.data as T & { fallback?: false };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("safeFetch:", url, msg);

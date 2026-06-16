@@ -69,12 +69,14 @@ import {
 import {
   COACH_CLIENT_FETCH_TIMEOUT_MS,
   COACH_CLIENT_SLOW_MESSAGE_MS,
+  COACH_CLIENT_POLL_OPTIONS,
 } from "@workspace/coach-journey";
 import { fetchCoachGeneratePlan, type CoachGeneratePlanResponse } from "@/lib/coach-generate-client";
 import {
   COACH_USER_FACING_ERROR,
   COACH_USER_FACING_LOADING,
   COACH_USER_FACING_SLOW,
+  safeJsonResponse,
 } from "@/lib/safe-json-response";
 
 const COACH_AI_FETCH_TIMEOUT_MS = COACH_CLIENT_FETCH_TIMEOUT_MS;
@@ -805,6 +807,8 @@ export default function AICoachPage() {
   const [isFirstCoachingWin, setIsFirstCoachingWin] = useState(false);
   const fetchingNextRef = useRef(false);
   const extendingRef = useRef(false);
+  const feedbackInFlightRef = useRef(false);
+  const activeIdxRef = useRef(0);
 
   // Keep last submitted answers/payload around so lazy /next-win and /extend work
   const lastPayloadRef = useRef<{
@@ -818,6 +822,10 @@ export default function AICoachPage() {
 
   const planRef = useRef(plan);
   planRef.current = plan;
+
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   // Warm shared coach audio cache when a plan loads (all wins, global reuse).
   useEffect(() => {
@@ -1105,7 +1113,7 @@ export default function AICoachPage() {
         const res = await authFetch(`/api/ai-coach/session/${encodeURIComponent(resumeSessionId)}`);
         if (cancelled) return;
         if (!res.ok) throw new Error("session not found");
-        const data = (await res.json()) as {
+        const parsed = await safeJsonResponse<{
           sessionId: string;
           goalId: string;
           plan: Plan;
@@ -1120,7 +1128,9 @@ export default function AICoachPage() {
             topicAnswers?: Record<string, string | string[]>;
           };
           feedbacks: Record<string, string>;
-        };
+        }>(res);
+        if (!parsed.ok) throw new Error("session not found");
+        const data = parsed.data;
         if (cancelled) return;
 
         // Restore plan + session state
@@ -1508,11 +1518,7 @@ export default function AICoachPage() {
       if (!res.ok) throw new Error(`Server ${res.status}`);
       const { readResolvedApiJson } = await import("@/lib/poll-result");
       const data = await readResolvedApiJson<{ win?: Win }>(res, authFetch, {
-        poll: {
-          maxAttempts: 45,
-          intervalMs: 2000,
-          requestTimeoutMs: 15_000,
-        },
+        poll: COACH_CLIENT_POLL_OPTIONS,
       });
       if (!data?.win) throw new Error("empty win");
       const newLen = currentPlan.wins.length + 1;
@@ -1551,7 +1557,10 @@ export default function AICoachPage() {
   const submitFeedback = async (winNumber: number, feedback: Feedback) => {
     if (!plan || !sessionId) return;
     if (!coachEligible) return;
+    if (feedbackInFlightRef.current || feedbackByWin[winNumber]) return;
+    feedbackInFlightRef.current = true;
 
+    try {
     const denom = originalWinCountRef.current || plan.wins.length;
     const prevPct = computeCoachProgressPct(feedbackByWin, denom);
 
@@ -1630,7 +1639,7 @@ export default function AICoachPage() {
         setPhase("graduation");
         return;
       }
-      await advanceAfterFeedback(activeIdx + 1);
+      await advanceAfterFeedback(activeIdxRef.current + 1);
       return;
     }
 
@@ -1642,16 +1651,16 @@ export default function AICoachPage() {
         return;
       }
       const currentPlan = planRef.current;
-      const atLast = currentPlan ? activeIdx >= currentPlan.wins.length - 1 : true;
+      const atLast = currentPlan ? activeIdxRef.current >= currentPlan.wins.length - 1 : true;
       const canFetchMore = currentPlan
         ? currentPlan.wins.length < (originalWinCountRef.current || 12)
         : false;
       if (!atLast) {
-        await advanceAfterFeedback(activeIdx + 1);
+        await advanceAfterFeedback(activeIdxRef.current + 1);
         return;
       }
       if (canFetchMore) {
-        const advanced = await advanceAfterFeedback(activeIdx + 1);
+        const advanced = await advanceAfterFeedback(activeIdxRef.current + 1);
         if (advanced) return;
       }
       toast({
@@ -1676,7 +1685,10 @@ export default function AICoachPage() {
       setPhase("graduation");
       return;
     }
-    await advanceAfterFeedback(activeIdx + 1);
+    await advanceAfterFeedback(activeIdxRef.current + 1);
+    } finally {
+      feedbackInFlightRef.current = false;
+    }
   };
 
   // ─── Adaptive: ask backend for 1 follow-up win when a step doesn't fully work
@@ -1688,7 +1700,7 @@ export default function AICoachPage() {
     }
     const failedWin = plan.wins.find(w => w.win === failedWinNumber);
     if (!failedWin) return false;
-    const insertAt = activeIdx + 1;
+    const insertAt = activeIdxRef.current + 1;
     const nextWinNum = Math.max(0, ...plan.wins.map(w => w.win)) + 1;
     extendingRef.current = true;
     setExtending(true);
@@ -1717,7 +1729,8 @@ export default function AICoachPage() {
         )
       }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
-        const errBody = await res.json().catch(() => ({})) as { error?: string };
+        const errParsed = await safeJsonResponse<{ error?: string }>(res);
+        const errBody = errParsed.ok ? errParsed.data : {};
         window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
           detail: {
@@ -1733,11 +1746,7 @@ export default function AICoachPage() {
         res,
         authFetch,
         {
-          poll: {
-            maxAttempts: 45,
-            intervalMs: 2000,
-            requestTimeoutMs: 15_000,
-          },
+          poll: COACH_CLIENT_POLL_OPTIONS,
         },
       );
       const newWins = data?.wins ?? data?.result?.wins;
@@ -3371,7 +3380,7 @@ function WinCard({
                   key={b.v}
                   type="button"
                   onClick={() => onFeedback(b.v)}
-                  disabled={extending}
+                  disabled={extending || !!currentFeedback}
                   style={{
                     flex: 1,
                     padding: "12px 6px",

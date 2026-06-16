@@ -131,6 +131,7 @@ export async function fetchCoachGeneratePlan(
         intervalMs: COACH_CLIENT_POLL_INTERVAL_MS,
         requestTimeoutMs: COACH_CLIENT_POLL_REQUEST_TIMEOUT_MS,
         traceHeaders: trace.headers,
+        signal,
       });
       const resolved = await resolveAiApiData<CoachGeneratePlanResponse>(result, authFetch);
       if (resolved?.plan?.wins?.length) {

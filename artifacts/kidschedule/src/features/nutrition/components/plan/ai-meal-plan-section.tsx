@@ -28,6 +28,7 @@ import { MealPlanDaySelector } from "@/features/nutrition/components/plan/meal-p
 import { NutritionPill } from "@/features/nutrition/components/plan/nutrition-pill";
 import { PlanLoadingSkeleton } from "@/features/nutrition/components/plan/plan-loading-skeleton";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
+import { safeJsonResponse } from "@/lib/safe-json-response";
 
 export function AIMealPlanSection() {
   const { t } = useTranslation();
@@ -69,15 +70,16 @@ export function AIMealPlanSection() {
           body: JSON.stringify({ weather, forceRefresh }),
         });
         if (res.status === 402) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string; feature?: string };
+          const parsed = await safeJsonResponse<{ error?: string; feature?: string }>(res);
+          const j = parsed.ok ? parsed.data : {};
           if (j.error === "feature_locked" || j.feature === NUTRITION_WEEK_PLAN_FEATURE) {
             openPaywall("hub_nutrition");
             return;
           }
         }
         if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(j.error ?? `Server error ${res.status}`);
+          const parsed = await safeJsonResponse<{ error?: string }>(res);
+          throw new Error(parsed.ok ? parsed.data.error ?? `Server error ${res.status}` : `Server error ${res.status}`);
         }
         const { readResolvedApiJson } = await import("@/lib/poll-result");
         const data = await readResolvedApiJson<{ plan: DayPlan[]; generatedAt: string }>(res, authFetch);

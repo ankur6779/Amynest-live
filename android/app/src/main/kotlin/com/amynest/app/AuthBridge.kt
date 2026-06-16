@@ -303,7 +303,12 @@ class AuthBridge(
         try {
             pendingFacebookSignInReply = replyProxy to cbId
             persistPendingFacebookSignInCbId(activity, cbId)
-            Log.i(TAG, "Launching Facebook login cbId=$cbId")
+            val fbKeyHash = GoogleSignInDiagnostics.getFacebookKeyHash(activity)
+            Log.i(
+                TAG,
+                "Launching Facebook login package=${activity.packageName} " +
+                    "facebookKeyHash=${fbKeyHash ?: "unknown"} cbId=$cbId",
+            )
             LoginManager.getInstance().apply {
                 // NATIVE_WITH_FALLBACK: uses the Facebook app's native account picker
                 // (same overlay-dialog UX as Google Sign-In) when the app is installed,

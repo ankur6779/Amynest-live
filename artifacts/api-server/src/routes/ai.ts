@@ -10,6 +10,7 @@ import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import { wrapJobInput } from "../queue/ai-job-payload.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
+import { asyncRoute } from "../middlewares/async-route.js";
 
 const router: IRouter = Router();
 
@@ -67,7 +68,7 @@ async function trimUserHistory(userId: string): Promise<void> {
 // Uses recipeFor() which has comprehensive regex matching for Indian + global
 // meal names. The older findRecipe() had only ~15 keywords + a hash-based
 // random fallback that returned wrong recipes for most meal chip names.
-router.post("/ai/recipe", async (req, res): Promise<void> => {
+router.post("/ai/recipe", asyncRoute(async (req, res): Promise<void> => {
   const parsed = GetRecipeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -91,10 +92,10 @@ router.post("/ai/recipe", async (req, res): Promise<void> => {
   };
 
   res.json(GetRecipeResponse.parse(recipe));
-});
+}));
 
 // Rule-based parenting assistant — zero API cost (static FAQ fallback)
-router.post("/ai/assistant", async (req, res): Promise<void> => {
+router.post("/ai/assistant", asyncRoute(async (req, res): Promise<void> => {
   const parsed = AskAssistantBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -105,10 +106,10 @@ router.post("/ai/assistant", async (req, res): Promise<void> => {
   const answer = getParentingAdvice(question, childName ?? undefined, childAge ?? undefined);
 
   res.json(AskAssistantResponse.parse({ answer }));
-});
+}));
 
 // GET /ai/messages — return the user's saved Amy chat history (oldest first)
-router.get("/ai/messages", async (req, res): Promise<void> => {
+router.get("/ai/messages", asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -139,10 +140,10 @@ router.get("/ai/messages", async (req, res): Promise<void> => {
     console.error("[amy-ai] fetch history failed", err);
     res.status(500).json({ error: "failed to load history" });
   }
-});
+}));
 
 // DELETE /ai/messages — wipe the user's Amy chat history
-router.delete("/ai/messages", async (req, res): Promise<void> => {
+router.delete("/ai/messages", asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -154,10 +155,10 @@ router.delete("/ai/messages", async (req, res): Promise<void> => {
     console.error("[amy-ai] delete history failed", err);
     res.status(500).json({ error: "failed to clear history" });
   }
-});
+}));
 
 // AI-powered parenting assistant — infant context: 3/day; otherwise 10/day (see assistantAiUsageGate)
-router.post("/ai/assistant-ai", assistantAiUsageGate, async (req, res): Promise<void> => {
+router.post("/ai/assistant-ai", assistantAiUsageGate, asyncRoute(async (req, res): Promise<void> => {
   const parsed = AskAssistantBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -255,10 +256,10 @@ LENGTH
       legacyPollUrl: `/api/ai/jobs/${jobId}`,
     }),
   });
-});
+}));
 
 // Short-form parenting tip rewrite — strict 30-word output, low cost
-router.post("/ai/rewrite-tip", aiUsageGate, async (req, res): Promise<void> => {
+router.post("/ai/rewrite-tip", aiUsageGate, asyncRoute(async (req, res): Promise<void> => {
   const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 400) : "";
   const childName = typeof req.body?.childName === "string" ? req.body.childName.slice(0, 60) : "";
 
@@ -303,6 +304,6 @@ router.post("/ai/rewrite-tip", aiUsageGate, async (req, res): Promise<void> => {
       pollUrl: `/api/ai/jobs/${jobId}`,
     }),
   });
-});
+}));
 
 export default router;

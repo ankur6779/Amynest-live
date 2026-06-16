@@ -122,6 +122,44 @@ export async function runCoachGenerateSideEffects(
       "coach generate side effects failed (non-fatal)",
     );
   }
+  await enqueueCoachRemainingWins(body, ctx);
+}
+
+/** Queue wins 3–12 on BullMQ instead of fire-and-forget on the API process. */
+export async function enqueueCoachRemainingWins(
+  body: CoachGenerateApiBody,
+  ctx: CoachGeneratePollContext,
+): Promise<void> {
+  if (!body.lazyWins || body.plan.wins.length >= COACH_TOTAL_WINS) return;
+
+  try {
+    const { getGoalPromptSection } = await import("../lib/goal-prompts.js");
+    const { enqueueAiJob } = await import("../queue/ai-job-queue.js");
+    const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+    const generationId = randomUUID();
+    const goalBrief = getGoalPromptSection(ctx.goal, ctx.goalLabel);
+
+    await enqueueAiJob(
+      "ai-coach.remaining_wins",
+      ctx.userId,
+      wrapJobInput("ai-coach/remaining-wins", {
+        generationId,
+        sessionId: ctx.sessionId,
+        userId: ctx.userId,
+        cacheKey: ctx.cacheKey,
+        input: ctx.input,
+        partialPlan: body.plan,
+        goalLabel: ctx.goalLabel,
+        goalBrief,
+      }),
+      { deterministicJobId: `coach-remaining:${ctx.sessionId}` },
+    );
+  } catch (err) {
+    logger.warn(
+      { err, sessionId: ctx.sessionId, userId: ctx.userId },
+      "coach remaining wins enqueue failed (non-fatal)",
+    );
+  }
 }
 
 export function newCoachGeneratePollContext(

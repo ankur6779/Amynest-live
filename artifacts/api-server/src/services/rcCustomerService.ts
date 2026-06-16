@@ -1,5 +1,6 @@
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
+import { safeJsonResponse } from "../lib/safe-json-response.js";
 import { activateSubscription, type Plan } from "./subscriptionService";
 
 const RC_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY ?? "";
@@ -99,7 +100,12 @@ export async function syncRevenueCatSubscription(userId: string): Promise<{
       return { synced: false, isPremium: false, reason: "rc_fetch_failed" };
     }
 
-    const body = (await res.json()) as RcSubscriberResponse;
+    const parsed = await safeJsonResponse<RcSubscriberResponse>(res);
+    if (!parsed.ok) {
+      logger.warn({ userId, kind: parsed.kind, status: res.status }, "[rcSync] subscriber response not JSON");
+      return { synced: false, isPremium: false, reason: "rc_fetch_failed" };
+    }
+    const body = parsed.data;
     const activeEnt = pickActiveEntitlement(body.subscriber?.entitlements);
     if (!activeEnt) {
       // Log what RevenueCat DID return so we can tell apart "no purchase",

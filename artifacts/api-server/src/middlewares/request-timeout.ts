@@ -13,6 +13,18 @@ const LONG_RUNNING_PATH_PREFIXES = [
   "/api/coach/",
   "/api/ai-coach",
   "/api/result/",
+  "/api/meals/",
+  "/api/speech/",
+  "/api/tts/",
+  "/api/abacus/",
+  "/api/infant-",
+  "/api/audio-lessons/",
+  "/api/phonics/",
+  "/api/smart-study/",
+  "/api/olympiad/",
+  "/api/spelling/",
+  "/api/explain/",
+  "/api/ai/",
 ];
 
 function resolveTimeoutMs(req: Request): number {

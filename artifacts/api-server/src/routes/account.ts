@@ -5,7 +5,7 @@ import { db } from "@workspace/db";
 import { logger } from "../lib/logger";
 import {
   logDeletionAudit,
-  purgeUserData,
+  purgeUserDataChunked,
   type DeletionAuditEntry,
 } from "../services/data-deletion-service.js";
 
@@ -33,9 +33,7 @@ router.delete("/account", async (req, res): Promise<void> => {
       // Email lookup is best-effort for admin grant cleanup.
     }
 
-    await db.transaction(async (tx) => {
-      childIds = await purgeUserData(tx, userId, audit, { accountEmail });
-    });
+    childIds = await purgeUserDataChunked(userId, audit, { accountEmail });
 
     logDeletionAudit({
       operation: "account",

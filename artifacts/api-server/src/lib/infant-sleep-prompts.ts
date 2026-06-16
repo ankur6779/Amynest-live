@@ -99,3 +99,30 @@ export function sanitizeInfantSleepCoachPlan(raw: unknown): InfantSleepCoachPlan
     actionSteps,
   };
 }
+
+/** Rule-based plan when OpenAI fails — keeps infant sleep coach usable. */
+export function buildInfantSleepCoachFallbackPlan(ctx: InfantSleepCoachContext): InfantSleepCoachPlan {
+  return {
+    bedtimeRecommendation: `Keep a calm, consistent bedtime for ${ctx.childName}. Start wind-down 20–30 minutes before sleep.`,
+    wakeWindowAdjustments: [
+      ctx.ageMonths < 4
+        ? "Watch sleepy cues (yawning, staring) rather than strict clocks for young infants."
+        : `Adjust wake windows gradually for a ${ctx.ageMonths}-month-old — shorten by 15 minutes if naps were short.`,
+    ],
+    regressionAnalysis:
+      ctx.napSessions14d.length === 0
+        ? "Log a few days of naps and nights so Amy can spot patterns."
+        : "Recent logs show variable sleep — consistency this week will help.",
+    napTransitionGuidance:
+      ctx.ageMonths >= 12
+        ? "Many toddlers move toward one nap between 14–18 months."
+        : "Follow age-typical nap counts and protect bedtime if naps run short.",
+    weeklyFocus: "Build a predictable bedtime routine this week.",
+    actionSteps: [
+      "Log naps and night sleep for 3–5 days.",
+      "Keep bedtime within a 30-minute window.",
+      "Use a short, calm pre-sleep routine.",
+      "Contact your pediatrician for breathing pauses, poor feeding, or fever in young infants.",
+    ],
+  };
+}

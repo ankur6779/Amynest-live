@@ -7,6 +7,7 @@ import { logger } from "../lib/logger.js";
 import { GOAL_IDS, type GoalId } from "../lib/image-map.js";
 import { getGoalPromptSection } from "../lib/goal-prompts.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
+import { asyncRoute } from "../middlewares/async-route.js";
 import { infantCoachPreviewGate } from "../middlewares/infantCoachPreviewGate.js";
 import { incrementAiUsage } from "../services/subscriptionService.js";
 import {
@@ -25,7 +26,11 @@ import {
 } from "../services/coachWinGenerationService.js";
 import { saveCoachSession } from "../services/coachSessionService.js";
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
-import { buildCoachProgressViewModel, type CoachPlanRef } from "@workspace/coach-journey";
+import {
+  buildCoachProgressViewModel,
+  COACH_GATEWAY_TIMEOUT_MS,
+  type CoachPlanRef,
+} from "@workspace/coach-journey";
 import { fallbackExtensionWin } from "../services/coachExtensionFallback.js";
 import { buildCoachPlanCacheKey, COACH_PLAN_NAMESPACE, shouldBypassCoachPlanCache } from "../services/coachPlanCacheKey.js";
 import { buildGoalSpecificFullFallback, buildGoalSpecificFallbackWin } from "../services/coachGoalFallbackLibrary.js";
@@ -35,7 +40,7 @@ import {
   recordCoachObservabilityEvent,
   recordCoachNextWinAttempt,
   recordCoachProgressDelta,
-  getCoachObservabilityDashboard,
+  getCoachObservabilityDashboardAsync,
 } from "../services/coachObservabilityService.js";
 import { computeCoachProgressPct } from "../services/coachProgressUtils.js";
 import {
@@ -965,7 +970,7 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
 }
 
 // ─── GET /ai-coach/observability — admin dashboard for Phase 2 metrics ───
-router.get("/ai-coach/observability", async (req, res): Promise<void> => {
+async function handleCoachObservability(req: import("express").Request, res: import("express").Response): Promise<void> {
   const { userId } = getAuth(req);
   if (!isAdminUser(userId)) {
     res.status(403).json({ error: "forbidden" });
@@ -974,18 +979,18 @@ router.get("/ai-coach/observability", async (req, res): Promise<void> => {
   const { describeCoachCacheLayers } = await import("../services/coachPlanCacheKey.js");
   res.json({
     ok: true,
-    dashboard: getCoachObservabilityDashboard(),
+    dashboard: await getCoachObservabilityDashboardAsync(),
     cacheLayers: describeCoachCacheLayers(),
   });
-});
+}
 
-// ─── POST /ai-coach (2 wins now; wins 3–12 lazy on /coach/next-win) ───────
-router.post("/ai-coach", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
-router.post("/coach/generate", infantCoachPreviewGate(), aiUsageGate, handleCoachGenerate);
-router.post("/coach/generate-fallback", infantCoachPreviewGate(), handleCoachGenerateFallback);
-router.post("/ai-coach/generate-fallback", infantCoachPreviewGate(), handleCoachGenerateFallback);
-router.post("/ai-coach/next-win", infantCoachPreviewGate(), aiUsageGate, handleCoachNextWin);
-router.post("/coach/next-win", infantCoachPreviewGate(), aiUsageGate, handleCoachNextWin);
+router.get("/ai-coach/observability", asyncRoute(handleCoachObservability));
+router.post("/ai-coach", infantCoachPreviewGate(), aiUsageGate, asyncRoute(handleCoachGenerate));
+router.post("/coach/generate", infantCoachPreviewGate(), aiUsageGate, asyncRoute(handleCoachGenerate));
+router.post("/coach/generate-fallback", infantCoachPreviewGate(), asyncRoute(handleCoachGenerateFallback));
+router.post("/ai-coach/generate-fallback", infantCoachPreviewGate(), asyncRoute(handleCoachGenerateFallback));
+router.post("/ai-coach/next-win", infantCoachPreviewGate(), aiUsageGate, asyncRoute(handleCoachNextWin));
+router.post("/coach/next-win", infantCoachPreviewGate(), aiUsageGate, asyncRoute(handleCoachNextWin));
 
 async function handleCoachStatus(req: import("express").Request, res: import("express").Response): Promise<void> {
   const { userId } = getAuth(req);
@@ -1021,15 +1026,15 @@ async function handleCoachStatus(req: import("express").Request, res: import("ex
   });
 }
 
-router.get("/ai-coach/status", handleCoachStatus);
-router.get("/coach/status", handleCoachStatus);
+router.get("/ai-coach/status", asyncRoute(handleCoachStatus));
+router.get("/coach/status", asyncRoute(handleCoachStatus));
 
 // ─── POST /ai-coach/stream ───────────────────────────────────────────────
 // Server-Sent Events (SSE) version of /ai-coach. Streams progress events
 // as the AI generates each win, so the loading UI can show "Crafting win
 // 5 of 12…" instead of a static spinner. Same validation, same caches —
 // returns the same `{ plan, sessionId, ... }` shape inside a `done` event.
-router.post("/ai-coach/stream", infantCoachPreviewGate(), aiUsageGate, async (req, res): Promise<void> => {
+router.post("/ai-coach/stream", infantCoachPreviewGate(), aiUsageGate, asyncRoute(async (req, res): Promise<void> => {
   pruneMem();
   const { userId } = getAuth(req);
   const raw: CoachInput = req.body ?? {};
@@ -1213,8 +1218,8 @@ ${goalBrief}`;
       );
       if (enqueued.jobId) {
         const finished = isBullMqActive()
-          ? await waitForJobResult(enqueued.jobId, 90_000)
-          : await waitForJob(enqueued.jobId, 90_000);
+          ? await waitForJobResult(enqueued.jobId, COACH_GATEWAY_TIMEOUT_MS)
+          : await waitForJob(enqueued.jobId, COACH_GATEWAY_TIMEOUT_MS);
         if (finished?.status === "completed" && finished.result) {
           const buf = (finished.result as { raw: string }).raw ?? "";
           const meta = tryExtractMeta(buf);
@@ -1261,11 +1266,11 @@ ${goalBrief}`;
       recordCoachPlanCompleted(userId, goal, sessionId),
     );
   }
-});
+}));
 
 // ─── POST /ai-coach/extend ───────────────────────────────────────────────
 // When a parent says "Not worked for me" or "Partially worked" — generate 1 adaptive win
-router.post("/ai-coach/extend", infantCoachPreviewGate(), aiUsageGate, async (req, res): Promise<void> => {
+router.post("/ai-coach/extend", infantCoachPreviewGate(), aiUsageGate, asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -1365,10 +1370,10 @@ STRICT:
     },
     res,
   });
-});
+}));
 
 // ─── POST /ai-coach/feedback ─────────────────────────────────────────────
-router.post("/ai-coach/feedback", infantCoachPreviewGate(), async (req, res): Promise<void> => {
+router.post("/ai-coach/feedback", infantCoachPreviewGate(), asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -1459,11 +1464,11 @@ router.post("/ai-coach/feedback", infantCoachPreviewGate(), async (req, res): Pr
     logger.error({ err }, "ai-coach feedback insert failed");
     res.status(500).json({ error: "failed to save feedback" });
   }
-});
+}));
 
 // ─── GET /ai-coach/session/:sessionId ────────────────────────────────────
 // Loads saved plan + inputs for "Continue plan" from Progress page
-router.get("/ai-coach/session/:sessionId", async (req, res): Promise<void> => {
+router.get("/ai-coach/session/:sessionId", asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -1499,10 +1504,10 @@ router.get("/ai-coach/session/:sessionId", async (req, res): Promise<void> => {
     logger.error({ err }, "ai-coach session fetch failed");
     res.status(500).json({ error: "failed to load session" });
   }
-});
+}));
 
 // ─── GET /ai-coach/progress ──────────────────────────────────────────────
-router.get("/ai-coach/progress", async (req, res): Promise<void> => {
+router.get("/ai-coach/progress", asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
 
@@ -1586,10 +1591,10 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
     logger.error({ err }, "ai-coach progress query failed");
     res.status(500).json({ error: "failed to load progress" });
   }
-});
+}));
 
 // ─── POST /ai-coach/graduate ─────────────────────────────────────────────
-router.post("/ai-coach/graduate", infantCoachPreviewGate(), async (req, res): Promise<void> => {
+router.post("/ai-coach/graduate", infantCoachPreviewGate(), asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1619,10 +1624,10 @@ router.post("/ai-coach/graduate", infantCoachPreviewGate(), async (req, res): Pr
     /* non-fatal */
   }
   res.json({ ok: true });
-});
+}));
 
 // ─── POST /ai-coach/check-in ─────────────────────────────────────────────
-router.post("/ai-coach/check-in", infantCoachPreviewGate(), async (req, res): Promise<void> => {
+router.post("/ai-coach/check-in", infantCoachPreviewGate(), asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1664,10 +1669,10 @@ router.post("/ai-coach/check-in", infantCoachPreviewGate(), async (req, res): Pr
     /* non-fatal */
   }
   res.json({ ok: true });
-});
+}));
 
 // ─── GET /ai-coach/intelligence ──────────────────────────────────────────
-router.get("/ai-coach/intelligence", async (req, res): Promise<void> => {
+router.get("/ai-coach/intelligence", asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1687,11 +1692,11 @@ router.get("/ai-coach/intelligence", async (req, res): Promise<void> => {
     logger.error({ err }, "ai-coach intelligence load failed");
     res.status(500).json({ error: "failed to load intelligence" });
   }
-});
+}));
 
 // ─── POST /ai-coach/pregenerate-audio ────────────────────────────────────
 // Pre-synthesizes listen-aloud MP3s for coach wins into coach_audio_cache + tts_cache.
-router.post("/ai-coach/pregenerate-audio", async (req, res): Promise<void> => {
+router.post("/ai-coach/pregenerate-audio", asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1726,11 +1731,11 @@ router.post("/ai-coach/pregenerate-audio", async (req, res): Promise<void> => {
     buildSyncBody: (result) => result as Record<string, unknown>,
     res,
   });
-});
+}));
 
 // ─── POST /ai-coach/audio/generate ───────────────────────────────────────
 // Cache-first coach win audio — dedicated layer then shared TTS store.
-router.post("/ai-coach/audio/generate", async (req, res): Promise<void> => {
+router.post("/ai-coach/audio/generate", asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1781,11 +1786,11 @@ router.post("/ai-coach/audio/generate", async (req, res): Promise<void> => {
     );
     res.status(502).json({ ok: false, error: "tts_failed" });
   }
-});
+}));
 
 // ─── POST /ai-coach/pregenerate-infant-audio ─────────────────────────────
 // One-shot warm of all static 0–2 yr infant problem listen-aloud clips (shared cache).
-router.post("/ai-coach/pregenerate-infant-audio", async (req, res): Promise<void> => {
+router.post("/ai-coach/pregenerate-infant-audio", asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1801,6 +1806,6 @@ router.post("/ai-coach/pregenerate-infant-audio", async (req, res): Promise<void
     buildSyncBody: (result) => result as Record<string, unknown>,
     res,
   });
-});
+}));
 
 export default router;

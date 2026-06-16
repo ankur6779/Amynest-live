@@ -146,7 +146,7 @@ function minimalCoachFallbackWin(winNumber: number, goalLabel: string): CoachWin
   };
 }
 
-async function loadFallbackPlan(input: CoachInput, goalLabel: string): Promise<CoachPlan> {
+export async function loadFallbackPlan(input: CoachInput, goalLabel: string): Promise<CoachPlan> {
   const { buildGoalSpecificFullFallback } = await import("./coachGoalFallbackLibrary.js");
   return buildGoalSpecificFullFallback(input.goal ?? "generic", goalLabel, input);
 }
@@ -693,74 +693,41 @@ export interface BackgroundCoachJob {
 }
 
 /**
- * Fire-and-forget background completion. Does not use per-user queue.
+ * Enqueue background win completion on BullMQ (replaces in-process setImmediate).
  */
 export function generateRemainingCoachWins(job: BackgroundCoachJob): void {
   const { generationId } = job;
   if (inFlightBackground.has(generationId)) return;
   inFlightBackground.add(generationId);
 
-  setImmediate(() => {
-    void (async () => {
-      const bgSpan = startCoachPerfSpan("BACKGROUND_TOTAL", {
-        generationId: job.generationId,
+  void (async () => {
+    try {
+      const { enqueueCoachRemainingWins, buildCoachGenerateApiBody } = await import(
+        "../lib/coach-generate-response.js"
+      );
+      const body = buildCoachGenerateApiBody(null, {
         userId: job.userId,
+        sessionId: job.sessionId,
+        goal: job.input.goal ?? "",
+        goalLabel: job.goalLabel,
+        input: job.input,
+        cacheKey: job.cacheKey,
+      }, { skipTelemetry: true });
+      body.plan = job.partialPlan;
+      await enqueueCoachRemainingWins(body, {
+        userId: job.userId,
+        sessionId: job.sessionId,
+        goal: job.input.goal ?? "",
+        goalLabel: job.goalLabel,
+        input: job.input,
+        cacheKey: job.cacheKey,
       });
-      try {
-        const { wins: remaining, aiOk } = await generateRemainingWinsWithAi(
-          job.input,
-          job.goalLabel,
-          job.goalBrief,
-          job.partialPlan,
-          job.partialPlan.wins,
-          job.renderTopicAnswersBlock,
-        );
-
-        const fullPlan = mergeCoachPlan(job.partialPlan, job.partialPlan.wins, remaining);
-        if (!validatePlan(fullPlan)) {
-          logger.warn({ generationId }, "ai-coach background merge validation failed — using fallback slice");
-          const fallback = await loadFallbackPlan(job.input, job.goalLabel);
-          Object.assign(fullPlan, fallback);
-        }
-
-        if (aiOk) await dbSetCoachCache(job.cacheKey, job.input, fullPlan);
-        job.memCacheSet?.(fullPlan);
-        job.onComplete?.(fullPlan);
-
-        await upsertCoachGeneration({
-          generationId: job.generationId,
-          sessionId: job.sessionId,
-          userId: job.userId,
-          cacheKey: job.cacheKey,
-          input: job.input,
-          plan: fullPlan,
-          status: "complete",
-        });
-        await updateCoachSessionPlan(job.userId, job.sessionId, fullPlan);
-
-        bgSpan.end({ status: "complete", wins: fullPlan.wins.length, aiOk });
-        logger.info(
-          { generationId, sessionId: job.sessionId, wins: fullPlan.wins.length },
-          "ai-coach background wins complete",
-        );
-      } catch (err) {
-        bgSpan.end({ status: "error" });
-        logger.error({ err, generationId: job.generationId }, "ai-coach background generation failed");
-        await upsertCoachGeneration({
-          generationId: job.generationId,
-          sessionId: job.sessionId,
-          userId: job.userId,
-          cacheKey: job.cacheKey,
-          input: job.input,
-          plan: job.partialPlan,
-          status: "partial",
-          errorMessage: err instanceof Error ? err.message : "background_failed",
-        });
-      } finally {
-        inFlightBackground.delete(generationId);
-      }
-    })();
-  });
+    } catch (err) {
+      logger.error({ err, generationId }, "ai-coach remaining wins enqueue failed");
+    } finally {
+      inFlightBackground.delete(generationId);
+    }
+  })();
 }
 
 export function newCoachGenerationIds(): { sessionId: string; generationId: string } {

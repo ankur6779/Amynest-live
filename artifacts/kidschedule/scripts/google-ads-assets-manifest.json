@@ -1,0 +1,235 @@
+{
+  "outputDir": "public/promo/google-ads",
+  "defaults": {
+    "logo": "public/amynest-logo-new.png",
+    "footer": "Free to start · Privacy first · amynest.in/get-app"
+  },
+  "screenshotSources": {
+    "amy-assistant": "public/promo/get-app/screenshots/amy-assistant.jpg",
+    "daily-routine": "public/promo/get-app/screenshots/daily-routine.jpg",
+    "infant-hub": "public/promo/get-app/screenshots/infant-hub.jpg",
+    "speech-coach": "public/promo/get-app/screenshots/speech-coach.png",
+    "study-zone": "public/promo/get-app/screenshots/smart-study-zone.jpg",
+    "opengraph": "public/opengraph.jpg",
+    "tap-download": "public/promo/amynest-tap-to-download.png",
+    "reel-amy": "public/promo/social/reels/amy-coach.png",
+    "reel-routines": "public/promo/social/reels/daily-routines.png",
+    "reel-speech": "public/promo/social/reels/speech-coach.png",
+    "reel-nutrition": "public/promo/social/reels/nutrition-hub.png",
+    "reel-learning": "public/promo/social/reels/learning-zone.png",
+    "reel-screen-time": "public/promo/social/reels/screen-time-guidance.png",
+    "infant-baby": "public/promo/infant-parenting/appstore-02-baby-today.jpg"
+  },
+  "assets": [
+    {
+      "id": "01-landscape-hero",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "01-landscape-hero-calm-daily-wins.png",
+      "eyebrow": "AI Parenting Coach",
+      "headline": "Turn Parenting Chaos Into",
+      "headlineAccent": "Calm Daily Wins",
+      "subheadline": "Routines, speech, nutrition & infant care — one app for Indian families.",
+      "showCta": true
+    },
+    {
+      "id": "02-landscape-amy",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "02-landscape-amy-coach.png",
+      "eyebrow": "AMY Coach",
+      "headline": "Ask Anything About",
+      "headlineAccent": "Parenting",
+      "subheadline": "Sleep, tantrums, meals & milestones — personalized answers in seconds.",
+      "screenshot": "amy-assistant",
+      "accent": "#a855f7"
+    },
+    {
+      "id": "03-landscape-routines",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "03-landscape-daily-routines.png",
+      "eyebrow": "Smart Routines",
+      "headline": "End Daily Chaos With",
+      "headlineAccent": "Calm Plans",
+      "subheadline": "AI routines for mornings, meals, study & bedtime — ages 0 to 10+.",
+      "screenshot": "daily-routine",
+      "accent": "#7c3aed"
+    },
+    {
+      "id": "04-landscape-infant",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "04-landscape-infant-hub-free.png",
+      "eyebrow": "Infant Hub · 100% Free",
+      "headline": "Decode Cries & Track",
+      "headlineAccent": "Baby Care",
+      "subheadline": "Feeds, sleep, growth & vaccines — full infant app free on Google Play.",
+      "screenshot": "infant-hub",
+      "accent": "#f472b6"
+    },
+    {
+      "id": "05-landscape-speech",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "05-landscape-speech-coach.png",
+      "eyebrow": "Speech Coach",
+      "headline": "Help Your Child Speak",
+      "headlineAccent": "With Confidence",
+      "subheadline": "Guided pronunciation practice with streaks & parent summaries.",
+      "screenshot": "speech-coach",
+      "accent": "#f59e0b"
+    },
+    {
+      "id": "06-landscape-study",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "06-landscape-smart-study.png",
+      "eyebrow": "Smart Study Zone",
+      "headline": "Learning That Fits",
+      "headlineAccent": "Your Schedule",
+      "subheadline": "Phonics, math, spelling & discovery — structured for every age.",
+      "screenshot": "study-zone",
+      "accent": "#3b82f6"
+    },
+    {
+      "id": "07-landscape-cta",
+      "format": "landscape",
+      "layout": "feature",
+      "filename": "07-landscape-download-free.png",
+      "eyebrow": "Google Play",
+      "headline": "Download AmyNest AI",
+      "headlineAccent": "Free Today",
+      "subheadline": "Join parents building better routines, meals & learning habits.",
+      "screenshot": "tap-download",
+      "showCta": true,
+      "accent": "#ec4899"
+    },
+    {
+      "id": "08-square-hero",
+      "format": "square",
+      "layout": "stack",
+      "filename": "08-square-one-ai-companion.png",
+      "eyebrow": "AmyNest AI",
+      "headline": "One AI Companion For",
+      "headlineAccent": "Every Challenge",
+      "subheadline": "From newborn sleep to school success — guidance that grows with your child.",
+      "showCta": true
+    },
+    {
+      "id": "09-square-amy",
+      "format": "square",
+      "layout": "stack",
+      "filename": "09-square-amy-assistant.png",
+      "eyebrow": "AMY Assistant",
+      "headline": "Your 24/7",
+      "headlineAccent": "Parenting Co-Pilot",
+      "subheadline": "Instant, personalized answers — not generic blog tips.",
+      "screenshot": "amy-assistant",
+      "accent": "#a855f7"
+    },
+    {
+      "id": "10-square-routines",
+      "format": "square",
+      "layout": "stack",
+      "filename": "10-square-daily-routines.png",
+      "eyebrow": "Routine Generator",
+      "headline": "Personalized Plans",
+      "headlineAccent": "Every Day",
+      "subheadline": "Morning prep, study blocks & wind-down — built for your family.",
+      "screenshot": "daily-routine",
+      "accent": "#7c3aed"
+    },
+    {
+      "id": "11-square-infant",
+      "format": "square",
+      "layout": "stack",
+      "filename": "11-square-infant-hub.png",
+      "eyebrow": "0–24 Months",
+      "headline": "Infant Parenting",
+      "headlineAccent": "Made Simple",
+      "subheadline": "Cry insights, feeding support & sleep guidance — 100% free.",
+      "screenshot": "infant-baby",
+      "accent": "#f472b6"
+    },
+    {
+      "id": "12-square-speech",
+      "format": "square",
+      "layout": "stack",
+      "filename": "12-square-speech-coach.png",
+      "eyebrow": "Speech Development",
+      "headline": "Practice Words",
+      "headlineAccent": "Build Streaks",
+      "subheadline": "Warm-up sounds, confidence drills & parent progress summaries.",
+      "screenshot": "speech-coach",
+      "accent": "#f59e0b"
+    },
+    {
+      "id": "13-square-study",
+      "format": "square",
+      "layout": "stack",
+      "filename": "13-square-learning-zone.png",
+      "eyebrow": "1000+ Activities",
+      "headline": "One Learning",
+      "headlineAccent": "Home",
+      "subheadline": "Focus sessions, skill builders & progress saved automatically.",
+      "screenshot": "study-zone",
+      "accent": "#3b82f6"
+    },
+    {
+      "id": "14-square-nutrition",
+      "format": "square",
+      "layout": "full",
+      "filename": "14-square-nutrition-hub.png",
+      "screenshot": "reel-nutrition"
+    },
+    {
+      "id": "15-portrait-amy-reel",
+      "format": "portrait",
+      "layout": "full",
+      "filename": "15-portrait-amy-coach-reel.png",
+      "screenshot": "reel-amy"
+    },
+    {
+      "id": "16-portrait-routines-reel",
+      "format": "portrait",
+      "layout": "full",
+      "filename": "16-portrait-routines-reel.png",
+      "screenshot": "reel-routines"
+    },
+    {
+      "id": "17-portrait-speech-reel",
+      "format": "portrait",
+      "layout": "full",
+      "filename": "17-portrait-speech-reel.png",
+      "screenshot": "reel-speech"
+    },
+    {
+      "id": "18-portrait-learning-reel",
+      "format": "portrait",
+      "layout": "full",
+      "filename": "18-portrait-learning-reel.png",
+      "screenshot": "reel-learning"
+    },
+    {
+      "id": "19-portrait-screen-time",
+      "format": "portrait",
+      "layout": "full",
+      "filename": "19-portrait-screen-time-reel.png",
+      "screenshot": "reel-screen-time"
+    },
+    {
+      "id": "20-portrait-cta",
+      "format": "portrait",
+      "layout": "stack",
+      "filename": "20-portrait-download-cta.png",
+      "eyebrow": "Free Download",
+      "headline": "Start Your",
+      "headlineAccent": "Parenting Journey",
+      "subheadline": "Routines · Speech · Nutrition · Infant care — free on Google Play.",
+      "screenshot": "tap-download",
+      "showCta": true,
+      "accent": "#ec4899"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import {
   type Plan,
 } from "../services/subscriptionService";
 import { getLivePlanPrices } from "../services/rcPricingService";
+import { asyncRoute } from "../middlewares/async-route.js";
 import { requireAuth } from "../middlewares/requireAuth";
 import { buildSubscriptionFallbackResponse } from "../lib/api-fallbacks.js";
 import { buildPlanCardsForApi } from "@workspace/subscription-marketing";
@@ -140,7 +141,7 @@ router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<voi
  * subscriber record from RevenueCat and activate premium immediately instead
  * of waiting for the webhook (which can lag several seconds).
  */
-router.post("/subscription/rc-sync", requireAuth, async (req, res): Promise<void> => {
+router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -168,14 +169,14 @@ router.post("/subscription/rc-sync", requireAuth, async (req, res): Promise<void
     reason: result.reason,
     entitlements: ent,
   });
-});
+}));
 
 /**
  * Legacy endpoint — kept for the web client which still posts here. Returns
  * 200 with rc-config payload so the web client can hand-off to RevenueCat.
  * Mobile clients should call /subscription/rc-config directly.
  */
-router.post("/subscription/checkout", requireAuth, async (req, res): Promise<void> => {
+router.post("/subscription/checkout", requireAuth, asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -192,7 +193,7 @@ router.post("/subscription/checkout", requireAuth, async (req, res): Promise<voi
       yearly: "$rc_annual",
     },
   });
-});
+}));
 
 /**
  * RevenueCat webhook — invoked by RevenueCat on subscription lifecycle events
@@ -201,7 +202,7 @@ router.post("/subscription/checkout", requireAuth, async (req, res): Promise<voi
  *
  * Authenticated via shared bearer token (REVENUECAT_WEBHOOK_SECRET).
  */
-router.post("/subscription/webhook", async (req, res): Promise<void> => {
+router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> => {
   const expected = process.env.REVENUECAT_WEBHOOK_SECRET;
   if (!expected) {
     if (process.env.NODE_ENV === "production") {
@@ -297,7 +298,7 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
       res.json({ ok: true, ignored: event.type });
       return;
   }
-});
+}));
 
 /**
  * POST /subscription/cancel
@@ -306,7 +307,7 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
  * - Manual/trial: downgrades immediately.
  * Returns updated entitlements.
  */
-router.post("/subscription/cancel", requireAuth, async (req, res): Promise<void> => {
+router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -362,7 +363,7 @@ router.post("/subscription/cancel", requireAuth, async (req, res): Promise<void>
   } catch (err: any) {
     res.status(502).json({ error: "cancel_failed", message: err?.message });
   }
-});
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Razorpay (web + Android only — iOS keeps RevenueCat / Apple IAP)
@@ -397,7 +398,7 @@ router.get("/subscription/razorpay/config", requireAuth, (req, res): void => {
 router.post(
   "/subscription/razorpay/create-subscription",
   requireAuth,
-  async (req, res): Promise<void> => {
+  asyncRoute(async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;
     if (!userId) {
       res.status(401).json({ error: "unauthorized" });
@@ -434,7 +435,7 @@ router.post(
     } catch (err: any) {
       res.status(502).json({ error: "razorpay_create_failed", message: err?.message });
     }
-  },
+  }),
 );
 
 /**
@@ -455,7 +456,7 @@ router.post(
 router.post(
   "/subscription/razorpay/verify",
   requireAuth,
-  async (req, res): Promise<void> => {
+  asyncRoute(async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;
     if (!userId) {
       res.status(401).json({ error: "unauthorized" });
@@ -542,7 +543,7 @@ router.post(
       plan: planCode,
       entitlements: ent,
     });
-  },
+  }),
 );
 
 /**
@@ -567,7 +568,7 @@ router.post(
  * the database row is the lock.
  */
 
-router.post("/subscription/razorpay/webhook", async (req, res): Promise<void> => {
+router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promise<void> => {
   // Razorpay always POSTs JSON. Reject anything else so the rawBody hook
   // (which is keyed off application/json) is guaranteed to have run.
   const ct = (req.headers["content-type"] ?? "").toString().toLowerCase();
@@ -716,6 +717,6 @@ router.post("/subscription/razorpay/webhook", async (req, res): Promise<void> =>
       res.json({ ok: true, applied: outcome.payload });
       return;
   }
-});
+}));
 
 export default router;

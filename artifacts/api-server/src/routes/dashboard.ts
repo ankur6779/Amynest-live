@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, routinesTable, behaviorsTable } from "@workspace/db";
 import { GetDashboardSummaryResponse, GetRecentRoutinesResponse, GetBehaviorStatsResponse } from "@workspace/api-zod";
@@ -49,8 +49,7 @@ router.get(
           ? await db
               .select()
               .from(behaviorsTable)
-              .where(eq(behaviorsTable.date, today!))
-              .then((rows) => rows.filter((b) => childIds.includes(b.childId)))
+              .where(and(inArray(behaviorsTable.childId, childIds), eq(behaviorsTable.date, today!)))
           : [];
 
       const weekRoutines = routines.filter(
@@ -149,8 +148,7 @@ router.get(
           ? await db
               .select()
               .from(behaviorsTable)
-              .where(eq(behaviorsTable.date, today!))
-              .then((rows) => rows.filter((b) => childIds.includes(b.childId)))
+              .where(and(inArray(behaviorsTable.childId, childIds), eq(behaviorsTable.date, today!)))
           : [];
 
       const stats = children.map((child) => {

@@ -15,6 +15,7 @@ import {
   assessMealAgeSafety,
 } from "../lib/meal-safety.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { asyncRoute } from "../middlewares/async-route.js";
 import { buildMealsAiGenerateApiBody } from "../lib/meals-ai-generate-response.js";
 import {
   resolveNutritionCountryProfile,
@@ -195,7 +196,7 @@ RULES:
 Generate exactly ${count} meals as a JSON array.`;
 }
 
-router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
+router.get("/meals/generate", requireAuth, asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required to use meal generator." });
@@ -241,7 +242,7 @@ router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
     },
     res,
   });
-});
+}));
 
 // ─── AI Meal Generator from Free-Text User Query ─────────────────────────────
 // POST /api/meals/ai-generate
@@ -408,7 +409,7 @@ RULES:
 - amyMessage: 1 sentence, max 120 chars`;
 }
 
-router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> => {
+router.post("/meals/ai-generate", requireAuth, asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required." });
@@ -554,7 +555,7 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
     logger.error(`[meals/ai-generate] queue error ${String(err)}`);
     res.status(503).json({ error: "AI service unavailable. Please retry." });
   }
-});
+}));
 
 // ─── AI 7-Day Week Plan ───────────────────────────────────────────────────────
 // POST /api/meals/week-plan
@@ -732,7 +733,7 @@ OUTPUT FORMAT (exactly this shape):
 Generate all 7 days (Monday through Sunday).`;
 }
 
-router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"), async (req, res): Promise<void> => {
+router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"), asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required." });
@@ -855,7 +856,7 @@ router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"),
     },
     res,
   });
-});
+}));
 
 
 // ─── Family Portions ──────────────────────────────────────────────────────────
@@ -933,7 +934,7 @@ OUTPUT:
 }`;
 }
 
-router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family_ai"), async (req, res): Promise<void> => {
+router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family_ai"), asyncRoute(async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required." });
@@ -993,7 +994,7 @@ router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family
     },
     res,
   });
-});
+}));
 
 export default router;
 

@@ -1,6 +1,7 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
 import {
   buildInfantFeedingPlanPrompt,
+  buildInfantFeedingPlanFallback,
   sanitizeInfantFeedingPlan,
   type InfantFeedingPlan,
   type InfantFeedingPlanContext,
@@ -50,10 +51,16 @@ export async function runInfantFeedingPlan(input: {
     });
   }
 
-  if (!outcome.content) throw new Error(outcome.error ?? "ai_empty");
+  if (!outcome.content) {
+    return { plan: buildInfantFeedingPlanFallback(input.context), cached: false };
+  }
 
-  const parsed = JSON.parse(outcome.content) as unknown;
-  const plan = sanitizeInfantFeedingPlan(parsed);
-  if (!plan) throw new Error("invalid_plan");
-  return { plan, cached: false };
+  try {
+    const parsed = JSON.parse(outcome.content) as unknown;
+    const plan = sanitizeInfantFeedingPlan(parsed);
+    if (!plan) return { plan: buildInfantFeedingPlanFallback(input.context), cached: false };
+    return { plan, cached: false };
+  } catch {
+    return { plan: buildInfantFeedingPlanFallback(input.context), cached: false };
+  }
 }

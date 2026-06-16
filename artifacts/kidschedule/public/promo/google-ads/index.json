@@ -1,0 +1,244 @@
+{
+  "generatedAt": "2026-06-15T18:28:32.789Z",
+  "campaign": "AmyNest AI — Google Ads (get-app)",
+  "copySuggestions": {
+    "headlines": [
+      "AmyNest AI Parenting Coach",
+      "Calm Daily Parenting Wins",
+      "AI Routines For Your Child",
+      "Free Infant Hub · 0–24 Mo",
+      "Speech Coach For Kids"
+    ],
+    "descriptions": [
+      "Routines, speech, nutrition & infant care. Free on Google Play.",
+      "Turn parenting chaos into calm. AI coach built for Indian families.",
+      "Personalized plans for sleep, meals, tantrums & learning.",
+      "Download free — privacy first, no ads shown to children.",
+      "From newborn to school age. One app, whole family."
+    ],
+    "finalUrl": "https://www.amynest.in/get-app",
+    "playStoreUrl": "https://play.google.com/store/apps/details?id=com.amynest.app"
+  },
+  "assets": [
+    {
+      "type": "image",
+      "id": "01-landscape-hero",
+      "filename": "01-landscape-hero-calm-daily-wins.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/01-landscape-hero-calm-daily-wins.png"
+    },
+    {
+      "type": "image",
+      "id": "02-landscape-amy",
+      "filename": "02-landscape-amy-coach.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/02-landscape-amy-coach.png"
+    },
+    {
+      "type": "image",
+      "id": "03-landscape-routines",
+      "filename": "03-landscape-daily-routines.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/03-landscape-daily-routines.png"
+    },
+    {
+      "type": "image",
+      "id": "04-landscape-infant",
+      "filename": "04-landscape-infant-hub-free.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/04-landscape-infant-hub-free.png"
+    },
+    {
+      "type": "image",
+      "id": "05-landscape-speech",
+      "filename": "05-landscape-speech-coach.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/05-landscape-speech-coach.png"
+    },
+    {
+      "type": "image",
+      "id": "06-landscape-study",
+      "filename": "06-landscape-smart-study.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/06-landscape-smart-study.png"
+    },
+    {
+      "type": "image",
+      "id": "07-landscape-cta",
+      "filename": "07-landscape-download-free.png",
+      "format": "landscape",
+      "width": 1200,
+      "height": 628,
+      "ratio": "1.91:1",
+      "path": "public/promo/google-ads/images/07-landscape-download-free.png"
+    },
+    {
+      "type": "image",
+      "id": "08-square-hero",
+      "filename": "08-square-one-ai-companion.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/08-square-one-ai-companion.png"
+    },
+    {
+      "type": "image",
+      "id": "09-square-amy",
+      "filename": "09-square-amy-assistant.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/09-square-amy-assistant.png"
+    },
+    {
+      "type": "image",
+      "id": "10-square-routines",
+      "filename": "10-square-daily-routines.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/10-square-daily-routines.png"
+    },
+    {
+      "type": "image",
+      "id": "11-square-infant",
+      "filename": "11-square-infant-hub.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/11-square-infant-hub.png"
+    },
+    {
+      "type": "image",
+      "id": "12-square-speech",
+      "filename": "12-square-speech-coach.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/12-square-speech-coach.png"
+    },
+    {
+      "type": "image",
+      "id": "13-square-study",
+      "filename": "13-square-learning-zone.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/13-square-learning-zone.png"
+    },
+    {
+      "type": "image",
+      "id": "14-square-nutrition",
+      "filename": "14-square-nutrition-hub.png",
+      "format": "square",
+      "width": 1200,
+      "height": 1200,
+      "ratio": "1:1",
+      "path": "public/promo/google-ads/images/14-square-nutrition-hub.png"
+    },
+    {
+      "type": "image",
+      "id": "15-portrait-amy-reel",
+      "filename": "15-portrait-amy-coach-reel.png",
+      "format": "portrait",
+      "width": 960,
+      "height": 1200,
+      "ratio": "4:5",
+      "path": "public/promo/google-ads/images/15-portrait-amy-coach-reel.png"
+    },
+    {
+      "type": "image",
+      "id": "16-portrait-routines-reel",
+      "filename": "16-portrait-routines-reel.png",
+      "format": "portrait",
+      "width": 960,
+      "height": 1200,
+      "ratio": "4:5",
+      "path": "public/promo/google-ads/images/16-portrait-routines-reel.png"
+    },
+    {
+      "type": "image",
+      "id": "17-portrait-speech-reel",
+      "filename": "17-portrait-speech-reel.png",
+      "format": "portrait",
+      "width": 960,
+      "height": 1200,
+      "ratio": "4:5",
+      "path": "public/promo/google-ads/images/17-portrait-speech-reel.png"
+    },
+    {
+      "type": "image",
+      "id": "18-portrait-learning-reel",
+      "filename": "18-portrait-learning-reel.png",
+      "format": "portrait",
+      "width": 960,
+      "height": 1200,
+      "ratio": "4:5",
+      "path": "public/promo/google-ads/images/18-portrait-learning-reel.png"
+    },
+    {
+      "type": "image",
+      "id": "19-portrait-screen-time",
+      "filename": "19-portrait-screen-time-reel.png",
+      "format": "portrait",
+      "width": 960,
+      "height": 1200,
+      "ratio": "4:5",
+      "path": "public/promo/google-ads/images/19-portrait-screen-time-reel.png"
+    },
+    {
+      "type": "image",
+      "id": "20-portrait-cta",
+      "filename": "20-portrait-download-cta.png",
+      "format": "portrait",
+      "width": 960,
+      "height": 1200,
+      "ratio": "4:5",
+      "path": "public/promo/google-ads/images/20-portrait-download-cta.png"
+    },
+    {
+      "type": "video",
+      "id": "video-vertical",
+      "filename": "01-vertical-15s-9x16.mp4",
+      "width": 1080,
+      "height": 1920,
+      "ratio": "9:16",
+      "durationSec": 15,
+      "path": "public/promo/google-ads/videos/01-vertical-15s-9x16.mp4"
+    },
+    {
+      "type": "video",
+      "id": "video-horizontal",
+      "filename": "02-horizontal-15s-16x9.mp4",
+      "width": 1280,
+      "height": 720,
+      "ratio": "16:9",
+      "durationSec": 15,
+      "path": "public/promo/google-ads/videos/02-horizontal-15s-16x9.mp4"
+    }
+  ]
+}

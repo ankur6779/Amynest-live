@@ -67,6 +67,13 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sendAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      sendAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -148,15 +155,22 @@ export default function AssistantPage() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
+    sendAbortRef.current?.abort();
+    const controller = new AbortController();
+    sendAbortRef.current = controller;
 
     try {
       const { default: i18nInstance } = await import("@/i18n");
-      const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
+      const history = [...messages.slice(-5), { role: "user" as const, content: text }].map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
       const res = await authFetch(
         "/api/ai/assistant-ai",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             question: text,
             language: i18nInstance.language || "en",
@@ -195,13 +209,14 @@ export default function AssistantPage() {
       }
       if (!res.ok) throw new Error(`api_error_${res.status}`);
       const data = await readResolvedApiJson<{ answer?: string }>(res, authFetch, {
-        poll: ASSISTANT_POLL_OPTIONS,
+        poll: { ...ASSISTANT_POLL_OPTIONS, signal: controller.signal },
       });
       const answer = data?.answer?.trim();
       if (!answer) throw new Error("empty_answer");
       setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
-    } catch {
+    } catch (err) {
+      if (controller.signal.aborted) return;
       toast({ title: t("ai.error_response"), variant: "destructive" });
     } finally {
       setLoading(false);

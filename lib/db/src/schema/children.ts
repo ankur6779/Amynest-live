@@ -1,8 +1,10 @@
-import { pgTable, text, integer, serial, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const childrenTable = pgTable("children", {
+export const childrenTable = pgTable(
+  "children",
+  {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
   name: text("name").notNull(),
@@ -74,7 +76,11 @@ export const childrenTable = pgTable("children", {
     .$type<Array<{ activity: string; days: string[]; start: string; end: string }>>()
     .default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+  },
+  (t) => ({
+    userIdIdx: index("children_user_id_idx").on(t.userId),
+  }),
+);
 
 export const insertChildSchema = createInsertSchema(childrenTable).omit({ id: true, createdAt: true });
 export type InsertChild = z.infer<typeof insertChildSchema>;

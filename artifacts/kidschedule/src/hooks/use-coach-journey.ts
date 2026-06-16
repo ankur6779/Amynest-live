@@ -4,6 +4,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useSubscription } from "@/hooks/use-subscription";
 import { getApiUrl } from "@/lib/api";
+import { safeJsonResponse } from "@/lib/safe-json-response";
 import { withActiveChildId } from "@/lib/coach-age-nav";
 import {
   getCoachGoalAccess,
@@ -58,7 +59,9 @@ export function useCoachJourney() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl("/api/coach-journey/status"));
       if (!res.ok) throw new Error(`coach-journey status ${res.status}`);
-      return (await res.json()) as CoachJourneyStatus;
+      const parsed = await safeJsonResponse<CoachJourneyStatus>(res);
+      if (!parsed.ok) throw new Error(`coach-journey status ${res.status}`);
+      return parsed.data;
     },
   });
 
@@ -90,7 +93,9 @@ export function useCoachJourney() {
         body: JSON.stringify(withActiveChildId(payload)),
       });
       if (!res.ok) throw new Error(`coach-journey complete ${res.status}`);
-      return res.json();
+      const parsed = await safeJsonResponse(res);
+      if (!parsed.ok) throw new Error(`coach-journey complete ${res.status}`);
+      return parsed.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: QKEY }),
   });

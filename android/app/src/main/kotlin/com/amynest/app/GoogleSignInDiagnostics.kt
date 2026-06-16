@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import org.json.JSONObject
 import java.security.MessageDigest
+import android.util.Base64
 
 /**
  * Runtime + build-time helpers for native Google Sign-In configuration.
@@ -47,6 +48,35 @@ object GoogleSignInDiagnostics {
     fun getSigningSha1(context: Context): String? = getCertFingerprint(context, "SHA-1")
 
     fun getSigningSha256(context: Context): String? = getCertFingerprint(context, "SHA-256")
+
+    /** Meta Facebook Login key hash = Base64(SHA-1 signing certificate bytes). */
+    fun getFacebookKeyHash(context: Context): String? {
+        return try {
+            val pm = context.packageManager
+            val flags =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    PackageManager.GET_SIGNING_CERTIFICATES
+                } else {
+                    @Suppress("DEPRECATION")
+                    PackageManager.GET_SIGNATURES
+                }
+            val packageInfo = pm.getPackageInfo(context.packageName, flags)
+            val signatures =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    packageInfo.signingInfo?.apkContentsSigners
+                } else {
+                    @Suppress("DEPRECATION")
+                    packageInfo.signatures
+                }
+            val sig = signatures?.firstOrNull() ?: return null
+            val md = MessageDigest.getInstance("SHA-1")
+            val digest = md.digest(sig.toByteArray())
+            Base64.encodeToString(digest, Base64.NO_WRAP)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to read Facebook key hash", t)
+            null
+        }
+    }
 
     @Suppress("DEPRECATION")
     private fun getCertFingerprint(context: Context, algorithm: String): String? {
@@ -105,6 +135,7 @@ object GoogleSignInDiagnostics {
             .put("webClientIdSuffix", webClientId.takeLast(20))
             .put("signingSha1", getSigningSha1(context) ?: JSONObject.NULL)
             .put("signingSha256", getSigningSha256(context) ?: JSONObject.NULL)
+            .put("facebookKeyHash", getFacebookKeyHash(context) ?: JSONObject.NULL)
             .put("bridgeVersion", AuthBridge.BRIDGE_VERSION)
     }
 

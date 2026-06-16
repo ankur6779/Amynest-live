@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: var(--w);
+      height: var(--h);
+      overflow: hidden;
+      font-family: Quicksand, system-ui, sans-serif;
+      background: linear-gradient(135deg, #07050f 0%, #12102a 50%, #1a1538 100%);
+      color: #fff;
+    }
+    .canvas {
+      width: var(--w);
+      height: var(--h);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: var(--pad);
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .orb-a {
+      width: 50%;
+      height: 60%;
+      top: -15%;
+      right: -10%;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.35), transparent 70%);
+    }
+    .orb-b {
+      width: 40%;
+      height: 50%;
+      bottom: -10%;
+      left: -5%;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.2), transparent 70%);
+    }
+    .top-bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: var(--gap-sm);
+    }
+    .brand img {
+      width: var(--logo);
+      height: var(--logo);
+      border-radius: calc(var(--logo) * 0.22);
+      object-fit: cover;
+    }
+    .brand span {
+      font-size: var(--brand-size);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .body-row {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: var(--gap-md);
+      min-height: 0;
+    }
+    .body-row.landscape { flex-direction: row; }
+    .body-row.stack { flex-direction: column; justify-content: center; text-align: center; }
+    .copy { flex: 1; min-width: 0; }
+    .eyebrow {
+      font-size: var(--eyebrow);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(216, 180, 254, 0.85);
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: var(--h1);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+    .accent { color: #c084fc; }
+    .sub {
+      margin-top: 10px;
+      font-size: var(--sub);
+      font-weight: 600;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.72);
+      max-width: 28ch;
+    }
+    .stack .sub { margin-left: auto; margin-right: auto; }
+    .phone-wrap { flex-shrink: 0; }
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      border-radius: calc(var(--phone-w) * 0.14);
+      overflow: hidden;
+      border: 3px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px var(--accent-glow, rgba(168, 85, 247, 0.25));
+      background: #0a061a;
+    }
+    .phone img, .full-shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+    .full-shot {
+      flex: 1;
+      min-height: 0;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .cta-pill {
+      display: inline-flex;
+      margin-top: 14px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: var(--cta-size);
+      font-weight: 800;
+      background: linear-gradient(120deg, #9333ea, #ec4899);
+      box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
+    }
+    .footer {
+      position: relative;
+      z-index: 2;
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: var(--footer-size);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.32);
+      text-align: center;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="top-bar">
+      <div class="brand">
+        <img id="logo" alt="" />
+        <span>AmyNest AI</span>
+      </div>
+    </div>
+    <div id="layout-feature" class="body-row landscape hidden">
+      <div class="copy">
+        <p id="feat-eyebrow" class="eyebrow"></p>
+        <h1><span id="feat-headline"></span> <span id="feat-accent" class="accent"></span></h1>
+        <p id="feat-sub" class="sub"></p>
+        <div id="feat-cta" class="cta-pill hidden">Download Free</div>
+      </div>
+      <div class="phone-wrap">
+        <div id="feat-phone" class="phone"><img id="feat-shot" alt="" /></div>
+      </div>
+    </div>
+    <div id="layout-stack" class="body-row stack hidden">
+      <div class="copy">
+        <p id="stack-eyebrow" class="eyebrow"></p>
+        <h1><span id="stack-headline"></span> <span id="stack-accent" class="accent"></span></h1>
+        <p id="stack-sub" class="sub"></p>
+        <div id="stack-cta" class="cta-pill hidden">Get it on Google Play</div>
+      </div>
+      <div class="phone-wrap">
+        <div id="stack-phone" class="phone"><img id="stack-shot" alt="" /></div>
+      </div>
+    </div>
+    <div id="layout-full" class="body-row stack hidden">
+      <div class="full-shot"><img id="full-shot" alt="" /></div>
+    </div>
+    <p id="footer" class="footer"></p>
+  </div>
+  <script>
+    function render(cfg) {
+      const s = cfg.sizes;
+      const root = document.documentElement;
+      root.style.setProperty("--w", s.width + "px");
+      root.style.setProperty("--h", s.height + "px");
+      root.style.setProperty("--pad", s.pad + "px");
+      root.style.setProperty("--gap-sm", s.gapSm + "px");
+      root.style.setProperty("--gap-md", s.gapMd + "px");
+      root.style.setProperty("--logo", s.logo + "px");
+      root.style.setProperty("--brand-size", s.brandSize + "px");
+      root.style.setProperty("--eyebrow", s.eyebrow + "px");
+      root.style.setProperty("--h1", s.h1 + "px");
+      root.style.setProperty("--sub", s.sub + "px");
+      root.style.setProperty("--phone-w", s.phoneW + "px");
+      root.style.setProperty("--phone-h", s.phoneH + "px");
+      root.style.setProperty("--cta-size", s.ctaSize + "px");
+      root.style.setProperty("--footer-size", s.footerSize + "px");
+      root.style.setProperty("--accent-glow", (cfg.accent || "#a855f7") + "44");
+
+      document.getElementById("logo").src = cfg.logoDataUrl;
+      document.getElementById("footer").textContent = cfg.footer || "";
+
+      ["layout-feature", "layout-stack", "layout-full"].forEach((id) => {
+        document.getElementById(id).classList.add("hidden");
+      });
+
+      const layout = cfg.layout || "feature";
+      document.getElementById("layout-" + layout).classList.remove("hidden");
+
+      if (layout === "feature") {
+        document.getElementById("feat-eyebrow").textContent = cfg.eyebrow || "";
+        document.getElementById("feat-headline").textContent = cfg.headline || "";
+        document.getElementById("feat-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("feat-sub").textContent = cfg.subheadline || "";
+        document.getElementById("feat-shot").src = cfg.screenshotDataUrl || "";
+        document.getElementById("feat-cta").classList.toggle("hidden", !cfg.showCta);
+      }
+
+      if (layout === "stack") {
+        document.getElementById("stack-eyebrow").textContent = cfg.eyebrow || "";
+        document.getElementById("stack-headline").textContent = cfg.headline || "";
+        document.getElementById("stack-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("stack-sub").textContent = cfg.subheadline || "";
+        document.getElementById("stack-shot").src = cfg.screenshotDataUrl || "";
+        document.getElementById("stack-cta").classList.toggle("hidden", !cfg.showCta);
+        document.getElementById("stack-phone").classList.toggle("hidden", !cfg.screenshotDataUrl);
+      }
+
+      if (layout === "full") {
+        document.getElementById("full-shot").src = cfg.screenshotDataUrl || "";
+      }
+    }
+  </script>
+</body>
+</html>

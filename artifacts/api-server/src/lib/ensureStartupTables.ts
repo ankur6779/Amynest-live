@@ -756,9 +756,27 @@ export async function ensureRoutinesChildDateUnique(): Promise<void> {
   logger.info({ evt: "db.ensure", index: "routines_child_date_uq" }, "Ensured routines child+date uniqueness");
 }
 
+/** P0: hot path — listChildrenForUser filters on user_id on every authenticated request. */
+export async function ensureChildrenUserIdIndex(): Promise<void> {
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS children_user_id_idx ON children (user_id)
+  `);
+  logger.info({ evt: "db.ensure", index: "children_user_id_idx" }, "Ensured children user_id index");
+}
+
+/** P0: dashboard/insights load behaviors by child_id + date. */
+export async function ensureBehaviorsChildDateIndex(): Promise<void> {
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS behaviors_child_date_idx ON behaviors (child_id, date)
+  `);
+  logger.info({ evt: "db.ensure", index: "behaviors_child_date_idx" }, "Ensured behaviors child+date index");
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
+    { name: "children_user_id_idx", run: ensureChildrenUserIdIndex },
+    { name: "behaviors_child_date_idx", run: ensureBehaviorsChildDateIndex },
     { name: "routines_child_date_uq", run: ensureRoutinesChildDateUnique },
     { name: "parent_profiles", run: ensureParentProfilesTable },
     { name: "subscriptions", run: ensureSubscriptionsTable },

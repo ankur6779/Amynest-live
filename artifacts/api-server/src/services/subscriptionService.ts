@@ -6,7 +6,7 @@ import {
   adminPremiumGrantsTable,
   type Subscription,
 } from "@workspace/db";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
   hasValidPaidPeriodEnd,
@@ -328,6 +328,40 @@ export async function getFeatureUsage(userId: string, feature: FeatureKey): Prom
   return rows[0]?.count ?? 0;
 }
 
+/** Batch-read usage counters for many features in one query (entitlements hot path). */
+export async function getFeatureUsageMap(
+  userId: string,
+  features: FeatureKey[],
+): Promise<Partial<Record<FeatureKey, number>>> {
+  if (features.length === 0) return {};
+  const dayKeys = [...new Set(features.map((f) => bucketKeyFor(f)))];
+  const rows = await db
+    .select({
+      feature: usageDailyTable.feature,
+      day: usageDailyTable.day,
+      count: usageDailyTable.count,
+    })
+    .from(usageDailyTable)
+    .where(
+      and(
+        eq(usageDailyTable.userId, userId),
+        inArray(usageDailyTable.feature, features),
+        inArray(usageDailyTable.day, dayKeys),
+      ),
+    );
+  const out: Partial<Record<FeatureKey, number>> = {};
+  for (const feature of features) {
+    out[feature] = 0;
+  }
+  for (const row of rows) {
+    const feature = row.feature as FeatureKey;
+    if (!features.includes(feature)) continue;
+    if (row.day !== bucketKeyFor(feature)) continue;
+    out[feature] = row.count ?? 0;
+  }
+  return out;
+}
+
 /**
  * Generic atomic increment using ON CONFLICT — safe under concurrent calls.
  *
@@ -419,13 +453,12 @@ export async function getEntitlements(
   const { getRoutineGenerateEntitlement } = await import(
     "./routineJourneyService.js"
   );
-  const [routineEntitlement, ...featureCounts] = await Promise.all([
+  const [routineEntitlement, usageMap] = await Promise.all([
     getRoutineGenerateEntitlement(userId, isPremium),
-    ...otherKeys.map((f) => getFeatureUsage(userId, f)),
+    getFeatureUsageMap(userId, otherKeys),
   ]);
 
   const features = {} as Record<FeatureKey, FeatureUsage>;
-  let otherIdx = 0;
   for (const key of featureKeys) {
     if (key === "routine_generate") {
       const { used, limit, locked } = routineEntitlement;
@@ -437,8 +470,7 @@ export async function getEntitlements(
       };
       continue;
     }
-    const used = featureCounts[otherIdx] ?? 0;
-    otherIdx += 1;
+    const used = usageMap[key] ?? 0;
     const limit = FREE_FEATURE_LIMITS[key];
     features[key] = {
       used,

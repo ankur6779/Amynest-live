@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray } from "drizzle-orm";
 import { db, childrenTable, routinesTable, behaviorsTable } from "@workspace/db";
 
 export type InsightsRange = "week" | "month";
@@ -388,8 +388,14 @@ export async function buildInsights(args: {
   }
 
   const [allRoutines, allBehaviors] = await Promise.all([
-    db.select().from(routinesTable).where(inArray(routinesTable.childId, childIds)),
-    db.select().from(behaviorsTable).where(inArray(behaviorsTable.childId, childIds)),
+    db
+      .select()
+      .from(routinesTable)
+      .where(and(inArray(routinesTable.childId, childIds), gte(routinesTable.date, previousStart))),
+    db
+      .select()
+      .from(behaviorsTable)
+      .where(and(inArray(behaviorsTable.childId, childIds), gte(behaviorsTable.date, previousStart))),
   ]);
 
   const routinesThisPeriod = allRoutines.filter((r) => {

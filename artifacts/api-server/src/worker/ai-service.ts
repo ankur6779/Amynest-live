@@ -123,7 +123,11 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
         { evt: "ai_worker.job_timeout", jobId, type, timeoutMs, durationMs: Date.now() - started },
         "AI job timed out",
       );
-      return null;
+      if (!COACH_JOB_TYPES.has(type) && !AUDIO_JOB_TYPES.has(type)) {
+        const { recordAiJobFailure } = await import("../services/ai-job-alert-store.js");
+        recordAiJobFailure(type, jobId, "timed_out");
+      }
+      throw new Error(`AI job timed out after ${timeoutMs}ms`);
     }
 
     await patchJobRecord(jobId, { status: "completed", result });
@@ -179,6 +183,10 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
       status: "failed",
       error: message.slice(0, 500),
     });
+    if (!COACH_JOB_TYPES.has(type) && !AUDIO_JOB_TYPES.has(type)) {
+      const { recordAiJobFailure } = await import("../services/ai-job-alert-store.js");
+      recordAiJobFailure(type, jobId, message);
+    }
     logger.error(
       {
         evt: "ai_worker.job_failed",

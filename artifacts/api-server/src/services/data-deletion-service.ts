@@ -314,7 +314,17 @@ export async function purgeUserData(
     await purgeChildScopedData(tx, childId, audit);
   }
 
-  // Co-parent links where this user is a caregiver (not owner)
+  await purgeUserScopedData(tx, userId, audit, options);
+  return childIds;
+}
+
+/** User-owned rows after child subtrees are removed (or never existed). */
+async function purgeUserScopedData(
+  tx: DbTx,
+  userId: string,
+  audit: DeletionAuditEntry[],
+  options?: PurgeUserDataOptions,
+): Promise<void> {
   await countDeleted(
     tx,
     "child_caregivers_by_user",
@@ -429,6 +439,29 @@ export async function purgeUserData(
   for (const { table, run } of userDeletes) {
     await countDeleted(tx, table, await run(), audit);
   }
+}
+
+/** Remove all user-owned data using chunked transactions (one per child + final user scope). */
+export async function purgeUserDataChunked(
+  userId: string,
+  audit: DeletionAuditEntry[],
+  options?: PurgeUserDataOptions,
+): Promise<number[]> {
+  const userChildren = await db
+    .select({ id: childrenTable.id })
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, userId));
+  const childIds = userChildren.map((c) => c.id);
+
+  for (const childId of childIds) {
+    await db.transaction(async (tx) => {
+      await purgeChildScopedData(tx, childId, audit);
+    });
+  }
+
+  await db.transaction(async (tx) => {
+    await purgeUserScopedData(tx, userId, audit, options);
+  });
 
   return childIds;
 }

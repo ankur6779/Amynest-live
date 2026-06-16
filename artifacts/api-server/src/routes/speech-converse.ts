@@ -24,6 +24,7 @@ import {
   recordConvoLatencySamples,
   type ConvoLatencySample,
 } from "../services/speechConverseMetrics.js";
+import { asyncRoute } from "../middlewares/async-route.js";
 
 /**
  * Amy Live Speech Coach — conversational "talk bot" for kids.
@@ -301,7 +302,7 @@ function fallbackReply(childName: string | null, phase: Phase): ReplyJson {
   };
 }
 
-router.post("/speech/converse", async (req, res): Promise<void> => {
+router.post("/speech/converse", asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -470,7 +471,7 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
       resetsAt,
     }),
   });
-});
+}));
 
 // ─── GET /api/speech/converse/memory ──────────────────────────────────────
 // Cross-device memory for the welcome-back screen + adaptive targeting.

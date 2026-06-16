@@ -13,6 +13,8 @@ export type PollResultOptions = {
   requestTimeoutMs?: number;
   /** Propagate coach generate trace id on poll requests. */
   traceHeaders?: Record<string, string>;
+  /** Abort polling when the caller unmounts or navigates away. */
+  signal?: AbortSignal;
 };
 
 export type ResolveAiApiOptions = {
@@ -53,6 +55,9 @@ export async function pollResult(
   const requestTimeoutMs = options?.requestTimeoutMs ?? 15_000;
 
   for (let i = 0; i < maxAttempts; i++) {
+    if (options?.signal?.aborted) {
+      throw new PollTerminalError("cancelled", "Poll cancelled");
+    }
     if (i > 0) await wait(intervalMs);
     try {
       const res = await authFetch(
