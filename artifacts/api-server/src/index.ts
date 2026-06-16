@@ -1,3 +1,4 @@
+import "./lib/instrumentation.js";
 import "./lib/loadEnv";
 import { logAmynestEnvironment } from "./lib/loadEnv";
 import { assertCriticalEnvAtBoot, assertAudioEnvAtBoot, logStartupEnvDiagnostics } from "./lib/env";

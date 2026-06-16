@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -134,7 +135,7 @@ export default function AdminInfantParentingPage() {
       const res = await authFetch(`/api/admin/infant-parenting-analytics?days=${days}`);
       if (res.status === 403) throw new Error("not_admin");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      const json = (await res.json()) as InfantDashboardData & { ok?: boolean };
+      const json = (await parseApiJson<InfantDashboardData & { ok?: boolean }>(res));
       return json;
     },
     refetchInterval: 30_000,

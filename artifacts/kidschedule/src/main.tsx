@@ -5,6 +5,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { setAppQueryClient } from "@/lib/app-query-client";
 import { createSelfHealingQueryClient } from "@/lib/self-healing/query-recovery";
 import { installSelfHealingRuntime } from "@/lib/self-healing/install";
+import { initWebSentry } from "@/lib/sentry";
+import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
 import App from "./App";
 import "./index.css";
 import "./i18n";
@@ -90,6 +92,7 @@ installAudioReliabilityDevTools();
 installAudioAutoFixDevTools();
 installAudioReleaseCertificationDevTools();
 installAndroidAudioLifecycleMonitor();
+initWebSentry();
 logBootContext();
 
 if (import.meta.env.DEV) {
@@ -124,11 +127,13 @@ function bootstrap(): void {
     }
 
     createRoot(rootEl).render(
-      <QueryClientProvider client={queryClient}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <App />
-        </Suspense>
-      </QueryClientProvider>,
+      <SentryErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <Suspense fallback={<div>Loading...</div>}>
+            <App />
+          </Suspense>
+        </QueryClientProvider>
+      </SentryErrorBoundary>,
     );
 
     mark("react-rendered");

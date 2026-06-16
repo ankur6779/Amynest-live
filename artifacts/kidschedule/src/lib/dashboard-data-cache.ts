@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Client-side dashboard cache — instant paint from last successful session,
  * background refresh when online.
@@ -176,7 +177,7 @@ async function fetchJson<T>(
 ): Promise<T> {
   const res = await authFetch(getApiUrl(path));
   if (!res.ok) throw new Error(`dashboard_fetch_${res.status}`);
-  return (await res.json()) as T;
+  return (await parseApiJson<T>(res));
 }
 
 export async function fetchDashboardSummaryResilient(

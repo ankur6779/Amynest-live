@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -50,7 +51,7 @@ export default function KidsControlCenterPage() {
         const res = await authFetch(`/api/feature-feedback?feature=${FEATURE_KEY}`);
         if (!alive) return;
         if (res.ok) {
-          const data: ServerFeedback = await res.json();
+          const data: ServerFeedback = await parseApiJson(res);
           if (data.feedback) {
             setSavedFeedback(data.feedback);
             setPendingFeedback(data.feedback);

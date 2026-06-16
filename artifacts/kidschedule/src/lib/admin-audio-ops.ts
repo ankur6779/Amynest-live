@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Poll server-side admin ops flags (streaming/API disable, emergency mode, safe mode).
  */
@@ -125,7 +126,7 @@ async function fetchOps(): Promise<void> {
     });
     if (!res.ok) return;
 
-    const ops = (await res.json()) as AdminAudioOps;
+    const ops = (await parseApiJson<AdminAudioOps>(res));
     cachedOps = {
       ...ops,
       disableMseStreaming:

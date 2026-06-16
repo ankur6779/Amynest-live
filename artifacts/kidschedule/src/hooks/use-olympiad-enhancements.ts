@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import type { OlympiadDifficulty } from "@workspace/olympiad";
@@ -22,7 +23,7 @@ export function useOlympiadHint(childId: number) {
           body: JSON.stringify({ childId, ...input }),
         });
         if (!res.ok) return null;
-        const data = (await res.json()) as { ok: true; hint: string; source: "ai" | "local" };
+        const data = await parseApiJson<{ ok: true;hint: string; source: "ai" | "local" }>(res);
         return { hint: data.hint, source: data.source };
       } catch {
         return null;
@@ -58,12 +59,12 @@ export function useOlympiadInsight(childId: number) {
           body: JSON.stringify({ childId, ...payload }),
         });
         if (!res.ok) return;
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           ok: true;
           source: "ai" | "template";
           insight?: string;
           parentTip?: string;
-        };
+        }>(res);
         setSource(data.source);
         if (data.source === "ai" && data.insight) {
           setInsight(data.insight);

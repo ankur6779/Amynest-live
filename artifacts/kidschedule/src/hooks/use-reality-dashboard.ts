@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "./use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
@@ -48,7 +49,7 @@ export function useRealityDashboard(enabled = true) {
     queryFn: async (): Promise<RealityDashboardData> => {
       const res = await authFetch(getApiUrl("/api/reality-validation/dashboard"));
       if (!res.ok) throw new Error("reality_dashboard_failed");
-      return res.json();
+      return parseApiJson(res);
     },
   });
 }
@@ -63,5 +64,5 @@ export async function askAmyEvidence(
     body: JSON.stringify({ question }),
   });
   if (!res.ok) throw new Error("amy_evidence_failed");
-  return res.json();
+  return parseApiJson(res);
 }

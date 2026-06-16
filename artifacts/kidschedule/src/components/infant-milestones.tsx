@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -412,10 +413,10 @@ async function fetchRemoteProgress(
   try {
     const r = await authFetch(getApiUrl(`/api/infant-milestones/${childId}`));
     if (!r.ok) return null;
-    const j = (await r.json()) as {
+    const j = (await parseApiJson<{
       ok: boolean;
       progress: Stored;
-    };
+      }>(r));
     return j.ok ? j.progress : null;
   } catch {
     return null;
@@ -434,7 +435,7 @@ async function pushProgressToServer(
       body: JSON.stringify({ progress: data }),
     });
     if (!r.ok) return null;
-    const j = (await r.json()) as { ok: boolean; progress: Stored };
+    const j = (await parseApiJson<{ ok: boolean; progress: Stored }>(r));
     return j.ok ? j.progress : null;
   } catch {
     return null;

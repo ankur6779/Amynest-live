@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
@@ -456,7 +457,7 @@ export default function AICoachProgressPage() {
       try {
         const res = await authFetch("/api/ai-coach/progress");
         if (res.ok) {
-          const data = (await res.json()) as { sessions: CoachProgressViewModel[] };
+          const data = (await parseApiJson<{ sessions: CoachProgressViewModel[] }>(res));
           setSessions(data.sessions);
         }
       } finally {

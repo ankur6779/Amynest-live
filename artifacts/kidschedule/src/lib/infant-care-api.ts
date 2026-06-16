@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 import { waitForIdToken } from "@/lib/auth-token";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
@@ -36,7 +37,7 @@ export async function infantFetch<T>(
       res.status === 401 ? "auth-unauthorized" : `infant_api_${res.status}`,
     );
   }
-  return res.json() as Promise<T>;
+  return parseApiJson(res) as Promise<T>;
 }
 
 export type BabyTodayData = {

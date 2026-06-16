@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import {
   getDefaultApiOrigin,
   PRODUCTION_WORKER_API_ORIGIN,
@@ -144,7 +145,7 @@ export async function safeFetchJson<T extends Record<string, unknown> = Record<s
 ): Promise<(T & { fallback?: boolean }) | { fallback: true }> {
   try {
     const res = await fetch(resolveApiRequestInput(input), init);
-    const data = (await res.json()) as T;
+    const data = (await parseApiJson<T>(res));
     if (!res.ok) {
       console.error("API error: HTTP", res.status, input);
       return { fallback: true };

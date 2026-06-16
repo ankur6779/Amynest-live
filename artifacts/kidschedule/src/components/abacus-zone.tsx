@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAbacusTranslation } from "@/hooks/use-abacus-translation";
@@ -1208,9 +1209,12 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
   // the child's latest weekly points without a manual refresh.
   const refreshLeaderboard = useCallback(() => {
     authFetch(`/api/abacus/leaderboard?childId=${childId}`)
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<LeaderboardShape>(r);
+      })
       .then((data) => {
-        if (data?.top) setLeaderboard(data as LeaderboardShape);
+        if (data?.top) setLeaderboard(data);
       })
       .catch(() => { /* leaderboard is non-essential — silent on failure */ });
   }, [authFetch, childId]);
@@ -1230,11 +1234,11 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
       setLoading(true);
     }
     authFetch(`/api/abacus/progress?childId=${childId}`)
-      .then((r) => r.json())
+      .then(async (r) => parseApiJson<{ eligible?: boolean; progress?: ProgressShape }>(r))
       .then((data) => {
         if (cancelled) return;
         if (data?.eligible && data.progress) {
-          const p = data.progress as ProgressShape;
+          const p = data.progress;
           setProgress(p);
           writeCachedProgress(childId, p);
           if (!cached) {
@@ -1328,7 +1332,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
             points,
           }),
         });
-        const data = await res.json().catch(() => null);
+        const data = await parseApiJson<{ progress?: ProgressShape }>(res).catch(() => null);
         if (data?.progress) {
           const np: ProgressShape = {
             ...(progress ?? {

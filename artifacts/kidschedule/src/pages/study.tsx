@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -425,11 +426,11 @@ function TodaysPlanSection({
           body: JSON.stringify({ childId, date: planDate }),
         });
         if (!res.ok) { if (!cancelled) setLoading(false); return; }
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           plan: DailyPlan;
           completionPct: number;
           doneTopicIds: string[];
-        };
+        }>(res);
         if (cancelled) return;
         setPlan(data.plan);
         setCompletionPct(data.completionPct);

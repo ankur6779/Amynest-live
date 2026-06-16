@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   ChatThread,
@@ -87,7 +88,7 @@ export default function AssistantPage() {
       try {
         const r = await authFetch("/api/ai/messages");
         if (!r.ok) return;
-        const data = (await r.json()) as { messages?: Array<{ role: string; content: string }> };
+        const data = (await parseApiJson<{ messages?: Array<{ role: string; content: string }> }>(r));
         if (cancelled) return;
         const past: Message[] = (data.messages ?? [])
           .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
@@ -109,7 +110,8 @@ export default function AssistantPage() {
     queryKey: ["children-for-assistant"],
     queryFn: async () => {
       const r = await authFetch("/api/children");
-      return r.ok ? r.json() : [];
+      if (!r.ok) return [];
+      return parseApiJson<Array<{ id?: number; name?: string; age?: number | null; ageMonths?: number | null }>>(r);
     },
     staleTime: 60_000,
   });
@@ -143,7 +145,8 @@ export default function AssistantPage() {
     queryKey: ["amy-daily-briefing"],
     queryFn: async () => {
       const r = await authFetch("/api/amy/daily-briefing");
-      return r.ok ? r.json() : {};
+      if (!r.ok) return {};
+      return parseApiJson<DailyBriefing>(r);
     },
     staleTime: 300_000,
   });
@@ -188,7 +191,7 @@ export default function AssistantPage() {
         refreshSubscription();
         let paywallReason: PaywallReason = "ai_quota";
         try {
-          const errBody = (await res.json()) as { feature?: string };
+          const errBody = (await parseApiJson<{ feature?: string }>(res));
           paywallReason = mapFeatureToPaywallReason(errBody?.feature);
         } catch {
           paywallReason = isInfantAmyContext ? "infant_ai_quota" : "ai_quota";

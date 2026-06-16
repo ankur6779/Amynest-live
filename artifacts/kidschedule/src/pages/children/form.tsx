@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "wouter";
@@ -344,9 +345,15 @@ function ChildForm() {
     setFixedActivities((prev) => (prev.length === 0 ? prev : []));
   }, [isInfant, watchDob, form]);
   useEffect(() => {
-    authFetch("/api/babysitters").then(r => r.ok ? r.json() : []).then((data: Babysitter[]) => setBabysitters(data)).catch(() => {});
+    authFetch("/api/babysitters").then(async (r) => {
+      if (!r.ok) return [];
+      return parseApiJson<Babysitter[]>(r);
+    }).then((data) => setBabysitters(data)).catch(() => {});
     authFetch("/api/parent-profile")
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ country?: string | null }>(r);
+      })
       .then((profile: { country?: string | null } | null) => {
         const country = profile?.country?.trim();
         if (!country) return;

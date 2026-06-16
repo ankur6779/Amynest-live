@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 
 export interface ChatPlatformRemoteConfig {
@@ -65,7 +66,7 @@ export async function refreshChatPlatformRemoteConfig(): Promise<ChatPlatformRem
     });
     if (!res.ok) return cachedConfig;
 
-    const data = (await res.json()) as Partial<ChatPlatformRemoteConfig>;
+    const data = (await parseApiJson<Partial<ChatPlatformRemoteConfig>>(res));
     cachedConfig = {
       chatPlatformVisibilityProtection:
         data.chatPlatformVisibilityProtection ??

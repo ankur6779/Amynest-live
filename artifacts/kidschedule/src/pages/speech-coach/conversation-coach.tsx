@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 // audit-block-ignore-start -- immersive Speech Coach uses intentional neon dark UI accents.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -374,12 +375,12 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           15_000,
         );
         if (!res.ok) return;
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           memory?: MemoryPayload;
           limitSeconds?: number;
           isPremium?: boolean;
           trialExpired?: boolean;
-        };
+        }>(res);
         if (cancelled) return;
         if (data.memory) setServerMem(data.memory);
         setIsPremium(!!data.isPremium);
@@ -503,7 +504,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       )
         .then(async (res) => {
           if (!res.ok) return;
-          const data = (await res.json().catch(() => null)) as { memory?: MemoryPayload } | null;
+          const data = (await parseApiJson(res).catch(() => null)) as { memory?: MemoryPayload } | null;
           if (data?.memory) setServerMem(data.memory);
         })
         .catch(() => undefined);
@@ -659,7 +660,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         );
 
         if (res.status === 402) {
-          const body = (await res.json().catch(() => ({}))) as ConverseResponse;
+          const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as ConverseResponse;
           setRemaining(0);
           setResetsAt(body.resetsAt ?? null);
           if (typeof body.limitSeconds === "number" && body.limitSeconds > 0) {
@@ -680,7 +681,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           return;
         }
 
-        const initial = (await res.json()) as ConverseResponse;
+        const initial = (await parseApiJson<ConverseResponse>(res));
         const remainingSeconds = initial.remainingSeconds ?? remainingRef.current;
         if (typeof initial.resetsAt === "string") setResetsAt(initial.resetsAt);
         if (typeof initial.limitSeconds === "number" && initial.limitSeconds > 0) {

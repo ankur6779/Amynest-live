@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -212,7 +213,7 @@ export default function AdminFeedbackPage() {
       const res = await authFetch(buildUrl());
       if (res.status === 403) throw new Error("not_admin");
       if (!res.ok) throw new Error("server_error");
-      return res.json() as Promise<AdminFeedbackResponse>;
+      return parseApiJson(res) as Promise<AdminFeedbackResponse>;
     },
     retry: false,
   });

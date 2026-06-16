@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -99,7 +100,7 @@ export function ColoringBooks({
         signal
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
+        const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as {
           error?: string;
         };
         if (body.error === "google_api_key_missing") {
@@ -111,7 +112,7 @@ export function ColoringBooks({
         setPagination(null);
         return;
       }
-      const data = (await res.json()) as ListResponse;
+      const data = (await parseApiJson<ListResponse>(res));
       setFiles(data.files);
       setPagination(data.pagination);
       setQuota(data.dailyQuota);
@@ -173,7 +174,7 @@ export function ColoringBooks({
       });
       const contentType = res.headers.get("content-type") ?? "";
       if (contentType.includes("json")) {
-        const data = (await res.json().catch(() => ({}))) as DownloadResponse;
+        const data = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as DownloadResponse;
         if (res.status === 429) {
           if (data.dailyQuota) setQuota(data.dailyQuota);
           setRowError({

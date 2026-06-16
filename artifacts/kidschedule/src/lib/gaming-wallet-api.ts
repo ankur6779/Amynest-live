@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 import {
   applyWalletSnapshot,
@@ -15,10 +16,9 @@ export interface ServerWalletSnapshot extends WalletSnapshotPayload {
 }
 
 async function parseWalletResponse(res: Response): Promise<ServerWalletSnapshot> {
-  const data = await res.json();
-  const wallet = data.wallet as ServerWalletSnapshot;
-  applyWalletSnapshot(wallet);
-  return wallet;
+  const data = await parseApiJson<{ wallet: ServerWalletSnapshot }>(res);
+  applyWalletSnapshot(data.wallet);
+  return data.wallet;
 }
 
 export async function fetchGamingWallet(
@@ -71,13 +71,17 @@ export async function unlockGamingGame(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ gameId }),
   });
-  const data = await res.json();
+  const data = await parseApiJson<{
+    wallet?: ServerWalletSnapshot;
+    reason?: string;
+    via?: string;
+  }>(res);
   if (!res.ok) {
-    if (data.wallet) applyWalletSnapshot(data.wallet as ServerWalletSnapshot);
+    if (data.wallet) applyWalletSnapshot(data.wallet);
     throw new Error(data.reason ?? `gaming unlock ${res.status}`);
   }
-  applyWalletSnapshot(data.wallet as ServerWalletSnapshot);
-  return { wallet: data.wallet as ServerWalletSnapshot, via: data.via as string | undefined };
+  applyWalletSnapshot(data.wallet!);
+  return { wallet: data.wallet!, via: data.via };
 }
 
 export async function recordGamingPlay(
@@ -89,12 +93,17 @@ export async function recordGamingPlay(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json();
+  const data = await parseApiJson<{
+    wallet?: ServerWalletSnapshot;
+    reason?: string;
+    pointsEarned: number;
+    perfect: boolean;
+  }>(res);
   if (!res.ok) {
     if (data.wallet) applyWalletSnapshot(data.wallet);
     throw new Error(data.reason ?? `gaming play ${res.status}`);
   }
-  const wallet = data.wallet as ServerWalletSnapshot;
+  const wallet = data.wallet!;
   applyWalletSnapshot(wallet);
   return {
     wallet,

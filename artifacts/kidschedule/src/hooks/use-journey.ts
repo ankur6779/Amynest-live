@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -51,7 +52,7 @@ export function useJourney() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl("/api/journey/status"));
       if (!res.ok) throw new Error(`journey status ${res.status}`);
-      return (await res.json()) as JourneyStatus;
+      return (await parseApiJson<JourneyStatus>(res));
     },
   });
 

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -26,7 +27,7 @@ export function useCoachIntelligence(activeGoalId?: string) {
       const qs = activeGoalId ? `?goalId=${encodeURIComponent(activeGoalId)}` : "";
       const res = await authFetch(`/api/ai-coach/intelligence${qs}`);
       if (res.ok) {
-        const remote = (await res.json()) as CoachIntelligencePublicView;
+        const remote = (await parseApiJson<CoachIntelligencePublicView>(res));
         const merged = syncCoachIntelligenceFromServer(userId, remote);
         setPublicView(merged);
         setLocalSnapshot(loadLocalCoachIntelligence(userId));

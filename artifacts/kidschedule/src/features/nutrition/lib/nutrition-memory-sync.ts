@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import {
   mealMemoryStorageKey,
   mergeMealMemoryEntries,
@@ -193,7 +194,7 @@ export async function hydrateMealMemory(
   try {
     const res = await authFetch(getApiUrl(`/api/nutrition/meal-memory?childId=${childId}`));
     if (res.ok) {
-      const json = (await res.json()) as { entries?: MealMemoryEntry[] };
+      const json = (await parseApiJson<{ entries?: MealMemoryEntry[] }>(res));
       const merged = mergeMealMemoryEntries(local, json.entries ?? []);
       saveMealMemoryEntries(childId, merged);
       await flushMealMemorySync(childId, authFetch);

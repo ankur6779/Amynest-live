@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -20,13 +21,13 @@ async function fetchBatch(offset: number): Promise<ApiResponse> {
   const res = await fetch(getApiUrl(`/api/reels/videos?offset=${offset}&batch=6`));
   if (!res.ok) {
     try {
-      const body = await res.json();
+      const body = await parseApiJson<{ error?: string }>(res);
       throw new Error(body.error || `HTTP ${res.status}`);
     } catch {
       throw new Error(`HTTP ${res.status}`);
     }
   }
-  return res.json();
+  return parseApiJson(res);
 }
 function displayName(name: string) {
   return name.replace(/\.[^.]+$/, "").replace(/_/g, " ");

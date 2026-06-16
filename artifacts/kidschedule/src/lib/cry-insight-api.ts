@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 import { extractApiErrorMessage } from "@/lib/api-error-message";
 
@@ -73,13 +74,13 @@ export async function fetchCryInsightHistory(
   if (!r.ok) {
     let data: unknown = null;
     try {
-      data = await r.json();
+      data = await parseApiJson(r);
     } catch {
       /* noop */
     }
     return { ok: false, status: r.status, data };
   }
-  const j = (await r.json()) as { ok: boolean; sessions: CrySession[] };
+  const j = (await parseApiJson<{ ok: boolean; sessions: CrySession[] }>(r));
   return { ok: true, sessions: j.ok ? j.sessions : [] };
 }
 
@@ -99,12 +100,12 @@ export async function postCryInsightAnalyze(
   if (!r.ok) {
     let data: unknown = null;
     try {
-      data = await r.json();
+      data = await parseApiJson(r);
     } catch {
       /* noop */
     }
     return { ok: false, status: r.status, data };
   }
-  const j = (await r.json()) as { ok: true; session: CrySession };
+  const j = (await parseApiJson<{ ok: true; session: CrySession }>(r));
   return { ok: true, session: j.session };
 }

@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -41,7 +42,7 @@ export function NutritionLibrarySection() {
     queryFn: async () => {
       const res = await authFetch("/api/nutrition-library/books");
       if (!res.ok) throw new Error("books_fetch_failed");
-      return res.json() as Promise<NutritionLibraryBooksResponse>;
+      return parseApiJson(res) as Promise<NutritionLibraryBooksResponse>;
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -57,10 +58,10 @@ export function NutritionLibrarySection() {
           : `/api/nutrition-library/download?file=${encodeURIComponent(fileName)}`;
       const res = await authFetch(path);
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { message?: string };
         throw new Error(body.message ?? "signed_url_failed");
       }
-      return res.json() as Promise<NutritionLibrarySignedUrlResponse>;
+      return parseApiJson(res) as Promise<NutritionLibrarySignedUrlResponse>;
     },
     [authFetch],
   );

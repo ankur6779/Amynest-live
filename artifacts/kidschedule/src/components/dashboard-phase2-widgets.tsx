@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -186,7 +187,7 @@ export function DashboardWeeklyInsightsCard({
     queryFn: async () => {
       const res = await authFetch(getApiUrl("/api/dashboard/insights?range=week"));
       if (!res.ok) return null;
-      const json: unknown = await res.json();
+      const json: unknown = await parseApiJson(res);
       return isInsightsPayload(json) ? json : null;
     },
     staleTime: 5 * 60_000,

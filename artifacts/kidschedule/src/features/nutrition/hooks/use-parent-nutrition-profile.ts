@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import {
   resolveNutritionCountryProfile,
   resolveEffectiveFoodStyle,
@@ -21,7 +22,7 @@ export function useParentNutritionProfile() {
     queryFn: async () => {
       const res = await authFetch("/api/parent-profile");
       if (!res.ok) return null;
-      return res.json() as Promise<ParentNutritionApi>;
+      return parseApiJson(res) as Promise<ParentNutritionApi>;
     },
     staleTime: 5 * 60 * 1000,
   });

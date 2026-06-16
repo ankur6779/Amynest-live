@@ -1,3 +1,4 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
 /**
  * Behavior-driven audio warmup — enqueue Hetzner worker jobs on module entry.
  * No app boot warmup. One job per module per browser session.
@@ -60,7 +61,7 @@ export function enqueueBehaviorWarmup(
   })
     .then(async (res) => {
       if (res.ok || res.status === 202) return;
-      const body = (await res.json().catch(() => ({}))) as { retryAfterMs?: number };
+      const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { retryAfterMs?: number };
       if (res.status === 429 || body.retryAfterMs) {
         const delayMs = Math.min(body.retryAfterMs ?? 2_000, 15_000);
         window.setTimeout(() => {

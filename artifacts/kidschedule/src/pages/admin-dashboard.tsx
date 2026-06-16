@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
@@ -321,7 +322,7 @@ export default function AdminDashboardPage() {
       const res = await authFetch("/api/admin/dashboard");
       if (res.status === 403) throw new Error("not_admin");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      return res.json();
+      return parseApiJson(res);
     },
     refetchInterval: 15_000,
   });
@@ -331,14 +332,14 @@ export default function AdminDashboardPage() {
     queryFn: async () => {
       const res = await authFetch("/api/admin/startup-stats");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      return (await res.json()) as {
+      return await parseApiJson<{
         sampleCount: number;
         timeoutRate: number;
         deadlockRate: number;
         bootTimeoutRate: number;
         reactRenderMs: { p50: number; p95: number; p99: number };
         appCoreReadyMs: { p50: number; p95: number; p99: number };
-      };
+        }>(res);
     },
     refetchInterval: 30_000,
   });
@@ -348,7 +349,7 @@ export default function AdminDashboardPage() {
     queryFn: async (): Promise<ChatPlatformHealthData> => {
       const res = await authFetch("/api/admin/chat-platform-health");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      return res.json();
+      return parseApiJson(res);
     },
     refetchInterval: 30_000,
   });
@@ -358,7 +359,7 @@ export default function AdminDashboardPage() {
     queryFn: async (): Promise<SystemHealthData> => {
       const res = await authFetch("/api/admin/system-health");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      return res.json();
+      return parseApiJson(res);
     },
     refetchInterval: 20_000,
   });
@@ -368,7 +369,7 @@ export default function AdminDashboardPage() {
     queryFn: async (): Promise<AudioHealthGateData> => {
       const res = await authFetch("/api/admin/audio-health-gate");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      return res.json();
+      return parseApiJson(res);
     },
     refetchInterval: 60_000,
   });
@@ -381,7 +382,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({ action }),
       });
       if (!res.ok) throw new Error("action_failed");
-      return res.json();
+      return parseApiJson(res);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
@@ -398,7 +399,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({ dryRun }),
       });
       if (!res.ok) throw new Error("orphan_cleanup_failed");
-      return res.json() as Promise<{
+      return parseApiJson(res) as Promise<{
         scanned: number;
         orphans: number;
         deleted: number;

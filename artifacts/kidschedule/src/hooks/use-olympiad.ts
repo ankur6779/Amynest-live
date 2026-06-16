@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import type { OlympiadAgeBand, OlympiadRunType, OlympiadTrackId } from "@workspace/olympiad";
@@ -36,7 +37,7 @@ export function useSubmitOlympiadScore() {
           body: JSON.stringify(payload),
         });
         if (!res.ok) return null;
-        const data = (await res.json()) as { ok: true; id: number; score: number };
+        const data = (await parseApiJson<{ ok: true; id: number; score: number }>(res));
         return data;
       } catch {
         return null;
@@ -65,7 +66,7 @@ export function useOlympiadLeaderboard(
         `/api/olympiad/leaderboard/${scope}?ageBand=${encodeURIComponent(ageBand)}&childId=${childId}&limit=${limit}`,
       );
       if (!res.ok) throw new Error(`lb_${res.status}`);
-      const json = (await res.json()) as { ok: true } & OlympiadLeaderboardResponse;
+      const json = (await parseApiJson<{ ok: true } & OlympiadLeaderboardResponse>(res));
       setData(json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "lb_failed");

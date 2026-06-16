@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import type { OnboardingStep } from "@/lib/onboarding-chat-types";
 import { trackOnboardingError } from "@/lib/onboarding-analytics";
 import {
@@ -165,7 +166,7 @@ function isSetupComplete(data: SetupStatus | undefined): boolean {
 
 async function readJsonBody(res: Response): Promise<Record<string, unknown>> {
   try {
-    const data = (await res.json()) as unknown;
+    const data = (await parseApiJson<unknown>(res));
     return typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
   } catch {
     return {};
@@ -197,7 +198,7 @@ async function fetchExistingChildren(
 ): Promise<Array<{ id: number; name: string | null }>> {
   const res = await authFetch("/api/children");
   if (!res.ok) return [];
-  const body = (await res.json()) as unknown;
+  const body = (await parseApiJson<unknown>(res));
   if (!Array.isArray(body)) return [];
   return body
     .map((row) => {
@@ -479,7 +480,7 @@ export async function fetchProfileCompletionSignals(
   try {
     const childrenRes = await authFetch("/api/children");
     if (childrenRes.ok) {
-      const body = (await childrenRes.json()) as unknown;
+      const body = (await parseApiJson<unknown>(childrenRes));
       if (Array.isArray(body)) {
         children = body.map((row) => {
           const r = row as Record<string, unknown>;

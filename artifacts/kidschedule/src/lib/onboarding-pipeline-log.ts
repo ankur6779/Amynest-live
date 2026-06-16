@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import type { AuthFetchFn } from "@/lib/setup-status";
 import { readOnboardingCache } from "@/lib/setup-status";
 import { buildOnboardingTelemetryPayload } from "@/lib/onboarding-telemetry";
@@ -49,7 +50,7 @@ async function fetchApiOnboardingState(
 
   try {
     const res = await authFetch("/api/onboarding");
-    const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as Record<string, unknown>;
     fallback = body.fallback === true ? true : res.ok ? false : null;
     onboardingComplete =
       typeof body.onboardingComplete === "boolean" ? body.onboardingComplete : null;
@@ -62,7 +63,7 @@ async function fetchApiOnboardingState(
   try {
     const res = await authFetch("/api/children");
     if (res.ok) {
-      const rows = (await res.json()) as unknown;
+      const rows = (await parseApiJson<unknown>(res));
       if (Array.isArray(rows)) {
         for (const row of rows) {
           const id = (row as { id?: unknown }).id;

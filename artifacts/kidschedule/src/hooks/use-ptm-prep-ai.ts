@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useState } from "react";
 import {
   generateAmyActionsLocal,
@@ -29,7 +30,7 @@ export function usePtmPrepAi(authFetch: AuthFetch) {
           body: JSON.stringify({ kind: "questions", ...input }),
         });
         if (res.ok) {
-          const data = (await res.json()) as AmyQuestionsResult & { usedFallback?: boolean };
+          const data = (await parseApiJson<AmyQuestionsResult & { usedFallback?: boolean }>(res));
           return {
             questions: data.questions ?? local.questions,
             source: data.source ?? (data.usedFallback ? "local" : "ai"),
@@ -65,7 +66,7 @@ export function usePtmPrepAi(authFetch: AuthFetch) {
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as AmyActionsResult & { usedFallback?: boolean };
+          const data = (await parseApiJson<AmyActionsResult & { usedFallback?: boolean }>(res));
           return {
             actions: data.actions ?? local.actions,
             source: data.source ?? (data.usedFallback ? "local" : "ai"),

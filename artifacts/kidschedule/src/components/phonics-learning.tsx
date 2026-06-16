@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PhonicsErrorBoundary } from "@/components/phonics-error-boundary";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1452,13 +1453,13 @@ function PhonicsDownloadCard({
           signal: ctrl.signal
         });
         if (!res.ok) return;
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           ok?: boolean;
           downloads?: Array<{
             fileKey: string;
             count: number;
           }>;
-        };
+        }>(res);
         const row = data.downloads?.find(d => d.fileKey === PHONICS_PDF.fileKey);
         if (row) setDownloadCount(row.count);
       } catch {
@@ -1519,7 +1520,7 @@ function PhonicsDownloadCard({
         }),
       });
       if (logRes.ok) {
-        const data = (await logRes.json()) as { totalDownloads?: number };
+        const data = (await parseApiJson<{ totalDownloads?: number }>(logRes));
         if (typeof data.totalDownloads === "number") {
           setDownloadCount(data.totalDownloads);
         }

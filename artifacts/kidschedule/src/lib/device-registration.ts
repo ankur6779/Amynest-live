@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 import {
   detectBrowser,
@@ -22,6 +23,15 @@ export type UserDeviceRecord = {
   isActive: boolean;
   isCurrent: boolean;
   isCurrentDevice?: boolean;
+};
+
+type DeviceApiBody = {
+  error?: string;
+  message?: string;
+  limit?: number;
+  devices?: UserDeviceRecord[];
+  device?: UserDeviceRecord;
+  registered?: boolean;
 };
 
 function devicePayload() {
@@ -60,7 +70,7 @@ export async function registerCurrentDevice(
     body: JSON.stringify(payload),
   });
 
-  const body = await res.json().catch(() => ({}));
+  const body = (await safeJsonResponse<DeviceApiBody>(res).then((p) => (p.ok ? p.data : {})));
 
   if (res.status === 402 && body?.error === "device_limit_reached") {
     track("device_limit_reached", {
@@ -93,6 +103,10 @@ export async function registerCurrentDevice(
     track("device_registered", { platform: payload.platform });
   }
 
+  if (!body.device) {
+    throw new Error("Device registration response missing device");
+  }
+
   return {
     ok: true,
     device: body.device,
@@ -106,10 +120,10 @@ export async function listUserDevices(
 ): Promise<{ devices: UserDeviceRecord[]; limit: number }> {
   const res = await authFetch(getApiUrl("/api/devices"));
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+    const body = (await safeJsonResponse<DeviceApiBody>(res).then((p) => (p.ok ? p.data : {})));
     throw new Error(body?.message ?? "Could not load devices");
   }
-  return res.json();
+  return parseApiJson(res);
 }
 
 export async function removeUserDevice(
@@ -120,7 +134,7 @@ export async function removeUserDevice(
     method: "DELETE",
   });
   if (!res.ok && res.status !== 204) {
-    const body = await res.json().catch(() => ({}));
+    const body = (await safeJsonResponse<DeviceApiBody>(res).then((p) => (p.ok ? p.data : {})));
     throw new Error(body?.message ?? "Could not remove device");
   }
   track("device_removed", { deviceId });
@@ -146,7 +160,7 @@ export async function replaceUserDevice(
     }),
   });
 
-  const body = await res.json().catch(() => ({}));
+  const body = (await safeJsonResponse<DeviceApiBody>(res).then((p) => (p.ok ? p.data : {})));
 
   if (!res.ok) {
     if (res.status === 402 && body?.error === "device_limit_reached") {
@@ -165,6 +179,10 @@ export async function replaceUserDevice(
     removedDeviceId: removeDeviceId,
     platform: payload.platform,
   });
+
+  if (!body.device) {
+    throw new Error("Device registration response missing device");
+  }
 
   return {
     ok: true,

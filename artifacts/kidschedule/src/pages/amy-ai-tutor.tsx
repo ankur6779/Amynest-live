@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useRef, useState, useMemo, useCallback } from "react";
 import { ChatThread, type InteractionEvent, type ThreadMessage } from "@/components/chat-thread";
 import { useTranslation } from "react-i18next";
@@ -132,7 +133,8 @@ export default function AmyAiTutorPage() {
     queryKey: ["children-for-amy-tutor"],
     queryFn: async () => {
       const r = await authFetch("/api/children");
-      return r.ok ? r.json() : [];
+      if (!r.ok) return [];
+      return parseApiJson<Array<{ id?: number; name?: string; age?: number | null }>>(r);
     },
     staleTime: 60_000,
   });

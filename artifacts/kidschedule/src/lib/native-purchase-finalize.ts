@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import type { QueryClient } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import type { SubscriptionResponse } from "@/hooks/use-subscription";
@@ -24,7 +25,7 @@ async function postRcSync(authFetch: AuthFetch): Promise<RcSyncResult | null> {
       method: "POST",
     });
     if (!res.ok) return null;
-    return (await res.json()) as RcSyncResult;
+    return (await parseApiJson<RcSyncResult>(res));
   } catch {
     return null;
   }

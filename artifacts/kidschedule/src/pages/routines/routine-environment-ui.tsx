@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -198,7 +199,7 @@ export function EnvironmentSection({
       const qs = parts.length ? `?${parts.join("&")}` : "";
       const res = await authFetch(`/api/environment/context${qs}`);
       if (!res.ok) throw new Error("env_failed");
-      return res.json() as Promise<{ context: EnvApiContext }>;
+      return parseApiJson(res) as Promise<{ context: EnvApiContext }>;
     },
     enabled: geoReady,
     staleTime: 10 * 60 * 1000,
@@ -215,7 +216,7 @@ export function EnvironmentSection({
           { headers: { "User-Agent": "AmyNest/1.0 (parenting-app)" } },
         );
         if (!res.ok) return null;
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           address?: {
             city?: string;
             town?: string;
@@ -223,7 +224,7 @@ export function EnvironmentSection({
             state?: string;
             country_code?: string;
           };
-        };
+        }>(res);
         const city =
           data.address?.city ?? data.address?.town ?? data.address?.village;
         const state = data.address?.state;

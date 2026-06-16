@@ -127,6 +127,22 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
         const { recordAiJobFailure } = await import("../services/ai-job-alert-store.js");
         recordAiJobFailure(type, jobId, "timed_out");
       }
+      const { recordDlqEntry } = await import("../queue/dlq-store.js");
+      await recordDlqEntry({
+        jobId,
+        type,
+        userId,
+        reason: "timed_out",
+        route: type,
+        payload,
+        error: `AI job timed out after ${timeoutMs}ms`,
+      });
+      const { captureBullMqJobFailure } = await import("../lib/sentry.js");
+      captureBullMqJobFailure(new Error(`AI job timed out after ${timeoutMs}ms`), {
+        jobId,
+        type,
+        userId,
+      });
       throw new Error(`AI job timed out after ${timeoutMs}ms`);
     }
 
@@ -187,6 +203,18 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
       const { recordAiJobFailure } = await import("../services/ai-job-alert-store.js");
       recordAiJobFailure(type, jobId, message);
     }
+    const { recordDlqEntry } = await import("../queue/dlq-store.js");
+    await recordDlqEntry({
+      jobId,
+      type,
+      userId,
+      reason: "failed",
+      route: type,
+      payload,
+      error: message,
+    });
+    const { captureBullMqJobFailure } = await import("../lib/sentry.js");
+    captureBullMqJobFailure(err, { jobId, type, userId });
     logger.error(
       {
         evt: "ai_worker.job_failed",

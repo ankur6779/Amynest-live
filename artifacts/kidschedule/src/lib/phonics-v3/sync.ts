@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Offline-first Phonics V3 sync — local cache + queued writes + server merge.
  */
@@ -160,7 +161,7 @@ async function fetchServerBundle(
 ): Promise<PhonicsV3ProgressBundle | null> {
   const res = await authFetch(getApiUrl(`/api/phonics/v3/progress/${childId}`));
   if (!res.ok) return null;
-  const json = (await res.json()) as { progress?: PhonicsV3ProgressBundle };
+  const json = (await parseApiJson<{ progress?: PhonicsV3ProgressBundle }>(res));
   return json.progress ?? null;
 }
 
@@ -182,7 +183,7 @@ async function postSyncBatch(
     body: JSON.stringify(body),
   });
   if (!res.ok) return null;
-  const json = (await res.json()) as { progress?: PhonicsV3ProgressBundle };
+  const json = (await parseApiJson<{ progress?: PhonicsV3ProgressBundle }>(res));
   return json.progress ?? null;
 }
 

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { normalizeStudyCountry } from "@workspace/study-zone";
@@ -11,7 +12,10 @@ export function useStudyCountry(): { country: string; loading: boolean } {
   useEffect(() => {
     let cancelled = false;
     authFetch("/api/parent-profile")
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ country?: string }>(r);
+      })
       .catch(() => null)
       .then((profile) => {
         if (cancelled) return;

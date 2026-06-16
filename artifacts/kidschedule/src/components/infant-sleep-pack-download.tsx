@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * OTA download UI for the extended infant sleep audio pack.
  */
@@ -28,10 +29,10 @@ export function InfantSleepPackDownload({ childId }: { childId?: string }) {
       const manifestUrl = "/infant-sleep-audio/manifest.json";
       const res = await fetch(manifestUrl);
       if (!res.ok) throw new Error("Could not load the sleep audio catalog.");
-      const manifest = (await res.json()) as {
+      const manifest = await parseApiJson<{
         version?: number;
         items?: { assetPath?: string; packId?: string }[];
-      };
+        }>(res);
       const manifestVersion = typeof manifest.version === "number" ? manifest.version : 1;
 
       const paths = (manifest.items ?? [])

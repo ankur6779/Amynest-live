@@ -1,3 +1,4 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
 import { useCallback, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -49,14 +50,14 @@ export function useInfantFeedingPlan(childId: number) {
           body: JSON.stringify({ childId, forceRefresh }),
         });
         if (res.status === 402) {
-          const body = (await res.json().catch(() => ({}))) as { feature?: string };
+          const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { feature?: string };
           if (handleSubscriptionGateError(res.status, body, "infant_feeding_plan")) {
             openPaywall("infant_feeding_plan");
             return null;
           }
         }
         if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          const j = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string };
           throw new Error(j.error ?? `error_${res.status}`);
         }
         const { readResolvedApiJson } = await import("@/lib/poll-result");

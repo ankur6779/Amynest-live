@@ -137,6 +137,7 @@
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@sentry/react": "^10.58.0",
     "@workspace/age-content": "workspace:*",
     "@workspace/amy-intelligence": "workspace:*",
     "@workspace/audio-lessons": "workspace:*",

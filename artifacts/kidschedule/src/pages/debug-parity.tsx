@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 // i18n-ignore-start — debug/dev tool: English-only by design
 // audit-block-ignore-start — debug parity page uses intentional semantic status colors (red=mismatch, green=match, amber=warning, violet=debug branding)
 import { useState, useCallback } from "react";
@@ -192,7 +193,7 @@ export default function DebugParityPage() {
     queryFn: async () => {
       const r = await authFetch("/api/debug/parity");
       if (!r.ok) throw new Error("Failed to load parity report");
-      return r.json();
+      return parseApiJson(r);
     },
     staleTime: 0,
   });

@@ -1,3 +1,4 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
 import { useMemo, useRef, useState } from "react";
 import { Sparkles, Volume2, VolumeX } from "lucide-react";
 import { KeyboardSafeShell } from "@/components/chat-platform";
@@ -62,7 +63,7 @@ export function AbacusTutorKeyboardPanel({
         }),
       });
       if (!res.ok) {
-        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        const errBody = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string };
         throw new Error(errBody?.error ?? "ai_failed");
       }
       const { readResolvedApiJson } = await import("@/lib/poll-result");

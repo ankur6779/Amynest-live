@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Hybrid TTS learning — server strategy pull + batched telemetry push.
  * Privacy: only hashed cache keys leave the device.
@@ -233,7 +234,7 @@ export async function refreshServerTtsStrategy(
     const res = await fetch(url, { headers: await authHeaders() });
     if (!res.ok) return;
 
-    const data = (await res.json()) as ServerTtsStrategy;
+    const data = (await parseApiJson<ServerTtsStrategy>(res));
     cachedStrategy = {
       preferredLayers: data.preferredLayers?.length
         ? data.preferredLayers
@@ -315,7 +316,7 @@ export async function refreshServerRlStrategy(): Promise<void> {
       headers: await authHeaders(),
     });
     if (!res.ok) return;
-    const data = (await res.json()) as { qValues?: Partial<Record<LearnableLayer, number>> };
+    const data = (await parseApiJson<{ qValues?: Partial<Record<LearnableLayer, number>> }>(res));
     if (data.qValues) setServerRlQ(data.qValues);
   } catch {
     /* offline */

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -5,6 +6,7 @@ import {
   type CoachCheckInHistoryEntry,
   type CoachCheckInViewModel,
   type CoachProgressViewModel,
+  type CoachIntelligencePublicView,
   pickPrimaryCoachSession,
   resolveCoachCheckIn,
 } from "@workspace/coach-journey";
@@ -95,11 +97,11 @@ export function useAmyCoachCheckIn() {
           ),
         ]);
         if (progressRes.ok) {
-          const data = (await progressRes.json()) as { sessions: CoachProgressViewModel[] };
+          const data = (await parseApiJson<{ sessions: CoachProgressViewModel[] }>(progressRes));
           if (!cancelled) setSessions(data.sessions ?? []);
         }
         if (intelRes.ok && userId) {
-          const remote = await intelRes.json();
+          const remote = await parseApiJson<CoachIntelligencePublicView>(intelRes);
           const { syncCoachIntelligenceFromServer } = await import("@/lib/coach-intelligence-state");
           syncCoachIntelligenceFromServer(userId, remote);
           if (!cancelled) setIntelVersion((v) => v + 1);

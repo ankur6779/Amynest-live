@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -37,7 +38,7 @@ export function useRoutineJourney() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl("/api/routine-journey/status"));
       if (!res.ok) throw new Error(`routine-journey status ${res.status}`);
-      return (await res.json()) as RoutineJourneyStatus;
+      return (await parseApiJson<RoutineJourneyStatus>(res));
     },
   });
 

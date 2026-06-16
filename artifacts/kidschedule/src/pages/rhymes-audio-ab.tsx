@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 // i18n-ignore-start — internal dev A/B page for Rhymes 320 kbps vs 128 kbps QA
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Pause, Play, Volume2 } from "lucide-react";
@@ -47,7 +48,7 @@ async function fetchSignedUrl(audioId: string, variant: Variant): Promise<string
     `${AB_API}/api/audio/signed-url/${encodeURIComponent(audioId)}?variant=${variant}`,
   );
   if (!res.ok) return null;
-  const body = (await res.json()) as SignedPayload;
+  const body = (await parseApiJson<SignedPayload>(res));
   return body.success && body.signedUrl ? body.signedUrl : null;
 }
 
@@ -74,7 +75,7 @@ export default function RhymesAudioAbPage() {
       try {
         const res = await fetch(`${AB_API}/api/audio/rhymes-reencode-report`);
         if (res.ok) {
-          const body = (await res.json()) as { report?: { summary: ReportSummary; files: ReportFile[] } };
+          const body = await parseApiJson<{ report?: { summary: ReportSummary; files: ReportFile[] } }>(res);
           if (body.report) {
             setSummary(body.report.summary);
             setReportFiles(new Map(body.report.files.map((f) => [f.id, f])));
@@ -87,7 +88,7 @@ export default function RhymesAudioAbPage() {
       try {
         const res = await fetch(`${AB_API}/api/audio/rhymes-reencode-quality`);
         if (res.ok) {
-          const body = (await res.json()) as { quality?: { samples: QualitySample[] } };
+          const body = (await parseApiJson<{ quality?: { samples: QualitySample[] } }>(res));
           if (body.quality?.samples) setQualitySamples(body.quality.samples);
         }
       } catch {

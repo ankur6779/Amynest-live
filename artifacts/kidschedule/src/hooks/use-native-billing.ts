@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -296,7 +297,7 @@ export function useNativeBilling(): NativeBillingState {
       try {
         const res = await authFetch(getApiUrl("/api/subscription/rc-config"));
         if (!res.ok) return;
-        const cfg = (await res.json()) as RcConfig;
+        const cfg = (await parseApiJson<RcConfig>(res));
         if (cancelled) return;
         setPackageMap(cfg.packageMap);
         const offerings = await androidBridge?.getOfferings();

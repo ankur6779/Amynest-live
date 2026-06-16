@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, Link, useParams, useSearch } from "wouter";
@@ -638,7 +639,16 @@ export default function RoutineDetail() {
   // Fetch parent profile once for meal suggestion prefs
   useEffect(() => {
     let cancelled = false;
-    Promise.all([authFetch(getApiUrl("/api/parent-profile")).then(r => r.ok ? r.json() : null).catch(() => null), authFetch(getApiUrl("/api/children")).then(r => r.ok ? r.json() : null).catch(() => null)]).then(([profile, children]) => {
+    Promise.all([
+      authFetch(getApiUrl("/api/parent-profile")).then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ region?: string; foodType?: string }>(r);
+      }).catch(() => null),
+      authFetch(getApiUrl("/api/children")).then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<Array<{ age?: number | null }>>(r);
+      }).catch(() => null),
+    ]).then(([profile, children]) => {
       if (cancelled) return;
       const region = profile?.region ?? "pan_indian";
       const isVeg = profile?.foodType === "veg" ? true : undefined;
@@ -716,16 +726,21 @@ export default function RoutineDetail() {
     }
     // Fetch babysitter assigned to this child
     if (routine?.childId) {
-      authFetch(`/api/children/${routine.childId}`).then(r => r.ok ? r.json() : null).then((child: any) => {
+      authFetch(`/api/children/${routine.childId}`).then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ babysitterId?: number }>(r);
+      }).then((child) => {
         if (child?.babysitterId) {
-          authFetch("/api/babysitters").then(r => r.json()).then((sitters: {
-            id: number;
-            name: string;
-            mobileNumber?: string | null;
-          }[]) => {
+          authFetch("/api/babysitters").then(async (r) => {
+            if (!r.ok) return;
+            const sitters = await parseApiJson<Array<{
+              id: number;
+              name: string;
+              mobileNumber?: string | null;
+            }>>(r);
             const sitter = sitters.find(s => s.id === child.babysitterId);
             if (sitter) setBabysitterInfo(sitter);
-          });
+          }).catch(() => {});
         }
       }).catch(() => {});
     }
@@ -811,7 +826,7 @@ export default function RoutineDetail() {
         })
       });
       if (!res.ok) throw new Error("Failed to fetch recipe");
-      const data = await res.json();
+      const data = await parseApiJson<{ items?: RoutineItem[] }>(res);
       setRecipeData(data);
     } catch {
       toast({
@@ -901,7 +916,7 @@ export default function RoutineDetail() {
         body: "{}"
       });
       if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
+      const data = await parseApiJson<{ items?: RoutineItem[] }>(res);
       if (data.items) {
         setLocalItems(data.items);
         toast({
@@ -937,7 +952,7 @@ export default function RoutineDetail() {
         })
       });
       if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
+      const data = await parseApiJson<{ items?: RoutineItem[] }>(res);
       if (data.items) {
         setLocalItems(data.items);
         toast({
@@ -991,7 +1006,7 @@ export default function RoutineDetail() {
         return;
       }
       if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
+      const data = await parseApiJson<{ childName?: string; items?: RoutineItem[] }>(res);
       toast({
         title: `🌅 Tomorrow's routine ready!`,
         description: `${isWeekend ? "Weekend" : "School day"} routine generated for ${data.childName ?? "your child"}.`
@@ -1024,7 +1039,7 @@ export default function RoutineDetail() {
         })
       });
       if (!res.ok) throw new Error("Failed to save");
-      return res.json();
+      return parseApiJson(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

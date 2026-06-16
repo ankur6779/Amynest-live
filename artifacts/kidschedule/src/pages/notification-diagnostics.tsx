@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -220,7 +221,7 @@ export default function NotificationDiagnosticsPage() {
     queryFn: async () => {
       const r = await authFetch("/api/notifications/diagnostics");
       if (!r.ok) throw new Error("Failed to load diagnostics");
-      return r.json();
+      return parseApiJson(r);
     },
   });
 

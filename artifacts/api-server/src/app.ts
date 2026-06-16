@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import "./lib/instrumentation.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
@@ -11,6 +12,10 @@ import { requestTimeout } from "./middlewares/request-timeout.js";
 import { requestIdMiddleware } from "./middlewares/request-id.js";
 import { limitJsonResponse } from "./middlewares/limit-json-response.js";
 import { requestLoopDetector } from "./middlewares/request-loop-detector.js";
+import {
+  sentryRequestMiddleware,
+  setupSentryExpressErrorHandler,
+} from "./middlewares/sentry-context.js";
 import { getMemorySnapshot } from "./utils/memory-monitor.js";
 import {
   bootElapsedMs,
@@ -39,6 +44,7 @@ export async function createApp(): Promise<Express> {
 
   app.use(cookieParser());
   app.use(requestIdMiddleware);
+  app.use(sentryRequestMiddleware);
   app.use(requestTimeout);
   app.use(slowApiGuard);
   app.use(limitJsonResponse);
@@ -222,6 +228,8 @@ export async function createApp(): Promise<Express> {
       `No handler for ${req.method} ${req.originalUrl} on api-server.`,
     );
   });
+
+  setupSentryExpressErrorHandler(app);
 
   app.use(
     (

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
@@ -76,7 +77,7 @@ export function useStoriesData(childId: number | string | null): UseStoriesDataR
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
-        const payload = (await res.json()) as StoriesPayload;
+        const payload = (await parseApiJson<StoriesPayload>(res));
         if (cancelled || myReq !== reqIdRef.current) return;
         setData(payload);
       } catch (err) {

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Runtime phonics manifest — quality metadata for learning-safe routing.
  */
@@ -16,7 +17,7 @@ export async function loadPhonicsManifest(): Promise<PhonicsAudioManifestFile | 
     manifestPromise = fetch("/phonics-audio/manifest.json", { cache: "force-cache" })
       .then(async (res) => {
         if (!res.ok) return null;
-        return (await res.json()) as PhonicsAudioManifestFile;
+        return (await parseApiJson<PhonicsAudioManifestFile>(res));
       })
       .catch(() => null);
   }

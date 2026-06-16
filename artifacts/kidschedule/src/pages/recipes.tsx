@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -84,7 +85,7 @@ export default function RecipesPage() {
     queryFn: async () => {
       const res = await authFetch("/api/recipes");
       if (!res.ok) throw new Error("Failed to load recipes");
-      return res.json();
+      return parseApiJson(res);
     }
   });
   const saveMutation = useMutation({
@@ -100,12 +101,12 @@ export default function RecipesPage() {
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({
+        const err = await parseApiJson<{ error?: string }>(res).catch(() => ({
           error: "Failed"
         }));
         throw new Error(err.error || "Failed to save recipe");
       }
-      return res.json();
+      return parseApiJson(res);
     },
     onSuccess: () => {
       qc.invalidateQueries({

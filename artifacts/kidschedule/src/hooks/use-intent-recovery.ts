@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
@@ -29,7 +30,7 @@ export function useContinueJourney(enabled = true) {
     queryFn: async () => {
       const r = await authFetch(getApiUrl("/api/intent-recovery/continue-journey"));
       if (!r.ok) throw new Error("continue_journey_failed");
-      return r.json();
+      return parseApiJson(r);
     },
   });
 }
@@ -50,7 +51,7 @@ export function useIntentMutations() {
         body: JSON.stringify({ state }),
       });
       if (!r.ok) throw new Error("transition_failed");
-      return r.json();
+      return parseApiJson(r);
     },
     onSuccess: invalidate,
   });
@@ -63,7 +64,7 @@ export function useIntentMutations() {
         body: "{}",
       });
       if (!r.ok) throw new Error("interrupt_failed");
-      return r.json();
+      return parseApiJson(r);
     },
     onSuccess: invalidate,
   });
@@ -76,7 +77,7 @@ export function useIntentMutations() {
         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error("create_intent_failed");
-      return r.json();
+      return parseApiJson(r);
     },
     onSuccess: invalidate,
   });

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Amy Health Lab™ — offline-first server sync (phonics-v3 pattern).
  */
@@ -114,10 +115,10 @@ export async function hydrateHealthLabProfile(
     try {
       const res = await globalFetch(getApiUrl(`/api/health-lab/profile/${childId}`));
       if (res.ok) {
-        const json = (await res.json()) as {
+        const json = await parseApiJson<{
           profile?: Partial<HealthLabPersistedState> | null;
           clientUpdatedAt?: number;
-        };
+        }>(res);
         if (json.profile) {
           const merged = mergeState(local, json.profile, json.clientUpdatedAt ?? 0, localTs);
           saveHealthLabState(merged);
@@ -164,7 +165,7 @@ export async function flushHealthLabSync(childId: number): Promise<boolean> {
       trackHealthLabEvent("health_lab_sync_failure", childId, { status: res.status });
       return false;
     }
-    const json = (await res.json()) as { profile?: Partial<HealthLabPersistedState> };
+    const json = (await parseApiJson<{ profile?: Partial<HealthLabPersistedState> }>(res));
     if (json.profile) {
       const merged = mergeState(state, json.profile, clientUpdatedAt, clientUpdatedAt);
       saveHealthLabState(merged);

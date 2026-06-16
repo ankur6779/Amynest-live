@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Infant Sleep Prediction (Beta) — web UI.
  *
@@ -161,14 +162,12 @@ export function SleepPredict({
         authFetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=10`)),
       ]);
       if (pRes.ok) {
-        const json = (await pRes.json()) as PredictResponse;
+        const json = (await parseApiJson<PredictResponse>(pRes));
         setData(json);
         trackSleepPredictionViewed(childId, ageMonths);
       }
       if (hRes.ok) {
-        const json = (await hRes.json()) as {
-          sessions: NapSession[];
-        };
+        const json = (await parseApiJson<{ sessions: NapSession[] }>(hRes));
         setHistory(json.sessions ?? []);
         // If the most recent session is still in-progress, restore the
         // start state on the toggle button.
@@ -206,7 +205,7 @@ export function SleepPredict({
         })
       });
       if (!r.ok) {
-        const data = await r.json().catch(() => null);
+        const data = await parseApiJson(r).catch(() => null);
         throw { status: r.status, data };
       }
       setActiveStartIso(startedAt);
@@ -246,7 +245,7 @@ export function SleepPredict({
         })
       });
       if (!r.ok) {
-        const data = await r.json().catch(() => null);
+        const data = await parseApiJson(r).catch(() => null);
         throw { status: r.status, data };
       }
       setActiveStartIso(null);

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { isCapacitorNative } from "@/lib/capacitor-native";
 
 export interface GeoCoords {
@@ -126,9 +127,9 @@ export async function reverseGeocodeCountry(
   );
   if (!res.ok) return null;
 
-  const data = (await res.json()) as {
+  const data = await parseApiJson<{
     address?: { country?: string; country_code?: string };
-  };
+        }>(res);
   const countryCode = data.address?.country_code?.toUpperCase();
   const countryName = data.address?.country?.trim();
   if (!countryCode || countryCode.length !== 2) return null;
@@ -147,7 +148,7 @@ export async function detectCountryFromIp(): Promise<ReverseGeocodeResult | null
     window.clearTimeout(tid);
     if (!res.ok) return null;
 
-    const data = (await res.json()) as { country_code?: string; country_name?: string };
+    const data = await parseApiJson<{ country_code?: string;country_name?: string }>(res);
     if (!data.country_code || !data.country_name) return null;
 
     return {

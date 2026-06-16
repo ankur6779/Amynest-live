@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
@@ -335,7 +336,7 @@ export function useSpellingWords(
           body: JSON.stringify({ age: ageGroup, difficulty: diff, count }),
         });
         if (!res.ok) throw new Error(`ai_${res.status}`);
-        const raw = await res.json();
+        const raw = await parseApiJson(res);
         const data = await resolveAiApiData<{ ok?: boolean; words: SpellingWord[] }>(
           raw,
           authFetch,
@@ -412,7 +413,7 @@ export function useSpellingProgress(
         `/api/spelling/progress?childId=${childId}&ageGroup=${encodeURIComponent(ageGroup)}`,
       );
       if (!res.ok) throw new Error(`progress_${res.status}`);
-      const data = (await res.json()) as { ok: true; progress: SpellingProgress };
+      const data = await parseApiJson<{ ok: true;progress: SpellingProgress }>(res);
       setProgress(data.progress);
     } catch (err) {
       setError(err instanceof Error ? err.message : "progress_failed");
@@ -434,7 +435,7 @@ export function useSpellingProgress(
           body: JSON.stringify({ childId, ageGroup, correct, source }),
         });
         if (!res.ok) throw new Error(`record_${res.status}`);
-        const data = (await res.json()) as { ok: true; progress: SpellingProgress };
+        const data = await parseApiJson<{ ok: true;progress: SpellingProgress }>(res);
         setProgress(data.progress);
         return data.progress;
       } catch (err) {
@@ -480,7 +481,7 @@ export function useSpellingLeaderboard(
         `/api/spelling/competition/leaderboard?ageGroup=${encodeURIComponent(ageGroup)}`,
       );
       if (!res.ok) throw new Error(`lb_${res.status}`);
-      const data = (await res.json()) as { ok: true; leaderboard: LeaderboardRow[] };
+      const data = await parseApiJson<{ ok: true;leaderboard: LeaderboardRow[] }>(res);
       setRows(data.leaderboard);
     } catch (err) {
       setError(err instanceof Error ? err.message : "lb_failed");
@@ -657,7 +658,7 @@ export function useSpellingSession(
           }),
         });
         if (!res.ok) throw new Error(`session_start_${res.status}`);
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           ok: true;
           sessionToken: string;
           mode: SessionMode;
@@ -665,7 +666,7 @@ export function useSpellingSession(
           difficulty: SpellingDifficulty;
           startedAt: string;
           words: SafeSessionWord[];
-        };
+        }>(res);
         setSessionToken(data.sessionToken);
         setWords(data.words);
         setStartedAt(data.startedAt);
@@ -703,13 +704,13 @@ export function useSpellingSession(
           return null;
         }
         if (!res.ok) throw new Error(`session_attempt_${res.status}`);
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           ok: true;
           correct: boolean;
           correctAnswer: string;
           progress: SpellingProgress;
           aiResult: { correct: boolean; ms: number } | null;
-        };
+        }>(res);
         setGradedIndices((prev) => {
           const next = new Set(prev);
           next.add(wordIndex);
@@ -738,12 +739,12 @@ export function useSpellingSession(
         { method: "POST", headers: { "Content-Type": "application/json" } },
       );
       if (!res.ok) throw new Error(`session_finalize_${res.status}`);
-      const data = (await res.json()) as {
+      const data = await parseApiJson<{
         ok: true;
         summary: SessionFinalizeSummary;
         competitionScoreId: number | null;
         alreadyFinalized: boolean;
-      };
+        }>(res);
       setFinalSummary(data.summary);
       return data.summary;
     } catch (err) {
@@ -888,11 +889,11 @@ export function useSpellingTournament(
         body: JSON.stringify({ childId, ageGroup }),
       });
       if (!res.ok) throw new Error(`tournament_start_${res.status}`);
-      const data = (await res.json()) as {
+      const data = await parseApiJson<{
         ok: true;
         tournament: TournamentSummary;
         session: TournamentActiveSession;
-      };
+        }>(res);
       setTournament(data.tournament);
       setActiveSession(data.session);
       return true;
@@ -924,13 +925,13 @@ export function useSpellingTournament(
           return null;
         }
         if (!res.ok) throw new Error(`tournament_attempt_${res.status}`);
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           ok: true;
           correct: boolean;
           correctAnswer: string;
           progress: SpellingProgress;
           aiResult: { correct: boolean; ms: number } | null;
-        };
+        }>(res);
         setGradedIndices((prev) => {
           const next = new Set(prev);
           next.add(wordIndex);
@@ -962,19 +963,19 @@ export function useSpellingTournament(
         { method: "POST", headers: { "Content-Type": "application/json" } },
       );
       if (res.status === 409) {
-        const pending = (await res.json()) as { status?: string };
+        const pending = (await parseApiJson<{ status?: string }>(res));
         if (pending.status === "round_incomplete") {
           setError("round_incomplete");
           return null;
         }
       }
       if (!res.ok) throw new Error(`tournament_advance_${res.status}`);
-      const data = (await res.json()) as {
+      const data = await parseApiJson<{
         ok: true;
         tournament: TournamentSummary;
         lastRound: TournamentRoundSnapshot;
         nextSession: TournamentActiveSession | null;
-      };
+        }>(res);
       setTournament(data.tournament);
       setLastRound(data.lastRound);
       setActiveSession(data.nextSession);

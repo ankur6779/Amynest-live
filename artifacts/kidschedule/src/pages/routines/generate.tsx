@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, Link, useSearch } from "wouter";
@@ -141,7 +142,14 @@ async function detectWeatherOutdoorFromBrowser(timeoutMs = 5000): Promise<Weathe
     const res = await fetch(url, { signal: ctrl.signal });
     clearTimeout(timer);
     if (!res.ok) return null;
-    const json = (await res.json()) as { current?: { temperature_2m?: number; precipitation?: number; wind_speed_10m?: number; weather_code?: number } };
+    const json = await parseApiJson<{
+      current?: {
+        temperature_2m?: number;
+        precipitation?: number;
+        wind_speed_10m?: number;
+        weather_code?: number;
+      };
+    }>(res);
     return mapOpenMeteoToWeatherOutdoor(json.current ?? {});
   } catch {
     return null;
@@ -724,7 +732,10 @@ export default function RoutineGenerate() {
   const [parentDietType, setParentDietType] = React.useState<string | null>(null);
   React.useEffect(() => {
     let cancelled = false;
-    authFetch("/api/parent-profile").then(r => r.ok ? r.json() : null).then(p => {
+    authFetch("/api/parent-profile").then(async (r) => {
+      if (!r.ok) return null;
+      return parseApiJson<{ region?: string; dietType?: string; foodStyle?: string }>(r);
+    }).then(p => {
       if (!cancelled) {
         if (p?.region) setParentRegion(p.region);
         if (p?.dietType) setParentDietType(p.dietType);
@@ -820,7 +831,10 @@ export default function RoutineGenerate() {
     }
     if (checkDebounceRef.current) clearTimeout(checkDebounceRef.current);
     checkDebounceRef.current = setTimeout(() => {
-      authFetch(getApiUrl(`/api/routines/check?childId=${selectedChild}&date=${date}`)).then(r => r.ok ? r.json() : null).then((data: any) => {
+      authFetch(getApiUrl(`/api/routines/check?childId=${selectedChild}&date=${date}`)).then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ exists: boolean; routineId?: number }>(r);
+      }).then((data) => {
         setExistingRoutine(data ?? null);
         if (data?.exists) {
           if (autoOverrideRef.current) {
@@ -1474,7 +1488,7 @@ export default function RoutineGenerate() {
         try {
           const r = await authFetch(getApiUrl(`/api/routines/check?childId=${c.id}&date=${familyDate}`));
           if (!r.ok) return null;
-          const data = await r.json() as { exists?: boolean };
+          const data = await parseApiJson(r) as { exists?: boolean };
           return data?.exists ? c : null;
         } catch {
           return null;

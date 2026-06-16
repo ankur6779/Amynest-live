@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
@@ -67,7 +68,7 @@ async function preloadTtsPhrase(
       body: JSON.stringify({ text: phrase, mode, category: "phonics", speed: 0.9 }),
     });
     if (!res.ok) return null;
-    const json = (await res.json()) as { url?: string; audioUrl?: string };
+    const json = (await parseApiJson<{ url?: string; audioUrl?: string }>(res));
     const url = json.url ?? json.audioUrl;
     if (url) ttsUrlCache.set(key, url);
     return url ?? null;
@@ -900,7 +901,7 @@ function PhonicsTestContent({
       });
       if (!isMounted.current) return;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as AvailabilityState;
+      const json = (await parseApiJson<AvailabilityState>(res));
       if (isMounted.current) setAvailability(json ?? null);
     } catch (err) {
       if ((err as { name?: string })?.name === "AbortError") return;
@@ -937,10 +938,10 @@ function PhonicsTestContent({
         ]);
         if (!isMounted.current || controller.signal.aborted) return;
         if (!availRes.ok) throw new Error(`HTTP ${availRes.status}`);
-        const json = (await availRes.json()) as AvailabilityState;
+        const json = (await parseApiJson<AvailabilityState>(availRes));
         if (isMounted.current) setAvailability(json ?? null);
         if (configRes.ok) {
-          const cfg = (await configRes.json()) as TestConfigState;
+          const cfg = (await parseApiJson<TestConfigState>(configRes));
           if (isMounted.current && cfg?.ok) setTestConfig(cfg);
         }
       } catch (err) {
@@ -1073,10 +1074,10 @@ function PhonicsTestContent({
       });
       if (!isMounted.current) return;
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
+        const errBody = (await safeJsonResponse<{ error?: string }>(res).then((p) => (p.ok ? p.data : {})));
         throw new Error(errBody?.error ?? `HTTP ${res.status}`);
       }
-      const data = (await res.json()) as StartResponse;
+      const data = (await parseApiJson<StartResponse>(res));
       if (!data?.questions || data.questions.length === 0) {
         throw new Error("not_enough_content");
       }
@@ -1145,10 +1146,10 @@ function PhonicsTestContent({
         });
         if (!isMounted.current) return;
         if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
+          const errBody = (await safeJsonResponse<{ error?: string }>(res).then((p) => (p.ok ? p.data : {})));
           throw new Error(errBody?.error ?? `HTTP ${res.status}`);
         }
-        const submitData = (await res.json()) as SubmitResponse;
+        const submitData = (await parseApiJson<SubmitResponse>(res));
         if (!isMounted.current) return;
         setPhase({ kind: "result", data: submitData });
         clearResume();

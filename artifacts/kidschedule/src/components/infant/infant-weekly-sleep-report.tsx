@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, Moon, Sparkles } from "lucide-react";
@@ -64,7 +65,7 @@ export function InfantWeeklySleepReport({
       if (!res.ok) {
         throw new Error(`report_${res.status}`);
       }
-      const json = (await res.json()) as { report: WeeklySleepReportData };
+      const json = (await parseApiJson<{ report: WeeklySleepReportData }>(res));
       setReport(json.report);
       trackInfantSleepCoachPlanGenerated(childId, ageMonths, {
         cached: json.report.cached,

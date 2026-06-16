@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -309,13 +310,13 @@ function HealthCare({
       try {
         const r = await authFetch(getApiUrl(`/api/vaccinations/${childId}`));
         if (!r.ok) return;
-        const j = (await r.json()) as {
+        const j = (await parseApiJson<{
           ok: boolean;
           logs: {
             ageLabel: string;
             status: VaxStatus;
           }[];
-        };
+      }>(r));
         if (cancelled || !j.ok) return;
         const next: Record<string, VaxStatus> = {};
         for (const l of j.logs) next[l.ageLabel] = l.status;

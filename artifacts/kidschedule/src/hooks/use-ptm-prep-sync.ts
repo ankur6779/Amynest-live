@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -61,7 +62,7 @@ export function usePtmPrepSync() {
     try {
       const res = await authFetch(getApiUrl("/api/ptm-prep/sync"));
       if (!res.ok) return null;
-      return (await res.json()) as PtmPrepSyncPayload;
+      return (await parseApiJson<PtmPrepSyncPayload>(res));
     } catch {
       return null;
     }

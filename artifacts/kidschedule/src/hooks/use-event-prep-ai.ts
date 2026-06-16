@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useState } from "react";
 import {
   generateQuickActionLocal,
@@ -32,7 +33,7 @@ export function useEventPrepQuickAction(authFetch: AuthFetch) {
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as QuickActionResult & { usedFallback?: boolean };
+          const data = (await parseApiJson<QuickActionResult & { usedFallback?: boolean }>(res));
           setResult({
             type: data.type,
             title: data.title,

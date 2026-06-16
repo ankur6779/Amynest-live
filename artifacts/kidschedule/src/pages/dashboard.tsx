@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey, type BehaviorStat, type Child } from "@workspace/api-client-react";
 import { Redirect, useLocation } from "wouter";
@@ -347,7 +348,7 @@ function SmartHeroSection({
       const qs = geo ? `?lat=${geo.lat}&lng=${geo.lng}` : "";
       const res = await authFetch(`/api/environment/context${qs}`);
       if (!res.ok) throw new Error("env");
-      return res.json() as Promise<{ context: any; childName: string | null }>;
+      return parseApiJson(res) as Promise<{ context: any; childName: string | null }>;
     },
     enabled: geoReady,
     staleTime: 10 * 60 * 1000,
@@ -1122,7 +1123,10 @@ export default function Dashboard() {
     if (!authReady || !isSignedIn || profileFetchedRef.current) return;
     profileFetchedRef.current = true;
     void authFetch("/api/parent-profile")
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ name?: string }>(r);
+      })
       .then((data) => {
         if (data?.name) setProfileName(data.name);
       })

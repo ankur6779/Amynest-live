@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-react";
@@ -174,7 +175,10 @@ export default function ProgressPage() {
         method: "POST"
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await parseApiJson<{
+          summary: string;
+          insights: { type: string; message: string; icon: string }[];
+        }>(res);
         setInsights(data);
         saveCachedInsights(data);
         setInsightsCached(false);

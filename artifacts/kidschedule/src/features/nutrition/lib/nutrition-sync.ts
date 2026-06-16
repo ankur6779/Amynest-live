@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Nutrition Hub — offline-first server sync (health-lab / phonics-v3 pattern).
  *
@@ -160,13 +161,13 @@ export async function hydrateNutritionScore(
       getApiUrl(`/api/nutrition/daily-score?childId=${childId}&date=${today}`),
     );
     if (res.ok) {
-      const json = (await res.json()) as {
+      const json = await parseApiJson<{
         log?: {
           dateKey: string;
           checklist: Record<string, boolean>;
           updatedAt?: string;
         } | null;
-      };
+        }>(res);
       if (json.log?.checklist) {
         const serverChecklist = sanitizeChecklist(json.log.checklist);
         const serverTs = json.log.updatedAt ? Date.parse(json.log.updatedAt) : 0;
@@ -193,7 +194,7 @@ export async function hydrateNutritionScore(
       getApiUrl(`/api/nutrition/weekly-trend?childId=${childId}&date=${today}`),
     );
     if (trendRes.ok) {
-      const trendJson = (await trendRes.json()) as {
+      const trendJson = (await parseApiJson<{
         days?: Array<{
           dateKey: string;
           score: number;
@@ -202,7 +203,7 @@ export async function hydrateNutritionScore(
           checklist?: Record<string, boolean>;
           updatedAt?: string;
         }>;
-      };
+      }>(trendRes));
       for (const day of trendJson.days ?? []) {
         if (!day.checklist || day.dateKey === today) continue;
         const serverTs = day.updatedAt ? Date.parse(day.updatedAt) : 0;
@@ -276,7 +277,7 @@ export async function fetchNutritionStreak(
     const today = dateKeyLocal();
     const res = await fetcher(getApiUrl(`/api/nutrition/streak?childId=${childId}&date=${today}`));
     if (!res.ok) return null;
-    const json = (await res.json()) as { streak?: number };
+    const json = (await parseApiJson<{ streak?: number }>(res));
     return typeof json.streak === "number" ? json.streak : null;
   } catch {
     return null;
@@ -305,7 +306,7 @@ export async function fetchNutritionWeeklyTrend(
       getApiUrl(`/api/nutrition/weekly-trend?childId=${childId}&date=${today}`),
     );
     if (!res.ok) return null;
-    const json = (await res.json()) as { days?: WeeklyTrendDayPayload[] };
+    const json = (await parseApiJson<{ days?: WeeklyTrendDayPayload[] }>(res));
     return json.days ?? null;
   } catch {
     return null;

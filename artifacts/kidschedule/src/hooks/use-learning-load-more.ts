@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -52,7 +53,7 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
         `/api/learning/load-more/status?section=${encodeURIComponent(section)}`,
       );
       if (!res.ok) return;
-      const data = (await res.json()) as LoadMoreUsage & { ok?: boolean };
+      const data = (await parseApiJson<LoadMoreUsage & { ok?: boolean }>(res));
       setUsage({
         isPremium: data.isPremium,
         used: data.used,
@@ -134,7 +135,7 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
           return { ...data, items };
         }
 
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        const err = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string };
         throw new Error(err.error ?? `load_more_${res.status}`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "load_more_failed");

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Client-side signed URL fetch + cache for GCS-backed lullabies.
  * Never exposes raw GCS object paths — only audioId → API → signedUrl.
@@ -79,7 +80,7 @@ export async function fetchSignedLullabyUrl(
       console.warn("[LullabyGcs]", JSON.stringify({ audioId: id, signedUrlGenerated: false, status: res.status }));
       return { signedUrl: null, error: LULLABY_UNAVAILABLE };
     }
-    const body = (await res.json()) as RhymesSignedUrlResponse;
+    const body = (await parseApiJson<RhymesSignedUrlResponse>(res));
     if (!body.success || !body.signedUrl) {
       return { signedUrl: null, error: LULLABY_UNAVAILABLE };
     }

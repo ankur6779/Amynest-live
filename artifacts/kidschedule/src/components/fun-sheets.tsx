@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -98,7 +99,7 @@ export function FunSheets({
         signal
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
+        const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as {
           error?: string;
         };
         if (body.error === "google_api_key_missing") {
@@ -110,7 +111,7 @@ export function FunSheets({
         setPagination(null);
         return;
       }
-      const data = (await res.json()) as ListResponse;
+      const data = (await parseApiJson<ListResponse>(res));
       setFiles(data.files);
       setPagination(data.pagination);
       setQuota(data.dailyQuota);
@@ -152,7 +153,7 @@ export function FunSheets({
       });
       const contentType = res.headers.get("content-type") ?? "";
       if (contentType.includes("json")) {
-        const body = (await res.json().catch(() => ({}))) as DownloadResponse;
+        const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as DownloadResponse;
         if (body.error === "daily_limit_reached" || res.status === 429) {
           if (body.dailyQuota) setQuota(body.dailyQuota);
           setRowError({

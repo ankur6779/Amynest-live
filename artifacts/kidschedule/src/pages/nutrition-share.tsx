@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -34,11 +35,11 @@ export default function NutritionSharePage() {
           setError(res.status === 410 ? "expired" : "not_found");
           return;
         }
-        const json = (await res.json()) as {
+        const json = await parseApiJson<{
           readOnly: boolean;
           expiresAt: string;
           payload: SharePayload;
-        };
+        }>(res);
         setData(json);
       })
       .catch(() => setError("not_found"));

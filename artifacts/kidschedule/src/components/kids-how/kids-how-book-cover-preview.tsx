@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Loader2 } from "lucide-react";
@@ -34,7 +35,7 @@ export function KidsHowBookCoverPreview({
     queryFn: async () => {
       const res = await authFetch(kidsHowPreviewApiPath(bookId));
       if (!res.ok) throw new Error("preview_failed");
-      return res.json() as Promise<{ url: string }>;
+      return parseApiJson(res) as Promise<{ url: string }>;
     },
     staleTime: 25 * 60 * 1000,
   });

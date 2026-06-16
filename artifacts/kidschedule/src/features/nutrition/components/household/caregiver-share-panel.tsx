@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link2 } from "lucide-react";
@@ -74,7 +75,7 @@ export function CaregiverSharePanel() {
       });
 
       if (!res.ok) return;
-      const json = (await res.json()) as { shareToken?: string };
+      const json = (await parseApiJson<{ shareToken?: string }>(res));
       if (json.shareToken) {
         const origin = typeof window !== "undefined" ? window.location.origin : getAppApiBaseOrigin().replace(/\/api.*$/, "");
         setShareUrl(`${origin}/nutrition/share/${json.shareToken}`);

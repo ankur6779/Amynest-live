@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -518,7 +519,7 @@ export default function SignInPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail.trim() }),
       });
-      const checkData = (await checkRes.json()) as { exists?: boolean };
+      const checkData = (await parseApiJson<{ exists?: boolean }>(checkRes));
       if (!checkData.exists) {
         setResetError(t("screens.sign_in.reset_not_found"));
         return;

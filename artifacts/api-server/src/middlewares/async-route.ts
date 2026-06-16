@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { logger } from "../lib/logger.js";
 import { sendSafeError } from "../lib/safe-api-response.js";
+import { captureApiException } from "../lib/sentry.js";
 
 /**
  * Wraps async route handlers so rejections never become unhandledRejection crashes.
@@ -24,6 +25,12 @@ export function asyncRoute(
         },
         "Async route failed",
       );
+      captureApiException(err, {
+        route: req.originalUrl?.split("?")[0],
+        traceId:
+          (typeof req.headers["x-request-id"] === "string" && req.headers["x-request-id"]) ||
+          undefined,
+      });
       sendSafeError(res, 500, "Something went wrong, try again", true);
     });
   };

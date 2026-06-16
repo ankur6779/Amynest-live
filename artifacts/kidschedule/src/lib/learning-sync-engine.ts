@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Phase 6 — Learning Sync Engine (client).
  *
@@ -274,7 +275,7 @@ async function postOne(item: PendingActivity): Promise<PostResult> {
   if (!res.ok) {
     throw new Error(`learning-sync_http_${res.status}`);
   }
-  return (await res.json()) as PostResult;
+  return (await parseApiJson<PostResult>(res));
 }
 
 async function flushQueue(): Promise<void> {

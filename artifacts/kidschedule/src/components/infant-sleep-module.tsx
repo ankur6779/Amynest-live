@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -162,7 +163,7 @@ async function loadSleepLogFromApi(
   try {
     const res = await authFetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=50`));
     if (!res.ok) return null;
-    const json = (await res.json()) as { sessions?: NapSessionRow[] };
+    const json = (await parseApiJson<{ sessions?: NapSessionRow[] }>(res));
     const sessions = json.sessions ?? [];
     if (sessions.length === 0) return null;
     return napSessionsToSleepEvents(sessions);

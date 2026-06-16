@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -117,7 +118,7 @@ export function useSubscription() {
         },
       );
       if (!createRes.ok) {
-        const body = await createRes.json().catch(() => ({}));
+        const body = (await safeJsonResponse<{ message?: string; error?: string }>(createRes).then((p) => (p.ok ? p.data : {})));
         if (createRes.status === 503) {
           return {
             ok: false,
@@ -127,10 +128,10 @@ export function useSubscription() {
         }
         return { ok: false, reason: body?.message ?? "Could not start checkout." };
       }
-      const { subscriptionId, keyId } = (await createRes.json()) as {
+      const { subscriptionId, keyId } = (await parseApiJson<{
         subscriptionId: string;
         keyId: string;
-      };
+      }>(createRes));
 
       // 2) Open Razorpay Checkout. We resolve the outer promise from inside
       //    the handler / dismiss callbacks.
@@ -226,7 +227,7 @@ export function useSubscription() {
       refresh();
       return { ok: true };
     }
-    const body = await res.json().catch(() => ({}));
+    const body = (await safeJsonResponse<{ message?: string; error?: string }>(res).then((p) => (p.ok ? p.data : {})));
     return { ok: false, reason: body?.message ?? body?.error ?? "Could not cancel subscription." };
   }, [authFetch, refresh]);
 

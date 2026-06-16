@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import {
   FacebookAuthProvider,
   OAuthProvider,
@@ -97,7 +98,7 @@ async function enrichFirebaseUserFromFacebookGraph(
     url.searchParams.set("access_token", accessToken);
     const res = await fetch(url.toString());
     if (!res.ok) return;
-    const body = (await res.json()) as FacebookGraphProfile;
+    const body = (await parseApiJson<FacebookGraphProfile>(res));
     const displayName = body.name?.trim();
     if (displayName && !user.displayName?.trim()) {
       await updateProfile(user, { displayName });

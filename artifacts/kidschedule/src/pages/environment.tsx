@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -690,7 +691,7 @@ export default function EnvironmentPage() {
     queryFn: async () => {
       const res = await authFetch("/api/environment/context");
       if (!res.ok) throw new Error("env-fail");
-      return res.json() as Promise<ContextResponse>;
+      return parseApiJson(res) as Promise<ContextResponse>;
     },
     staleTime: 10 * 60 * 1000,
     retry: 1,
@@ -701,7 +702,7 @@ export default function EnvironmentPage() {
     queryFn: async () => {
       const res = await authFetch("/api/parent-profile");
       if (!res.ok) return null;
-      return res.json() as Promise<ParentProfile>;
+      return parseApiJson(res) as Promise<ParentProfile>;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -711,7 +712,7 @@ export default function EnvironmentPage() {
     queryFn: async () => {
       const res = await authFetch("/api/children");
       if (!res.ok) return [];
-      return res.json() as Promise<Child[]>;
+      return parseApiJson(res) as Promise<Child[]>;
     },
     staleTime: 5 * 60 * 1000,
   });

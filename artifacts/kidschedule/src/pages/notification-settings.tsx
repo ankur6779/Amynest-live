@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -428,7 +429,7 @@ export default function NotificationSettingsPage() {
     queryFn: async () => {
       const r = await authFetch("/api/notifications/categories");
       if (!r.ok) throw new Error("Failed to load preferences");
-      return r.json();
+      return parseApiJson(r);
     }
   });
   const [local, setLocal] = useState<Prefs | null>(null);
@@ -465,14 +466,14 @@ export default function NotificationSettingsPage() {
       if (!r.ok) {
         let detail = "Failed to save";
         try {
-          const body = (await r.json()) as { error?: string; message?: string };
+          const body = (await parseApiJson<{ error?: string; message?: string }>(r));
           detail = extractApiErrorMessage({ data: body, status: r.status }, detail);
         } catch {
           /* ignore */
         }
         throw new Error(detail);
       }
-      return r.json() as Promise<Prefs>;
+      return parseApiJson<Prefs>(r);
     },
     onSuccess: saved => {
       setLocal(saved);
@@ -506,7 +507,7 @@ export default function NotificationSettingsPage() {
     queryFn: async () => {
       const r = await authFetch("/api/notifications/history?limit=20");
       if (!r.ok) throw new Error("Failed to load history");
-      return r.json();
+      return parseApiJson(r);
     }
   });
   const testDelivery = useMutation({
@@ -534,7 +535,7 @@ export default function NotificationSettingsPage() {
         }),
       });
       if (!r.ok) throw new Error(`Server error ${r.status}`);
-      return (await r.json()) as { status?: string; reason?: string; detail?: string };
+      return (await parseApiJson<{ status?: string; reason?: string; detail?: string }>(r));
     },
     onSuccess: (result) => {
       const status = result.status ?? "unknown";
@@ -584,10 +585,10 @@ export default function NotificationSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category, onlyPlatforms: testNotificationOnlyPlatforms() }),
       });
-      return (await r.json()) as {
+      return (await parseApiJson<{
         status?: string;
         reason?: string;
-      };
+      }>(r));
     },
     onSuccess: result => {
       const status = result.status ?? "unknown";

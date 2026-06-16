@@ -1,3 +1,4 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Brain, Globe, Loader2, RefreshCw, Search, Users, Zap } from "lucide-react";
@@ -50,14 +51,14 @@ export function FamilyModeSection() {
           body: JSON.stringify({ meal_name: dish, forceRefresh }),
         });
         if (res.status === 402) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string; feature?: string };
+          const j = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string; feature?: string };
           if (j.error === "feature_locked" || j.feature === NUTRITION_FAMILY_AI_FEATURE) {
             openPaywall("hub_nutrition");
             return;
           }
         }
         if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          const j = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string };
           throw new Error(j.error ?? `Server error ${res.status}`);
         }
         const { readResolvedApiJson } = await import("@/lib/poll-result");

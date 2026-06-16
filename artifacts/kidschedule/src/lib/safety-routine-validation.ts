@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import type { SafetyValidationResponse } from "@workspace/api-zod";
 
 export type AgeBand = "infant" | "toddler" | "preschool" | "school" | "tween";
@@ -280,7 +281,7 @@ export async function validateRoutineSafety(
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Safety validation failed (${res.status})`);
-  return res.json() as Promise<SafetyValidationResponse>;
+  return parseApiJson(res) as Promise<SafetyValidationResponse>;
 }
 
 export function cacheSafetyForRoutine(

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 
 export type InfantNotifPrefs = {
@@ -24,7 +25,7 @@ export async function fetchInfantNotificationPrefs(
 ): Promise<InfantNotifPrefs & { maxPerDay: number; snoozeUntil: Record<string, string> }> {
   const res = await authFetch(getApiUrl(`/api/infant-notifications/prefs/${childId}`));
   if (!res.ok) throw new Error(`infant_notif_prefs_${res.status}`);
-  const json = (await res.json()) as { prefs: InfantNotifPrefs & { maxPerDay: number; snoozeUntil: Record<string, string> } };
+  const json = (await parseApiJson<{ prefs: InfantNotifPrefs & { maxPerDay: number; snoozeUntil: Record<string, string> } }>(res));
   return json.prefs;
 }
 

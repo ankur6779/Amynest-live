@@ -6,6 +6,8 @@
  * Render: separate service, same REDIS_URL as API, start command above.
  */
 import { logAmynestEnvironment } from "../lib/loadEnv.js";
+import "../lib/instrumentation.js";
+import { initWorkerSentry } from "../lib/sentry.js";
 import { logger } from "../lib/logger.js";
 import { registerProcessErrorHandlers } from "../utils/async-errors.js";
 import { startMemoryMonitor } from "../utils/memory-monitor.js";
@@ -69,6 +71,7 @@ function idleWorkerDisabled(reason: string): void {
 async function startWorker(): Promise<void> {
   registerProcessErrorHandlers();
   logAmynestEnvironment();
+  initWorkerSentry();
   startMemoryMonitor();
   startWorkerHealthServer();
 

@@ -44,6 +44,9 @@ const STORIES_STREAM_RE = /^\/api\/stories\/stream\/[a-zA-Z0-9_-]+$/;
 const MEDIA_CACHE_TTL_FALLBACK =
   "public, max-age=31536000, stale-while-revalidate=86400, immutable";
 
+/** Fail-fast upstream proxy — must exceed coach gateway (65s) but bound hung backends. */
+const PROXY_UPSTREAM_TIMEOUT_MS = 70_000;
+
 /** Match Express cors-origins.ts — Capacitor iOS/Android cross-origin API calls. */
 const ALLOWED_CORS_ORIGINS = new Set([
   "https://www.amynest.in",
@@ -157,6 +160,10 @@ async function proxyToBackend(request, env, url) {
     init.body = request.body;
   }
 
+  const controller = new AbortController();
+  init.signal = controller.signal;
+  const timeoutHandle = setTimeout(() => controller.abort("upstream_timeout"), PROXY_UPSTREAM_TIMEOUT_MS);
+
   if (coachTrace) {
     logCoachTrace("cloudflare.request_forwarded", {
       traceId,
@@ -167,7 +174,49 @@ async function proxyToBackend(request, env, url) {
     });
   }
 
-  const response = await fetch(target.toString(), init);
+  let response;
+  try {
+    response = await fetch(target.toString(), init);
+  } catch (err) {
+    clearTimeout(timeoutHandle);
+    const cfMs = Date.now() - cfStarted;
+    const isTimeout =
+      controller.signal.aborted ||
+      (err instanceof Error && /abort|timeout/i.test(err.message));
+    if (coachTrace) {
+      logCoachTrace("cloudflare.upstream_timeout", {
+        traceId,
+        timestamp: new Date().toISOString(),
+        durationMs: cfMs,
+        layer: "cloudflare",
+        httpStatus: 504,
+        contentType: "application/json",
+        meta: { path: url.pathname, timeoutMs: PROXY_UPSTREAM_TIMEOUT_MS, classification: isTimeout ? "upstream_timeout" : "upstream_error" },
+      });
+    }
+    return new Response(
+      JSON.stringify({
+        error: "edge_upstream_timeout",
+        message: "The request took too long. Please retry.",
+        fallback: true,
+        traceId,
+        timeoutMs: PROXY_UPSTREAM_TIMEOUT_MS,
+      }),
+      {
+        status: 504,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": resolveAccessControlOrigin(request, url),
+          "Access-Control-Allow-Credentials": "true",
+          ...(traceId ? { [COACH_GENERATE_TRACE_HEADER]: traceId } : {}),
+          "x-amynest-trace-cf-ms": String(cfMs),
+        },
+      },
+    );
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+
   const cfMs = Date.now() - cfStarted;
 
   if (coachTrace) {

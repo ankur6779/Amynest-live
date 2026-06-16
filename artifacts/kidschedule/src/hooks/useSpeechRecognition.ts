@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 // ─────────────────────────────────────────────────────────────────────────────
 // useSpeechRecognition — Web Speech API wrapper with MediaRecorder fallback
 //
@@ -402,7 +403,7 @@ export function useSpeechRecognition(
             else setError("transcription_failed");
             return;
           }
-          const raw = await r.json();
+          const raw = await parseApiJson(r);
           const headers: Record<string, string> = {};
           try {
             const tok = await getAuthTokenRef.current?.();

@@ -19,6 +19,27 @@ function logClientJsonIncident(kind: string, meta: Record<string, unknown>): voi
     // eslint-disable-next-line no-console
     console.warn("[safeJsonResponse]", kind, meta);
   }
+  if (import.meta.env.PROD) {
+    void import("@/lib/sentry").then(({ captureWebException }) => {
+      captureWebException(new Error(`safeJsonResponse:${kind}`), {
+        route: typeof window !== "undefined" ? window.location.pathname : undefined,
+        tags: { kind: String(kind), status: String(meta.status ?? "") },
+      });
+    }).catch(() => {});
+  }
+}
+
+/**
+ * Strict API JSON parse — throws on HTML/empty/parse errors (for authFetch flows).
+ */
+export async function parseApiJson<T = unknown>(res: Response): Promise<T> {
+  const parsed = await safeJsonResponse<T>(res);
+  if (!parsed.ok) {
+    const traceId = res.headers.get("x-request-id") ?? res.headers.get("x-amynest-coach-trace-id");
+    logClientJsonIncident(parsed.kind, { status: res.status, traceId });
+    throw new Error(`API response not JSON (${parsed.kind})`);
+  }
+  return parsed.data;
 }
 
 /**

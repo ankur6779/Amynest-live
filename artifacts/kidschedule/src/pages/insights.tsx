@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState } from "react";
 import { Link } from "wouter";
 import { AddChildLink } from "@/components/add-child-link";
@@ -119,7 +120,7 @@ export default function InsightsPage() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl(`/api/dashboard/insights?range=${range}`));
       if (!res.ok) throw new Error("Failed to load insights");
-      return res.json();
+      return parseApiJson(res);
     },
     staleTime: 5 * 60_000,
   });
@@ -134,7 +135,7 @@ export default function InsightsPage() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl(`/api/abacus/weekly-summary`));
       if (!res.ok) throw new Error("Failed to load abacus summary");
-      return res.json();
+      return parseApiJson(res);
     },
     staleTime: 5 * 60_000,
   });

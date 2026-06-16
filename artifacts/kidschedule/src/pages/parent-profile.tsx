@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -113,6 +114,8 @@ interface ParentProfile {
   subCuisine: string;
 }
 
+type ParentProfileApi = Partial<ParentProfile> & { allergies?: string };
+
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export default function ParentProfilePage() {
@@ -155,7 +158,10 @@ export default function ParentProfilePage() {
       fetch(getApiUrl("/api/parent-profile"), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-        .then(r => (r.ok ? r.json() : null))
+        .then(async (r) => {
+          if (!r.ok) return null;
+          return parseApiJson<ParentProfileApi>(r);
+        })
         .then(data => {
           if (data) {
             const dietType: string =

@@ -1,3 +1,4 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
 /**
  * Recovers client audio circuits after backend deploy / cold start.
  * Polls /api/healthz/audio and clears breakers when the API is healthy again.
@@ -36,7 +37,7 @@ async function probeAudioHealth(): Promise<boolean> {
       credentials: "omit",
       signal: controller.signal,
     }).finally(() => window.clearTimeout(timer));
-    const body = (await res.json().catch(() => ({}))) as { ok?: boolean };
+    const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { ok?: boolean };
     return res.ok && body.ok === true;
   } catch {
     return false;

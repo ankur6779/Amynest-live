@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
 import {
   healOnboardingCompletionIfNeeded,
@@ -149,7 +150,7 @@ export async function resolveSetupStatus(
 
   let data: SetupStatus;
   try {
-    data = (await res.json()) as SetupStatus;
+    data = (await parseApiJson<SetupStatus>(res));
   } catch (e) {
     console.error("[setup-status] onboarding json parse failed", e);
     if (isSetupComplete(cached)) return cached;
@@ -170,7 +171,7 @@ export async function resolveSetupStatus(
   try {
     const childrenRes = await authFetch("/api/children");
     if (childrenRes.ok) {
-      const children = (await childrenRes.json()) as unknown;
+      const children = (await parseApiJson<unknown>(childrenRes));
       if (Array.isArray(children) && children.length > 0) {
         const fromChildren = { onboardingComplete: true, profileComplete: true };
         const repaired = repairLocalFromServerComplete(fromChildren, cached);

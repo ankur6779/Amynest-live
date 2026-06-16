@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
@@ -17,7 +18,7 @@ export function useHubDashboard(enabled = true) {
       if (!res.ok) {
         throw new Error(`hub_dashboard_${res.status}`);
       }
-      const data = (await res.json()) as HubDashboardData;
+      const data = (await parseApiJson<HubDashboardData>(res));
       const elapsed = performance.now() - started;
       const bytes = new TextEncoder().encode(JSON.stringify(data)).length;
       if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {

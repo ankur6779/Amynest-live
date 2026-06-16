@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Loader2, Lock } from "lucide-react";
@@ -50,7 +51,7 @@ export default function AnswerToKidsHowReaderPage() {
     queryFn: async () => {
       const res = await authFetch(kidsHowPreviewApiPath(bookId));
       if (!res.ok) throw new Error("preview_failed");
-      return res.json() as Promise<{ url: string }>;
+      return parseApiJson(res) as Promise<{ url: string }>;
     },
     staleTime: 25 * 60 * 1000,
   });

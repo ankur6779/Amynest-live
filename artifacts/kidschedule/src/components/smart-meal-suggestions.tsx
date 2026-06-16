@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -81,7 +82,16 @@ export function SmartMealSuggestions() {
   const placeholder = placeholders[0];
   useEffect(() => {
     let cancelled = false;
-    Promise.all([authFetch("/api/parent-profile").then(r => r.ok ? r.json() : null).catch(() => null), authFetch("/api/children").then(r => r.ok ? r.json() : null).catch(() => null)]).then(([profile, children]) => {
+    Promise.all([
+      authFetch("/api/parent-profile").then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ region?: string; country?: string }>(r);
+      }).catch(() => null),
+      authFetch("/api/children").then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<Array<{ age?: number | null }>>(r);
+      }).catch(() => null),
+    ]).then(([profile, children]) => {
       if (cancelled) return;
       if (profile?.region) setRegion(profile.region);
       if (profile?.country) setCountry(String(profile.country).toUpperCase());
@@ -119,7 +129,7 @@ export function SmartMealSuggestions() {
         })
       });
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as {
+        const err = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as {
           error?: string;
         };
         throw new Error(err.error ?? `Server error ${res.status}`);

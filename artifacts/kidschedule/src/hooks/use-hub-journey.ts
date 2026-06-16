@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -48,7 +49,7 @@ export function useHubJourney(childId: number | null | undefined) {
         getApiUrl(`/api/hub-journey/status?childId=${cid}`),
       );
       if (!res.ok) throw new Error(`hub-journey status ${res.status}`);
-      return (await res.json()) as HubJourneyStatus;
+      return (await parseApiJson<HubJourneyStatus>(res));
     },
   });
 
@@ -60,7 +61,7 @@ export function useHubJourney(childId: number | null | undefined) {
         body: JSON.stringify({ childId: cid, stepIds }),
       });
       if (!res.ok) throw new Error(`hub-journey complete ${res.status}`);
-      return res.json();
+      return parseApiJson<Record<string, unknown>>(res).then(() => undefined);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: QKEY }),
   });
@@ -73,7 +74,7 @@ export function useHubJourney(childId: number | null | undefined) {
         body: JSON.stringify({ childId: cid }),
       });
       if (!res.ok) throw new Error(`hub-journey peek ${res.status}`);
-      return res.json();
+      return parseApiJson<Record<string, unknown>>(res).then(() => undefined);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: QKEY }),
   });

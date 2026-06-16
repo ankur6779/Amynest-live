@@ -5,6 +5,7 @@ import { applyDeviceHeaders } from "@/lib/device-id";
 import { useCallback, useRef } from "react";
 import { loggedFetch } from "@/lib/api-logger";
 import { DEFAULT_API_TIMEOUT_MS, fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 
 export function useAuthFetch() {
   const { getToken, isSignedIn } = useAuth();
@@ -45,4 +46,23 @@ export function useAuthFetch() {
   );
 
   return authFetch;
+}
+
+export { parseApiJson, safeJsonResponse };
+
+type AuthFetchFn = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  timeoutMs?: number,
+) => Promise<Response>;
+
+/** Authenticated fetch + safe JSON parse. Throws on HTML/parse errors. */
+export async function authFetchJson<T>(
+  authFetch: AuthFetchFn,
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  timeoutMs?: number,
+): Promise<T> {
+  const res = await authFetch(input, init ?? {}, timeoutMs);
+  return parseApiJson<T>(res);
 }

@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { setActiveIntentId } from "@/hooks/use-intent-interruption-tracker";
@@ -28,7 +29,7 @@ export async function createNotificationIntent(
       }),
     });
     if (!r.ok) return;
-    const data = (await r.json()) as { intentId?: string };
+    const data = (await parseApiJson<{ intentId?: string }>(r));
     if (data.intentId) setActiveIntentId(data.intentId);
   } catch {
     /* best-effort */

@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -53,7 +54,7 @@ export function useReferrals() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl("/api/referrals/me"));
       if (!res.ok) throw new Error(`referrals ${res.status}`);
-      return (await res.json()) as ReferralPayload;
+      return (await parseApiJson<ReferralPayload>(res));
     },
     enabled: isLoaded && isSignedIn,
     staleTime: 30_000,
@@ -66,7 +67,7 @@ export function useReferrals() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
       });
-      const json = await res.json().catch(() => ({}));
+      const json = (await safeJsonResponse<{ error?: string }>(res).then((p) => (p.ok ? p.data : {})));
       if (!res.ok) throw new Error(json?.error ?? `attribute ${res.status}`);
       return json as { ok: true; alreadyAttributed: boolean };
     },
@@ -83,7 +84,7 @@ export function useReferrals() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ giftCode: giftCode.trim().toUpperCase() }),
       });
-      const json = await res.json().catch(() => ({}));
+      const json = (await safeJsonResponse<{ error?: string }>(res).then((p) => (p.ok ? p.data : {})));
       if (!res.ok) throw new Error(json?.error ?? `redeem ${res.status}`);
       return json as { ok: true; bonusDays: number; giftCode: string };
     },

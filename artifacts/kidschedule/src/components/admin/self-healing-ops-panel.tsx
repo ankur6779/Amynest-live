@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
@@ -44,14 +45,20 @@ export function SelfHealingOpsPanel() {
 
   useEffect(() => {
     void authFetch("/api/admin/crash-intelligence/audit?limit=8")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: CrashAuditReport | null) => {
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<CrashAuditReport>(r);
+      })
+      .then((data) => {
         if (data?.entries) setAudit(data);
       })
       .catch(() => {});
 
     void authFetch("/api/logs/recent")
-      .then((r) => (r.ok ? r.json() : { logs: [] }))
+      .then(async (r) => {
+        if (!r.ok) return { logs: [] };
+        return parseApiJson<{ logs?: Array<{ message: string; ts: number; userId: string | null; type: string }> }>(r);
+      })
       .then((data: { logs?: Array<{ message: string; ts: number; userId: string | null; type: string }> }) => {
         const crashes = (data.logs ?? [])
           .filter((l) => l.type === "crash")

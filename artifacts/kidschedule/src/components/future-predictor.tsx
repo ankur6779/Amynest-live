@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -74,7 +75,7 @@ export function FuturePredictor({
         : `/api/future-predictor`;
       const r = await authFetch(url);
       if (!r.ok) throw new Error(`Failed: ${r.status}`);
-      return r.json();
+      return parseApiJson(r);
     },
     staleTime: 1000 * 60 * 60, // 1 hour
   });

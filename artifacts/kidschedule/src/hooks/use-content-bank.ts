@@ -1,3 +1,4 @@
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import type { ContentBankCategory } from "@workspace/content-bank";
@@ -47,12 +48,12 @@ export function useContentBankFeed<T = unknown>(
         `/api/content-bank/${category}/feed?childId=${childId}&limit=${limit}`,
       );
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string };
         setError(body.error ?? `feed_${res.status}`);
         setData(null);
         return;
       }
-      const json = (await res.json()) as ContentBankFeedResponse<T>;
+      const json = (await parseApiJson<ContentBankFeedResponse<T>>(res));
       setData(json);
     } catch (e) {
       setError(e instanceof Error ? e.message : "feed_failed");
@@ -95,10 +96,10 @@ export function useContentBankItem<T = unknown>(
     )
       .then(async (res) => {
         if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { error?: string };
           throw new Error(body.error ?? `item_${res.status}`);
         }
-        return res.json() as Promise<{
+        return parseApiJson(res) as Promise<{
           ok: true;
           item: T;
           progressActivityId: string;

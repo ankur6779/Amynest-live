@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import type {
@@ -175,12 +176,12 @@ export function useOlympiadQuestionSet(
 
       if (!res.ok) throw new Error(`fetch_${res.status}`);
 
-      const data = (await res.json()) as {
+      const data = await parseApiJson<{
         source: "ai" | "dataset";
         country: string;
         isPremium: boolean;
         questions: OlympiadQuestion[];
-      };
+        }>(res);
 
       if (!mounted.current) return;
 

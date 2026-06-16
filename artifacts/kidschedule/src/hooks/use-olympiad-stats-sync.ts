@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useRef } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
@@ -15,11 +16,11 @@ export function useOlympiadStatsSync(childId: number) {
     try {
       const res = await authFetch(`/api/olympiad/stats?childId=${childId}`);
       if (!res.ok) return null;
-      const data = (await res.json()) as {
+      const data = await parseApiJson<{
         ok: true;
         stats: unknown;
         clientUpdatedAt: string | null;
-      };
+        }>(res);
       return data.stats ? (parseRemoteStatsBlob(data.stats) as ChildOlympiadStats) : null;
     } catch {
       return null;
@@ -55,11 +56,11 @@ export function useOlympiadStatsSync(childId: number) {
       try {
         const res = await authFetch(`/api/olympiad/stats?childId=${childId}`);
         if (!res.ok) return local;
-        const data = (await res.json()) as {
+        const data = await parseApiJson<{
           ok: true;
           stats: unknown;
           clientUpdatedAt: string | null;
-        };
+        }>(res);
         if (!data.stats) return local;
         const remote = parseRemoteStatsBlob(data.stats);
         const merged = mergeStatsFromServer(local, remote, data.clientUpdatedAt);

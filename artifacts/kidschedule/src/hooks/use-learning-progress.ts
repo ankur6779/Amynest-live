@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -49,7 +50,7 @@ export function useLearningProgress(childId: number | null | undefined) {
         getApiUrl(`/api/learning-progress/status?childId=${cid}`),
       );
       if (!res.ok) throw new Error(`learning-progress status ${res.status}`);
-      return (await res.json()) as LearningProgressStatus;
+      return (await parseApiJson<LearningProgressStatus>(res));
     },
   });
 
@@ -73,7 +74,7 @@ export function useLearningProgress(childId: number | null | undefined) {
         },
       );
       if (!res.ok) throw new Error(`complete-activity ${res.status}`);
-      return (await res.json()) as LearningProgressStatus;
+      return (await parseApiJson<LearningProgressStatus>(res));
     },
     onSuccess: (data) => {
       qc.setQueryData(QKEY, data);
@@ -91,7 +92,7 @@ export function useLearningProgress(childId: number | null | undefined) {
         },
       );
       if (!res.ok) throw new Error(`session-step ${res.status}`);
-      return (await res.json()) as LearningProgressStatus;
+      return (await parseApiJson<LearningProgressStatus>(res));
     },
     onSuccess: (data) => {
       qc.setQueryData(QKEY, data);

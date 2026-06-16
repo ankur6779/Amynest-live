@@ -1,3 +1,4 @@
+import { safeJsonResponse } from "@/lib/safe-json-response";
 /**
  * Non-blocking audio boot — runs after React mount; failures never block the shell.
  *
@@ -199,7 +200,7 @@ async function probeAudioApiHealth(): Promise<{ ok: boolean; status?: number }> 
 
   const op = await runStartupAudioOperation("audio_api_health", url, HEALTH_PROBE_TIMEOUT_MS, async () => {
     const res = await fetch(url, { cache: "no-store", credentials: "omit" });
-    const body = (await res.json().catch(() => ({}))) as { ok?: boolean };
+    const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as { ok?: boolean };
     return { status: res.status, healthy: res.ok && body.ok === true };
   });
 
@@ -215,7 +216,7 @@ async function probeStaticAudioHealth(): Promise<{ ok: boolean; status?: number 
   const op = await runStartupAudioOperation("static_audio_health", url, STATIC_HEALTH_TIMEOUT_MS, async () => {
     const res = await fetch(url, { cache: "no-store" });
     recordClientCdnCacheStatus(url, res);
-    const body = (await res.json().catch(() => ({}))) as {
+    const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as {
       gcs?: boolean;
       status?: string;
       circuitOpen?: boolean;

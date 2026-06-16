@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -68,7 +69,7 @@ export function useFeatureUsage() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl("/api/feature-usage/status"));
       if (!res.ok) throw new Error(`feature-usage status ${res.status}`);
-      return (await res.json()) as StatusResponse;
+      return (await parseApiJson<StatusResponse>(res));
     },
   });
 
@@ -93,7 +94,7 @@ export function useFeatureUsage() {
         body: JSON.stringify(withActiveChildId({ featureId })),
       });
       if (!res.ok) throw new Error(`feature-usage track ${res.status}`);
-      return res.json();
+      return parseApiJson(res);
     },
     onMutate: async (featureId) => {
       await qc.cancelQueries({ queryKey: QKEY });

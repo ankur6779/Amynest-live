@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 /**
  * Smart Study Zone v2 — Adaptive Question Runner
  *
@@ -114,7 +115,7 @@ export function AdaptiveQuestionRunner({
       body: JSON.stringify({ childId, subject: practiceSubject, count: BATCH_SIZE, country }),
     });
     if (!res.ok) return null;
-    return (await res.json()) as NextResponse;
+    return (await parseApiJson<NextResponse>(res));
   }, [childId, practiceSubject, country, getToken]);
 
   const applyBatch = useCallback((data: NextResponse, fromCache: boolean) => {

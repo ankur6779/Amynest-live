@@ -1,3 +1,4 @@
+import { parseApiJson } from "@/lib/safe-json-response";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import amyLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_01_56_21_PM_1776587201948.png";
 import { useTranslation } from "react-i18next";
@@ -115,10 +116,10 @@ export function PrintableWorksheets({
     setLoading(true);
     setError(null);
     fetch(getApiUrl("/api/worksheets")).then(r => {
-      if (!r.ok) return r.json().then((b: any) => {
+      if (!r.ok) return parseApiJson<{ error?: string }>(r).then((b) => {
         throw new Error(b.error || `HTTP ${r.status}`);
       });
-      return r.json();
+      return parseApiJson<{ worksheets?: Worksheet[] }>(r);
     }).then(data => setAll(data.worksheets || [])).catch((e: Error) => setError(e.message)).finally(() => setLoading(false));
   }, []);
   useEffect(() => {

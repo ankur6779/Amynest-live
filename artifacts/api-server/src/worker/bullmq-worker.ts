@@ -42,9 +42,35 @@ export function startBullMqWorker(): Worker<AiJobQueuePayload> {
         evt: "bullmq.failed",
         jobId: job?.id,
         message: err.message,
+        attemptsMade: job?.attemptsMade,
       },
       "BullMQ job failed",
     );
+    void (async () => {
+      const attempts = job?.opts?.attempts ?? 3;
+      const made = job?.attemptsMade ?? 0;
+      if (job?.data && made >= attempts) {
+        const { recordDlqEntry } = await import("../queue/dlq-store.js");
+        await recordDlqEntry({
+          jobId: job.data.jobId,
+          type: job.data.type,
+          userId: job.data.userId,
+          reason: "exhausted_retries",
+          route: job.data.type,
+          payload: job.data.payload,
+          error: err.message,
+          attemptsMade: made,
+        });
+      }
+      if (job?.data) {
+        const { captureBullMqJobFailure } = await import("../lib/sentry.js");
+        captureBullMqJobFailure(err, {
+          jobId: job.data.jobId,
+          type: job.data.type,
+          userId: job.data.userId,
+        });
+      }
+    })();
   });
 
   worker.on("error", (err) => {
