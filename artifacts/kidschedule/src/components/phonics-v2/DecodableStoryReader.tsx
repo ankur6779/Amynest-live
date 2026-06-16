@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getDecodableStory } from "@/lib/phonics-v2/content/decodable-stories";
@@ -10,6 +10,7 @@ function resolveStory(storyId: string) {
   return getDecodableStory(storyId);
 }
 import { AudioPlayButton } from "@/components/audio-play-button";
+import { prefetchStoryLines } from "@/lib/phonics-v2/audio-prefetch";
 import { BookOpen, Users, Mic } from "lucide-react";
 
 type ReadMode = "amy" | "together" | "child";
@@ -40,6 +41,10 @@ export function DecodableStoryReader({ storyId, onComplete }: DecodableStoryRead
   }
 
   const line = story.lines[lineIdx]!;
+
+  useEffect(() => {
+    prefetchStoryLines(story.lines.map((l) => l.text));
+  }, [story.id]);
 
   return (
     <div
@@ -109,6 +114,9 @@ export function DecodableStoryReader({ storyId, onComplete }: DecodableStoryRead
       {(mode === "amy" || mode === "together") && (
         <AudioPlayButton
           text={line.text}
+          mode="phonics"
+          phonicsContentType="sentence"
+          prefetchNextText={story.lines[lineIdx + 1]?.text}
           size="md"
           variant="violet"
           ariaLabel="Amy read this line"

@@ -28,3 +28,14 @@ export function prefetchCvcWordList(words: string[]): void {
 export function prefetchFamilyAudio(familyWords: string[]): void {
   prefetchCvcWordList(familyWords);
 }
+
+/** Warm decodable story line clips (GCS library — no live TTS). */
+export function prefetchStoryLines(lines: string[]): void {
+  const unique = [...new Set(lines.map((l) => l.trim()).filter(Boolean))];
+  prefetchPhonicsContentTexts(unique.slice(0, 12), "sentence");
+}
+
+/** Warm CVC clips for phonics games hub (feed / build / family). */
+export function prefetchPhonicsGameWords(words: string[]): void {
+  prefetchCvcWordList(words.slice(0, 8));
+}

@@ -58,8 +58,10 @@ export function isPhonicsHubFastClip(text: string, opts?: SpeakOptions): boolean
     return false;
   }
   const t = (text ?? "").trim();
-  if (!t || t.length > 32) return false;
+  if (!t) return false;
+  // Phonics mode always uses pre-generated library clips (incl. decodable story lines).
   if (opts?.mode === "phonics") return true;
+  if (t.length > 32) return false;
   return !/\s/.test(t);
 }
 
@@ -79,6 +81,23 @@ export async function speakPhonicsFastClip(
   if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
 
   recordTtsUserGesture();
+
+  // Story sentences and multi-word lines — sentence clip first (skip letter-key misses).
+  if (/\s/.test(trimmed)) {
+    const sentence = await playPhonicsContentAudio(trimmed, {
+      contentType: "sentence",
+      waitUntilEnd: true,
+      playbackRate: opts?.playbackRate,
+      isCancelled: opts?.isCancelled,
+    });
+    if (sentence.ok) return { success: true, layer: "static" };
+    if (sentence.error === "phonics_cancelled" || opts?.isCancelled?.()) {
+      return { success: false, error: "tts_cancelled" };
+    }
+    if (sentence.error === "phonics_library_missing") {
+      return { success: false, error: "phonics_audio_preparing" };
+    }
+  }
 
   const audioKey =
     resolvePhonicsAudioKey({

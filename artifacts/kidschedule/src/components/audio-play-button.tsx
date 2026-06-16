@@ -6,11 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useInFlightGuard, useMountedRef, useSafeAsync } from "@/hooks/use-safe-async";
 import {
   prefetchPhonicsAudioKeys,
+  prefetchPhonicsContentTexts,
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
 import {
   checkPhonicsLetterClip,
   checkPhonicsWordClip,
+  checkPhonicsContentClip,
 } from "@/lib/phonics-audio-availability";
 import { subscribePhonicsPlayback, isPhonicsPlaying } from "@/lib/phonics-player";
 import {
@@ -29,6 +31,7 @@ import {
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
+import type { PhonicsAssetType } from "@workspace/phonics-sounds";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
 import {
@@ -77,6 +80,8 @@ interface AudioPlayButtonProps {
   phonemeKey?: string;
   /** CVC word key for GCS cache (word_cat). */
   cvcWordKey?: string;
+  /** Library content type for sentences / quiz prompts (decodable stories). */
+  phonicsContentType?: PhonicsAssetType;
   /** Disable while another phonics clip is playing (prevents double-tap races). */
   lockWhileGlobalPlayback?: boolean;
   disabled?: boolean;
@@ -116,6 +121,7 @@ export function AudioPlayButton({
   slow = false,
   phonemeKey,
   cvcWordKey,
+  phonicsContentType,
   lockWhileGlobalPlayback = false,
   disabled: disabledProp = false,
   className,
@@ -208,13 +214,16 @@ export function AudioPlayButton({
       if (cvcWordKey || (!phonemeKey && trimmed && !/\s/.test(trimmed))) {
         return checkPhonicsWordClip(cvcWordKey ?? trimmed).available;
       }
+      if (/\s/.test(trimmed) || phonicsContentType === "sentence") {
+        return checkPhonicsContentClip(trimmed, phonicsContentType ?? "sentence").available;
+      }
       const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
       return checkPhonicsLetterClip(key).available;
     } catch (err) {
       console.warn("[AudioPlayButton] phonics availability check failed", err);
       return true;
     }
-  }, [mode, text, phonemeKey, cvcWordKey, resolvedAudioKey, isWordClip]);
+  }, [mode, text, phonemeKey, cvcWordKey, phonicsContentType, resolvedAudioKey, isWordClip]);
 
   const resolvedText = useMemo(() => {
     const trimmed = (text ?? "").trim();
@@ -276,6 +285,13 @@ export function AudioPlayButton({
       prefetchPhonicsAudioKeys([resolvedAudioKey]);
       return;
     }
+    if (mode === "phonics" && (phonicsContentType === "sentence" || /\s/.test(resolvedText))) {
+      prefetchPhonicsContentTexts([resolvedText], phonicsContentType ?? "sentence");
+      if (resolvedPrefetch) {
+        prefetchPhonicsContentTexts([resolvedPrefetch], phonicsContentType ?? "sentence");
+      }
+      return;
+    }
     if (!resolvedText) return;
     const currentUrl = lookupStaticAudioUrl(resolvedText, mode ?? "default");
     if (currentUrl) prefetchStaticAudioUrl(currentUrl);
@@ -283,7 +299,7 @@ export function AudioPlayButton({
       const nextUrl = lookupStaticAudioUrl(resolvedPrefetch, mode ?? "phonics");
       if (nextUrl) prefetchStaticAudioUrl(nextUrl);
     }
-  }, [resolvedText, resolvedPrefetch, mode, resolvedAudioKey]);
+  }, [resolvedText, resolvedPrefetch, mode, resolvedAudioKey, phonicsContentType]);
 
   const handlePointerDown = useCallback(() => {
     audioManager.unlockFromUserGesture();

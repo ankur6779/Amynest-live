@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FeedTheMonster } from "./FeedTheMonster";
@@ -6,6 +6,7 @@ import { BuildTheWord } from "./BuildTheWord";
 import { FindTheFamily } from "./FindTheFamily";
 import { Gamepad2 } from "lucide-react";
 import { getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
+import { prefetchPhonicsGameWords } from "@/lib/phonics-v2/audio-prefetch";
 import type { WordFamilyId } from "@/lib/phonics-v2/content/word-families";
 
 type GameId = "feed" | "build" | "family";
@@ -41,6 +42,10 @@ export function PhonicsGamesHub({
   const targetFamilyId = useMemo((): WordFamilyId => {
     return getFamilyForWord(practiceWord)?.id ?? "at";
   }, [practiceWord]);
+
+  useEffect(() => {
+    prefetchPhonicsGameWords(practiceWords);
+  }, [practiceWords]);
 
   if (practiceWords.length === 0 || !practiceWord) {
     return null;
