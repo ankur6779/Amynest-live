@@ -1,7 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { KaraokeBlendRound } from "../KaraokeBlendRound";
 import { motion } from "framer-motion";
 
@@ -10,12 +9,28 @@ type BuildTheWordProps = {
   onComplete: () => void;
 };
 
+function emptySlots(count: number): (string | null)[] {
+  return Array.from({ length: count }, () => null);
+}
+
+function shuffledLetters(word: string): string[] {
+  return [...word.trim().toLowerCase()].sort(() => Math.random() - 0.5);
+}
+
 export function BuildTheWord({ word, onComplete }: BuildTheWordProps) {
-  const entry = getCvcWordEntry(word);
-  const letters = (entry ? word : word).split("");
-  const [slots, setSlots] = useState<(string | null)[]>([null, null, null]);
-  const [pool, setPool] = useState(() => [...letters].sort(() => Math.random() - 0.5));
+  const target = word.trim().toLowerCase();
+  const letters = useMemo(() => [...target], [target]);
+  const slotCount = letters.length;
+
+  const [slots, setSlots] = useState<(string | null)[]>(() => emptySlots(slotCount));
+  const [pool, setPool] = useState(() => shuffledLetters(target));
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    setSlots(emptySlots(slotCount));
+    setPool(shuffledLetters(target));
+    setDone(false);
+  }, [target, slotCount]);
 
   const placeLetter = useCallback(
     (letter: string, fromPoolIdx: number) => {
@@ -25,18 +40,18 @@ export function BuildTheWord({ word, onComplete }: BuildTheWordProps) {
       next[emptyIdx] = letter;
       setSlots(next);
       setPool((p) => p.filter((_, i) => i !== fromPoolIdx));
-      const built = next.join("").toLowerCase();
-      if (built === word.toLowerCase() && !next.includes(null)) {
+      const built = next.join("");
+      if (built === target && !next.includes(null)) {
         setDone(true);
         onComplete();
       }
     },
-    [slots, word, onComplete],
+    [slots, target, onComplete],
   );
 
   const reset = () => {
-    setSlots([null, null, null]);
-    setPool([...letters].sort(() => Math.random() - 0.5));
+    setSlots(emptySlots(slotCount));
+    setPool(shuffledLetters(target));
     setDone(false);
   };
 

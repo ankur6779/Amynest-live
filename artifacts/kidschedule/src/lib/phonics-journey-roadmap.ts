@@ -1,5 +1,16 @@
 import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import { defaultLevelForAgeMonths } from "@workspace/phonics-curriculum";
+
+/** Parent hub journey stage status — mastery-based (age never auto-completes). */
+export type ParentJourneyStageStatus =
+  | "locked"
+  | "available_for_review"
+  | "current_target"
+  | "mastered";
+
+/** @deprecated Use ParentJourneyStageStatus */
+export type LegacyParentJourneyStageStatus = "completed" | "current" | "locked";
 
 /** Parent-facing reading journey — six milestones from sound awareness to stories. */
 export type PhonicsJourneyStageId =
@@ -170,6 +181,8 @@ export function computeJourneyCompletionPct(
   itemCount?: number,
 ): number {
   if (curriculumLevel != null) {
+    const earned = masteryScore > 0 || Boolean(progress && Object.keys(progress.practiced).length > 0);
+    if (!earned) return 0;
     const completedStages = Math.max(0, curriculumLevel - 1);
     const withinStage = Math.min(100, Math.max(0, masteryScore)) / 100;
     return Math.round(Math.min(100, ((completedStages + withinStage) / 7) * 100));
@@ -181,10 +194,67 @@ export function computeJourneyCompletionPct(
   return 0;
 }
 
+export type ParentJourneyProgressInput = {
+  curriculumLevel: CurriculumLevel | null | undefined;
+  masteryScore: number;
+  totalAgeMonths: number;
+  hasTestHistory?: boolean;
+  streak?: number;
+  practicedCount?: number;
+};
+
+function hasEarnedParentJourneyProgress(input: ParentJourneyProgressInput): boolean {
+  if (input.hasTestHistory) return true;
+  if ((input.streak ?? 0) > 0) return true;
+  if ((input.practicedCount ?? 0) > 0) return true;
+  if (input.masteryScore > 0) return true;
+  return false;
+}
+
+export function resolveParentJourneyTarget(
+  input: ParentJourneyProgressInput,
+): PhonicsJourneyStage {
+  if (!hasEarnedParentJourneyProgress(input)) {
+    const recommended = defaultLevelForAgeMonths(input.totalAgeMonths);
+    return journeyStageForCurriculumLevel(recommended, input.totalAgeMonths);
+  }
+  if (input.curriculumLevel != null) {
+    return journeyStageForCurriculumLevel(input.curriculumLevel, input.totalAgeMonths);
+  }
+  return journeyStageForAgeMonths(input.totalAgeMonths);
+}
+
+function maxCurriculumLevelForParentStage(stage: PhonicsJourneyStage): number {
+  return Math.max(...stage.curriculumLevels);
+}
+
+function isParentStageMastered(
+  stage: PhonicsJourneyStage,
+  input: ParentJourneyProgressInput,
+): boolean {
+  if (!hasEarnedParentJourneyProgress(input) || input.curriculumLevel == null) return false;
+  const max = maxCurriculumLevelForParentStage(stage);
+  if (input.curriculumLevel > max) return true;
+  if (input.curriculumLevel === max && input.masteryScore >= 85) return true;
+  return false;
+}
+
+export function parentStageStatus(
+  stage: PhonicsJourneyStage,
+  input: ParentJourneyProgressInput,
+): ParentJourneyStageStatus {
+  const target = resolveParentJourneyTarget(input);
+  if (isParentStageMastered(stage, input)) return "mastered";
+  if (stage.order === target.order) return "current_target";
+  if (stage.order < target.order) return "available_for_review";
+  return "locked";
+}
+
+/** @deprecated Use parentStageStatus — age-based auto-complete removed */
 export function stageStatus(
   stage: PhonicsJourneyStage,
   activeStage: PhonicsJourneyStage,
-): "completed" | "current" | "locked" {
+): LegacyParentJourneyStageStatus {
   if (stage.order < activeStage.order) return "completed";
   if (stage.order === activeStage.order) return "current";
   return "locked";

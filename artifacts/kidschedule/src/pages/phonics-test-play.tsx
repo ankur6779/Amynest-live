@@ -7,6 +7,7 @@ import { PhonicsTest } from "@/components/phonics-test";
 import { LockedBlock } from "@/components/locked-block";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
+import { ensurePhonicsManifestLoaded } from "@/lib/phonics-manifest-validation";
 import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
@@ -57,7 +58,11 @@ export default function PhonicsTestPlayPage() {
 
   useEffect(() => {
     if (locked) return;
-    warmPhonicsRouteOnOpen();
+    void ensurePhonicsManifestLoaded()
+      .then(() => {
+        warmPhonicsRouteOnOpen();
+      })
+      .catch(() => undefined);
   }, [locked]);
 
   useEffect(() => {

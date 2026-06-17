@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Package } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import {
   reviewTierLabel,
   sortItemsForSmartReview,
 } from "@/lib/phonics-journey-adaptive";
+import { warmPhonicsSessionTiles } from "@/lib/phonics-v2/audio-prefetch";
 
 type PackKind = "sounds" | "letters" | "words" | "reading";
 
@@ -119,6 +120,20 @@ export function PhonicsLearningPacks({
   const masteryPct =
     practicedCount > 0 ? Math.round((masteredCount / practicedCount) * 100) : 0;
   const adaptiveMode = resolveAdaptiveDifficulty(masteryPct, masteryPct);
+
+  useEffect(() => {
+    if (packs.length === 0) return;
+    const items = packs.flatMap((p) => p.items);
+    if (items.length === 0) return;
+    void warmPhonicsSessionTiles(items, { limit: 32 });
+  }, [packs]);
+
+  useEffect(() => {
+    if (!expandedPack) return;
+    const pack = packs.find((p) => p.id === expandedPack);
+    if (!pack?.items.length) return;
+    void warmPhonicsSessionTiles(pack.items, { limit: 32 });
+  }, [expandedPack, packs]);
 
   if (packs.length === 0) {
     return (

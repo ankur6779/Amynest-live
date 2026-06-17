@@ -82,6 +82,7 @@ import {
   saveCoachJourneySnapshot,
   setSpeechViewMode,
   weakSoundsToHistory,
+  speechCoachSttOptions,
   type SpeechViewMode,
 } from "./speech-coach-utils";
 import { formatAge } from "@/lib/age-groups";
@@ -537,11 +538,11 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
       return null;
     }
   }, []);
-  const stt = useSpeechRecognition("en-US", {
+  const stt = useSpeechRecognition("en-US", speechCoachSttOptions({
     getAuthToken,
     onTranscribeStart: () => speechCoachPerf.mark("stt_start"),
     onTranscribeEnd: () => speechCoachPerf.mark("stt_end"),
-  });
+  }));
 
   const [kind, setKind] = useState<SpeechPromptKind>("word");
   const [difficulty, setDifficulty] = useState<SessionDifficulty>("easy");
@@ -618,6 +619,10 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     const phase = promptPhaseRef.current;
     if (phase !== "recording" && phase !== "analyzing") return;
     if (stt.listening || stt.transcribing) return;
+    if (stt.error) {
+      setPromptPhase("heard");
+      return;
+    }
     const item = currentItemRef.current;
     const final = stt.transcript.trim();
     if (!item) return;
@@ -639,7 +644,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     setTurnIndex((n) => n + 1);
     setPromptPhase("result");
     void speakCoachFeedbackLines(voice, evaluated.spokenLines, item);
-  }, [bestStreak, makeDialogueCtx, sessionIdx, stt.listening, stt.transcribing, stt.transcript, streak, turnIndex, voice]);
+  }, [bestStreak, makeDialogueCtx, sessionIdx, stt.error, stt.listening, stt.transcribing, stt.transcript, streak, turnIndex, voice]);
 
   const startSession = useCallback(() => {
     speechCoachPerf.startSession();
@@ -726,14 +731,16 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     })();
   };
 
-  const handleRecord = () => {
+  const handleRecord = async () => {
     if (!currentItem) return;
+    (document.activeElement as HTMLElement | null)?.blur?.();
     voice.pause();
     stt.reset();
     setCurrentResult(null);
     setPromptPhase("recording");
     speechCoachPerf.mark("recording_start");
-    void stt.start();
+    const ok = await stt.start();
+    if (!ok) setPromptPhase("heard");
   };
 
   const handleStop = () => {
@@ -875,7 +882,7 @@ function ReadAloudSection({ child, viewMode }: { child: AnyChild; viewMode: Spee
   const getAuthToken = useCallback(async () => {
     try { return (await getAuth().currentUser?.getIdToken()) ?? null; } catch { return null; }
   }, []);
-  const stt = useSpeechRecognition("en-US", { getAuthToken });
+  const stt = useSpeechRecognition("en-US", speechCoachSttOptions({ getAuthToken }));
   const story = t("screens.speech_coach.read_aloud.story_default_body");
   const lines = useMemo(() => story.split(/(?<=[.!?])\s+/), [story]);
   const [idx, setIdx] = useState(0);

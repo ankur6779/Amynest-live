@@ -7,6 +7,7 @@ import {
   recordAndroidBaselineHeight,
   resolveActiveChatPromptId,
   resetAndroidBaselineHeightForTests,
+  resetCapacitorIosKeyboardInsetForTests,
   scheduleSelfHealingVisibility,
   setNativeWebViewVisibleHeightPx,
   validateActivePromptVisibility,
@@ -107,6 +108,42 @@ describe("ChatPlatform visibility engine", () => {
         configurable: true,
         value: originalInnerHeight,
       });
+    });
+
+    it("subtracts native keyboard inset on Capacitor iOS when visualViewport stays full height", () => {
+      const originalInnerHeight = window.innerHeight;
+      const originalCapacitor = (window as Window & { Capacitor?: unknown }).Capacitor;
+      resetCapacitorIosKeyboardInsetForTests();
+      Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+      Object.defineProperty(window, "visualViewport", {
+        configurable: true,
+        value: { height: 844, offsetTop: 0, addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      });
+      (window as Window & { Capacitor?: unknown }).Capacitor = {
+        isNativePlatform: () => true,
+        getPlatform: () => "ios",
+      };
+      document.documentElement.style.setProperty("--auth-keyboard-inset-native", "336px");
+
+      const metrics = metricsForChatLayout(
+        { height: 844, offsetTop: 0, keyboardInset: 336 },
+        true,
+      );
+
+      expect(metrics.height).toBe(508);
+      expect(metrics.keyboardInset).toBe(336);
+
+      resetCapacitorIosKeyboardInsetForTests();
+      document.documentElement.style.removeProperty("--auth-keyboard-inset-native");
+      Object.defineProperty(window, "innerHeight", {
+        configurable: true,
+        value: originalInnerHeight,
+      });
+      if (originalCapacitor === undefined) {
+        delete (window as Window & { Capacitor?: unknown }).Capacitor;
+      } else {
+        (window as Window & { Capacitor?: unknown }).Capacitor = originalCapacitor;
+      }
     });
   });
 

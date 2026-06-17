@@ -17,7 +17,7 @@ import { getApiUrl } from "@/lib/api";
 import { resolveAiApiData } from "@/lib/poll-result";
 import { uploadSpeechTranscribe } from "@/lib/transcribe-audio-upload";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
-import { prepareForMicrophoneAcquisition } from "@/lib/audio-session-coordinator";
+import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 import { requestMicrophoneAccess, resetMicrophonePermissionCache, queryOsMicrophonePermissionState, isOsMicrophonePermissionDenied, classifyMicrophoneFailure, type MicrophoneRuntimeErrorCode } from "@/lib/microphone-permission";
 import { microphoneSessionManager, MicrophoneSessionState } from "@/lib/microphone-session-manager";
 
@@ -143,8 +143,8 @@ export interface UseSpeechRecognitionOptions {
   getAuthToken?: () => Promise<string | null>;
   /**
    * Server transcription provider for the MediaRecorder/Whisper fallback path.
-   * Defaults to Whisper. The live "Talk with Amy" coach passes "elevenlabs" to
-   * use Scribe v1; the native Web Speech path (desktop) is unaffected.
+   * Defaults to Whisper. Talk with Amy and Speech Coach pass "elevenlabs" for
+   * ElevenLabs Scribe on mobile MediaRecorder paths; native Web Speech is unaffected.
    */
   transcribeProvider?: "whisper" | "elevenlabs";
   /** Dev perf trace hooks (Speech Coach Practice). */
@@ -228,7 +228,7 @@ export function useSpeechRecognition(
       /* best-effort */
     }
     try {
-      await prepareForMicrophoneAcquisition();
+      await prepareCoachMicCapture();
     } catch {
       /* best-effort */
     }
@@ -271,7 +271,7 @@ export function useSpeechRecognition(
     setError(null);
     setStatus("preparing");
 
-    await prepareForMicrophoneAcquisition();
+    await prepareCoachMicCapture();
 
     // Single mic owner: stop any active Whisper session completely to free hardware
     microphoneSessionManager.cleanup();
@@ -358,88 +358,101 @@ export function useSpeechRecognition(
     setStatus("idle");
   }, []);
 
-  // ── Whisper fallback path (MediaRecorder → /api/speech/transcribe) ──────────
+  // ── Mobile MediaRecorder path (Talking Amy engine → server transcribe) ─────
+  const transcribeRecordedBlob = useCallback(async (blob: Blob) => {
+    const mimeType = blob.type || microphoneSessionManager.getRecorderMimeType();
+    setTranscribing(true);
+    onTranscribeStartRef.current?.();
+    try {
+      const provider = transcribeProviderRef.current;
+      const r = await uploadSpeechTranscribe({
+        blob,
+        mimeType,
+        provider,
+        getAuthToken: getAuthTokenRef.current,
+      });
+      if (!r.ok) {
+        if (r.status === 401) setError("transcription_auth_failed");
+        else setError("transcription_failed");
+        return;
+      }
+      const raw = await parseApiJson(r);
+      const headers: Record<string, string> = {};
+      try {
+        const tok = await getAuthTokenRef.current?.();
+        if (tok) headers.Authorization = `Bearer ${tok}`;
+      } catch {
+        /* ignore */
+      }
+      const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? getApiUrl(input) : input;
+        return fetch(url, {
+          ...init,
+          headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+          credentials: "include",
+        });
+      };
+      const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch, {
+        poll: { maxAttempts: 30, intervalMs: 500, requestTimeoutMs: 15_000 },
+      });
+      const text = (j?.transcript ?? "").trim();
+      setTranscript(text);
+      if (!text) {
+        setError("recognition_start_failed");
+      }
+    } catch (err) {
+      logSpeechRecognition("transcription failed", err);
+      setError("transcription_failed");
+    } finally {
+      onTranscribeEndRef.current?.();
+      setTranscribing(false);
+    }
+  }, []);
+
   const startWhisper = useCallback(async (): Promise<boolean> => {
     setError(null);
     setTranscript("");
     setInterimTranscript("");
 
+    await prepareCoachMicCapture();
+
     const success = await microphoneSessionManager.startRecording({
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
-      timeslice: 400,
+      timeslice: 200,
       onError: (err, mappedCode) => {
-        logSpeechRecognition("Whisper recording session error callback", {
+        logSpeechRecognition("MediaRecorder session error", {
           message: err.message,
           mappedCode,
           sessionStats: microphoneSessionManager.getStatistics(),
         });
         setError(mappedCode);
+        setListening(false);
       },
-      onStop: async (chunks) => {
-        logSpeechRecognition("Whisper recording onStop callback triggered", { chunks: chunks.length });
-        
-        if (chunks.length === 0) {
-          setError("recognition_start_failed");
-          return;
-        }
-
-        const mimeType = pickRecorderMimeType();
-        const blob = new Blob(chunks, { type: mimeType });
-
-        setTranscribing(true);
-        onTranscribeStartRef.current?.();
-        try {
-          const provider = transcribeProviderRef.current;
-          const r = await uploadSpeechTranscribe({
-            blob,
-            mimeType,
-            provider,
-            getAuthToken: getAuthTokenRef.current,
-          });
-          if (!r.ok) {
-            if (r.status === 401) setError("transcription_auth_failed");
-            else setError("transcription_failed");
-            return;
-          }
-          const raw = await parseApiJson(r);
-          const headers: Record<string, string> = {};
-          try {
-            const tok = await getAuthTokenRef.current?.();
-            if (tok) headers.Authorization = `Bearer ${tok}`;
-          } catch {
-            /* ignore */
-          }
-          const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-            const url = typeof input === "string" ? getApiUrl(input) : input;
-            return fetch(url, {
-              ...init,
-              headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
-              credentials: "include",
-            });
-          };
-          // Poll faster than default 2s when BullMQ returns async jobId.
-          const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch, {
-            poll: { maxAttempts: 30, intervalMs: 500, requestTimeoutMs: 15_000 },
-          });
-          setTranscript(j?.transcript ?? "");
-        } catch (err) {
-          logSpeechRecognition("transcription failed", err);
-          setError("transcription_failed");
-        } finally {
-          onTranscribeEndRef.current?.();
-          setTranscribing(false);
-        }
-      }
     });
 
+    if (success) {
+      logSpeechRecognition("MediaRecorder session started (Talking Amy engine)");
+    }
     return success;
   }, []);
 
   const stopWhisper = useCallback(() => {
-    void microphoneSessionManager.stopRecording();
-  }, []);
+    void (async () => {
+      const blob = await microphoneSessionManager.stopRecording();
+      setListening(false);
+      logSpeechRecognition("MediaRecorder stop", {
+        blobBytes: blob?.size ?? 0,
+        mime: blob?.type ?? microphoneSessionManager.getRecorderMimeType(),
+      });
+      if (!blob || blob.size < 100) {
+        setError("recognition_start_failed");
+        return;
+      }
+      await transcribeRecordedBlob(blob);
+    })();
+  }, [transcribeRecordedBlob]);
 
   const start = useCallback(async () => {
     if (mode === "native") return startNative();

@@ -57,7 +57,7 @@ export function PersistentComposer({
     <div className="mx-auto w-full max-w-3xl px-4" data-testid={testId}>
       {footerExtra}
       <div
-        className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary"
+        className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 text-card-foreground shadow-sm transition-colors focus-within:border-primary"
         data-chat-answer="true"
       >
         <Textarea
@@ -70,8 +70,8 @@ export function PersistentComposer({
           rows={1}
           className={
             variant === "onboarding"
-              ? "max-h-[120px] min-h-[52px] flex-1 resize-none overflow-y-auto border-none bg-transparent p-0 text-lg font-medium shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
-              : "max-h-[120px] min-h-[40px] flex-1 resize-none overflow-y-auto border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+              ? "max-h-[120px] min-h-[52px] flex-1 resize-none overflow-y-auto border-none bg-transparent p-0 text-lg font-medium text-card-foreground shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+              : "max-h-[120px] min-h-[40px] flex-1 resize-none overflow-y-auto border-none bg-transparent p-0 text-sm text-card-foreground shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
           }
           style={{ height: minHeightPx }}
           data-testid="chat-thread-input"

@@ -85,6 +85,7 @@ export function PhonicsGamesHub({
         )}
         {active === "build" && (
           <BuildTheWord
+            key={practiceWord}
             word={practiceWord}
             onComplete={() => onGameComplete?.("build")}
           />

@@ -10,7 +10,7 @@ function resolveStory(storyId: string) {
   return getDecodableStory(storyId);
 }
 import { AudioPlayButton } from "@/components/audio-play-button";
-import { prefetchStoryLines } from "@/lib/phonics-v2/audio-prefetch";
+import { warmStoryLinesEager } from "@/lib/phonics-v2/audio-prefetch";
 import { BookOpen, Users, Smile } from "lucide-react";
 
 type ReadMode = "amy" | "together" | "child";
@@ -43,8 +43,8 @@ export function DecodableStoryReader({ storyId, onComplete }: DecodableStoryRead
   const line = story.lines[lineIdx]!;
 
   useEffect(() => {
-    prefetchStoryLines(story.lines.map((l) => l.text));
-  }, [story.id]);
+    void warmStoryLinesEager(story.lines.map((l) => l.text), { limit: 8 });
+  }, [story.id, story.lines]);
 
   return (
     <div

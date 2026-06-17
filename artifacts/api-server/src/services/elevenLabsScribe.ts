@@ -14,9 +14,9 @@ export function isElevenLabsScribeEnabled(): boolean {
 /**
  * Transcribe a short audio clip with ElevenLabs Scribe v2.
  *
- * Used only by the live "Talk with Amy" conversation coach. All other speech
- * features stay on Whisper. Returns the plain transcript, or throws so the
- * caller can fall back to Whisper.
+ * Used by Talk with Amy and Speech Coach on mobile. All other speech features
+ * may stay on Whisper. Returns the plain transcript, or throws so the caller
+ * can fall back to Whisper.
  */
 export async function transcribeWithElevenLabsScribe(
   audio: Buffer,

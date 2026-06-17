@@ -5,7 +5,19 @@ import {
   type SessionAttemptInput,
   type SessionJourneyInput,
 } from "@workspace/speech-coach";
+import type { UseSpeechRecognitionOptions } from "@/hooks/useSpeechRecognition";
 import type { MicrophoneSessionState } from "@/lib/microphone-session-manager";
+
+/**
+ * Mobile WebView/Capacitor record via MediaRecorder → server STT.
+ * ElevenLabs Scribe matches the working Talk-with-Amy path on iOS/Android.
+ */
+export const speechCoachSttOptions = (
+  extras?: Omit<UseSpeechRecognitionOptions, "transcribeProvider">,
+): UseSpeechRecognitionOptions => ({
+  transcribeProvider: "elevenlabs",
+  ...extras,
+});
 
 export type SpeechViewMode = "parent" | "child";
 export type SpeechCoachPageTab = "practice" | "hub";

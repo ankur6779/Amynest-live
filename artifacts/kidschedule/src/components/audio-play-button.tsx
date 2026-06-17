@@ -5,8 +5,6 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { useInFlightGuard, useMountedRef, useSafeAsync } from "@/hooks/use-safe-async";
 import {
-  prefetchPhonicsAudioKeys,
-  prefetchPhonicsContentTexts,
   resolvePhonicsAudioKey,
   isPhonicsLibraryOnlyEnforced,
 } from "@/lib/phonics-static-audio";
@@ -41,6 +39,7 @@ import {
   playLocalPhonicsWord,
 } from "@/lib/phonics-local-playback";
 import { speakPhonicsFastClip } from "@/lib/phonics-audio";
+import { prefetchPhonicsTileAudio } from "@/lib/phonics-v2/audio-prefetch";
 import { cn } from "@/lib/utils";
 import { AudioWaveformIndicator } from "@/components/premium-ux/audio-waveform-indicator";
 import { MOTION_MS, PRESS_FEEDBACK } from "@/lib/experience-system";
@@ -281,35 +280,55 @@ export function AudioPlayButton({
     return mode === "phonics" ? getPhonicsAudioText(next) : next;
   }, [prefetchNextText, mode]);
 
-  const handlePointerEnter = useCallback(() => {
-    if (mode === "phonics" && resolvedAudioKey) {
-      prefetchPhonicsAudioKeys([resolvedAudioKey]);
-      return;
-    }
-    if (mode === "phonics" && (phonicsContentType === "sentence" || /\s/.test(resolvedText))) {
-      prefetchPhonicsContentTexts([resolvedText], phonicsContentType ?? "sentence");
-      if (resolvedPrefetch) {
-        prefetchPhonicsContentTexts([resolvedPrefetch], phonicsContentType ?? "sentence");
-      }
-      return;
-    }
-    if (!resolvedText) return;
-    const currentUrl = lookupStaticAudioUrl(resolvedText, mode ?? "default");
-    if (currentUrl) prefetchStaticAudioUrl(currentUrl);
+  const prefetchPhonicsClip = useCallback(() => {
+    if (mode !== "phonics" || !resolvedText) return;
+    prefetchPhonicsTileAudio({
+      text: resolvedText,
+      cvcWordKey,
+      phonemeKey,
+      phonicsContentType,
+    });
     if (resolvedPrefetch) {
-      const nextUrl = lookupStaticAudioUrl(resolvedPrefetch, mode ?? "phonics");
-      if (nextUrl) prefetchStaticAudioUrl(nextUrl);
+      prefetchPhonicsTileAudio({
+        text: resolvedPrefetch,
+        phonicsContentType: phonicsContentType ?? "sentence",
+      });
     }
-  }, [resolvedText, resolvedPrefetch, mode, resolvedAudioKey, phonicsContentType]);
+  }, [
+    mode,
+    resolvedText,
+    cvcWordKey,
+    phonemeKey,
+    phonicsContentType,
+    resolvedPrefetch,
+  ]);
+
+  useEffect(() => {
+    prefetchPhonicsClip();
+  }, [prefetchPhonicsClip]);
+
+  const handlePointerEnter = useCallback(() => {
+    prefetchPhonicsClip();
+    if (mode !== "phonics") {
+      if (!resolvedText) return;
+      const currentUrl = lookupStaticAudioUrl(resolvedText, mode ?? "default");
+      if (currentUrl) prefetchStaticAudioUrl(currentUrl);
+      if (resolvedPrefetch) {
+        const nextUrl = lookupStaticAudioUrl(resolvedPrefetch, mode ?? "phonics");
+        if (nextUrl) prefetchStaticAudioUrl(nextUrl);
+      }
+    }
+  }, [prefetchPhonicsClip, resolvedText, resolvedPrefetch, mode]);
 
   const handlePointerDown = useCallback(() => {
     audioManager.unlockFromUserGesture();
-    if (resolvedText) {
+    prefetchPhonicsClip();
+    if (mode !== "phonics" && resolvedText) {
       primeStaticAudioInUserGesture(resolvedText, mode ?? "default");
       const url = lookupStaticAudioUrl(resolvedText, mode ?? "default");
       if (url) prefetchStaticAudioUrl(url);
     }
-  }, [resolvedText, mode]);
+  }, [prefetchPhonicsClip, resolvedText, mode]);
 
   const handleClick = useCallback(async () => {
     if (disabled || preparing) return;

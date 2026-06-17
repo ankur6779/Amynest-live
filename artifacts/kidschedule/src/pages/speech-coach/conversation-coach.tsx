@@ -44,11 +44,13 @@ import {
 import { playStreamingTts } from "@/lib/amy-voice-stream-player";
 import { audioManager } from "@/lib/audio-manager";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
+import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import {
   getSpeechCoachMicStatusMessage,
   loadCoachLocalSnapshot,
   saveCoachJourneySnapshot,
+  speechCoachSttOptions,
 } from "./speech-coach-utils";
 import { useConversationSilenceStop } from "./conversation-silence-detector";
 import {
@@ -333,7 +335,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   }, []);
 
   // Live coach listens via ElevenLabs Scribe v2 (Whisper stays the fallback).
-  const stt = useSpeechRecognition("en-US", { getAuthToken, transcribeProvider: "elevenlabs" });
+  const stt = useSpeechRecognition("en-US", speechCoachSttOptions({ getAuthToken }));
   const voice = useAmyVoice();
 
   useEffect(() => {
@@ -567,6 +569,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
 
     ttsAbortRef.current?.abort();
     voice.pause();
+    await prepareCoachMicCapture();
 
     stt.reset();
     setStatus("Listening... your turn to talk!");
@@ -739,6 +742,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     if (!listenStartedRef.current) return;
     if (stt.listening || stt.transcribing) return;
     const transcript = stt.transcript.trim();
+    if (!transcript && !stt.error) return;
     listenStartedRef.current = false;
     listenActiveRef.current = false;
     if (!transcript) {
@@ -753,7 +757,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     turnTimer.markSttEnd();
     void sendTurn(transcript, false, turnTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, stt.listening, stt.transcribing, stt.transcript]);
+  }, [phase, stt.listening, stt.transcribing, stt.transcript, stt.error]);
 
   useEffect(() => {
     return () => {
@@ -764,11 +768,37 @@ function ConversationCoach({ child }: { child: AnyChild }) {
 
   useEffect(() => {
     if (stt.error === "microphone_blocked") {
+      listenStartedRef.current = false;
+      listenActiveRef.current = false;
+      startingMicRef.current = false;
+      setStartingMic(false);
       setMicSettingsOpen(true);
       setStatus("Microphone access is required to talk with Amy.");
       setPhase("amy_speaking");
+    } else if (stt.error === "microphone_denied") {
+      listenStartedRef.current = false;
+      listenActiveRef.current = false;
+      startingMicRef.current = false;
+      setStartingMic(false);
+      setPhase("amy_speaking");
+      setStatus(getSpeechCoachMicStatusMessage({
+        error: stt.error,
+        sessionStatus: stt.status,
+        fallbackStatus: status,
+      }));
+    } else if (stt.error && stt.error !== "transcription_failed" && stt.error !== "transcription_auth_failed") {
+      listenStartedRef.current = false;
+      listenActiveRef.current = false;
+      startingMicRef.current = false;
+      setStartingMic(false);
+      setPhase("amy_speaking");
+      setStatus(getSpeechCoachMicStatusMessage({
+        error: stt.error,
+        sessionStatus: stt.status,
+        fallbackStatus: status,
+      }));
     }
-  }, [stt.error]);
+  }, [stt.error, stt.status, status]);
 
   const start = useCallback(() => {
     recordTtsUserGesture();

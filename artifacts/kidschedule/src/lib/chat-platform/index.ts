@@ -20,7 +20,9 @@ export {
   readNativeWebViewVisibleHeightPx,
   recordAndroidBaselineHeight,
   resetAndroidBaselineHeightForTests,
+  resetCapacitorIosKeyboardInsetForTests,
   resolveAndroidChatLayoutHeight,
+  setCapacitorIosKeyboardInsetPx,
   setNativeWebViewVisibleHeightPx,
   usesCapacitorBodyKeyboardResize,
 } from "./viewport";

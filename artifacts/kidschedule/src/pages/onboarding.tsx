@@ -1971,7 +1971,7 @@ export default function OnboardingPage() {
     : undefined;
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative flex min-h-dvh w-full flex-col">
       {!isOnline ? (
         <div
           className="absolute inset-x-0 top-0 z-30 px-4 py-2 text-center text-xs font-medium"
@@ -2000,6 +2000,7 @@ export default function OnboardingPage() {
         surface="onboarding"
         theme="onboarding"
         testId="onboarding-chat-thread"
+        className="min-h-0 flex-1"
         messages={threadMessages}
         draft={textInput}
         onDraftChange={setTextInput}

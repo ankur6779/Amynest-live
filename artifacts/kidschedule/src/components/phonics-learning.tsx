@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2, RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText, Lock, Library } from "lucide-react";
 import { AudioPlayButton } from "@/components/audio-play-button";
-import { preloadStaticPhrases } from "@/lib/static-audio";
-import { getStaticAudioPrefetchLimit } from "@/lib/static-audio-edge";
+import { getPhonicsSessionPrewarmLimit } from "@/lib/phonics-v2/audio-prefetch";
 import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
@@ -50,6 +49,7 @@ import { stopPhonicsPlayback } from "@/lib/phonics-player";
 import { PhonicsJourneyHub } from "@/components/phonics-journey-hub";
 import { PhonicsLearningPacks } from "@/components/phonics-learning-packs";
 import { PhonicsV2 } from "@/components/phonics-v2";
+import { warmPhonicsSessionTiles } from "@/lib/phonics-v2/audio-prefetch";
 import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
@@ -363,26 +363,15 @@ function PhonicsLearningContent({
 
   const preloadKeyRef = useRef<string>("");
   useEffect(() => {
-    if (safeItems.length === 0) return;
-    const limit = getStaticAudioPrefetchLimit();
-    const key = safeItems
-      .slice(0, limit)
-      .map((i) => i.id)
-      .join(",");
+    if (practiceItems.length === 0) return;
+    const limit = getPhonicsSessionPrewarmLimit();
+    const key = practiceItems.map((i) => i.id).join(",");
     if (preloadKeyRef.current === key) return;
     preloadKeyRef.current = key;
-    try {
-      const phonicsLines = safeItems
-        .slice(0, limit)
-        .map((item) => phonicsTilePlaybackText(item))
-        .filter((p) => p.length > 0);
-      if (phonicsLines.length > 0) {
-        preloadStaticPhrases(phonicsLines, "phonics", limit);
-      }
-    } catch (err) {
-      console.warn("[phonics] tile audio preload skipped", err);
-    }
-  }, [safeItems]);
+    void warmPhonicsSessionTiles(practiceItems, { limit }).catch((err) => {
+      console.warn("[phonics] library audio warm skipped", err);
+    });
+  }, [practiceItems]);
 
   // Guard while hook is still resolving API / fallback content
   if (loading && !level && safeItems.length === 0) {
@@ -447,6 +436,9 @@ function PhonicsLearningContent({
           recordPlay={recordPlay}
           curriculumLevel={curriculumLevel}
           curriculumPlan={phonicsCurriculum.data?.plan ?? null}
+          curriculumMasteryScore={phonicsCurriculum.data?.progress?.masteryScore ?? 0}
+          curriculumLastTestAt={phonicsCurriculum.data?.progress?.lastTestAt ?? null}
+          curriculumStreak={phonicsCurriculum.data?.progress?.streak ?? 0}
           onCompleteCurriculumActivity={phonicsCurriculum.completeActivity}
         />
       )}

@@ -2,6 +2,7 @@
  * Phonics V2 journey map — aligned to canonical curriculum levels 1–7.
  */
 import type { CurriculumLevel } from "@workspace/phonics-curriculum";
+import type { JourneyStageStatus } from "../journey-progression";
 
 export type PhonicsV2StageId =
   | "letter_sounds"
@@ -12,7 +13,10 @@ export type PhonicsV2StageId =
   | "cvcc"
   | "fluency_stories";
 
-export type PhonicsV2StageStatus = "locked" | "available" | "completed";
+export type PhonicsV2StageStatus = JourneyStageStatus;
+
+/** @deprecated Use JourneyStageStatus from journey-progression.ts */
+export type LegacyPhonicsV2StageStatus = "locked" | "available" | "completed";
 
 export type PhonicsV2Stage = {
   id: PhonicsV2StageId;
@@ -98,6 +102,7 @@ export const PHONICS_V2_STAGES: PhonicsV2Stage[] = [
   },
 ];
 
+/** @deprecated Use resolveCurrentTargetStage from journey-progression.ts */
 export function resolveV2ActiveStage(
   curriculumLevel: number | null | undefined,
   totalAgeMonths: number,
@@ -116,11 +121,12 @@ export function resolveV2ActiveStage(
   return match;
 }
 
+/** @deprecated Use resolveJourneyStageStatus from journey-progression.ts */
 export function resolveV2StageStatus(
   stage: PhonicsV2Stage,
   active: PhonicsV2Stage,
   masteredStageOrders: number[],
-): PhonicsV2StageStatus {
+): LegacyPhonicsV2StageStatus {
   if (masteredStageOrders.includes(stage.order)) return "completed";
   if (stage.order < active.order) return "completed";
   if (stage.order === active.order) return "available";
@@ -128,6 +134,7 @@ export function resolveV2StageStatus(
   return "locked";
 }
 
+/** @deprecated Use computeMasteryBasedJourneyPct from journey-progression.ts */
 export function computeV2JourneyPct(
   masteredCount: number,
   totalStages = PHONICS_V2_STAGES.length,

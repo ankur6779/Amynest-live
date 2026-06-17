@@ -341,6 +341,9 @@ export function installAudioSessionLifecycle(): void {
   void import("@/lib/phonics-player").then(({ stopPhonicsPlayback }) => {
     registerPlaybackStopper(() => stopPhonicsPlayback("coordinator"));
   });
+  void import("@/lib/amy-voice-controller").then(({ amyVoiceController }) => {
+    registerPlaybackStopper(() => amyVoiceController.pause());
+  });
 
   void tryInstallCapacitorAppStateListener();
   log("audio session lifecycle installed", getAudioSessionDiagnostics());

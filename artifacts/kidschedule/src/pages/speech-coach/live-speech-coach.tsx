@@ -20,7 +20,6 @@ import {
   buildActivityIntro,
   buildCoachSessionMemory,
   buildItemPromptLines,
-  buildListeningEncouragement,
   buildPracticeSession,
   buildProgressNote,
   buildSessionClosing,
@@ -44,17 +43,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useConversationSilenceStop } from "./conversation-silence-detector";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { isCoachStaticPackLine, playCoachStaticLine } from "@/lib/coach-local-playback";
+import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   buildCoachLocalSnapshot,
   clampClarityScore,
   getSpeechCoachMicStatusMessage,
+  speechCoachSttOptions,
   loadCoachLocalSnapshot,
   playSpeechCue,
   saveCoachJourneySnapshot,
@@ -355,7 +357,6 @@ export function LiveSpeechCoach({
   const inSequenceRef = useRef(false);
   const listenStartedRef = useRef(false);
   const startingMicRef = useRef(false);
-  const listeningEncouragedRef = useRef(false);
   const sessionAttemptsRef = useRef<SessionAttemptInput[]>([]);
   const logAttempt = useLogSpeechPracticeAttempt();
 
@@ -398,7 +399,7 @@ export function LiveSpeechCoach({
       return null;
     }
   }, []);
-  const stt = useSpeechRecognition("en-US", { getAuthToken });
+  const stt = useSpeechRecognition("en-US", speechCoachSttOptions({ getAuthToken }));
   const voice = useAmyVoice({
     onFinished: () => {
       if (inSequenceRef.current) return;
@@ -613,10 +614,17 @@ export function LiveSpeechCoach({
   const processResponse = useCallback(async () => {
     if (!current) return;
     listenStartedRef.current = false;
+    const heard = stt.transcript.trim();
+    if (!heard) {
+      setState("idle");
+      setStatus("I didn't catch that — tap the mic and try again.");
+      stt.reset();
+      return;
+    }
     setState("processing");
     setStatus("Amy is thinking...");
     const ctx = dialogueContext(idx, streak);
-    const result = evaluateCoachResponse(current, stt.transcript, ctx);
+    const result = evaluateCoachResponse(current, heard, ctx);
     setLastResult(result);
     setScore((n) => n + result.points);
     setStreak((n) => {
@@ -665,8 +673,10 @@ export function LiveSpeechCoach({
     if (startingMicRef.current) return;
     startingMicRef.current = true;
     setStartingMic(true);
+    (document.activeElement as HTMLElement | null)?.blur?.();
     stt.reset();
     voice.pause();
+    await prepareCoachMicCapture();
     setLastResult(null);
     setStatus("Checking microphone...");
     const started = await stt.start();
@@ -679,36 +689,21 @@ export function LiveSpeechCoach({
       return;
     }
     listenStartedRef.current = true;
-    listeningEncouragedRef.current = false;
     setState("listening");
     setStatus("Amy is listening...");
   }, [canRecord, state, stt, stopListeningAndProcess, voice]);
 
-  useEffect(() => {
-    if (state !== "listening") return;
-    const id = window.setTimeout(() => {
-      if (stateRef.current !== "listening" || listeningEncouragedRef.current) return;
-      const line = buildListeningEncouragement(dialogueContext(idx, streak));
-      if (!line) return;
-      listeningEncouragedRef.current = true;
-      void speak(line, "encouragement");
-    }, 3500);
-    return () => window.clearTimeout(id);
-  }, [dialogueContext, idx, speak, state, streak]);
+  useConversationSilenceStop({
+    active: state === "listening",
+    enabled: stt.mode === "whisper",
+    onSilenceStop: () => stt.stop(),
+    onMaxTimeout: () => stt.stop(),
+  });
 
   useEffect(() => {
-    if (state !== "listening") return;
-    const id = window.setTimeout(() => {
-      if (stateRef.current !== "listening") return;
-      stt.stop();
-      if (stt.mode === "native") {
-        window.setTimeout(() => {
-          if (stateRef.current === "listening") void processResponse();
-        }, 250);
-      }
-    }, 8000);
-    return () => window.clearTimeout(id);
-  }, [processResponse, state, stt]);
+    if (state !== "ai_speaking" && state !== "feedback") return;
+    void stt.warm();
+  }, [state, stt]);
 
   const nextTask = useCallback(() => {
     stt.reset();

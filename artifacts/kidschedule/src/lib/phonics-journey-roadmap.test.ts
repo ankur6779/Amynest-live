@@ -5,11 +5,12 @@ import {
   computeJourneyCompletionPct,
   estimateJourneyEta,
   journeyStageForCurriculumLevel,
+  parentStageStatus,
   readingAgeBand,
   readingConfidence,
   resolveActiveJourneyStage,
+  resolveParentJourneyTarget,
   resolvePrimaryCta,
-  stageStatus,
 } from "./phonics-journey-roadmap";
 
 describe("phonics-journey-roadmap", () => {
@@ -31,15 +32,34 @@ describe("phonics-journey-roadmap", () => {
   });
 
   it("computes overall completion from level and mastery", () => {
-    expect(computeJourneyCompletionPct(3, 50)).toBe(36);
-    expect(computeJourneyCompletionPct(7, 100)).toBe(100);
+    expect(computeJourneyCompletionPct(3, 50, { practiced: { a: 1 }, mastered: {} }, 10)).toBe(36);
+    expect(computeJourneyCompletionPct(7, 100, { practiced: { a: 1 }, mastered: {} }, 10)).toBe(100);
+    expect(computeJourneyCompletionPct(5, 0)).toBe(0);
   });
 
-  it("marks prior stages completed and future locked", () => {
-    const active = resolveActiveJourneyStage(3, 48);
-    expect(stageStatus(PHONICS_JOURNEY_STAGES[0]!, active)).toBe("completed");
-    expect(stageStatus(PHONICS_JOURNEY_STAGES[3]!, active)).toBe("current");
-    expect(stageStatus(PHONICS_JOURNEY_STAGES[5]!, active)).toBe("locked");
+  it("marks prior stages reviewable — not auto-completed for age-seeded users", () => {
+    const input = {
+      curriculumLevel: 4 as const,
+      masteryScore: 0,
+      totalAgeMonths: 84,
+    };
+    const target = resolveParentJourneyTarget(input);
+    expect(target.id).toBe("fluency");
+    expect(parentStageStatus(PHONICS_JOURNEY_STAGES[0]!, input)).toBe("available_for_review");
+    expect(parentStageStatus(PHONICS_JOURNEY_STAGES[3]!, input)).toBe("available_for_review");
+    expect(parentStageStatus(PHONICS_JOURNEY_STAGES[4]!, input)).toBe("current_target");
+    expect(parentStageStatus(PHONICS_JOURNEY_STAGES[5]!, input)).toBe("locked");
+  });
+
+  it("marks earned prior stages mastered after curriculum progression", () => {
+    const input = {
+      curriculumLevel: 4 as const,
+      masteryScore: 40,
+      totalAgeMonths: 84,
+      hasTestHistory: true,
+    };
+    expect(parentStageStatus(PHONICS_JOURNEY_STAGES[2]!, input)).toBe("mastered");
+    expect(parentStageStatus(PHONICS_JOURNEY_STAGES[3]!, input)).toBe("current_target");
   });
 
   it("derives reading age band and confidence", () => {

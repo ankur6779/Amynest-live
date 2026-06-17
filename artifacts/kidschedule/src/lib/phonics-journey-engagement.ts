@@ -1,8 +1,10 @@
 import type { PhonicsInsight } from "@/hooks/use-phonics-data";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
+import type { CurriculumLevel } from "@workspace/phonics-curriculum";
 import {
   PHONICS_JOURNEY_STAGES,
   SESSIONS_PER_STAGE_EXPORT,
+  parentStageStatus,
   type PhonicsJourneyStage,
   type PhonicsPrimaryCta,
 } from "./phonics-journey-roadmap";
@@ -219,10 +221,22 @@ export function buildParentInsight(params: {
 export function buildCelebrationBanners(params: {
   masteredCount: number;
   activeStage: PhonicsJourneyStage;
-  curriculumLevel: number | null | undefined;
+  curriculumLevel: CurriculumLevel | null | undefined;
   masteryScore: number;
+  totalAgeMonths: number;
+  hasTestHistory?: boolean;
+  streak?: number;
+  practicedCount?: number;
 }): CelebrationBanner[] {
-  const { masteredCount, activeStage, curriculumLevel, masteryScore } = params;
+  const {
+    masteredCount,
+    curriculumLevel,
+    masteryScore,
+    totalAgeMonths,
+    hasTestHistory,
+    streak,
+    practicedCount,
+  } = params;
   const banners: CelebrationBanner[] = [];
 
   if (masteredCount >= 100) {
@@ -279,7 +293,15 @@ export function buildCelebrationBanners(params: {
   };
 
   for (const stage of PHONICS_JOURNEY_STAGES) {
-    if (stage.order >= activeStage.order) break;
+    const mastered = parentStageStatus(stage, {
+      curriculumLevel,
+      masteryScore,
+      totalAgeMonths,
+      hasTestHistory,
+      streak,
+      practicedCount,
+    });
+    if (mastered !== "mastered") continue;
     const def = stageCelebrations[stage.id];
     if (def) {
       banners.push({

@@ -1563,6 +1563,17 @@ html.amynest-android-shell .amynest-auth-input {
   font-size: 16px;
 }
 
+/* Capacitor iOS / Android WebView: keep chat composer text visible while typing */
+html.amynest-native-shell .chat-thread-input textarea,
+html.amynest-android-shell .chat-thread-input textarea,
+html.amynest-native-shell [data-testid="chat-thread-input"],
+html.amynest-android-shell [data-testid="chat-thread-input"] {
+  -webkit-text-fill-color: hsl(var(--card-foreground)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  caret-color: hsl(var(--card-foreground));
+  font-size: 16px;
+}
+
 html.amynest-native-shell,
 html.amynest-native-shell body,
 html.amynest-android-shell,

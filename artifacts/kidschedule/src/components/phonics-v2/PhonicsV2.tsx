@@ -26,8 +26,10 @@ import {
   loadPronunciationScores,
   type PhonicsV2PronunciationScores,
 } from "@/lib/phonics-v2/pronunciation-scores";
-import { prefetchCvcWordList } from "@/lib/phonics-v2/audio-prefetch";
+import { prefetchCvcWordList, warmPhonicsSessionTiles } from "@/lib/phonics-v2/audio-prefetch";
 import type { PhonicsV2Stage } from "@/lib/phonics-v2/content/journey-stages";
+import type { JourneyStageStatus } from "@/lib/phonics-v2/journey-progression";
+import { trackJourneyStageSelect } from "@/lib/phonics-v2/journey-progression-telemetry";
 import { getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import {
@@ -100,6 +102,9 @@ export type PhonicsV2Props = {
   recordPlay: (id: string, contentId?: number) => void;
   curriculumLevel?: number | null;
   curriculumPlan?: PhonicsDailyPlan | null;
+  curriculumMasteryScore?: number;
+  curriculumLastTestAt?: string | null;
+  curriculumStreak?: number;
   onCompleteCurriculumActivity?: (activityId: string) => Promise<void>;
   onMissionSummaryChange?: (summary: MissionSummary) => void;
 };
@@ -114,6 +119,9 @@ export function PhonicsV2({
   recordPlay,
   curriculumLevel,
   curriculumPlan,
+  curriculumMasteryScore = 0,
+  curriculumLastTestAt,
+  curriculumStreak = 0,
   onCompleteCurriculumActivity,
   onMissionSummaryChange,
 }: PhonicsV2Props) {
@@ -181,6 +189,12 @@ export function PhonicsV2({
   }, [childId, authFetch]);
 
   useEffect(() => {
+    const wordTiles = practiceWords.map((w) => ({
+      symbol: w,
+      type: "word" as const,
+    }));
+    void warmPhonicsSessionTiles(wordTiles, { limit: 16 });
+
     const runPrefetch = () => {
       prefetchCvcWordList(practiceWords);
       const plan = buildOfflinePrefetchPlan({
@@ -290,10 +304,19 @@ export function PhonicsV2({
     [familyProgress, childId, recordPlay, journeyProgress],
   );
 
-  const handleStageSelect = useCallback((stage: PhonicsV2Stage) => {
-    const el = document.getElementById(stage.scrollTarget);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  const practicedItemCount = useMemo(
+    () => Object.keys(progress.practiced ?? {}).length,
+    [progress.practiced],
+  );
+
+  const handleStageSelect = useCallback(
+    (stage: PhonicsV2Stage, status: JourneyStageStatus) => {
+      trackJourneyStageSelect(stage.id, status, childId);
+      const el = document.getElementById(stage.scrollTarget);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [childId],
+  );
 
   const masteryAvg = avgMasteryScore(mastery);
   const storyCatalogLevel = curriculumLevel ?? 1;
@@ -330,6 +353,10 @@ export function PhonicsV2({
 
       <JourneyMapV2
         curriculumLevel={curriculumLevel}
+        masteryScore={curriculumMasteryScore}
+        lastTestAt={curriculumLastTestAt}
+        streak={curriculumStreak}
+        practicedItemCount={practicedItemCount}
         totalAgeMonths={totalAgeMonths}
         journeyProgress={journeyProgress}
         onStageSelect={handleStageSelect}

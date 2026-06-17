@@ -13,9 +13,11 @@ import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import { cn } from "@/lib/utils";
 import { getPhonicsLevel } from "@/lib/phonics-content";
 import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
-import { preloadPhonicsBundledManifest } from "@/lib/phonics-bundled-manifest";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
-import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
+import {
+  ensurePhonicsManifestLoaded,
+  isPhonicsModuleAvailable,
+} from "@/lib/phonics-manifest-validation";
 import {
   resolvePrimaryCta,
   type PhonicsPrimaryCta,
@@ -94,10 +96,13 @@ export default function PhonicsPage() {
 
   useEffect(() => {
     if (locked || !phonicsShipped) return;
-    void preloadPhonicsBundledManifest().catch(() => {
-      /* audio layer degrades; route stays usable */
-    });
-    warmPhonicsRouteOnOpen();
+    void ensurePhonicsManifestLoaded()
+      .then(() => {
+        warmPhonicsRouteOnOpen();
+      })
+      .catch(() => {
+        /* audio layer degrades; route stays usable */
+      });
   }, [locked, phonicsShipped]);
 
   const goBack = () => {

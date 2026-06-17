@@ -14,6 +14,7 @@ import {
   readNativeImeInsetPx,
   recordAndroidBaselineHeight,
   scheduleSelfHealingVisibility,
+  setCapacitorIosKeyboardInsetPx,
   setNativeWebViewVisibleHeightPx,
   startChatPlatformRemoteConfigPolling,
   subscribeChatPlatformRemoteConfig,
@@ -369,10 +370,18 @@ export function useKeyboardChatLayout(
             ? KeyboardResize.Body
             : KeyboardResize.Native;
           void Keyboard.setResizeMode({ mode });
-          void Keyboard.addListener("keyboardDidShow", onVisibilityTrigger).then((handle) => {
+          void Keyboard.addListener("keyboardDidShow", (info) => {
+            if (isCapacitorIosShell() && info.keyboardHeight > 0) {
+              setCapacitorIosKeyboardInsetPx(info.keyboardHeight);
+            }
+            onVisibilityTrigger();
+          }).then((handle) => {
             if (!cancelled) removeKeyboardShow = () => void handle.remove();
           });
           void Keyboard.addListener("keyboardDidHide", () => {
+            if (isCapacitorIosShell()) {
+              setCapacitorIosKeyboardInsetPx(null);
+            }
             scheduleResetAfterKeyboard();
           }).then((handle) => {
             if (!cancelled) removeKeyboardHide = () => void handle.remove();

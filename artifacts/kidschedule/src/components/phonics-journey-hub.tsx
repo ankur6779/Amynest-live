@@ -413,8 +413,21 @@ export function PhonicsJourneyHub({
         activeStage,
         curriculumLevel,
         masteryScore,
+        totalAgeMonths,
+        hasTestHistory: Boolean(curriculumProgress?.lastTestAt),
+        streak,
+        practicedCount,
       }),
-    [masteredCount, activeStage, curriculumLevel, masteryScore],
+    [
+      masteredCount,
+      activeStage,
+      curriculumLevel,
+      masteryScore,
+      totalAgeMonths,
+      curriculumProgress?.lastTestAt,
+      streak,
+      practicedCount,
+    ],
   );
 
   const readingPointsTotal = computeTotalReadingPoints({

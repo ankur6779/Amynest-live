@@ -187,6 +187,31 @@ export function usesCapacitorBodyKeyboardResize(): boolean {
   return isCapacitorNative() && isCapacitorIosShell();
 }
 
+/** IME height reported by `@capacitor/keyboard` when visualViewport lags on iOS. */
+let _capacitorIosKeyboardInsetPx: number | null = null;
+
+/** @internal Updated from `keyboardDidShow` in use-keyboard-chat-layout.ts. */
+export function setCapacitorIosKeyboardInsetPx(px: number | null | undefined): void {
+  if (!usesCapacitorBodyKeyboardResize()) return;
+  _capacitorIosKeyboardInsetPx =
+    typeof px === "number" && Number.isFinite(px) && px > 0 ? Math.round(px) : null;
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (_capacitorIosKeyboardInsetPx != null) {
+    root.style.setProperty("--auth-keyboard-inset-native", `${_capacitorIosKeyboardInsetPx}px`);
+  } else {
+    root.style.removeProperty("--auth-keyboard-inset-native");
+  }
+}
+
+/** @internal Vitest-only — reset Capacitor iOS inset between tests. */
+export function resetCapacitorIosKeyboardInsetForTests(): void {
+  _capacitorIosKeyboardInsetPx = null;
+  if (typeof document !== "undefined") {
+    document.documentElement.style.removeProperty("--auth-keyboard-inset-native");
+  }
+}
+
 export function readNativeImeInsetPx(): number {
   if (typeof document === "undefined") return 0;
   const root = document.documentElement;
@@ -280,20 +305,27 @@ export function metricsForChatLayout(
     if (!keyboardOpen) {
       return { height: window.innerHeight, offsetTop: 0, keyboardInset: 0 };
     }
-    // Capacitor `resize: "body"` keeps window.innerHeight at full-screen and only
-    // shrinks visualViewport when the keyboard opens. Size the fixed chat
-    // container to the visible viewport so the composer is pinned directly above
-    // the keyboard (ChatGPT-style) instead of rendering behind it.
+    // Capacitor `resize: "body"` keeps window.innerHeight at full-screen. WKWebView
+    // often leaves visualViewport at full height while the keyboard is open, so
+    // honour the measured / native inset and pin the composer above the keyboard.
     const vv = window.visualViewport;
-    const visibleHeight =
-      vv && vv.height > 0
-        ? Math.round(vv.height)
-        : Math.max(0, window.innerHeight - metrics.keyboardInset);
+    const innerH = window.innerHeight;
     const offsetTop = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+    const vvHeight = vv && vv.height > 0 ? Math.round(vv.height) : innerH;
+    const vvInset = Math.max(0, innerH - vvHeight - offsetTop);
+    const effectiveInset = Math.max(metrics.keyboardInset, vvInset);
+    const threshold = readKeyboardOpenThresholdPx();
+    const vvReflectsKeyboard =
+      effectiveInset > threshold && vvHeight <= innerH - effectiveInset * 0.35;
+    const visibleHeight = vvReflectsKeyboard
+      ? vvHeight
+      : effectiveInset > threshold
+        ? Math.max(0, innerH - effectiveInset - offsetTop)
+        : vvHeight;
     return {
       height: visibleHeight,
       offsetTop,
-      keyboardInset: metrics.keyboardInset,
+      keyboardInset: effectiveInset,
     };
   }
   return metrics;
@@ -308,6 +340,7 @@ export function applyChatViewportCssVars(metrics: Pick<ChatViewportMetrics, "hei
 
 export function clearChatViewportCssVars() {
   if (typeof document === "undefined") return;
+  setCapacitorIosKeyboardInsetPx(null);
   const root = document.documentElement;
   root.style.removeProperty("--vv-height");
   root.style.removeProperty("--vv-offset-top");

@@ -31,6 +31,7 @@ import {
 import {
   clampClarityScore,
   playSpeechCue,
+  speechCoachSttOptions,
   weakSoundsToHistory,
   type SpeechViewMode,
 } from "./speech-coach-utils";
@@ -182,7 +183,7 @@ export function SpeechGameFlow({
       return null;
     }
   }, []);
-  const stt = useSpeechRecognition("en-US", { getAuthToken });
+  const stt = useSpeechRecognition("en-US", speechCoachSttOptions({ getAuthToken }));
 
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>("setup");
   const [promptPhase, setPromptPhase] = useState<PromptPhase>("idle");
@@ -236,6 +237,10 @@ export function SpeechGameFlow({
     const phase = promptPhaseRef.current;
     if (phase !== "recording" && phase !== "analyzing") return;
     if (stt.listening || stt.transcribing) return;
+    if (stt.error) {
+      setPromptPhase("heard");
+      return;
+    }
     const item = currentItemRef.current;
     const final = stt.transcript.trim();
     const r = item
@@ -271,7 +276,7 @@ export function SpeechGameFlow({
         (n) => n + coinsForFeedback(feedback, gameMeta.rewardStars),
       );
     }
-  }, [ageMonths, gameMeta.rewardStars, stt.listening, stt.transcribing, stt.transcript]);
+  }, [ageMonths, gameMeta.rewardStars, stt.error, stt.listening, stt.transcribing, stt.transcript]);
 
   const resetSession = () => {
     setSessionPhase("setup");
@@ -355,13 +360,15 @@ export function SpeechGameFlow({
     })();
   };
 
-  const handleRecord = () => {
+  const handleRecord = async () => {
     if (!currentItem) return;
+    (document.activeElement as HTMLElement | null)?.blur?.();
     voice.pause();
     stt.reset();
     setCurrentResult(null);
     setPromptPhase("recording");
-    void stt.start();
+    const ok = await stt.start();
+    if (!ok) setPromptPhase("heard");
   };
 
   const handleStop = () => {
