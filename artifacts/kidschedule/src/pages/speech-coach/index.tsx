@@ -73,6 +73,10 @@ import { SpeechGameFlow, SpeechGameRewardsBar } from "./speech-game-flow";
 import { loadSpeechGameRewards } from "./speech-game-rewards";
 import { SPEECH_GAME_THEMES } from "./speech-game-theme";
 import {
+  isSpeechCoachV2Enabled,
+  startSpeechCoachV2RemoteConfigPolling,
+} from "@/features/speech-coach-v2/lib/remote-config";
+import {
   buildCoachLocalSnapshot,
   clampClarityScore,
   getSessionTypeAction,
@@ -1461,8 +1465,18 @@ export default function SpeechCoachPage() {
     isSpeechCoachEligibleAgeMonths(totalMonths(c)),
   );
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
   const child =
     eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+
+  useEffect(() => {
+    const stop = startSpeechCoachV2RemoteConfigPolling();
+    const interval = setInterval(() => setV2Enabled(isSpeechCoachV2Enabled()), 30_000);
+    return () => {
+      stop();
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleSessionType = useCallback(
     (key: string) => {
@@ -1584,6 +1598,35 @@ export default function SpeechCoachPage() {
               </div>
             </motion.div>
           </AppLink>
+
+          {v2Enabled && (
+            <AppLink href="/speech-coach-v2" source="speech-coach-v2-promo">
+              <motion.div
+                whileHover={{ scale: 1.005 }}
+                whileTap={{ scale: 0.985 }}
+                className="group relative overflow-hidden rounded-2xl border border-sky-400/30 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 p-5 text-white shadow-lg"
+                data-testid="speech-coach-v2-promo"
+              >
+                <div className="relative flex items-center gap-4">
+                  <div className="shrink-0 rounded-2xl bg-white/15 p-3 ring-1 ring-white/25">
+                    <Sparkles className="h-7 w-7" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-black uppercase tracking-[2px] text-white/75">
+                      {t("screens.speech_coach.home.hero_v2_badge")}
+                    </div>
+                    <div className="text-xl font-black leading-tight mt-1">
+                      {t("screens.speech_coach.home.hero_v2_title")}
+                    </div>
+                    <p className="text-sm mt-2 text-white/85 leading-snug">
+                      {t("screens.speech_coach.home.hero_v2_sub")}
+                    </p>
+                  </div>
+                  <div className="text-2xl opacity-70 group-hover:translate-x-0.5 transition">→</div>
+                </div>
+              </motion.div>
+            </AppLink>
+          )}
 
           {/* SECONDARY: Talk with Amy + Practice with Amy */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
