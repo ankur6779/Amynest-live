@@ -2,12 +2,14 @@
  * Strict phonics clip availability — never substitute wrong audio (no "a" fallback).
  */
 import {
-  resolveContentCatalogKey,
   resolveGraphemeToAudioKey,
   resolveLetterClipCatalogKey,
   type PhonicsAssetType,
 } from "@workspace/phonics-sounds";
-import { lookupPhonicsLibraryAsset } from "@/lib/phonics-audio-map";
+import {
+  lookupPhonicsLibraryAsset,
+  resolvePhonicsContentCatalogKey,
+} from "@/lib/phonics-audio-map";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { hasPhonicsStaticCatalogAudio } from "@/lib/unified-catalog-playback";
 import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
@@ -50,7 +52,7 @@ export function checkPhonicsContentClip(
   if (!trimmed) {
     return { available: false, catalogKey: null, reason: "missing_catalog_key" };
   }
-  const catalogKey = resolveContentCatalogKey(trimmed, preferredType);
+  const catalogKey = resolvePhonicsContentCatalogKey(trimmed, preferredType);
   if (!catalogKey) {
     return { available: false, catalogKey: null, reason: "missing_catalog_key" };
   }

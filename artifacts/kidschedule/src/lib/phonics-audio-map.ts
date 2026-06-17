@@ -69,12 +69,29 @@ export function lookupPhonicsLetterUrl(audioKey: string): string | null {
   return lookupPhonicsLibraryAsset(catalogKey)?.url ?? null;
 }
 
+/** Resolve text → manifest catalog key (core catalog, then bundled manifest). */
+export function resolvePhonicsContentCatalogKey(
+  text: string,
+  preferredType?: PhonicsAssetType,
+): string | null {
+  const fromCore = resolveContentCatalogKey(text, preferredType);
+  if (fromCore) return fromCore;
+
+  const norm = text.trim().toLowerCase();
+  if (!norm) return null;
+  for (const [key, asset] of Object.entries(manifest().assets ?? {})) {
+    if (preferredType && asset.type !== preferredType) continue;
+    if ((asset.text ?? "").trim().toLowerCase() === norm) return key;
+  }
+  return null;
+}
+
 /** Resolve word/sentence/quiz text → playable URL. */
 export function lookupPhonicsContentUrl(
   text: string,
   preferredType?: PhonicsAssetType,
 ): string | null {
-  const catalogKey = resolveContentCatalogKey(text, preferredType);
+  const catalogKey = resolvePhonicsContentCatalogKey(text, preferredType);
   if (!catalogKey) return null;
   return lookupPhonicsLibraryAsset(catalogKey)?.url ?? null;
 }
@@ -106,7 +123,7 @@ export function getPhonicsContentCacheKey(
   text: string,
   preferredType?: PhonicsAssetType,
 ): string {
-  const catalogKey = resolveContentCatalogKey(text, preferredType);
+  const catalogKey = resolvePhonicsContentCatalogKey(text, preferredType);
   if (catalogKey) return `phonics:content:${catalogKey}`;
   const slug = text.trim().toLowerCase();
   return `phonics:content:${preferredType ?? "unknown"}:${slug}`;
