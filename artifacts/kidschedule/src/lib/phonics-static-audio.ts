@@ -53,17 +53,19 @@ const PHONICS_PREWARM_BATCH_GAP_MS = 40;
 let libraryPrewarmStarted = false;
 
 /**
- * Hard cutover switch for ElevenLabs-only phonics. When enabled, phonics
- * resolves ONLY from the certified ElevenLabs library manifest and never
- * touches the static-audio catalog (which historically held OpenAI clips).
+ * Hard cutover switch for ElevenLabs-only phonics. Phonics resolves ONLY from
+ * the certified ElevenLabs library manifest and never touches the static-audio
+ * catalog (which historically held OpenAI clips).
  *
- * Default OFF so audio coverage is preserved during the migration window;
- * flip to "1"/"true" after Phase G regeneration verifies full library
- * coverage to guarantee no non-library voice can ever be served.
+ * Default ON as of the Phase G regeneration + full-coverage certification
+ * (1393/1393 ElevenLabs assets, library check 10/10, OpenAI static phonics
+ * buckets purged). This guarantees no non-library / OpenAI voice can ever be
+ * served for phonics across web/PWA/native. Emergency escape hatch only:
+ * VITE_PHONICS_LIBRARY_ONLY=0 (or "false") re-enables the legacy fallback.
  */
 export function isPhonicsLibraryOnlyEnforced(): boolean {
   const raw = import.meta.env.VITE_PHONICS_LIBRARY_ONLY;
-  return raw === "1" || raw === "true";
+  return raw !== "0" && raw !== "false";
 }
 
 /** HTTPS URL for a letter/digraph phoneme clip — library first, then static catalog. */

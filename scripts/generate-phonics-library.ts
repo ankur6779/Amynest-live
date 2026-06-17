@@ -39,6 +39,7 @@ import {
 } from "./phonics-audio-process.js";
 import { PHONICS_MODE_DURATION_MS } from "@workspace/phonics-sounds";
 import {
+  loadPhonicsLibraryManifest,
   manifestAssetFromBuffer,
   REPO_ROOT,
   sha256Hex,
@@ -310,6 +311,13 @@ function parseOnlyTypes(argv: string[]): Set<string> | null {
   return new Set(arg.slice("--only-type=".length).split(",").map((s) => s.trim()).filter(Boolean));
 }
 
+/** Targeted regen of specific catalog keys (e.g. "sentence:score,quiz:what_is_this"). */
+function parseOnlyIds(argv: string[]): Set<string> | null {
+  const arg = argv.find((a) => a.startsWith("--only-ids="));
+  if (!arg) return null;
+  return new Set(arg.slice("--only-ids=".length).split(",").map((s) => s.trim()).filter(Boolean));
+}
+
 async function main(): Promise<void> {
   const apiKey = readEnvApiKey();
   if (!apiKey) {
@@ -323,17 +331,26 @@ async function main(): Promise<void> {
     console.warn("[phonics-library] ffmpeg missing — phoneme mastering disabled");
   }
 
-  const force = process.argv.includes("--force");
   const onlyTypes = parseOnlyTypes(process.argv);
+  const onlyIds = parseOnlyIds(process.argv);
+  // Targeted runs (--only-ids) always regenerate the named assets even if they
+  // already exist in GCS (that is the whole point of a placeholder re-run).
+  const force = process.argv.includes("--force") || onlyIds !== null;
+  const partial = onlyTypes !== null || onlyIds !== null;
   const bucket = getBucketName();
   const storage = buildStorage();
-  const catalog = (await loadFullPhonicsCatalog()).filter(
-    (e) => !onlyTypes || onlyTypes.has(e.type),
-  );
+  const catalog = (await loadFullPhonicsCatalog()).filter((e) => {
+    if (onlyTypes && !onlyTypes.has(e.type)) return false;
+    if (onlyIds && !onlyIds.has(getPhonicsCatalogKey(e.type, e.id))) return false;
+    return true;
+  });
 
   console.log(`[phonics-library] generating ${catalog.length} assets → gs://${bucket}/phonics/`);
 
-  const assets: PhonicsAudioLibraryManifest["assets"] = {};
+  // Partial runs MERGE into the existing manifest so untouched assets survive.
+  const assets: PhonicsAudioLibraryManifest["assets"] = partial
+    ? { ...(loadPhonicsLibraryManifest()?.assets ?? {}) }
+    : {};
   let created = 0;
   let skipped = 0;
   let fallbacks = 0;

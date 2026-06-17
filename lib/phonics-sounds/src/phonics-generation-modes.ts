@@ -69,14 +69,22 @@ export function getPhonicsGenerationProfile(mode: PhonicsGenerationMode): Phonic
   return PHONICS_GENERATION_PROFILES[mode];
 }
 
-/** Per-mode acceptable clip duration (ms) — validation bounds for QA / CI. */
+/**
+ * Per-mode acceptable clip duration (ms) — validation bounds for QA / CI.
+ *
+ * Floors detect silence/truncation only; structural integrity (empty / corrupt
+ * MP3) is enforced separately by PHONICS_MIN_MP3_BYTES + validatePhonicsMp3Buffer.
+ * The `sentence` floor is intentionally low (250ms) so short but valid utterances
+ * — "Score", "Listen", "Jump in", "Next" — are NOT rejected into placeholder
+ * tones, while still flagging sub-syllable (silent/cut-off) audio.
+ */
 export const PHONICS_MODE_DURATION_MS: Record<PhonicsGenerationMode, { min: number; max: number }> = {
   letter_sound: { min: 250, max: 900 },
   phoneme: { min: 250, max: 900 },
   blending: { min: 300, max: 1500 },
   segmenting: { min: 300, max: 1500 },
-  word: { min: 350, max: 1800 },
-  sentence: { min: 600, max: 8000 },
+  word: { min: 250, max: 1800 },
+  sentence: { min: 250, max: 8000 },
   decodable_story: { min: 600, max: 12000 },
 };
 
