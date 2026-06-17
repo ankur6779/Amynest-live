@@ -20,6 +20,7 @@ import {
   getPhonicsGcsObjectPath,
   getPhonicsGenerationProfile,
   modeForAssetType,
+  phonicsLibraryProxyPath,
   PHONICS_LIBRARY_VERSION,
   type PhonicsAudioLibraryManifest,
   type PhonicsCatalogEntry,
@@ -364,7 +365,9 @@ async function main(): Promise<void> {
         const [exists] = await storage.bucket(bucket).file(gcsPath).exists();
         if (exists) {
           skipped += 1;
-          const url = `https://storage.googleapis.com/${bucket}/${gcsPath}`;
+          // Ship same-origin API proxy URLs (not raw GCS) — enforced by
+          // check:audio-manifest-urls. Keeps regenerated manifests gate-clean.
+          const url = phonicsLibraryProxyPath(gcsPath);
           assets[catalogKey] = catalogEntryToManifestAsset(entry, bucket, { url, gcsPath });
           continue;
         }
@@ -375,7 +378,9 @@ async function main(): Promise<void> {
 
     console.log(`[phonics-library] ${catalogKey} speak="${entry.speakText}"`);
     const { buffer, durationMs, source } = await synthesizeEntry(entry, useFfmpeg);
-    const url = await uploadToGcs(storage, bucket, gcsPath, buffer);
+    await uploadToGcs(storage, bucket, gcsPath, buffer);
+    // Ship same-origin API proxy URL (not raw GCS) — check:audio-manifest-urls gate.
+    const url = phonicsLibraryProxyPath(gcsPath);
 
     const base = catalogEntryToManifestAsset(entry, bucket, { url, gcsPath, durationMs });
     const asset = manifestAssetFromBuffer(base, buffer, source, durationMs);
