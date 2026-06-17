@@ -18,7 +18,7 @@ const DB_VERSION = 1;
  * (PWA) AND IndexedDB (native iOS/Android, which skip the SW) — drops stale,
  * mixed-voice clips on the next launch.
  */
-export const AUDIO_ASSET_VERSION = "v4";
+export const AUDIO_ASSET_VERSION = "v5";
 const AUDIO_VERSION_STORAGE_KEY = "amynest:audio-asset-version";
 const MAX_ENTRIES = 80;
 const MAX_CACHE_BYTES = 50 * 1024 * 1024;

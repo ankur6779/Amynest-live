@@ -101,6 +101,7 @@ import {
   playPhonicsStaticAudio,
   resolvePhonicsAudioKey,
   resolvePhonicsSequenceKeys,
+  isPhonicsLibraryOnlyEnforced,
 } from "@/lib/phonics-static-audio";
 import { isStaticTtsText, type StaticAudioMode } from "@workspace/static-audio/browser";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
@@ -818,6 +819,9 @@ async function tryPregeneratedParallelLayer(
       run: async () => {
         const local = await attemptPhonicsLocalPlay(text, opts, ctx, waitUntilEnd);
         if (local.ok) return local;
+        if (isPhonicsLibraryOnlyEnforced()) {
+          return local;
+        }
         return kind === "static"
           ? attemptStaticPlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts)
           : attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts, opts);

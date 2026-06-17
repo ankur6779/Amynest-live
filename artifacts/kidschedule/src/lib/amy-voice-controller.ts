@@ -666,12 +666,29 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           return fast;
         }
         logTts({ reason: "phonics_fast_miss", requestId, error: fast.error });
+        amyVoicePlaybackFsm.markCompleted(String(requestId));
+        this.transition(requestId, "idle", null, null);
+        if (this.activeReliabilityRequestId) {
+          finishAudioRequest(this.activeReliabilityRequestId);
+          this.activeReliabilityRequestId = null;
+        }
+        return fast;
       } catch (err) {
         logTts({
           reason: "phonics_fast_error",
           requestId,
           error: err instanceof Error ? err.message : String(err),
         });
+        amyVoicePlaybackFsm.markCompleted(String(requestId));
+        this.transition(requestId, "idle", null, null);
+        if (this.activeReliabilityRequestId) {
+          finishAudioRequest(this.activeReliabilityRequestId);
+          this.activeReliabilityRequestId = null;
+        }
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "phonics_audio_preparing",
+        };
       }
     }
 

@@ -1,4 +1,4 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v16 / audio: amynest-audio-v4 */
+/* Auto-generated on build — do not edit. Cache: amynest-v16 / audio: amynest-audio-v5 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
@@ -19,7 +19,7 @@ const CACHE_NAME = "amynest-v16";
  * partials are dropped. Any amynest-audio-* cache that is not the current
  * name is purged on activate, so the bump is self-cleaning.
  */
-const AUDIO_CACHE_VERSION = "v4";
+const AUDIO_CACHE_VERSION = "v5";
 const AUDIO_CACHE_NAME = "amynest-audio-" + AUDIO_CACHE_VERSION;
 
 self.addEventListener("install", (event) => {

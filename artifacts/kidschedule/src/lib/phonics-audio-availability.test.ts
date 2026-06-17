@@ -1,21 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import {
   checkPhonicsLetterClip,
   checkPhonicsWordClip,
   validatePhonicsWordAudio,
 } from "@/lib/phonics-audio-availability";
+import { preloadPhonicsBundledManifest } from "@/lib/phonics-bundled-manifest";
 
 describe("phonics-audio-availability", () => {
-  it("treats static-catalog CVC words as available even without library manifest", () => {
+  beforeAll(async () => {
+    await preloadPhonicsBundledManifest();
+  });
+  it("uses ElevenLabs library manifest for CVC words (not legacy static catalog)", () => {
     const shop = checkPhonicsWordClip("shop");
     expect(shop.available).toBe(true);
-    expect(shop.catalogKey).toBe("static:phonics:shop");
+    expect(shop.catalogKey).toBe("cvc:shop");
   });
 
-  it("treats static-catalog digraph keys as available", () => {
+  it("uses ElevenLabs library manifest for digraph letter clips", () => {
     const sh = checkPhonicsLetterClip("sh");
     expect(sh.available).toBe(true);
+    expect(sh.catalogKey).toBe("digraph:sh");
   });
 
   it("marks words missing from both library and static catalog unavailable", () => {

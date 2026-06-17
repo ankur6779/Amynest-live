@@ -28,7 +28,7 @@ describe("unified-catalog-playback phonics guards", () => {
     expect(
       resolvePhonicsCatalogPhrase("b", { phonicsOnly: true }),
     ).toBe("b");
-    expect(hasPhonicsStaticCatalogAudio("b")).toBe(true);
+    expect(hasPhonicsStaticCatalogAudio("b")).toBe(false);
   });
 
   it("phonicsOnly resolve never returns a default-only lesson phrase for corrupt input", () => {

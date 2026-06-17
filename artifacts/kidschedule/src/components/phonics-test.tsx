@@ -517,9 +517,6 @@ function QuestionCard({
       setAudioPreparing(true);
       return;
     }
-    if (ttsText && !res.ok && !isLocalAudioRecoveryEnabled()) {
-      void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
-    }
   }, [
     speaking,
     loading,

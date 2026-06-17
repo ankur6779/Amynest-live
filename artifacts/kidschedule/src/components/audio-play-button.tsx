@@ -8,6 +8,7 @@ import {
   prefetchPhonicsAudioKeys,
   prefetchPhonicsContentTexts,
   resolvePhonicsAudioKey,
+  isPhonicsLibraryOnlyEnforced,
 } from "@/lib/phonics-static-audio";
 import {
   checkPhonicsLetterClip,
@@ -206,7 +207,7 @@ export function AudioPlayButton({
     const trimmed = (text ?? "").trim();
     if (!trimmed) return false;
     try {
-      if (hasPhonicsStaticCatalogAudio(trimmed)) return true;
+      if (!isPhonicsLibraryOnlyEnforced() && hasPhonicsStaticCatalogAudio(trimmed)) return true;
       // Phonics clips often live in phonics-library / TTS, not static-audio-map — keep buttons tappable.
       if (shouldBypassPhonicsSpellingLibraries() || isLocalAudioRecoveryEnabled()) {
         return true;
@@ -328,6 +329,7 @@ export function AudioPlayButton({
           pause();
           await phonicsEngineStop("audio_play_button");
           const tryStaticCatalogFirst = async (phrase: string) => {
+            if (isPhonicsLibraryOnlyEnforced()) return null;
             if (!hasPhonicsStaticCatalogAudio(phrase)) return null;
             const catalog = await playCatalogPreparedUrl(phrase, {
               playbackRate,

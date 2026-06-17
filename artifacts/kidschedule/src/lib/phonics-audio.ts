@@ -23,6 +23,7 @@ import {
   playPhonicsContentAudio,
   prefetchPhonicsAudioKeys,
   resolvePhonicsAudioKey,
+  isPhonicsLibraryOnlyEnforced,
 } from "@/lib/phonics-static-audio";
 import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
 import {
@@ -137,7 +138,7 @@ export async function speakPhonicsFastClip(
     }
   }
 
-  if (shouldBypassPhonicsSpellingLibraries()) {
+  if (!isPhonicsLibraryOnlyEnforced() && shouldBypassPhonicsSpellingLibraries()) {
     const phrase = resolvePhonicsCatalogPhrase(trimmed, opts?.phoneme);
     const catalog = await playCatalogPreparedUrl(phrase, {
       playbackRate: opts?.playbackRate,
@@ -150,7 +151,7 @@ export async function speakPhonicsFastClip(
     return { success: false, error: catalog.error ?? "tts_static_missing_url" };
   }
 
-  {
+  if (!isPhonicsLibraryOnlyEnforced()) {
     const phrase = resolvePhonicsCatalogPhrase(trimmed, opts?.phoneme);
     const catalog = await playCatalogPreparedUrl(phrase, {
       playbackRate: opts?.playbackRate,
@@ -200,7 +201,7 @@ async function playCvcWordFinale(
   });
   if (library.ok) return { success: true, layer: "static" };
 
-  if (shouldBypassPhonicsSpellingLibraries()) {
+  if (!isPhonicsLibraryOnlyEnforced() && shouldBypassPhonicsSpellingLibraries()) {
     const catalog = await playCatalogPreparedUrl(w, {
       isCancelled: opts?.isCancelled,
       source: "phonics-cvc-word-fallback",
@@ -209,7 +210,7 @@ async function playCvcWordFinale(
     if (catalog.ok) return { success: true, layer: "static" };
   }
 
-  if (!opts?.isCancelled?.()) {
+  if (!isPhonicsLibraryOnlyEnforced() && !opts?.isCancelled?.()) {
     const proxyUrl = lookupStaticAudioUrlStrict(w, "phonics");
     if (proxyUrl) {
       const result = await amyVoiceController.playPreparedUrl(proxyUrl, {
