@@ -113,6 +113,45 @@ export function getFamilyForWord(word: string): WordFamilyDef | undefined {
   return id ? FAMILY_BY_ID.get(id) : undefined;
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+
+/**
+ * Build a guaranteed-valid "Find the Family" question.
+ *
+ * Picks a target family (preferring one represented in `seedWords`) and returns
+ * exactly one correct word plus two distractors from other families, so the
+ * prompt always has a single right answer. Never produces an impossible round.
+ */
+export function buildFamilyQuestion(seedWords: string[] = []): {
+  familyId: WordFamilyId;
+  options: string[];
+} {
+  const target =
+    WORD_FAMILIES.find((f) =>
+      seedWords.some((w) => getFamilyForWord(w)?.id === f.id),
+    ) ??
+    shuffleArray(WORD_FAMILIES)[0]!;
+
+  const correct = shuffleArray(target.words.map((w) => w.word))[0]!;
+  const distractors = shuffleArray(
+    WORD_FAMILIES.filter((f) => f.id !== target.id).flatMap((f) =>
+      f.words.map((w) => w.word),
+    ),
+  ).slice(0, 2);
+
+  return {
+    familyId: target.id,
+    options: shuffleArray([correct, ...distractors]),
+  };
+}
+
 /** Split display word into onset + rime for pattern highlighting. */
 export function splitOnsetRime(word: string, rime: string): { onset: string; rime: string } {
   const w = word.trim().toLowerCase();

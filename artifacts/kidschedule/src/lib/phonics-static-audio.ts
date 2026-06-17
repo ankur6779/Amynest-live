@@ -15,6 +15,7 @@ import {
 } from "@workspace/phonics-sounds";
 import { getLocalCachedAudioUrl, warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
+import { recordPhonicsPlayback } from "@/lib/phonics-prewarm-telemetry";
 import { logAudioHealthSuccess } from "@/lib/audio-health";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { logPhonicsPlaybackFailure } from "@/lib/phonics-playback-fallback";
@@ -51,10 +52,25 @@ const PHONICS_PREWARM_BATCH_GAP_MS = 40;
 
 let libraryPrewarmStarted = false;
 
+/**
+ * Hard cutover switch for ElevenLabs-only phonics. When enabled, phonics
+ * resolves ONLY from the certified ElevenLabs library manifest and never
+ * touches the static-audio catalog (which historically held OpenAI clips).
+ *
+ * Default OFF so audio coverage is preserved during the migration window;
+ * flip to "1"/"true" after Phase G regeneration verifies full library
+ * coverage to guarantee no non-library voice can ever be served.
+ */
+export function isPhonicsLibraryOnlyEnforced(): boolean {
+  const raw = import.meta.env.VITE_PHONICS_LIBRARY_ONLY;
+  return raw === "1" || raw === "true";
+}
+
 /** HTTPS URL for a letter/digraph phoneme clip — library first, then static catalog. */
 export function getPhonicsStaticAudioUrl(audioKey: string): string {
   const fromLibrary = lookupPhonicsLetterUrl(audioKey);
   if (fromLibrary) return fromLibrary;
+  if (isPhonicsLibraryOnlyEnforced()) return "";
 
   const phrase = resolvePhonicsCatalogPhrase(audioKey, { phonicsOnly: true });
   return lookupStaticAudioUrlStrict(phrase, "phonics") ?? "";
@@ -67,6 +83,7 @@ export function getPhonicsContentAudioUrl(
 ): string {
   const fromLibrary = lookupPhonicsContentUrl(text, preferredType);
   if (fromLibrary) return fromLibrary;
+  if (isPhonicsLibraryOnlyEnforced()) return "";
 
   const phrase = resolvePhonicsCatalogPhrase(text, { phonicsOnly: true });
   return lookupStaticAudioUrlStrict(phrase, "phonics") ?? "";
@@ -230,6 +247,7 @@ async function tryStaticCatalogClip(
   source: string,
   options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
 ): Promise<PlayPhonicsStaticResult | null> {
+  if (isPhonicsLibraryOnlyEnforced()) return null;
   const phrase = resolvePhonicsCatalogPhrase(label, { phonicsOnly: true });
   const staticUrl = lookupStaticAudioUrlStrict(phrase, "phonics");
   if (!staticUrl) return null;
@@ -330,7 +348,20 @@ export async function playPhonicsContentAudio(
   const trimmed = (text ?? "").trim();
   const url = getPhonicsContentAudioUrl(trimmed, options?.contentType);
   const cacheKey = getPhonicsContentCacheKey(trimmed, options?.contentType);
-  return playUrlClip(trimmed, url, cacheKey, "phonics-content", options, options?.contentType);
+  const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const result = await playUrlClip(
+    trimmed,
+    url,
+    cacheKey,
+    "phonics-content",
+    options,
+    options?.contentType,
+  );
+  if (result.ok) {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    recordPhonicsPlayback(trimmed, Math.round(now - t0));
+  }
+  return result;
 }
 
 export async function playBlendPhonemeClip(
@@ -344,7 +375,13 @@ export async function playPhonicsStaticAudio(
   audioKey: string,
   options?: PlayPhonicsStaticOptions,
 ): Promise<PlayPhonicsStaticResult> {
-  return playStaticKeyClip(audioKey, "phonics-library", options);
+  const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const result = await playStaticKeyClip(audioKey, "phonics-library", options);
+  if (result.ok) {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    recordPhonicsPlayback(audioKey, Math.round(now - t0));
+  }
+  return result;
 }
 
 export async function playPhonicsSequence(

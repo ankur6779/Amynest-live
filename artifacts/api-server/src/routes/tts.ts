@@ -27,6 +27,7 @@ import { applyPredictiveStrategyAdjustments } from "../services/predictive-strat
 import { computeTtsCacheKey } from "../services/ttsCacheService.js";
 import { recordApiHealthSample } from "../services/api-health-store.js";
 import { streamOpenAiTtsWithCache } from "../services/openaiTtsStreamCache.js";
+import { isPhonicsTtsRequest } from "../lib/phonics-tts-policy.js";
 import { ingestRlTelemetry, resolveRlStrategy } from "../services/ttsRlService.js";
 import {
   isTtsRateLimitedError,
@@ -609,6 +610,23 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
         "ElevenLabs stream failed — falling back to OpenAI",
       );
     }
+  }
+
+  // ElevenLabs-only policy for phonics: never fall through to OpenAI on the
+  // stream route. If ElevenLabs streaming failed, fail closed (no second voice).
+  if (isPhonicsTtsRequest({ mode, category: parsed.data.category })) {
+    recordApiHealthSample({
+      route: "stream",
+      success: false,
+      latencyMs: Date.now() - startedAt,
+      errorType: "phonics_elevenlabs_only",
+    });
+    logger.warn(
+      { evt: "tts.stream_phonics_elevenlabs_only_blocked_openai", mode },
+      "Phonics stream is ElevenLabs-only — refusing OpenAI fallback",
+    );
+    if (!res.headersSent) res.status(503).json({ error: "phonics_elevenlabs_only" });
+    return;
   }
 
   const clientVoice = parsed.data.voice?.trim();

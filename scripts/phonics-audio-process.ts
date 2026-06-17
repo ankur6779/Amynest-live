@@ -93,6 +93,40 @@ export async function processPhonemeAudioBuffer(
   }
 }
 
+/**
+ * Phase H — normalize ANY phonics clip (words, sentences, stories) to the same
+ * loudness / sample-rate / channel / silence profile as phonemes, WITHOUT the
+ * phoneme-only 250–900ms duration assertion. Optional mode-aware bounds.
+ */
+export async function normalizePhonicsAudioBuffer(
+  buffer: Buffer,
+  opts?: { durationBounds?: { min: number; max: number }; label?: string },
+): Promise<Buffer> {
+  const dir = mkdtempSync(join(tmpdir(), "phonics-norm-"));
+  const inputPath = join(dir, "in.mp3");
+  const outputPath = join(dir, "out.mp3");
+  try {
+    writeFileSync(inputPath, buffer);
+    await runFfmpegMastering(inputPath, outputPath);
+    const mastered = readFileSync(outputPath);
+    if (mastered.byteLength < PHONICS_MIN_MP3_BYTES) {
+      throw new Error(`${opts?.label ?? "clip"}: normalization produced invalid output`);
+    }
+    const bounds = opts?.durationBounds;
+    if (bounds) {
+      const durationMs = estimateMp3DurationMs(mastered.byteLength);
+      if (durationMs < bounds.min || durationMs > bounds.max) {
+        throw new Error(
+          `${opts?.label ?? "clip"}: duration ${durationMs}ms outside [${bounds.min}, ${bounds.max}]`,
+        );
+      }
+    }
+    return mastered;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 /** Master a file in place (batch normalization). */
 export async function processPhonemeAudioFile(
   filePath: string,

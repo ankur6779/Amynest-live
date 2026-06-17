@@ -384,6 +384,11 @@ export type PhonicsAudioLibraryManifest = {
   baseUrl: string;
   voiceId: string;
   modelId: string;
+  /** Provenance hardening (Phase B) — optional for backward compat, required at certification. */
+  provider?: "elevenlabs";
+  curriculumVersion?: number;
+  phonemeVersion?: number;
+  normalizationVersion?: number;
   assetCount: number;
   assets: Record<string, PhonicsAudioManifestAsset>;
 };

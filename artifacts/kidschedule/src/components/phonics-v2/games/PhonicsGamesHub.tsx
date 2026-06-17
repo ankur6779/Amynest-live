@@ -5,9 +5,8 @@ import { FeedTheMonster } from "./FeedTheMonster";
 import { BuildTheWord } from "./BuildTheWord";
 import { FindTheFamily } from "./FindTheFamily";
 import { Gamepad2 } from "lucide-react";
-import { getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
+import { buildFamilyQuestion } from "@/lib/phonics-v2/content/word-families";
 import { prefetchPhonicsGameWords } from "@/lib/phonics-v2/audio-prefetch";
-import type { WordFamilyId } from "@/lib/phonics-v2/content/word-families";
 
 type GameId = "feed" | "build" | "family";
 
@@ -29,19 +28,12 @@ export function PhonicsGamesHub({
     [practiceWords, practiceWord],
   );
 
-  const familyOptions = useMemo(() => {
-    const sameFamily = practiceWords.filter((w) => {
-      const fam = getFamilyForWord(w);
-      const targetFam = getFamilyForWord(practiceWord);
-      return fam && targetFam && fam.id === targetFam.id;
-    });
-    const pool = sameFamily.length >= 2 ? sameFamily : practiceWords;
-    return pool.slice(0, 3);
-  }, [practiceWords, practiceWord]);
-
-  const targetFamilyId = useMemo((): WordFamilyId => {
-    return getFamilyForWord(practiceWord)?.id ?? "at";
-  }, [practiceWord]);
+  // Catalog-driven so the family round always has exactly one correct answer,
+  // even when practice words (e.g. digraphs) don't map to a CVC word family.
+  const familyQuestion = useMemo(
+    () => buildFamilyQuestion(practiceWords),
+    [practiceWords],
+  );
 
   useEffect(() => {
     prefetchPhonicsGameWords(practiceWords);
@@ -97,10 +89,11 @@ export function PhonicsGamesHub({
             onComplete={() => onGameComplete?.("build")}
           />
         )}
-        {active === "family" && familyOptions.length >= 2 && (
+        {active === "family" && (
           <FindTheFamily
-            targetFamilyId={targetFamilyId}
-            options={familyOptions}
+            key={`${familyQuestion.familyId}-${familyQuestion.options.join("-")}`}
+            targetFamilyId={familyQuestion.familyId}
+            options={familyQuestion.options}
             onCorrect={() => onGameComplete?.("family")}
           />
         )}

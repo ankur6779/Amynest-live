@@ -15,6 +15,7 @@ import {
 } from "@workspace/phonics-sounds";
 import { logger } from "../lib/logger.js";
 import { isElevenLabsFallbackEnabled } from "../lib/env.js";
+import { isPhonicsTtsRequest } from "../lib/phonics-tts-policy.js";
 import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 import { synthesizeElevenLabsFallback } from "./elevenLabsFallbackService.js";
 import {
@@ -81,6 +82,7 @@ export async function generateOpenAiTts(
   if (!text) return null;
 
   const mode: SynthesizeMode = input.mode ?? "default";
+  const phonicsOnly = isPhonicsTtsRequest({ mode, category: input.category });
 
   // Primary dynamic TTS for the WHOLE app (incl. Speech Coach) is ElevenLabs
   // Flash v2.5 — cache-first, stored once in GCS and reused by every user.
@@ -110,6 +112,17 @@ export async function generateOpenAiTts(
         "ElevenLabs Flash failed — falling back to OpenAI TTS",
       );
     }
+  }
+
+  // ElevenLabs-only policy for phonics: never serve OpenAI for phonics, neither
+  // a freshly synthesized clip nor a previously cached OpenAI clip. Fail safe
+  // (no audio) rather than playing a second, inconsistent voice to the child.
+  if (phonicsOnly) {
+    logger.warn(
+      { evt: "tts.phonics_elevenlabs_only_blocked_openai", mode, category: input.category },
+      "Phonics TTS is ElevenLabs-only — refusing OpenAI fallback",
+    );
+    return null;
   }
 
   const voiceId = (input.voice?.trim() || getAmyTtsVoiceId()).slice(0, 64);

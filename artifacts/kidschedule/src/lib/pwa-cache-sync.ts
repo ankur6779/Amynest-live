@@ -1,4 +1,5 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
+import { reconcileLocalAudioCacheVersion } from "@/lib/local-tts-cache";
 import {
   checkDeployVersionMismatch,
   getDeployVersion,
@@ -31,6 +32,10 @@ export async function runPwaCacheSyncBackground(): Promise<void> {
 
   const deployMeta = getDeployVersion();
   const { mismatch, previous, current } = checkDeployVersionMismatch();
+
+  // Audio-asset cache busting (Phase D) — runs on every platform incl. native
+  // shells that skip the service worker. No-op unless AUDIO_ASSET_VERSION changed.
+  void reconcileLocalAudioCacheVersion();
 
   try {
     if (mismatch && previous && current) {

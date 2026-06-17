@@ -25,6 +25,13 @@ export const PHONEME_AUDIO: Record<string, string> = {
   g: "g",
   n: "n",
   r: "r",
+  // P3 fix — consonants used by CVC/blend words that were previously unmapped
+  // (e.g. "win" → /w/). Without these, the blend formatter fell through to a
+  // bare letter and risked an alphabet-name read.
+  w: "w",
+  j: "j",
+  v: "v",
+  z: "z",
 
   æ: "a as in apple",
   ɛ: "e as in egg",

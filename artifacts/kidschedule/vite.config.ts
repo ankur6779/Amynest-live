@@ -23,6 +23,13 @@ const basePath = process.env.BASE_PATH ?? "/";
 /** PWA / service-worker cache bucket — bump on deploy to purge stale shells. */
 const CACHE_VERSION = "amynest-v16";
 
+/**
+ * Immutable audio cache version. BUMP THIS whenever phonics (or other static)
+ * audio is regenerated so every client drops stale / mixed-voice clips and the
+ * 1-year-immutable CDN entries are superseded by a fresh cache namespace.
+ */
+const AUDIO_CACHE_VERSION = "v4";
+
 function resolveDeployVersion(): string {
   const sha =
     process.env.RENDER_GIT_COMMIT?.slice(0, 7) ??
@@ -146,9 +153,10 @@ function amynestServiceWorkerPlugin() {
     );
     const swContent = template
       .replace("__AMYNEST_CACHE_NAME__", cacheName)
+      .replace("__AMYNEST_AUDIO_CACHE_VERSION__", AUDIO_CACHE_VERSION)
       .replace("/* __AMYNEST_FCM_BLOCK__ */", fcmBlock);
 
-    const banner = `/* Auto-generated on build — do not edit. Cache: ${cacheName} */\n`;
+    const banner = `/* Auto-generated on build — do not edit. Cache: ${cacheName} / audio: amynest-audio-${AUDIO_CACHE_VERSION} */\n`;
     writeFileSync(path.join(publicDir, "sw.js"), banner + swContent, "utf8");
 
     try {

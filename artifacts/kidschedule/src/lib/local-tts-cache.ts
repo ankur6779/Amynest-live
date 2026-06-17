@@ -10,6 +10,16 @@ import { adaptiveTimeoutMs } from "@/lib/network-adaptive-timeout";
 const DB_NAME = "amynest_amy_voice_cache";
 const STORE = "audio";
 const DB_VERSION = 1;
+
+/**
+ * Audio asset cache generation. MUST stay in sync with `AUDIO_CACHE_VERSION`
+ * in `artifacts/kidschedule/vite.config.ts` (service-worker cache name). Bump
+ * BOTH whenever phonics audio is regenerated so every layer — service worker
+ * (PWA) AND IndexedDB (native iOS/Android, which skip the SW) — drops stale,
+ * mixed-voice clips on the next launch.
+ */
+export const AUDIO_ASSET_VERSION = "v4";
+const AUDIO_VERSION_STORAGE_KEY = "amynest:audio-asset-version";
 const MAX_ENTRIES = 80;
 const MAX_CACHE_BYTES = 50 * 1024 * 1024;
 /** Reject truncated / corrupt MP3 blobs. */
@@ -142,6 +152,31 @@ async function pruneLocalCache(db: IDBDatabase): Promise<void> {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Drop the IndexedDB audio blob cache when the audio asset generation changes.
+ * Critical for native shells (Capacitor iOS / Android WebView) which never run
+ * the service worker, so the SW cache-name bump alone cannot evict their
+ * IndexedDB-cached clips. Runs at startup; no-op when version is unchanged.
+ */
+export async function reconcileLocalAudioCacheVersion(
+  version: string = AUDIO_ASSET_VERSION,
+): Promise<void> {
+  if (typeof localStorage === "undefined") return;
+  let previous: string | null = null;
+  try {
+    previous = localStorage.getItem(AUDIO_VERSION_STORAGE_KEY);
+  } catch {
+    return;
+  }
+  if (previous === version) return;
+  await clearAllLocalCachedAudio();
+  try {
+    localStorage.setItem(AUDIO_VERSION_STORAGE_KEY, version);
   } catch {
     /* ignore */
   }

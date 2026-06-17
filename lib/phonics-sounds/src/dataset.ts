@@ -94,7 +94,10 @@ export const CVC_WORD_LIST = [
   "run",
 ] as const;
 
-const DIGRAPH_GRAPHEMES = ["sh", "ch", "th", "ng", "ph", "wh"] as const;
+// P5 fix — "ck" (/k/) and "qu" (/kw/) are single grapheme units so blending
+// segments e.g. "duck" → ["d","u","ck"] and "queen" → ["qu","ee"...] rather
+// than splitting them into individual letters.
+const DIGRAPH_GRAPHEMES = ["sh", "ch", "th", "ng", "ph", "wh", "ck", "qu"] as const;
 
 /** Words where "th" is voiced (this, that, them…). */
 const TH_VOICED_WORDS = new Set([

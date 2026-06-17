@@ -43,7 +43,9 @@ export const PHONICS_SOUNDS: Record<string, PhonicsSoundEntry> = {
   v: { sound: "v", example: "van", audioText: letterAudioText("v", "v", "van") },
   w: { sound: "w", example: "water", audioText: letterAudioText("w", "w", "water") },
   x: { sound: "ks", example: "box", audioText: letterAudioText("x", "ks", "box") },
-  y: { sound: "j", example: "yak", audioText: letterAudioText("y", "j", "yak") },
+  // P4 fix — y is the /j/ glide ("yak"). The bare "j" audioText made TTS speak
+  // the /dʒ/ ("juh") sound of letter j; force the example form for clarity.
+  y: { sound: "j", example: "yak", audioText: "y as in yak" },
   z: { sound: "z", example: "zebra", audioText: letterAudioText("z", "z", "zebra") },
 };
 
@@ -204,6 +206,10 @@ export * from "./cvc.js";
 export * from "./dataset.js";
 export * from "./phoneme-map.js";
 export * from "./phonics-generation.js";
+export * from "./phonics-generation-modes.js";
+export * from "./audio-standards.js";
+export * from "./audio-review-spec.js";
+export * from "./phoneme-registry.js";
 export * from "./phonics-quality.js";
 export * from "./phonics-audio-master.js";
 export * from "./phonics-audio-demos.js";

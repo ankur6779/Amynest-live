@@ -34,6 +34,7 @@ import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { warmParentHubVisibleContent } from "@/lib/parent-hub-audio-warmup";
+import { schedulePhonicsPredictivePrewarm } from "@/lib/phonics-predictive-prewarm";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import {
   warmLearningZoneTabOnOpen,
@@ -953,6 +954,19 @@ function ParentingHubPage() {
         ageMonths: totalAgeMonths,
         childName: effectiveChild.name,
       });
+      // Phase I + G.5 — mastery-driven phonics warming from the hub (before the
+      // study zone). Passing childId/ageMonths lets the prewarm engine ask the
+      // real mastery engine for the child's actual next lesson/story/word pack
+      // and warm only those assets. Capability-gated for low-end / metered.
+      const numericChildId =
+        typeof effectiveChild.id === "number"
+          ? effectiveChild.id
+          : Number(effectiveChild.id);
+      schedulePhonicsPredictivePrewarm(
+        Number.isFinite(numericChildId) && numericChildId > 0
+          ? { childId: numericChildId, ageMonths: totalAgeMonths }
+          : { ageMonths: totalAgeMonths },
+      );
     } catch {
       /* audio warmup is best-effort — must not crash the hub */
     }

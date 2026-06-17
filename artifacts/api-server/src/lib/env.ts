@@ -109,7 +109,11 @@ export function isElevenLabsFallbackEnabled(): boolean {
   return envFlagEnabled("TTS_ELEVENLABS_FALLBACK_ENABLED", true);
 }
 
-/** Primary dynamic TTS — OpenAI. ElevenLabs is fallback-only. */
+/**
+ * Health-reporting label only. Actual runtime priority is ElevenLabs-primary
+ * (see `generateOpenAiTts` and `/api/tts/stream`); OpenAI is a general-app
+ * safety net and is fully blocked for phonics (see `phonics-tts-policy.ts`).
+ */
 export function getTtsProvider(): TtsProvider {
   return "openai";
 }

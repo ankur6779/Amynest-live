@@ -1,0 +1,29 @@
+{
+  "$comment": "Phase 8 human audio review gate. A human MUST listen to representative clips for every category and set status to 'approved' (with notes) before ElevenLabs regeneration. Bump curriculumVersion/phonemeVersion to match lib/phonics-sounds/src/audio-standards.ts. Run: pnpm --filter @workspace/scripts run check-phonics-audio-review",
+  "automatedPreReview": {
+    "$note": "AI machine-check only. NOT a human listening sign-off. Auditory checks (phoneme distinction, child intelligibility) require human ears AND require the regenerated ElevenLabs assets to exist first. Statuses remain 'pending' until a human reviews.",
+    "verdict": "CONDITIONAL PASS",
+    "machineCheckedAt": "2026-06-17",
+    "registry": "PASS — 55 entries, 0 collisions; P1 short-a!=short-o, P2 voiced!=unvoiced th, P3 w/j/v/z mapped, P4 y=/j/, P5 ck/qu units",
+    "blockers": [
+      "Regenerated ElevenLabs assets do not exist yet (shipped manifest is eleven_turbo_v2_5, not eleven_flash_v2_5).",
+      "Human auditory verification not performed."
+    ]
+  },
+  "curriculumVersion": 1,
+  "phonemeVersion": 1,
+  "reviewer": "",
+  "reviewedAt": "",
+  "categories": {
+    "short_vowels": { "status": "pending", "notes": "AUTO: registry distinguishes short-a (aw=at) from short-o (P1 fix); human must confirm clipped, non-diphthongized vowels." },
+    "long_vowels": { "status": "pending", "notes": "AUTO: in curriculum scope; human must confirm clear glide, no schwa-collapse on cake/see/bike/boat/cube." },
+    "digraphs": { "status": "pending", "notes": "AUTO: sh/ch/th/wh/ck/ng present as units; human must confirm single fused sound." },
+    "trigraphs": { "status": "pending", "notes": "AUTO: scoped (future) in registry; verify igh/tch/dge coverage post-regen or mark N/A for phonics-v2 scope." },
+    "blends": { "status": "pending", "notes": "AUTO: blend words mapped; human must confirm no inserted vowel between consonants." },
+    "r_controlled_vowels": { "status": "pending", "notes": "AUTO: scoped (future); verify ar/er/ir/or/ur post-regen or mark N/A for current scope." },
+    "schwa": { "status": "pending", "notes": "AUTO: scoped (future); verify neutral /uh/ post-regen or mark N/A for current scope." },
+    "diphthongs": { "status": "pending", "notes": "AUTO: scoped (future); verify oi/oy/ou/ow post-regen or mark N/A for current scope." },
+    "voiced_th": { "status": "pending", "notes": "AUTO: P2 fix — voiced th text='thuh' distinct from unvoiced; human must confirm buzzing /th/ in this/that/mother." },
+    "unvoiced_th": { "status": "pending", "notes": "AUTO: P2 fix — unvoiced th distinct from voiced; human must confirm breathy /th/ in thin/bath/thumb." }
+  }
+}

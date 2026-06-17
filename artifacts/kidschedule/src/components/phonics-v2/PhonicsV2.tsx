@@ -9,7 +9,7 @@ import { PhonicsGamesHub } from "./games/PhonicsGamesHub";
 import { DecodableStoryReader } from "./DecodableStoryReader";
 import { ParentInsightsV3Card } from "./ParentInsightsV3Card";
 import { DigraphPathwayPanel } from "./DigraphPathwayPanel";
-import { VoicePhonicsRound } from "./VoicePhonicsRound";
+import { BlendListenCheck } from "./BlendListenCheck";
 import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
 import type { MissionSummary } from "./DailyMissionPanel";
 import {
@@ -29,6 +29,7 @@ import {
 import { prefetchCvcWordList } from "@/lib/phonics-v2/audio-prefetch";
 import type { PhonicsV2Stage } from "@/lib/phonics-v2/content/journey-stages";
 import { getFamilyForWord } from "@/lib/phonics-v2/content/word-families";
+import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import {
   getUnlockedStoriesV3,
   getStoryCount,
@@ -128,6 +129,7 @@ export function PhonicsV2({
   );
   const [karaokeWord, setKaraokeWord] = useState("");
   const [storyId, setStoryId] = useState<string | null>(null);
+  const [showAllStories, setShowAllStories] = useState(false);
   const [mastery, setMastery] = useState(() => loadMasteryState(childId));
   const [fluency, setFluency] = useState(() => loadFluencyState(childId));
   const [retention, setRetention] = useState<PhonicsRetentionState>(() =>
@@ -149,15 +151,19 @@ export function PhonicsV2({
     [safeItems],
   );
 
-  useEffect(() => {
-    if (practiceWords.length === 0) {
-      setKaraokeWord("");
-      return;
-    }
-    setKaraokeWord((prev) =>
-      prev && practiceWords.includes(prev) ? prev : practiceWords[0]!,
-    );
+  // Karaoke blending only supports CVC words in the blend library. Filter out
+  // digraph/non-CVC words (e.g. "ship", "chip") so the round never shows
+  // "not in the blend library"; fall back to a starter CVC set when needed.
+  const blendableWords = useMemo(() => {
+    const cvc = practiceWords.filter((w) => getCvcWordEntry(w));
+    return cvc.length > 0 ? cvc : ["cat", "dog", "pin", "sun", "hat", "pan"];
   }, [practiceWords]);
+
+  useEffect(() => {
+    setKaraokeWord((prev) =>
+      prev && blendableWords.includes(prev) ? prev : blendableWords[0]!,
+    );
+  }, [blendableWords]);
 
   useEffect(() => {
     ensurePhonicsV3OnlineSync(authFetch);
@@ -343,13 +349,13 @@ export function PhonicsV2({
         onTaskComplete={() => setPronunciation(loadPronunciationScores(childId))}
       />
 
-      {practiceWords.length > 0 && karaokeWord && (
+      {blendableWords.length > 0 && karaokeWord && (
       <div id="phonics-v2-karaoke" className="scroll-mt-24">
         <Card className="rounded-3xl border border-white/[0.08] bg-card/90">
           <CardContent className="p-5">
             <h3 className="font-quicksand text-base font-bold mb-3">Karaoke Blending</h3>
             <div className="flex flex-wrap gap-2 mb-4">
-              {practiceWords.map((w) => (
+              {blendableWords.map((w) => (
                 <button
                   key={w}
                   type="button"
@@ -392,27 +398,23 @@ export function PhonicsV2({
               }}
             />
             <div className="mt-4 border-t border-border pt-4">
-              <VoicePhonicsRound
-                childId={childId}
-                childName={childName}
-                totalAgeMonths={totalAgeMonths}
+              <BlendListenCheck
+                key={karaokeWord}
                 word={karaokeWord}
-                onReviewOutcome={({ passed, confidence }) => {
+                options={blendableWords}
+                onOutcome={({ passed, confidence }) => {
                   const attempt = (voiceAttemptsRef.current[karaokeWord] ?? 0) + 1;
                   voiceAttemptsRef.current[karaokeWord] = attempt;
                   handleRetentionReview(karaokeWord, passed);
                   applyGatedMastery({
                     word: karaokeWord,
-                    dimension: "spoken",
-                    activity: "voice",
+                    dimension: "identified",
+                    activity: "identify",
                     passed,
                     confidence,
                     attemptNumber: attempt,
                   });
-                  setPronunciation(loadPronunciationScores(childId));
-                }}
-                onComplete={() => {
-                  trackSkillIntroduction(karaokeWord);
+                  if (passed) trackSkillIntroduction(karaokeWord);
                 }}
               />
             </div>
@@ -450,8 +452,12 @@ export function PhonicsV2({
             <p className="text-[10px] text-muted-foreground mb-3">
               {unlockedStories.length} unlocked · {getStoryCount()} total
             </p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {unlockedStories.map((s) => (
+            <div
+              className={`flex flex-wrap gap-2 mb-3 ${
+                showAllStories ? "max-h-60 overflow-y-auto pr-1" : ""
+              }`}
+            >
+              {(showAllStories ? unlockedStories : unlockedStories.slice(0, 8)).map((s) => (
                 <button
                   key={s.id}
                   type="button"
@@ -466,6 +472,17 @@ export function PhonicsV2({
                 </button>
               ))}
             </div>
+            {unlockedStories.length > 8 && (
+              <button
+                type="button"
+                onClick={() => setShowAllStories((v) => !v)}
+                className="mb-4 rounded-full border border-border px-3 py-1 text-[10px] font-bold text-muted-foreground hover:bg-muted"
+              >
+                {showAllStories
+                  ? "Show less"
+                  : `Show all ${unlockedStories.length} stories`}
+              </button>
+            )}
             {storyId && (
               <DecodableStoryReader
                 storyId={storyId}

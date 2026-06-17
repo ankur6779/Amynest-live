@@ -14,23 +14,30 @@ import { join } from "node:path";
 import { config } from "dotenv";
 import { Storage } from "@google-cloud/storage";
 import {
+  buildPhonicsProvenance,
   catalogEntryToManifestAsset,
   getPhonicsCatalogKey,
   getPhonicsGcsObjectPath,
+  getPhonicsGenerationProfile,
+  modeForAssetType,
   PHONICS_LIBRARY_VERSION,
   type PhonicsAudioLibraryManifest,
   type PhonicsCatalogEntry,
+  type PhonicsVoiceProfile,
 } from "@workspace/phonics-sounds";
 import { loadFullPhonicsCatalog } from "./phonics-audio-coverage.js";
 import {
   PHONICS_ELEVENLABS_MODEL_DEFAULT,
   PHONICS_ELEVENLABS_VOICE_ID_DEFAULT,
-  PHONICS_ELEVENLABS_VOICE_SETTINGS,
-  PHONICS_ELEVENLABS_WORD_VOICE_SETTINGS,
   validatePhonicsMp3Buffer,
 } from "@workspace/phonics-sounds";
 import { describeFallbackTone, generateFallbackToneMp3 } from "./phonics-audio-fallback.js";
-import { isFfmpegAvailable, processPhonemeAudioBuffer } from "./phonics-audio-process.js";
+import {
+  isFfmpegAvailable,
+  normalizePhonicsAudioBuffer,
+  processPhonemeAudioBuffer,
+} from "./phonics-audio-process.js";
+import { PHONICS_MODE_DURATION_MS } from "@workspace/phonics-sounds";
 import {
   manifestAssetFromBuffer,
   REPO_ROOT,
@@ -151,11 +158,12 @@ function buildStorage(): Storage {
 
 async function callElevenLabs(
   speakText: string,
-  isolatedPhoneme: boolean,
+  profile: PhonicsVoiceProfile,
 ): Promise<Buffer> {
   const apiKey = readEnvApiKey();
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY required");
 
+  // Phase H — fixed 44.1kHz / 128kbps mono-friendly MP3 for every clip.
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(VOICE_ID)}?output_format=mp3_44100_128`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -171,9 +179,13 @@ async function callElevenLabs(
       body: JSON.stringify({
         text: speakText,
         model_id: MODEL_ID,
-        voice_settings: isolatedPhoneme
-          ? { ...PHONICS_ELEVENLABS_VOICE_SETTINGS }
-          : { ...PHONICS_ELEVENLABS_WORD_VOICE_SETTINGS },
+        voice_settings: {
+          stability: profile.stability,
+          similarity_boost: profile.similarity_boost,
+          style: profile.style,
+          use_speaker_boost: profile.use_speaker_boost,
+          speed: profile.speed,
+        },
       }),
       signal: controller.signal,
     });
@@ -188,18 +200,27 @@ async function callElevenLabs(
 }
 
 async function postProcess(buffer: Buffer, entry: PhonicsCatalogEntry, useFfmpeg: boolean): Promise<Buffer> {
-  if (!useFfmpeg || !entry.isolatedPhoneme) return buffer;
-  return processPhonemeAudioBuffer(buffer, entry.id);
+  if (!useFfmpeg) return buffer;
+  // Isolated phonemes: strict 250–900ms phoneme mastering + assertions.
+  if (entry.isolatedPhoneme) return processPhonemeAudioBuffer(buffer, entry.id);
+  // Words / sentences / stories: same loudness/sample-rate/trim profile, with
+  // mode-aware duration bounds (Phase H — uniform normalization everywhere).
+  const mode = modeForAssetType(entry.type);
+  return normalizePhonicsAudioBuffer(buffer, {
+    durationBounds: PHONICS_MODE_DURATION_MS[mode],
+    label: entry.id,
+  });
 }
 
 async function synthesizeEntry(
   entry: PhonicsCatalogEntry,
   useFfmpeg: boolean,
 ): Promise<{ buffer: Buffer; durationMs: number; source: "elevenlabs" | "fallback_tone" }> {
+  const profile = getPhonicsGenerationProfile(modeForAssetType(entry.type));
   let lastError = "unknown";
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      const raw = await callElevenLabs(entry.speakText, entry.isolatedPhoneme);
+      const raw = await callElevenLabs(entry.speakText, profile);
       const buffer = await postProcess(raw, entry, useFfmpeg);
       const validation = validatePhonicsMp3Buffer(
         buffer,
@@ -354,14 +375,19 @@ async function main(): Promise<void> {
     await sleep(INTER_REQUEST_MS);
   }
 
+  const provenance = buildPhonicsProvenance({ voiceId: VOICE_ID, model: MODEL_ID });
   const manifest: PhonicsAudioLibraryManifest = {
     version: 1,
     libraryVersion: PHONICS_LIBRARY_VERSION,
-    generatedAt: new Date().toISOString(),
+    generatedAt: provenance.generatedAt,
     bucket,
     baseUrl: "",
     voiceId: VOICE_ID,
     modelId: MODEL_ID,
+    provider: provenance.provider,
+    curriculumVersion: provenance.curriculumVersion,
+    phonemeVersion: provenance.phonemeVersion,
+    normalizationVersion: provenance.normalizationVersion,
     assetCount: Object.keys(assets).length,
     assets,
   };

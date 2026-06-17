@@ -11,7 +11,7 @@ function resolveStory(storyId: string) {
 }
 import { AudioPlayButton } from "@/components/audio-play-button";
 import { prefetchStoryLines } from "@/lib/phonics-v2/audio-prefetch";
-import { BookOpen, Users, Mic } from "lucide-react";
+import { BookOpen, Users, Smile } from "lucide-react";
 
 type ReadMode = "amy" | "together" | "child";
 
@@ -67,7 +67,7 @@ export function DecodableStoryReader({ storyId, onComplete }: DecodableStoryRead
           [
             ["amy", "Amy Read", BookOpen],
             ["together", "Read Together", Users],
-            ["child", "Child Read", Mic],
+            ["child", "Child Read", Smile],
           ] as const
         ).map(([id, label, Icon]) => (
           <Button

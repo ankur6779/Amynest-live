@@ -12,9 +12,14 @@
 /* global self, caches, clients, importScripts, firebase */
 
 const CACHE_NAME = "__AMYNEST_CACHE_NAME__";
-/** Immutable hash-keyed audio — bump to invalidate poisoned partial (206) entries. */
-const AUDIO_CACHE_NAME = "amynest-audio-v2";
-const LEGACY_AUDIO_CACHE_NAMES = ["amynest-audio-v1"];
+/**
+ * Immutable hash-keyed audio cache. Bump AUDIO_CACHE_VERSION (build-injected)
+ * whenever phonics audio is regenerated so stale/mixed-voice clips and 206
+ * partials are dropped. Any amynest-audio-* cache that is not the current
+ * name is purged on activate, so the bump is self-cleaning.
+ */
+const AUDIO_CACHE_VERSION = "__AMYNEST_AUDIO_CACHE_VERSION__";
+const AUDIO_CACHE_NAME = "amynest-audio-" + AUDIO_CACHE_VERSION;
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -96,7 +101,8 @@ self.addEventListener("activate", (event) => {
       Promise.all(
         names.map((name) => {
           if (name === CACHE_NAME || name === AUDIO_CACHE_NAME) return undefined;
-          if (LEGACY_AUDIO_CACHE_NAMES.includes(name)) return caches.delete(name);
+          // Purge superseded audio caches (older AUDIO_CACHE_VERSION) and any
+          // other stale shell caches from previous deploys.
           return caches.delete(name);
         }),
       ).then(() => safeClaimClients()),
