@@ -178,38 +178,52 @@ export async function loadStudyZoneRecommendationContext(
   };
 }
 
-async function ensureProgressRow(userId: string, childId: number) {
-  const existing = await loadProgressRow(childId, userId);
-  if (existing) return existing;
-  const inserted = await db
-    .insert(learningProgressTable)
-    .values({ childId, userId })
-    .returning();
-  return inserted[0] ?? null;
-}
-
 async function persistFreshLessonState(
   userId: string,
   childId: number,
-  ctx: StudyZoneRecommendationContext,
   freshState: FreshLessonProgressState,
 ): Promise<void> {
-  const row = ctx.progressRowId
-    ? { id: ctx.progressRowId }
-    : await ensureProgressRow(userId, childId);
-  if (!row?.id) return;
-  const nextSection = mergeFreshLessonState(
-    ctx.sectionProgress,
-    ctx.visibility,
-    freshState,
-  );
-  await db
-    .update(learningProgressTable)
-    .set({
-      sectionProgress: nextSection,
-      updatedAt: sql`now()`,
-    })
-    .where(eq(learningProgressTable.id, row.id));
+  await db.transaction(async (tx) => {
+    const existing = await tx
+      .select()
+      .from(learningProgressTable)
+      .where(
+        and(
+          eq(learningProgressTable.childId, childId),
+          eq(learningProgressTable.userId, userId),
+        ),
+      )
+      .for("update")
+      .limit(1);
+
+    let row = existing[0];
+    if (!row) {
+      const inserted = await tx
+        .insert(learningProgressTable)
+        .values({ childId, userId })
+        .returning();
+      row = inserted[0];
+    }
+    if (!row?.id) return;
+
+    const sectionProgress =
+      row.sectionProgress && typeof row.sectionProgress === "object"
+        ? (row.sectionProgress as Record<string, unknown>)
+        : {};
+    const visibility = readLessonVisibility(sectionProgress);
+    const nextSection = mergeFreshLessonState(
+      sectionProgress,
+      visibility,
+      freshState,
+    );
+    await tx
+      .update(learningProgressTable)
+      .set({
+        sectionProgress: nextSection,
+        updatedAt: sql`now()`,
+      })
+      .where(eq(learningProgressTable.id, row.id));
+  });
 }
 
 async function emitFreshLessonAnalytics(
@@ -295,7 +309,7 @@ export async function resolveAndPersistFreshLesson(
     || resolved.state.freshLessonSequence.join(",") !== ctx.freshState.freshLessonSequence.join(",");
 
   if (stateChanged) {
-    await persistFreshLessonState(userId, childId, ctx, resolved.state);
+    await persistFreshLessonState(userId, childId, resolved.state);
   }
 
   if (resolved.event === "assigned" || resolved.event === "advanced") {
@@ -403,29 +417,53 @@ export async function recordContentBankLessonViewed(
   childId: number,
   lessonId: string,
 ): Promise<boolean> {
-  const row = await loadProgressRow(childId, userId);
-  if (!row) return false;
   const ts = new Date().toISOString();
-  const prevSection =
-    row.sectionProgress && typeof row.sectionProgress === "object"
-      ? (row.sectionProgress as Record<string, unknown>)
-      : {};
-  const visibility = recordLessonViewed(
-    readLessonVisibility(prevSection),
-    lessonId,
-    ts,
-  );
-  const freshState = readFreshLessonState(prevSection);
-  const nextSection = mergeFreshLessonState(prevSection, visibility, freshState);
-  await db
-    .update(learningProgressTable)
-    .set({
-      sectionProgress: nextSection,
-      lastActiveDate: ts.slice(0, 10),
-      updatedAt: sql`now()`,
-    })
-    .where(eq(learningProgressTable.id, row.id));
-  return true;
+  let updated = false;
+  await db.transaction(async (tx) => {
+    const existing = await tx
+      .select()
+      .from(learningProgressTable)
+      .where(
+        and(
+          eq(learningProgressTable.childId, childId),
+          eq(learningProgressTable.userId, userId),
+        ),
+      )
+      .for("update")
+      .limit(1);
+
+    let row = existing[0];
+    if (!row) {
+      const inserted = await tx
+        .insert(learningProgressTable)
+        .values({ childId, userId })
+        .returning();
+      row = inserted[0];
+    }
+    if (!row?.id) return;
+
+    const prevSection =
+      row.sectionProgress && typeof row.sectionProgress === "object"
+        ? (row.sectionProgress as Record<string, unknown>)
+        : {};
+    const visibility = recordLessonViewed(
+      readLessonVisibility(prevSection),
+      lessonId,
+      ts,
+    );
+    const freshState = readFreshLessonState(prevSection);
+    const nextSection = mergeFreshLessonState(prevSection, visibility, freshState);
+    await tx
+      .update(learningProgressTable)
+      .set({
+        sectionProgress: nextSection,
+        lastActiveDate: ts.slice(0, 10),
+        updatedAt: sql`now()`,
+      })
+      .where(eq(learningProgressTable.id, row.id));
+    updated = true;
+  });
+  return updated;
 }
 
 export async function notifyFreshLessonCompleted(
@@ -457,13 +495,8 @@ export async function loadSmartStudyLessonItem(
   const ctx = await loadStudyZoneRecommendationContext(userId, childId, dateIso);
   if (!ctx) return null;
   const lesson = ctx.unlockedLessons.find((l) => l.id === lessonId);
-  if (lesson) return lesson;
-  try {
-    const catalog = await loadContentBankCategory<SmartStudyLesson>("smart-study");
-    return catalog.find((l) => l.id === lessonId) ?? null;
-  } catch {
-    return null;
-  }
+  if (!lesson || !validateLessonEligibility(ctx, lesson)) return null;
+  return lesson;
 }
 
 export { smartStudyActivityId };

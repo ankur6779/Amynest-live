@@ -90,17 +90,30 @@ export function mergeSectionProgressVisibility(
   fresh?: FreshLessonProgressState,
 ): Record<string, unknown> {
   const prev = readContentBankLessonStorage(sectionProgress);
+  const resolvedFresh = fresh
+    ? pickNewerFreshLessonState(readFreshLessonState(sectionProgress), fresh)
+    : undefined;
   return mergeSectionProgressStorage(sectionProgress, {
     ...prev,
-    viewed: visibility.viewed,
-    ...(fresh
+    viewed: { ...prev.viewed, ...visibility.viewed },
+    ...(resolvedFresh
       ? {
-          currentFreshLessonId: fresh.currentFreshLessonId,
-          currentFreshLessonAssignedAt: fresh.currentFreshLessonAssignedAt,
-          freshLessonSequence: fresh.freshLessonSequence,
+          currentFreshLessonId: resolvedFresh.currentFreshLessonId,
+          currentFreshLessonAssignedAt: resolvedFresh.currentFreshLessonAssignedAt,
+          freshLessonSequence: resolvedFresh.freshLessonSequence,
         }
       : {}),
   });
+}
+
+function pickNewerFreshLessonState(
+  stored: FreshLessonProgressState,
+  incoming: FreshLessonProgressState,
+): FreshLessonProgressState {
+  const storedAt = stored.currentFreshLessonAssignedAt ?? "";
+  const incomingAt = incoming.currentFreshLessonAssignedAt ?? "";
+  if (incomingAt > storedAt) return incoming;
+  return stored;
 }
 
 export function mergeFreshLessonState(
