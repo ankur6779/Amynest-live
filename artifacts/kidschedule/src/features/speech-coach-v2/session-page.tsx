@@ -17,13 +17,34 @@ import {
   startSpeechCoachV2RemoteConfigPolling,
 } from "./lib/remote-config";
 
+const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
+
 export default function SpeechCoachV2SessionPage() {
   const authFetch = useAuthFetch();
   const [location, setLocation] = useLocation();
   const { data: children = [] } = useListChildren();
-  const child = children[0];
   const [live, setLive] = useState(false);
   const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : null;
+  });
+
+  const child =
+    children.find((c) => c.id === selectedChildId) ?? children[0];
+
+  useEffect(() => {
+    if (!child) return;
+    if (child.id !== selectedChildId) setSelectedChildId(child.id);
+    window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(child.id));
+  }, [child, selectedChildId]);
+
+  const selectChild = useCallback((id: number) => {
+    if (live) return;
+    setSelectedChildId(id);
+    window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(id));
+  }, [live]);
 
   useEffect(() => {
     const stop = startSpeechCoachV2RemoteConfigPolling();
@@ -160,6 +181,25 @@ export default function SpeechCoachV2SessionPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
       </div>
+
+      {!live && children.length > 1 && (
+        <div className="absolute right-4 top-4 z-10 flex flex-wrap justify-end gap-2">
+          {children.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => selectChild(c.id)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold backdrop-blur transition ${
+                c.id === child.id
+                  ? "bg-white text-slate-900"
+                  : "bg-black/30 text-white"
+              }`}
+            >
+              {c.name ?? "Child"}
+            </button>
+          ))}
+        </div>
+      )}
 
       <SpeechCoachV2SessionUi
         childName={child.name ?? "friend"}

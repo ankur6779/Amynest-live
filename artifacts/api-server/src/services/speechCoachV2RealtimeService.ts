@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { logger } from "../lib/logger.js";
 
 const REALTIME_MODEL = process.env.SPEECH_COACH_V2_REALTIME_MODEL?.trim()
-  || "gpt-4o-realtime-preview-2024-12-17";
+  || "gpt-realtime";
 
 const REALTIME_VOICE = process.env.SPEECH_COACH_V2_VOICE?.trim() || "shimmer";
 
@@ -45,11 +45,11 @@ export async function mintRealtimeClientSecret(input: {
       type: "realtime",
       model: REALTIME_MODEL,
       instructions: input.instructions,
-      input_audio_transcription: {
-        model: "gpt-4o-mini-transcribe",
-      },
       audio: {
         input: {
+          transcription: {
+            model: "gpt-4o-mini-transcribe",
+          },
           turn_detection: {
             type: "server_vad",
             threshold: 0.5,

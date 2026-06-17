@@ -90,6 +90,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     localStreamRef.current = null;
     if (audioElRef.current) {
       audioElRef.current.srcObject = null;
+      audioElRef.current.remove();
       audioElRef.current = null;
     }
     connectingRef.current = false;
@@ -144,9 +145,19 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
 
       const audioEl = document.createElement("audio");
       audioEl.autoplay = true;
+      audioEl.setAttribute("playsinline", "true");
+      (audioEl as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+      audioEl.style.position = "fixed";
+      audioEl.style.width = "0";
+      audioEl.style.height = "0";
+      audioEl.style.opacity = "0";
+      document.body.appendChild(audioEl);
       audioElRef.current = audioEl;
       pc.ontrack = (event) => {
         audioEl.srcObject = event.streams[0] ?? null;
+        void audioEl.play().catch(() => {
+          // autoplay can be blocked until a user gesture; ignore
+        });
         if (connectStartedAtRef.current > 0) {
           const ttfaMs = Date.now() - connectStartedAtRef.current;
           trackSpeechCoachV2Ttfa({ childId, sessionId, ttfaMs });
