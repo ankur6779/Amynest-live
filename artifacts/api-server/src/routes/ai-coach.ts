@@ -655,6 +655,10 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   });
 
   if (reused) {
+    if (userId) {
+      const { incrementFeatureUsage } = await import("../services/subscriptionService.js");
+      void incrementFeatureUsage(userId, "ai_query", -1).catch(() => undefined);
+    }
     recordCoachObservabilityEvent("coach_duplicate_prevented", {
       goal,
       userId,
