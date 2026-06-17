@@ -47,6 +47,10 @@ export default function SpeechCoachV2SessionPage() {
     enabled: v2Enabled && Boolean(child?.id),
   });
 
+  const handleLimitReached = useCallback(() => {
+    setLive(false);
+  }, []);
+
   const realtime = useSpeechCoachV2Realtime({
     authFetch,
     childId: child?.id ?? 0,
@@ -56,7 +60,7 @@ export default function SpeechCoachV2SessionPage() {
     enabled: live && Boolean(session.sessionState?.sessionId) && Boolean(session.tabLockToken),
     onUserTranscript: session.handleUserTranscript,
     onAssistantTranscript: session.handleAssistantTranscript,
-    onLimitReached: () => setLive(false),
+    onLimitReached: handleLimitReached,
   });
 
   const handleEnd = useCallback(async () => {
@@ -71,13 +75,12 @@ export default function SpeechCoachV2SessionPage() {
   useEffect(() => {
     if (!live) return;
     const timer = setInterval(() => {
-      const elapsed = realtime.sessionElapsedSeconds();
-      if (session.checkSessionComplete(elapsed)) {
+      if (session.remainingSeconds <= 0) {
         void handleEndRef.current();
       }
     }, 2000);
     return () => clearInterval(timer);
-  }, [live, realtime, session]);
+  }, [live, session.remainingSeconds]);
 
   const handleStart = useCallback(() => {
     session.beginLive();

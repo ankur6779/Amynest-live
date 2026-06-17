@@ -22,6 +22,7 @@ import { asyncRoute } from "../middlewares/async-route.js";
 import { getFeatureUsage, nextResetAtFor } from "../services/subscriptionService.js";
 import { getSpeechCoachV2RemoteConfig } from "../services/speechCoachV2RemoteConfig.js";
 import {
+  assertActiveSessionForToken,
   generateTabLockToken,
   getActiveSessionForChild,
   registerActiveSession,
@@ -295,7 +296,7 @@ router.post(
     }
 
     try {
-      await validateAndTouchSession({
+      await assertActiveSessionForToken({
         userId,
         childId: body.childId,
         sessionId: body.sessionId,

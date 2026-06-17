@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthFetchFn } from "@/lib/poll-result";
-import { mintSpeechCoachV2RealtimeToken } from "../lib/api";
+import { mintSpeechCoachV2RealtimeToken, SpeechCoachV2ApiError } from "../lib/api";
 import {
   trackSpeechCoachV2Reconnect,
   trackSpeechCoachV2Ttfa,
@@ -47,11 +47,24 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const reconnectAttemptRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartedAtRef = useRef<number>(Date.now());
   const connectStartedAtRef = useRef<number>(0);
   const mountedRef = useRef(true);
+  const connectingRef = useRef(false);
   const instructionsRef = useRef(instructions);
   instructionsRef.current = instructions;
+
+  const authFetchRef = useRef(authFetch);
+  authFetchRef.current = authFetch;
+  const onUserTranscriptRef = useRef(onUserTranscript);
+  onUserTranscriptRef.current = onUserTranscript;
+  const onAssistantTranscriptRef = useRef(onAssistantTranscript);
+  onAssistantTranscriptRef.current = onAssistantTranscript;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const onLimitReachedRef = useRef(onLimitReached);
+  onLimitReachedRef.current = onLimitReached;
 
   const sendSessionUpdate = useCallback((nextInstructions: string) => {
     const dc = dcRef.current;
@@ -65,6 +78,10 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   }, []);
 
   const cleanup = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
     dcRef.current?.close();
     dcRef.current = null;
     pcRef.current?.close();
@@ -75,43 +92,44 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       audioElRef.current.srcObject = null;
       audioElRef.current = null;
     }
+    connectingRef.current = false;
   }, []);
 
-  const handleRealtimeEvent = useCallback(
-    (payload: Record<string, unknown>) => {
-      const type = String(payload.type ?? "");
-      if (type === "conversation.item.input_audio_transcription.completed") {
-        const transcript = String(
-          (payload as { transcript?: string }).transcript ?? "",
-        ).trim();
-        if (transcript) onUserTranscript?.(transcript, transcript);
-      }
-      if (
-        type === "response.output_audio_transcript.done"
-        || type === "response.audio_transcript.done"
-      ) {
-        const transcript = String(
-          (payload as { transcript?: string }).transcript ?? "",
-        ).trim();
-        if (transcript) onAssistantTranscript?.(transcript);
-      }
-      if (type === "error") {
-        const message = String(
-          (payload as { error?: { message?: string } }).error?.message ?? "Realtime error",
-        );
-        onError?.(message);
-      }
-    },
-    [onAssistantTranscript, onError, onUserTranscript],
-  );
+  const handleRealtimeEvent = useCallback((payload: Record<string, unknown>) => {
+    const type = String(payload.type ?? "");
+    if (type === "conversation.item.input_audio_transcription.completed") {
+      const transcript = String(
+        (payload as { transcript?: string }).transcript ?? "",
+      ).trim();
+      if (transcript) onUserTranscriptRef.current?.(transcript, transcript);
+    }
+    if (
+      type === "response.output_audio_transcript.done"
+      || type === "response.audio_transcript.done"
+    ) {
+      const transcript = String(
+        (payload as { transcript?: string }).transcript ?? "",
+      ).trim();
+      if (transcript) onAssistantTranscriptRef.current?.(transcript);
+    }
+    if (type === "error") {
+      const message = String(
+        (payload as { error?: { message?: string } }).error?.message ?? "Realtime error",
+      );
+      onErrorRef.current?.(message);
+    }
+  }, []);
 
-  const connect = useCallback(async () => {
-    if (!enabled || !sessionId || !tabLockToken) return;
+  const connectRef = useRef<() => Promise<void>>(async () => {});
+
+  connectRef.current = async () => {
+    if (!enabled || !sessionId || !tabLockToken || connectingRef.current) return;
+    connectingRef.current = true;
     setConnectionState(reconnectAttemptRef.current > 0 ? "reconnecting" : "connecting");
     connectStartedAtRef.current = Date.now();
 
     try {
-      const token = await mintSpeechCoachV2RealtimeToken(authFetch, {
+      const token = await mintSpeechCoachV2RealtimeToken(authFetchRef.current, {
         childId,
         sessionId,
         tabLockToken,
@@ -119,6 +137,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       });
 
       cleanup();
+      connectingRef.current = true;
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
@@ -166,7 +185,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
 
       if (!sdpResponse.ok) {
         if (sdpResponse.status === 429) {
-          onLimitReached?.();
+          onLimitReachedRef.current?.();
           throw new Error("Daily limit reached");
         }
         throw new Error(`Realtime SDP exchange failed: ${sdpResponse.status}`);
@@ -181,32 +200,32 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         trackSpeechCoachV2Reconnect({ childId, sessionId });
       }
       reconnectAttemptRef.current = 0;
+      connectingRef.current = false;
       setConnectionState("connected");
     } catch (err) {
       cleanup();
       if (!mountedRef.current) return;
+
+      if (err instanceof SpeechCoachV2ApiError) {
+        if (err.code === "daily_limit_reached" || err.code === "session_limit_reached") {
+          onLimitReachedRef.current?.();
+          setConnectionState("disconnected");
+          return;
+        }
+      }
+
       const message = err instanceof Error ? err.message : "Connection failed";
       setConnectionState("error");
-      onError?.(message);
+      onErrorRef.current?.(message);
 
       if (reconnectAttemptRef.current < 3) {
         reconnectAttemptRef.current += 1;
-        setTimeout(() => {
-          void connect();
+        reconnectTimerRef.current = setTimeout(() => {
+          void connectRef.current();
         }, 1500 * reconnectAttemptRef.current);
       }
     }
-  }, [
-    authFetch,
-    childId,
-    cleanup,
-    enabled,
-    handleRealtimeEvent,
-    onError,
-    onLimitReached,
-    sessionId,
-    tabLockToken,
-  ]);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -220,14 +239,15 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     }
 
     sessionStartedAtRef.current = Date.now();
-    void connect();
+    reconnectAttemptRef.current = 0;
+    void connectRef.current();
 
     return () => {
       mountedRef.current = false;
       cleanup();
       setConnectionState("disconnected");
     };
-  }, [enabled, sessionId, tabLockToken, connect, cleanup]);
+  }, [enabled, sessionId, tabLockToken, cleanup]);
 
   useEffect(() => {
     if (connectionState !== "connected") return;
@@ -248,6 +268,6 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectionState,
     disconnect,
     sessionElapsedSeconds,
-    reconnect: connect,
+    reconnect: () => connectRef.current(),
   };
 }

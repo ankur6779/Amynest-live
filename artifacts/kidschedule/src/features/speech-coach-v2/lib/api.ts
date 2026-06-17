@@ -10,6 +10,26 @@ import type {
   SpeechCoachV2Phase,
 } from "@workspace/speech-coach-v2";
 
+export class SpeechCoachV2ApiError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public status?: number,
+  ) {
+    super(message);
+    this.name = "SpeechCoachV2ApiError";
+  }
+}
+
+async function parseApiError(res: Response, fallback: string): Promise<SpeechCoachV2ApiError> {
+  const err = await res.json().catch(() => ({}));
+  const body = err as { error?: string; message?: string };
+  return new SpeechCoachV2ApiError(
+    body.message ?? fallback,
+    body.error,
+    res.status,
+  );
+}
 export interface SpeechCoachV2Usage {
   speechSecondsUsed: number;
   speechMinutesToday: number;
@@ -107,8 +127,7 @@ export async function heartbeatSpeechCoachV2Session(
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as { error?: string }).error ?? "Heartbeat failed");
+    throw await parseApiError(res, "Heartbeat failed");
   }
   return parseApiJson(res);
 }
@@ -128,8 +147,7 @@ export async function mintSpeechCoachV2RealtimeToken(
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as { message?: string }).message ?? "Failed to mint realtime token");
+    throw await parseApiError(res, "Failed to mint realtime token");
   }
   return parseApiJson<SpeechCoachV2TokenResponse>(res);
 }

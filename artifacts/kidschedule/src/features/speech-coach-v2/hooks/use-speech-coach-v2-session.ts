@@ -20,6 +20,7 @@ import {
   fetchActiveSpeechCoachV2Session,
   fetchSpeechCoachV2Usage,
   heartbeatSpeechCoachV2Session,
+  SpeechCoachV2ApiError,
   startSpeechCoachV2Session,
 } from "../lib/api";
 import {
@@ -240,7 +241,7 @@ export function useSpeechCoachV2Session(input: {
   useEffect(() => {
     if (uiState !== "live" || !sessionState || !tabLockToken) return;
 
-    heartbeatRef.current = setInterval(() => {
+    const runHeartbeat = () => {
       void heartbeatSpeechCoachV2Session(authFetch, {
         childId,
         sessionId: sessionState.sessionId,
@@ -248,18 +249,25 @@ export function useSpeechCoachV2Session(input: {
       })
         .then((hb) => {
           setRemainingSeconds(hb.remainingSeconds);
-          applySession(hb.sessionState, tabLockToken, buildAmyRealtimeInstructions(hb.sessionState));
         })
-        .catch(() => {
-          setUiState("limit_reached");
-          trackSpeechCoachV2LimitReached({ childId });
+        .catch((err: unknown) => {
+          if (
+            err instanceof SpeechCoachV2ApiError
+            && (err.code === "daily_limit_reached" || err.code === "session_limit_reached")
+          ) {
+            setUiState("limit_reached");
+            trackSpeechCoachV2LimitReached({ childId });
+          }
         });
-    }, 15_000);
+    };
+
+    runHeartbeat();
+    heartbeatRef.current = setInterval(runHeartbeat, 15_000);
 
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
-  }, [uiState, sessionState, tabLockToken, authFetch, childId, applySession]);
+  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId]);
 
   const finishSession = useCallback(async () => {
     if (!sessionState || !tabLockToken) return;
