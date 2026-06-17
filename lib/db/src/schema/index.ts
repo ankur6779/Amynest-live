@@ -110,6 +110,7 @@ export * from "./speech_progress";
 export * from "./speech_practice_log";
 export * from "./speech_expert_waitlist";
 export * from "./speech_conversation_memory";
+export * from "./speech_coach_v2";
 export * from "./user_feedback";
 export * from "./gaming_wallet";
 export * from "./routine_personalization";

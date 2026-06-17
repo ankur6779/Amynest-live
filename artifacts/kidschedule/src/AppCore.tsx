@@ -99,6 +99,8 @@ const LifeSkillsPage = lazyPage(() => import("@/pages/life-skills"));
 const SpeechCoachPage = lazyPage(() => import("@/pages/speech-coach/index"));
 const SpeechCoachLiveSessionPage = lazyPage(() => import("@/pages/speech-coach/live-speech-coach"));
 const SpeechCoachTalkPage = lazyPage(() => import("@/pages/speech-coach/conversation-coach"));
+const SpeechCoachV2HubPage = lazyPage(() => import("@/features/speech-coach-v2/index"));
+const SpeechCoachV2SessionPage = lazyPage(() => import("@/features/speech-coach-v2/session-page"));
 const TalkingAmyPage = lazyPage(() => import("@/pages/talking-amy/index"));
 const KidsControlCenterPage = lazyPage(() => import("@/pages/kids-control-center"));
 const StudyPage = lazyPage(() => import("@/pages/study"));
@@ -439,6 +441,8 @@ const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
 const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
 const SpeechCoachLiveSessionRoute = makeProtectedRoute(SpeechCoachLiveSessionPage);
 const SpeechCoachTalkRoute = makeProtectedRoute(SpeechCoachTalkPage);
+const SpeechCoachV2HubRoute = makeProtectedRoute(SpeechCoachV2HubPage);
+const SpeechCoachV2SessionRoute = makeProtectedRoute(SpeechCoachV2SessionPage);
 const TalkingAmyRoute = makeProtectedRoute(TalkingAmyPage);
 const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
 const StudyRoute = makeProtectedRoute(StudyPage);
@@ -774,6 +778,8 @@ function AppRoutes() {
           </Route>
           <Route path="/speech-coach/live-session" component={SpeechCoachLiveSessionRoute} />
           <Route path="/speech-coach/talk" component={SpeechCoachTalkRoute} />
+          <Route path="/speech-coach-v2/session" component={SpeechCoachV2SessionRoute} />
+          <Route path="/speech-coach-v2" component={SpeechCoachV2HubRoute} />
           <Route path="/talking-amy" component={TalkingAmyRoute} />
           <Route path="/speech-coach" component={SpeechCoachRoute} />
           <Route path="/parenting-hub/speech-coach/live">

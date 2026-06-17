@@ -67,6 +67,7 @@
     "@workspace/routine-journey": "workspace:*",
     "@workspace/safety": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
+    "@workspace/speech-coach-v2": "workspace:*",
     "@workspace/spelling-audio": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",
     "@workspace/static-audio": "workspace:*",

@@ -164,6 +164,7 @@ export function Layout({
   const isImmersiveRoute =
     isLearningZoneRoute(location) ||
     safePathStartsWith(location, "/speech-coach") ||
+    safePathStartsWith(location, "/speech-coach-v2") ||
     safePathStartsWith(location, "/talking-amy") ||
     safePathStartsWith(location, "/audio-lessons");
   const isAssistantRoute =

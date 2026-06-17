@@ -223,6 +223,32 @@ const EVENT_PROP_SCHEMAS = {
     device_id: z.string().max(128).optional(),
     campaign: z.string().max(64).optional(),
   }),
+
+  // ── Speech Coach V2 (Realtime) ─────────────────────────────────────────
+  speech_coach_v2_session_start: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    ageBand: z.string().max(8).optional(),
+  }),
+  speech_coach_v2_session_complete: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    durationSeconds: z.number().int().nonnegative().optional(),
+    starsEarned: z.number().int().nonnegative().optional(),
+    phaseReached: z.string().max(64).optional(),
+  }),
+  speech_coach_v2_daily_limit: z.object({
+    childId: z.number().int().optional(),
+  }),
+  speech_coach_v2_reconnect: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+  }),
+  speech_coach_v2_ttfa: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    ttfaMs: z.number().int().nonnegative().optional(),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -262,6 +288,11 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   pre_signup_signup_completed: "growth",
   pre_signup_login_completed: "growth",
   pre_signup_signup_conversion: "growth",
+  speech_coach_v2_session_start: "session",
+  speech_coach_v2_session_complete: "session",
+  speech_coach_v2_daily_limit: "session",
+  speech_coach_v2_reconnect: "session",
+  speech_coach_v2_ttfa: "session",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

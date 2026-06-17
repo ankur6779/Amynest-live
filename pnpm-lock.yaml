@@ -376,6 +376,9 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
+      '@workspace/speech-coach-v2':
+        specifier: workspace:*
+        version: link:../../lib/speech-coach-v2
       '@workspace/spelling-audio':
         specifier: workspace:*
         version: link:../../lib/spelling-audio
@@ -647,6 +650,9 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
+      '@workspace/speech-coach-v2':
+        specifier: workspace:*
+        version: link:../../lib/speech-coach-v2
       '@workspace/spelling-audio':
         specifier: workspace:*
         version: link:../../lib/spelling-audio
@@ -1734,6 +1740,12 @@ importers:
   lib/safety: {}
 
   lib/speech-coach:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/speech-coach-v2:
     devDependencies:
       tsx:
         specifier: 'catalog:'

@@ -24,6 +24,7 @@ export const TAB_ROOT_ROUTES = new Set([
 /** Parent Hub modules — open with replace when launched from the hub. */
 export const HUB_MODULE_PREFIXES = [
   "/speech-coach",
+  "/speech-coach-v2",
   "/talking-amy",
   "/phonics",
   "/audio-lessons",
@@ -42,6 +43,8 @@ export const HUB_MODULE_PREFIXES = [
 const PARENT_ROUTE: Record<string, string> = {
   "/speech-coach": "/parenting-hub",
   "/speech-coach/live-session": "/speech-coach",
+  "/speech-coach-v2": "/parenting-hub",
+  "/speech-coach-v2/session": "/speech-coach-v2",
   "/talking-amy": "/parenting-hub",
   "/phonics/test/play": "/phonics",
   "/phonics/test": "/phonics",

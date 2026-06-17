@@ -138,6 +138,8 @@ export const FREE_FEATURE_LIMITS = {
   speech_conversation_seconds: 300,
   /** Whisper / Scribe STT calls per UTC day (Speech Coach pronunciation checks). */
   speech_transcribe: 20,
+  /** Speech Coach V2 Realtime voice — daily seconds budget (10 min, all users). */
+  speech_coach_v2_seconds: 600,
   // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
   nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
@@ -171,6 +173,7 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   hub_speech_coach: "lifetime",
   speech_conversation_seconds: "daily",
   speech_transcribe: "daily",
+  speech_coach_v2_seconds: "daily",
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
   learning_load_more_smart_study: "lifetime",
