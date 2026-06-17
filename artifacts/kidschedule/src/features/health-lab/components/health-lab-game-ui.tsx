@@ -1,9 +1,11 @@
 import type { CSSProperties, PointerEvent, ReactNode, RefObject } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ChevronRight, Gamepad2, Sparkles, Zap } from "lucide-react";
+import { ArrowLeft, ChevronRight, Gamepad2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { GAMES } from "../constants";
+import { formatGamePersonalBest, formatTrainSkills } from "../game-card-utils";
+import type { GameSessionResult } from "../types";
 import { HEALTH_LAB_GAME_BTN, HEALTH_LAB_SECTION_EYEBROW, HEALTH_LAB_SECTION_TITLE, HEALTH_LAB_THEME } from "../theme";
 
 type GameDef = (typeof GAMES)[number];
@@ -90,7 +92,7 @@ export function HealthLabChallengesSection({
           </div>
         </div>
       </div>
-      <div className="grid gap-3.5">{children}</div>
+      <div className="grid gap-2">{children}</div>
     </section>
   );
 }
@@ -98,110 +100,124 @@ export function HealthLabChallengesSection({
 export function HealthLabGameCard({
   game,
   personalBest,
-  bestLabel,
+  gameHistory = [],
   onSelect,
   index = 0,
 }: {
   game: GameDef;
   personalBest?: number;
-  bestLabel?: string;
+  gameHistory?: GameSessionResult[];
   onSelect: () => void;
   index?: number;
 }) {
   const reduced = useReducedMotion();
   const visuals = GAME_VISUALS[game.id];
+  const best = formatGamePersonalBest(game.id, personalBest, gameHistory, game.bestScoreKind);
 
   return (
     <motion.button
       type="button"
       onClick={onSelect}
-      initial={reduced ? false : { opacity: 0, y: 16 }}
+      initial={reduced ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={reduced ? undefined : { y: -2 }}
-      whileTap={reduced ? undefined : { scale: 0.985 }}
-      transition={{ delay: index * 0.06, duration: 0.4, ease: "easeOut" }}
+      whileHover={reduced ? undefined : { y: -1 }}
+      whileTap={reduced ? undefined : { scale: 0.99 }}
+      transition={{ delay: index * 0.04, duration: 0.35, ease: "easeOut" }}
       className={cn(
         HEALTH_LAB_GAME_BTN,
         "health-lab-premium-card group w-full text-left",
         "health-lab-game-card-shimmer",
       )}
       style={{
-        boxShadow: `0 18px 50px -22px rgba(0,0,0,0.8), 0 0 60px -28px ${visuals.glow}`,
+        boxShadow: `0 12px 36px -18px rgba(0,0,0,0.75), 0 0 40px -24px ${visuals.glow}`,
       }}
     >
-      <div className="health-lab-premium-card-inner relative overflow-hidden p-4">
+      <div className="health-lab-premium-card-inner relative overflow-hidden px-3 py-2.5">
         <div
-          className={cn("pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r opacity-80", visuals.accent)}
+          className={cn("pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r opacity-70", visuals.accent)}
           aria-hidden
         />
         <div
-          className={cn("pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300 group-hover:opacity-90", `bg-gradient-to-br ${game.theme}`)}
-          style={{ maskImage: "linear-gradient(135deg, black 0%, transparent 58%)" }}
+          className={cn(
+            "pointer-events-none absolute inset-0 opacity-40 transition-opacity duration-300 group-hover:opacity-55",
+            `bg-gradient-to-br ${game.theme}`,
+          )}
+          style={{ maskImage: "linear-gradient(135deg, black 0%, transparent 52%)" }}
           aria-hidden
         />
-        <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/[0.05] blur-3xl" aria-hidden />
 
-        <div className="relative flex items-center gap-4">
-          <div className="relative shrink-0">
+        <span
+          className="absolute right-2 top-2 z-[1] flex h-4 min-w-4 items-center justify-center rounded-full border border-white/10 bg-black/40 px-1 text-[9px] font-bold text-white/50"
+          aria-hidden
+        >
+          {index + 1}
+        </span>
+
+        <div className="relative flex items-stretch gap-2.5">
+          <div className="relative shrink-0 self-start pt-0.5">
             <div
               className={cn(
-                "health-lab-icon-halo absolute -inset-2 rounded-[1.35rem] blur-md",
-                `bg-gradient-to-br ${visuals.accent}`,
-              )}
-              style={{ opacity: 0.35 }}
-              aria-hidden
-            />
-            <div
-              className={cn(
-                "relative flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-[1.15rem]",
-                "border border-white/20 bg-gradient-to-br shadow-xl",
+                "relative flex h-11 w-11 items-center justify-center rounded-xl",
+                "border border-white/18 bg-gradient-to-br shadow-md",
                 visuals.ring,
                 !reduced && "health-lab-icon-float",
               )}
-              style={{ boxShadow: `0 10px 28px -10px ${visuals.glow}, inset 0 1px 0 rgba(255,255,255,0.35)` }}
+              style={{ boxShadow: `0 6px 18px -8px ${visuals.glow}, inset 0 1px 0 rgba(255,255,255,0.28)` }}
             >
-              <span className="text-[2rem] drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]" aria-hidden>
+              <span className="text-[1.35rem] drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]" aria-hidden>
                 {game.emoji}
               </span>
             </div>
-            <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-[#0f1538]/90 text-[10px] font-bold text-violet-200/80">
-              {index + 1}
-            </span>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <p className="text-[15px] font-semibold tracking-tight text-white drop-shadow-sm">{game.title}</p>
+          <div className="min-w-0 flex-1 pr-6">
+            <h3 className="text-[13px] font-semibold leading-snug tracking-tight text-white">{game.title}</h3>
+            <p className="mt-0.5 text-[11px] leading-snug text-white/70">{game.benefitLine}</p>
+
+            <div className="mt-1 flex flex-wrap gap-1">
+              {game.skillTags.map((tag) => (
+                <span
+                  key={tag}
+                  className={cn(
+                    "rounded-md border px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
+                    visuals.badge,
+                  )}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", visuals.badge)}>
+
+            <p className="mt-1 text-[10px] leading-snug text-white/55">
+              <span className="font-semibold uppercase tracking-[0.12em] text-white/35">Trains</span>
+              {" · "}
+              {formatTrainSkills(game.trains)}
+            </p>
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-white/50">
+              <span className={cn("rounded-md border px-1.5 py-px font-medium", visuals.badge)}>
                 {game.durationHint}
               </span>
-              <span className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/55">
-                {SENSOR_LABELS[game.sensor]}
-              </span>
+              <span className="text-white/45">{SENSOR_LABELS[game.sensor]}</span>
+              {best && (
+                <span className="font-medium text-amber-200/90">
+                  {best.icon} {best.label}: {best.value}
+                </span>
+              )}
             </div>
-            <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-white/60">{game.subtitle}</p>
-            {personalBest != null && bestLabel && (
-              <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-amber-300/20 bg-gradient-to-r from-amber-400/15 to-orange-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
-                <Sparkles className="h-3 w-3 text-amber-300" />
-                {bestLabel}: {personalBest}
-              </p>
-            )}
           </div>
 
-          <div className="flex shrink-0 flex-col items-center gap-1.5">
+          <div className="flex shrink-0 flex-col items-center justify-center self-center gap-0.5 pl-0.5">
             <div
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full",
-                "border border-white/15 bg-gradient-to-br from-white/[0.12] to-white/[0.04]",
-                "text-white/80 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)]",
-                "transition-all duration-300 group-hover:border-white/30 group-hover:from-violet-400/25 group-hover:to-cyan-400/15 group-hover:text-white",
+                "flex h-8 w-8 items-center justify-center rounded-full",
+                "border border-white/12 bg-white/[0.08] text-white/75",
+                "transition-all duration-200 group-hover:border-white/25 group-hover:bg-violet-400/20 group-hover:text-white",
               )}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-300/50 transition-colors group-hover:text-violet-200/80">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-violet-300/45 group-hover:text-violet-200/75">
               Play
             </span>
           </div>

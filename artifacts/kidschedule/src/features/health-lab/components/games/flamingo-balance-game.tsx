@@ -6,18 +6,29 @@ import { useMotionSensor } from "../../hooks/use-motion-sensor";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
 import { HealthLabGameStage, HealthLabGameTopBar, HealthLabGameChips, HealthLabGamePanel } from "../health-lab-game-ui";
-import {
-  HealthLabMissionBanner,
-  HealthLabSkyIslandScene,
-  HealthLabStarfield,
-} from "../health-lab-cinematic";
+import { HealthLabProgressRing } from "../health-lab-progress-ring";
+import { HealthLabPhaseFlash, HealthLabStarfield } from "../health-lab-cinematic";
 import { HealthLabGameOnboarding } from "../health-lab-onboarding";
 import { HealthLabMotionCalibration } from "../health-lab-motion-calibration";
 import { HealthLabMotionDebugOverlay } from "../health-lab-debug-overlay";
-import { HealthLabGuidance } from "../health-lab-amy-character";
-import { HealthLabBalanceRing, HealthLabProgressRing } from "../health-lab-progress-ring";
+import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { SessionCompleteOptions } from "../../types";
+import {
+  getIslandEvolution,
+  getStabilityVisualTier,
+  SKY_ISLAND_MAX_SECONDS,
+  SKY_ISLAND_MILESTONES,
+} from "./sky-island/sky-island-constants";
+import { SkyIslandStabilityMeter } from "./sky-island/sky-island-stability-meter";
+import { SkyIslandPremiumScene } from "./sky-island/sky-island-scene";
+import {
+  SkyIslandEncouragement,
+  SkyIslandMilestoneBurst,
+  SkyIslandParticles,
+  SkyIslandToast,
+  SkyIslandVictory,
+} from "./sky-island/sky-island-effects";
 
 interface Props {
   onComplete: (score: number, durationMs: number, options?: SessionCompleteOptions) => void;
@@ -32,19 +43,31 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
   const [difficulty, setDifficulty] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [weather, setWeather] = useState<"calm" | "wind">("calm");
-  const [liveMsg, setLiveMsg] = useState("Sky Island Survival");
+  const [liveMsg, setLiveMsg] = useState("Protect your floating island — stay balanced!");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [milestoneBurst, setMilestoneBurst] = useState(false);
+  const [showEncouragement, setShowEncouragement] = useState(false);
+  const [showVictory, setShowVictory] = useState(false);
+  const [legendaryVictory, setLegendaryVictory] = useState(false);
   const startRef = useRef<number | null>(null);
   const stabilitySamples = useRef<number[]>([]);
   const varianceSamples = useRef<number[]>([]);
   const finishingRef = useRef(false);
+  const lastMilestoneRef = useRef(0);
+  const victoryTriggeredRef = useRef(false);
+  const unstableSinceRef = useRef<number | null>(null);
 
   const sensorActive = phase === "calibrating" || phase === "playing";
   const sensor = useMotionSensor(sensorActive, childId);
-  const { playTap, playSuccess, playMilestone } = useHealthLabAudio();
+  const { playTap, playSuccess, playMilestone, playCompletion } = useHealthLabAudio();
   const reduced = useReducedMotion();
 
   const minDuration = FLAMINGO_MIN_DURATION[difficulty] ?? 15;
   const progress = Math.min(1, elapsed / minDuration);
+  const evolution = getIslandEvolution(elapsed);
+  const stabilityTier = getStabilityVisualTier(sensor.balanceZone, sensor.stabilityPercent);
+  const particleIntensity = Math.min(1, elapsed / SKY_ISLAND_MAX_SECONDS);
+  const flowerShake = sensor.balanceZone === "unstable" || showEncouragement;
 
   const beginCalibration = useCallback(async () => {
     playTap();
@@ -54,13 +77,16 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
     startRef.current = Date.now();
     stabilitySamples.current = [];
     varianceSamples.current = [];
+    lastMilestoneRef.current = 0;
+    victoryTriggeredRef.current = false;
+    unstableSinceRef.current = null;
     setElapsed(0);
     setPhase("playing");
-    setLiveMsg("Keep the island steady!");
+    setLiveMsg("Keep the island steady — you're its guardian!");
   }, [playTap, sensor]);
 
-  const finish = useCallback(() => {
-    if (phase !== "playing" || finishingRef.current) return;
+  const finishSession = useCallback(() => {
+    if (finishingRef.current) return;
     finishingRef.current = true;
     setPhase("done");
     const durationMs = startRef.current ? Date.now() - startRef.current : 0;
@@ -85,7 +111,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
       computeBalanceScore(elapsed, avgStability, difficulty),
       verdict,
     );
-    void playSuccess();
+    void playSuccess(score >= 90);
     setLiveMsg("Island saved!");
 
     onComplete(score, durationMs, {
@@ -94,7 +120,12 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
       eligibleForBadges: verdict.eligibleForBadges,
       eligibleForXp: verdict.eligibleForXp,
     });
-  }, [phase, elapsed, difficulty, sensor, minDuration, onComplete, playSuccess]);
+  }, [elapsed, difficulty, sensor, minDuration, onComplete, playSuccess]);
+
+  const handleVictoryDismiss = useCallback(() => {
+    setShowVictory(false);
+    finishSession();
+  }, [finishSession]);
 
   useEffect(() => {
     if (phase !== "playing") return;
@@ -105,101 +136,202 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
         setElapsed(sec);
         stabilitySamples.current.push(sensor.stabilityPercent);
         varianceSamples.current.push(sensor.variance);
-        if (Math.random() < 0.015 + difficulty * 0.004) {
+
+        if (Math.random() < 0.012 + difficulty * 0.003) {
           setWeather((w) => (w === "calm" ? "wind" : "calm"));
         }
-        if (sec >= minDuration && sensor.stabilityPercent >= 45) {
-          finish();
+
+        for (const m of SKY_ISLAND_MILESTONES) {
+          if (sec >= m.seconds && lastMilestoneRef.current < m.seconds) {
+            lastMilestoneRef.current = m.seconds;
+            setToastMessage(`${m.emoji} ${m.label}!`);
+            setLiveMsg(m.label);
+            setMilestoneBurst(true);
+            void playMilestone();
+            setTimeout(() => setMilestoneBurst(false), 800);
+            setTimeout(() => setToastMessage(null), 2400);
+          }
         }
-        if (Math.floor(sec) > 0 && Math.floor(sec) % 5 === 0 && sec - Math.floor(sec) < 0.15) {
-          void playMilestone();
+
+        if (sensor.balanceZone === "unstable" || sensor.stabilityPercent < 40) {
+          if (unstableSinceRef.current == null) unstableSinceRef.current = Date.now();
+          else if (Date.now() - unstableSinceRef.current > 2200) {
+            setShowEncouragement(true);
+            setTimeout(() => setShowEncouragement(false), 2800);
+            unstableSinceRef.current = null;
+          }
+        } else {
+          unstableSinceRef.current = null;
+          setShowEncouragement(false);
+        }
+
+        const readyToComplete = sec >= minDuration && sensor.stabilityPercent >= 45;
+        const legendary = sec >= SKY_ISLAND_MAX_SECONDS;
+
+        if ((readyToComplete || legendary) && !victoryTriggeredRef.current) {
+          victoryTriggeredRef.current = true;
+          setLegendaryVictory(legendary);
+          setShowVictory(true);
+          void playCompletion();
         }
       }
     }, 100);
     return () => clearInterval(id);
-  }, [phase, sensor.stabilityPercent, sensor.variance, difficulty, minDuration, finish, playMilestone]);
+  }, [phase, sensor.stabilityPercent, sensor.balanceZone, sensor.variance, difficulty, minDuration, playMilestone, playCompletion]);
 
-  const wobble = reduced ? 0 : (100 - sensor.stabilityPercent) * (0.25 + difficulty * 0.06) + (weather === "wind" ? 3 : 0);
+  const wobble = reduced
+    ? 0
+    : (100 - sensor.stabilityPercent) * (0.22 + difficulty * 0.05) + (weather === "wind" ? 2.5 : 0);
 
   if (phase === "onboarding") {
     return (
-      <>
-        <HealthLabGameOnboarding
-          gameId="flamingo-balance"
-          onExit={onExit}
-          onStart={beginCalibration}
-          startLabel="Start Survival"
-          ctaVariant="rose"
-          extraContent={
-            <>
-              {sensor.simulated && (
-                <HealthLabGamePanel className="mt-4 w-full text-center text-xs text-amber-200">
-                  Simulation mode — enable motion sensors for full experience
-                </HealthLabGamePanel>
-              )}
-              <HealthLabGameChips
-                options={FLAMINGO_DIFFICULTIES}
-                selected={difficulty}
-                onSelect={(i) => { setDifficulty(i); playTap(); }}
-                className="mt-4"
-              />
-            </>
-          }
-        />
-      </>
+      <HealthLabGameOnboarding
+        gameId="flamingo-balance"
+        onExit={onExit}
+        onStart={beginCalibration}
+        startLabel="Start Survival"
+        ctaVariant="rose"
+        extraContent={
+          <>
+            {sensor.simulated && (
+              <HealthLabGamePanel className="mt-4 w-full text-center text-xs text-amber-200">
+                Simulation mode — enable motion sensors for full experience
+              </HealthLabGamePanel>
+            )}
+            <HealthLabGameChips
+              options={FLAMINGO_DIFFICULTIES}
+              selected={difficulty}
+              onSelect={(i) => {
+                setDifficulty(i);
+                playTap();
+              }}
+              className="mt-4"
+            />
+          </>
+        }
+      />
     );
   }
 
   return (
-    <HealthLabGameStage gameId="flamingo-balance" className="items-center justify-center px-4 pb-8">
+    <HealthLabGameStage
+      gameId="flamingo-balance"
+      fullBleed
+      className="relative h-[100dvh] overflow-hidden bg-gradient-to-b from-sky-400/80 via-teal-300/40 to-emerald-200/30"
+    >
       <HealthLabLiveRegion message={liveMsg} />
-      <HealthLabGameTopBar onExit={onExit} title="Sky Island" />
-      <HealthLabStarfield count={16} />
+      <HealthLabStarfield count={14} />
+      <HealthLabPhaseFlash active={milestoneBurst} color="rgba(52,211,153,0.35)" />
       <HealthLabMotionDebugOverlay sensor={sensor} />
 
-      {phase === "calibrating" && (
-        <HealthLabMotionCalibration progress={sensor.calibrationProgress} />
-      )}
-
-      {weather === "wind" && phase === "playing" && !reduced && (
-        <HealthLabMissionBanner
-          eyebrow="Weather alert"
-          title="💨 Wind gust!"
-          subtitle="Hold steady — the island is shaking"
-          tone="danger"
-          className="absolute left-4 right-4 top-20 z-[3] mx-auto max-w-sm"
-        />
-      )}
-
-      {/* Balance ring + island */}
-      <div className="relative z-[3] mt-4 flex flex-col items-center">
-        {phase === "playing" && (
-          <HealthLabBalanceRing
-            zone={sensor.balanceZone}
-            stability={sensor.stabilityPercent}
-            className="mb-4"
-          />
-        )}
-        <HealthLabSkyIslandScene
-          wobble={wobble}
-          weather={weather}
-          reduced={reduced}
-          balanceZone={sensor.balanceZone}
-        />
+      <div className="relative z-20 shrink-0">
+        <HealthLabGameTopBar onExit={onExit} title="Sky Island" />
       </div>
 
-      {/* Progress ring */}
-      {phase === "playing" && (
-        <div className="relative z-[3] mt-6 flex flex-col items-center gap-3">
-          <HealthLabProgressRing progress={progress} tone="rose" size={90}>
-            <span className="font-mono text-xl font-bold tabular-nums text-white">
-              {Math.max(0, minDuration - elapsed).toFixed(0)}s
-            </span>
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-white/50">to go</span>
-          </HealthLabProgressRing>
-          <HealthLabGuidance messages={GUIDANCE_MESSAGES.balance} />
+      {phase === "calibrating" && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center">
+          <HealthLabMotionCalibration progress={sensor.calibrationProgress} />
         </div>
       )}
+
+      {/* Evolution label + milestone rail — absolute, no layout shift */}
+      {phase === "playing" && (
+        <div className="absolute left-0 right-0 top-[3.75rem] z-[3] px-3">
+          <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md">
+            <p className="mb-1.5 text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-200/70">
+              {evolution.label}
+            </p>
+            <div className="flex justify-between gap-0.5">
+              {SKY_ISLAND_MILESTONES.map((m) => (
+                <div key={m.seconds} className="flex flex-col items-center gap-0.5">
+                  <span
+                    className={cn(
+                      "text-sm transition-all duration-500",
+                      elapsed >= m.seconds
+                        ? "scale-110 opacity-100 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]"
+                        : "opacity-25 grayscale",
+                    )}
+                    aria-hidden
+                  >
+                    {m.emoji}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {weather === "wind" && phase === "playing" && (
+        <div className="pointer-events-none absolute left-1/2 top-[6.5rem] z-[4] -translate-x-1/2">
+          <p className="rounded-full border border-slate-300/30 bg-slate-500/20 px-4 py-1.5 text-xs font-bold text-white/90 backdrop-blur-md">
+            💨 Wind gust — hold steady!
+          </p>
+        </div>
+      )}
+
+      {/* Island playfield — fixed region */}
+      {phase === "playing" && (
+        <div className="absolute inset-x-0 bottom-[10rem] top-[7rem] z-[2] flex items-center justify-center">
+          <SkyIslandMilestoneBurst active={milestoneBurst} reduced={reduced} />
+          <SkyIslandToast message={toastMessage} />
+          <SkyIslandEncouragement visible={showEncouragement} />
+          <SkyIslandParticles
+            active={sensor.balanceZone !== "unstable"}
+            intensity={particleIntensity}
+            tier={stabilityTier}
+            reduced={reduced}
+          />
+          <SkyIslandPremiumScene
+            evolution={evolution}
+            wobble={wobble}
+            weather={weather}
+            stabilityTier={stabilityTier}
+            balanceZone={sensor.balanceZone}
+            reduced={reduced}
+            showParadise={showVictory}
+            flowerShake={flowerShake}
+          />
+        </div>
+      )}
+
+      {/* FIXED bottom HUD — stability meter + progress never move */}
+      {phase === "playing" && (
+        <>
+          <div
+            className="absolute left-4 z-30"
+            style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+          >
+            <SkyIslandStabilityMeter tier={stabilityTier} stability={sensor.stabilityPercent} />
+          </div>
+
+          <div
+            className="absolute right-4 z-30"
+            style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+          >
+            <HealthLabProgressRing progress={progress} tone="rose" size={90}>
+              <span className="font-mono text-xl font-bold tabular-nums text-white">
+                {Math.max(0, minDuration - elapsed).toFixed(0)}s
+              </span>
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-white/50">
+                to go
+              </span>
+            </HealthLabProgressRing>
+          </div>
+
+          <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 px-16 text-center text-[10px] leading-relaxed text-white/55">
+            {GUIDANCE_MESSAGES.balance[Math.min(Math.floor(elapsed / 10), GUIDANCE_MESSAGES.balance.length - 1)]}
+          </p>
+        </>
+      )}
+
+      <SkyIslandVictory
+        show={showVictory}
+        elapsed={elapsed}
+        legendary={legendaryVictory}
+        reduced={reduced}
+        onDismiss={handleVictoryDismiss}
+      />
     </HealthLabGameStage>
   );
 }

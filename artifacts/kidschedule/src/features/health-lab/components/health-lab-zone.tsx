@@ -126,7 +126,12 @@ export function HealthLabZone({ childId, childName }: Props) {
     };
     switch (gameId) {
       case "breath-control":
-        return <BreathControlGame {...common} />;
+        return (
+          <BreathControlGame
+            {...common}
+            previousBestScore={state.personalBests["breath-control"]}
+          />
+        );
       case "flamingo-balance":
         return <FlamingoBalanceGame {...common} childId={childId} />;
       case "reaction-time":

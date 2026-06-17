@@ -209,7 +209,7 @@ export function HealthLabHome({
             game={game}
             index={index}
             personalBest={state.personalBests[game.id]}
-            bestLabel={t("best", "Best")}
+            gameHistory={state.gameHistory}
             onSelect={() => onSelectGame(game.id)}
           />
         ))}

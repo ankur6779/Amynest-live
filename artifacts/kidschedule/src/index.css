@@ -2583,11 +2583,27 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   }
 }
 
+@keyframes healthLabBalloonVictoryShake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate3d(-2px, 1px, 0); }
+  20%, 40%, 60%, 80% { transform: translate3d(2px, -1px, 0); }
+}
+
+.health-lab-balloon-victory-shake {
+  animation: healthLabBalloonVictoryShake 0.5s ease-in-out;
+}
+
+.health-lab-island-meter-shake {
+  animation: healthLabBalloonVictoryShake 0.35s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .health-lab-glow-pulse,
   .health-lab-score-reveal,
   .health-lab-island-rise,
-  .health-lab-reward-enter {
+  .health-lab-reward-enter,
+  .health-lab-balloon-victory-shake,
+  .health-lab-island-meter-shake {
     animation: none !important;
   }
 }

@@ -1,56 +1,245 @@
-import type { CSSProperties } from "react";
+import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Fingerprint } from "lucide-react";
-import { BREATH_MILESTONES, GUIDANCE_MESSAGES } from "../../constants";
+import { GUIDANCE_MESSAGES } from "../../constants";
 import { computeBreathScore } from "../../scoring";
 import { validateBreathSession, applyCheatMultiplier } from "../../anti-cheat";
 import { useHealthLabAudio } from "../../hooks/use-health-lab-audio";
 import { HealthLabLiveRegion } from "../health-lab-live-region";
-import {
-  HealthLabGameStage,
-  HealthLabGameTopBar,
-  HealthLabGameTimer,
-  HealthLabHoldOrb,
-} from "../health-lab-game-ui";
-import {
-  HealthLabAltitudeBadge,
-  HealthLabPhaseFlash,
-  HealthLabStarfield,
-} from "../health-lab-cinematic";
+import { HealthLabGameStage, HealthLabGameTopBar, HealthLabGameTimer } from "../health-lab-game-ui";
+import { HealthLabPhaseFlash } from "../health-lab-cinematic";
 import { HealthLabGameOnboarding } from "../health-lab-onboarding";
-import { HealthLabGuidance } from "../health-lab-amy-character";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { getProceduralAudioContext } from "@/lib/procedural-sfx";
 import type { SessionCompleteOptions } from "../../types";
+import {
+  BALLOON_JOURNEY_MILESTONES,
+  BALLOON_MAX_SECONDS,
+  computeAltitudeMeters,
+  getBalloonGlowTier,
+} from "./balloon-journey/balloon-journey-constants";
+import { BalloonJourneySky } from "./balloon-journey/balloon-journey-sky";
+import { BalloonJourneyBalloon } from "./balloon-journey/balloon-journey-balloon";
+import {
+  BalloonJourneyEnergyStream,
+  BalloonJourneyMilestoneBurst,
+  BalloonJourneyParticles,
+  BalloonJourneyPressHint,
+  BalloonJourneyToast,
+  BalloonJourneyVictory,
+} from "./balloon-journey/balloon-journey-effects";
+import { BalloonJourneyHoldButton } from "./balloon-journey/balloon-journey-hold-button";
+import { useBalloonPhysics } from "./balloon-journey/use-balloon-physics";
 
 interface Props {
   onComplete: (score: number, durationMs: number, options?: SessionCompleteOptions) => void;
   onExit: () => void;
+  previousBestScore?: number;
 }
 
-export function BreathControlGame({ onComplete, onExit }: Props) {
+function hapticHoldPress(): void {
+  try {
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(12);
+    }
+  } catch {
+    /* optional */
+  }
+}
+
+function useBalloonWindAmbience(holding: boolean) {
+  const windRef = useRef<{ source: AudioBufferSourceNode; gain: GainNode } | null>(null);
+
+  useEffect(() => {
+    const ctx = getProceduralAudioContext();
+
+    if (!holding) {
+      const active = windRef.current;
+      if (active && ctx) {
+        try {
+          active.gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+          setTimeout(() => {
+            try {
+              active.source.stop();
+            } catch {
+              /* already stopped */
+            }
+          }, 250);
+        } catch {
+          /* ignore */
+        }
+      }
+      windRef.current = null;
+      return;
+    }
+
+    if (!ctx) return;
+
+    const bufferSize = ctx.sampleRate * 2;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 400;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.001;
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start();
+
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(0.012, now + 0.4);
+
+    windRef.current = { source, gain };
+
+    return () => {
+      try {
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        setTimeout(() => {
+          try {
+            source.stop();
+          } catch {
+            /* already stopped */
+          }
+        }, 250);
+      } catch {
+        /* ignore */
+      }
+      windRef.current = null;
+    };
+  }, [holding]);
+}
+
+function useBalloonRiseSound(holding: boolean, momentum: number) {
+  const oscRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
+
+  useEffect(() => {
+    const ctx = getProceduralAudioContext();
+
+    if (!holding) {
+      const active = oscRef.current;
+      if (active && ctx) {
+        try {
+          active.gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+          setTimeout(() => {
+            try {
+              active.osc.stop();
+            } catch {
+              /* already stopped */
+            }
+          }, 200);
+        } catch {
+          /* ignore */
+        }
+      }
+      oscRef.current = null;
+      return;
+    }
+
+    if (!ctx || oscRef.current) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = 180 + momentum * 120;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.001;
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(0.008, now + 0.25);
+
+    oscRef.current = { osc, gain };
+
+    return () => {
+      try {
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        setTimeout(() => {
+          try {
+            osc.stop();
+          } catch {
+            /* already stopped */
+          }
+        }, 200);
+      } catch {
+        /* ignore */
+      }
+      oscRef.current = null;
+    };
+  }, [holding]);
+
+  useEffect(() => {
+    const active = oscRef.current;
+    const ctx = getProceduralAudioContext();
+    if (!active || !ctx || !holding) return;
+    const target = 180 + momentum * 120;
+    active.osc.frequency.setTargetAtTime(target, ctx.currentTime, 0.12);
+  }, [holding, momentum]);
+}
+
+export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }: Props) {
   const [phase, setPhase] = useState<"onboarding" | "playing">("onboarding");
   const [holding, setHolding] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [celebrateMilestone, setCelebrateMilestone] = useState<string | null>(null);
-  const [liveMsg, setLiveMsg] = useState("Hold the glowing button to start your balloon journey");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [milestoneBurst, setMilestoneBurst] = useState(false);
+  const [showVictory, setShowVictory] = useState(false);
+  const [liveMsg, setLiveMsg] = useState("Hold the glowing button to help your balloon fly higher");
   const startRef = useRef<number | null>(null);
   const touchMovesRef = useRef<number[]>([]);
   const pointerCountRef = useRef(0);
   const lastMilestoneRef = useRef(0);
   const holdButtonRef = useRef<HTMLButtonElement>(null);
   const activePointerRef = useRef<number | null>(null);
-  const { playTap, playSuccess, playMilestone } = useHealthLabAudio();
+  const victoryTriggeredRef = useRef(false);
+  const { playTap, playSuccess, playMilestone, playCompletion } = useHealthLabAudio();
   const reduced = useReducedMotion();
+  const physics = useBalloonPhysics(holding, !finished, reduced);
+
+  useBalloonWindAmbience(holding && !finished && !reduced);
+  useBalloonRiseSound(holding && !finished && !reduced, physics.momentum);
+
+  const altitude = computeAltitudeMeters(elapsed);
+  const glowTier = getBalloonGlowTier(elapsed);
+  const particleIntensity = Math.min(1, elapsed / BALLOON_MAX_SECONDS);
 
   const touchStability =
     touchMovesRef.current.length < 2
       ? 100
       : Math.max(0, 100 - (Math.max(...touchMovesRef.current) - Math.min(...touchMovesRef.current)) * 150);
   const goldenMode = holding && touchStability >= 85 && elapsed >= 10;
-  const showRainbow = goldenMode && !reduced;
+
+  const projectedScore = (() => {
+    const moves = touchMovesRef.current;
+    const totalMovement = moves.reduce((a, b) => a + b, 0);
+    const stability =
+      moves.filter((m) => m > 0).length < 2
+        ? Math.min(70, 40 + totalMovement * 5)
+        : Math.max(0, 100 - (Math.max(...moves) - Math.min(...moves)) * 200);
+    const verdict = validateBreathSession({
+      holdSeconds: elapsed,
+      touchMoves: moves,
+      pointerCount: pointerCountRef.current,
+    });
+    return applyCheatMultiplier(computeBreathScore(elapsed, stability), verdict);
+  })();
+  const isVictoryPersonalBest = projectedScore > previousBestScore;
 
   useEffect(() => {
     if (!holding || finished) return;
@@ -58,26 +247,28 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
       if (startRef.current) {
         const sec = (Date.now() - startRef.current) / 1000;
         setElapsed(sec);
-        for (const m of BREATH_MILESTONES) {
+
+        for (const m of BALLOON_JOURNEY_MILESTONES) {
           if (sec >= m.seconds && lastMilestoneRef.current < m.seconds) {
             lastMilestoneRef.current = m.seconds;
-            setCelebrateMilestone(`${m.emoji} ${m.label} level!`);
-            setLiveMsg(`Reached ${m.label} level`);
+            setToastMessage(`${m.emoji} ${m.label}`);
+            setLiveMsg(m.label);
+            setMilestoneBurst(true);
             void playMilestone();
-            setTimeout(() => setCelebrateMilestone(null), 2000);
+            setTimeout(() => setMilestoneBurst(false), 800);
+            setTimeout(() => setToastMessage(null), 2200);
           }
+        }
+
+        if (sec >= BALLOON_MAX_SECONDS && !victoryTriggeredRef.current) {
+          victoryTriggeredRef.current = true;
+          setShowVictory(true);
+          void playCompletion();
         }
       }
     }, 50);
     return () => clearInterval(id);
-  }, [holding, finished, playMilestone]);
-
-  const milestone = [...BREATH_MILESTONES].reverse().find((m) => elapsed >= m.seconds);
-  const bgProgress = Math.min(1, elapsed / 60);
-  const inflate = Math.min(elapsed / 60, 1);
-  const balloonW = 56 + inflate * 52;
-  const balloonH = 72 + inflate * 68;
-  const rise = reduced ? 0 : inflate * 40;
+  }, [holding, finished, playMilestone, playCompletion]);
 
   const releasePointer = useCallback((pointerId?: number) => {
     const btn = holdButtonRef.current;
@@ -92,50 +283,73 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
     activePointerRef.current = null;
   }, []);
 
-  const handleEnd = useCallback((pointerId?: number) => {
-    if (finished || !holding) return;
-    const durationMs = startRef.current ? Date.now() - startRef.current : 0;
-    if (durationMs < 200) {
+  const finishSession = useCallback(
+    (durationMs: number) => {
+      const holdSeconds = durationMs / 1000;
+      const moves = touchMovesRef.current;
+      const totalMovement = moves.reduce((a, b) => a + b, 0);
+      const stability =
+        moves.filter((m) => m > 0).length < 2
+          ? Math.min(70, 40 + totalMovement * 5)
+          : Math.max(0, 100 - (Math.max(...moves) - Math.min(...moves)) * 200);
+
+      const verdict = validateBreathSession({
+        holdSeconds,
+        touchMoves: moves,
+        pointerCount: pointerCountRef.current,
+      });
+
+      const score = applyCheatMultiplier(computeBreathScore(holdSeconds, stability), verdict);
+      void playSuccess(score >= 95);
+      setLiveMsg(`Journey complete. Score ${score}`);
+      onComplete(score, durationMs, {
+        cheatFlags: verdict.flags,
+        eligibleForBadges: verdict.eligibleForBadges,
+        eligibleForXp: verdict.eligibleForXp,
+      });
+    },
+    [onComplete, playSuccess],
+  );
+
+  const handleEnd = useCallback(
+    (pointerId?: number) => {
+      if (finished || !holding) return;
+      const durationMs = startRef.current ? Date.now() - startRef.current : 0;
+      if (durationMs < 200) {
+        releasePointer(pointerId);
+        setHolding(false);
+        startRef.current = null;
+        setElapsed(0);
+        setLiveMsg("Place your finger on the glowing circle and hold steady");
+        return;
+      }
       releasePointer(pointerId);
       setHolding(false);
-      startRef.current = null;
-      setElapsed(0);
-      setLiveMsg("Place your finger on the glowing circle and hold steady");
-      return;
+      setFinished(true);
+      finishSession(durationMs);
+    },
+    [finished, holding, finishSession, releasePointer],
+  );
+
+  const handleVictoryDismiss = useCallback(() => {
+    setShowVictory(false);
+    if (!finished && startRef.current) {
+      setFinished(true);
+      setHolding(false);
+      releasePointer();
+      finishSession(Date.now() - startRef.current);
     }
-    releasePointer(pointerId);
-    setHolding(false);
-    setFinished(true);
-    const holdSeconds = durationMs / 1000;
-    const moves = touchMovesRef.current;
-    const totalMovement = moves.reduce((a, b) => a + b, 0);
-    const stability =
-      moves.filter((m) => m > 0).length < 2
-        ? Math.min(70, 40 + totalMovement * 5)
-        : Math.max(0, 100 - (Math.max(...moves) - Math.min(...moves)) * 200);
-
-    const verdict = validateBreathSession({
-      holdSeconds,
-      touchMoves: moves,
-      pointerCount: pointerCountRef.current,
-    });
-
-    let score = applyCheatMultiplier(computeBreathScore(holdSeconds, stability), verdict);
-    void playSuccess(score >= 95);
-    setLiveMsg(`Journey complete. Score ${score}`);
-    onComplete(score, durationMs, {
-      cheatFlags: verdict.flags,
-      eligibleForBadges: verdict.eligibleForBadges,
-      eligibleForXp: verdict.eligibleForXp,
-    });
-  }, [finished, holding, onComplete, playSuccess, releasePointer]);
+  }, [finished, finishSession, releasePointer]);
 
   if (phase === "onboarding") {
     return (
       <HealthLabGameOnboarding
         gameId="breath-control"
         onExit={onExit}
-        onStart={() => { playTap(); setPhase("playing"); }}
+        onStart={() => {
+          playTap();
+          setPhase("playing");
+        }}
         startLabel="Start Journey"
         ctaVariant="primary"
       />
@@ -145,253 +359,153 @@ export function BreathControlGame({ onComplete, onExit }: Props) {
   return (
     <HealthLabGameStage
       gameId="breath-control"
-      className="items-center justify-center px-4 pb-8"
-      style={{
-        background: `linear-gradient(180deg, 
-          hsl(${120 - bgProgress * 80}, 60%, ${45 - bgProgress * 25}%) 0%, 
-          hsl(${220 + bgProgress * 40}, 70%, ${25 + bgProgress * 15}%) 100%)`,
-      } as CSSProperties}
+      fullBleed
+      className="relative h-[100dvh] overflow-hidden"
     >
       <HealthLabLiveRegion message={liveMsg} />
-      <HealthLabGameTopBar onExit={onExit} title="Balloon Journey" />
-      <HealthLabStarfield count={bgProgress > 0.35 ? 20 : 16} />
-      <HealthLabPhaseFlash active={!!celebrateMilestone} color="rgba(251,191,36,0.4)" />
+      <BalloonJourneySky elapsed={elapsed} altitude={altitude} reduced={reduced} />
+      <HealthLabPhaseFlash active={milestoneBurst} color="rgba(251,191,36,0.4)" />
 
-      {/* Journey map */}
-      <div className="relative z-[3] mb-4 w-full max-w-sm rounded-2xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-md">
-        <div className="flex justify-between">
-          {BREATH_MILESTONES.map((m) => (
-            <div key={m.label} className="flex flex-col items-center gap-1">
-              <span
-                className={cn(
-                  "text-lg transition-all duration-500",
-                  elapsed >= m.seconds ? "scale-110 opacity-100 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" : "opacity-25 grayscale",
-                )}
-                aria-hidden
-              >
-                {m.emoji}
-              </span>
-              <span className={cn("text-[9px] font-medium uppercase tracking-wide", elapsed >= m.seconds ? "text-amber-200/90" : "text-white/30")}>
-                {m.label}
-              </span>
-            </div>
-          ))}
+      {/* Top bar — fixed height, no layout coupling to game area */}
+      <div className="relative z-20 shrink-0">
+        <HealthLabGameTopBar onExit={onExit} title="Balloon Journey" />
+      </div>
+
+      {/* Journey progress rail — absolute, never pushes hold button */}
+      <div className="absolute left-0 right-0 top-[3.75rem] z-[3] px-3">
+        <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md">
+          <div className="flex justify-between gap-1">
+            {BALLOON_JOURNEY_MILESTONES.map((m) => (
+              <div key={m.seconds} className="flex flex-col items-center gap-0.5">
+                <span
+                  className={cn(
+                    "text-base transition-all duration-500",
+                    elapsed >= m.seconds
+                      ? "scale-110 opacity-100 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                      : "opacity-25 grayscale",
+                  )}
+                  aria-hidden
+                >
+                  {m.emoji}
+                </span>
+                <span
+                  className={cn(
+                    "hidden text-[8px] font-medium uppercase tracking-wide sm:block",
+                    elapsed >= m.seconds ? "text-amber-200/90" : "text-white/30",
+                  )}
+                >
+                  {m.shortLabel}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {milestone && (
-        <div className="relative z-[3] mb-3 w-full max-w-xs px-2">
-          <HealthLabAltitudeBadge
-            label={milestone.label}
-            emoji={milestone.emoji}
-            progress={bgProgress}
-          />
+      {/* Altitude + timer HUD — absolute above fixed hold button */}
+      <div className="absolute bottom-[10.5rem] left-0 right-0 z-[3] flex justify-center gap-3 px-4">
+        <div className="health-lab-timer-glass rounded-2xl px-5 py-3 text-center">
+          <p className="font-mono text-2xl font-bold tabular-nums text-white">{altitude}m</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
+            Altitude
+          </p>
         </div>
-      )}
+        <HealthLabGameTimer
+          value={`${elapsed.toFixed(1)}s`}
+          label="Hold time"
+          className="!px-5 !py-3 [&_p:first-child]:!text-2xl"
+        />
+      </div>
 
-      {!reduced && (
-        <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
-          {[...Array(5)].map((_, i) => (
-            <motion.span
-              key={`bird-${i}`}
-              className="absolute text-xl"
-              style={{ top: `${15 + i * 12}%` }}
-              animate={{ x: ["-10%", "110%"] }}
-              transition={{ duration: 8 + i * 2, repeat: Infinity, delay: i * 1.5 }}
-            >
-              🐦
-            </motion.span>
-          ))}
-          {[...Array(8)].map((_, i) => (
-            <motion.span
-              key={`cloud-${i}`}
-              className="absolute text-2xl opacity-60"
-              style={{ top: `${10 + (i % 4) * 20}%`, left: `${(i * 13) % 80}%` }}
-              animate={{ x: [0, 20, 0] }}
-              transition={{ duration: 6 + i, repeat: Infinity }}
-            >
-              ☁️
-            </motion.span>
-          ))}
-          {bgProgress > 0.4 &&
-            [...Array(6)].map((_, i) => (
-              <motion.span
-                key={`star-${i}`}
-                className="absolute text-sm"
-                style={{ top: `${5 + i * 8}%`, left: `${(i * 17) % 90}%` }}
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-              >
-                ⭐
-              </motion.span>
-            ))}
-        </div>
-      )}
-
-      <p className="relative z-[3] mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
-        Balloon Journey Adventure
-      </p>
-
-      <div className="relative z-[3] mb-3">
-        <HealthLabGuidance messages={GUIDANCE_MESSAGES.hold} intervalMs={4500} />
+      {/* Balloon playfield — centered, independent of bottom controls */}
+      <div className="absolute inset-x-0 bottom-[11rem] top-[7.5rem] z-[2] flex items-center justify-center">
+        <BalloonJourneyMilestoneBurst active={milestoneBurst} reduced={reduced} />
+        <BalloonJourneyToast message={toastMessage} />
+        <BalloonJourneyParticles holding={holding} intensity={particleIntensity} reduced={reduced} />
+        <BalloonJourneyEnergyStream holding={holding} reduced={reduced} />
+        <BalloonJourneyPressHint visible={!holding && !finished} reduced={reduced} />
+        <BalloonJourneyBalloon
+          physics={physics}
+          glowTier={glowTier}
+          goldenMode={goldenMode}
+          holding={holding}
+          reduced={reduced}
+        />
       </div>
 
       {goldenMode && (
-        <motion.p
-          className="relative z-[3] mb-2 rounded-full border border-amber-300/40 bg-amber-500/20 px-4 py-1 text-sm font-bold text-amber-100"
-          animate={!reduced ? { scale: [1, 1.05, 1] } : {}}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
-          ✨ Golden Balloon Mode!
-        </motion.p>
+        <div className="pointer-events-none absolute left-1/2 top-[42%] z-[4] -translate-x-1/2">
+          <p className="rounded-full border border-amber-300/40 bg-amber-500/20 px-4 py-1 text-sm font-bold text-amber-100">
+            ✨ Golden Balloon Mode!
+          </p>
+        </div>
       )}
-      <AnimatePresence>
-        {celebrateMilestone && (
-          <motion.p
-            className="relative z-[3] mb-4 rounded-2xl border border-amber-300/30 bg-amber-500/15 px-5 py-2 text-xl font-bold text-amber-100 shadow-[0_0_40px_-8px_rgba(251,191,36,0.5)]"
-            initial={{ scale: 0.5, opacity: 0, y: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-          >
-            {celebrateMilestone}
-          </motion.p>
-        )}
-      </AnimatePresence>
 
-      <motion.div
-        className="relative z-[3] mb-6 flex flex-col items-center"
-        animate={reduced ? {} : { y: -rise }}
-        transition={{ type: "spring", stiffness: 120, damping: 18 }}
+      {/* FIXED hold button — never moves */}
+      <div
+        className="absolute left-1/2 z-30 -translate-x-1/2"
+        style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
       >
-        <motion.div
-          className="relative"
-          style={{ width: balloonW, height: balloonH }}
-          animate={
-            reduced
-              ? {}
-              : {
-                  scale: 1 + inflate * 0.15,
-                  rotate: holding ? [-1.5, 1.5, -1.5] : 0,
-                }
-          }
-          transition={
-            holding && !reduced
-              ? { rotate: { duration: 2.8, repeat: Infinity, ease: "easeInOut" }, scale: { duration: 0.4 } }
-              : { duration: 0.4 }
-          }
+        <BalloonJourneyHoldButton
+          holding={holding}
+          disabled={finished}
+          buttonRef={holdButtonRef}
+          ariaLabel="Hold to inflate balloon"
+          onPointerDown={(e: PointerEvent<HTMLButtonElement>) => {
+            if (finished || !e.isPrimary) return;
+            hapticHoldPress();
+            playTap();
+            pointerCountRef.current = 1;
+            activePointerRef.current = e.pointerId;
+            startRef.current = Date.now();
+            touchMovesRef.current = [0.01];
+            victoryTriggeredRef.current = false;
+            setHolding(true);
+            setElapsed(0);
+            lastMilestoneRef.current = 0;
+            setLiveMsg("Holding steady — balloon rising");
+            try {
+              e.currentTarget.setPointerCapture(e.pointerId);
+            } catch {
+              /* older WebViews may not support capture */
+            }
+          }}
+          onPointerMove={(e) => {
+            if (!holding || activePointerRef.current !== e.pointerId) return;
+            const delta = Math.abs(e.movementX) + Math.abs(e.movementY);
+            touchMovesRef.current.push(Math.max(0.01, delta));
+          }}
+          onPointerUp={(e) => {
+            if (activePointerRef.current !== e.pointerId) return;
+            handleEnd(e.pointerId);
+          }}
+          onPointerCancel={(e) => {
+            if (activePointerRef.current !== e.pointerId) return;
+            handleEnd(e.pointerId);
+          }}
         >
-          {/* Balloon body */}
-          <div
+          <Fingerprint
             className={cn(
-              "absolute inset-0 shadow-[0_8px_24px_rgba(244,63,94,0.45)]",
-              goldenMode && "shadow-[0_8px_32px_rgba(251,191,36,0.6)]",
+              "h-14 w-14 text-white/95 drop-shadow-md",
+              holding ? "opacity-100" : "opacity-85",
             )}
-            style={{
-              borderRadius: "50% 50% 50% 50% / 58% 58% 42% 42%",
-              background: goldenMode
-                ? "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.6) 0%, transparent 42%), linear-gradient(155deg, #fde68a 0%, #fbbf24 38%, #f59e0b 72%, #d97706 100%)"
-                : "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 18%, transparent 42%), radial-gradient(circle at 70% 75%, rgba(190,24,93,0.35) 0%, transparent 55%), linear-gradient(155deg, #fda4af 0%, #fb7185 38%, #f43f5e 72%, #e11d48 100%)",
-            }}
-          />
-          {showRainbow && (
-            <motion.div
-              className="pointer-events-none absolute -inset-4 rounded-full opacity-60"
-              style={{ background: "conic-gradient(from 0deg, red, orange, yellow, green, blue, violet, red)" }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              aria-hidden
-            />
-          )}
-          {/* Surface shine */}
-          <div
-            className="pointer-events-none absolute left-[18%] top-[14%] rounded-full bg-white/45 blur-[0.5px]"
-            style={{ width: balloonW * 0.22, height: balloonH * 0.28 }}
+            strokeWidth={1.5}
             aria-hidden
           />
-          <div
-            className="pointer-events-none absolute left-[30%] top-[22%] rounded-full bg-white/25"
-            style={{ width: balloonW * 0.1, height: balloonH * 0.12 }}
-            aria-hidden
-          />
-          {/* Knot */}
-          <div
-            className="absolute bottom-0 left-1/2 h-3 w-3 -translate-x-1/2 translate-y-[38%] rotate-45 rounded-sm bg-rose-700 shadow-sm"
-            style={{ borderRadius: "2px 2px 6px 2px" }}
-            aria-hidden
-          />
-        </motion.div>
-
-        {/* String hangs below the balloon */}
-        <svg
-          width={Math.max(24, balloonW * 0.35)}
-          height={48 + inflate * 12}
-          viewBox="0 0 40 60"
-          className="-mt-1 text-rose-200/80"
-          aria-hidden
-        >
-          <path
-            d="M20 0 C22 12, 18 22, 20 32 C22 42, 16 50, 20 58"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </motion.div>
-
-      <HealthLabGameTimer value={`${elapsed.toFixed(1)}s`} label="Hold time" className="relative z-[3] mb-4" />
-
-      <div className="relative z-[3]">
-        <HealthLabHoldOrb
-        holding={holding}
-        disabled={finished}
-        buttonRef={holdButtonRef}
-        ariaLabel="Hold to inflate balloon"
-        onPointerDown={(e) => {
-          if (finished || !e.isPrimary) return;
-          playTap();
-          pointerCountRef.current = 1;
-          activePointerRef.current = e.pointerId;
-          startRef.current = Date.now();
-          touchMovesRef.current = [0.01];
-          setHolding(true);
-          setElapsed(0);
-          lastMilestoneRef.current = 0;
-          setLiveMsg("Holding steady — balloon rising");
-          try {
-            e.currentTarget.setPointerCapture(e.pointerId);
-          } catch {
-            /* older WebViews may not support capture */
-          }
-        }}
-        onPointerMove={(e) => {
-          if (!holding || activePointerRef.current !== e.pointerId) return;
-          const delta = Math.abs(e.movementX) + Math.abs(e.movementY);
-          touchMovesRef.current.push(Math.max(0.01, delta));
-        }}
-        onPointerUp={(e) => {
-          if (activePointerRef.current !== e.pointerId) return;
-          handleEnd(e.pointerId);
-        }}
-        onPointerCancel={(e) => {
-          if (activePointerRef.current !== e.pointerId) return;
-          handleEnd(e.pointerId);
-        }}
-      >
-        <Fingerprint
-          className={cn(
-            "h-14 w-14 text-white/95 drop-shadow-md",
-            holding ? "opacity-100" : "opacity-85",
-          )}
-          strokeWidth={1.5}
-          aria-hidden
-        />
-      </HealthLabHoldOrb>
+        </BalloonJourneyHoldButton>
       </div>
 
-      <p className="relative z-[3] mt-6 max-w-xs text-center text-xs leading-relaxed text-white/55">
-        Place your finger on the circle and hold — gentle micro-movements only!
+      <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 px-6 text-center text-[10px] leading-relaxed text-white/45">
+        {GUIDANCE_MESSAGES.hold[Math.min(Math.floor(elapsed / 8), GUIDANCE_MESSAGES.hold.length - 1)]}
       </p>
+
+      <BalloonJourneyVictory
+        show={showVictory}
+        holdSeconds={elapsed}
+        isPersonalBest={isVictoryPersonalBest}
+        reduced={reduced}
+        onDismiss={handleVictoryDismiss}
+      />
     </HealthLabGameStage>
   );
 }

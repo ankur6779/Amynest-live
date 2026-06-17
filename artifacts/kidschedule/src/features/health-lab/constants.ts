@@ -90,10 +90,19 @@ export const GUIDANCE_MESSAGES = {
   general: ["You can do it!", "Keep going!", "Almost there!", "Amazing work!", "Super scientist!"],
 } as const;
 
+export interface GameTrainSkill {
+  emoji: string;
+  label: string;
+}
+
 export const GAMES: {
   id: HealthGameId;
   title: string;
   subtitle: string;
+  benefitLine: string;
+  skillTags: readonly string[];
+  trains: readonly GameTrainSkill[];
+  bestScoreKind: "duration" | "score" | "percent";
   emoji: string;
   theme: string;
   sensor: "touch" | "motion" | "aggregate";
@@ -102,16 +111,30 @@ export const GAMES: {
   {
     id: "breath-control",
     title: "Balloon Journey Adventure",
-    subtitle: "Hold steady — soar from trees to the universe",
+    subtitle: "Build finger control and focus",
+    benefitLine: "Build finger control and focus",
+    skillTags: ["Focus", "Control"],
+    trains: [
+      { emoji: "🎯", label: "Focus" },
+      { emoji: "✋", label: "Control" },
+    ],
+    bestScoreKind: "duration",
     emoji: "🎈",
     theme: "from-sky-400 via-indigo-500 to-violet-700",
     sensor: "touch",
-    durationHint: "Up to 60 sec",
+    durationHint: "60 sec",
   },
   {
     id: "flamingo-balance",
     title: "Sky Island Survival",
-    subtitle: "Stand on one leg — weather the wind gusts",
+    subtitle: "Improve balance and body stability",
+    benefitLine: "Improve balance and body stability",
+    skillTags: ["Balance", "Coordination"],
+    trains: [
+      { emoji: "⚖️", label: "Balance" },
+      { emoji: "🤸", label: "Coordination" },
+    ],
+    bestScoreKind: "duration",
     emoji: "🦩",
     theme: "from-pink-400 via-rose-500 to-orange-400",
     sensor: "motion",
@@ -120,7 +143,14 @@ export const GAMES: {
   {
     id: "reaction-time",
     title: "Rocket Launch Academy",
-    subtitle: "Launch rockets — tap when the signal turns go",
+    subtitle: "Train reaction speed and timing",
+    benefitLine: "Train reaction speed and timing",
+    skillTags: ["Reaction", "Timing"],
+    trains: [
+      { emoji: "⚡", label: "Reaction" },
+      { emoji: "🎯", label: "Focus" },
+    ],
+    bestScoreKind: "score",
     emoji: "🚀",
     theme: "from-red-500 via-amber-500 to-emerald-500",
     sensor: "touch",
@@ -129,8 +159,15 @@ export const GAMES: {
   {
     id: "freeze-statue",
     title: "Crystal Garden Challenge",
-    subtitle: "Dance with Amy — freeze to grow crystals",
-    emoji: "🗿",
+    subtitle: "Practice movement and self-control",
+    benefitLine: "Practice movement and self-control",
+    skillTags: ["Movement", "Self-Control"],
+    trains: [
+      { emoji: "💃", label: "Movement" },
+      { emoji: "🧊", label: "Self-Control" },
+    ],
+    bestScoreKind: "percent",
+    emoji: "🌸",
     theme: "from-emerald-400 via-teal-500 to-cyan-600",
     sensor: "motion",
     durationHint: "5 rounds",
@@ -138,7 +175,14 @@ export const GAMES: {
   {
     id: "finger-stability",
     title: "Crystal Core Reactor",
-    subtitle: "Stabilize the energy core — don't let it crack",
+    subtitle: "Strengthen attention and precision",
+    benefitLine: "Strengthen attention and precision",
+    skillTags: ["Focus", "Precision"],
+    trains: [
+      { emoji: "🎯", label: "Focus" },
+      { emoji: "💎", label: "Precision" },
+    ],
+    bestScoreKind: "score",
     emoji: "💎",
     theme: "from-violet-500 via-purple-600 to-fuchsia-600",
     sensor: "touch",
@@ -147,21 +191,28 @@ export const GAMES: {
   {
     id: "calmness-meter",
     title: "Amy Wellness Report",
-    subtitle: "Your wellness signature — powered by your adventures",
+    subtitle: "Track wellness growth and achievements",
+    benefitLine: "Track wellness growth and achievements",
+    skillTags: ["Growth", "Insights"],
+    trains: [
+      { emoji: "📈", label: "Growth" },
+      { emoji: "⭐", label: "Achievements" },
+    ],
+    bestScoreKind: "score",
     emoji: "✨",
     theme: "from-amber-400 via-violet-500 to-indigo-700",
     sensor: "aggregate",
-    durationHint: "Daily snapshot",
+    durationHint: "Report",
   },
 ];
 
 export const BREATH_MILESTONES = [
-  { seconds: 5, label: "Tree", emoji: "🌳" },
-  { seconds: 10, label: "Cloud", emoji: "☁️" },
-  { seconds: 20, label: "Mountain", emoji: "⛰️" },
-  { seconds: 30, label: "Space", emoji: "🌌" },
-  { seconds: 45, label: "Galaxy", emoji: "🪐" },
-  { seconds: 60, label: "Universe", emoji: "🌟" },
+  { seconds: 5, label: "Nice Start!", emoji: "🎈", shortLabel: "Start" },
+  { seconds: 10, label: "Above The Clouds!", emoji: "☁️", shortLabel: "Clouds" },
+  { seconds: 20, label: "Mountain Explorer!", emoji: "🏔", shortLabel: "Mountain" },
+  { seconds: 30, label: "Rainbow Rider!", emoji: "🌈", shortLabel: "Rainbow" },
+  { seconds: 45, label: "Sky Champion!", emoji: "⭐", shortLabel: "Champion" },
+  { seconds: 60, label: "Space Explorer!", emoji: "🚀", shortLabel: "Space" },
 ] as const;
 
 export const REACTION_TIERS = [
