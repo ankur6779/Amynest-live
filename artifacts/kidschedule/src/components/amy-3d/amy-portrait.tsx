@@ -35,6 +35,11 @@ export interface AmyPortraitProps {
    * LISTENING Amy reacts to the child's voice without triggering re-renders.
    */
   audioLevelRef?: RefObject<number>;
+  /**
+   * Explicit talking flag from the realtime audio state. When set it drives the
+   * talking-mouth overlay independently of `state` (which is used for pose/halo).
+   */
+  speaking?: boolean;
 }
 
 // Eye positions as fractions of the square portrait. Measured from
@@ -100,7 +105,6 @@ export function AmyPortrait({
   audioLevelRef,
 }: AmyPortraitProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
-  const speaking = state === "speaking";
 
   // Random tilt direction, re-rolled whenever Amy enters a "posed" state.
   const [tiltDir, setTiltDir] = useState(1);

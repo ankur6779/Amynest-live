@@ -708,32 +708,34 @@ export default function ParentProfilePage() {
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-3 z-10 flex flex-col gap-2 rounded-3xl border border-border/50 bg-background/95 p-3 shadow-lg backdrop-blur-md">
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full rounded-full h-12 font-bold shadow-md"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? t("common.saving") : t("profile.save")}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/notification-settings")}
-          className="w-full rounded-full h-11 border-border/60"
-        >
-          <Bell className="h-4 w-4 mr-2" />
-          {t("pages.parent_profile.notification_settings")}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/manage-devices")}
-          className="w-full rounded-full h-11 border-border/60"
-        >
-          <Smartphone className="h-4 w-4 mr-2" />
-          {t("pages.parent_profile.manage_devices")}
-        </Button>
-      </div>
+      <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card">
+        <CardContent className="flex flex-col gap-2 pt-5 pb-5">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full rounded-full h-12 font-bold shadow-md"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? t("common.saving") : t("profile.save")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/notification-settings")}
+            className="w-full rounded-full h-11 border-border/60"
+          >
+            <Bell className="h-4 w-4 mr-2" />
+            {t("pages.parent_profile.notification_settings")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/manage-devices")}
+            className="w-full rounded-full h-11 border-border/60"
+          >
+            <Smartphone className="h-4 w-4 mr-2" />
+            {t("pages.parent_profile.manage_devices")}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="rounded-3xl border-destructive/20 bg-destructive/[0.03] shadow-sm">
         <CardHeader>

@@ -53,3 +53,30 @@ export function trackSpeechCoachUpgradeShown(props: { childId: number; source: s
 export function trackSpeechCoachUpgradeClicked(props: { childId: number; source: string }): void {
   track("speech_coach_upgrade_clicked", props);
 }
+
+export function trackSpeechCoachV2FalseInterrupt(props: {
+  childId: number;
+  sessionId: string;
+  speechDurationMs: number;
+  amySpeaking: boolean;
+}): void {
+  track("speech_coach_v2_false_interrupt", props);
+}
+
+export function trackSpeechCoachV2VadTrigger(props: {
+  childId: number;
+  sessionId: string;
+  amySpeaking: boolean;
+  event: "speech_started" | "speech_stopped";
+  speechDurationMs?: number;
+}): void {
+  track("speech_coach_v2_vad_trigger", props);
+}
+
+export function trackSpeechCoachV2ChildSpeechDetected(props: {
+  childId: number;
+  sessionId: string;
+  transcriptLength: number;
+}): void {
+  track("speech_coach_v2_child_speech_detected", props);
+}

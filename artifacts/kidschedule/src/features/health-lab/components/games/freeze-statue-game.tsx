@@ -12,7 +12,8 @@ import { HealthLabGameOnboarding } from "../health-lab-onboarding";
 import { HealthLabMotionCalibration } from "../health-lab-motion-calibration";
 import { HealthLabMotionDebugOverlay } from "../health-lab-debug-overlay";
 import { useReducedMotion } from "@/lib/reduced-motion";
-import { getProceduralAudioContext, playProceduralTone } from "@/lib/procedural-sfx";
+import { cn } from "@/lib/utils";
+import { playProceduralTone } from "@/lib/procedural-sfx";
 import type { SessionCompleteOptions } from "../../types";
 import {
   CRYSTAL_GARDEN_ROUNDS,
@@ -26,6 +27,11 @@ import {
 import { CrystalGardenAmy } from "./crystal-garden/crystal-garden-amy";
 import { CrystalGardenScene } from "./crystal-garden/crystal-garden-scene";
 import {
+  preloadCrystalGardenDance,
+  useCrystalGardenDanceMusic,
+} from "./crystal-garden/crystal-garden-audio";
+import {
+  CrystalGardenDanceLights,
   CrystalGardenFreezeCinematic,
   CrystalGardenMotionMeter,
   CrystalGardenRoundCelebration,
@@ -49,54 +55,7 @@ type Phase =
   | "finalVictory"
   | "done";
 
-function useCrystalDanceMusic(active: boolean) {
-  useEffect(() => {
-    const ctx = getProceduralAudioContext();
-    if (!active || !ctx) return;
-
-    const osc = ctx.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.value = 220;
-
-    const gain = ctx.createGain();
-    gain.gain.value = 0.001;
-
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 2.5;
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 8;
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    lfo.start();
-
-    const now = ctx.currentTime;
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-
-    return () => {
-      try {
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-        setTimeout(() => {
-          try {
-            osc.stop();
-            lfo.stop();
-          } catch {
-            /* stopped */
-          }
-        }, 200);
-      } catch {
-        /* ignore */
-      }
-    };
-  }, [active]);
-}
-
 function playFreezeDramatic(): void {
-  if (!getProceduralAudioContext()) return;
   playProceduralTone(180, 120, "sawtooth", 0.035);
   setTimeout(() => playProceduralTone(90, 200, "sine", 0.04), 60);
   setTimeout(() => playProceduralTone(880, 150, "sine", 0.03), 100);
@@ -143,7 +102,13 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
           ? "celebrate"
           : "idle";
 
-  useCrystalDanceMusic(phase === "dance" && !reduced);
+  useCrystalGardenDanceMusic(phase === "dance" && !reduced);
+
+  useEffect(() => {
+    if (phase === "onboarding" || phase === "calibrating") {
+      preloadCrystalGardenDance();
+    }
+  }, [phase]);
 
   const beginRound = useCallback(
     (round: number) => {
@@ -291,7 +256,10 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
       <HealthLabGameOnboarding
         gameId="freeze-statue"
         onExit={onExit}
-        onStart={beginCalibration}
+        onStart={() => {
+          preloadCrystalGardenDance();
+          void beginCalibration();
+        }}
         startLabel="Start Dancing"
         ctaVariant="emerald"
         extraContent={
@@ -309,10 +277,16 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
     <HealthLabGameStage
       gameId="freeze-statue"
       fullBleed
-      className="relative h-[100dvh] overflow-hidden bg-gradient-to-b from-indigo-950/90 via-violet-950/80 to-emerald-950/70"
+      className={cn(
+        "relative h-[100dvh] overflow-hidden",
+        phase === "dance"
+          ? "bg-gradient-to-b from-violet-900/95 via-fuchsia-950/85 to-emerald-900/80"
+          : "bg-gradient-to-b from-indigo-950/90 via-violet-950/80 to-emerald-950/70",
+      )}
     >
       <HealthLabLiveRegion message={liveMsg} />
       <HealthLabStarfield count={18} />
+      <CrystalGardenDanceLights active={phase === "dance" && !reduced} />
       <HealthLabPhaseFlash active={phase === "freeze"} color="rgba(34,211,238,0.35)" />
       <HealthLabPhaseFlash
         active={statueRating !== null && statueRating !== "fail"}

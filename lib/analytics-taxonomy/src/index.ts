@@ -267,6 +267,24 @@ const EVENT_PROP_SCHEMAS = {
   speech_coach_paid_usage: z.object({
     childId: z.number().int().optional(),
   }),
+  speech_coach_v2_false_interrupt: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    speechDurationMs: z.number().int().nonnegative().optional(),
+    amySpeaking: z.boolean().optional(),
+  }),
+  speech_coach_v2_vad_trigger: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    amySpeaking: z.boolean().optional(),
+    event: z.enum(["speech_started", "speech_stopped"]).optional(),
+    speechDurationMs: z.number().int().nonnegative().optional(),
+  }),
+  speech_coach_v2_child_speech_detected: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    transcriptLength: z.number().int().nonnegative().optional(),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -316,6 +334,9 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   speech_coach_upgrade_shown: "premium",
   speech_coach_upgrade_clicked: "premium",
   speech_coach_paid_usage: "session",
+  speech_coach_v2_false_interrupt: "session",
+  speech_coach_v2_vad_trigger: "session",
+  speech_coach_v2_child_speech_detected: "session",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

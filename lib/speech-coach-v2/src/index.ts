@@ -7,5 +7,6 @@ export * from "./speech-evaluation";
 export * from "./feedback";
 export * from "./gamification";
 export * from "./usage-limits";
+export * from "./realtime-vad";
 export * from "./analytics";
 export * from "./amy-instructions";

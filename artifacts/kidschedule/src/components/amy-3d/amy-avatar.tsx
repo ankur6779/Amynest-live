@@ -44,6 +44,8 @@ export interface AmyAvatarProps {
   className?: string;
   /** Live mic level (0..1) ref → reactive listening halo on the hero portrait. */
   audioLevelRef?: RefObject<number>;
+  /** When true, Amy plays a subtle talking-mouth animation while audio plays. */
+  speaking?: boolean;
 }
 
 // ── Error boundary: any failure inside the 3D stage drops to the 2D fallback ──
@@ -72,10 +74,11 @@ export function AmyAvatar({
   bounce = false,
   className,
   audioLevelRef,
+  speaking = false,
 }: AmyAvatarProps) {
   const modelAvailable = useAmyModelAvailable();
   const iconFallback = (
-    <AmyIcon size={size} ring={ring} bounce={bounce} className={className} />
+    <AmyIcon size={size} ring={ring} bounce={bounce} className={className} speaking={speaking} />
   );
 
   // Small / non-hero spots stay 2D (the premium baked image via AmyIcon).
@@ -91,6 +94,7 @@ export function AmyAvatar({
       size={size}
       className={className}
       audioLevelRef={audioLevelRef}
+      speaking={speaking}
     />
   );
 

@@ -18,6 +18,12 @@ const EYE = { y: 0.625, h: 0.145, w: 0.165, lX: 0.365, rX: 0.635 };
 interface AmyBlinkFaceProps {
   size: number;
   className?: string;
+  /**
+   * Reserved talking flag. The premium talking-mouth animation now lives in the
+   * dedicated `AmyTalkingHead` (pre-rendered mouth frames); this baked face only
+   * blinks, so the flag is accepted for API compatibility but not rendered here.
+   */
+  speaking?: boolean;
 }
 
 export function AmyBlinkFace({ size, className }: AmyBlinkFaceProps) {

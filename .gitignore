@@ -60,6 +60,9 @@ scripts/__pycache__/
 Amynest-backend-dykj.env
 .hetzner-worker.env
 hetzner-overrides.env
+# Catch-all for any *.env secret dumps (e.g. "Amynest-backend-dykj (2).env")
+*.env
+!.env*.example
 
 # Service account / Firebase client JSON — never commit under attached_assets
 attached_assets/*.json

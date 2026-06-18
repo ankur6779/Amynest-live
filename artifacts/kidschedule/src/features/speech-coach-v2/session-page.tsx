@@ -248,6 +248,8 @@ export default function SpeechCoachV2SessionPage() {
         onEnd={() => void handleEnd()}
         live={live}
         loading={session.uiState === "loading"}
+        amySpeaking={realtime.isAmySpeaking}
+        amyAudioLevel={realtime.amyAudioLevelRef}
       />
 
       {session.celebration && (

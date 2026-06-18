@@ -21,6 +21,7 @@ const baseUrl = (
   || "https://api.openai.com"
 ).replace(/\/$/, "");
 
+import { SPEECH_COACH_V2_VAD_LISTENING } from "@workspace/speech-coach-v2";
 import { resolveSpeechCoachV2RealtimeModel } from "../artifacts/api-server/src/services/speechCoachV2RealtimeService.js";
 
 const model = resolveSpeechCoachV2RealtimeModel(process.env.SPEECH_COACH_V2_REALTIME_MODEL);
@@ -61,14 +62,8 @@ async function main() {
         audio: {
           input: {
             transcription: { model: "gpt-4o-mini-transcribe" },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500,
-              create_response: true,
-              interrupt_response: true,
-            },
+            noise_reduction: { type: "near_field" },
+            turn_detection: { ...SPEECH_COACH_V2_VAD_LISTENING },
           },
           output: { voice },
         },

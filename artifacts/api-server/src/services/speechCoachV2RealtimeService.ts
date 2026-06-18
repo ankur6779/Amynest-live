@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { SPEECH_COACH_V2_VAD_LISTENING } from "@workspace/speech-coach-v2";
 import { logger } from "../lib/logger.js";
 
 /** GA production Realtime model — @see https://platform.openai.com/docs/guides/realtime */
@@ -122,14 +123,8 @@ export async function mintRealtimeClientSecret(input: {
           transcription: {
             model: "gpt-4o-mini-transcribe",
           },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 500,
-            create_response: true,
-            interrupt_response: true,
-          },
+          noise_reduction: { type: "near_field" },
+          turn_detection: { ...SPEECH_COACH_V2_VAD_LISTENING },
         },
         output: {
           voice: REALTIME_VOICE,

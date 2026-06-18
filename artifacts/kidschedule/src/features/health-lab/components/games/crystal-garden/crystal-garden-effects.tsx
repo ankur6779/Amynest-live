@@ -8,6 +8,48 @@ import {
   type FreezeMotionTier,
 } from "./crystal-garden-constants";
 
+export const CrystalGardenDanceLights = memo(function CrystalGardenDanceLights({
+  active,
+}: {
+  active: boolean;
+}) {
+  const reduced = useReducedMotion();
+
+  return (
+    <AnimatePresence>
+      {active && !reduced && (
+        <>
+          <motion.div
+            className="pointer-events-none fixed inset-0 z-[1] health-lab-dance-lights"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            aria-hidden
+          />
+          {[...Array(6)].map((_, i) => (
+            <motion.span
+              key={`note-${i}`}
+              className="pointer-events-none fixed z-[2] text-xl sm:text-2xl"
+              style={{ left: `${8 + i * 15}%`, top: `${12 + (i % 3) * 8}%` }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{
+                opacity: [0, 1, 1, 0],
+                y: [20, -10, -30, -50],
+                rotate: [-12, 8, -6, 0],
+              }}
+              transition={{ duration: 2.2, repeat: Infinity, delay: i * 0.35 }}
+              aria-hidden
+            >
+              {["🎵", "🎶", "✨", "💃", "🕺", "⭐"][i]}
+            </motion.span>
+          ))}
+        </>
+      )}
+    </AnimatePresence>
+  );
+});
+
 const TIER_STYLES: Record<
   FreezeMotionTier,
   { ring: string; glow: string; bg: string; pulse: boolean }

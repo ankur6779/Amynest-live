@@ -7,12 +7,15 @@ interface AmyIconProps {
   className?: string;
   bounce?: boolean;
   ring?: boolean;
+  /** When true, the baked face plays the subtle talking-mouth cycle. */
+  speaking?: boolean;
 }
 export function AmyIcon({
   size = 36,
   className = "",
   bounce = false,
-  ring = false
+  ring = false,
+  speaking = false
 }: AmyIconProps) {
   const {
     t
@@ -42,7 +45,7 @@ export function AmyIcon({
     frame = setTimeout(doBlink, 1000);
     return () => clearTimeout(frame);
   }, []);
-  const face = baked ? <AmyBlinkFace size={faceSize} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
+  const face = baked ? <AmyBlinkFace size={faceSize} speaking={speaking} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
     display: "block"
   }}>
       <defs>

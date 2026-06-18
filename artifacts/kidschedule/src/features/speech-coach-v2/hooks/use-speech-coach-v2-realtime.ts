@@ -4,12 +4,22 @@ import { openMicrophoneStream } from "@/lib/microphone-permission";
 import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 import { mintSpeechCoachV2RealtimeToken, SpeechCoachV2ApiError } from "../lib/api";
 import {
+  buildSpeechCoachV2MicConstraints,
+  isLikelyFalseInterrupt,
+  probeSpeechCoachV2MicConstraintSupport,
+  SPEECH_COACH_V2_MIN_SPEECH_MS,
+  speechCoachV2TurnDetectionForMode,
+} from "@workspace/speech-coach-v2";
+import {
   exchangeRealtimeSdpOffer,
   type RealtimeSdpExchangeDiagnostics,
 } from "@/lib/openai-realtime-webrtc";
 import {
+  trackSpeechCoachV2ChildSpeechDetected,
+  trackSpeechCoachV2FalseInterrupt,
   trackSpeechCoachV2Reconnect,
   trackSpeechCoachV2Ttfa,
+  trackSpeechCoachV2VadTrigger,
 } from "../lib/analytics";
 import { detectVerificationPlatform, verificationTrace } from "../lib/verification-trace";
 
@@ -90,6 +100,8 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
 
   const [connectionState, setConnectionState] = useState<RealtimeConnectionState>("idle");
   const [diagnostics, setDiagnostics] = useState<RealtimeDiagnostics>(INITIAL_DIAGNOSTICS);
+  // Reactive mirror of amySpeakingRef so the avatar can animate Amy's mouth.
+  const [amySpeaking, setAmySpeakingState] = useState(false);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
@@ -100,6 +112,19 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   const connectStartedAtRef = useRef<number>(0);
   const mountedRef = useRef(true);
   const connectingRef = useRef(false);
+  const amySpeakingRef = useRef(false);
+  const vadSpeechStartedAtRef = useRef<number | null>(null);
+  const vadAmySpeakingAtStartRef = useRef(false);
+  // Live amplitude (0..1) of Amy's OUTPUT audio, updated via a Web Audio
+  // analyser on the remote stream. Drives the avatar's halo/headphone/waveform
+  // cues without re-rendering. Stays 0 if Web Audio is unavailable (the cues
+  // then fall back to a gentle CSS animation), so this is always safe.
+  const amyAudioLevelRef = useRef(0);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const levelRafRef = useRef<number | null>(null);
+  const startAnalyserRef = useRef<(stream: MediaStream) => void>(() => {});
+  const stopAnalyserRef = useRef<() => void>(() => {});
   const instructionsRef = useRef(instructions);
   instructionsRef.current = instructions;
 
@@ -142,17 +167,105 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     );
   }, []);
 
+  const sendTurnDetectionUpdate = useCallback((mode: "listening" | "amy_speaking") => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open") return;
+    dc.send(
+      JSON.stringify({
+        type: "session.update",
+        session: {
+          type: "realtime",
+          audio: {
+            input: {
+              noise_reduction: { type: "near_field" },
+              turn_detection: speechCoachV2TurnDetectionForMode(mode),
+            },
+          },
+        },
+      }),
+    );
+    rtLog("vad.update", { mode, ...speechCoachV2TurnDetectionForMode(mode) });
+  }, []);
+
+  const setAmySpeaking = useCallback(
+    (speaking: boolean) => {
+      if (amySpeakingRef.current === speaking) return;
+      amySpeakingRef.current = speaking;
+      setAmySpeakingState(speaking);
+      sendTurnDetectionUpdate(speaking ? "amy_speaking" : "listening");
+    },
+    [sendTurnDetectionUpdate],
+  );
+
   const sendInitialGreeting = useCallback(() => {
     const dc = dcRef.current;
     if (!dc || dc.readyState !== "open") return;
     dc.send(JSON.stringify({ type: "response.create" }));
   }, []);
 
+  const stopOutputAnalyser = useCallback(() => {
+    if (levelRafRef.current != null) {
+      cancelAnimationFrame(levelRafRef.current);
+      levelRafRef.current = null;
+    }
+    try {
+      audioSourceRef.current?.disconnect();
+    } catch {
+      /* already disconnected */
+    }
+    audioSourceRef.current = null;
+    if (audioCtxRef.current) {
+      void audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+    amyAudioLevelRef.current = 0;
+  }, []);
+
+  const startOutputAnalyser = useCallback((stream: MediaStream) => {
+    stopAnalyserRef.current();
+    try {
+      const Ctx =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.6;
+      // NOTE: do NOT connect the analyser to ctx.destination — the <audio>
+      // element already plays the stream; this taps it for metering only.
+      source.connect(analyser);
+      audioCtxRef.current = ctx;
+      audioSourceRef.current = source;
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) {
+          const v = (buf[i] - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / buf.length);
+        const target = Math.min(1, rms * 3.2); // gentle gain so quiet speech reads
+        amyAudioLevelRef.current += (target - amyAudioLevelRef.current) * 0.4;
+        levelRafRef.current = requestAnimationFrame(tick);
+      };
+      levelRafRef.current = requestAnimationFrame(tick);
+    } catch {
+      // Web Audio blocked/unsupported → leave level at 0 (CSS fallback animates).
+    }
+  }, []);
+  startAnalyserRef.current = startOutputAnalyser;
+  stopAnalyserRef.current = stopOutputAnalyser;
+
   const cleanupPeerConnection = useCallback(() => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
+    stopAnalyserRef.current();
     dcRef.current?.close();
     dcRef.current = null;
     pcRef.current?.close();
@@ -163,6 +276,9 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       audioElRef.current = null;
     }
     connectingRef.current = false;
+    amySpeakingRef.current = false;
+    setAmySpeakingState(false);
+    vadSpeechStartedAtRef.current = null;
   }, []);
 
   const cleanup = useCallback(() => {
@@ -176,11 +292,64 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     const type = String(payload.type ?? "");
     rtLog("event", { type });
 
+    if (type === "input_audio_buffer.speech_started") {
+      vadSpeechStartedAtRef.current = Date.now();
+      vadAmySpeakingAtStartRef.current = amySpeakingRef.current;
+      trackSpeechCoachV2VadTrigger({
+        childId: childIdRef.current,
+        sessionId: sessionIdRef.current,
+        amySpeaking: amySpeakingRef.current,
+        event: "speech_started",
+      });
+    }
+
+    if (type === "input_audio_buffer.speech_stopped") {
+      const startedAt = vadSpeechStartedAtRef.current;
+      vadSpeechStartedAtRef.current = null;
+      const speechDurationMs = startedAt != null ? Date.now() - startedAt : 0;
+      trackSpeechCoachV2VadTrigger({
+        childId: childIdRef.current,
+        sessionId: sessionIdRef.current,
+        amySpeaking: amySpeakingRef.current,
+        event: "speech_stopped",
+        speechDurationMs,
+      });
+      if (
+        isLikelyFalseInterrupt({
+          amySpeaking: vadAmySpeakingAtStartRef.current,
+          speechDurationMs,
+        })
+      ) {
+        trackSpeechCoachV2FalseInterrupt({
+          childId: childIdRef.current,
+          sessionId: sessionIdRef.current,
+          speechDurationMs,
+          amySpeaking: true,
+        });
+      } else if (
+        vadAmySpeakingAtStartRef.current
+        && speechDurationMs >= SPEECH_COACH_V2_MIN_SPEECH_MS
+      ) {
+        const dc = dcRef.current;
+        if (dc?.readyState === "open") {
+          dc.send(JSON.stringify({ type: "response.cancel" }));
+        }
+        setAmySpeaking(false);
+      }
+    }
+
     if (type === "conversation.item.input_audio_transcription.completed") {
       const transcript = String(
         (payload as { transcript?: string }).transcript ?? "",
       ).trim();
-      if (transcript) onUserTranscriptRef.current?.(transcript, transcript);
+      if (transcript) {
+        trackSpeechCoachV2ChildSpeechDetected({
+          childId: childIdRef.current,
+          sessionId: sessionIdRef.current,
+          transcriptLength: transcript.length,
+        });
+        onUserTranscriptRef.current?.(transcript, transcript);
+      }
     }
     if (
       type === "response.output_audio_transcript.done"
@@ -194,12 +363,18 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     }
     if (type === "response.created") {
       verificationTrace("RESPONSE_CREATED");
+      setAmySpeaking(true);
     }
     if (type === "response.output_audio.started" || type === "response.audio.started") {
       verificationTrace("AUDIO_STARTED");
+      setAmySpeaking(true);
     }
     if (type === "response.done" || type === "response.output_audio.done" || type === "response.audio.done") {
       verificationTrace("AUDIO_COMPLETED");
+      setAmySpeaking(false);
+    }
+    if (type === "response.cancelled") {
+      setAmySpeaking(false);
     }
     if (type === "error") {
       const message = String(
@@ -207,7 +382,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       );
       onErrorRef.current?.(message);
     }
-  }, []);
+  }, [setAmySpeaking]);
 
   const waitForMediaReady = useCallback(
     (pc: RTCPeerConnection, audioEl: HTMLAudioElement) =>
@@ -231,6 +406,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
             streamCount: event.streams.length,
           });
           audioEl.srcObject = event.streams[0] ?? null;
+          if (event.streams[0]) startAnalyserRef.current(event.streams[0]);
           void audioEl.play().then(() => {
             verificationTrace("AUDIO_PLAY_STARTED", {
               readyState: audioEl.readyState,
@@ -287,8 +463,10 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         });
         try {
           await prepareCoachMicCapture();
+          const micSupport = probeSpeechCoachV2MicConstraintSupport();
+          rtLog("mic.constraints", micSupport);
           const mic = await openMicrophoneStream(
-            { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+            buildSpeechCoachV2MicConstraints(),
             { forFeature: true },
           );
           if (!mic.ok) {
@@ -370,6 +548,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       dc.onopen = () => {
         rtLog("datachannel.open");
         verificationTrace("DATA_CHANNEL_OPEN");
+        sendTurnDetectionUpdate("listening");
         sendSessionUpdate(instructionsRef.current);
         sendInitialGreeting();
         verificationTrace("RESPONSE_CREATE_SENT");
@@ -529,5 +708,8 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectFromUserGesture,
     reconnect: () => connectRef.current(false),
     isMediaConnected: connectionState === "connected",
+    isAmySpeaking: amySpeaking,
+    /** Live 0..1 amplitude of Amy's output audio for reactive avatar cues. */
+    amyAudioLevelRef,
   };
 }

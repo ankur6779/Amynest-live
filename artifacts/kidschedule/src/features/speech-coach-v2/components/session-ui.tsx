@@ -1,5 +1,6 @@
+import type { RefObject } from "react";
 import { Loader2, Mic, PhoneOff, Sparkles } from "lucide-react";
-import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
+import { AmyTalkingHead } from "@/components/amy-3d/amy-talking-head";
 import type { RealtimeConnectionState, RealtimeDiagnostics } from "../hooks/use-speech-coach-v2-realtime";
 import { RealtimeDiagnosticsPanel } from "./realtime-diagnostics-panel";
 import { showRealtimeDiagnostics } from "../lib/show-realtime-diagnostics";
@@ -33,6 +34,8 @@ export function SpeechCoachV2SessionUi(props: {
   onEnd: () => void;
   live: boolean;
   loading?: boolean;
+  amySpeaking?: boolean;
+  amyAudioLevel?: RefObject<number>;
 }) {
   const {
     childName,
@@ -47,6 +50,8 @@ export function SpeechCoachV2SessionUi(props: {
     onEnd,
     live,
     loading,
+    amySpeaking = false,
+    amyAudioLevel,
   } = props;
 
   return (
@@ -66,7 +71,11 @@ export function SpeechCoachV2SessionUi(props: {
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <AmyAvatar state={live && connectionState === "connected" ? "listening" : "idle"} size={280} />
+        <AmyTalkingHead
+          size={280}
+          speaking={amySpeaking}
+          audioLevelRef={amyAudioLevel}
+        />
         <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
         <p className="mt-1 text-xs text-white/60">{connectionLabel(connectionState)}</p>
         {live && diagnostics && showRealtimeDiagnostics() && (

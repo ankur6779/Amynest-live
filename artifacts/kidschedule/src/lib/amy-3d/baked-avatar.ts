@@ -11,6 +11,16 @@ export const BAKED_AMY_SRC = "/amy-3d/amy-idle.webp";
 // Full-resolution square portrait used by the animated hero avatar (AmyPortrait).
 export const AMY_PORTRAIT_SRC = "/amy-3d/amy-avatar-square.webp";
 
+// Pre-rendered "talking" mouth frames (closed → small-open → wide-open), sliced
+// from a single 3-up render and eye-centred so ONLY the mouth differs between
+// frames (head stays perfectly still). Used by AmyTalkingHead to animate Amy
+// speaking without any live 3D. Regenerate via scripts/slice-amy-mouth-sprite.py.
+export const AMY_TALK_FRAMES = [
+  "/amy-3d/amy-talk-0.webp",
+  "/amy-3d/amy-talk-1.webp",
+  "/amy-3d/amy-talk-2.webp",
+] as const;
+
 // Rigged 3D model. When this file is dropped in, the hero upgrades to a live
 // 3D Amy with viseme lip-sync + eye-tracking. See public/amy-3d/README.md.
 export const AMY_MODEL_SRC = "/amy-3d/amy.glb";

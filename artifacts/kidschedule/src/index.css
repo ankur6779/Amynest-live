@@ -380,6 +380,25 @@
   .amy-bounce, .amy-eyes, .amy-pulse, .amy-fade-in { animation: none !important; }
 }
 
+/* ── Amy "talking" — cross-fade between pre-rendered mouth frames ─────────── */
+/* AmyTalkingHead stacks three eye-centred frames (closed / small-open / wide-
+   open) sliced from ONE render, so only the mouth differs — the head never
+   drifts. The two open frames fade in over the closed base with a calm speech
+   rhythm. Opacity-only → GPU composited; pauses on reduced-motion. */
+@keyframes amyTalkF1 {
+  0%, 100% { opacity: 0; }
+  28%, 52% { opacity: 1; }
+}
+@keyframes amyTalkF2 {
+  0%, 100% { opacity: 0; }
+  38%, 46% { opacity: 1; }
+}
+.amy-talk-f1 { animation: amyTalkF1 820ms ease-in-out infinite; }
+.amy-talk-f2 { animation: amyTalkF2 820ms ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .amy-talk-f1, .amy-talk-f2 { animation: none !important; opacity: 0 !important; }
+}
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -2501,6 +2520,10 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   .health-lab-aurora {
     animation: none !important;
   }
+  .health-lab-dance-floor,
+  .health-lab-dance-lights {
+    animation: none !important;
+  }
 }
 
 @keyframes healthLabPulseDanger {
@@ -2568,6 +2591,33 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   animation: healthLabIslandRise 2s ease-out forwards;
 }
 
+@keyframes healthLabDanceFloor {
+  0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+  33% { filter: hue-rotate(15deg) brightness(1.08); }
+  66% { filter: hue-rotate(-10deg) brightness(1.05); }
+}
+
+@keyframes healthLabDanceLights {
+  0%, 100% {
+    background: radial-gradient(ellipse at 20% 30%, rgba(236,72,153,0.12), transparent 55%),
+      radial-gradient(ellipse at 80% 25%, rgba(56,189,248,0.1), transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(167,139,250,0.08), transparent 60%);
+  }
+  50% {
+    background: radial-gradient(ellipse at 75% 35%, rgba(236,72,153,0.16), transparent 55%),
+      radial-gradient(ellipse at 25% 40%, rgba(52,211,153,0.12), transparent 50%),
+      radial-gradient(ellipse at 50% 70%, rgba(251,191,36,0.1), transparent 60%);
+  }
+}
+
+.health-lab-dance-floor {
+  animation: healthLabDanceFloor 1.2s ease-in-out infinite;
+}
+
+.health-lab-dance-lights {
+  animation: healthLabDanceLights 1.5s ease-in-out infinite;
+}
+
 .health-lab-reward-enter {
   animation: healthLabRewardEnter 0.35s ease-out;
 }
@@ -2603,7 +2653,9 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   .health-lab-island-rise,
   .health-lab-reward-enter,
   .health-lab-balloon-victory-shake,
-  .health-lab-island-meter-shake {
+  .health-lab-island-meter-shake,
+  .health-lab-dance-floor,
+  .health-lab-dance-lights {
     animation: none !important;
   }
 }
