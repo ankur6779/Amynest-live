@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
+import { preloadPhonicsBundledManifest } from "@/lib/phonics-bundled-manifest";
 import {
   checkPhonicsLetterClip,
   checkPhonicsWordClip,
+  checkPhonicsContentClip,
   validatePhonicsWordAudio,
 } from "@/lib/phonics-audio-availability";
 import { preloadPhonicsBundledManifest } from "@/lib/phonics-bundled-manifest";
@@ -36,5 +38,17 @@ describe("phonics-audio-availability", () => {
     expect(bundle.available).toBe(true);
     expect(bundle.wordAudio).toBe(true);
     expect(bundle.phonemeAudio).toEqual([true, true, true]);
+  });
+
+  describe("manifest-backed decodable sentences", () => {
+    beforeAll(async () => {
+      await preloadPhonicsBundledManifest();
+    });
+
+    it("resolves decodable story sentences from bundled manifest beyond core catalog", () => {
+      const samSat = checkPhonicsContentClip("Sam sat.", "sentence");
+      expect(samSat.available).toBe(true);
+      expect(samSat.catalogKey).toBe("sentence:sam_sat");
+    });
   });
 });
