@@ -37,6 +37,8 @@ const VerifyEmailPage = lazyPage(() => import("@/pages/verify-email"));
 const AuthCallbackPage = lazyPage(() => import("@/pages/auth-callback"));
 const ResetPasswordPage = lazyPage(() => import("@/pages/reset-password"));
 import RouteFailedPage from "@/pages/route-failed";
+import SpeechCoachV2DebugPage from "@/pages/speech-coach-v2-debug";
+import OpenAiRealtimeTestPage from "@/pages/openai-realtime-test";
 import { FirebaseActionGate } from "@/components/firebase-action-gate";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
@@ -737,6 +739,12 @@ function AppRoutes() {
           {/* Firebase email template may use /auth/action */}
           <Route path="/auth/action" component={AuthCallbackPage} />
           <Route path="/auth/apple/callback" component={AppleAuthCallbackPage} />
+          {!import.meta.env.PROD && (
+            <>
+              <Route path="/speech-coach-v2-debug" component={SpeechCoachV2DebugPage} />
+              <Route path="/openai-realtime-test" component={OpenAiRealtimeTestPage} />
+            </>
+          )}
           <Route path="/onboarding" component={OnboardingRouteGuard} />
           <Route path="/subscription-trial" component={SubscriptionTrialPage} />
           <Route path="/dashboard" component={DashboardRoute} />

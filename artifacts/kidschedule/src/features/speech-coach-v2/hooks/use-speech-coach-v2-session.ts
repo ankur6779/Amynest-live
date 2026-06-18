@@ -49,8 +49,9 @@ export function useSpeechCoachV2Session(input: {
   childName: string;
   ageMonths: number;
   enabled: boolean;
+  realtimeConnected?: boolean;
 }) {
-  const { authFetch, childId, enabled } = input;
+  const { authFetch, childId, enabled, realtimeConnected = false } = input;
 
   const [uiState, setUiState] = useState<SessionUiState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -239,7 +240,7 @@ export function useSpeechCoachV2Session(input: {
   }, []);
 
   useEffect(() => {
-    if (uiState !== "live" || !sessionState || !tabLockToken) return;
+    if (uiState !== "live" || !sessionState || !tabLockToken || !realtimeConnected) return;
 
     const runHeartbeat = () => {
       void heartbeatSpeechCoachV2Session(authFetch, {
@@ -267,7 +268,7 @@ export function useSpeechCoachV2Session(input: {
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
-  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId]);
+  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId, realtimeConnected]);
 
   const finishSession = useCallback(async () => {
     if (!sessionState || !tabLockToken) return;

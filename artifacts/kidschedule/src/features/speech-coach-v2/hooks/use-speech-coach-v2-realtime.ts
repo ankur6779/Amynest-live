@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthFetchFn } from "@/lib/poll-result";
+import { openMicrophoneStream } from "@/lib/microphone-permission";
+import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 import { mintSpeechCoachV2RealtimeToken, SpeechCoachV2ApiError } from "../lib/api";
 import {
   trackSpeechCoachV2Reconnect,
   trackSpeechCoachV2Ttfa,
 } from "../lib/analytics";
+import { detectVerificationPlatform, verificationTrace } from "../lib/verification-trace";
 
 export type RealtimeConnectionState =
   | "idle"
@@ -25,6 +28,25 @@ export interface UseSpeechCoachV2RealtimeOptions {
   onAssistantTranscript?: (text: string) => void;
   onError?: (message: string) => void;
   onLimitReached?: () => void;
+  onConnectionChange?: (connected: boolean) => void;
+}
+
+const REALTIME_DEBUG = import.meta.env.DEV;
+
+function rtLog(stage: string, detail?: Record<string, unknown>) {
+  if (REALTIME_DEBUG) {
+    console.debug("[speech-coach-v2:realtime]", stage, detail ?? "");
+  }
+}
+
+function micFailure(err: unknown): never {
+  const error = err instanceof Error ? err : new Error(String(err));
+  verificationTrace("MIC_REQUEST_FAILURE", {
+    name: error.name,
+    message: error.message,
+    platform: detectVerificationPlatform(),
+  });
+  throw error;
 }
 
 export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOptions) {
@@ -39,6 +61,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     onAssistantTranscript,
     onError,
     onLimitReached,
+    onConnectionChange,
   } = options;
 
   const [connectionState, setConnectionState] = useState<RealtimeConnectionState>("idle");
@@ -65,6 +88,20 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   onErrorRef.current = onError;
   const onLimitReachedRef = useRef(onLimitReached);
   onLimitReachedRef.current = onLimitReached;
+  const onConnectionChangeRef = useRef(onConnectionChange);
+  onConnectionChangeRef.current = onConnectionChange;
+
+  const childIdRef = useRef(childId);
+  childIdRef.current = childId;
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
+  const tabLockTokenRef = useRef(tabLockToken);
+  tabLockTokenRef.current = tabLockToken;
+
+  const setConnected = useCallback((connected: boolean, state: RealtimeConnectionState) => {
+    setConnectionState(state);
+    onConnectionChangeRef.current?.(connected);
+  }, []);
 
   const sendSessionUpdate = useCallback((nextInstructions: string) => {
     const dc = dcRef.current;
@@ -72,12 +109,21 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     dc.send(
       JSON.stringify({
         type: "session.update",
-        session: { instructions: nextInstructions },
+        session: {
+          type: "realtime",
+          instructions: nextInstructions,
+        },
       }),
     );
   }, []);
 
-  const cleanup = useCallback(() => {
+  const sendInitialGreeting = useCallback(() => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open") return;
+    dc.send(JSON.stringify({ type: "response.create" }));
+  }, []);
+
+  const cleanupPeerConnection = useCallback(() => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
@@ -86,8 +132,6 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     dcRef.current = null;
     pcRef.current?.close();
     pcRef.current = null;
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
-    localStreamRef.current = null;
     if (audioElRef.current) {
       audioElRef.current.srcObject = null;
       audioElRef.current.remove();
@@ -96,8 +140,17 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectingRef.current = false;
   }, []);
 
+  const cleanup = useCallback(() => {
+    cleanupPeerConnection();
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+    onConnectionChangeRef.current?.(false);
+  }, [cleanupPeerConnection]);
+
   const handleRealtimeEvent = useCallback((payload: Record<string, unknown>) => {
     const type = String(payload.type ?? "");
+    rtLog("event", { type });
+
     if (type === "conversation.item.input_audio_transcription.completed") {
       const transcript = String(
         (payload as { transcript?: string }).transcript ?? "",
@@ -107,11 +160,21 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     if (
       type === "response.output_audio_transcript.done"
       || type === "response.audio_transcript.done"
+      || type === "response.output_audio_transcript.done"
     ) {
       const transcript = String(
         (payload as { transcript?: string }).transcript ?? "",
       ).trim();
       if (transcript) onAssistantTranscriptRef.current?.(transcript);
+    }
+    if (type === "response.created") {
+      verificationTrace("RESPONSE_CREATED");
+    }
+    if (type === "response.output_audio.started" || type === "response.audio.started") {
+      verificationTrace("AUDIO_STARTED");
+    }
+    if (type === "response.done" || type === "response.output_audio.done" || type === "response.audio.done") {
+      verificationTrace("AUDIO_COMPLETED");
     }
     if (type === "error") {
       const message = String(
@@ -121,27 +184,129 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     }
   }, []);
 
-  const connectRef = useRef<() => Promise<void>>(async () => {});
+  const waitForMediaReady = useCallback(
+    (pc: RTCPeerConnection, audioEl: HTMLAudioElement) =>
+      new Promise<void>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          reject(new Error("Timed out waiting for audio track"));
+        }, 15_000);
 
-  connectRef.current = async () => {
-    if (!enabled || !sessionId || !tabLockToken || connectingRef.current) return;
+        const done = () => {
+          window.clearTimeout(timeout);
+          resolve();
+        };
+
+        pc.ontrack = (event) => {
+          rtLog("ontrack", {
+            kind: event.track.kind,
+            streams: event.streams.length,
+          });
+          verificationTrace("ONTRACK_FIRED", {
+            kind: event.track.kind,
+            streamCount: event.streams.length,
+          });
+          audioEl.srcObject = event.streams[0] ?? null;
+          void audioEl.play().then(() => {
+            verificationTrace("AUDIO_PLAY_STARTED", {
+              readyState: audioEl.readyState,
+              paused: audioEl.paused,
+              muted: audioEl.muted,
+            });
+          }).catch((playErr) => {
+            rtLog("audio.play blocked", {
+              error: playErr instanceof Error ? playErr.message : String(playErr),
+            });
+          });
+          if (connectStartedAtRef.current > 0) {
+            const ttfaMs = Date.now() - connectStartedAtRef.current;
+            trackSpeechCoachV2Ttfa({
+              childId: childIdRef.current,
+              sessionId: sessionIdRef.current,
+              ttfaMs,
+            });
+            connectStartedAtRef.current = 0;
+          }
+          done();
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          rtLog("iceState", { state: pc.iceConnectionState });
+          if (pc.iceConnectionState === "failed") {
+            window.clearTimeout(timeout);
+            reject(new Error("ICE connection failed"));
+          }
+        };
+      }),
+    [],
+  );
+
+  const connectRef = useRef<(fromUserGesture: boolean) => Promise<void>>(async () => {});
+
+  connectRef.current = async (fromUserGesture: boolean) => {
+    const sid = sessionIdRef.current;
+    const token = tabLockTokenRef.current;
+    if (!sid || !token || connectingRef.current) return;
+
     connectingRef.current = true;
-    setConnectionState(reconnectAttemptRef.current > 0 ? "reconnecting" : "connecting");
+    const isRetry = reconnectAttemptRef.current > 0;
+    setConnected(false, isRetry ? "reconnecting" : "connecting");
     connectStartedAtRef.current = Date.now();
+    rtLog("connect.start", { fromUserGesture, isRetry, sessionId: sid });
 
     try {
-      const token = await mintSpeechCoachV2RealtimeToken(authFetchRef.current, {
-        childId,
-        sessionId,
-        tabLockToken,
+      // Mic MUST open before any network await when started from a user gesture.
+      if (fromUserGesture || !localStreamRef.current) {
+        verificationTrace("MIC_REQUEST_START", {
+          platform: detectVerificationPlatform(),
+        });
+        try {
+          await prepareCoachMicCapture();
+          const mic = await openMicrophoneStream(
+            { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+            { forFeature: true },
+          );
+          if (!mic.ok) {
+            throw new Error(`Microphone unavailable: ${mic.reason}`);
+          }
+          verificationTrace("MIC_REQUEST_SUCCESS", {
+            tracks: mic.stream.getAudioTracks().length,
+            platform: detectVerificationPlatform(),
+          });
+          verificationTrace("MIC_OPENED", {
+            tracks: mic.stream.getAudioTracks().length,
+          });
+          rtLog("mic.opened", { tracks: mic.stream.getAudioTracks().length });
+          localStreamRef.current?.getTracks().forEach((t) => t.stop());
+          localStreamRef.current = mic.stream;
+        } catch (err) {
+          micFailure(err);
+        }
+      }
+
+      const minted = await mintSpeechCoachV2RealtimeToken(authFetchRef.current, {
+        childId: childIdRef.current,
+        sessionId: sid,
+        tabLockToken: token,
         instructions: instructionsRef.current,
       });
+      rtLog("token.minted", {
+        model: minted.model,
+        voice: minted.voice,
+        callsUrl: minted.callsUrl,
+        expiresAt: minted.expiresAt,
+      });
+      verificationTrace("TOKEN_MINTED", {
+        model: minted.model,
+        voice: minted.voice,
+        callsUrl: minted.callsUrl,
+      });
 
-      cleanup();
+      cleanupPeerConnection();
       connectingRef.current = true;
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
+      verificationTrace("PC_CREATED");
 
       const audioEl = document.createElement("audio");
       audioEl.autoplay = true;
@@ -153,26 +318,30 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       audioEl.style.opacity = "0";
       document.body.appendChild(audioEl);
       audioElRef.current = audioEl;
-      pc.ontrack = (event) => {
-        audioEl.srcObject = event.streams[0] ?? null;
-        void audioEl.play().catch(() => {
-          // autoplay can be blocked until a user gesture; ignore
-        });
-        if (connectStartedAtRef.current > 0) {
-          const ttfaMs = Date.now() - connectStartedAtRef.current;
-          trackSpeechCoachV2Ttfa({ childId, sessionId, ttfaMs });
-          connectStartedAtRef.current = 0;
-        }
-      };
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStreamRef.current = stream;
+      const stream = localStreamRef.current;
+      if (!stream) throw new Error("Microphone stream missing");
       for (const track of stream.getTracks()) {
         pc.addTrack(track, stream);
       }
 
+      const mediaReady = waitForMediaReady(pc, audioEl);
+
       const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
+      dc.onopen = () => {
+        rtLog("datachannel.open");
+        verificationTrace("DATA_CHANNEL_OPEN");
+        sendSessionUpdate(instructionsRef.current);
+        sendInitialGreeting();
+        verificationTrace("RESPONSE_CREATE_SENT");
+      };
+      dc.onerror = (event) => {
+        rtLog("datachannel.error", { event: String(event) });
+      };
+      dc.onclose = () => {
+        rtLog("datachannel.close");
+      };
       dc.onmessage = (event) => {
         try {
           const data = JSON.parse(String(event.data)) as Record<string, unknown>;
@@ -184,35 +353,46 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      rtLog("sdp.offer", { length: offer.sdp?.length ?? 0 });
+      verificationTrace("SDP_SENT", { offerLength: offer.sdp?.length ?? 0 });
 
-      const sdpResponse = await fetch(token.callsUrl, {
+      const sdpResponse = await fetch(minted.callsUrl, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token.clientSecret}`,
+          Authorization: `Bearer ${minted.clientSecret}`,
           "Content-Type": "application/sdp",
         },
         body: offer.sdp ?? "",
       });
+
+      const answerSdp = await sdpResponse.text();
+      rtLog("sdp.answer", { status: sdpResponse.status, length: answerSdp.length });
 
       if (!sdpResponse.ok) {
         if (sdpResponse.status === 429) {
           onLimitReachedRef.current?.();
           throw new Error("Daily limit reached");
         }
-        throw new Error(`Realtime SDP exchange failed: ${sdpResponse.status}`);
+        throw new Error(`Realtime SDP exchange failed: ${sdpResponse.status} — ${answerSdp.slice(0, 200)}`);
       }
+      verificationTrace("SDP_ACCEPTED", { status: sdpResponse.status });
 
-      const answerSdp = await sdpResponse.text();
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      verificationTrace("REMOTE_DESCRIPTION_SET");
+      await mediaReady;
 
       if (!mountedRef.current) return;
 
-      if (reconnectAttemptRef.current > 0) {
-        trackSpeechCoachV2Reconnect({ childId, sessionId });
+      if (isRetry) {
+        trackSpeechCoachV2Reconnect({
+          childId: childIdRef.current,
+          sessionId: sid,
+        });
       }
       reconnectAttemptRef.current = 0;
       connectingRef.current = false;
-      setConnectionState("connected");
+      setConnected(true, "connected");
+      rtLog("connect.success");
     } catch (err) {
       cleanup();
       if (!mountedRef.current) return;
@@ -220,19 +400,20 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       if (err instanceof SpeechCoachV2ApiError) {
         if (err.code === "daily_limit_reached" || err.code === "session_limit_reached") {
           onLimitReachedRef.current?.();
-          setConnectionState("disconnected");
+          setConnected(false, "disconnected");
           return;
         }
       }
 
       const message = err instanceof Error ? err.message : "Connection failed";
-      setConnectionState("error");
+      rtLog("connect.fail", { message });
+      setConnected(false, "error");
       onErrorRef.current?.(message);
 
       if (reconnectAttemptRef.current < 3) {
         reconnectAttemptRef.current += 1;
         reconnectTimerRef.current = setTimeout(() => {
-          void connectRef.current();
+          void connectRef.current(false);
         }, 1500 * reconnectAttemptRef.current);
       }
     }
@@ -251,7 +432,6 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
 
     sessionStartedAtRef.current = Date.now();
     reconnectAttemptRef.current = 0;
-    void connectRef.current();
 
     return () => {
       mountedRef.current = false;
@@ -264,6 +444,11 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     if (connectionState !== "connected") return;
     sendSessionUpdate(instructions);
   }, [instructions, connectionState, sendSessionUpdate]);
+
+  const connectFromUserGesture = useCallback(async () => {
+    reconnectAttemptRef.current = 0;
+    await connectRef.current(true);
+  }, []);
 
   const disconnect = useCallback(() => {
     cleanup();
@@ -279,6 +464,8 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectionState,
     disconnect,
     sessionElapsedSeconds,
-    reconnect: () => connectRef.current(),
+    connectFromUserGesture,
+    reconnect: () => connectRef.current(false),
+    isMediaConnected: connectionState === "connected",
   };
 }

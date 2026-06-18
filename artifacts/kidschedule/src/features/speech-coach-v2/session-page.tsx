@@ -24,6 +24,7 @@ export default function SpeechCoachV2SessionPage() {
   const [location, setLocation] = useLocation();
   const { data: children = [] } = useListChildren();
   const [live, setLive] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
@@ -66,6 +67,7 @@ export default function SpeechCoachV2SessionPage() {
     childName: child?.name ?? "friend",
     ageMonths,
     enabled: v2Enabled && Boolean(child?.id),
+    realtimeConnected,
   });
 
   const handleLimitReached = useCallback(() => {
@@ -82,6 +84,7 @@ export default function SpeechCoachV2SessionPage() {
     onUserTranscript: session.handleUserTranscript,
     onAssistantTranscript: session.handleAssistantTranscript,
     onLimitReached: handleLimitReached,
+    onConnectionChange: setRealtimeConnected,
   });
 
   const handleEnd = useCallback(async () => {
@@ -103,10 +106,11 @@ export default function SpeechCoachV2SessionPage() {
     return () => clearInterval(timer);
   }, [live, session.remainingSeconds]);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     session.beginLive();
     setLive(true);
-  }, [session]);
+    await realtime.connectFromUserGesture();
+  }, [session, realtime]);
 
   if (!v2Enabled) {
     return (
