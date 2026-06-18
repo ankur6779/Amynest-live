@@ -4,6 +4,10 @@ import { openMicrophoneStream } from "@/lib/microphone-permission";
 import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 import { mintSpeechCoachV2RealtimeToken, SpeechCoachV2ApiError } from "../lib/api";
 import {
+  exchangeRealtimeSdpOffer,
+  type RealtimeSdpExchangeDiagnostics,
+} from "@/lib/openai-realtime-webrtc";
+import {
   trackSpeechCoachV2Reconnect,
   trackSpeechCoachV2Ttfa,
 } from "../lib/analytics";
@@ -30,6 +34,24 @@ export interface UseSpeechCoachV2RealtimeOptions {
   onLimitReached?: () => void;
   onConnectionChange?: (connected: boolean) => void;
 }
+
+export type RealtimeDiagnostics = {
+  mic: "pending" | "ok" | "fail";
+  token: "pending" | "ok" | "fail";
+  sdp: "pending" | "ok" | "fail";
+  audio: "pending" | "ok" | "fail";
+  lastError: string | null;
+  sdpDetail: RealtimeSdpExchangeDiagnostics | null;
+};
+
+const INITIAL_DIAGNOSTICS: RealtimeDiagnostics = {
+  mic: "pending",
+  token: "pending",
+  sdp: "pending",
+  audio: "pending",
+  lastError: null,
+  sdpDetail: null,
+};
 
 const REALTIME_DEBUG = import.meta.env.DEV;
 
@@ -65,6 +87,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   } = options;
 
   const [connectionState, setConnectionState] = useState<RealtimeConnectionState>("idle");
+  const [diagnostics, setDiagnostics] = useState<RealtimeDiagnostics>(INITIAL_DIAGNOSTICS);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
@@ -250,6 +273,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectingRef.current = true;
     const isRetry = reconnectAttemptRef.current > 0;
     setConnected(false, isRetry ? "reconnecting" : "connecting");
+    setDiagnostics(INITIAL_DIAGNOSTICS);
     connectStartedAtRef.current = Date.now();
     rtLog("connect.start", { fromUserGesture, isRetry, sessionId: sid });
 
@@ -275,10 +299,16 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
           verificationTrace("MIC_OPENED", {
             tracks: mic.stream.getAudioTracks().length,
           });
+          setDiagnostics((d) => ({ ...d, mic: "ok" }));
           rtLog("mic.opened", { tracks: mic.stream.getAudioTracks().length });
           localStreamRef.current?.getTracks().forEach((t) => t.stop());
           localStreamRef.current = mic.stream;
         } catch (err) {
+          setDiagnostics((d) => ({
+            ...d,
+            mic: "fail",
+            lastError: err instanceof Error ? err.message : String(err),
+          }));
           micFailure(err);
         }
       }
@@ -299,7 +329,9 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         model: minted.model,
         voice: minted.voice,
         callsUrl: minted.callsUrl,
+        secretPrefix: minted.clientSecret?.slice(0, 8),
       });
+      setDiagnostics((d) => ({ ...d, token: "ok" }));
 
       cleanupPeerConnection();
       connectingRef.current = true;
@@ -356,30 +388,44 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       rtLog("sdp.offer", { length: offer.sdp?.length ?? 0 });
       verificationTrace("SDP_SENT", { offerLength: offer.sdp?.length ?? 0 });
 
-      const sdpResponse = await fetch(minted.callsUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${minted.clientSecret}`,
-          "Content-Type": "application/sdp",
-        },
-        body: offer.sdp ?? "",
-      });
-
-      const answerSdp = await sdpResponse.text();
-      rtLog("sdp.answer", { status: sdpResponse.status, length: answerSdp.length });
-
-      if (!sdpResponse.ok) {
-        if (sdpResponse.status === 429) {
+      let answerSdp: string;
+      try {
+        const exchanged = await exchangeRealtimeSdpOffer({
+          clientSecret: minted.clientSecret,
+          offerSdp: offer.sdp ?? "",
+          callsUrl: minted.callsUrl,
+        });
+        answerSdp = exchanged.answerSdp;
+        setDiagnostics((d) => ({ ...d, sdp: "ok", sdpDetail: exchanged.diagnostics }));
+        verificationTrace("SDP_ACCEPTED", {
+          status: exchanged.diagnostics.status,
+          responseBody: exchanged.diagnostics.responseBody.slice(0, 500),
+        });
+      } catch (sdpErr) {
+        const diag =
+          sdpErr instanceof Error && "diagnostics" in sdpErr
+            ? (sdpErr as Error & { diagnostics?: RealtimeSdpExchangeDiagnostics }).diagnostics
+            : null;
+        if (diag?.status === 429) {
           onLimitReachedRef.current?.();
-          throw new Error("Daily limit reached");
         }
-        throw new Error(`Realtime SDP exchange failed: ${sdpResponse.status} — ${answerSdp.slice(0, 200)}`);
+        const body = diag?.responseBody ?? (sdpErr instanceof Error ? sdpErr.message : String(sdpErr));
+        setDiagnostics((d) => ({
+          ...d,
+          sdp: "fail",
+          lastError: body,
+          sdpDetail: diag ?? d.sdpDetail,
+        }));
+        verificationTrace("SDP_REJECTED", { body: body.slice(0, 500) });
+        throw sdpErr;
       }
-      verificationTrace("SDP_ACCEPTED", { status: sdpResponse.status });
+
+      rtLog("sdp.answer", { length: answerSdp.length });
 
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
       verificationTrace("REMOTE_DESCRIPTION_SET");
       await mediaReady;
+      setDiagnostics((d) => ({ ...d, audio: "ok" }));
 
       if (!mountedRef.current) return;
 
@@ -406,7 +452,16 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       }
 
       const message = err instanceof Error ? err.message : "Connection failed";
+      const diagBody =
+        err instanceof Error && "diagnostics" in err
+          ? (err as Error & { diagnostics?: RealtimeSdpExchangeDiagnostics }).diagnostics?.responseBody
+          : null;
       rtLog("connect.fail", { message });
+      setDiagnostics((d) => ({
+        ...d,
+        lastError: diagBody ?? message,
+        audio: d.audio === "ok" ? "ok" : d.audio,
+      }));
       setConnected(false, "error");
       onErrorRef.current?.(message);
 
@@ -462,6 +517,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
 
   return {
     connectionState,
+    diagnostics,
     disconnect,
     sessionElapsedSeconds,
     connectFromUserGesture,

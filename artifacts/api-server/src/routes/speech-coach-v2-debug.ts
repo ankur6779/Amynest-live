@@ -2,8 +2,9 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { asyncRoute } from "../middlewares/async-route.js";
 import {
-  getRealtimeCallsUrl,
   mintRealtimeClientSecret,
+  REALTIME_MODEL,
+  REALTIME_VOICE,
 } from "../services/speechCoachV2RealtimeService.js";
 
 const router: IRouter = Router();
@@ -43,7 +44,9 @@ router.post(
       expiresAt: minted.expiresAt,
       model: minted.model,
       voice: minted.voice,
-      callsUrl: getRealtimeCallsUrl(),
+      callsUrl: minted.callsUrl,
+      sessionId: minted.sessionId,
+      mintResponse: minted.mintResponse,
     });
   }),
 );

@@ -30,7 +30,6 @@ import {
   validateAndTouchSession,
 } from "../services/speechCoachV2ActiveSessionService.js";
 import {
-  getRealtimeCallsUrl,
   mintRealtimeClientSecret,
 } from "../services/speechCoachV2RealtimeService.js";
 import {
@@ -320,7 +319,9 @@ router.post(
       expiresAt: minted.expiresAt,
       model: minted.model,
       voice: minted.voice,
-      callsUrl: getRealtimeCallsUrl(),
+      callsUrl: minted.callsUrl,
+      sessionId: minted.sessionId,
+      mintResponse: minted.mintResponse,
       remainingSeconds: remainingDailySeconds(secondsUsed),
     });
   }),

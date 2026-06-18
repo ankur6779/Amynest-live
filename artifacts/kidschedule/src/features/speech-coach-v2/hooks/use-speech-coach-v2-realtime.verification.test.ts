@@ -68,6 +68,8 @@ describe("useSpeechCoachV2Realtime verification trace (TEST 2/3 simulated runtim
       vi.fn(async () => ({
         ok: true,
         status: 200,
+        statusText: "OK",
+        headers: new Headers({ "content-type": "application/sdp" }),
         text: async () => "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\n",
       })),
     );

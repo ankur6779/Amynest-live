@@ -3,7 +3,6 @@ import { z } from "zod";
 import { asyncRoute } from "../middlewares/async-route.js";
 import { logger } from "../lib/logger.js";
 import {
-  getRealtimeCallsUrl,
   mintRealtimeClientSecret,
   REALTIME_MODEL,
   REALTIME_VOICE,
@@ -105,7 +104,7 @@ router.get(
       model: REALTIME_MODEL,
       voice: REALTIME_VOICE,
       tokenMint,
-      callsUrl: getRealtimeCallsUrl(),
+      callsUrl: minted.callsUrl,
       mintDetail,
     });
   }),
@@ -139,7 +138,9 @@ router.post(
       expiresAt: minted.expiresAt,
       model: minted.model,
       voice: minted.voice,
-      callsUrl: getRealtimeCallsUrl(),
+      callsUrl: minted.callsUrl,
+      sessionId: minted.sessionId,
+      mintResponse: minted.mintResponse,
     });
   }),
 );

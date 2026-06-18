@@ -209,6 +209,7 @@ export default function SpeechCoachV2SessionPage() {
         childName={child.name ?? "friend"}
         phaseLabel={session.phaseLabel}
         connectionState={realtime.connectionState}
+        diagnostics={realtime.diagnostics}
         starsEarned={session.sessionState?.starsEarned ?? 0}
         pointsEarned={session.sessionState?.pointsEarned ?? 0}
         remainingSeconds={session.remainingSeconds}

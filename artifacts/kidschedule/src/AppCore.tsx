@@ -39,6 +39,7 @@ const ResetPasswordPage = lazyPage(() => import("@/pages/reset-password"));
 import RouteFailedPage from "@/pages/route-failed";
 import SpeechCoachV2DebugPage from "@/pages/speech-coach-v2-debug";
 import OpenAiRealtimeTestPage from "@/pages/openai-realtime-test";
+import OpenAiRealtimeMinimalTestPage from "@/pages/openai-realtime-minimal-test";
 import { FirebaseActionGate } from "@/components/firebase-action-gate";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
@@ -743,6 +744,7 @@ function AppRoutes() {
             <>
               <Route path="/speech-coach-v2-debug" component={SpeechCoachV2DebugPage} />
               <Route path="/openai-realtime-test" component={OpenAiRealtimeTestPage} />
+              <Route path="/openai-realtime-minimal-test" component={OpenAiRealtimeMinimalTestPage} />
             </>
           )}
           <Route path="/onboarding" component={OnboardingRouteGuard} />

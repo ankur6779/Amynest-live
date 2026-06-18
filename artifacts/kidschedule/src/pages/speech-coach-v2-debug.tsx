@@ -4,6 +4,7 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { getApiUrl } from "@/lib/api";
+import { exchangeRealtimeSdpOffer } from "@/lib/openai-realtime-webrtc";
 import { openMicrophoneStream } from "@/lib/microphone-permission";
 import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
 
@@ -222,21 +223,12 @@ export default function SpeechCoachV2DebugPage() {
       pushTrace("SDP_SENT", { length: offer.sdp?.length ?? 0 });
       markStep("sdp_sent", "ok");
 
-      const sdpRes = await fetch(token.callsUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token.clientSecret}`,
-          "Content-Type": "application/sdp",
-        },
-        body: offer.sdp ?? "",
+      const { answerSdp, diagnostics } = await exchangeRealtimeSdpOffer({
+        clientSecret: token.clientSecret,
+        offerSdp: offer.sdp ?? "",
+        callsUrl: token.callsUrl,
       });
-      const answerSdp = await sdpRes.text();
-      if (!sdpRes.ok) {
-        pushTrace("SDP_REJECTED", { status: sdpRes.status }, answerSdp.slice(0, 500));
-        markStep("sdp_accepted", "fail");
-        throw new Error(`SDP failed: ${sdpRes.status} — ${answerSdp.slice(0, 200)}`);
-      }
-      pushTrace("SDP_ACCEPTED", { status: sdpRes.status, length: answerSdp.length });
+      pushTrace("SDP_ACCEPTED", diagnostics);
       markStep("sdp_accepted", "ok");
 
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });

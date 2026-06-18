@@ -1,12 +1,13 @@
 /**
- * Minimal OpenAI Realtime infrastructure test — no Speech Coach, DB, quota, or analytics.
- * Route: /openai-realtime-test (dev or OPENAI_REALTIME_DEBUG on API)
+ * Minimal OpenAI Realtime reproduction — no Speech Coach, DB, quota, or analytics.
+ * Route: /openai-realtime-minimal-test
  */
 import { useCallback, useRef, useState } from "react";
 import { getApiUrl } from "@/lib/api";
 import {
   exchangeRealtimeSdpOffer,
   OPENAI_REALTIME_CALLS_URL,
+  type RealtimeSdpExchangeDiagnostics,
 } from "@/lib/openai-realtime-webrtc";
 import { openMicrophoneStream } from "@/lib/microphone-permission";
 import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
@@ -26,13 +27,7 @@ declare global {
 }
 
 function pushTrace(tag: string, detail?: unknown, payload?: unknown) {
-  const entry: TraceEntry = {
-    ts: Date.now(),
-    iso: new Date().toISOString(),
-    tag,
-    detail,
-    payload,
-  };
+  const entry: TraceEntry = { ts: Date.now(), iso: new Date().toISOString(), tag, detail, payload };
   window.__OPENAI_REALTIME_TRACE__ = window.__OPENAI_REALTIME_TRACE__ ?? [];
   window.__OPENAI_REALTIME_TRACE__.push(entry);
   console.info("[OPENAI_REALTIME]", tag, detail ?? "", payload ?? "");
@@ -42,27 +37,26 @@ function pushTrace(tag: string, detail?: unknown, payload?: unknown) {
 type StepStatus = "pending" | "ok" | "fail";
 
 const STEPS = [
-  "MIC_OPENED",
-  "TOKEN_MINTED",
-  "SDP_SENT",
-  "SDP_ACCEPTED",
+  "MIC_OPEN_SUCCESS",
+  "TOKEN_MINT_SUCCESS",
+  "SDP_POST_SUCCESS",
   "DATA_CHANNEL_OPEN",
   "ONTRACK_FIRED",
-  "AUDIO_STARTED",
-  "RESPONSE_CREATED",
+  "AUDIO_PLAY_STARTED",
+  "AMY_GREETING_HEARD",
 ] as const;
 
 type StepKey = (typeof STEPS)[number];
 
-export default function OpenAiRealtimeTestPage() {
+export default function OpenAiRealtimeMinimalTestPage() {
   const [status, setStatus] = useState("idle");
   const [steps, setSteps] = useState<Record<StepKey, StepStatus>>(
     () => Object.fromEntries(STEPS.map((s) => [s, "pending"])) as Record<StepKey, StepStatus>,
   );
   const [trace, setTrace] = useState<TraceEntry[]>([]);
-  const [audioState, setAudioState] = useState<Record<string, unknown> | null>(null);
-  const [health, setHealth] = useState<Record<string, unknown> | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [sdpDiag, setSdpDiag] = useState<RealtimeSdpExchangeDiagnostics | null>(null);
+  const [mintInfo, setMintInfo] = useState<Record<string, unknown> | null>(null);
   const [connecting, setConnecting] = useState(false);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -77,21 +71,6 @@ export default function OpenAiRealtimeTestPage() {
   const markStep = useCallback((key: StepKey, value: StepStatus) => {
     setSteps((prev) => ({ ...prev, [key]: value }));
   }, []);
-
-  const checkHealth = useCallback(async () => {
-    try {
-      const res = await fetch(getApiUrl("/api/debug/openai-realtime-health"));
-      const body = await res.json().catch(() => ({}));
-      setHealth(body as Record<string, unknown>);
-      pushTrace("HEALTH_CHECK", { status: res.status }, body);
-      refreshTrace();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setHealth({ error: message });
-      pushTrace("HEALTH_CHECK_FAILURE", { message });
-      refreshTrace();
-    }
-  }, [refreshTrace]);
 
   const disconnect = useCallback(() => {
     dcRef.current?.close();
@@ -114,8 +93,9 @@ export default function OpenAiRealtimeTestPage() {
   const connect = useCallback(async () => {
     window.__OPENAI_REALTIME_TRACE__ = [];
     setTrace([]);
-    setError(null);
-    setAudioState(null);
+    setLastError(null);
+    setSdpDiag(null);
+    setMintInfo(null);
     setSteps(Object.fromEntries(STEPS.map((s) => [s, "pending"])) as Record<StepKey, StepStatus>);
     setConnecting(true);
     setStatus("connecting");
@@ -132,8 +112,8 @@ export default function OpenAiRealtimeTestPage() {
         pushTrace("MIC_OPEN_FAILURE", { reason: mic.reason });
         throw new Error(`Microphone unavailable: ${mic.reason}`);
       }
-      pushTrace("MIC_OPENED", { tracks: mic.stream.getAudioTracks().length });
-      markStep("MIC_OPENED", "ok");
+      pushTrace("MIC_OPEN_SUCCESS", { tracks: mic.stream.getAudioTracks().length });
+      markStep("MIC_OPEN_SUCCESS", "ok");
       streamRef.current = mic.stream;
 
       const tokenRes = await fetch(getApiUrl("/api/debug/openai-realtime-token"), {
@@ -146,10 +126,9 @@ export default function OpenAiRealtimeTestPage() {
       const tokenBody = await tokenRes.json().catch(() => ({}));
       if (!tokenRes.ok) {
         pushTrace("TOKEN_MINT_FAILURE", { status: tokenRes.status }, tokenBody);
-        markStep("TOKEN_MINTED", "fail");
+        markStep("TOKEN_MINT_SUCCESS", "fail");
         throw new Error(
-          (tokenBody as { message?: string; error?: string }).message
-          ?? (tokenBody as { error?: string }).error
+          (tokenBody as { message?: string }).message
           ?? `Token mint failed: ${tokenRes.status}`,
         );
       }
@@ -158,13 +137,25 @@ export default function OpenAiRealtimeTestPage() {
         callsUrl: string;
         model: string;
         voice: string;
+        mintResponse?: Record<string, unknown>;
       };
-      pushTrace("TOKEN_MINTED", { model: token.model, voice: token.voice });
-      markStep("TOKEN_MINTED", "ok");
+      setMintInfo({
+        model: token.model,
+        voice: token.voice,
+        callsUrl: token.callsUrl,
+        resolvedCallsUrl: OPENAI_REALTIME_CALLS_URL,
+        secretPrefix: token.clientSecret?.slice(0, 8),
+        mintResponse: token.mintResponse,
+      });
+      pushTrace("TOKEN_MINT_SUCCESS", {
+        model: token.model,
+        voice: token.voice,
+        secretPrefix: token.clientSecret?.slice(0, 8),
+      });
+      markStep("TOKEN_MINT_SUCCESS", "ok");
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
-
       const audioEl = document.createElement("audio");
       audioEl.autoplay = true;
       audioEl.setAttribute("playsinline", "true");
@@ -178,21 +169,20 @@ export default function OpenAiRealtimeTestPage() {
 
       const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
-
       dc.onopen = () => {
         pushTrace("DATA_CHANNEL_OPEN");
         markStep("DATA_CHANNEL_OPEN", "ok");
         dc.send(JSON.stringify({ type: "response.create" }));
         pushTrace("RESPONSE_CREATED");
-        markStep("RESPONSE_CREATED", "ok");
         refreshTrace();
       };
-
       dc.onmessage = (event) => {
         try {
           const payload = JSON.parse(String(event.data)) as Record<string, unknown>;
-          const type = String(payload.type ?? "unknown");
-          pushTrace("OPENAI_EVENT", { type }, payload);
+          pushTrace("OPENAI_EVENT", { type: payload.type }, payload);
+          if (payload.type === "response.output_audio.done" || payload.type === "response.done") {
+            markStep("AMY_GREETING_HEARD", "ok");
+          }
           refreshTrace();
         } catch (err) {
           pushTrace("OPENAI_EVENT_PARSE_ERROR", {
@@ -203,52 +193,42 @@ export default function OpenAiRealtimeTestPage() {
       };
 
       pc.ontrack = (event) => {
-        pushTrace("ONTRACK_FIRED", {
-          kind: event.track.kind,
-          streamCount: event.streams.length,
-        });
+        pushTrace("ONTRACK_FIRED", { kind: event.track.kind, streamCount: event.streams.length });
         markStep("ONTRACK_FIRED", "ok");
         audioEl.srcObject = event.streams[0] ?? null;
         void audioEl.play().then(() => {
-          const state = {
+          pushTrace("AUDIO_PLAY_STARTED", {
             readyState: audioEl.readyState,
             paused: audioEl.paused,
             muted: audioEl.muted,
-            srcObject: Boolean(audioEl.srcObject),
-            trackCount: event.streams[0]?.getAudioTracks().length ?? 0,
-          };
-          pushTrace("AUDIO_STARTED", state);
-          markStep("AUDIO_STARTED", "ok");
-          setAudioState(state);
+          });
+          markStep("AUDIO_PLAY_STARTED", "ok");
           refreshTrace();
         }).catch((playErr) => {
-          const state = {
-            readyState: audioEl.readyState,
-            paused: audioEl.paused,
-            muted: audioEl.muted,
-            srcObject: Boolean(audioEl.srcObject),
-            trackCount: event.streams[0]?.getAudioTracks().length ?? 0,
-            playError: playErr instanceof Error ? playErr.message : String(playErr),
-          };
-          pushTrace("AUDIO_PLAY_BLOCKED", state);
-          markStep("AUDIO_STARTED", "fail");
-          setAudioState(state);
+          pushTrace("AUDIO_PLAY_BLOCKED", {
+            message: playErr instanceof Error ? playErr.message : String(playErr),
+          });
+          markStep("AUDIO_PLAY_STARTED", "fail");
           refreshTrace();
         });
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      pushTrace("SDP_SENT", { url: OPENAI_REALTIME_CALLS_URL, length: offer.sdp?.length ?? 0 });
-      markStep("SDP_SENT", "ok");
+      pushTrace("SDP_SENT", {
+        url: OPENAI_REALTIME_CALLS_URL,
+        length: offer.sdp?.length ?? 0,
+        preview: offer.sdp?.slice(0, 200),
+      });
 
       const { answerSdp, diagnostics } = await exchangeRealtimeSdpOffer({
         clientSecret: token.clientSecret,
         offerSdp: offer.sdp ?? "",
         callsUrl: token.callsUrl,
       });
-      pushTrace("SDP_ACCEPTED", diagnostics);
-      markStep("SDP_ACCEPTED", "ok");
+      setSdpDiag(diagnostics);
+      pushTrace("SDP_POST_SUCCESS", diagnostics);
+      markStep("SDP_POST_SUCCESS", "ok");
 
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
       pushTrace("REMOTE_DESCRIPTION_SET");
@@ -258,8 +238,13 @@ export default function OpenAiRealtimeTestPage() {
       refreshTrace();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      pushTrace("CONNECT_FAILURE", { message });
-      setError(message);
+      const diag =
+        err instanceof Error && "diagnostics" in err
+          ? (err as Error & { diagnostics?: RealtimeSdpExchangeDiagnostics }).diagnostics
+          : undefined;
+      if (diag) setSdpDiag(diag);
+      setLastError(diag?.responseBody ?? message);
+      pushTrace("CONNECT_FAILURE", { message, diagnostics: diag });
       setStatus("error");
       setConnecting(false);
       refreshTrace();
@@ -268,52 +253,28 @@ export default function OpenAiRealtimeTestPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6 font-mono text-sm">
-      <h1 className="text-xl font-bold font-sans">OpenAI Realtime — Infrastructure Test</h1>
+      <h1 className="text-xl font-bold font-sans">OpenAI Realtime — Minimal Test</h1>
       <p className="text-muted-foreground font-sans">
-        Mic → token → SDP → Amy audio. No Speech Coach, curriculum, DB, quota, or analytics.
-      </p>
-      <p className="text-muted-foreground font-sans text-xs">
-        API: {getApiUrl("/api/debug/openai-realtime-health")}
+        Reproduces mic → token → POST {OPENAI_REALTIME_CALLS_URL} → audio. No Speech Coach.
       </p>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => void checkHealth()}
-          className="rounded bg-blue-600 px-4 py-2 text-white"
-        >
-          Check health
-        </button>
-        <button
-          type="button"
-          onClick={() => void connect()}
-          disabled={connecting}
-          className="rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
-        >
+      <div className="flex gap-3">
+        <button type="button" onClick={() => void connect()} disabled={connecting} className="rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50">
           Connect
         </button>
-        <button
-          type="button"
-          onClick={disconnect}
-          className="rounded bg-red-600 px-4 py-2 text-white"
-        >
+        <button type="button" onClick={disconnect} className="rounded bg-red-600 px-4 py-2 text-white">
           Disconnect
         </button>
       </div>
 
       <div>
         <strong>Status:</strong> {status}
-        {error && <p className="mt-2 text-red-600">{error}</p>}
-      </div>
-
-      {health && (
-        <div>
-          <strong>Health</strong>
-          <pre className="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs dark:bg-gray-900">
-            {JSON.stringify(health, null, 2)}
+        {lastError && (
+          <pre className="mt-2 overflow-auto rounded bg-red-950/40 p-3 text-xs text-red-300">
+            Last Error: {lastError}
           </pre>
-        </div>
-      )}
+        )}
+      </div>
 
       <div>
         <strong>Steps</strong>
@@ -321,15 +282,7 @@ export default function OpenAiRealtimeTestPage() {
           {STEPS.map((step) => (
             <li key={step}>
               {step}:{" "}
-              <span
-                className={
-                  steps[step] === "ok"
-                    ? "text-green-600"
-                    : steps[step] === "fail"
-                      ? "text-red-600"
-                      : "text-gray-500"
-                }
-              >
+              <span className={steps[step] === "ok" ? "text-green-600" : steps[step] === "fail" ? "text-red-600" : "text-gray-500"}>
                 {steps[step]}
               </span>
             </li>
@@ -337,23 +290,23 @@ export default function OpenAiRealtimeTestPage() {
         </ul>
       </div>
 
-      {audioState && (
+      {mintInfo && (
         <div>
-          <strong>Audio element state</strong>
-          <pre className="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs dark:bg-gray-900">
-            {JSON.stringify(audioState, null, 2)}
-          </pre>
+          <strong>Token mint</strong>
+          <pre className="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs dark:bg-gray-900">{JSON.stringify(mintInfo, null, 2)}</pre>
+        </div>
+      )}
+
+      {sdpDiag && (
+        <div>
+          <strong>SDP exchange diagnostics</strong>
+          <pre className="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs dark:bg-gray-900">{JSON.stringify(sdpDiag, null, 2)}</pre>
         </div>
       )}
 
       <div>
-        <strong>Trace ({trace.length} entries)</strong>
-        <p className="text-xs text-muted-foreground font-sans">
-          Export: <code>JSON.stringify(window.__OPENAI_REALTIME_TRACE__, null, 2)</code>
-        </p>
-        <pre className="mt-2 max-h-96 overflow-auto rounded bg-gray-100 p-3 text-xs dark:bg-gray-900">
-          {JSON.stringify(trace, null, 2)}
-        </pre>
+        <strong>Trace ({trace.length})</strong>
+        <pre className="mt-2 max-h-96 overflow-auto rounded bg-gray-100 p-3 text-xs dark:bg-gray-900">{JSON.stringify(trace, null, 2)}</pre>
       </div>
     </div>
   );
