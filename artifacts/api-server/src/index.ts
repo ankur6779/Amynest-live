@@ -81,6 +81,13 @@ async function startBackgroundTasks(): Promise<void> {
     return;
   }
 
+  await runBackgroundPhase("speech_coach_v2_realtime_model", async () => {
+    const { validateSpeechCoachV2RealtimeModelAtBoot } = await import(
+      "./services/speechCoachV2RealtimeService.js"
+    );
+    await validateSpeechCoachV2RealtimeModelAtBoot();
+  });
+
   // Auto push notifications: always start the in-process cron when enabled,
   // even if other background tasks are disabled (Render free tier / minimal boot).
   if (isModuleEnabled("crons") && isNotificationCronEnabled()) {

@@ -40,6 +40,7 @@ export type RealtimeDiagnostics = {
   token: "pending" | "ok" | "fail";
   sdp: "pending" | "ok" | "fail";
   audio: "pending" | "ok" | "fail";
+  model: string | null;
   lastError: string | null;
   sdpDetail: RealtimeSdpExchangeDiagnostics | null;
 };
@@ -49,6 +50,7 @@ const INITIAL_DIAGNOSTICS: RealtimeDiagnostics = {
   token: "pending",
   sdp: "pending",
   audio: "pending",
+  model: null,
   lastError: null,
   sdpDetail: null,
 };
@@ -331,7 +333,11 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         callsUrl: minted.callsUrl,
         secretPrefix: minted.clientSecret?.slice(0, 8),
       });
-      setDiagnostics((d) => ({ ...d, token: "ok" }));
+      setDiagnostics((d) => ({
+        ...d,
+        token: "ok",
+        model: minted.model,
+      }));
 
       cleanupPeerConnection();
       connectingRef.current = true;

@@ -4,8 +4,8 @@ import { asyncRoute } from "../middlewares/async-route.js";
 import { logger } from "../lib/logger.js";
 import {
   mintRealtimeClientSecret,
-  REALTIME_MODEL,
   REALTIME_VOICE,
+  getSpeechCoachV2RealtimeModel,
   getRealtimeCallsUrl,
 } from "../services/speechCoachV2RealtimeService.js";
 
@@ -66,7 +66,7 @@ router.get(
     if (!apiKey) {
       res.json({
         openaiReachable: false,
-        model: REALTIME_MODEL,
+        model: getSpeechCoachV2RealtimeModel(),
         tokenMint: false,
         error: "OPENAI_API_KEY not configured",
       });
@@ -104,7 +104,7 @@ router.get(
 
     res.json({
       openaiReachable,
-      model: REALTIME_MODEL,
+      model: getSpeechCoachV2RealtimeModel(),
       voice: REALTIME_VOICE,
       tokenMint,
       callsUrl: resolvedCallsUrl,

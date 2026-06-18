@@ -3,7 +3,6 @@ import { z } from "zod";
 import { asyncRoute } from "../middlewares/async-route.js";
 import {
   mintRealtimeClientSecret,
-  REALTIME_MODEL,
   REALTIME_VOICE,
 } from "../services/speechCoachV2RealtimeService.js";
 

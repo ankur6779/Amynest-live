@@ -21,7 +21,9 @@ const baseUrl = (
   || "https://api.openai.com"
 ).replace(/\/$/, "");
 
-const model = process.env.SPEECH_COACH_V2_REALTIME_MODEL?.trim() || "gpt-realtime";
+import { resolveSpeechCoachV2RealtimeModel } from "../artifacts/api-server/src/services/speechCoachV2RealtimeService.js";
+
+const model = resolveSpeechCoachV2RealtimeModel(process.env.SPEECH_COACH_V2_REALTIME_MODEL);
 const voice = process.env.SPEECH_COACH_V2_VOICE?.trim() || "shimmer";
 
 async function main() {
