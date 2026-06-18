@@ -92,7 +92,12 @@ export const SPEECH_COACH_V2_PHASE_DURATIONS: Record<SpeechCoachV2Phase, number>
 };
 
 export const SPEECH_COACH_V2_SESSION_SECONDS = 600;
-export const SPEECH_COACH_V2_DAILY_LIMIT_SECONDS = 600;
+/** Paid subscribers — 10 minutes per day. */
+export const SPEECH_COACH_V2_PAID_DAILY_LIMIT_SECONDS = 600;
+/** Free trial — 2 minutes per day. */
+export const SPEECH_COACH_V2_TRIAL_DAILY_LIMIT_SECONDS = 120;
+/** @deprecated Use SPEECH_COACH_V2_PAID_DAILY_LIMIT_SECONDS — kept for paid-tier references. */
+export const SPEECH_COACH_V2_DAILY_LIMIT_SECONDS = SPEECH_COACH_V2_PAID_DAILY_LIMIT_SECONDS;
 
 export const MASTERY_MIN_ATTEMPTS_PER_PHASE = 2;
 export const MASTERY_SUCCESS_SCORE_THRESHOLD = 75;

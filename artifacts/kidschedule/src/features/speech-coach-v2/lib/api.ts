@@ -38,6 +38,8 @@ export interface SpeechCoachV2Usage {
   monthSecondsUsed: number;
   remainingSeconds: number;
   limitReached: boolean;
+  isTrial: boolean;
+  isPaid: boolean;
   dateKey: string;
 }
 
@@ -49,6 +51,9 @@ export interface SpeechCoachV2StartResponse {
   exercises: SpeechCoachV2Exercise[];
   sessionState: PersistedSessionState;
   remainingSeconds: number;
+  dailyLimitSeconds: number;
+  isTrial: boolean;
+  isPaid: boolean;
   instructions: string;
 }
 

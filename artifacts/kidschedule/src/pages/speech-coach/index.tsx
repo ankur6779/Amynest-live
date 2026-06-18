@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { useTranslation } from "react-i18next";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getAuth } from "firebase/auth";
 import {
   ChevronLeft,
@@ -74,8 +75,12 @@ import { loadSpeechGameRewards } from "./speech-game-rewards";
 import { SPEECH_GAME_THEMES } from "./speech-game-theme";
 import {
   isSpeechCoachV2Enabled,
+  getSpeechCoachV2RemoteConfig,
   startSpeechCoachV2RemoteConfigPolling,
+  subscribeSpeechCoachV2RemoteConfig,
 } from "@/features/speech-coach-v2/lib/remote-config";
+import { showSpeechCoachLegacyCards } from "./show-speech-coach-legacy";
+import { useSpeechCoachV2DailyAllowance } from "@/features/speech-coach-v2/hooks/use-speech-coach-v2-daily-allowance";
 import {
   buildCoachLocalSnapshot,
   clampClarityScore,
@@ -1454,6 +1459,7 @@ function ExpertSection({ child }: { child: AnyChild | null }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function SpeechCoachPage() {
   usePrimeIosMicrophone();
+  const authFetch = useAuthFetch();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [viewMode, setViewMode] = useState<SpeechViewMode>(() =>
@@ -1466,15 +1472,27 @@ export default function SpeechCoachPage() {
   );
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
+  const [, setRemoteConfigTick] = useState(0);
+  const showLegacyCards = showSpeechCoachLegacyCards(
+    getSpeechCoachV2RemoteConfig().speechCoachLegacyVisible,
+  );
   const child =
     eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+  const v2DailyAllowance = useSpeechCoachV2DailyAllowance(
+    authFetch,
+    child?.id,
+    v2Enabled && Boolean(child?.id),
+  );
 
   useEffect(() => {
     const stop = startSpeechCoachV2RemoteConfigPolling();
-    const interval = setInterval(() => setV2Enabled(isSpeechCoachV2Enabled()), 30_000);
+    const unsub = subscribeSpeechCoachV2RemoteConfig(() => {
+      setV2Enabled(isSpeechCoachV2Enabled());
+      setRemoteConfigTick((n) => n + 1);
+    });
     return () => {
       stop();
-      clearInterval(interval);
+      unsub();
     };
   }, []);
 
@@ -1566,12 +1584,14 @@ export default function SpeechCoachPage() {
             </div>
           </div>
 
-          {/* PRIMARY: Start Live Session */}
+          {/* PRIMARY: Start Live Session (legacy — hidden in production) */}
+          {showLegacyCards && (
           <AppLink href="/speech-coach/live-session" source="speech-home-hero-live" replace>
             <motion.div
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.985 }}
               className="group relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl bg-gradient-to-br from-primary via-fuchsia-500 to-violet-600 border border-white/20"
+              data-testid="speech-coach-legacy-live-session"
             >
               <div className="absolute inset-0 bg-[radial-gradient(white_0.8px,transparent_1px)] bg-[length:3px_3px] opacity-10" />
               <motion.div
@@ -1598,43 +1618,63 @@ export default function SpeechCoachPage() {
               </div>
             </motion.div>
           </AppLink>
+          )}
 
           {v2Enabled && (
             <AppLink href="/speech-coach-v2" source="speech-coach-v2-promo">
               <motion.div
-                whileHover={{ scale: 1.005 }}
+                whileHover={{ scale: showLegacyCards ? 1.005 : 1.01 }}
                 whileTap={{ scale: 0.985 }}
-                className="group relative overflow-hidden rounded-2xl border border-sky-400/30 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 p-5 text-white shadow-lg"
+                className={
+                  showLegacyCards
+                    ? "group relative overflow-hidden rounded-2xl border border-sky-400/30 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 p-5 text-white shadow-lg"
+                    : "group relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl bg-gradient-to-br from-primary via-fuchsia-500 to-violet-600 border border-white/20"
+                }
                 data-testid="speech-coach-v2-promo"
               >
+                {!showLegacyCards && (
+                  <>
+                    <div className="absolute inset-0 bg-[radial-gradient(white_0.8px,transparent_1px)] bg-[length:3px_3px] opacity-10" />
+                    <motion.div
+                      animate={{ opacity: [0.6, 1, 0.6] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute -inset-[2px] rounded-[20px] bg-gradient-to-r from-white/30 via-white/10 to-white/30 blur-xl"
+                    />
+                  </>
+                )}
                 <div className="relative flex items-center gap-4">
-                  <div className="shrink-0 rounded-2xl bg-white/15 p-3 ring-1 ring-white/25">
-                    <Sparkles className="h-7 w-7" />
+                  <div className={`shrink-0 rounded-2xl bg-white/15 ring-1 ring-white/25 ${showLegacyCards ? "p-3" : "p-3.5"}`}>
+                    <Sparkles className={showLegacyCards ? "h-7 w-7" : "h-8 w-8"} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-black uppercase tracking-[2px] text-white/75">
+                    <div className={`font-black uppercase tracking-[2px] text-white/75 ${showLegacyCards ? "text-[10px]" : "text-[10px] tracking-[2.5px] text-white/70"}`}>
                       {t("screens.speech_coach.home.hero_v2_badge")}
                     </div>
-                    <div className="text-xl font-black leading-tight mt-1">
+                    <div className={`font-black leading-tight mt-1 ${showLegacyCards ? "text-xl" : "text-2xl leading-none tracking-[-0.5px]"}`}>
                       {t("screens.speech_coach.home.hero_v2_title")}
                     </div>
-                    <p className="text-sm mt-2 text-white/85 leading-snug">
+                    <p className={`mt-2 text-white/85 leading-snug ${showLegacyCards ? "text-sm" : "text-sm line-clamp-3 pr-2"}`}>
                       {t("screens.speech_coach.home.hero_v2_sub")}
                     </p>
+                    {v2DailyAllowance && (
+                      <p className="mt-1 text-xs font-semibold text-white/75">{v2DailyAllowance}</p>
+                    )}
                   </div>
-                  <div className="text-2xl opacity-70 group-hover:translate-x-0.5 transition">→</div>
+                  <div className={`opacity-70 group-hover:translate-x-0.5 transition ${showLegacyCards ? "text-2xl" : "text-3xl"}`}>→</div>
                 </div>
               </motion.div>
             </AppLink>
           )}
 
-          {/* SECONDARY: Talk with Amy + Practice with Amy */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* AI Pronunciation Practice + legacy Talk with Amy */}
+          <div className={showLegacyCards ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
+            {showLegacyCards && (
             <AppLink href="/speech-coach/talk" source="speech-home-talk-banner" replace>
               <motion.div
                 whileHover={{ scale: 1.005 }}
                 whileTap={{ scale: 0.99 }}
                 className="group relative h-full overflow-hidden rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-600/90 via-sky-700/85 to-indigo-800/90 p-4 text-white shadow-lg"
+                data-testid="speech-coach-legacy-talk-with-amy"
               >
                 <div className="relative flex h-full flex-col gap-3">
                   <div className="flex items-start gap-3">
@@ -1660,11 +1700,13 @@ export default function SpeechCoachPage() {
                 </div>
               </motion.div>
             </AppLink>
+            )}
 
             <button
               type="button"
               onClick={() => scrollToSection("speech-section-practice")}
-              className="group rounded-2xl border-2 border-primary/30 bg-card hover:border-primary/60 p-4 text-left transition-all active:scale-[0.985] flex flex-col justify-between min-h-full"
+              className="group rounded-2xl border-2 border-primary/30 bg-card hover:border-primary/60 p-4 text-left transition-all active:scale-[0.985] flex flex-col justify-between min-h-full w-full"
+              data-testid="speech-coach-pronunciation-practice"
             >
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-0.5 text-[10px] font-black uppercase tracking-widest text-primary mb-3">

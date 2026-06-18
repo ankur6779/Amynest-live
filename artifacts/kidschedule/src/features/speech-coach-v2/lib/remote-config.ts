@@ -3,6 +3,7 @@ import { getApiUrl } from "@/lib/api";
 
 export interface SpeechCoachV2RemoteConfig {
   speechCoachV2Enabled: boolean;
+  speechCoachLegacyVisible: boolean;
 }
 
 function envBool(key: string, defaultValue: boolean): boolean {
@@ -14,6 +15,7 @@ function envBool(key: string, defaultValue: boolean): boolean {
 
 const DEFAULT_CONFIG: SpeechCoachV2RemoteConfig = {
   speechCoachV2Enabled: envBool("VITE_SPEECH_COACH_V2_ENABLED", false),
+  speechCoachLegacyVisible: envBool("VITE_SPEECH_COACH_LEGACY_VISIBLE", false),
 };
 
 let cachedConfig: SpeechCoachV2RemoteConfig = { ...DEFAULT_CONFIG };
@@ -48,6 +50,8 @@ export async function refreshSpeechCoachV2RemoteConfig(): Promise<SpeechCoachV2R
     cachedConfig = {
       speechCoachV2Enabled:
         data.speechCoachV2Enabled ?? DEFAULT_CONFIG.speechCoachV2Enabled,
+      speechCoachLegacyVisible:
+        data.speechCoachLegacyVisible ?? DEFAULT_CONFIG.speechCoachLegacyVisible,
     };
     notifyListeners();
     return cachedConfig;

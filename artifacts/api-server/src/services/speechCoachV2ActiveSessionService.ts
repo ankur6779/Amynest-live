@@ -7,12 +7,12 @@ import {
   speechCoachV2MonthlyUsageTable,
 } from "@workspace/db";
 import {
-  SPEECH_COACH_V2_DAILY_LIMIT_SECONDS,
   SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
   SPEECH_COACH_V2_SESSION_SECONDS,
   utcDateKey,
   type PersistedSessionState,
 } from "@workspace/speech-coach-v2";
+import { resolveSpeechCoachV2UsagePolicy } from "./speechCoachV2UsagePolicy.js";
 
 const ACTIVE_STALE_MS = 45_000;
 const HEARTBEAT_TICK_SECONDS = 15;
@@ -100,6 +100,7 @@ async function addUsageLocked(
   userId: string,
   childId: number,
   deltaSeconds: number,
+  dailyLimitSeconds: number,
 ): Promise<{ dailyUsed: number; monthlyUsed: number; limitReached: boolean }> {
   const day = utcDateKey();
   const month = utcMonthKey();
@@ -120,13 +121,13 @@ async function addUsageLocked(
 
   let dailyUsed = dailyRows[0]?.secondsUsed ?? 0;
   if (dailyRows[0]) {
-    dailyUsed = Math.min(SPEECH_COACH_V2_DAILY_LIMIT_SECONDS, dailyUsed + cappedDelta);
+    dailyUsed = Math.min(dailyLimitSeconds, dailyUsed + cappedDelta);
     await tx
       .update(speechCoachV2DailyUsageTable)
       .set({ secondsUsed: dailyUsed, updatedAt: new Date() })
       .where(eq(speechCoachV2DailyUsageTable.id, dailyRows[0].id));
   } else {
-    dailyUsed = Math.min(SPEECH_COACH_V2_DAILY_LIMIT_SECONDS, cappedDelta);
+    dailyUsed = Math.min(dailyLimitSeconds, cappedDelta);
     await tx.insert(speechCoachV2DailyUsageTable).values({
       userId,
       childId,
@@ -166,7 +167,7 @@ async function addUsageLocked(
   }
 
   const limitReached =
-    dailyUsed >= SPEECH_COACH_V2_DAILY_LIMIT_SECONDS
+    dailyUsed >= dailyLimitSeconds
     || monthlyUsed >= SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS;
 
   return { dailyUsed, monthlyUsed, limitReached };
@@ -181,6 +182,15 @@ export async function registerActiveSession(input: {
   tabLockToken: string;
   resume?: boolean;
 }): Promise<PersistedSessionState> {
+  const policy = await resolveSpeechCoachV2UsagePolicy(input.userId);
+  if (policy.dailyLimitSeconds <= 0) {
+    throw new SpeechCoachV2SessionError(
+      "Speech Coach V2 is not available on your plan.",
+      "daily_limit_reached",
+      429,
+    );
+  }
+
   return db.transaction(async (tx) => {
     const existing = await lockActiveSession(tx, input.userId, input.childId);
     if (existing) {
@@ -217,7 +227,7 @@ export async function registerActiveSession(input: {
     }
 
     const dailyUsed = await getDailyUsageLocked(tx, input.userId, input.childId);
-    if (dailyUsed >= SPEECH_COACH_V2_DAILY_LIMIT_SECONDS) {
+    if (dailyUsed >= policy.dailyLimitSeconds) {
       throw new SpeechCoachV2SessionError(
         "Daily speech limit reached.",
         "daily_limit_reached",
@@ -307,6 +317,15 @@ export async function validateAndTouchSession(input: {
   limitReached: boolean;
   remainingSeconds: number;
 }> {
+  const policy = await resolveSpeechCoachV2UsagePolicy(input.userId);
+  if (policy.dailyLimitSeconds <= 0) {
+    throw new SpeechCoachV2SessionError(
+      "Speech Coach V2 is not available on your plan.",
+      "daily_limit_reached",
+      429,
+    );
+  }
+
   return db.transaction(async (tx) => {
     const rows = await tx
       .select()
@@ -345,9 +364,19 @@ export async function validateAndTouchSession(input: {
 
     const nextConsumed = row.secondsConsumed + tickSeconds;
 
-    const usage = await addUsageLocked(tx, input.userId, input.childId, tickSeconds);
+    const usage = await addUsageLocked(
+      tx,
+      input.userId,
+      input.childId,
+      tickSeconds,
+      policy.dailyLimitSeconds,
+    );
 
-    const sessionCapReached = nextConsumed >= SPEECH_COACH_V2_SESSION_SECONDS;
+    const sessionCapSeconds = Math.min(
+      SPEECH_COACH_V2_SESSION_SECONDS,
+      policy.dailyLimitSeconds,
+    );
+    const sessionCapReached = nextConsumed >= sessionCapSeconds;
     const limitReached = usage.limitReached || sessionCapReached;
     const status = limitReached ? "terminated" : "active";
 
@@ -375,7 +404,7 @@ export async function validateAndTouchSession(input: {
       sessionState: row.sessionStateJson as unknown as PersistedSessionState,
       secondsConsumed: nextConsumed,
       limitReached: false,
-      remainingSeconds: Math.max(0, SPEECH_COACH_V2_DAILY_LIMIT_SECONDS - usage.dailyUsed),
+      remainingSeconds: Math.max(0, policy.dailyLimitSeconds - usage.dailyUsed),
     };
   });
 }
@@ -410,6 +439,8 @@ export async function terminateActiveSession(input: {
   sessionId: string;
   status?: "completed" | "terminated";
 }): Promise<number> {
+  const policy = await resolveSpeechCoachV2UsagePolicy(input.userId);
+
   return db.transaction(async (tx) => {
     const rows = await tx
       .select()
@@ -435,8 +466,14 @@ export async function terminateActiveSession(input: {
     const finalTick = Math.min(HEARTBEAT_TICK_SECONDS, elapsedSinceLastSeen);
     const nextConsumed = row.secondsConsumed + finalTick;
 
-    if (finalTick > 0) {
-      await addUsageLocked(tx, input.userId, input.childId, finalTick);
+    if (finalTick > 0 && policy.dailyLimitSeconds > 0) {
+      await addUsageLocked(
+        tx,
+        input.userId,
+        input.childId,
+        finalTick,
+        policy.dailyLimitSeconds,
+      );
     }
 
     await tx

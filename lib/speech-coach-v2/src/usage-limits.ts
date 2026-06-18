@@ -1,4 +1,6 @@
-import { SPEECH_COACH_V2_DAILY_LIMIT_SECONDS } from "./types";
+import {
+  SPEECH_COACH_V2_PAID_DAILY_LIMIT_SECONDS,
+} from "./types";
 
 export interface DailyUsageState {
   speechSecondsUsed: number;
@@ -18,17 +20,33 @@ export function dailyUsageFromSeconds(secondsUsed: number): DailyUsageState {
   };
 }
 
-export function remainingDailySeconds(secondsUsed: number): number {
-  return Math.max(0, SPEECH_COACH_V2_DAILY_LIMIT_SECONDS - secondsUsed);
+export function remainingDailySeconds(
+  secondsUsed: number,
+  dailyLimitSeconds: number,
+): number {
+  return Math.max(0, dailyLimitSeconds - secondsUsed);
 }
 
-export function isDailyLimitReached(secondsUsed: number): boolean {
-  return secondsUsed >= SPEECH_COACH_V2_DAILY_LIMIT_SECONDS;
+export function isDailyLimitReached(
+  secondsUsed: number,
+  dailyLimitSeconds: number,
+): boolean {
+  if (dailyLimitSeconds <= 0) return true;
+  return secondsUsed >= dailyLimitSeconds;
 }
 
 export const DAILY_LIMIT_MESSAGE =
-  "Amazing work today. Come back tomorrow for another speech adventure.";
+  "Amazing work today! 🌟 You have completed today's speech practice. Come back tomorrow for another session.";
 
-export function canStartSession(secondsUsed: number): boolean {
-  return !isDailyLimitReached(secondsUsed);
+export const TRIAL_UPGRADE_CTA =
+  "Unlock 10 minutes/day with AmyNest Premium.";
+
+export function canStartSession(
+  secondsUsed: number,
+  dailyLimitSeconds: number,
+): boolean {
+  return !isDailyLimitReached(secondsUsed, dailyLimitSeconds);
 }
+
+/** Default paid-tier limit for legacy call sites. */
+export const DEFAULT_PAID_DAILY_LIMIT_SECONDS = SPEECH_COACH_V2_PAID_DAILY_LIMIT_SECONDS;

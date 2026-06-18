@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useListChildren } from "@workspace/api-client-react";
+import { usePaywall } from "@/contexts/paywall-context";
 import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import { useSpeechCoachV2Session } from "./hooks/use-speech-coach-v2-session";
 import { useSpeechCoachV2Realtime } from "./hooks/use-speech-coach-v2-realtime";
 import { SpeechCoachV2SessionUi } from "./components/session-ui";
 import { SpeechCoachV2CelebrationOverlay } from "./components/celebration-overlay";
 import { SpeechCoachV2LimitReached } from "./components/limit-reached";
+import {
+  trackSpeechCoachUpgradeClicked,
+  trackSpeechCoachUpgradeShown,
+} from "./lib/analytics";
 import {
   isSpeechCoachV2Enabled,
   startSpeechCoachV2RemoteConfigPolling,
@@ -21,6 +26,7 @@ const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
 export default function SpeechCoachV2SessionPage() {
   const authFetch = useAuthFetch();
+  const { openPaywall } = usePaywall();
   const [location, setLocation] = useLocation();
   const { data: children = [] } = useListChildren();
   const [live, setLive] = useState(false);
@@ -112,6 +118,15 @@ export default function SpeechCoachV2SessionPage() {
     await realtime.connectFromUserGesture();
   }, [session, realtime]);
 
+  useEffect(() => {
+    if (session.uiState === "limit_reached" && session.isTrial && child?.id) {
+      trackSpeechCoachUpgradeShown({
+        childId: child.id,
+        source: "speech_coach_v2_limit",
+      });
+    }
+  }, [session.uiState, session.isTrial, child?.id]);
+
   if (!v2Enabled) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
@@ -132,7 +147,22 @@ export default function SpeechCoachV2SessionPage() {
   }
 
   if (session.uiState === "limit_reached") {
-    return <SpeechCoachV2LimitReached message={session.dailyLimitMessage} />;
+    return (
+      <SpeechCoachV2LimitReached
+        message={session.dailyLimitMessage}
+        isTrial={session.isTrial}
+        onUpgrade={() => {
+          trackSpeechCoachUpgradeClicked({
+            childId: child.id,
+            source: "speech_coach_v2_limit",
+          });
+          openPaywall("speech_coach");
+        }}
+        onDismiss={() => {
+          setLocation("/speech-coach-v2");
+        }}
+      />
+    );
   }
 
   if (session.uiState === "resume_prompt" && session.pendingResume) {

@@ -6,18 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListChildren } from "@workspace/api-client-react";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import {
   isSpeechCoachV2Enabled,
   startSpeechCoachV2RemoteConfigPolling,
 } from "./lib/remote-config";
 import { SpeechCoachV2ParentDashboardPanel } from "./components/parent-dashboard";
+import { useSpeechCoachV2DailyAllowance } from "./hooks/use-speech-coach-v2-daily-allowance";
 
 export default function SpeechCoachV2HubPage() {
   const [, setLocation] = useLocation();
+  const authFetch = useAuthFetch();
   const { data: children = [] } = useListChildren();
   const child = children[0];
   const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
+  const dailyAllowance = useSpeechCoachV2DailyAllowance(
+    authFetch,
+    child?.id,
+    v2Enabled && Boolean(child?.id),
+  );
 
   useEffect(() => {
     const stop = startSpeechCoachV2RemoteConfigPolling();
@@ -58,11 +66,13 @@ export default function SpeechCoachV2HubPage() {
         <p className="text-xs font-semibold uppercase tracking-wider text-white/70">
           AmyNest AI™ Speech Coach V2
         </p>
-        <h1 className="mt-2 text-2xl font-bold">Talk with Amy</h1>
+        <h1 className="mt-2 text-2xl font-bold">Speech Coach V2</h1>
         <p className="mt-2 text-sm text-white/85">
-          A structured 10-minute speech session for pronunciation, fluency, and confidence.
-          Voice-first — no buttons between exercises.
+          Live AI speech coaching for pronunciation, fluency, and confidence.
         </p>
+        {dailyAllowance && (
+          <p className="mt-1 text-xs font-semibold text-white/75">{dailyAllowance}</p>
+        )}
         <AppLink href="/speech-coach-v2/session" source="speech-coach-v2-hub">
           <Button
             className="mt-5 w-full rounded-xl bg-white text-indigo-700 hover:bg-white/90"
@@ -85,10 +95,10 @@ export default function SpeechCoachV2HubPage() {
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
               <ul className="space-y-2">
-                <li>• 10-minute guided session with 6 phases</li>
+                <li>• Guided session with 6 phases</li>
                 <li>• Age-adaptive lessons for ages 2–10</li>
                 <li>• Stars, points, and confidence badges</li>
-                <li>• 10 minutes per day — healthy practice limit</li>
+                <li>• {dailyAllowance ?? "Daily practice limit from your plan"}</li>
               </ul>
             </CardContent>
           </Card>

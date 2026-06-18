@@ -19,8 +19,11 @@ export function trackSpeechCoachV2SessionComplete(props: {
   track("speech_coach_v2_session_complete", props);
 }
 
-export function trackSpeechCoachV2LimitReached(props: { childId: number }): void {
+export function trackSpeechCoachV2LimitReached(props: { childId: number; isTrial?: boolean }): void {
   track("speech_coach_v2_daily_limit", props);
+  if (props.isTrial) {
+    track("speech_coach_trial_limit_hit", { childId: props.childId });
+  }
 }
 
 export function trackSpeechCoachV2Reconnect(props: { childId: number; sessionId: string }): void {
@@ -33,4 +36,20 @@ export function trackSpeechCoachV2Ttfa(props: {
   ttfaMs: number;
 }): void {
   track("speech_coach_v2_ttfa", props);
+}
+
+export function trackSpeechCoachTrialStarted(props: { childId: number }): void {
+  track("speech_coach_trial_started", props);
+}
+
+export function trackSpeechCoachPaidUsage(props: { childId: number }): void {
+  track("speech_coach_paid_usage", props);
+}
+
+export function trackSpeechCoachUpgradeShown(props: { childId: number; source: string }): void {
+  track("speech_coach_upgrade_shown", props);
+}
+
+export function trackSpeechCoachUpgradeClicked(props: { childId: number; source: string }): void {
+  track("speech_coach_upgrade_clicked", props);
 }

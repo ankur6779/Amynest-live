@@ -11,7 +11,6 @@ import {
   DAILY_LIMIT_MESSAGE,
   isDailyLimitReached,
   remainingDailySeconds,
-  SPEECH_COACH_V2_DAILY_LIMIT_SECONDS,
   SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
   toFullSessionState,
   utcDateKey,
@@ -21,6 +20,7 @@ import { getAuth } from "../lib/auth";
 import { asyncRoute } from "../middlewares/async-route.js";
 import { getFeatureUsage, nextResetAtFor } from "../services/subscriptionService.js";
 import { getSpeechCoachV2RemoteConfig } from "../services/speechCoachV2RemoteConfig.js";
+import { resolveSpeechCoachV2UsagePolicy } from "../services/speechCoachV2UsagePolicy.js";
 import {
   assertActiveSessionForToken,
   generateTabLockToken,
@@ -95,6 +95,27 @@ function handleSessionError(err: unknown, res: import("express").Response): bool
   return false;
 }
 
+async function buildUsageResponse(
+  userId: string,
+  childId: number,
+  secondsUsed: number,
+  monthUsed: number,
+) {
+  const policy = await resolveSpeechCoachV2UsagePolicy(userId);
+  return {
+    speechSecondsUsed: secondsUsed,
+    speechMinutesToday: Math.floor(secondsUsed / 60),
+    dailyLimitSeconds: policy.dailyLimitSeconds,
+    monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+    monthSecondsUsed: monthUsed,
+    remainingSeconds: remainingDailySeconds(secondsUsed, policy.dailyLimitSeconds),
+    limitReached: isDailyLimitReached(secondsUsed, policy.dailyLimitSeconds),
+    isTrial: policy.isTrial,
+    isPaid: policy.isPaid,
+    dateKey: utcDateKey(),
+  };
+}
+
 router.get(
   "/speech/v2/config",
   asyncRoute(async (_req, res) => {
@@ -118,16 +139,7 @@ router.get(
       getDailyUsageSeconds(userId, childId),
       getMonthlyUsageSeconds(userId, childId),
     ]);
-    res.json({
-      speechSecondsUsed: secondsUsed,
-      speechMinutesToday: Math.floor(secondsUsed / 60),
-      dailyLimitSeconds: SPEECH_COACH_V2_DAILY_LIMIT_SECONDS,
-      monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
-      monthSecondsUsed: monthUsed,
-      remainingSeconds: remainingDailySeconds(secondsUsed),
-      limitReached: isDailyLimitReached(secondsUsed),
-      dateKey: utcDateKey(),
-    });
+    res.json(await buildUsageResponse(userId, childId, secondsUsed, monthUsed));
   }),
 );
 
@@ -183,11 +195,14 @@ router.post(
     }
 
     const secondsUsed = await getDailyUsageSeconds(userId, body.childId);
-    if (!canStartSession(secondsUsed)) {
+    const policy = await resolveSpeechCoachV2UsagePolicy(userId);
+    if (!canStartSession(secondsUsed, policy.dailyLimitSeconds)) {
       res.status(429).json({
         error: "daily_limit_reached",
         message: DAILY_LIMIT_MESSAGE,
         speechSecondsUsed: secondsUsed,
+        dailyLimitSeconds: policy.dailyLimitSeconds,
+        isTrial: policy.isTrial,
       });
       return;
     }
@@ -235,7 +250,10 @@ router.post(
       phase: state.phase,
       exercises: state.exercises,
       sessionState: state,
-      remainingSeconds: remainingDailySeconds(secondsUsed),
+      remainingSeconds: remainingDailySeconds(secondsUsed, policy.dailyLimitSeconds),
+      dailyLimitSeconds: policy.dailyLimitSeconds,
+      isTrial: policy.isTrial,
+      isPaid: policy.isPaid,
       instructions: buildAmyRealtimeInstructions(state),
     });
   }),
@@ -313,6 +331,7 @@ router.post(
     });
 
     const secondsUsed = await getDailyUsageSeconds(userId, body.childId);
+    const policy = await resolveSpeechCoachV2UsagePolicy(userId);
 
     res.json({
       clientSecret: minted.clientSecret,
@@ -322,7 +341,9 @@ router.post(
       callsUrl: minted.callsUrl,
       sessionId: minted.sessionId,
       mintResponse: minted.mintResponse,
-      remainingSeconds: remainingDailySeconds(secondsUsed),
+      remainingSeconds: remainingDailySeconds(secondsUsed, policy.dailyLimitSeconds),
+      dailyLimitSeconds: policy.dailyLimitSeconds,
+      isTrial: policy.isTrial,
     });
   }),
 );

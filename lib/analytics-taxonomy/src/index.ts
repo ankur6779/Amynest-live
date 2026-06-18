@@ -239,6 +239,7 @@ const EVENT_PROP_SCHEMAS = {
   }),
   speech_coach_v2_daily_limit: z.object({
     childId: z.number().int().optional(),
+    isTrial: z.boolean().optional(),
   }),
   speech_coach_v2_reconnect: z.object({
     childId: z.number().int().optional(),
@@ -248,6 +249,23 @@ const EVENT_PROP_SCHEMAS = {
     childId: z.number().int().optional(),
     sessionId: z.string().max(64).optional(),
     ttfaMs: z.number().int().nonnegative().optional(),
+  }),
+  speech_coach_trial_started: z.object({
+    childId: z.number().int().optional(),
+  }),
+  speech_coach_trial_limit_hit: z.object({
+    childId: z.number().int().optional(),
+  }),
+  speech_coach_upgrade_shown: z.object({
+    childId: z.number().int().optional(),
+    source: z.string().max(64).optional(),
+  }),
+  speech_coach_upgrade_clicked: z.object({
+    childId: z.number().int().optional(),
+    source: z.string().max(64).optional(),
+  }),
+  speech_coach_paid_usage: z.object({
+    childId: z.number().int().optional(),
   }),
 } as const;
 
@@ -293,6 +311,11 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   speech_coach_v2_daily_limit: "session",
   speech_coach_v2_reconnect: "session",
   speech_coach_v2_ttfa: "session",
+  speech_coach_trial_started: "session",
+  speech_coach_trial_limit_hit: "session",
+  speech_coach_upgrade_shown: "premium",
+  speech_coach_upgrade_clicked: "premium",
+  speech_coach_paid_usage: "session",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

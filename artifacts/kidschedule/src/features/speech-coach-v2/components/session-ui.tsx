@@ -1,12 +1,9 @@
 import { Loader2, Mic, PhoneOff, Sparkles } from "lucide-react";
 import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
 import type { RealtimeConnectionState, RealtimeDiagnostics } from "../hooks/use-speech-coach-v2-realtime";
-
-function stepLabel(value: RealtimeDiagnostics[keyof Pick<RealtimeDiagnostics, "mic" | "token" | "sdp" | "audio">]): string {
-  if (value === "ok") return "PASS";
-  if (value === "fail") return "FAIL";
-  return "…";
-}
+import { RealtimeDiagnosticsPanel } from "./realtime-diagnostics-panel";
+import { showRealtimeDiagnostics } from "../lib/show-realtime-diagnostics";
+import { formatSpeechCoachRemainingLabel } from "../lib/usage-display";
 
 function connectionLabel(state: RealtimeConnectionState): string {
   switch (state) {
@@ -72,19 +69,8 @@ export function SpeechCoachV2SessionUi(props: {
         <AmyAvatar state={live && connectionState === "connected" ? "listening" : "idle"} size={280} />
         <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
         <p className="mt-1 text-xs text-white/60">{connectionLabel(connectionState)}</p>
-        {live && diagnostics && (
-          <div className="mt-3 w-full max-w-sm rounded-xl bg-black/40 p-3 text-left text-[11px] text-white/80">
-            <p className="font-semibold text-white/90">Realtime Diagnostics</p>
-            {diagnostics.model && (
-              <p className="text-white/70">Model: {diagnostics.model}</p>
-            )}
-            <p>Mic: {stepLabel(diagnostics.mic)} · Token: {stepLabel(diagnostics.token)} · SDP: {stepLabel(diagnostics.sdp)} · Audio: {stepLabel(diagnostics.audio)}</p>
-            {diagnostics.lastError && (
-              <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-red-300">
-                Last Error: {diagnostics.lastError.slice(0, 400)}
-              </pre>
-            )}
-          </div>
+        {live && diagnostics && showRealtimeDiagnostics() && (
+          <RealtimeDiagnosticsPanel diagnostics={diagnostics} />
         )}
         {lastTranscript && (
           <p className="mt-4 max-w-sm rounded-2xl bg-white/10 px-4 py-2 text-center text-sm text-white/90">
@@ -95,7 +81,7 @@ export function SpeechCoachV2SessionUi(props: {
 
       <div className="px-6 pb-10">
         <p className="mb-4 text-center text-xs text-white/50">
-          {Math.floor(remainingSeconds / 60)} min left today
+          {formatSpeechCoachRemainingLabel(remainingSeconds)}
         </p>
 
         {!live ? (

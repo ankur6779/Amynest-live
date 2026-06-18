@@ -8,7 +8,6 @@ import {
   isDailyLimitReached,
   isSessionCompleteMastery,
   phaseLabel,
-  SPEECH_COACH_V2_DAILY_LIMIT_SECONDS,
   SPEECH_COACH_V2_SESSION_SECONDS,
   toFullSessionState,
   type PersistedSessionState,
@@ -29,6 +28,8 @@ import {
   saveLocalSnapshot,
 } from "../lib/storage";
 import {
+  trackSpeechCoachPaidUsage,
+  trackSpeechCoachTrialStarted,
   trackSpeechCoachV2LimitReached,
   trackSpeechCoachV2SessionComplete,
   trackSpeechCoachV2SessionStart,
@@ -58,7 +59,10 @@ export function useSpeechCoachV2Session(input: {
   const [sessionState, setSessionState] = useState<SpeechCoachV2SessionState | null>(null);
   const [tabLockToken, setTabLockToken] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [remainingSeconds, setRemainingSeconds] = useState(600);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [dailyLimitSeconds, setDailyLimitSeconds] = useState(0);
+  const [isTrial, setIsTrial] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
   const [lastUserTranscript, setLastUserTranscript] = useState("");
   const [pendingResume, setPendingResume] = useState<{
     sessionId: string;
@@ -100,9 +104,22 @@ export function useSpeechCoachV2Session(input: {
     [persistSnapshot],
   );
 
+  const applyUsage = useCallback((usage: Awaited<ReturnType<typeof fetchSpeechCoachV2Usage>>) => {
+    setDailyLimitSeconds(usage.dailyLimitSeconds);
+    setIsTrial(usage.isTrial);
+    setIsPaid(usage.isPaid);
+    setRemainingSeconds(usage.remainingSeconds);
+  }, []);
+
   const startFreshSession = useCallback(async () => {
     const started = await startSpeechCoachV2Session(authFetch, { childId });
     applySession(started.sessionState, started.tabLockToken, started.instructions);
+    setRemainingSeconds(started.remainingSeconds);
+    if (started.isTrial) {
+      trackSpeechCoachTrialStarted({ childId });
+    } else if (started.isPaid) {
+      trackSpeechCoachPaidUsage({ childId });
+    }
     setUiState("ready");
     trackSpeechCoachV2SessionStart({
       childId,
@@ -119,12 +136,12 @@ export function useSpeechCoachV2Session(input: {
 
     try {
       const usage = await fetchSpeechCoachV2Usage(authFetch, childId);
-      if (isDailyLimitReached(usage.speechSecondsUsed)) {
+      applyUsage(usage);
+      if (isDailyLimitReached(usage.speechSecondsUsed, usage.dailyLimitSeconds)) {
         setUiState("limit_reached");
-        trackSpeechCoachV2LimitReached({ childId });
+        trackSpeechCoachV2LimitReached({ childId, isTrial: usage.isTrial });
         return;
       }
-      setRemainingSeconds(usage.remainingSeconds);
 
       const [active, local] = await Promise.all([
         fetchActiveSpeechCoachV2Session(authFetch, childId),
@@ -158,7 +175,7 @@ export function useSpeechCoachV2Session(input: {
       setErrorMessage(err instanceof Error ? err.message : "Could not start session");
       setUiState("error");
     }
-  }, [authFetch, childId, enabled, startFreshSession]);
+  }, [applyUsage, authFetch, childId, enabled, startFreshSession]);
 
   const resumeSession = useCallback(async () => {
     if (!pendingResume) return;
@@ -171,6 +188,12 @@ export function useSpeechCoachV2Session(input: {
         tabLockToken: pendingResume.tabLockToken,
       });
       applySession(started.sessionState, started.tabLockToken, started.instructions);
+      setRemainingSeconds(started.remainingSeconds);
+      if (started.isTrial) {
+        trackSpeechCoachTrialStarted({ childId });
+      } else if (started.isPaid) {
+        trackSpeechCoachPaidUsage({ childId });
+      }
       setUiState("ready");
       trackSpeechCoachV2SessionStart({
         childId,
@@ -257,7 +280,7 @@ export function useSpeechCoachV2Session(input: {
             && (err.code === "daily_limit_reached" || err.code === "session_limit_reached")
           ) {
             setUiState("limit_reached");
-            trackSpeechCoachV2LimitReached({ childId });
+            trackSpeechCoachV2LimitReached({ childId, isTrial });
           }
         });
     };
@@ -268,7 +291,7 @@ export function useSpeechCoachV2Session(input: {
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
-  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId, realtimeConnected]);
+  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId, realtimeConnected, isTrial]);
 
   const finishSession = useCallback(async () => {
     if (!sessionState || !tabLockToken) return;
@@ -311,11 +334,11 @@ export function useSpeechCoachV2Session(input: {
       if (!sessionState) return false;
       return (
         isSessionCompleteMastery(sessionState, elapsedSeconds, SPEECH_COACH_V2_SESSION_SECONDS)
-        || elapsedSeconds >= SPEECH_COACH_V2_DAILY_LIMIT_SECONDS
+        || elapsedSeconds >= dailyLimitSeconds
         || sessionState.phase === "celebration"
       );
     },
-    [sessionState],
+    [sessionState, dailyLimitSeconds],
   );
 
   return {
@@ -325,6 +348,9 @@ export function useSpeechCoachV2Session(input: {
     tabLockToken,
     instructions,
     remainingSeconds,
+    dailyLimitSeconds,
+    isTrial,
+    isPaid,
     lastUserTranscript,
     celebration,
     pendingResume,

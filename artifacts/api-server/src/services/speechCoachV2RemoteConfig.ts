@@ -4,6 +4,7 @@
  */
 export interface SpeechCoachV2RemoteConfigPayload {
   speechCoachV2Enabled: boolean;
+  speechCoachLegacyVisible: boolean;
 }
 
 function envBool(key: string, defaultValue: boolean): boolean {
@@ -16,5 +17,6 @@ function envBool(key: string, defaultValue: boolean): boolean {
 export function getSpeechCoachV2RemoteConfig(): SpeechCoachV2RemoteConfigPayload {
   return {
     speechCoachV2Enabled: envBool("SPEECH_COACH_V2_ENABLED", false),
+    speechCoachLegacyVisible: envBool("SPEECH_COACH_LEGACY_VISIBLE", false),
   };
 }
