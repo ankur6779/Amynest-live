@@ -60,12 +60,24 @@ export type SpeechCoachV2MicConstraintSupport = {
   autoGainControl: boolean;
 };
 
+// Minimal shape of the bits we use — this lib is shared with the Node API
+// server (no DOM lib), so we must not rely on the global `Navigator` type.
+type MediaDevicesLike = {
+  getSupportedConstraints?: () => {
+    echoCancellation?: boolean;
+    noiseSuppression?: boolean;
+    autoGainControl?: boolean;
+  };
+};
+
 /** Best-effort browser capability probe (does not guarantee runtime honor). */
 export function probeSpeechCoachV2MicConstraintSupport(): SpeechCoachV2MicConstraintSupport {
-  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getSupportedConstraints) {
+  const nav = (globalThis as { navigator?: { mediaDevices?: MediaDevicesLike } }).navigator;
+  const getSupported = nav?.mediaDevices?.getSupportedConstraints;
+  if (!getSupported) {
     return { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
   }
-  const supported = navigator.mediaDevices.getSupportedConstraints();
+  const supported = getSupported.call(nav!.mediaDevices);
   return {
     echoCancellation: supported.echoCancellation ?? false,
     noiseSuppression: supported.noiseSuppression ?? false,
