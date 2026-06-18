@@ -71,6 +71,8 @@ const ALLOWLIST = new Set([
   "lib/talking-amy-echo.ts",
   "hooks/use-sound-engine.ts",
   "pages/phonics-audio-preview.tsx",
+  // Self-contained game background-music module (looping MP3, not Amy voice/TTS).
+  "features/health-lab/components/games/crystal-garden/crystal-garden-audio.ts",
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {
