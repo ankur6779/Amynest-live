@@ -6,6 +6,7 @@ import {
   mintRealtimeClientSecret,
   REALTIME_MODEL,
   REALTIME_VOICE,
+  getRealtimeCallsUrl,
 } from "../services/speechCoachV2RealtimeService.js";
 
 const router: IRouter = Router();
@@ -76,12 +77,14 @@ router.get(
 
     let tokenMint = false;
     let mintDetail: Record<string, unknown> | undefined;
+    let resolvedCallsUrl = getRealtimeCallsUrl();
     try {
       const minted = await mintRealtimeClientSecret({
         userId: "openai-realtime-infra-health",
         instructions: "Say exactly: Hello from Amy.",
       });
       tokenMint = Boolean(minted.clientSecret);
+      resolvedCallsUrl = minted.callsUrl;
       mintDetail = {
         expiresAt: minted.expiresAt,
         model: minted.model,
@@ -104,7 +107,7 @@ router.get(
       model: REALTIME_MODEL,
       voice: REALTIME_VOICE,
       tokenMint,
-      callsUrl: minted.callsUrl,
+      callsUrl: resolvedCallsUrl,
       mintDetail,
     });
   }),
