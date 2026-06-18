@@ -172,6 +172,28 @@ async function addUsageLocked(
   return { dailyUsed, monthlyUsed, limitReached };
 }
 
+export async function getActiveSessionRecord(
+  userId: string,
+  childId: number,
+  sessionId?: string,
+): Promise<(typeof speechCoachV2ActiveSessionsTable.$inferSelect) | null> {
+  const conditions = [
+    eq(speechCoachV2ActiveSessionsTable.userId, userId),
+    eq(speechCoachV2ActiveSessionsTable.childId, childId),
+    eq(speechCoachV2ActiveSessionsTable.status, "active"),
+  ];
+  if (sessionId) {
+    conditions.push(eq(speechCoachV2ActiveSessionsTable.sessionId, sessionId));
+  }
+
+  const rows = await db
+    .select()
+    .from(speechCoachV2ActiveSessionsTable)
+    .where(and(...conditions))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function registerActiveSession(input: {
   userId: string;
   childId: number;
@@ -193,27 +215,26 @@ export async function registerActiveSession(input: {
         );
       }
       if (input.resume && existing.sessionId === input.sessionId) {
-        const resumeStale = Date.now() - existing.lastSeenAt.getTime() > ACTIVE_STALE_MS;
+        const resumeStale = stale;
+        const preservedState = existing.sessionStateJson as unknown as PersistedSessionState;
         await tx
           .update(speechCoachV2ActiveSessionsTable)
           .set({
             lastSeenAt: new Date(),
             tabLockToken: input.tabLockToken,
-            sessionStateJson: input.sessionState,
+            sessionStateJson: preservedState,
             status: "active",
             ...(resumeStale
               ? { startedAt: new Date(), secondsConsumed: 0, updatedAt: new Date() }
               : { updatedAt: new Date() }),
           })
           .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
-        return input.sessionState;
+        return preservedState;
       }
-      if (!stale) {
-        await tx
-          .update(speechCoachV2ActiveSessionsTable)
-          .set({ status: "terminated", updatedAt: new Date() })
-          .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
-      }
+      await tx
+        .update(speechCoachV2ActiveSessionsTable)
+        .set({ status: "terminated", updatedAt: new Date() })
+        .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
     }
 
     const dailyUsed = await getDailyUsageLocked(tx, input.userId, input.childId);
@@ -426,6 +447,9 @@ export async function terminateActiveSession(input: {
 
     const row = rows[0];
     if (!row) return 0;
+    if (row.status !== "active") {
+      return row.secondsConsumed;
+    }
 
     const now = Date.now();
     const elapsedSinceLastSeen = Math.max(

@@ -25,6 +25,7 @@ import {
   assertActiveSessionForToken,
   generateTabLockToken,
   getActiveSessionForChild,
+  getActiveSessionRecord,
   registerActiveSession,
   SpeechCoachV2SessionError,
   validateAndTouchSession,
@@ -206,7 +207,7 @@ router.post(
     });
 
     if (body.resume && body.sessionId && body.tabLockToken) {
-      const existing = await getActiveSessionForChild(userId, body.childId);
+      const existing = await getActiveSessionRecord(userId, body.childId, body.sessionId);
       if (existing && existing.sessionId === body.sessionId) {
         sessionId = existing.sessionId;
         state = existing.sessionStateJson as unknown as typeof state;
