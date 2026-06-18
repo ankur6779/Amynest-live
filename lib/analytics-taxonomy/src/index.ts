@@ -285,6 +285,13 @@ const EVENT_PROP_SCHEMAS = {
     sessionId: z.string().max(64).optional(),
     transcriptLength: z.number().int().nonnegative().optional(),
   }),
+  speech_coach_v2_token_usage: z.object({
+    childId: z.number().int().optional(),
+    sessionId: z.string().max(64).optional(),
+    inputTokens: z.number().int().nonnegative().optional(),
+    outputTokens: z.number().int().nonnegative().optional(),
+    estimatedCostInr: z.number().nonnegative().optional(),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -337,6 +344,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   speech_coach_v2_false_interrupt: "session",
   speech_coach_v2_vad_trigger: "session",
   speech_coach_v2_child_speech_detected: "session",
+  speech_coach_v2_token_usage: "session",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

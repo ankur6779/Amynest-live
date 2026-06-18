@@ -102,6 +102,43 @@ export const speechCoachV2MonthlyUsageTable = pgTable("speech_coach_v2_monthly_u
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Per-session OpenAI Realtime token usage + cost estimate. */
+export const speechCoachV2SessionTokenUsageTable = pgTable("speech_coach_v2_session_token_usage", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull().unique(),
+  userId: text("user_id").notNull(),
+  childId: integer("child_id").notNull(),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  inputAudioTokens: integer("input_audio_tokens").notNull().default(0),
+  outputAudioTokens: integer("output_audio_tokens").notNull().default(0),
+  cachedInputTokens: integer("cached_input_tokens").notNull().default(0),
+  inputTextTokens: integer("input_text_tokens").notNull().default(0),
+  outputTextTokens: integer("output_text_tokens").notNull().default(0),
+  responseCount: integer("response_count").notNull().default(0),
+  model: text("model"),
+  estimatedCostUsd: real("estimated_cost_usd").notNull().default(0),
+  estimatedCostInr: real("estimated_cost_inr").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Monthly aggregated Realtime token cost per child. */
+export const speechCoachV2MonthlyCostUsageTable = pgTable("speech_coach_v2_monthly_cost_usage", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  childId: integer("child_id").notNull(),
+  month: text("month").notNull(),
+  sessionCount: integer("session_count").notNull().default(0),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  estimatedCostUsd: real("estimated_cost_usd").notNull().default(0),
+  estimatedCostInr: real("estimated_cost_inr").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertSpeechCoachV2DailyUsageSchema = createInsertSchema(
   speechCoachV2DailyUsageTable,
 ).omit({ id: true, updatedAt: true });

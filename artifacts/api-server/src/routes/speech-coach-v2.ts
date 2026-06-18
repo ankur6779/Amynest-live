@@ -39,6 +39,7 @@ import {
   getParentDashboard,
   recordTurnEvaluation,
 } from "../services/speechCoachV2Service.js";
+import { recordSpeechCoachV2TokenUsage } from "../services/speechCoachV2CostService.js";
 
 /**
  * Amy Speech Coach V2 — OpenAI Realtime voice sessions.
@@ -399,6 +400,61 @@ router.post(
         starsEarned: result.starsEarned,
         pointsEarned: result.pointsEarned,
         instructions: buildAmyRealtimeInstructions(fullState),
+      });
+    } catch (err) {
+      if (handleSessionError(err, res)) return;
+      throw err;
+    }
+  }),
+);
+
+router.post(
+  "/speech/v2/session/usage",
+  asyncRoute(async (req, res) => {
+    assertV2Enabled();
+    const userId = requireUserId(req);
+    const body = z
+      .object({
+        childId: z.number().int().positive(),
+        sessionId: z.string().uuid(),
+        tabLockToken: z.string().uuid(),
+        responseCount: z.number().int().min(1).max(100),
+        model: z.string().max(64).optional(),
+        delta: z.object({
+          inputTokens: z.number().int().min(0),
+          outputTokens: z.number().int().min(0),
+          totalTokens: z.number().int().min(0),
+          inputAudioTokens: z.number().int().min(0).default(0),
+          outputAudioTokens: z.number().int().min(0).default(0),
+          cachedInputTokens: z.number().int().min(0).default(0),
+          inputTextTokens: z.number().int().min(0).default(0),
+          outputTextTokens: z.number().int().min(0).default(0),
+        }),
+      })
+      .parse(req.body);
+
+    const child = await loadChild(userId, body.childId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+
+    try {
+      const result = await recordSpeechCoachV2TokenUsage({
+        userId,
+        childId: body.childId,
+        sessionId: body.sessionId,
+        tabLockToken: body.tabLockToken,
+        delta: body.delta,
+        responseCount: body.responseCount,
+        model: body.model,
+      });
+
+      res.json({
+        ok: true,
+        sessionCostInr: result.sessionCostInr,
+        sessionCostUsd: result.sessionCostUsd,
+        sessionTotals: result.sessionTotals,
       });
     } catch (err) {
       if (handleSessionError(err, res)) return;

@@ -179,6 +179,50 @@ export async function evaluateSpeechCoachV2Turn(
   return parseApiJson<SpeechCoachV2EvaluateResponse>(res);
 }
 
+export async function reportSpeechCoachV2TokenUsage(
+  authFetch: AuthFetchFn,
+  input: {
+    childId: number;
+    sessionId: string;
+    tabLockToken: string;
+    delta: {
+      inputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+      inputAudioTokens: number;
+      outputAudioTokens: number;
+      cachedInputTokens: number;
+      inputTextTokens: number;
+      outputTextTokens: number;
+    };
+    responseCount: number;
+    model?: string;
+  },
+): Promise<{
+  sessionCostInr: number;
+  sessionCostUsd: number;
+  sessionTotals: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    inputAudioTokens: number;
+    outputAudioTokens: number;
+    cachedInputTokens: number;
+    inputTextTokens: number;
+    outputTextTokens: number;
+  };
+}> {
+  const res = await authFetch(getApiUrl("/api/speech/v2/session/usage"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    throw await parseApiError(res, "Failed to report token usage");
+  }
+  return parseApiJson(res);
+}
+
 export async function completeSpeechCoachV2Session(
   authFetch: AuthFetchFn,
   input: {

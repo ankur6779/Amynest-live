@@ -2,13 +2,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { openMicrophoneStream } from "@/lib/microphone-permission";
 import { prepareCoachMicCapture } from "@/lib/speech-coach-mic-capture";
-import { mintSpeechCoachV2RealtimeToken, SpeechCoachV2ApiError } from "../lib/api";
+import { mintSpeechCoachV2RealtimeToken, reportSpeechCoachV2TokenUsage, SpeechCoachV2ApiError } from "../lib/api";
 import {
   buildSpeechCoachV2MicConstraints,
+  EMPTY_REALTIME_USAGE_DELTA,
   isLikelyFalseInterrupt,
+  mergeRealtimeUsageDelta,
+  parseRealtimeResponseUsage,
   probeSpeechCoachV2MicConstraintSupport,
   SPEECH_COACH_V2_MIN_SPEECH_MS,
   speechCoachV2TurnDetectionForMode,
+  type RealtimeUsageDelta,
 } from "@workspace/speech-coach-v2";
 import {
   exchangeRealtimeSdpOffer,
@@ -18,6 +22,7 @@ import {
   trackSpeechCoachV2ChildSpeechDetected,
   trackSpeechCoachV2FalseInterrupt,
   trackSpeechCoachV2Reconnect,
+  trackSpeechCoachV2TokenUsage,
   trackSpeechCoachV2Ttfa,
   trackSpeechCoachV2VadTrigger,
 } from "../lib/analytics";
@@ -66,6 +71,11 @@ const INITIAL_DIAGNOSTICS: RealtimeDiagnostics = {
 };
 
 const REALTIME_DEBUG = import.meta.env.DEV;
+const TOKEN_FLUSH_RESPONSE_THRESHOLD = 3;
+
+function emptyPendingUsage(): { delta: RealtimeUsageDelta; responseCount: number } {
+  return { delta: { ...EMPTY_REALTIME_USAGE_DELTA }, responseCount: 0 };
+}
 
 function rtLog(stage: string, detail?: Record<string, unknown>) {
   if (REALTIME_DEBUG) {
@@ -147,6 +157,55 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   sessionIdRef.current = sessionId;
   const tabLockTokenRef = useRef(tabLockToken);
   tabLockTokenRef.current = tabLockToken;
+  const modelRef = useRef<string | null>(null);
+  const pendingUsageRef = useRef(emptyPendingUsage());
+  const sessionUsageTotalsRef = useRef<RealtimeUsageDelta>({ ...EMPTY_REALTIME_USAGE_DELTA });
+  const flushingUsageRef = useRef(false);
+
+  const flushTokenUsage = useCallback(async () => {
+    const pending = pendingUsageRef.current;
+    const sid = sessionIdRef.current;
+    const token = tabLockTokenRef.current;
+    if (!sid || !token || pending.responseCount <= 0 || flushingUsageRef.current) return;
+
+    flushingUsageRef.current = true;
+    const payload = { ...pending };
+    pendingUsageRef.current = emptyPendingUsage();
+
+    try {
+      const result = await reportSpeechCoachV2TokenUsage(authFetchRef.current, {
+        childId: childIdRef.current,
+        sessionId: sid,
+        tabLockToken: token,
+        delta: payload.delta,
+        responseCount: payload.responseCount,
+        model: modelRef.current ?? undefined,
+      });
+      trackSpeechCoachV2TokenUsage({
+        childId: childIdRef.current,
+        sessionId: sid,
+        inputTokens: result.sessionTotals.inputTokens,
+        outputTokens: result.sessionTotals.outputTokens,
+        estimatedCostInr: result.sessionCostInr,
+      });
+    } catch (err) {
+      pendingUsageRef.current = {
+        delta: mergeRealtimeUsageDelta(payload.delta, pendingUsageRef.current.delta),
+        responseCount: payload.responseCount + pendingUsageRef.current.responseCount,
+      };
+      rtLog("usage.flush.fail", {
+        message: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      flushingUsageRef.current = false;
+    }
+  }, []);
+
+  const queueTokenUsageFlush = useCallback(() => {
+    if (pendingUsageRef.current.responseCount >= TOKEN_FLUSH_RESPONSE_THRESHOLD) {
+      void flushTokenUsage();
+    }
+  }, [flushTokenUsage]);
 
   const setConnected = useCallback((connected: boolean, state: RealtimeConnectionState) => {
     setConnectionState(state);
@@ -282,11 +341,12 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   }, []);
 
   const cleanup = useCallback(() => {
+    void flushTokenUsage();
     cleanupPeerConnection();
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     onConnectionChangeRef.current?.(false);
-  }, [cleanupPeerConnection]);
+  }, [cleanupPeerConnection, flushTokenUsage]);
 
   const handleRealtimeEvent = useCallback((payload: Record<string, unknown>) => {
     const type = String(payload.type ?? "");
@@ -369,7 +429,22 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       verificationTrace("AUDIO_STARTED");
       setAmySpeaking(true);
     }
-    if (type === "response.done" || type === "response.output_audio.done" || type === "response.audio.done") {
+    if (type === "response.done") {
+      verificationTrace("AUDIO_COMPLETED");
+      setAmySpeaking(false);
+      const usageDelta = parseRealtimeResponseUsage(payload);
+      if (usageDelta) {
+        pendingUsageRef.current = {
+          delta: mergeRealtimeUsageDelta(pendingUsageRef.current.delta, usageDelta),
+          responseCount: pendingUsageRef.current.responseCount + 1,
+        };
+        sessionUsageTotalsRef.current = mergeRealtimeUsageDelta(
+          sessionUsageTotalsRef.current,
+          usageDelta,
+        );
+        queueTokenUsageFlush();
+      }
+    } else if (type === "response.output_audio.done" || type === "response.audio.done") {
       verificationTrace("AUDIO_COMPLETED");
       setAmySpeaking(false);
     }
@@ -382,7 +457,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
       );
       onErrorRef.current?.(message);
     }
-  }, [setAmySpeaking]);
+  }, [setAmySpeaking, queueTokenUsageFlush]);
 
   const waitForMediaReady = useCallback(
     (pc: RTCPeerConnection, audioEl: HTMLAudioElement) =>
@@ -516,6 +591,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         token: "ok",
         model: minted.model,
       }));
+      modelRef.current = minted.model;
 
       cleanupPeerConnection();
       connectingRef.current = true;
@@ -704,6 +780,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectionState,
     diagnostics,
     disconnect,
+    flushTokenUsage,
     sessionElapsedSeconds,
     connectFromUserGesture,
     reconnect: () => connectRef.current(false),

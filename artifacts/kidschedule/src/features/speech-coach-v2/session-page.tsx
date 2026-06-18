@@ -95,6 +95,7 @@ export default function SpeechCoachV2SessionPage() {
 
   const handleEnd = useCallback(async () => {
     setLive(false);
+    await realtime.flushTokenUsage();
     realtime.disconnect();
     await session.finishSession();
   }, [realtime, session]);

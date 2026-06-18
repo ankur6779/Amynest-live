@@ -80,3 +80,13 @@ export function trackSpeechCoachV2ChildSpeechDetected(props: {
 }): void {
   track("speech_coach_v2_child_speech_detected", props);
 }
+
+export function trackSpeechCoachV2TokenUsage(props: {
+  childId: number;
+  sessionId: string;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostInr: number;
+}): void {
+  track("speech_coach_v2_token_usage", props);
+}
