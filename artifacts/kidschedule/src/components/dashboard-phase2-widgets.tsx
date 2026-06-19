@@ -19,7 +19,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
-import { getRewards, getTotalPoints, type Reward } from "@/lib/rewards";
+import { getTotalPoints } from "@/lib/rewards";
 import { routineDateKey, routineItems } from "@/lib/routines";
 import { DashboardSectionHeader } from "@/components/dashboard-section-header";
 import { DashboardGlassCard, DashboardGlassChip } from "@/components/dashboard-glass-card";
@@ -289,19 +289,10 @@ export function DashboardWeeklyInsightsCard({
 export function RewardsCompactCard() {
   const { t } = useTranslation();
   const [points, setPoints] = useState(0);
-  const [rewards, setRewards] = useState<Reward[]>([]);
 
   useEffect(() => {
     setPoints(getTotalPoints());
-    setRewards(getRewards());
   }, []);
-
-  const sorted = useMemo(() => [...rewards].sort((a, b) => a.cost - b.cost), [rewards]);
-  const nextReward = sorted.find((r) => r.cost > points) ?? sorted[sorted.length - 1];
-  const progressToNext =
-    nextReward && nextReward.cost > points
-      ? Math.min(100, Math.round((points / nextReward.cost) * 100))
-      : 100;
 
   return (
     <Card className="rounded-2xl border-border/50 overflow-hidden">
@@ -309,7 +300,7 @@ export function RewardsCompactCard() {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <Medal className="h-4 w-4 text-primary" />
-            <span className="font-quicksand font-bold text-sm">{t("dashboard.rewards_points")}</span>
+            <span className="font-quicksand font-bold text-sm">{t("nav.games")}</span>
           </div>
           <div className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 border border-border">
             <Star className="h-3.5 w-3.5 fill-primary text-primary" />
@@ -317,34 +308,14 @@ export function RewardsCompactCard() {
             <span className="text-[10px] font-medium text-muted-foreground">{t("pages.dashboard.pts")}</span>
           </div>
         </div>
-        {nextReward ? (
-          <div className="rounded-xl border border-border bg-muted/30 p-3 mb-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
-              {t("dashboard.next_reward")}
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{nextReward.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{nextReward.label}</p>
-                <p className="text-xs text-muted-foreground">
-                  {points} / {nextReward.cost} {t("pages.dashboard.pts")}
-                </p>
-              </div>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${progressToNext}%` }}
-              />
-            </div>
-          </div>
-        ) : null}
-        <p className="text-xs text-muted-foreground mb-3">{t("dashboard.earn_more_points")}</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          {points} {t("pages.dashboard.pts")} can unlock more mini-games in Gaming Hub.
+        </p>
         <Link
-          href="/rewards"
+          href="/games"
           className="flex items-center justify-center gap-2 w-full rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-bold py-2.5 hover:bg-primary/15 transition-colors"
         >
-          {t("dashboard.view_all_rewards")}
+          {t("nav.games")}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </CardContent>

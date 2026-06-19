@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { RefreshCw, ThumbsUp, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { BookOpenCheck, Brain, Flame, Heart, RefreshCw, Send, Sparkles, Star, Trophy, Volume2, VolumeX, Zap } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { ConfettiBurst, XpPopup } from "@/components/study-engagement";
+import { cn } from "@/lib/utils";
 import {
   createParentHubAudioIdentity,
   PARENT_HUB_SECTIONS,
@@ -11,7 +13,6 @@ import type { AgeGroup } from "@/lib/age-groups";
 import { ALL_HUB_FACTS, buildFactSpeakText, type HubFact } from "@workspace/parent-hub-speak";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-import { useTranslation } from "react-i18next";
 type FactCategory = "animal" | "science" | "gk";
 type Fact = HubFact;
 const ALL_FACTS = ALL_HUB_FACTS;
@@ -23,10 +24,28 @@ const CATEGORY_LABEL: Record<FactCategory, string> = {
   science: "Science",
   gk: "G.K."
 };
-const CATEGORY_COLORS: Record<FactCategory, string> = {
-  animal: "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border",
-  science: "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border",
-  gk: "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border"
+const CATEGORY_STYLE: Record<FactCategory, { from: string; to: string; text: string; chip: string; glow: string }> = {
+  animal: {
+    from: "from-emerald-400",
+    to: "to-lime-400",
+    text: "text-emerald-100",
+    chip: "border-emerald-200/25 bg-emerald-200/14 text-emerald-50",
+    glow: "rgba(52,211,153,0.36)",
+  },
+  science: {
+    from: "from-cyan-400",
+    to: "to-blue-500",
+    text: "text-cyan-100",
+    chip: "border-cyan-200/25 bg-cyan-200/14 text-cyan-50",
+    glow: "rgba(34,211,238,0.36)",
+  },
+  gk: {
+    from: "from-amber-300",
+    to: "to-orange-500",
+    text: "text-amber-100",
+    chip: "border-amber-200/25 bg-amber-200/14 text-amber-50",
+    glow: "rgba(251,191,36,0.36)",
+  },
 };
 function lsKey(childName: string) {
   return `amynest_facts_${childName.replace(/\s+/g, "_").toLowerCase()}`;
@@ -74,19 +93,48 @@ function factDisplayText(fact: Fact, lang: string): string {
   return useHi && fact.textHi.trim() ? fact.textHi : fact.text;
 }
 
+function factChallengeAnswer(fact: Fact, lang: string): string {
+  const text = factDisplayText(fact, lang);
+  const cleaned = text
+    .replace(/^Did you know\??\s*/i, "")
+    .replace(/^A\s+/i, "")
+    .replace(/^An\s+/i, "")
+    .replace(/^The\s+/i, "")
+    .trim();
+  const subject = cleaned.split(/\s+(?:have|has|is|are|can|were|was|live|takes|drink|make|cover|existed|recognise|start|taste|float|turn|opens|moves|contains|spans)\b/i)[0]?.trim();
+  const words = (subject || cleaned).split(/\s+/).slice(0, 3).join(" ");
+  return words.replace(/[—,.!?:;]+$/g, "") || CATEGORY_LABEL[fact.category];
+}
+
+function quizDistractors(fact: Fact, pool: Fact[], lang: string): string[] {
+  const defaults: Record<FactCategory, string[]> = {
+    animal: ["Tiger", "Elephant", "Dolphin", "Penguin"],
+    science: ["Gravity", "Sunlight", "Magnets", "Water"],
+    gk: ["Moon", "Earth", "Oceans", "Rainbow"],
+  };
+  const fromPool = pool
+    .filter((candidate) => candidate.id !== fact.id)
+    .map((candidate) => factChallengeAnswer(candidate, lang))
+    .filter((answer) => answer && answer !== factChallengeAnswer(fact, lang));
+  return [...new Set([...fromPool, ...defaults[fact.category]])].slice(0, 2);
+}
+
 function buildFactQuiz(
   fact: Fact,
   pool: Fact[],
   lang: string,
-): { statement: string; isTrue: boolean } {
+): { question: string; options: string[]; correct: string } {
   const seed = dateSeed(fact.id, todayStr());
-  const useTrue = seed % 2 === 0;
-  if (useTrue) {
-    return { statement: factDisplayText(fact, lang), isTrue: true };
-  }
-  const others = pool.filter((f) => f.id !== fact.id);
-  const distractor = others[seed % Math.max(others.length, 1)] ?? fact;
-  return { statement: factDisplayText(distractor, lang), isTrue: false };
+  const correct = factChallengeAnswer(fact, lang);
+  const distractors = quizDistractors(fact, pool, lang);
+  const options = seededShuffle([correct, ...distractors].slice(0, 3), seed + 13);
+  return {
+    question: fact.category === "animal"
+      ? "Which animal is this discovery about?"
+      : "Which discovery topic did this fact teach?",
+    options,
+    correct,
+  };
 }
 
 function dateSeed(date: string, childName: string): number {
@@ -107,21 +155,50 @@ interface AmazingFactsProps {
 }
 type QuizState = {
   factId: string;
-  statement: string;
-  isTrue: boolean;
-  answered?: boolean;
+  selected: string;
   correct?: boolean;
 };
+
+function DiscoveryStat({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone: "cyan" | "amber" | "emerald";
+}) {
+  const toneClass =
+    tone === "cyan"
+      ? "border-cyan-200/20 bg-cyan-200/10 text-cyan-100"
+      : tone === "amber"
+        ? "border-amber-200/20 bg-amber-200/10 text-amber-100"
+        : "border-emerald-200/20 bg-emerald-200/10 text-emerald-100";
+  return (
+    <div className={cn("rounded-2xl border p-3 backdrop-blur-xl", toneClass)}>
+      <Icon className="mb-2 h-4 w-4" />
+      <p className="text-[9px] font-black uppercase tracking-wide text-white/42">{label}</p>
+      <p className="mt-1 font-quicksand text-lg font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function MiniDiscoveryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
+      <p className="truncate text-[9px] font-black uppercase tracking-wide text-white/38">{label}</p>
+      <p className="mt-1 truncate text-xs font-black text-white/82">{value}</p>
+    </div>
+  );
+}
 
 export function AmazingFacts({
   childName,
   ageGroup,
 }: AmazingFactsProps) {
-  const {
-    t,
-    i18n,
-  } = useTranslation();
-  const lang = i18n.language ?? "en";
+  const lang = "en";
   const [likes, setLikes] = useState<Set<string>>(() => {
     try {
       return new Set(JSON.parse(localStorage.getItem(`${lsKey(childName)}_likes`) || "[]"));
@@ -133,6 +210,15 @@ export function AmazingFacts({
   const [refreshCount, setRefreshCount] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [quiz, setQuiz] = useState<QuizState | null>(null);
+  const [xpTrigger, setXpTrigger] = useState({ trigger: 0, amount: 0 });
+  const discoveryKey = `${lsKey(childName)}_discoveries`;
+  const [discoveries, setDiscoveries] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(discoveryKey) || "{}");
+    } catch {
+      return {};
+    }
+  });
   const { speak, pause, primeSpeakGesture, speaking, loading } = useAmyVoice();
   useEffect(() => {
     const seed = dateSeed(todayStr() + refreshCount, childName);
@@ -148,6 +234,13 @@ export function AmazingFacts({
       return next;
     });
   }, [childName]);
+  const saveDiscoveries = useCallback((next: Record<string, string>) => {
+    try {
+      localStorage.setItem(discoveryKey, JSON.stringify(next));
+    } catch {
+      // Discovery rewards still work in-memory if storage is unavailable.
+    }
+  }, [discoveryKey]);
   const refreshFacts = () => {
     pause();
     setPlayingId(null);
@@ -178,123 +271,208 @@ export function AmazingFacts({
       setPlayingId(null);
     });
   }, [playingId, speak, pause]);
-  const startQuiz = useCallback((fact: Fact) => {
-    pause();
-    setPlayingId(null);
-    const q = buildFactQuiz(fact, facts, lang);
-    setQuiz({ factId: fact.id, ...q });
-  }, [facts, lang, pause]);
-  const answerQuiz = useCallback((pickedTrue: boolean) => {
-    setQuiz(prev => {
-      if (!prev) return prev;
-      const correct = pickedTrue === prev.isTrue;
-      return { ...prev, answered: true, correct };
-    });
-  }, []);
+  const answerQuiz = useCallback((fact: Fact, selected: string, correct: string) => {
+    const isCorrect = selected === correct;
+    setQuiz({ factId: fact.id, selected, correct: isCorrect });
+    if (isCorrect && !discoveries[fact.id]) {
+      const next = { ...discoveries, [fact.id]: todayStr() };
+      setDiscoveries(next);
+      saveDiscoveries(next);
+      setXpTrigger((prev) => ({ trigger: prev.trigger + 1, amount: 10 }));
+    }
+  }, [discoveries, saveDiscoveries]);
+  const shareFact = useCallback((fact: Fact) => {
+    const text = factDisplayText(fact, lang);
+    if (navigator.share) {
+      void navigator.share({ title: "Amy Discovery Lab", text }).catch(() => undefined);
+      return;
+    }
+    void navigator.clipboard?.writeText(text);
+  }, [lang]);
+  const weeklyDiscoveries = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 6);
+    const cutoffKey = cutoff.toISOString().slice(0, 10);
+    return Object.values(discoveries).filter((date) => date >= cutoffKey).length;
+  }, [discoveries]);
+  const favoriteCategories = useMemo(() => {
+    const counts: Record<FactCategory, number> = { animal: 0, science: 0, gk: 0 };
+    for (const fact of ALL_FACTS) {
+      if (likes.has(fact.id)) counts[fact.category] += 1;
+    }
+    return (Object.entries(counts) as Array<[FactCategory, number]>)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([category]) => CATEGORY_LABEL[category])
+      .slice(0, 2);
+  }, [likes]);
+  const curiosityScore = Math.min(100, weeklyDiscoveries * 10 + likes.size * 3);
+  const curiosityStreak = weeklyDiscoveries > 0 ? Math.min(7, weeklyDiscoveries) : 0;
   if (facts.length === 0) return null;
-  return <div className="space-y-4">
+  return <div className="relative space-y-4 text-white">
+      <ConfettiBurst trigger={xpTrigger.trigger} />
+      <XpPopup amount={xpTrigger.amount} trigger={xpTrigger.trigger} />
 
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h3 className="font-bold text-base">{t("components.amazing_facts.amazing_facts_for_today")}</h3>
+      <section className="overflow-hidden rounded-[2rem] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.30),transparent_30%),radial-gradient(circle_at_90%_8%,rgba(251,191,36,0.28),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.90))] p-4 shadow-[0_24px_80px_-36px_rgba(34,211,238,0.82)]">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 via-blue-500 to-emerald-400 text-2xl shadow-[0_0_30px_rgba(34,211,238,0.38)]">
+                🔬
+              </div>
+              <div>
+                <h3 className="font-quicksand text-2xl font-black leading-tight">Discovery Lab</h3>
+                <p className="text-sm font-semibold text-white/60">Fun knowledge adventures for {childName}</p>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={refreshFacts}
+            className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.08] px-3 py-2 text-xs font-black text-white/80 backdrop-blur-xl transition-all hover:bg-white/[0.13] active:scale-[0.98]"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            New Facts
+          </button>
         </div>
-        <button onClick={refreshFacts} className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full">
-          <RefreshCw className="h-3.5 w-3.5" /> {t("components.amazing_facts.show_new_facts")}
-        </button>
-      </div>
 
-      {/* Facts grid */}
-      <div className="grid gap-3">
-        {facts.map(fact => {
-        const isLiked = likes.has(fact.id);
-        const displayText = factDisplayText(fact, lang);
-        const speakText = buildFactSpeakText(fact);
-        const activeQuiz = quiz?.factId === fact.id ? quiz : null;
-        return <Card key={fact.id} className="rounded-3xl border-border/50 overflow-hidden hover:shadow-sm transition-shadow">
-              <CardContent className="p-4 flex flex-col gap-3">
-                <div className="flex items-start gap-3">
-                <div className="text-3xl flex-shrink-0 mt-0.5">{fact.emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <Badge className={`text-[10px] px-2 py-0 border rounded-full ${CATEGORY_COLORS[fact.category]}`}>
-                      {CATEGORY_LABEL[fact.category]}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-foreground leading-snug">
-                    {displayText}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5 flex-shrink-0">
-                  <button
-                    onPointerDown={() => primeSpeakGesture(speakText, { parentHub: true })}
-                    onClick={() => handleListen(fact)}
-                    className={`flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${playingId === fact.id || (speaking && playingId === fact.id) ? "bg-primary/15 text-primary border border-primary/30" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary"}`}
-                    title={t("components.amazing_facts.listen")}
-                  >
-                    {playingId === fact.id && (speaking || loading) ? (
-                      <VolumeX className="h-3 w-3" />
-                    ) : (
-                      <Volume2 className="h-3 w-3" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => startQuiz(fact)}
-                    className="flex items-center justify-center text-xs font-bold rounded-full px-2.5 py-1.5 bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 hover:bg-amber-500/25 transition-all"
-                    title={t("components.amazing_facts.quiz")}
-                  >
-                    ?
-                  </button>
-                  <button onClick={() => toggleLike(fact.id)} className={`flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${isLiked ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary"}`} title={t("components.amazing_facts.interesting")}>
-                    <ThumbsUp className="h-3 w-3" />
-                    {isLiked && <span>{t("components.amazing_facts.liked")}</span>}
-                  </button>
-                </div>
-                </div>
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <DiscoveryStat icon={BookOpenCheck} label="Today's Discoveries" value={String(facts.length)} tone="cyan" />
+          <DiscoveryStat icon={Star} label="Weekly Curiosity Score" value={`${curiosityScore}/100`} tone="amber" />
+          <DiscoveryStat icon={Trophy} label="Facts Learned" value={String(Object.keys(discoveries).length)} tone="emerald" />
+        </div>
 
-                {activeQuiz && <div className="rounded-2xl border border-amber-500/25 bg-amber-500/8 p-3 space-y-2">
-                    <p className="text-[11px] font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wide">
-                      {t("components.amazing_facts.quiz_prompt")}
-                    </p>
-                    <p className="text-sm text-foreground font-medium leading-snug italic">
-                      &ldquo;{activeQuiz.statement}&rdquo;
-                    </p>
-                    {!activeQuiz.answered ? (
-                      <div className="flex gap-2">
+        <div className="mb-4 grid grid-cols-3 gap-2 rounded-3xl border border-white/10 bg-black/18 p-3">
+          <MiniDiscoveryMetric label="Curiosity Streak" value={`${curiosityStreak}d`} />
+          <MiniDiscoveryMetric label="Weekly Discoveries" value={String(weeklyDiscoveries)} />
+          <MiniDiscoveryMetric label="Favorite Categories" value={favoriteCategories.join(", ") || "Start saving"} />
+        </div>
+
+        <div className="grid gap-4">
+          {facts.slice(0, 6).map((fact, index) => {
+            const isLiked = likes.has(fact.id);
+            const displayText = factDisplayText(fact, lang);
+            const speakText = buildFactSpeakText(fact);
+            const activeQuiz = quiz?.factId === fact.id ? quiz : null;
+            const challenge = buildFactQuiz(fact, facts, lang);
+            const style = CATEGORY_STYLE[fact.category];
+            const learned = !!discoveries[fact.id];
+            return (
+              <Card
+                key={fact.id}
+                className="group overflow-hidden rounded-[2rem] border border-white/12 bg-white/[0.07] text-white shadow-[0_18px_54px_-34px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.10]"
+                style={{ boxShadow: `0 20px 60px -42px ${style.glow}` }}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <div className={cn("relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br text-6xl shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]", style.from, style.to)}>
+                      <div className="absolute inset-x-5 top-4 h-1 rounded-full bg-white/35" />
+                      <span className="drop-shadow-[0_12px_18px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-110">{fact.emoji}</span>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className={cn("rounded-full border px-2.5 py-1 text-[11px] font-black", style.chip)}>
+                          {CATEGORY_LABEL[fact.category]} Discovery
+                        </span>
+                        <span className="rounded-full border border-white/12 bg-black/20 px-2.5 py-1 text-[11px] font-black text-white/62">
+                          {index < 2 ? "Easy" : index < 4 ? "Medium" : "Explorer"}
+                        </span>
+                        <span className="rounded-full border border-pink-200/20 bg-pink-200/12 px-2.5 py-1 text-[11px] font-black text-pink-50">
+                          Fun Meter {Math.min(99, 72 + index * 4)}%
+                        </span>
+                        {learned ? (
+                          <span className="rounded-full border border-emerald-200/25 bg-emerald-200/14 px-2.5 py-1 text-[11px] font-black text-emerald-50">
+                            Learned
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <p className="font-quicksand text-lg font-black text-white">
+                        {fact.emoji} {CATEGORY_LABEL[fact.category]} Discovery
+                      </p>
+                      <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/40">Did you know?</p>
+                      <p className="mt-1 text-base font-semibold leading-relaxed text-white/82">
+                        {displayText}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => answerQuiz(true)}
-                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 hover:bg-emerald-500/30"
+                          onPointerDown={() => primeSpeakGesture(speakText, { parentHub: true })}
+                          onClick={() => handleListen(fact)}
+                          className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-black transition-all active:scale-[0.98]", playingId === fact.id || (speaking && playingId === fact.id) ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-50" : "border-white/10 bg-black/18 text-white/66 hover:bg-white/10 hover:text-white")}
                         >
-                          {t("components.amazing_facts.true")}
+                          {playingId === fact.id && (speaking || loading) ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                          Listen
                         </button>
                         <button
                           type="button"
-                          onClick={() => answerQuiz(false)}
-                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/30 hover:bg-rose-500/30"
+                          onClick={() => toggleLike(fact.id)}
+                          className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-black transition-all active:scale-[0.98]", isLiked ? "border-pink-200/35 bg-pink-200/18 text-pink-50" : "border-white/10 bg-black/18 text-white/66 hover:bg-white/10 hover:text-white")}
                         >
-                          {t("components.amazing_facts.false")}
+                          <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current")} />
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={refreshFacts}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/18 px-3 py-2 text-xs font-black text-white/66 transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          New Fact
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => shareFact(fact)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/18 px-3 py-2 text-xs font-black text-white/66 transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          Share
                         </button>
                       </div>
-                    ) : (
-                      <p className={`text-sm font-bold ${activeQuiz.correct ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                        {activeQuiz.correct
-                          ? t("components.amazing_facts.quiz_correct")
-                          : t("components.amazing_facts.quiz_wrong", {
-                              answer: factDisplayText(fact, lang),
-                            })}
-                      </p>
-                    )}
-                  </div>}
-              </CardContent>
-            </Card>;
-      })}
-      </div>
 
-      <p className="text-center text-xs text-muted-foreground">
-        {t("components.amazing_facts.tap_for_fresh_facts_tap_to_mark_favourites")}
-      </p>
+                      <div className="mt-4 rounded-3xl border border-white/10 bg-black/18 p-3">
+                        <div className="mb-2 flex items-center gap-2">
+                          <Brain className="h-4 w-4 text-amber-200" />
+                          <p className="font-quicksand text-sm font-black text-white">Quick Challenge</p>
+                        </div>
+                        <p className="mb-2 text-sm font-semibold text-white/68">{challenge.question}</p>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          {challenge.options.map((option, optionIndex) => {
+                            const selected = activeQuiz?.selected === option;
+                            const correct = activeQuiz?.correct && selected;
+                            const wrong = activeQuiz && selected && !activeQuiz.correct;
+                            return (
+                              <button
+                                key={option}
+                                type="button"
+                                onClick={() => answerQuiz(fact, option, challenge.correct)}
+                                className={cn(
+                                  "rounded-2xl border px-3 py-2.5 text-left text-xs font-black transition-all active:scale-[0.98]",
+                                  correct && "border-emerald-200/40 bg-emerald-200/18 text-emerald-50",
+                                  wrong && "border-rose-200/40 bg-rose-200/18 text-rose-50",
+                                  !selected && "border-white/10 bg-white/[0.06] text-white/72 hover:bg-white/[0.10]",
+                                )}
+                              >
+                                {String.fromCharCode(65 + optionIndex)}. {option}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {activeQuiz ? (
+                          <p className={cn("mt-2 text-sm font-black", activeQuiz.correct ? "text-emerald-200" : "text-rose-200")}>
+                            {activeQuiz.correct ? "+10 Curiosity XP earned!" : `Not quite. Correct answer: ${challenge.correct}`}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
     </div>;
 }

@@ -9,7 +9,7 @@ import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift, Mic, Salad, FlaskConical } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Mic, Salad, FlaskConical } from "lucide-react";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
@@ -609,23 +609,6 @@ function ActivitiesSection({
   const {
     t
   } = useTranslation();
-  const hubUsage = useFeatureUsage();
-  const hubJourney = useHubJourney(effectiveChild?.id);
-  const tryFreeFor = (featureId: string) => {
-    if (hubUsage.isPremium) return false;
-    if (hubJourney.isFreeJourneyPeriod) return true;
-    if (hubJourney.access) return !hubJourney.isHubFeatureLocked(featureId);
-    return hubUsage.tryFreeFor(featureId);
-  };
-  const isHubLocked = (featureId: string) => {
-    if (hubUsage.isPremium) return false;
-    if (hubJourney.access) return hubJourney.isHubFeatureLocked(featureId);
-    return hubUsage.isFeatureLocked(featureId);
-  };
-  const markHubUsed = (featureId: string) => {
-    if (!hubJourney.access) hubUsage.markFeatureUsed(featureId);
-  };
-  const journeySoftLock = hubJourney.isJourneyLocked;
   const isInfantHubAge = totalAgeMonths < 24;
   const isInfant = ageGroup === "infant";
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
@@ -643,26 +626,9 @@ function ActivitiesSection({
         </AppLink>
       </SubSection>
 
-      <FeatureGate locked={isHubLocked("hub_rewards_shop")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-        <SubSection
-          gateSection="hub_activities"
-          icon={<Gift className="h-4 w-4 text-white" />}
-          title={t("parent_hub.tiles_activity.rewards_shop.title")}
-          description={t("parent_hub.tiles_activity.rewards_shop.desc")}
-          accentClass="bg-gradient-to-br from-amber-400 to-orange-500"
-          cardClass="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.12)100%)"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            {tryFreeFor("hub_rewards_shop") ? <TryFreeBadge /> : null}
-          </div>
-          <AppLink href="/rewards" onClick={() => markHubUsed("hub_rewards_shop")}>
-            <Button variant="outline" className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-rewards-shop">
-              {t("parent_hub.tiles_activity.rewards_shop.title")}
-              <ArrowRight className="h-4 w-4 ml-auto" />
-            </Button>
-          </AppLink>
-        </SubSection>
-      </FeatureGate>
+      {totalAgeMonths >= 24 && totalAgeMonths < 96 && (
+        <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
+      )}
 
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfantHubAge && <>
@@ -681,10 +647,6 @@ function ActivitiesSection({
 
       {/* ── TODDLER / PRESCHOOL ────────────────────────────────────────── */}
       {isToddlerOrPreschool && <>
-          <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-activity.title")} description={t("parent_hub.subsections.daily-activity.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(250,204,21,0.26)0%,rgba(251,146,60,0.12)100%)">
-            <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-          </SubSection>
-
           <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-toddler.title")} description={t("parent_hub.subsections.skills-to-focus-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(129,140,248,0.26)0%,rgba(168,85,247,0.12)100%)">
             <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="skill" />
           </SubSection>
@@ -702,7 +664,7 @@ function ActivitiesSection({
           </SubSection>
 
           {ageGroup === "preschool" && <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-pre.title")} description={t("parent_hub.subsections.daily-puzzle-pre.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">
-              <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} />
+              <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} />
             </SubSection>}
 
           <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-toddler.title")} description={t("parent_hub.subsections.amazing-facts-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">
@@ -712,10 +674,6 @@ function ActivitiesSection({
 
       {/* ── OLDER KIDS ─────────────────────────────────────────────────── */}
       {isOlder && <>
-          {totalAgeMonths < 96 && <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-activity-older.title")} description={t("parent_hub.subsections.daily-activity-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(250,204,21,0.26)0%,rgba(251,146,60,0.12)100%)">
-              <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-            </SubSection>}
-
           <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-older.title")} description={t("parent_hub.subsections.skills-to-focus-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(129,140,248,0.26)0%,rgba(168,85,247,0.12)100%)">
             <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
@@ -725,7 +683,7 @@ function ActivitiesSection({
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">
-            <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} />
+            <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} />
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.parent-tasks-older.title")} description={t("parent_hub.subsections.parent-tasks-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(45,212,191,0.26)0%,rgba(34,211,238,0.12)100%)">
@@ -1717,27 +1675,60 @@ function ParentingHubPage() {
     },
   }, {
     // Amy Speech Coach — opens dedicated /parenting-hub/speech-coach page.
-    // Visible for all infants and children up to 8 years (bands 0-2 → 6-8).
-    // No minimum-age gate — age-band-aware content covers all ages from birth.
+    // Visible for all infants and children up to 8 years; infants get overview-only preview.
     id: "speech-coach",
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
       if (!shouldRenderHubTileContent("speech-coach", totalAgeMonths, isTwoPlus)) return null;
-      return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_speech")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+      const speechCoachPreview = totalAgeMonths < 24;
+      const content = (
+        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_speech")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="speech-coach" icon={<MessageCircleHeart className="h-5 w-5 text-white" />} title={t("screens.speech_coach.hub_tile.title")} description={t("screens.speech_coach.hub_tile.description")} accentClass="bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_speech")} onOpen={() => markHubUsed("hub_speech")}>  {/* audit-ok: intentional sky→indigo accent gradient for Speech Coach tile */}
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {t("screens.speech_coach.subtitle")}
-              </p>
-              <AppLink href="/speech-coach" source="hub-speech-coach">
-                <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-speech-coach">
-                  {t("screens.speech_coach.cta.start_practice")}
-                  <ArrowRight className="h-4 w-4 ml-auto" />
-                </Button>
-              </AppLink>
-            </div>
+            {speechCoachPreview ? (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-foreground">
+                  {t("screens.speech_coach.preview.title")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t("screens.speech_coach.preview.body")}
+                </p>
+                <div className="grid gap-2">
+                  {(["sessions", "feedback", "progress"] as const).map((item) => (
+                    <div key={item} className="flex items-start gap-2 rounded-xl border border-border/70 bg-background/45 px-3 py-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span>{t(`screens.speech_coach.preview.items.${item}`)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  {t("screens.speech_coach.subtitle")}
+                </p>
+                <AppLink href="/speech-coach" source="hub-speech-coach">
+                  <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-speech-coach">
+                    {t("screens.speech_coach.cta.start_practice")}
+                    <ArrowRight className="h-4 w-4 ml-auto" />
+                  </Button>
+                </AppLink>
+              </div>
+            )}
           </HubSection>
-        </FeatureGate>;
+        </FeatureGate>
+      );
+
+      if (!speechCoachPreview) return content;
+
+      return (
+        <HubRenderContext.Provider
+          value={{ surface: hubSurface.current, isInfant, speechCoachPreview: true }}
+        >
+          <ComingNextWrapper band="2-4">
+            {content}
+          </ComingNextWrapper>
+        </HubRenderContext.Provider>
+      );
     }
   }, {
     id: "discovery-worlds",

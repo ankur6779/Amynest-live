@@ -30,14 +30,43 @@ export type HubFact = {
   ageGroups: AgeGroup[];
 };
 
+export type HubPuzzleInteractionKind =
+  | "tap-target"
+  | "counting"
+  | "bigger"
+  | "drag-answer"
+  | "pattern-completion"
+  | "logic-grid"
+  | "memory-challenge"
+  | "visual-reasoning";
+
+export type HubPuzzleInteractionItem = {
+  label: string;
+  value: string;
+  emoji?: string;
+  hint?: string;
+};
+
+export type HubPuzzleInteraction = {
+  kind: HubPuzzleInteractionKind;
+  prompt: string;
+  items?: HubPuzzleInteractionItem[];
+  sequence?: string[];
+  dropLabel?: string;
+};
+
 export type HubPuzzle = {
   id: string;
+  ageMinMonths: number;
+  ageMaxMonths: number;
+  category: string;
   question: string;
   options: string[];
   correctAnswer: string;
   difficulty: "easy" | "medium" | "hard";
   visual?: string;
   audioQ?: string;
+  interaction?: HubPuzzleInteraction;
 };
 
 export type HubOrigamiFold =

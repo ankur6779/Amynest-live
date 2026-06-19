@@ -131,7 +131,7 @@ export default function SpeechCoachV2SessionPage() {
   if (!v2Enabled) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-        <p className="text-muted-foreground">Speech Coach V2 is not available yet.</p>
+        <p className="text-muted-foreground">Speech Coach is not available yet.</p>
         <AppLink href="/speech-coach" className="mt-4">
           <Button variant="outline">Go to Speech Coach</Button>
         </AppLink>
@@ -142,7 +142,7 @@ export default function SpeechCoachV2SessionPage() {
   if (!child) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-6 text-center text-muted-foreground">
-        Add a child profile to start Speech Coach V2.
+        Add a child profile to start Speech Coach.
       </div>
     );
   }

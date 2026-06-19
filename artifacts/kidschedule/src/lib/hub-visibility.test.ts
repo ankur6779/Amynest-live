@@ -71,40 +71,40 @@ describe("isHubSectionVisible", () => {
 });
 
 describe("health zone journey gates", () => {
-  it("applies journey lock only from 23 months for health zone features", () => {
+  it("applies journey lock only from 24 months for health zone features", () => {
     expect(isHealthZoneFeature("hub_nutrition")).toBe(true);
     expect(isHealthZoneFeature("hub_health_lab")).toBe(true);
     expect(isHealthZoneFeature("hub_abacus")).toBe(false);
-    expect(isHealthZoneJourneyEligible(22)).toBe(false);
-    expect(isHealthZoneJourneyEligible(23)).toBe(true);
-    expect(shouldApplyHealthZoneJourneyLock("hub_health_lab", 22)).toBe(false);
-    expect(shouldApplyHealthZoneJourneyLock("hub_health_lab", 23)).toBe(true);
+    expect(isHealthZoneJourneyEligible(23)).toBe(false);
+    expect(isHealthZoneJourneyEligible(24)).toBe(true);
+    expect(shouldApplyHealthZoneJourneyLock("hub_health_lab", 23)).toBe(false);
+    expect(shouldApplyHealthZoneJourneyLock("hub_health_lab", 24)).toBe(true);
     expect(shouldApplyHealthZoneJourneyLock("hub_abacus", 30)).toBe(false);
   });
 });
 
 describe("health lab age gates", () => {
-  it("treats under 23 months as preview", () => {
-    expect(isHealthLabPreviewAge(22)).toBe(true);
+  it("treats up to 23 months as preview", () => {
+    expect(isHealthLabPreviewAge(23)).toBe(true);
     expect(isHealthLabPreviewAge(0)).toBe(true);
-    expect(isHealthLabPreviewAge(23)).toBe(false);
+    expect(isHealthLabPreviewAge(24)).toBe(false);
   });
 
-  it("unlocks full access from 23 months up to max age", () => {
-    expect(isHealthLabEligibleAge(22)).toBe(false);
-    expect(isHealthLabEligibleAge(23)).toBe(true);
+  it("unlocks full access from 24 months up to max age", () => {
+    expect(isHealthLabEligibleAge(23)).toBe(false);
+    expect(isHealthLabEligibleAge(24)).toBe(true);
     expect(isHealthLabEligibleAge(155)).toBe(true);
     expect(isHealthLabEligibleAge(156)).toBe(false);
-    expect(HEALTH_LAB_MIN_AGE_MONTHS).toBe(23);
+    expect(HEALTH_LAB_MIN_AGE_MONTHS).toBe(24);
   });
 });
 
 describe("gaming hub age gates", () => {
-  it("treats under 23 months as preview", () => {
-    expect(isGamingHubPreviewAge(22)).toBe(true);
+  it("treats up to 23 months as preview", () => {
+    expect(isGamingHubPreviewAge(23)).toBe(true);
     expect(isGamingHubPreviewAge(0)).toBe(true);
-    expect(isGamingHubPreviewAge(23)).toBe(false);
-    expect(GAMING_HUB_MIN_AGE_MONTHS).toBe(23);
+    expect(isGamingHubPreviewAge(24)).toBe(false);
+    expect(GAMING_HUB_MIN_AGE_MONTHS).toBe(24);
   });
 });
 

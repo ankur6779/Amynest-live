@@ -3,11 +3,9 @@ import {
   ArrowLeft,
   Coins,
   Gamepad2,
-  Gift,
   MoreVertical,
   Plus,
   Sparkles,
-  Store,
   Zap,
 } from "lucide-react";
 import {
@@ -28,8 +26,6 @@ interface GamesPageHeaderProps {
   perfectStreak: number;
   isPremium: boolean;
   onBack: () => void;
-  onRedeem: () => void;
-  onRewardsShop: () => void;
   onUpgrade: () => void;
   onDevGrant?: () => void;
 }
@@ -40,12 +36,11 @@ export function GamesPageHeader({
   perfectStreak,
   isPremium,
   onBack,
-  onRedeem,
-  onRewardsShop,
   onUpgrade,
   onDevGrant,
 }: GamesPageHeaderProps) {
   const { t } = useTranslation();
+  const showMenu = !isPremium || (import.meta.env.DEV && !!onDevGrant);
 
   return (
     <header className={cn(GAMES_HEADER_SHELL, "hub-page-enter")}>
@@ -67,64 +62,52 @@ export function GamesPageHeader({
           </div>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                GAMES_ICON_BUTTON,
-                "data-[state=open]:border-fuchsia-400/45 data-[state=open]:bg-fuchsia-500/15",
-              )}
-              aria-label={t("screens.games.menu_label")}
-            >
-              <MoreVertical className="h-[18px] w-[18px]" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-56 rounded-2xl border-white/10 bg-[rgba(18,28,60,0.96)] text-foreground shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl"
-          >
-            <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {t("screens.games.menu_label")}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem
-              onClick={onRedeem}
-              className="cursor-pointer gap-2.5 rounded-xl py-2.5 focus:bg-white/10 focus:text-foreground"
-            >
-              <Gift className="h-4 w-4 text-amber-300" />
-              {t("screens.games.redeem_button")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={onRewardsShop}
-              className="cursor-pointer gap-2.5 rounded-xl py-2.5 focus:bg-white/10 focus:text-foreground"
-            >
-              <Store className="h-4 w-4 text-amber-300" />
-              {t("screens.games.rewards_shop_link")}
-            </DropdownMenuItem>
-            {!isPremium && (
-              <DropdownMenuItem
-                onClick={onUpgrade}
-                className="cursor-pointer gap-2.5 rounded-xl py-2.5 focus:bg-white/10 focus:text-foreground"
+        {showMenu && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  GAMES_ICON_BUTTON,
+                  "data-[state=open]:border-fuchsia-400/45 data-[state=open]:bg-fuchsia-500/15",
+                )}
+                aria-label={t("screens.games.menu_label")}
               >
-                <Zap className="h-4 w-4 text-violet-300" />
-                {t("screens.games.upgrade_premium")}
-              </DropdownMenuItem>
-            )}
-            {import.meta.env.DEV && onDevGrant && (
-              <>
-                <DropdownMenuSeparator className="bg-white/10" />
+                <MoreVertical className="h-[18px] w-[18px]" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 rounded-2xl border-white/10 bg-[rgba(18,28,60,0.96)] text-foreground shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            >
+              <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                {t("screens.games.menu_label")}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-white/10" />
+              {!isPremium && (
                 <DropdownMenuItem
-                  onClick={onDevGrant}
-                  className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-emerald-300 focus:bg-emerald-500/15 focus:text-emerald-200"
+                  onClick={onUpgrade}
+                  className="cursor-pointer gap-2.5 rounded-xl py-2.5 focus:bg-white/10 focus:text-foreground"
                 >
-                  <Plus className="h-4 w-4" />
-                  {t("screens.games.dev_grant_label")} {t("screens.games.dev_label")}
+                  <Zap className="h-4 w-4 text-violet-300" />
+                  {t("screens.games.upgrade_premium")}
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+              {import.meta.env.DEV && onDevGrant && (
+                <>
+                  {!isPremium && <DropdownMenuSeparator className="bg-white/10" />}
+                  <DropdownMenuItem
+                    onClick={onDevGrant}
+                    className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-emerald-300 focus:bg-emerald-500/15 focus:text-emerald-200"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t("screens.games.dev_grant_label")} {t("screens.games.dev_label")}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2.5">

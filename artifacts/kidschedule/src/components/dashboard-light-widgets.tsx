@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,9 +8,7 @@ import {
   ChevronUp,
   Flame,
   Gamepad2,
-  Medal,
   Ribbon,
-  Star,
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyFamilyMemoryCard } from "@/components/intelligence/amy-family-memory-card";
@@ -26,7 +24,7 @@ import {
   RecentRoutinesCollapsible,
 } from "@/components/dashboard-phase2-widgets";
 import { routineDateKey, routineItems } from "@/lib/routines";
-import { getRewards, getTotalPoints } from "@/lib/rewards";
+import { getTotalPoints } from "@/lib/rewards";
 
 type RoutineItem = {
   time: string;
@@ -95,10 +93,10 @@ function buildAmyTips(
     });
   } else if (pct >= 80) {
     suggestions.push({
-      emoji: "🌟",
-      text: "Amazing progress today! Consider a small reward to celebrate.",
-      actionLabel: t("dashboard.amy_view_rewards"),
-      href: "/rewards",
+      emoji: "🎮",
+      text: "Amazing progress today! Use earned points to unlock a new game.",
+      actionLabel: t("nav.games"),
+      href: "/games",
     });
   }
   if (hour >= 15 && hour <= 17) {
@@ -321,38 +319,13 @@ function RewardsGamingRow({
 }) {
   const { t } = useTranslation();
   const [points, setPoints] = useState(0);
-  const [rewards, setRewards] = useState<ReturnType<typeof getRewards>>([]);
 
   useEffect(() => {
     setPoints(getTotalPoints());
-    setRewards(getRewards());
   }, []);
 
-  const nextReward = useMemo(() => {
-    const sorted = [...rewards].sort((a, b) => a.cost - b.cost);
-    return sorted.find((r) => r.cost > points) ?? sorted[sorted.length - 1];
-  }, [rewards, points]);
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <Link href="/rewards" className="block">
-        <DashboardGlassChip tintRgb={DASHBOARD_TINTS.rewards}>
-          <div className="flex items-center gap-3 px-3 py-2.5">
-            <Medal className="h-4 w-4 text-amber-300 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white truncate">{t("dashboard.rewards_points")}</p>
-              <p className="text-xs text-white/60 truncate">
-                {points} {t("pages.dashboard.pts")}
-                {nextReward ? ` · ${nextReward.emoji} ${nextReward.label}` : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-0.5 shrink-0">
-              <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />
-              <span className="font-black text-sm text-white">{points}</span>
-            </div>
-          </div>
-        </DashboardGlassChip>
-      </Link>
+    <div className="grid grid-cols-1 gap-2">
       {gamingLocked ? (
         <DashboardGlassChip tintRgb={DASHBOARD_TINTS.gaming} className="opacity-70">
           <div className="flex items-center gap-3 px-3 py-2.5">
@@ -367,7 +340,9 @@ function RewardsGamingRow({
               <span className="text-lg shrink-0">🎮</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white truncate">{gamingLabel}</p>
-                <p className="text-xs text-white/60 line-clamp-1">{gamingSub}</p>
+                <p className="text-xs text-white/60 line-clamp-1">
+                  {points} {t("pages.dashboard.pts")} · {gamingSub}
+                </p>
               </div>
               <ArrowRight className="h-3.5 w-3.5 text-white/45 shrink-0" />
             </div>

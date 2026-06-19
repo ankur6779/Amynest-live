@@ -8,6 +8,9 @@ export type {
   HubOrigami,
   HubOrigamiStep,
   HubPuzzle,
+  HubPuzzleInteraction,
+  HubPuzzleInteractionItem,
+  HubPuzzleInteractionKind,
   HubShortStory,
 } from "./types.js";
 

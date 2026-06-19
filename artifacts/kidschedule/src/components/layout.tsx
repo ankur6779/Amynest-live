@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { invokePageBackHandler } from "@/lib/page-back-handler";
 import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
-import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
 import { logNavEvent } from "@/lib/navigation-log";
@@ -104,10 +104,6 @@ const NAV_ITEMS: NavItem[] = [{
   href: "/insights",
   labelKey: "nav.insights",
   icon: BarChart2
-}, {
-  href: "/rewards",
-  labelKey: "nav.rewards",
-  icon: Trophy
 }, {
   href: "/behavior",
   labelKey: "nav.behavior",

@@ -1,5 +1,151 @@
 import type { HubPuzzle } from '../types.js';
-export const ALL_HUB_PUZZLES: HubPuzzle[] = [
+
+type RawHubPuzzle = Omit<HubPuzzle, "ageMinMonths" | "ageMaxMonths" | "category"> & {
+  ageMinMonths?: number;
+  ageMaxMonths?: number;
+  category?: string;
+};
+
+function puzzleLearningTarget(id: string): Pick<HubPuzzle, "ageMinMonths" | "ageMaxMonths" | "category"> {
+  if (id.startsWith("e")) {
+    return { ageMinMonths: 36, ageMaxMonths: 59, category: "Counting, colors, shapes, matching" };
+  }
+
+  const mediumUpperPrimary = new Set(["m01", "m05", "m07", "m12", "m13", "m17"]);
+  if (mediumUpperPrimary.has(id)) {
+    return { ageMinMonths: 84, ageMaxMonths: 119, category: "Multiplication, division, logic" };
+  }
+
+  if (id.startsWith("m")) {
+    return { ageMinMonths: 60, ageMaxMonths: 83, category: "Addition, subtraction, patterns" };
+  }
+
+  const olderReasoning = new Set(["h01", "h03", "h07", "h10", "h14", "h16", "h18"]);
+  if (olderReasoning.has(id)) {
+    return { ageMinMonths: 108, ageMaxMonths: 179, category: "Multi-step reasoning, problem solving" };
+  }
+
+  return { ageMinMonths: 120, ageMaxMonths: 179, category: "Advanced logic, brain teasers, critical thinking" };
+}
+
+function puzzleInteraction(id: string): Pick<HubPuzzle, "interaction"> {
+  switch (id) {
+    case "e01":
+      return {
+        interaction: {
+          kind: "pattern-completion",
+          prompt: "Complete the alphabet train",
+          sequence: ["A", "B", "C", "?"],
+        },
+      };
+    case "e02":
+      return {
+        interaction: {
+          kind: "tap-target",
+          prompt: "Tap the sky color",
+          items: [
+            { label: "Green", value: "Green", emoji: "🟩" },
+            { label: "Blue", value: "Blue", emoji: "🟦" },
+            { label: "Red", value: "Red", emoji: "🟥" },
+            { label: "Yellow", value: "Yellow", emoji: "🟨" },
+          ],
+        },
+      };
+    case "e03":
+      return {
+        interaction: {
+          kind: "counting",
+          prompt: "Count the fingers, then tap the number",
+          items: [
+            { label: "4", value: "4", emoji: "✋" },
+            { label: "6", value: "6", emoji: "✋" },
+            { label: "5", value: "5", emoji: "✋" },
+            { label: "10", value: "10", emoji: "🙌" },
+          ],
+        },
+      };
+    case "e10":
+      return {
+        interaction: {
+          kind: "bigger",
+          prompt: "Tap the biggest animal",
+          items: [
+            { label: "Cat", value: "Cat", emoji: "🐈" },
+            { label: "Dog", value: "Dog", emoji: "🐕" },
+            { label: "Elephant", value: "Elephant", emoji: "🐘" },
+            { label: "Rabbit", value: "Rabbit", emoji: "🐇" },
+          ],
+        },
+      };
+    case "e11":
+      return {
+        interaction: {
+          kind: "tap-target",
+          prompt: "Tap the shape with three sides",
+          items: [
+            { label: "2", value: "2", emoji: "➖" },
+            { label: "4", value: "4", emoji: "🟦" },
+            { label: "5", value: "5", emoji: "⬟" },
+            { label: "3", value: "3", emoji: "🔺" },
+          ],
+        },
+      };
+    case "m01":
+    case "m05":
+    case "m10":
+      return {
+        interaction: {
+          kind: "drag-answer",
+          prompt: "Drag the answer into the power box",
+          dropLabel: "Drop answer here",
+        },
+      };
+    case "m08":
+      return {
+        interaction: {
+          kind: "pattern-completion",
+          prompt: "Complete the polygon pattern",
+          sequence: ["3 sides", "4 sides", "5 sides", "?"],
+        },
+      };
+    case "m18":
+      return {
+        interaction: {
+          kind: "pattern-completion",
+          prompt: "Balance the triangle angle pattern",
+          sequence: ["60°", "60°", "?"],
+        },
+      };
+    case "h01":
+    case "h14":
+      return {
+        interaction: {
+          kind: "visual-reasoning",
+          prompt: "Build the answer from the visual clue",
+        },
+      };
+    case "h11":
+    case "h17":
+      return {
+        interaction: {
+          kind: "logic-grid",
+          prompt: "Use the clue grid to pick the matching answer",
+        },
+      };
+    case "h12":
+      return {
+        interaction: {
+          kind: "memory-challenge",
+          prompt: "Watch the folds, remember the layers, then choose",
+          sequence: ["1 sheet", "Fold once = 2", "Fold twice = ?"],
+        },
+      };
+    default:
+      return {};
+  }
+}
+
+const RAW_HUB_PUZZLES: RawHubPuzzle[] = [
 // ── EASY (preschool, 3–5 years) ──────────────────────────────────────────
 {
   id: "e01",
@@ -348,3 +494,9 @@ export const ALL_HUB_PUZZLES: HubPuzzle[] = [
   options: ["1/3", "1/6", "1/4", "1/2"],
   correctAnswer: "1/4"
 }];
+
+export const ALL_HUB_PUZZLES: HubPuzzle[] = RAW_HUB_PUZZLES.map((puzzle) => ({
+  ...puzzleLearningTarget(puzzle.id),
+  ...puzzleInteraction(puzzle.id),
+  ...puzzle,
+}));

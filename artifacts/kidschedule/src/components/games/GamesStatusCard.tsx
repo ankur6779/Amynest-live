@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Gift, Target } from "lucide-react";
+import { Lock, Target } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -8,8 +8,12 @@ import {
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { GAMES_GLASS_PANEL, gameTheme } from "@/lib/game-theme";
-import { DAILY_LIMIT_FREE, PERFECT_COMBO_BADGE_AT, STREAK_UNLOCK_DAYS } from "@/lib/games";
-import type { Reward } from "@/lib/rewards";
+import {
+  DAILY_LIMIT_FREE,
+  PERFECT_COMBO_BADGE_AT,
+  STREAK_UNLOCK_DAYS,
+  type GameDef,
+} from "@/lib/games";
 
 interface GamesStatusCardProps {
   playedToday: number;
@@ -20,7 +24,8 @@ interface GamesStatusCardProps {
   routineStreak: number;
   perfectStreak: number;
   showComboBadge: boolean;
-  nextReward: { reward: Reward; remaining: number } | null;
+  points: number;
+  nextUnlockGame: GameDef | null;
 }
 
 export function GamesStatusCard({
@@ -32,9 +37,13 @@ export function GamesStatusCard({
   routineStreak,
   perfectStreak,
   showComboBadge,
-  nextReward,
+  points,
+  nextUnlockGame,
 }: GamesStatusCardProps) {
   const { t } = useTranslation();
+  const pointsToNextGame = nextUnlockGame
+    ? Math.max(0, nextUnlockGame.unlockCost - points)
+    : null;
 
   return (
     <div className={cn(GAMES_GLASS_PANEL, "rounded-2xl p-3.5")}>
@@ -79,14 +88,15 @@ export function GamesStatusCard({
               ? t("screens.games.daily_plays_done")
               : t("screens.games.daily_plays_remaining", { count: limit - playedToday })}
           </p>
-          {nextReward && (
+          {nextUnlockGame && pointsToNextGame !== null && (
             <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Gift className="h-3 w-3 shrink-0 text-amber-300/80" />
-              {t("screens.games.next_reward_nudge", {
-                emoji: nextReward.reward.emoji,
-                label: nextReward.reward.label,
-                count: nextReward.remaining,
-              })}
+              <Lock className="h-3 w-3 shrink-0 text-amber-300/80" />
+              {pointsToNextGame === 0
+                ? t("screens.games.next_game_ready", { title: nextUnlockGame.title })
+                : t("screens.games.next_game_nudge", {
+                    count: pointsToNextGame,
+                    title: nextUnlockGame.title,
+                  })}
             </p>
           )}
         </div>

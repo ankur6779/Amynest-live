@@ -9,12 +9,12 @@ export type HubSectionVisibilityInput = {
   bands?: AgeBand[];
 };
 
-/** Amy Health Lab™ — full access from 23 months; preview below. */
-export const HEALTH_LAB_MIN_AGE_MONTHS = 23;
+/** Amy Health Lab™ — full access from 24 months; preview through 23 months. */
+export const HEALTH_LAB_MIN_AGE_MONTHS = 24;
 export const HEALTH_LAB_MAX_AGE_MONTHS = 156;
 
-/** Gaming Hub — full access from 23 months; preview below. */
-export const GAMING_HUB_MIN_AGE_MONTHS = 23;
+/** Gaming Hub — full access from 24 months; preview through 23 months. */
+export const GAMING_HUB_MIN_AGE_MONTHS = 24;
 
 export function isHealthLabPreviewAge(childAgeMonths: number): boolean {
   return childAgeMonths < HEALTH_LAB_MIN_AGE_MONTHS;
@@ -40,7 +40,7 @@ export function isHealthZoneFeature(featureId: string): featureId is HealthZoneF
   return (HEALTH_ZONE_FEATURE_IDS as readonly string[]).includes(featureId);
 }
 
-/** Health Zone tiles follow the 3-day journey paywall from 23+ months only. */
+/** Health Zone tiles follow the 3-day journey paywall from 24+ months only. */
 export function isHealthZoneJourneyEligible(childAgeMonths: number): boolean {
   return childAgeMonths >= HEALTH_LAB_MIN_AGE_MONTHS;
 }

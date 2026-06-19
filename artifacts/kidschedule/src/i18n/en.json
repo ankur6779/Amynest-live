@@ -1772,7 +1772,8 @@
       "daily_plays_done": "Daily limit reached — great job today!",
       "daily_plays_remaining_one": "{{count}} play left today",
       "daily_plays_remaining_other": "{{count}} plays left today",
-      "next_reward_nudge": "{{remaining}} pts to {{emoji}} {{label}}",
+      "next_game_nudge": "{{count}} pts to unlock {{title}}",
+      "next_game_ready": "{{title}} is ready to unlock with points",
       "how_it_works": "How it works",
       "tab_skills": "Skills",
       "tab_leaderboard": "Leaderboard",
@@ -1789,7 +1790,6 @@
       "unlock_streak_short": "Streak unlock",
       "limit_hit_short": "Limit reached",
       "amy_pick_label": "Amy's pick",
-      "redeem_button": "Redeem",
       "limit_reached_msg": "Daily limit reached ({{count}} games per day). Come back tomorrow!",
       "could_not_unlock": "Could not unlock.",
       "played_today_label": "Played today:",
@@ -1808,26 +1808,11 @@
       "points_earned": "+{{count}} points",
       "perfect_bonus": "(perfect bonus)",
       "done": "Done",
-      "reward_redemption": "Reward Redemption",
-      "available_points": "Available points",
-      "child_name_placeholder": "Child's name (for record)",
-      "type_child_name": "Type the child's name first.",
-      "not_enough_points": "Not enough points for {{label}} (need {{cost}}).",
-      "redeemed_msg": "✨ {{label}} redeemed for {{name}}!",
-      "points_unit": "{{count}} points",
-      "delete_reward": "Delete reward",
-      "add_parent_reward": "Add a parent-defined reward",
-      "cancel": "Cancel",
-      "save": "Save",
-      "label_placeholder": "e.g. Ice cream after dinner",
-      "recent_redemptions": "Recent redemptions ({{count}})",
-      "redemption_minus_pts": "−{{cost}} pts",
       "hub_teaser": "Skill-based mini games — earn points from routines, unlock with points or a 5-day streak.",
       "free_tier_hint": "Free: 2 starter games · {{limit}} plays/day. Premium unlocks all games.",
       "streak_unlock_hint": "{{days}}-day routine streak unlocks games without points (current: {{current}} days).",
       "premium_game": "Premium",
       "upgrade_premium": "Upgrade for all games",
-      "rewards_shop_link": "Rewards Shop",
       "amy_play_now": "Play now",
       "weekly_summary_title": "Weekly game summary",
       "weekly_plays": "{{count}} plays (7 days)",
@@ -2386,6 +2371,16 @@
         "title": "Amy Speech Coach",
         "description": "Daily 5-minute speech sessions, milestones, and confidence-building games."
       },
+      "preview": {
+        "banner": "Speech Coach unlocks at 24 months. You can preview what happens inside today.",
+        "title": "Preview Speech Coach",
+        "body": "For children up to 23 months, Speech Coach is overview-only. You can see the session flow, parent insights, and speaking milestones, but practice sessions stay locked until age 2.",
+        "items": {
+          "sessions": "Daily 5-minute speaking practice",
+          "feedback": "Gentle pronunciation and fluency feedback",
+          "progress": "Milestones, badges, and parent progress view"
+        }
+      },
       "home": {
         "welcome_title": "Welcome to Amy Speech Coach",
         "welcome_sub": "Your child's complete speech & confidence ecosystem. Multiple fun modes, daily challenges, progress tracking, and personalized guidance — all in one magical place.",
@@ -2394,7 +2389,7 @@
         "hero_live_title": "Start Live Session",
         "hero_live_sub": "Real-time AI coaching • Instant feedback • Amy cheers you on",
         "hero_v2_badge": "LIVE AI SPEECH COACH",
-        "hero_v2_title": "Speech Coach V2",
+        "hero_v2_title": "Speech Coach",
         "hero_v2_sub": "Live AI speech coaching • Pronunciation • Fluency • Confidence",
         "hero_talk_badge": "NEW • LIVE AI CHAT • 5 MIN/DAY",
         "hero_talk_title": "Talk with Amy",
@@ -3275,7 +3270,14 @@
       "health-lab": {
         "title": "Amy Health Lab™",
         "description": "Play, move, breathe & discover wellness superpowers",
-        "preview_banner": "Amy Health Lab unlocks at 23 months. You can preview how it works today."
+        "preview_banner": "Amy Health Lab unlocks at 24 months. You can preview how it works today.",
+        "preview_title": "Preview Amy Health Lab",
+        "preview_body": "For children up to 23 months, Health Lab is overview-only. You can see the wellness areas, but activities stay locked until age 2.",
+        "preview_items": {
+          "movement": "Movement games for balance and coordination",
+          "breathing": "Breathing and calm-down activities",
+          "wellness": "Wellness discovery cards for healthy habits"
+        }
       },
       "amy-ai": {
         "title": "Ask Amy AI",
@@ -3325,7 +3327,14 @@
       "gaming-rewards": {
         "title": "🎮 Gaming Hub",
         "description": "15 educational mini-games · earn points & unlock rewards",
-        "preview_banner": "Gaming Hub unlocks at 23 months. You can preview how it works today."
+        "preview_banner": "Gaming Hub unlocks at 24 months. You can preview how it works today.",
+        "preview_title": "Preview Gaming Hub",
+        "preview_body": "For children up to 23 months, Gaming Hub is overview-only. You can browse the learning game types, rewards, and progress areas, but games cannot be played yet.",
+        "preview_items": {
+          "games": "Brain, memory, math, focus, and creativity games",
+          "rewards": "Points, reward shop, and unlockable challenges",
+          "insights": "Skill insights and weekly progress for parents"
+        }
       },
       "art-craft": {
         "title": "🎨 Art & Craft Videos",

@@ -61,6 +61,7 @@ type ActivityState = {
   origamiIds: string[];
   doneIds: string[];
   savedIds: string[];
+  origamiProgress?: Record<string, number>;
 };
 
 // ─── Datasets ────────────────────────────────────────────────────────────────
@@ -428,6 +429,150 @@ const REELS: Reel[] = [{
 }];
 const ORIGAMI = HUB_ORIGAMI;
 
+type OrigamiCategory = "All" | "Animals" | "Nature" | "Vehicles" | "Fun Shapes" | "Favorites";
+
+const ORIGAMI_CATEGORIES: OrigamiCategory[] = ["All", "Animals", "Nature", "Vehicles", "Fun Shapes", "Favorites"];
+
+const ORIGAMI_CATEGORY_EMOJI: Record<OrigamiCategory, string> = {
+  All: "✨",
+  Animals: "🐰",
+  Nature: "🌷",
+  Vehicles: "⛵",
+  "Fun Shapes": "⭐",
+  Favorites: "❤️",
+};
+
+const ORIGAMI_BADGES: Record<Origami["difficulty"], { icon: string; label: string; className: string }> = {
+  Easy: {
+    icon: "🟢",
+    label: "Beginner",
+    className: "text-emerald-950 bg-emerald-100/80 border-emerald-200/80",
+  },
+  Medium: {
+    icon: "🟡",
+    label: "Explorer",
+    className: "text-amber-950 bg-amber-100/80 border-amber-200/80",
+  },
+  Fun: {
+    icon: "🔴",
+    label: "Master",
+    className: "text-rose-950 bg-rose-100/80 border-rose-200/80",
+  },
+};
+
+const ORIGAMI_ACHIEVEMENTS: Record<string, string> = {
+  og1: "⛵ Boat Builder",
+  og4: "🦋 Butterfly Artist",
+  og7: "🐰 Bunny Beginner",
+  og10: "⛵ Sail Captain",
+};
+
+function getOrigamiXp(item: Origami) {
+  if (item.difficulty === "Easy") return 10;
+  if (item.difficulty === "Medium") return 20;
+  return 30;
+}
+
+function getOrigamiShortName(item: Origami) {
+  return item.title
+    .replace(/^Learn to make a\s+/i, "")
+    .replace(/^Create a\s+/i, "")
+    .replace(/^Make a\s+/i, "")
+    .replace(/^Fold a\s+/i, "")
+    .replace(/^Simple\s+/i, "")
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\bPaper\b/gi, "")
+    .trim();
+}
+
+function playOrigamiSuccessSound() {
+  try {
+    const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) return;
+    const ctx = new AudioContextCtor();
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.42);
+    gain.connect(ctx.destination);
+
+    [523.25, 659.25, 783.99].forEach((frequency, index) => {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(frequency, ctx.currentTime + index * 0.08);
+      osc.connect(gain);
+      osc.start(ctx.currentTime + index * 0.08);
+      osc.stop(ctx.currentTime + 0.48);
+    });
+  } catch {
+    /* Audio feedback is a nice-to-have and can be blocked by browser policy. */
+  }
+}
+
+function categorizeOrigami(item: Origami): Exclude<OrigamiCategory, "All" | "Favorites"> {
+  const text = `${item.title} ${item.emoji}`.toLowerCase();
+  if (/[🐰🐸🦢🦚]/u.test(item.emoji) || /\b(bunny|frog|crane|peacock)\b/.test(text)) return "Animals";
+  if (/[🌷🦋]/u.test(item.emoji) || /\b(flower|tulip|butterfly)\b/.test(text)) return "Nature";
+  if (/[⛵✈️]/u.test(item.emoji) || /\b(boat|sailboat|airplane|plane)\b/.test(text)) return "Vehicles";
+  return "Fun Shapes";
+}
+
+function getOrigamiVisual(item: Origami) {
+  const category = categorizeOrigami(item);
+  if (/\bbunny\b/i.test(item.title)) {
+    return {
+      gradient: "from-rose-100 via-pink-100 to-amber-50",
+      accent: "#f472b6",
+      shape: "bunny" as const,
+      motif: "rabbit ears",
+      glow: "bg-pink-300/50",
+    };
+  }
+  if (/\bbutterfly\b/i.test(item.title)) {
+    return {
+      gradient: "from-violet-100 via-sky-100 to-cyan-100",
+      accent: "#8b5cf6",
+      shape: "butterfly" as const,
+      motif: "wing folds",
+      glow: "bg-violet-300/50",
+    };
+  }
+  if (category === "Vehicles") {
+    return {
+      gradient: "from-sky-100 via-cyan-100 to-blue-200",
+      accent: "#0ea5e9",
+      shape: /\bairplane|plane\b/i.test(item.title) ? "plane" as const : "boat" as const,
+      motif: "ocean folds",
+      glow: "bg-cyan-300/50",
+    };
+  }
+  if (/\bcrane\b/i.test(item.title)) {
+    return {
+      gradient: "from-amber-100 via-orange-100 to-yellow-200",
+      accent: "#f59e0b",
+      shape: "crane" as const,
+      motif: "wish paper",
+      glow: "bg-amber-300/50",
+    };
+  }
+  if (category === "Nature") {
+    return {
+      gradient: "from-emerald-100 via-lime-100 to-teal-100",
+      accent: "#10b981",
+      shape: "flower" as const,
+      motif: "garden folds",
+      glow: "bg-emerald-300/50",
+    };
+  }
+  return {
+    gradient: "from-fuchsia-100 via-indigo-100 to-slate-100",
+    accent: item.accent,
+    shape: "star" as const,
+    motif: "magic folds",
+    glow: "bg-indigo-300/50",
+  };
+}
+
 // ─── Seeded shuffle ───────────────────────────────────────────────────────────
 function seededRandom(seed: number) {
   let s = seed;
@@ -622,23 +767,65 @@ export function DailyKidsActivity({
       return new Set();
     }
   });
+  const [origamiProgress, setOrigamiProgress] = useState<Record<string, number>>(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem(key) || "{}") as ActivityState;
+      return p.origamiProgress ?? {};
+    } catch {
+      return {};
+    }
+  });
+  const [origamiCategory, setOrigamiCategory] = useState<OrigamiCategory>("All");
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [celebration, setCelebration] = useState<{ item: Origami; xp: number } | null>(null);
   const [modalItem, setModalItem] = useState<ModalItem | null>(null);
   const [stepsItem, setStepsItem] = useState<Origami | null>(null);
-  const persist = (d: Set<string>, s: Set<string>) => {
+  const persist = (d: Set<string>, s: Set<string>, progress: Record<string, number> = origamiProgress) => {
     try {
       const p = JSON.parse(localStorage.getItem(key) || "{}") as ActivityState;
       localStorage.setItem(key, JSON.stringify({
         ...p,
         doneIds: [...d],
-        savedIds: [...s]
+        savedIds: [...s],
+        origamiProgress: progress
       }));
     } catch {/* ignore */}
   };
+  const showOrigamiCelebration = useCallback((item: Origami) => {
+    playOrigamiSuccessSound();
+    setCelebration({ item, xp: getOrigamiXp(item) });
+  }, []);
   const toggleDone = (id: string) => {
     setDone(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      persist(next, saved);
+      const nextProgress = { ...origamiProgress };
+      const activity = daily.og.find(o => o.id === id);
+      if (next.has(id)) {
+        next.delete(id);
+        nextProgress[id] = 0;
+      } else {
+        next.add(id);
+        nextProgress[id] = activity?.steps.length ?? nextProgress[id] ?? 0;
+        if (activity) showOrigamiCelebration(activity);
+      }
+      setOrigamiProgress(nextProgress);
+      persist(next, saved, nextProgress);
+      return next;
+    });
+  };
+  const completeOrigami = (id: string) => {
+    setDone(prev => {
+      const next = new Set(prev);
+      const wasDone = next.has(id);
+      next.add(id);
+      const activity = daily.og.find(o => o.id === id);
+      const nextProgress = {
+        ...origamiProgress,
+        [id]: activity?.steps.length ?? origamiProgress[id] ?? 0,
+      };
+      setOrigamiProgress(nextProgress);
+      persist(next, saved, nextProgress);
+      if (activity && !wasDone) showOrigamiCelebration(activity);
       return next;
     });
   };
@@ -650,8 +837,39 @@ export function DailyKidsActivity({
       return next;
     });
   };
+  const updateOrigamiProgress = (id: string, completedFolds: number) => {
+    setOrigamiProgress(prev => {
+      const activity = daily.og.find(o => o.id === id);
+      const clamped = Math.max(0, Math.min(completedFolds, activity?.steps.length ?? completedFolds));
+      const next = {
+        ...prev,
+        [id]: Math.max(prev[id] ?? 0, clamped),
+      };
+      persist(done, saved, next);
+      return next;
+    });
+  };
   const openModal = (item: ModalItem) => setModalItem(item);
   const closeModal = () => setModalItem(null);
+  const filteredOrigami = useMemo(() => {
+    if (origamiCategory === "All") return daily.og;
+    if (origamiCategory === "Favorites") return daily.og.filter(o => saved.has(o.id));
+    return daily.og.filter(o => categorizeOrigami(o) === origamiCategory);
+  }, [daily.og, origamiCategory, saved]);
+  const completedOrigamiCount = daily.og.filter(o => done.has(o.id)).length;
+  const activeOrigamiCount = daily.og.length;
+  const completedCollection = ORIGAMI.filter(o => done.has(o.id));
+  const lockedCollection = ORIGAMI.filter(o => !done.has(o.id)).slice(0, Math.max(3, 6 - completedCollection.length));
+  const challenge = daily.og.find(o => /butterfly/i.test(o.title)) ?? daily.og[seed % Math.max(daily.og.length, 1)];
+  const challengeProgress = challenge ? Math.round((Math.min(origamiProgress[challenge.id] ?? 0, challenge.steps.length) / challenge.steps.length) * 100) : 0;
+  const foldingStreak = Math.max(1, completedOrigamiCount || saved.size || 3);
+  const totalXp = completedCollection.reduce((sum, item) => sum + getOrigamiXp(item), 0);
+
+  useEffect(() => {
+    if (!celebration) return;
+    const timer = window.setTimeout(() => setCelebration(null), 4600);
+    return () => window.clearTimeout(timer);
+  }, [celebration]);
   return <div className="space-y-5 animate-in fade-in duration-500">
 
       {/* ── Origami Steps Modal ─────────────────────────────────── */}
@@ -659,11 +877,14 @@ export function DailyKidsActivity({
           item={stepsItem}
           childName={childName}
           onClose={() => setStepsItem(null)}
-          onComplete={(id) => toggleDone(id)}
+          initialStep={Math.min(origamiProgress[stepsItem.id] ?? 0, Math.max(stepsItem.steps.length - 1, 0))}
+          onProgress={updateOrigamiProgress}
+          onComplete={completeOrigami}
         />}
 
       {/* ── Drive Preview Modal ─────────────────────────────────── */}
       {modalItem && <DrivePreviewModal item={modalItem} onClose={closeModal} isSaved={saved.has(modalItem.id)} onSave={() => toggleSaved(modalItem.id)} />}
+      {celebration && <OrigamiCelebrationToast item={celebration.item} xp={celebration.xp} onClose={() => setCelebration(null)} />}
 
       {/* ── Section Header ─────────────────────────────────────── */}
       <div className="rounded-2xl bg-gradient-to-r from-primary via-primary to-primary p-4 text-white shadow-md relative overflow-hidden">
@@ -684,11 +905,122 @@ export function DailyKidsActivity({
       </div>
 
       {/* ── Origami ────────────────────────────────────────────── */}
-      <SectionBlock emoji="🧩" title={t("components.daily_kids_activity.origami_activity")} subtitle="Paper folding — zero mess, max fun!">
-        <div className="grid grid-cols-2 gap-3">
-          {daily.og.map(o => <OrigamiCard key={o.id} item={o} done={done.has(o.id)} saved={saved.has(o.id)} onDone={() => toggleDone(o.id)} onSave={() => toggleSaved(o.id)} onViewSteps={() => setStepsItem(o)} />)}
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 px-3 py-4 shadow-2xl shadow-slate-950/30">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_10%,rgba(56,189,248,0.22),transparent_28%),radial-gradient(circle_at_86%_5%,rgba(236,72,153,0.16),transparent_24%),linear-gradient(145deg,#071226_0%,#0f172a_48%,#111827_100%)]" />
+        <div className="pointer-events-none absolute -left-16 top-20 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-12 bottom-10 h-44 w-44 rounded-full bg-fuchsia-300/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.08]" style={{
+          backgroundImage: "linear-gradient(135deg,transparent 0 42%,#fff 42% 43%,transparent 43% 100%),linear-gradient(45deg,transparent 0 47%,#fff 47% 48%,transparent 48% 100%)",
+          backgroundSize: "74px 74px",
+        }} />
+
+        <div className="relative z-10">
+          <div className="mb-4 rounded-[1.6rem] border border-white/10 bg-white/[0.07] p-4 text-white shadow-xl backdrop-blur-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">Premium Studio</p>
+                <h2 className="text-2xl font-black leading-tight">🧩 Origami Studio</h2>
+                <p className="mt-1 text-sm font-semibold text-white/62">Fold • Create • Imagine</p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="rounded-2xl border border-orange-200/20 bg-orange-400/12 px-3 py-2 text-right backdrop-blur-md">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-orange-100/65">Streak</p>
+                  <p className="text-sm font-black text-white"><span className="inline-block animate-pulse motion-reduce:animate-none">🔥</span> {foldingStreak} Day</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCollectionOpen(open => !open)}
+                  className="min-h-11 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-black text-white/80 backdrop-blur-md transition-all hover:bg-white/15 hover:text-white active:scale-95"
+                  aria-expanded={collectionOpen}
+                >
+                  📚 My Collection
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl border border-white/10 bg-white/10 px-2.5 py-2 text-center shadow-inner backdrop-blur-md">
+                <p className="text-lg">⭐</p>
+                <p className="text-sm font-black">{ORIGAMI.length}</p>
+                <p className="text-[10px] font-bold text-white/55">Activities</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/10 px-2.5 py-2 text-center shadow-inner backdrop-blur-md">
+                <p className="text-lg">🏆</p>
+                <p className="text-sm font-black">{completedOrigamiCount}</p>
+                <p className="text-[10px] font-bold text-white/55">Completed</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/10 px-2.5 py-2 text-center shadow-inner backdrop-blur-md">
+                <p className="text-lg">🔥</p>
+                <p className="text-sm font-black">{totalXp}</p>
+                <p className="text-[10px] font-bold text-white/55">XP Earned</p>
+              </div>
+            </div>
+          </div>
+
+          {challenge && <OrigamiChallengeHero
+            item={challenge}
+            progress={challengeProgress}
+            done={done.has(challenge.id)}
+            onStart={() => setStepsItem(challenge)}
+          />}
+
+          {collectionOpen && <OrigamiCollectionBook completed={completedCollection} locked={lockedCollection} totalXp={totalXp} />}
+
+          {completedOrigamiCount === 0 && <div className="mb-4 overflow-hidden rounded-[1.6rem] border border-cyan-200/15 bg-gradient-to-br from-cyan-400/14 via-white/[0.07] to-violet-400/14 p-4 text-white shadow-xl shadow-slate-950/20">
+            <div className="flex items-center gap-4">
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.35rem] bg-white/12 shadow-inner">
+                <svg viewBox="0 0 90 90" className="h-16 w-16 drop-shadow-lg" aria-hidden="true">
+                  <path d="M16 52 45 14l29 38-29 24z" fill="rgba(255,255,255,.92)" />
+                  <path d="M45 14v62M16 52h58" stroke="#22d3ee" strokeWidth="3" strokeLinecap="round" strokeDasharray="5 5" />
+                  <path d="M45 14 29 76h32z" fill="rgba(129,140,248,.42)" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-black">Your Origami Journey Starts Here</p>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-white/58">Unlock badges, build a paper collection, and earn XP with every finished model.</p>
+                {challenge && <button
+                  type="button"
+                  onClick={() => setStepsItem(challenge)}
+                  className="mt-3 min-h-11 rounded-2xl bg-white px-4 py-2 text-xs font-black text-slate-950 shadow-lg transition-all hover:scale-[1.02] active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100"
+                >
+                  Create First Model
+                </button>}
+              </div>
+            </div>
+          </div>}
+
+          <div className="-mx-3 mb-4 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+            {ORIGAMI_CATEGORIES.map(category => {
+              const active = origamiCategory === category;
+              return <button
+                key={category}
+                type="button"
+                onClick={() => setOrigamiCategory(category)}
+                className={`shrink-0 rounded-full border px-4 py-2 text-xs font-black transition-all active:scale-95 ${active ? "border-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 text-white shadow-lg shadow-blue-950/40" : "border-white/10 bg-white/[0.07] text-white/62 backdrop-blur-md hover:bg-white/12 hover:text-white"}`}
+              >
+                <span className="mr-1.5">{ORIGAMI_CATEGORY_EMOJI[category]}</span>{category}
+              </button>;
+            })}
+          </div>
+
+          {filteredOrigami.length > 0 ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {filteredOrigami.map(o => <OrigamiCard
+              key={o.id}
+              item={o}
+              done={done.has(o.id)}
+              saved={saved.has(o.id)}
+              progress={origamiProgress[o.id] ?? 0}
+              onDone={() => toggleDone(o.id)}
+              onSave={() => toggleSaved(o.id)}
+              onViewSteps={() => setStepsItem(o)}
+            />)}
+          </div> : <div className="rounded-[1.5rem] border border-dashed border-white/15 bg-white/[0.05] px-5 py-8 text-center text-white/70">
+            <p className="text-3xl mb-2">💌</p>
+            <p className="text-sm font-black">No saved missions yet</p>
+            <p className="mt-1 text-xs font-semibold text-white/45">Tap Save on an origami card to build a favorites shelf.</p>
+          </div>}
         </div>
-      </SectionBlock>
+      </section>
 
     </div>;
 }
@@ -1138,18 +1470,22 @@ function OrigamiStepsModal({
   item,
   childName,
   onClose,
+  initialStep = 0,
+  onProgress,
   onComplete
 }: {
   item: Origami;
   childName: string;
   onClose(): void;
+  initialStep?: number;
+  onProgress?(origamiId: string, completedFolds: number): void;
   onComplete?(origamiId: string): void;
 }) {
   const {
     t
   } = useTranslation();
   const [phase, setPhase] = useState<OrigamiPhase>("cover");
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
   const [animKey, setAnimKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [autoPlay, setAutoPlay] = useState(false);
@@ -1165,9 +1501,10 @@ function OrigamiStepsModal({
   } = useAmyVoice();
   const goTo = useCallback((next: number) => {
     setStep(next);
+    onProgress?.(item.id, next);
     setAnimKey(k => k + 1);
     setIsPlaying(true);
-  }, []);
+  }, [item.id, onProgress]);
   const goNext = useCallback(() => {
     setStep(prev => {
       const next = prev + 1;
@@ -1175,14 +1512,16 @@ function OrigamiStepsModal({
         setPhase("done");
         const totalDone = recordOrigamiCompletion(childName, item.id);
         setCompletionTotal(totalDone);
+        onProgress?.(item.id, total);
         onComplete?.(item.id);
         return prev;
       }
+      onProgress?.(item.id, next);
       setAnimKey(k => k + 1);
       setIsPlaying(true);
       return next;
     });
-  }, [total, childName, item.id, onComplete]);
+  }, [total, childName, item.id, onProgress, onComplete]);
   const goPrev = useCallback(() => {
     setStep(prev => {
       if (prev <= 0) return prev;
@@ -1197,6 +1536,7 @@ function OrigamiStepsModal({
   }, []);
   const restart = () => {
     setStep(0);
+    onProgress?.(item.id, 0);
     setAnimKey(k => k + 1);
     setIsPlaying(true);
     setPhase("steps");
@@ -1646,11 +1986,266 @@ function OrigamiStepsModal({
   return createPortal(shell, document.body);
 }
 
-// ─── Origami Card (redesigned) ───────────────────────────────────────────────
+// ─── Origami Card (premium studio) ───────────────────────────────────────────
+function OrigamiChallengeHero({
+  item,
+  progress,
+  done,
+  onStart,
+}: {
+  item: Origami;
+  progress: number;
+  done: boolean;
+  onStart(): void;
+}) {
+  const visual = getOrigamiVisual(item);
+  const xp = getOrigamiXp(item);
+  const ring = Math.max(0, Math.min(progress, 100));
+  return <div className="group/challenge relative mb-4 overflow-hidden rounded-[1.8rem] border border-white/10 bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.04] p-4 text-white shadow-2xl shadow-slate-950/25 backdrop-blur-xl">
+      <div className={`absolute -right-10 -top-12 h-36 w-36 rounded-full ${visual.glow} blur-3xl`} />
+      <div className="absolute inset-0 opacity-[0.12]" style={{
+        backgroundImage: "linear-gradient(120deg,transparent 0 35%,rgba(255,255,255,.9) 45%,transparent 58% 100%)",
+        transform: "translateX(-65%)",
+        transition: "transform 900ms cubic-bezier(.2,.8,.2,1)",
+      }} />
+      <div className="relative z-10 flex items-center gap-4">
+        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-[1.6rem] bg-white/10 shadow-[0_18px_42px_rgba(0,0,0,0.24)] transition-transform duration-300 group-hover/challenge:-translate-y-1 group-hover/challenge:rotate-1 motion-reduce:transition-none motion-reduce:group-hover/challenge:translate-y-0 motion-reduce:group-hover/challenge:rotate-0">
+          <svg viewBox="0 0 96 96" className="absolute inset-0 h-full w-full -rotate-90" aria-label={`${ring}% challenge progress`}>
+            <circle cx="48" cy="48" r="39" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="8" />
+            <circle
+              cx="48"
+              cy="48"
+              r="39"
+              fill="none"
+              stroke="url(#origami-challenge-ring)"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 39}`}
+              strokeDashoffset={`${2 * Math.PI * 39 * (1 - ring / 100)}`}
+              className="transition-[stroke-dashoffset] duration-700 motion-reduce:transition-none"
+            />
+            <defs>
+              <linearGradient id="origami-challenge-ring" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#67e8f9" />
+                <stop offset="52%" stopColor="#818cf8" />
+                <stop offset="100%" stopColor="#f0abfc" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <OrigamiMiniModel item={item} visual={visual} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/75">🧩 Challenge of the Day</p>
+          <h3 className="mt-1 text-xl font-black leading-tight">Create a {getOrigamiShortName(item)} Today</h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-amber-200/30 bg-amber-300/16 px-3 py-1.5 text-xs font-black text-amber-100">+{xp + 15} XP</span>
+            <span className="rounded-full border border-orange-200/25 bg-orange-400/14 px-3 py-1.5 text-xs font-black text-orange-100">+1 Streak</span>
+            {done && <span className="rounded-full border border-emerald-200/25 bg-emerald-400/14 px-3 py-1.5 text-xs font-black text-emerald-100">Unlocked</span>}
+          </div>
+          <button
+            type="button"
+            onClick={onStart}
+            className="relative mt-4 min-h-11 overflow-hidden rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-lg transition-all hover:scale-[1.02] active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100"
+          >
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-cyan-200/70 to-transparent transition-transform duration-700 group-hover/challenge:translate-x-full motion-reduce:hidden" />
+            <span className="relative">{done ? "Practice Challenge" : "Start Challenge"}</span>
+          </button>
+        </div>
+      </div>
+    </div>;
+}
+
+function OrigamiMiniModel({
+  item,
+  visual,
+}: {
+  item: Origami;
+  visual: ReturnType<typeof getOrigamiVisual>;
+}) {
+  return <svg viewBox="0 0 90 90" className="relative z-10 h-16 w-16 drop-shadow-xl" aria-hidden="true">
+      <defs>
+        <linearGradient id={`mini-paper-${item.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fff" />
+          <stop offset="100%" stopColor={visual.accent} />
+        </linearGradient>
+      </defs>
+      <path d="M15 50 45 14l30 36-30 26z" fill={`url(#mini-paper-${item.id})`} opacity=".95" />
+      <path d="M45 14v62M15 50h60" stroke="rgba(15,23,42,.28)" strokeWidth="3" strokeLinecap="round" strokeDasharray="5 5" />
+      <path d="M45 14 30 76h30z" fill="rgba(255,255,255,.42)" />
+    </svg>;
+}
+
+function OrigamiCollectionBook({
+  completed,
+  locked,
+  totalXp,
+}: {
+  completed: Origami[];
+  locked: Origami[];
+  totalXp: number;
+}) {
+  return <div className="mb-4 overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.07] p-4 text-white shadow-xl backdrop-blur-xl">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-black">📚 My Collection</p>
+          <p className="mt-0.5 text-xs font-semibold text-white/48">{completed.length} unlocked • {totalXp} XP</p>
+        </div>
+        <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-black text-white/70">Collector Book</span>
+      </div>
+      {completed.length > 0 ? <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {completed.map(item => <div key={item.id} className="rounded-2xl border border-amber-200/25 bg-amber-300/12 p-3 shadow-inner">
+          <p className="text-lg">{item.emoji}</p>
+          <p className="mt-1 truncate text-xs font-black">{getOrigamiShortName(item)}</p>
+          <p className="text-[10px] font-bold text-amber-100/65">+{getOrigamiXp(item)} XP</p>
+        </div>)}
+      </div> : <div className="mb-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.04] p-4 text-center">
+        <p className="text-sm font-black">No models collected yet</p>
+        <p className="mt-1 text-xs font-semibold text-white/45">Finish a challenge to stamp your first page.</p>
+      </div>}
+      <div className="grid grid-cols-3 gap-2">
+        {locked.map(item => <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/35 p-3 text-center shadow-inner">
+          <p className="text-xl">❓</p>
+          <p className="mt-1 text-[10px] font-black text-white/42">Mystery Model</p>
+        </div>)}
+      </div>
+    </div>;
+}
+
+function OrigamiCelebrationToast({
+  item,
+  xp,
+  onClose,
+}: {
+  item: Origami;
+  xp: number;
+  onClose(): void;
+}) {
+  const achievement = ORIGAMI_ACHIEVEMENTS[item.id] ?? "🏆 Origami Master";
+  return <div className="pointer-events-none fixed inset-x-3 bottom-5 z-[10000] flex justify-center" aria-live="polite">
+      <div className="pointer-events-auto relative w-full max-w-sm overflow-hidden rounded-[1.6rem] border border-amber-200/35 bg-slate-950/95 p-4 text-white shadow-2xl shadow-slate-950/45 backdrop-blur-xl" style={{ animation: "origami-toast-in 420ms cubic-bezier(.2,.9,.2,1) both" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(251,191,36,.22),transparent_36%),radial-gradient(circle_at_88%_18%,rgba(34,211,238,.16),transparent_30%)]" />
+        {Array.from({ length: 18 }).map((_, i) => <span
+          key={i}
+          className="absolute h-2 w-2 rounded-sm"
+          style={{
+            left: `${8 + (i * 13) % 86}%`,
+            top: `${-8 - (i % 5) * 7}px`,
+            background: ["#facc15", "#22d3ee", "#f472b6", "#34d399"][i % 4],
+            animation: `origami-confetti ${900 + (i % 5) * 120}ms ${i * 28}ms ease-out both`,
+          }}
+        />)}
+        <button type="button" onClick={onClose} aria-label="Dismiss celebration" className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-sm font-black text-white/70 transition-colors hover:bg-white/15 hover:text-white">
+          ✕
+        </button>
+        <div className="relative z-10 flex items-center gap-3 pr-10">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-amber-300/18 text-3xl shadow-[0_0_28px_rgba(251,191,36,.24)] animate-pulse motion-reduce:animate-none">
+            🏅
+          </div>
+          <div>
+            <p className="text-lg font-black">Amazing Folding!</p>
+            <p className="mt-0.5 text-xs font-bold text-amber-100">{achievement} unlocked</p>
+            <p className="mt-1 text-xs font-semibold text-white/58">{getOrigamiShortName(item)} completed • +{xp} XP</p>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes origami-toast-in {
+          from { opacity: 0; transform: translateY(24px) scale(.96) }
+          to { opacity: 1; transform: translateY(0) scale(1) }
+        }
+        @keyframes origami-confetti {
+          0% { opacity: 0; transform: translate3d(0,0,0) rotate(0deg) }
+          12% { opacity: 1 }
+          100% { opacity: 0; transform: translate3d(18px,118px,0) rotate(260deg) }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .origami-reduced-motion, .origami-reduced-motion * { animation: none !important; transition: none !important; }
+          @keyframes origami-toast-in { from { opacity: 1; transform: none } to { opacity: 1; transform: none } }
+          @keyframes origami-confetti { from { opacity: 0 } to { opacity: 0 } }
+        }
+      `}</style>
+    </div>;
+}
+
+function OrigamiHeroArtwork({
+  item,
+  visual,
+}: {
+  item: Origami;
+  visual: ReturnType<typeof getOrigamiVisual>;
+}) {
+  const paperShadow = "drop-shadow(0 16px 20px rgba(15,23,42,0.24))";
+  return <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      <div className={`absolute -left-10 -top-10 h-28 w-28 rounded-full ${visual.glow} blur-3xl`} />
+      <div className="absolute right-4 top-6 h-16 w-16 rounded-full bg-white/30 blur-2xl" />
+      <div className="absolute inset-0 opacity-30" style={{
+        backgroundImage: "linear-gradient(135deg,rgba(255,255,255,.42) 0 1px,transparent 1px),linear-gradient(45deg,rgba(255,255,255,.28) 0 1px,transparent 1px)",
+        backgroundSize: "28px 28px",
+      }} />
+      <svg viewBox="0 0 220 160" className="relative z-10 h-36 w-full max-w-[230px] transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0 motion-reduce:group-hover:scale-100" role="img" aria-label={`${item.title} paper artwork`}>
+        <defs>
+          <linearGradient id={`paper-${item.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.96" />
+            <stop offset="48%" stopColor={visual.accent} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={visual.accent} stopOpacity="0.7" />
+          </linearGradient>
+          <linearGradient id={`crease-${item.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#0f172a" stopOpacity="0.22" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="110" cy="133" rx="58" ry="12" fill="#0f172a" opacity="0.14" />
+        {visual.shape === "boat" && <>
+          <path d="M58 92h104l-18 30H76z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.72)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M106 38v54H68z" fill="#fff" opacity="0.9" stroke="rgba(15,23,42,.16)" strokeWidth="2" />
+          <path d="M112 34v58h44z" fill={`url(#paper-${item.id})`} stroke="rgba(15,23,42,.16)" strokeWidth="2" />
+          <path d="M112 34v89" stroke="rgba(15,23,42,.22)" strokeWidth="3" strokeLinecap="round" />
+        </>}
+        {visual.shape === "plane" && <>
+          <path d="M36 78 184 34 132 126 106 89z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.72)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M106 89 184 34 120 102z" fill={`url(#crease-${item.id})`} opacity="0.75" />
+          <path d="M106 89 88 124l32-22" fill="#fff" opacity="0.82" />
+        </>}
+        {visual.shape === "butterfly" && <>
+          <path d="M106 77C82 38 42 38 38 72c-4 34 36 40 68 15z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M114 77c24-39 64-39 68-5 4 34-36 40-68 15z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M110 64v55" stroke="#312e81" strokeOpacity=".52" strokeWidth="8" strokeLinecap="round" />
+          <path d="M70 72h80M88 94h44" stroke="rgba(255,255,255,.55)" strokeWidth="2" strokeLinecap="round" />
+        </>}
+        {visual.shape === "bunny" && <>
+          <path d="M82 78 72 28c22 7 31 27 34 55z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M126 78 148 28c-24 5-37 27-42 55z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M62 82h96l-18 45H80z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <circle cx="94" cy="100" r="4" fill="#334155" /><circle cx="124" cy="100" r="4" fill="#334155" />
+          <path d="M106 111q5 5 10 0" stroke="#334155" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </>}
+        {visual.shape === "crane" && <>
+          <path d="M42 88 106 52l44 38-50 34z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M106 52 136 24l14 66z" fill="#fff" opacity=".86" stroke="rgba(15,23,42,.14)" strokeWidth="2" />
+          <path d="M150 90 184 72l-34 36z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.65)" strokeWidth="2" />
+          <path d="M100 124 88 142M116 116l10 26" stroke="rgba(15,23,42,.32)" strokeWidth="3" strokeLinecap="round" />
+        </>}
+        {visual.shape === "flower" && <>
+          <path d="M110 42 148 84 110 126 72 84z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M110 42v84M72 84h76" stroke="rgba(15,23,42,.18)" strokeWidth="2" strokeDasharray="5 5" />
+          <path d="M110 126c-8 12-15 18-28 22" stroke="#16a34a" strokeWidth="7" strokeLinecap="round" fill="none" />
+        </>}
+        {visual.shape === "star" && <>
+          <path d="M110 28 128 68l44 5-33 29 10 43-39-23-38 23 9-43-33-29 44-5z" fill={`url(#paper-${item.id})`} stroke="rgba(255,255,255,.75)" strokeWidth="2" style={{ filter: paperShadow }} />
+          <path d="M110 28v94M58 73l81 29M172 73l-100 72" stroke="rgba(15,23,42,.16)" strokeWidth="2" />
+        </>}
+      </svg>
+      <div className="absolute bottom-3 left-4 rounded-full border border-white/50 bg-white/35 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm backdrop-blur-md">
+        {visual.motif}
+      </div>
+    </div>;
+}
+
 function OrigamiCard({
   item,
   done,
   saved,
+  progress,
   onDone,
   onSave,
   onViewSteps
@@ -1658,73 +2253,109 @@ function OrigamiCard({
   item: Origami;
   done: boolean;
   saved: boolean;
+  progress: number;
   onDone(): void;
   onSave(): void;
   onViewSteps(): void;
 }) {
-  const {
-    t
-  } = useTranslation();
-  return <div className={`rounded-2xl border overflow-hidden flex flex-col transition-all shadow-sm hover:shadow-md ${done ? "opacity-75" : ""}`}>
+  const visual = getOrigamiVisual(item);
+  const difficulty = ORIGAMI_BADGES[item.difficulty];
+  const completedFolds = done ? item.steps.length : Math.min(progress, item.steps.length);
+  const percent = Math.round((completedFolds / item.steps.length) * 100);
+  const status = done ? "✅ Completed" : completedFolds > 0 ? "⏳ Continue" : "▶ Start";
+  const primaryLabel = done ? "Practice Again" : completedFolds > 0 ? "Continue Folding" : "Start Folding";
+  const achievement = ORIGAMI_ACHIEVEMENTS[item.id] ?? "🏆 Origami Master";
+  const xp = getOrigamiXp(item);
 
-      {/* ── Large preview area ─────────────────────────── */}
-      <div className={`relative ${item.bg} flex flex-col items-center justify-center pt-5 pb-3 px-2`}>
-        {/* Done overlay */}
-        {done && <div className="absolute inset-0 bg-primary flex items-center justify-center z-10 rounded-t-2xl">
-            <div className="bg-primary text-white rounded-full w-9 h-9 flex items-center justify-center text-base font-black shadow-lg">✓</div>
-          </div>}
+  return <article className={`group relative flex min-h-[520px] flex-col overflow-hidden rounded-[1.75rem] border bg-slate-950/95 shadow-[0_18px_0_rgba(15,23,42,0.5),0_30px_60px_rgba(2,6,23,0.38)] transition-all duration-300 will-change-transform hover:-translate-y-2 hover:rotate-[0.35deg] hover:scale-[1.02] hover:shadow-[0_24px_0_rgba(15,23,42,0.42),0_42px_80px_rgba(2,6,23,0.48)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0 motion-reduce:hover:scale-100 ${done ? "border-amber-300/70 ring-2 ring-amber-300/25" : "border-white/10"}`}>
+      {done && <div className="pointer-events-none absolute inset-0 z-20 rounded-[1.75rem] shadow-[0_0_38px_rgba(251,191,36,0.28)]" />}
+      <div className="pointer-events-none absolute inset-x-5 -bottom-2 h-5 rounded-b-[1.75rem] bg-slate-900/80 blur-sm" />
+      <div className="pointer-events-none absolute inset-0 z-10 -translate-x-[120%] bg-gradient-to-r from-transparent via-white/12 to-transparent transition-transform duration-1000 group-hover:translate-x-[120%] motion-reduce:hidden" />
 
-        {/* Large emoji final output */}
-        <div className="w-20 h-20 rounded-2xl bg-white/50 shadow-md flex items-center justify-center mb-2 border border-white/60">
-          <span className="text-4xl">{item.emoji}</span>
+      <div className={`relative h-[235px] shrink-0 overflow-hidden bg-gradient-to-br ${visual.gradient}`}>
+        <OrigamiHeroArtwork item={item} visual={visual} />
+        <div className="absolute left-4 top-4 rounded-full border border-white/55 bg-white/30 px-3 py-1.5 text-[11px] font-black text-slate-800 shadow-lg backdrop-blur-xl">
+          <span className="mr-1">📄</span>{item.steps.length} Folds
         </div>
-
-        {/* Steps + difficulty badges */}
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${DIFFICULTY_COLORS[item.difficulty]}`}>
-            {item.difficulty}
-          </span>
-          <span className="text-[9px] font-bold bg-white/70 text-foreground px-2 py-0.5 rounded-full">
-            {item.steps.length} {t("components.daily_kids_activity.steps_2")}
-          </span>
+        <div className="absolute left-4 top-[58px] rounded-full border border-amber-200/70 bg-amber-200/75 px-3 py-1.5 text-[11px] font-black text-amber-950 shadow-lg backdrop-blur-xl">
+          ⚡ +{xp} XP
         </div>
-
-        {/* Step dot indicators */}
-        <div className="flex gap-0.5">
-          {item.steps.slice(0, 10).map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/60" />)}
-          {item.steps.length > 10 && <span className="text-[7px] text-white/70 font-bold ml-0.5">+{item.steps.length - 10}</span>}
+        <div className={`absolute bottom-4 right-4 rounded-full border px-3 py-1.5 text-[11px] font-black shadow-lg backdrop-blur-xl ${difficulty.className}`}>
+          <span className="mr-1">{difficulty.icon}</span>{difficulty.label}
         </div>
-
-        {/* Save heart */}
-        <button onClick={onSave} className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full transition-all ${saved ? "bg-primary text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`}>
-          <span className="text-xs">{saved ? "♥" : "♡"}</span>
+        <button
+          type="button"
+          onClick={onSave}
+          aria-label={saved ? "Remove from favorites" : "Save to favorites"}
+          className={`absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border shadow-lg backdrop-blur-xl transition-all duration-300 active:scale-90 motion-reduce:transition-none ${saved ? "border-rose-200/70 bg-rose-500 text-white rotate-6 scale-105 motion-reduce:rotate-0" : "border-white/55 bg-white/30 text-slate-600 hover:bg-white/55"}`}
+        >
+          <span className="text-lg transition-transform duration-300 group-hover:scale-125 motion-reduce:transition-none motion-reduce:group-hover:scale-100">{saved ? "❤️" : "♡"}</span>
         </button>
+        {done && <div className="absolute left-4 bottom-4 rounded-full border border-amber-200/80 bg-amber-300/90 px-3 py-1.5 text-[11px] font-black text-amber-950 shadow-lg shadow-amber-900/20">
+          🎊 Complete
+        </div>}
       </div>
 
-      {/* ── Card info + actions ────────────────────────── */}
-      <div className="p-3 flex-1 flex flex-col justify-between bg-card">
-        {/* Title */}
-        <p className="text-xs font-bold text-foreground leading-snug mb-3">{item.title}</p>
+      <div className="relative flex flex-1 flex-col p-4 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,0.08),transparent_34%)]" />
+        <div className="relative z-10 flex flex-1 flex-col">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <p className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-white/35">{status}</p>
+              <h3 className="text-xl font-black leading-tight tracking-[-0.02em]">{item.title}</h3>
+            </div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-xl shadow-inner">
+              {item.emoji}
+            </div>
+          </div>
 
-        {/* Buttons */}
-        <div className="flex flex-col gap-1.5">
-          {/* View Steps — primary */}
-          <button onClick={onViewSteps} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-black text-white transition-all active:scale-95" style={{
-          background: `linear-gradient(135deg,${item.accent}cc,${item.accent})`
-        }}>
-            <span>▶</span> {t("components.daily_kids_activity.view_steps")}
-          </button>
+          {done && <div className="mb-3 rounded-2xl border border-amber-200/30 bg-amber-300/12 px-3 py-2 text-xs font-black text-amber-100">
+            {achievement}
+          </div>}
 
-          {/* Download + Done row */}
-          <div className="flex gap-1.5">
-            <a href={item.guideUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-muted text-muted-foreground text-[10px] font-bold hover:bg-muted/80 transition-colors border border-border">
-              {t("components.daily_kids_activity.guide")}
-            </a>
-            <button onClick={onDone} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-colors border ${done ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary dark:text-muted-foreground border-border"}`}>
-              {done ? "✓ Done" : "Mark Done"}
+          <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.06] p-3 shadow-inner">
+            <div className="mb-2 flex items-center justify-between text-xs font-bold">
+              <span className="text-white/68">{completedFolds} of {item.steps.length} folds completed</span>
+              <span className="text-white">{percent}%</span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 shadow-[0_0_18px_rgba(34,211,238,0.45)] transition-[width] duration-700 ease-out"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-auto space-y-2">
+            <button
+              type="button"
+              onClick={onViewSteps}
+              className="relative min-h-11 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/35 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95 group-hover:animate-pulse motion-reduce:transition-none motion-reduce:group-hover:animate-none"
+            >
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 group-hover:translate-x-full motion-reduce:hidden" />
+              <span className="relative">▶ {primaryLabel}</span>
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <a href={item.guideUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-3 text-xs font-black text-white/72 transition-colors hover:bg-white/12 hover:text-white motion-reduce:transition-none">
+                📖 Step Guide
+              </a>
+              <button
+                type="button"
+                onClick={onDone}
+                className={`min-h-11 rounded-2xl border px-3 py-3 text-xs font-black transition-all active:scale-95 motion-reduce:transition-none ${done ? "border-amber-300/40 bg-amber-300/18 text-amber-100" : "border-white/10 bg-white/[0.07] text-white/72 hover:bg-white/12 hover:text-white"}`}
+              >
+                {done ? "✅ Completed" : "✅ Mark Done"}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={onSave}
+              className="min-h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs font-black text-white/50 transition-colors hover:bg-white/10 hover:text-white motion-reduce:transition-none"
+            >
+              {saved ? "❤️ Saved Mission" : "❤️ Save"}
             </button>
           </div>
         </div>
       </div>
-    </div>;
+    </article>;
 }

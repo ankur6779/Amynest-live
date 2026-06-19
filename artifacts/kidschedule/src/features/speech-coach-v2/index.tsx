@@ -40,7 +40,7 @@ export default function SpeechCoachV2HubPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
         <Sparkles className="mx-auto h-10 w-10 text-sky-500" />
-        <h1 className="mt-4 text-2xl font-bold">Speech Coach V2</h1>
+        <h1 className="mt-4 text-2xl font-bold">Speech Coach</h1>
         <p className="mt-2 text-muted-foreground">
           Coming soon — a brand-new voice practice experience powered by OpenAI Realtime.
         </p>
@@ -64,9 +64,9 @@ export default function SpeechCoachV2HubPage() {
 
       <div className="rounded-3xl bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 p-6 text-white shadow-lg">
         <p className="text-xs font-semibold uppercase tracking-wider text-white/70">
-          AmyNest AI™ Speech Coach V2
+          AmyNest AI™ Speech Coach
         </p>
-        <h1 className="mt-2 text-2xl font-bold">Speech Coach V2</h1>
+        <h1 className="mt-2 text-2xl font-bold">Speech Coach</h1>
         <p className="mt-2 text-sm text-white/85">
           Live AI speech coaching for pronunciation, fluency, and confidence.
         </p>

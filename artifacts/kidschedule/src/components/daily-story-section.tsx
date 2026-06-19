@@ -1,15 +1,18 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
+import { ConfettiBurst, XpPopup } from "@/components/study-engagement";
+import { cn } from "@/lib/utils";
 import {
   createParentHubAudioIdentity,
   PARENT_HUB_SECTIONS,
 } from "@/lib/parent-hub-audio-identity";
 import { ALL_DAILY_STORIES, buildDailyStorySpeakText, type DailyStory } from "@workspace/parent-hub-speak";
+import { BookOpen, Flame, Headphones, Heart, Laugh, Sparkles, Star, Trophy, Zap } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-import { useTranslation } from "react-i18next";
 type StoryCategory = "moral" | "fun" | "animal" | "learning";
 type Story = DailyStory;
 const ALL_STORIES = ALL_DAILY_STORIES;
@@ -125,178 +128,318 @@ function CatBadge({
     </span>;
 }
 
-// ─── Story card (featured) ────────────────────────────────────────────────────
+type StoryReaction = "loved" | "funny" | "surprising";
 
-function FeaturedCard({
+type StoryStudioProgress = {
+  completed: Record<string, boolean>;
+  reactions: Record<string, StoryReaction>;
+  quizAnswers: Record<string, string>;
+};
+
+const STORY_XP = 30;
+
+function AmyStoryHero({
   story,
+  childName,
+  ageMonths,
   isPlaying,
-  onPlay,
-  onPrimePlay,
-  expanded,
-  onToggleExpand
+  isOpen,
+  completed,
+  reaction,
+  selectedAnswer,
+  onRead,
+  onListen,
+  onPrimeListen,
+  onReact,
+  onAnswer,
 }: {
   story: Story;
+  childName: string;
+  ageMonths: number;
   isPlaying: boolean;
-  onPlay(): void;
-  onPrimePlay(): void;
-  expanded: boolean;
-  onToggleExpand(): void;
+  isOpen: boolean;
+  completed: boolean;
+  reaction?: StoryReaction;
+  selectedAnswer?: string;
+  onRead(): void;
+  onListen(): void;
+  onPrimeListen(): void;
+  onReact(reaction: StoryReaction): void;
+  onAnswer(answer: string): void;
 }) {
-  const {
-    t
-  } = useTranslation();
   const c = CAT[story.category];
-  return <div className="rounded-3xl border overflow-hidden mb-3" style={{
-    borderColor: c.color + "30",
-    background: `linear-gradient(135deg,${c.bg} 0%,transparent 100%)`
-  }}>
-      {/* Header */}
-      <div className="p-4 pb-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-muted dark:bg-muted text-primary dark:text-muted-foreground">
-              {t("components.daily_story_section.featured")}
+  const answers = buildStoryAnswers(story);
+  return (
+    <section
+      className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-[radial-gradient(circle_at_20%_0%,rgba(251,191,36,0.28),transparent_28%),radial-gradient(circle_at_82%_12%,rgba(168,85,247,0.36),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.90))] p-4 text-white shadow-[0_26px_80px_-34px_rgba(59,130,246,0.85)]"
+      style={{ boxShadow: `0 24px 72px -36px ${c.color}` }}
+    >
+      <div className="absolute -right-10 top-10 h-36 w-36 rounded-full blur-3xl" style={{ background: c.color + "55" }} />
+      <div className="relative">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/25 bg-amber-200/15 px-3 py-1 text-xs font-black text-amber-100">
+            <Star className="h-3.5 w-3.5 fill-amber-200 text-amber-200" />
+            Story of the Day
+          </span>
+          {completed ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/15 px-2.5 py-1 text-[11px] font-black text-emerald-100">
+              <Trophy className="h-3.5 w-3.5" />
+              Badge unlocked
             </span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-muted dark:bg-muted text-primary dark:text-muted-foreground">
-              {t("components.daily_story_section.new_today")}
-            </span>
-          </div>
-          <CatBadge category={story.category} />
+          ) : null}
         </div>
 
-        <div className="flex gap-3 mb-3">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 text-4xl border" style={{
-          background: c.bg,
-          borderColor: c.color + "30"
-        }}>
-            {story.emoji}
+        <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
+          <div
+            className="relative flex min-h-[180px] items-center justify-center overflow-hidden rounded-[1.75rem] border border-white/25 text-7xl shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_18px_42px_-22px_rgba(0,0,0,0.9)]"
+            style={{
+              background: `linear-gradient(145deg,${c.color}40,rgba(255,255,255,0.10)), radial-gradient(circle at 35% 20%, rgba(255,255,255,0.42), transparent 28%)`,
+            }}
+          >
+            <div className="absolute inset-x-5 top-5 h-1 rounded-full bg-white/30" />
+            <span className="drop-shadow-[0_12px_22px_rgba(0,0,0,0.55)] transition-transform duration-500 hover:scale-110">
+              {story.emoji}
+            </span>
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-quicksand font-black text-lg text-foreground leading-snug mb-1">
+
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <StoryStudioBadge>{readingTime(story.story)} read</StoryStudioBadge>
+              <StoryStudioBadge>{ageBadge(ageMonths)}</StoryStudioBadge>
+              <StoryStudioBadge>{CAT[story.category].label}</StoryStudioBadge>
+              <StoryStudioBadge>💡 Moral</StoryStudioBadge>
+              <StoryStudioBadge>🎧 Audio</StoryStudioBadge>
+            </div>
+            <h3 className="font-quicksand text-3xl font-black leading-tight text-white">
               {story.title}
             </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-white/62">
+              Recommended because {childName} is learning Creativity this week
+            </p>
+            <p className="mt-3 text-base leading-relaxed text-white/78 line-clamp-3">
               {story.preview}
             </p>
-          </div>
-        </div>
-      </div>
 
-      {/* Full story (expandable) */}
-      {expanded && <div className="px-4 pb-3">
-          <div className="rounded-2xl p-4 border" style={{
-        background: "rgba(255,255,255,0.5)",
-        borderColor: c.color + "20"
-      }}>
-            <p className="text-sm text-foreground leading-relaxed italic mb-3">
-              "{story.story}"
-            </p>
-            <div className="rounded-xl p-3" style={{
-          background: c.bg
-        }}>
-              <p className="text-[11px] font-black mb-0.5" style={{
-            color: c.color
-          }}>
-                {t("components.daily_story_section.moral_of_the_story")}
-              </p>
-              <p className="text-sm font-semibold text-foreground">{story.moral}</p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={onRead}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-purple-500 px-4 py-3 text-sm font-black text-white shadow-[0_14px_34px_-18px_rgba(168,85,247,0.95)] transition-all hover:brightness-110 active:scale-[0.98]"
+              >
+                <BookOpen className="h-4 w-4" />
+                Read Story
+              </button>
+              <button
+                type="button"
+                onPointerDown={onPrimeListen}
+                onClick={onListen}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/14 bg-white/[0.08] px-4 py-3 text-sm font-black text-white/90 backdrop-blur-xl transition-all hover:bg-white/[0.13] active:scale-[0.98]"
+              >
+                <Headphones className="h-4 w-4" />
+                {isPlaying ? "Stop Amy" : "Listen With Amy"}
+              </button>
             </div>
           </div>
-        </div>}
+        </div>
 
-      {/* Action buttons */}
-      <div className="flex gap-2 px-4 pb-4">
-        <button onPointerDown={onPrimePlay} onClick={onPlay} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border transition-all active:scale-95" style={{
-        background: isPlaying ? c.bg : "transparent",
-        borderColor: c.color + "40",
-        color: c.color
-      }}>
-          {isPlaying ? "⏸ Stop" : "🔊 Read Aloud"}
-        </button>
-        <button onClick={onToggleExpand} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-black transition-all active:scale-95 text-white" style={{
-        background: c.color
-      }}>
-          {expanded ? "✕ Close" : "📖 Read Story"}
-        </button>
+        <div className="mt-4 grid gap-3 rounded-3xl border border-white/12 bg-black/18 p-3 backdrop-blur-xl sm:grid-cols-2">
+          <StoryRewardMetric icon={Zap} label="Completion Reward" value={`+${STORY_XP} XP`} />
+          <StoryRewardMetric icon={Flame} label="Daily Reading Streak" value={completed ? "Active today" : "Start today"} />
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <ReactionButton active={reaction === "loved"} onClick={() => onReact("loved")} icon={Heart} label="Loved It" />
+          <ReactionButton active={reaction === "funny"} onClick={() => onReact("funny")} icon={Laugh} label="Funny" />
+          <ReactionButton active={reaction === "surprising"} onClick={() => onReact("surprising")} icon={Sparkles} label="Surprising" />
+        </div>
+
+        {isOpen ? (
+          <div className="mt-4 space-y-4 rounded-3xl border border-white/12 bg-white/[0.07] p-4 backdrop-blur-xl">
+            <p className="text-base leading-8 text-white/84">&ldquo;{story.story}&rdquo;</p>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/40">Moral</p>
+              <p className="mt-1 text-sm font-bold text-white/82">{story.moral}</p>
+            </div>
+            <div>
+              <p className="mb-2 font-quicksand text-lg font-black text-white">What did you learn?</p>
+              <div className="grid gap-2">
+                {answers.map((answer) => {
+                  const selected = selectedAnswer === answer;
+                  return (
+                    <button
+                      key={answer}
+                      type="button"
+                      onClick={() => onAnswer(answer)}
+                      className={cn(
+                        "rounded-2xl border px-3 py-3 text-left text-sm font-bold transition-all active:scale-[0.99]",
+                        selected
+                          ? "border-emerald-300/40 bg-emerald-300/16 text-emerald-50"
+                          : "border-white/10 bg-black/16 text-white/72 hover:bg-white/10",
+                      )}
+                    >
+                      {answer}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
-    </div>;
+    </section>
+  );
 }
 
-// ─── Story card (compact) ─────────────────────────────────────────────────────
-
-function StoryCard({
+function StoryCarouselCard({
   story,
-  isPlaying,
-  onPlay,
-  onPrimePlay,
-  expanded,
-  onToggleExpand
+  active,
+  completed,
+  onSelect,
 }: {
   story: Story;
-  isPlaying: boolean;
-  onPlay(): void;
-  onPrimePlay(): void;
-  expanded: boolean;
-  onToggleExpand(): void;
+  active: boolean;
+  completed: boolean;
+  onSelect(): void;
 }) {
-  const {
-    t
-  } = useTranslation();
   const c = CAT[story.category];
-  return <div className="rounded-2xl border p-3 mb-2 transition-all" style={{
-    borderColor: expanded ? c.color + "40" : "var(--border)",
-    background: expanded ? c.bg : "transparent"
-  }}>
-      <div className="flex gap-3 items-start">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl border" style={{
-        background: c.bg,
-        borderColor: c.color + "25"
-      }}>
-          {story.emoji}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-bold text-sm text-foreground truncate">{story.title}</span>
-            <CatBadge category={story.category} />
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-            {story.preview}
-          </p>
-        </div>
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "group w-[168px] shrink-0 rounded-3xl border p-3 text-left transition-all duration-300 active:scale-[0.98]",
+        active
+          ? "border-white/45 bg-white/[0.14] shadow-[0_18px_44px_-28px_rgba(255,255,255,0.9)]"
+          : "border-white/12 bg-white/[0.07] hover:bg-white/[0.11]",
+      )}
+    >
+      <div
+        className="mb-3 flex h-28 items-center justify-center rounded-2xl border border-white/14 text-5xl transition-transform duration-300 group-hover:-translate-y-1"
+        style={{ background: `linear-gradient(145deg,${c.color}38,rgba(255,255,255,0.08))` }}
+      >
+        {story.emoji}
       </div>
-
-      {/* Expanded story */}
-      {expanded && <div className="mt-3 rounded-xl p-3 border" style={{
-      borderColor: c.color + "20",
-      background: "rgba(255,255,255,0.4)"
-    }}>
-          <p className="text-xs text-foreground leading-relaxed italic mb-2">"{story.story}"</p>
-          <div className="rounded-lg p-2.5" style={{
-        background: c.bg
-      }}>
-            <p className="text-[10px] font-black mb-0.5" style={{
-          color: c.color
-        }}>{t("components.daily_story_section.moral")}</p>
-            <p className="text-xs font-semibold text-foreground">{story.moral}</p>
-          </div>
-        </div>}
-
-      {/* Buttons */}
-      <div className="flex gap-2 mt-2.5">
-        <button onPointerDown={onPrimePlay} onClick={onPlay} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95" style={{
-        borderColor: c.color + "30",
-        color: c.color,
-        background: isPlaying ? c.bg : "transparent"
-      }}>
-          {isPlaying ? "⏸ Stop" : "🔊 Aloud"}
-        </button>
-        <button onClick={onToggleExpand} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-black transition-all active:scale-95 text-white" style={{
-        background: c.color
-      }}>
-          {expanded ? "✕ Close" : "📖 Read"}
-        </button>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <CatBadge category={story.category} />
+        {completed ? <Trophy className="h-3.5 w-3.5 text-amber-200" /> : null}
       </div>
-    </div>;
+      <p className="line-clamp-2 font-quicksand text-sm font-black leading-tight text-white">{story.title}</p>
+      <p className="mt-1 text-[11px] font-semibold text-white/46">{readingTime(story.story)} read</p>
+    </button>
+  );
+}
+
+function StoryStudioBadge({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/12 bg-black/22 px-2.5 py-1 text-[11px] font-black text-white/72 backdrop-blur-xl">
+      {children}
+    </span>
+  );
+}
+
+function StoryRewardMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2">
+      <Icon className="h-4 w-4 text-amber-200" />
+      <div className="min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-wide text-white/38">{label}</p>
+        <p className="text-sm font-black text-white">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReactionButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick(): void;
+  icon: LucideIcon;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-black transition-all active:scale-[0.98]",
+        active
+          ? "border-pink-300/35 bg-pink-300/18 text-pink-50 shadow-[0_0_24px_rgba(244,114,182,0.18)]"
+          : "border-white/10 bg-black/16 text-white/62 hover:bg-white/10 hover:text-white",
+      )}
+    >
+      <Icon className={cn("h-3.5 w-3.5", active && "fill-current")} />
+      {label}
+    </button>
+  );
+}
+
+function readingTime(story: string): string {
+  const words = story.trim().split(/\s+/).filter(Boolean).length;
+  return `${Math.max(1, Math.ceil(words / 120))} min`;
+}
+
+function ageBadge(ageMonths: number): string {
+  const years = Math.max(1, Math.floor(ageMonths / 12));
+  return `${years}+ yrs`;
+}
+
+function buildStoryAnswers(story: Story): string[] {
+  return [
+    story.moral,
+    "Being fast matters more than being kind.",
+    "You should never ask for help.",
+  ];
+}
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readStoryStreak(streakKey: string): number {
+  try {
+    const dates: string[] = JSON.parse(localStorage.getItem(streakKey) ?? "[]");
+    return consecutiveDayCount(dates);
+  } catch {
+    return 0;
+  }
+}
+
+function markStoryReadToday(streakKey: string): number {
+  const today = todayKey();
+  try {
+    const dates = new Set<string>(JSON.parse(localStorage.getItem(streakKey) ?? "[]"));
+    dates.add(today);
+    const sorted = [...dates].sort().slice(-60);
+    localStorage.setItem(streakKey, JSON.stringify(sorted));
+    return consecutiveDayCount(sorted);
+  } catch {
+    return 1;
+  }
+}
+
+function consecutiveDayCount(dates: string[]): number {
+  const dateSet = new Set(dates);
+  let count = 0;
+  const cursor = new Date();
+  for (let i = 0; i < 60; i++) {
+    const key = cursor.toISOString().slice(0, 10);
+    if (!dateSet.has(key)) break;
+    count += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return count;
 }
 
 // ─── Main exported component ──────────────────────────────────────────────────
@@ -309,9 +452,6 @@ export function DailyStorySection({
   ageMonths,
   childName
 }: DailyStorySectionProps) {
-  const {
-    t
-  } = useTranslation();
   const authFetch = useAuthFetch();
   const pool = useMemo(() => getDailyPool(ageMonths), [ageMonths]);
   const PAGE = 5;
@@ -324,8 +464,20 @@ export function DailyStorySection({
     enqueueBehaviorWarmup(authFetch, "parent_hub", { ageMonths });
   }, [authFetch, ageMonths, pool]);
   const [page, setPage] = useState(0);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
+  const [openStoryId, setOpenStoryId] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const progressKey = `amynest:story-studio:${childName}:${new Date().toISOString().slice(0, 10)}`;
+  const streakKey = `amynest:story-studio:streak:${childName}`;
+  const [progress, setProgress] = useState<StoryStudioProgress>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(progressKey) ?? '{"completed":{},"reactions":{},"quizAnswers":{}}');
+    } catch {
+      return { completed: {}, reactions: {}, quizAnswers: {} };
+    }
+  });
+  const [streak, setStreak] = useState(() => readStoryStreak(streakKey));
+  const [celebration, setCelebration] = useState({ trigger: 0, amount: 0 });
   const {
     speak,
     pause,
@@ -333,13 +485,6 @@ export function DailyStorySection({
   } = useAmyVoice();
   const storySpeech = useCallback((story: Story) => buildDailyStorySpeakText(story), []);
   const visible = useMemo(() => pool.slice(0, (page + 1) * PAGE), [pool, page]);
-  const toggleExpand = useCallback((id: string) => {
-    setExpanded(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }, []);
   const handlePlay = useCallback((story: Story) => {
     if (playingId === story.id) {
       pause();
@@ -363,43 +508,125 @@ export function DailyStorySection({
       if (!res?.success) console.warn("TTS failed, skipping audio flow:", res?.error);
       setPlayingId(null);
     });
-  }, [playingId, speak, pause]);
+  }, [playingId, speak, pause, storySpeech]);
   const hasMore = visible.length < pool.length;
   if (pool.length === 0) return null;
-  const [featured, ...rest] = visible as [Story, ...Story[]];
-  return <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <p className="text-xs text-primary dark:text-muted-foreground font-semibold">
-            {t("components.daily_story_section.daily_stories_for")} {childName} · {visible.length} {t("components.daily_story_section.shown")}
-          </p>
+  const featured = visible.find((story) => story.id === activeStoryId) ?? visible[0]!;
+  const carouselStories = visible.filter((story) => story.id !== featured.id);
+  const completedCount = Object.values(progress.completed).filter(Boolean).length;
+  const totalXp = completedCount * STORY_XP;
+
+  const persistProgress = (next: StoryStudioProgress) => {
+    try {
+      localStorage.setItem(progressKey, JSON.stringify(next));
+    } catch {
+      // Story rewards still work in-memory if localStorage is unavailable.
+    }
+  };
+
+  const updateProgress = (updater: (prev: StoryStudioProgress) => StoryStudioProgress) => {
+    setProgress((prev) => {
+      const next = updater(prev);
+      persistProgress(next);
+      return next;
+    });
+  };
+
+  const completeStory = (story: Story, answer: string) => {
+    const wasCompleted = !!progress.completed[story.id];
+    updateProgress((prev) => ({
+      completed: { ...prev.completed, [story.id]: true },
+      reactions: prev.reactions,
+      quizAnswers: { ...prev.quizAnswers, [story.id]: answer },
+    }));
+    if (!wasCompleted) {
+      const nextStreak = markStoryReadToday(streakKey);
+      setStreak(nextStreak);
+      setCelebration((prev) => ({ trigger: prev.trigger + 1, amount: STORY_XP }));
+    }
+  };
+
+  return (
+    <div className="relative space-y-4">
+      <ConfettiBurst trigger={celebration.trigger} />
+      <XpPopup amount={celebration.amount} trigger={celebration.trigger} />
+
+      <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(59,130,246,0.18),rgba(168,85,247,0.12),rgba(251,191,36,0.08))] p-3 text-white shadow-[0_18px_60px_-34px_rgba(59,130,246,0.8)] backdrop-blur-xl">
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <div>
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.08] px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-white/70">
+              <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+              Amy Story Studio
+            </p>
+            <p className="mt-1 text-xs font-semibold text-white/48">
+              Netflix Kids + Kindle Kids inspired daily reading world
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-right">
+            <div className="rounded-2xl border border-white/10 bg-black/16 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-wide text-white/40">XP</p>
+              <p className="font-quicksand text-sm font-black text-white">{totalXp}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/16 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-wide text-white/40">Streak</p>
+              <p className="font-quicksand text-sm font-black text-white">{streak}d</p>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-1">
-          {(["moral", "fun", "animal", "learning"] as StoryCategory[]).map(c => <span key={c} className="w-2 h-2 rounded-full" style={{
-          background: CAT[c].dot
-        }} title={CAT[c].label} />)}
-        </div>
+
+        <AmyStoryHero
+          story={featured}
+          childName={childName}
+          ageMonths={ageMonths}
+          isPlaying={playingId === featured.id}
+          isOpen={openStoryId === featured.id}
+          completed={!!progress.completed[featured.id]}
+          reaction={progress.reactions[featured.id]}
+          selectedAnswer={progress.quizAnswers[featured.id]}
+          onRead={() => setOpenStoryId((current) => current === featured.id ? null : featured.id)}
+          onPrimeListen={() => primeSpeakGesture(storySpeech(featured))}
+          onListen={() => handlePlay(featured)}
+          onReact={(reaction) => updateProgress((prev) => ({
+            completed: prev.completed,
+            reactions: { ...prev.reactions, [featured.id]: reaction },
+            quizAnswers: prev.quizAnswers,
+          }))}
+          onAnswer={(answer) => completeStory(featured, answer)}
+        />
+
+        {carouselStories.length > 0 ? (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <p className="font-quicksand text-sm font-black text-white">More from Amy&apos;s shelf</p>
+              <p className="text-[11px] font-semibold text-white/45">{visible.length} stories today</p>
+            </div>
+            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+              {carouselStories.map((story) => (
+                <StoryCarouselCard
+                  key={story.id}
+                  story={story}
+                  active={story.id === featured.id}
+                  completed={!!progress.completed[story.id]}
+                  onSelect={() => {
+                    setActiveStoryId(story.id);
+                    setOpenStoryId(null);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {hasMore ? (
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            className="mt-3 w-full rounded-2xl border border-dashed border-white/18 bg-white/[0.06] py-3 text-sm font-black text-white/76 transition-all hover:bg-white/[0.10] active:scale-[0.98]"
+          >
+            Load 5 more studio stories
+          </button>
+        ) : null}
       </div>
-
-      {/* Featured story */}
-      <FeaturedCard story={featured} isPlaying={playingId === featured.id} onPrimePlay={() => primeSpeakGesture(storySpeech(featured))} onPlay={() => handlePlay(featured)} expanded={expanded.has(featured.id)} onToggleExpand={() => toggleExpand(featured.id)} />
-
-      {/* Remaining stories */}
-      {rest.map(story => <StoryCard key={story.id} story={story} isPlaying={playingId === story.id} onPrimePlay={() => primeSpeakGesture(storySpeech(story))} onPlay={() => handlePlay(story)} expanded={expanded.has(story.id)} onToggleExpand={() => toggleExpand(story.id)} />)}
-
-      {/* Load More */}
-      {hasMore && <button onClick={() => setPage(p => p + 1)} className="w-full mt-3 py-3 rounded-2xl border-2 border-dashed text-sm font-bold text-primary dark:text-muted-foreground border-border dark:border-border hover:bg-muted dark:hover:bg-muted transition-all active:scale-[0.98]">
-          {t("components.daily_story_section.load_5_more_stories")}
-        </button>}
-
-      {/* No more stories */}
-      {!hasMore && pool.length > 0 && <p className="text-center text-xs text-muted-foreground mt-3">
-          {t("components.daily_story_section.you_ve_seen_all_stories_for_today_check_back_tomorrow_for_ne")}
-        </p>}
-
-      <p className="text-[10px] text-muted-foreground mt-3 text-center">
-        {t("components.daily_story_section.read_these_stories_to")} {childName} {t("components.daily_story_section.at_bedtime_for_a_meaningful_connection_moment")}
-      </p>
-    </div>;
+    </div>
+  );
 }
