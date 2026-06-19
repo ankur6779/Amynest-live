@@ -2806,7 +2806,8 @@
       },
       "today_regen": "Generate a new routine",
       "section_for_child": "For {{name}} · age {{age}}",
-      "section_empty": "Nothing in this section for {{name}} just yet — keep checking back!"
+      "section_empty": "Nothing in this section for {{name}} just yet — keep checking back!",
+      "loading_origami_studio": "Loading Origami Studio..."
     },
     "badges": {
       "try_free": "Try Free",

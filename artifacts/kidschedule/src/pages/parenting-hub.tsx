@@ -1397,7 +1397,7 @@ function ParentingHubPage() {
       if (totalAgeMonths < 24 || totalAgeMonths >= 96) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="origami-studio" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.origami-studio.title")} description={t("parent_hub.web_tiles.origami-studio.description")} accentClass="bg-gradient-to-br from-fuchsia-400 via-violet-500 to-cyan-500" cardClass="linear-gradient(135deg,rgba(217,70,239,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}> {/* audit-ok: premium origami studio accent gradient */}
-            <Suspense fallback={<div className="rounded-3xl border border-white/10 bg-slate-950/50 p-4 text-sm font-bold text-white/70">Loading Origami Studio...</div>}>
+            <Suspense fallback={<div className="rounded-3xl border border-white/10 bg-slate-950/50 p-4 text-sm font-bold text-white/70">{t("parent_hub.shell.loading_origami_studio")}</div>}>
               <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} childId={effectiveChild.id} />
             </Suspense>
           </HubSection>
