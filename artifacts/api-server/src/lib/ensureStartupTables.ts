@@ -740,6 +740,66 @@ export async function ensurePtmPrepDataTable(): Promise<void> {
   logger.info({ evt: "db.ensure", table: "ptm_prep_data" }, "Ensured ptm_prep_data table");
 }
 
+/** Speech Coach V2 Realtime token usage + cost telemetry (migration 0037). */
+export async function ensureSpeechCoachV2TokenUsageTables(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS speech_coach_v2_session_token_usage (
+      id serial PRIMARY KEY,
+      session_id text NOT NULL UNIQUE,
+      user_id text NOT NULL,
+      child_id integer NOT NULL,
+      input_tokens bigint NOT NULL DEFAULT 0,
+      output_tokens bigint NOT NULL DEFAULT 0,
+      total_tokens bigint NOT NULL DEFAULT 0,
+      input_audio_tokens bigint NOT NULL DEFAULT 0,
+      output_audio_tokens bigint NOT NULL DEFAULT 0,
+      cached_input_tokens bigint NOT NULL DEFAULT 0,
+      input_text_tokens bigint NOT NULL DEFAULT 0,
+      output_text_tokens bigint NOT NULL DEFAULT 0,
+      response_count integer NOT NULL DEFAULT 0,
+      model text,
+      estimated_cost_usd real NOT NULL DEFAULT 0,
+      estimated_cost_inr real NOT NULL DEFAULT 0,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS speech_coach_v2_session_token_user_idx
+      ON speech_coach_v2_session_token_usage (user_id, created_at DESC)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS speech_coach_v2_session_token_child_idx
+      ON speech_coach_v2_session_token_usage (user_id, child_id, created_at DESC)
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS speech_coach_v2_monthly_cost_usage (
+      id serial PRIMARY KEY,
+      user_id text NOT NULL,
+      child_id integer NOT NULL,
+      month text NOT NULL,
+      session_count integer NOT NULL DEFAULT 0,
+      input_tokens bigint NOT NULL DEFAULT 0,
+      output_tokens bigint NOT NULL DEFAULT 0,
+      total_tokens bigint NOT NULL DEFAULT 0,
+      estimated_cost_usd real NOT NULL DEFAULT 0,
+      estimated_cost_inr real NOT NULL DEFAULT 0,
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE (user_id, child_id, month)
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS speech_coach_v2_monthly_cost_user_idx
+      ON speech_coach_v2_monthly_cost_usage (user_id, month)
+  `);
+
+  logger.info(
+    { evt: "db.ensure", table: "speech_coach_v2_token_usage" },
+    "Ensured Speech Coach V2 token usage tables",
+  );
+}
+
 /** P0: one routine per (child_id, date) — required for safe replace semantics. */
 export async function ensureRoutinesChildDateUnique(): Promise<void> {
   await db.execute(sql`
@@ -790,6 +850,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "infant_product_analytics_events", run: ensureInfantProductAnalyticsEventsTable },
     { name: "ptm_prep_data", run: ensurePtmPrepDataTable },
     { name: "feature_notification_schedules", run: ensureFeatureNotificationSchedulesTable },
+    { name: "speech_coach_v2_token_usage", run: ensureSpeechCoachV2TokenUsageTables },
   ];
 
   const failed: string[] = [];
