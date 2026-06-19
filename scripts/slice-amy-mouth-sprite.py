@@ -12,6 +12,11 @@ from PIL import Image
 SRC = "scripts/assets/amy-mouth-sprite.png"
 OUT = "artifacts/kidschedule/public/amy-3d/amy-talk-{}.webp"
 
+# Pixels within this colour distance of the flat render background become fully
+# transparent; the soft band feathers anti-aliased edges so no square box shows.
+BG_KEY_THRESHOLD = 55
+BG_KEY_SOFT = 40
+
 img = Image.open(SRC).convert("RGB")
 W, H = img.size
 px = img.load()
@@ -21,6 +26,20 @@ bg = px[4, 4]
 
 def is_content(p):
     return abs(p[0] - bg[0]) + abs(p[1] - bg[1]) + abs(p[2] - bg[2]) > 60
+
+def apply_alpha_key(frame: Image.Image) -> Image.Image:
+    rgba = frame.convert("RGBA")
+    fpx = rgba.load()
+    for y in range(rgba.height):
+        for x in range(rgba.width):
+            r, g, b, _a = fpx[x, y]
+            dist = abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2])
+            if dist <= BG_KEY_THRESHOLD:
+                fpx[x, y] = (r, g, b, 0)
+            elif dist <= BG_KEY_THRESHOLD + BG_KEY_SOFT:
+                t = (dist - BG_KEY_THRESHOLD) / BG_KEY_SOFT
+                fpx[x, y] = (r, g, b, int(255 * t))
+    return rgba
 
 def is_eye(p):
     # Pupils are the darkest near-black/deep-purple blobs sitting inside the
@@ -124,13 +143,13 @@ for i, ex in enumerate(exs):
     left = ex + offset_x - half
     top = head_cy - half
     # Pad if the crop runs off the canvas so every frame is exactly `side`.
-    frame = Image.new("RGB", (side, side), bg)
+    frame = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     sx0, sy0 = max(left, 0), max(top, 0)
     sx1, sy1 = min(left + side, W), min(top + side, H)
-    region = img.crop((sx0, sy0, sx1, sy1))
+    region = img.crop((sx0, sy0, sx1, sy1)).convert("RGBA")
     frame.paste(region, (sx0 - left, sy0 - top))
 
-    # Wipe anything past the background valleys (neighbouring faces) to bg.
+    # Wipe anything past the background valleys (neighbouring faces) to transparent.
     lo, hi = cuts[i]
     own_l = lo - left   # frame-local left cut (background gap → safe for Amy)
     own_r = hi - left   # frame-local right cut
@@ -138,7 +157,8 @@ for i, ex in enumerate(exs):
     for y in range(side):
         for x in range(side):
             if x < own_l or x > own_r:
-                fpx[x, y] = bg
+                fpx[x, y] = (0, 0, 0, 0)
 
-    frame.save(OUT.format(i), "WEBP", quality=92)
+    keyed = apply_alpha_key(frame)
+    keyed.save(OUT.format(i), "WEBP", quality=92, method=6)
     print(f"saved {OUT.format(i)} left={left} top={top} cut=({lo},{hi}) own=({own_l},{own_r})")

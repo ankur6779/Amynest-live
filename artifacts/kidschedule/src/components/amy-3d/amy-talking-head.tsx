@@ -40,6 +40,13 @@ interface AmyTalkingHeadProps {
 
 const BAR_COUNT = 9;
 
+function ringTransform(isStage: boolean, scale: number): string {
+  const s = scale.toFixed(3);
+  return isStage
+    ? `translate(-50%, -50%) scale(${s})`
+    : `scale(${s})`;
+}
+
 function stageWaveHeight(
   barDrive: number,
   center: number,
@@ -129,7 +136,7 @@ export function AmyTalkingHead({
     if (tabHidden || reduced) {
       if (ring) {
         ring.style.opacity = halo ? "0.5" : "0";
-        ring.style.transform = "scale(1)";
+        ring.style.transform = ringTransform(isStage, 1);
       }
       if (hpL) hpL.style.opacity = "0";
       if (hpR) hpR.style.opacity = "0";
@@ -142,7 +149,7 @@ export function AmyTalkingHead({
       resetMouthClosed();
       if (ring) {
         ring.style.opacity = halo ? "0.5" : "0";
-        ring.style.transform = "scale(1)";
+        ring.style.transform = ringTransform(isStage, 1);
       }
       if (hpL) hpL.style.opacity = "0";
       if (hpR) hpR.style.opacity = "0";
@@ -208,7 +215,7 @@ export function AmyTalkingHead({
           ? 0.55 + 0.4 * ringDrive
           : 0.42 + 0.5 * ringDrive;
         ring.style.opacity = String(halo ? ringOpacity : 0);
-        ring.style.transform = `scale(${1 + (isStage ? 0.1 : 0.05) * ringDrive})`;
+        ring.style.transform = ringTransform(isStage, 1 + (isStage ? 0.1 : 0.05) * ringDrive);
         if (isStage) {
           const cyan = listening && !amyTalking;
           const glowA = cyan ? "rgba(34,211,238,0.65)" : "rgba(168,85,247,0.62)";
@@ -349,8 +356,17 @@ export function AmyTalkingHead({
             ref={ringRef}
             style={{
               position: "absolute",
-              inset: isStage ? -Math.round(size * 0.06) : -4,
-              borderRadius: isStage ? "28%" : "50%",
+              ...(isStage
+                ? {
+                    left: "50%",
+                    top: "48%",
+                    width: Math.round(size * 0.74),
+                    height: Math.round(size * 0.74),
+                    transform: "translate(-50%, -50%)",
+                  }
+                : { inset: -4 }),
+              borderRadius: "50%",
+              background: "transparent",
               boxShadow: isStage
                 ? `0 0 ${Math.round(size * 0.32)}px rgba(168,85,247,0.62), 0 0 ${Math.round(size * 0.62)}px rgba(56,189,248,0.35), 0 0 ${Math.round(size * 0.9)}px rgba(99,102,241,0.2)`
                 : "0 0 0 3px rgba(168,85,247,0.5), 0 0 30px 6px rgba(168,85,247,0.55)",
