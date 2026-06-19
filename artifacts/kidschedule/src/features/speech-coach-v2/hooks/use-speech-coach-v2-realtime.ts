@@ -27,6 +27,12 @@ import {
   trackSpeechCoachV2VadTrigger,
 } from "../lib/analytics";
 import { detectVerificationPlatform, verificationTrace } from "../lib/verification-trace";
+import {
+  computeRmsFromTimeDomain,
+  getAmySharedAudioContext,
+  resumeAmySharedAudioContext,
+  rmsToAudioLevel,
+} from "@/lib/amy-3d/amy-audio-context";
 
 export type RealtimeConnectionState =
   | "idle"
@@ -130,8 +136,10 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   // cues without re-rendering. Stays 0 if Web Audio is unavailable (the cues
   // then fall back to a gentle CSS animation), so this is always safe.
   const amyAudioLevelRef = useRef(0);
+  const amyAudioMeterActiveRef = useRef(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null);
   const levelRafRef = useRef<number | null>(null);
   const startAnalyserRef = useRef<(stream: MediaStream) => void>(() => {});
   const stopAnalyserRef = useRef<() => void>(() => {});
@@ -272,50 +280,45 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     } catch {
       /* already disconnected */
     }
-    audioSourceRef.current = null;
-    if (audioCtxRef.current) {
-      void audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
+    try {
+      audioAnalyserRef.current?.disconnect();
+    } catch {
+      /* already disconnected */
     }
+    audioSourceRef.current = null;
+    audioAnalyserRef.current = null;
+    audioCtxRef.current = null;
     amyAudioLevelRef.current = 0;
+    amyAudioMeterActiveRef.current = false;
   }, []);
 
   const startOutputAnalyser = useCallback((stream: MediaStream) => {
-    stopAnalyserRef.current();
+    stopOutputAnalyser();
     try {
-      const Ctx =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
+      const ctx = getAmySharedAudioContext();
+      if (!ctx) return;
+      void resumeAmySharedAudioContext();
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.6;
-      // NOTE: do NOT connect the analyser to ctx.destination — the <audio>
-      // element already plays the stream; this taps it for metering only.
+      analyser.smoothingTimeConstant = 0.55;
       source.connect(analyser);
       audioCtxRef.current = ctx;
       audioSourceRef.current = source;
+      audioAnalyserRef.current = analyser;
       const buf = new Uint8Array(analyser.frequencyBinCount);
       const tick = () => {
         analyser.getByteTimeDomainData(buf);
-        let sum = 0;
-        for (let i = 0; i < buf.length; i++) {
-          const v = (buf[i] - 128) / 128;
-          sum += v * v;
-        }
-        const rms = Math.sqrt(sum / buf.length);
-        const target = Math.min(1, rms * 3.2); // gentle gain so quiet speech reads
-        amyAudioLevelRef.current += (target - amyAudioLevelRef.current) * 0.4;
+        const target = rmsToAudioLevel(computeRmsFromTimeDomain(buf));
+        amyAudioLevelRef.current += (target - amyAudioLevelRef.current) * 0.45;
+        amyAudioMeterActiveRef.current = true;
         levelRafRef.current = requestAnimationFrame(tick);
       };
       levelRafRef.current = requestAnimationFrame(tick);
     } catch {
-      // Web Audio blocked/unsupported → leave level at 0 (CSS fallback animates).
+      amyAudioMeterActiveRef.current = false;
     }
-  }, []);
+  }, [stopOutputAnalyser]);
   startAnalyserRef.current = startOutputAnalyser;
   stopAnalyserRef.current = stopOutputAnalyser;
 
@@ -788,5 +791,6 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     isAmySpeaking: amySpeaking,
     /** Live 0..1 amplitude of Amy's output audio for reactive avatar cues. */
     amyAudioLevelRef,
+    amyAudioMeterActiveRef,
   };
 }

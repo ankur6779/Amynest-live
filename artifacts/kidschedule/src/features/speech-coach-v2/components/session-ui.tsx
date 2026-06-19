@@ -36,6 +36,7 @@ export function SpeechCoachV2SessionUi(props: {
   loading?: boolean;
   amySpeaking?: boolean;
   amyAudioLevel?: RefObject<number>;
+  amyAudioMeterActive?: RefObject<boolean>;
 }) {
   const {
     childName,
@@ -52,6 +53,7 @@ export function SpeechCoachV2SessionUi(props: {
     loading,
     amySpeaking = false,
     amyAudioLevel,
+    amyAudioMeterActive,
   } = props;
 
   return (
@@ -72,9 +74,14 @@ export function SpeechCoachV2SessionUi(props: {
 
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <AmyTalkingHead
-          size={280}
+          size={380}
+          presentation="stage"
           speaking={amySpeaking}
+          listening={live && connectionState === "connected" && !amySpeaking}
+          listenForAudio={live}
           audioLevelRef={amyAudioLevel}
+          audioMeterActiveRef={amyAudioMeterActive}
+          debugMouth={showRealtimeDiagnostics()}
         />
         <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
         <p className="mt-1 text-xs text-white/60">{connectionLabel(connectionState)}</p>

@@ -251,6 +251,7 @@ export default function SpeechCoachV2SessionPage() {
         loading={session.uiState === "loading"}
         amySpeaking={realtime.isAmySpeaking}
         amyAudioLevel={realtime.amyAudioLevelRef}
+        amyAudioMeterActive={realtime.amyAudioMeterActiveRef}
       />
 
       {session.celebration && (
