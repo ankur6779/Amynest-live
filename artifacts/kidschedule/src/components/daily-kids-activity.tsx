@@ -1,6 +1,17 @@
-import { useState, useMemo, useEffect, useCallback, type ReactNode } from "react";
+import { memo, useState, useMemo, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import {
+  CERTIFIED_ORIGAMI_MODELS,
+  ORIGAMI_CERTIFICATES,
+  ORIGAMI_LEARNING_PATHS,
+  getCertifiedOrigamiModelBySourceId,
+  getOrigamiLearningInsights,
+  getOrigamiMilestone,
+  type OrigamiModel,
+  type OrigamiStepContent,
+} from "@/lib/origami-studio-cms";
 import {
   createParentHubAudioIdentity,
   PARENT_HUB_SECTIONS,
@@ -62,6 +73,16 @@ type ActivityState = {
   doneIds: string[];
   savedIds: string[];
   origamiProgress?: Record<string, number>;
+};
+
+type OrigamiHistoryEvent = {
+  at: string;
+  modelId: string;
+  modelName: string;
+  category: string;
+  skills: string[];
+  completionTime: number;
+  retryCount: number;
 };
 
 // ─── Datasets ────────────────────────────────────────────────────────────────
@@ -428,6 +449,8 @@ const REELS: Reel[] = [{
   ageMax: 84
 }];
 const ORIGAMI = HUB_ORIGAMI;
+const ORIGAMI_TEACHER_READY_IDS = new Set(CERTIFIED_ORIGAMI_MODELS.map(model => model.sourceId));
+const ORIGAMI_TEACHER_READY = ORIGAMI.filter(item => ORIGAMI_TEACHER_READY_IDS.has(item.id));
 
 type OrigamiCategory = "All" | "Animals" | "Nature" | "Vehicles" | "Fun Shapes" | "Favorites";
 
@@ -468,9 +491,7 @@ const ORIGAMI_ACHIEVEMENTS: Record<string, string> = {
 };
 
 function getOrigamiXp(item: Origami) {
-  if (item.difficulty === "Easy") return 10;
-  if (item.difficulty === "Medium") return 20;
-  return 30;
+  return getCertifiedOrigamiModelBySourceId(item.id)?.xp ?? (item.difficulty === "Easy" ? 10 : item.difficulty === "Medium" ? 20 : 30);
 }
 
 function getOrigamiShortName(item: Origami) {
@@ -483,6 +504,64 @@ function getOrigamiShortName(item: Origami) {
     .replace(/\s*\([^)]*\)/g, "")
     .replace(/\bPaper\b/gi, "")
     .trim();
+}
+
+function getOrigamiStepAsset(item: Origami, stepIndex: number) {
+  return getCertifiedOrigamiModelBySourceId(item.id)?.assets.steps[stepIndex] ?? null;
+}
+
+function getOrigamiHeroAsset(item: Origami) {
+  return getCertifiedOrigamiModelBySourceId(item.id)?.assets.hero ?? null;
+}
+
+function getOrigamiCertificateProgress(completedModels: number) {
+  const next = ORIGAMI_CERTIFICATES.find(certificate => completedModels < certificate.modelsCompleted);
+  return next ? Math.min(100, Math.round((completedModels / next.modelsCompleted) * 100)) : 100;
+}
+
+function getOrigamiAnalyticsMetadata(item: Origami, completedModels: number, analytics?: { durationMs: number; retryCount: number }) {
+  const model = getCertifiedOrigamiModelBySourceId(item.id);
+  const stepCount = model?.steps.length ?? 1;
+  return {
+    modelId: model?.id ?? item.id,
+    modelName: model?.title ?? item.title,
+    difficulty: model?.difficulty ?? item.difficulty,
+    xp: model?.xp ?? getOrigamiXp(item),
+    completionTime: analytics ? Math.round(analytics.durationMs / 1000) : 0,
+    retryCount: analytics?.retryCount ?? 0,
+    stepCount,
+    validationStatus: model?.validation.status ?? "DRAFT",
+    skills: (model?.skills ?? []).join("|"),
+    certificateProgress: getOrigamiCertificateProgress(completedModels),
+  };
+}
+
+function origamiHistoryKey(childName: string) {
+  return `amynest.origami.history.${childName.replace(/\s+/g, "_").toLowerCase()}`;
+}
+
+function buildOrigamiHistoryInsights(history: OrigamiHistoryEvent[]) {
+  const now = Date.now();
+  const dayMs = 86_400_000;
+  const since7 = history.filter(event => now - new Date(event.at).getTime() <= 7 * dayMs);
+  const since30 = history.filter(event => now - new Date(event.at).getTime() <= 30 * dayMs);
+  const categories = history.reduce<Record<string, number>>((acc, event) => {
+    acc[event.category] = (acc[event.category] ?? 0) + 1;
+    return acc;
+  }, {});
+  const favoriteCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Not enough history yet";
+  const avgTime = history.length > 0 ? Math.round(history.reduce((sum, event) => sum + event.completionTime, 0) / history.length) : 0;
+  const skillGrowth = new Set(history.flatMap(event => event.skills)).size;
+  const streak = new Set(history.map(event => event.at.slice(0, 10))).size;
+  return [
+    `Last 7 Days: ${since7.length} models completed`,
+    `Last 30 Days: ${since30.length} models completed`,
+    `Lifetime: ${history.length} models completed`,
+    `Favorite Category: ${favoriteCategory}`,
+    `Skill Growth: ${skillGrowth} skills practiced`,
+    `Average Completion Time: ${avgTime}s`,
+    `Streak: ${streak} active folding days`,
+  ];
 }
 
 function playOrigamiSuccessSound() {
@@ -703,14 +782,17 @@ function DrivePreviewModal({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function DailyKidsActivity({
   childName,
-  ageMonths
+  ageMonths,
+  childId,
 }: {
   childName: string;
   ageMonths: number;
+  childId?: number | null;
 }) {
   const {
     t
   } = useTranslation();
+  const { recordActivity } = useRecordLearningActivity(childId);
   // Only render for ages 24–95 months (2–7.9 years)
   if (ageMonths < 24 || ageMonths >= 96) return null;
   const seed = useMemo(() => dateSeed(childName), [childName]);
@@ -718,7 +800,7 @@ export function DailyKidsActivity({
   const filtered = useMemo(() => ({
     worksheets: WORKSHEETS.filter(w => ageMonths >= w.ageMin && ageMonths <= w.ageMax),
     reels: REELS.filter(r => ageMonths >= r.ageMin && ageMonths <= r.ageMax),
-    origami: ORIGAMI.filter(o => ageMonths >= o.ageMin && ageMonths <= o.ageMax)
+    origami: ORIGAMI_TEACHER_READY.filter(o => ageMonths >= o.ageMin && ageMonths <= o.ageMax)
   }), [ageMonths]);
   const daily = useMemo(() => {
     const saved = localStorage.getItem(key);
@@ -775,6 +857,22 @@ export function DailyKidsActivity({
       return {};
     }
   });
+  const [certificateUnlocks, setCertificateUnlocks] = useState<Set<string>>(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem(`amynest.origami.certificates.${childName.replace(/\s+/g, "_").toLowerCase()}`) || "[]") as string[];
+      return new Set(p);
+    } catch {
+      return new Set();
+    }
+  });
+  const [origamiHistory, setOrigamiHistory] = useState<OrigamiHistoryEvent[]>(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem(origamiHistoryKey(childName)) || "[]") as OrigamiHistoryEvent[];
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
+  });
   const [origamiCategory, setOrigamiCategory] = useState<OrigamiCategory>("All");
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [celebration, setCelebration] = useState<{ item: Origami; xp: number } | null>(null);
@@ -795,6 +893,25 @@ export function DailyKidsActivity({
     playOrigamiSuccessSound();
     setCelebration({ item, xp: getOrigamiXp(item) });
   }, []);
+  const appendOrigamiHistory = (item: Origami, metadata: ReturnType<typeof getOrigamiAnalyticsMetadata>) => {
+    const model = getCertifiedOrigamiModelBySourceId(item.id);
+    const event: OrigamiHistoryEvent = {
+      at: new Date().toISOString(),
+      modelId: String(metadata.modelId),
+      modelName: String(metadata.modelName),
+      category: model?.category ?? categorizeOrigami(item),
+      skills: (model?.skills ?? []).slice(),
+      completionTime: Number(metadata.completionTime),
+      retryCount: Number(metadata.retryCount),
+    };
+    setOrigamiHistory(prev => {
+      const next = [...prev, event].slice(-200);
+      try {
+        localStorage.setItem(origamiHistoryKey(childName), JSON.stringify(next));
+      } catch {/* ignore */}
+      return next;
+    });
+  };
   const toggleDone = (id: string) => {
     setDone(prev => {
       const next = new Set(prev);
@@ -805,15 +922,27 @@ export function DailyKidsActivity({
         nextProgress[id] = 0;
       } else {
         next.add(id);
-        nextProgress[id] = activity?.steps.length ?? nextProgress[id] ?? 0;
-        if (activity) showOrigamiCelebration(activity);
+        const completedAfter = ORIGAMI_TEACHER_READY.filter(o => next.has(o.id)).length;
+        nextProgress[id] = activity ? buildCmsOrigamiTutorial(activity).length : nextProgress[id] ?? 0;
+        if (activity) {
+          const metadata = getOrigamiAnalyticsMetadata(activity, completedAfter);
+          void recordActivity({
+            activityId: `origami:${activity.id}`,
+            section: "creativity",
+            correct: true,
+            analyticsEvent: "origami_model_completed",
+            metadata,
+          });
+          appendOrigamiHistory(activity, metadata);
+          showOrigamiCelebration(activity);
+        }
       }
       setOrigamiProgress(nextProgress);
       persist(next, saved, nextProgress);
       return next;
     });
   };
-  const completeOrigami = (id: string) => {
+  const completeOrigami = (id: string, analytics?: { durationMs: number; retryCount: number }) => {
     setDone(prev => {
       const next = new Set(prev);
       const wasDone = next.has(id);
@@ -821,11 +950,23 @@ export function DailyKidsActivity({
       const activity = daily.og.find(o => o.id === id);
       const nextProgress = {
         ...origamiProgress,
-        [id]: activity?.steps.length ?? origamiProgress[id] ?? 0,
+        [id]: activity ? buildCmsOrigamiTutorial(activity).length : origamiProgress[id] ?? 0,
       };
       setOrigamiProgress(nextProgress);
       persist(next, saved, nextProgress);
-      if (activity && !wasDone) showOrigamiCelebration(activity);
+      if (activity && !wasDone) {
+        const completedAfter = ORIGAMI_TEACHER_READY.filter(o => next.has(o.id)).length;
+        const metadata = getOrigamiAnalyticsMetadata(activity, completedAfter, analytics);
+        void recordActivity({
+          activityId: `origami:${activity.id}`,
+          section: "creativity",
+          correct: true,
+          analyticsEvent: "origami_model_completed",
+          metadata,
+        });
+        appendOrigamiHistory(activity, metadata);
+        showOrigamiCelebration(activity);
+      }
       return next;
     });
   };
@@ -840,7 +981,7 @@ export function DailyKidsActivity({
   const updateOrigamiProgress = (id: string, completedFolds: number) => {
     setOrigamiProgress(prev => {
       const activity = daily.og.find(o => o.id === id);
-      const clamped = Math.max(0, Math.min(completedFolds, activity?.steps.length ?? completedFolds));
+      const clamped = Math.max(0, Math.min(completedFolds, activity ? buildCmsOrigamiTutorial(activity).length : completedFolds));
       const next = {
         ...prev,
         [id]: Math.max(prev[id] ?? 0, clamped),
@@ -858,12 +999,58 @@ export function DailyKidsActivity({
   }, [daily.og, origamiCategory, saved]);
   const completedOrigamiCount = daily.og.filter(o => done.has(o.id)).length;
   const activeOrigamiCount = daily.og.length;
-  const completedCollection = ORIGAMI.filter(o => done.has(o.id));
-  const lockedCollection = ORIGAMI.filter(o => !done.has(o.id)).slice(0, Math.max(3, 6 - completedCollection.length));
+  const completedCollection = ORIGAMI_TEACHER_READY.filter(o => done.has(o.id));
+  const lockedCollection = ORIGAMI_TEACHER_READY.filter(o => !done.has(o.id)).slice(0, Math.max(3, 6 - completedCollection.length));
   const challenge = daily.og.find(o => /butterfly/i.test(o.title)) ?? daily.og[seed % Math.max(daily.og.length, 1)];
-  const challengeProgress = challenge ? Math.round((Math.min(origamiProgress[challenge.id] ?? 0, challenge.steps.length) / challenge.steps.length) * 100) : 0;
+  const challengeTotal = challenge ? buildCmsOrigamiTutorial(challenge).length : 1;
+  const challengeProgress = challenge ? Math.round((Math.min(origamiProgress[challenge.id] ?? 0, challengeTotal) / challengeTotal) * 100) : 0;
   const foldingStreak = Math.max(1, completedOrigamiCount || saved.size || 3);
   const totalXp = completedCollection.reduce((sum, item) => sum + getOrigamiXp(item), 0);
+  const favoriteCategories = Array.from(new Set(completedCollection.map(categorizeOrigami)));
+  const learningInsights = getOrigamiLearningInsights({
+    completedModels: completedCollection.map(item => item.id),
+    favoriteCategories,
+    spatialReasoningThisWeek: completedCollection.length,
+  });
+  const historicalInsights = useMemo(() => buildOrigamiHistoryInsights(origamiHistory), [origamiHistory]);
+  const currentMilestone = getOrigamiMilestone(completedCollection.length);
+  const certificateKey = `amynest.origami.certificates.${childName.replace(/\s+/g, "_").toLowerCase()}`;
+
+  useEffect(() => {
+    const unlocked = ORIGAMI_CERTIFICATES.filter(certificate => completedCollection.length >= certificate.modelsCompleted).map(certificate => certificate.title);
+    if (unlocked.length === 0) return;
+    setCertificateUnlocks(prev => {
+      const next = new Set([...prev, ...unlocked]);
+      try {
+        localStorage.setItem(certificateKey, JSON.stringify([...next]));
+      } catch {/* ignore */}
+      return next;
+    });
+  }, [certificateKey, completedCollection.length]);
+
+  const handleCertificateDownload = (certificate: { title: string; modelsCompleted: number; printableTemplate: string }) => {
+    setCertificateUnlocks(prev => {
+      const next = new Set(prev);
+      next.add(certificate.title);
+      try {
+        localStorage.setItem(certificateKey, JSON.stringify([...next]));
+      } catch {/* ignore */}
+      return next;
+    });
+    void recordActivity({
+      activityId: `origami-certificate:${certificate.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      section: "creativity",
+      correct: true,
+      analyticsEvent: "origami_certificate_downloaded",
+      skipCompletion: true,
+      metadata: {
+        certificateTitle: certificate.title,
+        threshold: certificate.modelsCompleted,
+        completedModels: completedCollection.length,
+        template: certificate.printableTemplate,
+      },
+    });
+  };
 
   useEffect(() => {
     if (!celebration) return;
@@ -877,7 +1064,7 @@ export function DailyKidsActivity({
           item={stepsItem}
           childName={childName}
           onClose={() => setStepsItem(null)}
-          initialStep={Math.min(origamiProgress[stepsItem.id] ?? 0, Math.max(stepsItem.steps.length - 1, 0))}
+          initialStep={Math.min(origamiProgress[stepsItem.id] ?? 0, Math.max(buildCmsOrigamiTutorial(stepsItem).length - 1, 0))}
           onProgress={updateOrigamiProgress}
           onComplete={completeOrigami}
         />}
@@ -941,7 +1128,7 @@ export function DailyKidsActivity({
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="rounded-2xl border border-white/10 bg-white/10 px-2.5 py-2 text-center shadow-inner backdrop-blur-md">
                 <p className="text-lg">⭐</p>
-                <p className="text-sm font-black">{ORIGAMI.length}</p>
+                <p className="text-sm font-black">{ORIGAMI_TEACHER_READY.length}</p>
                 <p className="text-[10px] font-bold text-white/55">Activities</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 px-2.5 py-2 text-center shadow-inner backdrop-blur-md">
@@ -965,6 +1152,15 @@ export function DailyKidsActivity({
           />}
 
           {collectionOpen && <OrigamiCollectionBook completed={completedCollection} locked={lockedCollection} totalXp={totalXp} />}
+
+          <OrigamiCertificationPanel
+            completedCount={completedCollection.length}
+            totalXp={totalXp}
+            milestoneTitle={currentMilestone?.title ?? "Origami Explorer"}
+            insights={[...learningInsights, ...historicalInsights]}
+            unlockedCertificates={certificateUnlocks}
+            onCertificateDownload={handleCertificateDownload}
+          />
 
           {completedOrigamiCount === 0 && <div className="mb-4 overflow-hidden rounded-[1.6rem] border border-cyan-200/15 bg-gradient-to-br from-cyan-400/14 via-white/[0.07] to-violet-400/14 p-4 text-white shadow-xl shadow-slate-950/20">
             <div className="flex items-center gap-4">
@@ -1302,6 +1498,559 @@ const DIFFICULTY_TIME: Record<string, string> = {
   Fun: "~15 min"
 };
 
+type RealOrigamiFoldKind =
+  | "valley"
+  | "mountain"
+  | "inside-reverse"
+  | "outside-reverse"
+  | "accordion"
+  | "open"
+  | "squash"
+  | "shape";
+
+type RealOrigamiPaperState = {
+  id: string;
+  label: string;
+  parts: {
+    d: string;
+    side?: "front" | "back";
+    opacity?: number;
+    crease?: boolean;
+  }[];
+  creases?: string[];
+};
+
+type RealOrigamiStep = {
+  instruction: string;
+  cmsStep: OrigamiStepContent;
+  model: OrigamiModel;
+  beforeShape: RealOrigamiPaperState;
+  foldAction: {
+    kind: RealOrigamiFoldKind;
+    label: string;
+    pathD: string;
+    handFrom: [number, number];
+    handTo: [number, number];
+    durationMs?: number;
+  };
+  afterShape: RealOrigamiPaperState;
+};
+
+type OrigamiTeacherHints = {
+  currentStep: string;
+  expectedResult: string;
+  commonMistake: string;
+  activeRegionLabel: string;
+  activeRegionD: string;
+  orientation: "front" | "back";
+  zoom: boolean;
+  level1: string;
+  level2: string;
+  parentExplanation: string;
+  skills: string[];
+};
+
+type RealOrigamiStageSpec = {
+  id: string;
+  label: string;
+  parts: string[];
+  creases?: string[];
+};
+
+const PAPER_PARTS: Record<string, string> = {
+  square: "M24 24 H176 V176 H24 Z",
+  rectH: "M22 64 H178 V136 H22 Z",
+  rectV: "M64 22 H136 V178 H64 Z",
+  triangleUp: "M100 24 L178 176 H22 Z",
+  triangleDown: "M22 24 H178 L100 176 Z",
+  diamond: "M100 18 L182 100 L100 182 L18 100 Z",
+  kite: "M100 18 L164 112 L100 182 L36 112 Z",
+  slimKite: "M100 14 L144 104 L100 186 L56 104 Z",
+  smallSquare: "M52 52 H148 V148 H52 Z",
+  strip: "M38 78 H162 V122 H38 Z",
+  boatHull: "M34 116 H166 L142 154 H58 Z",
+  boatSailLeft: "M98 44 V116 H48 Z",
+  boatSailRight: "M106 38 V116 H158 Z",
+  butterflyLeft: "M98 96 C74 42 30 46 24 88 C18 130 62 142 100 110 Z",
+  butterflyRight: "M102 96 C126 42 170 46 176 88 C182 130 138 142 100 110 Z",
+  accordionTall: "M54 30 H146 L132 170 H68 Z",
+  bunnyHead: "M46 92 H154 L136 156 H64 Z",
+  bunnyEarLeft: "M68 90 L54 26 C78 34 88 60 92 96 Z",
+  bunnyEarRight: "M108 96 C114 58 132 34 154 24 L134 92 Z",
+  craneBody: "M38 106 L100 58 L152 108 L96 152 Z",
+  craneWingLeft: "M38 106 L100 58 L82 144 Z",
+  craneWingRight: "M100 58 L162 92 L112 136 Z",
+  craneNeck: "M148 104 L184 82 L154 132 Z",
+  flowerBud: "M100 34 L152 94 L100 158 L48 94 Z",
+  flowerPetalLeft: "M100 36 C52 44 42 90 82 104 Z",
+  flowerPetalRight: "M100 36 C148 44 158 90 118 104 Z",
+  frogBody: "M38 70 H162 L146 146 H54 Z",
+  frogLegLeft: "M54 146 L20 172 H80 Z",
+  frogLegRight: "M146 146 L180 172 H120 Z",
+  star: "M100 22 L120 76 L178 78 L132 112 L148 168 L100 136 L52 168 L68 112 L22 78 L80 76 Z",
+  heartTop: "M100 162 C42 116 24 82 48 52 C68 28 92 44 100 62 C108 44 132 28 152 52 C176 82 158 116 100 162 Z",
+  peacockBody: "M74 86 H126 L144 148 H56 Z",
+  peacockFan: "M100 24 C48 34 28 72 52 112 C78 92 122 92 148 112 C172 72 152 34 100 24 Z",
+  pinwheelA: "M100 100 L100 24 L132 76 Z",
+  pinwheelB: "M100 100 L176 100 L124 132 Z",
+  pinwheelC: "M100 100 L100 176 L68 124 Z",
+  pinwheelD: "M100 100 L24 100 L76 68 Z",
+  foxFace: "M34 74 L100 32 L166 74 L138 156 H62 Z",
+  foxEarLeft: "M34 74 L54 30 L76 88 Z",
+  foxEarRight: "M166 74 L146 30 L124 88 Z",
+  elephantBody: "M36 72 H150 L168 132 H54 Z",
+  elephantTrunk: "M146 76 C184 92 176 144 142 154 L132 130 C154 120 160 96 138 92 Z",
+  fortuneBase: "M42 42 H158 V158 H42 Z",
+  fortuneFlapA: "M42 42 L100 80 L158 42 Z",
+  fortuneFlapB: "M158 42 L120 100 L158 158 Z",
+  fortuneFlapC: "M158 158 L100 120 L42 158 Z",
+  fortuneFlapD: "M42 158 L80 100 L42 42 Z",
+  basketBase: "M44 78 H156 L142 152 H58 Z",
+  basketSideLeft: "M44 78 L22 112 L58 152 Z",
+  basketSideRight: "M156 78 L178 112 L142 152 Z",
+};
+
+function realState(spec: RealOrigamiStageSpec): RealOrigamiPaperState {
+  return {
+    id: spec.id,
+    label: spec.label,
+    parts: spec.parts.map((part, index) => ({
+      d: PAPER_PARTS[part] ?? PAPER_PARTS.square,
+      side: index % 3 === 1 ? "back" : "front",
+      opacity: 0.96,
+    })),
+    creases: spec.creases,
+  };
+}
+
+function realStep(
+  cmsStep: OrigamiStepContent,
+  model: OrigamiModel,
+  before: RealOrigamiStageSpec,
+  action: RealOrigamiStep["foldAction"],
+  after: RealOrigamiStageSpec,
+): RealOrigamiStep {
+  return {
+    instruction: cmsStep.instruction,
+    cmsStep,
+    model,
+    beforeShape: realState(before),
+    foldAction: action,
+    afterShape: realState(after),
+  };
+}
+
+function action(kind: RealOrigamiFoldKind, label: string, pathD: string, handFrom: [number, number], handTo: [number, number], durationMs = 1100): RealOrigamiStep["foldAction"] {
+  return { kind, label, pathD, handFrom, handTo, durationMs };
+}
+
+function getOrigamiTeacherHints(step: RealOrigamiStep, index: number): OrigamiTeacherHints {
+  const kind = step.foldAction.kind;
+  const zoom = step.cmsStep.zoomRequired || kind === "inside-reverse" || kind === "outside-reverse" || kind === "squash" || /ear|head|petal|pocket|corner/i.test(step.foldAction.label);
+  const activeRegionLabel = /corner/i.test(step.foldAction.label)
+    ? "Target corner"
+    : /edge/i.test(step.foldAction.label)
+      ? "Target edge"
+      : /pocket|petal/i.test(step.foldAction.label)
+        ? "Target pocket"
+        : /wing|ear|tail|neck/i.test(step.foldAction.label)
+          ? "Target flap"
+          : "Fold area";
+  const activeRegionD = /corner/i.test(step.foldAction.label)
+    ? "M78 22 H130 L112 68 Z"
+    : /edge/i.test(step.foldAction.label)
+      ? "M42 92 H158 V112 H42 Z"
+      : /pocket|petal|squash/i.test(step.foldAction.label)
+        ? "M62 70 C82 48 118 48 138 70 L124 124 H76 Z"
+        : /ear|tail|neck|wing/i.test(step.foldAction.label)
+          ? "M64 46 L136 46 L122 136 L78 136 Z"
+          : "M58 58 H142 V142 H58 Z";
+  const orientation: "front" | "back" = kind === "mountain" || /back|flip|turn over/i.test(step.instruction) ? "back" : "front";
+  return {
+    currentStep: step.foldAction.label,
+    expectedResult: step.cmsStep.expectedResult || step.afterShape.label,
+    commonMistake: step.cmsStep.commonMistakes[0] ?? commonMistakeFor(kind, step.foldAction.label),
+    activeRegionLabel: step.cmsStep.targetRegion || activeRegionLabel,
+    activeRegionD,
+    orientation,
+    zoom,
+    level1: step.cmsStep.instruction,
+    level2: step.cmsStep.detailedInstruction,
+    parentExplanation: step.cmsStep.parentExplanation || parentExplanationFor(kind, index),
+    skills: step.model.skills.length > 0 ? step.model.skills : skillsForFold(kind),
+  };
+}
+
+function commonMistakeFor(kind: RealOrigamiFoldKind, label: string) {
+  if (/corner/i.test(label)) return "Corner not aligned with the guide crease.";
+  if (/edge/i.test(label)) return "Edge stops short of the center crease.";
+  if (kind === "accordion") return "Pleats are uneven, so both wings may become different sizes.";
+  if (kind === "inside-reverse") return "Inside flap is not opened before reversing.";
+  if (kind === "squash") return "Pocket is pressed sideways instead of flat.";
+  if (kind === "mountain") return "Paper is folded toward you instead of away from you.";
+  return "Crease is too soft or the fold line is slightly off.";
+}
+
+function parentExplanationFor(kind: RealOrigamiFoldKind, index: number) {
+  if (kind === "accordion") return "Accordion folds build rhythm and bilateral coordination because both hands must keep equal spacing.";
+  if (kind === "inside-reverse" || kind === "outside-reverse") return "Reverse folds teach spatial reasoning: the child opens a pocket, changes direction, and locks the new shape.";
+  if (kind === "squash") return "Squash folds strengthen precision because the pocket must open symmetrically before pressing flat.";
+  if (kind === "open") return "Opening folds help the child compare the hidden layers with the visible result before moving on.";
+  if (index < 2) return "Early crease steps are the blueprint for later folds. A sharp crease here prevents confusion later.";
+  return "This fold transforms the flat base into a recognizable model part, building focus and shape prediction.";
+}
+
+function skillsForFold(kind: RealOrigamiFoldKind) {
+  const base = ["Fine Motor", "Focus"];
+  if (kind === "accordion" || kind === "open") return [...base, "Bilateral Coordination", "Patterning"];
+  if (kind === "inside-reverse" || kind === "outside-reverse" || kind === "squash") return [...base, "Spatial Reasoning", "Problem Solving"];
+  return [...base, "Bilateral Coordination", "Spatial Reasoning"];
+}
+
+function finalPartForCategory(category: OrigamiModel["category"]) {
+  if (category === "Vehicles") return "boatHull";
+  if (category === "Nature") return "flowerBud";
+  if (category === "Animals") return "bunnyHead";
+  return "star";
+}
+
+function foldStageParts(kind: RealOrigamiFoldKind, category: OrigamiModel["category"], progress: number) {
+  if (progress >= 0.95) return [finalPartForCategory(category)];
+  if (kind === "accordion") return progress > 0.55 ? ["accordionTall"] : ["strip", "rectH"];
+  if (kind === "squash" || kind === "inside-reverse" || kind === "outside-reverse") return progress > 0.6 ? ["slimKite"] : ["diamond"];
+  if (kind === "open") return progress > 0.7 ? [finalPartForCategory(category)] : ["diamond"];
+  if (kind === "mountain") return ["kite"];
+  if (progress < 0.2) return ["square"];
+  if (progress < 0.42) return ["triangleUp"];
+  if (progress < 0.68) return ["diamond"];
+  return ["kite"];
+}
+
+function stageFromCmsStep(model: OrigamiModel, step: OrigamiStepContent, index: number, offset: 0 | 1): RealOrigamiStageSpec {
+  const total = Math.max(model.steps.length, 1);
+  const progress = Math.min(1, Math.max(0, (index + offset) / total));
+  const parts = foldStageParts(step.foldType, model.category, progress);
+  return {
+    id: `${model.slug}-${step.id}-${offset === 0 ? "before" : "after"}`,
+    label: offset === 0 ? (index === 0 ? "Square paper" : model.steps[index - 1]?.expectedResult ?? "Previous result") : step.expectedResult,
+    parts,
+    creases: offset === 0 ? ["M100 24 V176"] : ["M24 100 H176", "M100 24 V176"],
+  };
+}
+
+function actionFromCmsStep(step: OrigamiStepContent, index: number): RealOrigamiStep["foldAction"] {
+  const vertical = index % 2 === 0;
+  const pathD = step.foldType === "accordion"
+    ? "M40 150 C70 130 130 130 160 150"
+    : step.foldType === "squash"
+      ? "M24 100 C72 72 128 72 176 100"
+      : step.foldType === "inside-reverse" || step.foldType === "outside-reverse"
+        ? "M76 158 L58 90"
+        : step.foldType === "open"
+          ? "M70 142 C88 112 112 112 130 142"
+          : vertical
+            ? "M100 172 L100 36"
+            : "M36 100 L164 100";
+  const handFrom: [number, number] = vertical ? [100, 170] : [38, 100];
+  const handTo: [number, number] = vertical ? [100, 38] : [162, 100];
+  const label = step.instruction.replace(/[.!?]$/, "");
+  return action(step.foldType, label, pathD, handFrom, handTo, step.zoomRequired ? 1400 : 1100);
+}
+
+function buildCmsOrigamiTutorial(item: Origami): RealOrigamiStep[] {
+  const model = getCertifiedOrigamiModelBySourceId(item.id);
+  if (!model) return [];
+  return model.steps.map((cmsStep, index) => realStep(
+    cmsStep,
+    model,
+    stageFromCmsStep(model, cmsStep, index, 0),
+    actionFromCmsStep(cmsStep, index),
+    stageFromCmsStep(model, cmsStep, index, 1),
+  ));
+}
+
+function RealPaperStateSvg({
+  state,
+  accent,
+  size = 164,
+  animated = false,
+  activeRegionD,
+}: {
+  state: RealOrigamiPaperState;
+  accent: string;
+  size?: number;
+  animated?: boolean;
+  activeRegionD?: string;
+}) {
+  const gradientId = `real-paper-${state.id.replace(/[^a-z0-9-]/gi, "")}-${size}`;
+  return <svg width={size} height={size} viewBox="0 0 200 200" className="drop-shadow-2xl" role="img" aria-label={state.label}>
+      <defs>
+        <linearGradient id={`${gradientId}-front`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fff7ed" />
+          <stop offset="45%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0.7" />
+        </linearGradient>
+        <linearGradient id={`${gradientId}-back`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#dbeafe" />
+          <stop offset="100%" stopColor="#a5b4fc" />
+        </linearGradient>
+        <filter id={`${gradientId}-shadow`} x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="10" stdDeviation="8" floodColor="#000000" floodOpacity="0.26" />
+        </filter>
+      </defs>
+      <ellipse cx="100" cy="178" rx="58" ry="10" fill="#020617" opacity="0.22" />
+      {state.parts.map((part, index) => <path
+        key={`${state.id}-${index}`}
+        d={part.d}
+        fill={`url(#${gradientId}-${part.side === "back" ? "back" : "front"})`}
+        stroke="rgba(15,23,42,.22)"
+        strokeWidth="2"
+        opacity={part.opacity ?? 1}
+        filter={`url(#${gradientId}-shadow)`}
+        style={{
+          transformOrigin: "100px 100px",
+          animation: animated ? `real-paper-lift ${900 + index * 120}ms cubic-bezier(.2,.8,.2,1) both` : undefined,
+        }}
+      />)}
+      {activeRegionD && <path
+        d={activeRegionD}
+        fill="rgba(251,191,36,.24)"
+        stroke="hsl(var(--brand-amber-300))"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        filter={`url(#${gradientId}-shadow)`}
+        style={{ animation: "real-active-region 1100ms ease-in-out infinite" }}
+      />}
+      {state.creases?.map((crease, index) => <path key={`${state.id}-crease-${index}`} d={crease} stroke="rgba(15,23,42,.35)" strokeWidth="2" strokeDasharray="6 5" fill="none" />)}
+      <text x="100" y="194" textAnchor="middle" fontSize="10" fontWeight="800" fill="rgba(255,255,255,.74)" fontFamily="system-ui,sans-serif">
+        {state.label}
+      </text>
+    </svg>;
+}
+
+function pngFallbackFor(src: string) {
+  return src.endsWith(".webp") ? src.replace(/\.webp$/, ".png") : null;
+}
+
+function oneXFor(src: string) {
+  return src.endsWith(".webp") ? src.replace(/\.webp$/, "@1x.webp") : src;
+}
+
+function OrigamiAssetImage({
+  src,
+  alt,
+  className,
+  containerClassName = "relative",
+  loading,
+  fallback,
+  deferUntilVisible = false,
+  sizes = "(max-width: 640px) 384px, 768px",
+}: {
+  src: string | null | undefined;
+  alt: string;
+  className: string;
+  containerClassName?: string;
+  loading?: "lazy" | "eager";
+  fallback: ReactNode;
+  deferUntilVisible?: boolean;
+  sizes?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(!deferUntilVisible);
+  const shouldLoad = Boolean(src) && visible;
+  const [currentSrc, setCurrentSrc] = useState(shouldLoad ? src ?? null : null);
+  const [status, setStatus] = useState<"idle" | "loading" | "loaded" | "fallback">(shouldLoad ? "loading" : "idle");
+
+  useEffect(() => {
+    if (!deferUntilVisible || visible) return;
+    const node = containerRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [deferUntilVisible, visible]);
+
+  useEffect(() => {
+    const nextSrc = shouldLoad ? src ?? null : null;
+    setCurrentSrc(nextSrc);
+    setStatus(nextSrc ? "loading" : shouldLoad ? "fallback" : "idle");
+  }, [shouldLoad, src]);
+
+  if (!currentSrc || status === "fallback") return <div ref={containerRef} className={containerClassName}>{fallback}</div>;
+
+  return <div ref={containerRef} className={containerClassName}>
+    {status === "loading" && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-slate-950/70 text-[10px] font-black uppercase tracking-widest text-white/45">Loading</div>}
+    <img
+      src={currentSrc}
+      srcSet={currentSrc.endsWith(".webp") ? `${oneXFor(currentSrc)} 384w, ${currentSrc} 768w` : undefined}
+      sizes={currentSrc.endsWith(".webp") ? sizes : undefined}
+      alt={alt}
+      className={className}
+      loading={loading}
+      onLoad={() => setStatus("loaded")}
+      onError={() => {
+        const png = pngFallbackFor(currentSrc);
+        if (png && png !== currentSrc) {
+          setCurrentSrc(png);
+          setStatus("loading");
+          return;
+        }
+        setStatus("fallback");
+      }}
+    />
+  </div>;
+}
+
+function RealOrigamiFoldStage({
+  step,
+  accent,
+  animKey,
+  isPlaying,
+  assetUrl,
+  previousAssetUrl,
+}: {
+  step: RealOrigamiStep;
+  accent: string;
+  animKey: number;
+  isPlaying: boolean;
+  assetUrl?: string | null;
+  previousAssetUrl?: string | null;
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const handFrom = step.foldAction.handFrom;
+  const handTo = step.foldAction.handTo;
+  const hints = getOrigamiTeacherHints(step, animKey);
+  return <div className="w-full px-4">
+      <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Origami Teacher Pro</p>
+            <p className="text-sm font-black text-white">Current Step: {hints.currentStep}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-white/48">{step.foldAction.kind.replace("-", " ")} fold • {hints.activeRegionLabel}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${hints.orientation === "front" ? "bg-blue-400/18 text-blue-100 border border-blue-200/25" : "bg-white/16 text-white border border-white/20"}`}>
+              {hints.orientation === "front" ? "🔵 Front Side" : "⚪ Back Side"}
+            </span>
+            {hints.zoom && <span className="rounded-full border border-cyan-200/25 bg-cyan-400/14 px-2.5 py-1 text-[10px] font-black text-cyan-100">🔍 Zoom Fold</span>}
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl border border-emerald-200/20 bg-emerald-400/10 px-3 py-2 font-black text-emerald-100">✓ Correct Fold: {hints.expectedResult}</div>
+          <div className="rounded-xl border border-amber-200/20 bg-amber-400/10 px-3 py-2 font-black text-amber-100">⚠ {hints.commonMistake}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-3">
+          <p className="mb-2 text-center text-[10px] font-black uppercase tracking-widest text-white/38">Previous Shape</p>
+          <OrigamiAssetImage
+            src={previousAssetUrl}
+            alt={`${step.beforeShape.label} illustration`}
+            className="mx-auto aspect-[4/3] w-full max-w-[190px] rounded-2xl object-cover shadow-xl"
+            loading="lazy"
+            fallback={<div className="flex justify-center"><RealPaperStateSvg state={step.beforeShape} accent={accent} size={132} /></div>}
+          />
+        </div>
+
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.03] p-3">
+          <p className="mb-2 text-center text-[10px] font-black uppercase tracking-widest text-amber-200/80">Current Fold</p>
+          <div className={`relative mx-auto h-[210px] w-full max-w-[280px] transition-transform duration-500 motion-reduce:transition-none ${hints.zoom ? "scale-105" : ""}`}>
+            <OrigamiAssetImage
+              src={assetUrl}
+              alt={`${step.foldAction.label} illustrated fold`}
+              className="absolute inset-0 h-full w-full rounded-2xl object-cover shadow-2xl"
+              containerClassName="absolute inset-0"
+              loading="eager"
+              fallback={<RealPaperStateSvg key={`fold-paper-${animKey}`} state={step.beforeShape} accent={accent} size={190} animated={isPlaying} activeRegionD={hints.activeRegionD} />}
+            />
+            <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+              {assetUrl && <path d={hints.activeRegionD} fill="rgba(251,191,36,.18)" stroke="hsl(var(--brand-amber-300))" strokeWidth="3" style={{ animation: "real-active-region 1100ms ease-in-out infinite" }} />}
+              <path d={step.foldAction.pathD} stroke={accent} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.22" />
+              <path
+                d={step.foldAction.pathD}
+                stroke="hsl(var(--brand-amber-300))"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                strokeDasharray="280"
+                strokeDashoffset="280"
+                style={{ animation: isPlaying ? `real-fold-path ${step.foldAction.durationMs ?? 1100}ms ease-out forwards` : "none" }}
+              />
+            </svg>
+            {isPlaying && <div
+              key={`hand-${animKey}`}
+              className="absolute z-10 text-3xl drop-shadow-xl"
+              style={{
+                left: handFrom[0],
+                top: handFrom[1],
+                transform: "translate(-50%, -50%)",
+                animation: `real-guided-hand ${step.foldAction.durationMs ?? 1100}ms cubic-bezier(.2,.8,.2,1) forwards`,
+                ["--hand-x" as string]: `${handTo[0] - handFrom[0]}px`,
+                ["--hand-y" as string]: `${handTo[1] - handFrom[1]}px`,
+              }}
+            >
+              👆
+            </div>}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-emerald-200/20 bg-emerald-400/10 p-3">
+          <p className="mb-2 text-center text-[10px] font-black uppercase tracking-widest text-emerald-100/72">Result Shape</p>
+          <OrigamiAssetImage
+            src={assetUrl}
+            alt={`${step.afterShape.label} expected result`}
+            className="mx-auto aspect-[4/3] w-full max-w-[220px] rounded-2xl object-cover shadow-xl"
+            loading="lazy"
+            fallback={<div className="flex justify-center"><RealPaperStateSvg state={step.afterShape} accent={accent} size={152} animated={isPlaying} /></div>}
+          />
+          <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2 text-center">
+            <p className="text-xs font-black text-white">Does your paper look like this?</p>
+            <p className="mt-0.5 text-[11px] font-bold text-white/48">Compare corners, crease direction, and side color before moving forward.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-3xl border border-white/10 bg-white/[0.05] p-3 text-white">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Step Explanation</p>
+            <p className="text-sm font-black">{hints.level1}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDetailsOpen(open => !open)}
+            className="min-h-11 rounded-full border border-white/10 bg-white/10 px-3 text-xs font-black text-white/70"
+            aria-expanded={detailsOpen}
+          >
+            {detailsOpen ? "Hide Detail" : "More Detail"}
+          </button>
+        </div>
+        <p className="mt-2 text-xs font-semibold leading-relaxed text-white/62">{hints.level2}</p>
+        {detailsOpen && <div className="mt-3 rounded-2xl border border-cyan-200/15 bg-cyan-400/10 p-3">
+          <p className="text-xs font-black text-cyan-100">Parent explanation</p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-white/62">{hints.parentExplanation}</p>
+        </div>}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {hints.skills.map(skill => <span key={skill} className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[10px] font-black text-white/65">{skill}</span>)}
+        </div>
+      </div>
+    </div>;
+}
+
 // Per-fold: SVG arrow path (viewBox 0 0 100 100), CSS animation name, hint
 const FOLD_META: Record<FoldShape, {
   arrowD: string;
@@ -1479,7 +2228,7 @@ function OrigamiStepsModal({
   onClose(): void;
   initialStep?: number;
   onProgress?(origamiId: string, completedFolds: number): void;
-  onComplete?(origamiId: string): void;
+  onComplete?(origamiId: string, analytics?: { durationMs: number; retryCount: number }): void;
 }) {
   const {
     t
@@ -1492,7 +2241,10 @@ function OrigamiStepsModal({
   const [voiceOn, setVoiceOn] = useState(true);
   const [completionTotal, setCompletionTotal] = useState<number | null>(null);
   const [shared, setShared] = useState(false);
-  const total = item.steps.length;
+  const [retryCount, setRetryCount] = useState(0);
+  const sessionStartMs = useRef(Date.now());
+  const tutorialSteps = useMemo(() => buildCmsOrigamiTutorial(item), [item]);
+  const total = tutorialSteps.length;
   const {
     speak,
     pause,
@@ -1512,8 +2264,23 @@ function OrigamiStepsModal({
         setPhase("done");
         const totalDone = recordOrigamiCompletion(childName, item.id);
         setCompletionTotal(totalDone);
+        if (voiceOn) {
+          const celebrationText = `Amazing folding! You completed ${item.title}. You practiced focus, fine motor skills, and spatial reasoning.`;
+          const identity = createParentHubAudioIdentity({
+            sectionId: PARENT_HUB_SECTIONS.KIDS_ACTIVITY,
+            itemId: `${item.id}:complete`,
+            text: celebrationText,
+          });
+          void speak(identity.text, {
+            parentHub: true,
+            audioIdentity: identity,
+          });
+        }
         onProgress?.(item.id, total);
-        onComplete?.(item.id);
+        onComplete?.(item.id, {
+          durationMs: Date.now() - sessionStartMs.current,
+          retryCount,
+        });
         return prev;
       }
       onProgress?.(item.id, next);
@@ -1521,7 +2288,7 @@ function OrigamiStepsModal({
       setIsPlaying(true);
       return next;
     });
-  }, [total, childName, item.id, onProgress, onComplete]);
+  }, [total, childName, item.id, item.title, voiceOn, speak, retryCount, onProgress, onComplete]);
   const goPrev = useCallback(() => {
     setStep(prev => {
       if (prev <= 0) return prev;
@@ -1531,10 +2298,13 @@ function OrigamiStepsModal({
     });
   }, []);
   const replay = useCallback(() => {
+    setRetryCount(count => count + 1);
     setAnimKey(k => k + 1);
     setIsPlaying(true);
   }, []);
   const restart = () => {
+    sessionStartMs.current = Date.now();
+    setRetryCount(count => count + 1);
     setStep(0);
     onProgress?.(item.id, 0);
     setAnimKey(k => k + 1);
@@ -1545,7 +2315,7 @@ function OrigamiStepsModal({
   const speakCurrentStep = useCallback(
     (opts?: { onFinished?: () => void }) => {
       if (!voiceOn || phase !== "steps") return;
-      const instruction = item.steps[step]?.instruction?.trim();
+      const instruction = tutorialSteps[step]?.instruction?.trim();
       if (!instruction) return;
       const identity = createParentHubAudioIdentity({
         sectionId: PARENT_HUB_SECTIONS.KIDS_ACTIVITY,
@@ -1559,15 +2329,15 @@ function OrigamiStepsModal({
         onFinished: opts?.onFinished,
       });
     },
-    [voiceOn, phase, step, item.steps, item.id, speak],
+    [voiceOn, phase, step, tutorialSteps, item.id, speak],
   );
 
   const primeCurrentStep = useCallback(() => {
-    const instruction = item.steps[step]?.instruction?.trim();
+    const instruction = tutorialSteps[step]?.instruction?.trim();
     if (instruction) {
       primeSpeakGesture(instruction, { parentHub: true });
     }
-  }, [item.steps, step, primeSpeakGesture]);
+  }, [tutorialSteps, step, primeSpeakGesture]);
 
   useEffect(() => {
     if (!voiceOn || phase !== "steps") return;
@@ -1643,8 +2413,20 @@ function OrigamiStepsModal({
       window.removeEventListener("keydown", handler);
     };
   }, [phase, handleClose, goNext, goPrev]);
-  const cur = item.steps[step]!;
+  const cur = tutorialSteps[step]!;
+  const finalShape = tutorialSteps[total - 1]?.afterShape ?? cur.afterShape;
+  const finalAsset = getOrigamiStepAsset(item, total - 1);
+  const finalSkills = Array.from(new Set(tutorialSteps.flatMap((tutorialStep, index) => getOrigamiTeacherHints(tutorialStep, index).skills)));
   const timeEst = DIFFICULTY_TIME[item.difficulty] ?? "~10 min";
+  const nextStepAsset = getOrigamiStepAsset(item, step + 1);
+
+  useEffect(() => {
+    if (!nextStepAsset) return;
+    const img = new Image();
+    img.src = nextStepAsset;
+    img.srcset = `${oneXFor(nextStepAsset)} 384w, ${nextStepAsset} 768w`;
+    img.sizes = "(max-width: 640px) 384px, 768px";
+  }, [nextStepAsset]);
 
   // ── shared shell ────────────────────────────────────────────────────────────
   const shell = <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label={item.title}>
@@ -1694,7 +2476,7 @@ function OrigamiStepsModal({
 
             {/* Step preview dots */}
             <div className="flex gap-1.5 mb-4">
-              {item.steps.map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-white/30" />)}
+              {tutorialSteps.map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-white/30" />)}
             </div>
 
             {/* Feature pills */}
@@ -1762,7 +2544,7 @@ function OrigamiStepsModal({
 
               {/* Segmented progress bar — clickable */}
               <div className="flex gap-1">
-                {item.steps.map((_, i) => <button key={i} onClick={() => goTo(i)} className="h-1.5 rounded-full flex-1 transition-all duration-300" style={{
+                {tutorialSteps.map((_, i) => <button key={i} onClick={() => goTo(i)} className="h-1.5 rounded-full flex-1 transition-all duration-300" style={{
               background: i < step ? "hsl(var(--brand-emerald-500))" : i === step ? item.accent : "rgba(255,255,255,0.12)"
             }} aria-label={`Go to step ${i + 1}`} />)}
               </div>
@@ -1772,7 +2554,15 @@ function OrigamiStepsModal({
             <div className="flex flex-col items-center justify-center py-6 relative" style={{
           background: "linear-gradient(180deg,#161628 0%,#0f0f18 100%)"
         }}>
-              <AnimatedFoldStage key={animKey} fold={cur.fold} emoji={item.emoji} accent={item.accent} animKey={animKey} isPlaying={isPlaying} />
+              <RealOrigamiFoldStage
+                key={animKey}
+                step={cur}
+                accent={item.accent}
+                animKey={animKey}
+                isPlaying={isPlaying}
+                assetUrl={getOrigamiStepAsset(item, step)}
+                previousAssetUrl={null}
+              />
 
               {/* ── Playback controls: Replay | Play/Pause (below diagram) ── */}
               <div className="flex items-center gap-3 mt-5">
@@ -1857,24 +2647,41 @@ function OrigamiStepsModal({
       }}>
             <button onClick={handleClose} aria-label={t("components.daily_kids_activity.close_5")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
-            <div className="mt-12 mb-4" style={{
+            <div className="mt-10 mb-4 rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-2xl" style={{
           animation: "og-pop-in 500ms cubic-bezier(0.34,1.56,0.64,1) both"
         }}>
-              <span style={{
-            fontSize: 96
-          }}>{item.emoji}</span>
+              <div className="animate-[origami-final-showcase_5s_ease-in-out_infinite] motion-reduce:animate-none">
+                <OrigamiAssetImage
+                  src={finalAsset}
+                  alt={`${item.title} completed model`}
+                  className="h-48 w-64 rounded-3xl object-cover shadow-2xl"
+                  loading="lazy"
+                  fallback={<RealPaperStateSvg state={finalShape} accent={item.accent} size={190} animated />}
+                />
+              </div>
             </div>
 
             <div className="text-4xl mb-2" style={{
           animation: "og-pop-in 500ms 120ms cubic-bezier(0.34,1.56,0.64,1) both"
         }}>
-              🎉
+              🏆
             </div>
 
-            <h2 className="text-white font-black text-2xl mb-2">{t("components.daily_kids_activity.you_did_it")}</h2>
+            <h2 className="text-white font-black text-2xl mb-2">Amazing Folding!</h2>
             <p className="text-white/60 text-sm px-8 mb-2 leading-relaxed">
               {t("components.daily_kids_activity.amazing_work_your")} <strong className="text-white/80">{item.title}</strong> {t("components.daily_kids_activity.is_complete")}
             </p>
+            <div className="mb-4 flex flex-wrap justify-center gap-2 px-6">
+              <span className="rounded-full border border-amber-200/25 bg-amber-300/16 px-3 py-1.5 text-xs font-black text-amber-100">+{getOrigamiXp(item)} XP</span>
+              <span className="rounded-full border border-emerald-200/25 bg-emerald-400/14 px-3 py-1.5 text-xs font-black text-emerald-100">{ORIGAMI_ACHIEVEMENTS[item.id] ?? "🏆 Origami Master"}</span>
+            </div>
+            <div className="mx-6 mb-5 rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-left">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-white/40">Development Benefits</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {finalSkills.map(skill => <span key={skill} className="rounded-full border border-cyan-200/15 bg-cyan-400/10 px-3 py-1.5 text-xs font-black text-cyan-100">{skill}</span>)}
+              </div>
+              <p className="mt-3 text-xs font-semibold leading-relaxed text-white/55">Saved to AmyNest reports under Creativity so progress can contribute to learning insights.</p>
+            </div>
             {completionTotal != null && completionTotal > 0 && <p className="text-emerald-300/90 text-xs font-bold px-8 mb-6">
                 {t("components.daily_kids_activity.completion_streak", {
                   name: childName,
@@ -1980,6 +2787,36 @@ function OrigamiStepsModal({
         @keyframes og-draw-arrow {
           from { stroke-dashoffset:220 }
           to   { stroke-dashoffset:0 }
+        }
+        @keyframes real-fold-path {
+          from { stroke-dashoffset:280 }
+          to { stroke-dashoffset:0 }
+        }
+        @keyframes real-guided-hand {
+          0% { opacity:0; transform:translate(-50%, -50%) scale(.86) }
+          12% { opacity:1; transform:translate(-50%, -50%) scale(1) }
+          78% { opacity:1; transform:translate(calc(-50% + var(--hand-x)), calc(-50% + var(--hand-y))) scale(1.04) }
+          100% { opacity:0; transform:translate(calc(-50% + var(--hand-x)), calc(-50% + var(--hand-y))) scale(.9) }
+        }
+        @keyframes real-paper-lift {
+          0% { transform:translate3d(0,0,0) rotateX(0deg); filter:brightness(1) }
+          45% { transform:translate3d(0,-6px,0) rotateX(10deg); filter:brightness(1.08) }
+          100% { transform:translate3d(0,0,0) rotateX(0deg); filter:brightness(1) }
+        }
+        @keyframes real-active-region {
+          0%,100% { opacity:.45; filter:drop-shadow(0 0 4px rgba(251,191,36,.38)) }
+          50% { opacity:.95; filter:drop-shadow(0 0 16px rgba(251,191,36,.86)) }
+        }
+        @keyframes origami-final-showcase {
+          0%,100% { transform:rotateY(-8deg) rotateZ(-1deg) scale(1) }
+          50% { transform:rotateY(8deg) rotateZ(1deg) scale(1.04) }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes real-fold-path { from { stroke-dashoffset:0 } to { stroke-dashoffset:0 } }
+          @keyframes real-guided-hand { from { opacity:0 } to { opacity:0 } }
+          @keyframes real-paper-lift { from { transform:none } to { transform:none } }
+          @keyframes real-active-region { from { opacity:.65 } to { opacity:.65 } }
+          @keyframes origami-final-showcase { from { transform:none } to { transform:none } }
         }
       `}</style>
     </div>;
@@ -2107,6 +2944,108 @@ function OrigamiCollectionBook({
           <p className="text-xl">❓</p>
           <p className="mt-1 text-[10px] font-black text-white/42">Mystery Model</p>
         </div>)}
+      </div>
+    </div>;
+}
+
+function OrigamiCertificationPanel({
+  completedCount,
+  totalXp,
+  milestoneTitle,
+  insights,
+  unlockedCertificates,
+  onCertificateDownload,
+}: {
+  completedCount: number;
+  totalXp: number;
+  milestoneTitle: string;
+  insights: string[];
+  unlockedCertificates: Set<string>;
+  onCertificateDownload(certificate: { title: string; modelsCompleted: number; printableTemplate: string }): void;
+}) {
+  const nextCertificateAt = completedCount < 5 ? 5 : completedCount < 10 ? 10 : completedCount < 25 ? 25 : completedCount < 50 ? 50 : completedCount < 100 ? 100 : 100;
+  const progress = Math.min(100, Math.round((completedCount / nextCertificateAt) * 100));
+  return <div className="mb-4 overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.06] p-4 text-white shadow-xl backdrop-blur-xl">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100/65">Certified Learning Module</p>
+          <h3 className="mt-1 text-lg font-black">Origami Teacher Pro Lab</h3>
+          <p className="mt-1 text-xs font-semibold text-white/50">Only certified, asset-complete, parent-tested tutorials are published.</p>
+        </div>
+        <div className="rounded-2xl border border-amber-200/25 bg-amber-300/14 px-3 py-2 text-right">
+          <p className="text-[10px] font-black text-amber-100/70">Certificate</p>
+          <p className="text-sm font-black text-white">{milestoneTitle}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+          <p className="text-xs font-black text-white/50">Certified Models</p>
+          <p className="mt-1 text-xl font-black">{CERTIFIED_ORIGAMI_MODELS.length}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+          <p className="text-xs font-black text-white/50">Completed</p>
+          <p className="mt-1 text-xl font-black">{completedCount}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+          <p className="text-xs font-black text-white/50">Studio XP</p>
+          <p className="mt-1 text-xl font-black">{totalXp}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+        <div className="mb-2 flex items-center justify-between text-xs font-black">
+          <span>Mastery Progress</span>
+          <span>{completedCount}/{nextCertificateAt}</span>
+        </div>
+        <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-white/40">Learning Paths</p>
+        <div className="grid gap-2">
+          {ORIGAMI_LEARNING_PATHS.map(path => <div key={path.id} className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-black">{path.title}</p>
+              <p className="text-[10px] font-black text-white/45">{path.modelSlugs.length} models</p>
+            </div>
+            <p className="mt-1 text-[11px] font-semibold text-white/45">{path.unlockRule}</p>
+          </div>)}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-white/40">Achievements & Certificates</p>
+        <div className="grid gap-2">
+          {ORIGAMI_CERTIFICATES.map(certificate => {
+            const unlocked = completedCount >= certificate.modelsCompleted || unlockedCertificates.has(certificate.title);
+            return <div key={certificate.title} className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black">{certificate.title}</p>
+                  <p className="mt-0.5 text-[11px] font-semibold text-white/45">{certificate.modelsCompleted} certified models required</p>
+                </div>
+                {unlocked ? <a
+                  href={certificate.printableTemplate}
+                  download
+                  onClick={() => onCertificateDownload(certificate)}
+                  className="shrink-0 rounded-full border border-emerald-200/25 bg-emerald-400/14 px-3 py-2 text-[10px] font-black text-emerald-100"
+                >
+                  Download Certificate
+                </a> : <span className="shrink-0 rounded-full border border-white/10 bg-white/8 px-3 py-2 text-[10px] font-black text-white/45">Locked</span>}
+              </div>
+            </div>;
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-white/40">Learning Intelligence</p>
+        <div className="space-y-2">
+          {insights.map(insight => <p key={insight} className="rounded-2xl border border-cyan-200/15 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-50/85">{insight}</p>)}
+        </div>
       </div>
     </div>;
 }
@@ -2241,7 +3180,7 @@ function OrigamiHeroArtwork({
     </div>;
 }
 
-function OrigamiCard({
+const OrigamiCard = memo(function OrigamiCard({
   item,
   done,
   saved,
@@ -2260,12 +3199,14 @@ function OrigamiCard({
 }) {
   const visual = getOrigamiVisual(item);
   const difficulty = ORIGAMI_BADGES[item.difficulty];
-  const completedFolds = done ? item.steps.length : Math.min(progress, item.steps.length);
-  const percent = Math.round((completedFolds / item.steps.length) * 100);
+  const realStepCount = buildCmsOrigamiTutorial(item).length;
+  const completedFolds = done ? realStepCount : Math.min(progress, realStepCount);
+  const percent = Math.round((completedFolds / realStepCount) * 100);
   const status = done ? "✅ Completed" : completedFolds > 0 ? "⏳ Continue" : "▶ Start";
   const primaryLabel = done ? "Practice Again" : completedFolds > 0 ? "Continue Folding" : "Start Folding";
   const achievement = ORIGAMI_ACHIEVEMENTS[item.id] ?? "🏆 Origami Master";
   const xp = getOrigamiXp(item);
+  const heroAsset = getOrigamiHeroAsset(item);
 
   return <article className={`group relative flex min-h-[520px] flex-col overflow-hidden rounded-[1.75rem] border bg-slate-950/95 shadow-[0_18px_0_rgba(15,23,42,0.5),0_30px_60px_rgba(2,6,23,0.38)] transition-all duration-300 will-change-transform hover:-translate-y-2 hover:rotate-[0.35deg] hover:scale-[1.02] hover:shadow-[0_24px_0_rgba(15,23,42,0.42),0_42px_80px_rgba(2,6,23,0.48)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0 motion-reduce:hover:scale-100 ${done ? "border-amber-300/70 ring-2 ring-amber-300/25" : "border-white/10"}`}>
       {done && <div className="pointer-events-none absolute inset-0 z-20 rounded-[1.75rem] shadow-[0_0_38px_rgba(251,191,36,0.28)]" />}
@@ -2273,9 +3214,17 @@ function OrigamiCard({
       <div className="pointer-events-none absolute inset-0 z-10 -translate-x-[120%] bg-gradient-to-r from-transparent via-white/12 to-transparent transition-transform duration-1000 group-hover:translate-x-[120%] motion-reduce:hidden" />
 
       <div className={`relative h-[235px] shrink-0 overflow-hidden bg-gradient-to-br ${visual.gradient}`}>
-        <OrigamiHeroArtwork item={item} visual={visual} />
+        <OrigamiAssetImage
+          src={heroAsset}
+          alt={`${item.title} certified origami illustration`}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          loading="lazy"
+          deferUntilVisible
+          sizes="(max-width: 640px) 90vw, (max-width: 1280px) 45vw, 25vw"
+          fallback={<OrigamiHeroArtwork item={item} visual={visual} />}
+        />
         <div className="absolute left-4 top-4 rounded-full border border-white/55 bg-white/30 px-3 py-1.5 text-[11px] font-black text-slate-800 shadow-lg backdrop-blur-xl">
-          <span className="mr-1">📄</span>{item.steps.length} Folds
+          <span className="mr-1">📄</span>{realStepCount} Real Folds
         </div>
         <div className="absolute left-4 top-[58px] rounded-full border border-amber-200/70 bg-amber-200/75 px-3 py-1.5 text-[11px] font-black text-amber-950 shadow-lg backdrop-blur-xl">
           ⚡ +{xp} XP
@@ -2315,7 +3264,7 @@ function OrigamiCard({
 
           <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.06] p-3 shadow-inner">
             <div className="mb-2 flex items-center justify-between text-xs font-bold">
-              <span className="text-white/68">{completedFolds} of {item.steps.length} folds completed</span>
+              <span className="text-white/68">{completedFolds} of {realStepCount} real folds completed</span>
               <span className="text-white">{percent}%</span>
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-white/10">
@@ -2358,4 +3307,4 @@ function OrigamiCard({
         </div>
       </div>
     </article>;
-}
+});

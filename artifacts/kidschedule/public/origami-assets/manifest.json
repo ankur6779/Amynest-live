@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "styleGuide": {
+    "cameraAngle": "front-facing tabletop",
+    "paperScale": "consistent 768x576 composition",
+    "background": "deep navy premium classroom gradient",
+    "format": "webp",
+    "quality": "retina-friendly fast-loading"
+  },
+  "models": {
+    "butterfly": { "steps": 8, "hero": "/origami-assets/butterfly/step-08.webp" },
+    "boat": { "steps": 10, "hero": "/origami-assets/boat/step-10.webp" },
+    "bunny": { "steps": 10, "hero": "/origami-assets/bunny/step-10.webp" },
+    "crane": { "steps": 14, "hero": "/origami-assets/crane/step-14.webp" },
+    "flower": { "steps": 10, "hero": "/origami-assets/flower/step-10.webp" }
+  },
+  "certificates": {
+    "origamiExplorer": "/origami-assets/certificates/origami-explorer.pdf",
+    "origamiBuilder": "/origami-assets/certificates/origami-builder.pdf",
+    "origamiArtist": "/origami-assets/certificates/origami-artist.pdf",
+    "origamiMaster": "/origami-assets/certificates/origami-master.pdf",
+    "origamiGrandmaster": "/origami-assets/certificates/origami-grandmaster.pdf"
+  }
+}

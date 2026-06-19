@@ -1,5 +1,4 @@
 import { getApiUrl } from "@/lib/api";
-import { getFirebaseAuth } from "@/lib/firebase";
 
 export type ClientErrorPayload = {
   message: string;
@@ -9,13 +8,7 @@ export type ClientErrorPayload = {
 };
 
 async function bearerToken(): Promise<string | null> {
-  try {
-    const user = getFirebaseAuth().currentUser;
-    if (!user) return null;
-    return await user.getIdToken();
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 /**

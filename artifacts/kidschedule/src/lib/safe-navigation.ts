@@ -3,7 +3,6 @@
  */
 import { useCallback } from "react";
 import { useLocation } from "wouter";
-import { pauseAmyVoiceOnAmyCoachLeave } from "@/lib/amy-voice-route-guard";
 import { logNavError, logNavEvent } from "@/lib/navigation-log";
 import {
   getParentRoute,
@@ -22,6 +21,18 @@ import { withViewTransition } from "@/lib/view-transition";
 
 const DEFAULT_DEBOUNCE_MS = 100;
 const navInFlight = new Map<string, number>();
+
+function isAmyCoachWinsRoute(path: string): boolean {
+  return normalizeRoutePath(path) === "/amy-coach";
+}
+
+function pauseAmyVoiceOnAmyCoachLeaveDeferred(from: string, to: string): void {
+  if (isSameRoute(from, to)) return;
+  if (!isAmyCoachWinsRoute(from)) return;
+  void import("@/lib/amy-voice-route-guard").then((mod) => {
+    mod.pauseAmyVoiceOnAmyCoachLeave(from, to);
+  });
+}
 
 export type AppNavigateOptions = {
   replace?: boolean;
@@ -101,7 +112,7 @@ export function appNavigate(
     source: options?.source,
   });
 
-  pauseAmyVoiceOnAmyCoachLeave(current, target);
+  pauseAmyVoiceOnAmyCoachLeaveDeferred(current, target);
 
   withViewTransition(() => {
     recordSanitizedTransition(current, target, replace ? "replace" : "push");

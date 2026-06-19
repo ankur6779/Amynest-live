@@ -21,6 +21,7 @@ export const ANALYTICS_EVENT_CATEGORIES = [
   "feedback",
   "premium",
   "growth",
+  "learning",
 ] as const;
 
 export type AnalyticsEventCategory = (typeof ANALYTICS_EVENT_CATEGORIES)[number];
@@ -292,6 +293,26 @@ const EVENT_PROP_SCHEMAS = {
     outputTokens: z.number().int().nonnegative().optional(),
     estimatedCostInr: z.number().nonnegative().optional(),
   }),
+  origami_model_completed: z.object({
+    childId: z.number().int().optional(),
+    modelId: z.string().max(80),
+    modelName: z.string().max(160),
+    difficulty: z.string().max(32),
+    xp: z.number().int().nonnegative(),
+    completionTime: z.number().int().nonnegative(),
+    retryCount: z.number().int().nonnegative(),
+    stepCount: z.number().int().positive(),
+    validationStatus: z.string().max(32),
+    skills: z.string().max(512),
+    certificateProgress: z.number().int().nonnegative(),
+  }),
+  origami_certificate_downloaded: z.object({
+    childId: z.number().int().optional(),
+    certificateTitle: z.string().max(120),
+    threshold: z.number().int().positive(),
+    completedModels: z.number().int().nonnegative(),
+    template: z.string().max(240),
+  }),
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -345,6 +366,8 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   speech_coach_v2_vad_trigger: "session",
   speech_coach_v2_child_speech_detected: "session",
   speech_coach_v2_token_usage: "session",
+  origami_model_completed: "learning",
+  origami_certificate_downloaded: "learning",
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

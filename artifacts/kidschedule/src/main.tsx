@@ -5,8 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { setAppQueryClient } from "@/lib/app-query-client";
 import { createSelfHealingQueryClient } from "@/lib/self-healing/query-recovery";
 import { installSelfHealingRuntime } from "@/lib/self-healing/install";
-import { initWebSentry } from "@/lib/sentry";
-import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
 import App from "./App";
 import "./index.css";
 import "./i18n";
@@ -25,16 +23,6 @@ import {
 import { patchBootDiagnostics } from "@/lib/boot-store";
 import { redirectApexToCanonicalWww } from "@/lib/canonical-domain";
 import { installStaticAudioGuards } from "@/lib/static-audio-guard";
-import {
-  installStaticAudioDevTools,
-} from "@/lib/static-audio-telemetry";
-import { installAmyVoiceAudioDiagnostics } from "@/lib/amy-voice-audio-diag";
-import { installStaticAudioGestureWarmup } from "@/lib/static-audio-edge";
-import { installGlobalAudioWarmupOnGesture } from "@/lib/global-audio-warmup";
-import { installAudioReliabilityDevTools } from "@/lib/audio-reliability-telemetry";
-import { installAudioAutoFixDevTools } from "@/lib/audio-auto-fix-engine";
-import { installAudioReleaseCertificationDevTools } from "@/lib/audio-release-certification";
-import { installAndroidAudioLifecycleMonitor } from "@/lib/android-audio-lifecycle";
 import {
   initStartupOrchestrator,
   markReactRendered,
@@ -84,18 +72,29 @@ installSelfHealingRuntime();
 installViteChunkRecovery();
 installGlobalErrorHandlers();
 installStaticAudioGuards();
-installStaticAudioDevTools();
-installStaticAudioGestureWarmup();
-installGlobalAudioWarmupOnGesture();
-installAmyVoiceAudioDiagnostics();
-installAudioReliabilityDevTools();
-installAudioAutoFixDevTools();
-installAudioReleaseCertificationDevTools();
-installAndroidAudioLifecycleMonitor();
-initWebSentry();
 logBootContext();
 
+const installPostPaintAnalytics = () => {
+  void import("@/lib/sentry").then((m) => m.initWebSentry());
+};
+
 if (import.meta.env.DEV) {
+  const installDeferredAudioDevTools = () => {
+    void import("@/lib/static-audio-telemetry").then((m) => m.installStaticAudioDevTools());
+    void import("@/lib/amy-voice-audio-diag").then((m) => m.installAmyVoiceAudioDiagnostics());
+    void import("@/lib/audio-reliability-telemetry").then((m) =>
+      m.installAudioReliabilityDevTools(),
+    );
+    void import("@/lib/audio-auto-fix-engine").then((m) => m.installAudioAutoFixDevTools());
+    void import("@/lib/audio-release-certification").then((m) =>
+      m.installAudioReleaseCertificationDevTools(),
+    );
+  };
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(installDeferredAudioDevTools, { timeout: 8_000 });
+  } else {
+    globalThis.setTimeout(installDeferredAudioDevTools, 8_000);
+  }
   void import("@/lib/stress-harness").then((m) => m.installStressHarness());
   void import("@/lib/audio-stress-harness").then((m) => m.installAudioStressHarness());
   void import("@/lib/amy-voice-field-validation").then((m) =>
@@ -127,13 +126,11 @@ function bootstrap(): void {
     }
 
     createRoot(rootEl).render(
-      <SentryErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <Suspense fallback={<div>Loading...</div>}>
-            <App />
-          </Suspense>
-        </QueryClientProvider>
-      </SentryErrorBoundary>,
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <App />
+        </Suspense>
+      </QueryClientProvider>,
     );
 
     mark("react-rendered");
@@ -141,6 +138,9 @@ function bootstrap(): void {
     patchBootDiagnostics({ hostname: window.location.hostname });
 
     /* Never await — failures must not block the shell. */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(installPostPaintAnalytics);
+    });
     schedulePostRenderStartup();
   } catch (err) {
     console.error("[amynest:bootstrap] Failed to start app", err);
@@ -167,15 +167,7 @@ function bootstrap(): void {
 }
 
 function startSplashDismissal(): void {
-  const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const isRootEntry =
-    window.location.pathname === "/" ||
-    window.location.pathname === BASE ||
-    window.location.pathname === BASE + "/";
-
-  const isLiteSplash =
-    document.documentElement.classList.contains("lite-splash");
-  const SPLASH_MIN_MS = !isRootEntry ? 0 : isLiteSplash ? 900 : 3200;
+  const SPLASH_MIN_MS = 0;
   const SPLASH_MAX_MS = 12000;
 
   const splashStartedAt = performance.now();
@@ -205,9 +197,7 @@ function startSplashDismissal(): void {
     if (splashDismissed) return false;
     const elapsed = performance.now() - splashStartedAt;
     const minElapsed = elapsed >= SPLASH_MIN_MS;
-    const coreReady = window.__amynestAppCoreReady === true;
-    const fallbackElapsed = elapsed >= 6000;
-    if (!minElapsed || (!coreReady && !fallbackElapsed)) return false;
+    if (!minElapsed) return false;
     splashDismissed = true;
     if (pollHandle !== null) {
       clearInterval(pollHandle);

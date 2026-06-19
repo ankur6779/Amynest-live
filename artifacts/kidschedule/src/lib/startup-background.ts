@@ -25,7 +25,6 @@ import {
   trackStartupEvent,
   waitWithTimeout,
 } from "@/lib/startup-orchestrator";
-import { scheduleAudioBoot } from "@/lib/audio-boot-orchestrator";
 
 const BOOT_CACHE_RECOVERY_TIMEOUT_MS = 8_000;
 const OPTIONAL_SERVICE_TIMEOUT_MS = 6_000;
@@ -98,9 +97,6 @@ export async function runOptionalStartupServices(): Promise<void> {
     fn: () => initCapacitorPushTapHandling(),
     fallback: undefined,
   });
-
-  // Audio boot is fully async — never block optional-services phase on health probes.
-  scheduleAudioBoot();
 
   markOptionalServicesComplete();
   trackStartupEvent("startup_phase_completed", { phase: "ready" });

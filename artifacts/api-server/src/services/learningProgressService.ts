@@ -1,6 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import {
   db,
+  analyticsEventsTable,
   childrenTable,
   learningProgressTable,
   childLearningProgressTable,
@@ -497,6 +498,17 @@ export async function recordProgressAnalytics(
     },
     `[learning_progress] ${event}`,
   );
+  await db.insert(analyticsEventsTable).values({
+    userId,
+    childId,
+    eventName: event,
+    eventCategory: event.startsWith("origami_") ? "learning" : "session",
+    props: { childId, event, ...(metadata ?? {}) },
+    clientTs: null,
+    sessionId: null,
+    platform: null,
+    appVersion: null,
+  });
   return true;
 }
 

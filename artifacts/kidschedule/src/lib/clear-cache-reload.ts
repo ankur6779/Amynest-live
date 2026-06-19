@@ -1,5 +1,4 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
-import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 import { resetTtsApiCircuit } from "@/lib/amy-voice-circuit";
 
 /**
@@ -11,7 +10,6 @@ export async function clearCacheAndReload(): Promise<void> {
 }
 
 function resetAudioStateAfterCacheClear(): void {
-  resetClientStaticAudioCircuit();
   resetTtsApiCircuit();
   void import("@/lib/local-tts-cache").then((m) => m.clearAllLocalCachedAudio()).catch(() => undefined);
 }

@@ -309,6 +309,7 @@ export default defineConfig(async ({ command }) => ({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    modulePreload: false,
     assetsDir: "assets",
     rollupOptions: {
       output: {
@@ -329,6 +330,7 @@ export default defineConfig(async ({ command }) => ({
           if (id.includes("commonjsHelpers")) return "vendor-react";
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("three") || id.includes("@react-three")) return "vendor-three";
+          if (id.includes("@sentry")) return "vendor-sentry";
           if (id.includes("firebase")) return "vendor-firebase";
           if (id.includes("framer-motion")) return "vendor-motion";
           if (id.includes("@radix-ui")) return "vendor-radix";

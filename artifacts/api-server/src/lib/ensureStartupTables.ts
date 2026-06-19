@@ -832,6 +832,30 @@ export async function ensureBehaviorsChildDateIndex(): Promise<void> {
   logger.info({ evt: "db.ensure", index: "behaviors_child_date_idx" }, "Ensured behaviors child+date index");
 }
 
+export async function ensureValidationRunsTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS validation_runs (
+      id               SERIAL PRIMARY KEY,
+      tutorial_id      TEXT NOT NULL,
+      tester_type      TEXT NOT NULL,
+      completion_time  INTEGER NOT NULL,
+      success          BOOLEAN NOT NULL,
+      feedback         TEXT,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS validation_runs_tutorial_idx ON validation_runs (tutorial_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS validation_runs_tester_idx ON validation_runs (tester_type)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS validation_runs_created_idx ON validation_runs (created_at)
+  `);
+  logger.info({ evt: "db.ensure", table: "validation_runs" }, "Ensured validation_runs table");
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
@@ -851,6 +875,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "ptm_prep_data", run: ensurePtmPrepDataTable },
     { name: "feature_notification_schedules", run: ensureFeatureNotificationSchedulesTable },
     { name: "speech_coach_v2_token_usage", run: ensureSpeechCoachV2TokenUsageTables },
+    { name: "validation_runs", run: ensureValidationRunsTable },
   ];
 
   const failed: string[] = [];

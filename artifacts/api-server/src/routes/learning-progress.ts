@@ -132,6 +132,12 @@ const ProgressEventEnum = z.enum([
   "streak_recovered",
   "unlock_conversion",
   "session_quality_high",
+  "fresh_lesson_assigned",
+  "fresh_lesson_reopened",
+  "fresh_lesson_advanced",
+  "fresh_lesson_completed",
+  "origami_model_completed",
+  "origami_certificate_downloaded",
 ]);
 
 const AnalyticsBody = z.object({

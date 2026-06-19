@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { pauseAmyVoiceOnAmyCoachLeave } from "@/lib/amy-voice-route-guard";
+
+function isAmyCoachWinsRoute(path: string): boolean {
+  return path.split(/[?#]/, 1)[0]?.replace(/\/+$/, "") === "/amy-coach";
+}
 
 /** Pauses Amy Coach win listen-aloud when route leaves `/amy-coach`. */
 export function AmyVoiceRouteGuard() {
@@ -11,7 +14,10 @@ export function AmyVoiceRouteGuard() {
     const prev = prevRef.current;
     prevRef.current = location;
     if (prev !== location) {
-      pauseAmyVoiceOnAmyCoachLeave(prev, location);
+      if (!isAmyCoachWinsRoute(prev)) return;
+      void import("@/lib/amy-voice-route-guard").then((mod) => {
+        mod.pauseAmyVoiceOnAmyCoachLeave(prev, location);
+      });
     }
   }, [location]);
 

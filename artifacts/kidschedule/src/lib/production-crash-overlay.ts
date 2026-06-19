@@ -8,7 +8,6 @@ import {
   shouldAttemptAutoRecovery,
   tryAutoRecovery,
 } from "@/lib/auto-recovery";
-import { generateErrorReferenceId } from "@/lib/crash-report";
 import { canAttemptAutoRecovery, navigateToSafeRoute } from "@/lib/crash-recovery";
 import {
   isBenignRuntimeError,
@@ -35,6 +34,15 @@ const OVERLAY_ID = "amynest-crash-overlay";
 const SAFE_OVERLAY_ID = "amynest-safe-recovery-overlay";
 const LAST_CRASH_KEY = "__amynest_last_crash_v1";
 
+function generateErrorReferenceId(): string {
+  const d = new Date();
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `ERR-${y}${m}${day}-${suffix}`;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -60,22 +68,7 @@ function homePath(): string {
 }
 
 function silentLogCrash(payload: ProductionCrashPayload): void {
-  void import("@/lib/crash-report").then(({ reportCrash }) =>
-    reportCrash({
-      kind: payload.kind,
-      message: payload.message,
-      stack: payload.stack,
-      component: payload.detail,
-      errorId: payload.errorId,
-      meta: {
-        source: payload.source,
-        line: payload.line,
-        col: payload.col,
-        href: payload.href,
-        route: payload.route,
-      },
-    }),
-  );
+  void import("@/lib/crash-report-loader").then((m) => m.reportProductionCrash(payload));
 }
 
 function dismissDebugCrashOverlay(): void {

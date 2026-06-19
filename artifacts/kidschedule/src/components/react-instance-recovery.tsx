@@ -98,13 +98,11 @@ export class ReactInstanceRecovery extends Component<
       "\nreact componentStack:\n",
       info.componentStack ?? "(no component stack)",
     );
-    void import("@/lib/crash-report").then(({ reportCrash }) =>
-      reportCrash({
-        kind: "react.recovery",
+    void import("@/lib/crash-report-loader").then((m) =>
+      m.reportReactRecoveryCrash({
         message,
         stack,
         componentStack: info.componentStack ?? undefined,
-        component: "ReactInstanceRecovery",
       }).then((report) => {
         this.setState({ errorReferenceId: report.errorId });
       }),

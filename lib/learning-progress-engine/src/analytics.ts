@@ -22,6 +22,8 @@ export const PROGRESS_ANALYTICS_EVENTS: ProgressAnalyticsEvent[] = [
   "fresh_lesson_reopened",
   "fresh_lesson_advanced",
   "fresh_lesson_completed",
+  "origami_model_completed",
+  "origami_certificate_downloaded",
 ];
 
 export interface AnalyticsPayload {

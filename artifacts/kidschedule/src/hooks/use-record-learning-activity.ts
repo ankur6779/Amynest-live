@@ -18,6 +18,7 @@ export interface RecordActivityInput {
   correct?: boolean;
   analyticsEvent?: ProgressAnalyticsEvent;
   metadata?: Record<string, string | number | boolean>;
+  skipCompletion?: boolean;
 }
 
 /**
@@ -45,12 +46,14 @@ export function useRecordLearningActivity(
       // Enqueue through the sync engine — handles dedup, retry, offline.
       // The engine notifies the celebration channel via configureLearningSync,
       // but we keep the direct callback path as a fast-path for tests / SSR.
-      const enqueued = enqueueLearningActivity({
-        childId,
-        activityId: input.activityId,
-        section: input.section,
-        correct: input.correct ?? true,
-      });
+      const enqueued = input.skipCompletion
+        ? false
+        : enqueueLearningActivity({
+            childId,
+            activityId: input.activityId,
+            section: input.section,
+            correct: input.correct ?? true,
+          });
 
       // Local analytics still fire — they're separate from XP credit and don't
       // contribute to anti-spam (they're for our own observability only).
