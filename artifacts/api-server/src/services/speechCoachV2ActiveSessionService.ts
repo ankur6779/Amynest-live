@@ -14,8 +14,12 @@ import {
 } from "@workspace/speech-coach-v2";
 import { resolveSpeechCoachV2UsagePolicy } from "./speechCoachV2UsagePolicy.js";
 
-const ACTIVE_STALE_MS = 45_000;
+export const ACTIVE_STALE_MS = 45_000;
 const HEARTBEAT_TICK_SECONDS = 15;
+
+export function isActiveSessionStale(lastSeenAt: Date, now = Date.now()): boolean {
+  return now - lastSeenAt.getTime() > ACTIVE_STALE_MS;
+}
 
 type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -194,7 +198,7 @@ export async function registerActiveSession(input: {
   return db.transaction(async (tx) => {
     const existing = await lockActiveSession(tx, input.userId, input.childId);
     if (existing) {
-      const stale = Date.now() - existing.lastSeenAt.getTime() > ACTIVE_STALE_MS;
+      const stale = isActiveSessionStale(existing.lastSeenAt);
       if (!stale && existing.sessionId !== input.sessionId && !input.resume) {
         throw new SpeechCoachV2SessionError(
           "An active session already exists for this child.",
@@ -203,27 +207,27 @@ export async function registerActiveSession(input: {
         );
       }
       if (input.resume && existing.sessionId === input.sessionId) {
-        const resumeStale = Date.now() - existing.lastSeenAt.getTime() > ACTIVE_STALE_MS;
+        const resumeStale = isActiveSessionStale(existing.lastSeenAt);
+        const persistedState = existing.sessionStateJson as unknown as PersistedSessionState;
         await tx
           .update(speechCoachV2ActiveSessionsTable)
           .set({
             lastSeenAt: new Date(),
             tabLockToken: input.tabLockToken,
-            sessionStateJson: input.sessionState,
+            // Server DB state is authoritative; stale resume must not wipe progress.
+            sessionStateJson: persistedState,
             status: "active",
             ...(resumeStale
               ? { startedAt: new Date(), secondsConsumed: 0, updatedAt: new Date() }
               : { updatedAt: new Date() }),
           })
           .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
-        return input.sessionState;
+        return persistedState;
       }
-      if (!stale) {
-        await tx
-          .update(speechCoachV2ActiveSessionsTable)
-          .set({ status: "terminated", updatedAt: new Date() })
-          .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
-      }
+      await tx
+        .update(speechCoachV2ActiveSessionsTable)
+        .set({ status: "terminated", updatedAt: new Date() })
+        .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
     }
 
     const dailyUsed = await getDailyUsageLocked(tx, input.userId, input.childId);
@@ -266,8 +270,28 @@ export async function getActiveSessionForChild(
     .limit(1);
   const row = rows[0];
   if (!row) return null;
-  if (Date.now() - row.lastSeenAt.getTime() > ACTIVE_STALE_MS) return null;
+  if (isActiveSessionStale(row.lastSeenAt)) return null;
   return row;
+}
+
+export async function getActiveSessionRowBySessionId(
+  userId: string,
+  childId: number,
+  sessionId: string,
+): Promise<(typeof speechCoachV2ActiveSessionsTable.$inferSelect) | null> {
+  const rows = await db
+    .select()
+    .from(speechCoachV2ActiveSessionsTable)
+    .where(
+      and(
+        eq(speechCoachV2ActiveSessionsTable.userId, userId),
+        eq(speechCoachV2ActiveSessionsTable.childId, childId),
+        eq(speechCoachV2ActiveSessionsTable.sessionId, sessionId),
+        eq(speechCoachV2ActiveSessionsTable.status, "active"),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 export async function assertActiveSessionForToken(input: {
@@ -306,6 +330,102 @@ export async function assertActiveSessionForToken(input: {
     .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
 }
 
+export async function lockAndTouchActiveSessionInTx(
+  tx: DbExecutor,
+  input: {
+    userId: string;
+    childId: number;
+    sessionId: string;
+    tabLockToken: string;
+  },
+  policy: { dailyLimitSeconds: number },
+): Promise<{
+  row: typeof speechCoachV2ActiveSessionsTable.$inferSelect;
+  sessionState: PersistedSessionState;
+  secondsConsumed: number;
+  remainingSeconds: number;
+}> {
+  const rows = await tx
+    .select()
+    .from(speechCoachV2ActiveSessionsTable)
+    .where(
+      and(
+        eq(speechCoachV2ActiveSessionsTable.sessionId, input.sessionId),
+        eq(speechCoachV2ActiveSessionsTable.userId, input.userId),
+        eq(speechCoachV2ActiveSessionsTable.childId, input.childId),
+      ),
+    )
+    .for("update")
+    .limit(1);
+
+  const row = rows[0];
+  if (!row || row.status !== "active") {
+    throw new SpeechCoachV2SessionError("Unknown or inactive session.", "invalid_session", 404);
+  }
+  if (row.tabLockToken !== input.tabLockToken) {
+    throw new SpeechCoachV2SessionError(
+      "This session is active in another tab.",
+      "tab_lock_violation",
+      409,
+    );
+  }
+
+  const now = Date.now();
+  const elapsedSinceLastSeen = Math.max(
+    0,
+    Math.floor((now - row.lastSeenAt.getTime()) / 1000),
+  );
+  const tickSeconds = Math.min(
+    HEARTBEAT_TICK_SECONDS,
+    Math.max(elapsedSinceLastSeen, 1),
+  );
+
+  const nextConsumed = row.secondsConsumed + tickSeconds;
+
+  const usage = await addUsageLocked(
+    tx,
+    input.userId,
+    input.childId,
+    tickSeconds,
+    policy.dailyLimitSeconds,
+  );
+
+  const sessionCapSeconds = Math.min(
+    SPEECH_COACH_V2_SESSION_SECONDS,
+    policy.dailyLimitSeconds,
+  );
+  const sessionCapReached = nextConsumed >= sessionCapSeconds;
+  const limitReached = usage.limitReached || sessionCapReached;
+  const status = limitReached ? "terminated" : "active";
+
+  await tx
+    .update(speechCoachV2ActiveSessionsTable)
+    .set({
+      lastSeenAt: new Date(now),
+      secondsConsumed: nextConsumed,
+      status,
+      updatedAt: new Date(),
+    })
+    .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
+
+  if (limitReached) {
+    throw new SpeechCoachV2SessionError(
+      sessionCapReached
+        ? "Session time limit reached."
+        : "Daily or monthly speech limit reached.",
+      sessionCapReached ? "session_limit_reached" : "daily_limit_reached",
+      429,
+    );
+  }
+
+  return {
+    row,
+    sessionState: row.sessionStateJson as unknown as PersistedSessionState,
+    secondsConsumed: nextConsumed,
+    remainingSeconds: Math.max(0, policy.dailyLimitSeconds - usage.dailyUsed),
+  };
+}
+
 export async function validateAndTouchSession(input: {
   userId: string;
   childId: number;
@@ -327,96 +447,27 @@ export async function validateAndTouchSession(input: {
   }
 
   return db.transaction(async (tx) => {
-    const rows = await tx
-      .select()
-      .from(speechCoachV2ActiveSessionsTable)
-      .where(
-        and(
-          eq(speechCoachV2ActiveSessionsTable.sessionId, input.sessionId),
-          eq(speechCoachV2ActiveSessionsTable.userId, input.userId),
-          eq(speechCoachV2ActiveSessionsTable.childId, input.childId),
-        ),
-      )
-      .for("update")
-      .limit(1);
-
-    const row = rows[0];
-    if (!row || row.status !== "active") {
-      throw new SpeechCoachV2SessionError("Unknown or inactive session.", "invalid_session", 404);
-    }
-    if (row.tabLockToken !== input.tabLockToken) {
-      throw new SpeechCoachV2SessionError(
-        "This session is active in another tab.",
-        "tab_lock_violation",
-        409,
-      );
-    }
-
-    const now = Date.now();
-    const elapsedSinceLastSeen = Math.max(
-      0,
-      Math.floor((now - row.lastSeenAt.getTime()) / 1000),
-    );
-    const tickSeconds = Math.min(
-      HEARTBEAT_TICK_SECONDS,
-      Math.max(elapsedSinceLastSeen, 1),
-    );
-
-    const nextConsumed = row.secondsConsumed + tickSeconds;
-
-    const usage = await addUsageLocked(
-      tx,
-      input.userId,
-      input.childId,
-      tickSeconds,
-      policy.dailyLimitSeconds,
-    );
-
-    const sessionCapSeconds = Math.min(
-      SPEECH_COACH_V2_SESSION_SECONDS,
-      policy.dailyLimitSeconds,
-    );
-    const sessionCapReached = nextConsumed >= sessionCapSeconds;
-    const limitReached = usage.limitReached || sessionCapReached;
-    const status = limitReached ? "terminated" : "active";
-
-    await tx
-      .update(speechCoachV2ActiveSessionsTable)
-      .set({
-        lastSeenAt: new Date(now),
-        secondsConsumed: nextConsumed,
-        status,
-        updatedAt: new Date(),
-      })
-      .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
-
-    if (limitReached) {
-      throw new SpeechCoachV2SessionError(
-        sessionCapReached
-          ? "Session time limit reached."
-          : "Daily or monthly speech limit reached.",
-        sessionCapReached ? "session_limit_reached" : "daily_limit_reached",
-        429,
-      );
-    }
-
+    const touched = await lockAndTouchActiveSessionInTx(tx, input, policy);
     return {
-      sessionState: row.sessionStateJson as unknown as PersistedSessionState,
-      secondsConsumed: nextConsumed,
+      sessionState: touched.sessionState,
+      secondsConsumed: touched.secondsConsumed,
       limitReached: false,
-      remainingSeconds: Math.max(0, policy.dailyLimitSeconds - usage.dailyUsed),
+      remainingSeconds: touched.remainingSeconds,
     };
   });
 }
 
-export async function updateSessionState(input: {
-  userId: string;
-  childId: number;
-  sessionId: string;
-  tabLockToken: string;
-  sessionState: PersistedSessionState;
-}): Promise<void> {
-  await db
+export async function updateSessionState(
+  input: {
+    userId: string;
+    childId: number;
+    sessionId: string;
+    tabLockToken: string;
+    sessionState: PersistedSessionState;
+  },
+  executor: DbExecutor = db,
+): Promise<void> {
+  const result = await executor
     .update(speechCoachV2ActiveSessionsTable)
     .set({
       sessionStateJson: input.sessionState,
@@ -431,6 +482,9 @@ export async function updateSessionState(input: {
         eq(speechCoachV2ActiveSessionsTable.status, "active"),
       ),
     );
+  if ((result.rowCount ?? 0) === 0) {
+    throw new SpeechCoachV2SessionError("Unknown or inactive session.", "invalid_session", 404);
+  }
 }
 
 export async function terminateActiveSession(input: {

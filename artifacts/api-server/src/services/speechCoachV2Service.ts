@@ -29,10 +29,13 @@ import {
   type SpeechTimingMetadata,
 } from "@workspace/speech-coach-v2";
 import {
+  lockAndTouchActiveSessionInTx,
+  SpeechCoachV2SessionError,
   terminateActiveSession,
   updateSessionState,
   validateAndTouchSession,
 } from "./speechCoachV2ActiveSessionService.js";
+import { resolveSpeechCoachV2UsagePolicy } from "./speechCoachV2UsagePolicy.js";
 
 function utcMonthKey(now = new Date()): string {
   return now.toISOString().slice(0, 7);
@@ -76,24 +79,6 @@ export async function getMonthlyUsageSeconds(
   return rows[0]?.secondsUsed ?? 0;
 }
 
-async function loadActiveSessionState(
-  userId: string,
-  sessionId: string,
-): Promise<PersistedSessionState> {
-  const rows = await db
-    .select({ sessionStateJson: speechCoachV2ActiveSessionsTable.sessionStateJson })
-    .from(speechCoachV2ActiveSessionsTable)
-    .where(
-      and(
-        eq(speechCoachV2ActiveSessionsTable.sessionId, sessionId),
-        eq(speechCoachV2ActiveSessionsTable.userId, userId),
-      ),
-    )
-    .limit(1);
-  if (!rows[0]) throw new Error("session_not_found");
-  return rows[0].sessionStateJson as unknown as PersistedSessionState;
-}
-
 export async function recordTurnEvaluation(input: {
   userId: string;
   childId: number;
@@ -113,70 +98,88 @@ export async function recordTurnEvaluation(input: {
   const safety = sanitizeChildTranscript(input.rawTranscript ?? input.transcript);
   if (safety.blocked) throw new Error("unsafe_transcript");
 
-  await validateAndTouchSession({
-    userId: input.userId,
-    childId: input.childId,
-    sessionId: input.sessionId,
-    tabLockToken: input.tabLockToken,
-  });
-
-  const sessionState = await loadActiveSessionState(input.userId, input.sessionId);
-  const exercise = getCurrentExercise(sessionState);
-  if (!exercise || exercise.id !== input.exerciseId) {
-    throw new Error("exercise_mismatch");
+  const policy = await resolveSpeechCoachV2UsagePolicy(input.userId);
+  if (policy.dailyLimitSeconds <= 0) {
+    throw new SpeechCoachV2SessionError(
+      "Speech Coach V2 is not available on your plan.",
+      "daily_limit_reached",
+      429,
+    );
   }
 
-  const result = evaluateSpeechResponse({
-    expected: input.expected,
-    transcript: safety.text || input.transcript,
-    rawTranscript: input.rawTranscript ?? input.transcript,
-    timing: input.timing,
+  return db.transaction(async (tx) => {
+    const touched = await lockAndTouchActiveSessionInTx(
+      tx,
+      {
+        userId: input.userId,
+        childId: input.childId,
+        sessionId: input.sessionId,
+        tabLockToken: input.tabLockToken,
+      },
+      policy,
+    );
+
+    const sessionState = touched.sessionState;
+    const exercise = getCurrentExercise(sessionState);
+    if (!exercise || exercise.id !== input.exerciseId) {
+      throw new Error("exercise_mismatch");
+    }
+
+    const result = evaluateSpeechResponse({
+      expected: input.expected,
+      transcript: safety.text || input.transcript,
+      rawTranscript: input.rawTranscript ?? input.transcript,
+      timing: input.timing,
+    });
+
+    await tx.insert(speechCoachV2TurnLogTable).values({
+      userId: input.userId,
+      childId: input.childId,
+      sessionId: input.sessionId,
+      exerciseId: input.exerciseId,
+      expected: input.expected,
+      transcript: safety.text || input.transcript,
+      rawTranscript: input.rawTranscript ?? input.transcript,
+      accuracyScore: result.pronunciationEstimate,
+      fluencyScore: result.fluencyScore,
+      confidenceScore: result.confidenceScore,
+      completionScore: result.completionScore,
+      overallScore: result.overallScore,
+      transcriptAccuracy: result.transcriptAccuracy,
+      pronunciationEstimate: result.pronunciationEstimate,
+      scoringConfidence: result.scoringConfidence,
+      speakingRateScore: result.speakingRateScore,
+    });
+
+    const stars = starsForScore(result.overallScore);
+    const points = pointsForScore(result.overallScore);
+
+    let nextState = recordTurnResult(
+      sessionState,
+      result,
+      result.wordsSpoken,
+      result.sentencesCompleted,
+      stars,
+      points,
+    );
+
+    if (shouldAdvancePhaseMastery(nextState)) {
+      nextState = advancePhaseMastery(nextState);
+    }
+
+    await updateSessionState(
+      {
+        userId: input.userId,
+        childId: input.childId,
+        sessionId: input.sessionId,
+        tabLockToken: input.tabLockToken,
+        sessionState: nextState,
+      },
+      tx,
+    );
+
+    return { evaluation: result, sessionState: nextState, starsEarned: stars, pointsEarned: points };
   });
-
-  await db.insert(speechCoachV2TurnLogTable).values({
-    userId: input.userId,
-    childId: input.childId,
-    sessionId: input.sessionId,
-    exerciseId: input.exerciseId,
-    expected: input.expected,
-    transcript: safety.text || input.transcript,
-    rawTranscript: input.rawTranscript ?? input.transcript,
-    accuracyScore: result.pronunciationEstimate,
-    fluencyScore: result.fluencyScore,
-    confidenceScore: result.confidenceScore,
-    completionScore: result.completionScore,
-    overallScore: result.overallScore,
-    transcriptAccuracy: result.transcriptAccuracy,
-    pronunciationEstimate: result.pronunciationEstimate,
-    scoringConfidence: result.scoringConfidence,
-    speakingRateScore: result.speakingRateScore,
-  });
-
-  const stars = starsForScore(result.overallScore);
-  const points = pointsForScore(result.overallScore);
-
-  let nextState = recordTurnResult(
-    sessionState,
-    result,
-    result.wordsSpoken,
-    result.sentencesCompleted,
-    stars,
-    points,
-  );
-
-  if (shouldAdvancePhaseMastery(nextState)) {
-    nextState = advancePhaseMastery(nextState);
-  }
-
-  await updateSessionState({
-    userId: input.userId,
-    childId: input.childId,
-    sessionId: input.sessionId,
-    tabLockToken: input.tabLockToken,
-    sessionState: nextState,
-  });
-
-  return { evaluation: result, sessionState: nextState, starsEarned: stars, pointsEarned: points };
 }
 
 async function updateStreak(userId: string, childId: number, day = utcDateKey()): Promise<{
