@@ -16,6 +16,10 @@ import {
   isPremiumNow,
 } from "./subscription-premium-gate.js";
 import { UNLIMITED_DEVICES_EMAILS } from "./deviceLimitLogic.js";
+import {
+  recoverPremiumOwnerForAuth,
+  resolveSubscriptionOwnerUserId,
+} from "./userIdentityService.js";
 
 export {
   hasValidPaidPeriodEnd,
@@ -408,10 +412,11 @@ export async function getOrCreateSubscription(
   dbExec: DbExec = db,
   phoneNumber?: string | null,
 ): Promise<Subscription> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId, dbExec);
   const existing = await dbExec
     .select()
     .from(subscriptionsTable)
-    .where(eq(subscriptionsTable.userId, userId))
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
     .limit(1);
   if (existing[0]) {
     // Opportunistically save phone number if not yet stored.
@@ -419,17 +424,17 @@ export async function getOrCreateSubscription(
       const [updated] = await dbExec
         .update(subscriptionsTable)
         .set({ phoneNumber, updatedAt: new Date() })
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .returning();
-      return maybeApplyAutomaticAgeTrial(userId, updated ?? existing[0], dbExec);
+      return maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, updated ?? existing[0], dbExec);
     }
-    return maybeApplyAutomaticAgeTrial(userId, existing[0], dbExec);
+    return maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, existing[0], dbExec);
   }
   const [created] = await dbExec
     .insert(subscriptionsTable)
-    .values({ userId, plan: "free", status: "free", provider: "none", phoneNumber: phoneNumber ?? null })
+    .values({ userId: subscriptionOwnerUserId, plan: "free", status: "free", provider: "none", phoneNumber: phoneNumber ?? null })
     .returning();
-  return maybeApplyAutomaticAgeTrial(userId, created, dbExec);
+  return maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, created, dbExec);
 }
 
 /**
@@ -600,9 +605,16 @@ export async function healStaleSubscriptionRecord(
 export async function getEntitlements(
   userId: string,
   email?: string | null,
+  opts: { emailVerified?: boolean; provider?: string | null } = {},
 ): Promise<EntitlementSummary> {
   const featureKeys = Object.keys(FREE_FEATURE_LIMITS) as FeatureKey[];
-  let sub = await getOrCreateSubscription(userId);
+  const subscriptionOwnerUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email,
+    emailVerified: opts.emailVerified,
+    provider: opts.provider,
+  });
+  let sub = await getOrCreateSubscription(subscriptionOwnerUserId);
   sub = await healStaleSubscriptionRecord(sub);
   const isPremium = isPremiumNow(sub);
   const isPremiumSubscriber = isPremiumSubscriberNow(sub);
@@ -618,8 +630,8 @@ export async function getEntitlements(
     "./routineJourneyService.js"
   );
   const [routineEntitlement, usageMap] = await Promise.all([
-    getRoutineGenerateEntitlement(userId, isPremium),
-    getFeatureUsageMap(userId, otherKeys),
+    getRoutineGenerateEntitlement(subscriptionOwnerUserId, isPremium),
+    getFeatureUsageMap(subscriptionOwnerUserId, otherKeys),
   ]);
 
   const features = {} as Record<FeatureKey, FeatureUsage>;

@@ -31,6 +31,24 @@ type RcConfig = {
   packageMap: Record<Exclude<Plan, "free">, string>;
 };
 
+export function isCanonicalBillingReady(input: {
+  nativeAvailable: boolean;
+  wrapperPresent: boolean;
+  currentUserId: string | null;
+  billingConfigUserId: string | null;
+  revenueCatAppUserId: string | null;
+  billingConfigLoading: boolean;
+}): boolean {
+  if (!input.nativeAvailable) return false;
+  if (!input.wrapperPresent) return true;
+  return Boolean(
+    input.currentUserId &&
+      input.revenueCatAppUserId &&
+      input.billingConfigUserId === input.currentUserId &&
+      !input.billingConfigLoading,
+  );
+}
+
 function detectBillingPlatform(): "ios" | "android" | "web" {
   if (isCapacitorIOS()) return "ios";
   if (isWrapperPresent()) return "android";
@@ -130,10 +148,15 @@ export function useNativeBilling(): NativeBillingState {
   const { user } = useUser();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const currentUserId = user?.id ?? null;
+  const currentUserIdRef = useRef<string | null>(currentUserId);
 
   const [available, setAvailable] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
   const [packageMap, setPackageMap] = useState<RcConfig["packageMap"] | null>(null);
+  const [revenueCatAppUserId, setRevenueCatAppUserId] = useState<string | null>(null);
+  const [billingConfigUserId, setBillingConfigUserId] = useState<string | null>(null);
+  const [billingConfigLoading, setBillingConfigLoading] = useState(false);
   const [priceByPlan, setPriceByPlan] = useState<Partial<Record<Exclude<Plan, "free">, string>>>({});
   const [storePricesByPlan, setStorePricesByPlan] = useState<
     Partial<Record<Exclude<Plan, "free">, StorePlanPrice>>
@@ -142,17 +165,104 @@ export function useNativeBilling(): NativeBillingState {
   const userIdSyncedRef = useRef<string | null>(null);
 
   useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  useEffect(() => {
     setAvailable(false);
     setUnavailableReason(null);
     setPackageMap(null);
+    setRevenueCatAppUserId(null);
+    setBillingConfigUserId(null);
+    setBillingConfigLoading(false);
     setPriceByPlan({});
     setStorePricesByPlan({});
     userIdSyncedRef.current = null;
-  }, [platform]);
+  }, [platform, currentUserId]);
+
+  const loadRevenueCatConfig = useCallback(
+    async (): Promise<RcConfig | null> => {
+      if (!wrapperPresent || !currentUserId) return null;
+      const requestedUserId = currentUserId;
+      setBillingConfigLoading(true);
+      try {
+        const res = await authFetch(getApiUrl("/api/subscription/rc-config"));
+        if (!res.ok) return null;
+        const cfg = await parseApiJson<RcConfig>(res);
+        if (currentUserIdRef.current !== requestedUserId) return null;
+        setRevenueCatAppUserId(cfg.appUserId);
+        setBillingConfigUserId(requestedUserId);
+        setPackageMap(cfg.packageMap);
+        return cfg;
+      } catch {
+        return null;
+      } finally {
+        if (currentUserIdRef.current === requestedUserId) {
+          setBillingConfigLoading(false);
+        }
+      }
+    },
+    [wrapperPresent, currentUserId, authFetch],
+  );
+
+  const requireRevenueCatAppUserId = useCallback(async (): Promise<string | null> => {
+    if (
+      currentUserId &&
+      revenueCatAppUserId &&
+      billingConfigUserId === currentUserId
+    ) {
+      return revenueCatAppUserId;
+    }
+    const cfg = await loadRevenueCatConfig();
+    return cfg?.appUserId ?? null;
+  }, [billingConfigUserId, currentUserId, loadRevenueCatConfig, revenueCatAppUserId]);
+
+  useEffect(() => {
+    if (!wrapperPresent || !currentUserId) return;
+    let cancelled = false;
+    const run = async () => {
+      const cfg = await loadRevenueCatConfig();
+      if (!cancelled && !cfg) {
+        setUnavailableReason("Loading your billing account. Please try again in a moment.");
+      }
+    };
+    void run();
+    const onRetry = () => {
+      if (!cancelled) void run();
+    };
+    window.addEventListener("focus", onRetry);
+    window.addEventListener("pageshow", onRetry);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onRetry);
+      window.removeEventListener("pageshow", onRetry);
+    };
+  }, [wrapperPresent, currentUserId, loadRevenueCatConfig]);
+
+  const billingReady = isCanonicalBillingReady({
+    nativeAvailable: available,
+    wrapperPresent,
+    currentUserId,
+    billingConfigUserId,
+    revenueCatAppUserId,
+    billingConfigLoading,
+  });
+
+  const billingConfigUnavailableReason =
+    billingConfigLoading ||
+    (wrapperPresent && currentUserId && !billingReady)
+      ? "Loading your billing account. Please try again in a moment."
+      : unavailableReason;
 
   const probeIosBilling = useCallback(async () => {
     if (!iosShell || !user?.id) return;
-    const result = await initIOSBilling(user.id);
+    const appUserId = await requireRevenueCatAppUserId();
+    if (!appUserId) {
+      setAvailable(false);
+      setUnavailableReason("Loading your billing account. Please try again in a moment.");
+      return;
+    }
+    const result = await initIOSBilling(appUserId);
     if (!result.ok) {
       setAvailable(false);
       setPriceByPlan({});
@@ -209,7 +319,7 @@ export function useNativeBilling(): NativeBillingState {
       ...(nextStore.six_month?.priceString ? { six_month: nextStore.six_month.priceString } : {}),
       ...(nextStore.yearly?.priceString ? { yearly: nextStore.yearly.priceString } : {}),
     });
-  }, [iosShell, user?.id]);
+  }, [iosShell, requireRevenueCatAppUserId, user?.id]);
 
   // ── iOS: init RevenueCat + probe availability (retry on focus) ───────────
   useEffect(() => {
@@ -275,30 +385,35 @@ export function useNativeBilling(): NativeBillingState {
 
   // ── Android: sync user id to RevenueCat once billing is ready ────────────
   useEffect(() => {
-    if (!androidBridge || !available || !user?.id) return;
-    if (userIdSyncedRef.current === user.id) return;
+    if (!androidBridge || !available || !currentUserId) return;
+    if (!revenueCatAppUserId || billingConfigUserId !== currentUserId) return;
+    const appUserId = revenueCatAppUserId;
+    if (userIdSyncedRef.current === appUserId) return;
     let cancelled = false;
     void (async () => {
-      const res = await androidBridge.setUserId(user.id);
+      const res = await androidBridge.setUserId(appUserId);
       if (!cancelled && (res == null || res.ok !== false)) {
-        userIdSyncedRef.current = user.id;
+        userIdSyncedRef.current = appUserId;
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [androidBridge, available, user?.id]);
+  }, [androidBridge, available, billingConfigUserId, currentUserId, revenueCatAppUserId]);
 
   // ── Android: load plan → RC package mapping from backend ─────────────────
   useEffect(() => {
-    if (!androidWrapper || !available) return;
+    if (!androidWrapper || !available || !currentUserId) return;
     let cancelled = false;
+    const requestedUserId = currentUserId;
     void (async () => {
       try {
         const res = await authFetch(getApiUrl("/api/subscription/rc-config"));
         if (!res.ok) return;
         const cfg = (await parseApiJson<RcConfig>(res));
-        if (cancelled) return;
+        if (cancelled || currentUserIdRef.current !== requestedUserId) return;
+        setRevenueCatAppUserId(cfg.appUserId);
+        setBillingConfigUserId(requestedUserId);
         setPackageMap(cfg.packageMap);
         const offerings = await androidBridge?.getOfferings();
         if (!offerings?.ok) return;
@@ -332,15 +447,19 @@ export function useNativeBilling(): NativeBillingState {
       }
     })();
     return () => { cancelled = true; };
-  }, [androidWrapper, androidBridge, available, authFetch]);
+  }, [androidWrapper, androidBridge, available, authFetch, currentUserId]);
 
   // ── purchase ──────────────────────────────────────────────────────────────
   const purchase = useCallback(
     async (
       plan: Exclude<Plan, "free">,
     ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
-      if (!available) {
-        return { ok: false, reason: unavailableReason ?? "Billing is not available." };
+      if (!billingReady) {
+        return { ok: false, reason: billingConfigUnavailableReason ?? "Billing is not available." };
+      }
+      const canonicalAppUserId = await requireRevenueCatAppUserId();
+      if (!canonicalAppUserId) {
+        return { ok: false, reason: "Loading your billing account. Please try again in a moment." };
       }
 
       setPurchasing(true);
@@ -368,11 +487,9 @@ export function useNativeBilling(): NativeBillingState {
         if (!androidBridge) {
           return { ok: false, reason: "Google Play Billing is not available." };
         }
-        if (user?.id) {
-          const login = await androidBridge.setUserId(user.id);
-          if (login?.ok === false) {
-            return { ok: false, reason: "Could not link your account to Google Play billing." };
-          }
+        const login = await androidBridge.setUserId(canonicalAppUserId);
+        if (login?.ok === false) {
+          return { ok: false, reason: "Could not link your account to Google Play billing." };
         }
         const map = packageMap;
         if (!map) return { ok: false, reason: "Loading plans — please retry in a moment." };
@@ -401,14 +518,18 @@ export function useNativeBilling(): NativeBillingState {
         setPurchasing(false);
       }
     },
-    [iosShell, androidBridge, available, packageMap, qc, authFetch, unavailableReason, user?.id],
+    [iosShell, androidBridge, billingReady, packageMap, qc, authFetch, billingConfigUnavailableReason, requireRevenueCatAppUserId],
   );
 
   // ── restore ───────────────────────────────────────────────────────────────
   const restore = useCallback(async (): Promise<boolean> => {
-    if (!available) return false;
+    if (!billingReady) return false;
+    const canonicalAppUserId = await requireRevenueCatAppUserId();
+    if (!canonicalAppUserId) return false;
 
     if (iosShell) {
+      const init = await initIOSBilling(canonicalAppUserId);
+      if (!init.ok) return false;
       const result = await restoreIOSPurchases();
       if (result.ok) {
         const finalized = await finalizeNativeRestore(authFetch, qc);
@@ -418,20 +539,22 @@ export function useNativeBilling(): NativeBillingState {
     }
 
     if (!androidBridge) return false;
+    const login = await androidBridge.setUserId(canonicalAppUserId);
+    if (login?.ok === false) return false;
     const res = await androidBridge.restore();
     if (res.ok) {
       const finalized = await finalizeNativeRestore(authFetch, qc);
       return finalized.isPremium;
     }
     return false;
-  }, [iosShell, androidBridge, available, qc, authFetch]);
+  }, [iosShell, androidBridge, billingReady, qc, authFetch, requireRevenueCatAppUserId]);
 
   return {
     platform,
     wrapperPresent,
-    available,
+    available: billingReady,
     purchasing,
-    unavailableReason,
+    unavailableReason: billingConfigUnavailableReason,
     priceByPlan,
     storePricesByPlan,
     purchase,

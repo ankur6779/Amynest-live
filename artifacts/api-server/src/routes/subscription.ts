@@ -32,6 +32,10 @@ import {
   TOTAL_COUNT_BY_PLAN,
 } from "../lib/razorpayClient";
 import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
+import {
+  recoverPremiumOwnerForAuth,
+  resolveSubscriptionOwnerUserId,
+} from "../services/userIdentityService.js";
 
 function isRevenueCatAnonymousId(id: string | null | undefined): boolean {
   return typeof id === "string" && id.startsWith("$RCAnonymousID:");
@@ -51,7 +55,7 @@ router.get(
   safeRoute(
     "GET /subscription",
     async (req, res): Promise<void> => {
-      const { userId, email, phoneNumber } = getAuth(req);
+      const { userId, email, emailVerified, phoneNumber, signInProvider } = getAuth(req);
       if (!userId) {
         res.status(401).json({ error: "unauthorized" });
         return;
@@ -62,7 +66,10 @@ router.get(
         /* best-effort — never block subscription read */
       }
       const [ent, prices] = await Promise.all([
-        getEntitlements(userId, email),
+        getEntitlements(userId, email, {
+          emailVerified,
+          provider: signInProvider,
+        }),
         getLivePlanPrices(),
       ]);
       const marketing = buildPlanCardsForApi();
@@ -118,16 +125,22 @@ router.post("/subscription/start-trial", requireAuth, async (req, res): Promise<
  * The actual checkout happens client-side via the RevenueCat SDK.
  */
 router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const { userId, email, emailVerified, signInProvider } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  const appUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email,
+    emailVerified,
+    provider: signInProvider,
+  });
   res.json({
     provider: "revenuecat",
     entitlementId: process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium",
     offeringId: "default",
-    appUserId: userId,
+    appUserId,
     packageMap: {
       monthly: "$rc_monthly",
       six_month: "$rc_six_month",
@@ -142,7 +155,7 @@ router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<voi
  * is retained for Restore Purchase flows where no fresh webhook is expected.
  */
 router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const { userId, email, emailVerified, signInProvider } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
@@ -151,14 +164,24 @@ router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): P
     res.status(409).json({ ok: false, reason: "webhook_required" });
     return;
   }
+  const appUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email,
+    emailVerified,
+    provider: signInProvider,
+  });
   const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
-  const result = await syncRevenueCatSubscription(userId, { source: "restore" });
-  const ent = await getEntitlements(userId);
+  const result = await syncRevenueCatSubscription(appUserId, { source: "restore" });
+  const ent = await getEntitlements(userId, email, {
+    emailVerified,
+    provider: signInProvider,
+  });
   // One-line trace tying the sync attempt to what the user actually receives —
   // makes "paid but no premium" reports diagnosable from logs alone.
   logger.info(
     {
-      userId,
+      userId: appUserId,
+      requestedUserId: userId,
       synced: result.synced,
       syncReason: result.reason ?? null,
       isPremium: ent.isPremium,
@@ -223,16 +246,22 @@ router.post("/subscription/rc-recover", asyncRoute(async (req, res): Promise<voi
  * Mobile clients should call /subscription/rc-config directly.
  */
 router.post("/subscription/checkout", requireAuth, asyncRoute(async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const { userId, email, emailVerified, signInProvider } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  const appUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email,
+    emailVerified,
+    provider: signInProvider,
+  });
   res.json({
     provider: "revenuecat",
     entitlementId: process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium",
     offeringId: "default",
-    appUserId: userId,
+    appUserId,
     packageMap: {
       monthly: "$rc_monthly",
       six_month: "$rc_six_month",
@@ -283,13 +312,14 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     auto_renew_status?: boolean;
   };
 
-  const userId = preferredRevenueCatUserId(event.app_user_id, event.original_app_user_id);
-  if (!userId) {
+  const rawRevenueCatUserId = preferredRevenueCatUserId(event.app_user_id, event.original_app_user_id);
+  if (!rawRevenueCatUserId) {
     res.status(400).json({ error: "missing_app_user_id" });
     return;
   }
+  const userId = await resolveSubscriptionOwnerUserId(rawRevenueCatUserId);
 
-  const eventId = event.id ?? event.transaction_id ?? `${event.type}:${userId}:${event.expiration_at_ms ?? "na"}`;
+  const eventId = event.id ?? event.transaction_id ?? `${event.type}:${rawRevenueCatUserId}:${event.expiration_at_ms ?? "na"}`;
   const eventAt = event.event_timestamp_ms ? new Date(event.event_timestamp_ms) : new Date();
 
   const inserted = await db
@@ -298,7 +328,11 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       eventId,
       eventType: event.type ?? null,
       appUserId: userId,
-      payload: req.body ?? {},
+      payload: {
+        ...(req.body ?? {}),
+        amynestCanonicalUserId: userId,
+        amynestRawRevenueCatAppUserId: rawRevenueCatUserId,
+      },
       eventTimestamp: eventAt,
       transactionId: event.transaction_id ?? null,
       originalTransactionId: event.original_transaction_id ?? null,

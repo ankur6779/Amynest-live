@@ -50,11 +50,13 @@ describe("auth-feature-flags", () => {
     expect(shouldShowFacebookSignIn()).toBe(false);
   });
 
-  it("keeps phone OTP visible outside Capacitor iOS", () => {
-    setCapacitorPlatform(undefined);
-    expect(shouldShowPhoneOtp()).toBe(true);
-
+  it("hides phone OTP on Android auth surfaces", () => {
     setCapacitorPlatform("android");
-    expect(shouldShowPhoneOtp()).toBe(true);
+    expect(shouldShowPhoneOtp()).toBe(false);
+  });
+
+  it("hides phone OTP on regular web", () => {
+    setCapacitorPlatform(undefined);
+    expect(shouldShowPhoneOtp()).toBe(false);
   });
 });

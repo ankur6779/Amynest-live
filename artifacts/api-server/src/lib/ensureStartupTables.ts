@@ -259,6 +259,41 @@ export async function ensureSubscriptionsTable(): Promise<void> {
   logger.info({ evt: "db.ensure", table: "subscriptions" }, "Ensured subscriptions table");
 }
 
+export async function ensureUserIdentityAliasesTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_identity_aliases (
+      id                SERIAL PRIMARY KEY,
+      internal_user_id  TEXT NOT NULL,
+      firebase_uid      TEXT NOT NULL,
+      email             TEXT,
+      normalized_email  TEXT,
+      provider          TEXT NOT NULL DEFAULT 'unknown',
+      email_verified    BOOLEAN NOT NULL DEFAULT false,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      last_seen_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS user_identity_aliases_firebase_uid_uq
+      ON user_identity_aliases (firebase_uid)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS user_identity_aliases_internal_user_idx
+      ON user_identity_aliases (internal_user_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS user_identity_aliases_normalized_email_idx
+      ON user_identity_aliases (normalized_email)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS user_identity_aliases_email_verified_idx
+      ON user_identity_aliases (normalized_email, email_verified)
+  `);
+
+  logger.info({ evt: "db.ensure", table: "user_identity_aliases" }, "Ensured user_identity_aliases table");
+}
+
 export async function ensureOnboardingProfilesTable(): Promise<void> {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS onboarding_profiles (
@@ -960,6 +995,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "routines_child_date_uq", run: ensureRoutinesChildDateUnique },
     { name: "parent_profiles", run: ensureParentProfilesTable },
     { name: "subscriptions", run: ensureSubscriptionsTable },
+    { name: "user_identity_aliases", run: ensureUserIdentityAliasesTable },
     { name: "onboarding_profiles", run: ensureOnboardingProfilesTable },
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },

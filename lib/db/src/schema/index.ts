@@ -118,5 +118,6 @@ export * from "./routine_personalization";
 export * from "./routine_feedback";
 export * from "./analytics_events";
 export * from "./billing_audit_events";
+export * from "./user_identity_aliases";
 export * from "./crash_intelligence";
 export * from "./validation_runs";

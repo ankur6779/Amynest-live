@@ -55,6 +55,7 @@ export async function requireAuth(
   try {
     const decoded = await adminAuth().verifyIdToken(token);
     const phoneNumber = (decoded.phone_number as string | undefined) ?? null;
+    const firebaseClaims = decoded.firebase as { sign_in_provider?: string } | undefined;
     req.firebaseAuth = {
       userId: decoded.uid,
       email: decoded.email ?? null,
@@ -62,6 +63,7 @@ export async function requireAuth(
       phoneNumber,
       name: (decoded.name as string | undefined) ?? null,
       picture: (decoded.picture as string | undefined) ?? null,
+      signInProvider: firebaseClaims?.sign_in_provider ?? null,
     };
 
     next();

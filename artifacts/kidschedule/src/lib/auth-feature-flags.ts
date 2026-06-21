@@ -13,10 +13,9 @@ export const ENABLE_FACEBOOK_SIGN_IN = true;
 export const ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN = true;
 /** Capacitor iOS Facebook Sign-In (Firebase OAuth). */
 export const ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN = true;
-export const ENABLE_PHONE_OTP = true;
+export const ENABLE_PHONE_OTP = false;
 
 export function shouldShowPhoneOtp(): boolean {
-  if (isCapacitorIos()) return false;
   return ENABLE_PHONE_OTP;
 }
 

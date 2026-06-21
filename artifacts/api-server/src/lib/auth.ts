@@ -12,6 +12,7 @@ export interface AuthPayload {
   phoneNumber: string | null;
   name: string | null;
   picture: string | null;
+  signInProvider?: string | null;
 }
 
 const EMPTY: AuthPayload = {
@@ -21,6 +22,7 @@ const EMPTY: AuthPayload = {
   phoneNumber: null,
   name: null,
   picture: null,
+  signInProvider: null,
 };
 
 declare global {
