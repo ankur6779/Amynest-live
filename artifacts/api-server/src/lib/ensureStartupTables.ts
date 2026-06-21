@@ -224,6 +224,37 @@ export async function ensureSubscriptionsTable(): Promise<void> {
   await db.execute(sql`
     ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS referral_rewards_granted INTEGER NOT NULL DEFAULT 0
   `);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS subscription_state TEXT NOT NULL DEFAULT 'FREE'`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS store TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS environment TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS revenuecat_app_user_id TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS original_app_user_id TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS product_id TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS entitlement_id TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS original_transaction_id TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS latest_transaction_id TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_event_type TEXT`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_event_at TIMESTAMPTZ`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS grace_period_expires_at TIMESTAMPTZ`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS auto_renew_status BOOLEAN`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS expired_at TIMESTAMPTZ`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_reconciled_at TIMESTAMPTZ`);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS sync_error TEXT`);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS subscriptions_provider_sub_idx
+      ON subscriptions (provider, provider_subscription_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS subscriptions_original_transaction_idx
+      ON subscriptions (original_transaction_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS subscriptions_state_period_idx
+      ON subscriptions (subscription_state, current_period_end)
+  `);
 
   logger.info({ evt: "db.ensure", table: "subscriptions" }, "Ensured subscriptions table");
 }
@@ -339,11 +370,76 @@ export async function ensureRevenuecatWebhookEventsTable(): Promise<void> {
     ALTER TABLE revenuecat_webhook_events
     ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ NOT NULL DEFAULT now()
   `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ
+  `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS processing_status TEXT NOT NULL DEFAULT 'pending'
+  `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS processing_error TEXT
+  `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ
+  `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS transaction_id TEXT
+  `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS original_transaction_id TEXT
+  `);
+  await db.execute(sql`
+    ALTER TABLE revenuecat_webhook_events ADD COLUMN IF NOT EXISTS environment TEXT
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS revenuecat_webhook_events_app_user_received_idx
+      ON revenuecat_webhook_events (app_user_id, received_at)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS revenuecat_webhook_events_processing_status_idx
+      ON revenuecat_webhook_events (processing_status, received_at)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS revenuecat_webhook_events_transaction_idx
+      ON revenuecat_webhook_events (transaction_id)
+  `);
 
   logger.info(
     { evt: "db.ensure", table: "revenuecat_webhook_events" },
     "Ensured revenuecat_webhook_events table exists",
   );
+}
+
+export async function ensureBillingAuditEventsTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS billing_audit_events (
+      id                SERIAL PRIMARY KEY,
+      user_id           TEXT,
+      provider          TEXT NOT NULL DEFAULT 'revenuecat',
+      source            TEXT NOT NULL,
+      event_name        TEXT NOT NULL,
+      status            TEXT NOT NULL DEFAULT 'ok',
+      provider_event_id TEXT,
+      from_state        TEXT,
+      to_state          TEXT,
+      reason            TEXT,
+      metadata          JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS billing_audit_events_user_created_idx
+      ON billing_audit_events (user_id, created_at)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS billing_audit_events_event_created_idx
+      ON billing_audit_events (event_name, created_at)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS billing_audit_events_provider_event_idx
+      ON billing_audit_events (provider, provider_event_id)
+  `);
+  logger.info({ evt: "db.ensure", table: "billing_audit_events" }, "Ensured billing_audit_events table");
 }
 
 /** Run all startup table ensures (non-throwing per step). */
@@ -868,6 +964,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },
     { name: "revenuecat_webhook_events", run: ensureRevenuecatWebhookEventsTable },
+    { name: "billing_audit_events", run: ensureBillingAuditEventsTable },
     { name: "phonics_curriculum", run: ensurePhonicsCurriculumTables },
     { name: "infant_care", run: ensureInfantCareTables },
     { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },
