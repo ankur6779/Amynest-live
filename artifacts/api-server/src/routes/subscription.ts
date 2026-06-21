@@ -208,9 +208,10 @@ router.post("/subscription/rc-recover", asyncRoute(async (req, res): Promise<voi
   const { reconcileRevenueCatAppUserIds } = await import("../services/subscriptionReconciliationService.js");
   const summary = await reconcileRevenueCatAppUserIds(appUserIds, "manual_recovery");
   const entitlements = await Promise.all(
-    appUserIds.map(async (appUserId: string) => ({
-      appUserId,
-      entitlements: await getEntitlements(appUserId),
+    summary.results.map(async (result) => ({
+      appUserId: result.appUserId,
+      appliedUserId: result.appliedUserId,
+      entitlements: await getEntitlements(result.appliedUserId),
     })),
   );
   res.json({ ok: summary.failed === 0, summary, entitlements });
