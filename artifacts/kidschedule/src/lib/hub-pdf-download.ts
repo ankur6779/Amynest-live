@@ -9,6 +9,20 @@ export type HubDownloadQuota = {
 export type HubDownloadQuotaPair = {
   dailyQuota?: HubDownloadQuota;
   lifetimeQuota?: HubDownloadQuota;
+  downloadWallet?: HubDownloadWallet;
+};
+
+export type HubDownloadWallet = {
+  enabled: boolean;
+  availableToday: number;
+  dailyAllocation: number;
+  dailyRefresh: number;
+  dailyUsed: number;
+  dailyRemaining: number;
+  bankedDownloads: number;
+  maxBank: number;
+  maxAvailable: number;
+  lastRefreshAt: string | null;
 };
 
 function parseIntHeader(res: Response, name: string): number | null {
@@ -26,6 +40,7 @@ export function parseHubQuotaHeaders(res: Response): HubDownloadQuotaPair {
   const lifetimeLimit = parseIntHeader(res, "X-Hub-Lifetime-Limit");
   const lifetimeUsed = parseIntHeader(res, "X-Hub-Lifetime-Used");
   const lifetimeRemaining = parseIntHeader(res, "X-Hub-Lifetime-Remaining");
+  const walletEnabled = res.headers.get("X-Hub-Download-Wallet-Enabled") === "1";
 
   const out: HubDownloadQuotaPair = {};
 
@@ -44,6 +59,21 @@ export function parseHubQuotaHeaders(res: Response): HubDownloadQuotaPair {
       limit: null,
       used: lifetimeUsed ?? 0,
       remaining: null,
+    };
+  }
+
+  if (walletEnabled) {
+    out.downloadWallet = {
+      enabled: true,
+      availableToday: parseIntHeader(res, "X-Hub-Download-Wallet-Available") ?? 0,
+      dailyAllocation: parseIntHeader(res, "X-Hub-Download-Wallet-Daily-Allocation") ?? 5,
+      dailyRefresh: parseIntHeader(res, "X-Hub-Download-Wallet-Daily-Refresh") ?? 5,
+      dailyUsed: parseIntHeader(res, "X-Hub-Download-Wallet-Daily-Used") ?? 0,
+      dailyRemaining: parseIntHeader(res, "X-Hub-Download-Wallet-Daily-Remaining") ?? 0,
+      bankedDownloads: parseIntHeader(res, "X-Hub-Download-Wallet-Banked") ?? 0,
+      maxBank: parseIntHeader(res, "X-Hub-Download-Wallet-Max-Bank") ?? 25,
+      maxAvailable: parseIntHeader(res, "X-Hub-Download-Wallet-Max-Available") ?? 30,
+      lastRefreshAt: res.headers.get("X-Hub-Download-Wallet-Last-Refresh-At") || null,
     };
   }
 

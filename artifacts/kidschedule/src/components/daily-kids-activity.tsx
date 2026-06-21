@@ -1931,8 +1931,8 @@ function RealOrigamiFoldStage({
   const handFrom = step.foldAction.handFrom;
   const handTo = step.foldAction.handTo;
   const hints = getOrigamiTeacherHints(step, animKey);
-  return <div className="w-full px-3">
-      <div className="mb-2 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2.5">
+  return <div className="w-full px-2.5">
+      <div className="mb-1.5 rounded-2xl border border-white/10 bg-white/[0.06] px-2.5 py-2">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Origami Teacher Pro</p>
@@ -1946,14 +1946,14 @@ function RealOrigamiFoldStage({
             {hints.zoom && <span className="rounded-full border border-cyan-200/25 bg-cyan-400/14 px-2.5 py-1 text-[10px] font-black text-cyan-100">🔍 Zoom Fold</span>}
           </div>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-1.5 text-xs">
-          <details className="group rounded-xl border border-emerald-200/20 bg-emerald-400/10 px-2.5 py-1.5 text-emerald-100">
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-xs">
+          <details className="group rounded-xl border border-emerald-200/20 bg-emerald-400/10 px-2 py-1 text-emerald-100">
             <summary className="cursor-pointer list-none font-black leading-snug [&::-webkit-details-marker]:hidden">
               ✓ Correct Fold
             </summary>
             <p className="mt-1 text-[11px] font-bold leading-snug text-emerald-50/78">{hints.expectedResult}</p>
           </details>
-          <details className="group rounded-xl border border-amber-200/20 bg-amber-400/10 px-2.5 py-1.5 text-amber-100">
+          <details className="group rounded-xl border border-amber-200/20 bg-amber-400/10 px-2 py-1 text-amber-100">
             <summary className="cursor-pointer list-none font-black leading-snug [&::-webkit-details-marker]:hidden">
               ⚠ Common Mistake
             </summary>
@@ -1962,33 +1962,33 @@ function RealOrigamiFoldStage({
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-2">
-        <div className="grid grid-cols-1 gap-2">
-        <div className="relative flex min-h-[58px] items-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 px-2.5 py-2">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-1.5">
+        <div className="grid grid-cols-1 gap-1.5">
+        <div className="relative flex min-h-[44px] items-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 px-2 py-1.5">
           <p className="w-20 shrink-0 text-[10px] font-black uppercase tracking-widest text-white/38">Previous</p>
           <OrigamiAssetImage
             src={previousAssetUrl}
             alt={`${step.beforeShape.label} illustration`}
-            className="ml-auto h-12 max-h-[160px] w-20 rounded-xl object-contain shadow-xl"
+            className="ml-auto h-9 max-h-[160px] w-16 rounded-xl object-contain shadow-xl"
             loading="lazy"
-            fallback={<div className="ml-auto flex h-12 w-20 items-center justify-center"><RealPaperStateSvg state={step.beforeShape} accent={accent} size={52} /></div>}
+            fallback={<div className="ml-auto flex h-9 w-16 items-center justify-center"><RealPaperStateSvg state={step.beforeShape} accent={accent} size={40} /></div>}
           />
-          <span className="absolute bottom-1.5 right-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white/45">1 / 3</span>
+          <span className="absolute bottom-1 right-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white/45">1 / 3</span>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-2.5 py-2">
-          <div className="mb-1 flex items-center justify-between">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-2 py-1.5">
+          <div className="mb-0.5 flex items-center justify-between">
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-200/80">Current Fold</p>
             <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white/45">2 / 3</span>
           </div>
-          <div className={`relative mx-auto h-[132px] max-h-[160px] w-full max-w-[230px] transition-transform duration-500 motion-reduce:transition-none ${hints.zoom ? "scale-[1.02]" : ""}`}>
+          <div className={`relative mx-auto h-[104px] max-h-[160px] w-full max-w-[210px] transition-transform duration-500 motion-reduce:transition-none ${hints.zoom ? "scale-[1.02]" : ""}`}>
             <OrigamiAssetImage
               src={assetUrl}
               alt={`${step.foldAction.label} illustrated fold`}
               className="absolute inset-0 h-full w-full rounded-2xl object-contain shadow-2xl"
               containerClassName="absolute inset-0"
               loading="eager"
-              fallback={<RealPaperStateSvg key={`fold-paper-${animKey}`} state={step.beforeShape} accent={accent} size={124} animated={isPlaying} activeRegionD={hints.activeRegionD} />}
+              fallback={<RealPaperStateSvg key={`fold-paper-${animKey}`} state={step.beforeShape} accent={accent} size={104} animated={isPlaying} activeRegionD={hints.activeRegionD} />}
             />
             <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
               {assetUrl && <path d={hints.activeRegionD} fill="rgba(251,191,36,.18)" stroke="hsl(var(--brand-amber-300))" strokeWidth="3" style={{ animation: "real-active-region 1100ms ease-in-out infinite" }} />}
@@ -2022,39 +2022,39 @@ function RealOrigamiFoldStage({
           </div>
         </div>
 
-        <div className="relative flex min-h-[76px] items-center gap-2 overflow-hidden rounded-2xl border border-emerald-200/20 bg-emerald-400/10 px-2.5 py-2">
+        <div className="relative flex min-h-[58px] items-center gap-2 overflow-hidden rounded-2xl border border-emerald-200/20 bg-emerald-400/10 px-2 py-1.5">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-100/72">Result Shape</p>
-            <p className="mt-1 line-clamp-2 text-[11px] font-bold leading-snug text-white/55">Does your paper look like this?</p>
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-bold leading-snug text-white/55">Does your paper look like this?</p>
           </div>
           <OrigamiAssetImage
             src={assetUrl}
             alt={`${step.afterShape.label} expected result`}
-            className="h-14 max-h-[160px] w-24 shrink-0 rounded-xl object-contain shadow-xl"
+            className="h-11 max-h-[160px] w-20 shrink-0 rounded-xl object-contain shadow-xl"
             loading="lazy"
-            fallback={<div className="flex h-14 w-24 shrink-0 justify-center"><RealPaperStateSvg state={step.afterShape} accent={accent} size={62} animated={isPlaying} /></div>}
+            fallback={<div className="flex h-11 w-20 shrink-0 justify-center"><RealPaperStateSvg state={step.afterShape} accent={accent} size={50} animated={isPlaying} /></div>}
           />
-          <span className="absolute bottom-1.5 right-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white/45">3 / 3</span>
+          <span className="absolute bottom-1 right-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white/45">3 / 3</span>
         </div>
         </div>
       </div>
 
-      <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.05] p-2.5 text-white">
+      <div className="mt-1.5 rounded-2xl border border-white/10 bg-white/[0.05] p-2 text-white">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Step Explanation</p>
-            <p className="line-clamp-2 text-sm font-black leading-snug">{hints.level1}</p>
+            <p className="line-clamp-2 text-[13px] font-black leading-snug">{hints.level1}</p>
           </div>
         </div>
-        <details className="mt-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1.5">
+        <details className="mt-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 py-1">
           <summary className="cursor-pointer list-none text-xs font-black text-white/62 [&::-webkit-details-marker]:hidden">More detail</summary>
           <p className="mt-1.5 text-xs font-semibold leading-relaxed text-white/62">{hints.level2}</p>
         </details>
-        <details className="mt-1.5 rounded-xl border border-cyan-200/15 bg-cyan-400/10 px-2.5 py-1.5">
+        <details className="mt-1 rounded-xl border border-cyan-200/15 bg-cyan-400/10 px-2 py-1">
           <summary className="cursor-pointer list-none text-xs font-black text-cyan-100 [&::-webkit-details-marker]:hidden">Parent explanation</summary>
           <p className="mt-1.5 text-xs font-semibold leading-relaxed text-white/62">{hints.parentExplanation}</p>
         </details>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2 hidden flex-wrap gap-1.5 sm:flex">
           {hints.skills.map(skill => <span key={skill} className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[10px] font-black text-white/65">{skill}</span>)}
         </div>
       </div>
@@ -2515,8 +2515,8 @@ function OrigamiStepsModal({
             <button onClick={handleClose} aria-label={t("components.daily_kids_activity.close_4")} className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
             {/* ── Top bar: title + step badge + progress ── */}
-            <div className="px-4 pt-3 pb-2 flex-shrink-0">
-              <div className="flex items-center justify-between mb-2">
+            <div className="flex-shrink-0 px-3 pb-1.5 pt-2">
+              <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40 truncate max-w-[55%]">
                   {item.title}
                 </span>
@@ -2561,7 +2561,7 @@ function OrigamiStepsModal({
             </div>
 
             {/* ── Animated fold stage ── */}
-            <div className="relative flex min-h-0 flex-1 flex-col items-center justify-start overflow-y-auto px-0 pb-20 pt-2" style={{
+            <div className="relative flex min-h-0 flex-1 flex-col items-center justify-start overflow-y-auto px-0 pb-[76px] pt-1" style={{
           background: "linear-gradient(180deg,#161628 0%,#0f0f18 100%)"
         }}>
               <RealOrigamiFoldStage
@@ -2620,12 +2620,12 @@ function OrigamiStepsModal({
               </div>
 
               {/* ── Instruction ── */}
-              <div className="w-full flex-shrink-0 px-3 pb-2 pt-2">
-              <div key={`inst-${animKey}`} className="mb-2 rounded-2xl border border-white/10 p-3" style={{
+              <div className="w-full flex-shrink-0 px-2.5 pb-1 pt-1.5">
+              <div key={`inst-${animKey}`} className="mb-1 rounded-2xl border border-white/10 p-2" style={{
             background: "rgba(255,255,255,0.05)",
             animation: "og-slide-up 220ms 120ms ease both"
           }}>
-                <p className="text-center text-sm font-semibold leading-snug text-white">
+                <p className="line-clamp-2 text-center text-[13px] font-semibold leading-snug text-white">
                   {cur.instruction}
                 </p>
               </div>
@@ -2649,17 +2649,17 @@ function OrigamiStepsModal({
               </a>
               </div>
 
-              <div className="sticky bottom-0 z-30 mx-auto w-full border-t border-white/10 bg-[#0f0f18]/95 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 shadow-[0_-16px_35px_rgba(0,0,0,0.35)] backdrop-blur sm:hidden">
+              <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full border-t border-white/10 bg-[#0f0f18]/95 px-3 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-1.5 shadow-[0_-16px_35px_rgba(0,0,0,0.35)] backdrop-blur sm:hidden">
                 <div className="mx-auto flex max-w-md items-center gap-2.5">
-                  <button onClick={goPrev} disabled={step === 0} className="min-h-12 flex-1 rounded-2xl border border-white/10 bg-white/[0.08] text-xs font-black text-white transition-all active:scale-95 disabled:opacity-30" aria-label={t("components.daily_kids_activity.previous_step")}>
+                  <button onClick={goPrev} disabled={step === 0} className="min-h-11 flex-1 rounded-2xl border border-white/10 bg-white/[0.08] text-xs font-black text-white transition-all active:scale-95 disabled:opacity-30" aria-label={t("components.daily_kids_activity.previous_step")}>
                     Previous
                   </button>
-                  <button onClick={() => setIsPlaying(p => !p)} aria-label={isPlaying ? "Pause" : "Play"} className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-black text-white shadow-lg transition-all active:scale-90" style={{
+                  <button onClick={() => setIsPlaying(p => !p)} aria-label={isPlaying ? "Pause" : "Play"} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-black text-white shadow-lg transition-all active:scale-90" style={{
               background: `linear-gradient(135deg,${item.accent},${item.accent}cc)`
             }}>
                     {isPlaying ? "⏸" : "▶"}
                   </button>
-                  <button onClick={goNext} className="min-h-12 flex-[1.35] rounded-2xl text-xs font-black text-white transition-all active:scale-95" style={{
+                  <button onClick={goNext} className="min-h-11 flex-[1.35] rounded-2xl text-xs font-black text-white transition-all active:scale-95" style={{
               background: step < total - 1 ? `linear-gradient(135deg,${item.accent},${item.accent}bb)` : "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-blue-500)))"
             }} aria-label={t("components.daily_kids_activity.next_step")}>
                     {step < total - 1 ? "Next Step" : "Finish"}

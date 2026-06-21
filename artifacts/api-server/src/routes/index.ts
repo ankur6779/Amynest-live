@@ -128,8 +128,6 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/reels", reelsRouter);
-router.use(driveRouter);
-router.use(worksheetsRouter);
 // Subscription router contains the public RevenueCat webhook endpoint
 // (authenticated by REVENUECAT_WEBHOOK_SECRET), so it must be mounted
 // BEFORE the global requireAuth gate. Authenticated subscription
@@ -177,6 +175,8 @@ router.use(remoteConfigRouter);
 router.use(speechCoachV2DebugRouter);
 router.use(openaiRealtimeInfraRouter);
 router.use(requireAuth);
+router.use(driveRouter);
+router.use(worksheetsRouter);
 router.use(devicesRouter);
 router.use(requireRegisteredDevice);
 router.use(staticAudioAuthRouter);

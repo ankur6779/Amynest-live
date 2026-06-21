@@ -126,7 +126,14 @@ export function PaywallModal() {
   const reason = (state.reason in PAYWALL_REASON_COPY
     ? state.reason
     : "feature") as AppPaywallReason;
-  const copy = resolvePaywallCopy(reason, childName);
+  const copy =
+    reason === "phonics_workbook"
+      ? {
+          title: "Unlock 15 Complete Phonics Workbook Sets",
+          subtitle:
+            "Get 150+ paid-subscriber worksheets for ages 3-7 covering vowels, blends, digraphs, sight words, and early reading confidence.",
+        }
+      : resolvePaywallCopy(reason, childName);
   const HeroIcon = REASON_ICONS[reason] ?? Sparkles;
   const selectedCta = planCta(selected);
 
@@ -259,12 +266,14 @@ export function PaywallModal() {
             <p className="text-white/70 text-sm max-w-md mx-auto">{copy.subtitle}</p>
           </div>
 
-          <div className="mb-4">
-            <SubscriptionTrialOffer
-              source="paywall_modal"
-              onActivated={closePaywall}
-            />
-          </div>
+          {reason !== "phonics_workbook" && (
+            <div className="mb-4">
+              <SubscriptionTrialOffer
+                source="paywall_modal"
+                onActivated={closePaywall}
+              />
+            </div>
+          )}
 
           <div className="grid gap-3 mb-5 grid-cols-1 sm:grid-cols-3 sm:items-end">
             {sortedPlans.map(p => {

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Subscription } from "@workspace/db";
-import { isPremiumNow } from "../subscription-premium-gate.js";
+import {
+  isPremiumNow,
+  isPremiumSubscriberNow,
+} from "../subscription-premium-gate.js";
 
 type SubRow = {
   status: string;
@@ -126,4 +129,66 @@ test("isPremiumNow rejects expired V2 state even with stale active status", () =
     ),
     false,
   );
+});
+
+test("isPremiumSubscriberNow accepts active paid provider period", () => {
+  assert.equal(
+    isPremiumSubscriberNow(
+      sub({
+        status: "active",
+        provider: "razorpay",
+        subscriptionState: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    true,
+  );
+});
+
+test("isPremiumSubscriberNow accepts cancelled paid period before expiry", () => {
+  assert.equal(
+    isPremiumSubscriberNow(
+      sub({
+        status: "active",
+        provider: "revenuecat",
+        subscriptionState: "CANCELLED",
+        expiresAt: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    true,
+  );
+});
+
+test("isPremiumSubscriberNow rejects trial, grace, bonus, and manual grants", () => {
+  const future = new Date(Date.now() + 86_400_000);
+  const blocked = [
+    sub({
+      status: "trialing",
+      provider: "revenuecat",
+      subscriptionState: "TRIAL",
+      trialEndsAt: future,
+    }),
+    sub({
+      status: "past_due",
+      provider: "revenuecat",
+      subscriptionState: "GRACE_PERIOD",
+      gracePeriodExpiresAt: future,
+    }),
+    sub({
+      status: "free",
+      provider: "none",
+      subscriptionState: "FREE",
+      bonusExpiresAt: future,
+    }),
+    sub({
+      status: "active",
+      provider: "manual",
+      subscriptionState: "FREE",
+      currentPeriodEnd: new Date("2099-12-31T23:59:59.000Z"),
+    }),
+  ];
+
+  for (const row of blocked) {
+    assert.equal(isPremiumSubscriberNow(row), false);
+  }
 });

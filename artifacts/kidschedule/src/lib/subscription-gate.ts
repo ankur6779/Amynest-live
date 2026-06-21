@@ -34,6 +34,10 @@ export function mapFeatureToPaywallReason(feature?: string): PaywallReason {
       return "behavior_locked";
     case "audio_lesson":
       return "audio_lessons";
+    case "kids_how_pdf":
+      return "hub_locked";
+    case "nutrition_pdf":
+      return "nutrition_library";
     case "infant_sleep_coach":
       return "infant_sleep_coach";
     case "infant_feeding_plan":

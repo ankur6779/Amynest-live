@@ -1478,8 +1478,9 @@ function PhonicsDownloadCard({
   const {
     t
   } = useTranslation();
-  const { isPremium } = useSubscription();
+  const { entitlements } = useSubscription();
   const { openPaywall } = usePaywall();
+  const canDownloadWorkbook = entitlements?.canDownloadPhonicsWorkbook === true;
   const numericChildId = typeof childId === "number" ? childId : Number.isFinite(Number(childId)) ? Number(childId) : null;
   const authFetch = useAuthFetch();
   const [downloading, setDownloading] = useState(false);
@@ -1513,7 +1514,7 @@ function PhonicsDownloadCard({
   }, [authFetch]);
   const handleDownloadClick = () => {
     if (downloading) return;
-    if (!isPremium) {
+    if (!canDownloadWorkbook) {
       openPaywall("phonics_workbook");
       return;
     }
@@ -1574,27 +1575,83 @@ function PhonicsDownloadCard({
     }
   };
 
+  const learningOutcomes = [
+    "Short vowels, blends, digraphs, and sight-word practice",
+    "Trace, read, circle, match, and sentence-building worksheets",
+    "Parent-friendly progression from early sounds to confident reading",
+  ];
+  const samplePages = [
+    { title: "Sample 1", body: "CVC word tracing and picture matching" },
+    { title: "Sample 2", body: "Blend practice with read-aloud prompts" },
+    { title: "Sample 3", body: "Digraph sorting and sentence completion" },
+  ];
+
   return <Card data-testid="phonics-download-card" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <span className="absolute top-3 right-3 z-10 text-xs bg-yellow-500 text-black px-2 py-1 rounded-md font-semibold">
-        Premium
+        Paid Premium
       </span>
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
-            <FileText className="h-5 w-5 text-primary dark:text-muted-foreground" />
+          <div className="w-14 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-orange-100 to-yellow-100 dark:from-orange-950/40 dark:to-yellow-950/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-orange-200/60 dark:ring-orange-800/40">
+            <div className="text-center">
+              <FileText className="mx-auto h-5 w-5 text-orange-600 dark:text-orange-300" />
+              <span className="mt-1 block text-[9px] font-black uppercase text-orange-700 dark:text-orange-200">Cover</span>
+            </div>
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">
-              {t("components.phonics_learning.phonics_mastery_printable_workbook")}
+              Unlock 15 Complete Phonics Workbook Sets
             </h3>
             <p className="text-xs text-muted-foreground">
-              {t("components.phonics_learning.15_sets_covering_short_vowels_blends_digraphs_more")}
+              150+ printable worksheets for ages 3-7, covering sounds, blends, digraphs, and early reading.
             </p>
           </div>
           {downloadCount !== null && downloadCount > 0 && <Badge data-testid="phonics-download-count" className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border font-bold text-[10px] shrink-0">
               {downloadCount}{t("components.phonics_learning.downloaded")}
             </Badge>}
         </div>
+
+        <div className="grid grid-cols-2 gap-2 mb-3 text-[11px]">
+          <div className="rounded-xl bg-orange-500/10 p-3">
+            <p className="font-black text-orange-700 dark:text-orange-200">Worksheet count</p>
+            <p className="text-muted-foreground">15 sets · 150+ worksheets</p>
+          </div>
+          <div className="rounded-xl bg-yellow-500/10 p-3">
+            <p className="font-black text-yellow-700 dark:text-yellow-200">Age coverage</p>
+            <p className="text-muted-foreground">Recommended for 3-7 years</p>
+          </div>
+        </div>
+
+        <div className="mb-3 rounded-2xl border border-border/60 bg-white/50 p-3 dark:bg-white/[0.03]">
+          <p className="text-[11px] font-black uppercase tracking-wide text-foreground">Learning outcomes</p>
+          <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+            {learningOutcomes.map((outcome) => (
+              <li key={outcome} className="flex gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-500" />
+                <span>{outcome}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {!canDownloadWorkbook && (
+          <div className="mb-3 rounded-2xl border border-dashed border-orange-300/70 bg-orange-500/5 p-3">
+            <p className="text-[11px] font-black uppercase tracking-wide text-orange-700 dark:text-orange-200">
+              Sample pages
+            </p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              {samplePages.map((sample) => (
+                <div key={sample.title} className="rounded-xl bg-background/70 p-3 text-center ring-1 ring-border/60">
+                  <p className="text-[10px] font-black text-foreground">{sample.title}</p>
+                  <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{sample.body}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              Full PDF preview and storage access are hidden until an active paid subscription is confirmed.
+            </p>
+          </div>
+        )}
 
         <button
           type="button"
@@ -1603,7 +1660,7 @@ function PhonicsDownloadCard({
           data-testid="phonics-download-button"
           className={cn(
             "w-full rounded-xl py-3 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-70",
-            isPremium
+            canDownloadWorkbook
               ? "bg-orange-500 hover:bg-orange-600"
               : "bg-gray-600 opacity-70",
           )}
@@ -1615,15 +1672,15 @@ function PhonicsDownloadCard({
             </>
           ) : (
             <>
-              {!isPremium ? <span aria-hidden>🔒</span> : <Download className="h-4 w-4" />}
-              {t("components.phonics_learning.download_pdf")}
+              {!canDownloadWorkbook ? <Lock className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+              {canDownloadWorkbook ? t("components.phonics_learning.download_pdf") : "Upgrade to unlock workbook"}
             </>
           )}
         </button>
 
-        {!isPremium && (
+        {!canDownloadWorkbook && (
           <p className="text-xs text-muted-foreground text-center mt-2">
-            {t("components.phonics_learning.available_with_premium")}
+            Paid subscription required. Free trials and temporary premium unlocks do not include workbook downloads.
           </p>
         )}
 

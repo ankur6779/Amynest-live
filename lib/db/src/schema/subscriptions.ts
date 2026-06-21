@@ -49,6 +49,9 @@ export const subscriptionsTable = pgTable(
     // Premium extension granted by the referral system. Independent from the
     // paid-period end so a paid renewal webhook never shrinks bonus time.
     bonusExpiresAt: timestamp("bonus_expires_at", { withTimezone: true }),
+    downloadBankBalance: integer("download_bank_balance").notNull().default(0),
+    dailyDownloadAllocation: integer("daily_download_allocation").notNull().default(5),
+    lastDownloadRefreshAt: timestamp("last_download_refresh_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

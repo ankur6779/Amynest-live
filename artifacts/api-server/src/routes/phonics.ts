@@ -46,6 +46,7 @@ import { generatePhonicsWordsCached } from "../lib/phonicsContentAi.js";
 import { PHONICS_CURRICULUM_LEVELS } from "@workspace/phonics-curriculum";
 import {
   getOrCreateSubscription,
+  isPremiumSubscriberNow,
   isPremiumNow,
 } from "../services/subscriptionService.js";
 import { getHubJourneyStatus } from "../services/parentHubJourneyService.js";
@@ -356,7 +357,7 @@ router.get("/phonics", async (req, res): Promise<void> => {
 const PHONICS_DOWNLOADABLE_FILES = {
   "phonics-mastery-15-sets": {
     fileName: "Phonics-Mastery-15-Sets.pdf",
-    publicBasename: "phonics-mastery-15-sets.pdf",
+    privateBasename: "phonics-mastery-15-sets.pdf",
   },
 } as const;
 type PhonicsDownloadableKey = keyof typeof PHONICS_DOWNLOADABLE_FILES;
@@ -368,13 +369,13 @@ function resolvePhonicsWorkbookPath(meta: (typeof PHONICS_DOWNLOADABLE_FILES)[Ph
   const cwd = process.cwd();
   const candidates = [
     // Production Docker (docker/backend/Dockerfile → /app/assets/)
-    path.join(cwd, "assets", meta.publicBasename),
-    // Monorepo root / full checkout
-    path.join(cwd, "artifacts", "kidschedule", "public", meta.publicBasename),
+    path.join(cwd, "assets", meta.privateBasename),
+    // Monorepo root / full checkout. Keep premium downloads outside the web
+    // public bundle so direct static URLs cannot bypass entitlements.
+    path.join(cwd, "artifacts", "api-server", "assets", meta.privateBasename),
     // pnpm --filter @workspace/api-server dev (cwd = artifacts/api-server)
-    path.join(cwd, "..", "kidschedule", "public", meta.publicBasename),
-    path.join(cwd, "public", meta.publicBasename),
-    path.join(cwd, meta.publicBasename),
+    path.join(cwd, "assets", meta.privateBasename),
+    path.join(cwd, "..", "api-server", "assets", meta.privateBasename),
   ];
   for (const candidate of candidates) {
     if (existsSync(candidate)) return candidate;
@@ -402,8 +403,8 @@ const WorkbookDownloadQuery = z.object({
 
 // ─── GET /api/phonics/workbook/download ──────────────────────────────────────
 //
-// Premium-only PDF download. Frontend must use this route — public static
-// URLs are not a security boundary.
+// Paid-subscriber-only PDF download. Trials, bonus/manual grants, grace
+// periods, and journey unlocks must never expose workbook files.
 
 router.get("/phonics/workbook/download", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -413,8 +414,12 @@ router.get("/phonics/workbook/download", async (req, res): Promise<void> => {
   }
 
   const sub = await getOrCreateSubscription(userId);
-  if (!isPremiumNow(sub)) {
-    res.status(403).json({ message: "Premium required" });
+  if (!isPremiumSubscriberNow(sub)) {
+    res.status(403).json({
+      error: "paid_subscription_required",
+      feature: "phonics_workbook",
+      message: "Phonics workbook downloads require an active paid subscription.",
+    });
     return;
   }
 
@@ -451,8 +456,12 @@ router.post("/phonics/downloads", infantExploreMutationGate(), async (req, res):
   }
 
   const sub = await getOrCreateSubscription(userId);
-  if (!isPremiumNow(sub)) {
-    res.status(403).json({ message: "Premium required" });
+  if (!isPremiumSubscriberNow(sub)) {
+    res.status(403).json({
+      error: "paid_subscription_required",
+      feature: "phonics_workbook",
+      message: "Phonics workbook download logging requires an active paid subscription.",
+    });
     return;
   }
 

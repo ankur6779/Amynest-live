@@ -11,6 +11,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   parseHubQuotaHeaders,
   savePdfFromResponse,
+  type HubDownloadWallet,
 } from "@/lib/hub-pdf-download";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -45,12 +46,14 @@ interface ListResponse {
   pagination: Pagination;
   dailyQuota: DailyQuota;
   lifetimeQuota?: LifetimeQuota;
+  downloadWallet?: HubDownloadWallet | null;
 }
 interface DownloadResponse {
   ok?: boolean;
   downloadUrl?: string;
   dailyQuota?: DailyQuota;
   lifetimeQuota?: LifetimeQuota;
+  downloadWallet?: HubDownloadWallet;
   error?: string;
 }
 
@@ -77,6 +80,7 @@ export function ColoringBooks({
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [quota, setQuota] = useState<DailyQuota | null>(null);
   const [lifetimeQuota, setLifetimeQuota] = useState<LifetimeQuota | null>(null);
+  const [downloadWallet, setDownloadWallet] = useState<HubDownloadWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState<ColoringFile | null>(null);
@@ -117,6 +121,7 @@ export function ColoringBooks({
       setPagination(data.pagination);
       setQuota(data.dailyQuota);
       setLifetimeQuota(data.lifetimeQuota ?? null);
+      setDownloadWallet(data.downloadWallet ?? null);
       // Server may have clamped the page (e.g. on last-page after a download).
       if (data.pagination.page !== targetPage) {
         setPage(data.pagination.page);
@@ -177,9 +182,12 @@ export function ColoringBooks({
         const data = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as DownloadResponse;
         if (res.status === 429) {
           if (data.dailyQuota) setQuota(data.dailyQuota);
+          if (data.downloadWallet) setDownloadWallet(data.downloadWallet);
           setRowError({
             id: file.id,
-            message: "Daily limit reached. Try again tomorrow."
+            message: data.downloadWallet
+              ? "Your download wallet is empty. You receive 5 new downloads tomorrow."
+              : "Daily limit reached. Try again tomorrow."
           });
         } else if (res.status === 402) {
           if (data.lifetimeQuota) setLifetimeQuota(data.lifetimeQuota);
@@ -213,6 +221,7 @@ export function ColoringBooks({
       const quotaHeaders = parseHubQuotaHeaders(res);
       if (quotaHeaders.dailyQuota) setQuota(quotaHeaders.dailyQuota);
       if (quotaHeaders.lifetimeQuota) setLifetimeQuota(quotaHeaders.lifetimeQuota);
+      if (quotaHeaders.downloadWallet) setDownloadWallet(quotaHeaders.downloadWallet);
       await fetchPage(page);
     } catch {
       setRowError({
@@ -253,6 +262,8 @@ export function ColoringBooks({
       lifetimeQuota.remaining <= 0);
   const allDone = pagination !== null && pagination.total === 0;
   return <div className="space-y-4" data-testid="coloring-books-section">
+      {downloadWallet?.enabled && <DownloadWalletCard wallet={downloadWallet} />}
+
       {/* Daily quota banner */}
       {quota && quota.limit !== null && <div data-testid="coloring-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
           <span className="flex items-center gap-2 font-semibold">
@@ -263,6 +274,8 @@ export function ColoringBooks({
                 : `Daily limit reached for ${childName}`
               : lifetimeQuota?.limit != null
                 ? `${quota.remaining} of ${quota.limit} today · ${lifetimeQuota.remaining} of ${lifetimeQuota.limit} lifetime left`
+                : downloadWallet?.enabled
+                  ? `You receive ${downloadWallet.dailyRefresh} new worksheet downloads every day`
                 : `${quota.remaining} of ${quota.limit} downloads left today`}
           </span>
           {quotaExhausted && quota.remaining !== null && quota.remaining <= 0 && (lifetimeQuota?.limit == null || (lifetimeQuota.remaining ?? 0) > 0) && <span className="text-xs opacity-80">{t("components.coloring_books.resets_at_midnight_ist")}</span>}
@@ -350,6 +363,45 @@ export function ColoringBooks({
         </DialogContent>
       </Dialog>
     </div>;
+}
+
+function DownloadWalletCard({ wallet }: { wallet: HubDownloadWallet }) {
+  return (
+    <Card className="rounded-2xl border border-primary/20 bg-primary/5">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-quicksand text-sm font-bold text-foreground">
+              Worksheet Downloads
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Unused downloads are saved automatically.
+            </p>
+          </div>
+          <Badge variant="outline" className="rounded-full">
+            Available Today: {wallet.availableToday}
+          </Badge>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+          <div className="rounded-xl bg-background/70 p-2">
+            <p className="text-muted-foreground">Daily Refresh</p>
+            <p className="font-bold">+{wallet.dailyRefresh}</p>
+          </div>
+          <div className="rounded-xl bg-background/70 p-2">
+            <p className="text-muted-foreground">Banked Downloads</p>
+            <p className="font-bold">{wallet.bankedDownloads}</p>
+          </div>
+          <div className="rounded-xl bg-background/70 p-2">
+            <p className="text-muted-foreground">Maximum Bank</p>
+            <p className="font-bold">{wallet.maxBank}</p>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Build your download bank up to {wallet.maxBank} worksheets.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ─── Sub-component: thumbnail with graceful fallback ─────────────────────────

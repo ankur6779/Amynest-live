@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trophy, Sparkles, Share2, Loader2 } from "lucide-react";
+import { Trophy, Sparkles, Share2, Loader2, Lock } from "lucide-react";
 import { getIsoWeekKey } from "@workspace/infant-hub";
 import { useInfantToday } from "@/hooks/use-infant-today";
 import { trackWeeklyReportViewed } from "@/lib/infant-hub-analytics";
@@ -15,6 +15,8 @@ import {
 import { InfantShareSheet } from "@/components/infant/infant-share-sheet";
 import { loadMilestoneProgress } from "@/lib/infant-milestone-progress";
 import { lookupMilestoneTitle } from "@/components/infant-milestones";
+import { useSubscription } from "@/hooks/use-subscription";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 type WeeklyProgressReportProps = {
   childId: number;
@@ -32,6 +34,7 @@ export function WeeklyProgressReport({
   const { t } = useTranslation();
   const { toast } = useToast();
   const { data } = useInfantToday(childId);
+  const { entitlements } = useSubscription();
   const weekKey = getIsoWeekKey();
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
@@ -88,6 +91,7 @@ export function WeeklyProgressReport({
   const showPreview =
     activation != null &&
     (activation.childAgeDays < 3 || activation.completedCount < 2);
+  const reportLocked = !entitlements?.canAccessWeeklyReports;
 
   return (
     <>
@@ -101,7 +105,29 @@ export function WeeklyProgressReport({
             {t("components.weekly_report.title", "This week's progress")}
           </p>
         </div>
-        {showPreview ? (
+        {reportLocked ? (
+          <div className="rounded-xl border border-dashed border-amber-400/30 bg-white/30 dark:bg-white/5 p-4 text-center space-y-3">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
+              <Lock className="h-4 w-4 text-amber-500" />
+            </div>
+            <p className="text-sm font-semibold text-foreground/90">
+              {t("components.weekly_report.premium_title", "Unlock weekly sleep and growth reports")}
+            </p>
+            <p className="text-[12px] text-muted-foreground leading-snug">
+              {t(
+                "components.weekly_report.premium_body",
+                "Get a weekly sleep score, milestone analytics, growth insights, and a shareable PDF-style summary.",
+              )}
+            </p>
+            <button
+              type="button"
+              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-bold text-white"
+              onClick={() => openSubscriptionGate({ reason: "premium_insight", source: "infant_weekly_report" })}
+            >
+              {t("components.weekly_report.unlock_cta", "Upgrade for weekly report")}
+            </button>
+          </div>
+        ) : showPreview ? (
           <div className="rounded-xl border border-dashed border-amber-400/30 bg-white/30 dark:bg-white/5 p-4 text-center space-y-2">
             <p className="text-sm font-semibold text-foreground/90">
               {t("components.weekly_report.preview_title", "Weekly Report Preview")}
@@ -141,7 +167,13 @@ export function WeeklyProgressReport({
           type="button"
           variant="default"
           disabled={shareBusy || showPreview}
-          onClick={() => void handleShareThisWeek()}
+          onClick={() => {
+            if (reportLocked) {
+              openSubscriptionGate({ reason: "premium_insight", source: "infant_weekly_report_share" });
+              return;
+            }
+            void handleShareThisWeek();
+          }}
           className="w-full rounded-xl gap-2 text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white border-0"
         >
           {shareBusy ? (

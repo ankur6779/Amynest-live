@@ -13,9 +13,15 @@ type KidsHowBookCardProps = {
   book: LearningBook;
   readHref: string;
   locked?: boolean;
+  previewEnabled?: boolean;
 };
 
-export function KidsHowBookCard({ book, readHref, locked = false }: KidsHowBookCardProps) {
+export function KidsHowBookCard({
+  book,
+  readHref,
+  locked = false,
+  previewEnabled = true,
+}: KidsHowBookCardProps) {
   const rootRef = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -52,7 +58,11 @@ export function KidsHowBookCard({ book, readHref, locked = false }: KidsHowBookC
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-amber-500/20 via-violet-500/15 to-cyan-500/10">
         {visible ? (
-          <KidsHowBookCoverPreview bookId={book.id} title={book.title} enabled={visible} />
+          <KidsHowBookCoverPreview
+            bookId={book.id}
+            title={book.title}
+            enabled={visible && previewEnabled && !locked}
+          />
         ) : (
           <div className="h-full w-full animate-pulse bg-white/5" />
         )}

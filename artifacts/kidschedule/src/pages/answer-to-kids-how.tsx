@@ -174,6 +174,7 @@ export default function AnswerToKidsHowPage() {
                   book={book}
                   readHref={`/answer-to-kids-how/read/${book.id}`}
                   locked={!canOpenKidsHowBook(book.id, userId, isPremium)}
+                  previewEnabled={isPremium}
                 />
               </li>
             ))}

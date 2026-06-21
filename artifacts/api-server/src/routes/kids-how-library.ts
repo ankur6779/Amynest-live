@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { applyFeatureGate } from "../middlewares/featureGate.js";
 import { getKidsHowLibraryEntry } from "../services/kidsHowLibraryCatalog.js";
 import {
   gcsObjectExists,
@@ -51,6 +52,12 @@ router.get("/kids-how-library/preview-url", async (req, res): Promise<void> => {
     res.status(503).json({ error: "storage_unavailable" });
     return;
   }
+
+  let allowed = false;
+  await applyFeatureGate(req, res, "kids_how_pdf", () => {
+    allowed = true;
+  });
+  if (!allowed) return;
 
   res.json({
     url,

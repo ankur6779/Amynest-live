@@ -3,6 +3,8 @@ import {
   subscriptionsTable,
   usageDailyTable,
   childrenTable,
+  childCaregiversTable,
+  onboardingProfilesTable,
   adminPremiumGrantsTable,
   type Subscription,
 } from "@workspace/db";
@@ -10,11 +12,16 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
   hasValidPaidPeriodEnd,
+  isPremiumSubscriberNow,
   isPremiumNow,
 } from "./subscription-premium-gate.js";
 import { UNLIMITED_DEVICES_EMAILS } from "./deviceLimitLogic.js";
 
-export { hasValidPaidPeriodEnd, isPremiumNow } from "./subscription-premium-gate.js";
+export {
+  hasValidPaidPeriodEnd,
+  isPremiumSubscriberNow,
+  isPremiumNow,
+} from "./subscription-premium-gate.js";
 
 /** Env-configurable infant Baby Expert daily limit (A/B testing). Default 3. */
 function resolveInfantAiDailyLimit(): number {
@@ -143,6 +150,7 @@ export const FREE_FEATURE_LIMITS = {
   // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
   nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
+  nutrition_pdf: 1,          // one Nutrition Library full-PDF access per lifetime
   // ── Learning hub AI load-more (1 free lifetime per section; premium 20/day) ─
   learning_load_more_smart_study: 1,
   learning_load_more_smart_math_tricks: 1,
@@ -150,6 +158,8 @@ export const FREE_FEATURE_LIMITS = {
   learning_load_more_spelling: 1,
   learning_load_more_phonics: 1,
   learning_load_more_life_skills: 1,
+  /** Curiosity library — full PDF books signed for reading (lifetime). */
+  kids_how_pdf: HUB_CONTENT_QUOTAS.kidsHowLifetimePdfs,
   // ── Infant Premium MVP ───────────────────────────────────────────────────
   infant_sleep_coach: 1,
   infant_feeding_plan: 1,
@@ -176,12 +186,14 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   speech_coach_v2_seconds: "daily",
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
+  nutrition_pdf: "lifetime",
   learning_load_more_smart_study: "lifetime",
   learning_load_more_smart_math_tricks: "lifetime",
   learning_load_more_olympiad: "lifetime",
   learning_load_more_spelling: "lifetime",
   learning_load_more_phonics: "lifetime",
   learning_load_more_life_skills: "lifetime",
+  kids_how_pdf: "lifetime",
   infant_sleep_coach: "lifetime",
   infant_feeding_plan: "lifetime",
 };
@@ -194,13 +206,30 @@ export type FeatureUsage = {
 };
 
 export type EntitlementSummary = {
+  ageMonths: number | null;
+  isInfant: boolean;
   plan: Plan;
   status: Status;
   isPremium: boolean;
+  isPremiumSubscriber: boolean;
+  isTrialActive: boolean;
+  trialDaysRemaining: number;
+  allPremiumAccess: boolean;
   isTrialing: boolean;
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  canAccessLearningHub: boolean;
+  canAccessActivitiesHub: boolean;
+  canAccessSpeechCoach: boolean;
+  canAccessNutritionHub: boolean;
+  canAccessHealthLab: boolean;
+  canAccessDownloads: boolean;
+  canDownloadPhonicsWorkbook: boolean;
+  babyExpertDailyLimit: number;
+  canAccessSleepCoach: boolean;
+  canAccessFeedingRoadmap: boolean;
+  canAccessWeeklyReports: boolean;
   /** Payment provider for the active subscription. Used by the client to
    *  decide whether server-side cancellation is possible (razorpay) or the
    *  user must cancel through their device's app store (revenuecat). */
@@ -250,6 +279,130 @@ export function speechTranscribeDailyLimit(isPremium: boolean): number {
   return Number.isFinite(n) && n > 0 ? n : 100;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const AGE_TRIAL_MIN_MONTHS = 24;
+
+type EntitlementChildContext = {
+  ageMonths: number | null;
+  firstChildCreatedAt: Date | null;
+  firstCaregiverCreatedAt: Date | null;
+};
+
+function totalChildAgeMonths(row: { age: number | null; ageMonths: number | null }): number {
+  return Math.max(0, (row.age ?? 0) * 12 + (row.ageMonths ?? 0));
+}
+
+function minDate(...dates: Array<Date | null | undefined>): Date | null {
+  const valid = dates.filter((d): d is Date => d instanceof Date);
+  if (valid.length === 0) return null;
+  return new Date(Math.min(...valid.map((d) => d.getTime())));
+}
+
+function trialDaysRemaining(trialEndsAt: Date | null | undefined, now = new Date()): number {
+  if (!trialEndsAt) return 0;
+  return Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / DAY_MS));
+}
+
+async function getEntitlementChildContext(userId: string): Promise<EntitlementChildContext> {
+  const owned = await db
+    .select({
+      age: childrenTable.age,
+      ageMonths: childrenTable.ageMonths,
+      createdAt: childrenTable.createdAt,
+    })
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, userId))
+    .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
+
+  const caregiver = await db
+    .select({
+      age: childrenTable.age,
+      ageMonths: childrenTable.ageMonths,
+      childCreatedAt: childrenTable.createdAt,
+      caregiverCreatedAt: childCaregiversTable.createdAt,
+    })
+    .from(childCaregiversTable)
+    .innerJoin(childrenTable, eq(childrenTable.id, childCaregiversTable.childId))
+    .where(
+      and(
+        eq(childCaregiversTable.userId, userId),
+        eq(childCaregiversTable.status, "active"),
+      ),
+    )
+    .orderBy(asc(childCaregiversTable.createdAt), asc(childrenTable.createdAt), asc(childrenTable.id));
+
+  const children = [
+    ...owned.map((row) => ({
+      ageMonths: totalChildAgeMonths(row),
+      relationCreatedAt: row.createdAt,
+      childCreatedAt: row.createdAt,
+    })),
+    ...caregiver.map((row) => ({
+      ageMonths: totalChildAgeMonths(row),
+      relationCreatedAt: row.caregiverCreatedAt,
+      childCreatedAt: row.childCreatedAt,
+    })),
+  ].sort((a, b) => {
+    const byRelation = a.relationCreatedAt.getTime() - b.relationCreatedAt.getTime();
+    return byRelation !== 0 ? byRelation : a.childCreatedAt.getTime() - b.childCreatedAt.getTime();
+  });
+
+  const first = children[0];
+  return {
+    ageMonths: first?.ageMonths ?? null,
+    firstChildCreatedAt: first?.childCreatedAt ?? null,
+    firstCaregiverCreatedAt: first?.relationCreatedAt ?? null,
+  };
+}
+
+async function getAccountCreatedAt(
+  userId: string,
+  sub: Subscription,
+  childContext: EntitlementChildContext,
+): Promise<Date> {
+  const onboarding = await db
+    .select({ createdAt: onboardingProfilesTable.createdAt })
+    .from(onboardingProfilesTable)
+    .where(eq(onboardingProfilesTable.userId, userId))
+    .limit(1);
+
+  return minDate(
+    sub.createdAt,
+    onboarding[0]?.createdAt,
+    childContext.firstCaregiverCreatedAt,
+    childContext.firstChildCreatedAt,
+  ) ?? sub.createdAt ?? new Date();
+}
+
+async function maybeApplyAutomaticAgeTrial(
+  userId: string,
+  sub: Subscription,
+  dbExec: DbExec,
+): Promise<Subscription> {
+  if (sub.status !== "free") return sub;
+
+  const childContext = await getEntitlementChildContext(userId);
+  if ((childContext.ageMonths ?? 0) < AGE_TRIAL_MIN_MONTHS) return sub;
+
+  const trialStart = await getAccountCreatedAt(userId, sub, childContext);
+  const trialEnd = new Date(trialStart.getTime() + FREE_LIMITS.trialDays * DAY_MS);
+  if (trialEnd.getTime() <= Date.now()) return sub;
+
+  const [updated] = await dbExec
+    .update(subscriptionsTable)
+    .set({
+      status: "trialing",
+      plan: "monthly",
+      subscriptionState: "TRIAL",
+      trialEndsAt: trialEnd,
+      currentPeriodEnd: trialEnd,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptionsTable.userId, userId))
+    .returning();
+  return updated ?? sub;
+}
+
 export async function getOrCreateSubscription(
   userId: string,
   dbExec: DbExec = db,
@@ -263,18 +416,20 @@ export async function getOrCreateSubscription(
   if (existing[0]) {
     // Opportunistically save phone number if not yet stored.
     if (phoneNumber && !existing[0].phoneNumber) {
-      await dbExec
+      const [updated] = await dbExec
         .update(subscriptionsTable)
         .set({ phoneNumber, updatedAt: new Date() })
-        .where(eq(subscriptionsTable.userId, userId));
+        .where(eq(subscriptionsTable.userId, userId))
+        .returning();
+      return maybeApplyAutomaticAgeTrial(userId, updated ?? existing[0], dbExec);
     }
-    return existing[0];
+    return maybeApplyAutomaticAgeTrial(userId, existing[0], dbExec);
   }
   const [created] = await dbExec
     .insert(subscriptionsTable)
     .values({ userId, plan: "free", status: "free", provider: "none", phoneNumber: phoneNumber ?? null })
     .returning();
-  return created;
+  return maybeApplyAutomaticAgeTrial(userId, created, dbExec);
 }
 
 /**
@@ -450,7 +605,13 @@ export async function getEntitlements(
   let sub = await getOrCreateSubscription(userId);
   sub = await healStaleSubscriptionRecord(sub);
   const isPremium = isPremiumNow(sub);
+  const isPremiumSubscriber = isPremiumSubscriberNow(sub);
   const isTrialing = sub.status === "trialing" && !!sub.trialEndsAt && sub.trialEndsAt.getTime() > Date.now();
+  const childContext = await getEntitlementChildContext(userId);
+  const ageMonths = childContext.ageMonths;
+  const isInfant = ageMonths != null && ageMonths < AGE_TRIAL_MIN_MONTHS;
+  const isTrialActive = isTrialing;
+  const remainingTrialDays = trialDaysRemaining(sub.trialEndsAt);
 
   const otherKeys = featureKeys.filter((k) => k !== "routine_generate");
   const { getRoutineGenerateEntitlement } = await import(
@@ -484,14 +645,38 @@ export async function getEntitlements(
   }
 
   return {
+    ageMonths,
+    isInfant,
     plan: sub.plan as Plan,
     status: sub.status as Status,
     isPremium,
+    isPremiumSubscriber,
+    isTrialActive,
+    trialDaysRemaining: remainingTrialDays,
+    allPremiumAccess: isPremium,
     isTrialing,
     trialEndsAt: sub.trialEndsAt ? sub.trialEndsAt.toISOString() : null,
     currentPeriodEnd: sub.currentPeriodEnd ? sub.currentPeriodEnd.toISOString() : null,
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
     provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
+    canAccessLearningHub: isPremium || !features.learning_load_more_smart_study.locked,
+    canAccessActivitiesHub: isPremium,
+    canAccessSpeechCoach: isPremium || !features.hub_speech_session.locked,
+    canAccessNutritionHub:
+      isPremium ||
+      !features.nutrition_week_plan.locked ||
+      !features.nutrition_family_ai.locked,
+    canAccessHealthLab: isPremium,
+    canAccessDownloads: isPremium,
+    canDownloadPhonicsWorkbook: isPremiumSubscriber,
+    babyExpertDailyLimit: FREE_LIMITS.infantAiQueriesPerDay,
+    canAccessSleepCoach:
+      isPremium ||
+      (isInfant && !features.infant_sleep_coach.locked),
+    canAccessFeedingRoadmap:
+      isPremium ||
+      (isInfant && (ageMonths ?? 0) >= 6 && !features.infant_feeding_plan.locked),
+    canAccessWeeklyReports: isPremium,
     limits: {
       ...FREE_LIMITS,
       childrenMax: resolveChildrenMax(isPremium, email),

@@ -8,6 +8,7 @@ import { OAuthRedirectHandler } from "@/components/oauth-redirect-handler";
 import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useLearningSyncBootstrap } from "@/hooks/use-learning-sync";
+import { useSubscription, type Entitlements } from "@/hooks/use-subscription";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
@@ -73,6 +74,7 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
 import { markAppCoreReady } from "@/lib/startup-orchestrator";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. Suspense fallbacks use the premium splash.
@@ -343,6 +345,106 @@ function isChildOptionalRoute(path: string): boolean {
   );
 }
 
+type PremiumRouteMeta = {
+  route: string;
+  title: string;
+  accessKey: keyof Pick<
+    Entitlements,
+    | "canAccessLearningHub"
+    | "canAccessActivitiesHub"
+    | "canAccessSpeechCoach"
+    | "canAccessNutritionHub"
+    | "canAccessHealthLab"
+    | "canAccessDownloads"
+  >;
+  preview: string;
+  benefits: string[];
+  source: string;
+};
+
+const PREMIUM_ROUTE_METADATA: PremiumRouteMeta[] = [
+  {
+    route: "/phonics",
+    title: "Phonics Premium",
+    accessKey: "canAccessDownloads",
+    preview: "Preview structured phonics practice and unlock the premium workbook through the secure download route.",
+    benefits: ["Full workbook access", "Download protection", "Premium phonics progression"],
+    source: "route_phonics",
+  },
+  {
+    route: "/nutrition",
+    title: "Nutrition Premium",
+    accessKey: "canAccessNutritionHub",
+    preview: "Try basic nutrition tools, then unlock meal planning, family portions, and nutrition library PDFs.",
+    benefits: ["Weekly AI meal plans", "Family portion intelligence", "Premium nutrition library"],
+    source: "route_nutrition",
+  },
+  {
+    route: "/speech-coach",
+    title: "Speech Premium",
+    accessKey: "canAccessSpeechCoach",
+    preview: "Use the free speech samples, then unlock the full coaching path and practice library.",
+    benefits: ["More practice sessions", "Conversation coaching", "Speech progress guidance"],
+    source: "route_speech_coach",
+  },
+  {
+    route: "/health-lab",
+    title: "Health Lab Premium",
+    accessKey: "canAccessHealthLab",
+    preview: "Preview the child wellness insights available in Health Lab.",
+    benefits: ["Health insights", "Progress reports", "Premium wellness guidance"],
+    source: "route_health_lab",
+  },
+  {
+    route: "/study",
+    title: "Learning Premium",
+    accessKey: "canAccessLearningHub",
+    preview: "Preview learning cards and unlock deeper personalized study support.",
+    benefits: ["More learning content", "Premium study guidance", "Downloadable resources"],
+    source: "route_learning_study",
+  },
+  {
+    route: "/smart-math-tricks",
+    title: "Learning Premium",
+    accessKey: "canAccessLearningHub",
+    preview: "Preview smart math tricks and unlock the complete learning path.",
+    benefits: ["Premium math tricks", "More examples", "Personalized learning expansion"],
+    source: "route_learning_math",
+  },
+];
+
+function getPremiumRouteMeta(path: string): PremiumRouteMeta | null {
+  const exact = PREMIUM_ROUTE_METADATA.find((meta) => path === meta.route);
+  if (exact) return exact;
+  return PREMIUM_ROUTE_METADATA.find((meta) => path.startsWith(`${meta.route}/`)) ?? null;
+}
+
+function PremiumRoutePreview({ meta }: { meta: PremiumRouteMeta }) {
+  return (
+    <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-6 py-10 text-center">
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_-40px_rgba(124,58,237,0.75)]">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-300">Premium preview</p>
+        <h1 className="mt-3 text-2xl font-black text-foreground">{meta.title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{meta.preview}</p>
+        <ul className="mt-5 space-y-2 text-left text-sm text-muted-foreground">
+          {meta.benefits.map((benefit) => (
+            <li key={benefit} className="rounded-2xl bg-white/[0.04] px-4 py-3">
+              {benefit}
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          className="mt-6 min-h-11 w-full rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/25"
+          onClick={() => openSubscriptionGate({ reason: "feature", source: meta.source })}
+        >
+          Upgrade to unlock
+        </button>
+      </div>
+    </main>
+  );
+}
+
 function ProtectedRoute({
   component: Component,
   routeLabel,
@@ -375,6 +477,8 @@ function ProtectedRoute({
   const deviceBlocked =
     deviceStatus === "blocked" && !location.startsWith("/manage-devices");
   const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
+  const { entitlements, loading: subscriptionLoading } = useSubscription();
+  const premiumRoute = getPremiumRouteMeta(location);
 
   // Hard guard: never decide signed-in / signed-out until Firebase has
   // resolved. Without this gate, a signed-in user with a slow auth resolve
@@ -401,6 +505,18 @@ function ProtectedRoute({
     !isChildOptionalRoute(location)
   ) {
     return <Redirect to="/onboarding" />;
+  }
+  if (premiumRoute) {
+    if (subscriptionLoading || !entitlements) return <RouteLoadingShell />;
+    if (!entitlements[premiumRoute.accessKey]) {
+      return (
+        <AppErrorBoundary label="Layout">
+          <Layout>
+            <PremiumRoutePreview meta={premiumRoute} />
+          </Layout>
+        </AppErrorBoundary>
+      );
+    }
   }
   return (
     <AppErrorBoundary label="Layout">

@@ -20,6 +20,12 @@ import {
   isPremiumNow,
 } from "../services/subscriptionService.js";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
+import {
+  getPremiumDownloadWallet,
+  refundPremiumDownloadBankDebit,
+  reservePremiumDownload,
+  type PremiumDownloadWallet,
+} from "../services/premiumDownloadBankService.js";
 
 const router: IRouter = Router();
 
@@ -239,7 +245,8 @@ router.get("/coloring/list", async (req, res): Promise<void> => {
     const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
     const sub = await getOrCreateSubscription(userId);
     const premium = isPremiumNow(sub);
-    const dailyLimit = dailyLimitFor(premium);
+    const downloadWallet = await getPremiumDownloadWallet(userId);
+    const dailyLimit = downloadWallet.enabled ? downloadWallet.maxAvailable : dailyLimitFor(premium);
 
     res.json({
       ok: true,
@@ -254,8 +261,10 @@ router.get("/coloring/list", async (req, res): Promise<void> => {
       },
       dailyQuota: {
         limit: dailyLimit,
-        used,
-        remaining: Math.max(0, dailyLimit - used),
+        used: downloadWallet.enabled ? downloadWallet.dailyUsed : used,
+        remaining: downloadWallet.enabled
+          ? downloadWallet.availableToday
+          : Math.max(0, dailyLimit - used),
       },
       lifetimeQuota: premium
         ? { limit: null, used: lifetimeUsed, remaining: null }
@@ -264,6 +273,7 @@ router.get("/coloring/list", async (req, res): Promise<void> => {
             used: lifetimeUsed,
             remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsed),
           },
+      downloadWallet: downloadWallet.enabled ? downloadWallet : null,
     });
   } catch (err) {
     logger.error(
@@ -322,22 +332,28 @@ router.post("/coloring/download", infantExploreMutationGate(), async (req, res):
 
     const sub = await getOrCreateSubscription(userId);
     const premium = isPremiumNow(sub);
-    const dailyLimit = dailyLimitFor(premium);
+    const downloadWallet = await getPremiumDownloadWallet(userId);
+    const paidWalletEnabled = downloadWallet.enabled;
+    const dailyLimit = paidWalletEnabled ? downloadWallet.maxAvailable : dailyLimitFor(premium);
     const used = await getDailyDownloadCount(userId, childId);
     const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
 
     const buildQuotaHeaders = (
       dailyUsed: number,
       lifetimeUsedCount: number,
+      wallet?: PremiumDownloadWallet | null,
     ): HubQuotaHeaders => ({
       dailyLimit,
-      dailyUsed,
-      dailyRemaining: Math.max(0, dailyLimit - dailyUsed),
+      dailyUsed: wallet?.enabled ? wallet.dailyUsed : dailyUsed,
+      dailyRemaining: wallet?.enabled
+        ? wallet.availableToday
+        : Math.max(0, dailyLimit - dailyUsed),
       lifetimeLimit: premium ? null : LIFETIME_LIMIT,
       lifetimeUsed: lifetimeUsedCount,
       lifetimeRemaining: premium
         ? null
         : Math.max(0, LIFETIME_LIMIT - lifetimeUsedCount),
+      downloadWallet: wallet?.enabled ? wallet : undefined,
     });
 
     const [existing] = await db
@@ -354,7 +370,7 @@ router.post("/coloring/download", infantExploreMutationGate(), async (req, res):
 
     // Re-download: stream again without consuming quota.
     if (existing) {
-      setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
+      setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed, downloadWallet));
       const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
       if (!streamed && !res.headersSent) {
         res.status(502).json({ error: "stream_failed" });
@@ -374,7 +390,25 @@ router.post("/coloring/download", infantExploreMutationGate(), async (req, res):
       return;
     }
 
-    if (used >= dailyLimit) {
+    let premiumReservation:
+      | Awaited<ReturnType<typeof reservePremiumDownload>>
+      | null = null;
+
+    if (paidWalletEnabled) {
+      premiumReservation = await reservePremiumDownload(userId);
+      if (!premiumReservation.ok) {
+        res.status(429).json({
+          error: "daily_limit_reached",
+          dailyQuota: {
+            limit: premiumReservation.wallet.maxAvailable,
+            used: premiumReservation.wallet.dailyUsed,
+            remaining: premiumReservation.wallet.availableToday,
+          },
+          downloadWallet: premiumReservation.wallet,
+        });
+        return;
+      }
+    } else if (used >= dailyLimit) {
       res.status(429).json({
         error: "daily_limit_reached",
         dailyQuota: { limit: dailyLimit, used, remaining: 0 },
@@ -411,7 +445,11 @@ router.post("/coloring/download", infantExploreMutationGate(), async (req, res):
     const lifetimeUsedAfter = lifetimeUsed + 1;
     setHubQuotaHeaders(
       res,
-      buildQuotaHeaders(dailyUsedAfter, lifetimeUsedAfter),
+      buildQuotaHeaders(
+        dailyUsedAfter,
+        lifetimeUsedAfter,
+        premiumReservation?.ok ? premiumReservation.wallet : downloadWallet,
+      ),
     );
 
     const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
@@ -420,6 +458,9 @@ router.post("/coloring/download", infantExploreMutationGate(), async (req, res):
         await db
           .delete(coloringDownloadsTable)
           .where(eq(coloringDownloadsTable.id, insertedId));
+      }
+      if (premiumReservation?.ok && premiumReservation.source === "bank") {
+        await refundPremiumDownloadBankDebit(userId);
       }
       if (!res.headersSent) {
         res.status(502).json({ error: "stream_failed" });

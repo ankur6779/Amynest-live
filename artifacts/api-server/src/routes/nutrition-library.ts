@@ -8,10 +8,7 @@ import {
   nutritionLibraryGcsCandidates,
   type NutritionLibraryBook,
 } from "../services/nutritionLibraryCatalog.js";
-import {
-  getOrCreateSubscription,
-  isPremiumNow,
-} from "../services/subscriptionService.js";
+import { applyFeatureGate } from "../middlewares/featureGate.js";
 import {
   gcsObjectExists,
   getGcsSignedReadUrl,
@@ -112,6 +109,12 @@ router.get("/nutrition-library/preview-url", async (req, res): Promise<void> => 
     return;
   }
 
+  let allowed = false;
+  await applyFeatureGate(req, res, "nutrition_pdf", () => {
+    allowed = true;
+  });
+  if (!allowed) return;
+
   const url = await getGcsSignedReadUrl(objectName, PREVIEW_TTL_MS);
   if (!url) {
     res.status(503).json({ error: "storage_unavailable" });
@@ -135,15 +138,6 @@ router.get("/nutrition-library/download", async (req, res): Promise<void> => {
     return;
   }
 
-  const sub = await getOrCreateSubscription(userId);
-  if (!isPremiumNow(sub)) {
-    res.status(403).json({
-      error: "premium_required",
-      message: "Nutrition Library downloads are available for Premium Families.",
-    });
-    return;
-  }
-
   const parsed = FileQuery.safeParse({ file: req.query.file });
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
@@ -161,6 +155,12 @@ router.get("/nutrition-library/download", async (req, res): Promise<void> => {
     res.status(404).json({ error: "file_not_found" });
     return;
   }
+
+  let allowed = false;
+  await applyFeatureGate(req, res, "nutrition_pdf", () => {
+    allowed = true;
+  });
+  if (!allowed) return;
 
   const url = await getGcsSignedReadUrl(objectName, DOWNLOAD_TTL_MS);
   if (!url) {

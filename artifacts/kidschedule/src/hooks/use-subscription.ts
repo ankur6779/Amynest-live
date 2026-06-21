@@ -15,13 +15,30 @@ export type Plan = "free" | "monthly" | "six_month" | "yearly";
 export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
 
 export type Entitlements = {
+  ageMonths: number | null;
+  isInfant: boolean;
   plan: Plan;
   status: Status;
   isPremium: boolean;
+  isPremiumSubscriber: boolean;
+  isTrialActive: boolean;
+  trialDaysRemaining: number;
+  allPremiumAccess: boolean;
   isTrialing: boolean;
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  canAccessLearningHub: boolean;
+  canAccessActivitiesHub: boolean;
+  canAccessSpeechCoach: boolean;
+  canAccessNutritionHub: boolean;
+  canAccessHealthLab: boolean;
+  canAccessDownloads: boolean;
+  canDownloadPhonicsWorkbook: boolean;
+  babyExpertDailyLimit: number;
+  canAccessSleepCoach: boolean;
+  canAccessFeedingRoadmap: boolean;
+  canAccessWeeklyReports: boolean;
   /** Payment provider — determines how cancellation works. */
   provider: "none" | "manual" | "razorpay" | "revenuecat";
   limits: {
@@ -41,7 +58,29 @@ export type Entitlements = {
     // Global Paywall: per-feature lifetime usage. Optional for backwards
     // compatibility with cached responses from older clients.
     features?: Record<
-      "ai_query" | "routine_generate" | "behavior_log",
+      | "ai_query"
+      | "infant_ai_query"
+      | "routine_generate"
+      | "behavior_log"
+      | "audio_lesson"
+      | "tts_generation"
+      | "hub_speech_session"
+      | "hub_speech_coach"
+      | "speech_conversation_seconds"
+      | "speech_transcribe"
+      | "speech_coach_v2_seconds"
+      | "nutrition_week_plan"
+      | "nutrition_family_ai"
+      | "nutrition_pdf"
+      | "learning_load_more_smart_study"
+      | "learning_load_more_smart_math_tricks"
+      | "learning_load_more_olympiad"
+      | "learning_load_more_spelling"
+      | "learning_load_more_phonics"
+      | "learning_load_more_life_skills"
+      | "kids_how_pdf"
+      | "infant_sleep_coach"
+      | "infant_feeding_plan",
       { used: number; remaining: number | null; limit: number; locked: boolean }
     >;
   };

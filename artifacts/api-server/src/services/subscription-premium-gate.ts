@@ -6,6 +6,28 @@ export function hasValidPaidPeriodEnd(s: Subscription): boolean {
 }
 
 /**
+ * Strict paid-subscriber check for assets that must not unlock via trials,
+ * bonus grants, grace periods, journey access, or manual/promotional grants.
+ */
+export function isPremiumSubscriberNow(s: Subscription): boolean {
+  const paidProvider = ["razorpay", "revenuecat", "stripe"].includes(s.provider ?? "");
+  if (!paidProvider) return false;
+
+  if (s.subscriptionState === "TRIAL" || s.subscriptionState === "GRACE_PERIOD") {
+    return false;
+  }
+
+  const paidStateActive =
+    s.subscriptionState === "ACTIVE" ||
+    s.subscriptionState === "CANCELLED" ||
+    s.status === "active";
+  if (!paidStateActive) return false;
+
+  const paidUntil = s.currentPeriodEnd ?? s.expiresAt;
+  return Boolean(paidUntil && paidUntil.getTime() > Date.now());
+}
+
+/**
  * Server-side premium check. Requires a time-bound entitlement — never treats
  * bare `status === "active"` without `currentPeriodEnd` (or bonus/trial) as premium.
  */

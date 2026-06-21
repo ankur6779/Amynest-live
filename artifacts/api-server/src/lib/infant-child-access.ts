@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, childrenTable, childCaregiversTable } from "@workspace/db";
 import { isInfantAgeMonths, parseChildIdFromBody, totalAgeMonths } from "./infant-age.js";
 import { canAccessChild } from "./child-access.js";
@@ -25,16 +25,29 @@ export async function resolveInfantAiQuotaFromDb(
 
 /** True when the user cares for at least one child under 24 months. */
 export async function userHasInfantChild(userId: string): Promise<boolean> {
-  const rows = await db
+  const owned = await db
     .select({
       age: childrenTable.age,
       ageMonths: childrenTable.ageMonths,
     })
     .from(childrenTable)
-    .innerJoin(childCaregiversTable, eq(childCaregiversTable.childId, childrenTable.id))
-    .where(eq(childCaregiversTable.userId, userId));
+    .where(eq(childrenTable.userId, userId));
 
-  return rows.some((row) =>
+  const shared = await db
+    .select({
+      age: childrenTable.age,
+      ageMonths: childrenTable.ageMonths,
+    })
+    .from(childCaregiversTable)
+    .innerJoin(childrenTable, eq(childCaregiversTable.childId, childrenTable.id))
+    .where(
+      and(
+        eq(childCaregiversTable.userId, userId),
+        eq(childCaregiversTable.status, "active"),
+      ),
+    );
+
+  return [...owned, ...shared].some((row) =>
     isInfantAgeMonths(totalAgeMonths(row.age ?? 0, row.ageMonths ?? 0)),
   );
 }

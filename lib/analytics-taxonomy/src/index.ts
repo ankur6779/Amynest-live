@@ -94,6 +94,26 @@ const EVENT_PROP_SCHEMAS = {
   premium_cta_clicked: z.object({
     source: z.string().max(64).optional(),
   }),
+  premium_download_bank_refreshed: z.object({
+    downloads_used_today: z.number().int().nonnegative().optional(),
+    downloads_banked: z.number().int().nonnegative().optional(),
+    average_bank_balance: z.number().nonnegative().optional(),
+    bank_usage_rate: z.number().nonnegative().optional(),
+    available_downloads: z.number().int().nonnegative().optional(),
+    daily_download_allocation: z.number().int().positive().optional(),
+    days_until_first_bank_use: z.number().int().nonnegative().nullable().optional(),
+    source: z.string().max(64).optional(),
+  }),
+  premium_download_bank_used: z.object({
+    downloads_used_today: z.number().int().nonnegative().optional(),
+    downloads_banked: z.number().int().nonnegative().optional(),
+    average_bank_balance: z.number().nonnegative().optional(),
+    bank_usage_rate: z.number().nonnegative().optional(),
+    available_downloads: z.number().int().nonnegative().optional(),
+    daily_download_allocation: z.number().int().positive().optional(),
+    days_until_first_bank_use: z.number().int().nonnegative().nullable().optional(),
+    debit_source: z.enum(["daily", "bank"]).optional(),
+  }),
 
   // ── device limits ──────────────────────────────────────────────────────
   device_registered: z.object({
@@ -327,6 +347,8 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   routine_feedback_submitted: "feedback",
   premium_paywall_viewed: "premium",
   premium_cta_clicked: "premium",
+  premium_download_bank_refreshed: "premium",
+  premium_download_bank_used: "premium",
   device_registered: "premium",
   device_removed: "premium",
   device_limit_reached: "premium",

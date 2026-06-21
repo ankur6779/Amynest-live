@@ -15,6 +15,18 @@ export type HubQuotaHeaders = {
   lifetimeLimit: number | null;
   lifetimeUsed: number;
   lifetimeRemaining: number | null;
+  downloadWallet?: {
+    enabled: boolean;
+    availableToday: number;
+    dailyAllocation: number;
+    dailyRefresh: number;
+    dailyUsed: number;
+    dailyRemaining: number;
+    bankedDownloads: number;
+    maxBank: number;
+    maxAvailable: number;
+    lastRefreshAt: string | null;
+  };
 };
 
 export function setHubQuotaHeaders(res: Response, quota: HubQuotaHeaders): void {
@@ -31,6 +43,20 @@ export function setHubQuotaHeaders(res: Response, quota: HubQuotaHeaders): void 
   } else {
     res.setHeader("X-Hub-Lifetime-Limit", "");
     res.setHeader("X-Hub-Lifetime-Remaining", "");
+  }
+
+  if (quota.downloadWallet) {
+    const wallet = quota.downloadWallet;
+    res.setHeader("X-Hub-Download-Wallet-Enabled", wallet.enabled ? "1" : "0");
+    res.setHeader("X-Hub-Download-Wallet-Available", String(wallet.availableToday));
+    res.setHeader("X-Hub-Download-Wallet-Daily-Allocation", String(wallet.dailyAllocation));
+    res.setHeader("X-Hub-Download-Wallet-Daily-Refresh", String(wallet.dailyRefresh));
+    res.setHeader("X-Hub-Download-Wallet-Daily-Used", String(wallet.dailyUsed));
+    res.setHeader("X-Hub-Download-Wallet-Daily-Remaining", String(wallet.dailyRemaining));
+    res.setHeader("X-Hub-Download-Wallet-Banked", String(wallet.bankedDownloads));
+    res.setHeader("X-Hub-Download-Wallet-Max-Bank", String(wallet.maxBank));
+    res.setHeader("X-Hub-Download-Wallet-Max-Available", String(wallet.maxAvailable));
+    res.setHeader("X-Hub-Download-Wallet-Last-Refresh-At", wallet.lastRefreshAt ?? "");
   }
 }
 
