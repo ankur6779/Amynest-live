@@ -21,7 +21,7 @@ import {
 } from "@/lib/native-billing-ios";
 import type { Plan } from "@/hooks/use-subscription";
 import type { StorePlanPrice } from "@/lib/plan-price";
-import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
+import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purchase-finalize";
 
 type RcConfig = {
   provider: "revenuecat";
@@ -411,7 +411,7 @@ export function useNativeBilling(): NativeBillingState {
     if (iosShell) {
       const result = await restoreIOSPurchases();
       if (result.ok) {
-        const finalized = await finalizeNativePurchase(authFetch, qc);
+        const finalized = await finalizeNativeRestore(authFetch, qc);
         return finalized.isPremium;
       }
       return false;
@@ -420,7 +420,7 @@ export function useNativeBilling(): NativeBillingState {
     if (!androidBridge) return false;
     const res = await androidBridge.restore();
     if (res.ok) {
-      const finalized = await finalizeNativePurchase(authFetch, qc);
+      const finalized = await finalizeNativeRestore(authFetch, qc);
       return finalized.isPremium;
     }
     return false;

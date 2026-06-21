@@ -128,9 +128,9 @@ router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<voi
 });
 
 /**
- * POST /subscription/rc-sync — after a native RevenueCat purchase, pull the
- * subscriber record from RevenueCat and activate premium immediately instead
- * of waiting for the webhook (which can lag several seconds).
+ * POST /subscription/rc-sync — restore-only RevenueCat recovery.
+ * New purchases must unlock through RevenueCat webhook delivery. This endpoint
+ * is retained for Restore Purchase flows where no fresh webhook is expected.
  */
 router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -138,8 +138,12 @@ router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): P
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  if (req.body?.purpose !== "restore") {
+    res.status(409).json({ ok: false, reason: "webhook_required" });
+    return;
+  }
   const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
-  const result = await syncRevenueCatSubscription(userId);
+  const result = await syncRevenueCatSubscription(userId, { source: "restore" });
   const ent = await getEntitlements(userId);
   // One-line trace tying the sync attempt to what the user actually receives —
   // makes "paid but no premium" reports diagnosable from logs alone.
@@ -164,6 +168,43 @@ router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): P
     reason: result.reason,
     entitlements: ent,
   });
+}));
+
+/**
+ * POST /subscription/rc-recover — operator-only targeted recovery.
+ * Body: { appUserIds: ["firebaseUidOrRevenueCatAppUserId"] }
+ *
+ * This does not grant premium manually. It asks RevenueCat V2 for each customer
+ * and mirrors the active entitlement into the canonical subscription row.
+ */
+router.post("/subscription/rc-recover", asyncRoute(async (req, res): Promise<void> => {
+  const expected = process.env.BILLING_RECOVERY_SECRET;
+  if (!expected) {
+    res.status(503).json({ error: "billing_recovery_secret_unconfigured" });
+    return;
+  }
+  const auth = req.headers["authorization"];
+  if (auth !== `Bearer ${expected}`) {
+    res.status(401).json({ error: "invalid_recovery_secret" });
+    return;
+  }
+
+  const rawIds = Array.isArray(req.body?.appUserIds) ? req.body.appUserIds : [req.body?.appUserId];
+  const appUserIds = rawIds.filter((id: unknown): id is string => typeof id === "string" && id.trim().length > 0);
+  if (appUserIds.length === 0) {
+    res.status(400).json({ error: "missing_app_user_ids" });
+    return;
+  }
+
+  const { reconcileRevenueCatAppUserIds } = await import("../services/subscriptionReconciliationService.js");
+  const summary = await reconcileRevenueCatAppUserIds(appUserIds, "manual_recovery");
+  const entitlements = await Promise.all(
+    appUserIds.map(async (appUserId: string) => ({
+      appUserId,
+      entitlements: await getEntitlements(appUserId),
+    })),
+  );
+  res.json({ ok: summary.failed === 0, summary, entitlements });
 }));
 
 /**

@@ -10,7 +10,7 @@ export type PlanPriceMap = Record<
 const RC_PROJECT_ID = process.env.REVENUECAT_PROJECT_ID ?? "";
 const RC_APPLE_APP_ID = process.env.REVENUECAT_APPLE_APP_STORE_APP_ID ?? "";
 const RC_GOOGLE_APP_ID = process.env.REVENUECAT_GOOGLE_PLAY_STORE_APP_ID ?? "";
-const RC_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY ?? "";
+const RC_V2_SECRET_KEY = process.env.REVENUECAT_V2_SECRET_KEY ?? "";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const RC_FETCH_TIMEOUT_MS = Number(process.env.RC_FETCH_TIMEOUT_MS ?? "4000");
@@ -67,7 +67,7 @@ async function rcFetch(path: string): Promise<unknown> {
   const url = `https://api.revenuecat.com/v2${path}`;
   const res = await fetchWithTimeout(url, {
     headers: {
-      Authorization: `Bearer ${RC_SECRET_KEY}`,
+      Authorization: `Bearer ${RC_V2_SECRET_KEY}`,
       "Content-Type": "application/json",
     },
     timeoutMs: RC_FETCH_TIMEOUT_MS,
@@ -80,8 +80,8 @@ async function rcFetch(path: string): Promise<unknown> {
 }
 
 async function fetchLivePrices(): Promise<PlanPriceMap> {
-  if (!RC_SECRET_KEY || !RC_PROJECT_ID) {
-    logger.warn("[rcPricing] REVENUECAT_SECRET_KEY not set — using fallback prices");
+  if (!RC_V2_SECRET_KEY || !RC_PROJECT_ID) {
+    logger.warn("[rcPricing] RevenueCat V2 config not set — using fallback prices");
     return fallbackPrices();
   }
 

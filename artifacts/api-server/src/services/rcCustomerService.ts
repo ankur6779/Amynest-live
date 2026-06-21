@@ -9,7 +9,7 @@ import {
   type RevenueCatSnapshot,
 } from "./subscriptionStateService";
 
-const RC_V2_SECRET_KEY = process.env.REVENUECAT_V2_SECRET_KEY ?? process.env.REVENUECAT_SECRET_KEY ?? "";
+const RC_V2_SECRET_KEY = process.env.REVENUECAT_V2_SECRET_KEY ?? "";
 const RC_PROJECT_ID = process.env.REVENUECAT_PROJECT_ID ?? "";
 const ENTITLEMENT_ID = process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium";
 const RC_FETCH_TIMEOUT_MS = Number(process.env.RC_FETCH_TIMEOUT_MS ?? "8000");
@@ -22,7 +22,6 @@ type RcV2Response = UnknownRecord | UnknownRecord[];
 type RcV2ConfigStatus = {
   configured: boolean;
   missing: string[];
-  usingLegacySecretEnv: boolean;
 };
 
 export function getRevenueCatV2ConfigStatus(): RcV2ConfigStatus {
@@ -33,20 +32,13 @@ export function getRevenueCatV2ConfigStatus(): RcV2ConfigStatus {
   return {
     configured: missing.length === 0,
     missing,
-    usingLegacySecretEnv: !process.env.REVENUECAT_V2_SECRET_KEY && Boolean(process.env.REVENUECAT_SECRET_KEY),
   };
 }
 
 export function assertRevenueCatV2ConfigAtBoot(): void {
   const status = getRevenueCatV2ConfigStatus();
-  if (status.usingLegacySecretEnv) {
-    logger.warn(
-      { env: "REVENUECAT_SECRET_KEY" },
-      "[rcSync] using legacy RevenueCat secret env name; set REVENUECAT_V2_SECRET_KEY explicitly",
-    );
-  }
   if (status.configured) return;
-  const message = `[rcSync] missing RevenueCat V2 config: ${status.missing.join(", ")}`;
+  const message = `[rcSync] missing RevenueCat V2 config: ${status.missing.join(", ")}.`;
   if (process.env.NODE_ENV === "production" || process.env.AMYNEST_ENV === "production") {
     throw new Error(message);
   }
@@ -183,7 +175,7 @@ function buildSnapshotFromV2(
  * for the webhook round-trip.
  */
 export async function syncRevenueCatSubscription(userId: string, opts: {
-  source?: "purchase_finalize" | "restore" | "webhook" | "reconciliation";
+  source?: "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery";
   providerEventId?: string | null;
   eventType?: string | null;
 } = {}): Promise<{

@@ -142,7 +142,10 @@ export async function recordBillingAuditEvent(input: {
 export async function applyRevenueCatSnapshot(
   userId: string,
   snapshot: RevenueCatSnapshot,
-  opts: { source: "purchase_finalize" | "restore" | "webhook" | "reconciliation"; providerEventId?: string | null } = {
+  opts: {
+    source: "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery";
+    providerEventId?: string | null;
+  } = {
     source: "purchase_finalize",
   },
 ): Promise<SubscriptionApplyResult> {
@@ -181,7 +184,7 @@ export async function applyRevenueCatSnapshot(
     expiredAt,
     currentPeriodEnd: premiumUntil,
     cancelAtPeriodEnd: state === "CANCELLED" ? 1 : 0,
-    lastReconciledAt: opts.source === "reconciliation" ? now : null,
+    lastReconciledAt: opts.source === "reconciliation" || opts.source === "manual_recovery" ? now : null,
     syncError: null,
     updatedAt: now,
   };

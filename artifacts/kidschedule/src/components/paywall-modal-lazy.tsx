@@ -9,7 +9,7 @@ import {
   canPresentNativeRCPaywall,
   presentNativeRCPaywall,
 } from "@/lib/native-rc-paywall";
-import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
+import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purchase-finalize";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { PURCHASE_SCREEN } from "@workspace/subscription-marketing";
 
@@ -55,7 +55,9 @@ export function PaywallModalLazy() {
 
       if (outcome.handled) {
         if (outcome.purchased || outcome.restored) {
-          const finalized = await finalizeNativePurchase(authFetch, qc);
+          const finalized = outcome.restored
+            ? await finalizeNativeRestore(authFetch, qc)
+            : await finalizeNativePurchase(authFetch, qc);
           closePaywall();
           trackSubscriptionEvent({
             event: "purchase_success",
