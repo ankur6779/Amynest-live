@@ -108,6 +108,47 @@ function nestedRecord(record: UnknownRecord | null | undefined, keys: string[]):
   return null;
 }
 
+function isRevenueCatAnonymousId(id: string | null | undefined): boolean {
+  return typeof id === "string" && id.startsWith("$RCAnonymousID:");
+}
+
+function pushIdentifier(out: string[], value: unknown): void {
+  if (typeof value === "string" && value.trim().length > 0) {
+    out.push(value.trim());
+    return;
+  }
+  const record = asRecord(value);
+  if (!record) return;
+  for (const key of ["app_user_id", "original_app_user_id", "id", "alias"]) {
+    const text = textField(record, [key]);
+    if (text) out.push(text);
+  }
+}
+
+export function collectRevenueCatCustomerIdentifiers(body: RcV2Response | null, requestedUserId?: string): string[] {
+  const identifiers: string[] = [];
+  if (requestedUserId) identifiers.push(requestedUserId);
+  for (const customer of asArray(body ?? {})) {
+    for (const key of ["app_user_id", "original_app_user_id", "id"]) {
+      pushIdentifier(identifiers, customer[key]);
+    }
+    for (const key of ["aliases", "alias_ids", "app_user_ids"]) {
+      const aliases = customer[key];
+      if (Array.isArray(aliases)) {
+        for (const alias of aliases) pushIdentifier(identifiers, alias);
+      } else {
+        pushIdentifier(identifiers, aliases);
+      }
+    }
+  }
+  return Array.from(new Set(identifiers));
+}
+
+export function resolveCanonicalRevenueCatUserId(customerBody: RcV2Response | null, requestedUserId: string): string {
+  const identifiers = collectRevenueCatCustomerIdentifiers(customerBody, requestedUserId);
+  return identifiers.find((id) => !isRevenueCatAnonymousId(id)) ?? requestedUserId;
+}
+
 async function fetchRevenueCatV2<T extends RcV2Response>(path: string): Promise<{ ok: true; data: T } | { ok: false; status: number; reason: string }> {
   const res = await fetchWithTimeout(`${RC_API_BASE_URL}${path}`, {
     headers: {
@@ -227,6 +268,7 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
   activeEntitlement?: boolean;
   dbUpdated?: boolean;
   apiPremium?: boolean;
+  appliedUserId?: string;
   reason?: string;
 }> {
   const config = getRevenueCatV2ConfigStatus();
@@ -242,9 +284,11 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
     const customerPath = `/v2/projects/${encodeURIComponent(RC_PROJECT_ID)}/customers/${encodeURIComponent(userId)}`;
     const entitlementsPath = `${customerPath}/active_entitlements`;
     const subscriptionsPath = `${customerPath}/subscriptions`;
+    const aliasesPath = `${customerPath}/aliases`;
     const customerResult = await fetchRevenueCatV2<RcV2Response>(customerPath);
     const entitlementsResult = await fetchRevenueCatV2<RcV2Response>(entitlementsPath);
     const subscriptionsResult = await fetchRevenueCatV2<RcV2Response>(subscriptionsPath);
+    const aliasesResult = await fetchRevenueCatV2<RcV2Response>(aliasesPath);
 
     if (!customerResult.ok) {
       if (customerResult.reason === "customer_not_found") {
@@ -254,6 +298,7 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
         customerStatus: customerResult.ok ? 200 : customerResult.status,
         entitlementsStatus: entitlementsResult.ok ? 200 : entitlementsResult.status,
         subscriptionsStatus: subscriptionsResult.ok ? 200 : subscriptionsResult.status,
+        aliasesStatus: aliasesResult.ok ? 200 : aliasesResult.status,
       });
       return { synced: false, isPremium: false, verifiedCustomer: false, activeEntitlement: false, dbUpdated: false, apiPremium: false, reason: customerResult.reason };
     }
@@ -261,10 +306,15 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
       await markRevenueCatSyncError(userId, opts.source ?? "purchase_finalize", entitlementsResult.reason, {
         customerStatus: 200,
         entitlementsStatus: entitlementsResult.status,
+        aliasesStatus: aliasesResult.ok ? 200 : aliasesResult.status,
       });
       return { synced: false, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: false, apiPremium: false, reason: entitlementsResult.reason };
     }
 
+    const customerIdentityBody = aliasesResult.ok
+      ? [...asArray(customerResult.data), ...asArray(aliasesResult.data)]
+      : customerResult.data;
+    const canonicalUserId = resolveCanonicalRevenueCatUserId(customerIdentityBody, userId);
     const activeEnt = pickActiveEntitlement(entitlementsResult.data);
     const activeSubscription = subscriptionsResult.ok ? pickAccessSubscription(subscriptionsResult.data) : null;
     if (!activeEnt && !activeSubscription) {
@@ -278,11 +328,11 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
-      const applied = await applyRevenueCatSnapshot(userId, snapshot, {
+      const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
         source: opts.source ?? "purchase_finalize",
         providerEventId: opts.providerEventId,
       });
-      return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, reason: "no_active_entitlement" };
+      return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, appliedUserId: canonicalUserId, reason: "no_active_entitlement" };
     }
 
     const rawProductId =
@@ -307,21 +357,22 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
       return { synced: false, isPremium: false, verifiedCustomer: true, activeEntitlement: true, dbUpdated: false, apiPremium: false, reason: "unknown_product" };
     }
 
-    const applied = await applyRevenueCatSnapshot(userId, snapshot, {
+    const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
       source: opts.source ?? "purchase_finalize",
       providerEventId: opts.providerEventId,
     });
 
     logger.info(
       {
-        userId,
+        userId: canonicalUserId,
+        requestedUserId: userId,
         plan,
         productId: snapshot.productId,
         periodEnd: applied.expiresAt?.toISOString() ?? null,
       },
       "[rcSync] activated premium from RevenueCat V2 customer",
     );
-    return { synced: true, isPremium: applied.isPremium, plan, verifiedCustomer: true, activeEntitlement: true, dbUpdated: true, apiPremium: applied.isPremium };
+    return { synced: true, isPremium: applied.isPremium, plan, verifiedCustomer: true, activeEntitlement: true, dbUpdated: true, apiPremium: applied.isPremium, appliedUserId: canonicalUserId };
   } catch (err) {
     logger.error({ err, userId }, "[rcSync] failed");
     await markRevenueCatSyncError(userId, opts.source ?? "purchase_finalize", "sync_error", {

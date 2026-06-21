@@ -33,6 +33,15 @@ import {
 } from "../lib/razorpayClient";
 import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
 
+function isRevenueCatAnonymousId(id: string | null | undefined): boolean {
+  return typeof id === "string" && id.startsWith("$RCAnonymousID:");
+}
+
+function preferredRevenueCatUserId(...ids: Array<string | null | undefined>): string | null {
+  const present = ids.filter((id): id is string => typeof id === "string" && id.length > 0);
+  return present.find((id) => !isRevenueCatAnonymousId(id)) ?? present[0] ?? null;
+}
+
 const router: IRouter = Router();
 
 router.get(
@@ -273,7 +282,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     auto_renew_status?: boolean;
   };
 
-  const userId = event.app_user_id ?? event.original_app_user_id;
+  const userId = preferredRevenueCatUserId(event.app_user_id, event.original_app_user_id);
   if (!userId) {
     res.status(400).json({ error: "missing_app_user_id" });
     return;
