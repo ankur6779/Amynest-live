@@ -3,6 +3,7 @@ import "./lib/loadEnv";
 import { logAmynestEnvironment } from "./lib/loadEnv";
 import { assertCriticalEnvAtBoot, assertAudioEnvAtBoot, logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
+import { assertRevenueCatV2ConfigAtBoot } from "./services/rcCustomerService.js";
 import { registerProcessErrorHandlers } from "./utils/async-errors.js";
 import { startMemoryMonitor } from "./utils/memory-monitor.js";
 import {
@@ -39,6 +40,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 assertCriticalEnvAtBoot();
 assertAudioEnvAtBoot();
+assertRevenueCatV2ConfigAtBoot();
 
 /**
  * Runs a single background-init step with phase logging that NEVER rethrows.
@@ -243,11 +245,13 @@ async function startBackgroundTasks(): Promise<void> {
       const { startRazorpayWebhookCleanup } = await import("./lib/razorpayWebhookCleanup.js");
       const { startWeeklyRecapCron } = await import("./lib/weeklyRecapCron.js");
       const { startAdminHealthDigestCron } = await import("./lib/adminHealthDigestCron.js");
+      const { startBillingReconciliationCron } = await import("./lib/billingReconciliationCron.js");
       const { startRenderKeepWarm } = await import("./lib/render-keep-warm.js");
 
       startRazorpayWebhookCleanup();
       startWeeklyRecapCron();
       startAdminHealthDigestCron();
+      startBillingReconciliationCron();
       startRenderKeepWarm(port);
       console.log("[bg:ok]", "crons");
       endBootPhase("crons");

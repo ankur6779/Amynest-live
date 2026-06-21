@@ -67,17 +67,19 @@ export type SubscriptionResponse = {
   plans: PlanCard[];
 };
 
-const QKEY = ["subscription"] as const;
+export const subscriptionQueryKey = (userId: string | null | undefined) =>
+  ["subscription", userId ?? "anonymous"] as const;
 
 export function useSubscription() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, userId } = useAuth();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const qkey = subscriptionQueryKey(userId);
 
   const query = useQuery<SubscriptionResponse>({
-    queryKey: QKEY,
-    queryFn: () => fetchSubscriptionResilient(authFetch),
-    placeholderData: () => readCachedSubscription() ?? EMPTY_SUBSCRIPTION_RESPONSE,
+    queryKey: qkey,
+    queryFn: () => fetchSubscriptionResilient(authFetch, userId),
+    placeholderData: () => readCachedSubscription(userId) ?? EMPTY_SUBSCRIPTION_RESPONSE,
     enabled: isLoaded && isSignedIn,
     staleTime: 60_000,
     refetchOnWindowFocus: true,
@@ -85,8 +87,8 @@ export function useSubscription() {
   });
 
   const refresh = useCallback(() => {
-    void qc.invalidateQueries({ queryKey: QKEY });
-  }, [qc]);
+    void qc.invalidateQueries({ queryKey: qkey });
+  }, [qc, qkey]);
 
   const startTrial = useCallback(async () => {
     const res = await authFetch(getApiUrl("/api/subscription/start-trial"), {
@@ -196,14 +198,14 @@ export function useSubscription() {
         refresh();
         for (const delay of [1500, 3500, 6000]) {
           await new Promise((r) => setTimeout(r, delay));
-          await qc.invalidateQueries({ queryKey: QKEY });
-          const data = qc.getQueryData<SubscriptionResponse>(QKEY);
+          await qc.invalidateQueries({ queryKey: qkey });
+          const data = qc.getQueryData<SubscriptionResponse>(qkey);
           if (data?.entitlements.isPremium) break;
         }
       }
       return result;
     },
-    [authFetch, qc, refresh],
+    [authFetch, qc, qkey, refresh],
   );
 
   /**

@@ -69,6 +69,10 @@ function writeJson(key: string, value: unknown): void {
   }
 }
 
+function scopedKey(baseKey: string, userId?: string | null): string {
+  return userId ? `${baseKey}:${userId}` : baseKey;
+}
+
 /** Record last successful dashboard cache write (ms since epoch). */
 export function touchDashboardSyncTimestamp(at = Date.now()): void {
   if (typeof localStorage === "undefined") return;
@@ -141,7 +145,11 @@ export function persistChildrenList(children: DashboardChildRow[]): void {
 /** Drop dashboard/session payloads (e.g. after sign-out or account deletion). */
 export function clearDashboardCaches(): void {
   if (typeof localStorage === "undefined") return;
-  for (const key of [SUMMARY_KEY, STATS_KEY, CHILDREN_KEY, SUBSCRIPTION_KEY, SYNCED_AT_KEY]) {
+  const keysToRemove = [SUMMARY_KEY, STATS_KEY, CHILDREN_KEY, SUBSCRIPTION_KEY, SYNCED_AT_KEY];
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith(`${SUBSCRIPTION_KEY}:`)) keysToRemove.push(key);
+  }
+  for (const key of keysToRemove) {
     try {
       localStorage.removeItem(key);
     } catch {
@@ -150,15 +158,32 @@ export function clearDashboardCaches(): void {
   }
 }
 
-export function readCachedSubscription(): SubscriptionResponse | undefined {
-  const cached = readJson<SubscriptionResponse>(SUBSCRIPTION_KEY);
-  if (!cached?.entitlements?.limits) return undefined;
-  return cached;
+function asUiOnlyCachedSubscription(cached: SubscriptionResponse): SubscriptionResponse {
+  return {
+    ...cached,
+    entitlements: {
+      ...cached.entitlements,
+      plan: "free",
+      status: "free",
+      isPremium: false,
+      isTrialing: false,
+      trialEndsAt: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      provider: "none",
+    },
+  };
 }
 
-export function persistSubscription(data: SubscriptionResponse): void {
+export function readCachedSubscription(userId?: string | null): SubscriptionResponse | undefined {
+  const cached = readJson<SubscriptionResponse>(scopedKey(SUBSCRIPTION_KEY, userId));
+  if (!cached?.entitlements?.limits) return undefined;
+  return asUiOnlyCachedSubscription(cached);
+}
+
+export function persistSubscription(data: SubscriptionResponse, userId?: string | null): void {
   if (!data?.entitlements?.limits) return;
-  persistWithSync(() => writeJson(SUBSCRIPTION_KEY, data));
+  persistWithSync(() => writeJson(scopedKey(SUBSCRIPTION_KEY, userId), data));
 }
 
 /** True when a prior session left real (non-empty) dashboard payloads. */
@@ -234,14 +259,15 @@ export async function fetchChildrenListResilient(
 
 export async function fetchSubscriptionResilient(
   authFetch: AuthFetchFn,
+  userId?: string | null,
 ): Promise<SubscriptionResponse> {
   try {
     const data = await fetchJson<SubscriptionResponse>(authFetch, "/api/subscription");
     if (!data?.entitlements?.limits) return EMPTY_SUBSCRIPTION_RESPONSE;
-    persistSubscription(data);
+    persistSubscription(data, userId);
     return data;
   } catch (err) {
     console.warn("[dashboard] subscription fetch failed", err);
-    return readCachedSubscription() ?? EMPTY_SUBSCRIPTION_RESPONSE;
+    return readCachedSubscription(userId) ?? EMPTY_SUBSCRIPTION_RESPONSE;
   }
 }

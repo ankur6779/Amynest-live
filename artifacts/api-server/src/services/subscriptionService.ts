@@ -615,7 +615,9 @@ export async function startTrial(userId: string): Promise<Subscription> {
     .set({
       status: "trialing",
       plan: "monthly",
+      subscriptionState: "TRIAL",
       trialEndsAt: trialEnd,
+      currentPeriodEnd: trialEnd,
       updatedAt: new Date(),
     })
     .where(eq(subscriptionsTable.userId, userId))
@@ -696,6 +698,8 @@ export async function activateSubscription(
       provider,
       providerCustomerId: opts.providerCustomerId ?? null,
       providerSubscriptionId: opts.providerSubscriptionId ?? null,
+      subscriptionState: "ACTIVE",
+      expiresAt: opts.periodEnd ?? null,
       currentPeriodEnd: opts.periodEnd ?? null,
       updatedAt: new Date(),
     })

@@ -6,6 +6,7 @@ import {
 import {
   getOrCreateSubscription,
   healStaleSubscriptionRecord,
+  isPremiumNow,
 } from "./subscriptionService.js";
 
 export interface SpeechCoachV2UsagePolicy {
@@ -16,7 +17,7 @@ export interface SpeechCoachV2UsagePolicy {
 
 export function isTrialingSubscription(sub: Subscription, now = Date.now()): boolean {
   return (
-    sub.status === "trialing"
+    (sub.subscriptionState === "TRIAL" || sub.status === "trialing")
     && !!sub.trialEndsAt
     && sub.trialEndsAt.getTime() > now
   );
@@ -24,18 +25,7 @@ export function isTrialingSubscription(sub: Subscription, now = Date.now()): boo
 
 export function isPaidSubscription(sub: Subscription, now = Date.now()): boolean {
   if (isTrialingSubscription(sub, now)) return false;
-  if (sub.bonusExpiresAt && sub.bonusExpiresAt.getTime() > now) return true;
-  if (sub.status === "active" && sub.currentPeriodEnd && sub.currentPeriodEnd.getTime() > now) {
-    return true;
-  }
-  if (
-    (sub.status === "canceled" || sub.status === "past_due")
-    && sub.currentPeriodEnd
-    && sub.currentPeriodEnd.getTime() > now
-  ) {
-    return true;
-  }
-  return false;
+  return isPremiumNow(sub);
 }
 
 /** Resolve Speech Coach V2 daily limit from subscription state (server-authoritative). */

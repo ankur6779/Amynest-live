@@ -7,18 +7,24 @@ type SubRow = {
   status: string;
   plan?: string;
   provider?: string;
+  subscriptionState?: string;
   trialEndsAt?: Date | null;
   currentPeriodEnd?: Date | null;
   bonusExpiresAt?: Date | null;
+  expiresAt?: Date | null;
+  gracePeriodExpiresAt?: Date | null;
 };
 
 function sub(partial: SubRow): Subscription {
   return {
     plan: "monthly",
     provider: "revenuecat",
+    subscriptionState: "FREE",
     trialEndsAt: null,
     currentPeriodEnd: null,
     bonusExpiresAt: null,
+    expiresAt: null,
+    gracePeriodExpiresAt: null,
     ...partial,
   } as Subscription;
 }
@@ -35,6 +41,7 @@ test("isPremiumNow accepts active with future currentPeriodEnd", () => {
     isPremiumNow(
       sub({
         status: "active",
+        subscriptionState: "ACTIVE",
         currentPeriodEnd: new Date(Date.now() + 86_400_000),
       }),
     ),
@@ -47,6 +54,7 @@ test("isPremiumNow accepts valid trialing window", () => {
     isPremiumNow(
       sub({
         status: "trialing",
+        subscriptionState: "TRIAL",
         trialEndsAt: new Date(Date.now() + 86_400_000),
       }),
     ),
@@ -59,6 +67,7 @@ test("isPremiumNow rejects expired trialing", () => {
     isPremiumNow(
       sub({
         status: "trialing",
+        subscriptionState: "TRIAL",
         trialEndsAt: new Date(Date.now() - 86_400_000),
       }),
     ),
@@ -72,9 +81,49 @@ test("isPremiumNow accepts manual grant with far-future period end", () => {
       sub({
         status: "active",
         provider: "manual",
+        subscriptionState: "FREE",
         currentPeriodEnd: new Date("2099-12-31T23:59:59.000Z"),
       }),
     ),
     true,
+  );
+});
+
+test("isPremiumNow accepts cancelled V2 state until paid period ends", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "active",
+        subscriptionState: "CANCELLED",
+        currentPeriodEnd: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    true,
+  );
+});
+
+test("isPremiumNow accepts grace period until grace expiry", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "past_due",
+        subscriptionState: "GRACE_PERIOD",
+        gracePeriodExpiresAt: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    true,
+  );
+});
+
+test("isPremiumNow rejects expired V2 state even with stale active status", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "active",
+        subscriptionState: "EXPIRED",
+        currentPeriodEnd: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    false,
   );
 });

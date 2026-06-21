@@ -31,16 +31,7 @@ import {
   razorpayPlanIdToPlan,
   TOTAL_COUNT_BY_PLAN,
 } from "../lib/razorpayClient";
-
-// Map RevenueCat product/store identifiers back to our internal Plan code so
-// that webhook events can update the local subscription record.
-function productIdToPlan(productId: string | undefined | null): Exclude<Plan, "free"> | null {
-  if (!productId) return null;
-  if (productId.startsWith("amynest_monthly")) return "monthly";
-  if (productId.startsWith("amynest_6month")) return "six_month";
-  if (productId.startsWith("amynest_yearly")) return "yearly";
-  return null;
-}
+import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
 
 const router: IRouter = Router();
 
@@ -164,6 +155,10 @@ router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): P
   );
   res.json({
     ok: result.synced,
+    verifiedCustomer: result.verifiedCustomer ?? false,
+    activeEntitlement: result.activeEntitlement ?? false,
+    dbUpdated: result.dbUpdated ?? false,
+    apiPremium: ent.isPremium,
     isPremium: ent.isPremium,
     plan: result.plan ?? ent.plan,
     reason: result.reason,
@@ -225,9 +220,16 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     original_app_user_id?: string;
     product_id?: string;
     expiration_at_ms?: number;
+    grace_period_expiration_at_ms?: number;
+    cancellation_at_ms?: number;
+    event_timestamp_ms?: number;
     transaction_id?: string;
+    original_transaction_id?: string;
+    store?: string;
+    environment?: string;
     period_type?: string;
     price?: number;
+    auto_renew_status?: boolean;
   };
 
   const userId = event.app_user_id ?? event.original_app_user_id;
@@ -237,6 +239,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
   }
 
   const eventId = event.id ?? event.transaction_id ?? `${event.type}:${userId}:${event.expiration_at_ms ?? "na"}`;
+  const eventAt = event.event_timestamp_ms ? new Date(event.event_timestamp_ms) : new Date();
 
   const inserted = await db
     .insert(revenuecatWebhookEventsTable)
@@ -245,6 +248,10 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       eventType: event.type ?? null,
       appUserId: userId,
       payload: req.body ?? {},
+      eventTimestamp: eventAt,
+      transactionId: event.transaction_id ?? null,
+      originalTransactionId: event.original_transaction_id ?? null,
+      environment: event.environment ?? null,
     })
     .onConflictDoNothing({ target: revenuecatWebhookEventsTable.eventId })
     .returning({ eventId: revenuecatWebhookEventsTable.eventId });
@@ -254,49 +261,119 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     return;
   }
 
-  const plan = productIdToPlan(event.product_id);
-  const periodEnd = event.expiration_at_ms ? new Date(event.expiration_at_ms) : undefined;
+  const supportedEvents = new Set([
+    "INITIAL_PURCHASE",
+    "RENEWAL",
+    "PRODUCT_CHANGE",
+    "CANCELLATION",
+    "EXPIRATION",
+    "UNCANCELLATION",
+    "BILLING_ISSUE",
+    "TRANSFER",
+    "SUBSCRIPTION_PAUSED",
+  ]);
 
-  switch (event.type) {
-    case "INITIAL_PURCHASE":
-    case "RENEWAL":
-    case "PRODUCT_CHANGE":
-    case "UNCANCELLATION": {
-      if (!plan) {
-        res.status(200).json({ ok: true, ignored: "unknown_plan", productId: event.product_id });
-        return;
+  if (!event.type || !supportedEvents.has(event.type)) {
+    await db.update(revenuecatWebhookEventsTable).set({
+      processingStatus: "ignored",
+      processedAt: new Date(),
+    }).where(eq(revenuecatWebhookEventsTable.eventId, eventId));
+    await recordBillingAuditEvent({
+      userId,
+      source: "webhook",
+      eventName: "webhook_ignored",
+      providerEventId: eventId,
+      reason: event.type ?? "missing_event_type",
+    });
+    res.json({ ok: true, ignored: event.type ?? "missing_event_type", eventId });
+    return;
+  }
+
+  await recordBillingAuditEvent({
+    userId,
+    source: "webhook",
+    eventName: "webhook_received",
+    providerEventId: eventId,
+    metadata: { eventType: event.type, productId: event.product_id ?? null },
+  });
+
+  try {
+    const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
+    const synced = await syncRevenueCatSubscription(userId, {
+      source: "webhook",
+      providerEventId: eventId,
+      eventType: event.type,
+    });
+
+    let appliedFrom = "revenuecat_v2";
+    let applied = {
+      isPremium: synced.apiPremium ?? synced.isPremium,
+      plan: synced.plan,
+      reason: synced.reason,
+    };
+
+    if (!synced.dbUpdated) {
+      const plan = productIdToPlan(event.product_id);
+      const expirationAt = event.expiration_at_ms ? new Date(event.expiration_at_ms) : null;
+      const gracePeriodExpirationAt = event.grace_period_expiration_at_ms
+        ? new Date(event.grace_period_expiration_at_ms)
+        : null;
+      if (plan || event.type === "EXPIRATION" || event.type === "BILLING_ISSUE" || event.type === "SUBSCRIPTION_PAUSED") {
+        const fallback = await applyRevenueCatSnapshot(userId, {
+          appUserId: userId,
+          originalAppUserId: event.original_app_user_id ?? null,
+          entitlementId: process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium",
+          productId: event.product_id ?? null,
+          store: event.store ?? null,
+          environment: event.environment ?? null,
+          originalTransactionId: event.original_transaction_id ?? null,
+          latestTransactionId: event.transaction_id ?? null,
+          expirationAt,
+          gracePeriodExpirationAt,
+          autoRenewStatus:
+            event.type === "CANCELLATION" || event.type === "EXPIRATION" || event.type === "SUBSCRIPTION_PAUSED"
+              ? false
+              : event.auto_renew_status ?? null,
+          cancelledAt: event.cancellation_at_ms ? new Date(event.cancellation_at_ms) : null,
+          eventType: event.type,
+          eventAt,
+        }, { source: "webhook", providerEventId: eventId });
+        appliedFrom = "webhook_payload";
+        applied = { isPremium: fallback.isPremium, plan: fallback.plan === "free" ? undefined : fallback.plan, reason: fallback.reason };
       }
-      const { revenueCatCountsForReferralPaid } = await import(
-        "../services/referralService.js"
-      );
-      await activateSubscription(userId, plan, {
-        provider: "revenuecat",
-        periodEnd,
-        providerCustomerId: userId,
-        providerSubscriptionId: event.transaction_id,
-        countsForReferralPaid: revenueCatCountsForReferralPaid(event),
-      });
-      res.json({ ok: true, applied: { userId, plan } });
-      return;
     }
-    case "CANCELLATION":
-    case "EXPIRATION":
-    case "BILLING_ISSUE": {
-      // Mark canceled but keep period_end so client can show "active until ___".
-      // The entitlements helper checks isPremiumNow against current_period_end.
-      const { db, subscriptionsTable } = await import("@workspace/db");
-      const { eq } = await import("drizzle-orm");
-      await db.update(subscriptionsTable).set({
-        status: event.type === "BILLING_ISSUE" ? "past_due" : "canceled",
-        currentPeriodEnd: periodEnd ?? null,
-        updatedAt: new Date(),
-      }).where(eq(subscriptionsTable.userId, userId));
-      res.json({ ok: true, applied: { userId, status: event.type } });
-      return;
-    }
-    default:
-      res.json({ ok: true, ignored: event.type });
-      return;
+
+    await db.update(revenuecatWebhookEventsTable).set({
+      processingStatus: "processed",
+      processedAt: new Date(),
+      processingError: null,
+    }).where(eq(revenuecatWebhookEventsTable.eventId, eventId));
+    await recordBillingAuditEvent({
+      userId,
+      source: "webhook",
+      eventName: "webhook_applied",
+      providerEventId: eventId,
+      metadata: { eventType: event.type, appliedFrom, isPremium: applied.isPremium },
+    });
+    res.json({ ok: true, eventId, applied: { userId, plan: applied.plan, isPremium: applied.isPremium, reason: applied.reason, source: appliedFrom } });
+    return;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await db.update(revenuecatWebhookEventsTable).set({
+      processingStatus: "failed",
+      processingError: message.slice(0, 1000),
+      processedAt: new Date(),
+    }).where(eq(revenuecatWebhookEventsTable.eventId, eventId));
+    await recordBillingAuditEvent({
+      userId,
+      source: "webhook",
+      eventName: "webhook_failed",
+      status: "error",
+      providerEventId: eventId,
+      reason: message,
+      metadata: { eventType: event.type },
+    });
+    throw err;
   }
 }));
 

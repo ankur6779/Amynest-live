@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, serial, timestamp, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -18,6 +18,24 @@ export const subscriptionsTable = pgTable(
     provider: text("provider").notNull().default("none"),
     providerCustomerId: text("provider_customer_id"),
     providerSubscriptionId: text("provider_subscription_id"),
+    subscriptionState: text("subscription_state").notNull().default("FREE"),
+    store: text("store"),
+    environment: text("environment"),
+    revenuecatAppUserId: text("revenuecat_app_user_id"),
+    originalAppUserId: text("original_app_user_id"),
+    productId: text("product_id"),
+    entitlementId: text("entitlement_id"),
+    originalTransactionId: text("original_transaction_id"),
+    latestTransactionId: text("latest_transaction_id"),
+    lastEventType: text("last_event_type"),
+    lastEventAt: timestamp("last_event_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    gracePeriodExpiresAt: timestamp("grace_period_expires_at", { withTimezone: true }),
+    autoRenewStatus: boolean("auto_renew_status"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    expiredAt: timestamp("expired_at", { withTimezone: true }),
+    lastReconciledAt: timestamp("last_reconciled_at", { withTimezone: true }),
+    syncError: text("sync_error"),
     trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     cancelAtPeriodEnd: integer("cancel_at_period_end").notNull().default(0),

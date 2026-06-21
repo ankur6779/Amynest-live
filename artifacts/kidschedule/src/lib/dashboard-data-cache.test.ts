@@ -5,10 +5,14 @@ import {
   formatDashboardSyncLabel,
   hasDashboardStaleCache,
   persistDashboardSummary,
+  persistSubscription,
   readCachedDashboardSummary,
+  readCachedSubscription,
   readDashboardSyncTimestamp,
   touchDashboardSyncTimestamp,
 } from "@/lib/dashboard-data-cache";
+import type { SubscriptionResponse } from "@/hooks/use-subscription";
+import { EMPTY_SUBSCRIPTION_RESPONSE } from "@/lib/subscription-defaults";
 
 describe("dashboard-data-cache", () => {
   beforeEach(() => {
@@ -62,5 +66,26 @@ describe("dashboard-data-cache", () => {
     localStorage.clear();
     const second = await fetchDashboardSummaryResilient(authFetch);
     expect(second).toEqual(EMPTY_DASHBOARD_SUMMARY);
+  });
+
+  it("scopes subscription cache by user and never returns cached premium as authoritative", () => {
+    const premium: SubscriptionResponse = {
+      ...EMPTY_SUBSCRIPTION_RESPONSE,
+      entitlements: {
+        ...EMPTY_SUBSCRIPTION_RESPONSE.entitlements,
+        plan: "yearly",
+        status: "active",
+        isPremium: true,
+        currentPeriodEnd: "2099-01-01T00:00:00.000Z",
+        provider: "revenuecat",
+      },
+    };
+
+    persistSubscription(premium, "user_a");
+    expect(readCachedSubscription("user_b")).toBeUndefined();
+    const cached = readCachedSubscription("user_a");
+    expect(cached?.entitlements.isPremium).toBe(false);
+    expect(cached?.entitlements.plan).toBe("free");
+    expect(cached?.entitlements.provider).toBe("none");
   });
 });
