@@ -85,10 +85,18 @@ function boolField(record: UnknownRecord | null | undefined, keys: string[]): bo
 }
 
 function dateField(record: UnknownRecord | null | undefined, keys: string[]): Date | null {
-  const raw = textField(record, keys);
-  if (!raw) return null;
-  const date = new Date(raw);
-  return Number.isFinite(date.getTime()) ? date : null;
+  if (!record) return null;
+  for (const key of keys) {
+    const value = record[key];
+    const date =
+      typeof value === "number"
+        ? new Date(value)
+        : typeof value === "string" && value.length > 0
+          ? new Date(value)
+          : null;
+    if (date && Number.isFinite(date.getTime())) return date;
+  }
+  return null;
 }
 
 function nestedRecord(record: UnknownRecord | null | undefined, keys: string[]): UnknownRecord | null {
@@ -126,43 +134,76 @@ function pickActiveEntitlement(body: RcV2Response): UnknownRecord | null {
     const identifier = textField(entry, ["entitlement_id", "lookup_key", "identifier", "id"]);
     const expires = dateField(entry, ["expires_at", "expires_date", "expiration_at", "expiration_date"]);
     const graceExpires = dateField(entry, ["grace_period_expires_at", "grace_period_expires_date"]);
-    const matches = identifier === ENTITLEMENT_ID || textField(entry, ["product_id", "product_identifier"]);
+    const matches = identifier === ENTITLEMENT_ID || textField(entry, ["product_id", "product_identifier"]) || textField(entry, ["object"]) === "customer.active_entitlement";
     return Boolean(matches) && Boolean((expires && expires.getTime() > now) || (graceExpires && graceExpires.getTime() > now));
   });
   return active[0] ?? null;
+}
+
+function pickAccessSubscription(body: RcV2Response | null): UnknownRecord | null {
+  const now = Date.now();
+  const active = asArray(body ?? {}).filter((entry) => {
+    const status = textField(entry, ["status"]);
+    const givesAccess = boolField(entry, ["gives_access"]);
+    const expires = dateField(entry, ["current_period_ends_at", "ends_at", "expires_at", "expiration_at"]);
+    return Boolean(expires && expires.getTime() > now) && (givesAccess === true || status === "active");
+  });
+  return active[0] ?? null;
+}
+
+async function resolveStoreProductIdentifier(productId: string | null): Promise<string | null> {
+  if (!productId || productId.startsWith("amynest_")) return productId;
+  const result = await fetchRevenueCatV2<UnknownRecord>(`/v2/projects/${encodeURIComponent(RC_PROJECT_ID)}/products/${encodeURIComponent(productId)}`);
+  if (!result.ok) return productId;
+  return textField(result.data, ["store_identifier", "lookup_key", "id"]) ?? productId;
 }
 
 function buildSnapshotFromV2(
   userId: string,
   entitlement: UnknownRecord | null,
   customerBody: RcV2Response | null,
+  subscriptionBody: UnknownRecord | null,
+  productIdentifier: string | null,
   sourceEventType?: string,
 ): RevenueCatSnapshot {
   const customer = asArray(customerBody ?? {})[0] ?? {};
   const product = nestedRecord(entitlement, ["product"]);
-  const subscription = nestedRecord(entitlement, ["subscription"]);
+  const subscription = subscriptionBody ?? nestedRecord(entitlement, ["subscription"]);
   const store = nestedRecord(entitlement, ["store"]);
   const transaction = nestedRecord(entitlement, ["latest_transaction", "transaction"]);
+  const subscriptionEntitlement = asArray(subscription?.["entitlements"] ?? {})[0] ?? null;
   const productId =
+    productIdentifier ??
     textField(entitlement, ["product_id", "product_identifier"]) ??
+    textField(subscription, ["product_id", "product_identifier"]) ??
     textField(product, ["id", "lookup_key", "identifier"]);
   return {
     appUserId: textField(customer, ["app_user_id", "id"]) ?? userId,
-    originalAppUserId: textField(customer, ["original_app_user_id"]),
-    entitlementId: textField(entitlement, ["entitlement_id", "lookup_key", "identifier", "id"]) ?? ENTITLEMENT_ID,
+    originalAppUserId: textField(customer, ["original_app_user_id"]) ?? textField(subscription, ["original_customer_id"]),
+    entitlementId:
+      textField(subscriptionEntitlement, ["lookup_key", "entitlement_id", "identifier", "id"]) ??
+      textField(entitlement, ["entitlement_id", "lookup_key", "identifier", "id"]) ??
+      ENTITLEMENT_ID,
     productId,
-    store: textField(entitlement, ["store"]) ?? textField(store, ["type", "name"]),
-    environment: textField(entitlement, ["environment"]),
+    store: textField(subscription, ["store"]) ?? textField(entitlement, ["store"]) ?? textField(store, ["type", "name"]),
+    environment: textField(subscription, ["environment"]) ?? textField(entitlement, ["environment"]),
     originalTransactionId:
       textField(entitlement, ["original_transaction_id"]) ??
       textField(subscription, ["original_transaction_id"]) ??
+      textField(subscription, ["store_subscription_identifier"]) ??
       textField(transaction, ["original_transaction_id"]),
     latestTransactionId:
       textField(entitlement, ["latest_transaction_id", "transaction_id", "store_transaction_id"]) ??
+      textField(subscription, ["store_subscription_identifier", "id"]) ??
       textField(transaction, ["id", "transaction_id", "store_transaction_id"]),
-    expirationAt: dateField(entitlement, ["expires_at", "expires_date", "expiration_at", "expiration_date"]),
+    expirationAt:
+      dateField(subscription, ["current_period_ends_at", "ends_at", "expires_at", "expiration_at"]) ??
+      dateField(entitlement, ["expires_at", "expires_date", "expiration_at", "expiration_date"]),
     gracePeriodExpirationAt: dateField(entitlement, ["grace_period_expires_at", "grace_period_expires_date"]),
-    autoRenewStatus: boolField(entitlement, ["auto_renew_status", "will_renew", "is_auto_renewing"]),
+    autoRenewStatus:
+      textField(subscription, ["auto_renewal_status"]) === "will_renew"
+        ? true
+        : boolField(entitlement, ["auto_renew_status", "will_renew", "is_auto_renewing"]),
     cancelledAt: dateField(entitlement, ["cancelled_at", "unsubscribe_detected_at"]),
     eventType: sourceEventType ?? "CUSTOMER_SYNC",
     eventAt: new Date(),
@@ -200,8 +241,10 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
   try {
     const customerPath = `/v2/projects/${encodeURIComponent(RC_PROJECT_ID)}/customers/${encodeURIComponent(userId)}`;
     const entitlementsPath = `${customerPath}/active_entitlements`;
+    const subscriptionsPath = `${customerPath}/subscriptions`;
     const customerResult = await fetchRevenueCatV2<RcV2Response>(customerPath);
     const entitlementsResult = await fetchRevenueCatV2<RcV2Response>(entitlementsPath);
+    const subscriptionsResult = await fetchRevenueCatV2<RcV2Response>(subscriptionsPath);
 
     if (!customerResult.ok) {
       if (customerResult.reason === "customer_not_found") {
@@ -210,6 +253,7 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
       await markRevenueCatSyncError(userId, opts.source ?? "purchase_finalize", customerResult.reason, {
         customerStatus: customerResult.ok ? 200 : customerResult.status,
         entitlementsStatus: entitlementsResult.ok ? 200 : entitlementsResult.status,
+        subscriptionsStatus: subscriptionsResult.ok ? 200 : subscriptionsResult.status,
       });
       return { synced: false, isPremium: false, verifiedCustomer: false, activeEntitlement: false, dbUpdated: false, apiPremium: false, reason: customerResult.reason };
     }
@@ -222,16 +266,18 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
     }
 
     const activeEnt = pickActiveEntitlement(entitlementsResult.data);
-    if (!activeEnt) {
+    const activeSubscription = subscriptionsResult.ok ? pickAccessSubscription(subscriptionsResult.data) : null;
+    if (!activeEnt && !activeSubscription) {
       logger.warn(
         {
           userId,
           expectedEntitlementId: ENTITLEMENT_ID,
           entitlementCount: asArray(entitlementsResult.data).length,
+          subscriptionCount: subscriptionsResult.ok ? asArray(subscriptionsResult.data).length : null,
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
-      const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, opts.eventType ?? undefined);
+      const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(userId, snapshot, {
         source: opts.source ?? "purchase_finalize",
         providerEventId: opts.providerEventId,
@@ -239,7 +285,18 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
       return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, reason: "no_active_entitlement" };
     }
 
-    const snapshot = buildSnapshotFromV2(userId, activeEnt, customerResult.data, opts.eventType ?? undefined);
+    const rawProductId =
+      textField(activeEnt, ["product_id", "product_identifier"]) ??
+      textField(activeSubscription, ["product_id", "product_identifier"]);
+    const productIdentifier = await resolveStoreProductIdentifier(rawProductId);
+    const snapshot = buildSnapshotFromV2(
+      userId,
+      activeEnt,
+      customerResult.data,
+      activeSubscription,
+      productIdentifier,
+      opts.eventType ?? undefined,
+    );
     const plan = productIdToPlan(snapshot.productId);
     if (!plan) {
       logger.warn(
