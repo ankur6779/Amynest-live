@@ -4,6 +4,7 @@ import {
   db,
   funsheetDownloadsTable,
   subscriptionsTable,
+  worksheetDownloadsTable,
   type Subscription,
 } from "@workspace/db";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
@@ -122,7 +123,17 @@ async function countDownloadsForIstDay(
       ),
     );
 
-  return (coloring?.count ?? 0) + (funsheets?.count ?? 0);
+  const [worksheets] = await exec
+    .select({ count: sql<number>`count(*)::int` })
+    .from(worksheetDownloadsTable)
+    .where(
+      and(
+        eq(worksheetDownloadsTable.userId, userId),
+        dayPredicate(worksheetDownloadsTable.downloadedAt),
+      ),
+    );
+
+  return (coloring?.count ?? 0) + (funsheets?.count ?? 0) + (worksheets?.count ?? 0);
 }
 
 async function refreshSubscriptionBank(

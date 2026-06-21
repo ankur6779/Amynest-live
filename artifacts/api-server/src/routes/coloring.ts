@@ -233,13 +233,18 @@ router.get("/coloring/list", async (req, res): Promise<void> => {
         ),
       );
     const downloadedSet = new Set(downloaded.map((d) => d.fileId));
-    const available = allFiles.filter((f) => !downloadedSet.has(f.id));
+    const notDownloaded = allFiles.filter((f) => !downloadedSet.has(f.id));
+    const alreadyDownloaded = allFiles.filter((f) => downloadedSet.has(f.id));
+    const sortedFiles = [...notDownloaded, ...alreadyDownloaded];
 
-    const total = available.length;
+    const total = sortedFiles.length;
     const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
     const safePage = totalPages === 0 ? 0 : Math.min(page, totalPages - 1);
     const start = safePage * PAGE_SIZE;
-    const slice = available.slice(start, start + PAGE_SIZE);
+    const slice = sortedFiles.slice(start, start + PAGE_SIZE).map((f) => ({
+      ...f,
+      downloaded: downloadedSet.has(f.id),
+    }));
 
     const used = await getDailyDownloadCount(userId, childId);
     const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);

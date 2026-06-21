@@ -1,12 +1,13 @@
-import { parseApiJson } from "@/lib/safe-json-response";
+import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import amyLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_01_56_21_PM_1776587201948.png";
 import { useTranslation } from "react-i18next";
-import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
-import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
-import { useSubscription } from "@/hooks/use-subscription";
-import { useAuth } from "@/lib/firebase-auth-hooks";
-import { downloadPdfFromUrl, hubTodayIst } from "@/lib/hub-pdf-download";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import {
+  parseHubQuotaHeaders,
+  savePdfFromResponse,
+  type HubDownloadWallet,
+} from "@/lib/hub-pdf-download";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { worksheetProgressSummary } from "@workspace/learning-progress-engine";
 import {
@@ -19,69 +20,35 @@ interface Worksheet {
   mimeType: string;
   fileType: "pdf" | "image";
   category: string;
-  downloadUrl: string;
   previewUrl: string;
+  downloaded: boolean;
 }
-const FREE_DAILY_LIMIT = HUB_CONTENT_QUOTAS.worksheetDaily;
-const PREMIUM_DAILY_LIMIT = HUB_CONTENT_QUOTAS.premiumDownloadDaily;
-const LIFETIME_LIMIT = HUB_CONTENT_QUOTAS.worksheetLifetime;
+interface DailyQuota {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}
+interface LifetimeQuota {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}
+interface ListResponse {
+  ok: boolean;
+  worksheets: Worksheet[];
+  total: number;
+  dailyQuota: DailyQuota;
+  lifetimeQuota?: LifetimeQuota;
+  downloadWallet?: HubDownloadWallet | null;
+}
+interface DownloadResponse {
+  ok?: boolean;
+  dailyQuota?: DailyQuota;
+  lifetimeQuota?: LifetimeQuota;
+  downloadWallet?: HubDownloadWallet;
+  error?: string;
+}
 const PAGE_SIZE = 10;
-const LEGACY_STORAGE_KEYS = {
-  downloaded: "ws_downloaded_ids",
-  daily: "ws_daily"
-} as const;
-function storageKeys(userId: string) {
-  return {
-    downloaded: `ws_downloaded_ids_${userId}`,
-    daily: `ws_daily_${userId}`
-  } as const;
-}
-interface DailyRecord {
-  date: string;
-  count: number;
-}
-function getDownloadedIds(userId: string | null): Set<string> {
-  if (!userId) return new Set();
-  try {
-    const keys = storageKeys(userId);
-    const raw = localStorage.getItem(keys.downloaded);
-    if (raw) return new Set(JSON.parse(raw));
-    const legacy = localStorage.getItem(LEGACY_STORAGE_KEYS.downloaded);
-    return new Set(legacy ? JSON.parse(legacy) : []);
-  } catch {
-    return new Set();
-  }
-}
-function saveDownloadedId(id: string, userId: string): void {
-  const ids = getDownloadedIds(userId);
-  ids.add(id);
-  localStorage.setItem(storageKeys(userId).downloaded, JSON.stringify([...ids]));
-}
-function getDailyCount(userId: string | null): DailyRecord {
-  const today = hubTodayIst();
-  if (!userId) return { date: today, count: 0 };
-  try {
-    const keys = storageKeys(userId);
-    const raw = localStorage.getItem(keys.daily) ?? localStorage.getItem(LEGACY_STORAGE_KEYS.daily);
-    if (raw) {
-      const rec: DailyRecord = JSON.parse(raw);
-      if (rec.date === today) return rec;
-    }
-  } catch (e) { console.error("REAL ERROR:", e); }
-  return {
-    date: today,
-    count: 0
-  };
-}
-function incrementDailyCount(userId: string): DailyRecord {
-  const rec = getDailyCount(userId);
-  const next = {
-    date: hubTodayIst(),
-    count: rec.count + 1
-  };
-  localStorage.setItem(storageKeys(userId).daily, JSON.stringify(next));
-  return next;
-}
 export function PrintableWorksheets({
   childAgeMonths,
   childId,
@@ -92,8 +59,7 @@ export function PrintableWorksheets({
   const {
     t
   } = useTranslation();
-  const { isPremium } = useSubscription();
-  const { userId } = useAuth();
+  const authFetch = useAuthFetch();
   const { recordActivity } = useRecordLearningActivity(childId ?? null);
   const [all, setAll] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,54 +68,84 @@ export function PrintableWorksheets({
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
-  const [dailyRec, setDailyRec] = useState<DailyRecord>({
-    date: hubTodayIst(),
-    count: 0
-  });
+  const [quota, setQuota] = useState<DailyQuota | null>(null);
+  const [lifetimeQuota, setLifetimeQuota] = useState<LifetimeQuota | null>(null);
+  const [downloadWallet, setDownloadWallet] = useState<HubDownloadWallet | null>(null);
   const initRef = useRef(false);
-  useEffect(() => {
-    setDownloadedIds(getDownloadedIds(userId));
-    setDailyRec(getDailyCount(userId));
-  }, [userId]);
   const loadWorksheets = useCallback(() => {
+    if (!childId) {
+      setError("Please select a child to see worksheets.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
-    fetch(getApiUrl("/api/worksheets")).then(r => {
+    authFetch(`/api/worksheets/list?childId=${childId}`).then(r => {
       if (!r.ok) return parseApiJson<{ error?: string }>(r).then((b) => {
         throw new Error(b.error || `HTTP ${r.status}`);
       });
-      return parseApiJson<{ worksheets?: Worksheet[] }>(r);
-    }).then(data => setAll(data.worksheets || [])).catch((e: Error) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
+      return parseApiJson<ListResponse>(r);
+    }).then(data => {
+      setAll(data.worksheets || []);
+      setQuota(data.dailyQuota);
+      setLifetimeQuota(data.lifetimeQuota ?? null);
+      setDownloadWallet(data.downloadWallet ?? null);
+    }).catch((e: Error) => setError(e.message)).finally(() => setLoading(false));
+  }, [authFetch, childId]);
   useEffect(() => {
-    if (initRef.current) return;
     initRef.current = true;
     loadWorksheets();
   }, [loadWorksheets]);
   const handleDownload = useCallback(async (ws: Worksheet) => {
-    const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
-    if (!isPremium && downloadedIds.size >= LIFETIME_LIMIT) return;
-    if (dailyRec.count >= dailyLimit) return;
+    if (!childId) return;
+    if (!ws.downloaded && quota?.remaining !== null && quota?.remaining !== undefined && quota.remaining <= 0) return;
+    if (!ws.downloaded && lifetimeQuota?.remaining !== null && lifetimeQuota?.remaining !== undefined && lifetimeQuota.remaining <= 0) return;
     if (downloadingId !== null) return;
 
     setDownloadingId(ws.id);
     setDownloadError(null);
     try {
-      const saved = await downloadPdfFromUrl(
-        resolveApiMediaUrl(ws.downloadUrl),
-        ws.name,
-      );
+      const res = await authFetch("/api/worksheets/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          childId,
+          fileId: ws.id
+        })
+      });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("json")) {
+        const body = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as DownloadResponse;
+        if (res.status === 429) {
+          if (body.dailyQuota) setQuota(body.dailyQuota);
+          if (body.downloadWallet) setDownloadWallet(body.downloadWallet);
+          setDownloadError(body.downloadWallet
+            ? "Your download wallet is empty. You receive 5 new downloads tomorrow."
+            : "Daily limit reached. Try again tomorrow.");
+        } else if (res.status === 402) {
+          if (body.lifetimeQuota) setLifetimeQuota(body.lifetimeQuota);
+          setDownloadError("Free lifetime limit reached. Upgrade for unlimited downloads.");
+        } else if (res.status === 401) {
+          setDownloadError("Please sign in again to download.");
+        } else {
+          setDownloadError(body.error === "stream_failed"
+            ? "Couldn't save the PDF. Please try again."
+            : "Download failed. Please try again.");
+        }
+        return;
+      }
+      const saved = await savePdfFromResponse(res, ws.name);
       if (!saved) {
         setDownloadError("Couldn't save the PDF. Please try again.");
         return;
       }
-      if (!isPremium && userId) saveDownloadedId(ws.id, userId);
-      if (userId) {
-        const next = incrementDailyCount(userId);
-        if (!isPremium) setDownloadedIds(getDownloadedIds(userId));
-        setDailyRec(next);
-      }
+      const quotaHeaders = parseHubQuotaHeaders(res);
+      if (quotaHeaders.dailyQuota) setQuota(quotaHeaders.dailyQuota);
+      if (quotaHeaders.lifetimeQuota) setLifetimeQuota(quotaHeaders.lifetimeQuota);
+      if (quotaHeaders.downloadWallet) setDownloadWallet(quotaHeaders.downloadWallet);
+      setAll(prev => prev.map(item => item.id === ws.id ? { ...item, downloaded: true } : item));
       if (childId) {
         void recordActivity({
           activityId: `worksheet_${ws.id}`,
@@ -164,21 +160,23 @@ export function PrintableWorksheets({
     } finally {
       setDownloadingId(null);
     }
-  }, [childId, dailyRec, downloadedIds.size, downloadingId, isPremium, recordActivity, userId]);
+  }, [authFetch, childId, downloadingId, lifetimeQuota, quota, recordActivity]);
 
   const printableProgress = useMemo(
-    () => worksheetProgressSummary([...downloadedIds], all.length),
-    [downloadedIds, all.length],
+    () => worksheetProgressSummary(all.filter(w => w.downloaded).map(w => w.id), all.length),
+    [all],
   );
-  const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
-  const lifetimeUsed = downloadedIds.size;
-  const isDailyLimitReached = dailyRec.count >= dailyLimit;
-  const isLifetimeLimitReached = !isPremium && lifetimeUsed >= LIFETIME_LIMIT;
+  const downloadedCount = all.filter(w => w.downloaded).length;
+  const dailyLimit = quota?.limit ?? 0;
+  const dailyUsed = quota?.used ?? 0;
+  const dailyRemaining = quota?.remaining ?? 0;
+  const lifetimeUsed = lifetimeQuota?.used ?? downloadedCount;
+  const lifetimeLimit = lifetimeQuota?.limit;
+  const lifetimeRemaining = lifetimeQuota?.remaining ?? null;
+  const isDailyLimitReached = quota?.remaining !== null && quota?.remaining !== undefined && quota.remaining <= 0;
+  const isLifetimeLimitReached = lifetimeQuota?.remaining !== null && lifetimeQuota?.remaining !== undefined && lifetimeQuota.remaining <= 0;
   const isLimitReached = isDailyLimitReached || isLifetimeLimitReached;
-  const dailyRemaining = Math.max(0, dailyLimit - dailyRec.count);
-  const lifetimeRemaining = Math.max(0, LIFETIME_LIMIT - lifetimeUsed);
   const filtered = all
-    .filter(w => isPremium || !downloadedIds.has(w.id))
     .filter(w => !query || w.name.toLowerCase().includes(query.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const currentPage = Math.min(page, Math.max(1, totalPages));
@@ -215,7 +213,6 @@ export function PrintableWorksheets({
         </button>
       </div>;
   }
-  const allDownloaded = all.length > 0 && all.every(w => downloadedIds.has(w.id));
   return <>
       <style>{`
         @keyframes ws-spin { to { transform: rotate(360deg); } }
@@ -242,6 +239,8 @@ export function PrintableWorksheets({
         </div>
       )}
 
+      {downloadWallet?.enabled && <DownloadWalletCard wallet={downloadWallet} />}
+
       {/* Download quota badge */}
       <div style={{
       display: "flex",
@@ -267,9 +266,9 @@ export function PrintableWorksheets({
               ? "Lifetime free limit reached"
               : isDailyLimitReached
                 ? "Daily limit reached"
-                : isPremium
-                  ? `${dailyRemaining} download${dailyRemaining !== 1 ? "s" : ""} left today (Premium)`
-                  : `${dailyRemaining} download${dailyRemaining !== 1 ? "s" : ""} left today · ${lifetimeRemaining} lifetime left`}
+                : lifetimeLimit == null
+                  ? `${dailyRemaining} download${dailyRemaining !== 1 ? "s" : ""} available today`
+                  : `${dailyRemaining} download${dailyRemaining !== 1 ? "s" : ""} left today · ${lifetimeRemaining ?? 0} lifetime left`}
           </p>
           <p style={{
           margin: 0,
@@ -277,12 +276,12 @@ export function PrintableWorksheets({
           color: "#9ca3af"
         }}>
             {isLifetimeLimitReached
-              ? `You've used all ${LIFETIME_LIMIT} free worksheets — upgrade for more`
+              ? `You've used all ${lifetimeLimit ?? lifetimeUsed} free worksheets — upgrade for more`
               : isDailyLimitReached
                 ? "Come back tomorrow — daily limit resets at midnight"
-                : isPremium
-                  ? `${dailyRec.count}/${dailyLimit} used today · Resets daily`
-                  : `${dailyRec.count}/${dailyLimit} today · ${lifetimeUsed}/${LIFETIME_LIMIT} lifetime`}
+                : lifetimeLimit == null
+                  ? `${dailyUsed}/${dailyLimit} used today · Re-downloads do not use quota`
+                  : `${dailyUsed}/${dailyLimit} today · ${lifetimeUsed}/${lifetimeLimit} lifetime`}
           </p>
         </div>
       </div>
@@ -344,40 +343,10 @@ export function PrintableWorksheets({
       color: "#9ca3af"
     }}>
         {filtered.length} {t("components.printable_worksheets.worksheet")}{filtered.length !== 1 ? "s" : ""}
-        {downloadedIds.size > 0 ? ` · ${downloadedIds.size} already downloaded` : ""}
+        {downloadedCount > 0 ? ` · ${downloadedCount} already downloaded` : ""}
       </p>
 
-      {/* All downloaded state */}
-      {allDownloaded ? <div style={{
-      textAlign: "center",
-      padding: "36px 20px",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 12
-    }}>
-          <img src={amyLogo} alt={t("components.printable_worksheets.amynest")} style={{
-        width: 64,
-        opacity: 0.7
-      }} />
-          <p style={{
-        fontSize: 16,
-        fontWeight: 700,
-        color: "#374151",
-        margin: 0
-      }}>
-            {t("components.printable_worksheets.all_worksheets_downloaded")}
-          </p>
-          <p style={{
-        fontSize: 13,
-        color: "#9ca3af",
-        margin: 0,
-        maxWidth: 240,
-        lineHeight: 1.5
-      }}>
-            {t("components.printable_worksheets.you_ve_gone_through_the_whole_collection_new_worksheets_adde")}
-          </p>
-        </div> : filtered.length === 0 ? <div style={{
+      {filtered.length === 0 ? <div style={{
       textAlign: "center",
       padding: "36px 20px"
     }}>
@@ -539,34 +508,115 @@ function WorksheetCard({
           {displayName}
         </p>
 
-        <button className="ws-dl-btn" disabled={isLimitReached || isDownloading} onClick={onDownload} style={{
+        {worksheet.downloaded && <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: "hsl(var(--brand-green-600))"
+      }}>Downloaded · re-download free</span>}
+        <button className="ws-dl-btn" disabled={(isLimitReached && !worksheet.downloaded) || isDownloading} onClick={onDownload} style={{
         width: "100%",
-        background: isLimitReached ? "#94a3b8" : "#1e293b",
+        background: isLimitReached && !worksheet.downloaded ? "#94a3b8" : "#1e293b",
         color: "#fff",
         border: "none",
         borderRadius: 10,
         padding: "10px 12px",
         fontSize: 13,
         fontWeight: 600,
-        cursor: isLimitReached || isDownloading ? "not-allowed" : "pointer",
+        cursor: (isLimitReached && !worksheet.downloaded) || isDownloading ? "not-allowed" : "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
-        opacity: isLimitReached || isDownloading ? 0.65 : 1,
+        opacity: (isLimitReached && !worksheet.downloaded) || isDownloading ? 0.65 : 1,
         transition: "opacity 0.15s"
       }}>
-          {isLimitReached ? <>{t("components.printable_worksheets.limit_reached")}</> : isDownloading ? <>Saving…</> : <>
+          {isLimitReached && !worksheet.downloaded ? <>{t("components.printable_worksheets.limit_reached")}</> : isDownloading ? <>Saving…</> : <>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" strokeLinejoin="round" />
                 <polyline points="7 10 12 15 17 10" strokeLinecap="round" strokeLinejoin="round" />
                 <line x1="12" y1="15" x2="12" y2="3" strokeLinecap="round" />
               </svg>
-              {t("components.printable_worksheets.download")}
+              {worksheet.downloaded ? "Download Again" : t("components.printable_worksheets.download")}
             </>}
         </button>
       </div>
     </div>;
+}
+function DownloadWalletCard({ wallet }: { wallet: HubDownloadWallet }) {
+  return (
+    <div style={{
+      border: "1px solid rgba(168,85,247,0.22)",
+      background: "rgba(168,85,247,0.06)",
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 14
+    }}>
+      <div style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 12
+      }}>
+        <div>
+          <p style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 800,
+            color: "hsl(var(--foreground))"
+          }}>
+            Worksheet Downloads
+          </p>
+          <p style={{
+            margin: "4px 0 0",
+            fontSize: 12,
+            color: "#9ca3af"
+          }}>
+            Unused downloads are saved automatically.
+          </p>
+        </div>
+        <span style={{
+          border: "1px solid hsl(var(--border))",
+          borderRadius: 999,
+          padding: "4px 8px",
+          fontSize: 11,
+          fontWeight: 700,
+          whiteSpace: "nowrap"
+        }}>
+          Available Today: {wallet.availableToday}
+        </span>
+      </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 8,
+        marginTop: 12,
+        fontSize: 12
+      }}>
+        <WalletStat label="Daily Refresh" value={`+${wallet.dailyRefresh}`} />
+        <WalletStat label="Banked Downloads" value={String(wallet.bankedDownloads)} />
+        <WalletStat label="Maximum Bank" value={String(wallet.maxBank)} />
+      </div>
+      <p style={{
+        margin: "10px 0 0",
+        fontSize: 12,
+        color: "#9ca3af"
+      }}>
+        Build your download bank up to {wallet.maxBank} worksheets.
+      </p>
+    </div>
+  );
+}
+function WalletStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      borderRadius: 12,
+      background: "rgba(255,255,255,0.55)",
+      padding: 8
+    }}>
+      <p style={{ margin: 0, color: "#9ca3af" }}>{label}</p>
+      <p style={{ margin: "3px 0 0", fontWeight: 800 }}>{value}</p>
+    </div>
+  );
 }
 function darkBtn(): React.CSSProperties {
   return {

@@ -3401,7 +3401,7 @@
         "search_placeholder": "Search books, topics, or keywords",
         "book_count": "{{count}} of {{total}} books",
         "free_books_remaining": "{{count}} free books left to read",
-        "book_locked": "You've read your 3 free books. Upgrade to unlock the full Curiosity library.",
+        "book_locked": "You've read your 1 free book. Upgrade to unlock the full Curiosity library.",
         "empty_quote": "Every great discovery starts with a question.",
         "empty_cta": "Explore Books"
       },
