@@ -1772,6 +1772,118 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
     }),
     ...generationTransparencyPayload("fallback"),
   });
+  } catch (err) {
+    logger.error(
+      {
+        evt: "routine.generate_failed",
+        userId,
+        childId: parsed.data.childId,
+        date: parsed.data.date,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "Rule-based routine generation failed — attempting emergency safe fallback",
+    );
+    if (res.headersSent) {
+      return;
+    }
+
+    try {
+      const childRow = await getChildByIdForUser(parsed.data.childId, userId);
+      if (!childRow) {
+        res.status(404).json({ error: "Child not found" });
+        return;
+      }
+      const child = normalizeChildForRoutine(childRow);
+      const [pp] = await db
+        .select()
+        .from(parentProfilesTable)
+        .where(eq(parentProfilesTable.userId, userId));
+      const effectiveAge = parsed.data.age ?? child.age;
+      const totalAgeMonths = (effectiveAge * 12) + ((child as any).ageMonths ?? 0);
+      const ageGroup: AgeGroup =
+        totalAgeMonths < 12 ? "infant"
+        : totalAgeMonths < 36 ? "toddler"
+        : totalAgeMonths < 60 ? "preschool"
+        : totalAgeMonths < 120 ? "early_school"
+        : "pre_teen";
+      const wakeUpTime = normalizeTo24h(parsed.data.wakeTime ?? child.wakeUpTime);
+      const sleepTime = normalizeTo24h(child.sleepTime);
+      const hasSchool = isSchoolDay(
+        parsed.data.date,
+        child.isSchoolGoing,
+        (child as any).schoolDays,
+        parsed.data.hasSchool,
+      );
+      const feedingType =
+        child.feedingType === "breastfeeding" ||
+        child.feedingType === "formula" ||
+        child.feedingType === "mixed"
+          ? child.feedingType
+          : undefined;
+      const emergencyItems = buildEmergencySafeRoutine({
+        wakeUpTime,
+        sleepTime,
+        ageInMonths: totalAgeMonths,
+        ageGroup,
+        country: (pp as Record<string, unknown> | null)?.country as string | undefined,
+        hasSchool,
+        feedingType,
+      });
+      const hard = hardValidateSchedule(emergencyItems, wakeUpTime, sleepTime);
+      const trust = runBlockingTrustValidation(emergencyItems, {
+        wakeMins: parseTimeToMins(wakeUpTime),
+        sleepMins: parseTimeToMins(sleepTime),
+        ageGroup,
+        ageInMonths: totalAgeMonths,
+        country: (pp as Record<string, unknown> | null)?.country as string | undefined,
+        hasSchool,
+      });
+      if (!hard.valid || !trust.valid) {
+        throw new Error("emergency_routine_failed_validation");
+      }
+
+      const emergencyBody = GenerateRoutineResponse.parse({
+        title: `${child.name}'s Routine`,
+        items: emergencyItems,
+        adaptations: finalizeParentAdaptations(
+          ["Amy generated a simplified routine instantly."],
+          {
+            hasSchool,
+            isWeekendDay:
+              (() => {
+                const [yr, mo, dy] = parsed.data.date.split("-").map(Number);
+                const dow = new Date(yr, mo - 1, dy).getDay();
+                return dow === 0 || dow === 6;
+              })(),
+            mood: parsed.data.mood ?? "normal",
+          },
+        ),
+        fixedActivitiesResult: null,
+      });
+      res.json({
+        ...emergencyBody,
+        success: false,
+        fallback: true,
+        ...generationTransparencyPayload("fallback"),
+      });
+    } catch (fallbackErr) {
+      logger.error(
+        {
+          evt: "routine.generate_emergency_failed",
+          userId,
+          childId: parsed.data.childId,
+          date: parsed.data.date,
+          message: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+        },
+        "Emergency routine fallback failed",
+      );
+      if (!res.headersSent) {
+        res.status(422).json({
+          error: "routine_validation_failed",
+          message: "We couldn't build a safe routine right now. Please try again.",
+        });
+      }
+    }
   } finally {
     await releaseRoutineGenerateSlot();
   }
