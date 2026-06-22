@@ -27,12 +27,39 @@ export function remainingDailySeconds(
   return Math.max(0, dailyLimitSeconds - secondsUsed);
 }
 
+export function remainingMonthlySeconds(
+  secondsUsed: number,
+  monthlyLimitSeconds: number,
+): number {
+  return Math.max(0, monthlyLimitSeconds - secondsUsed);
+}
+
+export function remainingSpeechCoachSeconds(input: {
+  dailyUsedSeconds: number;
+  dailyLimitSeconds: number;
+  monthlyUsedSeconds: number;
+  monthlyLimitSeconds: number;
+}): number {
+  return Math.min(
+    remainingDailySeconds(input.dailyUsedSeconds, input.dailyLimitSeconds),
+    remainingMonthlySeconds(input.monthlyUsedSeconds, input.monthlyLimitSeconds),
+  );
+}
+
 export function isDailyLimitReached(
   secondsUsed: number,
   dailyLimitSeconds: number,
 ): boolean {
   if (dailyLimitSeconds <= 0) return true;
   return secondsUsed >= dailyLimitSeconds;
+}
+
+export function isMonthlyLimitReached(
+  secondsUsed: number,
+  monthlyLimitSeconds: number,
+): boolean {
+  if (monthlyLimitSeconds <= 0) return true;
+  return secondsUsed >= monthlyLimitSeconds;
 }
 
 export const DAILY_LIMIT_MESSAGE =

@@ -1162,22 +1162,6 @@ function ParentingHubPage() {
   },
   // ── Amy tutors (learning routes) ─────────────────────────────────────
   {
-    id: "amy-learning-tutor",
-    alwaysCurrent: true,
-    render: () => (
-      <HubLaunchCard
-        href="/learn-with-amy"
-        title={t("parent_hub.web_tiles.amy-learning-tutor.title")}
-        description={t("parent_hub.web_tiles.amy-learning-tutor.description")}
-        icon={<GraduationCap className="h-5 w-5 text-white" />}
-        accentClass="bg-gradient-to-br from-violet-500 to-indigo-600"
-        cardClass="bg-gradient-to-br from-violet-500/30 to-indigo-600/15 hover:shadow-[0_10px_36px_-10px_rgba(99,102,241,0.45)]"
-        testId="amy-learning-tutor-launch-card"
-        sectionId="amy-learning-tutor"
-      />
-    ),
-  },
-  {
     id: "amy-quick-tutor",
     alwaysCurrent: true,
     render: () => (

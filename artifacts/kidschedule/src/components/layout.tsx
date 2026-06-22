@@ -165,8 +165,7 @@ export function Layout({
     safePathStartsWith(location, "/audio-lessons");
   const isAssistantRoute =
     safePathStartsWithSegment(location, "/assistant") ||
-    safePathStartsWithSegment(location, "/amy-ai-tutor") ||
-    safePathStartsWithSegment(location, "/learn-with-amy");
+    safePathStartsWithSegment(location, "/amy-ai-tutor");
   const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
   const isDashboard = location === "/" || location === "/dashboard";
   const showDashboardChrome = location === "/dashboard";

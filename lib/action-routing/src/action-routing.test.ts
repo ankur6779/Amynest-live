@@ -19,7 +19,7 @@ describe("action-routing", () => {
   test("legacy paths resolve to canonical routes", () => {
     assert.equal(resolveDeepLinkPath("/hub").path, "/parenting-hub");
     assert.equal(resolveDeepLinkPath("/meals").path, "/nutrition");
-    assert.equal(resolveDeepLinkPath("/study-zone").path, "/learn-with-amy");
+    assert.equal(resolveDeepLinkPath("/study-zone").path, "/parenting-hub");
     assert.equal(resolveDeepLinkPath("/story-time").path, "/parenting-hub#tile-story-hub");
     assert.equal(resolveDeepLinkPath("/subscription").path, "/pricing");
     assert.equal(resolveDeepLinkPath("/routine").path, "/routines");

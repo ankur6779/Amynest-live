@@ -138,7 +138,7 @@ export function deriveIntentsFromContext(ctx: IntentSyncContext): CreateIntentIn
         amyContinuationLine: amyLineForIntent("CONTINUE_LEARNING_SESSION", "learning", childName),
         actionTarget: "learning_subject",
         entityId: ctx.learningSession.lastActivityId,
-        href: "/learn-with-amy",
+        href: "/parenting-hub",
         progressPct: pct,
         progressJson: {
           sessionId: ctx.learningSession.sessionId,

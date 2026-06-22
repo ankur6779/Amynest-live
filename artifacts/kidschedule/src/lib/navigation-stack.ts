@@ -36,7 +36,6 @@ export const HUB_MODULE_PREFIXES = [
   "/spelling",
   "/olympiad",
   "/event-prep",
-  "/learn-with-amy",
   "/amy-ai-tutor",
 ];
 
@@ -59,7 +58,6 @@ const PARENT_ROUTE: Record<string, string> = {
   "/olympiad": "/parenting-hub",
   "/event-prep": "/parenting-hub",
   "/amy-ai-tutor": "/parenting-hub",
-  "/learn-with-amy": "/parenting-hub",
   "/assistant": "/parenting-hub",
   "/amy-coach/progress": "/amy-coach",
   // Discovery Worlds: a sound world → its hub → Parent Hub.

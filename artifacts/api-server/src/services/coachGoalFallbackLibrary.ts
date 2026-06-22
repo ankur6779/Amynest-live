@@ -896,24 +896,28 @@ function tpl(
   goalContext: string,
   category: string,
 ): WinTemplate {
-  const actions: [string, string, string] = [
+  const categoryLabel = category.replace(/_/g, " ");
+  const actions: [string, string, string, string] = [
     `"${title}": write the exact words or steps you'll use today`,
-    `"${title}": schedule one calm-moment practice this week for ${goalContext}`,
-    `"${title}" (${category.replace(/_/g, " ")}): jot what shifted — even 5% counts`,
+    `"${title}": practice once in a calm moment before using it during stress`,
+    `"${title}": keep the cue short, repeatable, and specific to ${goalContext}`,
+    `"${title}" (${categoryLabel}): jot what shifted — even 5% counts`,
   ];
   return {
     title,
     objective: `${objective} for ${goalContext}`,
     deep_explanation:
-      `This step targets the ${category.replace(/_/g, " ")} layer of change — a distinct angle from prior wins. ` +
-      `Small, repeatable actions build trust when working on ${goalContext}.`,
+      `This step targets the ${categoryLabel} layer of change — a distinct angle from prior wins. ` +
+      `Behaviour-change research shows that children and parents learn faster when the new cue is small, repeated, and practised before the high-stress moment. ` +
+      `That reduces cognitive load, gives the nervous system a predictable script, and makes success visible enough to repeat. ` +
+      `For ${goalContext}, the goal is not a perfect day; it is one reliable pattern that makes the next attempt easier.`,
     actions,
     example:
       `Instead of fixing everything at once, the parent tried "${title.toLowerCase()}" and saw a small shift.`,
     mistake_to_avoid: "Adding more rules when the current step still feels too hard.",
     micro_task: `Write one reminder for "${title}" today.`,
     duration: "3–7 days",
-    science_reference: "Behaviour-change science",
+    science_reference: "Fogg, 2019 — Tiny Habits; Bandura, 1977 — self-efficacy",
   };
 }
 

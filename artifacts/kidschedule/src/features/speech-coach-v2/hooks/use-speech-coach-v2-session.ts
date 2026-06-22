@@ -5,7 +5,6 @@ import {
   currentExercise,
   DAILY_LIMIT_MESSAGE,
   getCurrentExercise,
-  isDailyLimitReached,
   isSessionCompleteMastery,
   phaseLabel,
   SPEECH_COACH_V2_SESSION_SECONDS,
@@ -43,6 +42,17 @@ export type SessionUiState =
   | "limit_reached"
   | "celebrating"
   | "error";
+
+function isSpeechCoachLimitError(err: unknown): boolean {
+  return (
+    err instanceof SpeechCoachV2ApiError
+    && (
+      err.code === "daily_limit_reached"
+      || err.code === "monthly_limit_reached"
+      || err.code === "session_limit_reached"
+    )
+  );
+}
 
 export function useSpeechCoachV2Session(input: {
   authFetch: AuthFetchFn;
@@ -137,7 +147,7 @@ export function useSpeechCoachV2Session(input: {
     try {
       const usage = await fetchSpeechCoachV2Usage(authFetch, childId);
       applyUsage(usage);
-      if (isDailyLimitReached(usage.speechSecondsUsed, usage.dailyLimitSeconds)) {
+      if (usage.limitReached) {
         setUiState("limit_reached");
         trackSpeechCoachV2LimitReached({ childId, isTrial: usage.isTrial });
         return;
@@ -172,10 +182,15 @@ export function useSpeechCoachV2Session(input: {
 
       await startFreshSession();
     } catch (err) {
+      if (isSpeechCoachLimitError(err)) {
+        setUiState("limit_reached");
+        trackSpeechCoachV2LimitReached({ childId, isTrial });
+        return;
+      }
       setErrorMessage(err instanceof Error ? err.message : "Could not start session");
       setUiState("error");
     }
-  }, [applyUsage, authFetch, childId, enabled, startFreshSession]);
+  }, [applyUsage, authFetch, childId, enabled, isTrial, startFreshSession]);
 
   const resumeSession = useCallback(async () => {
     if (!pendingResume) return;
@@ -201,10 +216,15 @@ export function useSpeechCoachV2Session(input: {
         ageBand: started.ageBand,
       });
     } catch (err) {
+      if (isSpeechCoachLimitError(err)) {
+        setUiState("limit_reached");
+        trackSpeechCoachV2LimitReached({ childId, isTrial });
+        return;
+      }
       setErrorMessage(err instanceof Error ? err.message : "Could not resume session");
       setUiState("error");
     }
-  }, [applySession, authFetch, childId, pendingResume]);
+  }, [applySession, authFetch, childId, isTrial, pendingResume]);
 
   const discardAndStartNew = useCallback(async () => {
     clearLocalSnapshot(childId);
@@ -213,10 +233,15 @@ export function useSpeechCoachV2Session(input: {
     try {
       await startFreshSession();
     } catch (err) {
+      if (isSpeechCoachLimitError(err)) {
+        setUiState("limit_reached");
+        trackSpeechCoachV2LimitReached({ childId, isTrial });
+        return;
+      }
       setErrorMessage(err instanceof Error ? err.message : "Could not start session");
       setUiState("error");
     }
-  }, [childId, startFreshSession]);
+  }, [childId, isTrial, startFreshSession]);
 
   useEffect(() => {
     void bootstrap();
@@ -275,10 +300,7 @@ export function useSpeechCoachV2Session(input: {
           setRemainingSeconds(hb.remainingSeconds);
         })
         .catch((err: unknown) => {
-          if (
-            err instanceof SpeechCoachV2ApiError
-            && (err.code === "daily_limit_reached" || err.code === "session_limit_reached")
-          ) {
+          if (isSpeechCoachLimitError(err)) {
             setUiState("limit_reached");
             trackSpeechCoachV2LimitReached({ childId, isTrial });
           }

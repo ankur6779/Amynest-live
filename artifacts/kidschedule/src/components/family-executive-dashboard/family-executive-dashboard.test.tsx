@@ -31,7 +31,7 @@ const mockDashboard = {
   goals: { goals: [], overallProgress: 0 },
   learningProgressPct: 68,
   routineConsistencyPct: 55,
-  learningMetric: { label: "Learning", pct: 68, action: { ...mockAction, href: "/learn-with-amy", actionTarget: "learning_subject" } },
+  learningMetric: { label: "Learning", pct: 68, action: { ...mockAction, href: "/parenting-hub", actionTarget: "learning_subject" } },
   routineMetric: { label: "Routine", pct: 55, action: mockAction },
   familyHealthAction: { ...mockAction, actionTarget: "family_health", href: "/parenting-hub" },
   amyRecommendation: {

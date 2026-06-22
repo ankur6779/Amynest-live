@@ -1,6 +1,6 @@
 export type ScoringConfidence = "HIGH" | "MEDIUM" | "LOW";
 
-export const SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS = 18_000;
+export const SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS = 9_000;
 
 export interface SpeechTimingMetadata {
   responseSeconds?: number;

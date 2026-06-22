@@ -1171,13 +1171,13 @@ Return ONLY valid JSON in this EXACT shape:
       "win": 1,
       "title": "Clear imperative step name (3-6 words)",
       "objective": "ONE sentence: what this step fixes for parent and child",
-      "deep_explanation": "5-6 lines explaining WHY this works (neuroscience, developmental psychology, or behavioural science). Reference a researcher/principle. Make a parent who reads ONLY this section understand the science.",
-      "actions": ["Specific action 1 (concrete, doable today)", "Specific action 2", "Specific action 3", "Specific action 4 (optional)"],
+      "deep_explanation": "6-8 lines explaining WHY this works (neuroscience, developmental psychology, or behavioural science). Reference a researcher/principle and explain the mechanism in plain language. Make a parent who reads ONLY this section understand the science.",
+      "actions": ["Detailed action 1 (concrete, doable today)", "Detailed action 2 with exact words/timing", "Detailed action 3 with what to do if child resists", "Detailed action 4", "Detailed action 5 (optional)"],
       "example": "ONE realistic 2-3 sentence story of a parent applying this step and what shifted",
       "mistake_to_avoid": "ONE sentence naming the most common parenting mistake that undermines this step",
       "micro_task": "ONE small task the parent can do TODAY in under 5 minutes to start practising this win",
       "duration": "How long to practice (e.g. '2-3 days', '1 week', '2 weeks', 'Ongoing')",
-      "science_reference": "Short reference to the underlying scientific concept, study or theory (e.g. 'Operant conditioning (Skinner)', 'Polyvagal Theory (Porges)', 'Dopamine reward system', 'Sleep-cycle research')"
+      "science_reference": "1-2 named sources separated by semicolons: real researcher, peer-reviewed study/theory, or guideline body with year when known (e.g. 'Mindell et al., 2006 bedtime routines; AAP sleep guidance', 'Gottman emotion coaching; Eisenberg et al. emotion regulation research')"
     }
   ]
 }
@@ -1187,11 +1187,11 @@ STRICT RULES:
 - Progression must follow: (1-2) Connect & diagnose root cause → (3-4) Set expectations & give autonomy → (5-7) Build regulation & skills → (8-9) Repair & track → (10-11) Consistency & setbacks → (12) Family identity
 - Each win is a COMPLETE module — no overlaps, no repetition
 - Tone: warm, calm, non-judgmental, specific to ${input.ageGroup} years
-- Each "actions" array MUST have 3-5 items
+- Each "actions" array MUST have 4-6 specific, implementable items when possible
 - Examples must feel real, with names and specifics — not abstract
 - Reference at least 5 different researchers/principles across the 12 wins
-- "deep_explanation" must be 6-8 lines of substantive science, not generic
-- Every win MUST include a "science_reference" naming a real researcher, theory, study, or guideline body (AAP/WHO/CDC/NIH/RCPCH etc.). Generic phrases like "research shows" are NOT acceptable — name the source.
+- "deep_explanation" must be 6-8 lines of substantive science, not generic, and must explain why the step works beyond the action list
+- Every win MUST include a "science_reference" naming a real researcher, theory, study, peer-reviewed paper, or guideline body (AAP/WHO/CDC/NIH/NICE/RCPCH etc.). Generic phrases like "research shows" are NOT acceptable — name the source and include a year when known.
 - When the parent has provided topic-specific context above, weave those specifics into the wins (root_cause, examples, actions, micro_tasks, mistake_to_avoid) so the plan feels personalised — name the location/device/food/trigger they reported instead of generic phrasing.
 - Output ONLY the JSON object — no other text
 

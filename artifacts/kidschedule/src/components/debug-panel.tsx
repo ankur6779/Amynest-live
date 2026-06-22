@@ -28,7 +28,6 @@ const SCREEN_NAMES: Record<string, string> = {
   "/games": "Games",
   "/assistant": "Assistant",
   "/amy-ai-tutor": "Amy Quick Tutor",
-  "/learn-with-amy": "Learn with Amy",
   "/ai-coach": "AI Coach",
   "/ai-coach/progress": "AI Coach Progress",
   "/recipes": "Recipes",

@@ -116,8 +116,7 @@ export async function startSpeechCoachV2Session(
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as { message?: string }).message ?? "Failed to start session");
+    throw await parseApiError(res, "Failed to start session");
   }
   return parseApiJson<SpeechCoachV2StartResponse>(res);
 }

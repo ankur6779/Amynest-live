@@ -10,7 +10,8 @@ import {
   createInitialSessionState,
   DAILY_LIMIT_MESSAGE,
   isDailyLimitReached,
-  remainingDailySeconds,
+  isMonthlyLimitReached,
+  remainingSpeechCoachSeconds,
   SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
   toFullSessionState,
   utcDateKey,
@@ -109,8 +110,15 @@ async function buildUsageResponse(
     dailyLimitSeconds: policy.dailyLimitSeconds,
     monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
     monthSecondsUsed: monthUsed,
-    remainingSeconds: remainingDailySeconds(secondsUsed, policy.dailyLimitSeconds),
-    limitReached: isDailyLimitReached(secondsUsed, policy.dailyLimitSeconds),
+    remainingSeconds: remainingSpeechCoachSeconds({
+      dailyUsedSeconds: secondsUsed,
+      dailyLimitSeconds: policy.dailyLimitSeconds,
+      monthlyUsedSeconds: monthUsed,
+      monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+    }),
+    limitReached:
+      isDailyLimitReached(secondsUsed, policy.dailyLimitSeconds)
+      || isMonthlyLimitReached(monthUsed, SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS),
     isTrial: policy.isTrial,
     isPaid: policy.isPaid,
     dateKey: utcDateKey(),
@@ -195,7 +203,10 @@ router.post(
       return;
     }
 
-    const secondsUsed = await getDailyUsageSeconds(userId, body.childId);
+    const [secondsUsed, monthUsed] = await Promise.all([
+      getDailyUsageSeconds(userId, body.childId),
+      getMonthlyUsageSeconds(userId, body.childId),
+    ]);
     const policy = await resolveSpeechCoachV2UsagePolicy(userId);
     if (!canStartSession(secondsUsed, policy.dailyLimitSeconds)) {
       res.status(429).json({
@@ -204,6 +215,17 @@ router.post(
         speechSecondsUsed: secondsUsed,
         dailyLimitSeconds: policy.dailyLimitSeconds,
         isTrial: policy.isTrial,
+      });
+      return;
+    }
+    if (isMonthlyLimitReached(monthUsed, SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS)) {
+      res.status(429).json({
+        error: "monthly_limit_reached",
+        message: "Monthly speech limit reached.",
+        monthSecondsUsed: monthUsed,
+        monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+        isTrial: policy.isTrial,
+        isPaid: policy.isPaid,
       });
       return;
     }
@@ -251,7 +273,12 @@ router.post(
       phase: state.phase,
       exercises: state.exercises,
       sessionState: state,
-      remainingSeconds: remainingDailySeconds(secondsUsed, policy.dailyLimitSeconds),
+      remainingSeconds: remainingSpeechCoachSeconds({
+        dailyUsedSeconds: secondsUsed,
+        dailyLimitSeconds: policy.dailyLimitSeconds,
+        monthlyUsedSeconds: monthUsed,
+        monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+      }),
       dailyLimitSeconds: policy.dailyLimitSeconds,
       isTrial: policy.isTrial,
       isPaid: policy.isPaid,
@@ -326,13 +353,37 @@ router.post(
     }
 
     const safeInstructions = validateAmyResponse(body.instructions);
+    const [secondsUsed, monthUsed] = await Promise.all([
+      getDailyUsageSeconds(userId, body.childId),
+      getMonthlyUsageSeconds(userId, body.childId),
+    ]);
+    const policy = await resolveSpeechCoachV2UsagePolicy(userId);
+    if (!canStartSession(secondsUsed, policy.dailyLimitSeconds)) {
+      res.status(429).json({
+        error: "daily_limit_reached",
+        message: DAILY_LIMIT_MESSAGE,
+        speechSecondsUsed: secondsUsed,
+        dailyLimitSeconds: policy.dailyLimitSeconds,
+        isTrial: policy.isTrial,
+      });
+      return;
+    }
+    if (isMonthlyLimitReached(monthUsed, SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS)) {
+      res.status(429).json({
+        error: "monthly_limit_reached",
+        message: "Monthly speech limit reached.",
+        monthSecondsUsed: monthUsed,
+        monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+        isTrial: policy.isTrial,
+        isPaid: policy.isPaid,
+      });
+      return;
+    }
+
     const minted = await mintRealtimeClientSecret({
       userId,
       instructions: safeInstructions.text || body.instructions,
     });
-
-    const secondsUsed = await getDailyUsageSeconds(userId, body.childId);
-    const policy = await resolveSpeechCoachV2UsagePolicy(userId);
 
     res.json({
       clientSecret: minted.clientSecret,
@@ -342,7 +393,12 @@ router.post(
       callsUrl: minted.callsUrl,
       sessionId: minted.sessionId,
       mintResponse: minted.mintResponse,
-      remainingSeconds: remainingDailySeconds(secondsUsed, policy.dailyLimitSeconds),
+      remainingSeconds: remainingSpeechCoachSeconds({
+        dailyUsedSeconds: secondsUsed,
+        dailyLimitSeconds: policy.dailyLimitSeconds,
+        monthlyUsedSeconds: monthUsed,
+        monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+      }),
       dailyLimitSeconds: policy.dailyLimitSeconds,
       isTrial: policy.isTrial,
     });

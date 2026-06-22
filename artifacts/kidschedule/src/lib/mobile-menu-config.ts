@@ -16,7 +16,6 @@ import {
   TrendingUp,
   UserCircle,
   Users,
-  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,7 +35,6 @@ export const NAV_ITEMS: MobileNavItem[] = [
   { href: "/routines", labelKey: "nav.routines", icon: Calendar },
   { href: "/games", labelKey: "nav.games", icon: Gamepad2 },
   { href: "/assistant", labelKey: "nav.amy_ai", icon: Bot },
-  { href: "/learn-with-amy", labelKey: "nav.amy_learning_tutor", icon: GraduationCap },
   { href: "/amy-ai-tutor", labelKey: "nav.amy_quick_tutor", icon: Sparkles },
   {
     href: "/kids-control-center",

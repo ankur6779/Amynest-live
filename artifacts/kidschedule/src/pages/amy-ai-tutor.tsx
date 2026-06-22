@@ -330,12 +330,6 @@ export default function AmyAiTutorPage() {
                   </p>
                 </div>
               </div>
-              <Link href="/learn-with-amy">
-                <Button variant="outline" size="sm" className="shrink-0 gap-1 rounded-full text-[11px]">
-                  <GraduationCap className="h-3.5 w-3.5" />
-                  Adaptive
-                </Button>
-              </Link>
             </div>
 
             {showPresenceStrip && (

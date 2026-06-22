@@ -30,7 +30,6 @@ const ROUTES = [
   "/nutrition",
   "/parent-profile",
   "/pricing",
-  "/learn-with-amy",
   "/study",
   "/environment",
 ];

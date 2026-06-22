@@ -8,7 +8,6 @@ export const SPA_ROUTE_PATTERNS: readonly string[] = [
   "/routines/:id",
   "/nutrition",
   "/study",
-  "/learn-with-amy",
   "/parenting-hub",
   "/parenting-hub#tile-:tileId",
   "/speech-coach",
@@ -38,7 +37,7 @@ export const ACTION_ROUTE_REGISTRY: Record<ActionTarget, RouteDefinition> = {
   },
   learning_subject: {
     target: "learning_subject",
-    path: "/learn-with-amy",
+    path: "/parenting-hub",
     fallbackTarget: "parent_hub",
     label: "Learning zone",
   },

@@ -758,6 +758,14 @@ function CoachExpandable({
   );
 }
 
+function splitCoachEvidenceReferences(reference: string): string[] {
+  return reference
+    .split(/(?:\n|;|\s\|\s)/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3290,6 +3298,76 @@ function WinCard({
           </ul>
         </div>
 
+        {(win.deep_explanation || win.science_reference) && (
+          <div
+            style={{
+              background: "rgba(14,165,233,0.1)",
+              border: "1px solid rgba(125,211,252,0.26)",
+              borderRadius: 14,
+              padding: "12px 14px",
+              marginBottom: 12,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: "hsl(var(--brand-sky-400))",
+                marginBottom: 6,
+              }}
+            >
+              {t("pages.ai_coach.research_backed_why", "Research-backed why this works")}
+            </p>
+            {win.deep_explanation && (
+              <p
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  color: "rgba(255,255,255,0.82)",
+                  margin: win.science_reference ? "0 0 10px" : 0,
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {win.deep_explanation}
+              </p>
+            )}
+            {win.science_reference && (
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  borderRadius: 12,
+                  padding: "9px 10px",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    color: "rgba(255,255,255,0.72)",
+                    margin: "0 0 6px",
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {t("pages.ai_coach.evidence_sources", "Evidence sources")}
+                </p>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: 16,
+                    color: "rgba(255,255,255,0.78)",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {splitCoachEvidenceReferences(win.science_reference).map((source) => (
+                    <li key={source}>{source}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* REAL EXAMPLE */}
         {win.example && (
           <div
@@ -3470,16 +3548,6 @@ function WinCard({
         )}
 
         {/* Collapsed educational content */}
-        {win.deep_explanation && (
-          <CoachExpandable label={t("pages.ai_coach.why_this_works", "▼ Why this works")}>
-            {win.deep_explanation}
-          </CoachExpandable>
-        )}
-        {win.science_reference && (
-          <CoachExpandable label={t("pages.ai_coach.research_behind_this", "▼ Research behind this")}>
-            {win.science_reference}
-          </CoachExpandable>
-        )}
         {(rootCauseHasMore || planSummary) && (
           <CoachExpandable label={t("pages.ai_coach.root_cause_details", "▼ Root cause details")}>
             {rootCauseHasMore && planRootCause && (

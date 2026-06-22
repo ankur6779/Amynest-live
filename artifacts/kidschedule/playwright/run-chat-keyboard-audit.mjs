@@ -16,7 +16,6 @@ const SCREENSHOTS = path.join(OUT, "screenshots");
 const CHAT_SCREENS = [
   { route: "/assistant", surface: "assistant", testId: "assistant-page", inputTestId: "chat-thread-input" },
   { route: "/amy-ai-tutor", surface: "amy-ai-tutor", testId: null, inputTestId: "chat-thread-input" },
-  { route: "/learn-with-amy", surface: "amy-learning-tutor", testId: null, inputTestId: "chat-thread-input" },
   { route: "/onboarding", surface: "onboarding", testId: null, inputTestId: "chat-thread-input" },
   { route: "/speech-coach/talk", surface: "conversation-coach", testId: "conversation-coach-page", inputTestId: null, voiceOnly: true },
   { route: "/amy-coach", surface: "amy-coach", testId: null, inputTestId: null, searchInput: true },

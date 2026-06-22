@@ -133,16 +133,17 @@ function minimalCoachFallbackWin(winNumber: number, goalLabel: string): CoachWin
       "When a strategy feels too big, shrinking the step keeps momentum without overwhelming your child. " +
       "Small wins rebuild trust and make the next attempt easier.",
     actions: [
-      "Pick one tiny action for today only",
-      "Practice once when everyone is calm",
-      "Celebrate any attempt, even partial",
+      "Pick one tiny action for today only and write it in one sentence",
+      "Practice once when everyone is calm, not during the hardest moment",
+      "Use the same words each time so the cue becomes predictable",
+      "Celebrate any attempt, even partial, with one specific sentence",
     ],
     example:
       "Instead of fixing the whole routine, parent says: 'Tonight we try one thing — shoes by the door before story.'",
     mistake_to_avoid: "Adding more rules when the current step still feels too hard.",
     micro_task: "Write one sticky-note reminder for today's tiny step.",
     duration: "3–5 days",
-    science_reference: "BJ Fogg — Tiny Habits",
+    science_reference: "Fogg, 2019 — Tiny Habits; Bandura, 1977 — self-efficacy",
   };
 }
 
@@ -355,9 +356,9 @@ async function callInitialCoachAi(
   );
 
   const systemPrompt =
-    "Parenting coach. Generate exactly 2 simple, actionable wins tailored to the SPECIFIC goal. Keep output short. No explanation. Valid JSON only.";
+    "Parenting coach. Generate exactly 2 evidence-backed, actionable wins tailored to the SPECIFIC goal. Valid JSON only.";
 
-  const userPrompt = `Generate exactly 2 simple, actionable wins. Keep output short. No explanation.
+  const userPrompt = `Generate exactly 2 evidence-backed, actionable wins.
 
 Goal: ${goalLabel}
 Age: ${input.ageGroup}
@@ -366,7 +367,8 @@ Triggers: ${triggers}
 Routine: ${input.routine}
 ${topicBlock}
 JSON only:
-{"title":"...","root_cause":"2 sentences","summary":"1 sentence","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"2-3 lines","actions":["a","b","c"],"example":"1 sentence","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"..."},{"win":2,...}]}
+{"title":"...","root_cause":"3-4 sentences with developmental science","summary":"2 sentences","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"5-6 lines explaining the mechanism in plain language","actions":["detailed step 1","detailed step 2","detailed step 3","detailed step 4"],"example":"2 sentences","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"Named study/researcher/guideline with year when known; include 1-2 sources separated by semicolons"},{"win":2,...}]}
+STRICT: each actions array should have 4-6 specific steps when possible. science_reference must name a real researcher, paper, clinical guideline, or organization (AAP, WHO, CDC, NIH, NICE, RCPCH, etc.); do not write only "research shows".
 ${goalBrief}
 ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
 
@@ -379,7 +381,7 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
         { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
-      max_completion_tokens: 900,
+      max_completion_tokens: 1600,
       temperature: 0.6,
       traceId,
     },
@@ -503,8 +505,8 @@ ${existingSummary}
 
 Write win #${nextWinNumber} of ${COACH_TOTAL_WINS}. Phase: ${phase}.
 Return ONLY:
-{"win":{"win":${nextWinNumber},"title":"3-6 words","objective":"one sentence","deep_explanation":"4-5 lines","actions":["a","b","c"],"example":"2 sentences","mistake_to_avoid":"one sentence","micro_task":"under 5 min today","duration":"e.g. 3-5 days","science_reference":"named researcher/theory"}}
-STRICT: win number must be ${nextWinNumber}; 3-5 actions; no overlap with prior wins.
+{"win":{"win":${nextWinNumber},"title":"3-6 words","objective":"one sentence","deep_explanation":"5-6 lines explaining the evidence-backed mechanism in plain parent language","actions":["detailed step 1","detailed step 2","detailed step 3","detailed step 4"],"example":"2 sentences","mistake_to_avoid":"one sentence","micro_task":"under 5 min today","duration":"e.g. 3-5 days","science_reference":"1-2 named researchers/studies/guidelines with year when known, separated by semicolons"}}
+STRICT: win number must be ${nextWinNumber}; 4-6 specific actions when possible; no overlap with prior wins; science_reference must name a real paper/researcher/guideline, not a generic claim.
 ${goalBrief}
 ${antiRepeatBlock}
 ${feedbackBlock}
@@ -525,7 +527,7 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 1200,
+        max_completion_tokens: 1800,
         temperature: 0.6,
       },
       NEXT_WIN_AI_TIMEOUT_MS,
@@ -631,14 +633,15 @@ Progression: expectations & autonomy → regulation & skills → repair & track 
 Return ONLY:
 {
   "wins": [
-    { "win": ${startWin}, "title": "...", "objective": "...", "deep_explanation": "5-6 lines", "actions": ["..."], "example": "...", "mistake_to_avoid": "...", "micro_task": "...", "duration": "...", "science_reference": "..." }
+    { "win": ${startWin}, "title": "...", "objective": "...", "deep_explanation": "5-6 lines explaining the evidence-backed mechanism in plain parent language", "actions": ["detailed step 1", "detailed step 2", "detailed step 3", "detailed step 4"], "example": "...", "mistake_to_avoid": "...", "micro_task": "...", "duration": "...", "science_reference": "1-2 named researchers/studies/guidelines with year when known, separated by semicolons" }
   ]
 }
 
 STRICT:
 - EXACTLY 10 wins, numbered ${startWin} to ${COACH_TOTAL_WINS}
 - No overlap with the first 2 wins above
-- 3-5 actions each; substantive deep_explanation; real science_reference on every win
+- 4-6 specific actions each when possible; substantive deep_explanation; real science_reference on every win
+- science_reference must name a real paper, researcher, theory, or guideline body, not a generic phrase like "research shows"
 ${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
 
   const aiSpan = startCoachPerfSpan("AI_CALL_BACKGROUND", { goal: input.goal });

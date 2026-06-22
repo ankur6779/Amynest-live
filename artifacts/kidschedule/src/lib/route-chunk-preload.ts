@@ -12,7 +12,6 @@ const EXACT_ROUTE_LOADERS: Record<string, ChunkLoader> = {
   "/nutrition": () => import("@/pages/nutrition"),
   "/assistant": () => import("@/pages/assistant"),
   "/amy-ai-tutor": () => import("@/pages/amy-ai-tutor"),
-  "/learn-with-amy": () => import("@/pages/amy-learning-tutor"),
   "/games": () => import("@/pages/games"),
   "/answer-to-kids-how": () => import("@/pages/answer-to-kids-how"),
   "/progress": () => import("@/pages/progress"),
