@@ -38,6 +38,13 @@ export function isPremiumNow(s: Subscription): boolean {
     !!s.expiresAt ||
     !!s.gracePeriodExpiresAt;
   if (hasExplicitV2State) {
+    if (
+      s.provider === "revenuecat" &&
+      s.subscriptionState === "FREE" &&
+      hasValidPaidPeriodEnd(s)
+    ) {
+      return true;
+    }
     return isStatePremium(s.subscriptionState, {
       currentPeriodEnd: s.currentPeriodEnd,
       expiresAt: s.expiresAt,

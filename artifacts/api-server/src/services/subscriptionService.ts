@@ -572,6 +572,10 @@ export async function healStaleSubscriptionRecord(
   if (isPremiumNow(sub)) return sub;
   if (sub.status === "free") return sub;
 
+  if (sub.provider === "revenuecat" && hasValidPaidPeriodEnd(sub)) {
+    return sub;
+  }
+
   if (sub.provider === "manual" && sub.status === "active" && !hasValidPaidPeriodEnd(sub)) {
     const farFuture = new Date("2099-12-31T23:59:59.000Z");
     const [fixed] = await dbExec

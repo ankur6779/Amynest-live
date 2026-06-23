@@ -15,6 +15,23 @@ const ENTITLEMENT_ID = process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium";
 const RC_FETCH_TIMEOUT_MS = Number(process.env.RC_FETCH_TIMEOUT_MS ?? "8000");
 const RC_API_BASE_URL = process.env.REVENUECAT_API_BASE_URL ?? "https://api.revenuecat.com";
 
+const RC_TERMINAL_SYNC_EVENT_TYPES = new Set([
+  "EXPIRATION",
+  "BILLING_ISSUE",
+  "SUBSCRIPTION_PAUSED",
+  "CANCELLATION",
+]);
+
+/** Only persist a FREE downgrade when RC truly has no entitlement and the caller expects removal. */
+export function shouldDowngradeOnMissingEntitlement(
+  source: "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery" | undefined,
+  eventType?: string | null,
+): boolean {
+  if (source === "reconciliation" || source === "manual_recovery") return true;
+  if (eventType && RC_TERMINAL_SYNC_EVENT_TYPES.has(eventType)) return true;
+  return false;
+}
+
 type UnknownRecord = Record<string, unknown>;
 
 type RcV2Response = UnknownRecord | UnknownRecord[];
@@ -324,9 +341,23 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
           expectedEntitlementId: ENTITLEMENT_ID,
           entitlementCount: asArray(entitlementsResult.data).length,
           subscriptionCount: subscriptionsResult.ok ? asArray(subscriptionsResult.data).length : null,
+          source: opts.source ?? "purchase_finalize",
+          eventType: opts.eventType ?? null,
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      if (!shouldDowngradeOnMissingEntitlement(opts.source, opts.eventType)) {
+        return {
+          synced: true,
+          isPremium: false,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: false,
+          appliedUserId: canonicalUserId,
+          reason: "no_active_entitlement",
+        };
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
         source: opts.source ?? "purchase_finalize",
