@@ -788,14 +788,22 @@ export async function maybeAutoGrantPremium(
   }
 
   const sub = await getOrCreateSubscription(userId, db, phoneNumber);
-  if (sub.status === "active") return;
+  if (isPremiumNow(sub)) return;
+  const premiumUntil = new Date("2099-12-31T23:59:59.000Z");
   await db
     .update(subscriptionsTable)
     .set({
       plan,
       status: "active",
       provider: "manual",
-      currentPeriodEnd: new Date("2099-12-31T23:59:59.000Z"),
+      subscriptionState: "ACTIVE",
+      expiresAt: premiumUntil,
+      currentPeriodEnd: premiumUntil,
+      trialEndsAt: null,
+      gracePeriodExpiresAt: null,
+      cancelledAt: null,
+      expiredAt: null,
+      syncError: null,
       cancelAtPeriodEnd: 0,
       updatedAt: new Date(),
     })
