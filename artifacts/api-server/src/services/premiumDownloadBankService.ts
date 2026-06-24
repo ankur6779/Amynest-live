@@ -10,6 +10,7 @@ import {
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import { and, eq, sql } from "drizzle-orm";
 import { isPremiumSubscriberNow } from "./subscription-premium-gate.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -207,16 +208,17 @@ async function emitBankAnalytics(
   });
 }
 
-export async function getPremiumDownloadWallet(userId: string): Promise<PremiumDownloadWallet> {
+export async function getPremiumDownloadWallet(authUserId: string): Promise<PremiumDownloadWallet> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(authUserId);
   return db.transaction(async (tx) => {
     const [locked] = await tx
       .select()
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId))
+      .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
       .limit(1)
       .for("update");
 
-    const todayUsed = await countDownloadsForIstDay(tx, userId, istDayKey(new Date()));
+    const todayUsed = await countDownloadsForIstDay(tx, authUserId, istDayKey(new Date()));
     if (!locked || !isPremiumSubscriberNow(locked)) {
       return disabledWallet(todayUsed);
     }
@@ -228,24 +230,25 @@ export async function getPremiumDownloadWallet(userId: string): Promise<PremiumD
       lastRefreshAt: refreshed.lastDownloadRefreshAt,
     });
 
-    void emitBankAnalytics(userId, "premium_download_bank_refreshed", wallet, {
+    void emitBankAnalytics(authUserId, "premium_download_bank_refreshed", wallet, {
       source: "wallet_read",
     }).catch(() => undefined);
     return wallet;
   });
 }
 
-export async function reservePremiumDownload(userId: string): Promise<PremiumDownloadReserve> {
+export async function reservePremiumDownload(authUserId: string): Promise<PremiumDownloadReserve> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(authUserId);
   return db.transaction(async (tx) => {
     const now = new Date();
     const [locked] = await tx
       .select()
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId))
+      .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
       .limit(1)
       .for("update");
 
-    const todayUsed = await countDownloadsForIstDay(tx, userId, istDayKey(now));
+    const todayUsed = await countDownloadsForIstDay(tx, authUserId, istDayKey(now));
     if (!locked || !isPremiumSubscriberNow(locked)) {
       return { ok: false, wallet: disabledWallet(todayUsed) };
     }
@@ -272,7 +275,7 @@ export async function reservePremiumDownload(userId: string): Promise<PremiumDow
       await tx
         .update(subscriptionsTable)
         .set({ downloadBankBalance: bankAfter, updatedAt: now })
-        .where(eq(subscriptionsTable.userId, userId));
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId));
     }
 
     const wallet = walletFromState({
@@ -281,19 +284,20 @@ export async function reservePremiumDownload(userId: string): Promise<PremiumDow
       lastRefreshAt: refreshed.lastDownloadRefreshAt,
     });
 
-    void emitBankAnalytics(userId, "premium_download_bank_used", wallet, {
+    void emitBankAnalytics(authUserId, "premium_download_bank_used", wallet, {
       debit_source: source,
     }).catch(() => undefined);
     return { ok: true, source, wallet };
   });
 }
 
-export async function refundPremiumDownloadBankDebit(userId: string): Promise<void> {
+export async function refundPremiumDownloadBankDebit(authUserId: string): Promise<void> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(authUserId);
   await db
     .update(subscriptionsTable)
     .set({
       downloadBankBalance: sql`LEAST(${PREMIUM_DOWNLOAD_BANK.maxBank}, ${subscriptionsTable.downloadBankBalance} + 1)`,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId));
 }
