@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import {
   db,
@@ -36,6 +37,61 @@ import { logger } from "../lib/logger.js";
 import { assertLearningZoneEnglishItems } from "../lib/learning-zone-english.js";
 
 export type LearningLoadMoreSection = AiContentNamespace;
+
+function answerSecret(): string {
+  return process.env["SMART_STUDY_ANSWER_SECRET"]
+    ?? process.env["SESSION_SECRET"]
+    ?? "amynest-smart-study-dev-secret";
+}
+
+function smartStudyAnswerMac(questionId: string, answer: string): string {
+  return createHmac("sha256", answerSecret())
+    .update(`${questionId}:${answer.trim().toLowerCase()}`)
+    .digest("base64url");
+}
+
+function smartStudyAnswerToken(opts: {
+  userId: string;
+  childId: number;
+  subject: string;
+  questionId: string;
+  answer: string;
+}): string {
+  const body = Buffer.from(
+    JSON.stringify({
+      userId: opts.userId,
+      childId: opts.childId,
+      subject: opts.subject,
+      questionId: opts.questionId,
+      answerMac: smartStudyAnswerMac(opts.questionId, opts.answer),
+      issuedAt: Date.now(),
+    }),
+    "utf8",
+  ).toString("base64url");
+  const sig = createHmac("sha256", answerSecret()).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
+function sanitizeSmartStudyQuestions(
+  questions: Array<{ id: string; q: string; options: string[]; answer?: string; hint?: string | null }>,
+  opts: { userId: string; childId?: number; subject: string },
+) {
+  if (opts.childId == null) return [];
+  return questions
+    .filter((q) => typeof q.answer === "string")
+    .map((q) => ({
+      id: q.id,
+      q: q.q,
+      options: q.options,
+      answerToken: smartStudyAnswerToken({
+        userId: opts.userId,
+        childId: opts.childId!,
+        subject: opts.subject,
+        questionId: q.id,
+        answer: q.answer!,
+      }),
+    }));
+}
 
 export const LEARNING_LOAD_MORE_FEATURES: Record<
   LearningLoadMoreSection,
@@ -251,6 +307,7 @@ export type LoadMorePollContext = {
   cachedItems: unknown[];
   count: number;
   childId?: number;
+  smartStudySubject?: string;
   olympiad?: {
     ageBand: OlympiadAgeBand;
     difficulty: OlympiadDifficulty;
@@ -258,6 +315,26 @@ export type LoadMorePollContext = {
     country: string;
   };
 };
+
+function loadMoreItemsPayload(
+  section: LearningLoadMoreSection,
+  items: unknown[],
+  ctx: Pick<LoadMorePollContext, "userId" | "childId" | "smartStudySubject">,
+): Record<string, unknown> {
+  if (section === "smart_study") {
+    return {
+      questions: sanitizeSmartStudyQuestions(
+        items as Array<{ id: string; q: string; options: string[]; answer?: string; hint?: string | null }>,
+        {
+          userId: ctx.userId,
+          childId: ctx.childId,
+          subject: ctx.smartStudySubject ?? "",
+        },
+      ),
+    };
+  }
+  return { [itemsKeyForSection(section)]: items };
+}
 
 export type LoadMoreResult = {
   ok: true;
@@ -339,10 +416,8 @@ export async function finalizeLearningLoadMorePoll(
   const freshItems = extractFreshItems(section, rawResult, ctx).filter(Boolean);
   const count = ctx.count;
   const cachedItems = ctx.cachedItems ?? [];
-  const itemsKey = itemsKeyForSection(section);
-  const itemsPayload = {
-    [itemsKey]: [...cachedItems, ...freshItems].slice(0, count),
-  };
+  const mergedItems = [...cachedItems, ...freshItems].slice(0, count);
+  const itemsPayload = loadMoreItemsPayload(section, mergedItems, ctx);
 
   if (freshItems.length === 0) {
     if (!skipSideEffects) {
@@ -365,7 +440,7 @@ export async function finalizeLearningLoadMorePoll(
         fromCache: true,
         charged: false,
         usage,
-        items: { [itemsKey]: cachedItems },
+        items: loadMoreItemsPayload(section, cachedItems, ctx),
       };
     }
     if (!skipSideEffects) {
@@ -444,7 +519,11 @@ export async function executeLearningLoadMore(opts: {
           fromCache: true,
           charged: false,
           usage,
-          items: { questions: hit.items },
+          items: loadMoreItemsPayload(section, hit.items, {
+            userId: opts.userId,
+            childId: opts.childId,
+            smartStudySubject: subject,
+          }),
         };
       }
       cachedItems = hit.items;
@@ -608,7 +687,14 @@ export async function executeLearningLoadMore(opts: {
         fromCache: true,
         charged: false,
         usage,
-        items: { [partialKey]: cachedItems },
+        items:
+          section === "smart_study"
+            ? loadMoreItemsPayload(section, cachedItems, {
+                userId: opts.userId,
+                childId: opts.childId,
+                smartStudySubject: String(opts.params.subject ?? ""),
+              })
+            : { [partialKey]: cachedItems },
       };
     }
     return {
@@ -627,6 +713,8 @@ export async function executeLearningLoadMore(opts: {
     cachedItems,
     count,
     childId: opts.childId,
+    smartStudySubject:
+      section === "smart_study" ? String(opts.params.subject ?? "") : undefined,
   };
 
   let jobId: string | null = null;

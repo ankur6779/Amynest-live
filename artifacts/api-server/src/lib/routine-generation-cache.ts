@@ -32,6 +32,7 @@ export function routineCacheKey(params: {
   sleepQuality?: string | null;
   aqi?: number | null;
   fridgeItems?: string | null;
+  fixedActivities?: unknown;
 }): string {
   const raw = [
     params.userId,
@@ -46,6 +47,7 @@ export function routineCacheKey(params: {
     params.sleepQuality ?? "",
     params.aqi != null ? String(Math.round(params.aqi)) : "",
     hashRoutineContextFragment(params.fridgeItems),
+    hashRoutineContextFragment(JSON.stringify(params.fixedActivities ?? [])),
   ].join("|");
   return createHash("sha256").update(raw).digest("hex").slice(0, 32);
 }

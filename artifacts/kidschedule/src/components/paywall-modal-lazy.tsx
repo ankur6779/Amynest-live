@@ -11,6 +11,7 @@ import {
 } from "@/lib/native-rc-paywall";
 import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purchase-finalize";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { track } from "@/lib/analytics";
 import { PURCHASE_SCREEN } from "@workspace/subscription-marketing";
 
 const PaywallModal = lazyPage(() =>
@@ -50,6 +51,12 @@ export function PaywallModalLazy() {
       }
 
       setShowCustom(false);
+      track("upgrade_started", {
+        module: state.module,
+        action: state.action ?? "checkout",
+        source: state.source ?? "native_rc_paywall",
+        entitlement_state: state.entitlementState ?? "free",
+      });
       const outcome = await presentNativeRCPaywall({ userId: user?.id });
       if (cancelled) return;
 
@@ -59,6 +66,14 @@ export function PaywallModalLazy() {
             ? await finalizeNativeRestore(authFetch, qc)
             : await finalizeNativePurchase(authFetch, qc);
           closePaywall();
+          if (finalized.isPremium) {
+            track("upgrade_completed", {
+              module: state.module,
+              action: state.action ?? "checkout",
+              source: state.source ?? "native_rc_paywall",
+              entitlement_state: "premium",
+            });
+          }
           trackSubscriptionEvent({
             event: "purchase_success",
             reason: paywallReason,
@@ -87,7 +102,7 @@ export function PaywallModalLazy() {
     return () => {
       cancelled = true;
     };
-  }, [state.open, user?.id, closePaywall, authFetch, qc, toast]);
+  }, [state, user?.id, closePaywall, authFetch, qc, toast]);
 
   if (!state.open || !showCustom) return null;
 

@@ -9,7 +9,7 @@ import {
   recordProgressAnalytics,
   isValidProgressEvent,
 } from "../services/learningProgressService.js";
-import { maybeAutoGrantPremium } from "../services/subscriptionService.js";
+import { getOrCreateSubscription, isPremiumNow, maybeAutoGrantPremium } from "../services/subscriptionService.js";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 
 const router: IRouter = Router();
@@ -37,6 +37,28 @@ const CompleteBody = z.object({
   section: SectionEnum,
   correct: z.boolean().default(true),
 });
+
+async function requirePremiumLearningAction(
+  userId: string,
+  feature: "hub_phonics" | "hub_smart_study",
+): Promise<{ ok: true } | { ok: false; body: Record<string, unknown> }> {
+  const sub = await getOrCreateSubscription(userId);
+  if (isPremiumNow(sub)) return { ok: true };
+  return {
+    ok: false,
+    body: {
+      error: "premium_required",
+      feature,
+      message: "Upgrade to save premium learning progress.",
+    },
+  };
+}
+
+function featureForCompletedSection(section: z.infer<typeof SectionEnum>): "hub_phonics" | "hub_smart_study" | null {
+  if (section === "phonics") return "hub_phonics";
+  if (section === "math") return "hub_smart_study";
+  return null;
+}
 
 /**
  * GET /api/learning-progress/status?childId=
@@ -89,6 +111,14 @@ router.post("/learning-progress/complete-activity", infantExploreMutationGate(),
     return;
   }
   try {
+    const feature = featureForCompletedSection(parsed.data.section);
+    if (feature) {
+      const premium = await requirePremiumLearningAction(userId, feature);
+      if (!premium.ok) {
+        res.status(403).json(premium.body);
+        return;
+      }
+    }
     try {
       await maybeAutoGrantPremium(userId, email, phoneNumber);
     } catch {
@@ -139,6 +169,19 @@ const ProgressEventEnum = z.enum([
   "origami_model_completed",
   "origami_certificate_downloaded",
 ]);
+const PREMIUM_PROGRESS_EVENTS = new Set<z.infer<typeof ProgressEventEnum>>([
+  "journey_completed",
+  "skill_unlocked",
+  "worksheet_completed",
+  "phonics_mastered",
+  "session_completed",
+  "level_up",
+  "unlock_conversion",
+  "session_quality_high",
+  "fresh_lesson_advanced",
+  "fresh_lesson_completed",
+  "origami_certificate_downloaded",
+]);
 
 const AnalyticsBody = z.object({
   childId: z.number().int().positive(),
@@ -168,6 +211,13 @@ router.post("/learning-progress/analytics", infantExploreMutationGate(), async (
     return;
   }
   try {
+    if (PREMIUM_PROGRESS_EVENTS.has(parsed.data.event)) {
+      const premium = await requirePremiumLearningAction(userId, "hub_smart_study");
+      if (!premium.ok) {
+        res.status(403).json(premium.body);
+        return;
+      }
+    }
     const ok = await recordProgressAnalytics(
       userId,
       parsed.data.childId,
@@ -204,6 +254,11 @@ router.post("/learning-progress/session-step", infantExploreMutationGate(), asyn
     return;
   }
   try {
+    const premium = await requirePremiumLearningAction(userId, "hub_smart_study");
+    if (!premium.ok) {
+      res.status(403).json(premium.body);
+      return;
+    }
     const result = await completeSessionStep(
       userId,
       parsed.data.childId,

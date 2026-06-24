@@ -15,6 +15,7 @@ import {
   syncPhonicsV3Progress,
 } from "../lib/phonicsV3ProgressService.js";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 
 const router: IRouter = Router();
 
@@ -52,7 +53,11 @@ router.get("/phonics/v3/progress/:childId", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/phonics/v3/progress", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/v3/progress",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -75,9 +80,14 @@ router.post("/phonics/v3/progress", infantExploreMutationGate(), async (req, res
     logger.error(`phonics v3 post progress failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
-router.patch("/phonics/v3/progress", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.patch(
+  "/phonics/v3/progress",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -106,9 +116,14 @@ router.patch("/phonics/v3/progress", infantExploreMutationGate(), async (req, re
     logger.error(`phonics v3 patch progress failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
-router.post("/phonics/v3/progress/sync", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/v3/progress/sync",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -138,6 +153,7 @@ router.post("/phonics/v3/progress/sync", infantExploreMutationGate(), async (req
     logger.error(`phonics v3 sync failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 export default router;

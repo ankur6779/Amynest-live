@@ -93,7 +93,11 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
           body: JSON.stringify(requestBody),
         });
 
-        if (res.status === 402) {
+        if (res.status === 402 || res.status === 403) {
+          const body = await safeJsonResponse<{ error?: string }>(res).then((p) => (p.ok ? p.data : {}));
+          if (res.status === 403 && body.error !== "premium_required") {
+            throw new Error(body.error ?? `load_more_${res.status}`);
+          }
           window.dispatchEvent(
             new CustomEvent("amynest:open-paywall", {
               detail: { reason: "learning_locked", section },

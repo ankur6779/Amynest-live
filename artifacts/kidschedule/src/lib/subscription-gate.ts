@@ -9,8 +9,9 @@ export type GateErrorBody = {
 };
 
 export function isSubscriptionGateResponse(status: number, body?: GateErrorBody): boolean {
-  if (status !== 402) return false;
   const err = body?.error ?? "";
+  if (status === 403 && err === "premium_required") return true;
+  if (status !== 402) return false;
   return (
     err === "feature_locked" ||
     err === "routine_locked" ||
@@ -55,6 +56,9 @@ export function openSubscriptionGate(opts: {
   source: string;
   usePaywallModal?: boolean;
   navigatePricing?: (path: string) => void;
+  module?: string;
+  action?: string;
+  entitlementState?: "free" | "premium" | "trial" | "unknown";
 }): void {
   trackSubscriptionEvent({
     event: "paywall_reason",
@@ -65,7 +69,15 @@ export function openSubscriptionGate(opts: {
   const useModal = opts.usePaywallModal ?? FF_PAYWALL_MODAL_FOR_LOCKS;
   if (useModal) {
     window.dispatchEvent(
-      new CustomEvent("amynest:open-paywall", { detail: { reason: opts.reason } }),
+      new CustomEvent("amynest:open-paywall", {
+        detail: {
+          reason: opts.reason,
+          source: opts.source,
+          module: opts.module,
+          action: opts.action,
+          entitlementState: opts.entitlementState,
+        },
+      }),
     );
     return;
   }

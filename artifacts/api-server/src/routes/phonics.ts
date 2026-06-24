@@ -37,6 +37,7 @@ import {
 } from "@workspace/phonics-sounds";
 import {
   getDailyPlanForChild,
+  loadCurriculumProgress,
   getOrCreateCurriculumProgress,
   markPlanActivityComplete,
   applyCurriculumTestResult,
@@ -59,6 +60,7 @@ import {
   pickPhonicsDailyItems,
 } from "@workspace/parent-hub-journey";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 
 const router: IRouter = Router();
 
@@ -568,7 +570,11 @@ const PostBody = z.object({
   action: z.enum(["play", "mastered", "unmastered"]),
 });
 
-router.post("/phonics/progress", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/progress",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -696,7 +702,8 @@ router.post("/phonics/progress", infantExploreMutationGate(), async (req, res): 
     );
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 // ─── Phonics Tests (Daily 5Q + Weekly 20Q) ───────────────────────────────────
 //
@@ -898,7 +905,11 @@ const StartBody = z.object({
   gameMode: GameModeSchema.optional(),
 });
 
-router.post("/phonics/tests/start", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/tests/start",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1015,7 +1026,8 @@ router.post("/phonics/tests/start", infantExploreMutationGate(), async (req, res
     );
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 // ─── POST /api/phonics/tests/submit ──────────────────────────────────────────
 
@@ -1032,7 +1044,11 @@ const SubmitBody = z.object({
     .max(50),
 });
 
-router.post("/phonics/tests/submit", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/tests/submit",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1227,7 +1243,8 @@ router.post("/phonics/tests/submit", infantExploreMutationGate(), async (req, re
     );
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 // ─── GET /api/phonics/tests/history/:childId ─────────────────────────────────
 
@@ -1348,7 +1365,11 @@ const CurriculumPlanBody = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-router.post("/phonics/curriculum/daily-plan", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/curriculum/daily-plan",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1397,7 +1418,8 @@ router.post("/phonics/curriculum/daily-plan", infantExploreMutationGate(), async
     );
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 const CompleteActivityBody = z.object({
   childId: z.number().int().positive(),
@@ -1405,7 +1427,11 @@ const CompleteActivityBody = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-router.post("/phonics/curriculum/complete-activity", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/phonics/curriculum/complete-activity",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1439,7 +1465,8 @@ router.post("/phonics/curriculum/complete-activity", infantExploreMutationGate()
     );
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 router.get("/phonics/curriculum/progress/:childId", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -1458,12 +1485,7 @@ router.get("/phonics/curriculum/progress/:childId", async (req, res): Promise<vo
       res.status(404).json({ error: "child_not_found" });
       return;
     }
-    const months = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
-    const progress = await getOrCreateCurriculumProgress(childId, userId, months);
-    if (!progress) {
-      res.status(503).json({ error: "curriculum_unavailable" });
-      return;
-    }
+    const progress = await loadCurriculumProgress(childId, userId);
     res.json({ progress, levels: PHONICS_CURRICULUM_LEVELS });
   } catch (err) {
     logger.error(
@@ -1478,7 +1500,10 @@ const AiWordsQuery = z.object({
   vowel: z.string().min(1).max(8).default("a"),
 });
 
-router.get("/phonics/curriculum/ai-words", async (req, res): Promise<void> => {
+router.get(
+  "/phonics/curriculum/ai-words",
+  hubModuleGate("hub_phonics", { premiumOnly: true, denyStatus: 403 }),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -1501,6 +1526,7 @@ router.get("/phonics/curriculum/ai-words", async (req, res): Promise<void> => {
     );
     res.status(500).json({ error: "server_error" });
   }
-});
+  },
+);
 
 export default router;

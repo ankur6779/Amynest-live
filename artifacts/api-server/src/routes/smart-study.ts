@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
@@ -63,6 +64,10 @@ const VALID_SUBJECTS = new Set<string>([
 ]);
 
 const PRACTICE_SUBJECT_IDS = TOPIC_PRACTICE_SUBJECTS;
+const SMART_STUDY_PREMIUM_GATE = hubModuleGate("hub_smart_study", {
+  premiumOnly: true,
+  denyStatus: 403,
+});
 
 // Zod shapes for the JSONB columns on `child_learning_progress`. We parse
 // untrusted DB jsonb (which could in theory be empty/legacy/garbled) instead
@@ -108,6 +113,85 @@ function todayIsoUtc(d = new Date()): string {
   return d.toISOString().slice(0, 10);
 }
 
+function answerSecret(): string {
+  return process.env["SMART_STUDY_ANSWER_SECRET"]
+    ?? process.env["SESSION_SECRET"]
+    ?? "amynest-smart-study-dev-secret";
+}
+
+function normalizeAnswer(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function b64url(input: string): string {
+  return Buffer.from(input, "utf8").toString("base64url");
+}
+
+function signAnswerPayload(payload: Record<string, unknown>): string {
+  const body = b64url(JSON.stringify(payload));
+  const sig = createHmac("sha256", answerSecret()).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
+function verifyAnswerToken(token: string): Record<string, unknown> | null {
+  const [body, sig] = token.split(".");
+  if (!body || !sig) return null;
+  const expected = createHmac("sha256", answerSecret()).update(body).digest("base64url");
+  const expectedBuf = Buffer.from(expected);
+  const actualBuf = Buffer.from(sig);
+  if (expectedBuf.length !== actualBuf.length || !timingSafeEqual(expectedBuf, actualBuf)) return null;
+  try {
+    return JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function answerMac(questionId: string, answer: string): string {
+  return createHmac("sha256", answerSecret())
+    .update(`${questionId}:${normalizeAnswer(answer)}`)
+    .digest("base64url");
+}
+
+function buildAnswerToken(opts: {
+  userId: string;
+  childId: number;
+  subject: string;
+  questionId: string;
+  answer: string;
+}): string {
+  return signAnswerPayload({
+    userId: opts.userId,
+    childId: opts.childId,
+    subject: opts.subject,
+    questionId: opts.questionId,
+    answerMac: answerMac(opts.questionId, opts.answer),
+    issuedAt: Date.now(),
+  });
+}
+
+function gradeAnswerToken(opts: {
+  token: string;
+  userId: string;
+  childId: number;
+  subject: string;
+  questionId: string;
+  selectedAnswer: string;
+}): boolean | null {
+  const payload = verifyAnswerToken(opts.token);
+  if (!payload) return null;
+  if (payload["userId"] !== opts.userId) return null;
+  if (payload["childId"] !== opts.childId) return null;
+  if (payload["subject"] !== opts.subject) return null;
+  if (payload["questionId"] !== opts.questionId) return null;
+  if (typeof payload["answerMac"] !== "string") return null;
+  const expected = answerMac(opts.questionId, opts.selectedAnswer);
+  const expectedBuf = Buffer.from(expected);
+  const actualBuf = Buffer.from(payload["answerMac"]);
+  if (expectedBuf.length !== actualBuf.length) return false;
+  return timingSafeEqual(expectedBuf, actualBuf);
+}
+
 async function resolveUserCountry(userId: string, override?: string): Promise<string> {
   if (override) return normalizeStudyCountry(override);
   const rows = await db
@@ -127,7 +211,7 @@ const PlanBody = z.object({
 
 router.post(
   "/smart-study/daily-plan",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
@@ -225,7 +309,7 @@ const SingleAttempt = z.object({
   childId: z.number().int().positive(),
   subject: z.string().min(1).max(40),
   topicId: z.string().min(1).max(80),
-  correct: z.boolean(),
+  correct: z.boolean().optional(),
   // Optional client-side timestamp — used when replaying a queued attempt
   // so the rolling 7-day accuracy window stays accurate even if delivery
   // is delayed (offline mobile sessions). Falls back to server `now()`.
@@ -234,6 +318,8 @@ const SingleAttempt = z.object({
   // present, it's appended to seenQuestionIds (capped at SEEN_ID_CAP)
   // so the same question never reappears for this child.
   questionId: z.string().min(1).max(120).optional(),
+  selectedAnswer: z.string().min(1).max(120).optional(),
+  answerToken: z.string().min(10).max(1200).optional(),
 });
 // Clients may post one attempt or a batch (one per question). The cap
 // keeps a single request bounded — a Practice/Test session is at most
@@ -242,7 +328,7 @@ const AttemptBody = z.union([SingleAttempt, z.array(SingleAttempt).min(1).max(50
 
 router.post(
   "/smart-study/attempt",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   infantExploreMutationGate(),
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -259,6 +345,11 @@ router.post(
   for (const a of incoming) {
     if (!VALID_SUBJECTS.has(a.subject)) {
       res.status(400).json({ error: "unknown_subject" });
+      return;
+    }
+    const hasServerGrade = Boolean(a.answerToken && a.selectedAnswer && a.questionId);
+    if (a.correct == null && !hasServerGrade) {
+      res.status(400).json({ error: "missing_grade" });
       return;
     }
   }
@@ -283,10 +374,25 @@ router.post(
     // per-question attempts the client batched.
     const bySubject = new Map<string, (LearningAttempt & { questionId?: string })[]>();
     for (const a of incoming) {
+      const graded =
+        a.answerToken && a.selectedAnswer && a.questionId
+          ? gradeAnswerToken({
+              token: a.answerToken,
+              userId,
+              childId,
+              subject: a.subject,
+              questionId: a.questionId,
+              selectedAnswer: a.selectedAnswer,
+            })
+          : null;
+      if (a.answerToken && graded == null) {
+        res.status(400).json({ error: "invalid_answer_token" });
+        return;
+      }
       const list = bySubject.get(a.subject) ?? [];
       list.push({
         topicId: a.topicId,
-        correct: a.correct,
+        correct: graded ?? a.correct ?? false,
         ts: a.ts ?? new Date().toISOString(),
         questionId: a.questionId,
       });
@@ -385,7 +491,24 @@ router.post(
     // shape so existing clients keep working unchanged.
     if (!Array.isArray(parsed.data)) {
       const r = result[0]!;
-      res.json({ ok: true, weakTopics: r.weakTopics, attemptsCount: r.attemptsCount });
+      const single = incoming[0]!;
+      const graded =
+        single.answerToken && single.selectedAnswer && single.questionId
+          ? gradeAnswerToken({
+              token: single.answerToken,
+              userId,
+              childId,
+              subject: single.subject,
+              questionId: single.questionId,
+              selectedAnswer: single.selectedAnswer,
+            })
+          : null;
+      res.json({
+        ok: true,
+        weakTopics: r.weakTopics,
+        attemptsCount: r.attemptsCount,
+        ...(graded != null ? { correct: graded } : {}),
+      });
       return;
     }
     res.json({ ok: true, results: result });
@@ -411,7 +534,7 @@ const InsightsQuery = z.object({
 
 router.get(
   "/smart-study/insights",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
@@ -642,7 +765,7 @@ async function generateWithAi(
 
 router.post(
   "/smart-study/next-questions",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   infantExploreMutationGate(),
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -705,7 +828,16 @@ router.post(
       source,
       country,
       questions: questions.slice(0, count).map((q) => ({
-        id: q.id, q: q.q, options: q.options, answer: q.answer, hint: q.hint ?? null,
+        id: q.id,
+        q: q.q,
+        options: q.options,
+        answerToken: buildAnswerToken({
+          userId,
+          childId,
+          subject,
+          questionId: q.id,
+          answer: q.answer,
+        }),
       })),
     });
   } catch (err) {
@@ -725,7 +857,7 @@ const FreshLessonQuery = z.object({
 
 router.get(
   "/smart-study/daily-fresh-lesson",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;
     if (!userId) {
@@ -768,7 +900,7 @@ router.get(
 
 router.get(
   "/smart-study/unseen-lessons",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;
     if (!userId) {
@@ -804,7 +936,7 @@ const RecommendedQuery = z.object({
 
 router.get(
   "/smart-study/recommended-next",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;
     if (!userId) {
@@ -839,7 +971,7 @@ router.get(
 
 router.get(
   "/smart-study/lesson/:lessonId",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;
     if (!userId) {
@@ -891,7 +1023,7 @@ const LessonViewBody = z.object({
 
 router.post(
   "/smart-study/lesson-view",
-  hubModuleGate("hub_smart_study"),
+  SMART_STUDY_PREMIUM_GATE,
   infantExploreMutationGate(),
   async (req, res): Promise<void> => {
     const userId = getAuth(req).userId;

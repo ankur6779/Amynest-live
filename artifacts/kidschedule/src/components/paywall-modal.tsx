@@ -144,6 +144,12 @@ export function PaywallModal() {
 
   const onPayWithRazorpay = async () => {
     track("premium_cta_clicked", { source: reason });
+    track("upgrade_started", {
+      module: state.module,
+      source: state.source ?? "paywall_modal",
+      action: state.action ?? "checkout",
+      entitlement_state: state.entitlementState ?? "free",
+    });
     trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,
@@ -160,6 +166,12 @@ export function PaywallModal() {
     const res = await checkoutRazorpay(selected, prefill);
     setSubmitting(false);
     if (res.ok) {
+      track("upgrade_completed", {
+        module: state.module,
+        source: state.source ?? "paywall_modal",
+        action: state.action ?? "checkout",
+        entitlement_state: "premium",
+      });
       trackSubscriptionEvent({
         event: "purchase_success",
         plan: selected,
@@ -184,6 +196,12 @@ export function PaywallModal() {
 
   const onPayWithNative = async () => {
     track("premium_cta_clicked", { source: reason });
+    track("upgrade_started", {
+      module: state.module,
+      source: state.source ?? "paywall_modal",
+      action: state.action ?? "checkout",
+      entitlement_state: state.entitlementState ?? "free",
+    });
     trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,
@@ -195,6 +213,12 @@ export function PaywallModal() {
     const res = await nativeBilling.purchase(selected);
     setSubmitting(false);
     if (res.ok) {
+      track("upgrade_completed", {
+        module: state.module,
+        source: state.source ?? "paywall_modal",
+        action: state.action ?? "checkout",
+        entitlement_state: "premium",
+      });
       trackSubscriptionEvent({
         event: "purchase_success",
         plan: selected,

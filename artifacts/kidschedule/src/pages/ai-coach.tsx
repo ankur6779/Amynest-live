@@ -933,9 +933,9 @@ export default function AICoachPage() {
   const totalMatches = useMemo(() => filteredCategories.reduce((n, c) => n + c.items.length, 0), [filteredCategories]);
   const selectedGoal = ALL_GOALS.find(g => g.id === goalId);
 
-  // Free-tier gate: parents may COMPLETE up to TWO coach topics for free.
-  // The free allowance is consumed only when a topic plan is successfully
-  // shown. Picking a goal that is never finished does NOT burn it.
+  // Free-tier gate: the first goal in each non-infant category is a sample;
+  // infant topics are static plans and remain free. Other goals require
+  // premium, with the API enforcing the same shared access rules.
   const coachJourney = useCoachJourney();
   const {
     openPaywall

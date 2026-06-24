@@ -94,6 +94,36 @@ const EVENT_PROP_SCHEMAS = {
   premium_cta_clicked: z.object({
     source: z.string().max(64).optional(),
   }),
+  learning_preview_opened: z.object({
+    module: z.string().max(80),
+    action: z.string().max(80).optional(),
+    source: z.string().max(80).optional(),
+    entitlement_state: z.enum(["free", "premium", "trial", "unknown"]),
+  }),
+  premium_gate_seen: z.object({
+    module: z.string().max(80),
+    action: z.string().max(80),
+    source: z.string().max(80).optional(),
+    entitlement_state: z.enum(["free", "premium", "trial", "unknown"]),
+  }),
+  premium_gate_clicked: z.object({
+    module: z.string().max(80),
+    action: z.string().max(80),
+    source: z.string().max(80).optional(),
+    entitlement_state: z.enum(["free", "premium", "trial", "unknown"]),
+  }),
+  upgrade_started: z.object({
+    module: z.string().max(80).optional(),
+    action: z.string().max(80).optional(),
+    source: z.string().max(80).optional(),
+    entitlement_state: z.enum(["free", "premium", "trial", "unknown"]).optional(),
+  }),
+  upgrade_completed: z.object({
+    module: z.string().max(80).optional(),
+    action: z.string().max(80).optional(),
+    source: z.string().max(80).optional(),
+    entitlement_state: z.enum(["free", "premium", "trial", "unknown"]).optional(),
+  }),
   premium_download_bank_refreshed: z.object({
     downloads_used_today: z.number().int().nonnegative().optional(),
     downloads_banked: z.number().int().nonnegative().optional(),
@@ -347,6 +377,11 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   routine_feedback_submitted: "feedback",
   premium_paywall_viewed: "premium",
   premium_cta_clicked: "premium",
+  learning_preview_opened: "premium",
+  premium_gate_seen: "premium",
+  premium_gate_clicked: "premium",
+  upgrade_started: "premium",
+  upgrade_completed: "premium",
   premium_download_bank_refreshed: "premium",
   premium_download_bank_used: "premium",
   device_registered: "premium",

@@ -16,16 +16,27 @@ export function SubscriptionEventBridge() {
 
   useEffect(() => {
     const onOpen = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { reason?: string } | undefined;
+      const detail = (e as CustomEvent).detail as {
+        reason?: string;
+        source?: string;
+        module?: string;
+        action?: string;
+        entitlementState?: "free" | "premium" | "trial" | "unknown";
+      } | undefined;
       const raw = detail?.reason ?? "feature";
       const reason: PaywallReason =
         raw === "learning_load_more" ? "learning_locked" : (raw as PaywallReason);
       trackSubscriptionEvent({
         event: "paywall_reason",
         reason,
-        source: "event_bridge",
+        source: detail?.source ?? "event_bridge",
       });
-      openPaywall(reason);
+      openPaywall(reason, {
+        source: detail?.source ?? "event_bridge",
+        module: detail?.module,
+        action: detail?.action,
+        entitlementState: detail?.entitlementState,
+      });
     };
     const onRefresh = () => {
       refresh();

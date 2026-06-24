@@ -13,7 +13,7 @@ const router: IRouter = Router();
 
 /**
  * GET /api/coach-journey/status
- * Returns Amy Coach 3-day journey access + completed topics.
+ * Returns Amy Coach free-sample access + completed topics.
  */
 router.get("/coach-journey/status", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;

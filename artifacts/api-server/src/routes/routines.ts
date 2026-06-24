@@ -1280,15 +1280,35 @@ function blockingFixedActivitiesResponse(
   });
 }
 
-/** Request body overrides child profile when `fixedActivities` is present on the body. */
+function mergeFixedActivityInputs(
+  profileFixed: FixedActivityInput[] | undefined,
+  requestFixed: FixedActivityInput[] | undefined,
+): FixedActivityInput[] | undefined {
+  const out: FixedActivityInput[] = [];
+  const seen = new Set<string>();
+  for (const item of [...(profileFixed ?? []), ...(requestFixed ?? [])]) {
+    const key = [
+      item.activity.trim().toLowerCase(),
+      [...(item.days ?? [])].map((d) => d.toLowerCase()).sort().join(","),
+      item.start,
+      item.end,
+    ].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+/** Persisted profile activities always apply; request body may add one-time extras. */
 function resolveFixedActivitiesForGenerate(
   childFixed: unknown,
   requestFixed: unknown,
 ): FixedActivityInput[] | undefined {
-  if (requestFixed !== undefined && requestFixed !== null) {
-    return coerceFixedActivities(requestFixed);
-  }
   const fromProfile = coerceFixedActivities(childFixed);
+  if (requestFixed !== undefined && requestFixed !== null) {
+    return mergeFixedActivityInputs(fromProfile, coerceFixedActivities(requestFixed));
+  }
   return fromProfile && fromProfile.length > 0 ? fromProfile : undefined;
 }
 
@@ -2074,6 +2094,7 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     sleepQuality: previousDayContext?.sleepQuality ?? null,
     aqi: aiEnvContext?.AQI ?? null,
     fridgeItems: fridgeItems ?? null,
+    fixedActivities: fixedActivities ?? [],
   });
   const cachedInQueue = getCachedRoutine(cacheKey);
   if (cachedInQueue) {
@@ -2398,6 +2419,10 @@ function sendSavedRoutineResponse(
   routine: typeof routinesTable.$inferSelect,
   childName: string,
 ): void {
+  const safeCreatedAt =
+    routine.createdAt instanceof Date
+      ? routine.createdAt.toISOString()
+      : new Date().toISOString();
   try {
     res.status(status).json(
       GetRoutineResponse.parse({
@@ -2405,16 +2430,33 @@ function sendSavedRoutineResponse(
         childName,
         items: routine.items as RoutineItem[],
         uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
-        createdAt: routine.createdAt.toISOString(),
+        createdAt: safeCreatedAt,
       }),
     );
   } catch (parseErr) {
-    console.error("[routines] GetRoutineResponse parse failed after save", parseErr);
-    res.status(500).json({
-      error: "routine_response_invalid",
-      message:
-        "Routine was saved but could not be returned. Refresh your routines list or try again.",
-      routineId: routine.id,
+    logger.error(
+      {
+        evt: "routine.response_parse_failed_after_save",
+        routineId: routine.id,
+        childId: routine.childId,
+        date: routine.date,
+        message: parseErr instanceof Error ? parseErr.message : String(parseErr),
+        stack: parseErr instanceof Error ? parseErr.stack : undefined,
+      },
+      "Saved routine response parse failed; returning safe saved-routine payload",
+    );
+    res.status(status).json({
+      id: routine.id,
+      childId: routine.childId,
+      childName,
+      date: routine.date,
+      title: routine.title,
+      items: Array.isArray(routine.items) ? routine.items : [],
+      adaptations: Array.isArray(routine.adaptations) ? routine.adaptations : [],
+      customized: routine.customized,
+      uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
+      createdAt: safeCreatedAt,
+      responseFallback: true,
     });
   }
 }
@@ -2439,9 +2481,9 @@ function respondRoutineSaveFailed(
     },
     "Routine insert/upsert failed",
   );
-  res.status(500).json({
+  res.status(503).json({
     error: "routine_save_failed",
-    message: "Could not save routine. Please try again.",
+    message: "Routine was generated but could not be saved. Please try again.",
     cause,
   });
 }

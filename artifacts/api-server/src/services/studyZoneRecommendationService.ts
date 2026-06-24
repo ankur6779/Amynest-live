@@ -458,12 +458,7 @@ export async function loadSmartStudyLessonItem(
   if (!ctx) return null;
   const lesson = ctx.unlockedLessons.find((l) => l.id === lessonId);
   if (lesson) return lesson;
-  try {
-    const catalog = await loadContentBankCategory<SmartStudyLesson>("smart-study");
-    return catalog.find((l) => l.id === lessonId) ?? null;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export { smartStudyActivityId };

@@ -6,9 +6,9 @@ import { AddChildLink } from "@/components/add-child-link";
 import { useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { LockedBlock } from "@/components/locked-block";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
+import { PremiumActionGate, PremiumBenefitsPanel } from "@/components/hub-module-page-shell";
 import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import { cn } from "@/lib/utils";
 import { getPhonicsLevel } from "@/lib/phonics-content";
@@ -46,7 +46,7 @@ export default function PhonicsPage() {
   const [location] = useLocation();
   const { back } = useAppNavigate();
   const search = useSearch();
-  const { locked, onEngage } = useHubModuleGate("hub_phonics");
+  const { locked, isPremium, onEngage } = useHubModuleGate("hub_phonics");
   const phonicsShipped = isPhonicsModuleAvailable();
   const [primaryCta, setPrimaryCta] = useState<PhonicsPrimaryCta>(DEFAULT_CTA);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
@@ -173,14 +173,8 @@ export default function PhonicsPage() {
       </header>
 
       <main className="scroll-safe min-h-0 flex-1 px-4 pt-4 pb-24">
-        <LockedBlock locked={locked} rounded="rounded-2xl">
-          <div
-            className="mx-auto max-w-4xl space-y-4"
-            onPointerDownCapture={() => onEngage()}
-            onKeyDownCapture={(e) => {
-              if (e.key === "Enter" || e.key === " ") onEngage();
-            }}
-          >
+        <div className="mx-auto max-w-4xl space-y-4">
+            {!isPremium ? <PremiumBenefitsPanel /> : null}
             {eligibleChildren.length > 1 && (
               <section className="flex gap-2 overflow-x-auto pb-1" aria-label="Choose child">
                 {eligibleChildren.map((child) => (
@@ -217,31 +211,33 @@ export default function PhonicsPage() {
               }
             />
             )}
-          </div>
-        </LockedBlock>
+        </div>
       </main>
 
-      <LockedBlock locked={locked} rounded="rounded-none">
-        <div
-          className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur"
-          onPointerDownCapture={() => onEngage()}
-          onKeyDownCapture={(e) => {
-            if (e.key === "Enter" || e.key === " ") onEngage();
-          }}
-        >
+      <div className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur">
           <div className="mx-auto max-w-4xl">
-            <Button
-              type="button"
-              onClick={() => scrollToSection(primaryCta.scrollTarget)}
-              className="h-12 w-full rounded-2xl gap-2 bg-primary font-semibold text-primary-foreground"
-              data-testid="phonics-primary-cta"
+            <PremiumActionGate
+              gate={{
+                locked,
+                previewMode: !isPremium,
+                onEngage,
+                module: "hub_phonics",
+                entitlementState: isPremium ? "premium" : "free",
+              }}
+              label="Unlock phonics learning"
             >
-              <Play className="h-4 w-4" />
-              {primaryCta.label}
-            </Button>
+              <Button
+                type="button"
+                onClick={() => scrollToSection(primaryCta.scrollTarget)}
+                className="h-12 w-full rounded-2xl gap-2 bg-primary font-semibold text-primary-foreground"
+                data-testid="phonics-primary-cta"
+              >
+                <Play className="h-4 w-4" />
+                {primaryCta.label}
+              </Button>
+            </PremiumActionGate>
           </div>
-        </div>
-      </LockedBlock>
+      </div>
     </div>
   );
 }

@@ -88,6 +88,30 @@ export async function getOrCreateCurriculumProgress(
   );
 }
 
+export async function loadCurriculumProgress(
+  childId: number,
+  userId: string,
+): Promise<ChildCurriculumProgress | null> {
+  return withSafeDb(
+    "phonics.curriculum.loadProgress",
+    async () => {
+      const existing = await db
+        .select()
+        .from(phonicsCurriculumProgressTable)
+        .where(
+          and(
+            eq(phonicsCurriculumProgressTable.childId, childId),
+            eq(phonicsCurriculumProgressTable.userId, userId),
+          ),
+        )
+        .limit(1);
+
+      return existing[0] ? rowToProgress(existing[0]) : null;
+    },
+    null,
+  );
+}
+
 export async function getDailyPlanForChild(
   childId: number,
   userId: string,

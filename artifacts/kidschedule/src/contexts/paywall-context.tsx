@@ -29,11 +29,15 @@ export type PaywallReason =
 type PaywallState = {
   open: boolean;
   reason: PaywallReason;
+  module?: string;
+  action?: string;
+  source?: string;
+  entitlementState?: "free" | "premium" | "trial" | "unknown";
 };
 
 type PaywallContextValue = {
   state: PaywallState;
-  openPaywall: (reason?: PaywallReason) => void;
+  openPaywall: (reason?: PaywallReason, meta?: Omit<PaywallState, "open" | "reason">) => void;
   closePaywall: () => void;
 };
 
@@ -42,15 +46,15 @@ const PaywallContext = createContext<PaywallContextValue | null>(null);
 export function PaywallProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PaywallState>({ open: false, reason: "feature" });
 
-  const openPaywall = useCallback((reason: PaywallReason = "feature") => {
+  const openPaywall = useCallback((reason: PaywallReason = "feature", meta?: Omit<PaywallState, "open" | "reason">) => {
     incrementPaywallVisitCount();
     trackSubscriptionEvent({
       event: "paywall_opened",
       reason,
-      source: "open_paywall",
+      source: meta?.source ?? "open_paywall",
     });
     track("premium_paywall_viewed", { source: reason });
-    setState({ open: true, reason });
+    setState({ open: true, reason, ...meta });
   }, []);
   const closePaywall = useCallback(() => {
     setState((s) => ({ ...s, open: false }));

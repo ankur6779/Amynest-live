@@ -167,7 +167,15 @@ export function PlayerSheet({
             </div>
           </div>
           <button
-            onClick={handleMinimize}
+            type="button"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              handleMinimize();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMinimize();
+            }}
             aria-label={t("pages.audio_lessons.close")}
             style={{
               color: "hsl(var(--brand-violet-300))",
@@ -180,6 +188,9 @@ export function PlayerSheet({
               justifyContent: "center",
               border: "none",
               cursor: "pointer",
+              touchAction: "manipulation",
+              position: "relative",
+              zIndex: 2,
             }}
           >
             <X size={16} />

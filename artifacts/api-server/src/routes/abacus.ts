@@ -22,6 +22,7 @@ import { buildAbacusWeeklySummary } from "../services/abacusWeeklySummary";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 
 const router: IRouter = Router();
 
@@ -69,14 +70,20 @@ function asLevelList(raw: unknown): LevelId[] {
   return Array.from(new Set(valid)).sort((a, b) => a - b) as LevelId[];
 }
 
-/** Read a child's progress row, or fabricate a fresh-zeroed one. */
-async function loadOrInitProgress(childId: number, userId: string) {
+/** Read a child's progress row without mutating preview state. */
+async function loadProgress(childId: number) {
   const rows = await db
     .select()
     .from(abacusProgressTable)
     .where(eq(abacusProgressTable.childId, childId))
     .limit(1);
-  if (rows[0]) return rows[0];
+  return rows[0] ?? null;
+}
+
+/** Create a progress row only after an entitled premium action starts. */
+async function loadOrInitProgress(childId: number, userId: string) {
+  const existing = await loadProgress(childId);
+  if (existing) return existing;
   const [created] = await db
     .insert(abacusProgressTable)
     .values({
@@ -129,23 +136,23 @@ router.get("/abacus/progress", async (req, res): Promise<void> => {
       return;
     }
 
-    const row = await loadOrInitProgress(childId, userId);
-    const completed = asLevelList(row.completedLevels);
+    const row = await loadProgress(childId);
+    const completed = asLevelList(row?.completedLevels);
     const highest = highestUnlockedLevel(completed);
 
     res.json({
       eligible: true,
       child: { id: child.id, name: child.name, age: child.age },
       progress: {
-        currentLevel: row.currentLevel,
-        lastMode: row.lastMode,
+        currentLevel: row?.currentLevel ?? 1,
+        lastMode: row?.lastMode ?? "learn",
         completedLevels: completed,
         highestUnlocked: highest,
-        bestScores: (row.bestScores as AbacusBestScores) ?? {},
-        totalCorrect: row.totalCorrect,
-        totalAttempts: row.totalAttempts,
-        totalPoints: row.totalPoints,
-        updatedAt: row.updatedAt,
+        bestScores: (row?.bestScores as AbacusBestScores | undefined) ?? {},
+        totalCorrect: row?.totalCorrect ?? 0,
+        totalAttempts: row?.totalAttempts ?? 0,
+        totalPoints: row?.totalPoints ?? 0,
+        updatedAt: row?.updatedAt ?? null,
       },
     });
   } catch (err) {
@@ -221,7 +228,11 @@ const PostBody = z.discriminatedUnion("action", [
   LogSessionBody,
 ]);
 
-router.post("/abacus/progress", infantExploreMutationGate(), async (req, res): Promise<void> => {
+router.post(
+  "/abacus/progress",
+  hubModuleGate("hub_abacus", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -348,7 +359,12 @@ const TutorBody = z.object({
   question: z.string().min(1).max(500),
 });
 
-router.post("/abacus/tutor", infantExploreMutationGate(), aiUsageGate, async (req, res): Promise<void> => {
+router.post(
+  "/abacus/tutor",
+  hubModuleGate("hub_abacus", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  aiUsageGate,
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

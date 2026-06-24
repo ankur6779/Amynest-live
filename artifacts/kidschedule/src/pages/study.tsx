@@ -267,6 +267,7 @@ export default function StudyPage() {
         featureId="hub_smart_study"
         childId={activeChildId}
         childName={gateChildName}
+        gateMode="action"
       >
       {isError ? (
         <ApiRetryShell onRetry={() => void refetch()} />

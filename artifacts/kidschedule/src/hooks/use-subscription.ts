@@ -1,6 +1,6 @@
 import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
@@ -10,6 +10,7 @@ import {
   readCachedSubscription,
 } from "@/lib/dashboard-data-cache";
 import { EMPTY_SUBSCRIPTION_RESPONSE } from "@/lib/subscription-defaults";
+import { clearLearningZonePremiumCaches } from "@/lib/learning-zone-premium-cache";
 
 export type Plan = "free" | "monthly" | "six_month" | "yearly";
 export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
@@ -125,6 +126,16 @@ export function useSubscription() {
     retry: 1,
   });
 
+  useEffect(() => {
+    if (!isSignedIn) {
+      clearLearningZonePremiumCaches();
+      return;
+    }
+    if (query.data && !query.data.entitlements.isPremium) {
+      clearLearningZonePremiumCaches();
+    }
+  }, [isSignedIn, query.data?.entitlements.isPremium, query.data]);
+
   const refresh = useCallback(() => {
     void qc.invalidateQueries({ queryKey: qkey });
   }, [qc, qkey]);
@@ -235,11 +246,21 @@ export function useSubscription() {
         // land. The verify endpoint already activates the row, so the first
         // refresh usually shows premium immediately.
         refresh();
+        let observedPremium = false;
         for (const delay of [1500, 3500, 6000]) {
           await new Promise((r) => setTimeout(r, delay));
           await qc.invalidateQueries({ queryKey: qkey });
           const data = qc.getQueryData<SubscriptionResponse>(qkey);
-          if (data?.entitlements.isPremium) break;
+          if (data?.entitlements.isPremium) {
+            observedPremium = true;
+            break;
+          }
+        }
+        if (!observedPremium) {
+          return {
+            ok: false,
+            reason: "Payment received. Premium is still verifying; please try again in a moment.",
+          };
         }
       }
       return result;

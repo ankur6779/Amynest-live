@@ -30,8 +30,7 @@ interface AdaptiveQuestion {
   id: string;
   q: string;
   options: string[];
-  answer: string;
-  hint?: string | null;
+  answerToken: string;
 }
 
 interface NextResponse {
@@ -89,6 +88,7 @@ export function AdaptiveQuestionRunner({
   const [questions, setQuestions] = useState<AdaptiveQuestion[]>([]);
   const [idx, setIdx] = useState(0);
   const [pickedIdx, setPickedIdx] = useState<number | null>(null);
+  const [pickedCorrect, setPickedCorrect] = useState<boolean | null>(null);
   const [reveal, setReveal] = useState(false);
   const [level, setLevel] = useState<number>(1);
   const [source, setSource] = useState<"ai" | "dataset">("dataset");
@@ -125,6 +125,7 @@ export function AdaptiveQuestionRunner({
     setResolvedCountry(data.country);
     setIdx(0);
     setPickedIdx(null);
+    setPickedCorrect(null);
     setReveal(false);
     if (!fromCache) writeCache(storageKey, data);
   }, [storageKey]);
@@ -202,38 +203,50 @@ export function AdaptiveQuestionRunner({
   const current = questions[idx];
 
   const reportAttempt = useCallback(
-    async (q: AdaptiveQuestion, correct: boolean): Promise<void> => {
+    async (q: AdaptiveQuestion, selectedAnswer: string): Promise<boolean | null> => {
       try {
         const token = await getToken();
-        if (!token) return;
+        if (!token) return null;
         const ts = new Date().toISOString();
-        // Dual write: pack row for weak-topic detection, practice row for level + seen ids.
-        await fetch(getApiUrl("/api/smart-study/attempt"), {
+        const res = await fetch(getApiUrl("/api/smart-study/attempt"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify([
-            {
+          body: JSON.stringify({
+            childId,
+            subject: practiceSubject,
+            topicId: practiceSubject,
+            questionId: q.id,
+            selectedAnswer,
+            answerToken: q.answerToken,
+            ts,
+          }),
+        });
+        if (!res.ok) return null;
+        const body = await parseApiJson<{ correct?: boolean }>(res);
+        const correct = body.correct ?? null;
+        if (correct != null) {
+          void fetch(getApiUrl("/api/smart-study/attempt"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
               childId,
               subject: progressPackId,
               topicId,
               correct,
               ts,
-            },
-            {
-              childId,
-              subject: practiceSubject,
-              topicId: practiceSubject,
-              correct,
-              questionId: q.id,
-              ts,
-            },
-          ]),
-        });
+            }),
+          });
+        }
+        return correct;
       } catch {
         /* best-effort */
+        return null;
       }
     },
     [childId, practiceSubject, progressPackId, topicId, getToken],
@@ -241,18 +254,22 @@ export function AdaptiveQuestionRunner({
 
   const onPick = (oi: number) => {
     if (!current || reveal) return;
+    const selectedAnswer = current.options[oi];
     setPickedIdx(oi);
-    setReveal(true);
-    const correct = current.options[oi] === current.answer;
-    setTotalAttempted((n) => n + 1);
-    if (correct) setTotalCorrect((n) => n + 1);
-    const persistP = reportAttempt(current, correct);
+    const persistP = reportAttempt(current, selectedAnswer).then((correct) => {
+      if (!mounted.current) return null;
+      setReveal(true);
+      setPickedCorrect(correct);
+      setTotalAttempted((n) => n + 1);
+      if (correct) setTotalCorrect((n) => n + 1);
+      return correct;
+    });
 
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(async () => {
+      const correct = await persistP;
       const nextIdx = idx + 1;
       if (nextIdx >= questions.length) {
-        try { await persistP; } catch { /* swallow */ }
         if (!mounted.current) return;
         void loadBatch(true);
         return;
@@ -260,8 +277,9 @@ export function AdaptiveQuestionRunner({
       if (!mounted.current) return;
       setIdx(nextIdx);
       setPickedIdx(null);
+      setPickedCorrect(null);
       setReveal(false);
-    }, correct ? 900 : 1700);
+    }, 1700);
   };
 
   const accuracy = totalAttempted === 0 ? 0 : Math.round((totalCorrect / totalAttempted) * 100);
@@ -350,11 +368,10 @@ export function AdaptiveQuestionRunner({
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {current.options.map((opt, oi) => {
                     const isPicked = pickedIdx === oi;
-                    const isAnswer = current.answer === opt;
                     const showState = reveal;
                     const cls = !showState
                       ? "border-white/[0.10] bg-[rgba(18,28,60,0.35)] hover:-translate-y-0.5"
-                      : isAnswer
+                      : isPicked && pickedCorrect
                         ? "border-emerald-400/60 bg-emerald-500/10"
                         : isPicked
                           ? "border-rose-400/50 bg-rose-500/10"
@@ -368,23 +385,14 @@ export function AdaptiveQuestionRunner({
                         className={`text-left rounded-xl border-2 px-4 py-3 text-base font-medium ${cls} transition-colors`}
                       >
                         <span className="inline-flex items-center gap-2">
-                          {showState && isAnswer && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--brand-emerald-600))]" />}
-                          {showState && isPicked && !isAnswer && <XCircle className="h-4 w-4 text-destructive" />}
+                          {showState && isPicked && pickedCorrect && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--brand-emerald-600))]" />}
+                          {showState && isPicked && !pickedCorrect && <XCircle className="h-4 w-4 text-destructive" />}
                           {opt}
                         </span>
                       </button>
                     );
                   })}
                 </div>
-                {reveal && pickedIdx !== null && current.options[pickedIdx] !== current.answer && current.hint && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-3 text-sm text-muted-foreground"
-                  >
-                    💡 {current.hint}
-                  </motion.div>
-                )}
               </div>
             </div>
           </motion.div>

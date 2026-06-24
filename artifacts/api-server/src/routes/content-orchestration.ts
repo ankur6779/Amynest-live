@@ -30,8 +30,13 @@ import {
   resetHumanOverride,
   runMetaEcosystemTick,
 } from "../lib/metaLearningService.js";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 
 const router: IRouter = Router();
+const smartStudyPremiumGate = hubModuleGate("hub_smart_study", {
+  premiumOnly: true,
+  denyStatus: 403,
+});
 
 const countrySchema = z.enum(["IN", "US", "UK", "AU", "NZ", "CA", "AE", "BD"]);
 const dateSchema = z
@@ -220,7 +225,7 @@ async function loadChildContext(
 }
 
 // GET /api/content/daily-plan/v2?childId=&countryCode=&date=
-router.get("/content/daily-plan/v2", async (req, res): Promise<void> => {
+router.get("/content/daily-plan/v2", smartStudyPremiumGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -271,7 +276,7 @@ router.get("/content/daily-plan/v2", async (req, res): Promise<void> => {
 });
 
 // POST /api/content/session-feedback
-router.post("/content/session-feedback", async (req, res): Promise<void> => {
+router.post("/content/session-feedback", smartStudyPremiumGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -369,7 +374,7 @@ router.post("/content/session-feedback", async (req, res): Promise<void> => {
 });
 
 // POST /api/content/realtime/event — HTTP fallback when WebSocket unavailable
-router.post("/content/realtime/event", async (req, res): Promise<void> => {
+router.post("/content/realtime/event", smartStudyPremiumGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -458,7 +463,7 @@ router.post("/content/realtime/event", async (req, res): Promise<void> => {
 });
 
 // POST /api/content/tutor/turn — Amy tutor voice + conversation
-router.post("/content/tutor/turn", async (req, res): Promise<void> => {
+router.post("/content/tutor/turn", smartStudyPremiumGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -547,7 +552,7 @@ router.get("/content/family/insights", async (req, res): Promise<void> => {
 });
 
 // POST /api/content/family/cooperative/turn — sibling quiz / verify mode
-router.post("/content/family/cooperative/turn", async (req, res): Promise<void> => {
+router.post("/content/family/cooperative/turn", smartStudyPremiumGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

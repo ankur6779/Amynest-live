@@ -1184,19 +1184,17 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_smart_math_tricks")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
-            href="/smart-math-tricks"
-            title={t("parent_hub.web_tiles.smart-math-tricks.title")}
-            description={t("parent_hub.web_tiles.smart-math-tricks.description")}
-            icon={<Sparkles className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-orange-400 to-amber-500"
-            cardClass="bg-gradient-to-br from-orange-400/30 to-amber-500/15 hover:shadow-[0_10px_36px_-10px_rgba(251,146,60,0.45)]"
-            tryFree={tryFreeFor("hub_smart_math_tricks")}
-            testId="smart-math-tricks-launch-card"
-            sectionId="smart-math-tricks"
-          />
-        </FeatureGate>
+        <HubLaunchCard
+          href="/smart-math-tricks"
+          title={t("parent_hub.web_tiles.smart-math-tricks.title")}
+          description={t("parent_hub.web_tiles.smart-math-tricks.description")}
+          icon={<Sparkles className="h-5 w-5 text-white" />}
+          accentClass="bg-gradient-to-br from-orange-400 to-amber-500"
+          cardClass="bg-gradient-to-br from-orange-400/30 to-amber-500/15 hover:shadow-[0_10px_36px_-10px_rgba(251,146,60,0.45)]"
+          previewBadge="Explore Free"
+          testId="smart-math-tricks-launch-card"
+          sectionId="smart-math-tricks"
+        />
       );
     }
   },
@@ -1207,19 +1205,17 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_abacus")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
-            href="/abacus"
-            title={t("pages.parenting_hub.abacus_pro_zone")}
-            description="Learn the soroban — beads, brain & speed math"
-            icon={<Sparkles className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-teal-400 to-cyan-500"
-            cardClass="bg-gradient-to-br from-teal-400/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(45,212,191,0.45)]"
-            tryFree={tryFreeFor("hub_abacus")}
-            testId="abacus-launch-card"
-            sectionId="abacus"
-          />
-        </FeatureGate>
+        <HubLaunchCard
+          href="/abacus"
+          title={t("pages.parenting_hub.abacus_pro_zone")}
+          description="Learn the soroban — beads, brain & speed math"
+          icon={<Sparkles className="h-5 w-5 text-white" />}
+          accentClass="bg-gradient-to-br from-teal-400 to-cyan-500"
+          cardClass="bg-gradient-to-br from-teal-400/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(45,212,191,0.45)]"
+          previewBadge="Preview Available"
+          testId="abacus-launch-card"
+          sectionId="abacus"
+        />
       );
     }
   },
@@ -1463,7 +1459,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("phonics", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_phonics")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <>
           {isPhonicsModuleAvailable() ? (
           <HubLaunchCard
             href="/phonics"
@@ -1472,14 +1468,14 @@ function ParentingHubPage() {
             icon={<AudioLines className="h-5 w-5 text-white" />}
             accentClass="bg-gradient-to-br from-sky-400 to-blue-500"
             cardClass="bg-gradient-to-br from-sky-400/30 to-blue-500/15 hover:shadow-[0_10px_36px_-10px_rgba(56,189,248,0.45)]"
-            tryFree={tryFreeFor("hub_phonics")}
+            previewBadge="Preview Available"
             testId="phonics-launch-card"
             sectionId="phonics"
           />
           ) : (
             <PhonicsUnavailableFallback compact />
           )}
-        </FeatureGate>
+        </>
       );
     }
   }, {
@@ -1503,20 +1499,17 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_smart_study")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
-            href="/study"
-            title={t("parent_hub.web_tiles.smart-study.title")}
-            description={t("parent_hub.web_tiles.smart-study.description")}
-            icon={<GraduationCap className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-fuchsia-500 to-violet-600"
-            cardClass="bg-gradient-to-br from-fuchsia-500/30 to-violet-600/15 hover:shadow-[0_10px_36px_-10px_rgba(192,38,211,0.45)]"
-            tryFree={tryFreeFor("hub_smart_study")}
-            testId="smart-study-launch-card"
-            sectionId="smart-study"
-            onNavigate={() => markHubUsed("hub_smart_study")}
-          />
-        </FeatureGate>
+        <HubLaunchCard
+          href="/study"
+          title={t("parent_hub.web_tiles.smart-study.title")}
+          description={t("parent_hub.web_tiles.smart-study.description")}
+          icon={<GraduationCap className="h-5 w-5 text-white" />}
+          accentClass="bg-gradient-to-br from-fuchsia-500 to-violet-600"
+          cardClass="bg-gradient-to-br from-fuchsia-500/30 to-violet-600/15 hover:shadow-[0_10px_36px_-10px_rgba(192,38,211,0.45)]"
+          previewBadge="Premium Experience"
+          testId="smart-study-launch-card"
+          sectionId="smart-study"
+        />
       );
     }
   }, {

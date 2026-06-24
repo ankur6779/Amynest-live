@@ -37,6 +37,10 @@ import { MathPlayground } from "@/components/math-playground";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
+  PremiumActionGate,
+  type HubModuleActionGateState,
+} from "@/components/hub-module-page-shell";
+import {
   scheduleLearningZoneAudioPrewarm,
   buildLearningZoneAudioStateKey,
 } from "@/lib/learning-zone-audio-prewarm";
@@ -218,6 +222,7 @@ function TrickCard({
   onSceneComplete,
   expanded,
   onToggle,
+  gate,
   showPractice = false,
 }: {
   trick: MathTrick;
@@ -231,6 +236,7 @@ function TrickCard({
   onSceneComplete?(trickId: string, summary: SceneCompletionSummary): void;
   expanded: boolean;
   onToggle(): void;
+  gate: HubModuleActionGateState;
   showPractice?: boolean;
 }) {
   const {
@@ -483,21 +489,26 @@ function TrickCard({
                 {hearTrickActive && loading ? "⏳" : hearTrickActive ? "⏹" : "🔈"}{" "}
                 {hearTrickActive ? t("components.smart_math_tricks.stop") : t("components.smart_math_tricks.hear_trick")}
               </button>
-              {animatedSequence && <button onClick={() => setInteractiveMode(true)} className="flex-1 min-w-[88px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
+              {animatedSequence && <PremiumActionGate gate={gate} className="flex-1 min-w-[88px]" label="Unlock interactive math practice">
+                <button onClick={() => setInteractiveMode(true)} className="w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
           background: `${trick.color}22`,
           border: `1.5px solid ${trick.color}55`,
           color: trick.color
         }}>
                   {t("components.smart_math_tricks.play_with_it")}
-                </button>}
-              {showPractice && <button onClick={() => setPracticeMode(true)} className="flex-1 min-w-[88px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
+                </button>
+              </PremiumActionGate>}
+              {showPractice && <PremiumActionGate gate={gate} className="flex-1 min-w-[88px]" label="Unlock smart math practice">
+                <button onClick={() => setPracticeMode(true)} className="w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
           background: "rgba(255,255,255,0.08)",
           border: "1.5px solid rgba(255,255,255,0.15)",
           color: "rgba(255,255,255,0.7)"
         }}>
                   {animatedSequence ? t("components.smart_math_tricks.quiz") : t("components.smart_math_tricks.try_it")}
-                </button>}
-              <button onClick={() => {
+                </button>
+              </PremiumActionGate>}
+              <PremiumActionGate gate={gate} label="Unlock progress saving">
+                <button onClick={() => {
           onStar();
         }} className="px-3 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95" style={{
           background: starred ? "#fbbf2433" : "rgba(255,255,255,0.08)",
@@ -506,6 +517,7 @@ function TrickCard({
         }} title={t("components.smart_math_tricks.mark_as_mastered")}>
                 {starred ? "⭐" : "☆"}
               </button>
+              </PremiumActionGate>
             </div>}
 
           {/* Practice mini quiz */}
@@ -585,6 +597,7 @@ function TodayTab({
   onSignal,
   onSceneComplete,
   onBonusLoaded,
+  gate,
 }: {
   pool: MathTrick[];
   bonusTricks: MathTrick[];
@@ -601,6 +614,7 @@ function TodayTab({
   onSignal(event: LearningSignalEvent): void;
   onSceneComplete(trickId: string, summary: SceneCompletionSummary): void;
   onBonusLoaded(tricks: MathTrick[]): void;
+  gate: HubModuleActionGateState;
 }) {
   const {
     t
@@ -631,6 +645,7 @@ function TodayTab({
           onSceneComplete={onSceneComplete}
           expanded={expanded === tr.id}
           onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
+          gate={gate}
           showPractice
         />
       ))}
@@ -648,21 +663,24 @@ function TodayTab({
           onSceneComplete={onSceneComplete}
           expanded={expanded === tr.id}
           onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
+          gate={gate}
           showPractice
         />
       ))}
-      <LearningLoadMoreButton
-        section="smart_math_tricks"
-        childId={childId}
-        count={2}
-        excludeIds={[...pool, ...bonusTricks].map((t) => t.id)}
-        params={{ age: trickAge }}
-        onLoaded={(items) => {
-          const tricks = (items.tricks ?? []) as MathTrick[];
-          if (tricks.length > 0) onBonusLoaded(tricks);
-        }}
-        className="pt-1"
-      />
+      <PremiumActionGate gate={gate} label="Unlock more smart math tricks">
+        <LearningLoadMoreButton
+          section="smart_math_tricks"
+          childId={childId}
+          count={2}
+          excludeIds={[...pool, ...bonusTricks].map((t) => t.id)}
+          params={{ age: trickAge }}
+          onLoaded={(items) => {
+            const tricks = (items.tricks ?? []) as MathTrick[];
+            if (tricks.length > 0) onBonusLoaded(tricks);
+          }}
+          className="pt-1"
+        />
+      </PremiumActionGate>
       <div className="text-center pt-1">
         <p className="text-[11px] text-white/30">{t("components.smart_math_tricks.new_tricks_unlock_tomorrow")}</p>
       </div>
@@ -685,6 +703,7 @@ function LearnAllTab({
   onSignal,
   onSceneComplete,
   onBonusLoaded,
+  gate,
 }: {
   pool: MathTrick[];
   bonusTricks: MathTrick[];
@@ -699,6 +718,7 @@ function LearnAllTab({
   onSignal(event: LearningSignalEvent): void;
   onSceneComplete(trickId: string, summary: SceneCompletionSummary): void;
   onBonusLoaded(tricks: MathTrick[]): void;
+  gate: HubModuleActionGateState;
 }) {
   const {
     t
@@ -727,20 +747,23 @@ function LearnAllTab({
           onSceneComplete={onSceneComplete}
           expanded={expanded === tr.id}
           onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
+          gate={gate}
           showPractice
         />
       ))}
-      <LearningLoadMoreButton
-        section="smart_math_tricks"
-        childId={childId}
-        count={2}
-        excludeIds={allTricks.map((t) => t.id)}
-        params={{ age: trickAge }}
-        onLoaded={(items) => {
-          const tricks = (items.tricks ?? []) as MathTrick[];
-          if (tricks.length > 0) onBonusLoaded(tricks);
-        }}
-      />
+      <PremiumActionGate gate={gate} label="Unlock the full tricks library">
+        <LearningLoadMoreButton
+          section="smart_math_tricks"
+          childId={childId}
+          count={2}
+          excludeIds={allTricks.map((t) => t.id)}
+          params={{ age: trickAge }}
+          onLoaded={(items) => {
+            const tricks = (items.tricks ?? []) as MathTrick[];
+            if (tricks.length > 0) onBonusLoaded(tricks);
+          }}
+        />
+      </PremiumActionGate>
     </div>;
 }
 
@@ -958,16 +981,25 @@ interface SmartMathTricksProps {
   childName: string;
   ageYears: number;
   childId?: number;
+  gate?: HubModuleActionGateState;
 }
 export function SmartMathTricks({
   childName,
   ageYears,
   childId,
+  gate,
 }: SmartMathTricksProps) {
   const {
     t
   } = useTranslation();
   const authFetch = useAuthFetch();
+  const actionGate = gate ?? {
+    locked: false,
+    previewMode: false,
+    onEngage: () => undefined,
+    module: "hub_smart_math_tricks",
+    entitlementState: "premium" as const,
+  };
   // Ages 2–8 (2+ in months via page shell)
   if (ageYears < 2 || ageYears > 8) return null;
   const trickAge: TrickAge = ageYears <= 6 ? "4-6" : "6-8";
@@ -1184,6 +1216,7 @@ export function SmartMathTricks({
             onSignal={recordSignal}
             onSceneComplete={handleSceneComplete}
             onBonusLoaded={handleBonusLoaded}
+            gate={actionGate}
           />
         )}
         {tab === "learn" && (
@@ -1201,21 +1234,26 @@ export function SmartMathTricks({
             onSignal={recordSignal}
             onSceneComplete={handleSceneComplete}
             onBonusLoaded={handleBonusLoaded}
+            gate={actionGate}
           />
         )}
         {tab === "practice" && (
-          <PracticeTab
-            pool={fullPool}
-            childName={childName}
-            starIds={mathSt.starIds}
-            mastery={mathSt.mastery}
-            onStar={handleStar}
-            onPracticeResult={handlePracticeResult}
-            onSessionComplete={handleSessionComplete}
-          />
+          <PremiumActionGate gate={actionGate} label="Unlock smart math practice sessions">
+            <PracticeTab
+              pool={fullPool}
+              childName={childName}
+              starIds={mathSt.starIds}
+              mastery={mathSt.mastery}
+              onStar={handleStar}
+              onPracticeResult={handlePracticeResult}
+              onSessionComplete={handleSessionComplete}
+            />
+          </PremiumActionGate>
         )}
         {tab === "playground" && (
-          <MathPlayground childName={childName} ageYears={ageYears} childId={childId} />
+          <PremiumActionGate gate={actionGate} label="Unlock math playground">
+            <MathPlayground childName={childName} ageYears={ageYears} childId={childId} />
+          </PremiumActionGate>
         )}
       </div>
     </div>;

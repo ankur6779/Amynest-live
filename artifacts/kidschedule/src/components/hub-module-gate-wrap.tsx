@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { LockedBlock } from "@/components/locked-block";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import { PremiumBenefitsPanel } from "@/components/hub-module-page-shell";
 
 /**
  * Client-side freemium gate for full-screen Parent Hub modules that do not use
@@ -12,15 +13,26 @@ export function HubModuleGateWrap({
   childId,
   childName = "your child",
   rounded = "rounded-2xl",
+  gateMode = "page",
   children,
 }: {
   featureId: string;
   childId?: number | null;
   childName?: string;
   rounded?: string;
+  gateMode?: "page" | "action";
   children: ReactNode;
 }) {
-  const { locked, journeySoft, onEngage } = useHubModuleGate(featureId, childId);
+  const { locked, journeySoft, onEngage, isPremium } = useHubModuleGate(featureId, childId);
+
+  if (gateMode === "action") {
+    return (
+      <>
+        {!isPremium ? <PremiumBenefitsPanel className="mb-4" /> : null}
+        {children}
+      </>
+    );
+  }
 
   const body = (
     <div

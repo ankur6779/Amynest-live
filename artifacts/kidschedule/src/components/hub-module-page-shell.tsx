@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Sparkles, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { useAppNavigate } from "@/components/app-link";
 import { useAddChildGate } from "@/hooks/use-add-child-gate";
@@ -9,11 +9,14 @@ import { LockedBlock } from "@/components/locked-block";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
+import { track } from "@/lib/analytics";
 import { isExploreNextStageHubFeature, isHealthLabPreviewAge, isGamingHubPreviewAge } from "@/lib/hub-visibility";
 import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
+const seenPremiumGateKeys = new Set<string>();
 
 type HubChild = {
   id: number;
@@ -22,6 +25,112 @@ type HubChild = {
   ageMonths?: number | null;
 };
 
+export type HubModuleActionGateState = {
+  locked: boolean;
+  previewMode: boolean;
+  onEngage: () => void;
+  module: string;
+  entitlementState: "free" | "premium" | "trial" | "unknown";
+};
+
+export function PremiumBenefitsPanel({ className }: { className?: string }) {
+  return (
+    <section className={cn("rounded-3xl border border-primary/25 bg-primary/10 p-4", className)}>
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-quicksand text-base font-black text-foreground">Unlock Premium</p>
+          <div className="mt-2 grid gap-1 text-sm font-semibold text-muted-foreground sm:grid-cols-2">
+            <span>✓ Unlimited Lessons</span>
+            <span>✓ Progress Tracking</span>
+            <span>✓ AI Learning Coach</span>
+            <span>✓ Certificates</span>
+            <span>✓ Advanced Content</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function PremiumActionGate({
+  gate,
+  children,
+  className,
+  label = "Premium action",
+}: {
+  gate: HubModuleActionGateState;
+  children: ReactNode;
+  className?: string;
+  label?: string;
+}) {
+  useEffect(() => {
+    if (!gate.previewMode || !gate.locked) return;
+    const key = `${gate.module}:${label}:${gate.entitlementState}`;
+    if (seenPremiumGateKeys.has(key)) return;
+    seenPremiumGateKeys.add(key);
+    track("premium_gate_seen", {
+      module: gate.module,
+      action: label,
+      source: "learning_action_gate",
+      entitlement_state: gate.entitlementState,
+    });
+  }, [gate.entitlementState, gate.locked, gate.module, gate.previewMode, label]);
+
+  const openGate = () => {
+    track("premium_gate_clicked", {
+      module: gate.module,
+      action: label,
+      source: "learning_action_gate",
+      entitlement_state: gate.entitlementState,
+    });
+    openSubscriptionGate({
+      reason: "hub_locked",
+      source: "learning_action_gate",
+      module: gate.module,
+      action: label,
+      entitlementState: gate.entitlementState,
+    });
+  };
+
+  if (!gate.previewMode) return className ? <div className={className}>{children}</div> : <>{children}</>;
+
+  if (!gate.locked) {
+    return (
+      <div
+        className={className}
+        onPointerDownCapture={() => gate.onEngage()}
+        onKeyDownCapture={(e) => {
+          if (e.key === "Enter" || e.key === " ") gate.onEngage();
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative rounded-2xl", className)} data-testid="premium-action-gate">
+      <div style={{ pointerEvents: "none" }} aria-hidden="true">
+        {children}
+      </div>
+      <button
+        type="button"
+        onClick={openGate}
+        aria-label={label}
+        className="absolute inset-0 z-10 flex cursor-pointer items-center justify-center rounded-2xl bg-background/35 px-3 backdrop-blur-[2px] transition-colors hover:bg-background/45"
+      >
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-foreground shadow-md">
+          <Lock className="h-3 w-3" />
+          Premium Experience
+        </span>
+      </button>
+    </div>
+  );
+}
+
 export function HubModulePageShell({
   featureId,
   title,
@@ -29,6 +138,7 @@ export function HubModulePageShell({
   icon,
   filterChild,
   emptyMessage,
+  gateMode = "page",
   children,
 }: {
   featureId: string;
@@ -37,11 +147,12 @@ export function HubModulePageShell({
   icon: ReactNode;
   filterChild?: (child: HubChild, totalAgeMonths: number) => boolean;
   emptyMessage?: string;
-  children: (ctx: { child: HubChild; totalAgeMonths: number }) => ReactNode;
+  gateMode?: "page" | "action";
+  children: (ctx: { child: HubChild; totalAgeMonths: number; gate: HubModuleActionGateState }) => ReactNode;
 }) {
   const { navigate, back } = useAppNavigate();
   const { tryAddChild } = useAddChildGate();
-  const { locked, journeySoft, onEngage } = useHubModuleGate(featureId);
+  const { locked, journeySoft, onEngage, isPremium } = useHubModuleGate(featureId);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -142,6 +253,27 @@ export function HubModulePageShell({
       : featureId === "hub_gaming_rewards"
         ? "parent_hub.web_tiles.gaming-rewards.preview_banner"
         : "parent_hub.explore_next.preview_banner";
+  const actionGate: HubModuleActionGateState = {
+    locked: locked && !infantExplorePreview,
+    previewMode: !isPremium && !infantExplorePreview,
+    onEngage,
+    module: featureId,
+    entitlementState: isPremium ? "premium" : journeySoft ? "trial" : "free",
+  };
+  useEffect(() => {
+    if (gateMode !== "action" || !actionGate.previewMode) return;
+    track("learning_preview_opened", {
+      module: featureId,
+      source: "hub_module_page",
+      entitlement_state: actionGate.entitlementState,
+    });
+  }, [actionGate.entitlementState, actionGate.previewMode, featureId, gateMode]);
+  const content = (
+    <>
+      {gateMode === "action" && actionGate.previewMode ? <PremiumBenefitsPanel className="mb-4" /> : null}
+      {children({ child: activeChild, totalAgeMonths, gate: actionGate })}
+    </>
+  );
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">
@@ -189,7 +321,9 @@ export function HubModulePageShell({
           {infantExplorePreview ? (
             <InfantExplorePreviewBanner className="mb-4" messageKey={previewBannerKey} />
           ) : null}
-          {journeySoft && !infantExplorePreview ? (
+          {gateMode === "action" ? (
+            content
+          ) : journeySoft && !infantExplorePreview ? (
             <JourneyPreviewContent childName={activeChild.name}>
               <div
                 onPointerDownCapture={() => onEngage()}
@@ -197,7 +331,7 @@ export function HubModulePageShell({
                   if (e.key === "Enter" || e.key === " ") onEngage();
                 }}
               >
-                {children({ child: activeChild, totalAgeMonths })}
+                {content}
               </div>
             </JourneyPreviewContent>
           ) : (
@@ -212,7 +346,7 @@ export function HubModulePageShell({
                   if (e.key === "Enter" || e.key === " ") onEngage();
                 }}
               >
-                {children({ child: activeChild, totalAgeMonths })}
+                {content}
               </div>
             </LockedBlock>
           )}

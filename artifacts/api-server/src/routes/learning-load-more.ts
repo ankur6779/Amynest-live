@@ -12,6 +12,7 @@ import {
   assertHubModuleAccess,
   hubModuleGateFailureBody,
 } from "../services/hubModuleGateService.js";
+import { getOrCreateSubscription, isPremiumNow } from "../services/subscriptionService.js";
 import type { ParentHubFeatureId } from "../services/featureUsageService.js";
 import {
   assertInfantExploreMutationAllowed,
@@ -24,8 +25,15 @@ const LOAD_MORE_HUB_FEATURE: Partial<
   Record<LearningLoadMoreSection, ParentHubFeatureId>
 > = {
   smart_study: "hub_smart_study",
+  smart_math_tricks: "hub_smart_math_tricks",
+  phonics: "hub_phonics",
   life_skills: "hub_life_skills",
 };
+const PREMIUM_ONLY_LOAD_MORE = new Set<LearningLoadMoreSection>([
+  "smart_study",
+  "smart_math_tricks",
+  "phonics",
+]);
 
 const router: IRouter = Router();
 
@@ -125,6 +133,17 @@ router.post("/learning/load-more", async (req, res): Promise<void> => {
   }
 
   const hubFeature = LOAD_MORE_HUB_FEATURE[parsed.data.section];
+  if (PREMIUM_ONLY_LOAD_MORE.has(parsed.data.section)) {
+    const sub = await getOrCreateSubscription(userId);
+    if (!isPremiumNow(sub)) {
+      res.status(403).json({
+        error: "premium_required",
+        feature: hubFeature,
+        message: "Upgrade to generate premium learning content.",
+      });
+      return;
+    }
+  }
   if (hubFeature) {
     const hubGate = await assertHubModuleAccess(
       userId,

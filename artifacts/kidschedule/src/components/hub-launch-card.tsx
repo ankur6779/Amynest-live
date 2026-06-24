@@ -22,6 +22,7 @@ export function HubLaunchCard({
   accentClass,
   cardClass,
   tryFree,
+  previewBadge,
   testId,
   sectionId,
   onNavigate,
@@ -33,6 +34,7 @@ export function HubLaunchCard({
   accentClass: string;
   cardClass: string;
   tryFree?: boolean;
+  previewBadge?: "Preview Available" | "Explore Free" | "Premium Experience";
   testId: string;
   sectionId?: string;
   onNavigate?: () => void;
@@ -70,6 +72,11 @@ export function HubLaunchCard({
           <div className={HUB_FEATURE_TILE_TEXT}>
             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
               <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
+              {previewBadge && !discoveryPreview ? (
+                <span className="shrink-0 rounded-full bg-card/85 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-foreground shadow-sm">
+                  {previewBadge}
+                </span>
+              ) : null}
               {tryFree && !discoveryPreview ? <TryFreeBadge /> : null}
             </div>
             <p className={HUB_FEATURE_TILE_DESC}>{description}</p>

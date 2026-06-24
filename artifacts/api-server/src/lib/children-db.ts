@@ -1,5 +1,6 @@
 import { and, asc, eq, getTableColumns } from "drizzle-orm";
 import { db, childrenTable, type Child, type InsertChild } from "@workspace/db";
+import { listActiveCustomActivitiesForChildren } from "../services/userCustomActivityService.js";
 import { isMissingColumnError, isSchemaMismatchError } from "./db-safe.js";
 import { logger } from "./logger.js";
 
@@ -22,6 +23,44 @@ export function getFixedActivitiesFromChild(child: unknown): ChildFixedActivity[
   const raw = (child as { fixedActivities?: unknown }).fixedActivities;
   if (!Array.isArray(raw)) return [];
   return raw as ChildFixedActivity[];
+}
+
+function mergeFixedActivities(
+  legacy: ChildFixedActivity[] | null | undefined,
+  saved: ChildFixedActivity[] | null | undefined,
+): ChildFixedActivity[] {
+  const out: ChildFixedActivity[] = [];
+  const seen = new Set<string>();
+  for (const item of [...(legacy ?? []), ...(saved ?? [])]) {
+    const key = [
+      item.activity.trim().toLowerCase(),
+      [...(item.days ?? [])].map((d) => d.toLowerCase()).sort().join(","),
+      item.start,
+      item.end,
+    ].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+async function attachSavedFixedActivities<T extends Child>(
+  userId: string,
+  rows: T[],
+): Promise<T[]> {
+  if (rows.length === 0) return rows;
+  const savedByChild = await listActiveCustomActivitiesForChildren(
+    userId,
+    rows.map((r) => r.id),
+  );
+  return rows.map((row) => ({
+    ...row,
+    fixedActivities: mergeFixedActivities(
+      getFixedActivitiesFromChild(row),
+      savedByChild.get(row.id) ?? [],
+    ),
+  }));
 }
 
 export function normalizeChildRow<T extends Record<string, unknown>>(
@@ -68,7 +107,7 @@ export async function listChildrenForUser(userId: string): Promise<Child[]> {
         .from(childrenTable)
         .where(eq(childrenTable.userId, userId))
         .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
-      return rows.map((r) => normalizeChildRow(r) as Child);
+      return attachSavedFixedActivities(userId, rows.map((r) => normalizeChildRow(r) as Child));
     }
     const rows = await db
       .select()
@@ -76,7 +115,7 @@ export async function listChildrenForUser(userId: string): Promise<Child[]> {
       .where(eq(childrenTable.userId, userId))
       .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
     fixedActivitiesColumnOk = true;
-    return rows.map((r) => normalizeChildRow(r) as Child);
+    return attachSavedFixedActivities(userId, rows.map((r) => normalizeChildRow(r) as Child));
   } catch (err) {
     noteFixedActivitiesMissing(err);
     if (fixedActivitiesColumnOk === false) {
@@ -85,7 +124,7 @@ export async function listChildrenForUser(userId: string): Promise<Child[]> {
         .from(childrenTable)
         .where(eq(childrenTable.userId, userId))
         .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
-      return rows.map((r) => normalizeChildRow(r) as Child);
+      return attachSavedFixedActivities(userId, rows.map((r) => normalizeChildRow(r) as Child));
     }
     if (isSchemaMismatchError(err)) {
       logger.warn(
@@ -102,20 +141,25 @@ export async function getChildByIdForUser(
   childId: number,
   userId: string,
 ): Promise<Child | undefined> {
+  const attachOne = async (row: Child | undefined): Promise<Child | undefined> => {
+    if (!row) return undefined;
+    const [withSaved] = await attachSavedFixedActivities(userId, [row]);
+    return withSaved;
+  };
   try {
     if (fixedActivitiesColumnOk === false) {
       const [row] = await db
         .select(childColumnsWithoutFixedActivities)
         .from(childrenTable)
         .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)));
-      return row ? (normalizeChildRow(row) as Child) : undefined;
+      return attachOne(row ? (normalizeChildRow(row) as Child) : undefined);
     }
     const [row] = await db
       .select()
       .from(childrenTable)
       .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)));
     if (row) fixedActivitiesColumnOk = true;
-    return row ? (normalizeChildRow(row) as Child) : undefined;
+    return attachOne(row ? (normalizeChildRow(row) as Child) : undefined);
   } catch (err) {
     noteFixedActivitiesMissing(err);
     if (fixedActivitiesColumnOk === false) {
@@ -123,7 +167,7 @@ export async function getChildByIdForUser(
         .select(childColumnsWithoutFixedActivities)
         .from(childrenTable)
         .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)));
-      return row ? (normalizeChildRow(row) as Child) : undefined;
+      return attachOne(row ? (normalizeChildRow(row) as Child) : undefined);
     }
     throw err;
   }

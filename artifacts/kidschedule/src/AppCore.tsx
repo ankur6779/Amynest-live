@@ -363,14 +363,6 @@ type PremiumRouteMeta = {
 
 const PREMIUM_ROUTE_METADATA: PremiumRouteMeta[] = [
   {
-    route: "/phonics",
-    title: "Phonics Premium",
-    accessKey: "canAccessDownloads",
-    preview: "Preview structured phonics practice and unlock the premium workbook through the secure download route.",
-    benefits: ["Full workbook access", "Download protection", "Premium phonics progression"],
-    source: "route_phonics",
-  },
-  {
     route: "/nutrition",
     title: "Nutrition Premium",
     accessKey: "canAccessNutritionHub",
@@ -393,22 +385,6 @@ const PREMIUM_ROUTE_METADATA: PremiumRouteMeta[] = [
     preview: "Preview the child wellness insights available in Health Lab.",
     benefits: ["Health insights", "Progress reports", "Premium wellness guidance"],
     source: "route_health_lab",
-  },
-  {
-    route: "/study",
-    title: "Learning Premium",
-    accessKey: "canAccessLearningHub",
-    preview: "Preview learning cards and unlock deeper personalized study support.",
-    benefits: ["More learning content", "Premium study guidance", "Downloadable resources"],
-    source: "route_learning_study",
-  },
-  {
-    route: "/smart-math-tricks",
-    title: "Learning Premium",
-    accessKey: "canAccessLearningHub",
-    preview: "Preview smart math tricks and unlock the complete learning path.",
-    benefits: ["Premium math tricks", "More examples", "Personalized learning expansion"],
-    source: "route_learning_math",
   },
 ];
 

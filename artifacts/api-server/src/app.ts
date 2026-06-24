@@ -204,12 +204,29 @@ export async function createApp(): Promise<Express> {
   app.use(
     (
       err: unknown,
-      _req: express.Request,
+      req: express.Request,
       res: express.Response,
       _next: express.NextFunction,
     ) => {
-      logger.error({ err }, "Unhandled API error");
+      logger.error(
+        {
+          err,
+          method: req.method,
+          path: req.originalUrl?.split("?")[0],
+          requestId: req.requestId,
+        },
+        "Unhandled API error",
+      );
       if (res.headersSent) return;
+      const path = req.originalUrl?.split("?")[0] ?? "";
+      if (path.startsWith("/api/routines") || path.startsWith("/api/household")) {
+        res.status(503).json({
+          error: "routine_service_unavailable",
+          message: "Routine service is temporarily unavailable. Please try again.",
+          requestId: req.requestId,
+        });
+        return;
+      }
       const raw = err instanceof Error ? err.message : "Internal server error";
       sendSafeError(res, 500, raw, true);
     },

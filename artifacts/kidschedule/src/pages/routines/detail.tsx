@@ -82,6 +82,8 @@ type RoutineItem = {
   category: string;
   notes?: string;
   status?: ItemStatus;
+  activitySource?: string;
+  culturalTag?: string;
   skipReason?: string;
   imageUrl?: string;
   /** Set by the Adaptive Engine when it auto-modifies a task. */
@@ -107,6 +109,11 @@ type RoutineItem = {
   description?: string;
   linkedModules?: string[];
 };
+
+function isSavedActivityItem(item: RoutineItem): boolean {
+  return item.activitySource === "fixed" || item.culturalTag === "fixed_recurring";
+}
+
 const STATUS_STYLES: Record<ItemStatus, string> = {
   pending: "",
   completed: "border-border bg-muted dark:bg-card dark:border-primary",
@@ -2126,6 +2133,9 @@ export default function RoutineDetail() {
                             {item.adjusted && status !== "completed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5" title={t("pages.routines.detail.auto_adjusted_by_amy_ai")}>
                                 {t("pages.routines.detail.adjusted")}
                               </Badge>}
+                            {isSavedActivityItem(item) && <Badge className="rounded-full text-[10px] sm:text-xs font-bold border border-primary/20 bg-primary/10 text-primary px-2 py-0.5">
+                              Saved Activity
+                            </Badge>}
                             <Badge className={cn("rounded-full text-[10px] sm:text-xs font-bold border px-2 py-0.5", catVisual.badge)}>
                               {formatCategoryLabel(item.category)}
                             </Badge>

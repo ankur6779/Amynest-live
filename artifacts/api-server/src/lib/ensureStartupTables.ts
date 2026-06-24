@@ -214,6 +214,9 @@ export async function ensureSubscriptionsTable(): Promise<void> {
       referral_code             TEXT UNIQUE,
       referral_rewards_granted  INTEGER NOT NULL DEFAULT 0,
       bonus_expires_at          TIMESTAMPTZ,
+      download_bank_balance     INTEGER NOT NULL DEFAULT 0,
+      daily_download_allocation INTEGER NOT NULL DEFAULT 5,
+      last_download_refresh_at  TIMESTAMPTZ,
       created_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at                TIMESTAMPTZ NOT NULL DEFAULT now()
     )
@@ -224,6 +227,13 @@ export async function ensureSubscriptionsTable(): Promise<void> {
   await db.execute(sql`
     ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS referral_rewards_granted INTEGER NOT NULL DEFAULT 0
   `);
+  await db.execute(sql`
+    ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS download_bank_balance INTEGER NOT NULL DEFAULT 0
+  `);
+  await db.execute(sql`
+    ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS daily_download_allocation INTEGER NOT NULL DEFAULT 5
+  `);
+  await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_download_refresh_at TIMESTAMPTZ`);
   await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS subscription_state TEXT NOT NULL DEFAULT 'FREE'`);
   await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS store TEXT`);
   await db.execute(sql`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS environment TEXT`);
@@ -257,6 +267,38 @@ export async function ensureSubscriptionsTable(): Promise<void> {
   `);
 
   logger.info({ evt: "db.ensure", table: "subscriptions" }, "Ensured subscriptions table");
+}
+
+export async function ensureUserCustomActivitiesTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_custom_activities (
+      id             SERIAL PRIMARY KEY,
+      user_id        TEXT NOT NULL,
+      child_id       INTEGER,
+      title          TEXT NOT NULL,
+      category       TEXT NOT NULL DEFAULT 'activity',
+      days_of_week   JSONB NOT NULL DEFAULT '[]'::jsonb,
+      start_time     TEXT NOT NULL,
+      end_time       TEXT NOT NULL,
+      location       TEXT,
+      notes          TEXT,
+      is_active      BOOLEAN NOT NULL DEFAULT true,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS user_custom_activities_user_child_idx
+      ON user_custom_activities (user_id, child_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS user_custom_activities_active_idx
+      ON user_custom_activities (user_id, is_active)
+  `);
+  logger.info(
+    { evt: "db.ensure", table: "user_custom_activities" },
+    "Ensured user_custom_activities table",
+  );
 }
 
 export async function ensureUserIdentityAliasesTable(): Promise<void> {
@@ -995,6 +1037,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "routines_child_date_uq", run: ensureRoutinesChildDateUnique },
     { name: "parent_profiles", run: ensureParentProfilesTable },
     { name: "subscriptions", run: ensureSubscriptionsTable },
+    { name: "user_custom_activities", run: ensureUserCustomActivitiesTable },
     { name: "user_identity_aliases", run: ensureUserIdentityAliasesTable },
     { name: "onboarding_profiles", run: ensureOnboardingProfilesTable },
     { name: "push_tokens", run: ensurePushTokensTable },

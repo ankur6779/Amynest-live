@@ -200,6 +200,8 @@ type RoutineItem = {
   category: string;
   notes?: string;
   status?: string;
+  activitySource?: string;
+  culturalTag?: string;
 };
 type GeneratedRoutine = {
   title: string;
@@ -238,6 +240,10 @@ function normalizeRoutineItemsForSave(items: RoutineItem[]): RoutineItem[] {
     ...item,
     duration: Math.max(1, Math.round(Number(item.duration) || 30)),
   }));
+}
+
+function isSavedActivityItem(item: RoutineItem): boolean {
+  return item.activitySource === "fixed" || item.culturalTag === "fixed_recurring";
 }
 type ChildType = {
   id: number;
@@ -540,6 +546,11 @@ function IndividualRoutineSection({
                 <div className="text-sm font-medium">{item.activity}</div>
                 {formatRoutineDurationShort(item) ? <div className="text-xs text-muted-foreground">{formatRoutineDurationShort(item)}</div> : null}
               </div>
+              {isSavedActivityItem(item) && (
+                <Badge className="text-xs shrink-0 border-primary/20 bg-primary/10 text-primary">
+                  Saved Activity
+                </Badge>
+              )}
               <Badge variant="outline" className="text-xs shrink-0">{formatCategoryLabel(item.category)}</Badge>
             </div>)}
         </div>}

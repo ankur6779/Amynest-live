@@ -37,6 +37,14 @@ const GATE_BY_CATEGORY: Record<
   "math-progression": "hub_smart_study",
 };
 
+function contentBankGateForCategory(cat: z.infer<typeof CategoryParam>) {
+  const feature = GATE_BY_CATEGORY[cat];
+  if (cat === "smart-study" || cat === "math-progression") {
+    return hubModuleGate(feature, { premiumOnly: true, denyStatus: 403 });
+  }
+  return hubModuleGate(feature);
+}
+
 async function resolvePremium(userId: string): Promise<boolean> {
   const sub = await getOrCreateSubscription(userId);
   return isPremiumNow(sub);
@@ -99,7 +107,7 @@ router.get(
       res.status(400).json({ error: "invalid_category" });
       return;
     }
-    hubModuleGate(GATE_BY_CATEGORY[catParsed.data])(req, res, next);
+    contentBankGateForCategory(catParsed.data)(req, res, next);
   },
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -153,7 +161,7 @@ router.get(
       res.status(400).json({ error: "invalid_category" });
       return;
     }
-    hubModuleGate(GATE_BY_CATEGORY[catParsed.data])(req, res, next);
+    contentBankGateForCategory(catParsed.data)(req, res, next);
   },
   async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;

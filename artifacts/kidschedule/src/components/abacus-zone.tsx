@@ -47,6 +47,10 @@ import {
   AbacusParentPanel,
   AbacusViewToggle,
 } from "@/components/abacus-dashboard";
+import {
+  PremiumActionGate,
+  type HubModuleActionGateState,
+} from "@/components/hub-module-page-shell";
 
 // ─── Tiny WebAudio bleeps for bead taps + correct/wrong/unlock cues ────
 import { playProceduralTone } from "@/lib/procedural-sfx";
@@ -317,6 +321,7 @@ interface Props {
   childId: number;
   childName: string;
   ageYears: number;
+  gate?: HubModuleActionGateState;
 }
 
 interface ProgressShape {
@@ -1185,7 +1190,7 @@ function MentalMode({ level }: { level: LevelId }) {
 
 // ─── Top-level component ────────────────────────────────────────────────
 
-export function AbacusZone({ childId, childName, ageYears }: Props) {
+export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
   const { t } = useAbacusTranslation();
   const authFetch = useAuthFetch();
   const voice = useAbacusAmyVoice();
@@ -1198,6 +1203,13 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
   const [streak, setStreak] = useState(() => readStreak(childId));
   const [zoneScreen, setZoneScreen] = useState<ZoneScreen>("home");
   const [viewMode, setViewMode] = useState<ViewMode>("child");
+  const actionGate = gate ?? {
+    locked: false,
+    previewMode: false,
+    onEngage: () => undefined,
+    module: "hub_abacus",
+    entitlementState: "premium" as const,
+  };
 
   const recordActivity = useCallback(() => {
     const next = bumpStreak(childId);
@@ -1443,21 +1455,23 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
       )}
 
       {viewMode === "child" && zoneScreen === "home" && progress && (
-        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-          <AbacusHomeDashboard
-            childName={childName}
-            progress={progress}
-            level={level}
-            mode={mode}
-            streakDays={streak.days}
-            dailyCorrect={dailyPractice.correct}
-            dailyGoal={DAILY_PRACTICE_GOAL}
-            leaderboard={leaderboard}
-            onContinue={() => startPlay()}
-            onQuickStart={(m) => startPlay(m)}
-            t={t}
-          />
-        </div>
+        <PremiumActionGate gate={actionGate} label="Unlock Abacus practice">
+          <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+            <AbacusHomeDashboard
+              childName={childName}
+              progress={progress}
+              level={level}
+              mode={mode}
+              streakDays={streak.days}
+              dailyCorrect={dailyPractice.correct}
+              dailyGoal={DAILY_PRACTICE_GOAL}
+              leaderboard={leaderboard}
+              onContinue={() => startPlay()}
+              onQuickStart={(m) => startPlay(m)}
+              t={t}
+            />
+          </div>
+        </PremiumActionGate>
       )}
 
       {viewMode === "child" && zoneScreen === "play" && (
@@ -1550,26 +1564,33 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
           </div>
 
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-none">
-            {MODES.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  setMode(m.id);
-                  persistMode(m.id, level);
-                }}
-                className={cn(
-                  "shrink-0 min-w-[4.5rem] rounded-xl text-xs font-semibold py-2 px-2 border transition-all",
-                  mode === m.id
-                    ? "bg-gradient-to-br from-teal-500 to-cyan-500 text-white border-transparent shadow-md scale-[1.02]"
-                    : "bg-background text-foreground border-border hover:bg-muted",
-                )}
-                data-testid={`abacus-mode-${m.id}`}
-              >
-                <span className="block text-base leading-none">{m.emoji}</span>
-                <span className="block mt-0.5 text-[10px] leading-tight">{m.label}</span>
-              </button>
-            ))}
+            {MODES.map((m) => {
+              const button = (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    setMode(m.id);
+                    persistMode(m.id, level);
+                  }}
+                  className={cn(
+                    "shrink-0 min-w-[4.5rem] rounded-xl text-xs font-semibold py-2 px-2 border transition-all",
+                    mode === m.id
+                      ? "bg-gradient-to-br from-teal-500 to-cyan-500 text-white border-transparent shadow-md scale-[1.02]"
+                      : "bg-background text-foreground border-border hover:bg-muted",
+                  )}
+                  data-testid={`abacus-mode-${m.id}`}
+                >
+                  <span className="block text-base leading-none">{m.emoji}</span>
+                  <span className="block mt-0.5 text-[10px] leading-tight">{m.label}</span>
+                </button>
+              );
+              return m.id === "learn" ? button : (
+                <PremiumActionGate key={m.id} gate={actionGate} label={`Unlock Abacus ${m.label}`}>
+                  {button}
+                </PremiumActionGate>
+              );
+            })}
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
@@ -1583,19 +1604,29 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
               />
             )}
             {mode === "practice" && (
-              <PracticeMode level={level} onAttempt={logPracticeAttempt} childView />
+              <PremiumActionGate gate={actionGate} label="Unlock Abacus practice">
+                <PracticeMode level={level} onAttempt={logPracticeAttempt} childView />
+              </PremiumActionGate>
             )}
             {mode === "challenge" && (
-              <ChallengeMode level={level} onComplete={onChallengeComplete} />
+              <PremiumActionGate gate={actionGate} label="Unlock Abacus challenge mode">
+                <ChallengeMode level={level} onComplete={onChallengeComplete} />
+              </PremiumActionGate>
             )}
-            {mode === "mental" && <MentalMode level={level} />}
+            {mode === "mental" && (
+              <PremiumActionGate gate={actionGate} label="Unlock mental math mode">
+                <MentalMode level={level} />
+              </PremiumActionGate>
+            )}
             {mode === "tutor" && (
-              <AbacusTutorKeyboardPanel
-                childId={childId}
-                level={level}
-                ageYears={ageYears}
-                voice={voice}
-              />
+              <PremiumActionGate gate={actionGate} label="Unlock Abacus AI tutor">
+                <AbacusTutorKeyboardPanel
+                  childId={childId}
+                  level={level}
+                  ageYears={ageYears}
+                  voice={voice}
+                />
+              </PremiumActionGate>
             )}
           </div>
         </>

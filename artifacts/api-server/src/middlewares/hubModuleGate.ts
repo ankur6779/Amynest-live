@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { getAuth } from "../lib/auth";
 import type { ParentHubFeatureId } from "../services/featureUsageService.js";
+import { getOrCreateSubscription, isPremiumNow } from "../services/subscriptionService.js";
 import {
   assertHubModuleAccess,
   hubModuleGateFailureBody,
@@ -23,7 +24,10 @@ function resolveChildIdFromRequest(req: Request): number | undefined {
  * Enforces Parent Hub module entitlement on API routes (defense in depth).
  * Pairs with client `HubModuleGateWrap` / `useHubModuleGate`.
  */
-export function hubModuleGate(featureId: ParentHubFeatureId) {
+export function hubModuleGate(
+  featureId: ParentHubFeatureId,
+  opts: { premiumOnly?: boolean; denyStatus?: 402 | 403 } = {},
+) {
   return async function hubModuleGateMw(
     req: Request,
     res: Response,
@@ -32,6 +36,20 @@ export function hubModuleGate(featureId: ParentHubFeatureId) {
     const userId = getAuth(req).userId;
     if (!userId) {
       res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+
+    if (opts.premiumOnly) {
+      const sub = await getOrCreateSubscription(userId);
+      if (!isPremiumNow(sub)) {
+        res.status(opts.denyStatus ?? 403).json({
+          error: "premium_required",
+          feature: featureId,
+          message: "Upgrade to use this premium learning action.",
+        });
+        return;
+      }
+      next();
       return;
     }
 

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { and, eq } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { logger } from "../lib/logger.js";
 import { db, routinesTable } from "@workspace/db";
 import {
   getOrCreateSubscription,
@@ -31,72 +32,89 @@ export function routineGenerateGate() {
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    const userId = getAuth(req).userId;
-    if (!userId) {
-      res.status(401).json({ error: "unauthorized" });
-      return;
-    }
-    const sub = await getOrCreateSubscription(userId);
-    if (isPremiumNow(sub)) {
-      next();
-      return;
-    }
-
-    const body = req.body as { childId?: number; date?: string } | undefined;
-    if (typeof body?.childId === "number" && typeof body?.date === "string") {
-      const existing = await db
-        .select({ id: routinesTable.id })
-        .from(routinesTable)
-        .where(
-          and(
-            eq(routinesTable.childId, body.childId),
-            eq(routinesTable.date, body.date),
-          ),
-        )
-        .limit(1);
-      if (existing.length > 0) {
+    try {
+      const userId = getAuth(req).userId;
+      if (!userId) {
+        res.status(401).json({ error: "unauthorized" });
+        return;
+      }
+      const sub = await getOrCreateSubscription(userId);
+      if (isPremiumNow(sub)) {
         next();
         return;
       }
-    }
 
-    const { assertRoutineCanGenerate, recordRoutineGeneration } = await import(
-      "../services/routineJourneyService.js"
-    );
-    const gate = await assertRoutineCanGenerate(userId);
-    if (!gate.ok) {
-      res.status(402).json({
-        error: "routine_locked",
-        feature: "routine_generate",
-        message:
-          "You've used all 3 free routine generations. Upgrade for unlimited routines.",
-        limit: gate.status.access.generationsTotal,
-        used: gate.status.access.generationsUsed,
-        access: gate.status.access,
-      });
-      return;
-    }
-
-    const origEnd = res.end.bind(res);
-    let settled = false;
-    res.end = function (...args: unknown[]) {
-      if (!settled) {
-        settled = true;
-        if (
-          res.statusCode >= 200 &&
-          res.statusCode < 300 &&
-          typeof body?.childId === "number" &&
-          typeof body?.date === "string"
-        ) {
-          void recordRoutineGeneration(userId, body.childId, body.date).catch(
-            () => undefined,
-          );
+      const body = req.body as { childId?: number; date?: string } | undefined;
+      if (typeof body?.childId === "number" && typeof body?.date === "string") {
+        const existing = await db
+          .select({ id: routinesTable.id })
+          .from(routinesTable)
+          .where(
+            and(
+              eq(routinesTable.childId, body.childId),
+              eq(routinesTable.date, body.date),
+            ),
+          )
+          .limit(1);
+        if (existing.length > 0) {
+          next();
+          return;
         }
       }
-      // @ts-expect-error - express.end has multiple overloads
-      return origEnd(...args);
-    };
-    next();
+
+      const { assertRoutineCanGenerate, recordRoutineGeneration } = await import(
+        "../services/routineJourneyService.js"
+      );
+      const gate = await assertRoutineCanGenerate(userId);
+      if (!gate.ok) {
+        res.status(402).json({
+          error: "routine_locked",
+          feature: "routine_generate",
+          message:
+            "You've used all 3 free routine generations. Upgrade for unlimited routines.",
+          limit: gate.status.access.generationsTotal,
+          used: gate.status.access.generationsUsed,
+          access: gate.status.access,
+        });
+        return;
+      }
+
+      const origEnd = res.end.bind(res);
+      let settled = false;
+      res.end = function (...args: unknown[]) {
+        if (!settled) {
+          settled = true;
+          if (
+            res.statusCode >= 200 &&
+            res.statusCode < 300 &&
+            typeof body?.childId === "number" &&
+            typeof body?.date === "string"
+          ) {
+            void recordRoutineGeneration(userId, body.childId, body.date).catch(
+              () => undefined,
+            );
+          }
+        }
+        // @ts-expect-error - express.end has multiple overloads
+        return origEnd(...args);
+      };
+      next();
+      return;
+    } catch (err) {
+      const body = req.body as { childId?: number; date?: string } | undefined;
+      logger.error(
+        {
+          evt: "routine.generate_gate_failed_open",
+          userId: getAuth(req).userId,
+          childId: body?.childId,
+          date: body?.date,
+          message: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+        },
+        "Routine generation gate failed; allowing generation to continue",
+      );
+      next();
+    }
   };
 }
 

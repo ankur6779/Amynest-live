@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell, Briefcase, MapPin, Smartphone } from "lucide-react";
 import { ProfileSkeleton } from "@/components/route-skeletons/profile-skeleton";
+import { CustomActivitiesProfileSection } from "@/components/routines/custom-activities-profile-section";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getApiUrl } from "@/lib/api";
@@ -565,6 +566,8 @@ export default function ParentProfilePage() {
           ))}
         </CardContent>
       </Card>
+
+      <CustomActivitiesProfileSection />
 
       {/* ── Food Preferences ─────────────────────────────────────────── */}
       <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-gradient-to-br from-card to-muted/20">

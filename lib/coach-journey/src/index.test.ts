@@ -76,6 +76,17 @@ describe("coach-journey", () => {
     );
   });
 
+  it("keeps completed paid goals locked for free users", () => {
+    assert.equal(
+      getCoachGoalAccess({
+        goalId: "handle-aggression",
+        isPremium: false,
+        completedGoalIds: ["handle-aggression"],
+      }),
+      "locked",
+    );
+  });
+
   it("opens every goal for premium users", () => {
     assert.equal(
       getCoachGoalAccess({
