@@ -389,6 +389,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       providerEventId: eventId,
       eventType: event.type,
     });
+    const applyUserId = synced.appliedUserId ?? userId;
 
     let appliedFrom = "revenuecat_v2";
     let applied = {
@@ -404,8 +405,8 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
         ? new Date(event.grace_period_expiration_at_ms)
         : null;
       if (plan || event.type === "EXPIRATION" || event.type === "BILLING_ISSUE" || event.type === "SUBSCRIPTION_PAUSED") {
-        const fallback = await applyRevenueCatSnapshot(userId, {
-          appUserId: userId,
+        const fallback = await applyRevenueCatSnapshot(applyUserId, {
+          appUserId: applyUserId,
           originalAppUserId: event.original_app_user_id ?? null,
           entitlementId: process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium",
           productId: event.product_id ?? null,
@@ -440,7 +441,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       providerEventId: eventId,
       metadata: { eventType: event.type, appliedFrom, isPremium: applied.isPremium },
     });
-    res.json({ ok: true, eventId, applied: { userId, plan: applied.plan, isPremium: applied.isPremium, reason: applied.reason, source: appliedFrom } });
+    res.json({ ok: true, eventId, applied: { userId: applyUserId, plan: applied.plan, isPremium: applied.isPremium, reason: applied.reason, source: appliedFrom } });
     return;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
