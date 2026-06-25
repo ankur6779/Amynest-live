@@ -25,8 +25,18 @@ export function AmyIcon({
   const blinkRef = useRef<SVGEllipseElement>(null);
   const blinkRef2 = useRef<SVGEllipseElement>(null);
   useEffect(() => {
-    let frame: ReturnType<typeof setTimeout>;
+    let mounted = true;
+    const timers = new Set<ReturnType<typeof setTimeout>>();
+    const schedule = (fn: () => void, delay: number) => {
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        if (mounted) fn();
+      }, delay);
+      timers.add(timer);
+      return timer;
+    };
     function doBlink() {
+      if (!mounted) return;
       const el1 = blinkRef.current;
       const el2 = blinkRef2.current;
       if (!el1 || !el2) return;
@@ -34,16 +44,20 @@ export function AmyIcon({
       el2.style.transform = "scaleY(0.05)";
       el1.style.transformOrigin = "center 33px";
       el2.style.transformOrigin = "center 33px";
-      setTimeout(() => {
+      schedule(() => {
         if (el1) el1.style.transform = "scaleY(1)";
         if (el2) el2.style.transform = "scaleY(1)";
       }, 100);
-      frame = setTimeout(() => {
+      schedule(() => {
         doBlink();
       }, 2200 + Math.random() * 1500);
     }
-    frame = setTimeout(doBlink, 1000);
-    return () => clearTimeout(frame);
+    schedule(doBlink, 1000);
+    return () => {
+      mounted = false;
+      for (const timer of timers) clearTimeout(timer);
+      timers.clear();
+    };
   }, []);
   const face = baked ? <AmyBlinkFace size={faceSize} speaking={speaking} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
     display: "block"

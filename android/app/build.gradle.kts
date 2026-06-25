@@ -28,6 +28,14 @@ val facebookClientToken =
     System.getenv("FACEBOOK_CLIENT_TOKEN")?.trim().orEmpty().ifBlank {
         localGradleProps["facebook.clientToken"].orEmpty()
     }
+val wrapperUrl =
+    System.getenv("AMYNEST_ANDROID_WRAPPER_URL")?.trim().orEmpty().ifBlank {
+        localGradleProps["wrapper.url"].orEmpty().ifBlank { "https://www.amynest.in" }
+    }
+val revenueCatApiKey =
+    System.getenv("REVENUECAT_ANDROID_API_KEY")?.trim().orEmpty().ifBlank {
+        localGradleProps["revenuecat.apiKey"].orEmpty().ifBlank { "goog_wswrltSsrqhqrsQrVvOPavTIzMA" }
+    }
 
 android {
     namespace = "com.amynest.app"
@@ -44,6 +52,8 @@ android {
             "facebook_client_token",
             facebookClientToken.ifBlank { "REPLACE_WITH_META_CLIENT_TOKEN" },
         )
+        buildConfigField("String", "WRAPPER_URL", "\"$wrapperUrl\"")
+        buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatApiKey\"")
     }
 
     signingConfigs {

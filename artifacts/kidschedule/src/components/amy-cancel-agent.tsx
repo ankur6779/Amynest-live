@@ -388,6 +388,7 @@ export function AmyCancelAgent({
                 <Button
                   type="button"
                   className="w-full font-semibold"
+                  disabled={cancelling}
                   onClick={() => onOpenStoreAndClose("apple")}
                   data-testid="amy-agent-cancel-app-store"
                 >
@@ -399,6 +400,7 @@ export function AmyCancelAgent({
                   type="button"
                   variant={storeTarget === "both" ? "outline" : "default"}
                   className="w-full font-semibold"
+                  disabled={cancelling}
                   onClick={() => onOpenStoreAndClose("google")}
                   data-testid="amy-agent-cancel-google-play"
                 >

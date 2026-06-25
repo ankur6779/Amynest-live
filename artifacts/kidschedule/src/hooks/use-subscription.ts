@@ -284,14 +284,26 @@ export function useSubscription() {
   );
 
   const cancelSubscription = useCallback(async (): Promise<{ ok: boolean; reason?: string }> => {
-    const res = await authFetch(getApiUrl("/api/subscription/cancel"), { method: "POST" });
-    if (res.ok) {
+    try {
+      const res = await authFetch(getApiUrl("/api/subscription/cancel"), { method: "POST" });
+      if (res.ok) {
+        clearLearningZonePremiumCaches();
+        window.dispatchEvent(new Event("amynest:refresh-subscription"));
+        void qc.invalidateQueries({ queryKey: ["feature-usage"] });
+        refresh();
+        return { ok: true };
+      }
+      const body = (await safeJsonResponse<{ message?: string; error?: string }>(res).then((p) => (p.ok ? p.data : {})));
+      return { ok: false, reason: body?.message ?? body?.error ?? "Could not cancel subscription." };
+    } catch {
+      clearLearningZonePremiumCaches();
       refresh();
-      return { ok: true };
+      return {
+        ok: false,
+        reason: "You're offline or the server could not be reached. Please try again.",
+      };
     }
-    const body = (await safeJsonResponse<{ message?: string; error?: string }>(res).then((p) => (p.ok ? p.data : {})));
-    return { ok: false, reason: body?.message ?? body?.error ?? "Could not cancel subscription." };
-  }, [authFetch, refresh]);
+  }, [authFetch, qc, refresh]);
 
   return {
     data: query.data,

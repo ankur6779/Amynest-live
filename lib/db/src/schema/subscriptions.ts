@@ -1,4 +1,5 @@
-import { boolean, pgTable, text, serial, timestamp, integer, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, check, pgTable, text, serial, timestamp, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -55,6 +56,44 @@ export const subscriptionsTable = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
+  (t) => ({
+    statusKnown: check(
+      "subscriptions_status_known_chk",
+      sql`${t.status} in ('free', 'trialing', 'active', 'past_due', 'canceled')`,
+    ),
+    providerKnown: check(
+      "subscriptions_provider_known_chk",
+      sql`${t.provider} in ('none', 'manual', 'razorpay', 'revenuecat', 'stripe')`,
+    ),
+    stateKnown: check(
+      "subscriptions_state_known_chk",
+      sql`${t.subscriptionState} in ('FREE', 'TRIAL', 'ACTIVE', 'GRACE_PERIOD', 'PAUSED', 'CANCELLED', 'EXPIRED')`,
+    ),
+    cancelAtPeriodEndBoolean: check(
+      "subscriptions_cancel_at_period_end_bool_chk",
+      sql`${t.cancelAtPeriodEnd} in (0, 1)`,
+    ),
+    freeHasNoProviderSubscription: check(
+      "subscriptions_free_provider_link_chk",
+      sql`${t.subscriptionState} <> 'FREE' or (${t.provider} = 'none' and ${t.plan} = 'free' and ${t.providerSubscriptionId} is null)`,
+    ),
+    trialShape: check(
+      "subscriptions_trial_shape_chk",
+      sql`${t.subscriptionState} <> 'TRIAL' or (${t.status} = 'trialing' and ${t.trialEndsAt} is not null and ${t.cancelAtPeriodEnd} = 0)`,
+    ),
+    activeShape: check(
+      "subscriptions_active_shape_chk",
+      sql`${t.subscriptionState} <> 'ACTIVE' or (${t.status} = 'active' and ${t.currentPeriodEnd} is not null and ${t.cancelAtPeriodEnd} = 0)`,
+    ),
+    cancelledShape: check(
+      "subscriptions_cancelled_shape_chk",
+      sql`${t.subscriptionState} <> 'CANCELLED' or (${t.status} = 'active' and ${t.currentPeriodEnd} is not null and ${t.cancelAtPeriodEnd} = 1 and coalesce(${t.autoRenewStatus}, false) = false)`,
+    ),
+    expiredShape: check(
+      "subscriptions_expired_shape_chk",
+      sql`${t.subscriptionState} <> 'EXPIRED' or (${t.status} in ('canceled', 'free') and ${t.cancelAtPeriodEnd} = 0 and ${t.expiredAt} is not null and (${t.currentPeriodEnd} is null or ${t.currentPeriodEnd} <= ${t.expiredAt}))`,
+    ),
+  }),
 );
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptionsTable).omit({

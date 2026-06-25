@@ -1,6 +1,6 @@
-import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, revenuecatWebhookEventsTable } from "@workspace/db";
+import { Router, type IRouter, type Request } from "express";
+import { eq, sql } from "drizzle-orm";
+import { db, revenuecatWebhookEventsTable, subscriptionsTable } from "@workspace/db";
 import { getAuth } from "../lib/auth";
 import {
   getEntitlements,
@@ -48,6 +48,79 @@ function preferredRevenueCatUserId(...ids: Array<string | null | undefined>): st
 
 const router: IRouter = Router();
 
+const RC_READ_REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
+
+function requestIdFrom(req: Request): string | null {
+  const raw = req.headers?.["x-request-id"];
+  return typeof raw === "string" && raw.trim().length > 0 ? raw.trim().slice(0, 120) : null;
+}
+
+function subscriptionStatusSnapshot(sub: {
+  status?: string | null;
+  provider?: string | null;
+  subscriptionState?: string | null;
+  cancelAtPeriodEnd?: number | null;
+  currentPeriodEnd?: Date | null;
+}) {
+  return {
+    status: sub.status ?? null,
+    provider: sub.provider ?? null,
+    subscriptionState: sub.subscriptionState ?? null,
+    cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
+    currentPeriodEnd: sub.currentPeriodEnd?.toISOString?.() ?? null,
+  };
+}
+
+function cancelAuditMetadata(input: {
+  requestId: string | null;
+  provider?: string | null;
+  subscriptionId?: string | null;
+  statusBefore?: ReturnType<typeof subscriptionStatusSnapshot> | null;
+  statusAfter?: ReturnType<typeof subscriptionStatusSnapshot> | null;
+  extra?: Record<string, unknown>;
+}) {
+  return {
+    requestId: input.requestId,
+    provider: input.provider ?? null,
+    subscriptionId: input.subscriptionId ?? null,
+    status_before: input.statusBefore ?? null,
+    status_after: input.statusAfter ?? input.statusBefore ?? null,
+    timestamp: new Date().toISOString(),
+    ...(input.extra ?? {}),
+  };
+}
+
+async function refreshRevenueCatBeforeSubscriptionRead(userId: string): Promise<void> {
+  const row = await db.query.subscriptionsTable.findFirst({
+    where: eq(subscriptionsTable.userId, userId),
+  });
+  if (!row) return;
+  if (
+    row.provider !== "revenuecat" &&
+    !row.revenuecatAppUserId &&
+    !row.originalTransactionId
+  ) {
+    return;
+  }
+  const lastRefreshAt = row.lastReconciledAt ?? row.lastEventAt ?? null;
+  if (
+    lastRefreshAt &&
+    Date.now() - lastRefreshAt.getTime() < RC_READ_REFRESH_MIN_INTERVAL_MS &&
+    !row.syncError
+  ) {
+    return;
+  }
+
+  try {
+    const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
+    await syncRevenueCatSubscription(row.revenuecatAppUserId ?? userId, {
+      source: "reconciliation",
+    });
+  } catch (err) {
+    logger.warn({ err, userId }, "[subscription] RevenueCat read refresh failed");
+  }
+}
+
 router.get(
   "/subscription",
   requireAuth,
@@ -65,6 +138,7 @@ router.get(
       } catch {
         /* best-effort — never block subscription read */
       }
+      await refreshRevenueCatBeforeSubscriptionRead(userId);
       const [ent, prices] = await Promise.all([
         getEntitlements(userId, email, {
           emailVerified,
@@ -476,55 +550,280 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     return;
   }
 
-  const { db, subscriptionsTable } = await import("@workspace/db");
+  const requestId = requestIdFrom(req);
 
-  const rows = await db
-    .select()
-    .from(subscriptionsTable)
-    .where(eq(subscriptionsTable.userId, userId))
-    .limit(1);
+  // Heal stale rows before deciding whether a real provider cancellation is needed.
+  await getEntitlements(userId);
 
-  const sub = rows[0];
-  if (!sub || !["active", "trialing"].includes(sub.status)) {
-    res.status(400).json({ error: "no_active_subscription" });
+  type CancelOutcome =
+    | { kind: "missing" }
+    | { kind: "inactive"; status: string | null }
+    | { kind: "redirect_to_store"; provider: string | null }
+    | { kind: "invalid_provider"; provider: string | null }
+    | { kind: "invalid_subscription_id"; provider: string | null }
+    | { kind: "duplicate"; provider: string | null }
+    | { kind: "completed"; provider: string | null };
+
+  let outcome: CancelOutcome;
+  try {
+    outcome = await db.transaction(async (tx): Promise<CancelOutcome> => {
+      // Serialize cancellation per user across app instances. This makes double
+      // clicks and retry storms deterministic without relying on in-memory locks.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+
+      const rows = await tx
+        .select()
+        .from(subscriptionsTable)
+        .where(eq(subscriptionsTable.userId, userId))
+        .limit(1);
+      const sub = rows[0];
+
+      if (!sub) {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_failed",
+          status: "warning",
+          reason: "missing_subscription",
+          metadata: cancelAuditMetadata({ requestId }),
+        });
+        return { kind: "missing" };
+      }
+
+      const before = subscriptionStatusSnapshot(sub);
+      await recordBillingAuditEvent({
+        userId,
+        source: "api",
+        eventName: "subscription_cancel_requested",
+        metadata: cancelAuditMetadata({
+          requestId,
+          provider: sub.provider ?? null,
+          subscriptionId: sub.providerSubscriptionId ?? null,
+          statusBefore: before,
+        }),
+      });
+
+      if (sub.cancelAtPeriodEnd === 1) {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_duplicate",
+          reason: "already_scheduled",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider ?? null,
+            subscriptionId: sub.providerSubscriptionId ?? null,
+            statusBefore: before,
+          }),
+        });
+        return { kind: "duplicate", provider: sub.provider ?? null };
+      }
+
+      if (!["active", "trialing"].includes(sub.status)) {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_duplicate",
+          reason: "already_inactive",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider ?? null,
+            subscriptionId: sub.providerSubscriptionId ?? null,
+            statusBefore: before,
+          }),
+        });
+        return { kind: "inactive", status: sub.status ?? null };
+      }
+
+      if (!["none", "manual", "razorpay", "revenuecat"].includes(sub.provider ?? "none")) {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_failed",
+          status: "warning",
+          reason: "invalid_provider",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider ?? null,
+            subscriptionId: sub.providerSubscriptionId ?? null,
+            statusBefore: before,
+          }),
+        });
+        return { kind: "invalid_provider" as const, provider: sub.provider ?? null };
+      }
+
+      // RevenueCat subscriptions (Google Play / Apple App Store) cannot be
+      // cancelled server-side. Only store settings can end the real billing
+      // relationship, and webhooks/reconciliation mirror that result locally.
+      if (sub.provider === "revenuecat") {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_failed",
+          status: "warning",
+          reason: "redirect_to_store",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider,
+            subscriptionId: sub.providerSubscriptionId ?? null,
+            statusBefore: before,
+          }),
+        });
+        return { kind: "redirect_to_store", provider: sub.provider };
+      }
+
+      if (sub.provider === "razorpay" && !sub.providerSubscriptionId) {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_failed",
+          status: "warning",
+          reason: "invalid_subscription_id",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider,
+            subscriptionId: null,
+            statusBefore: before,
+          }),
+        });
+        return { kind: "invalid_subscription_id" as const, provider: sub.provider };
+      }
+
+      if (sub.provider === "razorpay" && sub.providerSubscriptionId) {
+        try {
+          await rzpCancelSubscription(sub.providerSubscriptionId, true);
+        } catch (err) {
+          await recordBillingAuditEvent({
+            userId,
+            source: "api",
+            eventName: "subscription_cancel_failed",
+            status: "error",
+            reason: err instanceof Error ? err.message : String(err),
+            metadata: cancelAuditMetadata({
+              requestId,
+              provider: sub.provider,
+              subscriptionId: sub.providerSubscriptionId,
+              statusBefore: before,
+            }),
+          });
+          throw err;
+        }
+
+        const [updated] = await tx
+          .update(subscriptionsTable)
+          .set({
+            cancelAtPeriodEnd: 1,
+            cancelledAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptionsTable.userId, userId))
+          .returning();
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_scheduled",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider,
+            subscriptionId: sub.providerSubscriptionId,
+            statusBefore: before,
+            statusAfter: updated ? subscriptionStatusSnapshot(updated) : null,
+          }),
+        });
+        return { kind: "completed", provider: sub.provider };
+      }
+
+      const now = new Date();
+      const [updated] = await tx
+        .update(subscriptionsTable)
+        .set({
+          plan: "free",
+          status: "canceled",
+          provider: "none",
+          providerCustomerId: null,
+          providerSubscriptionId: null,
+          subscriptionState: "EXPIRED",
+          expiresAt: now,
+          gracePeriodExpiresAt: null,
+          trialEndsAt: null,
+          currentPeriodEnd: now,
+          cancelAtPeriodEnd: 0,
+          cancelledAt: now,
+          expiredAt: now,
+          updatedAt: now,
+        })
+        .where(eq(subscriptionsTable.userId, userId))
+        .returning();
+      await recordBillingAuditEvent({
+        userId,
+        source: "api",
+        eventName: "subscription_cancel_completed",
+        metadata: cancelAuditMetadata({
+          requestId,
+          provider: sub.provider ?? null,
+          subscriptionId: sub.providerSubscriptionId ?? null,
+          statusBefore: before,
+          statusAfter: updated ? subscriptionStatusSnapshot(updated) : null,
+        }),
+      });
+      return { kind: "completed", provider: sub.provider ?? null };
+    });
+  } catch (err: any) {
+    const current = await db.query.subscriptionsTable.findFirst({
+      where: eq(subscriptionsTable.userId, userId),
+    });
+    const snapshot = current ? subscriptionStatusSnapshot(current) : null;
+    await recordBillingAuditEvent({
+      userId,
+      source: "api",
+      eventName: "subscription_cancel_failed",
+      status: "error",
+      reason: err?.message ?? "Cancellation failed",
+      metadata: cancelAuditMetadata({
+        requestId,
+        provider: current?.provider ?? null,
+        subscriptionId: current?.providerSubscriptionId ?? null,
+        statusBefore: snapshot,
+        statusAfter: snapshot,
+      }),
+    });
+    res.status(502).json({ error: "cancel_failed", message: err?.message ?? "Cancellation failed" });
     return;
   }
 
-  // RevenueCat subscriptions (Google Play / Apple App Store) cannot be
-  // cancelled server-side — the billing relationship is between the user
-  // and their app store. Attempting to cancel from our side would only
-  // corrupt the local DB while leaving the real subscription active.
-  // Return a specific error so the client can show the right instructions.
-  if (sub.provider === "revenuecat") {
+  const ent = await getEntitlements(userId);
+  if (outcome.kind === "missing") {
+    res.status(404).json({ error: "missing_subscription", entitlements: ent });
+    return;
+  }
+  if (outcome.kind === "inactive") {
+    res.status(409).json({ error: "already_inactive", status: outcome.status, entitlements: ent });
+    return;
+  }
+  if (outcome.kind === "redirect_to_store") {
     res.status(422).json({
       error: "redirect_to_store",
       message:
         "Your subscription is managed by Google Play or the App Store. " +
         "To cancel, open your device's subscription settings and cancel AmyNest there.",
+      entitlements: ent,
     });
     return;
   }
-
-  try {
-    if (sub.provider === "razorpay" && sub.providerSubscriptionId) {
-      // Cancel at end of billing cycle — user keeps access until period_end.
-      await rzpCancelSubscription(sub.providerSubscriptionId, true);
-      await db
-        .update(subscriptionsTable)
-        .set({ cancelAtPeriodEnd: 1, updatedAt: new Date() })
-        .where(eq(subscriptionsTable.userId, userId));
-    } else {
-      // Manual grant / trial / none — cancel immediately.
-      await db
-        .update(subscriptionsTable)
-        .set({ status: "canceled", cancelAtPeriodEnd: 0, updatedAt: new Date() })
-        .where(eq(subscriptionsTable.userId, userId));
-    }
-    const ent = await getEntitlements(userId);
-    res.json({ ok: true, entitlements: ent });
-  } catch (err: any) {
-    res.status(502).json({ error: "cancel_failed", message: err?.message });
+  if (outcome.kind === "invalid_provider") {
+    res.status(422).json({ error: "invalid_provider", provider: outcome.provider, entitlements: ent });
+    return;
   }
+  if (outcome.kind === "invalid_subscription_id") {
+    res.status(409).json({ error: "invalid_subscription_id", provider: outcome.provider, entitlements: ent });
+    return;
+  }
+  res.json({
+    ok: true,
+    duplicate: outcome.kind === "duplicate",
+    provider: outcome.provider,
+    entitlements: ent,
+  });
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -845,15 +1144,34 @@ router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promi
         case "subscription.expired":
         case "subscription.paused":
         case "subscription.halted": {
+          const now = new Date();
+          const periodStillActive = Boolean(periodEnd && periodEnd.getTime() > now.getTime());
+          const pausedOrHalted = eventType === "subscription.paused" || eventType === "subscription.halted";
+          const terminalState = pausedOrHalted
+            ? "PAUSED"
+            : periodStillActive
+              ? "CANCELLED"
+              : "EXPIRED";
           await tx
             .update(subscriptionsTable)
             .set({
-              status: eventType === "subscription.halted" ? "past_due" : "canceled",
+              plan: terminalState === "EXPIRED" ? "free" : undefined,
+              status:
+                terminalState === "PAUSED"
+                  ? "past_due"
+                  : terminalState === "CANCELLED"
+                    ? "active"
+                    : "canceled",
+              subscriptionState: terminalState,
+              cancelAtPeriodEnd: terminalState === "CANCELLED" ? 1 : 0,
+              cancelledAt: terminalState === "CANCELLED" || terminalState === "EXPIRED" ? now : null,
+              expiredAt: terminalState === "EXPIRED" ? periodEnd ?? now : null,
+              expiresAt: periodEnd ?? null,
               currentPeriodEnd: periodEnd ?? null,
-              updatedAt: new Date(),
+              updatedAt: now,
             })
             .where(eq(subscriptionsTable.userId, userId));
-          return { kind: "applied", payload: { userId, status: eventType } };
+          return { kind: "applied", payload: { userId, status: eventType, subscriptionState: terminalState } };
         }
         default: {
           return { kind: "ignored", reason: eventType ?? "unknown_event" };
@@ -876,6 +1194,16 @@ router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promi
       res.json({ ok: true, ignored: outcome.reason, ...outcome.extra });
       return;
     case "applied":
+      if (outcome.payload.subscriptionState === "EXPIRED" && typeof outcome.payload.userId === "string") {
+        await recordBillingAuditEvent({
+          userId: outcome.payload.userId,
+          source: "webhook",
+          eventName: "subscription_expired",
+          providerEventId: eventId,
+          reason: eventType ?? "razorpay_terminal_event",
+          metadata: outcome.payload,
+        });
+      }
       res.json({ ok: true, applied: outcome.payload });
       return;
   }

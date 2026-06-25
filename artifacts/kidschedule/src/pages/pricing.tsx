@@ -141,6 +141,7 @@ export default function PricingPage() {
   const [submitting, setSubmitting] = useState<"googlepay" | "razorpay" | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [openingStore, setOpeningStore] = useState(false);
   const [showCancelAgent, setShowCancelAgent] = useState(false);
   const [cancelAgentBillingMode, setCancelAgentBillingMode] = useState<"razorpay" | "store">("razorpay");
   const [notice, setNotice] = useState<string | null>(null);
@@ -206,12 +207,29 @@ export default function PricingPage() {
   };
 
   const onCancel = async () => {
+    if (cancelling) return;
     setCancelling(true);
     setShowCancelAgent(false);
     setNotice(null);
-    const res = await cancelSubscription();
-    setCancelling(false);
-    if (!res.ok) setNotice(res.reason ?? "Could not cancel. Please try again."); // i18n-ok: fallback error
+    try {
+      const res = await cancelSubscription();
+      if (res.ok) {
+        setNotice(
+          periodEnd
+            ? t("pages.pricing.cancel_success_with_date", {
+                date: periodEnd,
+                defaultValue: `Your subscription is scheduled to end on ${periodEnd}. You'll keep premium access until then.`,
+              })
+            : t("pages.pricing.cancel_success", {
+                defaultValue: "Your subscription has been cancelled.",
+              }),
+        );
+      } else {
+        setNotice(res.reason ?? "Could not cancel. Please try again."); // i18n-ok: fallback error
+      }
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const openCancelAgent = (mode: "razorpay" | "store") => {
@@ -223,6 +241,8 @@ export default function PricingPage() {
   // Store-managed (RevenueCat) subscriptions can only be cancelled in Apple /
   // Google's own subscription settings — send the user straight there.
   const openStoreSubscriptions = (store: "apple" | "google") => {
+    if (openingStore) return;
+    setOpeningStore(true);
     const url =
       store === "apple"
         ? APPLE_MANAGE_SUBSCRIPTIONS_URL
@@ -236,6 +256,7 @@ export default function PricingPage() {
       return;
     }
     window.open(url, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => setOpeningStore(false), 1500);
   };
 
   const onUpgradeNativeStore = async () => {
@@ -837,6 +858,7 @@ export default function PricingPage() {
                 <Button
                   variant="outline"
                   onClick={() => openCancelAgent("store")}
+                  disabled={openingStore}
                   data-testid="button-cancel-app-store"
                   data-on-dark
                   className="h-11 w-full border-white/20 text-sm font-semibold text-white/85 hover:border-white/40 hover:bg-white/10 hover:text-white"
@@ -848,6 +870,7 @@ export default function PricingPage() {
                 <Button
                   variant="outline"
                   onClick={() => openCancelAgent("store")}
+                  disabled={openingStore}
                   data-testid="button-cancel-google-play"
                   data-on-dark
                   className="h-11 w-full border-white/20 text-sm font-semibold text-white/85 hover:border-white/40 hover:bg-white/10 hover:text-white"
@@ -965,7 +988,7 @@ export default function PricingPage() {
         onClose={() => setShowCancelAgent(false)}
         billingMode={cancelAgentBillingMode}
         periodEnd={periodEnd}
-        cancelling={cancelling}
+        cancelling={cancelling || openingStore}
         storeTarget={
           showAppleCancel && showGoogleCancel
             ? "both"

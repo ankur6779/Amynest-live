@@ -214,6 +214,24 @@ export async function applyRevenueCatSnapshot(
     },
   });
 
+  if (state === "EXPIRED") {
+    await recordBillingAuditEvent({
+      userId,
+      source: opts.source,
+      eventName: "subscription_expired",
+      providerEventId: opts.providerEventId ?? null,
+      fromState,
+      toState: state,
+      reason,
+      metadata: {
+        productId: snapshot.productId ?? null,
+        entitlementId: snapshot.entitlementId ?? null,
+        latestTransactionId: snapshot.latestTransactionId ?? null,
+        expiresAt: snapshot.expirationAt?.toISOString() ?? null,
+      },
+    });
+  }
+
   return {
     userId,
     fromState,

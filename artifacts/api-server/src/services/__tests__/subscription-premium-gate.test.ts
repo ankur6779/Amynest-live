@@ -131,6 +131,54 @@ test("isPremiumNow rejects expired V2 state even with stale active status", () =
   );
 });
 
+test("isPremiumNow rejects cancelled manual downgrade with expired state and current period set to now", () => {
+  const now = new Date();
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "canceled",
+        plan: "free",
+        provider: "none",
+        subscriptionState: "EXPIRED",
+        currentPeriodEnd: now,
+        expiresAt: now,
+        trialEndsAt: null,
+      }),
+    ),
+    false,
+  );
+});
+
+test("isPremiumNow rejects cancelled trial after trialEndsAt is cleared", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "canceled",
+        plan: "free",
+        provider: "none",
+        subscriptionState: "EXPIRED",
+        currentPeriodEnd: new Date(Date.now() - 1),
+        trialEndsAt: null,
+      }),
+    ),
+    false,
+  );
+});
+
+test("isPremiumNow rejects paused provider state", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "past_due",
+        provider: "razorpay",
+        subscriptionState: "PAUSED",
+        currentPeriodEnd: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    false,
+  );
+});
+
 test("isPremiumSubscriberNow accepts active paid provider period", () => {
   assert.equal(
     isPremiumSubscriberNow(
