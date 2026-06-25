@@ -60,4 +60,14 @@ describe("premium identity certification guardrails", () => {
     assert.match(script, /aliasesSkipped/);
     assert.match(script, /failures/);
   });
+
+  it("manual premium grants update the canonical subscription owner row", () => {
+    const service = readRepoFile("artifacts/api-server/src/services/subscriptionService.ts");
+    const fnStart = service.indexOf("export async function maybeAutoGrantPremium");
+    assert.ok(fnStart >= 0, "maybeAutoGrantPremium should exist");
+    const fnBody = service.slice(fnStart, fnStart + 2200);
+    assert.match(fnBody, /const sub = await getOrCreateSubscription\(userId/);
+    assert.match(fnBody, /\.where\(eq\(subscriptionsTable\.userId, sub\.userId\)\)/);
+    assert.doesNotMatch(fnBody, /\.where\(eq\(subscriptionsTable\.userId, userId\)\)/);
+  });
 });
