@@ -102,8 +102,6 @@ export function AmyTalkingHead({
   const useTimerFallback = timerFallback && speaking && !tabHidden && !reduced;
 
   const ringRef = useRef<HTMLSpanElement | null>(null);
-  const hpLeftRef = useRef<HTMLSpanElement | null>(null);
-  const hpRightRef = useRef<HTMLSpanElement | null>(null);
   const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const mouthF1Ref = useRef<HTMLImageElement | null>(null);
   const mouthF2Ref = useRef<HTMLImageElement | null>(null);
@@ -121,8 +119,6 @@ export function AmyTalkingHead({
 
   useEffect(() => {
     const ring = ringRef.current;
-    const hpL = hpLeftRef.current;
-    const hpR = hpRightRef.current;
     const bars = barRefs.current;
     const f1 = mouthF1Ref.current;
     const f2 = mouthF2Ref.current;
@@ -138,8 +134,6 @@ export function AmyTalkingHead({
         ring.style.opacity = halo ? "0.5" : "0";
         ring.style.transform = ringTransform(isStage, 1);
       }
-      if (hpL) hpL.style.opacity = "0";
-      if (hpR) hpR.style.opacity = "0";
       bars.forEach((b) => b && (b.style.transform = "scaleY(0.16)"));
       resetMouthClosed();
       return;
@@ -151,8 +145,6 @@ export function AmyTalkingHead({
         ring.style.opacity = halo ? "0.5" : "0";
         ring.style.transform = ringTransform(isStage, 1);
       }
-      if (hpL) hpL.style.opacity = "0";
-      if (hpR) hpR.style.opacity = "0";
       bars.forEach((b) => b && (b.style.transform = "scaleY(0.16)"));
       return;
     }
@@ -247,17 +239,6 @@ export function AmyTalkingHead({
       } else if (stageTilt) {
         stageTilt.style.transform = "";
       }
-      const glowBase = amyTalking ? drive : listening ? 0.55 : useTimerFallback ? 0.35 : 0.15;
-      const glow = 0.25 + 0.85 * glowBase;
-      if (hpL) {
-        const hpMul = listening && !amyTalking ? 1.15 : 1;
-        hpL.style.opacity = String(glow * hpMul * (0.75 + 0.25 * Math.sin(t * 7)));
-      }
-      if (hpR) {
-        const hpMul = listening && !amyTalking ? 1.15 : 1;
-        hpR.style.opacity = String(glow * hpMul * (0.75 + 0.25 * Math.sin(t * 7 + 1.7)));
-      }
-
       const n = bars.length;
       for (let i = 0; i < n; i++) {
         const b = bars[i];
@@ -296,21 +277,6 @@ export function AmyTalkingHead({
     objectFit: isStage ? "contain" : "cover",
     display: "block",
     pointerEvents: "none",
-  };
-
-  const earcup: CSSProperties = {
-    position: "absolute",
-    top: "64%",
-    width: "30%",
-    height: "30%",
-    transform: "translate(-50%, -50%)",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(56,189,248,0.85) 0%, rgba(56,189,248,0.35) 38%, rgba(56,189,248,0) 70%)",
-    filter: "blur(4px)",
-    opacity: 0,
-    pointerEvents: "none",
-    mixBlendMode: "screen",
   };
 
   return (
@@ -376,9 +342,6 @@ export function AmyTalkingHead({
             }}
           />
         )}
-
-        <span ref={hpLeftRef} style={{ ...earcup, left: "8%" }} />
-        <span ref={hpRightRef} style={{ ...earcup, left: "92%" }} />
 
         <div
           ref={stageTiltRef}

@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListChildren } from "@workspace/api-client-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import {
   isSpeechCoachV2Enabled,
   startSpeechCoachV2RemoteConfigPolling,
@@ -52,10 +51,10 @@ export default function SpeechCoachV2HubPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="mx-auto max-w-2xl px-4 pb-6 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)]">
       <button
         type="button"
-        onClick={() => runSafeNavAction("speech-coach-v2-back", () => smartBack(setLocation, "/speech-coach-v2", "speech-coach-v2-back"))}
+        onClick={() => setLocation("/parenting-hub", { replace: true })}
         className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground"
       >
         <ArrowLeft className="h-4 w-4" />

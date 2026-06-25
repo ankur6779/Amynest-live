@@ -41,6 +41,39 @@ def apply_alpha_key(frame: Image.Image) -> Image.Image:
                 fpx[x, y] = (r, g, b, int(255 * t))
     return rgba
 
+def clear_generated_edge_strips(frame: Image.Image) -> Image.Image:
+    """Drop full-height dark edge strips left by neighbouring sprite slices."""
+    rgba = frame.convert("RGBA")
+    fpx = rgba.load()
+    width, height = rgba.size
+
+    def is_strip_col(x):
+        opaque = 0
+        dark = 0
+        for y in range(height):
+            r, g, b, a = fpx[x, y]
+            if a > 16:
+                opaque += 1
+                if r + g + b < 60:
+                    dark += 1
+        return opaque > height * 0.96 and dark > height * 0.96
+
+    def clear_col(x):
+        for y in range(height):
+            fpx[x, y] = (0, 0, 0, 0)
+
+    x = 0
+    while x < width and is_strip_col(x):
+        clear_col(x)
+        x += 1
+
+    x = width - 1
+    while x >= 0 and is_strip_col(x):
+        clear_col(x)
+        x -= 1
+
+    return rgba
+
 def is_eye(p):
     # Pupils are the darkest near-black/deep-purple blobs sitting inside the
     # bright face. They are identical across all three frames (only the mouth
@@ -159,6 +192,6 @@ for i, ex in enumerate(exs):
             if x < own_l or x > own_r:
                 fpx[x, y] = (0, 0, 0, 0)
 
-    keyed = apply_alpha_key(frame)
+    keyed = clear_generated_edge_strips(apply_alpha_key(frame))
     keyed.save(OUT.format(i), "WEBP", quality=92, method=6)
     print(f"saved {OUT.format(i)} left={left} top={top} cut=({lo},{hi}) own=({own_l},{own_r})")

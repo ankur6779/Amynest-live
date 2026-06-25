@@ -58,7 +58,7 @@ export function SpeechCoachV2SessionUi(props: {
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-gradient-to-b from-sky-950 via-indigo-950 to-slate-950 text-white">
-      <div className="flex items-center justify-between px-4 pt-4">
+      <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
         <div>
           <p className="text-xs uppercase tracking-wider text-white/60">Speech Coach</p>
           <h1 className="text-lg font-bold">Hi {childName}!</h1>
@@ -95,7 +95,7 @@ export function SpeechCoachV2SessionUi(props: {
         )}
       </div>
 
-      <div className="px-6 pb-10">
+      <div className="px-6 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)]">
         <p className="mb-4 text-center text-xs text-white/50">
           {formatSpeechCoachRemainingLabel(remainingSeconds)}
         </p>

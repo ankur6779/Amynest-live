@@ -5,7 +5,7 @@
 
 import { getPhonicsAudioText, normalizePhonicsLetterKey } from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
-import { isAudioUnlocked, shouldUseWebAudioUnlock } from "@/lib/tts-guard";
+import { isAudioUnlocked } from "@/lib/tts-guard";
 
 const EMERGENCY_WORDS: Record<string, string> = {
   yes: "yes",
@@ -72,7 +72,7 @@ export function getCachedSpeechSynthesisVoice(): SpeechSynthesisVoice | null {
 }
 
 function getAudioContext(): AudioContext | null {
-  if (typeof window === "undefined" || !shouldUseWebAudioUnlock() || !isAudioUnlocked()) {
+  if (typeof window === "undefined" || !isAudioUnlocked()) {
     return null;
   }
   try {
@@ -133,15 +133,22 @@ function speakWithSynthesis(text: string, rate = 0.92): Promise<boolean> {
       u.pitch = 1.05;
       u.volume = 1;
       let done = false;
+      let started = false;
       const finish = (ok: boolean) => {
         if (done) return;
         done = true;
         resolve(ok);
       };
+      u.onstart = () => {
+        started = true;
+      };
       u.onend = () => finish(true);
       u.onerror = () => finish(false);
       window.speechSynthesis.speak(u);
-      setTimeout(() => finish(true), Math.min(4000, 400 + text.length * 80));
+      setTimeout(() => {
+        const synth = window.speechSynthesis;
+        finish(started || synth.speaking || synth.pending);
+      }, Math.min(4000, 400 + text.length * 80));
     } catch {
       resolve(false);
     }
@@ -192,16 +199,8 @@ export async function forceEmergencyPlayback(
   const speakText = (text ?? "").trim() || " ";
 
   try {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(speakText);
-      const voice = getCachedSpeechSynthesisVoice();
-      if (voice) u.voice = voice;
-      u.lang = voice?.lang ?? "en-US";
-      u.rate = 0.92;
-      u.pitch = 1.05;
-      u.volume = 1;
-      window.speechSynthesis.speak(u);
+    const spoke = await speakWithSynthesis(speakText);
+    if (spoke) {
       return { success: true, forced: true, layer: "emergency_local" };
     }
   } catch {

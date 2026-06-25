@@ -28,6 +28,7 @@ import {
 } from "../lib/analytics";
 import { detectVerificationPlatform, verificationTrace } from "../lib/verification-trace";
 import {
+  closeAmySharedAudioContext,
   computeRmsFromTimeDomain,
   getAmySharedAudioContext,
   resumeAmySharedAudioContext,
@@ -132,7 +133,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
   const vadSpeechStartedAtRef = useRef<number | null>(null);
   const vadAmySpeakingAtStartRef = useRef(false);
   // Live amplitude (0..1) of Amy's OUTPUT audio, updated via a Web Audio
-  // analyser on the remote stream. Drives the avatar's halo/headphone/waveform
+  // analyser on the remote stream. Drives the avatar's halo/waveform
   // cues without re-rendering. Stays 0 if Web Audio is unavailable (the cues
   // then fall back to a gentle CSS animation), so this is always safe.
   const amyAudioLevelRef = useRef(0);
@@ -778,6 +779,16 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     setConnectionState("disconnected");
   }, [cleanup]);
 
+  const disconnectAndRelease = useCallback(async () => {
+    await flushTokenUsage();
+    cleanupPeerConnection();
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+    closeAmySharedAudioContext();
+    onConnectionChangeRef.current?.(false);
+    setConnectionState("disconnected");
+  }, [cleanupPeerConnection, flushTokenUsage]);
+
   const sessionElapsedSeconds = useCallback(
     () => Math.floor((Date.now() - sessionStartedAtRef.current) / 1000),
     [],
@@ -787,6 +798,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     connectionState,
     diagnostics,
     disconnect,
+    disconnectAndRelease,
     flushTokenUsage,
     sessionElapsedSeconds,
     connectFromUserGesture,

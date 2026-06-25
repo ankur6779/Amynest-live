@@ -90,6 +90,13 @@ export function useSpeechCoachV2Session(input: {
   const responseStartedAtRef = useRef<number | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+  }, []);
+
   const persistSnapshot = useCallback(
     (state: PersistedSessionState, token: string) => {
       saveLocalSnapshot({
@@ -287,6 +294,11 @@ export function useSpeechCoachV2Session(input: {
     setUiState("live");
   }, []);
 
+  const stopLive = useCallback(() => {
+    stopHeartbeat();
+    setUiState((state) => (state === "live" ? "ready" : state));
+  }, [stopHeartbeat]);
+
   useEffect(() => {
     if (uiState !== "live" || !sessionState || !tabLockToken || !realtimeConnected) return;
 
@@ -310,10 +322,8 @@ export function useSpeechCoachV2Session(input: {
     runHeartbeat();
     heartbeatRef.current = setInterval(runHeartbeat, 15_000);
 
-    return () => {
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    };
-  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId, realtimeConnected, isTrial]);
+    return stopHeartbeat;
+  }, [uiState, sessionState?.sessionId, tabLockToken, authFetch, childId, realtimeConnected, isTrial, stopHeartbeat]);
 
   const finishSession = useCallback(async () => {
     if (!sessionState || !tabLockToken) return;
@@ -382,6 +392,7 @@ export function useSpeechCoachV2Session(input: {
     resumeSession,
     discardAndStartNew,
     beginLive,
+    stopLive,
     handleUserTranscript,
     handleAssistantTranscript,
     finishSession,

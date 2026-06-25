@@ -60,6 +60,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const onFinishedRef = useRef(onFinished);
   const { toast } = useToast();
   const toastRef = useRef(toast);
+  const lastPlaybackFailureToastRef = useRef<{ key: string; at: number } | null>(null);
 
   useEffect(() => {
     toastRef.current = toast;
@@ -93,8 +94,13 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         playbackRate: playbackRateRef.current,
         onFinished: onFinishedRef.current,
         isMounted: () => isMounted.current,
-        onPlaybackFailure: ({ message, retry }) => {
+        onPlaybackFailure: ({ message, error, retry }) => {
           if (!isMounted.current) return;
+          const key = `${message}:${error}`;
+          const now = Date.now();
+          const last = lastPlaybackFailureToastRef.current;
+          if (last?.key === key && now - last.at < 8_000) return;
+          lastPlaybackFailureToastRef.current = { key, at: now };
           toastRef.current({
             title: message,
             variant: "destructive",

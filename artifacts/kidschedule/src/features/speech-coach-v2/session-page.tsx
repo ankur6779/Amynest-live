@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useListChildren } from "@workspace/api-client-react";
 import { usePaywall } from "@/contexts/paywall-context";
-import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import { useSpeechCoachV2Session } from "./hooks/use-speech-coach-v2-session";
 import { useSpeechCoachV2Realtime } from "./hooks/use-speech-coach-v2-realtime";
 import { SpeechCoachV2SessionUi } from "./components/session-ui";
@@ -27,7 +26,7 @@ const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 export default function SpeechCoachV2SessionPage() {
   const authFetch = useAuthFetch();
   const { openPaywall } = usePaywall();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { data: children = [] } = useListChildren();
   const [live, setLive] = useState(false);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -102,16 +101,40 @@ export default function SpeechCoachV2SessionPage() {
 
   const handleEndRef = useRef(handleEnd);
   handleEndRef.current = handleEnd;
+  const autoEndTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearAutoEndTimer = useCallback(() => {
+    if (autoEndTimerRef.current) {
+      clearInterval(autoEndTimerRef.current);
+      autoEndTimerRef.current = null;
+    }
+  }, []);
+
+  const handleBack = useCallback(async () => {
+    const alreadyDisconnected =
+      !live
+      && (realtime.connectionState === "idle" || realtime.connectionState === "disconnected");
+
+    clearAutoEndTimer();
+    setLive(false);
+    session.stopLive();
+
+    if (!alreadyDisconnected) {
+      await realtime.disconnectAndRelease();
+    }
+
+    setLocation("/speech-coach", { replace: true });
+  }, [clearAutoEndTimer, live, realtime, session, setLocation]);
 
   useEffect(() => {
     if (!live) return;
-    const timer = setInterval(() => {
+    autoEndTimerRef.current = setInterval(() => {
       if (session.remainingSeconds <= 0) {
         void handleEndRef.current();
       }
     }, 2000);
-    return () => clearInterval(timer);
-  }, [live, session.remainingSeconds]);
+    return clearAutoEndTimer;
+  }, [clearAutoEndTimer, live, session.remainingSeconds]);
 
   const handleStart = useCallback(async () => {
     session.beginLive();
@@ -206,10 +229,10 @@ export default function SpeechCoachV2SessionPage() {
 
   return (
     <div className="relative">
-      <div className="absolute left-4 top-4 z-10">
+      <div className="absolute left-[max(1rem,env(safe-area-inset-left,0px))] top-[calc(env(safe-area-inset-top,0px)+1rem)] z-10">
         <button
           type="button"
-          onClick={() => runSafeNavAction("speech-coach-v2-session-back", () => smartBack(setLocation, location, "speech-coach-v2-session-back"))}
+          onClick={handleBack}
           className="rounded-full bg-black/30 p-2 text-white backdrop-blur"
           aria-label="Back"
         >
@@ -218,7 +241,7 @@ export default function SpeechCoachV2SessionPage() {
       </div>
 
       {!live && children.length > 1 && (
-        <div className="absolute right-4 top-4 z-10 flex flex-wrap justify-end gap-2">
+        <div className="absolute right-[max(1rem,env(safe-area-inset-right,0px))] top-[calc(env(safe-area-inset-top,0px)+1rem)] z-10 flex flex-wrap justify-end gap-2">
           {children.map((c) => (
             <button
               key={c.id}
