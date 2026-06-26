@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingMicPermissionCallbackId: String? = null
+    private var forceUpdateActive = false
 
     private var systemAudioManager: AudioManager? = null
 
@@ -235,6 +236,7 @@ class MainActivity : AppCompatActivity() {
         pushBridge.install(webView)
         localNotifBridge = LocalNotifBridge.installOn(webView, this)
         installMicrophoneBridge(webView)
+        installAppVersionBridge(webView)
         reviewBridge = ReviewBridge.installOn(this, webView)
         InstallReferrerBridge.fetchOn(this, webView)
 
@@ -346,6 +348,10 @@ class MainActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (!::webView.isInitialized) {
             super.onBackPressed()
+            return
+        }
+        if (forceUpdateActive) {
+            Log.d(TAG, "Hardware back ignored during force update")
             return
         }
         webView.evaluateJavascript(
@@ -563,7 +569,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        WebView.setWebContentsDebuggingEnabled(true)
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
     }
 
     /**
@@ -581,6 +587,33 @@ class MainActivity : AppCompatActivity() {
         } catch (_: ActivityNotFoundException) {
             false
         }
+
+    private fun openStoreUrlExternally(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val parsed = try {
+            Uri.parse(url)
+        } catch (_: Throwable) {
+            return false
+        }
+        if (!isAllowedStoreUri(parsed)) return false
+
+        if (parsed.scheme?.lowercase() == "https") {
+            val packageName = parsed.getQueryParameter("id")
+            if (!packageName.isNullOrBlank()) {
+                val marketUri = Uri.parse("market://details?id=$packageName")
+                if (openExternally(marketUri)) return true
+            }
+        }
+
+        return openExternally(parsed)
+    }
+
+    private fun isAllowedStoreUri(parsed: Uri): Boolean {
+        val scheme = parsed.scheme?.lowercase().orEmpty()
+        val host = parsed.host?.lowercase().orEmpty()
+        return (scheme == "market") ||
+            (scheme == "https" && host == "play.google.com" && parsed.path.orEmpty().startsWith("/store"))
+    }
 
     // ── URL construction ─────────────────────────────────────────────────────
 
@@ -747,6 +780,48 @@ class MainActivity : AppCompatActivity() {
             null,
         )
         Log.d(TAG, "Android microphone permission bridge installed")
+    }
+
+    @SuppressLint("JavascriptInterface")
+    private fun installAppVersionBridge(wv: WebView) {
+        wv.addJavascriptInterface(AndroidAppVersionInterface(), "AmyNestAppNative")
+        wv.evaluateJavascript(
+            "window.__AMYNEST_WRAPPER='android';" +
+                "window.dispatchEvent(new Event('amynest-app-native-ready'));",
+            null,
+        )
+        Log.d(TAG, "Android app version bridge installed version=${BuildConfig.VERSION_NAME}")
+    }
+
+    inner class AndroidAppVersionInterface {
+        @JavascriptInterface
+        fun getVersionName(): String = BuildConfig.VERSION_NAME
+
+        @JavascriptInterface
+        fun openStoreUrl(url: String?): Boolean {
+            Log.d(TAG, "JS openStoreUrl requested")
+            val parsed = try {
+                Uri.parse(url ?: "")
+            } catch (_: Throwable) {
+                null
+            }
+            if (parsed == null || !isAllowedStoreUri(parsed)) {
+                Log.w(TAG, "Rejected store URL from web layer: $url")
+                return false
+            }
+            runOnUiThread {
+                openStoreUrlExternally(url)
+            }
+            return true
+        }
+
+        @JavascriptInterface
+        fun setForceUpdateActive(active: Boolean) {
+            runOnUiThread {
+                forceUpdateActive = active
+            }
+            Log.d(TAG, "Force update active=$active")
+        }
     }
 
     inner class AndroidMicrophoneInterface {

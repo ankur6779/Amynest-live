@@ -6,6 +6,18 @@ import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 import { StartupWatchdogGate } from "@/components/startup-watchdog-gate";
+import { ForceUpdateScreen } from "@/components/force-update-screen";
+import { OptionalUpdateDialog } from "@/components/optional-update-dialog";
+import {
+  evaluateVersionGate,
+  openStoreUrl,
+  setNativeForceUpdateActive,
+  type VersionGateDecision,
+} from "@/lib/version-service";
+import {
+  installVersionAnalyticsRetry,
+  trackVersionAnalytics,
+} from "@/lib/version-analytics";
 
 // Everything heavy — Firebase Auth, providers, the router, every page route,
 // and the Layout shell — lives in AppCore. The shell starts the AppCore import
@@ -20,14 +32,74 @@ declare global {
 
 function App() {
   const [shouldLoadAppCore, setShouldLoadAppCore] = useState(false);
+  const [versionDecision, setVersionDecision] = useState<VersionGateDecision | null>(null);
+  const [showSoftUpdate, setShowSoftUpdate] = useState(false);
 
   useEffect(() => {
     devLog("APP MOUNTED");
     markAppShellReady();
     initNativeShell();
+    installVersionAnalyticsRetry();
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    void evaluateVersionGate()
+      .then((decision) => {
+        if (cancelled) return;
+        setVersionDecision(decision);
+        const isHardUpdate = decision.kind === "hard-update";
+        setNativeForceUpdateActive(isHardUpdate);
+        if (decision.kind === "hard-update") {
+          const { platform, installedVersion, policy } = decision;
+          trackVersionAnalytics(
+            "force_update_displayed",
+            {
+              platform,
+              installedVersion,
+              minimumVersion: policy.minimumVersion,
+              latestVersion: policy.latestVersion,
+              forceUpdate: policy.forceUpdate,
+              updateType: "hard",
+            },
+            {
+              onceKey: `${platform}:${installedVersion}:${policy.minimumVersion}:${policy.latestVersion}:hard-displayed`,
+            },
+          );
+        }
+        if (decision.kind === "soft-update") {
+          setShowSoftUpdate(true);
+          const { platform, installedVersion, policy } = decision;
+          trackVersionAnalytics(
+            "optional_update_displayed",
+            {
+              platform,
+              installedVersion,
+              minimumVersion: policy.minimumVersion,
+              latestVersion: policy.latestVersion,
+              forceUpdate: policy.forceUpdate,
+              updateType: "soft",
+            },
+            {
+              onceKey: `${platform}:${installedVersion}:${policy.minimumVersion}:${policy.latestVersion}:soft-displayed`,
+            },
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("[amynest:version] gate failed open", err);
+        if (!cancelled) {
+          setNativeForceUpdateActive(false);
+          setVersionDecision({ kind: "allow", platform: null, reason: "gate_exception" });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!versionDecision || versionDecision.kind === "hard-update") return;
     let cancelled = false;
     let secondFrame: number | null = null;
     const id = window.requestAnimationFrame(() => {
@@ -42,7 +114,30 @@ function App() {
         window.cancelAnimationFrame(secondFrame);
       }
     };
-  }, []);
+  }, [versionDecision]);
+
+  if (versionDecision?.kind === "hard-update") {
+    const { platform, installedVersion, policy } = versionDecision;
+    return (
+      <ForceUpdateScreen
+        message={policy.message}
+        latestVersion={policy.latestVersion}
+        onUpdateNow={() => {
+          trackVersionAnalytics("force_update_update_clicked", {
+            platform,
+            installedVersion,
+            minimumVersion: policy.minimumVersion,
+            latestVersion: policy.latestVersion,
+            forceUpdate: policy.forceUpdate,
+            updateType: "hard",
+          }, {
+            onceKey: `${platform}:${installedVersion}:${policy.minimumVersion}:${policy.latestVersion}:hard-clicked`,
+          });
+          void openStoreUrl(platform, policy.storeUrl);
+        }}
+      />
+    );
+  }
 
   return (
     <div id="app-root" className="app-root w-full max-w-full min-w-0">
@@ -55,6 +150,42 @@ function App() {
             </Suspense>
           </ReactInstanceRecovery>
         </StartupWatchdogGate>
+        {versionDecision?.kind === "soft-update" && showSoftUpdate ? (
+          <OptionalUpdateDialog
+            message={versionDecision.policy.message}
+            latestVersion={versionDecision.policy.latestVersion}
+            onLater={() => {
+              trackVersionAnalytics(
+                "optional_update_dismissed",
+                {
+                  platform: versionDecision.platform,
+                  installedVersion: versionDecision.installedVersion,
+                  minimumVersion: versionDecision.policy.minimumVersion,
+                  latestVersion: versionDecision.policy.latestVersion,
+                  forceUpdate: versionDecision.policy.forceUpdate,
+                  updateType: "soft",
+                },
+                {
+                  onceKey: `${versionDecision.platform}:${versionDecision.installedVersion}:${versionDecision.policy.minimumVersion}:${versionDecision.policy.latestVersion}:soft-dismissed`,
+                },
+              );
+              setShowSoftUpdate(false);
+            }}
+            onUpdate={() => {
+              trackVersionAnalytics("force_update_update_clicked", {
+                platform: versionDecision.platform,
+                installedVersion: versionDecision.installedVersion,
+                minimumVersion: versionDecision.policy.minimumVersion,
+                latestVersion: versionDecision.policy.latestVersion,
+                forceUpdate: versionDecision.policy.forceUpdate,
+                updateType: "soft",
+              }, {
+                onceKey: `${versionDecision.platform}:${versionDecision.installedVersion}:${versionDecision.policy.minimumVersion}:${versionDecision.policy.latestVersion}:soft-clicked`,
+              });
+              void openStoreUrl(versionDecision.platform, versionDecision.policy.storeUrl);
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );
