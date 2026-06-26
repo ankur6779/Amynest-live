@@ -1029,6 +1029,47 @@ export async function ensureValidationRunsTable(): Promise<void> {
   logger.info({ evt: "db.ensure", table: "validation_runs" }, "Ensured validation_runs table");
 }
 
+async function ensureHubDownloadLedgerTable(
+  tableName: "coloring_downloads" | "funsheet_downloads" | "worksheet_downloads",
+): Promise<void> {
+  await db.execute(sql.raw(`
+    CREATE TABLE IF NOT EXISTS "${tableName}" (
+      "id" serial PRIMARY KEY,
+      "user_id" text NOT NULL,
+      "child_id" integer NOT NULL,
+      "file_id" text NOT NULL,
+      "file_name" text NOT NULL,
+      "downloaded_at" timestamptz NOT NULL DEFAULT now()
+    )
+  `));
+  await db.execute(sql.raw(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "${tableName}_child_file_uniq"
+      ON "${tableName}" ("child_id", "file_id")
+  `));
+  await db.execute(sql.raw(`
+    CREATE INDEX IF NOT EXISTS "${tableName}_child_idx"
+      ON "${tableName}" ("child_id")
+  `));
+  await db.execute(sql.raw(`
+    CREATE INDEX IF NOT EXISTS "${tableName}_user_idx"
+      ON "${tableName}" ("user_id")
+  `));
+  await db.execute(sql.raw(`
+    CREATE INDEX IF NOT EXISTS "${tableName}_daily_quota_idx"
+      ON "${tableName}" ("user_id", "child_id", "downloaded_at")
+  `));
+}
+
+export async function ensureHubDownloadLedgerTables(): Promise<void> {
+  await ensureHubDownloadLedgerTable("coloring_downloads");
+  await ensureHubDownloadLedgerTable("funsheet_downloads");
+  await ensureHubDownloadLedgerTable("worksheet_downloads");
+  logger.info(
+    { evt: "db.ensure", table: "hub_download_ledgers" },
+    "Ensured hub download ledger tables",
+  );
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
@@ -1052,6 +1093,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "feature_notification_schedules", run: ensureFeatureNotificationSchedulesTable },
     { name: "speech_coach_v2_token_usage", run: ensureSpeechCoachV2TokenUsageTables },
     { name: "validation_runs", run: ensureValidationRunsTable },
+    { name: "hub_download_ledgers", run: ensureHubDownloadLedgerTables },
   ];
 
   const failed: string[] = [];
