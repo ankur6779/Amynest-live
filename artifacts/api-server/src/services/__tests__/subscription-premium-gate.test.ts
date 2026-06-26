@@ -39,6 +39,20 @@ test("isPremiumNow rejects active without currentPeriodEnd", () => {
   );
 });
 
+test("isPremiumNow accepts unmigrated paid rows with FREE subscriptionState", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "active",
+        provider: "revenuecat",
+        subscriptionState: "FREE",
+        currentPeriodEnd: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    true,
+  );
+});
+
 test("isPremiumNow accepts active with future currentPeriodEnd", () => {
   assert.equal(
     isPremiumNow(
