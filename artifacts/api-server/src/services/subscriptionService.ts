@@ -807,7 +807,7 @@ export async function maybeAutoGrantPremium(
       cancelAtPeriodEnd: 0,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(eq(subscriptionsTable.userId, sub.userId));
 }
 
 export async function startTrial(userId: string): Promise<Subscription> {
