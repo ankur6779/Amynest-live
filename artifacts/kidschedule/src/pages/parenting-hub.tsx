@@ -1002,7 +1002,6 @@ function ParentingHubPage() {
   };
 
   const learningTabOpen = expandedGroups.has("learning");
-  const storiesTabOpen = expandedGroups.has("stories");
   useEffect(() => {
     if (!learningTabOpen || !effectiveChild) return;
     void import("@/lib/learning-zone-tab-audio-warmup").then((mod) => {
@@ -1012,13 +1011,6 @@ function ParentingHubPage() {
       });
     });
   }, [learningTabOpen, effectiveChild?.id, totalAgeMonths, authFetch]);
-
-  useEffect(() => {
-    if (!storiesTabOpen) return;
-    void import("@/lib/learning-zone-tab-audio-warmup").then((mod) => {
-      mod.warmSpeechCoachOnStoriesTabOpen();
-    });
-  }, [storiesTabOpen]);
 
   useEffect(() => {
     if (!effectiveChild) return;
