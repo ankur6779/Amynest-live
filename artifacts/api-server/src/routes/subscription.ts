@@ -416,8 +416,22 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     .returning({ eventId: revenuecatWebhookEventsTable.eventId });
 
   if (inserted.length === 0) {
-    res.json({ ok: true, duplicate: true, eventId });
-    return;
+    const [existing] = await db
+      .select({ processingStatus: revenuecatWebhookEventsTable.processingStatus })
+      .from(revenuecatWebhookEventsTable)
+      .where(eq(revenuecatWebhookEventsTable.eventId, eventId))
+      .limit(1);
+    if (existing?.processingStatus !== "failed") {
+      res.json({ ok: true, duplicate: true, eventId });
+      return;
+    }
+    await recordBillingAuditEvent({
+      userId,
+      source: "webhook",
+      eventName: "webhook_retry",
+      providerEventId: eventId,
+      metadata: { eventType: event.type ?? null },
+    });
   }
 
   const supportedEvents = new Set([
