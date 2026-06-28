@@ -208,6 +208,10 @@ function ChildForm() {
   const [fixedActivities, setFixedActivities] = useState<FixedActivityDraft[]>([]);
   const [feedingType, setFeedingType] = useState<string | null>(null);
   const [sleepPattern, setSleepPattern] = useState<string | null>(null);
+  const [photoDirty, setPhotoDirty] = useState(false);
+  const [foodPrefsDirty, setFoodPrefsDirty] = useState(false);
+  const [infantPrefsDirty, setInfantPrefsDirty] = useState(false);
+  const [fixedActivitiesDirty, setFixedActivitiesDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const childHydrationKeyRef = useRef<string | null>(null);
   const childEducationPatchKeyRef = useRef<string | null>(null);
@@ -469,6 +473,10 @@ function ChildForm() {
     setFixedActivities(normalizeFixedActivities((child as { fixedActivities?: unknown }).fixedActivities));
     setFeedingType((child as { feedingType?: string | null }).feedingType ?? null);
     setSleepPattern((child as { sleepPattern?: string | null }).sleepPattern ?? null);
+    setPhotoDirty(false);
+    setFoodPrefsDirty(false);
+    setInfantPrefsDirty(false);
+    setFixedActivitiesDirty(false);
   }, [child, form, isEditing, parentCountry]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -496,6 +504,7 @@ function ChildForm() {
       };
       img.src = reader.result as string;
     };
+    setPhotoDirty(true);
     reader.readAsDataURL(file);
   };
   const onSubmit = (data: ChildFormValues) => {
@@ -534,8 +543,11 @@ function ChildForm() {
       years: age.years,
       months: age.months,
     });
+    const validFixedActivities = fixedActivities.filter(
+      (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
+    );
     const payload = {
-      name: data.name,
+      name: data.name.trim(),
       dob,
       dobIsEstimated,
       age: age.years,
@@ -563,21 +575,82 @@ function ChildForm() {
       sleepPattern: submitIsInfant ? sleepPattern : null,
       goals: data.goals?.trim() || (submitIsInfant ? "Infant care & development" : "General daily routine"),
       babysitterId: data.babysitterId || undefined,
-      photoUrl: photoPreview || undefined,
-      fixedActivities:
-        !submitIsInfant &&
-        fixedActivities.filter(
-          (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
-        ).length > 0
-          ? fixedActivities.filter(
-              (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
-            )
-          : null,
+      photoUrl: photoPreview || null,
+      fixedActivities: !submitIsInfant && validFixedActivities.length > 0 ? validFixedActivities : null,
     };
     if (isEditing) {
+      const dirty = form.formState.dirtyFields;
+      const updatePayload: Partial<typeof payload> = {};
+      const assignIfDirty = <K extends keyof typeof payload>(field: K, dirtyFlag?: boolean) => {
+        if (dirtyFlag) updatePayload[field] = payload[field];
+      };
+      const educationDirty =
+        !!dirty.dob ||
+        !!dirty.educationStage ||
+        !!dirty.scheduleKnown ||
+        !!dirty.childClass ||
+        !!dirty.schoolStartTime ||
+        !!dirty.schoolEndTime ||
+        !!dirty.schoolDays ||
+        !!dirty.travelMode ||
+        !!dirty.travelModeOther;
+
+      assignIfDirty("name", !!dirty.name);
+      assignIfDirty("wakeUpTime", !!dirty.wakeUpTime);
+      assignIfDirty("sleepTime", !!dirty.sleepTime);
+      assignIfDirty("goals", !!dirty.goals);
+      assignIfDirty("babysitterId", !!dirty.babysitterId);
+
+      if (dirty.dob) {
+        updatePayload.dob = payload.dob;
+        updatePayload.dobIsEstimated = payload.dobIsEstimated;
+        updatePayload.age = payload.age;
+        updatePayload.ageMonths = payload.ageMonths;
+      }
+
+      if (educationDirty) {
+        updatePayload.educationStage = payload.educationStage;
+        updatePayload.learningEnvironment = payload.learningEnvironment;
+        updatePayload.scheduleKnown = payload.scheduleKnown;
+        updatePayload.isSchoolGoing = payload.isSchoolGoing;
+        updatePayload.childClass = payload.childClass;
+        updatePayload.schoolStartTime = payload.schoolStartTime;
+        updatePayload.schoolEndTime = payload.schoolEndTime;
+        updatePayload.schoolDays = payload.schoolDays;
+        updatePayload.travelMode = payload.travelMode;
+        updatePayload.travelModeOther = payload.travelModeOther;
+      }
+
+      if (photoDirty) {
+        updatePayload.photoUrl = payload.photoUrl;
+      }
+      if (fixedActivitiesDirty) {
+        updatePayload.fixedActivities = payload.fixedActivities;
+      }
+      if (foodPrefsDirty) {
+        updatePayload.dietType = payload.dietType;
+        updatePayload.foodStyle = payload.foodStyle;
+        updatePayload.subCuisine = payload.subCuisine;
+        updatePayload.allergies = payload.allergies;
+        updatePayload.foodPrefInherited = payload.foodPrefInherited;
+        updatePayload.foodPrefCustomized = payload.foodPrefCustomized;
+        updatePayload.foodType = payload.foodType;
+      }
+      if (infantPrefsDirty) {
+        updatePayload.feedingType = payload.feedingType;
+        updatePayload.sleepPattern = payload.sleepPattern;
+      }
+
+      if (Object.keys(updatePayload).length === 0) {
+        toast({
+          title: t("toasts.children.profile_updated")
+        });
+        setLocation("/children");
+        return;
+      }
       updateMutation.mutate({
         id: childId,
-        data: payload
+        data: updatePayload
       }, {
         onSuccess: () => {
           toast({
@@ -753,6 +826,7 @@ function ChildForm() {
                   type="button"
                   onClick={() => {
                     setPhotoPreview(null);
+                    setPhotoDirty(true);
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
                   className="mt-2 text-xs font-semibold text-white/80 underline underline-offset-2 hover:text-white"
@@ -1099,7 +1173,10 @@ function ChildForm() {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setFeedingType((prev) => (prev === opt.value ? null : opt.value))}
+                          onClick={() => {
+                            setInfantPrefsDirty(true);
+                            setFeedingType((prev) => (prev === opt.value ? null : opt.value));
+                          }}
                           className={cn(
                             "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                             feedingType === opt.value
@@ -1119,7 +1196,10 @@ function ChildForm() {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setSleepPattern((prev) => (prev === opt.value ? null : opt.value))}
+                          onClick={() => {
+                            setInfantPrefsDirty(true);
+                            setSleepPattern((prev) => (prev === opt.value ? null : opt.value));
+                          }}
                           className={cn(
                             "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                             sleepPattern === opt.value
@@ -1171,7 +1251,10 @@ function ChildForm() {
                         {foodStyle ? ` · ${FOOD_STYLE_OPTIONS.find(s => s.value === foodStyle)?.label ?? foodStyle}` : ""}
                       </p>
                     </div>
-                    <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => setCustomizeOpen(true)}>
+                    <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => {
+                      setFoodPrefsDirty(true);
+                      setCustomizeOpen(true);
+                    }}>
                       {t("pages.children.form.customize_for_child")}
                     </Button>
                   </div>
@@ -1188,7 +1271,11 @@ function ChildForm() {
                       <div className="flex flex-wrap gap-2">
                         {DIET_OPTIONS.map(opt => (
                           <button key={opt.value} type="button"
-                            onClick={() => { setDietType(opt.value); form.setValue("foodType", deriveFoodType(opt.value)); }}
+                            onClick={() => {
+                              setFoodPrefsDirty(true);
+                              setDietType(opt.value);
+                              form.setValue("foodType", deriveFoodType(opt.value), { shouldDirty: true });
+                            }}
                             className={cn("px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                               dietType === opt.value ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-foreground hover:border-primary/50 bg-background")}>
                             <span>{opt.emoji}</span>{opt.label}
@@ -1201,7 +1288,11 @@ function ChildForm() {
                       <div className="flex flex-wrap gap-2">
                         {FOOD_STYLE_OPTIONS.map(opt => (
                           <button key={opt.value} type="button"
-                            onClick={() => { setFoodStyle(opt.value); if (opt.value !== "indian") setSubCuisine(""); }}
+                            onClick={() => {
+                              setFoodPrefsDirty(true);
+                              setFoodStyle(opt.value);
+                              if (opt.value !== "indian") setSubCuisine("");
+                            }}
                             className={cn("px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                               foodStyle === opt.value ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-foreground hover:border-primary/50 bg-background")}>
                             <span>{opt.emoji}</span>{opt.label}
@@ -1215,7 +1306,10 @@ function ChildForm() {
                         <div className="flex flex-wrap gap-2">
                           {INDIAN_SUB_OPTIONS.map(opt => (
                             <button key={opt.value} type="button"
-                              onClick={() => setSubCuisine(prev => prev === opt.value ? "" : opt.value)}
+                              onClick={() => {
+                                setFoodPrefsDirty(true);
+                                setSubCuisine(prev => prev === opt.value ? "" : opt.value);
+                              }}
                               className={cn("px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                                 subCuisine === opt.value ? "bg-primary/15 text-primary border-primary" : "border-border text-foreground hover:border-primary/50 bg-background")}>
                               <span>{opt.emoji}</span>{opt.label}
@@ -1229,7 +1323,10 @@ function ChildForm() {
                       <div className="flex flex-wrap gap-2">
                         {ALLERGY_CHIPS.map(chip => (
                           <button key={chip.value} type="button"
-                            onClick={() => setAllergyChips(prev => prev.includes(chip.value) ? prev.filter(c => c !== chip.value) : [...prev, chip.value])}
+                            onClick={() => {
+                              setFoodPrefsDirty(true);
+                              setAllergyChips(prev => prev.includes(chip.value) ? prev.filter(c => c !== chip.value) : [...prev, chip.value]);
+                            }}
                             className={cn("px-3 py-1.5 rounded-full text-sm border font-medium transition-all",
                               allergyChips.includes(chip.value) ? "bg-primary/15 text-primary border-primary" : "border-border text-foreground hover:border-primary/50 bg-background")}>
                             {chip.label}
@@ -1239,13 +1336,19 @@ function ChildForm() {
                       <Input
                         placeholder={t("pages.children.form.other_restrictions_placeholder")}
                         value={allergyText}
-                        onChange={e => setAllergyText(e.target.value)}
+                        onChange={e => {
+                          setFoodPrefsDirty(true);
+                          setAllergyText(e.target.value);
+                        }}
                         className="h-9 text-sm rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
                       />
                     </div>
                     {customizeOpen && (
                       <button type="button"
-                        onClick={() => setCustomizeOpen(false)}
+                        onClick={() => {
+                          setFoodPrefsDirty(true);
+                          setCustomizeOpen(false);
+                        }}
                         className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                         ← {t("pages.children.form.use_family_preferences_instead")}
                       </button>
@@ -1299,7 +1402,13 @@ function ChildForm() {
                     childName={watchName}
                   />
                 )}
-                <FixedActivitiesEditor value={fixedActivities} onChange={setFixedActivities} />
+                <FixedActivitiesEditor
+                  value={fixedActivities}
+                  onChange={(next) => {
+                    setFixedActivitiesDirty(true);
+                    setFixedActivities(next);
+                  }}
+                />
               </div>}
 
               {/* ── GOALS ── */}
