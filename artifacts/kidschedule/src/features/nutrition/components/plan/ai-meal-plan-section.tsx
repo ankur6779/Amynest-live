@@ -30,6 +30,8 @@ import { PlanLoadingSkeleton } from "@/features/nutrition/components/plan/plan-l
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
 import { safeJsonResponse } from "@/lib/safe-json-response";
 
+const MEAL_PLAN_GENERATE_TIMEOUT_MS = 60_000;
+
 export function AIMealPlanSection() {
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
@@ -68,7 +70,7 @@ export function AIMealPlanSection() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ weather, forceRefresh }),
-        });
+        }, MEAL_PLAN_GENERATE_TIMEOUT_MS);
         if (res.status === 402) {
           const parsed = await safeJsonResponse<{ error?: string; feature?: string }>(res);
           const j = parsed.ok ? parsed.data : {};
