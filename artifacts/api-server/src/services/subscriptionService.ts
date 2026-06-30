@@ -589,12 +589,20 @@ export async function healStaleSubscriptionRecord(
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
-      status: "free",
       plan: "free",
+      status: "free",
       provider: "none",
+      providerCustomerId: null,
+      providerSubscriptionId: null,
+      subscriptionState: "FREE",
       trialEndsAt: null,
       currentPeriodEnd: null,
+      expiresAt: null,
+      gracePeriodExpiresAt: null,
       cancelAtPeriodEnd: 0,
+      cancelledAt: null,
+      expiredAt: null,
+      autoRenewStatus: false,
       updatedAt: new Date(),
     })
     .where(eq(subscriptionsTable.userId, sub.userId))
@@ -807,7 +815,7 @@ export async function maybeAutoGrantPremium(
       cancelAtPeriodEnd: 0,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(eq(subscriptionsTable.userId, sub.userId));
 }
 
 export async function startTrial(userId: string): Promise<Subscription> {
