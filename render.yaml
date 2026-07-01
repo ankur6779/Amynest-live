@@ -95,6 +95,14 @@ services:
         sync: false
       - key: REVENUECAT_WEBHOOK_SECRET
         sync: false
+      - key: REVENUECAT_PROJECT_ID
+        sync: false
+      - key: REVENUECAT_APPLE_APP_STORE_APP_ID
+        sync: false
+      - key: REVENUECAT_GOOGLE_PLAY_STORE_APP_ID
+        sync: false
+      - key: REVENUECAT_ENTITLEMENT_ID
+        sync: false
       - key: BILLING_RECOVERY_SECRET
         sync: false
       - key: GOOGLE_API_KEY

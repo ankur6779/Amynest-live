@@ -30,6 +30,19 @@ import { getAdminOpsState } from "../services/admin-ops-store.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
+function audioHealthShallowOk(): boolean {
+  const openAiConfigured = !!getOpenAiApiKeyForFetch();
+  const gcs = getGcsDiagnostics();
+  const bucketSet = !!getGcsBucketId();
+  const gcsReady = gcs.legacyGcsConfigured && bucketSet;
+  return (
+    openAiConfigured &&
+    gcsReady &&
+    isLastGcsProbeOk() &&
+    !isStaticAudioCircuitOpen()
+  );
+}
+
 const router: IRouter = Router();
 
 router.get("/healthz", (_req, res) => {
@@ -183,7 +196,14 @@ router.get("/healthz/tts", (_req, res) => {
 /**
  * Audio stack readiness — static MP3 proxy + OpenAI TTS stream probe + playback flags.
  * Use after deploy: GET /api/healthz/audio (no secrets).
+ *
+ * HEAD is a fast config-only probe for uptime monitors (UptimeRobot, etc.) — no TTS stream.
  */
+router.head("/healthz/audio", (_req, res) => {
+  const ok = audioHealthShallowOk();
+  res.status(ok ? 200 : 503).end();
+});
+
 router.get("/healthz/audio", async (_req, res) => {
   const gcs = getGcsDiagnostics();
   const openAiConfigured = !!getOpenAiApiKeyForFetch();

@@ -120,22 +120,52 @@ async function userHasChild(userId: string): Promise<boolean> {
   return !!row;
 }
 
-export async function ensureHubJourney(userId: string): Promise<ParentHubJourney | null> {
+async function syncHubJourneyChildId(
+  row: ParentHubJourney,
+  childId: number,
+): Promise<ParentHubJourney> {
+  if (row.childId === childId) return row;
+  const now = new Date();
+  const [updated] = await db
+    .update(parentHubJourneyTable)
+    .set({ childId, updatedAt: now })
+    .where(eq(parentHubJourneyTable.userId, row.userId))
+    .returning();
+  return updated ?? { ...row, childId, updatedAt: now };
+}
+
+export async function ensureHubJourney(
+  userId: string,
+  childId?: number,
+): Promise<ParentHubJourney | null> {
   const [existing] = await db
     .select()
     .from(parentHubJourneyTable)
     .where(eq(parentHubJourneyTable.userId, userId))
     .limit(1);
-  if (existing) return existing;
+  if (existing) {
+    return childId != null ? syncHubJourneyChildId(existing, childId) : existing;
+  }
   if (!(await userHasChild(userId))) return null;
 
   const [created] = await db
     .insert(parentHubJourneyTable)
-    .values({ userId })
+    .values({ userId, childId: childId ?? null })
+    .onConflictDoNothing({ target: parentHubJourneyTable.userId })
     .returning();
 
-  logger.info({ evt: "hub_journey.started", userId }, "Parent Hub journey started");
-  return created;
+  if (created) {
+    logger.info({ evt: "hub_journey.started", userId, childId }, "Parent Hub journey started");
+    return created;
+  }
+
+  const [retry] = await db
+    .select()
+    .from(parentHubJourneyTable)
+    .where(eq(parentHubJourneyTable.userId, userId))
+    .limit(1);
+  if (!retry) return null;
+  return childId != null ? syncHubJourneyChildId(retry, childId) : retry;
 }
 
 async function loadProgressSnapshot(
@@ -240,7 +270,7 @@ export async function getHubJourneyStatus(
 
   const sub = await getOrCreateSubscription(userId);
   const premium = isPremiumNow(sub);
-  const row = await ensureHubJourney(userId);
+  const row = await ensureHubJourney(userId, childId);
   if (!row) return null;
 
   const completedDays = normaliseCompletedDays(row.completedDays);
@@ -367,7 +397,7 @@ export async function completeHubJourneyPath(
   const sub = await getOrCreateSubscription(userId);
   if (isPremiumNow(sub)) return { ok: true, access: status.access };
 
-  const row = await ensureHubJourney(userId);
+  const row = await ensureHubJourney(userId, childId);
   if (!row) return { ok: false };
 
   const completedDays = normaliseCompletedDays(row.completedDays);
@@ -437,7 +467,7 @@ export async function useHubJourneyPeekAhead(
   const status = await getHubJourneyStatus(userId, childId);
   if (!status?.peekAvailable) return { ok: false };
 
-  const row = await ensureHubJourney(userId);
+  const row = await ensureHubJourney(userId, childId);
   if (!row) return { ok: false };
 
   const peekUsed = normaliseCompletedDays(row.peekAheadUsed);
