@@ -9,9 +9,27 @@ import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Mic, Salad, FlaskConical } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Mic } from "lucide-react";
 import { HubLaunchCard } from "@/components/hub-launch-card";
-import { DiscoveryWorldsHubLaunchCard } from "@/components/discovery-world/discovery-worlds-hub-launch-card";
+import { LearningZoneLaunchCard } from "@/components/learning-zone-launch-card";
+import { CreativityPremiumSection } from "@/components/creativity-premium-section";
+import { CreativityLaunchCard } from "@/components/creativity-launch-card";
+import { CreativityGroupHeader } from "@/components/creativity-group-header";
+import { HealthZoneGroupHeader } from "@/components/health-zone-group-header";
+import { HealthZonePremiumSection } from "@/components/health-zone-premium-section";
+import { HealthZoneLaunchCard } from "@/components/health-zone-launch-card";
+import { GamingHubGroupHeader } from "@/components/gaming-hub-group-header";
+import { GamingHubLaunchCard } from "@/components/gaming-hub-launch-card";
+import { StoriesPremiumSection } from "@/components/stories-premium-section";
+import { StoriesLaunchCard } from "@/components/stories-launch-card";
+import { StoriesDiscoveryLaunchCard } from "@/components/stories-discovery-launch-card";
+import { ParentSupportGroupHeader } from "@/components/parent-support-group-header";
+import { ParentSupportPremiumSection } from "@/components/parent-support-premium-section";
+import { TodayForYouFamilyPulseSection } from "@/components/today-for-you-family-pulse-section";
+import { TodayForYouGroupHeader } from "@/components/today-for-you-group-header";
+import { TodayForYouLaunchCard } from "@/components/today-for-you-launch-card";
+import { TodayForYouPremiumSection } from "@/components/today-for-you-premium-section";
+import { StoriesGroupHeader } from "@/components/stories-group-header";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
 import { InfantModeShortcuts } from "@/components/infant/infant-mode-shortcuts";
@@ -82,7 +100,7 @@ import {
   AdaptiveRecommendationsChips,
 } from "@/components/learning-progress";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
-import { HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
+import { HubExploreAgesSection } from "@/components/hub-light-layout";
 import {
   PARENT_HUB_PAGE,
   getHubGroupStyle,
@@ -328,41 +346,6 @@ function HubSection({
         </div>
       </HubShadedCardBody>
     </div>
-  );
-}
-
-function RoutineLaunchCard({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  const theme = getHubFeatureTileAccent("generate-routine");
-  const awardSectionPoints = useHubSectionPoints();
-  return (
-    <AppLink
-      href="/routines/generate"
-      onClick={() => awardSectionPoints("generate-routine")}
-      className={cn("group block h-full overflow-hidden p-0 pl-0", hubShadedSectionCardClasses(theme))}
-      data-testid="routine-launch-card"
-      data-section-id="generate-routine"
-    >
-      <HubShadedCardBody theme={theme}>
-        <div className={HUB_FEATURE_TILE_LAUNCH_ROW}>
-          <div className={cn(HUB_FEATURE_TILE_ICON, theme.emojiShell, "bg-gradient-to-br from-emerald-400 to-teal-500")}>
-            <Calendar className="h-5 w-5 text-white" />
-          </div>
-          <div className={HUB_FEATURE_TILE_TEXT}>
-            <p className={HUB_FEATURE_TILE_TITLE}>{title}</p>
-            <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
-          </div>
-          <span className="inline-flex h-8 shrink-0 items-center self-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
-            Open
-          </span>
-        </div>
-      </HubShadedCardBody>
-    </AppLink>
   );
 }
 
@@ -1124,9 +1107,10 @@ function ParentingHubPage() {
     id: "command-center",
     alwaysCurrent: true,
     render: () => (
-      <HubFamilyPulseSection
+      <TodayForYouFamilyPulseSection
         childId={effectiveChild.id}
         childName={effectiveChild.name}
+        streakDays={learningProgress.phase3?.wallet?.streakDays}
       />
     ),
   },
@@ -1147,9 +1131,9 @@ function ParentingHubPage() {
     id: "tomorrow-forecast",
     alwaysCurrent: true,
     render: () => {
-      return <HubSection id="tomorrow-forecast" icon={<Moon className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
+      return <TodayForYouPremiumSection id="tomorrow-forecast" title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")}>
           <FuturePredictor childId={effectiveChild.id} />
-        </HubSection>;
+        </TodayForYouPremiumSection>;
     }
   },
   // ── Amy tutors (learning routes) ─────────────────────────────────────
@@ -1176,13 +1160,11 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <HubLaunchCard
+        <LearningZoneLaunchCard
+          cardId="smart-math-tricks"
           href="/smart-math-tricks"
           title={t("parent_hub.web_tiles.smart-math-tricks.title")}
           description={t("parent_hub.web_tiles.smart-math-tricks.description")}
-          icon={<Sparkles className="h-5 w-5 text-white" />}
-          accentClass="bg-gradient-to-br from-orange-400 to-amber-500"
-          cardClass="bg-gradient-to-br from-orange-400/30 to-amber-500/15 hover:shadow-[0_10px_36px_-10px_rgba(251,146,60,0.45)]"
           previewBadge="Explore Free"
           testId="smart-math-tricks-launch-card"
           sectionId="smart-math-tricks"
@@ -1197,13 +1179,11 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <HubLaunchCard
+        <LearningZoneLaunchCard
+          cardId="abacus"
           href="/abacus"
           title={t("pages.parenting_hub.abacus_pro_zone")}
           description="Learn the soroban — beads, brain & speed math"
-          icon={<Sparkles className="h-5 w-5 text-white" />}
-          accentClass="bg-gradient-to-br from-teal-400 to-cyan-500"
-          cardClass="bg-gradient-to-br from-teal-400/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(45,212,191,0.45)]"
           previewBadge="Preview Available"
           testId="abacus-launch-card"
           sectionId="abacus"
@@ -1219,13 +1199,10 @@ function ParentingHubPage() {
       const healthLabPreview = isHealthLabPreviewAge(totalAgeMonths);
       const card = (
         <FeatureGate reason="hub_journey" locked={isHubLocked("hub_health_lab")} journeySoft={healthZoneJourneySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
+          <HealthZoneLaunchCard
             href="/health-lab"
             title={t("parent_hub.web_tiles.health-lab.title")}
             description={t("parent_hub.web_tiles.health-lab.description")}
-            icon={<FlaskConical className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-violet-500 to-cyan-500"
-            cardClass="bg-gradient-to-br from-violet-500/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(34,211,238,0.45)]"
             tryFree={tryFreeFor("hub_health_lab")}
             testId="health-lab-launch-card"
             sectionId="health-lab"
@@ -1251,18 +1228,22 @@ function ParentingHubPage() {
     id: "amy-ai",
     alwaysCurrent: true,
     render: () => {
-      return <HubSection id="amy-ai" highlighted icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
+      return <TodayForYouPremiumSection id="amy-ai" highlighted title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")}>
           <AmyAISuggestionsSection />
-        </HubSection>;
+        </TodayForYouPremiumSection>;
     }
   }, {
     id: "generate-routine",
     alwaysCurrent: true,
     render: () => {
       return (
-        <RoutineLaunchCard
+        <TodayForYouLaunchCard
+          cardId="generate-routine"
+          href="/routines/generate"
           title={t("parent_hub.web_tiles.generate-routine.title")}
           description={t("parent_hub.web_tiles.generate-routine.description")}
+          testId="routine-launch-card"
+          sectionId="generate-routine"
         />
       );
     }
@@ -1278,13 +1259,10 @@ function ParentingHubPage() {
           childName={effectiveChild.name}
           isInfant={isInfant}
         >
-          <HubSection
+          <HealthZonePremiumSection
             id="nutrition"
-            icon={<Salad className="h-5 w-5 text-white" />}
             title={t("parent_hub.web_tiles.nutrition.title")}
             description={t("parent_hub.web_tiles.nutrition.description")}
-            accentClass="bg-gradient-to-br from-emerald-400 to-teal-500"
-            cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(16,185,129,0.14)100%)"
             tryFree={tryFreeFor("hub_nutrition")}
             preview={t("parent_hub.web_tiles.nutrition.preview")}
             onOpen={() => markHubUsed("hub_nutrition")}
@@ -1295,7 +1273,7 @@ function ParentingHubPage() {
               isPremium={hubUsage.isPremium}
               onOpenHub={() => markHubUsed("hub_nutrition")}
             />
-          </HubSection>
+          </HealthZonePremiumSection>
         </FeatureGate>
       );
     }
@@ -1304,9 +1282,9 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_articles")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} preview={articlePreview} onOpen={() => markHubUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
+          <ParentSupportPremiumSection id="articles" title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} tryFree={tryFreeFor("hub_articles")} preview={articlePreview} onOpen={() => markHubUsed("hub_articles")}>
             <HubLazyContent><ParentingArticles childAgeMonths={totalAgeMonths} compact /></HubLazyContent>
-          </HubSection>
+          </ParentSupportPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1315,9 +1293,9 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_tips")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="daily-tips" icon={<Lightbulb className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => markHubUsed("hub_tips")}> {/* audit-ok: brand tile accent gradient */}
+          <TodayForYouPremiumSection id="daily-tips" title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} tryFree={tryFreeFor("hub_tips")} onOpen={() => markHubUsed("hub_tips")}>
             <HubLazyContent><DailyTips ageGroup={ageGroup!} childName={effectiveChild.name} /></HubLazyContent>
-          </HubSection>
+          </TodayForYouPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1325,9 +1303,9 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_emotional")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} preview={moodHighlight ? t("parent_hub.support.emotional_mood_preview") : undefined} onOpen={() => markHubUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
+          <ParentSupportPremiumSection id="emotional" title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} tryFree={tryFreeFor("hub_emotional")} preview={moodHighlight ? t("parent_hub.support.emotional_mood_preview") : undefined} onOpen={() => markHubUsed("hub_emotional")}>
             <EmotionalSupportSection cardOrder={emotionalCardOrder} moodHighlight={moodHighlight} />
-          </HubSection>
+          </ParentSupportPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1338,16 +1316,13 @@ function ParentingHubPage() {
       if (!showTips) return null;
       const tipsAgeGroup: AgeGroup = hubSurface.current === "previous" ? "infant" : ageGroup!;
       return (
-        <HubSection
+        <ParentSupportPremiumSection
           id="new-parent-tips"
-          icon={<Baby className="h-5 w-5 text-white" />}
           title={t("parent_hub.web_tiles.new-parent-tips.title")}
           description={t("parent_hub.web_tiles.new-parent-tips.description")}
-          accentClass="bg-gradient-to-br from-rose-300 to-pink-400"
-          cardClass="linear-gradient(135deg,rgba(253,164,175,0.30)0%,rgba(244,114,182,0.14)100%)"
         >
           <NewParentTipsSection ageGroup={tipsAgeGroup} />
-        </HubSection>
+        </ParentSupportPremiumSection>
       );
     }
   }, {
@@ -1356,9 +1331,9 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="activities" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}> {/* audit-ok: brand tile accent gradient */}
+          <CreativityPremiumSection id="activities" title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}>
             <ActivitiesSection ageGroup={ageGroup!} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   },
@@ -1368,11 +1343,11 @@ function ParentingHubPage() {
     render: () => {
       if (totalAgeMonths < 24 || totalAgeMonths >= 96) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="origami-studio" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.origami-studio.title")} description={t("parent_hub.web_tiles.origami-studio.description")} accentClass="bg-gradient-to-br from-fuchsia-400 via-violet-500 to-cyan-500" cardClass="linear-gradient(135deg,rgba(217,70,239,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}> {/* audit-ok: premium origami studio accent gradient */}
+          <CreativityPremiumSection id="origami-studio" title={t("parent_hub.web_tiles.origami-studio.title")} description={t("parent_hub.web_tiles.origami-studio.description")} tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}>
             <Suspense fallback={<div className="rounded-3xl border border-white/10 bg-slate-950/50 p-4 text-sm font-bold text-white/70">{t("parent_hub.shell.loading_origami_studio")}</div>}>
               <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} childId={effectiveChild.id} />
             </Suspense>
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   },
@@ -1383,13 +1358,10 @@ function ParentingHubPage() {
       const gamingHubPreview = isGamingHubPreviewAge(totalAgeMonths);
       const card = (
         <FeatureGate reason="hub_locked" locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
+          <GamingHubLaunchCard
             href="/games"
             title={t("parent_hub.web_tiles.gaming-rewards.title")}
             description={t("parent_hub.web_tiles.gaming-rewards.description")}
-            icon={<Gamepad2 className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-violet-500 to-purple-600"
-            cardClass="bg-gradient-to-br from-violet-500/30 to-purple-600/15 hover:shadow-[0_10px_36px_-10px_rgba(139,92,246,0.45)]"
             tryFree={tryFreeFor("hub_gaming_rewards")}
             testId="gaming-rewards-launch-card"
             sectionId="gaming-rewards"
@@ -1417,9 +1389,9 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_art_craft")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(239,68,68,0.14)100%)" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => markHubUsed("hub_art_craft")}> {/* audit-ok: brand tile accent gradient */}
+          <CreativityPremiumSection id="art-craft" title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} tryFree={tryFreeFor("hub_art_craft")} onOpen={() => markHubUsed("hub_art_craft")}>
             <HubLazyContent><ArtCraftReels /></HubLazyContent>
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   },
@@ -1428,9 +1400,9 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_worksheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="worksheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.tiles.worksheets.title")} description={t("parent_hub.tiles.worksheets.desc")} accentClass="bg-gradient-to-br from-sky-400 to-indigo-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_worksheets")} onOpen={() => markHubUsed("hub_worksheets")}> {/* audit-ok: brand tile accent gradient */}
+          <CreativityPremiumSection id="worksheets" title={t("parent_hub.tiles.worksheets.title")} description={t("parent_hub.tiles.worksheets.desc")} tryFree={tryFreeFor("hub_worksheets")} onOpen={() => markHubUsed("hub_worksheets")}>
             <HubLazyContent><PrintableWorksheets childAgeMonths={totalAgeMonths} childId={effectiveChild.id} /></HubLazyContent>
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   },
@@ -1440,9 +1412,9 @@ function ParentingHubPage() {
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_story_hub")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-600" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => markHubUsed("hub_story_hub")}> {/* audit-ok: brand tile accent gradient */}
+          <StoriesPremiumSection id="story-hub" title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} tryFree={tryFreeFor("hub_story_hub")} onOpen={() => markHubUsed("hub_story_hub")}>
             <HubLazyContent><StoryHub childId={effectiveChild.id} childName={effectiveChild.name} /></HubLazyContent>
-          </HubSection>
+          </StoriesPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1453,13 +1425,11 @@ function ParentingHubPage() {
       return (
         <>
           {isPhonicsModuleAvailable() ? (
-          <HubLaunchCard
+          <LearningZoneLaunchCard
+            cardId="phonics"
             href="/phonics"
             title={t("parent_hub.web_tiles.phonics.title")}
             description={t("parent_hub.web_tiles.phonics.description")}
-            icon={<AudioLines className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-sky-400 to-blue-500"
-            cardClass="bg-gradient-to-br from-sky-400/30 to-blue-500/15 hover:shadow-[0_10px_36px_-10px_rgba(56,189,248,0.45)]"
             previewBadge="Preview Available"
             testId="phonics-launch-card"
             sectionId="phonics"
@@ -1476,13 +1446,13 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_ptm_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="ptm-prep" highlighted={ptmSeason} icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => markHubUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
+          <ParentSupportPremiumSection id="ptm-prep" highlighted={ptmSeason} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => markHubUsed("hub_ptm_prep")}>
             <HubLazyContent><PtmPrepAssistant child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
             age: effectiveChild.age
           }} /></HubLazyContent>
-          </HubSection>
+          </ParentSupportPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1491,13 +1461,11 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <HubLaunchCard
+        <LearningZoneLaunchCard
+          cardId="smart-study"
           href="/study"
           title={t("parent_hub.web_tiles.smart-study.title")}
           description={t("parent_hub.web_tiles.smart-study.description")}
-          icon={<GraduationCap className="h-5 w-5 text-white" />}
-          accentClass="bg-gradient-to-br from-fuchsia-500 to-violet-600"
-          cardClass="bg-gradient-to-br from-fuchsia-500/30 to-violet-600/15 hover:shadow-[0_10px_36px_-10px_rgba(192,38,211,0.45)]"
           previewBadge="Premium Experience"
           testId="smart-study-launch-card"
           sectionId="smart-study"
@@ -1512,13 +1480,11 @@ function ParentingHubPage() {
       if (!shouldRenderHubTileContent("spelling-mastery", totalAgeMonths, isTwoPlus)) return null;
       return (
         <FeatureGate reason="hub_locked" locked={isHubLocked("hub_spelling_mastery")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
+          <LearningZoneLaunchCard
+            cardId="spelling-mastery"
             href="/spelling"
             title={t("parent_hub.web_tiles.spelling-mastery.title")}
             description={t("parent_hub.web_tiles.spelling-mastery.description")}
-            icon={<GraduationCap className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-green-400 to-teal-500"
-            cardClass="bg-gradient-to-br from-green-400/30 to-teal-500/15 hover:shadow-[0_10px_36px_-10px_rgba(74,222,128,0.45)]"
             tryFree={tryFreeFor("hub_spelling_mastery")}
             testId="spelling-mastery-launch-card"
             sectionId="spelling-mastery"
@@ -1533,13 +1499,11 @@ function ParentingHubPage() {
       if (!shouldRenderHubTileContent("olympiad", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
         <FeatureGate reason="hub_locked" locked={isHubLocked("hub_olympiad")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubLaunchCard
+          <LearningZoneLaunchCard
+            cardId="olympiad"
             href="/olympiad"
             title={t("parent_hub.web_tiles.olympiad.title")}
             description={t("parent_hub.web_tiles.olympiad.description")}
-            icon={<Trophy className="h-5 w-5 text-white" />}
-            accentClass="bg-gradient-to-br from-yellow-400 to-amber-500"
-            cardClass="bg-gradient-to-br from-yellow-400/30 to-amber-500/15 hover:shadow-[0_10px_36px_-10px_rgba(250,204,21,0.45)]"
             tryFree={tryFreeFor("hub_olympiad")}
             testId="olympiad-launch-card"
             sectionId="olympiad"
@@ -1553,13 +1517,13 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("life-skills", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_life_skills")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} preview={lifeSkillPreview ? t("parent_hub.support.life_skill_preview", { skill: lifeSkillPreview }) : undefined} onOpen={() => markHubUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
+          <ParentSupportPremiumSection id="life-skills" title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} tryFree={tryFreeFor("hub_life_skills")} preview={lifeSkillPreview ? t("parent_hub.support.life_skill_preview", { skill: lifeSkillPreview }) : undefined} onOpen={() => markHubUsed("hub_life_skills")}>
             <HubLazyContent><LifeSkillsZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
             age: effectiveChild.age
           }} /></HubLazyContent>
-          </HubSection>
+          </ParentSupportPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1572,9 +1536,9 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("coloring-books", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_coloring_books")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(251,113,133,0.14)100%)" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => markHubUsed("hub_coloring_books")}> {/* audit-ok: brand tile accent gradient */}
+          <CreativityPremiumSection id="coloring-books" title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => markHubUsed("hub_coloring_books")}>
             <HubLazyContent><ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} /></HubLazyContent>
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1587,9 +1551,9 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("fun-sheets", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_fun_sheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" cardClass="linear-gradient(135deg,rgba(163,230,53,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => markHubUsed("hub_fun_sheets")}> {/* audit-ok: brand tile accent gradient */}
+          <CreativityPremiumSection id="fun-sheets" title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => markHubUsed("hub_fun_sheets")}>
             <HubLazyContent><FunSheets childId={effectiveChild.id} childName={effectiveChild.name} /></HubLazyContent>
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1603,13 +1567,10 @@ function ParentingHubPage() {
         childName={effectiveChild.name}
         isInfant={isInfant}
       >
-        <HubLaunchCard
+        <CreativityLaunchCard
           href="/answer-to-kids-how"
           title={t("parent_hub.web_tiles.answer-to-kids-how.title")}
           description={t("parent_hub.web_tiles.answer-to-kids-how.description")}
-          icon={<BookOpen className="h-5 w-5 text-white" />}
-          accentClass="bg-gradient-to-br from-amber-400 to-orange-500"
-          cardClass="bg-gradient-to-br from-amber-400/30 to-orange-500/15 hover:shadow-[0_10px_36px_-10px_rgba(251,191,36,0.45)]"
           tryFree={tryFreeFor("hub_answer_to_kids_how")}
           testId="answer-to-kids-how-launch-card"
           sectionId="answer-to-kids-how"
@@ -1623,9 +1584,9 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("event-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_event_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(249,115,22,0.14)100%)" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => markHubUsed("hub_event_prep")}> {/* audit-ok: brand tile accent gradient */}
+          <CreativityPremiumSection id="event-prep" title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} tryFree={tryFreeFor("hub_event_prep")} onOpen={() => markHubUsed("hub_event_prep")}>
             <HubLazyContent><EventPrepCard /></HubLazyContent>
-          </HubSection>
+          </CreativityPremiumSection>
         </FeatureGate>;
     }
   }, {
@@ -1635,13 +1596,11 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("talking-amy", totalAgeMonths, isTwoPlus)) return null;
       return (
-        <HubLaunchCard
+        <StoriesLaunchCard
+          cardId="talking-amy"
           href="/talking-amy"
           title={t("parent_hub.web_tiles.talking-amy.title")}
           description={t("parent_hub.web_tiles.talking-amy.description")}
-          icon={<Mic className="h-5 w-5 text-white" />}
-          accentClass="bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500"
-          cardClass="bg-gradient-to-br from-amber-400/30 via-orange-500/18 to-rose-500/12 hover:shadow-[0_10px_36px_-10px_rgba(251,146,60,0.45)]"
           testId="talking-amy-launch-card"
           sectionId="talking-amy"
         />
@@ -1657,7 +1616,7 @@ function ParentingHubPage() {
       const speechCoachPreview = totalAgeMonths < 24;
       const content = (
         <FeatureGate reason="hub_locked" locked={isHubLocked("hub_speech")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="speech-coach" icon={<MessageCircleHeart className="h-5 w-5 text-white" />} title={t("screens.speech_coach.hub_tile.title")} description={t("screens.speech_coach.hub_tile.description")} accentClass="bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_speech")} onOpen={() => markHubUsed("hub_speech")}>  {/* audit-ok: intentional sky→indigo accent gradient for Speech Coach tile */}
+          <StoriesPremiumSection id="speech-coach" title={t("screens.speech_coach.hub_tile.title")} description={t("screens.speech_coach.hub_tile.description")} tryFree={tryFreeFor("hub_speech")} onOpen={() => markHubUsed("hub_speech")}>
             {speechCoachPreview ? (
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">
@@ -1688,7 +1647,7 @@ function ParentingHubPage() {
                 </AppLink>
               </div>
             )}
-          </HubSection>
+          </StoriesPremiumSection>
         </FeatureGate>
       );
 
@@ -1721,7 +1680,7 @@ function ParentingHubPage() {
         childName={effectiveChild.name}
         isInfant={isInfant}
       >
-        <DiscoveryWorldsHubLaunchCard
+        <StoriesDiscoveryLaunchCard
           childId={effectiveChild.id}
           title={t("parent_hub.web_tiles.discovery-worlds.title")}
           description={t("parent_hub.web_tiles.discovery-worlds.description")}
@@ -1912,6 +1871,151 @@ function ParentingHubPage() {
               }
               const isOpen = expandedGroups.has(group.key);
               const gs = getHubGroupStyle(group.key);
+
+              if (group.key === "today") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <TodayForYouGroupHeader
+                      title={t(group.i18n)}
+                      subtitle={t("parent_hub.today_for_you_cards.section.subtitle")}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        {todayTiles.map(s => {
+                          const node = renderHubSection(s);
+                          return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              if (group.key === "stories") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <StoriesGroupHeader
+                      title={t(group.i18n)}
+                      subtitle={t("parent_hub.stories_cards.section.subtitle")}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                          {groupGrid.map(s => {
+                            const node = renderHubSection(s);
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              if (group.key === "support") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <ParentSupportGroupHeader
+                      title={t(group.i18n)}
+                      subtitle={t("parent_hub.parent_support_cards.section.subtitle")}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        {ptmSeason ? (
+                          <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
+                            {t("parent_hub.support.ptm_season_banner")}
+                          </div>
+                        ) : null}
+                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                          {groupGrid.map(s => {
+                            const node = renderHubSection(s);
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              if (group.key === "creativity") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <CreativityGroupHeader
+                      title={t(group.i18n)}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div
+                        className={cn(
+                          "space-y-3 animate-in fade-in slide-in-from-top-1 duration-200",
+                        )}
+                      >
+                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                          {groupGrid.map(s => {
+                            const node = renderHubSection(s);
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              if (group.key === "health") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <HealthZoneGroupHeader
+                      title={t(group.i18n)}
+                      subtitle={t("parent_hub.section_groups.health_subtitle")}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="grid grid-cols-1 gap-3 items-stretch lg:grid-cols-2">
+                          {groupGrid.map(s => {
+                            const node = renderHubSection(s);
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              if (group.key === "parent") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <GamingHubGroupHeader
+                      title={t(group.i18n)}
+                      subtitle={t("parent_hub.section_groups.gaming_subtitle")}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                          {groupGrid.map(s => {
+                            const node = renderHubSection(s);
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={group.key}
@@ -1966,10 +2070,7 @@ function ParentingHubPage() {
                         </div>
                       ) : null}
                       {isToday ? (
-                        todayTiles.map(s => {
-                          const node = renderHubSection(s);
-                          return node ? <div key={s.id}>{node}</div> : null;
-                        })
+                        null
                       ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
                           {groupGrid.map(s => {

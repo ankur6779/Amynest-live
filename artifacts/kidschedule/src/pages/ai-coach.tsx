@@ -19,6 +19,7 @@ import {
   AmyCoachGoalsShell,
   AmyCoachSearchInput,
 } from "@/components/amy-coach/coach-keyboard-shell";
+import { AmyAudioLessonsCard } from "@/components/amy-coach/amy-audio-lessons-card";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
@@ -2297,36 +2298,12 @@ export default function AICoachPage() {
           </button>
         )}
 
-        <button
-          data-on-dark
+        <AmyAudioLessonsCard
           onClick={() => {
             const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
             setLocation(`/audio-lessons${q}`);
           }}
-          className="relative flex w-full items-center gap-4 overflow-hidden rounded-[18px] p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.98]"
-          style={{
-            background: AGE_TILE_META[0]!.gradient,
-            border: COACH_TILE_BORDER,
-            boxShadow: "0 0 24px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
-          }}
-        >
-          <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(255,255,255,0.04)" }} />
-          <div
-            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-2xl"
-            style={{ background: "rgba(255,255,255,0.12)" }}
-          >
-            🎙️
-          </div>
-          <div className="relative min-w-0 flex-1">
-            <p className="font-quicksand text-[15px] font-bold leading-tight text-white">
-              {t("pages.ai_coach.amy_audio_lessons")}
-            </p>
-            <p className="mt-1 text-[12px] leading-snug" style={{ color: "rgba(199,192,232,0.9)" }}>
-              {t("pages.ai_coach.hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e")}
-            </p>
-          </div>
-          <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="relative shrink-0" />
-        </button>
+        />
 
         {forYouCategory && (
           <section>

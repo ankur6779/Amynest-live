@@ -3623,7 +3623,185 @@
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
       "health": "Health Zone",
-      "support": "Parent Support"
+      "support": "Parent Support",
+      "health_subtitle": "Eat well, move more & build healthy habits",
+      "gaming_subtitle": "Learn, play, earn & grow every day"
+    },
+    "learning_zone_cards": {
+      "smart_math_tricks": {
+        "chip_1": "Quick Tricks",
+        "chip_2": "Brain Boost"
+      },
+      "abacus": {
+        "chip_1": "Mental Math",
+        "chip_2": "Speed"
+      },
+      "phonics": {
+        "chip_1": "Sounds",
+        "chip_2": "Read Better"
+      },
+      "smart_study": {
+        "chip_1": "All Subjects",
+        "chip_2": "Practice + Audio"
+      },
+      "spelling_mastery": {
+        "chip_1": "Dictation",
+        "chip_2": "Compete"
+      },
+      "olympiad": {
+        "chip_1": "Mock Tests",
+        "chip_2": "Leaderboards"
+      }
+    },
+    "creativity_cards": {
+      "section": {
+        "chip_1": "Create",
+        "chip_2": "Play"
+      },
+      "activities": {
+        "chip_1": "Games",
+        "chip_2": "Skills"
+      },
+      "origami_studio": {
+        "chip_1": "Easy",
+        "chip_2": "Creative"
+      },
+      "art_craft": {
+        "chip_1": "DIY",
+        "chip_2": "Tutorials"
+      },
+      "worksheets": {
+        "chip_1": "Math",
+        "chip_2": "Tracing"
+      },
+      "coloring_books": {
+        "chip_1": "Fun",
+        "chip_2": "Relaxing"
+      },
+      "fun_sheets": {
+        "chip_1": "Activities",
+        "chip_2": "Puzzle"
+      },
+      "curiosity_library": {
+        "chip_1": "Explore",
+        "chip_2": "Discover"
+      },
+      "event_prep": {
+        "chip_1": "Fancy Dress",
+        "chip_2": "Speech"
+      }
+    },
+    "health_zone_cards": {
+      "section": {
+        "chip_1": "Wellness",
+        "chip_2": "Habits"
+      },
+      "nutrition": {
+        "chip_1": "Healthy Meals",
+        "chip_2": "Nutrition",
+        "chip_3": "Family",
+        "who_badge": "WHO-backed guides · all ages"
+      },
+      "health_lab": {
+        "chip_1": "Move",
+        "chip_2": "Breathe",
+        "chip_3": "Discover"
+      }
+    },
+    "gaming_hub_cards": {
+      "section": {
+        "chip_1": "Play",
+        "chip_2": "Earn"
+      },
+      "gaming_hub": {
+        "chip_1": "Learn",
+        "chip_2": "Play",
+        "chip_3": "Earn",
+        "chip_4": "Rewards"
+      }
+    },
+    "today_for_you_cards": {
+      "section": {
+        "subtitle": "Personalised AI recommendations for today.",
+        "chip_1": "AI Ready",
+        "chip_2": "For You"
+      },
+      "amy_ai": {
+        "chip_1": "AI Chat",
+        "chip_2": "Smart Advice"
+      },
+      "daily_tips": {
+        "chip_1": "Daily Pick",
+        "chip_2": "Easy To Apply"
+      },
+      "generate_routine": {
+        "chip_1": "Personalised",
+        "chip_2": "Smart Plan"
+      },
+      "tomorrow_forecast": {
+        "chip_1": "Energy",
+        "chip_2": "Sleep"
+      },
+      "command_center": {
+        "chip_1": "Insights",
+        "chip_2": "Progress",
+        "streak": "Family Streak · {{count}} days"
+      }
+    },
+    "parent_support_cards": {
+      "section": {
+        "subtitle": "Guidance, tools & support for every parenting stage.",
+        "chip_1": "Care",
+        "chip_2": "Guidance"
+      },
+      "articles": {
+        "chip_1": "Research Based",
+        "chip_2": "Age Matched"
+      },
+      "emotional": {
+        "chip_1": "Listen",
+        "chip_2": "Heal"
+      },
+      "life_skills": {
+        "chip_1": "Daily Mission",
+        "chip_2": "Confidence"
+      },
+      "ptm_prep": {
+        "chip_1": "Notes",
+        "chip_2": "Action Plan"
+      },
+      "new_parent_tips": {
+        "chip_1": "Newborn",
+        "chip_2": "Gentle Tips"
+      }
+    },
+    "stories_cards": {
+      "section": {
+        "subtitle": "Listen, speak, imagine & express",
+        "chip_1": "Listen",
+        "chip_2": "Imagine"
+      },
+      "story_hub": {
+        "chip_1": "Bedtime",
+        "chip_2": "Moral Stories"
+      },
+      "talking_amy": {
+        "chip_1": "5 Voices",
+        "chip_2": "AI Chat"
+      },
+      "speech_coach": {
+        "chip_1": "Pronunciation",
+        "chip_2": "Confidence"
+      },
+      "discovery_worlds": {
+        "chip_1": "Animals",
+        "chip_2": "Vehicles",
+        "progress_label": "Discovery progress",
+        "worlds": "Worlds",
+        "stickers": "Stickers",
+        "stars": "Stars",
+        "streak": "{{count}} day learning streak"
+      }
     },
     "quick_actions": {
       "ask_amy": "Ask Amy",
@@ -5034,6 +5212,8 @@
       "search_all_goals": "Search all goals…",
       "amy_audio_lessons": "Amy Audio Lessons",
       "hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e": "Hands full? Listen to age-curated parenting lessons (3–5 min each).",
+      "audio_lessons_tag_audio": "Audio",
+      "audio_lessons_tag_age_curated": "Age Curated",
       "goals": "goals →",
       "pick_child_age": "How old is your child?",
       "pick_child_age_sub": "We'll show the most relevant topics for this age.",

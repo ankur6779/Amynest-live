@@ -92,6 +92,65 @@
   .landing-scale-in, .landing-float { animation: none !important; }
 }
 
+/* ── Amy Audio Lessons premium card (coach goals) ───────────────── */
+@keyframes amyAudioNoteFloat {
+  0%, 100% { transform: translateY(0) rotate(-6deg); opacity: 0.85; }
+  50%       { transform: translateY(-6px) rotate(4deg); opacity: 1; }
+}
+@keyframes amyAudioWaveBar {
+  0%, 100% { transform: scaleY(0.55); opacity: 0.5; }
+  50%       { transform: scaleY(1); opacity: 0.95; }
+}
+@keyframes amyAudioSparkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50%       { opacity: 1; transform: scale(1.15); }
+}
+@keyframes amyAudioHeadphonesGlow {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%       { opacity: 0.85; transform: scale(1.12); }
+}
+.amy-audio-note-float { animation: amyAudioNoteFloat 3.8s ease-in-out infinite; }
+.amy-audio-wave-bar {
+  transform-origin: bottom;
+  animation: amyAudioWaveBar 1.4s ease-in-out infinite;
+}
+.amy-audio-sparkle { animation: amyAudioSparkle 2.6s ease-in-out infinite; }
+.amy-audio-headphones-glow { animation: amyAudioHeadphonesGlow 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .amy-audio-note-float,
+  .amy-audio-wave-bar,
+  .amy-audio-sparkle,
+  .amy-audio-headphones-glow { animation: none !important; }
+}
+
+/* ── Learning Zone premium cards (Parent Hub) ───────────────────── */
+@keyframes lzCharIdle {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes lzParticleFloat {
+  0%, 100% { transform: translateY(0) rotate(-4deg); opacity: 0.7; }
+  50%       { transform: translateY(-7px) rotate(3deg); opacity: 1; }
+}
+@keyframes lzSparkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50%       { opacity: 1; transform: scale(1.12); }
+}
+@keyframes lzCtaRipple {
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.35); opacity: 0.6; }
+  100% { box-shadow: 0 0 0 12px rgba(255,255,255,0); opacity: 0; }
+}
+.lz-char-idle { animation: lzCharIdle 4.8s ease-in-out infinite; }
+.lz-particle-float { animation: lzParticleFloat 4.2s ease-in-out infinite; }
+.lz-sparkle { animation: lzSparkle 2.8s ease-in-out infinite; }
+.lz-cta-ripple { animation: lzCtaRipple 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .lz-char-idle,
+  .lz-particle-float,
+  .lz-sparkle,
+  .lz-cta-ripple { animation: none !important; }
+}
+
 /* Olympiad quiz wrong-answer shake */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
