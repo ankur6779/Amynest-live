@@ -16,13 +16,13 @@ export const GAMING_HUB_SECTION_HEADER_VISUAL: HubPremiumCardVisual = {
   iconSrc: `${BASE}/section-header-icon.png`,
   heroSrc: `${BASE}/section-header-hero.png`,
   surfaceGradient:
-    "linear-gradient(135deg, rgba(88,28,135,0.62) 0%, rgba(109,40,217,0.54) 45%, rgba(192,38,211,0.46) 100%)",
+    "linear-gradient(135deg, rgba(88,28,135,0.62) 0%, rgba(109,40,217,0.54) 45%, rgba(34,197,94,0.3) 100%)",
   ambientGlow:
-    "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(168,85,247,0.4), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(217,70,239,0.32), transparent 55%)",
+    "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(168,85,247,0.4), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(34,197,94,0.26), transparent 55%)",
   borderHover: "group-hover:border-violet-300/35",
   chipBorder: "border-violet-200/15",
-  ctaGradient: "from-violet-400 via-purple-500 to-fuchsia-500",
-  ctaShadow: "shadow-[0_0_20px_rgba(139,92,246,0.45)] group-hover:shadow-[0_0_28px_rgba(168,85,247,0.55)]",
+  ctaGradient: "from-violet-400 via-purple-500 to-lime-400",
+  ctaShadow: "shadow-[0_0_20px_rgba(139,92,246,0.45)] group-hover:shadow-[0_0_28px_rgba(74,222,128,0.5)]",
   glyphColor: "text-violet-100/80",
   floatingGlyphs: ["★", "XP", "★"],
   chips: [
@@ -36,13 +36,13 @@ export const GAMING_HUB_CARD_VISUALS: Record<Exclude<GamingHubCardId, "section-h
     iconSrc: `${BASE}/gaming-hub-icon.png`,
     heroSrc: `${BASE}/gaming-hub-hero.png`,
     surfaceGradient:
-      "linear-gradient(135deg, rgba(88,28,135,0.58) 0%, rgba(124,58,237,0.5) 45%, rgba(192,38,211,0.42) 100%)",
+      "linear-gradient(135deg, rgba(88,28,135,0.58) 0%, rgba(124,58,237,0.5) 45%, rgba(74,222,128,0.32) 100%)",
     ambientGlow:
-      "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(168,85,247,0.38), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(217,70,239,0.28), transparent 55%)",
-    borderHover: "group-hover:border-fuchsia-300/35",
-    chipBorder: "border-fuchsia-200/15",
-    ctaGradient: "from-fuchsia-400 via-purple-500 to-violet-500",
-    ctaShadow: "shadow-[0_0_20px_rgba(192,38,211,0.42)] group-hover:shadow-[0_0_28px_rgba(217,70,239,0.55)]",
+      "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(168,85,247,0.38), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(74,222,128,0.26), transparent 55%)",
+    borderHover: "group-hover:border-violet-300/35",
+    chipBorder: "border-violet-200/15",
+    ctaGradient: "from-violet-400 via-purple-500 to-lime-400",
+    ctaShadow: "shadow-[0_0_20px_rgba(192,38,211,0.42)] group-hover:shadow-[0_0_28px_rgba(74,222,128,0.5)]",
     glyphColor: "text-fuchsia-100/80",
     floatingGlyphs: ["★", "XP", "1st"],
     chips: [

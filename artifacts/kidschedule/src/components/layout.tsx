@@ -1,9 +1,8 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { AppLink } from "@/components/app-link";
 import { invokePageBackHandler } from "@/lib/page-back-handler";
 import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
-import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
 import { logNavEvent } from "@/lib/navigation-log";
@@ -14,10 +13,9 @@ import {
   getUserEmail,
   getUserInitials,
 } from "@/lib/safe-user-display";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/brand-logo";
+import { PremiumDesktopSidebar } from "@/components/premium-desktop-sidebar";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
-import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -30,109 +28,7 @@ import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
-function FreeUserBadge({
-  className = ""
-}: {
-  className?: string;
-}) {
-  const {
-    t
-  } = useTranslation();
-  return <span className={`inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground ${className}`} data-testid="badge-free-user">
-      {t("components.layout.free_user")}
-    </span>;
-}
-function SmartParentBadge({
-  className = ""
-}: {
-  className?: string;
-}) {
-  const {
-    t
-  } = useTranslation();
-  return <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-primary to-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ${className}`} data-testid="badge-smart-parent">
-      <Sparkles className="h-2.5 w-2.5" />
-      {t("components.layout.smart_parent")}
-    </span>;
-}
-type NavItem = {
-  href: string;
-  labelKey: string;
-  icon: React.ComponentType<{
-    className?: string;
-  }>;
-  badge?: string;
-};
-const NAV_ITEMS: NavItem[] = [{
-  href: "/dashboard",
-  labelKey: "nav.dashboard",
-  icon: Home
-}, {
-  href: "/parenting-hub",
-  labelKey: "nav.parenting_hub",
-  icon: BookOpen
-}, {
-  href: "/amy-coach",
-  labelKey: "nav.amy_coach",
-  icon: Brain
-}, {
-  href: "/nutrition",
-  labelKey: "nav.nutrition_hub",
-  icon: Salad
-}, {
-  href: "/routines",
-  labelKey: "nav.routines",
-  icon: Calendar
-}, {
-  href: "/games",
-  labelKey: "nav.games",
-  icon: Gamepad2
-}, {
-  href: "/assistant",
-  labelKey: "nav.amy_ai",
-  icon: Bot
-}, {
-  href: "/kids-control-center",
-  labelKey: "nav.kids_control_center",
-  icon: Baby,
-  badge: "Soon 🚀"
-}, {
-  href: "/progress",
-  labelKey: "nav.progress",
-  icon: TrendingUp
-}, {
-  href: "/insights",
-  labelKey: "nav.insights",
-  icon: BarChart2
-}, {
-  href: "/behavior",
-  labelKey: "nav.behavior",
-  icon: Star
-}, {
-  href: "/recipes",
-  labelKey: "nav.my_recipes",
-  icon: ChefHat
-}, {
-  href: "/children",
-  labelKey: "nav.children",
-  icon: Users
-}, {
-  href: "/parent-profile",
-  labelKey: "nav.profile",
-  icon: UserCircle
-}, {
-  href: "/pricing",
-  labelKey: "nav.pricing",
-  icon: Sparkles
-}, {
-  href: "/referrals",
-  labelKey: "nav.referrals",
-  icon: Gift
-}, {
-  href: "/feedback",
-  labelKey: "nav.feedback",
-  icon: MessageSquarePlus
-}];
+
 export function Layout({
   children
 }: {
@@ -233,53 +129,16 @@ export function Layout({
       <main className="app-shell-main flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
         <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col md:flex-row">
         {/* Desktop Sidebar */}
-        {!isImmersiveRoute && <aside className="hidden w-64 shrink-0 flex-col border-r bg-card md:flex">
-          <div className="flex h-24 items-center justify-between border-b px-5 shadow-sm">
-            <BrandLogo size="md" showTagline={true} />
-            <AmyMascotLogo size={42} />
-          </div>
-          <div className="px-4 pt-3">
-            </div>
-          <nav className="flex flex-1 flex-col gap-1 p-4">
-            {NAV_ITEMS.map(item => {
-            const isActive = safePathStartsWith(location, item.href);
-            return <AppLink key={item.href} href={item.href} source="desktop-sidebar" data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/amy-coach" ? "amy-coach" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                  {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
-                      {item.badge}
-                    </span>}
-                </AppLink>;
-          })}
-          </nav>
-          {/* Desktop user / sign-out */}
-          <div className="border-t p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={avatarUrl} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold truncate flex items-center gap-1.5">
-                  <span className="truncate">{displayName}</span>
-                  {isPremium ? <SmartParentBadge /> : <FreeUserBadge />}
-                </span>
-                {email ? (
-                  <span className="text-xs text-muted-foreground truncate">{email}</span>
-                ) : null}
-              </div>
-            </div>
-            <button onClick={handleSignOut} data-testid="button-sign-out" className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-              <LogOut className="h-4 w-4" />
-              {t("nav.sign_out")}
-            </button>
-            <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-3 text-primary/25">
-              {t("patent_pending.footer_label")}
-            </p>
-          </div>
-        </aside>}
+        {!isImmersiveRoute && (
+          <PremiumDesktopSidebar
+            displayName={displayName}
+            email={email}
+            initials={initials}
+            avatarUrl={avatarUrl}
+            isPremium={isPremium}
+            onSignOut={handleSignOut}
+          />
+        )}
 
         <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip">
           <ScreenContainer

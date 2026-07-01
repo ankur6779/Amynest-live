@@ -56,14 +56,14 @@ export const HEALTH_ZONE_CARD_VISUALS: Record<Exclude<HealthZoneCardId, "section
     iconSrc: `${BASE}/health-lab-icon.png`,
     heroSrc: `${BASE}/health-lab-hero.png`,
     surfaceGradient:
-      "linear-gradient(135deg, rgba(67,56,202,0.58) 0%, rgba(79,70,229,0.5) 45%, rgba(99,102,241,0.42) 100%)",
+      "linear-gradient(135deg, rgba(6,95,70,0.58) 0%, rgba(5,150,105,0.5) 45%, rgba(20,184,166,0.42) 100%)",
     ambientGlow:
-      "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(129,140,248,0.35), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(99,102,241,0.28), transparent 55%)",
-    borderHover: "group-hover:border-indigo-300/35",
-    chipBorder: "border-indigo-200/15",
-    ctaGradient: "from-indigo-400 via-violet-500 to-blue-500",
-    ctaShadow: "shadow-[0_0_20px_rgba(99,102,241,0.42)] group-hover:shadow-[0_0_28px_rgba(129,140,248,0.55)]",
-    glyphColor: "text-indigo-100/80",
+      "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(52,211,153,0.35), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(45,212,191,0.28), transparent 55%)",
+    borderHover: "group-hover:border-emerald-300/35",
+    chipBorder: "border-emerald-200/15",
+    ctaGradient: "from-emerald-400 via-teal-500 to-cyan-500",
+    ctaShadow: "shadow-[0_0_20px_rgba(52,211,153,0.42)] group-hover:shadow-[0_0_28px_rgba(45,212,191,0.55)]",
+    glyphColor: "text-emerald-100/80",
     floatingGlyphs: ["♡", "☁", "✦"],
     chips: [
       { icon: Sparkles, labelKey: "parent_hub.health_zone_cards.health_lab.chip_1", defaultLabel: "Move" },
