@@ -20,6 +20,13 @@ export const HUB_EXPANDED_CONTENT_STACK = cn(
   "space-y-2.5 sm:space-y-3",
 );
 
+/** Container-query grids for hub section groups — see `.hub-group-card-grid` in index.css. */
+export const HUB_GRID_CONTAINER = "hub-grid-container";
+export const HUB_GROUP_CARD_GRID = "hub-group-card-grid";
+export const HUB_GROUP_CARD_GRID_2COL = HUB_GROUP_CARD_GRID;
+export const HUB_GROUP_CARD_GRID_DENSE = cn(HUB_GROUP_CARD_GRID, "hub-group-card-grid--dense");
+export const HUB_TODAY_LEARNING_GRID = "hub-today-learning-grid";
+
 /** Shared glass surface — all section / panel cards. */
 export const HUB_GLASS_SURFACE = cn(
   "rounded-[24px] bg-[rgba(18,28,60,0.72)] backdrop-blur-[18px]",

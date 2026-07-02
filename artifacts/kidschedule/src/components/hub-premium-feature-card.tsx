@@ -28,10 +28,6 @@ type HubPremiumFeatureCardProps = {
 
 const CHEVRON_SPRING = { type: "spring" as const, stiffness: 420, damping: 30 };
 
-/** Uniform Open CTA — identical sizing across all hub child cards. */
-const HUB_OPEN_CTA_CLASS =
-  "relative inline-flex h-11 w-[92px] shrink-0 items-center justify-center gap-1 rounded-full border border-white/30 px-3 text-[12px] font-semibold leading-none text-white bg-gradient-to-r shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-16px_rgba(8,10,28,0.92)] transition-transform duration-300";
-
 const MAX_VISIBLE_CHIPS = 2;
 
 const CHILD_SHELL_BG =
@@ -49,14 +45,14 @@ function GlassChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold text-white/92 sm:px-3 sm:text-[11px]",
+        "inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-full border px-2 py-1 text-[10px] font-semibold text-white/92",
         "bg-[linear-gradient(140deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))]",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]",
         borderClass,
       )}
     >
       <Icon className="h-3 w-3 shrink-0 opacity-90" strokeWidth={2.25} />
-      {label}
+      <span className="truncate">{label}</span>
     </span>
   );
 }
@@ -70,12 +66,7 @@ function ExpandChevron({
 }) {
   return (
     <motion.span
-      className={cn(
-        "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-        "border border-white/16 bg-white/[0.07]",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]",
-        className,
-      )}
+      className={cn("hub-expand-chevron", className)}
       animate={expanded ? { rotate: 180 } : { rotate: 0 }}
       transition={CHEVRON_SPRING}
     >
@@ -110,14 +101,14 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
     return (
       <div
         className={cn(
-          "group relative w-full overflow-visible rounded-[18px]",
+          "group relative w-full max-w-full overflow-hidden rounded-[18px]",
           "transition-[box-shadow,border-color] duration-300",
           className,
         )}
       >
         <div
           className={cn(
-            "relative flex h-[76px] items-center gap-2.5 overflow-hidden rounded-[18px] border px-3 sm:px-3.5",
+            "hub-section-shell relative flex min-h-[76px] items-center overflow-hidden rounded-[18px] border",
             "bg-[rgba(4,8,22,0.62)]",
             "transition-[box-shadow,border-color] duration-300",
             expanded
@@ -127,7 +118,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
         >
           <div
             className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]",
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] sm:h-9 sm:w-9",
               "border border-white/10 bg-white/[0.03]",
             )}
           >
@@ -141,10 +132,8 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
             />
           </div>
 
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <p className="min-w-0 flex-1 line-clamp-2 font-quicksand text-[17px] font-bold leading-[1.2] tracking-[-0.01em] text-white/88">
-              {cleanTitle}
-            </p>
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+            <p className="hub-section-title min-w-0 flex-1">{cleanTitle}</p>
             {actionMode === "expand" ? <ExpandChevron expanded={expanded} /> : null}
           </div>
         </div>
@@ -155,7 +144,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   return (
     <div
       className={cn(
-        "lz-premium-card group relative h-full w-full overflow-visible rounded-[30px]",
+        "lz-premium-card group relative h-full w-full max-w-full overflow-hidden rounded-[30px]",
         "transition-[transform,box-shadow,border-color] duration-300",
         "hover:-translate-y-[4px]",
         className,
@@ -163,13 +152,13 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
     >
       <div
         aria-hidden
-        className="lz-ambient-glow pointer-events-none absolute -inset-1 rounded-[32px]"
+        className="lz-ambient-glow pointer-events-none absolute inset-0 rounded-[30px]"
         style={{ background: visual.ambientGlow }}
       />
 
       <div
         className={cn(
-          "lz-glass-panel relative h-[128px] overflow-hidden rounded-[30px] border border-white/[0.22]",
+          "lz-glass-panel hub-child-shell relative overflow-hidden rounded-[30px] border border-white/[0.22]",
           "shadow-[0_22px_54px_-22px_rgba(5,10,26,0.92),0_0_0_1px_rgba(255,255,255,0.12)_inset,0_1px_0_rgba(255,255,255,0.2)_inset]",
           "transition-[box-shadow,border-color] duration-300",
           visual.borderHover,
@@ -185,53 +174,35 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           style={{ background: CHILD_SHELL_BG }}
         />
 
-        <div
-          className={cn(
-            "relative grid h-[128px] grid-cols-[48px_minmax(0,1fr)_92px_88px] items-start gap-x-2.5 px-4 py-3.5",
-            "sm:grid-cols-[52px_minmax(0,1fr)_92px_96px] sm:gap-x-3 sm:px-5",
-          )}
-        >
-          <div className="flex items-center justify-center self-center">
-            <div
-              className={cn(
-                "relative flex h-[46px] w-[46px] items-center justify-center rounded-[16px] sm:h-[50px] sm:w-[50px]",
-                "border border-white/30 bg-[linear-gradient(160deg,rgba(255,255,255,0.38),rgba(255,255,255,0.08)_58%,rgba(255,255,255,0.04))]",
-                "shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_30px_-16px_rgba(6,10,28,0.8)]",
-                "transition-transform duration-300 group-hover:-translate-y-[1px]",
-              )}
-            >
+        <div className="hub-child-grid relative">
+          <div className="hub-child-icon-wrap">
+            <div className="hub-child-icon-box">
               <img
                 src={visual.iconSrc}
                 alt=""
                 aria-hidden
-                className="h-[36px] w-[36px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:h-[40px] sm:w-[40px]"
+                className="hub-child-icon-img"
                 loading="lazy"
                 decoding="async"
               />
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
-            <p className="line-clamp-2 font-quicksand text-[16px] font-semibold leading-[1.2] tracking-[-0.015em] text-white">
-              {cleanTitle}
-            </p>
+          <div className="hub-child-text-col flex flex-col gap-1">
+            <p className="hub-child-title">{cleanTitle}</p>
             {(previewBadge || (tryFree && showTryFreeBadge)) ? (
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
                 {previewBadge ? (
-                  <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] sm:text-[9px]">
+                  <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] sm:px-2 sm:text-[9px]">
                     {previewBadge}
                   </span>
                 ) : null}
                 {tryFree && showTryFreeBadge ? <TryFreeBadge /> : null}
               </div>
             ) : null}
-            {description ? (
-              <p className="line-clamp-2 text-[13px] leading-[1.35] text-white/82">
-                {description}
-              </p>
-            ) : null}
+            {description ? <p className="hub-child-subtitle">{description}</p> : null}
             {showChips && visibleChips.length > 0 ? (
-              <div className="mt-0.5 grid max-w-full grid-cols-2 gap-1.5">
+              <div className="hub-child-chips">
                 {visibleChips.map((chip) => (
                   <GlassChip
                     key={chip.labelKey}
@@ -245,17 +216,22 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
             {footer}
           </div>
 
-          <div className="flex items-center justify-center self-start">
+          <div className="hub-child-action-col flex items-center justify-center self-start">
             {actionMode === "expand" ? (
               <ExpandChevron expanded={expanded} />
             ) : actionLabel ? (
               <motion.span
-                className={cn(HUB_OPEN_CTA_CLASS, visual.ctaGradient, visual.ctaShadow, "group-hover:scale-[1.03]")}
+                className={cn(
+                  "hub-open-cta bg-gradient-to-r",
+                  visual.ctaGradient,
+                  visual.ctaShadow,
+                  "group-hover:scale-[1.03]",
+                )}
                 whileHover={reducedMotion ? undefined : { scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <span className="truncate">{actionLabel}</span>
-                <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="min-w-0 truncate">{actionLabel}</span>
+                <ChevronRight className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" strokeWidth={2.5} />
                 <span
                   aria-hidden
                   className="lz-cta-ripple pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
@@ -264,7 +240,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
             ) : null}
           </div>
 
-          <div className="relative flex h-full items-end justify-center pb-1.5">
+          <div className="hub-child-hero-col">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"
@@ -277,10 +253,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
               src={visual.heroSrc}
               alt=""
               aria-hidden
-              className={cn(
-                "relative h-[92px] w-auto max-w-[88px] object-contain object-bottom drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] sm:max-w-[92px]",
-                !reducedMotion && "lz-char-idle",
-              )}
+              className={cn("hub-child-hero", !reducedMotion && "lz-char-idle")}
               loading="lazy"
               decoding="async"
             />

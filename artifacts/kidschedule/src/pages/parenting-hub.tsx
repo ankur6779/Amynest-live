@@ -133,6 +133,10 @@ import {
   HUB_SECTION_GROUP_TITLE,
   HUB_EXPANDED_CONTENT,
   HUB_EXPANDED_CONTENT_STACK,
+  HUB_GROUP_CARD_GRID_2COL,
+  HUB_GROUP_CARD_GRID_DENSE,
+  HUB_TODAY_LEARNING_GRID,
+  HUB_GRID_CONTAINER,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
@@ -1812,7 +1816,8 @@ function ParentingHubPage() {
               />
             ) : null}
             {learningProgress.unlocks ? (
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className={HUB_GRID_CONTAINER}>
+                <div className={HUB_TODAY_LEARNING_GRID}>
                 <DailyFreshnessCard
                   items={learningProgress.unlocks.todaysUnlocks}
                   isRevisionDay={learningProgress.unlocks.isRevisionDay}
@@ -1823,6 +1828,7 @@ function ParentingHubPage() {
                   childName={effectiveChild.name}
                   onVisible={trackNextSessionOpened}
                 />
+                </div>
               </div>
             ) : null}
           </HubTodayLearningPanel>
@@ -1903,7 +1909,7 @@ function ParentingHubPage() {
                       onToggle={() => toggleGroup(group.key)}
                     />
                     <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                        <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
@@ -1929,7 +1935,7 @@ function ParentingHubPage() {
                             {t("parent_hub.support.ptm_season_banner")}
                           </div>
                         ) : null}
-                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                        <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
@@ -1950,7 +1956,7 @@ function ParentingHubPage() {
                       onToggle={() => toggleGroup(group.key)}
                     />
                     <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className="grid grid-cols-1 gap-3 items-stretch lg:grid-cols-2">
+                        <div className={HUB_GROUP_CARD_GRID_DENSE}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
@@ -1970,7 +1976,7 @@ function ParentingHubPage() {
                       onToggle={() => toggleGroup(group.key)}
                     />
                     <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                        <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
@@ -1991,7 +1997,7 @@ function ParentingHubPage() {
                       onToggle={() => toggleGroup(group.key)}
                     />
                     <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className="grid grid-cols-1 gap-3 items-stretch lg:grid-cols-2">
+                        <div className={HUB_GROUP_CARD_GRID_DENSE}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
@@ -2012,7 +2018,7 @@ function ParentingHubPage() {
                       onToggle={() => toggleGroup(group.key)}
                     />
                     <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className="grid grid-cols-1 gap-3 items-stretch">
+                        <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
@@ -2023,7 +2029,7 @@ function ParentingHubPage() {
                 );
               }
 
-              // All known group keys are handled above; this defensive fallback
+              // All known group keys are handled above
               // renders any future/unknown group with a plain header. `group`
               // narrows to `never` here, so cast back to the group element type.
               const fallbackGroup = group as (typeof WEB_HUB_GROUPS)[number];
@@ -2083,7 +2089,7 @@ function ParentingHubPage() {
                       {isToday ? (
                         null
                       ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
+                        <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
