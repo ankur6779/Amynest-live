@@ -213,6 +213,8 @@ function ChildForm() {
   const [infantPrefsDirty, setInfantPrefsDirty] = useState(false);
   const [fixedActivitiesDirty, setFixedActivitiesDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const serverFixedActivitiesRef = useRef<FixedActivityDraft[]>([]);
+  const clearedFixedActivitiesForInfantRef = useRef(false);
   const childHydrationKeyRef = useRef<string | null>(null);
   const childEducationPatchKeyRef = useRef<string | null>(null);
   const legacyAgeRef = useRef<{ years: number; months: number } | null>(null);
@@ -261,6 +263,7 @@ function ChildForm() {
       babysitterId: undefined
     }
   });
+  const { dirtyFields } = form.formState;
   const [parentCountry, setParentCountry] = useState("IN");
   const [watchDob, watchEducationStage, watchScheduleKnown, travelMode, watchName, watchChildClass] =
     useWatch({
@@ -335,7 +338,13 @@ function ChildForm() {
       recordSelfHealingAction("child-form:stable-hydration-only");
       return;
     }
-    if (!isInfant) return;
+    if (!isInfant) {
+      if (clearedFixedActivitiesForInfantRef.current && !fixedActivitiesDirty) {
+        setFixedActivities(serverFixedActivitiesRef.current);
+        clearedFixedActivitiesForInfantRef.current = false;
+      }
+      return;
+    }
     const patches = infantFormNormalizationPatches(isInfant, {
       educationStage: form.getValues("educationStage"),
       scheduleKnown: form.getValues("scheduleKnown"),
@@ -346,8 +355,12 @@ function ChildForm() {
     if (patches?.scheduleKnown === false) {
       form.setValue("scheduleKnown", false, { shouldDirty: false });
     }
-    setFixedActivities((prev) => (prev.length === 0 ? prev : []));
-  }, [isInfant, watchDob, form]);
+    setFixedActivities((prev) => {
+      if (prev.length === 0) return prev;
+      clearedFixedActivitiesForInfantRef.current = true;
+      return [];
+    });
+  }, [isInfant, watchDob, form, fixedActivitiesDirty]);
   useEffect(() => {
     authFetch("/api/babysitters").then(async (r) => {
       if (!r.ok) return [];
@@ -470,7 +483,12 @@ function ChildForm() {
     setAllergyText(textPart);
     setFoodPrefInherited(!!(child as { foodPrefInherited?: boolean }).foodPrefInherited);
     setCustomizeOpen(!!(child as { foodPrefCustomized?: boolean }).foodPrefCustomized);
-    setFixedActivities(normalizeFixedActivities((child as { fixedActivities?: unknown }).fixedActivities));
+    const hydratedFixedActivities = normalizeFixedActivities(
+      (child as { fixedActivities?: unknown }).fixedActivities,
+    );
+    setFixedActivities(hydratedFixedActivities);
+    serverFixedActivitiesRef.current = hydratedFixedActivities;
+    clearedFixedActivitiesForInfantRef.current = false;
     setFeedingType((child as { feedingType?: string | null }).feedingType ?? null);
     setSleepPattern((child as { sleepPattern?: string | null }).sleepPattern ?? null);
     setPhotoDirty(false);
@@ -579,7 +597,7 @@ function ChildForm() {
       fixedActivities: !submitIsInfant && validFixedActivities.length > 0 ? validFixedActivities : null,
     };
     if (isEditing) {
-      const dirty = form.formState.dirtyFields;
+      const dirty = dirtyFields;
       const updatePayload: Partial<typeof payload> = {};
       const assignIfDirty = <K extends keyof typeof payload>(field: K, dirtyFlag?: boolean) => {
         if (dirtyFlag) updatePayload[field] = payload[field];
@@ -642,10 +660,6 @@ function ChildForm() {
       }
 
       if (Object.keys(updatePayload).length === 0) {
-        toast({
-          title: t("toasts.children.profile_updated")
-        });
-        setLocation("/children");
         return;
       }
       updateMutation.mutate({
