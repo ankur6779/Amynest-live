@@ -25,7 +25,7 @@ export function HubExpandedChildren({ open, children, className }: HubExpandedCh
               ? { duration: 0.15 }
               : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
           }
-          className={cn(className)}
+          className={cn("hub-expanded-panel", className)}
         >
           {children}
         </motion.div>

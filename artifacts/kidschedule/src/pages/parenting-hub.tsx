@@ -1876,7 +1876,7 @@ function ParentingHubPage() {
 
               if (group.key === "today") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <TodayForYouGroupHeader
                       title={t(group.i18n)}
                       subtitle={t("parent_hub.today_for_you_cards.section.subtitle")}
@@ -1895,7 +1895,7 @@ function ParentingHubPage() {
 
               if (group.key === "stories") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <StoriesGroupHeader
                       title={t(group.i18n)}
                       subtitle={t("parent_hub.stories_cards.section.subtitle")}
@@ -1916,7 +1916,7 @@ function ParentingHubPage() {
 
               if (group.key === "support") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <ParentSupportGroupHeader
                       title={t(group.i18n)}
                       subtitle={t("parent_hub.parent_support_cards.section.subtitle")}
@@ -1942,7 +1942,7 @@ function ParentingHubPage() {
 
               if (group.key === "learning") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <LearningZoneGroupHeader
                       title={t(group.i18n)}
                       subtitle={t("parent_hub.section_groups.learning_subtitle")}
@@ -1963,7 +1963,7 @@ function ParentingHubPage() {
 
               if (group.key === "creativity") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <CreativityGroupHeader
                       title={t(group.i18n)}
                       isOpen={isOpen}
@@ -1983,7 +1983,7 @@ function ParentingHubPage() {
 
               if (group.key === "health") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <HealthZoneGroupHeader
                       title={t(group.i18n)}
                       subtitle={t("parent_hub.section_groups.health_subtitle")}
@@ -2004,7 +2004,7 @@ function ParentingHubPage() {
 
               if (group.key === "parent") {
                 return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
                     <GamingHubGroupHeader
                       title={t(group.i18n)}
                       subtitle={t("parent_hub.section_groups.gaming_subtitle")}

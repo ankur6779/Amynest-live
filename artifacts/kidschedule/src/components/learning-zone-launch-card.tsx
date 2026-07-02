@@ -2,7 +2,6 @@ import { AppLink } from "@/components/app-link";
 import { LearningZonePremiumCard } from "@/components/learning-zone-premium-card";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import type { LearningZoneCardId } from "@/lib/learning-zone-card-config";
-import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
 type LearningZoneLaunchCardProps = {
@@ -32,19 +31,13 @@ export function LearningZoneLaunchCard({
   const { t } = useTranslation();
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const reducedMotion = useReducedMotion();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
   const actionLabel = discoveryPreview
     ? t("parent_hub.explore_next.cta_preview")
     : t("parent_hub.explore_next.cta_open");
 
   return (
-    <motion.div
-      initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="h-full"
-    >
+    <div className="h-full">
       <AppLink
         href={href}
         onClick={() => {
@@ -66,6 +59,6 @@ export function LearningZoneLaunchCard({
           showTryFreeBadge={!discoveryPreview}
         />
       </AppLink>
-    </motion.div>
+    </div>
   );
 }

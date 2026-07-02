@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -30,9 +30,12 @@ const CHEVRON_SPRING = { type: "spring" as const, stiffness: 420, damping: 30 };
 
 /** Uniform Open CTA — identical sizing across all hub child cards. */
 const HUB_OPEN_CTA_CLASS =
-  "relative inline-flex h-11 w-[92px] shrink-0 items-center justify-center gap-1 rounded-full border border-white/30 px-3 text-[12px] font-semibold leading-none text-white bg-gradient-to-r shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-16px_rgba(8,10,28,0.92)] backdrop-blur-2xl transition-transform duration-300 will-change-transform";
+  "relative inline-flex h-11 w-[92px] shrink-0 items-center justify-center gap-1 rounded-full border border-white/30 px-3 text-[12px] font-semibold leading-none text-white bg-gradient-to-r shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-16px_rgba(8,10,28,0.92)] transition-transform duration-300";
 
 const MAX_VISIBLE_CHIPS = 2;
+
+const CHILD_SHELL_BG =
+  "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 34%, transparent 58%), radial-gradient(ellipse 48% 76% at 0% 50%, rgba(255,255,255,0.14), transparent 58%), radial-gradient(ellipse 100% 42% at 50% 118%, rgba(255,255,255,0.14), rgba(255,255,255,0) 66%)";
 
 function GlassChip({
   icon: Icon,
@@ -47,8 +50,8 @@ function GlassChip({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold text-white/92 sm:px-3 sm:text-[11px]",
-        "bg-[linear-gradient(140deg,rgba(255,255,255,0.2),rgba(255,255,255,0.06))]",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_-12px_rgba(6,10,26,0.75)] backdrop-blur-xl",
+        "bg-[linear-gradient(140deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]",
         borderClass,
       )}
     >
@@ -69,8 +72,8 @@ function ExpandChevron({
     <motion.span
       className={cn(
         "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-        "border border-white/16 bg-white/[0.05]",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl",
+        "border border-white/16 bg-white/[0.07]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]",
         className,
       )}
       animate={expanded ? { rotate: 180 } : { rotate: 0 }}
@@ -82,7 +85,7 @@ function ExpandChevron({
 }
 
 /** Shared premium glass feature card shell (Learning Zone + Creativity). */
-export function HubPremiumFeatureCard({
+export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   visual,
   title,
   description,
@@ -115,7 +118,7 @@ export function HubPremiumFeatureCard({
         <div
           className={cn(
             "relative flex h-[76px] items-center gap-2.5 overflow-hidden rounded-[18px] border px-3 sm:px-3.5",
-            "bg-[rgba(4,8,22,0.55)] backdrop-blur-sm",
+            "bg-[rgba(4,8,22,0.62)]",
             "transition-[box-shadow,border-color] duration-300",
             expanded
               ? "border-white/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
@@ -160,21 +163,13 @@ export function HubPremiumFeatureCard({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-1 rounded-[32px] opacity-60 blur-2xl transition-opacity duration-300 group-hover:opacity-80"
+        className="lz-ambient-glow pointer-events-none absolute -inset-1 rounded-[32px]"
         style={{ background: visual.ambientGlow }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-px rounded-[30px] opacity-50"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.45), rgba(255,255,255,0.08) 42%, rgba(255,255,255,0.02) 75%)",
-        }}
       />
 
       <div
         className={cn(
-          "relative h-[128px] overflow-hidden rounded-[30px] border border-white/[0.22]",
+          "lz-glass-panel relative h-[128px] overflow-hidden rounded-[30px] border border-white/[0.22]",
           "shadow-[0_22px_54px_-22px_rgba(5,10,26,0.92),0_0_0_1px_rgba(255,255,255,0.12)_inset,0_1px_0_rgba(255,255,255,0.2)_inset]",
           "transition-[box-shadow,border-color] duration-300",
           visual.borderHover,
@@ -182,25 +177,12 @@ export function HubPremiumFeatureCard({
         )}
         style={{
           background: `linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04) 42%, rgba(255,255,255,0.08) 100%), ${visual.surfaceGradient}`,
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
         }}
       >
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 34%, transparent 58%), radial-gradient(ellipse 48% 76% at 0% 50%, rgba(255,255,255,0.14), transparent 58%), radial-gradient(ellipse 100% 42% at 50% 118%, rgba(255,255,255,0.14), rgba(255,255,255,0) 66%), radial-gradient(ellipse 120% 90% at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.18) 100%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-[1px] rounded-[29px]"
-          style={{
-            boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.24), inset 0 -18px 34px rgba(5,10,28,0.14)",
-          }}
+          style={{ background: CHILD_SHELL_BG }}
         />
 
         <div
@@ -210,36 +192,22 @@ export function HubPremiumFeatureCard({
           )}
         >
           <div className="flex items-center justify-center self-center">
-            <div className="relative">
-              <div
+            <div
+              className={cn(
+                "relative flex h-[46px] w-[46px] items-center justify-center rounded-[16px] sm:h-[50px] sm:w-[50px]",
+                "border border-white/30 bg-[linear-gradient(160deg,rgba(255,255,255,0.38),rgba(255,255,255,0.08)_58%,rgba(255,255,255,0.04))]",
+                "shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_30px_-16px_rgba(6,10,28,0.8)]",
+                "transition-transform duration-300 group-hover:-translate-y-[1px]",
+              )}
+            >
+              <img
+                src={visual.iconSrc}
+                alt=""
                 aria-hidden
-                className="absolute -inset-2 rounded-[20px] blur-md"
-                style={{
-                  background:
-                    "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.55), rgba(255,255,255,0.08) 58%, transparent 72%)",
-                }}
+                className="h-[36px] w-[36px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:h-[40px] sm:w-[40px]"
+                loading="lazy"
+                decoding="async"
               />
-              <div
-                className={cn(
-                  "relative flex h-[46px] w-[46px] items-center justify-center rounded-[16px] sm:h-[50px] sm:w-[50px]",
-                  "border border-white/30 bg-[linear-gradient(160deg,rgba(255,255,255,0.38),rgba(255,255,255,0.08)_58%,rgba(255,255,255,0.04))]",
-                  "shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-8px_18px_rgba(43,58,123,0.18),0_16px_30px_-16px_rgba(6,10,28,0.8)]",
-                  "backdrop-blur-2xl transition-transform duration-300 group-hover:-translate-y-[1px]",
-                )}
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-[1px] rounded-[15px] border border-white/18"
-                />
-                <img
-                  src={visual.iconSrc}
-                  alt=""
-                  aria-hidden
-                  className="h-[36px] w-[36px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:h-[40px] sm:w-[40px]"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
             </div>
           </div>
 
@@ -250,7 +218,7 @@ export function HubPremiumFeatureCard({
             {(previewBadge || (tryFree && showTryFreeBadge)) ? (
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 {previewBadge ? (
-                  <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-xl sm:text-[9px]">
+                  <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] sm:text-[9px]">
                     {previewBadge}
                   </span>
                 ) : null}
@@ -305,13 +273,14 @@ export function HubPremiumFeatureCard({
                   "radial-gradient(circle at 50% 80%, rgba(250,201,255,0.28) 0%, rgba(134,171,255,0.14) 38%, rgba(7,10,36,0) 70%)",
               }}
             />
-            <motion.img
+            <img
               src={visual.heroSrc}
               alt=""
               aria-hidden
-              className="relative h-[92px] w-auto max-w-[88px] object-contain object-bottom drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] sm:max-w-[92px]"
-              animate={reducedMotion ? undefined : { y: [0, -3, 0] }}
-              transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
+              className={cn(
+                "relative h-[92px] w-auto max-w-[88px] object-contain object-bottom drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] sm:max-w-[92px]",
+                !reducedMotion && "lz-char-idle",
+              )}
               loading="lazy"
               decoding="async"
             />
@@ -329,4 +298,4 @@ export function HubPremiumFeatureCard({
       </div>
     </div>
   );
-}
+});
