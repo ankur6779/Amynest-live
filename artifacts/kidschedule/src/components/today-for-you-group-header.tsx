@@ -36,8 +36,7 @@ export function TodayForYouGroupHeader({
           description={subtitle}
           actionMode="expand"
           expanded={isOpen}
-          showChips={false}
-          className="rounded-[32px] [&>div]:rounded-[32px]"
+          variant="section"
         />
       </button>
     </motion.div>

@@ -31,7 +31,7 @@ export function StoriesGroupHeader({ title, subtitle, isOpen, onToggle }: Storie
           description={subtitle}
           actionMode="expand"
           expanded={isOpen}
-          showChips={false}
+          variant="section"
         />
       </button>
     </motion.div>

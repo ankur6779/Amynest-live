@@ -30,12 +30,7 @@ export function CreativityGroupHeader({ title, isOpen, onToggle }: CreativityGro
           description=""
           actionMode="expand"
           expanded={isOpen}
-          showChips={false}
-          footer={
-            <span className="invisible mt-1 block text-[11px]" aria-hidden>
-              .
-            </span>
-          }
+          variant="section"
         />
       </button>
     </motion.div>

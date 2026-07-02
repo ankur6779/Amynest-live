@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
+import { HubExpandedChildren } from "@/components/hub-expanded-children";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
@@ -101,14 +102,13 @@ export function TodayForYouPremiumSection({
           />
         </div>
       </button>
-      {open ? (
-        <div
-          className={cn(
-            HUB_EXPANDED_CONTENT_STACK,
-            "mt-3 rounded-[24px] border border-white/[0.08] bg-[rgba(12,18,40,0.55)] backdrop-blur-md",
-            "animate-in fade-in slide-in-from-top-1 duration-200 hub-today-stack",
-          )}
-        >
+      <HubExpandedChildren
+        open={open}
+        className={cn(
+          HUB_EXPANDED_CONTENT_STACK,
+          "mt-3 rounded-[24px] border border-white/[0.08] bg-[rgba(12,18,40,0.55)] backdrop-blur-md hub-today-stack",
+        )}
+      >
           {discoveryPreview ? <InfantExplorePreviewBanner className="mb-3" /> : null}
           {previewLocked && !discoveryPreview && childName ? (
             <JourneyPreviewContent childName={childName} isInfant={isInfant}>
@@ -117,8 +117,7 @@ export function TodayForYouPremiumSection({
           ) : (
             children
           )}
-        </div>
-      ) : null}
+      </HubExpandedChildren>
     </div>
   );
 }

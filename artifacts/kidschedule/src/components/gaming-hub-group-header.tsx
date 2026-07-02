@@ -31,7 +31,7 @@ export function GamingHubGroupHeader({ title, subtitle, isOpen, onToggle }: Gami
           description={subtitle}
           actionMode="expand"
           expanded={isOpen}
-          showChips={false}
+          variant="section"
         />
       </button>
     </motion.div>

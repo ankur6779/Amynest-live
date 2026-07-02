@@ -31,7 +31,7 @@ export function HealthZoneGroupHeader({ title, subtitle, isOpen, onToggle }: Hea
           description={subtitle}
           actionMode="expand"
           expanded={isOpen}
-          showChips={false}
+          variant="section"
         />
       </button>
     </motion.div>

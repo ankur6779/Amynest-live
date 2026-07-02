@@ -20,9 +20,19 @@ type HubPremiumFeatureCardProps = {
   actionMode?: "open" | "expand";
   expanded?: boolean;
   showChips?: boolean;
+  /** Section headers are compact; child cards carry illustration + chips. */
+  variant?: "section" | "child";
   className?: string;
   footer?: ReactNode;
 };
+
+const CHEVRON_SPRING = { type: "spring" as const, stiffness: 420, damping: 30 };
+
+/** Uniform Open CTA — identical sizing across all hub child cards. */
+const HUB_OPEN_CTA_CLASS =
+  "relative inline-flex h-11 w-[92px] shrink-0 items-center justify-center gap-1 rounded-full border border-white/30 px-3 text-[12px] font-semibold leading-none text-white bg-gradient-to-r shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-16px_rgba(8,10,28,0.92)] backdrop-blur-2xl transition-transform duration-300 will-change-transform";
+
+const MAX_VISIBLE_CHIPS = 2;
 
 function GlassChip({
   icon: Icon,
@@ -39,13 +49,35 @@ function GlassChip({
         "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold text-white/92 sm:px-3 sm:text-[11px]",
         "bg-[linear-gradient(140deg,rgba(255,255,255,0.2),rgba(255,255,255,0.06))]",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_-12px_rgba(6,10,26,0.75)] backdrop-blur-xl",
-        "transition-transform duration-300 hover:-translate-y-[1px] will-change-transform",
         borderClass,
       )}
     >
       <Icon className="h-3 w-3 shrink-0 opacity-90" strokeWidth={2.25} />
       {label}
     </span>
+  );
+}
+
+function ExpandChevron({
+  expanded,
+  className,
+}: {
+  expanded: boolean;
+  className?: string;
+}) {
+  return (
+    <motion.span
+      className={cn(
+        "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+        "border border-white/16 bg-white/[0.05]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl",
+        className,
+      )}
+      animate={expanded ? { rotate: 180 } : { rotate: 0 }}
+      transition={CHEVRON_SPRING}
+    >
+      <ChevronDown className="h-[14px] w-[14px] text-white/70" strokeWidth={1.75} />
+    </motion.span>
   );
 }
 
@@ -61,17 +93,66 @@ export function HubPremiumFeatureCard({
   actionMode = "open",
   expanded = false,
   showChips = true,
+  variant = "child",
   className,
   footer,
 }: HubPremiumFeatureCardProps) {
   const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
   const cleanTitle = stripHubTileEmoji(title);
+  const isSection = variant === "section";
+  const visibleChips = visual.chips.slice(0, MAX_VISIBLE_CHIPS);
+
+  if (isSection) {
+    return (
+      <div
+        className={cn(
+          "group relative w-full overflow-visible rounded-[18px]",
+          "transition-[box-shadow,border-color] duration-300",
+          className,
+        )}
+      >
+        <div
+          className={cn(
+            "relative flex h-[76px] items-center gap-2.5 overflow-hidden rounded-[18px] border px-3 sm:px-3.5",
+            "bg-[rgba(4,8,22,0.55)] backdrop-blur-sm",
+            "transition-[box-shadow,border-color] duration-300",
+            expanded
+              ? "border-white/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+              : "border-white/[0.07]",
+          )}
+        >
+          <div
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]",
+              "border border-white/10 bg-white/[0.03]",
+            )}
+          >
+            <img
+              src={visual.iconSrc}
+              alt=""
+              aria-hidden
+              className="h-5 w-5 object-contain opacity-80"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <p className="min-w-0 flex-1 line-clamp-2 font-quicksand text-[17px] font-bold leading-[1.2] tracking-[-0.01em] text-white/88">
+              {cleanTitle}
+            </p>
+            {actionMode === "expand" ? <ExpandChevron expanded={expanded} /> : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
-        "lz-premium-card group relative w-full overflow-visible rounded-[30px]",
+        "lz-premium-card group relative h-full w-full overflow-visible rounded-[30px]",
         "transition-[transform,box-shadow,border-color] duration-300",
         "hover:-translate-y-[4px]",
         className,
@@ -79,12 +160,12 @@ export function HubPremiumFeatureCard({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-1 rounded-[32px] opacity-70 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute -inset-1 rounded-[32px] opacity-60 blur-2xl transition-opacity duration-300 group-hover:opacity-80"
         style={{ background: visual.ambientGlow }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-px rounded-[30px] opacity-60"
+        className="pointer-events-none absolute -inset-px rounded-[30px] opacity-50"
         style={{
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.45), rgba(255,255,255,0.08) 42%, rgba(255,255,255,0.02) 75%)",
@@ -93,14 +174,14 @@ export function HubPremiumFeatureCard({
 
       <div
         className={cn(
-          "relative min-h-[124px] overflow-hidden rounded-[30px] border border-white/[0.18]",
-          "shadow-[0_22px_54px_-22px_rgba(5,10,26,0.92),0_0_0_1px_rgba(255,255,255,0.1)_inset,0_1px_0_rgba(255,255,255,0.16)_inset]",
+          "relative h-[128px] overflow-hidden rounded-[30px] border border-white/[0.22]",
+          "shadow-[0_22px_54px_-22px_rgba(5,10,26,0.92),0_0_0_1px_rgba(255,255,255,0.12)_inset,0_1px_0_rgba(255,255,255,0.2)_inset]",
           "transition-[box-shadow,border-color] duration-300",
           visual.borderHover,
-          "group-hover:shadow-[0_28px_62px_-24px_rgba(5,10,26,0.95),0_0_0_1px_rgba(255,255,255,0.14)_inset,0_1px_0_rgba(255,255,255,0.22)_inset]",
+          "group-hover:shadow-[0_28px_62px_-24px_rgba(5,10,26,0.95),0_0_0_1px_rgba(255,255,255,0.16)_inset,0_1px_0_rgba(255,255,255,0.24)_inset]",
         )}
         style={{
-          background: `linear-gradient(160deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 42%, rgba(255,255,255,0.06) 100%), ${visual.surfaceGradient}`,
+          background: `linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04) 42%, rgba(255,255,255,0.08) 100%), ${visual.surfaceGradient}`,
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
         }}
@@ -110,7 +191,7 @@ export function HubPremiumFeatureCard({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.03) 34%, transparent 58%), radial-gradient(ellipse 48% 76% at 0% 50%, rgba(255,255,255,0.12), transparent 58%), radial-gradient(ellipse 100% 42% at 50% 118%, rgba(255,255,255,0.12), rgba(255,255,255,0) 66%), radial-gradient(ellipse 120% 90% at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.22) 100%)",
+              "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 34%, transparent 58%), radial-gradient(ellipse 48% 76% at 0% 50%, rgba(255,255,255,0.14), transparent 58%), radial-gradient(ellipse 100% 42% at 50% 118%, rgba(255,255,255,0.14), rgba(255,255,255,0) 66%), radial-gradient(ellipse 120% 90% at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.18) 100%)",
           }}
         />
         <div
@@ -118,12 +199,17 @@ export function HubPremiumFeatureCard({
           className="pointer-events-none absolute inset-[1px] rounded-[29px]"
           style={{
             boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -18px 34px rgba(5,10,28,0.18)",
+              "inset 0 1px 0 rgba(255,255,255,0.24), inset 0 -18px 34px rgba(5,10,28,0.14)",
           }}
         />
 
-        <div className="relative grid min-h-[124px] grid-cols-[48px_minmax(0,1fr)_96px] items-center gap-x-3 px-4 py-3.5 sm:grid-cols-[52px_minmax(0,1fr)_112px] sm:gap-x-4 sm:px-5">
-          <div className="flex h-full items-center justify-center">
+        <div
+          className={cn(
+            "relative grid h-[128px] grid-cols-[48px_minmax(0,1fr)_92px_88px] items-start gap-x-2.5 px-4 py-3.5",
+            "sm:grid-cols-[52px_minmax(0,1fr)_92px_96px] sm:gap-x-3 sm:px-5",
+          )}
+        >
+          <div className="flex items-center justify-center self-center">
             <div className="relative">
               <div
                 aria-hidden
@@ -157,93 +243,73 @@ export function HubPremiumFeatureCard({
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col justify-center gap-1.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="font-quicksand text-[16px] font-bold leading-[1.12] tracking-[-0.015em] text-white sm:text-[18px]">
-                {cleanTitle}
-              </p>
-              {previewBadge ? (
-                <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-xl sm:text-[9px]">
-                  {previewBadge}
-                </span>
-              ) : null}
-              {tryFree && showTryFreeBadge ? <TryFreeBadge /> : null}
-            </div>
+          <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
+            <p className="line-clamp-2 font-quicksand text-[16px] font-semibold leading-[1.2] tracking-[-0.015em] text-white">
+              {cleanTitle}
+            </p>
+            {(previewBadge || (tryFree && showTryFreeBadge)) ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                {previewBadge ? (
+                  <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-xl sm:text-[9px]">
+                    {previewBadge}
+                  </span>
+                ) : null}
+                {tryFree && showTryFreeBadge ? <TryFreeBadge /> : null}
+              </div>
+            ) : null}
             {description ? (
-              <p className="line-clamp-1 max-w-[46ch] text-[12px] leading-[1.35] text-white/84 sm:text-[12.5px]">
+              <p className="line-clamp-2 text-[13px] leading-[1.35] text-white/82">
                 {description}
               </p>
             ) : null}
-            <div className="mt-0.5 flex min-w-0 items-center justify-between gap-2">
-              {showChips ? (
-                <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-hidden">
-                  {visual.chips.map((chip) => (
-                    <GlassChip
-                      key={chip.labelKey}
-                      icon={chip.icon}
-                      label={t(chip.labelKey, chip.defaultLabel)}
-                      borderClass={visual.chipBorder}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div />
-              )}
-              <div className="shrink-0">
-                {actionMode === "expand" ? (
-                  <motion.span
-                    className={cn(
-                      "relative flex h-9 w-9 items-center justify-center rounded-full",
-                      "border border-white/32 bg-[linear-gradient(160deg,rgba(255,255,255,0.28),rgba(255,255,255,0.08))]",
-                      "shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_12px_20px_-14px_rgba(6,10,26,0.8)]",
-                      "backdrop-blur-2xl transition-transform duration-300 group-hover:scale-[1.03] will-change-transform",
-                      visual.ctaShadow,
-                    )}
-                    animate={expanded ? { rotate: 180 } : { rotate: 0 }}
-                    transition={{ duration: 0.32, ease: "easeInOut" }}
-                  >
-                    <ChevronDown className="h-[17px] w-[17px] text-white/90" strokeWidth={2.25} />
-                  </motion.span>
-                ) : actionLabel ? (
-                  <motion.span
-                    className={cn(
-                      "relative inline-flex h-8 items-center gap-1.5 rounded-full border border-white/30 px-3.5 text-[11px] font-semibold text-white sm:h-9 sm:px-4 sm:text-[12px]",
-                      "bg-gradient-to-r shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-16px_rgba(8,10,28,0.92)]",
-                      "backdrop-blur-2xl transition-transform duration-300 will-change-transform",
-                      visual.ctaGradient,
-                      visual.ctaShadow,
-                      "group-hover:scale-[1.03]",
-                    )}
-                    whileHover={reducedMotion ? undefined : { scale: 1.03, y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    {actionLabel}
-                    <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    <span
-                      aria-hidden
-                      className="lz-cta-ripple pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
-                    />
-                  </motion.span>
-                ) : null}
+            {showChips && visibleChips.length > 0 ? (
+              <div className="mt-0.5 grid max-w-full grid-cols-2 gap-1.5">
+                {visibleChips.map((chip) => (
+                  <GlassChip
+                    key={chip.labelKey}
+                    icon={chip.icon}
+                    label={t(chip.labelKey, chip.defaultLabel)}
+                    borderClass={visual.chipBorder}
+                  />
+                ))}
               </div>
-            </div>
+            ) : null}
             {footer}
           </div>
 
-          <div className="relative flex h-full items-center justify-center">
+          <div className="flex items-center justify-center self-start">
+            {actionMode === "expand" ? (
+              <ExpandChevron expanded={expanded} />
+            ) : actionLabel ? (
+              <motion.span
+                className={cn(HUB_OPEN_CTA_CLASS, visual.ctaGradient, visual.ctaShadow, "group-hover:scale-[1.03]")}
+                whileHover={reducedMotion ? undefined : { scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <span className="truncate">{actionLabel}</span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span
+                  aria-hidden
+                  className="lz-cta-ripple pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
+                />
+              </motion.span>
+            ) : null}
+          </div>
+
+          <div className="relative flex h-full items-end justify-center pb-1.5">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "radial-gradient(circle at 50% 55%, rgba(250,201,255,0.34) 0%, rgba(134,171,255,0.18) 38%, rgba(7,10,36,0) 70%)",
+                  "radial-gradient(circle at 50% 80%, rgba(250,201,255,0.28) 0%, rgba(134,171,255,0.14) 38%, rgba(7,10,36,0) 70%)",
               }}
             />
             <motion.img
               src={visual.heroSrc}
               alt=""
               aria-hidden
-              className="relative max-h-[100px] w-auto max-w-[112px] object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)]"
+              className="relative h-[92px] w-auto max-w-[88px] object-contain object-bottom drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] sm:max-w-[92px]"
               animate={reducedMotion ? undefined : { y: [0, -3, 0] }}
               transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
               loading="lazy"

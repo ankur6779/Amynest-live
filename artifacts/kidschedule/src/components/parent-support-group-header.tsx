@@ -36,7 +36,7 @@ export function ParentSupportGroupHeader({
           description={subtitle}
           actionMode="expand"
           expanded={isOpen}
-          showChips={false}
+          variant="section"
         />
       </button>
     </motion.div>

@@ -28,6 +28,7 @@ import { ParentSupportPremiumSection } from "@/components/parent-support-premium
 import { TodayForYouFamilyPulseSection } from "@/components/today-for-you-family-pulse-section";
 import { TodayForYouGroupHeader } from "@/components/today-for-you-group-header";
 import { LearningZoneGroupHeader } from "@/components/learning-zone-group-header";
+import { HubExpandedChildren } from "@/components/hub-expanded-children";
 import { TodayForYouLaunchCard } from "@/components/today-for-you-launch-card";
 import { TodayForYouPremiumSection } from "@/components/today-for-you-premium-section";
 import { StoriesGroupHeader } from "@/components/stories-group-header";
@@ -1849,7 +1850,7 @@ function ParentingHubPage() {
             </div>}
 
           {/* 6 collapsible section groups — glass + glow tiles */}
-          <div className="space-y-3">
+          <div className="space-y-6">
             {WEB_HUB_GROUPS.map(group => {
               const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
               const isToday = group.key === "today";
@@ -1882,14 +1883,12 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         {todayTiles.map(s => {
                           const node = renderHubSection(s);
                           return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                         })}
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
@@ -1903,16 +1902,14 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         <div className="grid grid-cols-1 gap-3 items-stretch">
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
@@ -1926,8 +1923,7 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         {ptmSeason ? (
                           <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
                             {t("parent_hub.support.ptm_season_banner")}
@@ -1939,8 +1935,7 @@ function ParentingHubPage() {
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
@@ -1954,16 +1949,14 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         <div className="grid grid-cols-1 gap-3 items-stretch lg:grid-cols-2">
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
@@ -1976,20 +1969,14 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div
-                        className={cn(
-                          "space-y-3 animate-in fade-in slide-in-from-top-1 duration-200",
-                        )}
-                      >
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         <div className="grid grid-cols-1 gap-3 items-stretch">
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
@@ -2003,16 +1990,14 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         <div className="grid grid-cols-1 gap-3 items-stretch lg:grid-cols-2">
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
@@ -2026,16 +2011,14 @@ function ParentingHubPage() {
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(group.key)}
                     />
-                    {isOpen ? (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <HubExpandedChildren open={isOpen} className="space-y-3">
                         <div className="grid grid-cols-1 gap-3 items-stretch">
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
                             return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
-                      </div>
-                    ) : null}
+                    </HubExpandedChildren>
                   </div>
                 );
               }
