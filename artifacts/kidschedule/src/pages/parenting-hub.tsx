@@ -1892,7 +1892,7 @@ function ParentingHubPage() {
                     <HubExpandedChildren open={isOpen} className="space-y-3">
                         {todayTiles.map(s => {
                           const node = renderHubSection(s);
-                          return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                         })}
                     </HubExpandedChildren>
                   </div>
@@ -1912,7 +1912,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                     </HubExpandedChildren>
@@ -1938,7 +1938,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                     </HubExpandedChildren>
@@ -1959,7 +1959,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_DENSE}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                     </HubExpandedChildren>
@@ -1979,7 +1979,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                     </HubExpandedChildren>
@@ -2000,7 +2000,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_DENSE}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                     </HubExpandedChildren>
@@ -2021,7 +2021,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                     </HubExpandedChildren>
@@ -2092,7 +2092,7 @@ function ParentingHubPage() {
                         <div className={HUB_GROUP_CARD_GRID_2COL}>
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
                           })}
                         </div>
                       )}

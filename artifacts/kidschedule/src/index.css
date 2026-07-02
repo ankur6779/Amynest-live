@@ -92,37 +92,6 @@
   .landing-scale-in, .landing-float { animation: none !important; }
 }
 
-/* ── Amy Audio Lessons premium card (coach goals) ───────────────── */
-@keyframes amyAudioNoteFloat {
-  0%, 100% { transform: translateY(0) rotate(-6deg); opacity: 0.85; }
-  50%       { transform: translateY(-6px) rotate(4deg); opacity: 1; }
-}
-@keyframes amyAudioWaveBar {
-  0%, 100% { transform: scaleY(0.55); opacity: 0.5; }
-  50%       { transform: scaleY(1); opacity: 0.95; }
-}
-@keyframes amyAudioSparkle {
-  0%, 100% { opacity: 0.35; transform: scale(0.85); }
-  50%       { opacity: 1; transform: scale(1.15); }
-}
-@keyframes amyAudioHeadphonesGlow {
-  0%, 100% { opacity: 0.45; transform: scale(1); }
-  50%       { opacity: 0.85; transform: scale(1.12); }
-}
-.amy-audio-note-float { animation: amyAudioNoteFloat 3.8s ease-in-out infinite; }
-.amy-audio-wave-bar {
-  transform-origin: bottom;
-  animation: amyAudioWaveBar 1.4s ease-in-out infinite;
-}
-.amy-audio-sparkle { animation: amyAudioSparkle 2.6s ease-in-out infinite; }
-.amy-audio-headphones-glow { animation: amyAudioHeadphonesGlow 3s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .amy-audio-note-float,
-  .amy-audio-wave-bar,
-  .amy-audio-sparkle,
-  .amy-audio-headphones-glow { animation: none !important; }
-}
-
 /* ── Learning Zone premium cards (Parent Hub) ───────────────────── */
 @keyframes lzCharIdle {
   0%, 100% { transform: translateY(0); }
@@ -439,7 +408,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 272px), 1fr));
   gap: 0.75rem;
-  align-items: stretch;
+  /* start — stretch + h-full cards left dark ambient-glow voids below tiles */
+  align-items: start;
 }
 
 .hub-group-card-grid > * {
@@ -1223,8 +1193,21 @@ html[data-theme="dark"] {
   padding-bottom: 80px;
 }
 
+@media (min-width: 1024px) {
+  .app-scroll,
+  .page-content {
+    padding-bottom: 0;
+  }
+}
+
 .main-content {
   padding-bottom: 80px;
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding-bottom: 0;
+  }
 }
 
 /* Reserve space above fixed bottom controls (audio player, sticky bars). */
@@ -1512,14 +1495,27 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   z-index: 150;
 }
 
+/* Native shells always use mobile nav — drawer must stay visible when open at any width. */
+html.amynest-android-shell .drawer-overlay,
+html.amynest-native-shell .drawer-overlay {
+  display: block !important;
+}
+
 .drawer {
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
-  width: 80%;
+  width: min(350px, 85vw);
   max-width: 350px;
   z-index: 200;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .drawer {
+    width: min(360px, 55vw);
+    max-width: 360px;
+  }
 }
 
 /* ── Mobile bottom nav + Ask Amy FAB (single source of truth — CSS only) ── */

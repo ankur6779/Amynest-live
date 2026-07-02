@@ -91,7 +91,7 @@ export function PremiumDesktopSidebar({
   return (
     <aside
       className={cn(
-        "hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] md:flex",
+        "hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] lg:flex",
         "bg-gradient-to-b from-[#0f1228] via-[#12152f] to-[#0c0e22]",
       )}
     >

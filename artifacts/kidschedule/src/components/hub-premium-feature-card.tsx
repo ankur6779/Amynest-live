@@ -18,6 +18,8 @@ type HubPremiumFeatureCardProps = {
   actionLabel?: string;
   /** Expandable hub sections use a glass chevron control. */
   actionMode?: "open" | "expand";
+  /** Compact circular chevron for navigation tiles (coach promo cards). */
+  iconOnlyAction?: boolean;
   expanded?: boolean;
   showChips?: boolean;
   /** Section headers are compact; child cards carry illustration + chips. */
@@ -85,6 +87,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   previewBadge,
   actionLabel,
   actionMode = "open",
+  iconOnlyAction = false,
   expanded = false,
   showChips = true,
   variant = "child",
@@ -144,18 +147,12 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   return (
     <div
       className={cn(
-        "lz-premium-card group relative h-full w-full max-w-full overflow-hidden rounded-[30px]",
+        "lz-premium-card group relative w-full max-w-full overflow-hidden rounded-[30px]",
         "transition-[transform,box-shadow,border-color] duration-300",
         "hover:-translate-y-[4px]",
         className,
       )}
     >
-      <div
-        aria-hidden
-        className="lz-ambient-glow pointer-events-none absolute inset-0 rounded-[30px]"
-        style={{ background: visual.ambientGlow }}
-      />
-
       <div
         className={cn(
           "lz-glass-panel hub-child-shell relative overflow-hidden rounded-[30px] border border-white/[0.22]",
@@ -168,6 +165,11 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           background: `linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04) 42%, rgba(255,255,255,0.08) 100%), ${visual.surfaceGradient}`,
         }}
       >
+        <div
+          aria-hidden
+          className="lz-ambient-glow pointer-events-none absolute inset-0 rounded-[30px]"
+          style={{ background: visual.ambientGlow }}
+        />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -219,6 +221,18 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           <div className="hub-child-action-col flex items-center justify-center self-start">
             {actionMode === "expand" ? (
               <ExpandChevron expanded={expanded} />
+            ) : iconOnlyAction ? (
+              <motion.span
+                className={cn(
+                  "hub-expand-chevron border-white/20 bg-white/[0.12]",
+                  "shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_16px_rgba(0,0,0,0.25)]",
+                  "group-hover:scale-[1.05]",
+                )}
+                whileHover={reducedMotion ? undefined : { scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <ChevronRight className="h-[14px] w-[14px] text-white/90" strokeWidth={2.25} />
+              </motion.span>
             ) : actionLabel ? (
               <motion.span
                 className={cn(

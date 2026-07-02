@@ -101,7 +101,7 @@ export function Layout({
       {showMobileHeader ? (
         <header
           ref={headerRef}
-          className="app-header header w-full max-w-full min-w-0 shrink-0 border-b border-border/80 md:hidden shadow-sm"
+          className="app-header header w-full max-w-full min-w-0 shrink-0 border-b border-border/80 lg:hidden shadow-sm"
         >
           <div className="app-header__bar">
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -127,7 +127,7 @@ export function Layout({
       ) : null}
 
       <main className="app-shell-main flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
-        <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col md:flex-row">
+        <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col lg:flex-row">
         {/* Desktop Sidebar */}
         {!isImmersiveRoute && (
           <PremiumDesktopSidebar
@@ -145,12 +145,12 @@ export function Layout({
             noOffset={isImmersiveRoute || isAssistantRoute}
             className={
               isImmersiveRoute || isAssistantRoute
-                ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
+                ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 lg:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
                 : isAmyCoachRoute
-                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:p-8"
+                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 lg:p-8"
                 : showDashboardChrome || isParentHubRoute
-                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:max-w-5xl md:p-8"
-                  : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
+                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 lg:max-w-5xl lg:p-8"
+                  : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 lg:p-8"
             }
           >
             {!isImmersiveRoute &&

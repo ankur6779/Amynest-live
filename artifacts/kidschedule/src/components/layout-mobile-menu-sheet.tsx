@@ -303,7 +303,7 @@ export function LayoutMobileMenuSheet({
 
   const sheet =
     !userLoaded || !user ? (
-      <div className="drawer-overlay md:hidden" role="dialog" aria-modal="true">
+      <div className="drawer-overlay lg:hidden" role="dialog" aria-modal="true">
         <button
           type="button"
           aria-label="Close menu"
@@ -317,7 +317,7 @@ export function LayoutMobileMenuSheet({
         </aside>
       </div>
     ) : (
-      <div className="drawer-overlay md:hidden" role="dialog" aria-modal="true">
+      <div className="drawer-overlay lg:hidden" role="dialog" aria-modal="true">
         <button
           type="button"
           aria-label="Close menu"

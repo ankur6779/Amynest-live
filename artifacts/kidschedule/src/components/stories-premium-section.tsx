@@ -64,7 +64,7 @@ export function StoriesPremiumSection({
   };
 
   return (
-    <div data-section-id={id} className="h-full">
+    <div data-section-id={id} className="w-full">
       <button
         type="button"
         onClick={toggle}

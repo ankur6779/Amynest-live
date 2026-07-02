@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nav Preview</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .font-quicksand { font-family: 'Quicksand', sans-serif; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 9999px; }
+</style>
+</head>
+<body class="bg-[#05060f]">
+  <!-- Drawer -->
+  <aside id="drawer" class="flex w-[360px] flex-col overflow-hidden bg-gradient-to-b from-[#0f1228] via-[#12152f] to-[#0b0d20] text-white shadow-2xl">
+    <!-- Header -->
+    <div class="relative shrink-0 overflow-hidden border-b border-white/[0.06] px-4 pb-4 pt-4">
+      <div class="pointer-events-none absolute inset-0 opacity-80" style="background: radial-gradient(ellipse 70% 80% at 18% 30%, rgba(168,85,247,0.22), transparent 60%), radial-gradient(ellipse 60% 90% at 92% 10%, rgba(244,114,182,0.16), transparent 55%)"></div>
+      <div class="relative flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <p class="font-quicksand text-xl font-black tracking-tight text-white">AmyNest AI</p>
+          <p class="mt-0.5 text-[11px] text-white/55">AI for Smart Parenting</p>
+        </div>
+        <div class="relative shrink-0">
+          <span class="absolute -inset-2 rounded-full bg-violet-500/25 blur-xl"></span>
+                  <img src="/illustrations/nav/header-hero.png" alt="" class="relative h-[60px] w-[60px] object-contain object-center drop-shadow-[0_6px_18px_rgba(168,85,247,0.45)]" />
+        </div>
+        <button class="relative -mr-1 shrink-0 self-start rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scroll area -->
+    <div class="px-3 pb-4 pt-3">
+      <!-- Profile card -->
+      <a href="#" class="relative block overflow-hidden rounded-[24px] border border-white/12 bg-white/[0.05] p-3.5 backdrop-blur-xl">
+        <span class="pointer-events-none absolute inset-0 opacity-90" style="background: radial-gradient(ellipse 70% 80% at 12% 20%, rgba(168,85,247,0.28), transparent 60%), radial-gradient(ellipse 60% 80% at 95% 90%, rgba(56,189,248,0.18), transparent 60%)"></span>
+        <span class="pointer-events-none absolute inset-0 rounded-[24px] border border-white/10" style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.14)"></span>
+        <div class="relative flex items-center gap-3">
+          <div class="relative shrink-0">
+            <span class="absolute -inset-1 rounded-full bg-purple-500/35 blur-md"></span>
+            <div class="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-gradient-to-br from-violet-500 to-purple-600 text-base font-semibold text-white">D</div>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-quicksand text-[16px] font-bold leading-tight text-white">Hi, demo!</p>
+            <div class="mt-1 flex items-center gap-1.5">
+              <span class="inline-flex items-center gap-1 rounded-full border border-amber-300/35 bg-gradient-to-r from-amber-500/30 to-yellow-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-100">
+                <i data-lucide="sparkles" class="h-2.5 w-2.5"></i> Smart Parent
+              </span>
+            </div>
+            <p class="mt-1 truncate text-[12px] text-white/50"><span class="text-white/60">Child: <span class="font-semibold text-white/80">Aarav +1</span></span></p>
+          </div>
+          <div class="flex shrink-0 items-center gap-1">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.06] text-white/60"><i data-lucide="settings-2" class="h-4 w-4"></i></span>
+            <i data-lucide="chevron-right" class="h-4 w-4 text-white/35"></i>
+          </div>
+        </div>
+      </a>
+
+      <div id="groups"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="shrink-0 border-t border-white/[0.06] px-3 pb-2 pt-3">
+      <div id="footer"></div>
+      <p class="mt-2 text-center text-[8px] font-bold uppercase tracking-widest text-white/20">Patent Pending</p>
+    </div>
+  </aside>
+
+<script>
+const TONES = {
+  primary:  { icon:"text-violet-100",  wrap:"from-violet-500/30 to-fuchsia-500/12", active:"from-violet-500/26 via-fuchsia-500/12", glow:"shadow-[0_12px_34px_-14px_rgba(139,92,246,0.65)]", accent:"from-violet-300 to-fuchsia-300" },
+  learning: { icon:"text-sky-100",     wrap:"from-sky-500/30 to-cyan-500/12",       active:"from-sky-500/26 via-cyan-500/12",       glow:"shadow-[0_12px_34px_-14px_rgba(56,189,248,0.6)]",  accent:"from-sky-300 to-cyan-300" },
+  insights: { icon:"text-emerald-100", wrap:"from-emerald-500/30 to-teal-500/12",   active:"from-emerald-500/26 via-teal-500/12",   glow:"shadow-[0_12px_34px_-14px_rgba(16,185,129,0.55)]", accent:"from-emerald-300 to-teal-300" },
+  account:  { icon:"text-slate-100",   wrap:"from-slate-300/22 to-slate-500/10",    active:"from-slate-300/20 via-slate-400/10",    glow:"shadow-[0_12px_34px_-14px_rgba(148,163,184,0.5)]", accent:"from-slate-200 to-slate-300" },
+  danger:   { icon:"text-rose-100",    wrap:"from-rose-500/30 to-pink-500/12",      active:"from-rose-500/24 via-pink-500/12",      glow:"shadow-[0_12px_34px_-14px_rgba(244,114,182,0.55)]", accent:"from-rose-300 to-pink-300" },
+};
+
+const GROUPS = [
+  { id:"primary", label:"Primary", tone:"primary", items:[
+    ["Dashboard","Overview & summary","home", false],
+    ["Parenting Hub","Articles, tools & support","book-open", true],
+    ["Amy Coach","Learning goals & progress","brain", false],
+    ["Nutrition Hub","Meals, plans & tracker","salad", false],
+    ["Routines","Builder & tracking","calendar", false],
+    ["Amy AI","Parenting assistant & chat","bot", false],
+  ]},
+  { id:"learning", label:"Learning", tone:"learning", items:[
+    ["Learning Zone","Skills, subjects & practice","graduation-cap", false],
+    ["Gaming Hub","Rewards & safe play","gamepad-2", false],
+    ["Quick Tutor","Quick learning help","sparkles", false],
+    ["Children","Manage child profiles","users", false],
+  ]},
+  { id:"insights", label:"Insights", tone:"insights", items:[
+    ["Progress","Milestones & streaks","trending-up", false],
+    ["Insights","Weekly reports & trends","bar-chart-2", false],
+    ["Behavior","Patterns & guidance","star", false],
+    ["Kids Control","Screen time & safety","baby", false, "Soon"],
+  ]},
+  { id:"account", label:"Account", tone:"account", items:[
+    ["Pricing","Plans & subscription","sparkles", false],
+    ["Referrals","Invite friends & earn","gift", false],
+    ["My Recipes","Saved family meals","chef-hat", false],
+    ["Feedback","Share your thoughts","message-square-plus", false],
+    ["My Profile","Account & preferences","user-circle", false],
+  ]},
+];
+
+function row(label, desc, icon, active, tone, badge, signout){
+  const t = TONES[signout ? "danger" : tone];
+  const base = "group relative flex min-h-[64px] items-center gap-3 overflow-hidden rounded-[22px] border px-3 text-left transition-all";
+  let cls;
+  if (active) cls = `${base} border-white/16 bg-gradient-to-r ${t.active} to-transparent ${t.glow}`;
+  else if (signout) cls = `${base} border-rose-400/20 bg-rose-500/[0.06]`;
+  else cls = `${base} border-white/[0.06] bg-white/[0.03]`;
+  const badgeHtml = badge ? `<span class="shrink-0 rounded-full border border-white/12 bg-black/30 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-white/90">${badge}</span>` : "";
+  const chevron = signout ? "" : `<i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-white/25"></i>`;
+  return `<a href="#" class="${cls}">
+    <span class="absolute left-0 top-1/2 h-8 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b ${t.accent} ${active?'opacity-100':'opacity-0'}"></span>
+    <span class="relative shrink-0">
+      <span class="absolute inset-0 rounded-[16px] bg-gradient-to-br opacity-70 blur-[7px] ${t.wrap}"></span>
+      <span class="relative flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/14 bg-gradient-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] ${t.wrap}">
+        <i data-lucide="${icon}" class="${t.icon}" style="width:22px;height:22px"></i>
+      </span>
+    </span>
+    <span class="min-w-0 flex-1">
+      <span class="flex items-center gap-1.5">
+        <span class="truncate font-quicksand text-[16px] font-semibold leading-tight text-white">${label}</span>${badgeHtml}
+      </span>
+      <span class="mt-0.5 block truncate text-[13px] leading-snug text-white/50">${desc}</span>
+    </span>
+    ${chevron}
+  </a>`;
+}
+
+const gc = document.getElementById("groups");
+gc.innerHTML = GROUPS.map(g => `
+  <section class="mt-6">
+    <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">${g.label}</p>
+    <div class="flex flex-col gap-2">${g.items.map(it => row(it[0],it[1],it[2],it[3],g.tone,it[4])).join("")}</div>
+  </section>`).join("");
+
+document.getElementById("footer").innerHTML = row("Sign out","Log out of your account","log-out",false,"danger",null,true);
+
+lucide.createIcons();
+</script>
+</body>
+</html>
