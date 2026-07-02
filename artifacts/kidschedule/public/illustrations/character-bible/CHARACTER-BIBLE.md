@@ -82,10 +82,16 @@ each mascot occupies the **same perceived space** inside the card.
 - New assets must be run through the same normalization before shipping so they
   match the frozen library exactly.
 
+> **Amy robot knockout note:** the Amy robot has a near-white / lavender body, so
+> the background remover must run with **enclosed-region removal DISABLED**
+> (`remove_bg(..., remove_enclosed=False)`). Otherwise the robot's own white face
+> and body get treated as background pockets and punch through as dark holes on the
+> card. Girl/boy mascots keep enclosed removal ON.
+
 ## Status: FROZEN — production assets ✅
 
-The illustration library is **frozen**. Treat the 37 `*-hero.png` files as final
-production assets.
+The illustration library is **frozen**. Treat the `*-hero.png` files as final
+production assets (incl. the Learning Zone section-header girl mascot).
 
 - Do **not** restyle, recolor, re-crop, or re-scale existing assets.
 - Future modules must **reuse these canonical mascots** (Amy robot / girl / boy) —

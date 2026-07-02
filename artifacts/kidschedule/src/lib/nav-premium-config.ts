@@ -184,6 +184,60 @@ export function getNavPremiumId(href: string): NavPremiumRouteId | undefined {
   return NAV_HREF_TO_PREMIUM_ID[href];
 }
 
+/* ── Mobile drawer grouping (premium redesign) ──────────────────────────────
+ * Groups only affect the mobile navigation drawer, not the desktop sidebar.
+ * Every existing route is placed into exactly one group; ordering here defines
+ * the drawer's information hierarchy (profile-first, then most-used actions).
+ */
+export type NavDrawerGroupId = "primary" | "learning" | "insights" | "account";
+
+export type NavDrawerGroup = {
+  id: NavDrawerGroupId;
+  labelKey: string;
+  defaultLabel: string;
+  hrefs: string[];
+};
+
+export const NAV_DRAWER_GROUPS: NavDrawerGroup[] = [
+  {
+    id: "primary",
+    labelKey: "nav.groups.primary",
+    defaultLabel: "Primary",
+    hrefs: ["/dashboard", "/parenting-hub", "/amy-coach", "/nutrition", "/routines", "/assistant"],
+  },
+  {
+    id: "learning",
+    labelKey: "nav.groups.learning",
+    defaultLabel: "Learning",
+    hrefs: ["/study", "/games", "/amy-ai-tutor", "/children"],
+  },
+  {
+    id: "insights",
+    labelKey: "nav.groups.insights",
+    defaultLabel: "Insights",
+    hrefs: ["/progress", "/insights", "/behavior", "/kids-control-center"],
+  },
+  {
+    id: "account",
+    labelKey: "nav.groups.account",
+    defaultLabel: "Account",
+    hrefs: ["/pricing", "/referrals", "/recipes", "/feedback", "/parent-profile"],
+  },
+];
+
+/** Partition the resolved menu into ordered drawer groups (drops unknown hrefs). */
+export function groupDrawerItems(
+  items: MobileNavItem[],
+): { group: NavDrawerGroup; items: MobileNavItem[] }[] {
+  const byHref = new Map(items.map((item) => [item.href, item]));
+  return NAV_DRAWER_GROUPS.map((group) => ({
+    group,
+    items: group.hrefs
+      .map((href) => byHref.get(href))
+      .filter((item): item is MobileNavItem => Boolean(item)),
+  })).filter((entry) => entry.items.length > 0);
+}
+
 export function splitNavItems(items: MobileNavItem[]): {
   primary: MobileNavItem[];
   account: MobileNavItem[];

@@ -22,6 +22,25 @@ export type LearningZoneCardId =
 
 const BASE = "/illustrations/learning-zone";
 
+export const LEARNING_ZONE_SECTION_HEADER_VISUAL: HubPremiumCardVisual = {
+  iconSrc: `${BASE}/section-header-icon.png`,
+  heroSrc: `${BASE}/section-header-hero.png`,
+  surfaceGradient:
+    "linear-gradient(135deg, rgba(30,64,175,0.6) 0%, rgba(79,70,229,0.54) 46%, rgba(245,158,11,0.4) 100%)",
+  ambientGlow:
+    "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(129,140,248,0.4), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(251,191,36,0.26), transparent 55%)",
+  borderHover: "group-hover:border-indigo-300/40",
+  chipBorder: "border-indigo-200/15",
+  ctaGradient: "from-amber-400 via-indigo-500 to-blue-500",
+  ctaShadow: "shadow-[0_0_24px_rgba(99,102,241,0.48)] group-hover:shadow-[0_0_32px_rgba(251,191,36,0.42)]",
+  glyphColor: "text-indigo-100/80",
+  floatingGlyphs: ["A", "★", "1"],
+  chips: [
+    { icon: BookOpen, labelKey: "parent_hub.learning_zone_cards.section.chip_1", defaultLabel: "Learn" },
+    { icon: Star, labelKey: "parent_hub.learning_zone_cards.section.chip_2", defaultLabel: "Grow" },
+  ],
+};
+
 export const LEARNING_ZONE_CARD_VISUALS: Record<LearningZoneCardId, HubPremiumCardVisual> = {
   "smart-math-tricks": {
     iconSrc: `${BASE}/smart-math-tricks-icon.png`,

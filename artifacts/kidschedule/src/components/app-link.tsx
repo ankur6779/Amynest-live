@@ -1,4 +1,4 @@
-import { type FocusEventHandler, type MouseEventHandler, type ReactNode } from "react";
+import { type CSSProperties, type FocusEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import {
@@ -18,6 +18,7 @@ type AppLinkProps = {
   href: string;
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
   replace?: boolean;
   push?: boolean;
   /** When true, tab-root → tab-root uses replace (bottom nav). */

@@ -27,6 +27,7 @@ import { ParentSupportGroupHeader } from "@/components/parent-support-group-head
 import { ParentSupportPremiumSection } from "@/components/parent-support-premium-section";
 import { TodayForYouFamilyPulseSection } from "@/components/today-for-you-family-pulse-section";
 import { TodayForYouGroupHeader } from "@/components/today-for-you-group-header";
+import { LearningZoneGroupHeader } from "@/components/learning-zone-group-header";
 import { TodayForYouLaunchCard } from "@/components/today-for-you-launch-card";
 import { TodayForYouPremiumSection } from "@/components/today-for-you-premium-section";
 import { StoriesGroupHeader } from "@/components/stories-group-header";
@@ -1944,6 +1945,29 @@ function ParentingHubPage() {
                 );
               }
 
+              if (group.key === "learning") {
+                return (
+                  <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
+                    <LearningZoneGroupHeader
+                      title={t(group.i18n)}
+                      subtitle={t("parent_hub.section_groups.learning_subtitle")}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {isOpen ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="grid grid-cols-1 gap-3 items-stretch lg:grid-cols-2">
+                          {groupGrid.map(s => {
+                            const node = renderHubSection(s);
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
               if (group.key === "creativity") {
                 return (
                   <div key={group.key} id={`hub-group-${group.key}`} className="space-y-3 hub-page-enter">
@@ -2016,16 +2040,20 @@ function ParentingHubPage() {
                 );
               }
 
+              // All known group keys are handled above; this defensive fallback
+              // renders any future/unknown group with a plain header. `group`
+              // narrows to `never` here, so cast back to the group element type.
+              const fallbackGroup = group as (typeof WEB_HUB_GROUPS)[number];
               return (
                 <div
-                  key={group.key}
-                  id={`hub-group-${group.key}`}
+                  key={fallbackGroup.key}
+                  id={`hub-group-${fallbackGroup.key}`}
                   className={cn(hubShadedSectionCardClasses(gs), "hub-page-enter")}
                 >
                   <HubShadedCardBody theme={gs}>
                     <div className="min-w-0 flex-1">
                   <button
-                    onClick={() => toggleGroup(group.key)}
+                    onClick={() => toggleGroup(fallbackGroup.key)}
                     className={cn(
                       HUB_SECTION_GROUP_HEADER,
                       isOpen ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
@@ -2033,14 +2061,14 @@ function ParentingHubPage() {
                     aria-expanded={isOpen}
                   >
                     <span className={cn(HUB_SECTION_GROUP_ICON, gs.emojiShell)}>
-                      {group.emoji}
+                      {fallbackGroup.emoji}
                     </span>
                     <span className={HUB_SECTION_GROUP_TEXT}>
                       <span className={cn(
                         HUB_SECTION_GROUP_TITLE,
                         isOpen ? "text-amber-100/95" : "text-foreground",
                       )}>
-                        {t(group.i18n)}
+                        {t(fallbackGroup.i18n)}
                       </span>
                       {!isOpen ? (
                         <span className={HUB_SECTION_GROUP_SUBTITLE}>

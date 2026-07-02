@@ -116,7 +116,7 @@ export function PremiumDesktopSidebar({
             src={NAV_PREMIUM_HEADER.heroSrc}
             alt=""
             aria-hidden
-            className="h-14 w-14 shrink-0 object-contain drop-shadow-[0_4px_16px_rgba(168,85,247,0.4)]"
+            className="relative h-[60px] w-[60px] object-contain object-center drop-shadow-[0_4px_16px_rgba(168,85,247,0.4)]"
             loading="lazy"
           />
         </div>

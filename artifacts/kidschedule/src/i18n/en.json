@@ -164,6 +164,8 @@
     "amy_ai": "Amy AI",
     "amy_learning_tutor": "Learn with Amy",
     "amy_quick_tutor": "Quick Tutor",
+    "learning_zone": "Learning Zone",
+    "current_child": "Child",
     "games": "Gaming Hub",
     "my_recipes": "My Recipes",
     "nutrition_hub": "Nutrition Hub",
@@ -176,7 +178,14 @@
     "sign_out": "Sign out",
     "premium_tagline": "AI for Smart Parenting",
     "greeting": "Hi, {{name}}!",
+    "groups": {
+      "primary": "Primary",
+      "learning": "Learning",
+      "insights": "Insights",
+      "account": "Account"
+    },
     "descriptions": {
+      "learning_zone": "Skills, subjects & practice",
       "dashboard": "Overview & summary",
       "parenting_hub": "Articles, tools & support",
       "amy_coach": "Learning goals & progress",
@@ -3648,9 +3657,14 @@
       "health": "Health Zone",
       "support": "Parent Support",
       "health_subtitle": "Eat well, move more & build healthy habits",
-      "gaming_subtitle": "Learn, play, earn & grow every day"
+      "gaming_subtitle": "Learn, play, earn & grow every day",
+      "learning_subtitle": "Master academics with fun, guided practice"
     },
     "learning_zone_cards": {
+      "section": {
+        "chip_1": "Learn",
+        "chip_2": "Grow"
+      },
       "smart_math_tricks": {
         "chip_1": "Quick Tricks",
         "chip_2": "Brain Boost"
