@@ -22,6 +22,7 @@ import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
 import { earnGamingPoints } from "@/lib/gaming-wallet-api";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { routineDateKey } from "@/lib/routines";
+import { saveActivationResume, clearActivationResume } from "@/lib/activation-resume";
 import {
   enrichRoutinePayload,
   fetchRoutineWithResilience,
@@ -1251,6 +1252,29 @@ export default function RoutineDetail() {
     () => sanitizeRoutineItems(localItems ?? routine?.items ?? []) as RoutineItem[],
     [localItems, routine?.items],
   );
+
+  useEffect(() => {
+    if (!routine?.id || items.length === 0) return;
+    const completed = items.filter((i) => i.status === "completed").length;
+    const terminal = items.filter(
+      (i) => i.status === "completed" || i.status === "skipped",
+    ).length;
+    if (terminal >= items.length) {
+      clearActivationResume(routine.id);
+      return;
+    }
+    if (completed === 0) return;
+    const dateKey = routineDateKey(routine) || new Date().toISOString().slice(0, 10);
+    saveActivationResume({
+      routineId: routine.id,
+      href: `/routines/${routine.id}`,
+      childName: routine.childName,
+      title: routine.title,
+      done: completed,
+      total: items.length,
+      dateKey,
+    });
+  }, [routine, items]);
 
   const trustRibbonSignals = useMemo(
     () =>

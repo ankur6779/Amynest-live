@@ -27,6 +27,8 @@ import { getConvoLatencyDashboard } from "../services/speechConverseMetrics.js";
 import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 import { fetchOpenAiTtsStream } from "../services/openaiTtsService.js";
 import { getAdminOpsState } from "../services/admin-ops-store.js";
+import { getApiDomainMetrics } from "../lib/api-domain-metrics.js";
+import { getAnalyticsQuality } from "../services/analyticsIngestService.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -395,6 +397,15 @@ router.get("/healthz/reels-catalog", async (_req, res) => {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: message.slice(0, 500) });
   }
+});
+
+/** Phase 3 — production-critical API domain metrics (process-local). */
+router.get("/healthz/stability-metrics", (_req, res) => {
+  res.json({
+    ok: true,
+    apiDomains: getApiDomainMetrics(),
+    analyticsQuality: getAnalyticsQuality(),
+  });
 });
 
 export default router;

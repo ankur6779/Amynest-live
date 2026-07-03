@@ -283,6 +283,10 @@ export class AnalyticsService {
       screen?: string;
       statusCode?: number;
       feature?: string;
+      fingerprint?: string;
+      stack_hash?: string;
+      component?: string;
+      session_id?: string;
     } = {},
   ): void {
     this.track("error_captured", {
@@ -292,6 +296,10 @@ export class AnalyticsService {
       screen: opts.screen ?? this.currentScreen,
       status_code: opts.statusCode,
       feature: opts.feature,
+      fingerprint: opts.fingerprint,
+      stack_hash: opts.stack_hash,
+      component: opts.component,
+      session_id: opts.session_id,
     });
   }
 

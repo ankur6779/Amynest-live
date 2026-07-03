@@ -29,5 +29,6 @@ describe("crash-report", () => {
     });
     expect(report.errorId).toBe("ERR-20260606-ABC123");
     expect(report.childId).toBe("child-42");
+    expect(report.readableFingerprint).toMatch(/ChildForm/);
   });
 });

@@ -53,6 +53,10 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
+import { computeRoutineStreak } from "@/lib/routine-streak";
+import { shouldBypassRoutineGeneratePaywall } from "@/lib/activation-gate";
+import { ActivationResumeBanner } from "@/components/activation-resume-banner";
+import { FeatureDiscoveryStrip } from "@/components/feature-discovery-strip";
 import { pickRoutineForIntelligence, resolveFamilyIntelligenceSurface } from "@/lib/family-intelligence-surface";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
@@ -107,23 +111,6 @@ function parseTimeToMinutes(t: string): number {
   if (period === "PM" && hours !== 12) h += 12;
   if (period === "AM" && hours === 12) h = 0;
   return h * 60 + (minutes || 0);
-}
-function computeStreak(routines: Routine[]): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dateSet = new Set(routines.map(r => routineDateKey(r)).filter(Boolean));
-  let streak = 0;
-  while (true) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - streak);
-    const key = d.toISOString().slice(0, 10);
-    if (dateSet.has(key)) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-  return streak;
 }
 
 type ChildRow = {
@@ -1078,7 +1065,7 @@ export default function Dashboard() {
     () => (childrenSafe as ChildRow[]).find((c) => c.id === selectedChildId) ?? null,
     [childrenList, selectedChildId],
   );
-  const streak = useMemo(() => computeStreak(allRoutinesSafe), [allRoutines]);
+  const streak = useMemo(() => computeRoutineStreak(allRoutinesSafe), [allRoutines]);
   const hubUsage = useFeatureUsage();
   const { status: journeyStatus } = useJourney();
   const hasTodayRoutine = useMemo(
@@ -1187,7 +1174,10 @@ export default function Dashboard() {
   const generateRoutineLocked =
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
   function handleGenerateRoutine() {
-    if (generateRoutineLocked) {
+    if (
+      generateRoutineLocked &&
+      !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
+    ) {
       openPaywall("routines_limit");
     } else {
       setLocation("/routines/generate");
@@ -1239,6 +1229,10 @@ export default function Dashboard() {
           >
             <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />
             <ContentReveal.Stagger className="relative z-10 flex flex-col gap-4">
+            <ContentReveal.Item>
+              <ActivationResumeBanner />
+            </ContentReveal.Item>
+
             <ContentReveal.Item>
               <SevenDayJourneyCard />
             </ContentReveal.Item>
@@ -1295,6 +1289,13 @@ export default function Dashboard() {
                 onGenerate={handleGenerateRoutine}
                 suppressGenerate={suppressAmyGenerate}
                 generatePrimarySource={generatePrimarySource}
+              />
+            </ContentReveal.Item>
+
+            <ContentReveal.Item>
+              <FeatureDiscoveryStrip
+                childAgeYears={selectedChild?.age}
+                hasRoutines={allRoutinesSafe.length > 0}
               />
             </ContentReveal.Item>
 

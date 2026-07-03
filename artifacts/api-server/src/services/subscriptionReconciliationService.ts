@@ -1,5 +1,5 @@
 import { db, subscriptionsTable } from "@workspace/db";
-import { eq, isNotNull, or } from "drizzle-orm";
+import { eq, isNotNull, or, sql, desc } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { syncRevenueCatSubscription } from "./rcCustomerService.js";
 import { recordBillingAuditEvent } from "./subscriptionStateService.js";
@@ -133,6 +133,10 @@ export async function reconcileRevenueCatSubscriptions(limit = 100): Promise<Rec
         isNotNull(subscriptionsTable.revenuecatAppUserId),
         isNotNull(subscriptionsTable.originalTransactionId),
       ),
+    )
+    .orderBy(
+      sql`CASE WHEN ${subscriptionsTable.syncError} IS NOT NULL THEN 0 ELSE 1 END`,
+      desc(subscriptionsTable.updatedAt),
     )
     .limit(Math.max(1, Math.min(limit, 500)));
 

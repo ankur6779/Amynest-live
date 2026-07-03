@@ -2,6 +2,7 @@ import {
   defaultEngagementState,
   defaultLearningState,
   defaultRewardState,
+  normalizeParentRetentionSnapshot,
   syncRewardProgress,
   type PlaygroundEngagementState,
   type PlaygroundIntelligenceState,
@@ -46,7 +47,11 @@ function normalizeV4(
     rewards: syncRewardProgress({ ...defaultRewardState(), ...parsed.rewards }),
     learning: { ...defaultLearningState(), ...parsed.learning },
     preferredPlayMode: parsed.preferredPlayMode,
-    lastParentSnapshot: parsed.lastParentSnapshot,
+    lastParentSnapshot: normalizeParentRetentionSnapshot(parsed.lastParentSnapshot, {
+      learning: { ...defaultLearningState(), ...parsed.learning },
+      rewards: syncRewardProgress({ ...defaultRewardState(), ...parsed.rewards }),
+      ageYears: 6,
+    }) ?? undefined,
     engagement: parsed.engagement ?? defaultEngagementState(),
     intelligence: normalizeIntelligence(parsed.intelligence),
   };

@@ -1694,6 +1694,12 @@ export default function RoutineGenerate() {
                 itemCount: Array.isArray(routine.items) ? routine.items.length : undefined,
                 source: "family",
               });
+              void import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
+                trackOnboardingMilestone("first_routine_generated", {
+                  routineId: savedRoutine.id,
+                  childId: child.id,
+                });
+              });
               void validateRoutineSafety(
                 authFetch,
                 routine.items as Array<{

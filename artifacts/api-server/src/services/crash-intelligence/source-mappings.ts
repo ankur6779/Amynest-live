@@ -127,6 +127,62 @@ export const SOURCE_MAPPINGS: SourceMapping[] = [
       },
     ],
   },
+  {
+    readableFingerprint: "Phonics|Error|PhonicsLearning",
+    component: "Phonics",
+    route: "/phonics",
+    locations: [
+      {
+        file: "artifacts/kidschedule/src/components/phonics-learning.tsx",
+        line: 0,
+        functionName: "PhonicsLearning",
+        hook: "other",
+        stateMutation: "render with sanitized phonics items",
+      },
+      {
+        file: "artifacts/kidschedule/src/components/phonics-error-boundary.tsx",
+        line: 0,
+        functionName: "PhonicsErrorBoundary",
+        hook: "other",
+        stateMutation: "componentDidCatch + reportCrash",
+      },
+    ],
+  },
+  {
+    readableFingerprint: "ParentingHub|Error|ActivitiesSection",
+    component: "ParentingHub",
+    route: "/parenting-hub",
+    locations: [
+      {
+        file: "artifacts/kidschedule/src/pages/parenting-hub.tsx",
+        line: 1335,
+        functionName: "ActivitiesSection",
+        hook: "other",
+        stateMutation: "requires ageGroup before render",
+      },
+    ],
+  },
+  {
+    readableFingerprint: "MathPlayground|TypeError|mathConfidenceStars",
+    component: "ParentRetentionDashboard",
+    route: "/parenting-hub",
+    locations: [
+      {
+        file: "artifacts/kidschedule/src/components/math-playground/rewards/ParentRetentionDashboard.tsx",
+        line: 0,
+        functionName: "ParentRetentionDashboard",
+        hook: "useMemo",
+        stateMutation: "normalizeParentRetentionSnapshot",
+      },
+      {
+        file: "lib/math-playground/src/parent-retention.ts",
+        line: 0,
+        functionName: "normalizeParentRetentionSnapshot",
+        hook: "other",
+        stateMutation: "default mathConfidenceStars",
+      },
+    ],
+  },
 ];
 
 export function getSourceMappingForFingerprint(

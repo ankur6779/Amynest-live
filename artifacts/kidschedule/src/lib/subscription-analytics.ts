@@ -36,7 +36,8 @@ export type SubscriptionAnalyticsEvent =
   | "winback_converted"
   | "post_purchase_upsell_shown"
   | "post_purchase_upsell_accepted"
-  | "post_purchase_upsell_dismissed";
+  | "post_purchase_upsell_dismissed"
+  | "paywall_deferred_activation";
 
 export type SubscriptionAnalyticsPayload = {
   event: SubscriptionAnalyticsEvent;

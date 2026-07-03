@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { getRequestId, sendStructuredApiError } from "../lib/safe-api-response";
 import { logger } from "../lib/logger";
 import {
   completeHubJourneyPath,
@@ -38,10 +39,22 @@ router.get("/hub-journey/status", async (req, res): Promise<void> => {
     }
     res.json(status);
   } catch (err) {
+    const requestId = getRequestId(req);
     logger.error(
-      `hub-journey GET failed: ${err instanceof Error ? err.message : String(err)}`,
+      {
+        err,
+        evt: "hub_journey.status_failed",
+        userId,
+        childId: parsed.data.childId,
+        requestId,
+      },
+      "hub-journey GET failed",
     );
-    res.status(500).json({ error: "server_error" });
+    sendStructuredApiError(res, 500, {
+      code: "server_error",
+      message: err instanceof Error ? err.message : "hub journey status failed",
+      requestId,
+    });
   }
 });
 
@@ -78,10 +91,22 @@ router.post("/hub-journey/complete-path", infantExploreMutationGate(), async (re
     const status = await getHubJourneyStatus(userId, parsed.data.childId);
     res.json({ ...result, status });
   } catch (err) {
+    const requestId = getRequestId(req);
     logger.error(
-      `hub-journey complete failed: ${err instanceof Error ? err.message : String(err)}`,
+      {
+        err,
+        evt: "hub_journey.complete_failed",
+        userId,
+        childId: parsed.data.childId,
+        requestId,
+      },
+      "hub-journey complete failed",
     );
-    res.status(500).json({ error: "server_error" });
+    sendStructuredApiError(res, 500, {
+      code: "server_error",
+      message: err instanceof Error ? err.message : "hub journey complete failed",
+      requestId,
+    });
   }
 });
 
@@ -112,10 +137,22 @@ router.post("/hub-journey/peek-ahead", infantExploreMutationGate(), async (req, 
     }
     res.json(result);
   } catch (err) {
+    const requestId = getRequestId(req);
     logger.error(
-      `hub-journey peek failed: ${err instanceof Error ? err.message : String(err)}`,
+      {
+        err,
+        evt: "hub_journey.peek_failed",
+        userId,
+        childId: parsed.data.childId,
+        requestId,
+      },
+      "hub-journey peek failed",
     );
-    res.status(500).json({ error: "server_error" });
+    sendStructuredApiError(res, 500, {
+      code: "server_error",
+      message: err instanceof Error ? err.message : "hub journey peek failed",
+      requestId,
+    });
   }
 });
 

@@ -28,14 +28,15 @@ export async function persistCrashEventToBackend(report: CrashReport): Promise<v
     if (token) headers.Authorization = `Bearer ${token}`;
 
     const readableFingerprint =
-      typeof report.meta?.readableFingerprint === "string"
+      report.readableFingerprint ??
+      (typeof report.meta?.readableFingerprint === "string"
         ? report.meta.readableFingerprint
-        : undefined;
+        : undefined);
 
     const body = {
       errorId: report.errorId,
       fingerprint: report.fingerprint,
-      readableFingerprint,
+      readableFingerprint: readableFingerprint ?? report.fingerprint,
       route: report.route,
       message: report.message,
       stack: report.stack,

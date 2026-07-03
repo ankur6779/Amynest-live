@@ -127,9 +127,19 @@ export function getUnlockedBadges(): AchievementBadge[] {
   return readJson<AchievementBadge[]>(BADGES_KEY, []);
 }
 
+export type OnboardingMilestone =
+  | "signup_completed"
+  | "first_routine_generated"
+  | "first_routine_created"
+  | "first_amy_chat";
+
+export function hasOnboardingMilestone(milestone: OnboardingMilestone): boolean {
+  return readJson<string[]>(MILESTONES_KEY, []).includes(milestone);
+}
+
 /** Track onboarding → activation milestones. */
 export function trackOnboardingMilestone(
-  milestone: "signup_completed" | "first_routine_created" | "first_amy_chat",
+  milestone: OnboardingMilestone,
   extra?: Record<string, string | number | boolean>,
 ): void {
   const reached = readJson<string[]>(MILESTONES_KEY, []);

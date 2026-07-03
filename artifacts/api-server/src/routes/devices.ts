@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth.js";
+import { getRequestId, sendStructuredApiError } from "../lib/safe-api-response.js";
 import { resolveClientIp } from "../lib/device-metadata.js";
+import { logger } from "../lib/logger.js";
 import {
   DEVICE_APP_VERSION_HEADER,
   DEVICE_BROWSER_HEADER,
@@ -24,6 +26,7 @@ import {
   trackDeviceAnalytics,
   trackDeviceBypassAttempt,
 } from "../services/deviceAnalyticsService.js";
+import { recordApiDomainOutcome } from "../lib/api-domain-metrics.js";
 
 const router: IRouter = Router();
 
@@ -89,6 +92,8 @@ function serializeDevices(
 }
 
 router.post("/devices/register", async (req, res): Promise<void> => {
+  const started = Date.now();
+  const requestId = getRequestId(req);
   const { userId, email } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
@@ -102,6 +107,7 @@ router.post("/devices/register", async (req, res): Promise<void> => {
   }
 
   const metadata = mergeMetadata(req, parsed.data);
+  try {
   const result = await registerOrRefreshDevice({
     userId,
     deviceId: parsed.data.deviceId,
@@ -152,6 +158,25 @@ router.post("/devices/register", async (req, res): Promise<void> => {
     limit,
     registered: result.registered,
   });
+  recordApiDomainOutcome("device_registration", true, Date.now() - started);
+  } catch (err) {
+    logger.error(
+      {
+        err,
+        evt: "device.register_failed",
+        userId,
+        deviceId: parsed.data.deviceId,
+        requestId,
+      },
+      "device registration failed",
+    );
+    recordApiDomainOutcome("device_registration", false, Date.now() - started, "server_error");
+    sendStructuredApiError(res, 500, {
+      code: "server_error",
+      message: err instanceof Error ? err.message : "device registration failed",
+      requestId,
+    });
+  }
 });
 
 router.get("/devices", async (req, res): Promise<void> => {

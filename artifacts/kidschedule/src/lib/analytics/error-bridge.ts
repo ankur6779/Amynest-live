@@ -1,21 +1,29 @@
 import type { AnalyticsService } from "./analytics-service";
+import { reportCrash } from "@/lib/crash-report";
 
-export function installAnalyticsErrorBridge(service: AnalyticsService): () => void {
+export function installAnalyticsErrorBridge(_service: AnalyticsService): () => void {
   if (typeof window === "undefined") return () => {};
 
   const onError = (event: ErrorEvent) => {
-    service.trackError("unhandled", event.message || "unknown error", {
-      route: window.location.pathname,
+    void reportCrash({
+      kind: "window.error",
+      message: event.message || "unknown error",
+      stack: event.error instanceof Error ? event.error.stack : undefined,
+      component: "window",
     });
   };
 
   const onRejection = (event: PromiseRejectionEvent) => {
-    const msg =
-      event.reason instanceof Error
-        ? event.reason.message
-        : String(event.reason ?? "rejection");
-    service.trackError("unhandled", msg.slice(0, 500), {
-      route: window.location.pathname,
+    const reason = event.reason;
+    const message =
+      reason instanceof Error
+        ? reason.message
+        : String(reason ?? "rejection");
+    void reportCrash({
+      kind: "unhandled.rejection",
+      message: message.slice(0, 500),
+      stack: reason instanceof Error ? reason.stack : undefined,
+      component: "promise",
     });
   };
 
@@ -28,11 +36,20 @@ export function installAnalyticsErrorBridge(service: AnalyticsService): () => vo
   };
 }
 
-/** Called from React error boundaries */
+/** Called from React error boundaries when orchestrator is not used. */
 export function trackReactAnalyticsError(
-  service: AnalyticsService,
+  _service: AnalyticsService,
   error: Error,
   route?: string,
+  component?: string,
+  componentStack?: string,
 ): void {
-  service.trackError("react", error.message, { route });
+  void reportCrash({
+    kind: "react.render",
+    message: error.message,
+    stack: error.stack,
+    component: component ?? "React",
+    componentStack,
+    meta: { route },
+  });
 }

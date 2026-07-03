@@ -9,7 +9,7 @@ import {
   speechPracticeLogTable,
   type LearningProgressRow,
 } from "@workspace/db";
-import { formatDateIso, normaliseCompletedDays, computeHubJourneyAccess } from "@workspace/parent-hub-journey";
+import { formatDateIso, normaliseCompletedDays, computeHubJourneyAccess, type HubJourneyAccess } from "@workspace/parent-hub-journey";
 import {
   buildLearningProfile,
   computeLearningProgressStatus,
@@ -41,6 +41,7 @@ import {
   computeCoinsStars,
 } from "./learningProgressPhase3.js";
 import { logger } from "../lib/logger.js";
+import { withApiDomainMetrics } from "../lib/api-domain-metrics.js";
 /**
  * Phase 6 — derives a recent activity log from the canonical completed-list.
  * This avoids a new persistent table; the last N entries are sufficient for
@@ -129,9 +130,65 @@ async function ensureLearningProgressRow(
       userId,
       sectionProgress: defaultSectionProgress(),
     })
+    .onConflictDoNothing({ target: learningProgressTable.childId })
     .returning();
-  if (!created) throw new Error("learning_progress_insert_failed");
-  return created;
+  if (created) return created;
+
+  const [retry] = await db
+    .select()
+    .from(learningProgressTable)
+    .where(eq(learningProgressTable.childId, childId))
+    .limit(1);
+  if (retry) return retry;
+
+  throw new Error("learning_progress_insert_failed");
+}
+
+async function resolvePremiumForLearning(userId: string): Promise<boolean> {
+  try {
+    const sub = await getOrCreateSubscription(userId);
+    return isPremiumNow(sub);
+  } catch (err) {
+    logger.warn(
+      { err, evt: "learning_progress.premium_check_failed", userId },
+      "learning progress premium check failed — defaulting to free",
+    );
+    return false;
+  }
+}
+
+type LearningHubContext = {
+  journeyDay: number;
+  hubAccess: HubJourneyAccess;
+};
+
+async function resolveLearningHubContext(
+  userId: string,
+  childId: number,
+): Promise<LearningHubContext> {
+  try {
+    const hubStatus = await getHubJourneyStatus(userId, childId);
+    if (hubStatus) {
+      return { journeyDay: hubStatus.journeyDay, hubAccess: hubStatus.access };
+    }
+    logger.warn(
+      { evt: "learning_progress.hub_degraded", userId, childId },
+      "hub status unavailable — using default journey context",
+    );
+  } catch (err) {
+    logger.warn(
+      { err, evt: "learning_progress.hub_failed", userId, childId },
+      "hub status threw — using default journey context",
+    );
+  }
+  return {
+    journeyDay: 1,
+    hubAccess: computeHubJourneyAccess({
+      isPremium: false,
+      completedDays: [],
+      startedAt: new Date(),
+    }),
+  };
 }
 
 /** Merge smart-study + speech + life-skills snapshots into section progress on read. */
@@ -221,35 +278,49 @@ async function enrichSectionProgress(
 }
 
 export async function getLearningProgressStatus(userId: string, childId: number) {
+  return withApiDomainMetrics("learning_progress", async () => {
   const child = await loadOwnedChild(userId, childId);
   if (!child) return null;
 
-  const hubStatus = await getHubJourneyStatus(userId, childId);
-  if (!hubStatus) return null;
-
-  const sub = await getOrCreateSubscription(userId);
-  const premium = isPremiumNow(sub);
+  const { journeyDay, hubAccess } = await resolveLearningHubContext(userId, childId);
+  const premium = await resolvePremiumForLearning(userId);
   const row = await ensureLearningProgressRow(userId, childId);
   const partial = rowToProfile(row);
-  partial.sectionProgress = await enrichSectionProgress(
-    userId,
-    childId,
-    partial.sectionProgress ?? defaultSectionProgress(),
-  );
-  partial.journeyDay = hubStatus.journeyDay;
+  try {
+    partial.sectionProgress = await enrichSectionProgress(
+      userId,
+      childId,
+      partial.sectionProgress ?? defaultSectionProgress(),
+    );
+  } catch (err) {
+    logger.warn(
+      { err, evt: "learning_progress.section_enrich_failed", userId, childId },
+      "section progress enrich failed — using stored progress",
+    );
+    partial.sectionProgress = partial.sectionProgress ?? defaultSectionProgress();
+  }
+  partial.journeyDay = journeyDay;
 
   const status = computeLearningProgressStatus({
     childId,
     age: child.age,
-    journeyDay: hubStatus.journeyDay,
+    journeyDay,
     isPremium: premium,
-    hubAccess: hubStatus.access,
+    hubAccess,
     profile: partial,
     dateIso: formatDateIso(),
   });
 
   const weeklyReport = buildWeeklyParentReport({ profile: status.profile });
-  const skillEntries = await loadSkillGraphEntries(childId);
+  let skillEntries: Awaited<ReturnType<typeof loadSkillGraphEntries>> = [];
+  try {
+    skillEntries = await loadSkillGraphEntries(childId);
+  } catch (err) {
+    logger.warn(
+      { err, evt: "learning_progress.skill_graph_failed", userId, childId },
+      "skill graph load failed — continuing without skill entries",
+    );
+  }
   const persisted = phase3FromRow(row);
   const phase3 = composePhase3Status({
     childId,
@@ -275,8 +346,9 @@ export async function getLearningProgressStatus(userId: string, childId: number)
       age: child.age,
       ageMonths: child.ageMonths ?? 0,
     },
-    journeyDay: hubStatus.journeyDay,
+    journeyDay,
   };
+  });
 }
 
 export async function completeLearningActivity(

@@ -433,8 +433,20 @@ export async function getOrCreateSubscription(
   const [created] = await dbExec
     .insert(subscriptionsTable)
     .values({ userId: subscriptionOwnerUserId, plan: "free", status: "free", provider: "none", phoneNumber: phoneNumber ?? null })
+    .onConflictDoNothing({ target: subscriptionsTable.userId })
     .returning();
-  return maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, created, dbExec);
+  if (created) {
+    return maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, created, dbExec);
+  }
+  const [retry] = await dbExec
+    .select()
+    .from(subscriptionsTable)
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
+    .limit(1);
+  if (!retry) {
+    throw new Error("subscription_insert_failed");
+  }
+  return maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, retry, dbExec);
 }
 
 /**

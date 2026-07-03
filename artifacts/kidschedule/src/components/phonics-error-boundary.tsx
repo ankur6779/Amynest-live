@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
-import { logClientError } from "@/lib/log-client-error";
+import { reportCrash } from "@/lib/crash-report";
 import { getPhonicsManifestValidation } from "@/lib/phonics-manifest-validation";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 
@@ -9,11 +9,11 @@ type Props = {
   childName?: string;
 };
 
-type State = { error: Error | null };
+type State = { error: Error | null; remountKey: number };
 
-/** Phonics render failures — logs manifest context and shows a safe fallback (never white-screen). */
+/** Phonics render failures — unified crash spine + safe fallback (never white-screen). */
 export class PhonicsErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, remountKey: 0 };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
@@ -28,12 +28,13 @@ export class PhonicsErrorBoundary extends Component<Props, State> {
       libraryVersion: validation.libraryVersion,
       assetCount: validation.assetCount,
     });
-    void logClientError({
-      label: "Phonics",
+    void reportCrash({
+      kind: "react.render",
       message: error.message,
       stack: error.stack,
+      component: "Phonics",
+      componentStack: info.componentStack ?? undefined,
       meta: {
-        componentStack: info.componentStack,
         manifestVersion: validation.manifestVersion,
         libraryVersion: validation.libraryVersion,
         assetCount: validation.assetCount,
@@ -42,10 +43,19 @@ export class PhonicsErrorBoundary extends Component<Props, State> {
     });
   }
 
+  private handleRetry = (): void => {
+    this.setState((s) => ({ error: null, remountKey: s.remountKey + 1 }));
+  };
+
   render(): ReactNode {
     if (this.state.error) {
-      return <PhonicsUnavailableFallback childName={this.props.childName} />;
+      return (
+        <PhonicsUnavailableFallback
+          childName={this.props.childName}
+          onRetry={this.handleRetry}
+        />
+      );
     }
-    return this.props.children;
+    return <div key={this.state.remountKey}>{this.props.children}</div>;
   }
 }

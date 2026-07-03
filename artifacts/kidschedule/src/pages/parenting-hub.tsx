@@ -1320,7 +1320,7 @@ function ParentingHubPage() {
     render: () => {
       const showTips = isInfant || hubSurface.current === "previous";
       if (!showTips) return null;
-      const tipsAgeGroup: AgeGroup = hubSurface.current === "previous" ? "infant" : ageGroup!;
+      const tipsAgeGroup: AgeGroup = hubSurface.current === "previous" ? "infant" : (ageGroup ?? "infant");
       return (
         <ParentSupportPremiumSection
           id="new-parent-tips"
@@ -1335,10 +1335,10 @@ function ParentingHubPage() {
     id: "activities",
     alwaysCurrent: true,
     render: () => {
-      if (!ageGroup && !isTwoPlus) return null;
+      if (!ageGroup) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <CreativityPremiumSection id="activities" title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}>
-            <ActivitiesSection ageGroup={ageGroup!} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
+            <ActivitiesSection ageGroup={ageGroup} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
           </CreativityPremiumSection>
         </FeatureGate>;
     }

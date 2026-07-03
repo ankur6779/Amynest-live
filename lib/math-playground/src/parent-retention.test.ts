@@ -6,6 +6,7 @@ import {
   computeSkillBreakdown,
   deriveSkillTrend,
   mathConfidenceStars,
+  normalizeParentRetentionSnapshot,
 } from "./parent-retention.ts";
 import { defaultLearningState, recordPlaygroundSession } from "./adaptive.ts";
 
@@ -91,5 +92,28 @@ describe("math-playground parent-retention", () => {
     assert.equal(snapshot.sessionCount, 1);
     assert.ok(snapshot.recommendedActivityId);
     assert.ok(["improving", "stable", "needs_practice"].includes(snapshot.recommendedTrend));
+  });
+
+  it("normalizeParentRetentionSnapshot repairs missing mathConfidenceStars", () => {
+    const learning = defaultLearningState();
+    const normalized = normalizeParentRetentionSnapshot(
+      {
+        skillBreakdown: {
+          counting: 50,
+          addition: 0,
+          subtraction: 0,
+          multiplication: 0,
+          division: 0,
+          patterns: 0,
+        },
+        sessionCount: 2,
+        recommendedActivityId: "counting_adventure",
+        recommendedTrend: "stable",
+        generatedAt: Date.now(),
+      },
+      { learning, rewards: defaultRewardState(), ageYears: 5 },
+    );
+    assert.ok(normalized);
+    assert.ok(normalized!.mathConfidenceStars >= 1 && normalized!.mathConfidenceStars <= 5);
   });
 });

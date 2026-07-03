@@ -59,12 +59,6 @@ export class AppErrorBoundary extends Component<Props, State> {
 
     console.error("APP CRASH:", label, error, info.componentStack);
 
-    void import("@/lib/analytics/error-bridge").then(({ trackReactAnalyticsError }) => {
-      void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
-        trackReactAnalyticsError(getAnalyticsService(), error, route);
-      });
-    });
-
     if (isCrashDebugOverlayEnabled()) {
       showReactCrashOverlay(error, label, info.componentStack ?? undefined);
     }

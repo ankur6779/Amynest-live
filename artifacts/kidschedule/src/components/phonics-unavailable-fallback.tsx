@@ -7,12 +7,14 @@ import { getPhonicsManifestValidation } from "@/lib/phonics-manifest-validation"
 type PhonicsUnavailableFallbackProps = {
   childName?: string;
   compact?: boolean;
+  onRetry?: () => void;
 };
 
 /** Shown when the phonics audio library failed boot validation — never crashes. */
 export function PhonicsUnavailableFallback({
   childName,
   compact = false,
+  onRetry,
 }: PhonicsUnavailableFallbackProps) {
   const validation = getPhonicsManifestValidation();
 
@@ -50,11 +52,18 @@ export function PhonicsUnavailableFallback({
             </p>
           ) : null}
         </div>
-        <AppLink href="/parenting-hub" source="phonics-unavailable">
-          <Button variant="outline" className="rounded-2xl">
-            Back to Learning Hub
-          </Button>
-        </AppLink>
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+          {onRetry ? (
+            <Button type="button" className="rounded-2xl" onClick={onRetry}>
+              Try again
+            </Button>
+          ) : null}
+          <AppLink href="/parenting-hub" source="phonics-unavailable">
+            <Button variant="outline" className="rounded-2xl w-full sm:w-auto">
+              Back to Learning Hub
+            </Button>
+          </AppLink>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-07-03T00:00:00.000Z",
+  "source": "Production Analytics Audit (Phase 0) — pre-Phase-5 deploy",
+  "note": "Re-run scripts/production-stabilization/analyze-activation-funnel.mjs against production DATABASE_URL for live snapshot.",
+  "activeUsers": { "mau": 148, "dau": 27 },
+  "retention": { "d1": 0.07, "d7": 0.028 },
+  "funnel": [
+    { "stage": "app_open", "users": 140, "events": 476 },
+    { "stage": "device_registered", "users": 131, "events": 269 },
+    { "stage": "onboarding_milestone", "users": 26, "events": 26 },
+    { "stage": "routine_generated", "users": 13, "events": 23 },
+    { "stage": "premium_paywall_viewed", "users": 13, "events": 30 },
+    { "stage": "streak_updated", "users": 111, "events": 162 }
+  ],
+  "conversionRates": {
+    "open_to_registered": 0.936,
+    "registered_to_onboarded": 0.198,
+    "registered_to_routine": 0.099,
+    "paywall_cta_click_rate": 0.08
+  },
+  "targets": {
+    "d1": 0.25,
+    "d7": 0.15,
+    "routine_completion": 0.6,
+    "first_feature_usage": 0.8,
+    "profile_completion": 0.85,
+    "trial_to_paid": 0.08
+  }
+}

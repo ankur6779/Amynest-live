@@ -1,5 +1,5 @@
 import { isActivityUnlocked } from "./age-bands";
-import { defaultActivityStats, pickWeakActivities } from "./adaptive";
+import { defaultActivityStats, defaultLearningState, pickWeakActivities } from "./adaptive";
 import type {
   ParentRetentionSnapshot,
   PlaygroundActivityId,
@@ -144,6 +144,67 @@ export function buildParentRetentionSnapshot(
     recommendedTrend: trend,
     sessionCount: learning.sessionHistory.length,
     generatedAt: Date.now(),
+  };
+}
+
+/** Repair partial/stale snapshots from localStorage (prevents mathConfidenceStars undefined crashes). */
+export function normalizeParentRetentionSnapshot(
+  raw: Partial<ParentRetentionSnapshot> | null | undefined,
+  fallback?: {
+    learning: PlaygroundLearningState;
+    rewards: PlaygroundRewardState;
+    ageYears: number;
+  },
+): ParentRetentionSnapshot | null {
+  if (!raw || typeof raw !== "object") {
+    if (!fallback) return null;
+    return buildParentRetentionSnapshot(fallback.learning, fallback.rewards, fallback.ageYears);
+  }
+
+  const skillBreakdown =
+    raw.skillBreakdown && typeof raw.skillBreakdown === "object"
+      ? {
+          counting: Number(raw.skillBreakdown.counting) || 0,
+          addition: Number(raw.skillBreakdown.addition) || 0,
+          subtraction: Number(raw.skillBreakdown.subtraction) || 0,
+          multiplication: Number(raw.skillBreakdown.multiplication) || 0,
+          division: Number(raw.skillBreakdown.division) || 0,
+          patterns: Number(raw.skillBreakdown.patterns) || 0,
+        }
+      : fallback
+        ? computeSkillBreakdown(fallback.learning)
+        : computeSkillBreakdown(defaultLearningState());
+
+  const starsRaw = raw.mathConfidenceStars;
+  const mathConfidenceStarsValue =
+    typeof starsRaw === "number" && starsRaw >= 1 && starsRaw <= 5
+      ? (Math.floor(starsRaw) as 1 | 2 | 3 | 4 | 5)
+      : mathConfidenceStars(skillBreakdown);
+
+  const sessionCount =
+    typeof raw.sessionCount === "number" && raw.sessionCount >= 0
+      ? raw.sessionCount
+      : fallback?.learning.sessionHistory.length ?? 0;
+
+  if (sessionCount === 0 && !fallback) return null;
+
+  const recommendedActivityId =
+    raw.recommendedActivityId ?? (fallback ? pickRecommendedActivity(fallback.learning, skillBreakdown, fallback.ageYears).activityId : "counting_adventure");
+
+  const recommendedTrend =
+    raw.recommendedTrend === "improving" ||
+    raw.recommendedTrend === "needs_practice" ||
+    raw.recommendedTrend === "stable"
+      ? raw.recommendedTrend
+      : "stable";
+
+  return {
+    mathConfidenceStars: mathConfidenceStarsValue,
+    skillBreakdown,
+    recommendedActivityId,
+    recommendedTrend,
+    sessionCount,
+    generatedAt: typeof raw.generatedAt === "number" ? raw.generatedAt : Date.now(),
   };
 }
 

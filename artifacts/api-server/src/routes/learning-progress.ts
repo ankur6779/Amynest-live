@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { getRequestId, sendStructuredApiError } from "../lib/safe-api-response";
 import { logger } from "../lib/logger";
 import {
   getLearningProgressStatus,
@@ -88,10 +89,22 @@ router.get("/learning-progress/status", async (req, res): Promise<void> => {
     }
     res.json(status);
   } catch (err) {
+    const requestId = getRequestId(req);
     logger.error(
-      `learning-progress GET failed: ${err instanceof Error ? err.message : String(err)}`,
+      {
+        err,
+        evt: "learning_progress.status_failed",
+        userId,
+        childId: parsed.data.childId,
+        requestId,
+      },
+      "learning-progress GET failed",
     );
-    res.status(500).json({ error: "server_error" });
+    sendStructuredApiError(res, 500, {
+      code: "server_error",
+      message: err instanceof Error ? err.message : "learning progress status failed",
+      requestId,
+    });
   }
 });
 

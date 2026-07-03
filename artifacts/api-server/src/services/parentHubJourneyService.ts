@@ -31,6 +31,7 @@ import {
 import { getArticlesForAgeMonths } from "@workspace/parenting-articles";
 import { getOrCreateSubscription, isPremiumNow } from "./subscriptionService.js";
 import { logger } from "../lib/logger.js";
+import { withApiDomainMetrics } from "../lib/api-domain-metrics.js";
 
 export {
   HUB_JOURNEY_FREE_DAYS,
@@ -126,12 +127,52 @@ async function syncHubJourneyChildId(
 ): Promise<ParentHubJourney> {
   if (row.childId === childId) return row;
   const now = new Date();
-  const [updated] = await db
-    .update(parentHubJourneyTable)
-    .set({ childId, updatedAt: now })
-    .where(eq(parentHubJourneyTable.userId, row.userId))
-    .returning();
-  return updated ?? { ...row, childId, updatedAt: now };
+  try {
+    const [updated] = await db
+      .update(parentHubJourneyTable)
+      .set({ childId, updatedAt: now })
+      .where(eq(parentHubJourneyTable.userId, row.userId))
+      .returning();
+    return updated ?? { ...row, childId, updatedAt: now };
+  } catch (err) {
+    logger.warn(
+      { err, evt: "hub_journey.child_sync_failed", userId: row.userId, childId },
+      "hub journey childId sync failed — continuing with cached row",
+    );
+    return { ...row, childId, updatedAt: now };
+  }
+}
+
+async function resolvePremiumForHub(userId: string): Promise<boolean> {
+  try {
+    const sub = await getOrCreateSubscription(userId);
+    return isPremiumNow(sub);
+  } catch (err) {
+    logger.warn(
+      { err, evt: "hub_journey.premium_check_failed", userId },
+      "hub journey premium check failed — defaulting to free",
+    );
+    return false;
+  }
+}
+
+function emptyProgressSnapshot(childName: string): ChildProgressSnapshot {
+  return {
+    lifeSkillsDone: 0,
+    lifeSkillsStreak: 0,
+    consistencyDays: 0,
+    levelLabel: null,
+    summaryLine: buildDefaultSummaryLine(childName, {
+      lifeSkillsDone: 0,
+      lifeSkillsStreak: 0,
+      consistencyDays: 0,
+      levelLabel: null,
+    }),
+  };
+}
+
+function asStringArray(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((v): v is string => typeof v === "string") : [];
 }
 
 export async function ensureHubJourney(
@@ -174,6 +215,7 @@ async function loadProgressSnapshot(
   childName: string,
   ageYears: number,
 ): Promise<ChildProgressSnapshot> {
+  try {
   const lsRows = await db
     .select({ completedDates: lifeSkillsProgressTable.completedDates })
     .from(lifeSkillsProgressTable)
@@ -236,6 +278,13 @@ async function loadProgressSnapshot(
     levelLabel,
     summaryLine,
   };
+  } catch (err) {
+    logger.warn(
+      { err, evt: "hub_journey.progress_snapshot_failed", userId, childId },
+      "hub journey progress snapshot failed — using empty snapshot",
+    );
+    return emptyProgressSnapshot(childName);
+  }
 }
 
 function pickParentTip(band: string, journeyDay: number, dateIso: string): string {
@@ -265,11 +314,11 @@ export async function getHubJourneyStatus(
   userId: string,
   childId: number,
 ): Promise<HubJourneyStatusResponse | null> {
+  return withApiDomainMetrics("hub_journey", async () => {
   const child = await loadOwnedChild(userId, childId);
   if (!child) return null;
 
-  const sub = await getOrCreateSubscription(userId);
-  const premium = isPremiumNow(sub);
+  const premium = await resolvePremiumForHub(userId);
   const row = await ensureHubJourney(userId, childId);
   if (!row) return null;
 
@@ -296,6 +345,7 @@ export async function getHubJourneyStatus(
   })();
   const previousIds: string[] = [];
   if (child.age >= 2) {
+    try {
     const lsRows = await db
       .select({ skillId: lifeSkillsProgressTable.skillId, completedDates: lifeSkillsProgressTable.completedDates })
       .from(lifeSkillsProgressTable)
@@ -305,25 +355,46 @@ export async function getHubJourneyStatus(
         previousIds.push(r.skillId);
       }
     }
+    } catch (err) {
+      logger.warn(
+        { err, evt: "hub_journey.life_skills_read_failed", userId, childId },
+        "hub journey life skills read failed — continuing without previousIds",
+      );
+    }
   }
 
-  const lifeSkillTasks =
-    child.age >= 2
-      ? pickDailyLifeSkillTasks({
-          ageBand: ageBandForLifeSkills(child.age),
-          date: dateIso,
-          childKey: childId,
-          count: 1,
-          previousIds,
-        })
-      : [];
+  let lifeSkillTasks: ReturnType<typeof pickDailyLifeSkillTasks> = [];
+  if (child.age >= 2) {
+    try {
+      lifeSkillTasks = pickDailyLifeSkillTasks({
+        ageBand: ageBandForLifeSkills(child.age),
+        date: dateIso,
+        childKey: childId,
+        count: 1,
+        previousIds,
+      });
+    } catch (err) {
+      logger.warn(
+        { err, evt: "hub_journey.life_skill_pick_failed", userId, childId },
+        "hub journey daily life skill pick failed",
+      );
+    }
+  }
   const ls = lifeSkillTasks[0];
 
-  const articles = getArticlesForAgeMonths(totalMonths);
-  const articleIdx = Math.abs(
-    `${dateIso}:${childId}`.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
-  ) % Math.max(1, articles.length);
-  const article = articles[articleIdx] ?? null;
+  let article: { id: string; title: string; summary: string } | null = null;
+  try {
+    const articles = getArticlesForAgeMonths(totalMonths);
+    const articleIdx = Math.abs(
+      `${dateIso}:${childId}`.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
+    ) % Math.max(1, articles.length);
+    article = articles[articleIdx] ?? null;
+  } catch (err) {
+    logger.warn(
+      { err, evt: "hub_journey.article_pick_failed", userId, childId },
+      "hub journey article pick failed",
+    );
+  }
 
   const progress = await loadProgressSnapshot(userId, childId, child.name, child.age);
 
@@ -373,7 +444,7 @@ export async function getHubJourneyStatus(
     peekAhead,
     peekAvailable,
     progress,
-    bonusUnlocks: row.bonusUnlocks ?? [],
+    bonusUnlocks: asStringArray(row.bonusUnlocks),
     articleOfDay: article
       ? { id: article.id, title: article.title, summary: article.summary }
       : null,
@@ -384,6 +455,7 @@ export async function getHubJourneyStatus(
       ageMonths,
     },
   };
+  });
 }
 
 export async function completeHubJourneyPath(

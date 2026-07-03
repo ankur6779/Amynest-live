@@ -4,10 +4,17 @@
 
 import { logClientError } from "@/lib/log-client-error";
 import { persistCrashEventToBackend } from "@/lib/persist-crash-event";
+import {
+  recordCrashFingerprint,
+  shouldEmitErrorCaptured,
+  stackTraceHash,
+} from "@/lib/crash-fingerprint-registry";
+import { buildReadableFingerprint } from "@/lib/self-healing/crash-intelligence";
 
 export type CrashReport = {
   errorId: string;
   fingerprint: string;
+  readableFingerprint: string;
   kind: string;
   message: string;
   stack?: string;
@@ -117,17 +124,28 @@ export function buildCrashReport(input: {
   childId?: string | null;
   errorId?: string;
   meta?: Record<string, unknown>;
+  fingerprint?: string;
+  readableFingerprint?: string;
 }): CrashReport {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const route = typeof window !== "undefined" ? window.location.pathname : undefined;
   const message = input.message.slice(0, 4000);
   const stack = input.stack?.slice(0, 8000);
-  const fingerprint = fingerprintCrash(message, input.component, stack);
+  const fingerprint =
+    input.fingerprint ?? fingerprintCrash(message, input.component, stack);
+  const readableFingerprint =
+    input.readableFingerprint ??
+    buildReadableFingerprint(
+      input.component,
+      message,
+      input.componentStack?.includes("Phonics") ? "PhonicsLearning" : undefined,
+    );
   const childId = input.childId ?? readChildIdFromRoute(route);
 
   return {
     errorId: input.errorId ?? generateErrorReferenceId(),
     fingerprint,
+    readableFingerprint,
     kind: input.kind,
     message,
     stack,
@@ -156,6 +174,8 @@ export async function reportCrash(input: {
   childId?: string | null;
   errorId?: string;
   meta?: Record<string, unknown>;
+  fingerprint?: string;
+  readableFingerprint?: string;
 }): Promise<CrashReport> {
   const report = buildCrashReport(input);
 
@@ -185,6 +205,7 @@ export async function reportCrash(input: {
     meta: {
       errorId: report.errorId,
       fingerprint: report.fingerprint,
+      readableFingerprint: report.readableFingerprint,
       kind: report.kind,
       route: report.route,
       componentStack: report.componentStack,
@@ -195,11 +216,41 @@ export async function reportCrash(input: {
       userId: report.userId,
       childId: report.childId,
       timestamp: report.timestamp,
+      stackHash: stackTraceHash(report.stack),
       ...report.meta,
     },
   });
 
-  void persistCrashEventToBackend(report);
+  const registryRecord = recordCrashFingerprint(report, report.readableFingerprint);
+
+  if (shouldEmitErrorCaptured(report.fingerprint)) {
+    void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+      getAnalyticsService().trackError(
+        input.kind.includes("react") ? "react" : "unhandled",
+        report.message,
+        {
+          route: report.route,
+          screen: report.route,
+          feature: input.component ?? report.kind,
+          fingerprint: report.fingerprint,
+          stack_hash: registryRecord.stackHash,
+          component: input.component,
+          session_id: report.sessionId,
+        },
+      );
+    });
+  }
+
+  void persistCrashEventToBackend({
+    ...report,
+    meta: {
+      ...report.meta,
+      readableFingerprint: report.readableFingerprint,
+      frequency: registryRecord.count,
+      firstSeen: registryRecord.firstSeen,
+      lastSeen: registryRecord.lastSeen,
+    },
+  });
 
   return report;
 }

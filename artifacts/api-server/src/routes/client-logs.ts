@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
 import { getAuth } from "../lib/auth";
+import { getRequestId, sendStructuredApiError } from "../lib/safe-api-response";
 import { logger } from "../lib/logger";
 import { recordChatPlatformPromptHiddenFailure } from "../services/chatPlatformRemoteConfig";
 import { ingestChatPlatformHealthEvent } from "../services/chatPlatformHealthStore";
@@ -51,18 +52,31 @@ const recentLogs: Array<{
   message: string;
 }> = [];
 
+function safeMetaClone(meta: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!meta || typeof meta !== "object") return undefined;
+  try {
+    return JSON.parse(JSON.stringify(meta).slice(0, 4000)) as Record<string, unknown>;
+  } catch {
+    return { truncated: true };
+  }
+}
+
 async function ingestClientLog(req: Request, res: Response): Promise<void> {
+  const requestId = getRequestId(req);
+  try {
   const parsed = ClientLogBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    sendStructuredApiError(res, 400, {
+      code: "invalid_body",
+      message: "Invalid client log payload",
+      details: { issues: parsed.error.issues },
+      requestId,
+    });
     return;
   }
 
   const { userId } = getAuth(req);
-  const meta =
-    parsed.data.meta && typeof parsed.data.meta === "object"
-      ? JSON.parse(JSON.stringify(parsed.data.meta).slice(0, 4000))
-      : undefined;
+  const meta = safeMetaClone(parsed.data.meta);
 
   const entry = {
     ts: Date.now(),
@@ -175,6 +189,24 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
   }
 
   res.status(204).end();
+  } catch (err) {
+    logger.error(
+      {
+        err,
+        evt: "client_log.ingest_failed",
+        requestId,
+        userId: getAuth(req).userId ?? null,
+      },
+      "client log ingest failed",
+    );
+    if (!res.headersSent) {
+      sendStructuredApiError(res, 500, {
+        code: "server_error",
+        message: "Failed to ingest client log",
+        requestId,
+      });
+    }
+  }
 }
 
 router.post("/logs", ingestClientLog);

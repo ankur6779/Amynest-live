@@ -1,4 +1,23 @@
-import type { Response } from "express";
+import type { Request, Response } from "express";
+
+export type StructuredApiErrorBody = {
+  success: false;
+  /** Machine-readable code (legacy clients read `error`). */
+  error: string;
+  code: string;
+  message: string;
+  details: Record<string, unknown>;
+  requestId?: string;
+  timestamp: string;
+};
+
+export function getRequestId(req: Request): string | undefined {
+  if (typeof req.requestId === "string" && req.requestId.length > 0) {
+    return req.requestId;
+  }
+  const id = (req as Request & { id?: string }).id;
+  return typeof id === "string" && id.length > 0 ? id : undefined;
+}
 
 export type SafeApiPayload<T> = {
   success: boolean;
@@ -59,4 +78,34 @@ export function sendSafeError(
     fallback,
     error: safe,
   });
+}
+
+/**
+ * Standard API error envelope for Phase 3 stability.
+ * Keeps `error` as the code string for backward compatibility.
+ */
+export function sendStructuredApiError(
+  res: Response,
+  status: number,
+  opts: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+    requestId?: string;
+  },
+): void {
+  const message =
+    process.env.NODE_ENV === "production"
+      ? sanitizePublicErrorMessage(opts.message)
+      : opts.message;
+  const body: StructuredApiErrorBody = {
+    success: false,
+    error: opts.code,
+    code: opts.code,
+    message,
+    details: opts.details ?? {},
+    ...(opts.requestId ? { requestId: opts.requestId } : {}),
+    timestamp: new Date().toISOString(),
+  };
+  res.status(status).json(body);
 }

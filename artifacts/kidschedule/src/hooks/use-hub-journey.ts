@@ -44,6 +44,7 @@ export function useHubJourney(childId: number | null | undefined) {
     enabled: !!isSignedIn && !!cid && cid > 0,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+    retry: 2,
     queryFn: async () => {
       const res = await authFetch(
         getApiUrl(`/api/hub-journey/status?childId=${cid}`),

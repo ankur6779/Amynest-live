@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   buildParentRetentionSnapshot,
   deriveSkillTrend,
+  normalizeParentRetentionSnapshot,
   type ParentRetentionSnapshot,
   type PlaygroundLearningState,
   type PlaygroundRewardState,
@@ -35,12 +36,25 @@ export function ParentRetentionDashboard({
   const { t } = useTranslation();
 
   const snapshot = useMemo(() => {
-    if (savedSnapshot) return savedSnapshot;
+    if (savedSnapshot) {
+      return (
+        normalizeParentRetentionSnapshot(savedSnapshot, {
+          learning,
+          rewards,
+          ageYears,
+        }) ?? null
+      );
+    }
     if (learning.sessionHistory.length === 0) return null;
     return buildParentRetentionSnapshot(learning, rewards, ageYears);
   }, [savedSnapshot, learning, rewards, ageYears]);
 
   if (!snapshot || snapshot.sessionCount === 0) return null;
+
+  const confidenceStars =
+    typeof snapshot.mathConfidenceStars === "number"
+      ? Math.min(5, Math.max(1, snapshot.mathConfidenceStars))
+      : 3;
 
   const visibleSkills = SKILL_ORDER.filter((key) => snapshot.skillBreakdown[key] > 0);
 
@@ -60,7 +74,7 @@ export function ParentRetentionDashboard({
           <span
             key={i}
             className="text-sm"
-            style={{ opacity: i < snapshot.mathConfidenceStars ? 1 : 0.25 }}
+            style={{ opacity: i < confidenceStars ? 1 : 0.25 }}
           >
             ⭐
           </span>

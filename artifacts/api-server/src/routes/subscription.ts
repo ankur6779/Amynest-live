@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
+import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db, revenuecatWebhookEventsTable, subscriptionsTable } from "@workspace/db";
 import { getAuth } from "../lib/auth";
@@ -20,6 +21,7 @@ import { buildPlanCardsForApi } from "@workspace/subscription-marketing";
 import { safeRoute } from "../lib/safe-route-handler.js";
 import { heavyRouteGuard } from "../middlewares/heavy-route-guard.js";
 import { logger } from "../lib/logger";
+import { recordApiDomainOutcome } from "../lib/api-domain-metrics.js";
 import {
   createSubscription as rzpCreateSubscription,
   fetchSubscription as rzpFetchSubscription,
@@ -228,14 +230,22 @@ router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<voi
  * New purchases must unlock through RevenueCat webhook delivery. This endpoint
  * is retained for Restore Purchase flows where no fresh webhook is expected.
  */
+const RcSyncBody = z.object({
+  purpose: z.literal("restore"),
+});
+
 router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): Promise<void> => {
+  const started = Date.now();
   const { userId, email, emailVerified, signInProvider } = getAuth(req);
   if (!userId) {
+    recordApiDomainOutcome("billing", false, Date.now() - started, "unauthorized");
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  if (req.body?.purpose !== "restore") {
-    res.status(409).json({ ok: false, reason: "webhook_required" });
+  const parsed = RcSyncBody.safeParse(req.body);
+  if (!parsed.success) {
+    recordApiDomainOutcome("billing", false, Date.now() - started, "webhook_required");
+    res.status(409).json({ ok: false, reason: "webhook_required", issues: parsed.error.flatten() });
     return;
   }
   const appUserId = await recoverPremiumOwnerForAuth({
@@ -263,6 +273,7 @@ router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): P
     },
     "[rc-sync] purchase finalize outcome",
   );
+  recordApiDomainOutcome("billing", result.synced, Date.now() - started, result.reason);
   res.json({
     ok: result.synced,
     verifiedCustomer: result.verifiedCustomer ?? false,

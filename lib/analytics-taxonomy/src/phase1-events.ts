@@ -124,6 +124,12 @@ export const PHASE1_EVENT_PROP_SCHEMAS = {
     screen: z.string().max(256).optional(),
     status_code: z.number().int().optional(),
     feature: z.string().max(80).optional(),
+    /** Stable crash group id (client fingerprint). */
+    fingerprint: z.string().max(64).optional(),
+    /** Hash of top stack frames for grouping. */
+    stack_hash: z.string().max(64).optional(),
+    component: z.string().max(128).optional(),
+    session_id: z.string().max(128).optional(),
   }),
 } as const;
 

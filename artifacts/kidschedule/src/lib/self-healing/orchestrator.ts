@@ -67,9 +67,9 @@ export async function planComponentCrashRecovery(
       componentStack: input.componentStack,
       userId: input.userId,
       errorId: intelligence.errorId,
+      fingerprint: intelligence.fingerprint,
+      readableFingerprint: intelligence.readableFingerprint,
       meta: {
-        readableFingerprint: intelligence.readableFingerprint,
-        fingerprint: intelligence.fingerprint,
         queryKeys: intelligence.queryKeys,
         recentActions: intelligence.recentActions,
         mitigationApplied,

@@ -24,6 +24,7 @@ export type GrowthEventName =
   | "achievement_unlocked"
   | "onboarding_milestone"
   | "signup_completed"
+  | "first_routine_generated"
   | "first_routine_created"
   | "first_amy_chat"
   | "pre_signup_notification_scheduled"
@@ -69,6 +70,7 @@ const GA4_GROWTH_EVENTS = new Set<GrowthEventName>([
   "play_store_click",
   "premium_conversion",
   "signup_completed",
+  "first_routine_generated",
   "first_routine_created",
   "first_amy_chat",
   "pre_signup_notification_scheduled",

@@ -122,19 +122,37 @@ export async function ingestAnalyticsEvents(
   }
 
   if (rows.length > 0) {
-    try {
-      await db.insert(analyticsEventsTable).values(rows);
-      summary.accepted = rows.length;
-      quality.accepted += rows.length;
-    } catch (err) {
+    const CHUNK = 50;
+    let insertError: unknown = null;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK);
+      try {
+        await db.insert(analyticsEventsTable).values(chunk);
+        summary.accepted += chunk.length;
+        quality.accepted += chunk.length;
+      } catch (err) {
+        insertError = err;
+        for (const row of chunk) {
+          try {
+            await db.insert(analyticsEventsTable).values(row);
+            summary.accepted += 1;
+            quality.accepted += 1;
+          } catch (rowErr) {
+            summary.rejected += 1;
+            logger.warn(
+              { err: rowErr, evt: "analytics.row_insert_failed", eventName: row.eventName, userId: ctx.userId },
+              "analytics single-row insert failed",
+            );
+          }
+        }
+      }
+    }
+    if (summary.accepted === 0 && insertError) {
       logger.error(
-        `analytics ingest insert failed: ${err instanceof Error ? err.message : String(err)}`,
+        { err: insertError, evt: "analytics.ingest_failed", userId: ctx.userId, batchSize: rows.length },
+        "analytics ingest insert failed for entire batch",
       );
-      // Persistence failed: nothing was accepted; report the batch as rejected
-      // so the caller doesn't over-report success.
-      summary.accepted = 0;
-      summary.rejected = summary.received;
-      throw err;
+      throw insertError;
     }
   }
 

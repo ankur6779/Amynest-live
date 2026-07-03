@@ -2,6 +2,10 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { incrementPaywallVisitCount } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { track } from "@/lib/analytics";
+import {
+  ACTIVATION_ROUTINE_GENERATE_HREF,
+  shouldDeferPaywallForActivation,
+} from "@/lib/activation-gate";
 
 export type PaywallReason =
   | "ai_quota"
@@ -47,6 +51,28 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PaywallState>({ open: false, reason: "feature" });
 
   const openPaywall = useCallback((reason: PaywallReason = "feature", meta?: Omit<PaywallState, "open" | "reason">) => {
+    const routineCount = Number(
+      (meta as { routineCount?: number } | undefined)?.routineCount ?? 0,
+    );
+    if (shouldDeferPaywallForActivation(reason, routineCount)) {
+      trackSubscriptionEvent({
+        event: "paywall_deferred_activation",
+        reason,
+        source: meta?.source ?? "open_paywall",
+      });
+      track("navigation", {
+        from_route: "paywall_deferred",
+        to_route: ACTIVATION_ROUTINE_GENERATE_HREF,
+        trigger: "programmatic",
+        feature: reason,
+      });
+      window.dispatchEvent(
+        new CustomEvent("amynest:activation-redirect", {
+          detail: { href: ACTIVATION_ROUTINE_GENERATE_HREF, reason },
+        }),
+      );
+      return;
+    }
     incrementPaywallVisitCount();
     trackSubscriptionEvent({
       event: "paywall_opened",

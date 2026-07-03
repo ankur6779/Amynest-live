@@ -250,7 +250,30 @@ export async function registerOrRefreshDevice(params: {
         lastSeenAt: now,
         isActive: 1,
       })
+      .onConflictDoNothing({ target: [userDevicesTable.userId, userDevicesTable.deviceId] })
       .returning();
+
+    if (!created) {
+      const [raced] = await tx
+        .select()
+        .from(userDevicesTable)
+        .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.deviceId, deviceId)))
+        .limit(1);
+      if (raced) {
+        const patch = buildRowPatch(meta, raced);
+        const [updated] = await tx
+          .update(userDevicesTable)
+          .set({ ...patch, isActive: 1 })
+          .where(eq(userDevicesTable.id, raced.id))
+          .returning();
+        return {
+          ok: true as const,
+          device: toDeviceRecord(updated ?? raced, deviceId),
+          registered: false,
+        };
+      }
+      throw new Error("device_insert_failed");
+    }
 
     logger.info(
       { evt: "device.registered", userId, deviceId, platform: meta.platform },

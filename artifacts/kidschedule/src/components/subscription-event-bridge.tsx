@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { usePaywall, type PaywallReason } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
@@ -13,6 +14,18 @@ export function SubscriptionEventBridge() {
   const { openPaywall } = usePaywall();
   const { refresh } = useSubscription();
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const onActivationRedirect = (e: Event) => {
+      const href = (e as CustomEvent<{ href?: string }>).detail?.href;
+      if (href) setLocation(href);
+    };
+    window.addEventListener("amynest:activation-redirect", onActivationRedirect);
+    return () => {
+      window.removeEventListener("amynest:activation-redirect", onActivationRedirect);
+    };
+  }, [setLocation]);
 
   useEffect(() => {
     const onOpen = (e: Event) => {
