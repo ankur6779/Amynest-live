@@ -119,6 +119,11 @@ export function useFeatureUsage() {
     onError: (_err, _id, ctx) => {
       if (ctx?.previous) qc.setQueryData(QKEY, ctx.previous);
     },
+    onSuccess: (_data, featureId) => {
+      void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+        getAnalyticsService().trackFeatureOpen(featureId);
+      });
+    },
   });
 
   /** True when the free quota for this feature is fully consumed. */

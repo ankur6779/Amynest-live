@@ -74,6 +74,9 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
 import { markAppCoreReady } from "@/lib/startup-orchestrator";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
+import { AnalyticsProvider } from "@/lib/analytics/analytics-provider";
+import { AnalyticsScreenTracker } from "@/lib/analytics/screen-tracker";
+import { AnalyticsBootstrap } from "@/lib/analytics/analytics-bootstrap";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
@@ -768,6 +771,7 @@ function AppRoutes() {
           <DebugProvider>
           <PaywallProvider>
             <DeviceRegistrationProvider>
+            <AnalyticsBootstrap />
             <DeviceLimitGate />
             <ReactMountMarker />
             <NativeApiBaseUrlBootstrap />
@@ -1021,6 +1025,8 @@ export default function AppCore() {
         <OnboardingStatusProvider>
           <AppInitGate>
             <WouterRouter base={basePath}>
+              <AnalyticsProvider>
+              <AnalyticsScreenTracker />
               <FirebaseActionGate>
                 <AmyVoiceRouteGuard />
                 <AppCoreMountMarker />
@@ -1031,6 +1037,7 @@ export default function AppCore() {
                 <NativeStartupPermissionsGateLazy />
                 <PwaAndroidPermissionsGateLazy />
               </FirebaseActionGate>
+              </AnalyticsProvider>
             </WouterRouter>
           </AppInitGate>
         </OnboardingStatusProvider>

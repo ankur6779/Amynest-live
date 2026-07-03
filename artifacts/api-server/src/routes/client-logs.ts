@@ -33,6 +33,8 @@ const ClientLogBody = z.object({
     z.literal("onboarding_funnel"),
     /** Infant parenting product analytics (`infant-hub-analytics.ts`). */
     z.literal("infant_parenting"),
+    /** Growth funnel — legacy; prefer analytics_events spine */
+    z.literal("growth_analytics"),
   ]),
   message: z.string().min(1).max(4000),
   context: z.string().max(256).optional(),

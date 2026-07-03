@@ -377,6 +377,9 @@ export function PaywallModal() {
               <Button
                 onClick={onPayWithNative}
                 disabled={submitting || nativeBilling.purchasing || plans.length === 0}
+                analyticsId="paywall_cta_native_checkout"
+                analyticsFeature="premium"
+                analyticsLabel={nativeButtonLabel}
                 className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
               >
                 <Zap className="h-4 w-4 mr-2" />
@@ -415,6 +418,9 @@ export function PaywallModal() {
             <Button
               onClick={onPayWithRazorpay}
               disabled={submitting || plans.length === 0}
+              analyticsId="paywall_cta_razorpay_checkout"
+              analyticsFeature="premium"
+              analyticsLabel={selectedCta}
               className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
             >
               <Zap className="h-4 w-4 mr-2" />

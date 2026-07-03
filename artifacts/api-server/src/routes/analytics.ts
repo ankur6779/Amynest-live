@@ -20,6 +20,8 @@ const BatchSchema = z.object({
   events: z.array(EventSchema).min(1).max(ANALYTICS_MAX_BATCH),
   platform: z.string().max(32).optional(),
   appVersion: z.string().max(32).optional(),
+  buildNumber: z.string().max(32).optional(),
+  environment: z.string().max(32).optional(),
 });
 
 /**
@@ -45,7 +47,7 @@ router.post("/analytics/events", async (req, res): Promise<void> => {
     const summary = await ingestAnalyticsEvents(parsed.data.events, {
       userId,
       platform: parsed.data.platform,
-      appVersion: parsed.data.appVersion,
+      appVersion: parsed.data.appVersion ?? parsed.data.buildNumber,
     });
     res.status(202).json({ ok: true, ...summary });
   } catch (err) {

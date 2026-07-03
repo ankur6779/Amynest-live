@@ -1,7 +1,7 @@
-import { queueClientLog } from "@/lib/client-logs";
 import { isIndiaRegion } from "@/lib/geo";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import type { PaywallReason } from "@/contexts/paywall-context";
 import type { Plan } from "@/hooks/use-subscription";
 
@@ -58,25 +58,26 @@ function detectCountry(): string {
   return isIndiaRegion() ? "IN" : "GLOBAL";
 }
 
-/** Central subscription funnel analytics — persisted via /api/logs. */
+/** Central subscription funnel analytics — persisted to analytics_events. */
 export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): void {
-  const meta: Record<string, unknown> = {
-    event: payload.event,
+  const platform = payload.platform ?? detectPlatform();
+  const country = payload.country ?? detectCountry();
+
+  getAnalyticsService().trackFunnel("subscription", payload.event, {
     reason: payload.reason,
     plan: payload.plan,
     source: payload.source,
-    platform: payload.platform ?? detectPlatform(),
-    country: payload.country ?? detectCountry(),
+    country,
+    platform,
     ...payload.extra,
-    at: new Date().toISOString(),
-  };
-
-  queueClientLog({
-    type: "subscription_funnel",
-    message: payload.event,
-    context: payload.source ?? "subscription_funnel",
-    meta,
   });
+
+  // Map paywall_opened → taxonomy premium_paywall_viewed (single spine, no duplicate)
+  if (payload.event === "paywall_opened") {
+    import("@/lib/analytics").then(({ track }) => {
+      track("premium_paywall_viewed", { source: payload.source });
+    });
+  }
 
   if (payload.event === "purchase_success") {
     import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
@@ -85,7 +86,7 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
   }
 
   if (import.meta.env.DEV) {
-    console.info("[subscription-analytics]", meta);
+    console.info("[subscription-analytics]", payload);
   }
 }
 

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { track, flushAnalytics, trackAppOpen } from "./analytics";
+import { getAnalyticsService, resetAnalyticsServiceForTests } from "./analytics/analytics-service";
 
 vi.mock("@/lib/api", () => ({
   getApiUrl: (p: string) => p,
@@ -14,6 +15,7 @@ function makeFetch() {
 
 beforeEach(() => {
   sessionStorage.clear();
+  resetAnalyticsServiceForTests();
 });
 
 describe("analytics client", () => {
@@ -61,11 +63,12 @@ describe("analytics client", () => {
     expect(names.filter((n) => n === "session_start")).toHaveLength(1);
   });
 
-  it("swallows network errors during flush", async () => {
+  it("swallows network errors during flush but retains queue", async () => {
     const fetchMock = vi.fn(async () => {
       throw new Error("network down");
     });
     track("app_open", {});
     await expect(flushAnalytics(fetchMock)).resolves.toBeUndefined();
+    expect(getAnalyticsService().pendingCount()).toBeGreaterThan(0);
   });
 });

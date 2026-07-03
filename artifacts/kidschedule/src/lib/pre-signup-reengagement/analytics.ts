@@ -1,6 +1,6 @@
 import { trackGrowthEvent, type GrowthEventName } from "@/lib/growth-analytics";
 import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
-import { queueClientLog } from "@/lib/client-logs";
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import type { AbVariant, PreSignupAnalyticsEvent } from "./types";
 
@@ -95,16 +95,11 @@ export function trackPreSignupEvent(
     campaign: "pre_signup_reengagement",
   };
 
-  queueClientLog({
-    type: "growth_analytics",
-    message: event,
-    context: "pre_signup_reengagement",
-    meta: payload,
-  });
-
   const growthEvent = GROWTH_MAP[event];
   if (growthEvent) {
     trackGrowthEvent(growthEvent, payload);
+  } else {
+    getAnalyticsService().trackFunnel("growth", event, payload);
   }
 
   if (GA4_EVENTS.has(event)) {

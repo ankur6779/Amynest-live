@@ -1,4 +1,21 @@
 import { z } from "zod";
+import {
+  ANALYTICS_EVENT_VERSION,
+  ANALYTICS_SCHEMA_VERSION,
+  ENVELOPE_PROP_KEYS,
+  type AnalyticsEnvelopeFields,
+} from "./envelope.js";
+import {
+  PHASE1_EVENT_CATEGORY,
+  PHASE1_EVENT_PROP_SCHEMAS,
+} from "./phase1-events.js";
+
+export {
+  ANALYTICS_EVENT_VERSION,
+  ANALYTICS_SCHEMA_VERSION,
+  ENVELOPE_PROP_KEYS,
+  type AnalyticsEnvelopeFields,
+};
 
 /**
  * AmyNest analytics taxonomy — the single source of truth for product
@@ -22,6 +39,9 @@ export const ANALYTICS_EVENT_CATEGORIES = [
   "premium",
   "growth",
   "learning",
+  "navigation",
+  "performance",
+  "error",
 ] as const;
 
 export type AnalyticsEventCategory = (typeof ANALYTICS_EVENT_CATEGORIES)[number];
@@ -443,6 +463,8 @@ const EVENT_PROP_SCHEMAS = {
     completedModels: z.number().int().nonnegative(),
     template: z.string().max(240),
   }),
+
+  ...PHASE1_EVENT_PROP_SCHEMAS,
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -516,6 +538,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   speech_coach_v2_token_usage: "session",
   origami_model_completed: "learning",
   origami_certificate_downloaded: "learning",
+  ...PHASE1_EVENT_CATEGORY,
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

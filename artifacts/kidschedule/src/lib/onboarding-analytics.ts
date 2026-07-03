@@ -1,5 +1,5 @@
-import { queueClientLog } from "@/lib/client-logs";
 import { getOnboardingRunId } from "@/lib/onboarding-telemetry";
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import type { OnboardingStep } from "@/lib/onboarding-chat-types";
 
 export type OnboardingFunnelEvent =
@@ -69,16 +69,9 @@ export function buildOnboardingAnalyticsContext(input: {
 }
 
 export function trackAddSecondChildIntent(source: string, existingChildCount = 1): void {
-  queueClientLog({
-    type: "onboarding_funnel",
-    message: `add_second_child_intent:${source}`,
-    context: "post_onboarding",
-    meta: {
-      event: "add_second_child_intent",
-      source,
-      existingChildCount,
-      at: new Date().toISOString(),
-    },
+  getAnalyticsService().trackFunnel("onboarding", "add_second_child_intent", {
+    source,
+    existingChildCount,
   });
   if (import.meta.env.DEV) {
     console.info("[onboarding-funnel] add_second_child_intent", { source, existingChildCount });
@@ -89,49 +82,38 @@ export function trackOnboardingError(
   event: OnboardingErrorEvent,
   metadata: Record<string, unknown> = {},
 ): void {
-  const meta: Record<string, unknown> = {
-    event,
-    onboardingRunId: getOnboardingRunId(),
-    route: typeof window !== "undefined" ? window.location.pathname : undefined,
-    at: new Date().toISOString(),
-    ...metadata,
-  };
-
-  queueClientLog({
-    type: "onboarding_funnel",
-    message: event,
-    context: "onboarding_error",
-    meta,
+  getAnalyticsService().trackError("api", event, {
+    feature: "onboarding",
+  });
+  getAnalyticsService().trackFunnel("onboarding", event, {
+    onboardingRunId: getOnboardingRunId() ?? undefined,
+    ...Object.fromEntries(
+      Object.entries(metadata).map(([k, v]) => [k, String(v)]),
+    ),
   });
 
   if (import.meta.env.DEV) {
-    console.warn("[onboarding-error]", meta);
+    console.warn("[onboarding-error]", event, metadata);
   }
 }
 
 export function trackOnboardingFunnel(payload: OnboardingFunnelPayload): void {
-  const meta: Record<string, unknown> = {
-    event: payload.event,
-    step: payload.step,
-    onboardingRunId: getOnboardingRunId(),
+  getAnalyticsService().trackFunnel("onboarding", payload.event, {
+    onboarding_step: payload.step,
     country: payload.country,
-    childAgeYears: payload.childAgeYears,
-    childAgeBand: payload.childAgeBand,
-    selectedAgeBand: payload.selectedAgeBand,
-    educationStage: payload.educationStage,
-    route: typeof window !== "undefined" ? window.location.pathname : undefined,
-    at: new Date().toISOString(),
+    child_age_band: payload.childAgeBand ?? payload.selectedAgeBand,
+    education_stage: payload.educationStage,
+    child_age_years: payload.childAgeYears,
     ...payload.extra,
-  };
-
-  queueClientLog({
-    type: "onboarding_funnel",
-    message: `${payload.event}:${payload.step}`,
-    context: "onboarding_funnel",
-    meta,
   });
 
+  if (payload.event === "onboarding_completed") {
+    import("@/lib/analytics").then(({ track }) => {
+      track("onboarding_milestone", { milestone: "completed" });
+    });
+  }
+
   if (import.meta.env.DEV) {
-    console.info("[onboarding-funnel]", meta);
+    console.info("[onboarding-funnel]", payload);
   }
 }

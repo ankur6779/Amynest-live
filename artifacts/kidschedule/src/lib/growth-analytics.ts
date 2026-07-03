@@ -4,8 +4,8 @@
  * client logs for maximum observability.
  */
 
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import { track } from "@/lib/analytics";
-import { queueClientLog } from "@/lib/client-logs";
 import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
 import type { AnalyticsEventName, AnalyticsEventProps } from "@workspace/analytics-taxonomy";
 
@@ -88,16 +88,11 @@ export function trackGrowthEvent(
   const at = new Date().toISOString();
   const payload = { ...params, at };
 
-  queueClientLog({
-    type: "growth_analytics",
-    message: event,
-    context: "growth",
-    meta: payload,
-  });
-
   const taxonomyEvent = GROWTH_TO_TAXONOMY[event];
   if (taxonomyEvent) {
     track(taxonomyEvent, params as AnalyticsEventProps<typeof taxonomyEvent>);
+  } else {
+    getAnalyticsService().trackFunnel("growth", event, params);
   }
 
   if (GA4_GROWTH_EVENTS.has(event)) {

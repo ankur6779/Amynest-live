@@ -46,15 +46,31 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  /** When set, emits button_click analytics via AnalyticsService */
+  analyticsId?: string
+  analyticsFeature?: string
+  analyticsLabel?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, analyticsId, analyticsFeature, analyticsLabel, onClick, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (analyticsId) {
+        void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+          getAnalyticsService().trackButtonClick(analyticsId, {
+            feature: analyticsFeature,
+            label: analyticsLabel,
+          });
+        });
+      }
+      onClick?.(e);
+    };
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        onClick={handleClick}
         {...props}
       />
     )

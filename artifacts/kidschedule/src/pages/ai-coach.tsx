@@ -6,6 +6,7 @@ import { useLocation, Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useCoachJourney } from "@/hooks/use-coach-journey";
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import { coachGoalCategoryId, coachCategoryGoalCount, goalIndexInCoachCategory, buildCoachGraduationViewModel, type GraduationPath } from "@workspace/coach-journey";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -932,6 +933,18 @@ export default function AICoachPage() {
     })).filter(c => c.items.length > 0);
   }, [searchQuery, ageFilteredCategories]);
   const totalMatches = useMemo(() => filteredCategories.reduce((n, c) => n + c.items.length, 0), [filteredCategories]);
+
+  useEffect(() => {
+    if (!searchQuery || phase !== "goals") return;
+    const timer = window.setTimeout(() => {
+      getAnalyticsService().trackSearchQuery(searchQuery, {
+        screen: "/amy-coach",
+        resultCount: totalMatches,
+      });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery, totalMatches, phase]);
+
   const selectedGoal = ALL_GOALS.find(g => g.id === goalId);
 
   // Free-tier gate: the first goal in each non-infant category is a sample;

@@ -1,5 +1,7 @@
 /** Parent Hub PDF save — blob + anchor (works in Capacitor / Android WebView). */
 
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
+
 export type HubDownloadQuota = {
   limit: number | null;
   used: number;
@@ -95,7 +97,11 @@ function fileNameFromDisposition(header: string | null, fallback: string): strin
   return fallback;
 }
 
-export function savePdfBlob(fileName: string, blob: Blob): void {
+export function savePdfBlob(
+  fileName: string,
+  blob: Blob,
+  meta?: { feature?: string; assetType?: string },
+): void {
   const safeName = fileName.endsWith(".pdf") ? fileName : `${fileName}.pdf`;
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -106,6 +112,10 @@ export function savePdfBlob(fileName: string, blob: Blob): void {
   anchor.click();
   document.body.removeChild(anchor);
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+  getAnalyticsService().trackAssetDownload(meta?.assetType ?? "pdf", {
+    assetId: safeName,
+    feature: meta?.feature,
+  });
 }
 
 /** Save PDF from a fetch Response (application/pdf body). Returns false on empty/failed body. */
@@ -124,7 +134,7 @@ export async function savePdfFromResponse(
     res.headers.get("content-disposition"),
     fallbackFileName,
   );
-  savePdfBlob(name, blob);
+  savePdfBlob(name, blob, { feature: "hub_pdf", assetType: "pdf" });
   return true;
 }
 
