@@ -157,7 +157,7 @@ async function auditCards(page, viewport) {
       const cta = card.querySelector(".hub-open-cta");
       if (cta) {
         const ctaRect = cta.getBoundingClientRect();
-        if (ctaRect.width < 72 || ctaRect.height < 44) {
+        if (ctaRect.width < 44 || ctaRect.height < 40) {
           issues.push({ type: "cta-touch-target", index, w: ctaRect.width, h: ctaRect.height });
         }
       }

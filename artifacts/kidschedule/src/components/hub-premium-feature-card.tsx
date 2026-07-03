@@ -177,20 +177,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
         />
 
         <div className="hub-child-grid relative">
-          <div className="hub-child-icon-wrap">
-            <div className="hub-child-icon-box">
-              <img
-                src={visual.iconSrc}
-                alt=""
-                aria-hidden
-                className="hub-child-icon-img"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-          </div>
-
-          <div className="hub-child-text-col flex flex-col gap-1">
+          <div className="hub-child-text-col flex flex-col gap-1.5">
             <p className="hub-child-title">{cleanTitle}</p>
             {(previewBadge || (tryFree && showTryFreeBadge)) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -218,7 +205,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
             {footer}
           </div>
 
-          <div className="hub-child-action-col flex items-center justify-center self-start">
+          <div className="hub-child-action-col flex items-center justify-center">
             {actionMode === "expand" ? (
               <ExpandChevron expanded={expanded} />
             ) : iconOnlyAction ? (
@@ -244,8 +231,8 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
                 whileHover={reducedMotion ? undefined : { scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <span className="min-w-0 truncate">{actionLabel}</span>
-                <ChevronRight className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" strokeWidth={2.5} />
+                <span>{actionLabel}</span>
+                <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                 <span
                   aria-hidden
                   className="lz-cta-ripple pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
