@@ -25,6 +25,7 @@ import {
 } from "@/lib/routine-generation-client";
 import { getApiUrl } from "@/lib/api";
 import { track } from "@/lib/analytics";
+import { trackRoutineGeneratedOnce } from "@/lib/routine-generation-analytics";
 import {
   formatCategoryLabel,
   formatRoutineDurationShort,
@@ -32,7 +33,8 @@ import {
 } from "@/lib/routine-timeline-ui";
 import { format } from "date-fns";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
-import { HANDLER_TYPES, type HandlerKey, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, type FRFamilyResult } from "@workspace/family-routine";
+import { HANDLER_TYPES, type HandlerKey, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, type FRFamilyResult } from "@workspace/family-routine";
+import { safeSimplifyForHandler } from "@/lib/routine-item-safety";
 import {
   AutoDetectedBadge,
   AutoDetectionToggle,
@@ -208,6 +210,7 @@ type GeneratedRoutine = {
   items: RoutineItem[];
   adaptations?: string[] | null;
   fixedActivitiesResult?: FixedActivitiesResult | null;
+  fallback?: boolean;
 };
 
 function toGeneratedRoutine(data: RoutineGenerateResult): GeneratedRoutine {
@@ -766,6 +769,15 @@ export default function RoutineGenerate() {
   const createMutation = useCreateRoutine();
   const [isStandardGenerating, setIsStandardGenerating] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [generationRecovery, setGenerationRecovery] = useState<{
+    message: string;
+    usedEmergency: boolean;
+  } | null>(null);
+  const lastGenerateContextRef = useRef<{
+    shouldOverride: boolean;
+    wakeTime: string | null;
+    mode: "ai" | "standard";
+  } | null>(null);
   const [aiGeneratingSlow, setAiGeneratingSlow] = useState(false);
   const fixedReviewRef = useRef<HTMLDivElement>(null);
 
@@ -981,11 +993,11 @@ export default function RoutineGenerate() {
     }, {
       onSuccess: savedRoutine => {
         console.log("[routine-gen] save response", savedRoutine);
-        track("routine_generated", {
+        trackRoutineGeneratedOnce({
           routineId: savedRoutine.id,
           childId: selectedChild ?? undefined,
           mode: (data as { fallback?: boolean }).fallback ? "fallback" : "ai",
-          itemCount: Array.isArray(data.items) ? data.items.length : undefined,
+          itemCount: Array.isArray(data.items) ? data.items.length : 0,
           source: "single",
         });
         toast({
@@ -1227,6 +1239,20 @@ export default function RoutineGenerate() {
       }));
       return;
     }
+
+    const ctx = lastGenerateContextRef.current;
+
+    if (selectedChildData && ctx) {
+      setGenerationRecovery({
+        message: err instanceof Error ? err.message : "Generation failed",
+        usedEmergency: false,
+      });
+    } else {
+      setGenerationRecovery({
+        message: err instanceof Error ? err.message : "Generation failed",
+        usedEmergency: false,
+      });
+    }
     toast({
       title: t("toasts.routines_generate.generate_failed"),
       description: err instanceof Error ? err.message : undefined,
@@ -1241,17 +1267,41 @@ export default function RoutineGenerate() {
     weatherForCall?: WeatherOutdoorChoice,
   ) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
+    lastGenerateContextRef.current = { shouldOverride, wakeTime, mode: "standard" };
+    setGenerationRecovery(null);
     setIsStandardGenerating(true);
     try {
       const generatedData = await fetchStandardRoutine(
         authFetch,
         buildGeneratePayload(wakeTime, weatherForCall),
+        {
+          source: "generate_page_standard",
+          childName: selectedChildData?.name,
+          allowClientEmergency: true,
+        },
       );
-      const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
+      const simplified = safeSimplifyForHandler(generatedData.items, handlerType) as RoutineItem[];
       handlePostGenerate({
         ...toGeneratedRoutine(generatedData),
         items: simplified,
+        fallback: generatedData.fallback === true,
       }, shouldOverride, wakeTime);
+      if (generatedData.fallback && generatedData.title === "Backup daily routine") {
+        setGenerationRecovery({
+          message: "Backup routine loaded",
+          usedEmergency: true,
+        });
+        toast({
+          title: t("toasts.routines_generate.generate_failed"),
+          description: t("pages.routines.generate.emergency_fallback_desc", {
+            defaultValue: "We loaded a safe backup routine you can edit and save.",
+          }),
+        });
+      } else if (generatedData.fallback) {
+        toast({
+          title: t("toasts.routines_generate.ai_fallback_used"),
+        });
+      }
     } catch (err) {
       handleGenerationError(err);
     } finally {
@@ -1270,6 +1320,8 @@ export default function RoutineGenerate() {
   // ── Core generate (AI) ─────────────────────────────────────────────────────
   const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
+    lastGenerateContextRef.current = { shouldOverride, wakeTime, mode: "ai" };
+    setGenerationRecovery(null);
     setIsAiGenerating(true);
     setAiGeneratingSlow(false);
     const payload = buildGeneratePayload(wakeTime, weatherForCall);
@@ -1285,17 +1337,32 @@ export default function RoutineGenerate() {
       const generatedData = await fetchAmyAiRoutine(authFetch, payload, {
         onSlow: () => setAiGeneratingSlow(true),
         userId,
+        source: "generate_page_ai",
+        childName: selectedChildData?.name,
+        allowClientEmergency: true,
       });
       console.log("[routine-gen] generate response", generatedData);
-      if (generatedData.fallback) {
+      if (generatedData.fallback && generatedData.title === "Backup daily routine") {
+        setGenerationRecovery({
+          message: "Backup routine loaded",
+          usedEmergency: true,
+        });
+        toast({
+          title: t("toasts.routines_generate.generate_failed"),
+          description: t("pages.routines.generate.emergency_fallback_desc", {
+            defaultValue: "We loaded a safe backup routine you can edit and save.",
+          }),
+        });
+      } else if (generatedData.fallback) {
         toast({
           title: t("toasts.routines_generate.ai_fallback_used"),
         });
       }
-      const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
+      const simplified = safeSimplifyForHandler(generatedData.items, handlerType) as RoutineItem[];
       handlePostGenerate({
         ...toGeneratedRoutine(generatedData),
         items: simplified,
+        fallback: generatedData.fallback === true,
       }, shouldOverride, wakeTime);
     } catch (err) {
       console.error("[routine-gen] generate failed", err);
@@ -1557,7 +1624,7 @@ export default function RoutineGenerate() {
         });
 
         // Apply handler-based simplification (grandparent / babysitter)
-        const simplifiedItems = simplifyForHandler(generated.items as any, handlerType);
+        const simplifiedItems = safeSimplifyForHandler(generated.items, handlerType);
         results.push({
           child,
           routine: {
@@ -1726,6 +1793,57 @@ export default function RoutineGenerate() {
 
       {/* ==================== SINGLE MODE ==================== */}
       {mode === "single" && <>
+          {generationRecovery && !isGenerating && !isAiGenerating ? (
+            <Card className="rounded-3xl border border-amber-500/30 bg-amber-500/5 shadow-sm mt-4">
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-foreground">
+                      {generationRecovery.usedEmergency
+                        ? t("pages.routines.generate.recovery_emergency_title", {
+                            defaultValue: "Backup routine loaded",
+                          })
+                        : t("pages.routines.generate.recovery_failed_title", {
+                            defaultValue: "Routine generation hit a snag",
+                          })}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {generationRecovery.usedEmergency
+                        ? t("pages.routines.generate.recovery_emergency_desc", {
+                            defaultValue: "Review the backup schedule below, edit anything you like, then save.",
+                          })
+                        : generationRecovery.message}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setGenerationRecovery(null);
+                      void handleAiGenerate(overrideMode);
+                    }}
+                  >
+                    {t("pages.routines.generate.retry_ai", { defaultValue: "Try Amy again" })}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setGenerationRecovery(null);
+                      void handleGenerate(overrideMode);
+                    }}
+                  >
+                    {t("pages.routines.generate.retry_standard", { defaultValue: "Use standard routine" })}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
           {isGenerating || isAiGenerating ? <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
               <CardContent className="p-12 flex flex-col items-center justify-center text-center space-y-6">
                 <div className="relative">

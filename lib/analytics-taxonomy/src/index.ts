@@ -159,6 +159,19 @@ const EVENT_PROP_SCHEMAS = {
     itemCount: z.number().int().nonnegative().optional(),
     source: z.string().max(64).optional(),
   }),
+  routine_generation_started: z.object({
+    childId: z.number().int().optional(),
+    mode: z.enum(["ai", "standard", "family", "partial_regen", "next_day"]).optional(),
+    source: z.string().max(64).optional(),
+  }),
+  routine_generation_failed: z.object({
+    childId: z.number().int().optional(),
+    mode: z.enum(["ai", "standard", "family", "partial_regen", "next_day"]).optional(),
+    error_class: z.string().max(64).optional(),
+    status_code: z.number().int().optional(),
+    used_fallback: z.boolean().optional(),
+    source: z.string().max(64).optional(),
+  }),
   routine_viewed: z.object({
     routineId: z.number().int().optional(),
     childId: z.number().int().optional(),
@@ -484,6 +497,8 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   cached_policy_used: "session",
   update_store_clicked: "session",
   routine_generated: "routine",
+  routine_generation_started: "routine",
+  routine_generation_failed: "routine",
   routine_viewed: "routine",
   routine_item_completed: "routine",
   routine_item_skipped: "routine",

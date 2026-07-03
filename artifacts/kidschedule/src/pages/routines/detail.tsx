@@ -22,6 +22,12 @@ import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
 import { earnGamingPoints } from "@/lib/gaming-wallet-api";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { routineDateKey } from "@/lib/routines";
+import {
+  enrichRoutinePayload,
+  fetchRoutineWithResilience,
+  RoutineGenerationPaywallError,
+} from "@/lib/routine-generation-client";
+import { sanitizeRoutineItems } from "@/lib/routine-item-safety";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
 import { isVoiceEnabled, getVoiceSettings, openAiVoiceForGender, ROUTINE_TASK_ANNOUNCE_MSGS, type VoiceSettings } from "@/lib/voice";
 import { VoiceSettingsPanel } from "@/components/voice-settings";
@@ -759,7 +765,7 @@ export default function RoutineDetail() {
       pause();
       return;
     }
-    const items = localItems ?? routine?.items as RoutineItem[] ?? [];
+    const items = sanitizeRoutineItems(localItems ?? routine?.items ?? []) as RoutineItem[];
     const childName = (childData as any)?.name ?? routine?.childName ?? "buddy";
     const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
     const currentTask = items.find(item => {
@@ -925,7 +931,7 @@ export default function RoutineDetail() {
       if (!res.ok) throw new Error("Failed");
       const data = await parseApiJson<{ items?: RoutineItem[] }>(res);
       if (data.items) {
-        setLocalItems(data.items);
+        setLocalItems(sanitizeRoutineItems(data.items) as RoutineItem[]);
         toast({
           title: t("toasts.routines_detail.day_regenerated_title"),
           description: t("toasts.routines_detail.day_regenerated_body")
@@ -961,7 +967,7 @@ export default function RoutineDetail() {
       if (!res.ok) throw new Error("Failed");
       const data = await parseApiJson<{ items?: RoutineItem[] }>(res);
       if (data.items) {
-        setLocalItems(data.items);
+        setLocalItems(sanitizeRoutineItems(data.items) as RoutineItem[]);
         toast({
           title: t("toasts.routines_detail.activity_added_title"),
           description: t("toasts.routines_detail.activity_added_body", {
@@ -994,37 +1000,38 @@ export default function RoutineDetail() {
       const dayOfWeek = tomorrow.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const dateStr = tomorrow.toISOString().split("T")[0];
-      const res = await authFetch(getApiUrl("/api/routines/generate"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      const childName = (childData as { name?: string } | undefined)?.name ?? routine?.childName;
+      const generated = await fetchRoutineWithResilience(
+        authFetch,
+        enrichRoutinePayload({
           childId: pendingNextDayChildId,
           date: dateStr,
-          hasSchool: !isWeekend
-        })
+          hasSchool: !isWeekend,
+        }),
+        { childName, source: "routine_detail_next_day" },
+      );
+      toast({
+        title: generated.fallback
+          ? t("toasts.routines_detail.tomorrow_backup_title", {
+              defaultValue: "Tomorrow's backup routine ready",
+            })
+          : `🌅 Tomorrow's routine ready!`,
+        description: `${isWeekend ? "Weekend" : "School day"} routine generated for ${childName ?? "your child"}.`,
       });
-      if (res.status === 402 || res.status === 403) {
+      queryClient.invalidateQueries({
+        queryKey: getListRoutinesQueryKey(),
+      });
+    } catch (err) {
+      if (err instanceof RoutineGenerationPaywallError) {
         setNextDayDialogOpen(false);
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-          detail: { reason: "routines_limit" }
+          detail: { reason: "routines_limit" },
         }));
         return;
       }
-      if (!res.ok) throw new Error("Failed");
-      const data = await parseApiJson<{ childName?: string; items?: RoutineItem[] }>(res);
-      toast({
-        title: `🌅 Tomorrow's routine ready!`,
-        description: `${isWeekend ? "Weekend" : "School day"} routine generated for ${data.childName ?? "your child"}.`
-      });
-      queryClient.invalidateQueries({
-        queryKey: getListRoutinesQueryKey()
-      });
-    } catch {
       toast({
         title: t("toasts.routines_detail.tomorrow_failed"),
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setNextDayLoading(false);
@@ -1240,7 +1247,10 @@ export default function RoutineDetail() {
     t,
     hasPushRegistered,
   ]);
-  const items = localItems ?? routine?.items as RoutineItem[] ?? [];
+  const items = useMemo(
+    () => sanitizeRoutineItems(localItems ?? routine?.items ?? []) as RoutineItem[],
+    [localItems, routine?.items],
+  );
 
   const trustRibbonSignals = useMemo(
     () =>
@@ -1267,7 +1277,10 @@ export default function RoutineDetail() {
   // Signature that captures the structural shape of the activities (names + bands).
   // Status / time changes don't affect it, so completing or cascading tasks keeps
   // the saved filter; AI regenerations / add / remove / rename invalidate it.
-  const itemsSignature = useMemo(() => items.map(i => `${i.activity}|${i.ageBand ?? ""}`).join("\n"), [items]);
+  const itemsSignature = useMemo(
+    () => items.map((i) => `${i.activity ?? ""}|${i.ageBand ?? ""}`).join("\n"),
+    [items],
+  );
 
   // Hydrate from localStorage when the routine or its activity signature
   // changes. Keyed per routine id so each routine remembers its own last
