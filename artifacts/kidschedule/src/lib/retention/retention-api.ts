@@ -36,19 +36,21 @@ export type RetentionGoalResult = {
   allGoalsComplete?: boolean;
 };
 
+export type RetentionStatusState = {
+  currentStreak: number;
+  longestStreak: number;
+  totalStars: number;
+  totalCoins: number;
+  parentXp: number;
+  dailyGoals: RetentionDailyGoals;
+  achievements: string[];
+  inactiveDays: number;
+  winbackLevel: number;
+};
+
 export type RetentionStatus = {
   ok: boolean;
-  state: {
-    currentStreak: number;
-    longestStreak: number;
-    totalStars: number;
-    totalCoins: number;
-    parentXp: number;
-    dailyGoals: RetentionDailyGoals;
-    achievements: string[];
-    inactiveDays: number;
-    winbackLevel: number;
-  };
+  state: RetentionStatusState;
   shieldAvailable: boolean;
   canUseShield: boolean;
   parentingScore: number;
@@ -61,20 +63,80 @@ export type RetentionStatus = {
   trialPremiumFeature: string | null;
 };
 
-const CACHE_KEY = "amynest:retention_status_cache_v1";
+export const RETENTION_STATUS_CACHE_KEY = "amynest:retention_status_cache_v1";
 
-export function readRetentionCache(): RetentionStatus | null {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function isValidRetentionDailyGoals(value: unknown): value is RetentionDailyGoals {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.routine === "boolean" &&
+    typeof value.story === "boolean" &&
+    typeof value.activity === "boolean" &&
+    typeof value.speech === "boolean"
+  );
+}
+
+export function isValidRetentionState(value: unknown): value is RetentionStatusState {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.currentStreak === "number" &&
+    typeof value.longestStreak === "number" &&
+    typeof value.totalStars === "number" &&
+    typeof value.totalCoins === "number" &&
+    typeof value.parentXp === "number" &&
+    typeof value.inactiveDays === "number" &&
+    typeof value.winbackLevel === "number" &&
+    Array.isArray(value.achievements) &&
+    isValidRetentionDailyGoals(value.dailyGoals)
+  );
+}
+
+/** Validates a full retention status payload before cache or render. */
+export function isValidRetentionStatus(value: unknown): value is RetentionStatus {
+  if (!isRecord(value)) return false;
+  if (!isValidRetentionState(value.state)) return false;
+  return (
+    typeof value.shieldAvailable === "boolean" &&
+    typeof value.canUseShield === "boolean" &&
+    typeof value.parentingScore === "number" &&
+    typeof value.goalsComplete === "number" &&
+    typeof value.goalsTotal === "number" &&
+    typeof value.checkedInToday === "boolean" &&
+    Array.isArray(value.resumeItems)
+  );
+}
+
+export function clearRetentionCache(): void {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    return raw ? (JSON.parse(raw) as RetentionStatus) : null;
+    sessionStorage.removeItem(RETENTION_STATUS_CACHE_KEY);
   } catch {
-    return null;
+    /* ignore */
+  }
+}
+
+export function readRetentionCache(): RetentionStatus | undefined {
+  try {
+    const raw = sessionStorage.getItem(RETENTION_STATUS_CACHE_KEY);
+    if (!raw) return undefined;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isValidRetentionStatus(parsed)) {
+      clearRetentionCache();
+      return undefined;
+    }
+    return parsed;
+  } catch {
+    clearRetentionCache();
+    return undefined;
   }
 }
 
 export function writeRetentionCache(status: RetentionStatus): void {
+  if (!isValidRetentionStatus(status)) return;
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(status));
+    sessionStorage.setItem(RETENTION_STATUS_CACHE_KEY, JSON.stringify(status));
   } catch {
     /* ignore */
   }
@@ -93,8 +155,20 @@ export async function fetchRetentionStatus(
   const res = await authFetch(
     getApiUrl(`/api/retention/status${qs ? `?${qs}` : ""}`),
   );
-  if (!res.ok) throw new Error(`retention status ${res.status}`);
-  const data = (await parseApiJson<RetentionStatus>(res));
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[retention] status API error", {
+      status: res.status,
+      url: res.url,
+      body: body.slice(0, 500),
+    });
+    throw new Error(`retention status ${res.status}`);
+  }
+  const data = await parseApiJson<unknown>(res);
+  if (!isValidRetentionStatus(data)) {
+    console.error("[retention] invalid API payload — not caching", { data });
+    throw new Error("retention status invalid");
+  }
   writeRetentionCache(data);
   void touchRetentionActivity(authFetch);
   return data;

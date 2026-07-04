@@ -1,0 +1,37 @@
+name: User retention DB migrate
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type migrate to apply user_retention schema (0045)"
+        required: true
+        type: string
+
+jobs:
+  migrate:
+    name: Apply user_retention schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.inputs.confirm == 'migrate'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Drizzle push (includes user_retention)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:push
+
+      - name: Verify user_retention table and indexes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/user-retention-verify-migration.mjs

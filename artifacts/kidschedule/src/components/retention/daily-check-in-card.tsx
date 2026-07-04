@@ -17,6 +17,7 @@ import { DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 import { useRetention } from "@/hooks/use-retention";
 import { readActivationResume } from "@/lib/activation-resume";
 import { trackRetentionEvent } from "@/lib/retention/retention-analytics";
+import { isValidRetentionStatus } from "@/lib/retention/retention-api";
 import { STREAK_MILESTONES } from "@workspace/retention-system";
 import { DailyGoalsCard } from "@/components/retention/daily-goals-card";
 import { StreakCelebration } from "@/components/retention/streak-celebration";
@@ -60,6 +61,8 @@ export function DailyCheckInCard({
     checkIn,
     isCheckingIn,
     isLoading,
+    isError,
+    error,
   } = useRetention({ routineCompletionPct });
   const [celebrateMilestone, setCelebrateMilestone] = useState<number | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
@@ -69,15 +72,29 @@ export function DailyCheckInCard({
   const checkinStarted = useRef(false);
   const [shieldPrompt, setShieldPrompt] = useState(false);
 
+  const retentionReady = data != null && isValidRetentionStatus(data);
+
   useEffect(() => {
-    if (!data || data.checkedInToday || checkinStarted.current || isCheckingIn) return;
+    if (!isError) return;
+    console.error("[retention] status unavailable — hiding check-in card", error);
+  }, [isError, error]);
+
+  useEffect(() => {
+    if (!retentionReady || data.checkedInToday || checkinStarted.current || isCheckingIn) return;
     if (data.canUseShield) {
       setShieldPrompt(true);
       return;
     }
     checkinStarted.current = true;
     checkIn();
-  }, [data?.checkedInToday, data?.canUseShield, checkIn, data, isCheckingIn]);
+  }, [
+    data?.checkedInToday,
+    data?.canUseShield,
+    checkIn,
+    data,
+    isCheckingIn,
+    retentionReady,
+  ]);
 
   const handleShieldChoice = (useShield: boolean) => {
     if (checkinStarted.current || isCheckingIn) return;
@@ -109,28 +126,29 @@ export function DailyCheckInCard({
     return null;
   }, [data?.resumeItems, localResume, t]);
 
-  const streak = data?.state.currentStreak ?? 0;
+  const streak = data?.state?.currentStreak ?? 0;
   const score = data?.parentingScore ?? 0;
   const progressScores = useMemo(() => {
     const base = Math.min(100, score);
     return {
       learning: base,
-      speech: Math.min(100, (data?.state.parentXp ?? 0) % 100),
+      speech: Math.min(100, (data?.state?.parentXp ?? 0) % 100),
       creativity: Math.min(100, streak * 8),
       health: Math.min(100, (data?.goalsComplete ?? 0) * 25),
       nutrition: Math.min(100, base * 0.7),
       behavior: Math.min(100, base * 0.85),
       sleep: Math.min(100, base * 0.6),
     };
-  }, [score, data?.state.parentXp, data?.goalsComplete, streak]);
+  }, [score, data?.state?.parentXp, data?.goalsComplete, streak]);
 
-  if (isLoading && !data) return null;
+  if (isLoading && !retentionReady) return null;
+  if (isError || !retentionReady) return null;
 
-  const stars = data?.state.totalStars ?? 0;
-  const coins = data?.state.totalCoins ?? 0;
+  const stars = data.state?.totalStars ?? 0;
+  const coins = data.state?.totalCoins ?? 0;
   const isSunday = new Date().getDay() === 0;
 
-  const prefs = data?.preferences as Record<string, unknown> | undefined;
+  const prefs = data.preferences as Record<string, unknown> | undefined;
   const personalized =
     (Array.isArray(prefs?.favoriteStories) && prefs.favoriteStories.length > 0) ||
     prefs?.preferredBedtime ||
@@ -141,17 +159,17 @@ export function DailyCheckInCard({
   return (
     <div className="flex flex-col gap-3" data-testid="daily-check-in-card">
       <ConfettiBurst trigger={confettiTrigger} />
-      {shieldPrompt && !data?.checkedInToday ? (
+      {shieldPrompt && !data.checkedInToday ? (
         <StreakShieldDialog
-          streak={data?.state.currentStreak ?? 0}
+          streak={data.state?.currentStreak ?? 0}
           onUseShield={() => handleShieldChoice(true)}
           onStartFresh={() => handleShieldChoice(false)}
           isLoading={isCheckingIn}
         />
       ) : null}
       <WinbackBanner
-        level={data?.state.winbackLevel ?? 0}
-        inactiveDays={data?.state.inactiveDays ?? 0}
+        level={data.state?.winbackLevel ?? 0}
+        inactiveDays={data.state?.inactiveDays ?? 0}
       />
 
       <DashboardGlassCard tintRgb={DASHBOARD_TINTS.journey}>
@@ -169,7 +187,7 @@ export function DailyCheckInCard({
                       "retention.welcome_back_personalized",
                       "Welcome back! Amy prepared today's plan specially for you.",
                     )
-                  : data?.checkedInToday
+                  : data.checkedInToday
                     ? t("retention.checked_in_today", "You're checked in for today")
                     : t("retention.checking_in", "Checking you in…")}
               </p>
@@ -263,7 +281,7 @@ export function DailyCheckInCard({
             </Link>
           ) : null}
 
-          {data?.shieldAvailable && streak > 0 && nextMilestone ? (
+          {data.shieldAvailable && streak > 0 && nextMilestone ? (
             <p className="text-[10px] text-white/45 flex items-center gap-1">
               <Shield className="h-3 w-3" aria-hidden />
               {t("retention.shield_hint", "{{n}} more days to reach {{m}}-day streak · 1 shield/month", {
@@ -275,15 +293,15 @@ export function DailyCheckInCard({
         </div>
       </DashboardGlassCard>
 
-      <DailyGoalsCard goals={data?.state.dailyGoals} goalsComplete={data?.goalsComplete ?? 0} />
+      <DailyGoalsCard goals={data.state?.dailyGoals} goalsComplete={data.goalsComplete ?? 0} />
 
       <ChildProgressDashboard {...progressScores} />
 
-      {data?.trialPremiumFeature ? (
+      {data.trialPremiumFeature ? (
         <TrialPremiumSpotlight featureId={data.trialPremiumFeature} />
       ) : null}
 
-      {isSunday ? <WeeklySummaryCard summary={data?.weeklySummary} parentingScore={score} /> : null}
+      {isSunday ? <WeeklySummaryCard summary={data.weeklySummary} parentingScore={score} /> : null}
 
       <AnimatePresence>
         {celebrateMilestone != null && !reduceMotion ? (

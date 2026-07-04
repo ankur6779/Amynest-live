@@ -31,11 +31,18 @@ export function useRetention(opts?: { routineCompletionPct?: number }) {
     enabled: !!isSignedIn,
     staleTime: 5 * 60_000,
     placeholderData: () => readRetentionCache() ?? undefined,
-    queryFn: () =>
-      fetchRetentionStatus(authFetch, {
-        routineCompletionPct: routinePct,
-        trialing: isTrialing,
-      }),
+    queryFn: async () => {
+      try {
+        return await fetchRetentionStatus(authFetch, {
+          routineCompletionPct: routinePct,
+          trialing: isTrialing,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[retention] status request failed", { message });
+        throw err;
+      }
+    },
   });
 
   const checkinMutation = useMutation({
