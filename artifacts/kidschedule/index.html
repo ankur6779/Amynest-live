@@ -295,6 +295,10 @@
             needsCacheRecovery = false;
             sessionStorage.removeItem("amynest:cache-recovery-done");
           }
+          if (sessionStorage.getItem("amynest:refresh-complete") === "1") {
+            needsCacheRecovery = false;
+            sessionStorage.removeItem("amynest:refresh-complete");
+          }
         } catch (_eGuard) { /* ignore */ }
         window.__amynestNeedsCacheRecovery = needsCacheRecovery;
 
@@ -625,12 +629,29 @@
           } catch (_log) { /* ignore */ }
 
           if (window.__amynestForceClearCaches) {
-            try { sessionStorage.setItem("amynest:cache-recovery-done", "1"); } catch (_eMark) { /* ignore */ }
+            try {
+              sessionStorage.setItem("amynest:cache-recovery-done", "1");
+              sessionStorage.setItem("amynest:refresh-complete", "1");
+            } catch (_eMark) { /* ignore */ }
             var entry = document.getElementById("amynest-entry");
             if (entry) entry.remove();
+            try { console.info("[Refresh] Started", { kind: kind || "unknown" }); } catch (_logStart) { /* ignore */ }
+            try { console.info("[Refresh] Clearing cache"); } catch (_logClear) { /* ignore */ }
+            var autoRecoveryTimeout = setTimeout(function () {
+              try { console.error("[Refresh] Timeout"); } catch (_logTimeout) { /* ignore */ }
+              try { sessionStorage.setItem("amynest:refresh-complete", "1"); } catch (_eTimeoutMark) { /* ignore */ }
+            }, 10000);
             window.__amynestForceClearCaches()
-              .then(function () { location.reload(); })
-              .catch(function () { location.reload(); });
+              .then(function () {
+                clearTimeout(autoRecoveryTimeout);
+                try { console.info("[Refresh] Reloading"); } catch (_logReload) { /* ignore */ }
+                location.reload();
+              })
+              .catch(function () {
+                clearTimeout(autoRecoveryTimeout);
+                try { console.error("[Refresh] Failed"); } catch (_logFail) { /* ignore */ }
+                location.reload();
+              });
             return true;
           }
           location.reload();
@@ -1496,14 +1517,38 @@
         // One-shot guard: mark so the next load skips recovery (otherwise the
         // boot record has no `splash-hidden` phase and prevCrashed stays true
         // → infinite reload loop).
-        try { sessionStorage.setItem("amynest:cache-recovery-done", "1"); } catch (_eMark) { /* ignore */ }
+        try {
+          sessionStorage.setItem("amynest:cache-recovery-done", "1");
+          sessionStorage.setItem("amynest:refresh-complete", "1");
+        } catch (_eMark) { /* ignore */ }
         try { sessionStorage.removeItem("amynest:cache-recovery-pending"); } catch (_eClear) { /* ignore */ }
         // Reset prev boot record so a future genuine crash isn't masked, but
         // an immediate reload doesn't see a half-finished boot trail.
         try { localStorage.removeItem("__amynest_boot_v1"); } catch (_eRec) { /* ignore */ }
+        try { console.info("[Refresh] Started", { kind: "pre_bundle_recovery" }); } catch (_logStart) { /* ignore */ }
+        try { console.info("[Refresh] Clearing cache"); } catch (_logClear) { /* ignore */ }
+        var recoveryTimeout = setTimeout(function () {
+          try { console.error("[Refresh] Timeout"); } catch (_logTimeout) { /* ignore */ }
+          window.__amynestNeedsCacheRecovery = false;
+          try { sessionStorage.setItem("amynest:refresh-complete", "1"); } catch (_eTimeoutMark) { /* ignore */ }
+          var entry = document.getElementById("amynest-entry");
+          if (entry && !window.__amynestBundleLoading) {
+            window.__amynestBundleLoading = true;
+            window.__amynestMark && window.__amynestMark("bundle-loading");
+            import("/src/main.tsx?v=1001").catch(function () { /* recovery overlay handles */ });
+          }
+        }, 10000);
         window.__amynestForceClearCaches()
-          .then(function () { location.reload(); })
-          .catch(function () { location.reload(); });
+          .then(function () {
+            clearTimeout(recoveryTimeout);
+            try { console.info("[Refresh] Reloading"); } catch (_logReload) { /* ignore */ }
+            location.reload();
+          })
+          .catch(function () {
+            clearTimeout(recoveryTimeout);
+            try { console.error("[Refresh] Failed"); } catch (_logFail) { /* ignore */ }
+            location.reload();
+          });
       })();
     </script>
     <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->

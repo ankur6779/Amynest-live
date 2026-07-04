@@ -20,6 +20,7 @@ import {
   shouldAttemptAutoRecovery,
   tryAutoRecovery,
 } from "@/lib/auto-recovery";
+import { runRefreshCycle } from "@/lib/refresh-orchestrator";
 import { patchBootDiagnostics } from "@/lib/boot-store";
 import { redirectApexToCanonicalWww } from "@/lib/canonical-domain";
 import { installStaticAudioGuards } from "@/lib/static-audio-guard";
@@ -53,13 +54,13 @@ const DYNAMIC_IMPORT_CRASH =
 window.addEventListener("error", (e) => {
   const message = String(e.message ?? (e.error instanceof Error ? e.error.message : ""));
   if (DYNAMIC_IMPORT_CRASH.test(message)) {
-    window.location.reload();
+    void runRefreshCycle({ reason: "main_dynamic_import_error" });
   }
 });
 
 window.addEventListener("unhandledrejection", (e) => {
   if (DYNAMIC_IMPORT_CRASH.test(String(e.reason ?? ""))) {
-    window.location.reload();
+    void runRefreshCycle({ reason: "main_dynamic_import_rejection" });
   }
 });
 

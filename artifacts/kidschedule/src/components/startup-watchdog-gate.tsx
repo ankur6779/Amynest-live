@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import {
   resetAutoRecoveryCounters,
 } from "@/lib/auto-recovery";
-import { handleRecoveryReload } from "@/lib/clear-cache-reload";
+import { clearRefreshCompleteFlag } from "@/lib/refresh-orchestrator";
 import { trackStartupEvent } from "@/lib/startup-orchestrator";
 import {
   collectStartupDiagnostics,
@@ -131,11 +132,22 @@ export function StartupWatchdogGate({ children }: { children: ReactNode }) {
             setReloading(true);
             void (async () => {
               resetAutoRecoveryCounters();
+              clearRefreshCompleteFlag();
               trackStartupEvent("startup_recovery_used", {
                 source: "startup_watchdog_gate",
                 action: "retry",
               });
-              await handleRecoveryReload();
+              const outcome = await handleRecoveryReload({
+                reason: "startup_watchdog",
+                force: true,
+                onTimeout: () => {
+                  console.error("[Refresh] Timeout");
+                  setReloading(false);
+                },
+              });
+              if (outcome !== "scheduled" && outcome !== "skipped_in_flight") {
+                setReloading(false);
+              }
             })();
           }}
           onContinue={() => {

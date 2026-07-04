@@ -8,6 +8,7 @@ import {
   resetCrashRecoveryCounters,
   type RecoveryStage,
 } from "@/lib/crash-recovery";
+import { clearRefreshCompleteFlag } from "@/lib/refresh-orchestrator";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { getFirebaseAuth } from "@/lib/firebase";
@@ -32,6 +33,7 @@ type State = {
 };
 
 const RECOVERY_DELAY_MS = 1000;
+const REFRESH_FAILSAFE_MS = 10_000;
 
 export class AppErrorBoundary extends Component<Props, State> {
   state: State = {
@@ -42,12 +44,13 @@ export class AppErrorBoundary extends Component<Props, State> {
   };
 
   private recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+  private refreshFailsafeTimer: ReturnType<typeof setTimeout> | null = null;
   private recoveryStarted = false;
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       error,
-      recovering: true,
+      recovering: false,
       recoveryMessage: "Something went wrong. Recovering…",
     };
   }
@@ -87,6 +90,24 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentWillUnmount(): void {
     if (this.recoveryTimer) clearTimeout(this.recoveryTimer);
+    this.clearRefreshFailsafe();
+  }
+
+  private clearRefreshFailsafe(): void {
+    if (this.refreshFailsafeTimer) {
+      clearTimeout(this.refreshFailsafeTimer);
+      this.refreshFailsafeTimer = null;
+    }
+  }
+
+  private armRefreshFailsafe(): void {
+    this.clearRefreshFailsafe();
+    this.refreshFailsafeTimer = setTimeout(() => {
+      console.error("[Refresh] Timeout");
+      this.showManualRecovery(
+        "Refresh timed out.\nPlease try again or go home.",
+      );
+    }, REFRESH_FAILSAFE_MS);
   }
 
   private showManualRecovery(message?: string): void {
@@ -131,7 +152,21 @@ export class AppErrorBoundary extends Component<Props, State> {
 
     if (stage === "reload") {
       this.setState({ recovering: true, recoveryMessage: "Refreshing AmyNest…" });
-      await executeHardReload();
+      this.armRefreshFailsafe();
+      const ok = await executeHardReload({
+        onTimeout: () => {
+          this.showManualRecovery(
+            "Refresh timed out.\nPlease try again or go home.",
+          );
+        },
+      });
+      this.clearRefreshFailsafe();
+      if (!ok) {
+        this.showManualRecovery();
+        recordRecoveryStageComplete(stage, label, false);
+        return;
+      }
+      recordRecoveryAttempt(stage);
       recordRecoveryStageComplete(stage, label, true);
       return;
     }
@@ -187,7 +222,21 @@ export class AppErrorBoundary extends Component<Props, State> {
           onReload={() => {
             this.setState({ recovering: true, recoveryMessage: "Refreshing AmyNest…" });
             resetCrashRecoveryCounters();
-            void executeHardReload();
+            clearRefreshCompleteFlag();
+            this.armRefreshFailsafe();
+            void executeHardReload({
+              force: true,
+              onTimeout: () => {
+                this.showManualRecovery(
+                  "Refresh timed out.\nPlease try again or go home.",
+                );
+              },
+            }).then((ok) => {
+              this.clearRefreshFailsafe();
+              if (!ok) {
+                this.showManualRecovery();
+              }
+            });
           }}
         />
       );

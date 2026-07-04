@@ -1,12 +1,16 @@
-import { forceClearAllCaches } from "@/lib/force-clear-caches";
 import { resetTtsApiCircuit } from "@/lib/amy-voice-circuit";
+import {
+  clearRefreshCompleteFlag,
+  runRefreshCycle,
+  type RefreshOutcome,
+} from "@/lib/refresh-orchestrator";
 
 /**
  * Full cache + service worker reset, then hard navigation to a clean app URL.
  * Used by the recovery UI and post-deploy SW updates.
  */
-export async function clearCacheAndReload(): Promise<void> {
-  await handleRecoveryReload();
+export async function clearCacheAndReload(): Promise<RefreshOutcome> {
+  return handleRecoveryReload();
 }
 
 function resetAudioStateAfterCacheClear(): void {
@@ -15,13 +19,20 @@ function resetAudioStateAfterCacheClear(): void {
 }
 
 /** Reload button: purge all caches/SW, then navigate to home without stale state. */
-export async function handleRecoveryReload(): Promise<void> {
-  if (typeof window === "undefined") return;
+export async function handleRecoveryReload(options?: {
+  reason?: string;
+  force?: boolean;
+  onTimeout?: () => void;
+}): Promise<RefreshOutcome> {
+  if (typeof window === "undefined") return "failed";
 
   resetAudioStateAfterCacheClear();
-  await forceClearAllCaches();
-
-  const origin = window.location.origin;
-  const base = (import.meta.env.BASE_URL as string).replace(/\/$/, "") || "";
-  window.location.href = `${origin}${base}/`;
+  if (options?.force) {
+    clearRefreshCompleteFlag();
+  }
+  return runRefreshCycle({
+    reason: options?.reason ?? "recovery_reload",
+    honorCompleteFlag: !options?.force,
+    onTimeout: options?.onTimeout,
+  });
 }

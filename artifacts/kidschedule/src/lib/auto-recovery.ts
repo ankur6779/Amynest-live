@@ -84,6 +84,10 @@ export function tryAutoRecovery(reason?: string): boolean {
   recordGlobalRecoveryAttempt();
   reloadInFlight = true;
   markCacheRecoveryPending();
-  void handleRecoveryReload();
+  void handleRecoveryReload({ reason: reason ?? "auto_recovery" }).then((outcome) => {
+    if (outcome !== "scheduled" && outcome !== "skipped_in_flight") {
+      reloadInFlight = false;
+    }
+  });
   return true;
 }

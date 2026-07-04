@@ -120,10 +120,17 @@ export function navigateToSafeRoute(): boolean {
   return true;
 }
 
-export async function executeHardReload(): Promise<void> {
-  if (!canAttemptAutoRecovery()) return;
+export async function executeHardReload(options?: {
+  force?: boolean;
+  onTimeout?: () => void;
+}): Promise<boolean> {
   markCacheRecoveryPending();
-  await handleRecoveryReload();
+  const outcome = await handleRecoveryReload({
+    reason: "hard_reload",
+    force: options?.force,
+    onTimeout: options?.onTimeout,
+  });
+  return outcome === "scheduled" || outcome === "skipped_in_flight";
 }
 
 export function tryAutoReload(reason: string): boolean {

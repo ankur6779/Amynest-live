@@ -1,4 +1,8 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
+import {
+  clearRefreshCompleteFlag,
+  hasCompletedRefreshCycle,
+} from "@/lib/refresh-orchestrator";
 
 const RECOVERY_FLAG_KEY = "amynest:cache-recovery-pending";
 
@@ -9,6 +13,11 @@ type AmyNestRecoveryWindow = Window & {
 /** True when index.html boot script or the error UI requested a cache purge. */
 export function shouldRunBootCacheRecovery(): boolean {
   if (typeof window === "undefined") return false;
+
+  if (hasCompletedRefreshCycle()) {
+    clearRefreshCompleteFlag();
+    return false;
+  }
 
   const win = window as AmyNestRecoveryWindow;
   if (win.__amynestNeedsCacheRecovery === true) return true;

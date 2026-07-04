@@ -7,6 +7,7 @@ import {
 } from "@/lib/auto-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
+import { clearRefreshCompleteFlag } from "@/lib/refresh-orchestrator";
 import { canAttemptAutoRecovery, navigateToSafeRoute } from "@/lib/crash-recovery";
 import { showProductionCrashOverlay, showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled, isInfiniteRenderError } from "@/lib/runtime-crash-policy";
@@ -52,6 +53,7 @@ interface State {
   fatal: boolean;
   reloading: boolean;
   errorReferenceId?: string;
+  reloadMessage?: string;
 }
 
 export class ReactInstanceRecovery extends Component<
@@ -62,6 +64,31 @@ export class ReactInstanceRecovery extends Component<
     super(props);
     this.state = { fatal: false, reloading: false };
     installGlobalRecoveryListeners();
+  }
+
+  private refreshFailsafeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private clearRefreshFailsafe(): void {
+    if (this.refreshFailsafeTimer) {
+      clearTimeout(this.refreshFailsafeTimer);
+      this.refreshFailsafeTimer = null;
+    }
+  }
+
+  private armRefreshFailsafe(): void {
+    this.clearRefreshFailsafe();
+    this.refreshFailsafeTimer = setTimeout(() => {
+      console.error("[Refresh] Timeout");
+      this.setState({
+        reloading: false,
+        fatal: true,
+        reloadMessage: "Refresh timed out.\nPlease try again or go home.",
+      });
+    }, 10_000);
+  }
+
+  componentWillUnmount(): void {
+    this.clearRefreshFailsafe();
   }
 
   static getDerivedStateFromError(err: unknown): Partial<State> {
@@ -126,12 +153,33 @@ export class ReactInstanceRecovery extends Component<
         <RecoveryFallback
           reloading={this.state.reloading}
           errorReferenceId={this.state.errorReferenceId}
+          message={this.state.reloadMessage}
           onReload={() => {
-            this.setState({ reloading: true });
+            this.setState({ reloading: true, fatal: false, reloadMessage: undefined });
+            this.armRefreshFailsafe();
             void (async () => {
               resetAutoRecoveryCounters();
+              clearRefreshCompleteFlag();
               markCacheRecoveryPending();
-              await handleRecoveryReload();
+              const outcome = await handleRecoveryReload({
+                reason: "react_instance_manual",
+                force: true,
+                onTimeout: () => {
+                  this.setState({
+                    reloading: false,
+                    fatal: true,
+                    reloadMessage: "Refresh timed out.\nPlease try again or go home.",
+                  });
+                },
+              });
+              this.clearRefreshFailsafe();
+              if (outcome !== "scheduled" && outcome !== "skipped_in_flight") {
+                this.setState({
+                  reloading: false,
+                  fatal: true,
+                  reloadMessage: "We're having trouble loading this screen.\nPlease try again.",
+                });
+              }
             })();
           }}
           onGoHome={() => navigateToSafeRoute()}
@@ -145,11 +193,13 @@ export class ReactInstanceRecovery extends Component<
 function RecoveryFallback({
   reloading,
   errorReferenceId,
+  message,
   onReload,
   onGoHome,
 }: {
   reloading: boolean;
   errorReferenceId?: string;
+  message?: string;
   onReload: () => void;
   onGoHome: () => void;
 }) {
@@ -162,7 +212,8 @@ function RecoveryFallback({
       message={
         reloading
           ? "AmyNest is fixing itself — clearing cache and reloading."
-          : "We're having trouble loading this screen.\nPlease try again."
+          : message ??
+            "We're having trouble loading this screen.\nPlease try again."
       }
     />
   );

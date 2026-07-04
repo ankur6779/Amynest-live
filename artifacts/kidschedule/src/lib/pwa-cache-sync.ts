@@ -1,10 +1,14 @@
-import { forceClearAllCaches } from "@/lib/force-clear-caches";
 import { reconcileLocalAudioCacheVersion } from "@/lib/local-tts-cache";
 import {
   checkDeployVersionMismatch,
   getDeployVersion,
   writeStoredDeployVersion,
 } from "@/lib/deploy-version";
+import {
+  clearRefreshCompleteFlag,
+  hasCompletedRefreshCycle,
+  runRefreshCycle,
+} from "@/lib/refresh-orchestrator";
 import { guardDeprecatedSyncPwaCache } from "@/lib/startup-api-guard";
 import {
   markCacheSyncComplete,
@@ -39,31 +43,63 @@ export async function runPwaCacheSyncBackground(): Promise<void> {
 
   try {
     if (mismatch && previous && current) {
-      console.info("[amynest:pwa] Deploy version changed — scheduling cache purge + reload", {
+      let reloadAlreadyAttempted = false;
+      try {
+        reloadAlreadyAttempted = Boolean(sessionStorage.getItem("amynest:deploy-reload-done"));
+      } catch {
+        /* ignore */
+      }
+
+      if (hasCompletedRefreshCycle() || reloadAlreadyAttempted) {
+        console.info(
+          "[Refresh] Deploy mismatch after prior reload — syncing version without re-reload",
+          { from: previous, to: current },
+        );
+        clearRefreshCompleteFlag();
+        writeStoredDeployVersion(current);
+        try {
+          sessionStorage.removeItem("amynest:deploy-reload-done");
+        } catch {
+          /* ignore */
+        }
+        markCacheSyncComplete(null);
+        return;
+      }
+
+      console.info("[Refresh] Deploy version changed — scheduling cache purge + reload", {
         from: previous,
         to: current,
       });
       markDeployReloadScheduled(previous, current);
-      writeStoredDeployVersion(current);
       try {
         sessionStorage.setItem("amynest:deploy-reload-done", current);
       } catch {
         /* ignore */
       }
 
-      await waitWithTimeout({
+      const outcome = await waitWithTimeout({
         label: "pwa_cache_clear",
         waitingFor: "cache_storage",
         timeoutMs: CACHE_SYNC_TIMEOUT_MS,
-        fn: () => forceClearAllCaches(),
-        fallback: undefined,
+        fn: () =>
+          runRefreshCycle({
+            reason: "deploy_mismatch",
+            honorCompleteFlag: false,
+            onTimeout: () => {
+              trackStartupEvent("startup_timeout", { task: "pwa_cache_clear" });
+            },
+          }),
+        fallback: "timeout" as const,
         onTimeout: () => {
           trackStartupEvent("startup_timeout", { task: "pwa_cache_clear" });
         },
       });
 
       markCacheSyncComplete(null);
-      window.location.reload();
+      if (outcome === "scheduled" || outcome === "skipped_in_flight") {
+        return;
+      }
+      writeStoredDeployVersion(current);
       return;
     }
 
