@@ -26,10 +26,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Drizzle push (includes user_retention)
+      - name: Apply 0045_user_retention.sql
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: pnpm db:push
+        run: node scripts/user-retention-apply-migration.mjs
 
       - name: Verify user_retention table and indexes
         env:
