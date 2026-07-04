@@ -176,8 +176,8 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           style={{ background: CHILD_SHELL_BG }}
         />
 
-        <div className="hub-child-grid relative">
-          <div className="hub-child-text-col flex flex-col gap-1.5">
+        <div className="hub-child-grid">
+          <div className="hub-child-text-col flex flex-col gap-1">
             <p className="hub-child-title">{cleanTitle}</p>
             {(previewBadge || (tryFree && showTryFreeBadge)) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -205,22 +205,8 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
             {footer}
           </div>
 
-          <div className="hub-child-action-col flex items-center justify-center">
-            {actionMode === "expand" ? (
-              <ExpandChevron expanded={expanded} />
-            ) : iconOnlyAction ? (
-              <motion.span
-                className={cn(
-                  "hub-expand-chevron border-white/20 bg-white/[0.12]",
-                  "shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_16px_rgba(0,0,0,0.25)]",
-                  "group-hover:scale-[1.05]",
-                )}
-                whileHover={reducedMotion ? undefined : { scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <ChevronRight className="h-[14px] w-[14px] text-white/90" strokeWidth={2.25} />
-              </motion.span>
-            ) : actionLabel ? (
+          {actionLabel ? (
+            <div className="hub-child-action-col">
               <motion.span
                 className={cn(
                   "hub-open-cta bg-gradient-to-r",
@@ -238,36 +224,51 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
                   className="lz-cta-ripple pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
                 />
               </motion.span>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
+        </div>
 
-          <div className="hub-child-hero-col">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 80%, rgba(250,201,255,0.28) 0%, rgba(134,171,255,0.14) 38%, rgba(7,10,36,0) 70%)",
-              }}
-            />
-            <img
-              src={visual.heroSrc}
-              alt=""
-              aria-hidden
-              className={cn("hub-child-hero", !reducedMotion && "lz-char-idle")}
-              loading="lazy"
-              decoding="async"
-            />
-            <span
-              aria-hidden
-              className="lz-sparkle pointer-events-none absolute right-[10%] top-[14%] h-1.5 w-1.5 rounded-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-            />
-            <span
-              aria-hidden
-              className="lz-sparkle pointer-events-none absolute left-[8%] top-[30%] h-1 w-1 rounded-full bg-violet-100/90"
-              style={{ animationDelay: "0.9s" }}
-            />
-          </div>
+        {actionMode === "expand" ? (
+          <ExpandChevron expanded={expanded} className="hub-child-chevron-abs" />
+        ) : iconOnlyAction ? (
+          <motion.span
+            className={cn(
+              "hub-child-chevron-abs hub-expand-chevron border-white/20 bg-white/[0.12]",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_16px_rgba(0,0,0,0.25)]",
+              "group-hover:scale-[1.05]",
+            )}
+            whileHover={reducedMotion ? undefined : { scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <ChevronRight className="h-[14px] w-[14px] text-white/90" strokeWidth={2.25} />
+          </motion.span>
+        ) : null}
+
+        <div aria-hidden className="hub-child-hero-layer pointer-events-none">
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 80%, rgba(250,201,255,0.28) 0%, rgba(134,171,255,0.14) 38%, rgba(7,10,36,0) 70%)",
+            }}
+          />
+          <img
+            src={visual.heroSrc}
+            alt=""
+            aria-hidden
+            className={cn("hub-child-hero", !reducedMotion && "lz-char-idle")}
+            loading="lazy"
+            decoding="async"
+          />
+          <span
+            aria-hidden
+            className="lz-sparkle pointer-events-none absolute right-[10%] top-[14%] h-1.5 w-1.5 rounded-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+          />
+          <span
+            aria-hidden
+            className="lz-sparkle pointer-events-none absolute left-[8%] top-[30%] h-1 w-1 rounded-full bg-violet-100/90"
+            style={{ animationDelay: "0.9s" }}
+          />
         </div>
       </div>
     </div>
