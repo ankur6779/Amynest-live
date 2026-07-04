@@ -15,6 +15,7 @@ import {
   STUDY_SECTION_TITLE,
   studyPanelCard,
 } from "@/lib/study-zone-theme";
+import { reportRetentionGoal } from "@/lib/retention/retention-goal-bridge";
 
 type LessonWithAudio = SmartStudyLesson & {
   audioHash?: string;
@@ -123,6 +124,9 @@ export function ContentBankLessonView({ childId, lessonId, onExit, onCompleted }
           correct: passed,
         }),
       });
+      if (passed) {
+        void reportRetentionGoal(authFetch, "activity");
+      }
       onCompleted?.();
     } catch {
       /* best-effort */

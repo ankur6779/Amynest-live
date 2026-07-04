@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
+import { reportRetentionGoal } from "@/lib/retention/retention-goal-bridge";
 import { ConfettiBurst, XpPopup } from "@/components/study-engagement";
 import { cn } from "@/lib/utils";
 import {
@@ -543,6 +544,7 @@ export function DailyStorySection({
       const nextStreak = markStoryReadToday(streakKey);
       setStreak(nextStreak);
       setCelebration((prev) => ({ trigger: prev.trigger + 1, amount: STORY_XP }));
+      void reportRetentionGoal(authFetch, "story");
     }
   };
 

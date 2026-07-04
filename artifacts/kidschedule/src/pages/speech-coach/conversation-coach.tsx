@@ -551,9 +551,12 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         import("@/lib/retention-engine").then(({ unlockBadge }) => {
           unlockBadge("speech_practice", "speech_coach");
         });
+        import("@/lib/retention/retention-goal-bridge").then(({ reportRetentionGoal }) => {
+          reportRetentionGoal(authFetch, "speech");
+        });
       }
     },
-    [persistSession, stt],
+    [persistSession, stt, authFetch],
   );
 
   const goPremium = useCallback(() => {

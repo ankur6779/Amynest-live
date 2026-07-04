@@ -250,6 +250,8 @@ async function startBackgroundTasks(): Promise<void> {
 
       startRazorpayWebhookCleanup();
       startWeeklyRecapCron();
+      const { startRetentionWeeklySummaryCron } = await import("./lib/retentionWeeklyCron.js");
+      startRetentionWeeklySummaryCron();
       startAdminHealthDigestCron();
       startBillingReconciliationCron();
       startRenderKeepWarm(port);

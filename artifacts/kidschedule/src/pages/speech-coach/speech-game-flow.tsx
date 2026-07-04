@@ -330,6 +330,9 @@ export function SpeechGameFlow({
     });
     onRewardsChange?.();
     setSessionPhase("done");
+    import("@/lib/retention/retention-goal-bridge").then(({ reportRetentionGoalBestEffort }) => {
+      reportRetentionGoalBestEffort("speech");
+    });
   };
 
   const handleHear = () => {

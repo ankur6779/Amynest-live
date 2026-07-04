@@ -131,6 +131,56 @@ export const PHASE1_EVENT_PROP_SCHEMAS = {
     component: z.string().max(128).optional(),
     session_id: z.string().max(128).optional(),
   }),
+
+  // ── retention / habit loop ───────────────────────────────────────────
+  daily_checkin: z.object({
+    streak_days: z.number().int().nonnegative().optional(),
+    stars: z.number().int().nonnegative().optional(),
+    coins: z.number().int().nonnegative().optional(),
+    parent_xp: z.number().int().nonnegative().optional(),
+  }),
+  streak_started: z.object({
+    streak_days: z.number().int().nonnegative().optional(),
+  }),
+  streak_extended: z.object({
+    streak_days: z.number().int().nonnegative().optional(),
+    milestone: z.number().int().optional(),
+  }),
+  streak_lost: z.object({
+    previous_streak: z.number().int().nonnegative().optional(),
+  }),
+  reward_claimed: z.object({
+    reward_type: z.enum(["stars", "coins", "parent_xp", "badge"]).optional(),
+    amount: z.number().int().nonnegative().optional(),
+    source: z.string().max(64).optional(),
+  }),
+  goal_completed: z.object({
+    goal: z.enum(["routine", "story", "activity", "speech", "all"]).optional(),
+  }),
+  weekly_summary_viewed: z.object({
+    week_key: z.string().max(16).optional(),
+  }),
+  resume_clicked: z.object({
+    resume_type: z.string().max(32).optional(),
+    href: z.string().max(256).optional(),
+  }),
+  notification_opened: z.object({
+    category: z.string().max(64).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
+  return_after_push: z.object({
+    category: z.string().max(64).optional(),
+    hours_since_push: z.number().nonnegative().optional(),
+  }),
+  achievement_unlocked_retention: z.object({
+    achievement_id: z.string().max(64).optional(),
+  }),
+  inactive_days: z.object({
+    days: z.number().int().nonnegative().optional(),
+  }),
+  winback_opened: z.object({
+    level: z.number().int().min(1).max(4).optional(),
+  }),
 } as const;
 
 export type Phase1EventName = keyof typeof PHASE1_EVENT_PROP_SCHEMAS;
@@ -160,4 +210,17 @@ export const PHASE1_EVENT_CATEGORY: Record<
   growth_funnel_event: "growth",
   performance_metric: "performance",
   error_captured: "error",
+  daily_checkin: "growth",
+  streak_started: "growth",
+  streak_extended: "growth",
+  streak_lost: "growth",
+  reward_claimed: "growth",
+  goal_completed: "growth",
+  weekly_summary_viewed: "growth",
+  resume_clicked: "growth",
+  notification_opened: "growth",
+  return_after_push: "growth",
+  achievement_unlocked_retention: "growth",
+  inactive_days: "growth",
+  winback_opened: "growth",
 };

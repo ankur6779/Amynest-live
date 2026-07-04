@@ -1107,6 +1107,9 @@ export default function RoutineDetail() {
             import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
               trackOnboardingMilestone("first_routine_created", { routineId: routine?.id ?? 0 });
             });
+            import("@/lib/retention/retention-goal-bridge").then(({ reportRetentionGoal }) => {
+              reportRetentionGoal(authFetch, "routine");
+            });
           }
         }
       }

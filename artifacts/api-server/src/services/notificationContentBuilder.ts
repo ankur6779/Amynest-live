@@ -181,6 +181,63 @@ export async function buildWeeklyReport(
   };
 }
 
+/* ────────────────────────  Retention win-back  ───────────────────────── */
+
+async function buildRetentionWinback(
+  userId: string,
+  childName: string,
+  timezone: string,
+  date: string,
+): Promise<BuiltNotification | null> {
+  const { userRetentionTable } = await import("@workspace/db");
+  const [row] = await db
+    .select({
+      inactiveDays: userRetentionTable.inactiveDays,
+      winbackLevel: userRetentionTable.winbackLevel,
+      resumeItems: userRetentionTable.resumeItems,
+    })
+    .from(userRetentionTable)
+    .where(eq(userRetentionTable.userId, userId))
+    .limit(1);
+
+  if (!row || row.inactiveDays < 1 || row.winbackLevel < 1) return null;
+
+  const level = row.winbackLevel;
+  const resumeHref = row.resumeItems?.[0]?.href ?? "/dashboard";
+
+  const copy: Record<number, { title: string; body: string; deepLink: string }> = {
+    1: {
+      title: "A gentle reminder",
+      body: `Today's routine for ${childName} is ready when you are.`,
+      deepLink: "/dashboard",
+    },
+    3: {
+      title: "Pick up where you left off",
+      body: `Your unfinished activity is still here — one small step for ${childName}.`,
+      deepLink: resumeHref,
+    },
+    7: {
+      title: "Welcome back bonus",
+      body: `Open AmyNest today for bonus stars — ${childName}'s journey continues.`,
+      deepLink: "/dashboard",
+    },
+    14: {
+      title: "We've missed you",
+      body: `Amy prepared a fresh start for ${childName}. No pressure — just drop in.`,
+      deepLink: "/dashboard",
+    },
+  };
+
+  const msg = copy[level] ?? copy[14];
+  return {
+    title: msg.title,
+    body: msg.body,
+    deepLink: msg.deepLink,
+    dedupKey: contentFingerprint(userId, "retention_winback", String(level), date),
+    data: { campaign: "retention_winback", winback_level: level },
+  };
+}
+
 /* ────────────────────────  Smart engagement logic  ───────────────────── */
 
 export async function buildEngagement(
@@ -190,6 +247,9 @@ export async function buildEngagement(
   const child = await getPrimaryChild(userId);
   if (!child) return null;
   const date = todayLocalDateString(timezone);
+
+  const winback = await buildRetentionWinback(userId, child.name, timezone, date);
+  if (winback) return winback;
 
   const { getJourneyStatus } = await import("./journeyService.js");
   const journey = await getJourneyStatus(userId);

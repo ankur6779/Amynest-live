@@ -795,6 +795,9 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
         }
       })();
       setSessionPhase("done");
+      import("@/lib/retention/retention-goal-bridge").then(({ reportRetentionGoalBestEffort }) => {
+        reportRetentionGoalBestEffort("speech");
+      });
     } else {
       const nextIdx = sessionIdx + 1;
       const nextItem = sessionItems[nextIdx];

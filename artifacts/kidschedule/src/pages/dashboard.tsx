@@ -56,6 +56,7 @@ import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { computeRoutineStreak } from "@/lib/routine-streak";
 import { shouldBypassRoutineGeneratePaywall } from "@/lib/activation-gate";
 import { ActivationResumeBanner } from "@/components/activation-resume-banner";
+import { RetentionHubSection } from "@/components/retention/retention-hub";
 import { FeatureDiscoveryStrip } from "@/components/feature-discovery-strip";
 import { pickRoutineForIntelligence, resolveFamilyIntelligenceSurface } from "@/lib/family-intelligence-surface";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
@@ -1231,6 +1232,20 @@ export default function Dashboard() {
             <ContentReveal.Stagger className="relative z-10 flex flex-col gap-4">
             <ContentReveal.Item>
               <ActivationResumeBanner />
+            </ContentReveal.Item>
+
+            <ContentReveal.Item>
+              <RetentionHubSection
+                childName={selectedChild?.name ?? null}
+                routineCompletionPct={
+                  todayProgress.total > 0
+                    ? Math.round((todayProgress.done / todayProgress.total) * 100)
+                    : 0
+                }
+                hasTodayRoutine={hasTodayRoutine}
+                onGenerateRoutine={handleGenerateRoutine}
+                learningHref="/parenting-hub"
+              />
             </ContentReveal.Item>
 
             <ContentReveal.Item>

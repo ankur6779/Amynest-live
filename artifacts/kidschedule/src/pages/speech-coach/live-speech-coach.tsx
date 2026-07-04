@@ -733,6 +733,9 @@ export function LiveSpeechCoach({
         analyticsEvent: "speech_improved",
         metadata: { score, streak: bestStreak, tasks: tasks.length },
       });
+      import("@/lib/retention/retention-goal-bridge").then(({ reportRetentionGoalBestEffort }) => {
+        reportRetentionGoalBestEffort("speech");
+      });
       return;
     }
     const nextIdx = idx + 1;

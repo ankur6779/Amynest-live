@@ -2,6 +2,9 @@ import { navigateAfterAuth } from "@/lib/auth-navigation";
 import { spaNavigateAfterSignIn } from "@/lib/auth-native-navigation";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
+/** Primary activation destination after onboarding — highest ROI for D1 retention. */
+export const POST_ONBOARDING_ACTIVATION_PATH = "/routines/generate" as const;
+
 /** Avoid full document reload on native WebView — prevents onboarding loop after finish. */
 export function navigateAfterOnboardingComplete(path: string): void {
   if (typeof window === "undefined") return;

@@ -20,6 +20,7 @@ import { HUB_ORIGAMI, type HubOrigami } from "@workspace/parent-hub-speak";
 
 // ─── Drive embed helper ───────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
+import { reportRetentionGoalBestEffort } from "@/lib/retention/retention-goal-bridge";
 function toEmbedUrl(url: string): string {
   const folderMatch = url.match(/\/folders\/([^?&#]+)/);
   if (folderMatch) return `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#list`;
@@ -2272,6 +2273,7 @@ function OrigamiStepsModal({
       const next = prev + 1;
       if (next >= total) {
         setPhase("done");
+        reportRetentionGoalBestEffort("activity");
         const totalDone = recordOrigamiCompletion(childName, item.id);
         setCompletionTotal(totalDone);
         if (voiceOn) {

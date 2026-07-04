@@ -173,6 +173,7 @@
     "@workspace/parenting-articles": "workspace:*",
     "@workspace/phone-auth": "workspace:*",
     "@workspace/phonics-curriculum": "workspace:*",
+    "@workspace/retention-system": "workspace:*",
     "@workspace/phonics-sounds": "workspace:*",
     "@workspace/phonics-v3-progress": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",

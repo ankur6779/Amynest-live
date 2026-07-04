@@ -66,6 +66,7 @@
     "@workspace/rhymes-audio": "workspace:*",
     "@workspace/routine-intelligence": "workspace:*",
     "@workspace/routine-journey": "workspace:*",
+    "@workspace/retention-system": "workspace:*",
     "@workspace/safety": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/speech-coach-v2": "workspace:*",

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { getAnalyticsService } from "./analytics-service";
+import { setRetentionAuthFetch } from "@/lib/retention/retention-goal-bridge";
 
 /** Wires auth fetch + subscription context into AnalyticsService. */
 export function AnalyticsBootstrap(): null {
@@ -10,6 +11,7 @@ export function AnalyticsBootstrap(): null {
 
   useEffect(() => {
     getAnalyticsService().setAuthFetch(authFetch);
+    setRetentionAuthFetch(authFetch);
   }, [authFetch]);
 
   useEffect(() => {

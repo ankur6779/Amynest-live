@@ -1,0 +1,15 @@
+{
+  "name": "@workspace/retention-system",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/index.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "catalog:"
+  }
+}

@@ -7,6 +7,7 @@ import { usePrimaryChild } from "@/hooks/use-primary-child";
 import { useSubscription } from "@/hooks/use-subscription";
 import { SubscriptionTrialOffer } from "@/components/subscription-trial-offer";
 import { markOnboardingTrialSeen } from "@/lib/subscription-funnel-storage";
+import { POST_ONBOARDING_ACTIVATION_PATH } from "@/lib/onboarding-navigation";
 import { FF_POST_ONBOARDING_TRIAL } from "@/lib/subscription-feature-flags";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { UPGRADE_MODAL } from "@workspace/subscription-marketing";
@@ -25,11 +26,11 @@ export default function SubscriptionTrialPage() {
 
   useEffect(() => {
     if (!FF_POST_ONBOARDING_TRIAL) {
-      setLocation("/dashboard");
+      setLocation(POST_ONBOARDING_ACTIVATION_PATH);
       return;
     }
     if (isPremium && !isTrialing) {
-      setLocation("/dashboard");
+      setLocation(POST_ONBOARDING_ACTIVATION_PATH);
     }
   }, [FF_POST_ONBOARDING_TRIAL, isPremium, isTrialing, setLocation]);
 
@@ -38,11 +39,11 @@ export default function SubscriptionTrialPage() {
     ? `Try the full AmyNest system for ${name}`
     : UPGRADE_MODAL.title;
 
-  const goDashboard = () => setLocation("/dashboard");
+  const goActivate = () => setLocation(POST_ONBOARDING_ACTIVATION_PATH);
 
   useEffect(() => {
     if (!canStartTrial && !isTrialing) {
-      setLocation("/dashboard");
+      setLocation(POST_ONBOARDING_ACTIVATION_PATH);
     }
   }, [canStartTrial, isTrialing, setLocation]);
 
@@ -83,12 +84,12 @@ export default function SubscriptionTrialPage() {
         <SubscriptionTrialOffer
           source="post_onboarding"
           variant="primary"
-          onActivated={goDashboard}
+          onActivated={goActivate}
         />
         <Button
           variant="ghost"
           className="w-full text-white/60 hover:text-white"
-          onClick={goDashboard}
+          onClick={goActivate}
         >
           {UPGRADE_MODAL.dismiss}
         </Button>

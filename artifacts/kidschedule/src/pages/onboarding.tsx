@@ -29,7 +29,7 @@ import {
 } from "@/lib/firebase-auth-listener";
 import { waitForIdToken } from "@/lib/auth-token";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
-import { navigateAfterOnboardingComplete } from "@/lib/onboarding-navigation";
+import { navigateAfterOnboardingComplete, POST_ONBOARDING_ACTIVATION_PATH } from "@/lib/onboarding-navigation";
 import {
   readFirebaseUserId,
   readOAuthParentNameHint,
@@ -1151,7 +1151,7 @@ export default function OnboardingPage() {
       const trialPath =
         FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
           ? "/subscription-trial"
-          : "/dashboard";
+          : POST_ONBOARDING_ACTIVATION_PATH;
       navigateAfterOnboardingComplete(trialPath);
       // Use Wouter setLocation as a direct fallback in case PopStateEvent is ignored.
       setLocation(trialPath);
@@ -1200,7 +1200,7 @@ export default function OnboardingPage() {
     const trialPath =
       FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
         ? "/subscription-trial"
-        : "/dashboard";
+        : POST_ONBOARDING_ACTIVATION_PATH;
     navigateAfterOnboardingComplete(trialPath);
     // Direct Wouter navigation as a belt-and-suspenders fallback.
     setLocation(trialPath);

@@ -122,3 +122,4 @@ export * from "./user_identity_aliases";
 export * from "./crash_intelligence";
 export * from "./validation_runs";
 export * from "./user_custom_activities";
+export * from "./user_retention";
