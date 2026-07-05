@@ -1,8 +1,8 @@
-import { Suspense, lazy, useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, lazy, useState, useEffect, useCallback, useRef, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
-import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { useListChildren, getListChildrenQueryKey, useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { SmartRouteFallback } from "@/components/smart-route-fallback";
@@ -15,24 +15,18 @@ import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { LearningZoneLaunchCard } from "@/components/learning-zone-launch-card";
 import { CreativityPremiumSection } from "@/components/creativity-premium-section";
 import { CreativityLaunchCard } from "@/components/creativity-launch-card";
-import { CreativityGroupHeader } from "@/components/creativity-group-header";
-import { HealthZoneGroupHeader } from "@/components/health-zone-group-header";
+import { HubSectionGroupHeader } from "@/components/hub-section-group-header";
 import { HealthZonePremiumSection } from "@/components/health-zone-premium-section";
 import { HealthZoneLaunchCard } from "@/components/health-zone-launch-card";
-import { GamingHubGroupHeader } from "@/components/gaming-hub-group-header";
 import { GamingHubLaunchCard } from "@/components/gaming-hub-launch-card";
 import { StoriesPremiumSection } from "@/components/stories-premium-section";
 import { StoriesLaunchCard } from "@/components/stories-launch-card";
 import { StoriesDiscoveryLaunchCard } from "@/components/stories-discovery-launch-card";
-import { ParentSupportGroupHeader } from "@/components/parent-support-group-header";
 import { ParentSupportPremiumSection } from "@/components/parent-support-premium-section";
 import { TodayForYouFamilyPulseSection } from "@/components/today-for-you-family-pulse-section";
-import { TodayForYouGroupHeader } from "@/components/today-for-you-group-header";
-import { LearningZoneGroupHeader } from "@/components/learning-zone-group-header";
 import { HubExpandedChildren } from "@/components/hub-expanded-children";
 import { TodayForYouLaunchCard } from "@/components/today-for-you-launch-card";
 import { TodayForYouPremiumSection } from "@/components/today-for-you-premium-section";
-import { StoriesGroupHeader } from "@/components/stories-group-header";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
 import { InfantModeShortcuts } from "@/components/infant/infant-mode-shortcuts";
@@ -73,6 +67,9 @@ import {
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
 import { applyParentingHubDeepLink, dispatchInfantHubOpenSection } from "@/lib/hub-activity-cross-link";
+import { buildAllHubSectionPreviews } from "@/lib/hub-section-discoverability";
+import { recordHubSectionVisit } from "@/lib/hub-section-visit-tracker";
+import { getHubSectionHeaderTheme, parseSectionTintRgb } from "@/lib/hub-section-header-theme";
 import {
   getAdaptiveMood,
   getLifeSkillPreviewText,
@@ -107,6 +104,7 @@ import { HubExploreAgesSection } from "@/components/hub-light-layout";
 import {
   PARENT_HUB_PAGE,
   getHubGroupStyle,
+  type HubGroupKey,
   HUB_GLASS_CARD,
   HUB_SECTION_LABEL,
   HUB_AGE_BADGE,
@@ -812,6 +810,13 @@ function ParentingHubPage() {
       queryKey: getListChildrenQueryKey()
     }
   });
+  const { data: hubRoutines = [] } = useListRoutines(undefined, {
+    query: {
+      queryKey: getListRoutinesQueryKey(),
+      enabled: (children ?? []).length > 0,
+      staleTime: 60_000,
+    },
+  });
   const STORAGE_KEY = "amynest:hub:activeChildId";
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window !== "undefined") {
@@ -951,6 +956,9 @@ function ParentingHubPage() {
         next.delete(key);
       } else {
         next.add(key);
+        if (effectiveChild?.id) {
+          recordHubSectionVisit(effectiveChild.id, key as HubGroupKey);
+        }
         awardHubSectionPoints(`group-${key}`);
       }
       return next;
@@ -1703,6 +1711,52 @@ function ParentingHubPage() {
     .map(id => sectionById.get(id))
     .filter((s): s is SectionEntry => !!s && isHubSectionVisible(s, currentBand!, totalAgeMonths));
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const hasTodayRoutine =
+    !!effectiveChild?.id &&
+    (hubRoutines as { childId?: number; date?: string }[]).some(
+      (r) => r.childId === effectiveChild!.id && (r.date?.slice(0, 10) ?? "") === todayStr,
+    );
+
+  const learningSessionPending = (() => {
+    const session = learningProgress.phase3?.dailySession;
+    return !!session && session.completedCount < session.totalCount;
+  })();
+
+  const hubGroupKeys = WEB_HUB_GROUPS.map((g) => g.key) as HubGroupKey[];
+
+  const visibleGroupTileIds = (() => {
+    const out = {} as Record<HubGroupKey, string[]>;
+    for (const group of WEB_HUB_GROUPS) {
+      const tileIdSet = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
+      if (group.key === "today") {
+        out.today = todayTiles.map((s) => s.id);
+      } else {
+        let ids = forYouGrid.filter((s) => tileIdSet.has(s.id)).map((s) => s.id);
+        if (group.key === "support") {
+          ids = sortSupportTileIds(ids, { ptmSeason });
+        } else if (group.key === "health") {
+          ids = sortHealthTileIds(ids);
+        }
+        out[group.key as HubGroupKey] = ids;
+      }
+    }
+    return out;
+  })();
+
+  const sectionPreviews = effectiveChild?.id
+    ? buildAllHubSectionPreviews({
+        childId: effectiveChild.id,
+        groupTileIds: visibleGroupTileIds,
+        groupKeys: hubGroupKeys,
+        hasTodayRoutine,
+        learningSessionPending,
+        recommendationCount:
+          learningProgress.phase3?.recommendations?.length ?? todayTiles.length,
+        t,
+      })
+    : ({} as ReturnType<typeof buildAllHubSectionPreviews>);
+
   const renderHubSection = (s: SectionEntry, surface: "main" | "previous" | "early" = "main") => {
     hubSurface.current = surface;
     const node = s.render();
@@ -1847,7 +1901,7 @@ function ParentingHubPage() {
             </div>}
 
           {/* 6 collapsible section groups — glass + glow tiles */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {WEB_HUB_GROUPS.map(group => {
               const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
               const isToday = group.key === "today";
@@ -1870,153 +1924,130 @@ function ParentingHubPage() {
               }
               const isOpen = expandedGroups.has(group.key);
               const gs = getHubGroupStyle(group.key);
+              const groupKey = group.key as HubGroupKey;
+              const preview = sectionPreviews[groupKey] ?? {
+                subtitle: t(`parent_hub.section_groups.collapsed_nav.${groupKey === "parent" ? "parent" : groupKey}`),
+                isPrimary: false,
+              };
+
+              const sectionHeaderTheme = getHubSectionHeaderTheme(groupKey);
+              const [sectionR, sectionG, sectionB] = parseSectionTintRgb(sectionHeaderTheme.tintRgb);
+
+              const groupShell = (body: ReactNode, gridClass?: string) => (
+                <div
+                  key={group.key}
+                  id={`hub-group-${group.key}`}
+                  className={cn(
+                    "hub-group-panel hub-page-enter",
+                    isOpen ? "hub-group-panel--open" : "space-y-3",
+                  )}
+                  style={
+                    {
+                      "--hub-section-r": sectionR,
+                      "--hub-section-g": sectionG,
+                      "--hub-section-b": sectionB,
+                    } as CSSProperties
+                  }
+                >
+                  <HubSectionGroupHeader
+                    groupKey={groupKey}
+                    title={t(group.i18n)}
+                    isOpen={isOpen}
+                    onToggle={() => toggleGroup(group.key)}
+                    preview={preview}
+                  />
+                  <HubExpandedChildren
+                    open={isOpen}
+                    connected
+                    panelId={`hub-group-${group.key}-panel`}
+                    className={gridClass ?? "space-y-3"}
+                  >
+                    {body}
+                  </HubExpandedChildren>
+                </div>
+              );
 
               if (group.key === "today") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <TodayForYouGroupHeader
-                      title={t(group.i18n)}
-                      subtitle={t("parent_hub.today_for_you_cards.section.subtitle")}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        {todayTiles.map(s => {
-                          const node = renderHubSection(s);
-                          return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                        })}
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <>
+                    {todayTiles.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </>,
                 );
               }
 
               if (group.key === "stories") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <StoriesGroupHeader
-                      title={t(group.i18n)}
-                      subtitle={t("parent_hub.stories_cards.section.subtitle")}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className={HUB_GROUP_CARD_GRID_2COL}>
-                          {groupGrid.map(s => {
-                            const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                          })}
-                        </div>
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <div className={HUB_GROUP_CARD_GRID_2COL}>
+                    {groupGrid.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </div>,
                 );
               }
 
               if (group.key === "support") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <ParentSupportGroupHeader
-                      title={t(group.i18n)}
-                      subtitle={t("parent_hub.parent_support_cards.section.subtitle")}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        {ptmSeason ? (
-                          <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
-                            {t("parent_hub.support.ptm_season_banner")}
-                          </div>
-                        ) : null}
-                        <div className={HUB_GROUP_CARD_GRID_2COL}>
-                          {groupGrid.map(s => {
-                            const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                          })}
-                        </div>
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <>
+                    {ptmSeason ? (
+                      <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
+                        {t("parent_hub.support.ptm_season_banner")}
+                      </div>
+                    ) : null}
+                    <div className={HUB_GROUP_CARD_GRID_2COL}>
+                      {groupGrid.map(s => {
+                        const node = renderHubSection(s);
+                        return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                      })}
+                    </div>
+                  </>,
                 );
               }
 
               if (group.key === "learning") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <LearningZoneGroupHeader
-                      title={t(group.i18n)}
-                      subtitle={t("parent_hub.section_groups.learning_subtitle")}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className={HUB_GROUP_CARD_GRID_DENSE}>
-                          {groupGrid.map(s => {
-                            const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                          })}
-                        </div>
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <div className={HUB_GROUP_CARD_GRID_DENSE}>
+                    {groupGrid.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </div>,
                 );
               }
 
               if (group.key === "creativity") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <CreativityGroupHeader
-                      title={t(group.i18n)}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className={HUB_GROUP_CARD_GRID_2COL}>
-                          {groupGrid.map(s => {
-                            const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                          })}
-                        </div>
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <div className={HUB_GROUP_CARD_GRID_2COL}>
+                    {groupGrid.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </div>,
                 );
               }
 
               if (group.key === "health") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <HealthZoneGroupHeader
-                      title={t(group.i18n)}
-                      subtitle={t("parent_hub.section_groups.health_subtitle")}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className={HUB_GROUP_CARD_GRID_DENSE}>
-                          {groupGrid.map(s => {
-                            const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                          })}
-                        </div>
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <div className={HUB_GROUP_CARD_GRID_DENSE}>
+                    {groupGrid.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </div>,
                 );
               }
 
               if (group.key === "parent") {
-                return (
-                  <div key={group.key} id={`hub-group-${group.key}`} className="hub-group-panel space-y-3 hub-page-enter">
-                    <GamingHubGroupHeader
-                      title={t(group.i18n)}
-                      subtitle={t("parent_hub.section_groups.gaming_subtitle")}
-                      isOpen={isOpen}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    <HubExpandedChildren open={isOpen} className="space-y-3">
-                        <div className={HUB_GROUP_CARD_GRID_2COL}>
-                          {groupGrid.map(s => {
-                            const node = renderHubSection(s);
-                            return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
-                          })}
-                        </div>
-                    </HubExpandedChildren>
-                  </div>
+                return groupShell(
+                  <div className={HUB_GROUP_CARD_GRID_2COL}>
+                    {groupGrid.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </div>,
                 );
               }
 

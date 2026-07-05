@@ -2,10 +2,10 @@ import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { HubTileButton, hubTileAriaLabel } from "@/components/hub-tile-button";
 import { PARENT_SUPPORT_SECTION_HEADER_VISUAL } from "@/lib/parent-support-card-config";
 import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type ParentSupportGroupHeaderProps = {
   title: string;
-  subtitle: string;
   isOpen: boolean;
   onToggle: () => void;
 };
@@ -13,11 +13,12 @@ type ParentSupportGroupHeaderProps = {
 /** Premium section header for the Parent Support hub group. */
 export function ParentSupportGroupHeader({
   title,
-  subtitle,
   isOpen,
   onToggle,
 }: ParentSupportGroupHeaderProps) {
+  const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
+  const navSubtitle = t("parent_hub.section_groups.collapsed_nav.support");
 
   return (
     <motion.div
@@ -27,16 +28,17 @@ export function ParentSupportGroupHeader({
     >
       <HubTileButton
         onClick={onToggle}
-        ariaLabel={hubTileAriaLabel(title, subtitle, isOpen)}
+        ariaLabel={hubTileAriaLabel(title, navSubtitle, isOpen)}
         ariaExpanded={isOpen}
         className="rounded-[18px]"
       >
         <HubPremiumFeatureCard
           visual={PARENT_SUPPORT_SECTION_HEADER_VISUAL}
           title={title}
-          description={subtitle}
+          description={navSubtitle}
           expanded={isOpen}
           variant="section"
+          sectionGroupKey="support"
         />
       </HubTileButton>
     </motion.div>

@@ -3658,7 +3658,34 @@
       "support": "Parent Support",
       "health_subtitle": "Eat well, move more & build healthy habits",
       "gaming_subtitle": "Learn, play, earn & grow every day",
-      "learning_subtitle": "Master academics with fun, guided practice"
+      "learning_subtitle": "Master academics with fun, guided practice",
+      "open_section": "Open",
+      "collapsed_nav": {
+        "today": "Routine • AI Coach • Daily Picks",
+        "learning": "Math • Phonics • Speech",
+        "creativity": "Crafts • Drawing • DIY",
+        "stories": "Reading • Communication",
+        "health": "Nutrition • Sleep • Wellness",
+        "parent": "Brain Games • Fun Learning",
+        "support": "Support • Experts • Parents"
+      }
+    },
+    "section_preview": {
+      "activities": "{{count}} activities",
+      "stories": "{{count}} stories",
+      "games": "{{count}} games",
+      "tools": "{{count}} tools",
+      "picks": "{{count}} recommendations",
+      "routine_ready": "Routine ready",
+      "create_routine": "Create routine",
+      "forecast_ready": "Forecast ready",
+      "last_opened": "Last opened",
+      "highlights": {
+        "new": "New",
+        "updated": "Updated",
+        "recommended": "Recommended",
+        "continue": "Continue"
+      }
     },
     "learning_zone_cards": {
       "section": {

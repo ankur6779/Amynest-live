@@ -131,13 +131,13 @@ export function DailyCheckInCard({
   const progressScores = useMemo(() => {
     const base = Math.min(100, score);
     return {
-      learning: base,
-      speech: Math.min(100, (data?.state?.parentXp ?? 0) % 100),
-      creativity: Math.min(100, streak * 8),
-      health: Math.min(100, (data?.goalsComplete ?? 0) * 25),
-      nutrition: Math.min(100, base * 0.7),
-      behavior: Math.min(100, base * 0.85),
-      sleep: Math.min(100, base * 0.6),
+      learning: Math.round(base),
+      speech: Math.round(Math.min(100, (data?.state?.parentXp ?? 0) % 100)),
+      creativity: Math.round(Math.min(100, streak * 8)),
+      health: Math.round(Math.min(100, (data?.goalsComplete ?? 0) * 25)),
+      nutrition: Math.round(Math.min(100, base * 0.7)),
+      behavior: Math.round(Math.min(100, base * 0.85)),
+      sleep: Math.round(Math.min(100, base * 0.6)),
     };
   }, [score, data?.state?.parentXp, data?.goalsComplete, streak]);
 

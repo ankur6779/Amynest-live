@@ -8,6 +8,9 @@ type HubTileButtonProps = {
   /** Accessible name — typically title plus description. */
   ariaLabel: string;
   ariaExpanded?: boolean;
+  /** Id of the expandable panel controlled by this button. */
+  ariaControls?: string;
+  id?: string;
   className?: string;
   testId?: string;
 };
@@ -18,17 +21,21 @@ export function HubTileButton({
   onClick,
   ariaLabel,
   ariaExpanded,
+  ariaControls,
+  id,
   className,
   testId,
 }: HubTileButtonProps) {
   return (
     <button
       type="button"
+      id={id}
       onClick={onClick}
       aria-label={ariaLabel}
       aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
       data-testid={testId}
-      className={cn(HUB_TILE_TRIGGER, className)}
+      className={cn(HUB_TILE_TRIGGER, "hub-tile-trigger--section", className)}
     >
       {children}
     </button>

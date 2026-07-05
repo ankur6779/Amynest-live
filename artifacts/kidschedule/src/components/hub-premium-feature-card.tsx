@@ -1,9 +1,15 @@
-import { memo, type ReactNode } from "react";
+import { memo, type CSSProperties, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import type { HubPremiumCardVisual } from "@/lib/hub-premium-card-types";
 import { stripHubTileEmoji } from "@/lib/hub-premium-card-types";
+import {
+  getHubSectionHeaderTheme,
+  parseSectionTintRgb,
+} from "@/lib/hub-section-header-theme";
 import { HUB_FEATURE_BADGE } from "@/lib/parent-hub-premium";
+import type { HubGroupKey } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
 type HubPremiumFeatureCardProps = {
@@ -18,6 +24,14 @@ type HubPremiumFeatureCardProps = {
   showChips?: boolean;
   /** Section headers are compact; child cards carry illustration + chips. */
   variant?: "section" | "child";
+  /** Accent identity for collapsed Parent Hub section navigation cards. */
+  sectionGroupKey?: HubGroupKey;
+  /** Subtle visit hint — shown inline before subtitle when collapsed. */
+  lastVisitedHint?: string;
+  /** Single-section smart highlight (New / Updated / etc.). */
+  highlightLabel?: string;
+  /** Time-of-day or routine personalization — accent intensity only. */
+  isPrimary?: boolean;
   className?: string;
   footer?: ReactNode;
 };
@@ -51,6 +65,108 @@ function GlassChip({
   );
 }
 
+function HubSectionNavigationCard({
+  visual,
+  title,
+  description,
+  expanded,
+  sectionGroupKey,
+  lastVisitedHint,
+  highlightLabel,
+  isPrimary = false,
+  className,
+}: {
+  visual: HubPremiumCardVisual;
+  title: string;
+  description: string;
+  expanded: boolean;
+  sectionGroupKey: HubGroupKey;
+  lastVisitedHint?: string;
+  highlightLabel?: string;
+  isPrimary?: boolean;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  const cleanTitle = stripHubTileEmoji(title);
+  const headerTheme = getHubSectionHeaderTheme(sectionGroupKey);
+  const [r, g, b] = parseSectionTintRgb(headerTheme.tintRgb);
+  const navSubtitle = description.trim();
+  const pillLabel = highlightLabel?.trim() || t("parent_hub.section_groups.open_section");
+
+  return (
+    <div
+      className={cn(
+        "hub-section-card group relative w-full max-w-full overflow-hidden rounded-[18px]",
+        isPrimary && !expanded && "hub-section-card--primary",
+        className,
+      )}
+      data-expanded={expanded || undefined}
+      style={
+        {
+          "--hub-section-r": r,
+          "--hub-section-g": g,
+          "--hub-section-b": b,
+        } as CSSProperties
+      }
+    >
+      <div
+        className={cn(
+          "hub-section-shell relative flex min-h-[4.5rem] items-center overflow-hidden",
+          expanded && "hub-section-shell--expanded",
+        )}
+      >
+        <div
+          aria-hidden
+          className="hub-section-ambient pointer-events-none absolute inset-0 rounded-[18px]"
+          style={{ background: visual.ambientGlow }}
+        />
+        {navSubtitle ? (
+          <span
+            aria-hidden={expanded}
+            className="hub-section-watermark hub-section-collapsed-only pointer-events-none absolute select-none leading-none"
+          >
+            {headerTheme.watermark}
+          </span>
+        ) : null}
+        <div aria-hidden className="hub-section-accent-bar absolute left-0 top-2 bottom-2 rounded-full" />
+        <div className="hub-section-content">
+          <div className="hub-section-icon-shell flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl">
+            <img
+              src={visual.iconSrc}
+              alt=""
+              aria-hidden
+              className="hub-section-icon-image relative z-[1] object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div className="hub-section-copy">
+            <p className="hub-section-title">{cleanTitle}</p>
+            {navSubtitle ? (
+              <p className="hub-section-subtitle hub-section-collapsed-only">
+                {lastVisitedHint ? (
+                  <span className="hub-section-last-visited">{lastVisitedHint} · </span>
+                ) : null}
+                {navSubtitle}
+              </p>
+            ) : null}
+          </div>
+          <span
+            aria-hidden={expanded}
+            className={cn(
+              "hub-section-open-pill hub-section-collapsed-only shrink-0 rounded-full",
+              highlightLabel && "hub-section-open-pill--highlight",
+            )}
+          >
+            <span className="hub-section-open-label">{pillLabel}</span>
+            <ChevronDown className="hub-section-open-chevron shrink-0" strokeWidth={2.25} aria-hidden />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Shared premium glass feature card shell — flex/grid layout, no floating CTAs. */
 export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   visual,
@@ -62,6 +178,10 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   expanded = false,
   showChips = true,
   variant = "child",
+  sectionGroupKey,
+  lastVisitedHint,
+  highlightLabel,
+  isPrimary,
   className,
   footer,
 }: HubPremiumFeatureCardProps) {
@@ -71,44 +191,21 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   const visibleChips = visual.chips.slice(0, MAX_VISIBLE_CHIPS);
 
   if (isSection) {
+    if (!sectionGroupKey) {
+      return null;
+    }
     return (
-      <div
-        className={cn(
-          "group relative w-full max-w-full overflow-hidden rounded-[18px]",
-          "transition-[box-shadow,border-color,transform] duration-300",
-          expanded
-            ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-            : "group-hover:-translate-y-0.5 group-active:scale-[0.985]",
-          className,
-        )}
-        data-expanded={expanded || undefined}
-      >
-        <div
-          className={cn(
-            "hub-section-shell relative flex min-h-[4.5rem] items-center overflow-hidden rounded-[18px] border",
-            "bg-[rgba(4,8,22,0.62)]",
-            "transition-[box-shadow,border-color] duration-300",
-            expanded ? "border-white/18" : "border-white/[0.07]",
-          )}
-        >
-          <div
-            className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] sm:h-9 sm:w-9",
-              "border border-white/10 bg-white/[0.03]",
-            )}
-          >
-            <img
-              src={visual.iconSrc}
-              alt=""
-              aria-hidden
-              className="h-5 w-5 object-contain opacity-80"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-          <p className="hub-section-title min-w-0 flex-1">{cleanTitle}</p>
-        </div>
-      </div>
+      <HubSectionNavigationCard
+        visual={visual}
+        title={title}
+        description={description}
+        expanded={expanded}
+        sectionGroupKey={sectionGroupKey}
+        lastVisitedHint={lastVisitedHint}
+        highlightLabel={highlightLabel}
+        isPrimary={isPrimary}
+        className={className}
+      />
     );
   }
 

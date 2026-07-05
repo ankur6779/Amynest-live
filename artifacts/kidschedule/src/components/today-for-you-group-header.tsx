@@ -2,10 +2,10 @@ import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { HubTileButton, hubTileAriaLabel } from "@/components/hub-tile-button";
 import { TODAY_FOR_YOU_SECTION_HEADER_VISUAL } from "@/lib/today-for-you-card-config";
 import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type TodayForYouGroupHeaderProps = {
   title: string;
-  subtitle: string;
   isOpen: boolean;
   onToggle: () => void;
 };
@@ -13,11 +13,12 @@ type TodayForYouGroupHeaderProps = {
 /** Premium section header for the Today For You hub group. */
 export function TodayForYouGroupHeader({
   title,
-  subtitle,
   isOpen,
   onToggle,
 }: TodayForYouGroupHeaderProps) {
+  const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
+  const navSubtitle = t("parent_hub.section_groups.collapsed_nav.today");
 
   return (
     <motion.div
@@ -27,16 +28,17 @@ export function TodayForYouGroupHeader({
     >
       <HubTileButton
         onClick={onToggle}
-        ariaLabel={hubTileAriaLabel(title, subtitle, isOpen)}
+        ariaLabel={hubTileAriaLabel(title, navSubtitle, isOpen)}
         ariaExpanded={isOpen}
         className="rounded-[18px]"
       >
         <HubPremiumFeatureCard
           visual={TODAY_FOR_YOU_SECTION_HEADER_VISUAL}
           title={title}
-          description={subtitle}
+          description={navSubtitle}
           expanded={isOpen}
           variant="section"
+          sectionGroupKey="today"
         />
       </HubTileButton>
     </motion.div>

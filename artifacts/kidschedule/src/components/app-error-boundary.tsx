@@ -60,7 +60,27 @@ export class AppErrorBoundary extends Component<Props, State> {
     const route = typeof window !== "undefined" ? window.location.pathname : undefined;
     const userId = getFirebaseAuth().currentUser?.uid ?? null;
 
+    console.error("ROOT ERROR", error);
+    console.error(error.stack);
+    console.error("[ROOT ERROR] context", {
+      label,
+      route,
+      message: error.message,
+      componentStack: info.componentStack,
+      filename: (error as Error & { fileName?: string }).fileName,
+      line: (error as Error & { lineNumber?: number }).lineNumber,
+      column: (error as Error & { columnNumber?: number }).columnNumber,
+    });
     console.error("APP CRASH:", label, error, info.componentStack);
+
+    let debugCrash = false;
+    try {
+      debugCrash =
+        sessionStorage.getItem("amynest:debug-crash") === "1" ||
+        localStorage.getItem("amynest:debug-crash") === "1";
+    } catch {
+      /* ignore */
+    }
 
     if (isCrashDebugOverlayEnabled()) {
       showReactCrashOverlay(error, label, info.componentStack ?? undefined);
@@ -75,7 +95,7 @@ export class AppErrorBoundary extends Component<Props, State> {
     }).then((plan) => {
       this.setState({ errorReferenceId: plan.errorReferenceId });
 
-      if (plan.skipAutoRecovery) {
+      if (debugCrash || plan.skipAutoRecovery) {
         this.showManualRecovery(
           plan.outcome === "quarantined"
             ? "This screen was paused to keep AmyNest stable.\nPlease try again or go home."

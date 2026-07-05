@@ -2,17 +2,19 @@ import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { HubTileButton, hubTileAriaLabel } from "@/components/hub-tile-button";
 import { GAMING_HUB_SECTION_HEADER_VISUAL } from "@/lib/gaming-hub-card-config";
 import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type GamingHubGroupHeaderProps = {
   title: string;
-  subtitle: string;
   isOpen: boolean;
   onToggle: () => void;
 };
 
 /** Premium section header for the Gaming Hub group. */
-export function GamingHubGroupHeader({ title, subtitle, isOpen, onToggle }: GamingHubGroupHeaderProps) {
+export function GamingHubGroupHeader({ title, isOpen, onToggle }: GamingHubGroupHeaderProps) {
+  const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
+  const navSubtitle = t("parent_hub.section_groups.collapsed_nav.parent");
 
   return (
     <motion.div
@@ -22,16 +24,17 @@ export function GamingHubGroupHeader({ title, subtitle, isOpen, onToggle }: Gami
     >
       <HubTileButton
         onClick={onToggle}
-        ariaLabel={hubTileAriaLabel(title, subtitle, isOpen)}
+        ariaLabel={hubTileAriaLabel(title, navSubtitle, isOpen)}
         ariaExpanded={isOpen}
         className="rounded-[18px]"
       >
         <HubPremiumFeatureCard
           visual={GAMING_HUB_SECTION_HEADER_VISUAL}
           title={title}
-          description={subtitle}
+          description={navSubtitle}
           expanded={isOpen}
           variant="section"
+          sectionGroupKey="parent"
         />
       </HubTileButton>
     </motion.div>

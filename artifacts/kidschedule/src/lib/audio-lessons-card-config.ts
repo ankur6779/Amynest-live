@@ -7,9 +7,9 @@ export const AMY_AUDIO_LESSONS_CARD_VISUAL: HubPremiumCardVisual = {
   iconSrc: `${BASE}/amy-audio-lessons-mic.png`,
   heroSrc: `${BASE}/amy-audio-lessons-hero.png`,
   surfaceGradient:
-    "linear-gradient(135deg, rgba(168,85,247,0.58) 0%, rgba(126,34,206,0.52) 42%, rgba(67,56,202,0.48) 100%)",
+    "linear-gradient(128deg, #1a1b2e 0%, #231a3d 38%, #2d1b4d 72%, #1e1640 100%)",
   ambientGlow:
-    "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(192,132,252,0.38), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(129,140,248,0.3), transparent 55%)",
+    "radial-gradient(ellipse 70% 80% at 8% 50%, rgba(168,85,247,0.22), transparent 55%), radial-gradient(ellipse 55% 70% at 92% 38%, rgba(236,72,153,0.18), transparent 52%), radial-gradient(ellipse 40% 50% at 78% 88%, rgba(139,92,246,0.24), transparent 58%)",
   borderHover: "group-hover:border-violet-300/35",
   chipBorder: "border-violet-200/15",
   ctaGradient: "from-violet-400 via-purple-500 to-indigo-500",

@@ -20,31 +20,67 @@ type Props = {
   sleep?: number;
 };
 
-function ring(value: number, color: string, label: string, reduceMotion: boolean | null) {
-  const pct = Math.max(0, Math.min(100, value));
-  const r = 22;
+const RING_SIZE = 52;
+
+function GrowthRing({
+  value,
+  color,
+  label,
+  reduceMotion,
+}: {
+  value: number;
+  color: string;
+  label: string;
+  reduceMotion: boolean | null;
+}) {
+  const pct = Math.round(Math.max(0, Math.min(100, value)));
+  const r = (RING_SIZE - 8) / 2;
   const c = 2 * Math.PI * r;
   const offset = c - (pct / 100) * c;
+
   return (
-    <div className="flex flex-col items-center gap-1" role="group" aria-label={`${label} ${pct}%`}>
-      <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
-        <circle cx="28" cy="28" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="5" />
-        <motion.circle
-          cx="28"
-          cy="28"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          initial={reduceMotion ? { strokeDashoffset: offset } : { strokeDashoffset: c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: reduceMotion ? 0 : 0.9, ease: "easeOut" }}
-        />
-      </svg>
-      <span className="text-[9px] text-white/55 text-center leading-tight max-w-[4.5rem]">{label}</span>
-      <span className="text-[10px] font-bold text-white -mt-3">{pct}</span>
+    <div
+      className="flex w-[4.25rem] flex-col items-center gap-1.5"
+      role="group"
+      aria-label={`${label} ${pct}%`}
+    >
+      <div className="relative shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
+        <svg
+          width={RING_SIZE}
+          height={RING_SIZE}
+          viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+          className="-rotate-90"
+          aria-hidden
+        >
+          <circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth="4"
+          />
+          <motion.circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={c}
+            initial={reduceMotion ? { strokeDashoffset: offset } : { strokeDashoffset: c }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: reduceMotion ? 0 : 0.9, ease: "easeOut" }}
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold tabular-nums text-white">
+          {pct}
+        </span>
+      </div>
+      <span className="w-full truncate text-center text-[10px] font-medium leading-tight text-white/60">
+        {label}
+      </span>
     </div>
   );
 }
@@ -77,9 +113,39 @@ export function ChildProgressDashboard({
         <p className="text-sm font-bold text-white">
           {t("retention.child_growth", "Your child's growth")}
         </p>
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 justify-items-center">
+        <div className="flex flex-col items-center gap-3 sm:hidden">
+          <div className="grid w-full grid-cols-4 justify-items-center gap-x-1">
+            {axes.slice(0, 4).map((axis) => (
+              <GrowthRing
+                key={axis.key}
+                value={axis.value}
+                color={axis.color}
+                label={axis.label}
+                reduceMotion={reduceMotion}
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-3 justify-items-center gap-x-1">
+            {axes.slice(4).map((axis) => (
+              <GrowthRing
+                key={axis.key}
+                value={axis.value}
+                color={axis.color}
+                label={axis.label}
+                reduceMotion={reduceMotion}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="hidden sm:grid sm:grid-cols-7 sm:justify-items-center sm:gap-x-2">
           {axes.map((axis) => (
-            <div key={axis.key}>{ring(axis.value, axis.color, axis.label, reduceMotion)}</div>
+            <GrowthRing
+              key={axis.key}
+              value={axis.value}
+              color={axis.color}
+              label={axis.label}
+              reduceMotion={reduceMotion}
+            />
           ))}
         </div>
       </div>

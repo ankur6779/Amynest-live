@@ -1,49 +1,73 @@
-import type { ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type HubExpandedChildrenProps = {
   open: boolean;
   children: ReactNode;
   className?: string;
+  /** Visually connect panel to expanded section header (same radius / timing). */
+  connected?: boolean;
+  /** Accessible panel id — pairs with header aria-controls. */
+  panelId?: string;
 };
 
-const EXPAND_EASE = [0.22, 1, 0.36, 1] as const;
+const COLLAPSE_MS = 200;
 
-/** Height + fade + slide for hub section child panels (expand/collapse). */
-export function HubExpandedChildren({ open, children, className }: HubExpandedChildrenProps) {
-  const reducedMotion = useReducedMotion();
+/**
+ * CSS grid height reveal — transform/opacity on inner panel only (60fps friendly).
+ */
+export function HubExpandedChildren({
+  open,
+  children,
+  className,
+  connected = false,
+  panelId,
+}: HubExpandedChildrenProps) {
+  const [showChildren, setShowChildren] = useState(open);
+  const [revealed, setRevealed] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setShowChildren(true);
+      const frame = requestAnimationFrame(() => {
+        setRevealed(true);
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+
+    setRevealed(false);
+    const timer = window.setTimeout(() => setShowChildren(false), COLLAPSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  if (!showChildren && !open) {
+    return null;
+  }
 
   return (
-    <AnimatePresence initial={false}>
-      {open ? (
-        <motion.div
-          key="hub-expanded-children"
-          initial={reducedMotion ? false : { height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={reducedMotion ? { height: 0, opacity: 0 } : { height: 0, opacity: 0 }}
-          transition={
-            reducedMotion
-              ? { duration: 0.15 }
-              : { duration: 0.24, ease: EXPAND_EASE }
-          }
-          className="overflow-hidden"
+    <div
+      id={panelId}
+      role="region"
+      aria-hidden={!open}
+      aria-labelledby={panelId ? panelId.replace(/-panel$/, "-trigger") : undefined}
+      className={cn(
+        "hub-expanded-children",
+        revealed && open && "hub-expanded-children--open",
+        connected && "hub-expanded-children--connected",
+      )}
+    >
+      <div className="hub-expanded-children__clip">
+        <div
+          className={cn(
+            "hub-expanded-panel",
+            connected && "hub-expanded-panel--connected",
+            revealed && open && "hub-expanded-panel--revealed",
+            className,
+          )}
         >
-          <motion.div
-            initial={reducedMotion ? false : { y: 8 }}
-            animate={{ y: 0 }}
-            exit={reducedMotion ? undefined : { y: 8 }}
-            transition={
-              reducedMotion
-                ? { duration: 0.15 }
-                : { duration: 0.24, ease: EXPAND_EASE }
-            }
-            className={cn("hub-expanded-panel", className)}
-          >
-            {children}
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+          {showChildren ? children : null}
+        </div>
+      </div>
+    </div>
   );
 }
