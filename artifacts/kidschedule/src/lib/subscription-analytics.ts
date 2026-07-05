@@ -84,6 +84,17 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
       trackPremiumConversion(payload.source ?? "subscription");
     });
+    void import("@/lib/meta-attribution").then(({ trackMetaSubscribe }) => {
+      const value =
+        typeof payload.extra?.value === "number" ? payload.extra.value : undefined;
+      const currency =
+        typeof payload.extra?.currency === "string" ? payload.extra.currency : undefined;
+      trackMetaSubscribe(payload.plan, {
+        source: payload.source,
+        value,
+        currency,
+      });
+    });
   }
 
   if (import.meta.env.DEV) {

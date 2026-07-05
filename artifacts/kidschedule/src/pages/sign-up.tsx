@@ -391,6 +391,9 @@ export default function SignUpPage() {
           /* non-fatal */
         }
       }
+      void import("@/lib/meta-attribution").then(({ trackMetaCompleteRegistration }) => {
+        trackMetaCompleteRegistration("email");
+      });
       const signupEmail = (cred.user.email ?? email.trim()).toLowerCase().trim();
       if (isEmailVerificationBypassEmail(signupEmail)) {
         try {

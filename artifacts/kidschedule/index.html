@@ -17,6 +17,16 @@
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', '2514850758945614');
+      (function () {
+        try {
+          var clickId = new URLSearchParams(location.search).get('fbclid');
+          if (clickId) {
+            document.cookie =
+              '_fbc=fb.1.' + Date.now() + '.' + clickId +
+              '; path=/; max-age=7776000; SameSite=Lax';
+          }
+        } catch (e) {}
+      })();
       fbq('track', 'PageView');
     </script>
     <noscript><img height="1" width="1" style="display:none"

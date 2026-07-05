@@ -17,6 +17,12 @@ export function navigateAfterOAuthSignIn(destination: string): void {
   navigateAfterAuth(destination);
 }
 
+/** First OAuth sign-in when account was just created (metadata times match). */
+function isOAuthNewUser(result: UserCredential): boolean {
+  const { creationTime, lastSignInTime } = result.user.metadata;
+  return Boolean(creationTime && lastSignInTime && creationTime === lastSignInTime);
+}
+
 export async function finalizeOAuthCredentialSignIn(
   result: UserCredential,
 ): Promise<User> {
@@ -32,6 +38,16 @@ export async function finalizeOAuthCredentialSignIn(
       { code: "app/auth-session-lost" },
     );
   }
+
+  const isNewUser = isOAuthNewUser(result);
+  void import("@/lib/meta-attribution").then(({ trackMetaCompleteRegistration, trackMetaLogin }) => {
+    if (isNewUser) {
+      trackMetaCompleteRegistration("oauth");
+    } else {
+      trackMetaLogin("oauth");
+    }
+  });
+
   return result.user;
 }
 

@@ -4,6 +4,7 @@
  */
 
 import { trackGrowthEvent } from "@/lib/growth-analytics";
+import { initMetaAttribution } from "@/lib/meta-attribution";
 
 const STORAGE_KEY = "amynest:install_attribution";
 const CAPTURED_KEY = "amynest:install_attribution_captured";
@@ -102,6 +103,7 @@ export function captureCampaignAttribution(): InstallAttribution {
   if (hasNewData || !existing) {
     writeAttribution(merged);
   }
+  initMetaAttribution();
   return merged;
 }
 

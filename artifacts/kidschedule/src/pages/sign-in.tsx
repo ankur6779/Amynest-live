@@ -479,6 +479,9 @@ export default function SignInPage() {
         }
       }
       await ensureAuthContextSynced();
+      void import("@/lib/meta-attribution").then(({ trackMetaLogin }) => {
+        trackMetaLogin("email");
+      });
       const showPerms = await shouldShowPermissionsSetupPromptAsync();
       let dest = showPerms ? "/notify-prompt?next=/" : "/";
       if (!showPerms) {
