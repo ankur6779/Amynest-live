@@ -26,8 +26,10 @@ import { saveActivationResume, clearActivationResume } from "@/lib/activation-re
 import {
   enrichRoutinePayload,
   fetchRoutineWithResilience,
+  persistGeneratedRoutine,
   RoutineGenerationPaywallError,
 } from "@/lib/routine-generation-client";
+import { trackRoutineGeneratedOnce } from "@/lib/routine-generation-analytics";
 import { sanitizeRoutineItems } from "@/lib/routine-item-safety";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
 import { isVoiceEnabled, getVoiceSettings, openAiVoiceForGender, ROUTINE_TASK_ANNOUNCE_MSGS, type VoiceSettings } from "@/lib/voice";
@@ -1009,8 +1011,27 @@ export default function RoutineDetail() {
           date: dateStr,
           hasSchool: !isWeekend,
         }),
-        { childName, source: "routine_detail_next_day" },
+        {
+          childName,
+          source: "routine_detail_next_day",
+          emitGeneratedOnSuccess: false,
+        },
       );
+      const saved = await persistGeneratedRoutine(authFetch, {
+        childId: pendingNextDayChildId,
+        date: dateStr,
+        title: generated.title,
+        items: generated.items,
+        adaptations: generated.adaptations,
+        override: true,
+      });
+      trackRoutineGeneratedOnce({
+        routineId: saved.id,
+        childId: pendingNextDayChildId,
+        mode: generated.fallback ? "fallback" : "rule",
+        itemCount: sanitizeRoutineItems(generated.items).length,
+        source: "routine_detail_next_day",
+      });
       toast({
         title: generated.fallback
           ? t("toasts.routines_detail.tomorrow_backup_title", {
