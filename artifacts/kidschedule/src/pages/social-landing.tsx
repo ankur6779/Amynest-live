@@ -21,6 +21,11 @@ import { InfantParentingSection } from "@/components/marketing/infant-parenting-
 import { PatentPendingPill, PATENT_TRUST_LINE } from "@/components/marketing/patent-pending-pill";
 import { SeeAmyNestInActionSection } from "@/components/marketing/horizontal-showcase/horizontal-showcase";
 import { trackGetAppFunnelEvent } from "@/lib/marketing/ga4-analytics";
+import {
+  initMetaGetAppPixel,
+  trackMetaAppDownloadClick,
+  trackMetaGetAppPageView,
+} from "@/lib/meta-get-app-attribution";
 import { applySeoMeta, buildCanonicalUrl } from "@/lib/marketing/canonical-seo";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 
@@ -145,6 +150,7 @@ function StoreButton({
   const onClick = () => {
     trackLandingEvent("install_intent", { store: target, location });
     trackLandingEvent("store_button_click", { store: target, location });
+    trackMetaAppDownloadClick({ store: target, location });
   };
   const bg =
     variant === "solid"
@@ -854,6 +860,8 @@ export default function SocialLandingPage() {
       ogImage: buildCanonicalUrl(OG_IMAGE),
     });
     trackLandingEvent("landing_page_view", { store_target: target, headline_variant: headline.id });
+    initMetaGetAppPixel();
+    trackMetaGetAppPageView({ store_target: target, headline_variant: headline.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
