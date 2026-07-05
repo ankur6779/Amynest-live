@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { HubExpandedChildren } from "@/components/hub-expanded-children";
+import { HubTileButton, hubTileAriaLabel } from "@/components/hub-tile-button";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
@@ -73,11 +74,10 @@ export function TodayForYouPremiumSection({
 
   return (
     <div data-section-id={id} className="h-full" data-testid={id === "command-center" ? "hub-family-pulse" : undefined}>
-      <button
-        type="button"
+      <HubTileButton
         onClick={toggle}
-        className="block w-full text-left active:scale-[0.985] transition-transform"
-        aria-expanded={open}
+        ariaLabel={hubTileAriaLabel(title, description, open)}
+        ariaExpanded={open}
       >
         <div className={cn(highlighted && !open && highlightGlow)}>
           <HubPremiumFeatureCard
@@ -87,7 +87,6 @@ export function TodayForYouPremiumSection({
             tryFree={tryFree}
             showTryFreeBadge={!discoveryPreview}
             previewBadge={badge}
-            actionMode="expand"
             expanded={open}
             className="rounded-[32px] [&>div]:rounded-[32px]"
             footer={
@@ -101,7 +100,7 @@ export function TodayForYouPremiumSection({
             }
           />
         </div>
-      </button>
+      </HubTileButton>
       <HubExpandedChildren
         open={open}
         className={cn(

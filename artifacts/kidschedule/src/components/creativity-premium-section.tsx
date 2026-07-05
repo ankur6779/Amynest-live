@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { HubExpandedChildren } from "@/components/hub-expanded-children";
+import { HubTileButton, hubTileAriaLabel } from "@/components/hub-tile-button";
+import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
@@ -63,11 +64,10 @@ export function CreativityPremiumSection({
 
   return (
     <div data-section-id={id} className="h-full">
-      <button
-        type="button"
+      <HubTileButton
         onClick={toggle}
-        className="block w-full text-left active:scale-[0.985] transition-transform"
-        aria-expanded={open}
+        ariaLabel={hubTileAriaLabel(title, description, open)}
+        ariaExpanded={open}
       >
         <HubPremiumFeatureCard
           visual={visual}
@@ -75,7 +75,6 @@ export function CreativityPremiumSection({
           description={description}
           tryFree={tryFree}
           showTryFreeBadge={!discoveryPreview}
-          actionMode="expand"
           expanded={open}
           footer={
             !open && preview ? (
@@ -92,7 +91,7 @@ export function CreativityPremiumSection({
             ) : null
           }
         />
-      </button>
+      </HubTileButton>
       <HubExpandedChildren
         open={open}
         className={cn(

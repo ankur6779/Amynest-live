@@ -1,4 +1,5 @@
 import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
+import { HubTileButton, hubTileAriaLabel } from "@/components/hub-tile-button";
 import { STORIES_SECTION_HEADER_VISUAL } from "@/lib/stories-card-config";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -19,21 +20,20 @@ export function StoriesGroupHeader({ title, subtitle, isOpen, onToggle }: Storie
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      <button
-        type="button"
+      <HubTileButton
         onClick={onToggle}
-        className="block w-full text-left active:scale-[0.985] transition-transform"
-        aria-expanded={isOpen}
+        ariaLabel={hubTileAriaLabel(title, subtitle, isOpen)}
+        ariaExpanded={isOpen}
+        className="rounded-[18px]"
       >
         <HubPremiumFeatureCard
           visual={STORIES_SECTION_HEADER_VISUAL}
           title={title}
           description={subtitle}
-          actionMode="expand"
           expanded={isOpen}
           variant="section"
         />
-      </button>
+      </HubTileButton>
     </motion.div>
   );
 }

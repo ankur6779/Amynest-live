@@ -1,13 +1,14 @@
 import { AppLink } from "@/components/app-link";
 import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
+import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import {
   TODAY_FOR_YOU_CARD_BADGES,
   TODAY_FOR_YOU_CARD_VISUALS,
   type TodayForYouLaunchCardId,
 } from "@/lib/today-for-you-card-config";
-import { motion, useReducedMotion } from "framer-motion";
-import { useTranslation } from "react-i18next";
+import { HUB_TILE_TRIGGER } from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 
 type TodayForYouLaunchCardProps = {
   cardId: TodayForYouLaunchCardId;
@@ -29,29 +30,20 @@ export function TodayForYouLaunchCard({
   sectionId,
   onNavigate,
 }: TodayForYouLaunchCardProps) {
-  const { t } = useTranslation();
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const reducedMotion = useReducedMotion();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
-  const actionLabel = discoveryPreview
-    ? t("parent_hub.explore_next.cta_preview")
-    : t("parent_hub.explore_next.cta_open");
 
   return (
-    <motion.div
-      initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="h-full"
-    >
+    <div className="h-full">
       <AppLink
         href={href}
         onClick={() => {
           awardSectionPoints(tileId);
           onNavigate?.();
         }}
-        className="block h-full overflow-visible p-0 active:scale-[0.985]"
+        className={cn(HUB_TILE_TRIGGER, "block h-full overflow-visible p-0 rounded-[32px]")}
+        aria-label={hubTileAriaLabel(title, description)}
         data-testid={testId}
         data-section-id={sectionId}
         source="hub-launch-card"
@@ -60,12 +52,10 @@ export function TodayForYouLaunchCard({
           visual={TODAY_FOR_YOU_CARD_VISUALS[cardId]}
           title={title}
           description={description}
-          actionLabel={actionLabel}
           previewBadge={TODAY_FOR_YOU_CARD_BADGES[cardId]}
-          actionMode="open"
           className="rounded-[32px] [&>div]:rounded-[32px]"
         />
       </AppLink>
-    </motion.div>
+    </div>
   );
 }

@@ -253,8 +253,11 @@ export const HUB_TILE = cn(
 
 /** Collapsed Parent Hub section-group headers (Today, Learning, Previous Stage, etc.). */
 export const HUB_SECTION_GROUP_HEADER = cn(
-  "w-full flex items-center gap-3 text-left px-3 py-3.5 min-h-[4.5rem]",
+  "hub-tile-trigger w-full flex items-center gap-3 text-left px-5 py-4 sm:px-6 rounded-[24px]",
   "transition-all duration-[220ms] ease-[ease]",
+  "hover:bg-white/[0.03]",
+  "cursor-pointer min-h-[3rem]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1730]",
 );
 
 export const HUB_SECTION_GROUP_ICON = cn(
@@ -264,53 +267,67 @@ export const HUB_SECTION_GROUP_ICON = cn(
 export const HUB_SECTION_GROUP_TEXT = "flex-1 min-w-0";
 
 export const HUB_SECTION_GROUP_TITLE = cn(
-  "block font-quicksand font-bold text-sm leading-tight truncate",
+  "block font-quicksand font-bold leading-[1.2] line-clamp-2",
+  "text-[clamp(20px,2.3vw,28px)]",
 );
 
 export const HUB_SECTION_GROUP_SUBTITLE = cn(
-  "block text-[11px] mt-0.5 line-clamp-1 min-h-[1rem] text-muted-foreground opacity-75",
+  "block text-[clamp(12px,1.8vw,14px)] mt-0.5 line-clamp-2 text-muted-foreground opacity-75",
 );
 
-/** Collapsed hub feature tile — uniform shell height (HubSection + HubLaunchCard). */
-export const HUB_FEATURE_TILE_COLLAPSED_HEIGHT = "min-h-[6.375rem]";
+/** Full-width hub tile trigger — pointer, 48px touch, spring press, focus ring. */
+export const HUB_TILE_TRIGGER = cn(
+  "hub-tile-trigger block w-full min-h-[3rem] text-left",
+  "cursor-pointer rounded-[32px]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1730]",
+);
+
+/** Unified pill badge for preview / status chips on feature tiles. */
+export const HUB_FEATURE_BADGE = cn(
+  "hub-feature-badge inline-flex min-h-[1.375rem] items-center gap-1 rounded-full border px-2 py-0.5",
+  "text-[9px] font-semibold uppercase tracking-[0.08em] leading-none",
+  "border-white/22 bg-white/[0.08] text-white/95",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]",
+  "whitespace-nowrap",
+);
+
+/** @deprecated Chevron removed — entire tile is tappable. */
+export const HUB_FEATURE_TILE_CHEVRON = "hidden";
+
+/** @deprecated Chevron removed — entire tile is tappable. */
+export const HUB_SECTION_GROUP_CHEVRON = "hidden";
 
 /** Collapsed Parent Hub feature tiles — shared header geometry for HubSection + HubLaunchCard. */
 export const HUB_FEATURE_TILE_HEADER = cn(
-  "w-full flex flex-1 items-center justify-between gap-2.5 px-2.5 py-2.5 sm:px-3 text-left",
+  "hub-tile-trigger w-full flex flex-1 items-start gap-3 px-5 py-4 sm:px-6 text-left rounded-[24px]",
   "transition-all duration-[220ms] ease-[ease]",
+  "hover:bg-white/[0.03]",
+  "cursor-pointer min-h-[3rem]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1730]",
 );
 
 export const HUB_FEATURE_TILE_ICON = cn(
-  "w-8 h-8 flex items-center justify-center shrink-0 [&_svg]:h-4 [&_svg]:w-4",
+  "w-9 h-9 flex items-center justify-center shrink-0 [&_svg]:h-4 [&_svg]:w-4",
 );
 
-export const HUB_FEATURE_TILE_TEXT = "min-w-0 flex-1";
+export const HUB_FEATURE_TILE_TEXT = "min-w-0 flex-1 flex flex-col gap-0.5";
 
 export const HUB_FEATURE_TILE_TITLE = cn(
-  "font-quicksand font-bold text-[14px] leading-tight text-foreground truncate min-w-0",
+  "font-quicksand font-bold leading-[1.2] text-foreground line-clamp-2 min-w-0",
+  "text-[clamp(20px,2.3vw,28px)]",
 );
 
 export const HUB_FEATURE_TILE_DESC = cn(
-  "text-[12px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-[1.35] h-[2.125rem]",
+  "text-[clamp(12px,1.8vw,14px)] text-muted-foreground/80 line-clamp-2 leading-[1.35]",
 );
 
 export const HUB_FEATURE_TILE_PREVIEW = cn(
-  "px-3 pb-2.5 -mt-0.5 h-[1.625rem] shrink-0 flex items-center",
+  "px-5 pb-4 sm:px-6 shrink-0 flex items-center",
 );
 
-const HUB_FEATURE_TILE_CHEVRON_BASE = cn(
-  "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-  "border border-white/10 bg-white/[0.05] transition-transform duration-300",
-);
-
-export const HUB_FEATURE_TILE_CHEVRON = HUB_FEATURE_TILE_CHEVRON_BASE;
-
-export const HUB_SECTION_GROUP_CHEVRON = HUB_FEATURE_TILE_CHEVRON_BASE;
-
-/** Launch / link tiles — same collapsed height as HubSection header + preview row. */
+/** Launch / link tiles — content-driven padding. */
 export const HUB_FEATURE_TILE_LAUNCH_ROW = cn(
-  "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5",
-  HUB_FEATURE_TILE_COLLAPSED_HEIGHT,
+  "flex min-w-0 flex-1 flex-col gap-1 px-5 py-5 sm:px-6",
 );
 
 export const HUB_XP_GOLD = "font-semibold text-[#FFD54F] tabular-nums";
@@ -650,12 +667,15 @@ export const HUB_SUB_TILE_ICON_LG = cn(
 
 /** Collapsed Activities / sub-section rows inside expanded hub tiles. */
 export const HUB_SUB_TILE_HEADER = cn(
-  "w-full flex items-center justify-between gap-3 px-3 py-3.5 sm:px-4 text-left min-h-[4.5rem]",
+  "hub-tile-trigger w-full flex items-start gap-3 px-5 py-4 sm:px-6 text-left rounded-2xl",
   "transition-colors duration-200",
+  "hover:bg-white/[0.03]",
+  "cursor-pointer min-h-[3rem]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1730]",
 );
 
 export const HUB_SUB_TILE_DESC = cn(
-  "text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug h-[2rem]",
+  "text-[clamp(12px,1.8vw,14px)] text-muted-foreground mt-0.5 line-clamp-2 leading-[1.35]",
 );
 
 const HUB_SUB_TILE_ICON_ACCENTS: Record<string, string> = {

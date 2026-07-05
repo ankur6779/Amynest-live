@@ -13,20 +13,19 @@ const PASSWORD = process.env.STRESS_TEST_PASSWORD ?? "AmyNest@2025";
 
 const GROUPS = ["today", "learning", "creativity", "stories", "health", "parent", "support"];
 
-/** Fold-first + classic breakpoints — not iPhone-only. */
+/** Required breakpoints + fold/tablet coverage. */
 const VIEWPORTS = [
+  { id: "320px", width: 320, height: 568, label: "320px phone" },
+  { id: "360px", width: 360, height: 640, label: "360px phone" },
+  { id: "375px", width: 375, height: 812, label: "375px phone" },
+  { id: "390px", width: 390, height: 844, label: "390px phone" },
+  { id: "412px", width: 412, height: 915, label: "412px phone" },
+  { id: "430px", width: 430, height: 932, label: "430px phone" },
+  { id: "768px", width: 768, height: 1024, label: "768px tablet" },
+  { id: "1024px", width: 1024, height: 900, label: "1024px desktop" },
   { id: "fold-cover-narrow", width: 280, height: 653, label: "Fold cover (narrow)" },
-  { id: "fold-cover", width: 344, height: 882, label: "Fold cover (Z Flip)" },
-  { id: "phone-narrow", width: 320, height: 568, label: "Phone narrow" },
-  { id: "phone-standard", width: 390, height: 844, label: "Phone standard" },
-  { id: "phone-large", width: 430, height: 932, label: "Phone large" },
-  { id: "fold-cover-landscape", width: 882, height: 344, label: "Fold cover landscape" },
-  { id: "phone-landscape", width: 844, height: 390, label: "Phone landscape" },
-  { id: "dual-pane", width: 540, height: 720, label: "Dual-pane / split" },
   { id: "fold-inner-portrait", width: 884, height: 1104, label: "Fold inner portrait" },
-  { id: "tablet", width: 768, height: 1024, label: "Tablet portrait" },
-  { id: "fold-inner-landscape", width: 1768, height: 832, label: "Fold inner landscape" },
-  { id: "desktop", width: 1024, height: 900, label: "Desktop narrow" },
+  { id: "phone-landscape", width: 844, height: 390, label: "Phone landscape" },
 ];
 
 const MOCK_CHILD = { id: 1, name: "Aarav", age: 5, ageMonths: 60 };
@@ -130,6 +129,11 @@ async function auditCards(page, viewport) {
       });
     }
 
+    const forbidden = document.querySelectorAll(".hub-open-cta, .hub-expand-chevron, .hub-child-chevron-abs");
+    if (forbidden.length > 0) {
+      issues.push({ type: "forbidden-floating-controls", count: forbidden.length });
+    }
+
     const minCardWidth = viewportWidth <= 320 ? 252 : 260;
 
     cards.forEach((card, index) => {
@@ -141,11 +145,14 @@ async function auditCards(page, viewport) {
         issues.push({ type: "card-overflow", index, scrollWidth: card.scrollWidth, clientWidth: card.clientWidth });
       }
 
-      const title = card.querySelector(".hub-child-title");
+      const title = card.querySelector(".hub-feature-tile__title, .hub-child-title");
       if (title) {
         const titleRect = title.getBoundingClientRect();
         if (titleRect.width < 48) {
           issues.push({ type: "title-too-narrow", index, width: titleRect.width, text: title.textContent?.slice(0, 40) });
+        }
+        if (titleRect.top < rect.top - 1 || titleRect.bottom > rect.bottom + 1) {
+          issues.push({ type: "title-outside-card", index, text: title.textContent?.slice(0, 40) });
         }
         const text = title.textContent ?? "";
         const words = text.trim().split(/\s+/);
@@ -154,30 +161,43 @@ async function auditCards(page, viewport) {
         }
       }
 
-      const cta = card.querySelector(".hub-open-cta");
-      if (cta) {
-        const ctaRect = cta.getBoundingClientRect();
-        const cardWidth = rect.width;
-        const minCtaH = cardWidth <= 360 ? 34 : cardWidth <= 430 ? 36 : 38;
-        const minCtaW = cardWidth <= 360 ? 68 : 44;
-        if (ctaRect.width < minCtaW || ctaRect.height < minCtaH) {
-          issues.push({ type: "cta-touch-target", index, w: ctaRect.width, h: ctaRect.height });
-        }
-      }
-
-      const chevron = card.querySelector(".hub-expand-chevron");
-      if (chevron) {
-        const chRect = chevron.getBoundingClientRect();
-        if (chRect.width < 44 || chRect.height < 44) {
-          issues.push({ type: "chevron-touch-target", index, w: chRect.width, h: chRect.height });
-        }
-      }
-
-      const hero = card.querySelector(".hub-child-hero");
+      const hero = card.querySelector(".hub-feature-tile__hero, .hub-child-hero");
       if (hero) {
         const heroRect = hero.getBoundingClientRect();
+        const media = hero.closest(".hub-feature-tile__media");
+        const mediaRect = media?.getBoundingClientRect();
         if (heroRect.right > rect.right + 2 || heroRect.bottom > rect.bottom + 2) {
           issues.push({ type: "hero-clipped", index });
+        }
+        if (mediaRect && (heroRect.width > mediaRect.width + 2 || heroRect.height > mediaRect.height + 2)) {
+          issues.push({ type: "hero-overflow-media", index });
+        }
+        if (title) {
+          const titleRect = title.getBoundingClientRect();
+          const overlap = !(
+            titleRect.right <= heroRect.left + 2 ||
+            titleRect.left >= heroRect.right - 2 ||
+            titleRect.bottom <= heroRect.top + 2 ||
+            titleRect.top >= heroRect.bottom - 2
+          );
+          if (overlap) {
+            issues.push({ type: "title-hero-overlap", index, text: title.textContent?.slice(0, 40) });
+          }
+        }
+      }
+
+      const desc = card.querySelector(".hub-feature-tile__desc, .hub-child-subtitle");
+      if (desc && hero) {
+        const descRect = desc.getBoundingClientRect();
+        const heroRect = hero.getBoundingClientRect();
+        const overlap = !(
+          descRect.right <= heroRect.left + 2 ||
+          descRect.left >= heroRect.right - 2 ||
+          descRect.bottom <= heroRect.top + 2 ||
+          descRect.top >= heroRect.bottom - 2
+        );
+        if (overlap) {
+          issues.push({ type: "desc-hero-overlap", index });
         }
       }
     });

@@ -1,8 +1,10 @@
 import { AppLink } from "@/components/app-link";
 import { LearningZonePremiumCard } from "@/components/learning-zone-premium-card";
+import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import type { LearningZoneCardId } from "@/lib/learning-zone-card-config";
-import { useTranslation } from "react-i18next";
+import { HUB_TILE_TRIGGER } from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 
 type LearningZoneLaunchCardProps = {
   cardId: LearningZoneCardId;
@@ -16,7 +18,7 @@ type LearningZoneLaunchCardProps = {
   onNavigate?: () => void;
 };
 
-/** Premium Learning Zone launch tile — same routing/handlers as HubLaunchCard. */
+/** Premium Learning Zone launch tile — entire card navigates. */
 export function LearningZoneLaunchCard({
   cardId,
   href,
@@ -28,13 +30,9 @@ export function LearningZoneLaunchCard({
   sectionId,
   onNavigate,
 }: LearningZoneLaunchCardProps) {
-  const { t } = useTranslation();
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
-  const actionLabel = discoveryPreview
-    ? t("parent_hub.explore_next.cta_preview")
-    : t("parent_hub.explore_next.cta_open");
 
   return (
     <div className="h-full">
@@ -44,7 +42,8 @@ export function LearningZoneLaunchCard({
           awardSectionPoints(tileId);
           onNavigate?.();
         }}
-        className="block h-full overflow-visible p-0 active:scale-[0.985]"
+        className={cn(HUB_TILE_TRIGGER, "block h-full overflow-visible p-0 rounded-[30px]")}
+        aria-label={hubTileAriaLabel(title, description)}
         data-testid={testId}
         data-section-id={sectionId}
         source="hub-launch-card"
@@ -53,7 +52,6 @@ export function LearningZoneLaunchCard({
           cardId={cardId}
           title={title}
           description={description}
-          actionLabel={actionLabel}
           previewBadge={discoveryPreview ? undefined : previewBadge}
           tryFree={tryFree}
           showTryFreeBadge={!discoveryPreview}

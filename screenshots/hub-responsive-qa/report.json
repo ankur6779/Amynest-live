@@ -1,0 +1,93 @@
+{
+  "viewports": {
+    "320px": {
+      "cardCount": 25,
+      "issues": [],
+      "id": "320px",
+      "width": 320,
+      "height": 568,
+      "label": "320px phone"
+    },
+    "360px": {
+      "cardCount": 25,
+      "issues": [],
+      "id": "360px",
+      "width": 360,
+      "height": 640,
+      "label": "360px phone"
+    },
+    "375px": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "375px",
+      "width": 375,
+      "height": 812,
+      "label": "375px phone"
+    },
+    "390px": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "390px",
+      "width": 390,
+      "height": 844,
+      "label": "390px phone"
+    },
+    "412px": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "412px",
+      "width": 412,
+      "height": 915,
+      "label": "412px phone"
+    },
+    "430px": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "430px",
+      "width": 430,
+      "height": 932,
+      "label": "430px phone"
+    },
+    "768px": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "768px",
+      "width": 768,
+      "height": 1024,
+      "label": "768px tablet"
+    },
+    "1024px": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "1024px",
+      "width": 1024,
+      "height": 900,
+      "label": "1024px desktop"
+    },
+    "fold-cover-narrow": {
+      "cardCount": 25,
+      "issues": [],
+      "id": "fold-cover-narrow",
+      "width": 280,
+      "height": 653,
+      "label": "Fold cover (narrow)"
+    },
+    "fold-inner-portrait": {
+      "cardCount": 29,
+      "issues": [],
+      "id": "fold-inner-portrait",
+      "width": 884,
+      "height": 1104,
+      "label": "Fold inner portrait"
+    },
+    "phone-landscape": {
+      "cardCount": 23,
+      "issues": [],
+      "id": "phone-landscape",
+      "width": 844,
+      "height": 390,
+      "label": "Phone landscape"
+    }
+  },
+  "passed": true
+}

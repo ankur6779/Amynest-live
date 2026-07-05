@@ -1,9 +1,10 @@
 import { AppLink } from "@/components/app-link";
 import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
+import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import { HEALTH_ZONE_CARD_VISUALS } from "@/lib/health-zone-card-config";
-import { motion, useReducedMotion } from "framer-motion";
-import { useTranslation } from "react-i18next";
+import { HUB_TILE_TRIGGER } from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 
 type HealthZoneLaunchCardProps = {
   href: string;
@@ -16,7 +17,7 @@ type HealthZoneLaunchCardProps = {
   onNavigate?: () => void;
 };
 
-/** Premium Health Zone launch tile — same routing/handlers as HubLaunchCard. */
+/** Premium Health Zone launch tile — entire card navigates. */
 export function HealthZoneLaunchCard({
   href,
   title,
@@ -27,29 +28,20 @@ export function HealthZoneLaunchCard({
   sectionId,
   onNavigate,
 }: HealthZoneLaunchCardProps) {
-  const { t } = useTranslation();
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const reducedMotion = useReducedMotion();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
-  const actionLabel = discoveryPreview
-    ? t("parent_hub.explore_next.cta_preview")
-    : t("parent_hub.explore_next.cta_open");
 
   return (
-    <motion.div
-      initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="h-full"
-    >
+    <div className="h-full">
       <AppLink
         href={href}
         onClick={() => {
           awardSectionPoints(tileId);
           onNavigate?.();
         }}
-        className="block h-full overflow-visible p-0 active:scale-[0.985]"
+        className={cn(HUB_TILE_TRIGGER, "block h-full overflow-visible p-0 rounded-[30px]")}
+        aria-label={hubTileAriaLabel(title, description)}
         data-testid={testId}
         data-section-id={sectionId}
         source="hub-launch-card"
@@ -58,13 +50,11 @@ export function HealthZoneLaunchCard({
           visual={HEALTH_ZONE_CARD_VISUALS["health-lab"]}
           title={title}
           description={description}
-          actionLabel={actionLabel}
           previewBadge={discoveryPreview ? undefined : previewBadge}
           tryFree={tryFree}
           showTryFreeBadge={!discoveryPreview}
-          actionMode="open"
         />
       </AppLink>
-    </motion.div>
+    </div>
   );
 }

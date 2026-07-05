@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HubSubTileShell } from "@/components/hub-sub-tile-shell";
+import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import {
   extractTintRgbFromCardClass,
   getHubSubTileIconAccent,
@@ -71,20 +71,21 @@ export function HubCollapsibleSubTile({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           HUB_SUB_TILE_HEADER,
-          open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
+          open ? "bg-white/[0.04]" : "",
         )}
         aria-expanded={open}
+        aria-label={hubTileAriaLabel(title, badge ? undefined : description, open)}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className={cn(HUB_SUB_TILE_ICON_LG, iconAccent)}>
             <span className="text-white [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
           </div>
           <div className="min-w-0 flex-1">
-            <span className="font-bold text-[15px] leading-snug text-foreground block truncate">
+            <span className="font-quicksand font-bold text-[clamp(20px,2.3vw,28px)] leading-[1.2] text-foreground block line-clamp-2">
               {title}
             </span>
             {badge ? (
-              <span className="inline-flex h-[2rem] items-center">
+              <span className="inline-flex items-center mt-0.5">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 dark:bg-white/10 text-foreground/80 backdrop-blur-sm">
                   {badge}
                 </span>
@@ -94,11 +95,6 @@ export function HubCollapsibleSubTile({
             )}
           </div>
         </div>
-        {open ? (
-          <ChevronUp className="h-5 w-5 text-foreground/50 shrink-0" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-foreground/50 shrink-0" />
-        )}
       </button>
       {open && children ? (
         <div
@@ -144,7 +140,7 @@ export function HubSubTileLink({
     <HubSubTileShell tintRgb={tintRgb} className={cn("rounded-2xl", className)}>
       <div
         className={cn(
-          "px-4 py-4 transition-colors hover:bg-white/[0.03]",
+          "px-5 py-4 sm:px-6 transition-colors hover:bg-white/[0.03]",
           highlighted
             ? "ring-2 ring-inset ring-primary/45 shadow-[0_0_20px_-4px_rgba(168,85,247,0.45)]"
             : "",
@@ -156,12 +152,12 @@ export function HubSubTileLink({
           </div>
           <div className="min-w-0 flex-1">
             {typeof title === "string" ? (
-              <p className="font-bold text-[15px] leading-snug text-foreground">{title}</p>
+              <p className="font-quicksand font-bold text-[clamp(20px,2.3vw,28px)] leading-[1.2] text-foreground line-clamp-2">{title}</p>
             ) : (
               title
             )}
             {subtitle ? (
-              <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{subtitle}</div>
+              <div className="text-[clamp(12px,1.8vw,14px)] text-muted-foreground mt-0.5 leading-[1.35] line-clamp-2">{subtitle}</div>
             ) : null}
             {children}
           </div>

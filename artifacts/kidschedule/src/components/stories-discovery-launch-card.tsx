@@ -1,12 +1,14 @@
 import { AppLink } from "@/components/app-link";
 import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
 import { Progress } from "@/components/ui/progress";
+import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import { buildDiscoveryHubTileStats } from "@/lib/discovery-worlds-unified-insights";
 import {
   STORIES_CARD_BADGES,
   STORIES_CARD_VISUALS,
 } from "@/lib/stories-card-config";
+import { HUB_TILE_TRIGGER } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
 import { Star, Sticker, Trophy } from "lucide-react";
@@ -31,9 +33,6 @@ export function StoriesDiscoveryLaunchCard({
   const awardSectionPoints = useHubSectionPoints();
   const reducedMotion = useReducedMotion();
   const stats = buildDiscoveryHubTileStats(childId);
-  const actionLabel = discoveryPreview
-    ? t("parent_hub.explore_next.cta_preview")
-    : t("parent_hub.explore_next.cta_open");
 
   return (
     <motion.div
@@ -45,7 +44,8 @@ export function StoriesDiscoveryLaunchCard({
       <AppLink
         href="/discovery-worlds"
         onClick={() => awardSectionPoints("discovery-worlds")}
-        className="block w-full overflow-visible p-0 active:scale-[0.985]"
+        className={cn(HUB_TILE_TRIGGER, "block w-full overflow-visible p-0 rounded-[30px]")}
+        aria-label={hubTileAriaLabel(title, description)}
         data-testid="discovery-worlds-launch-card"
         data-section-id="discovery-worlds"
         source="hub-launch-card"
@@ -54,11 +54,9 @@ export function StoriesDiscoveryLaunchCard({
           visual={STORIES_CARD_VISUALS["discovery-worlds"]}
           title={title}
           description={description}
-          actionLabel={actionLabel}
           previewBadge={STORIES_CARD_BADGES["discovery-worlds"]}
           tryFree={tryFree}
           showTryFreeBadge={!discoveryPreview}
-          actionMode="open"
         />
         <div
           className={cn(

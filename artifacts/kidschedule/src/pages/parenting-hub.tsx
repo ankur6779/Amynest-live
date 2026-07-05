@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Mic } from "lucide-react";
 import { HubLaunchCard } from "@/components/hub-launch-card";
+import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { LearningZoneLaunchCard } from "@/components/learning-zone-launch-card";
 import { CreativityPremiumSection } from "@/components/creativity-premium-section";
 import { CreativityLaunchCard } from "@/components/creativity-launch-card";
@@ -116,16 +117,13 @@ import {
   HUB_BOTTOM_CTA,
   getHubFeatureTileAccent,
   hubShadedSectionCardClasses,
-  HUB_FEATURE_TILE_CHEVRON,
   HUB_FEATURE_TILE_DESC,
-  HUB_FEATURE_TILE_COLLAPSED_HEIGHT,
   HUB_FEATURE_TILE_HEADER,
   HUB_FEATURE_TILE_ICON,
   HUB_FEATURE_TILE_LAUNCH_ROW,
   HUB_FEATURE_TILE_PREVIEW,
   HUB_FEATURE_TILE_TEXT,
   HUB_FEATURE_TILE_TITLE,
-  HUB_SECTION_GROUP_CHEVRON,
   HUB_SECTION_GROUP_HEADER,
   HUB_SECTION_GROUP_ICON,
   HUB_SECTION_GROUP_SUBTITLE,
@@ -279,16 +277,17 @@ function HubSection({
       )}
     >
       <HubShadedCardBody theme={tileTheme} cardClass={cardClass}>
-        <div className={cn("min-w-0 flex-1 flex flex-col", !open && HUB_FEATURE_TILE_COLLAPSED_HEIGHT)}>
+        <div className="min-w-0 flex-1 flex flex-col">
           <button
             onClick={toggle}
             className={cn(
               HUB_FEATURE_TILE_HEADER,
-              open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
+              open ? "bg-white/[0.04]" : "",
             )}
             aria-expanded={open}
+            aria-label={hubTileAriaLabel(title, description, open)}
           >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
               <div
                 className={cn(
                   HUB_FEATURE_TILE_ICON,
@@ -300,21 +299,13 @@ function HubSection({
                 {icon}
               </div>
               <div className={HUB_FEATURE_TILE_TEXT}>
-                <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
                   {tryFree && !discoveryPreview ? <TryFreeBadge /> : null}
                 </div>
                 <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
               </div>
             </div>
-            <span
-              className={cn(
-                HUB_FEATURE_TILE_CHEVRON,
-                open ? "rotate-180 text-amber-300/90" : "text-muted-foreground",
-              )}
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-            </span>
           </button>
           {!open ? (
             <div className={HUB_FEATURE_TILE_PREVIEW}>
@@ -1730,7 +1721,7 @@ function ParentingHubPage() {
     <div
       className={cn(
         PARENT_HUB_PAGE,
-        "mx-auto w-full max-w-full space-y-4 pb-12 md:max-w-6xl",
+        "mx-auto w-full max-w-full space-y-4 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] md:max-w-6xl",
       )}
     >
       <PageHeader />
@@ -2048,6 +2039,7 @@ function ParentingHubPage() {
                       isOpen ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
                     )}
                     aria-expanded={isOpen}
+                    aria-label={hubTileAriaLabel(t(fallbackGroup.i18n), isSupport || isHealth ? t("parent_hub.support.group_subtitle", { count: groupGrid.length }) : undefined, isOpen)}
                   >
                     <span className={cn(HUB_SECTION_GROUP_ICON, gs.emojiShell)}>
                       {fallbackGroup.emoji}
@@ -2066,12 +2058,6 @@ function ParentingHubPage() {
                             : "\u00A0"}
                         </span>
                       ) : null}
-                    </span>
-                    <span className={cn(
-                      HUB_SECTION_GROUP_CHEVRON,
-                      isOpen ? "rotate-180 text-amber-300/90" : "text-muted-foreground",
-                    )}>
-                      <ChevronDown className="h-3.5 w-3.5" />
                     </span>
                   </button>
                   {isOpen && (

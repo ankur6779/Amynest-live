@@ -1,10 +1,9 @@
 import { memo, type ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import type { HubPremiumCardVisual } from "@/lib/hub-premium-card-types";
 import { stripHubTileEmoji } from "@/lib/hub-premium-card-types";
+import { HUB_FEATURE_BADGE } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
 type HubPremiumFeatureCardProps = {
@@ -14,12 +13,7 @@ type HubPremiumFeatureCardProps = {
   tryFree?: boolean;
   showTryFreeBadge?: boolean;
   previewBadge?: string;
-  /** Navigate-style CTA label (learning / curiosity launch tiles). */
-  actionLabel?: string;
-  /** Expandable hub sections use a glass chevron control. */
-  actionMode?: "open" | "expand";
-  /** Compact circular chevron for navigation tiles (coach promo cards). */
-  iconOnlyAction?: boolean;
+  /** When true the tile is in expanded state (subtle visual feedback only). */
   expanded?: boolean;
   showChips?: boolean;
   /** Section headers are compact; child cards carry illustration + chips. */
@@ -27,8 +21,6 @@ type HubPremiumFeatureCardProps = {
   className?: string;
   footer?: ReactNode;
 };
-
-const CHEVRON_SPRING = { type: "spring" as const, stiffness: 420, damping: 30 };
 
 const MAX_VISIBLE_CHIPS = 2;
 
@@ -47,7 +39,7 @@ function GlassChip({
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-full border px-2 py-1 text-[10px] font-semibold text-white/92",
+        "inline-flex min-h-[1.375rem] min-w-0 items-center gap-1.5 overflow-hidden rounded-full border px-2 py-0.5 text-[10px] font-semibold text-white/92",
         "bg-[linear-gradient(140deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))]",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]",
         borderClass,
@@ -59,25 +51,7 @@ function GlassChip({
   );
 }
 
-function ExpandChevron({
-  expanded,
-  className,
-}: {
-  expanded: boolean;
-  className?: string;
-}) {
-  return (
-    <motion.span
-      className={cn("hub-expand-chevron", className)}
-      animate={expanded ? { rotate: 180 } : { rotate: 0 }}
-      transition={CHEVRON_SPRING}
-    >
-      <ChevronDown className="h-[14px] w-[14px] text-white/70" strokeWidth={1.75} />
-    </motion.span>
-  );
-}
-
-/** Shared premium glass feature card shell (Learning Zone + Creativity). */
+/** Shared premium glass feature card shell — flex/grid layout, no floating CTAs. */
 export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   visual,
   title,
@@ -85,9 +59,6 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   tryFree,
   showTryFreeBadge = true,
   previewBadge,
-  actionLabel,
-  actionMode = "open",
-  iconOnlyAction = false,
   expanded = false,
   showChips = true,
   variant = "child",
@@ -95,7 +66,6 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   footer,
 }: HubPremiumFeatureCardProps) {
   const { t } = useTranslation();
-  const reducedMotion = useReducedMotion();
   const cleanTitle = stripHubTileEmoji(title);
   const isSection = variant === "section";
   const visibleChips = visual.chips.slice(0, MAX_VISIBLE_CHIPS);
@@ -105,18 +75,20 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
       <div
         className={cn(
           "group relative w-full max-w-full overflow-hidden rounded-[18px]",
-          "transition-[box-shadow,border-color] duration-300",
+          "transition-[box-shadow,border-color,transform] duration-300",
+          expanded
+            ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+            : "group-hover:-translate-y-0.5 group-active:scale-[0.985]",
           className,
         )}
+        data-expanded={expanded || undefined}
       >
         <div
           className={cn(
-            "hub-section-shell relative flex min-h-[76px] items-center overflow-hidden rounded-[18px] border",
+            "hub-section-shell relative flex min-h-[4.5rem] items-center overflow-hidden rounded-[18px] border",
             "bg-[rgba(4,8,22,0.62)]",
             "transition-[box-shadow,border-color] duration-300",
-            expanded
-              ? "border-white/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-              : "border-white/[0.07]",
+            expanded ? "border-white/18" : "border-white/[0.07]",
           )}
         >
           <div
@@ -134,11 +106,7 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
               decoding="async"
             />
           </div>
-
-          <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-            <p className="hub-section-title min-w-0 flex-1">{cleanTitle}</p>
-            {actionMode === "expand" ? <ExpandChevron expanded={expanded} /> : null}
-          </div>
+          <p className="hub-section-title min-w-0 flex-1">{cleanTitle}</p>
         </div>
       </div>
     );
@@ -149,16 +117,17 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
       className={cn(
         "lz-premium-card group relative w-full max-w-full overflow-hidden rounded-[30px]",
         "transition-[transform,box-shadow,border-color] duration-300",
-        "hover:-translate-y-[4px]",
         className,
       )}
+      data-expanded={expanded || undefined}
     >
       <div
         className={cn(
-          "lz-glass-panel hub-child-shell relative overflow-hidden rounded-[30px] border border-white/[0.22]",
+          "hub-feature-tile lz-glass-panel relative overflow-hidden rounded-[30px] border border-white/[0.22]",
           "shadow-[0_22px_54px_-22px_rgba(5,10,26,0.92),0_0_0_1px_rgba(255,255,255,0.12)_inset,0_1px_0_rgba(255,255,255,0.2)_inset]",
           "transition-[box-shadow,border-color] duration-300",
           visual.borderHover,
+          expanded && "border-white/30 shadow-[0_24px_58px_-22px_rgba(5,10,26,0.95),0_0_0_1px_rgba(255,255,255,0.18)_inset]",
           "group-hover:shadow-[0_28px_62px_-24px_rgba(5,10,26,0.95),0_0_0_1px_rgba(255,255,255,0.16)_inset,0_1px_0_rgba(255,255,255,0.24)_inset]",
         )}
         style={{
@@ -176,22 +145,20 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           style={{ background: CHILD_SHELL_BG }}
         />
 
-        <div className="hub-child-grid">
-          <div className="hub-child-text-col flex flex-col gap-1">
-            <p className="hub-child-title">{cleanTitle}</p>
+        <div className="hub-feature-tile__grid">
+          <div className="hub-feature-tile__text">
+            <p className="hub-feature-tile__title">{cleanTitle}</p>
             {(previewBadge || (tryFree && showTryFreeBadge)) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
                 {previewBadge ? (
-                  <span className="shrink-0 rounded-full border border-white/22 bg-white/[0.08] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] sm:px-2 sm:text-[9px]">
-                    {previewBadge}
-                  </span>
+                  <span className={HUB_FEATURE_BADGE}>{previewBadge}</span>
                 ) : null}
                 {tryFree && showTryFreeBadge ? <TryFreeBadge /> : null}
               </div>
             ) : null}
-            {description ? <p className="hub-child-subtitle">{description}</p> : null}
+            {description ? <p className="hub-feature-tile__desc">{description}</p> : null}
             {showChips && visibleChips.length > 0 ? (
-              <div className="hub-child-chips">
+              <div className="hub-feature-tile__chips">
                 {visibleChips.map((chip) => (
                   <GlassChip
                     key={chip.labelKey}
@@ -205,70 +172,17 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
             {footer}
           </div>
 
-          {actionLabel ? (
-            <div className="hub-child-action-col">
-              <motion.span
-                className={cn(
-                  "hub-open-cta bg-gradient-to-r",
-                  visual.ctaGradient,
-                  visual.ctaShadow,
-                  "group-hover:scale-[1.03]",
-                )}
-                whileHover={reducedMotion ? undefined : { scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <span>{actionLabel}</span>
-                <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                <span
-                  aria-hidden
-                  className="lz-cta-ripple pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
-                />
-              </motion.span>
-            </div>
-          ) : null}
-        </div>
-
-        {actionMode === "expand" ? (
-          <ExpandChevron expanded={expanded} className="hub-child-chevron-abs" />
-        ) : iconOnlyAction ? (
-          <motion.span
-            className={cn(
-              "hub-child-chevron-abs hub-expand-chevron border-white/20 bg-white/[0.12]",
-              "shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_16px_rgba(0,0,0,0.25)]",
-              "group-hover:scale-[1.05]",
-            )}
-            whileHover={reducedMotion ? undefined : { scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <ChevronRight className="h-[14px] w-[14px] text-white/90" strokeWidth={2.25} />
-          </motion.span>
-        ) : null}
-
-        <div aria-hidden className="hub-child-hero-layer pointer-events-none">
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 80%, rgba(250,201,255,0.28) 0%, rgba(134,171,255,0.14) 38%, rgba(7,10,36,0) 70%)",
-            }}
-          />
-          <img
-            src={visual.heroSrc}
-            alt=""
-            aria-hidden
-            className={cn("hub-child-hero", !reducedMotion && "lz-char-idle")}
-            loading="lazy"
-            decoding="async"
-          />
-          <span
-            aria-hidden
-            className="lz-sparkle pointer-events-none absolute right-[10%] top-[14%] h-1.5 w-1.5 rounded-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-          />
-          <span
-            aria-hidden
-            className="lz-sparkle pointer-events-none absolute left-[8%] top-[30%] h-1 w-1 rounded-full bg-violet-100/90"
-            style={{ animationDelay: "0.9s" }}
-          />
+          <div className="hub-feature-tile__media" aria-hidden>
+            <img
+              src={visual.heroSrc}
+              alt=""
+              width={96}
+              height={96}
+              className="hub-feature-tile__hero"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
         </div>
       </div>
     </div>
