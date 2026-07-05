@@ -221,7 +221,7 @@ export function useAmyCharacterEngine(
       if (showShadow && shadowRef.current) {
         const spread = 1 + floatPh * 0.1 * (1 + speechEmphasis * 0.15);
         shadowRef.current.style.transform =
-          `translateX(-50%) scale(${spread.toFixed(3)}, ${(0.85 + floatPh * 0.06).toFixed(3)})`;
+          `translate(-50%, -50%) scale(${spread.toFixed(3)}, ${(0.85 + floatPh * 0.06).toFixed(3)})`;
         shadowRef.current.style.opacity = (0.36 + floatPh * 0.12).toFixed(3);
       }
 

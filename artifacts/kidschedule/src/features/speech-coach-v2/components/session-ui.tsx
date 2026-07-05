@@ -5,21 +5,10 @@ import type { RealtimeConnectionState, RealtimeDiagnostics } from "../hooks/use-
 import { RealtimeDiagnosticsPanel } from "./realtime-diagnostics-panel";
 import { showRealtimeDiagnostics } from "../lib/show-realtime-diagnostics";
 import { formatSpeechCoachRemainingLabel } from "../lib/usage-display";
-
-function connectionLabel(state: RealtimeConnectionState): string {
-  switch (state) {
-    case "connecting":
-      return "Amy is getting ready…";
-    case "connected":
-      return "Amy is listening";
-    case "reconnecting":
-      return "Reconnecting…";
-    case "error":
-      return "Connection issue";
-    default:
-      return "Tap to start speaking with Amy";
-  }
-}
+import {
+  speechCoachConnectionLabel,
+  useSpeechCoachHeroSize,
+} from "../lib/session-presentation";
 
 export function SpeechCoachV2SessionUi(props: {
   childName: string;
@@ -56,6 +45,8 @@ export function SpeechCoachV2SessionUi(props: {
     amyAudioMeterActive,
   } = props;
 
+  const heroSize = useSpeechCoachHeroSize();
+
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-gradient-to-b from-sky-950 via-indigo-950 to-slate-950 text-white">
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
@@ -74,7 +65,7 @@ export function SpeechCoachV2SessionUi(props: {
 
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <AmyTalkingHead
-          size={320}
+          size={heroSize}
           presentation="stage"
           speaking={amySpeaking}
           listening={live && connectionState === "connected" && !amySpeaking}
@@ -84,7 +75,9 @@ export function SpeechCoachV2SessionUi(props: {
           debugMouth={showRealtimeDiagnostics()}
         />
         <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
-        <p className="mt-1 text-xs text-white/60">{connectionLabel(connectionState)}</p>
+        <p className="mt-1 text-xs text-white/60">
+          {speechCoachConnectionLabel(connectionState, live)}
+        </p>
         {live && diagnostics && showRealtimeDiagnostics() && (
           <RealtimeDiagnosticsPanel diagnostics={diagnostics} />
         )}

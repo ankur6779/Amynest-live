@@ -1,6 +1,10 @@
-import { memo, useMemo, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AMY_STAGE_ASSETS } from "@/lib/amy/amy-stage-assets";
-import { AMY_STAGE_EYE, AMY_STAGE_EYELID_GRADIENT } from "@/lib/amy/amy-stage-layout";
+import {
+  AMY_STAGE_EYELID_GRADIENT,
+  amyStageEyeLayout,
+  type AmyStageEyeLayout,
+} from "@/lib/amy/amy-stage-layout";
 import type { AmyMouthFrame } from "@/lib/amy-3d/amy-mouth-audio";
 
 export interface AmyCharacterBodyProps {
@@ -28,21 +32,13 @@ const imgStyle: CSSProperties = {
   pointerEvents: "none",
 };
 
-function lidStyle(
-  cx: number,
-  width: number,
-  height: number,
-  closed: boolean,
-): CSSProperties {
-  const lidW = AMY_STAGE_EYE.w * width;
-  const lidH = AMY_STAGE_EYE.h * height;
-  const lidTop = (AMY_STAGE_EYE.y - AMY_STAGE_EYE.h / 2) * height;
+function lidStyle(slot: AmyStageEyeLayout["left"], closed: boolean): CSSProperties {
   return {
     position: "absolute",
-    left: cx * width - lidW / 2,
-    top: lidTop,
-    width: lidW,
-    height: lidH,
+    left: slot.left,
+    top: slot.top,
+    width: slot.width,
+    height: slot.height,
     borderRadius: "18% 18% 48% 48% / 22% 22% 80% 80%",
     background: AMY_STAGE_EYELID_GRADIENT,
     boxShadow: "inset 0 -1px 2px rgba(120,90,160,0.35)",
@@ -54,17 +50,16 @@ function lidStyle(
   };
 }
 
-function pupilStyle(cx: number, width: number, height: number): CSSProperties {
-  const pupilW = AMY_STAGE_EYE.w * width * 0.22;
-  const pupilH = AMY_STAGE_EYE.h * height * 0.28;
-  const top = AMY_STAGE_EYE.y * height - pupilH * 0.85;
-  const left = cx * width - pupilW * 0.35;
+function pupilStyle(
+  slot: AmyStageEyeLayout["left"],
+  pupil: AmyStageEyeLayout["pupil"],
+): CSSProperties {
   return {
     position: "absolute",
-    left,
-    top,
-    width: pupilW,
-    height: pupilH,
+    left: slot.left + slot.width / 2 - pupil.offsetX,
+    top: slot.top + slot.height / 2 - pupil.offsetY,
+    width: pupil.width,
+    height: pupil.height,
     borderRadius: "50%",
     background: "radial-gradient(circle, rgba(255,255,255,0.92) 0%, transparent 72%)",
     pointerEvents: "none",
@@ -73,7 +68,7 @@ function pupilStyle(cx: number, width: number, height: number): CSSProperties {
   };
 }
 
-/** Full-body Amy — hard-cut mouth frames; transform driven by engine. */
+/** Full-body Amy — hard-cut mouth frames; eyes anchored to the rendered image UV. */
 export const AmyCharacterBody = memo(function AmyCharacterBody({
   width,
   height,
@@ -92,7 +87,23 @@ export const AmyCharacterBody = memo(function AmyCharacterBody({
     () => (talking ? AMY_STAGE_ASSETS.talk[mouthFrame] : staticSrc),
     [talking, mouthFrame, staticSrc],
   );
+  const [eyeLayout, setEyeLayout] = useState<AmyStageEyeLayout | null>(null);
+
+  const syncEyeLayout = useCallback(() => {
+    const img = bodyImgRef.current;
+    if (!img?.naturalWidth || !img.naturalHeight) {
+      setEyeLayout(null);
+      return;
+    }
+    setEyeLayout(amyStageEyeLayout(width, height, img.naturalWidth, img.naturalHeight));
+  }, [bodyImgRef, height, width]);
+
+  useEffect(() => {
+    syncEyeLayout();
+  }, [syncEyeLayout, src]);
+
   const lidsClosed = eyesClosed || blinking;
+  const showEyes = !reduced && !eyesClosed && eyeLayout != null;
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
@@ -103,17 +114,14 @@ export const AmyCharacterBody = memo(function AmyCharacterBody({
         alt={alt}
         draggable={false}
         style={imgStyle}
+        onLoad={syncEyeLayout}
       />
-      {!reduced && !eyesClosed && (
+      {showEyes && (
         <>
-          <span ref={pupilLeftRef} aria-hidden style={pupilStyle(AMY_STAGE_EYE.lX, width, height)} />
-          <span ref={pupilRightRef} aria-hidden style={pupilStyle(AMY_STAGE_EYE.rX, width, height)} />
-        </>
-      )}
-      {!reduced && (
-        <>
-          <span aria-hidden style={lidStyle(AMY_STAGE_EYE.lX, width, height, lidsClosed)} />
-          <span aria-hidden style={lidStyle(AMY_STAGE_EYE.rX, width, height, lidsClosed)} />
+          <span ref={pupilLeftRef} aria-hidden style={pupilStyle(eyeLayout.left, eyeLayout.pupil)} />
+          <span ref={pupilRightRef} aria-hidden style={pupilStyle(eyeLayout.right, eyeLayout.pupil)} />
+          <span aria-hidden style={lidStyle(eyeLayout.left, lidsClosed)} />
+          <span aria-hidden style={lidStyle(eyeLayout.right, lidsClosed)} />
         </>
       )}
     </div>

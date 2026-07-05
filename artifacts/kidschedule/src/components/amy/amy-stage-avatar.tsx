@@ -14,6 +14,7 @@ import { AmyParticles } from "@/components/amy/amy-particles";
 import { AmyShadow } from "@/components/amy/amy-shadow";
 import { AMY_FULL_ASPECT, AMY_STAGE_ASSETS } from "@/lib/amy/amy-stage-assets";
 import { AMY_ERROR_RECOVERY_MS, AMY_WAVEFORM_BAR_COUNT } from "@/lib/amy/character/amy-character-constants";
+import { AMY_STAGE_BODY } from "@/lib/amy/amy-stage-layout";
 import {
   amy3dToCharacterState,
   characterStateToAssetKey,
@@ -228,53 +229,6 @@ function AmyStageAvatarInner({
           overflow: "visible",
         }}
       >
-        <AmyShadow ref={engineRefs.shadowRef} width={width} height={height} visible={showShadow} />
-        <AmyHalo ref={engineRefs.haloRef} width={width} height={height} visible={showHalo} />
-
-        {isListening && (
-          <span
-            ref={engineRefs.listenGlowRef}
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "32%",
-              width: Math.round(width * 0.78),
-              height: Math.round(height * 0.14),
-              transform: "translate(-50%, -50%)",
-              borderRadius: "9999px",
-              background:
-                "radial-gradient(ellipse, rgba(34,211,238,0.5) 0%, rgba(56,189,248,0.14) 55%, transparent 72%)",
-              pointerEvents: "none",
-              willChange: "opacity",
-            }}
-          />
-        )}
-
-        <AmyParticles
-          kind="celebration"
-          width={width}
-          height={height}
-          active={celebrateBurst}
-          reduced={reduced}
-        />
-
-        {isSleeping && !reduced && (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute"
-            style={{
-              left: "58%",
-              top: "18%",
-              fontSize: Math.round(height * 0.045),
-              color: "rgba(196,181,253,0.75)",
-              animation: "amySleepZ 3.2s ease-in-out infinite",
-            }}
-          >
-            z
-          </span>
-        )}
-
         <div
           ref={engineRefs.bodyWrapRef}
           style={{
@@ -285,6 +239,53 @@ function AmyStageAvatarInner({
             willChange: "transform",
           }}
         >
+          <AmyShadow ref={engineRefs.shadowRef} width={width} height={height} visible={showShadow} />
+          <AmyHalo ref={engineRefs.haloRef} width={width} height={height} visible={showHalo} />
+
+          {isListening && (
+            <span
+              ref={engineRefs.listenGlowRef}
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: AMY_STAGE_BODY.centerY * height,
+                width: Math.round(width * 0.78),
+                height: Math.round(height * 0.14),
+                transform: "translate(-50%, -50%)",
+                borderRadius: "9999px",
+                background:
+                  "radial-gradient(ellipse, rgba(34,211,238,0.5) 0%, rgba(56,189,248,0.14) 55%, transparent 72%)",
+                pointerEvents: "none",
+                willChange: "opacity",
+              }}
+            />
+          )}
+
+          <AmyParticles
+            kind="celebration"
+            width={width}
+            height={height}
+            active={celebrateBurst}
+            reduced={reduced}
+          />
+
+          {isSleeping && !reduced && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute"
+              style={{
+                left: "58%",
+                top: `${AMY_STAGE_BODY.centerY * 100}%`,
+                fontSize: Math.round(height * 0.045),
+                color: "rgba(196,181,253,0.75)",
+                animation: "amySleepZ 3.2s ease-in-out infinite",
+              }}
+            >
+              z
+            </span>
+          )}
+
           <AmyCharacterBody
             width={width}
             height={height}

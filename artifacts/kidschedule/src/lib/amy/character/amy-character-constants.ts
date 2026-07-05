@@ -29,13 +29,13 @@ export const AMY_STAGE_VH_RATIO = 0.58;
 
 /** Halo geometry as fractions of body width/height. */
 export const AMY_HALO = {
-  top: 0.46,
+  top: 0.57,
   size: 0.72,
 } as const;
 
 /** Shadow geometry as fractions of body width/height. */
 export const AMY_SHADOW = {
-  bottom: 0.01,
+  feetY: 0.935,
   width: 0.42,
   height: 0.05,
 } as const;

@@ -1,8 +1,10 @@
-// AmyBlinkFace — lightweight full-body Amy with blink (headers, lists, bubbles).
-
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import { AMY_ICON_SRC, AMY_FULL_ASPECT } from "@/lib/amy/amy-stage-assets";
-import { AMY_STAGE_EYE, AMY_STAGE_EYELID_GRADIENT } from "@/lib/amy/amy-stage-layout";
+import {
+  AMY_STAGE_EYELID_GRADIENT,
+  amyStageEyeLayout,
+  type AmyStageEyeLayout,
+} from "@/lib/amy/amy-stage-layout";
 import { prefersReducedMotion } from "@/lib/amy-3d/webgl-support";
 
 interface AmyBlinkFaceProps {
@@ -11,11 +13,41 @@ interface AmyBlinkFaceProps {
   speaking?: boolean;
 }
 
+function lidStyle(slot: AmyStageEyeLayout["left"], blinking: boolean): CSSProperties {
+  return {
+    position: "absolute",
+    left: slot.left,
+    top: slot.top,
+    width: slot.width,
+    height: slot.height,
+    borderRadius: "18% 18% 48% 48% / 22% 22% 80% 80%",
+    background: AMY_STAGE_EYELID_GRADIENT,
+    boxShadow: "inset 0 -1px 2px rgba(120,90,160,0.35)",
+    transformOrigin: "center top",
+    transform: `scaleY(${blinking ? 1 : 0})`,
+    transition: "transform 80ms ease-in-out",
+    pointerEvents: "none",
+    zIndex: 2,
+  };
+}
+
 export function AmyBlinkFace({ size, className }: AmyBlinkFaceProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const [blinking, setBlinking] = useState(false);
+  const [eyeLayout, setEyeLayout] = useState<AmyStageEyeLayout | null>(null);
   const height = size;
   const width = Math.round(size * AMY_FULL_ASPECT);
+
+  const syncEyeLayout = useCallback(
+    (img: HTMLImageElement) => {
+      if (!img.naturalWidth || !img.naturalHeight) {
+        setEyeLayout(null);
+        return;
+      }
+      setEyeLayout(amyStageEyeLayout(width, height, img.naturalWidth, img.naturalHeight));
+    },
+    [height, width],
+  );
 
   useEffect(() => {
     if (reduced) return;
@@ -33,25 +65,6 @@ export function AmyBlinkFace({ size, className }: AmyBlinkFaceProps) {
     };
   }, [reduced]);
 
-  const lidW = AMY_STAGE_EYE.w * width;
-  const lidH = AMY_STAGE_EYE.h * height;
-  const lidTop = (AMY_STAGE_EYE.y - AMY_STAGE_EYE.h / 2) * height;
-  const lidStyle = (cx: number): CSSProperties => ({
-    position: "absolute",
-    left: cx * width - lidW / 2,
-    top: lidTop,
-    width: lidW,
-    height: lidH,
-    borderRadius: "18% 18% 48% 48% / 22% 22% 80% 80%",
-    background: AMY_STAGE_EYELID_GRADIENT,
-    boxShadow: "inset 0 -1px 2px rgba(120,90,160,0.35)",
-    transformOrigin: "center top",
-    transform: `scaleY(${blinking ? 1 : 0})`,
-    transition: "transform 80ms ease-in-out",
-    pointerEvents: "none",
-    zIndex: 2,
-  });
-
   return (
     <div
       className={className}
@@ -59,7 +72,7 @@ export function AmyBlinkFace({ size, className }: AmyBlinkFaceProps) {
         width,
         height,
         position: "relative",
-        overflow: "visible",
+        overflow: "hidden",
         flexShrink: 0,
       }}
       aria-hidden
@@ -68,6 +81,7 @@ export function AmyBlinkFace({ size, className }: AmyBlinkFaceProps) {
         src={AMY_ICON_SRC}
         alt=""
         draggable={false}
+        onLoad={(e) => syncEyeLayout(e.currentTarget)}
         style={{
           width: "100%",
           height: "100%",
@@ -75,10 +89,10 @@ export function AmyBlinkFace({ size, className }: AmyBlinkFaceProps) {
           display: "block",
         }}
       />
-      {!reduced && (
+      {!reduced && eyeLayout && (
         <>
-          <span style={lidStyle(AMY_STAGE_EYE.lX)} />
-          <span style={lidStyle(AMY_STAGE_EYE.rX)} />
+          <span style={lidStyle(eyeLayout.left, blinking)} />
+          <span style={lidStyle(eyeLayout.right, blinking)} />
         </>
       )}
     </div>

@@ -731,15 +731,18 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         lastError: diagBody ?? message,
         audio: d.audio === "ok" ? "ok" : d.audio,
       }));
-      setConnected(false, "error");
-      onErrorRef.current?.(message);
 
       if (reconnectAttemptRef.current < 3) {
         reconnectAttemptRef.current += 1;
+        setConnected(false, "reconnecting");
         reconnectTimerRef.current = setTimeout(() => {
           void connectRef.current(false);
         }, 1500 * reconnectAttemptRef.current);
+        return;
       }
+
+      setConnected(false, "error");
+      onErrorRef.current?.(message);
     }
   };
 

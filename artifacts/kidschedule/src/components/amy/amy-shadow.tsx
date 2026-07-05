@@ -1,5 +1,6 @@
 import { forwardRef, memo } from "react";
 import { AMY_SHADOW } from "@/lib/amy/character/amy-character-constants";
+import { AMY_STAGE_BODY } from "@/lib/amy/amy-stage-layout";
 
 export interface AmyShadowProps {
   width: number;
@@ -13,6 +14,7 @@ export const AmyShadow = memo(
     ref,
   ) {
     if (!visible) return null;
+    const feetY = AMY_STAGE_BODY.feetY * height;
     return (
       <span
         ref={ref}
@@ -20,10 +22,10 @@ export const AmyShadow = memo(
         style={{
           position: "absolute",
           left: "50%",
-          bottom: Math.round(height * AMY_SHADOW.bottom),
+          top: feetY,
           width: Math.round(width * AMY_SHADOW.width),
           height: Math.round(height * AMY_SHADOW.height),
-          transform: "translateX(-50%) scale(1, 0.85)",
+          transform: "translate(-50%, -50%) scale(1, 0.85)",
           transformOrigin: "center center",
           borderRadius: "50%",
           background:

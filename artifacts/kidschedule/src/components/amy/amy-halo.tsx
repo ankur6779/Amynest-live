@@ -1,5 +1,6 @@
 import { forwardRef, memo } from "react";
 import { AMY_HALO } from "@/lib/amy/character/amy-character-constants";
+import { AMY_STAGE_BODY } from "@/lib/amy/amy-stage-layout";
 
 export interface AmyHaloProps {
   width: number;
@@ -9,19 +10,20 @@ export interface AmyHaloProps {
 
 export const AmyHalo = memo(
   forwardRef<HTMLSpanElement, AmyHaloProps>(function AmyHalo(
-    { width, visible = true },
+    { width, height, visible = true },
     ref,
   ) {
     if (!visible) return null;
     const size = Math.round(width * AMY_HALO.size);
+    const centerY = AMY_STAGE_BODY.centerY * height;
     return (
       <span
         ref={ref}
         aria-hidden
         style={{
           position: "absolute",
-          left: "50%",
-          top: `${AMY_HALO.top * 100}%`,
+          left: `${AMY_STAGE_BODY.centerX * 100}%`,
+          top: centerY,
           width: size,
           height: size,
           transform: "translate(-50%, -50%)",
