@@ -29,6 +29,7 @@ import {
   markReactRendered,
   trackStartupEvent,
 } from "@/lib/startup-orchestrator";
+import { scheduleAmyAssetPreload } from "@/lib/amy/character/amy-asset-preload";
 import { schedulePostRenderStartup } from "@/lib/startup-background";
 
 declare global {
@@ -143,6 +144,7 @@ function bootstrap(): void {
       requestAnimationFrame(installPostPaintAnalytics);
     });
     schedulePostRenderStartup();
+    scheduleAmyAssetPreload();
   } catch (err) {
     console.error("[amynest:bootstrap] Failed to start app", err);
     mark("bootstrap-failed");

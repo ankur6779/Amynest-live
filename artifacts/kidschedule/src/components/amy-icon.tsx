@@ -21,7 +21,7 @@ export function AmyIcon({
     t
   } = useTranslation();
   const baked = useBakedAmyAvailable();
-  const faceSize = ring ? size * 0.68 : size;
+  const iconHeight = ring ? size * 0.72 : size;
   const blinkRef = useRef<SVGEllipseElement>(null);
   const blinkRef2 = useRef<SVGEllipseElement>(null);
   useEffect(() => {
@@ -59,7 +59,7 @@ export function AmyIcon({
       timers.clear();
     };
   }, []);
-  const face = baked ? <AmyBlinkFace size={faceSize} speaking={speaking} /> : <svg viewBox="0 0 64 64" width={faceSize} height={faceSize} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
+  const face = baked ? <AmyBlinkFace size={iconHeight} speaking={speaking} /> : <svg viewBox="0 0 64 64" width={iconHeight} height={iconHeight} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
     display: "block"
   }}>
       <defs>

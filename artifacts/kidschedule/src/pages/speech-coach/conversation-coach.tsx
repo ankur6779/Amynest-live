@@ -90,10 +90,6 @@ function ConversationAmyHero({
   thinking: boolean;
 }) {
   const avatar = useHeroSize();
-  const glass = Math.round(avatar * 1.16);
-  const glow = Math.round(avatar * 1.5);
-  // Live mic level (0..1) → reactive listening halo. 0 when not listening or on
-  // the native Web Speech path (no accessible stream) → portrait uses its pulse.
   const audioLevelRef = useMicLevelRef(listening);
   const state: Amy3DState = speaking
     ? "speaking"
@@ -104,46 +100,22 @@ function ConversationAmyHero({
         : "idle";
   return (
     <div
-      className="relative flex flex-1 items-center justify-center"
-      style={{ minHeight: glass + 24 }}
+      className="relative flex flex-1 items-center justify-center py-2"
+      style={{ minHeight: avatar + 32 }}
     >
-      <div
-        className={[
-          "absolute rounded-full blur-3xl transition-all duration-500",
-          listening ? "bg-cyan-400/30" : speaking ? "bg-fuchsia-500/35" : "bg-violet-500/20",
-        ].join(" ")}
-        style={{ width: glow, height: glow }}
-      />
-      {listening && (
-        <div
-          className="absolute animate-ping rounded-full border border-cyan-300/50"
-          style={{ width: glass, height: glass }}
+      {thinking && (
+        <Loader2
+          className="pointer-events-none absolute animate-spin text-amber-200/40"
+          style={{ width: avatar * 0.9, height: avatar * 0.9 }}
         />
       )}
-      <div
-        className={[
-          "relative grid place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-500",
-          speaking ? "scale-105 border-fuchsia-300/70" : "",
-          listening ? "scale-110 border-cyan-300/80" : "",
-          thinking ? "border-amber-300/80" : "",
-        ].join(" ")}
-        style={{ width: glass, height: glass }}
-      >
-        {thinking && (
-          <Loader2
-            className="absolute animate-spin text-amber-200/50"
-            style={{ width: glass, height: glass }}
-          />
-        )}
-        <AmyAvatar
-          tier="hero"
-          size={avatar}
-          ring
-          bounce={speaking}
-          state={state}
-          audioLevelRef={audioLevelRef}
-        />
-      </div>
+      <AmyAvatar
+        tier="hero"
+        size={avatar}
+        state={state}
+        speaking={speaking}
+        audioLevelRef={audioLevelRef}
+      />
     </div>
   );
 }

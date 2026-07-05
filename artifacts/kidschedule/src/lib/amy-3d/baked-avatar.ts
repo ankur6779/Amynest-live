@@ -1,25 +1,12 @@
 import { useEffect, useState } from "react";
+import {
+  AMY_ICON_SRC,
+  AMY_STAGE_ASSETS,
+} from "@/lib/amy/amy-stage-assets";
 
-// Baked 3D Amy render used by the small "icon" tier (headers, lists, chat
-// bubbles). It is a static image rendered from the same 3D head via
-// scripts/render-amy-baked.mjs — so small spots look 3D without ever mounting a
-// live WebGL canvas. Until the PNG exists we transparently fall back to the 2D
-// SVG, so behaviour is unchanged on a fresh checkout.
-
-export const BAKED_AMY_SRC = "/amy-3d/amy-idle.webp";
-
-// Full-resolution square portrait used by the animated hero avatar (AmyPortrait).
-export const AMY_PORTRAIT_SRC = "/amy-3d/amy-avatar-square.webp";
-
-// Pre-rendered "talking" mouth frames (closed → small-open → wide-open), sliced
-// from a single 3-up render and eye-centred so ONLY the mouth differs between
-// frames (head stays perfectly still). Used by AmyTalkingHead to animate Amy
-// speaking without any live 3D. Regenerate via scripts/slice-amy-mouth-sprite.py.
-export const AMY_TALK_FRAMES = [
-  "/amy-3d/amy-talk-0.webp",
-  "/amy-3d/amy-talk-1.webp",
-  "/amy-3d/amy-talk-2.webp",
-] as const;
+export const BAKED_AMY_SRC = AMY_ICON_SRC;
+export const AMY_PORTRAIT_SRC = AMY_STAGE_ASSETS.idle;
+export const AMY_TALK_FRAMES = AMY_STAGE_ASSETS.talk;
 
 // Rigged 3D model. When this file is dropped in, the hero upgrades to a live
 // 3D Amy with viseme lip-sync + eye-tracking. See public/amy-3d/README.md.

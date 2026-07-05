@@ -129,18 +129,8 @@ const C = {
   panelBorder: "rgba(139,92,246,0.28)",
 } as const;
 
-// ─── Neon ring glow colours per Amy state ─────────────────────────────────────
-const RING_GLOW: Record<AmyAvatarState, string> = {
-  idle: C.violetMid,
-  listening: C.purple,
-  thinking: "rgba(236,72,153,0.75)",
-  speaking: "rgba(109,40,217,0.9)",
-  celebrating: C.amber,
-  encouraging: "rgba(167,139,250,0.65)",
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
-// AmyRing — animated neon halo around the Amy avatar
+// AmyRing — full-body stage avatar for pronunciation companion
 // ─────────────────────────────────────────────────────────────────────────────
 function AmyRing({
   state,
@@ -149,96 +139,17 @@ function AmyRing({
   state: AmyAvatarState;
   size: number;
 }) {
-  const glow = RING_GLOW[state];
-  const boxShadow = `0 0 ${state === "listening" ? 28 : 18}px ${glow}, 0 0 ${state === "listening" ? 52 : 34}px ${glow.replace(/,([\d.]+)\)$/, ",0.3)")}`;
-
   return (
     <div
       className="relative flex items-center justify-center shrink-0"
-      style={{ width: size, height: size }}
+      style={{ width: size, minHeight: size * 1.15 }}
       aria-hidden
     >
-      {/* Listening → double ping rings */}
-      {state === "listening" && (
-        <>
-          <span
-            className="absolute inset-0 rounded-full animate-ping"
-            style={{
-              background: "rgba(168,85,247,0.18)",
-              animationDuration: "1.2s",
-            }}
-          />
-          <span
-            className="absolute inset-2 rounded-full animate-ping"
-            style={{
-              background: "rgba(168,85,247,0.12)",
-              animationDuration: "1.7s",
-              animationDelay: "0.35s",
-            }}
-          />
-        </>
-      )}
-
-      {/* Celebrating → amber + emerald ping */}
-      {state === "celebrating" && (
-        <>
-          <span
-            className="absolute inset-0 rounded-full animate-ping"
-            style={{
-              background: "rgba(251,191,36,0.22)",
-              animationDuration: "1s",
-            }}
-          />
-          <span
-            className="absolute -inset-2 rounded-full animate-ping"
-            style={{
-              background: "rgba(52,211,153,0.15)",
-              animationDuration: "1.5s",
-              animationDelay: "0.25s",
-            }}
-          />
-        </>
-      )}
-
-      {/* Thinking → spinning arc */}
-      {state === "thinking" && (
-        <span
-          className="absolute inset-0 rounded-full animate-spin"
-          style={{
-            border: "3px solid transparent",
-            borderTopColor: "rgba(236,72,153,0.95)",
-            borderRightColor: "rgba(168,85,247,0.6)",
-          }}
-        />
-      )}
-
-      {/* Core glowing ring */}
-      <span
-        className={`absolute inset-0 rounded-full ${state === "idle" || state === "encouraging" ? "animate-pulse" : ""}`}
-        style={{
-          boxShadow,
-          border: `2px solid ${glow}`,
-          borderRadius: "9999px",
-        }}
-      />
-
-      {/* Speaking → pulsing inner ring */}
-      {state === "speaking" && (
-        <span
-          className="absolute inset-2 rounded-full animate-pulse"
-          style={{
-            border: "1px solid rgba(109,40,217,0.5)",
-          }}
-        />
-      )}
-
-      {/* Amy character — live 3D on this hero, 2D fallback otherwise */}
       <AmyAvatar
         tier="hero"
-        size={size * 0.75}
-        ring
-        bounce={state === "celebrating"}
+        size={size}
         state={state}
+        speaking={state === "speaking"}
       />
     </div>
   );

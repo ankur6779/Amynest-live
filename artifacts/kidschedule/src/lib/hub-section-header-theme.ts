@@ -20,11 +20,15 @@ export function getHubSectionHeaderTheme(key: HubGroupKey): HubSectionHeaderThem
   return HUB_SECTION_HEADER_THEMES[key];
 }
 
+/** Raw theme RGB — used for card surface tints (recognizable at a glance). */
 export function parseSectionTintRgb(tintRgb: string): [number, number, number] {
   const parts = tintRgb.split(",").map((s) => Number(s.trim()));
-  const r = parts[0] ?? 129;
-  const g = parts[1] ?? 140;
-  const b = parts[2] ?? 248;
+  return [parts[0] ?? 129, parts[1] ?? 140, parts[2] ?? 248];
+}
+
+/** Softened accent RGB — pills, bars, icon shell highlights. */
+export function parseSectionAccentRgb(tintRgb: string): [number, number, number] {
+  const [r, g, b] = parseSectionTintRgb(tintRgb);
   return softenSectionAccent(r, g, b);
 }
 

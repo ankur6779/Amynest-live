@@ -1937,6 +1937,7 @@ function ParentingHubPage() {
                 <div
                   key={group.key}
                   id={`hub-group-${group.key}`}
+                  data-hub-section={groupKey}
                   className={cn(
                     "hub-group-panel hub-page-enter",
                     isOpen ? "hub-group-panel--open" : "space-y-3",

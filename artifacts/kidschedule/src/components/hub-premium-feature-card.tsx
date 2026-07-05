@@ -6,6 +6,7 @@ import type { HubPremiumCardVisual } from "@/lib/hub-premium-card-types";
 import { stripHubTileEmoji } from "@/lib/hub-premium-card-types";
 import {
   getHubSectionHeaderTheme,
+  parseSectionAccentRgb,
   parseSectionTintRgb,
 } from "@/lib/hub-section-header-theme";
 import { HUB_FEATURE_BADGE } from "@/lib/parent-hub-premium";
@@ -90,6 +91,7 @@ function HubSectionNavigationCard({
   const cleanTitle = stripHubTileEmoji(title);
   const headerTheme = getHubSectionHeaderTheme(sectionGroupKey);
   const [r, g, b] = parseSectionTintRgb(headerTheme.tintRgb);
+  const [ar, ag, ab] = parseSectionAccentRgb(headerTheme.tintRgb);
   const navSubtitle = description.trim();
   const pillLabel = highlightLabel?.trim() || t("parent_hub.section_groups.open_section");
 
@@ -101,11 +103,15 @@ function HubSectionNavigationCard({
         className,
       )}
       data-expanded={expanded || undefined}
+      data-hub-section={sectionGroupKey}
       style={
         {
           "--hub-section-r": r,
           "--hub-section-g": g,
           "--hub-section-b": b,
+          "--hub-section-accent-r": ar,
+          "--hub-section-accent-g": ag,
+          "--hub-section-accent-b": ab,
         } as CSSProperties
       }
     >
@@ -130,12 +136,12 @@ function HubSectionNavigationCard({
         ) : null}
         <div aria-hidden className="hub-section-accent-bar absolute left-0 top-2 bottom-2 rounded-full" />
         <div className="hub-section-content">
-          <div className="hub-section-icon-shell flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl">
+          <div className="hub-section-icon-shell shrink-0 rounded-xl">
             <img
               src={visual.iconSrc}
               alt=""
               aria-hidden
-              className="hub-section-icon-image relative z-[1] object-contain"
+              className="hub-section-icon-image relative z-[1]"
               loading="lazy"
               decoding="async"
             />

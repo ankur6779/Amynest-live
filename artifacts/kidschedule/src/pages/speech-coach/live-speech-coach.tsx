@@ -243,52 +243,27 @@ function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
   const thinking = state === "processing";
   const avatar = useHeroSize();
   const audioLevelRef = useMicLevelRef(listening);
-  const glass = Math.round(avatar * 1.18);
-  const glow = Math.round(avatar * 1.5);
+  const amyState = success ? "celebrating" : coachStateToAmy3D(state);
 
   return (
     <div
-      className="relative flex items-center justify-center"
-      style={{ minHeight: glass + 48 }}
+      className="relative flex items-center justify-center py-2"
+      style={{ minHeight: avatar + 48 }}
     >
       <StarsBurst show={success} />
-      <div
-        className={[
-          "absolute rounded-full blur-3xl transition-all duration-500",
-          listening ? "bg-cyan-400/30" : speaking ? "bg-fuchsia-500/35" : "bg-violet-500/20",
-        ].join(" ")}
-        style={{ width: glow, height: glow }}
-      />
-      {listening && (
-        <div
-          className="absolute animate-ping rounded-full border border-cyan-300/50"
-          style={{ width: glass, height: glass }}
+      {thinking && (
+        <Loader2
+          className="pointer-events-none absolute animate-spin text-amber-200/40"
+          style={{ width: avatar * 0.9, height: avatar * 0.9 }}
         />
       )}
-      <div
-        className={[
-          "relative grid place-items-center rounded-full border bg-white/10 shadow-2xl backdrop-blur-xl transition-all duration-500",
-          speaking ? "scale-105 border-fuchsia-300/70 shadow-fuchsia-500/40" : "",
-          listening ? "scale-110 border-cyan-300/80 shadow-cyan-500/40" : "",
-          thinking ? "border-amber-300/80 shadow-amber-500/40" : "",
-        ].join(" ")}
-        style={{ width: glass, height: glass }}
-      >
-        {thinking && (
-          <Loader2
-            className="absolute animate-spin text-amber-200/50"
-            style={{ width: glass, height: glass }}
-          />
-        )}
-        <AmyAvatar
-          tier="hero"
-          size={avatar}
-          ring
-          bounce={success || speaking}
-          state={success ? "celebrating" : coachStateToAmy3D(state)}
-          audioLevelRef={audioLevelRef}
-        />
-      </div>
+      <AmyAvatar
+        tier="hero"
+        size={avatar}
+        state={amyState}
+        speaking={speaking}
+        audioLevelRef={audioLevelRef}
+      />
     </div>
   );
 }

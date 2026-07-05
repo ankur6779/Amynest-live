@@ -74,7 +74,7 @@ export function SpeechCoachV2SessionUi(props: {
 
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <AmyTalkingHead
-          size={380}
+          size={320}
           presentation="stage"
           speaking={amySpeaking}
           listening={live && connectionState === "connected" && !amySpeaking}

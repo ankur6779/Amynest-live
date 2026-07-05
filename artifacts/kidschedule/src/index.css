@@ -627,18 +627,47 @@
 
 .hub-expanded-panel--connected {
   border-radius: 0 0 18px 18px;
-  background-color: rgba(14, 20, 42, 0.52);
-  background-image: linear-gradient(
-    168deg,
-    rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.02) 0%,
-    rgba(14, 20, 42, 0.58) 38%,
-    rgba(8, 12, 28, 0.88) 100%
-  );
+  background-color: rgba(10, 12, 26, 0.86);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     inset 0 -1px 0 rgba(0, 0, 0, 0.14),
     0 1px 8px rgba(0, 0, 0, 0.08);
   padding-bottom: 0.75rem;
+}
+
+.hub-group-panel[data-hub-section="today"] .hub-expanded-panel--connected {
+  background-color: rgba(34, 24, 10, 0.88);
+  background-image: linear-gradient(168deg, rgba(255, 184, 0, 0.1) 0%, rgba(22, 16, 28, 0.78) 48%, rgba(10, 8, 18, 0.92) 100%);
+}
+
+.hub-group-panel[data-hub-section="learning"] .hub-expanded-panel--connected {
+  background-color: rgba(10, 8, 34, 0.9);
+  background-image: linear-gradient(180deg, rgba(99, 82, 240, 0.1) 0%, rgba(10, 8, 34, 0.82) 52%, rgba(5, 4, 16, 0.94) 100%);
+}
+
+.hub-group-panel[data-hub-section="creativity"] .hub-expanded-panel--connected {
+  background-color: rgba(28, 10, 28, 0.88);
+  background-image: linear-gradient(228deg, rgba(255, 72, 212, 0.08) 0%, rgba(28, 10, 28, 0.82) 100%);
+}
+
+.hub-group-panel[data-hub-section="stories"] .hub-expanded-panel--connected {
+  background-color: rgba(28, 16, 10, 0.88);
+  background-image: linear-gradient(250deg, rgba(8, 8, 16, 0.88) 0%, rgba(251, 146, 60, 0.08) 100%);
+}
+
+.hub-group-panel[data-hub-section="health"] .hub-expanded-panel--connected {
+  background-color: rgba(8, 22, 18, 0.88);
+  background-image: linear-gradient(15deg, rgba(52, 211, 153, 0.08) 0%, rgba(4, 12, 10, 0.92) 100%);
+}
+
+.hub-group-panel[data-hub-section="parent"] .hub-expanded-panel--connected {
+  background-color: rgba(14, 8, 28, 0.92);
+  background-image: linear-gradient(180deg, rgba(22, 10, 40, 0.85) 0%, rgba(12, 6, 24, 0.95) 100%);
+}
+
+.hub-group-panel[data-hub-section="support"] .hub-expanded-panel--connected {
+  background-color: rgba(8, 16, 32, 0.88);
+  background-image: linear-gradient(198deg, rgba(96, 165, 250, 0.08) 0%, rgba(4, 8, 20, 0.92) 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -674,7 +703,7 @@
 }
 
 .hub-section-shell {
-  --hub-section-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  --hub-section-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
 
   min-width: 0;
   max-width: 100%;
@@ -689,21 +718,10 @@
     box-shadow 200ms cubic-bezier(0, 0, 0.2, 1),
     border-radius 200ms cubic-bezier(0, 0, 0.2, 1),
     filter 120ms ease-out;
-  background-color: rgba(14, 20, 42, 0.52);
-  background-image:
-    var(--hub-section-noise),
-    radial-gradient(ellipse 72% 58% at 0% 0%, rgba(255, 255, 255, 0.07), transparent 58%),
-    radial-gradient(ellipse 88% 72% at 46% 36%, rgba(30, 44, 82, 0.28) 0%, transparent 62%),
-    radial-gradient(ellipse 108% 96% at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.22) 100%),
-    radial-gradient(ellipse 125% 88% at 10% 50%, rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.05), transparent 60%),
-    linear-gradient(
-      168deg,
-      rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.035) 0%,
-      rgba(14, 20, 42, 0.62) 44%,
-      rgba(8, 12, 28, 0.88) 100%
-    );
-  background-blend-mode: soft-light, normal, normal, multiply, normal, normal;
-  background-size: 128px 128px, auto, auto, auto, auto, auto;
+  background-color: rgba(10, 12, 26, 0.86);
+  background-image: var(--hub-section-noise);
+  background-blend-mode: soft-light;
+  background-size: 128px 128px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.065),
     inset 0 -1px 0 rgba(0, 0, 0, 0.18),
@@ -712,35 +730,16 @@
     0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.hub-section-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 140% 120% at 14% 18%,
-      rgba(255, 255, 255, 0.045),
-      transparent 52%
-    ),
-    radial-gradient(
-      ellipse 130% 110% at 20% 44%,
-      rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.045),
-      transparent 70%
-    );
-  opacity: 0.95;
-}
-
+.hub-section-shell::before,
 .hub-section-shell::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, transparent 14%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.08) 0%, transparent 12%);
+}
+
+.hub-section-shell::after {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
 }
 
@@ -751,10 +750,315 @@
     0 1px 8px rgba(0, 0, 0, 0.08);
 }
 
-.hub-section-ambient {
-  opacity: 0.14;
+/* ── Per-section surfaces — unique lighting, same design language ── */
+
+/* Today: warm light from top-left */
+.hub-section-card[data-hub-section="today"] .hub-section-shell {
+  background-color: rgba(34, 24, 10, 0.88);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 115% 85% at 0% 0%, rgba(255, 184, 0, 0.3), transparent 56%),
+    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(0, 0, 0, 0.45), transparent 52%),
+    linear-gradient(152deg, rgba(255, 184, 0, 0.15) 0%, rgba(22, 16, 28, 0.78) 48%, rgba(10, 8, 18, 0.92) 100%);
+  background-blend-mode: soft-light, normal, multiply, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="today"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 95% 75% at 6% 8%, rgba(255, 210, 110, 0.2), transparent 54%),
+    radial-gradient(ellipse 80% 55% at 85% 95%, rgba(0, 0, 0, 0.18), transparent 48%);
+  opacity: 0.94;
+}
+
+.hub-section-card[data-hub-section="today"] .hub-section-shell::after {
+  background:
+    linear-gradient(140deg, rgba(255, 200, 90, 0.07) 0%, transparent 32%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0%, transparent 16%);
+}
+
+.hub-section-card[data-hub-section="today"] .hub-section-ambient {
+  opacity: 0.3;
+  filter: blur(28px);
+}
+
+.hub-section-card[data-hub-section="today"] .hub-section-icon-shell {
+  border-color: rgba(255, 184, 0, 0.24);
+  background:
+    linear-gradient(155deg, rgba(255, 215, 130, 0.24) 0%, rgba(255, 184, 0, 0.12) 42%, rgba(48, 32, 10, 0.55) 100%);
+}
+
+.hub-section-card[data-hub-section="today"] .hub-section-open-pill {
+  border-color: rgba(255, 184, 0, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(255, 184, 0, 0.11);
+}
+
+/* Learning: centered indigo glow — richer */
+.hub-section-card[data-hub-section="learning"] .hub-section-shell {
+  background-color: rgba(10, 8, 34, 0.9);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 100% 90% at 50% 44%, rgba(122, 92, 255, 0.36), transparent 64%),
+    radial-gradient(ellipse 130% 110% at 50% 50%, rgba(0, 0, 0, 0.38), transparent 70%),
+    linear-gradient(180deg, rgba(99, 82, 240, 0.14) 0%, rgba(10, 8, 34, 0.82) 50%, rgba(5, 4, 16, 0.94) 100%);
+  background-blend-mode: soft-light, normal, multiply, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="learning"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 110% 95% at 50% 38%, rgba(140, 120, 255, 0.22), transparent 58%),
+    radial-gradient(ellipse 90% 80% at 0% 100%, rgba(0, 0, 0, 0.2), transparent 50%);
+  opacity: 0.92;
+}
+
+.hub-section-card[data-hub-section="learning"] .hub-section-shell::after {
+  background:
+    linear-gradient(180deg, rgba(160, 140, 255, 0.06) 0%, transparent 18%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.1) 0%, transparent 14%);
+}
+
+.hub-section-card[data-hub-section="learning"] .hub-section-ambient {
+  opacity: 0.27;
   filter: blur(22px);
-  transform: scale(1.12);
+}
+
+.hub-section-card[data-hub-section="learning"] .hub-section-icon-shell {
+  border-color: rgba(122, 92, 255, 0.26);
+  background:
+    linear-gradient(165deg, rgba(160, 140, 255, 0.22) 0%, rgba(122, 92, 255, 0.14) 40%, rgba(20, 14, 48, 0.58) 100%);
+}
+
+.hub-section-card[data-hub-section="learning"] .hub-section-open-pill {
+  border-color: rgba(122, 92, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(122, 92, 255, 0.12);
+}
+
+/* Creativity: diagonal magenta sweep — softer */
+.hub-section-card[data-hub-section="creativity"] .hub-section-shell {
+  background-color: rgba(28, 10, 28, 0.88);
+  background-image:
+    var(--hub-section-noise),
+    linear-gradient(228deg, rgba(255, 72, 212, 0.22) 0%, transparent 46%),
+    radial-gradient(ellipse 85% 70% at 18% 88%, rgba(255, 72, 212, 0.16), transparent 58%),
+    linear-gradient(118deg, rgba(8, 6, 18, 0.92) 0%, rgba(28, 10, 28, 0.78) 100%);
+  background-blend-mode: soft-light, normal, normal, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="creativity"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 100% 80% at 30% 70%, rgba(255, 120, 220, 0.14), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 95% 10%, rgba(255, 255, 255, 0.04), transparent 45%);
+  opacity: 0.86;
+}
+
+.hub-section-card[data-hub-section="creativity"] .hub-section-shell::after {
+  background:
+    linear-gradient(225deg, rgba(255, 72, 212, 0.06) 0%, transparent 40%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0%, transparent 12%);
+}
+
+.hub-section-card[data-hub-section="creativity"] .hub-section-ambient {
+  opacity: 0.21;
+  filter: blur(30px);
+  transform: scale(1.04);
+}
+
+.hub-section-card[data-hub-section="creativity"] .hub-section-icon-shell {
+  border-color: rgba(255, 72, 212, 0.22);
+  background:
+    linear-gradient(150deg, rgba(255, 140, 220, 0.2) 0%, rgba(255, 72, 212, 0.11) 45%, rgba(36, 12, 32, 0.52) 100%);
+}
+
+.hub-section-card[data-hub-section="creativity"] .hub-section-open-pill {
+  border-color: rgba(255, 72, 212, 0.13);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(255, 72, 212, 0.1);
+}
+
+/* Stories: warm copper glow from right */
+.hub-section-card[data-hub-section="stories"] .hub-section-shell {
+  background-color: rgba(28, 16, 10, 0.88);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 110% 90% at 100% 38%, rgba(251, 146, 60, 0.32), transparent 58%),
+    radial-gradient(ellipse 75% 65% at 0% 60%, rgba(0, 0, 0, 0.35), transparent 52%),
+    linear-gradient(250deg, rgba(8, 8, 16, 0.9) 0%, rgba(40, 22, 12, 0.78) 55%, rgba(251, 146, 60, 0.1) 100%);
+  background-blend-mode: soft-light, normal, multiply, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="stories"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 90% 75% at 92% 35%, rgba(251, 170, 90, 0.2), transparent 52%),
+    radial-gradient(ellipse 60% 50% at 8% 80%, rgba(0, 0, 0, 0.16), transparent 48%);
+  opacity: 0.9;
+}
+
+.hub-section-card[data-hub-section="stories"] .hub-section-shell::after {
+  background:
+    linear-gradient(270deg, rgba(251, 146, 60, 0.08) 0%, transparent 38%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.11) 0%, transparent 14%);
+}
+
+.hub-section-card[data-hub-section="stories"] .hub-section-ambient {
+  opacity: 0.25;
+  filter: blur(24px);
+}
+
+.hub-section-card[data-hub-section="stories"] .hub-section-icon-shell {
+  border-color: rgba(251, 146, 60, 0.24);
+  background:
+    linear-gradient(160deg, rgba(251, 170, 90, 0.22) 0%, rgba(251, 146, 60, 0.12) 42%, rgba(40, 22, 10, 0.55) 100%);
+}
+
+.hub-section-card[data-hub-section="stories"] .hub-section-open-pill {
+  border-color: rgba(251, 146, 60, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(251, 146, 60, 0.11);
+}
+
+/* Health: emerald glow from bottom-left — cleaner */
+.hub-section-card[data-hub-section="health"] .hub-section-shell {
+  background-color: rgba(8, 22, 18, 0.88);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 105% 85% at 0% 100%, rgba(52, 211, 153, 0.28), transparent 58%),
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgba(255, 255, 255, 0.03), transparent 45%),
+    linear-gradient(15deg, rgba(52, 211, 153, 0.1) 0%, rgba(8, 22, 18, 0.82) 52%, rgba(4, 12, 10, 0.92) 100%);
+  background-blend-mode: soft-light, normal, normal, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="health"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 95% 70% at 4% 92%, rgba(80, 230, 170, 0.16), transparent 54%),
+    radial-gradient(ellipse 80% 60% at 88% 8%, rgba(255, 255, 255, 0.05), transparent 42%);
+  opacity: 0.88;
+}
+
+.hub-section-card[data-hub-section="health"] .hub-section-shell::after {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 16%),
+    linear-gradient(45deg, rgba(52, 211, 153, 0.05) 0%, transparent 35%);
+}
+
+.hub-section-card[data-hub-section="health"] .hub-section-ambient {
+  opacity: 0.2;
+  filter: blur(20px);
+}
+
+.hub-section-card[data-hub-section="health"] .hub-section-icon-shell {
+  border-color: rgba(52, 211, 153, 0.22);
+  background:
+    linear-gradient(165deg, rgba(100, 230, 180, 0.2) 0%, rgba(52, 211, 153, 0.12) 40%, rgba(8, 28, 22, 0.52) 100%);
+}
+
+.hub-section-card[data-hub-section="health"] .hub-section-open-pill {
+  border-color: rgba(52, 211, 153, 0.13);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(52, 211, 153, 0.1);
+}
+
+/* Gaming (parent key): violet center bloom — deeper */
+.hub-section-card[data-hub-section="parent"] .hub-section-shell {
+  background-color: rgba(14, 8, 28, 0.92);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 85% 75% at 50% 50%, rgba(168, 85, 247, 0.34), transparent 62%),
+    radial-gradient(ellipse 120% 100% at 50% 50%, rgba(0, 0, 0, 0.42), transparent 72%),
+    linear-gradient(180deg, rgba(12, 6, 24, 0.95) 0%, rgba(22, 10, 40, 0.82) 100%);
+  background-blend-mode: soft-light, normal, multiply, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="parent"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 48%, rgba(190, 120, 255, 0.18), transparent 55%),
+    radial-gradient(ellipse 100% 90% at 50% 50%, rgba(0, 0, 0, 0.22), transparent 65%);
+  opacity: 0.95;
+}
+
+.hub-section-card[data-hub-section="parent"] .hub-section-shell::after {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, transparent 20%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0%, transparent 18%);
+}
+
+.hub-section-card[data-hub-section="parent"] .hub-section-ambient {
+  opacity: 0.32;
+  filter: blur(26px);
+  transform: scale(1.1);
+}
+
+.hub-section-card[data-hub-section="parent"] .hub-section-icon-shell {
+  border-color: rgba(168, 85, 247, 0.26);
+  background:
+    linear-gradient(160deg, rgba(190, 130, 255, 0.22) 0%, rgba(168, 85, 247, 0.14) 42%, rgba(20, 8, 36, 0.6) 100%);
+}
+
+.hub-section-card[data-hub-section="parent"] .hub-section-open-pill {
+  border-color: rgba(168, 85, 247, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(168, 85, 247, 0.12);
+}
+
+/* Parent Support: cool blue top-right lighting */
+.hub-section-card[data-hub-section="support"] .hub-section-shell {
+  background-color: rgba(8, 16, 32, 0.88);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 100% 85% at 100% 0%, rgba(96, 165, 250, 0.28), transparent 56%),
+    radial-gradient(ellipse 80% 70% at 0% 100%, rgba(0, 0, 0, 0.32), transparent 52%),
+    linear-gradient(198deg, rgba(96, 165, 250, 0.12) 0%, rgba(8, 16, 32, 0.8) 50%, rgba(4, 8, 20, 0.92) 100%);
+  background-blend-mode: soft-light, normal, multiply, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section="support"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 90% 70% at 94% 6%, rgba(130, 190, 255, 0.18), transparent 52%),
+    radial-gradient(ellipse 70% 55% at 10% 90%, rgba(0, 0, 0, 0.14), transparent 48%);
+  opacity: 0.9;
+}
+
+.hub-section-card[data-hub-section="support"] .hub-section-shell::after {
+  background:
+    linear-gradient(215deg, rgba(96, 165, 250, 0.07) 0%, transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 14%);
+}
+
+.hub-section-card[data-hub-section="support"] .hub-section-ambient {
+  opacity: 0.23;
+  filter: blur(22px);
+}
+
+.hub-section-card[data-hub-section="support"] .hub-section-icon-shell {
+  border-color: rgba(96, 165, 250, 0.24);
+  background:
+    linear-gradient(155deg, rgba(140, 195, 255, 0.2) 0%, rgba(96, 165, 250, 0.12) 42%, rgba(8, 20, 40, 0.55) 100%);
+}
+
+.hub-section-card[data-hub-section="support"] .hub-section-open-pill {
+  border-color: rgba(96, 165, 250, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(96, 165, 250, 0.11);
+}
+
+.hub-section-ambient {
+  opacity: 0.24;
+  filter: blur(24px);
+  transform: scale(1.08);
   mix-blend-mode: soft-light;
 }
 
@@ -763,11 +1067,11 @@
   margin-left: 1px;
   background: linear-gradient(
     180deg,
-    rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.36) 0%,
-    rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.06) 100%
+    rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.52) 0%,
+    rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.1) 100%
   );
   box-shadow: none;
-  opacity: 0.88;
+  opacity: 0.92;
 }
 
 .hub-section-content {
@@ -825,8 +1129,8 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 3.35rem;
-  opacity: 0.032;
-  filter: blur(1.4px);
+  opacity: 0.048;
+  filter: blur(1.2px);
   mix-blend-mode: soft-light;
   z-index: 0;
   pointer-events: none;
@@ -836,20 +1140,21 @@
 .hub-section-icon-shell {
   position: relative;
   flex-shrink: 0;
-  width: 42px;
-  height: 42px;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 38%, rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.035) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px) saturate(1.05);
   -webkit-backdrop-filter: blur(12px) saturate(1.05);
   box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.18),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.14),
+    inset 0 2px 3px rgba(255, 255, 255, 0.16),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.12),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     0 1px 2px rgba(0, 0, 0, 0.08);
   transition: transform 200ms ease-out, box-shadow 200ms ease-out;
@@ -874,9 +1179,14 @@
 }
 
 .hub-section-icon-image {
-  width: 22px;
-  height: 22px;
-  opacity: 0.9;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  opacity: 0.92;
   transition: opacity 200ms cubic-bezier(0, 0, 0.2, 1), filter 200ms cubic-bezier(0, 0, 0.2, 1);
 }
 
@@ -889,9 +1199,7 @@
   height: 1.625rem;
   padding-inline: 0.5rem 0.4375rem;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%),
-    rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.025);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow:
@@ -901,7 +1209,8 @@
     background 200ms ease-out,
     border-color 200ms ease-out,
     box-shadow 200ms ease-out,
-    color 200ms ease-out;
+    color 200ms ease-out,
+    filter 200ms ease-out;
 }
 
 .hub-section-open-label {
@@ -1016,17 +1325,7 @@
 }
 
 .hub-section-card:not([data-expanded]):hover .hub-section-shell::before {
-  background:
-    radial-gradient(
-      ellipse 140% 120% at 14% 18%,
-      rgba(255, 255, 255, 0.055),
-      transparent 52%
-    ),
-    radial-gradient(
-      ellipse 130% 110% at 20% 44%,
-      rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.055),
-      transparent 70%
-    );
+  opacity: 1;
 }
 
 .hub-section-card:not([data-expanded]):hover .hub-section-icon-shell {
@@ -1039,10 +1338,7 @@
 }
 
 .hub-section-card:not([data-expanded]):hover .hub-section-open-pill {
-  border-color: rgba(255, 255, 255, 0.085);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%),
-    rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.035);
+  filter: brightness(1.08);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 -1px 0 rgba(0, 0, 0, 0.04);
@@ -1105,17 +1401,6 @@
 
 .hub-section-card--primary:not([data-expanded]) .hub-section-shell::before {
   opacity: 1;
-  background:
-    radial-gradient(
-      ellipse 140% 120% at 14% 18%,
-      rgba(255, 255, 255, 0.055),
-      transparent 52%
-    ),
-    radial-gradient(
-      ellipse 130% 110% at 20% 44%,
-      rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.085),
-      transparent 70%
-    );
 }
 
 .hub-section-open-pill--highlight .hub-section-open-label {
@@ -1146,6 +1431,9 @@
 }
 
 .hub-group-panel {
+  --hub-section-accent-r: var(--hub-section-r);
+  --hub-section-accent-g: var(--hub-section-g);
+  --hub-section-accent-b: var(--hub-section-b);
   container-type: inline-size;
   container-name: hub-group;
   content-visibility: auto;
@@ -1527,6 +1815,14 @@
 .amy-talk-f2 { animation: amyTalkF2 820ms ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .amy-talk-f1, .amy-talk-f2 { animation: none !important; opacity: 0 !important; }
+}
+
+@keyframes amySleepZ {
+  0%, 100% { opacity: 0.35; transform: translateY(0); }
+  50% { opacity: 0.85; transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .amy-sleep-z, [style*="amySleepZ"] { animation: none !important; opacity: 0.5 !important; }
 }
 
 

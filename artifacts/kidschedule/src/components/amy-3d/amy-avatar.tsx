@@ -1,17 +1,12 @@
-// AmyAvatar — single tier-aware entry point for rendering Amy.
+// AmyAvatar — tier-aware entry point for rendering Amy.
 //
-//   tier="hero"  → live WebGL 3D (lazy-loaded three.js), with a 2D fallback
-//                  while loading / when WebGL is unavailable / on error.
-//   tier="icon"  → lightweight 2D Amy (the existing SVG, optionally a baked 3D
-//                  image). NEVER mounts a live canvas, so it is safe to use in
-//                  lists, headers, chat bubbles, etc.
-//
-// This keeps "live 3D only on hero" enforced in one place and guarantees small
-// spots stay cheap on low-end Android WebView / iOS.
+//   tier="hero"  → full-body AmyStageAvatar (official mascot).
+//   tier="icon"  → lightweight AmyIcon (full-body at small size). Never mounts WebGL.
 
 import { Component, lazy, Suspense, type ReactNode, type RefObject } from "react";
+import { AmyStageAvatar } from "@/components/amy/amy-stage-avatar";
 import { AmyIcon } from "@/components/amy-icon";
-import { AmyPortrait } from "@/components/amy-3d/amy-portrait";
+import { squareSizeToStageHeight } from "@/lib/amy/use-amy-stage-height";
 import { safeImport } from "@/lib/safe-import";
 import { canRenderLive3D } from "@/lib/amy-3d/webgl-support";
 import { AMY_MODEL_SRC, useAmyModelAvailable } from "@/lib/amy-3d/baked-avatar";
@@ -21,34 +16,20 @@ const Amy3DStage = lazy(() =>
   safeImport(() => import("@/components/amy-3d/amy-3d-stage")),
 );
 
-// The only rigged model available today (amy.glb) is a generic Tripo head that
-// is OFF-BRAND vs the premium purple-cap Amy. To keep ONE consistent Amy face
-// everywhere (header, hero, onboarding, branding), we render the premium
-// animated portrait on hero too and keep the live-3D path parked behind this
-// flag. Flip to true once an on-brand rigged amy.glb is dropped in — the whole
-// runtime animation system (blink/gaze/lip-sync) re-activates automatically.
 const ENABLE_LIVE_3D = false;
 
 export interface AmyAvatarProps {
-  /** Visual mood of the head. Defaults to "idle". */
   state?: Amy3DState;
-  /** Pixel size of the square avatar. */
   size: number;
-  /** "hero" mounts live 3D; "icon" stays 2D. Defaults to "icon". */
   tier?: "hero" | "icon";
-  /** Optional rigged .glb URL (Phase 3). */
   modelUrl?: string;
-  /** Passed to the 2D fallback so it matches the surrounding design. */
   ring?: boolean;
   bounce?: boolean;
   className?: string;
-  /** Live mic level (0..1) ref → reactive listening halo on the hero portrait. */
   audioLevelRef?: RefObject<number>;
-  /** When true, Amy plays a subtle talking-mouth animation while audio plays. */
   speaking?: boolean;
 }
 
-// ── Error boundary: any failure inside the 3D stage drops to the 2D fallback ──
 class Amy3DErrorBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
   { failed: boolean }
@@ -81,27 +62,27 @@ export function AmyAvatar({
     <AmyIcon size={size} ring={ring} bounce={bounce} className={className} speaking={speaking} />
   );
 
-  // Small / non-hero spots stay 2D (the premium baked image via AmyIcon).
   if (tier !== "hero") {
     return iconFallback;
   }
 
-  // Hero: prefer the live rigged 3D model when present + WebGL works.
-  // Otherwise show the premium animated image portrait (never the old sphere).
-  const portrait = (
-    <AmyPortrait
+  const stage = (
+    <AmyStageAvatar
       state={state}
-      size={size}
-      className={className}
+      height={squareSizeToStageHeight(size)}
+      speaking={speaking || state === "speaking"}
+      listening={state === "listening"}
+      listenForAudio={speaking || state === "speaking"}
       audioLevelRef={audioLevelRef}
-      speaking={speaking}
+      className={className}
+      showWaveform={false}
     />
   );
 
   if (ENABLE_LIVE_3D && modelAvailable && canRenderLive3D()) {
     return (
-      <Amy3DErrorBoundary fallback={portrait}>
-        <Suspense fallback={portrait}>
+      <Amy3DErrorBoundary fallback={stage}>
+        <Suspense fallback={stage}>
           <Amy3DStage
             state={state}
             size={size}
@@ -113,7 +94,7 @@ export function AmyAvatar({
     );
   }
 
-  return portrait;
+  return stage;
 }
 
 export default AmyAvatar;
