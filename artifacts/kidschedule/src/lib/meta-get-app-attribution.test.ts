@@ -54,6 +54,25 @@ describe("meta-get-app-attribution", () => {
     );
   });
 
+  it("skips duplicate PageView when index.html already booted pixel", () => {
+    (window as Window & { __AMYNEST_GET_APP_PIXEL_BOOTED__?: boolean }).__AMYNEST_GET_APP_PIXEL_BOOTED__ =
+      true;
+    trackMetaGetAppPageView({ store_target: "android" });
+    const fbq = vi.mocked(window.fbq as (...args: unknown[]) => void);
+    expect(fbq).not.toHaveBeenCalledWith(
+      "trackSingle",
+      META_GET_APP_PIXEL_ID,
+      "PageView",
+      expect.anything(),
+    );
+    expect(fbq).toHaveBeenCalledWith(
+      "trackSingle",
+      META_GET_APP_PIXEL_ID,
+      "ViewContent",
+      expect.objectContaining({ store_target: "android" }),
+    );
+  });
+
   it("tracks lead on store click", () => {
     trackMetaAppDownloadClick({ store: "android", location: "hero" });
     const fbq = vi.mocked(window.fbq as (...args: unknown[]) => void);

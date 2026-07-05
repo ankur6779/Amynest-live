@@ -15,6 +15,7 @@ export const META_GET_APP_PIXEL_ID = "1237814008328308";
 type MetaWindow = Window & {
   fbq?: (...args: unknown[]) => void;
   _fbq?: (...args: unknown[]) => void;
+  __AMYNEST_GET_APP_PIXEL_BOOTED__?: boolean;
 };
 
 let getAppPixelInited = false;
@@ -67,7 +68,9 @@ export function initMetaGetAppPixel(): void {
   if (typeof window === "undefined" || getAppPixelInited) return;
   ensureFbqLoader();
   initMetaAttribution();
-  callFbq("init", META_GET_APP_PIXEL_ID);
+  if (!(window as MetaWindow).__AMYNEST_GET_APP_PIXEL_BOOTED__) {
+    callFbq("init", META_GET_APP_PIXEL_ID);
+  }
   getAppPixelInited = true;
 }
 
@@ -81,7 +84,9 @@ export function trackMetaGetAppPageView(meta?: {
     content_category: "app_download",
     ...meta,
   });
-  callFbq("trackSingle", META_GET_APP_PIXEL_ID, "PageView", params);
+  if (!(window as MetaWindow).__AMYNEST_GET_APP_PIXEL_BOOTED__) {
+    callFbq("trackSingle", META_GET_APP_PIXEL_ID, "PageView", params);
+  }
   callFbq("trackSingle", META_GET_APP_PIXEL_ID, "ViewContent", params);
 }
 

@@ -28,10 +28,35 @@
         } catch (e) {}
       })();
       fbq('track', 'PageView');
+      (function () {
+        try {
+          var path = (location.pathname || '/').replace(/\/$/, '') || '/';
+          if (path !== '/get-app') return;
+          fbq('init', '1237814008328308');
+          fbq('trackSingle', '1237814008328308', 'PageView');
+          fbq('trackSingle', '1237814008328308', 'ViewContent', {
+            content_name: 'get-app',
+            content_category: 'app_download',
+          });
+          window.__AMYNEST_GET_APP_PIXEL_BOOTED__ = true;
+        } catch (e) {}
+      })();
     </script>
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=2514850758945614&ev=PageView&noscript=1"
     /></noscript>
+    <noscript id="meta-get-app-pixel-noscript"><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1237814008328308&ev=PageView&noscript=1"
+    /></noscript>
+    <script>
+      (function () {
+        try {
+          var path = (location.pathname || '/').replace(/\/$/, '') || '/';
+          var el = document.getElementById('meta-get-app-pixel-noscript');
+          if (path !== '/get-app' && el) el.remove();
+        } catch (e) {}
+      })();
+    </script>
     <!-- End Meta Pixel Code -->
 
     <!-- SEO: allow indexing, canonical URL -->
