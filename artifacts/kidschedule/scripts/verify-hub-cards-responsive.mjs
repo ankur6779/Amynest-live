@@ -172,6 +172,18 @@ async function auditCards(page, viewport) {
         if (mediaRect && (heroRect.width > mediaRect.width + 2 || heroRect.height > mediaRect.height + 2)) {
           issues.push({ type: "hero-overflow-media", index });
         }
+        const minHeroH = viewportWidth <= 320 ? 70 : viewportWidth <= 360 ? 78 : 84;
+        if (heroRect.height < minHeroH) {
+          issues.push({ type: "hero-too-small", index, h: heroRect.height, minHeroH });
+        }
+        const textCol = card.querySelector(".hub-feature-tile__text");
+        if (textCol) {
+          const textRect = textCol.getBoundingClientRect();
+          const gap = heroRect.left - textRect.right;
+          if (gap < 14) {
+            issues.push({ type: "text-image-gap", index, gap: Math.round(gap) });
+          }
+        }
         if (title) {
           const titleRect = title.getBoundingClientRect();
           const overlap = !(

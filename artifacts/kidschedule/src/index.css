@@ -141,8 +141,8 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(72px, 28%, 30%);
-  gap: clamp(16px, 4vw, 20px);
+  grid-template-columns: minmax(0, 1fr) 36%;
+  gap: max(16px, clamp(16px, 4vw, 20px));
   padding: clamp(20px, 5vw, 24px);
   align-items: stretch;
   min-height: clamp(7.5rem, 30vw, 9.75rem);
@@ -196,6 +196,12 @@
 
 .hub-child-hero,
 .hub-feature-tile__hero {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  max-width: 100%;
+  height: 88%;
+  max-height: 132px;
   object-fit: contain;
   object-position: bottom right;
   pointer-events: none;
@@ -203,15 +209,28 @@
 }
 
 .hub-feature-tile__media {
+  position: relative;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   justify-content: flex-end;
+  align-items: flex-end;
   flex-shrink: 0;
   min-width: 0;
-  align-self: end;
-  width: clamp(72px, 28%, 120px);
-  height: clamp(72px, 22vw, 96px);
-  min-height: clamp(72px, 22vw, 96px);
+  min-height: 100%;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.hub-feature-tile__media-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 82% 92%,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.05) 32%,
+    transparent 62%
+  );
+  pointer-events: none;
 }
 
 .hub-feature-tile__chips {
@@ -227,13 +246,36 @@
 }
 
 @container hub-feature-tile (max-width: 430px) {
+  .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) 35%;
+  }
+
   .hub-feature-tile__chips > :nth-child(n + 2) {
     display: none;
   }
 }
 
+@container hub-feature-tile (max-width: 390px) {
+  .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) 34%;
+  }
+}
+
+@container hub-feature-tile (max-width: 375px) {
+  .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) 33%;
+  }
+}
+
+@container hub-feature-tile (max-width: 360px) {
+  .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) 31%;
+  }
+}
+
 @container hub-feature-tile (max-width: 320px) {
   .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) 29%;
     padding-inline: clamp(16px, 4vw, 20px);
     min-height: clamp(6.75rem, 28vw, 8.5rem);
   }
@@ -275,13 +317,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-.hub-feature-tile__hero {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
 }
 
 @media (hover: hover) {

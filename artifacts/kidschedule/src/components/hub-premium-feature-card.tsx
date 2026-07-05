@@ -173,11 +173,12 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           </div>
 
           <div className="hub-feature-tile__media" aria-hidden>
+            <span className="hub-feature-tile__media-glow" aria-hidden />
             <img
               src={visual.heroSrc}
               alt=""
-              width={96}
-              height={96}
+              width={132}
+              height={132}
               className="hub-feature-tile__hero"
               loading="lazy"
               decoding="async"
