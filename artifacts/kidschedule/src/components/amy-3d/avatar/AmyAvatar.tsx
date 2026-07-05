@@ -15,7 +15,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 import { isMouthMoving } from "@/lib/amy-3d/use-amy-3d-state";
@@ -26,6 +26,7 @@ import { useIdleAnimation } from "./useIdleAnimation";
 import { useEyeMovement } from "./useEyeMovement";
 import { useBlink } from "./useBlink";
 import { useLipSync, type LipSyncController } from "./useLipSync";
+import { useAmyGltfActions } from "./useAmyGltfActions";
 
 const DEG = Math.PI / 180;
 const FIT_HEIGHT = 1.7; // target world-space height of the head
@@ -74,8 +75,17 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
   const pose = useMemo(() => createPose(), []);
 
   const outer = useRef<THREE.Group>(null);
+  const animRoot = useRef<THREE.Group>(null);
   const halo = useRef<THREE.Mesh>(null);
   const haloMat = useRef<THREE.MeshBasicMaterial>(null);
+
+  const { actions } = useAnimations(gltf.animations, animRoot);
+  const skeletalActive = useAmyGltfActions({
+    actions,
+    clips: gltf.animations,
+    state,
+    reduced,
+  });
 
   // Clone so multiple hero instances each get independent morph/transform state.
   const built = useMemo(() => {
@@ -109,8 +119,9 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
 
   // Animation layers (each is a single-writer of its channel).
   const attentive = state === "speaking" || state === "celebrating";
-  useIdleAnimation(pose, { reduced, attentive });
-  useEyeMovement(pose, { reduced, attentive });
+  const proceduralDamp = skeletalActive ? 0.22 : 1;
+  useIdleAnimation(pose, { reduced, attentive, floatAmplitude: 0.015 * proceduralDamp });
+  useEyeMovement(pose, { reduced, attentive, skeletalDamp: proceduralDamp });
   useBlink(built.manager, { reduced });
   const lipSync = useLipSync(built.manager, {
     speaking: isMouthMoving(state),
@@ -149,9 +160,9 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
     g.rotation.y = idle.rotY + gaze.headYaw * headFold;
     g.rotation.z = idle.rotZ;
 
-    if (built.headObj) {
-      built.headObj.rotation.y = gaze.headYaw;
-      built.headObj.rotation.x = gaze.headPitch;
+    if (built.headObj && proceduralDamp > 0.35) {
+      built.headObj.rotation.y = gaze.headYaw * proceduralDamp;
+      built.headObj.rotation.x = gaze.headPitch * proceduralDamp;
     }
     if (built.hasEyeObjs) {
       for (const eye of built.eyeObjs) {
@@ -173,8 +184,8 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
 
   return (
     <group ref={outer}>
-      {/* Centered + uniformly scaled model. */}
-      <group position={built.offset} scale={built.fit}>
+      {/* Centered + uniformly scaled model (skeletal clips target this root). */}
+      <group ref={animRoot} position={built.offset} scale={built.fit}>
         <primitive object={built.scene} />
       </group>
 

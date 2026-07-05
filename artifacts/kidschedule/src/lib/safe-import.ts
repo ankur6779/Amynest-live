@@ -15,6 +15,18 @@ async function retryImportWithCacheBust<T>(err: unknown): Promise<T | null> {
   }
 }
 
+/** Optional dynamic import — never throws, never triggers stale-chunk reload. */
+export async function safeOptionalImport<T>(
+  importFn: () => Promise<T>,
+): Promise<T | null> {
+  try {
+    return await importFn();
+  } catch (err) {
+    console.warn("[amynest:optional-import] module unavailable", err);
+    return null;
+  }
+}
+
 /**
  * Wrap dynamic import() with cache-bust retry and stale-chunk recovery (cache clear + reload).
  * Use with React.lazy: lazy(() => safeImport(() => import("./page"))).

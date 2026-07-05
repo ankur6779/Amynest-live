@@ -106,6 +106,8 @@ export function useAmyCoachCheckIn() {
           syncCoachIntelligenceFromServer(userId, remote);
           if (!cancelled) setIntelVersion((v) => v + 1);
         }
+      } catch (e) {
+        console.warn("[amy-coach-check-in] fetch failed", e);
       } finally {
         if (!cancelled) setLoading(false);
       }

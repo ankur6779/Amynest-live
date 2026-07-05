@@ -1,0 +1,30 @@
+import { describe, expect, it } from "vitest";
+import {
+  AMY_GLTF_CLIP,
+  AMY_GLTF_CLIP_FOR_STATE,
+  AMY_GLTF_LOOPING_CLIPS,
+} from "./amy-gltf-clips";
+
+describe("amy-gltf-clips", () => {
+  it("maps every Amy3DState to a semantic clip", () => {
+    const states = [
+      "idle",
+      "listening",
+      "thinking",
+      "speaking",
+      "celebrating",
+      "encouraging",
+    ] as const;
+    for (const state of states) {
+      expect(AMY_GLTF_CLIP_FOR_STATE[state]).toBeTruthy();
+    }
+  });
+
+  it("loops ambient states and one-shots celebrate and warmup", () => {
+    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.idle)).toBe(true);
+    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.talk)).toBe(true);
+    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.celebrate)).toBe(false);
+    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.wave)).toBe(false);
+    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.warmup)).toBe(false);
+  });
+});

@@ -24,6 +24,8 @@ export interface EyeMovementOptions {
   amplitude?: number;
   /** Forward-focus while speaking. */
   attentive?: boolean;
+  /** Scale gaze when skeletal GLB clips drive the head (0..1). */
+  skeletalDamp?: number;
 }
 
 const DEG = Math.PI / 180;
@@ -40,7 +42,12 @@ export function useEyeMovement(
   pose: AmyPose,
   options: EyeMovementOptions = {},
 ): void {
-  const { reduced = false, amplitude = 9 * DEG, attentive = false } = options;
+  const {
+    reduced = false,
+    amplitude = 9 * DEG,
+    attentive = false,
+    skeletalDamp = 1,
+  } = options;
   const fine = useMemo(() => isFinePointer(), []);
   const { pointer } = useThree();
 
@@ -96,9 +103,7 @@ export function useEyeMovement(
 
     g.eyeYaw = s.curYaw + jx;
     g.eyePitch = s.curPitch + jy;
-    // Head follows the gaze a little (only used when no eye objects exist, or
-    // for a faint head-follow even when they do).
-    g.headYaw = (s.curYaw + jx) * 0.5;
-    g.headPitch = (s.curPitch + jy) * 0.4;
+    g.headYaw = (s.curYaw + jx) * 0.5 * skeletalDamp;
+    g.headPitch = (s.curPitch + jy) * 0.4 * skeletalDamp;
   });
 }

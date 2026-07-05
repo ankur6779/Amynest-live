@@ -13,9 +13,11 @@
 // The Canvas just provides camera + lighting; all the "alive" behaviour lives
 // in <AmyAvatar> (./avatar/AmyAvatar.tsx) and its hooks.
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
+import { AMY_MODEL_SRC } from "@/lib/amy-3d/baked-avatar";
 import { prefersReducedMotion } from "@/lib/amy-3d/webgl-support";
 import { AmyAvatar } from "./avatar/AmyAvatar";
 
@@ -39,6 +41,11 @@ export interface Amy3DStageProps {
 export default function Amy3DStage({ state, size, modelUrl, className }: Amy3DStageProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const rim = RIM_COLOR[state];
+  const url = modelUrl ?? AMY_MODEL_SRC;
+
+  useEffect(() => {
+    useGLTF.preload(url);
+  }, [url]);
 
   return (
     <div className={className} style={{ width: size, height: size }} aria-hidden>
@@ -54,7 +61,7 @@ export default function Amy3DStage({ state, size, modelUrl, className }: Amy3DSt
         <pointLight position={[-3, 1, 2]} intensity={1.4} color={rim} distance={12} />
         <pointLight position={[3, -1, 1]} intensity={0.8} color="#EC4899" distance={12} />
         <Suspense fallback={null}>
-          {modelUrl ? <AmyAvatar url={modelUrl} state={state} /> : null}
+          <AmyAvatar url={url} state={state} />
         </Suspense>
       </Canvas>
     </div>

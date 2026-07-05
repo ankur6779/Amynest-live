@@ -9,9 +9,10 @@ Assets for the Amy companion avatar (`src/components/amy-3d/`).
   portrait (`AmyPortrait`).
 - `amy-idle.png` / `amy-idle@2x.png` — small baked avatar (256 / 512) used by
   `AmyIcon` everywhere (headers, lists, chat bubbles).
-- `amy.glb` — **(optional, not committed yet)** rigged 3D model. Drop it in and
-  the hero automatically upgrades to a live 3D Amy with viseme lip-sync +
-  eye-tracking. See below.
+- `amy.glb` — rigged Tripo 3D model (41 bones, 19 clips). Run
+  `python3 scripts/prepare-amy-gltf.py` after updating `AMY+3d+character.glb`
+  at repo root. Semantic clips: `idle`, `wave`, `talk`, `celebrate`,
+  `listening`, `thinking`.
 
 ## How rendering works (tiered)
 
