@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { RealtimeConnectionState } from "../hooks/use-speech-coach-v2-realtime";
 
-/** Responsive Speech Coach hero square size (px). */
+/** Responsive Speech Coach hero square size (px). Target: phone 320, tablet 400, desktop 460. */
 export function useSpeechCoachHeroSize(): number {
   const [size, setSize] = useState(320);
 
@@ -9,14 +9,14 @@ export function useSpeechCoachHeroSize(): number {
     const calc = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setSize(520);
+        setSize(460);
         return;
       }
       if (w >= 768) {
-        setSize(Math.max(420, Math.min(500, Math.round(w * 0.52))));
+        setSize(Math.max(360, Math.min(400, Math.round(w * 0.46))));
         return;
       }
-      setSize(Math.max(360, Math.min(420, Math.round(w * 0.92))));
+      setSize(Math.max(280, Math.min(320, Math.round(w * 0.82))));
     };
     calc();
     window.addEventListener("resize", calc);

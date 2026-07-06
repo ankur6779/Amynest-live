@@ -27,7 +27,6 @@ import { useEyeMovement } from "./useEyeMovement";
 import { useBlink } from "./useBlink";
 import { useLipSync, type LipSyncController } from "./useLipSync";
 import { useAmyAnimationState } from "./useAmyAnimationState";
-import { useAmyOrientationLock } from "./useAmyOrientationLock";
 import { AMY_GLTF_FACING_Y } from "@/lib/amy-3d/amy-gltf-clips";
 import { sanitizeAmyGltfClips } from "@/lib/amy-3d/sanitize-amy-gltf-clips";
 
@@ -137,8 +136,6 @@ export function AmyAvatar({
       hasHeadObj: !!headObj,
     };
   }, [gltf.scene, modelScale]);
-
-  useAmyOrientationLock(built.scene, skeletalActive);
 
   // Animation layers (each is a single-writer of its channel).
   const attentive = state === "speaking" || state === "celebrating";

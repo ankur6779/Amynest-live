@@ -1,13 +1,19 @@
-// Amy3DAvatar — production Tripo GLB hero with 2D fallback.
-// Presentation only: skeletal clips + optional mouth-frame overlay + waveform.
+// Amy3DAvatar — single source of truth for rendering Amy.
+// Presentation only: chooses ONE renderer (3D Tripo GLB or 2D image avatar),
+// never both, and never renders a blank hero.
+//
+// State machine:
+//   WebGL unsupported  → 2D forever, no 3D attempted.
+//   WebGL supported     → attempt 3D. While loading OR on any failure, the
+//                         Suspense/ErrorBoundary fallback IS the 2D avatar —
+//                         so there is never an empty frame, ever.
 
 import {
   Component,
   Suspense,
-  useEffect,
-  useRef,
+  lazy,
+  useCallback,
   useState,
-  type ComponentType,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -17,12 +23,10 @@ import { Amy3DMouthOverlay } from "@/components/amy-3d/amy-3d-mouth-overlay";
 import { squareSizeToStageHeight } from "@/lib/amy/use-amy-stage-height";
 import { AMY_FULL_ASPECT } from "@/lib/amy/amy-stage-assets";
 import { canRenderLive3D } from "@/lib/amy-3d/webgl-support";
-import { AMY_MODEL_SRC, useAmyModelAvailable } from "@/lib/amy-3d/baked-avatar";
+import { AMY_MODEL_SRC } from "@/lib/amy-3d/baked-avatar";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
-import { loadAmy3DStage } from "@/components/amy-3d/load-amy-3d-stage";
-import type { Amy3DStageProps } from "@/components/amy-3d/amy-3d-stage";
 
-const ENABLE_LIVE_3D = true;
+const Amy3DStage = lazy(() => import("@/components/amy-3d/amy-3d-stage"));
 
 export interface Amy3DAvatarProps {
   state?: Amy3DState;
@@ -52,7 +56,7 @@ class Amy3DErrorBoundary extends Component<
     return { failed: true };
   }
   componentDidCatch(err: unknown) {
-    console.warn("[amy-3d] Amy3DAvatar failed, using 2D fallback", err);
+    console.warn("[amy-3d] 3D avatar failed, staying on 2D", err);
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
@@ -75,119 +79,90 @@ export function Amy3DAvatar({
   waitingForSession = false,
   modelScale = 1,
 }: Amy3DAvatarProps) {
-  const modelAvailable = useAmyModelAvailable();
-  const wantLive3D = ENABLE_LIVE_3D && modelAvailable && canRenderLive3D();
-  const [Amy3DStage, setAmy3DStage] = useState<ComponentType<Amy3DStageProps> | null>(null);
-  const [live3DFailed, setLive3DFailed] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wantLive3D = canRenderLive3D();
+  const [is3DActive, setIs3DActive] = useState(false);
+  const onReady = useCallback(() => setIs3DActive(true), []);
 
   const stageHeight = squareSizeToStageHeight(size);
   const stageWidth = Math.round(stageHeight * AMY_FULL_ASPECT);
   const isTalking = speaking || state === "speaking";
+  const isListening = listening || state === "listening";
 
-  useEffect(() => {
-    if (!wantLive3D) {
-      setAmy3DStage(null);
-      setLive3DFailed(false);
-      return;
-    }
-    let cancelled = false;
-    void loadAmy3DStage().then((Stage) => {
-      if (cancelled) return;
-      if (Stage) setAmy3DStage(() => Stage);
-      else setLive3DFailed(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [wantLive3D]);
-
-  const fallback = (
+  const twoDFallback = (
     <AmyStageAvatar
       state={state}
       height={stageHeight}
       speaking={isTalking}
-      listening={listening || state === "listening"}
+      listening={isListening}
       listenForAudio={listenForAudio}
       audioLevelRef={audioLevelRef}
       audioMeterActiveRef={audioMeterActiveRef}
       debugMouth={debugMouth}
       showHalo={showHalo}
-      showWaveform={showWaveform}
-      className={className}
+      showWaveform={false}
     />
   );
 
-  if (!wantLive3D || !Amy3DStage || live3DFailed) {
-    return fallback;
+  const waveform = showWaveform && (
+    <AmyStageWaveform
+      height={stageHeight}
+      width={stageWidth}
+      speaking={isTalking}
+      listening={isListening}
+      listenForAudio={listenForAudio}
+      audioLevelRef={audioLevelRef}
+      audioMeterActiveRef={audioMeterActiveRef}
+    />
+  );
+
+  const wrapperStyle = {
+    display: "flex" as const,
+    flexDirection: "column" as const,
+    alignItems: "center" as const,
+    gap: Math.round(stageHeight * 0.06),
+    flexShrink: 0,
+  };
+
+  if (!wantLive3D) {
+    return (
+      <div className={className} style={wrapperStyle}>
+        {twoDFallback}
+        {waveform}
+      </div>
+    );
   }
 
-  const LiveStage = Amy3DStage;
-  const mouthActive = isTalking || listenForAudio;
-  const stageLoading = (
-    <div
-      aria-hidden
-      data-testid="amy-3d-stage-loading"
-      style={{ width: size, height: size, flexShrink: 0 }}
-    />
-  );
+  const mouthActive = is3DActive && (isTalking || listenForAudio);
 
   return (
-    <Amy3DErrorBoundary fallback={fallback}>
-      <div
-        ref={containerRef}
-        className={className}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: Math.round(stageHeight * 0.06),
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            position: "relative",
-            width: size,
-            height: size,
-            flexShrink: 0,
-          }}
-        >
-          <Suspense fallback={stageLoading}>
-            <LiveStage
+    <div className={className} style={wrapperStyle}>
+      <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+        <Amy3DErrorBoundary fallback={twoDFallback}>
+          <Suspense fallback={twoDFallback}>
+            <Amy3DStage
               state={state}
               size={size}
               modelUrl={modelUrl ?? AMY_MODEL_SRC}
-              visibilityRoot={containerRef}
               waitingForSession={waitingForSession}
               showHalo={showHalo}
               modelScale={modelScale}
+              onReady={onReady}
             />
           </Suspense>
-          {mouthActive && (
-            <Amy3DMouthOverlay
-              width={size}
-              height={size}
-              speaking={isTalking}
-              listenForAudio={listenForAudio}
-              audioLevelRef={audioLevelRef}
-              audioMeterActiveRef={audioMeterActiveRef}
-            />
-          )}
-        </div>
-        {showWaveform && (
-          <AmyStageWaveform
-            height={stageHeight}
-            width={stageWidth}
+        </Amy3DErrorBoundary>
+        {mouthActive && (
+          <Amy3DMouthOverlay
+            width={size}
+            height={size}
             speaking={isTalking}
-            listening={listening || state === "listening"}
             listenForAudio={listenForAudio}
             audioLevelRef={audioLevelRef}
             audioMeterActiveRef={audioMeterActiveRef}
           />
         )}
       </div>
-    </Amy3DErrorBoundary>
+      {waveform}
+    </div>
   );
 }
 
