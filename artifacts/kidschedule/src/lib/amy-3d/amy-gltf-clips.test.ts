@@ -25,11 +25,11 @@ describe("amy-gltf-clips", () => {
     expect(AMY_GLTF_FACING_Y).toBeCloseTo(-Math.PI / 2);
   });
 
-  it("loops ambient states and one-shots celebrate and warmup", () => {
+  it("loops ambient states and one-shots celebrate and wave", () => {
     expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.idle)).toBe(true);
     expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.talk)).toBe(true);
+    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.warmup)).toBe(true);
     expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.celebrate)).toBe(false);
     expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.wave)).toBe(false);
-    expect(AMY_GLTF_LOOPING_CLIPS.has(AMY_GLTF_CLIP.warmup)).toBe(false);
   });
 });

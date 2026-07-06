@@ -23,6 +23,10 @@ export interface Amy3DStageProps {
   className?: string;
   /** Intersection root for offscreen frameloop suspend. */
   visibilityRoot?: RefObject<HTMLElement | null>;
+  /** Speech Coach pre-session warmup loop. */
+  waitingForSession?: boolean;
+  showHalo?: boolean;
+  modelScale?: number;
 }
 
 export default function Amy3DStage({
@@ -31,6 +35,9 @@ export default function Amy3DStage({
   modelUrl,
   className,
   visibilityRoot,
+  waitingForSession,
+  showHalo = true,
+  modelScale = 1,
 }: Amy3DStageProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const rim = RIM_COLOR[state];
@@ -80,7 +87,13 @@ export default function Amy3DStage({
         <pointLight position={[-3, 1, 2]} intensity={1.4} color={rim} distance={12} />
         <pointLight position={[3, -1, 1]} intensity={0.8} color="#EC4899" distance={12} />
         <Suspense fallback={null}>
-          <AmyAvatar url={url} state={state} />
+          <AmyAvatar
+            url={url}
+            state={state}
+            waitingForSession={waitingForSession}
+            showHalo={showHalo}
+            modelScale={modelScale}
+          />
         </Suspense>
       </Canvas>
     </div>

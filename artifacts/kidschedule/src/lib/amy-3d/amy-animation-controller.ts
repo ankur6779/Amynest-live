@@ -8,11 +8,11 @@ import type { Amy3DState } from "./use-amy-3d-state";
 import {
   AMY_GLTF_CLIP,
   AMY_GLTF_CLIP_FOR_STATE,
+  AMY_GLTF_FADE_SEC,
   AMY_GLTF_LOOPING_CLIPS,
+  AMY_SESSION_START_FADE_SEC,
   type AmyGltfClipName,
 } from "./amy-gltf-clips";
-
-const FADE_SEC = 0.35;
 
 let clipsLogged = false;
 
@@ -54,8 +54,12 @@ export class AmyAnimationController {
   constructor(
     private readonly actions: Record<string, AnimationAction | null>,
     private readonly clips: AnimationClip[],
-    private readonly fadeSec = FADE_SEC,
+    private readonly fadeSec = AMY_GLTF_FADE_SEC,
   ) {}
+
+  getActive(): string | null {
+    return this.active;
+  }
 
   hasClip(name: AmyGltfClipName | string): boolean {
     return Boolean(this.actions[name]);
@@ -69,38 +73,38 @@ export class AmyAnimationController {
     this.active = null;
   }
 
-  play(name: string, loop = true): AnimationAction | null {
+  play(name: string, loop = true, fadeSec = this.fadeSec): AnimationAction | null {
     const action = this.actions[name];
     if (!action) return null;
     action.reset();
     action.setLoop(loop ? LoopRepeat : LoopOnce, loop ? Infinity : 1);
     action.clampWhenFinished = !loop;
-    action.fadeIn(this.fadeSec).play();
+    action.fadeIn(fadeSec).play();
     this.active = name;
     return action;
   }
 
-  crossfade(name: string, loop = true): AnimationAction | null {
+  crossfade(name: string, loop = true, fadeSec = this.fadeSec): AnimationAction | null {
     if (this.active === name) {
       const current = this.actions[name];
       if (current && !current.isRunning()) {
-        return this.play(name, loop);
+        return this.play(name, loop, fadeSec);
       }
       return current;
     }
     this.clearChain();
     for (const [key, action] of Object.entries(this.actions)) {
-      if (key !== name) action?.fadeOut(this.fadeSec);
+      if (key !== name) action?.fadeOut(fadeSec);
     }
-    return this.play(name, loop);
+    return this.play(name, loop, fadeSec);
   }
 
-  once(name: string, onFinished?: () => void): AnimationAction | null {
+  once(name: string, onFinished?: () => void, fadeSec = this.fadeSec): AnimationAction | null {
     this.clearChain();
     for (const action of Object.values(this.actions)) {
-      action?.fadeOut(this.fadeSec);
+      action?.fadeOut(fadeSec);
     }
-    const action = this.play(name, false);
+    const action = this.play(name, false, fadeSec);
     if (!action || !onFinished) return action;
 
     const mixer = action.getMixer();
@@ -147,11 +151,33 @@ export interface AmyAnimationStateInput {
   state: Amy3DState;
   reduced: boolean;
   getState: () => Amy3DState;
+  /** Speech Coach pre-session: loop warmup instead of static idle. */
+  waitingForSession?: boolean;
 }
 
-/** Map Amy3DState → skeletal clip playback (warmup→talk, wave/celebrate once→idle). */
+function playSpeechCoachGreeting(
+  controller: AmyAnimationController,
+  clips: AnimationClip[],
+): boolean {
+  const wave = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.wave);
+  const warmup = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.warmup);
+  if (wave && warmup) {
+    controller.queue([
+      { name: wave, loop: false },
+      { name: warmup, loop: true },
+    ]);
+    return true;
+  }
+  if (warmup) {
+    controller.crossfade(warmup, true);
+    return true;
+  }
+  return false;
+}
+
+/** Map Amy3DState → skeletal clip playback (warmup loop pre-session, talk on speak). */
 export function applyAmyAnimationState(input: AmyAnimationStateInput): boolean {
-  const { controller, clips, state, reduced, getState } = input;
+  const { controller, clips, state, reduced, getState, waitingForSession } = input;
   if (!controller || reduced || clips.length === 0) {
     controller?.dispose();
     return false;
@@ -159,23 +185,17 @@ export function applyAmyAnimationState(input: AmyAnimationStateInput): boolean {
 
   if (state === "speaking") {
     const talk = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.talk);
-    const warmup = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.warmup);
     if (!talk) return true;
-
-    if (warmup && controller.hasClip(warmup)) {
-      controller.queue(
-        [
-          { name: warmup, loop: false },
-          { name: talk, loop: true },
-        ],
-        () => {
-          if (getState() === "speaking") controller.crossfade(talk, true);
-        },
-      );
-    } else {
-      controller.crossfade(talk, true);
-    }
+    controller.crossfade(talk, true, AMY_SESSION_START_FADE_SEC);
     return true;
+  }
+
+  if (waitingForSession && state === "idle") {
+    const warmup = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.warmup);
+    if (warmup) {
+      controller.crossfade(warmup, true);
+      return true;
+    }
   }
 
   if (state === "celebrating") {
@@ -210,3 +230,5 @@ export function applyAmyAnimationState(input: AmyAnimationStateInput): boolean {
   controller.crossfade(target, loop);
   return true;
 }
+
+export { playSpeechCoachGreeting };

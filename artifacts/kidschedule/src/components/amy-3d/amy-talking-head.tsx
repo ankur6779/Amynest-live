@@ -13,6 +13,10 @@ interface AmyTalkingHeadProps {
   audioMeterActiveRef?: RefObject<boolean>;
   debugMouth?: boolean;
   halo?: boolean;
+  /** Speech Coach before "Start speaking" — continuous warmup loop. */
+  waitingForSession?: boolean;
+  /** Extra in-canvas scale (default tuned for Speech Coach hero). */
+  modelScale?: number;
   /** @deprecated Stage layout is always full-body; circle crop removed. */
   presentation?: "circle" | "stage";
   className?: string;
@@ -26,7 +30,9 @@ export function AmyTalkingHead({
   audioLevelRef,
   audioMeterActiveRef,
   debugMouth = false,
-  halo = true,
+  halo = false,
+  waitingForSession = false,
+  modelScale = 1.15,
   className,
 }: AmyTalkingHeadProps) {
   const state: Amy3DState = speaking
@@ -47,6 +53,8 @@ export function AmyTalkingHead({
       debugMouth={debugMouth}
       showHalo={halo}
       showWaveform
+      waitingForSession={waitingForSession}
+      modelScale={modelScale}
       className={className}
     />
   );

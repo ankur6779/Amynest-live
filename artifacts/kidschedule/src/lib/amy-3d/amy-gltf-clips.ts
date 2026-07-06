@@ -26,10 +26,17 @@ export const AMY_GLTF_CLIP_FOR_STATE: Record<Amy3DState, AmyGltfClipName> = {
 /** Clips that should loop while their state is active. */
 export const AMY_GLTF_LOOPING_CLIPS = new Set<AmyGltfClipName>([
   AMY_GLTF_CLIP.idle,
+  AMY_GLTF_CLIP.warmup,
   AMY_GLTF_CLIP.listening,
   AMY_GLTF_CLIP.thinking,
   AMY_GLTF_CLIP.talk,
 ]);
+
+/** Crossfade when Speech Coach session starts (warmup → talk). */
+export const AMY_SESSION_START_FADE_SEC = 0.3;
+
+/** Default crossfade between ambient states. */
+export const AMY_GLTF_FADE_SEC = 0.35;
 
 /** Tripo rig exports profile (+X); rotate to face the default camera on +Z. */
 export const AMY_GLTF_FACING_Y = -Math.PI / 2;

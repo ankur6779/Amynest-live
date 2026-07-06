@@ -9,14 +9,14 @@ export function useSpeechCoachHeroSize(): number {
     const calc = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setSize(460);
+        setSize(520);
         return;
       }
       if (w >= 768) {
-        setSize(Math.max(360, Math.min(420, Math.round(w * 0.46))));
+        setSize(Math.max(420, Math.min(500, Math.round(w * 0.52))));
         return;
       }
-      setSize(Math.max(300, Math.min(340, Math.round(w * 0.82))));
+      setSize(Math.max(360, Math.min(420, Math.round(w * 0.92))));
     };
     calc();
     window.addEventListener("resize", calc);

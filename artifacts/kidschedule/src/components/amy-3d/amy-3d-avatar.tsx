@@ -37,6 +37,10 @@ export interface Amy3DAvatarProps {
   showHalo?: boolean;
   className?: string;
   modelUrl?: string;
+  /** Speech Coach before session start — wave greeting + warmup loop. */
+  waitingForSession?: boolean;
+  /** Extra in-canvas scale for hero framing (Speech Coach). */
+  modelScale?: number;
 }
 
 class Amy3DErrorBoundary extends Component<
@@ -68,6 +72,8 @@ export function Amy3DAvatar({
   showHalo = true,
   className,
   modelUrl,
+  waitingForSession = false,
+  modelScale = 1,
 }: Amy3DAvatarProps) {
   const modelAvailable = useAmyModelAvailable();
   const wantLive3D = ENABLE_LIVE_3D && modelAvailable && canRenderLive3D();
@@ -153,6 +159,9 @@ export function Amy3DAvatar({
               size={size}
               modelUrl={modelUrl ?? AMY_MODEL_SRC}
               visibilityRoot={containerRef}
+              waitingForSession={waitingForSession}
+              showHalo={showHalo}
+              modelScale={modelScale}
             />
           </Suspense>
           {mouthActive && (

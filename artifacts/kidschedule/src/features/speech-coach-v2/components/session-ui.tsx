@@ -70,6 +70,7 @@ export function SpeechCoachV2SessionUi(props: {
           speaking={amySpeaking}
           listening={live && connectionState === "connected" && !amySpeaking}
           listenForAudio={live}
+          waitingForSession={!live}
           audioLevelRef={amyAudioLevel}
           audioMeterActiveRef={amyAudioMeterActive}
           debugMouth={showRealtimeDiagnostics()}

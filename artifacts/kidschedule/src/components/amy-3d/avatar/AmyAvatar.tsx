@@ -27,7 +27,9 @@ import { useEyeMovement } from "./useEyeMovement";
 import { useBlink } from "./useBlink";
 import { useLipSync, type LipSyncController } from "./useLipSync";
 import { useAmyAnimationState } from "./useAmyAnimationState";
+import { useAmyOrientationLock } from "./useAmyOrientationLock";
 import { AMY_GLTF_FACING_Y } from "@/lib/amy-3d/amy-gltf-clips";
+import { sanitizeAmyGltfClips } from "@/lib/amy-3d/sanitize-amy-gltf-clips";
 
 const DEG = Math.PI / 180;
 const FIT_HEIGHT = 1.7; // target world-space height of the head
@@ -47,6 +49,12 @@ const HALO_COLOR: Record<Amy3DState, string> = {
 export interface AmyAvatarProps {
   url: string;
   state: Amy3DState;
+  /** Speech Coach pre-session: greeting wave then continuous warmup loop. */
+  waitingForSession?: boolean;
+  /** Neon torus above the head — off for Speech Coach (reads as a stray arc). */
+  showHalo?: boolean;
+  /** Scales the rig inside the canvas (1 = default framing). */
+  modelScale?: number;
   /** Receives the lip-sync controller so a future TTS layer can push visemes. */
   onLipSyncReady?: (controller: LipSyncController) => void;
 }
@@ -70,7 +78,14 @@ function findAll(root: THREE.Object3D, keys: string[]): THREE.Object3D[] {
   return hits;
 }
 
-export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
+export function AmyAvatar({
+  url,
+  state,
+  waitingForSession,
+  showHalo = true,
+  modelScale = 1,
+  onLipSyncReady,
+}: AmyAvatarProps) {
   const gltf = useGLTF(url);
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const pose = useMemo(() => createPose(), []);
@@ -80,12 +95,17 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
   const halo = useRef<THREE.Mesh>(null);
   const haloMat = useRef<THREE.MeshBasicMaterial>(null);
 
-  const { actions } = useAnimations(gltf.animations, animRoot);
+  const sanitizedClips = useMemo(
+    () => sanitizeAmyGltfClips(gltf.animations),
+    [gltf.animations],
+  );
+  const { actions } = useAnimations(sanitizedClips, animRoot);
   const skeletalActive = useAmyAnimationState({
     actions,
-    clips: gltf.animations,
+    clips: sanitizedClips,
     state,
     reduced,
+    waitingForSession,
   });
 
   // Clone so multiple hero instances each get independent morph/transform state.
@@ -95,7 +115,7 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    const fit = FIT_HEIGHT / maxDim;
+    const fit = (FIT_HEIGHT * modelScale) / maxDim;
 
     const manager = new MorphTargetManager();
     manager.resolve(scene);
@@ -116,7 +136,9 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
       hasEyeObjs: eyeObjs.length > 0,
       hasHeadObj: !!headObj,
     };
-  }, [gltf.scene]);
+  }, [gltf.scene, modelScale]);
+
+  useAmyOrientationLock(built.scene, skeletalActive);
 
   // Animation layers (each is a single-writer of its channel).
   const attentive = state === "speaking" || state === "celebrating";
@@ -173,7 +195,7 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
     }
 
     // Halo: slow pulse (scale 1.0–1.05) + glow intensity variation.
-    if (halo.current && haloMat.current) {
+    if (showHalo && halo.current && haloMat.current) {
       const t = ctx.clock.elapsedTime;
       const pulse = reduced ? 1 : 1 + (Math.sin(t * 1.4) * 0.5 + 0.5) * 0.05;
       halo.current.scale.setScalar(pulse);
@@ -195,19 +217,20 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
         <primitive object={built.scene} />
       </group>
 
-      {/* Neon halo above the head. */}
-      <mesh ref={halo} position={[0, built.haloY, -0.05]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.42, 0.045, 16, 48]} />
-        <meshBasicMaterial
-          ref={haloMat}
-          color={haloColor}
-          transparent
-          opacity={0.5}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
+      {showHalo && (
+        <mesh ref={halo} position={[0, built.haloY, -0.05]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.42, 0.045, 16, 48]} />
+          <meshBasicMaterial
+            ref={haloMat}
+            color={haloColor}
+            transparent
+            opacity={0.5}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
     </group>
   );
 }

@@ -5,6 +5,7 @@ import {
   AmyAnimationController,
   applyAmyAnimationState,
   logAmyGltfClipsOnce,
+  playSpeechCoachGreeting,
 } from "@/lib/amy-3d/amy-animation-controller";
 
 export interface AmyAnimationStateInput {
@@ -12,6 +13,8 @@ export interface AmyAnimationStateInput {
   clips: AnimationClip[];
   state: Amy3DState;
   reduced: boolean;
+  /** Speech Coach before "Start speaking" — wave greeting then warmup loop. */
+  waitingForSession?: boolean;
 }
 
 /** Drives Tripo GLB clips via AmyAnimationController — one mixer, no per-render restarts. */
@@ -20,11 +23,15 @@ export function useAmyAnimationState({
   clips,
   state,
   reduced,
+  waitingForSession = false,
 }: AmyAnimationStateInput): boolean {
   const controllerRef = useRef<AmyAnimationController | null>(null);
   const stateRef = useRef(state);
   const prevStateRef = useRef<Amy3DState | null>(null);
+  const greetedRef = useRef(false);
+  const waitingRef = useRef(waitingForSession);
   stateRef.current = state;
+  waitingRef.current = waitingForSession;
 
   useEffect(() => {
     if (reduced || clips.length === 0) {
@@ -37,14 +44,21 @@ export function useAmyAnimationState({
     const ctrl = new AmyAnimationController(actions, clips);
     controllerRef.current = ctrl;
 
-    applyAmyAnimationState({
-      controller: ctrl,
-      clips,
-      state: stateRef.current,
-      reduced,
-      getState: () => stateRef.current,
-    });
-    prevStateRef.current = stateRef.current;
+    if (waitingRef.current && !greetedRef.current) {
+      greetedRef.current = true;
+      playSpeechCoachGreeting(ctrl, clips);
+      prevStateRef.current = stateRef.current;
+    } else {
+      applyAmyAnimationState({
+        controller: ctrl,
+        clips,
+        state: stateRef.current,
+        reduced,
+        getState: () => stateRef.current,
+        waitingForSession: waitingRef.current,
+      });
+      prevStateRef.current = stateRef.current;
+    }
 
     return () => {
       ctrl.dispose();
@@ -65,8 +79,9 @@ export function useAmyAnimationState({
       state,
       reduced,
       getState: () => stateRef.current,
+      waitingForSession: waitingRef.current,
     });
-  }, [clips, reduced, state]);
+  }, [clips, reduced, state, waitingForSession]);
 
   return clips.length > 0 && !reduced;
 }
