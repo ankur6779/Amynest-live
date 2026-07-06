@@ -30,3 +30,6 @@ export const AMY_GLTF_LOOPING_CLIPS = new Set<AmyGltfClipName>([
   AMY_GLTF_CLIP.thinking,
   AMY_GLTF_CLIP.talk,
 ]);
+
+/** Tripo rig exports profile (+X); rotate to face the default camera on +Z. */
+export const AMY_GLTF_FACING_Y = -Math.PI / 2;

@@ -26,7 +26,8 @@ import { useIdleAnimation } from "./useIdleAnimation";
 import { useEyeMovement } from "./useEyeMovement";
 import { useBlink } from "./useBlink";
 import { useLipSync, type LipSyncController } from "./useLipSync";
-import { useAmyGltfActions } from "./useAmyGltfActions";
+import { useAmyAnimationState } from "./useAmyAnimationState";
+import { AMY_GLTF_FACING_Y } from "@/lib/amy-3d/amy-gltf-clips";
 
 const DEG = Math.PI / 180;
 const FIT_HEIGHT = 1.7; // target world-space height of the head
@@ -80,7 +81,7 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
   const haloMat = useRef<THREE.MeshBasicMaterial>(null);
 
   const { actions } = useAnimations(gltf.animations, animRoot);
-  const skeletalActive = useAmyGltfActions({
+  const skeletalActive = useAmyAnimationState({
     actions,
     clips: gltf.animations,
     state,
@@ -122,7 +123,7 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
   const proceduralDamp = skeletalActive ? 0.22 : 1;
   useIdleAnimation(pose, { reduced, attentive, floatAmplitude: 0.015 * proceduralDamp });
   useEyeMovement(pose, { reduced, attentive, skeletalDamp: proceduralDamp });
-  useBlink(built.manager, { reduced });
+  useBlink(built.manager, { reduced: reduced || !built.manager.hasBlink });
   const lipSync = useLipSync(built.manager, {
     speaking: isMouthMoving(state),
     reduced,
@@ -185,7 +186,12 @@ export function AmyAvatar({ url, state, onLipSyncReady }: AmyAvatarProps) {
   return (
     <group ref={outer}>
       {/* Centered + uniformly scaled model (skeletal clips target this root). */}
-      <group ref={animRoot} position={built.offset} scale={built.fit}>
+      <group
+        ref={animRoot}
+        position={built.offset}
+        scale={built.fit}
+        rotation={[0, AMY_GLTF_FACING_Y, 0]}
+      >
         <primitive object={built.scene} />
       </group>
 

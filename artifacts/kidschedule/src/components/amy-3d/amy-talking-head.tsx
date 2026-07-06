@@ -1,9 +1,8 @@
-// AmyTalkingHead — delegates to AmyStageAvatar (full-body stage + waveform).
-// Preserves the public API used by Speech Coach V2 realtime UI.
+// AmyTalkingHead — Speech Coach hero (Tripo GLB + 2D fallback + mouth frames).
 
 import { type RefObject } from "react";
-import { AmyStageAvatar } from "@/components/amy/amy-stage-avatar";
-import { squareSizeToStageHeight } from "@/lib/amy/use-amy-stage-height";
+import { Amy3DAvatar } from "@/components/amy-3d/amy-3d-avatar";
+import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 
 interface AmyTalkingHeadProps {
   size: number;
@@ -30,16 +29,16 @@ export function AmyTalkingHead({
   halo = true,
   className,
 }: AmyTalkingHeadProps) {
-  const stageState = speaking
-    ? "talking"
+  const state: Amy3DState = speaking
+    ? "speaking"
     : listening
       ? "listening"
       : "idle";
 
   return (
-    <AmyStageAvatar
-      state={stageState}
-      height={squareSizeToStageHeight(size)}
+    <Amy3DAvatar
+      state={state}
+      size={size}
       speaking={speaking}
       listening={listening}
       listenForAudio={listenForAudio}

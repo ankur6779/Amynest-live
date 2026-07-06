@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AMY_GLTF_CLIP,
   AMY_GLTF_CLIP_FOR_STATE,
+  AMY_GLTF_FACING_Y,
   AMY_GLTF_LOOPING_CLIPS,
 } from "./amy-gltf-clips";
 
@@ -18,6 +19,10 @@ describe("amy-gltf-clips", () => {
     for (const state of states) {
       expect(AMY_GLTF_CLIP_FOR_STATE[state]).toBeTruthy();
     }
+  });
+
+  it("faces Tripo rig toward the default camera", () => {
+    expect(AMY_GLTF_FACING_Y).toBeCloseTo(-Math.PI / 2);
   });
 
   it("loops ambient states and one-shots celebrate and warmup", () => {
