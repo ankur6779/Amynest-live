@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Check, X, Smartphone,
+  Check, X, Smartphone, Clock,
   Sparkles, Crown, Zap, Shield, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,6 @@ export default function PricingPage() {
   const {
     plans,
     entitlements,
-    isPremium,
     checkoutRazorpay,
     loading,
     cancelSubscription,
@@ -153,6 +152,11 @@ export default function PricingPage() {
 
   const cancelAtPeriodEnd = entitlements?.cancelAtPeriodEnd ?? false;
   const provider = entitlements?.provider ?? "none";
+  /** Paid via Razorpay / store — distinct from internal age-based trial (`provider=none`). */
+  const isPremiumSubscriber = entitlements?.isPremiumSubscriber ?? false;
+  const isInternalTrial =
+    !!entitlements?.isTrialing && provider === "none" && !isPremiumSubscriber;
+  const canPurchasePlan = !isPremiumSubscriber;
 
   // Filter out sentinel "year 2100" dates — they mean "no real expiry"
   const rawEnd = entitlements?.currentPeriodEnd ?? null;
@@ -166,7 +170,7 @@ export default function PricingPage() {
       : null;
 
   const isManagedByStore = provider === "revenuecat";
-  const canCancelHere = isPremium && !cancelAtPeriodEnd && !isManagedByStore;
+  const canCancelHere = isPremiumSubscriber && !cancelAtPeriodEnd && !isManagedByStore;
   const isAndroid = isAndroidDevice();
   const isIOS = nativeBilling.platform === "ios";
   const isAndroidNative = nativeBilling.platform === "android";
@@ -334,6 +338,10 @@ export default function PricingPage() {
     if (plan === "yearly" || plan === "six_month" || plan === "monthly") {
       setSelected(plan);
     }
+    const source = params.get("source");
+    if (source) {
+      trackSubscriptionEvent({ event: "paywall_opened", source, plan: plan ?? selected });
+    }
   }, []);
 
   const selectedPlanCard = useMemo(
@@ -349,7 +357,7 @@ export default function PricingPage() {
     : null;
 
   const handleStickyCheckout = () => {
-    if (isPremium) return;
+    if (!canPurchasePlan) return;
     if (isIOS || isAndroidNative) {
       void onUpgradeNativeStore();
       return;
@@ -370,7 +378,7 @@ export default function PricingPage() {
     (!isNativeShell && isAndroid);
 
   const showStickyCta =
-    FF_PRICING_STICKY_CTA && !isPremium && !loading && !!selectedPlanCard;
+    FF_PRICING_STICKY_CTA && canPurchasePlan && !loading && !!selectedPlanCard;
 
   return (
     <div
@@ -408,18 +416,18 @@ export default function PricingPage() {
 
         <h1 className="relative z-10 mb-1 text-xl font-black tracking-tight text-white sm:text-2xl">
           {/* audit-ok: white text on dark brand gradient */}
-          {isHubJourneyReason && !isPremium
+          {isHubJourneyReason && canPurchasePlan
             ? t(journeyPricingHeader, { name: journeyChildName })
             : t("pricing.title", { defaultValue: SUBSCRIPTION_HERO.headline })}
         </h1>
         <p className="relative z-10 mx-auto max-w-md text-xs leading-snug text-white/65 sm:text-sm sm:leading-relaxed">
           {/* audit-ok: muted white on dark gradient */}
-          {isHubJourneyReason && !isPremium
+          {isHubJourneyReason && canPurchasePlan
             ? t(journeyPricingSubtitle, { name: journeyChildName })
             : t("pricing.subtitle", { defaultValue: SUBSCRIPTION_HERO.subheadline })}
         </p>
 
-        {isHubJourneyReason && !isPremium && journeyProgress && (
+        {isHubJourneyReason && canPurchasePlan && journeyProgress && (
           <div
             className="relative z-10 mx-auto mt-2 flex max-w-md flex-wrap justify-center gap-1.5"
             data-testid="pricing-journey-stats"
@@ -454,11 +462,9 @@ export default function PricingPage() {
           </span>
         </div>
 
-        {/* Premium status pill */}
-        {isPremium && (
+        {/* Premium status pill — paid subscribers only (not internal trial) */}
+        {isPremiumSubscriber && (
           <div className="relative z-10 mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold text-white/90 ring-1 ring-white/20">
-            {/* audit-ok: white text on semi-transparent dark pill */}
-            {/* audit-ok: green-400 — semantic success/premium indicator */}
             <Check className="h-4 w-4 text-green-400" />
             {t("pricing.on_plan", { plan: entitlements?.plan })}
             {cancelAtPeriodEnd && periodEnd && (
@@ -466,6 +472,15 @@ export default function PricingPage() {
                 · {t("pages.pricing.cancels")} {periodEnd}
               </span>
             )}
+          </div>
+        )}
+        {isInternalTrial && (
+          <div className="relative z-10 mt-4 inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-1.5 text-sm font-bold text-amber-200 ring-1 ring-amber-500/30">
+            <Clock className="h-4 w-4 text-amber-400" />
+            {t("subscription.trial.active", {
+              defaultValue: "{{count}} days left in your full-system trial",
+              count: entitlements?.trialDaysRemaining ?? 0,
+            })}
           </div>
         )}
       </div>
@@ -583,7 +598,7 @@ export default function PricingPage() {
         )}
       </div>
 
-      {!isPremium && <SubscriptionEcosystemSection />}
+      {canPurchasePlan && <SubscriptionEcosystemSection />}
 
       {/* ── Notice ── */}
       {paymentSuccess && (
@@ -602,12 +617,12 @@ export default function PricingPage() {
       {/* ── CTAs ── */}
       <div className="mx-auto max-w-md space-y-3 px-4 pb-10">
 
-        {isHubJourneyReason && !isPremium && (
+        {isHubJourneyReason && canPurchasePlan && (
           <p className="text-center text-sm font-bold text-white/85">{journeyCta}</p>
         )}
 
         {/* iOS Capacitor → Apple IAP via RevenueCat (highest priority; Apple policy forbids other gateways) */}
-        {isIOS && !isPremium && (
+        {isIOS && canPurchasePlan && (
           <div className="space-y-2">
             {nativeBilling.unavailableReason ? (
               <div
@@ -657,7 +672,7 @@ export default function PricingPage() {
         )}
 
         {/* Android WebView wrapper → Google Play Billing (required by Play policy) */}
-        {isAndroidNative && !isPremium && (
+        {isAndroidNative && canPurchasePlan && (
           <div className="space-y-2">
             {nativeBilling.unavailableReason ? (
               <div
@@ -713,7 +728,7 @@ export default function PricingPage() {
         )}
 
         {/* ── India browser PWA: Google Pay + Razorpay (not Play wrapper) ── */}
-        {!isNativeShell && !isIOS && isIndia && !isPremium && (
+        {!isNativeShell && !isIOS && isIndia && canPurchasePlan && (
           <>
             {/* PRIMARY: Google Pay button */}
             {/* audit-ok: Google Pay button — white bg with Google brand gray text (#3C4043) and Google blue spinner (#4285F4) per Google Pay brand guidelines */}
@@ -763,8 +778,8 @@ export default function PricingPage() {
           </>
         )}
 
-        {/* Already premium — shown for all platforms/regions */}
-        {isPremium && (
+        {/* Already premium — paid subscribers only */}
+        {isPremiumSubscriber && (
           <div
             data-on-dark
             // audit-ok: green-500/green-400 — semantic success colour for premium confirmation
@@ -776,7 +791,7 @@ export default function PricingPage() {
         )}
 
         {/* Non-India + Android browser PWA → open Play Store listing */}
-        {!isNativeShell && !isIOS && !isIndia && isAndroid && !isPremium && (
+        {!isNativeShell && !isIOS && !isIndia && isAndroid && canPurchasePlan && (
           <a
             href={PLAY_STORE_URL}
             target="_blank"
@@ -803,7 +818,7 @@ export default function PricingPage() {
         )}
 
         {/* Non-India + non-Android + non-iOS → prompt to download the app */}
-        {!isIOS && !isIndia && !isAndroid && !isPremium && (
+        {!isIOS && !isIndia && !isAndroid && canPurchasePlan && (
           <div
             data-on-dark
             className="w-full space-y-2 rounded-xl border border-white/15 bg-white/5 px-4 py-4 text-center"
@@ -835,7 +850,7 @@ export default function PricingPage() {
 
         {/* Managed by Google Play / App Store — deep-link straight to the
             store's subscription settings, where cancellation actually happens. */}
-        {isPremium && !cancelAtPeriodEnd && isManagedByStore && (
+        {isPremiumSubscriber && !cancelAtPeriodEnd && isManagedByStore && (
           <div
             data-on-dark
             className="space-y-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm"
@@ -883,7 +898,7 @@ export default function PricingPage() {
         )}
 
         {/* Scheduled to cancel — hide sentinel 2100 date */}
-        {isPremium && cancelAtPeriodEnd && (
+        {isPremiumSubscriber && cancelAtPeriodEnd && (
           <div
             data-on-dark
             className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm text-white/70"
@@ -895,7 +910,7 @@ export default function PricingPage() {
           </div>
         )}
 
-        {!isPremium && <SubscriptionTrustSection />}
+        {canPurchasePlan && <SubscriptionTrustSection />}
 
         <div className="flex items-center justify-center gap-4 pt-2">
           <span className="flex items-center gap-1 text-xs text-white/35">

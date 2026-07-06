@@ -42,6 +42,8 @@ export type Entitlements = {
   canAccessWeeklyReports: boolean;
   /** Payment provider — determines how cancellation works. */
   provider: "none" | "manual" | "razorpay" | "revenuecat";
+  subscriptionState?: string;
+  internalTrialExpired?: boolean;
   limits: {
     aiQueriesPerDay: number;
     infantAiQueriesPerDay?: number;

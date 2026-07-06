@@ -21,6 +21,23 @@ import {
   resolveSubscriptionOwnerUserId,
 } from "./userIdentityService.js";
 
+/** Best-effort server-side subscription funnel events (auto-trials skip the client). */
+async function trackServerSubscriptionFunnel(
+  userId: string,
+  step: string,
+  extra: Record<string, string> = {},
+): Promise<void> {
+  try {
+    const { ingestAnalyticsEvents } = await import("./analyticsIngestService.js");
+    await ingestAnalyticsEvents(
+      [{ name: "subscription_funnel_event", props: { step, source: "server", platform: "server", ...extra } }],
+      { userId, platform: "server" },
+    );
+  } catch {
+    // measurement must not block billing
+  }
+}
+
 export {
   hasValidPaidPeriodEnd,
   isPremiumSubscriberNow,
@@ -238,6 +255,10 @@ export type EntitlementSummary = {
    *  decide whether server-side cancellation is possible (razorpay) or the
    *  user must cancel through their device's app store (revenuecat). */
   provider: "none" | "manual" | "razorpay" | "revenuecat";
+  /** V2 billing state from subscriptions.subscription_state */
+  subscriptionState?: string;
+  /** Internal age-trial ended (provider=none, EXPIRED) — show win-back CTA */
+  internalTrialExpired?: boolean;
   limits: typeof FREE_LIMITS;
   usage: {
     // Today's AI message count (resets every UTC day).
@@ -404,6 +425,9 @@ async function maybeApplyAutomaticAgeTrial(
     })
     .where(eq(subscriptionsTable.userId, userId))
     .returning();
+  if (updated) {
+    void trackServerSubscriptionFunnel(userId, "trial_started", { trigger: "age_auto" });
+  }
   return updated ?? sub;
 }
 
@@ -598,20 +622,52 @@ export async function healStaleSubscriptionRecord(
     return sub;
   }
 
+  const now = new Date();
+  const wasTrial = sub.status === "trialing" || sub.subscriptionState === "TRIAL";
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
       status: "free",
       plan: "free",
+      subscriptionState: wasTrial ? "EXPIRED" : "FREE",
       provider: "none",
       trialEndsAt: null,
       currentPeriodEnd: null,
       cancelAtPeriodEnd: 0,
-      updatedAt: new Date(),
+      expiredAt: wasTrial ? now : sub.expiredAt,
+      updatedAt: now,
     })
     .where(eq(subscriptionsTable.userId, sub.userId))
     .returning();
+  if (wasTrial && updated) {
+    void trackServerSubscriptionFunnel(sub.userId, "trial_expired", { trigger: "heal_stale" });
+  }
   return updated ?? sub;
+}
+
+/** Sweep internal trials past trialEndsAt (provider=none). Safe to run on a schedule. */
+export async function sweepExpiredInternalTrials(
+  dbExec: DbExec = db,
+): Promise<{ scanned: number; healed: number }> {
+  const { and, eq, isNotNull, lt } = await import("drizzle-orm");
+  const now = new Date();
+  const rows = await dbExec
+    .select()
+    .from(subscriptionsTable)
+    .where(
+      and(
+        eq(subscriptionsTable.status, "trialing"),
+        isNotNull(subscriptionsTable.trialEndsAt),
+        lt(subscriptionsTable.trialEndsAt, now),
+        eq(subscriptionsTable.provider, "none"),
+      ),
+    );
+  let healed = 0;
+  for (const row of rows) {
+    const next = await healStaleSubscriptionRecord(row, dbExec);
+    if (next.status === "free" || next.subscriptionState === "EXPIRED") healed++;
+  }
+  return { scanned: rows.length, healed };
 }
 
 export async function getEntitlements(
@@ -683,6 +739,13 @@ export async function getEntitlements(
     currentPeriodEnd: sub.currentPeriodEnd ? sub.currentPeriodEnd.toISOString() : null,
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
     provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
+    subscriptionState: sub.subscriptionState ?? "FREE",
+    internalTrialExpired:
+      sub.subscriptionState === "EXPIRED" ||
+      (sub.status === "free" &&
+        sub.provider === "none" &&
+        !!sub.expiredAt &&
+        !isPremiumSubscriber),
     canAccessLearningHub: isPremium || !features.learning_load_more_smart_study.locked,
     canAccessActivitiesHub: isPremium,
     canAccessSpeechCoach: isPremium || !features.hub_speech_session.locked,
@@ -839,6 +902,9 @@ export async function startTrial(userId: string): Promise<Subscription> {
     })
     .where(eq(subscriptionsTable.userId, userId))
     .returning();
+  if (updated) {
+    void trackServerSubscriptionFunnel(userId, "trial_started", { trigger: "manual_start" });
+  }
   return updated;
 }
 

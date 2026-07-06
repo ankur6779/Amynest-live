@@ -37,6 +37,8 @@ export const FREE_ENTITLEMENTS: Entitlements = {
   canAccessFeedingRoadmap: false,
   canAccessWeeklyReports: false,
   provider: "none",
+  subscriptionState: "FREE",
+  internalTrialExpired: false,
   limits: {
     aiQueriesPerDay: 10,
     infantAiQueriesPerDay: INFANT_AI_DAILY_LIMIT,

@@ -254,6 +254,8 @@ async function startBackgroundTasks(): Promise<void> {
       startRetentionWeeklySummaryCron();
       startAdminHealthDigestCron();
       startBillingReconciliationCron();
+      const { startTrialExpiryCron } = await import("./lib/trialExpiryCron.js");
+      startTrialExpiryCron();
       startRenderKeepWarm(port);
       console.log("[bg:ok]", "crons");
       endBootPhase("crons");

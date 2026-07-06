@@ -1,10 +1,11 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { markTrialStartedLocally } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { isInternalTrial } from "@/lib/internal-trial";
 
 const SUBSCRIPTION_KEY = ["subscription"] as const;
 
@@ -12,6 +13,7 @@ export function useTrialState() {
   const { entitlements, isPremium, startTrial, refresh } = useSubscription();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const expiryTrackedRef = useRef(false);
 
   const isTrialing = entitlements?.status === "trialing" && entitlements.isTrialing;
   const trialEndsAt = entitlements?.trialEndsAt ?? null;
@@ -49,15 +51,20 @@ export function useTrialState() {
   );
 
   const checkTrialExpiry = useCallback(() => {
-    if (
-      entitlements?.status === "trialing" &&
-      trialEndsAt &&
-      new Date(trialEndsAt).getTime() <= Date.now() &&
-      !entitlements.isPremium
-    ) {
-      trackSubscriptionEvent({ event: "trial_expired" });
+    if (!trialEndsAt) return;
+    const expired = new Date(trialEndsAt).getTime() <= Date.now();
+    if (!expired) return;
+
+    const stillTrialing =
+      entitlements?.status === "trialing" || entitlements?.isTrialing === true;
+    if (!stillTrialing) return;
+
+    if (!expiryTrackedRef.current) {
+      expiryTrackedRef.current = true;
+      trackSubscriptionEvent({ event: "trial_expired", source: "client_expiry_check" });
     }
-  }, [entitlements, trialEndsAt]);
+    void refresh();
+  }, [entitlements, trialEndsAt, refresh]);
 
   return {
     isTrialing,
@@ -67,6 +74,7 @@ export function useTrialState() {
     trialDaysRemaining,
     trialExpiringSoon,
     canStartTrial,
+    isInternalTrial: isInternalTrial(entitlements),
     activateTrial,
     checkTrialExpiry,
     authFetch,
