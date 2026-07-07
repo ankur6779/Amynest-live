@@ -18,6 +18,8 @@
     "dev": "pnpm run dev:api",
     "dev:api": "pnpm --filter @workspace/api-server dev",
     "dev:web": "pnpm --filter @workspace/kidschedule dev",
+    "dev:worker": "pnpm --filter @workspace/api-server dev:worker",
+    "dev:local": "bash scripts/dev-local.sh",
     "dev:mobile": "node -e \"console.error('Expo app archived at archive/amynest-mobile-expo. Use: pnpm dev:web + artifacts/amynest-capacitor (iOS/Android).'); process.exit(1)\"",
     "build:api": "pnpm --filter @workspace/api-server build",
     "start:api": "pnpm --filter @workspace/api-server start",

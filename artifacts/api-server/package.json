@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "AMYNEST_ENV=development NODE_ENV=development tsx watch ./src/index.ts",
+    "dev:worker": "AMYNEST_ENV=development NODE_ENV=development tsx watch ./src/worker/index.ts",
     "dev:built": "AMYNEST_ENV=development NODE_ENV=development pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "AMYNEST_ENV=${AMYNEST_ENV:-production} node --enable-source-maps ./dist/index.mjs",
