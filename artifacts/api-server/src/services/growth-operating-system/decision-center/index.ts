@@ -28,10 +28,11 @@ function mapRecommendationToDecision(rec: Recommendation, existing?: GrowthOsDec
   };
 }
 
-export async function syncDecisionsFromRecommendations(
+/** Read-only merge for display — preserves admin workflow fields on existing rows. */
+export function mergeDecisionsFromRecommendations(
+  payload: Awaited<ReturnType<typeof loadGrowthOsPayload>>,
   recommendations: Recommendation[],
-): Promise<GrowthOsDecision[]> {
-  const payload = await loadGrowthOsPayload();
+): GrowthOsDecision[] {
   const byRecId = new Map(payload.decisions.map((d) => [d.recommendationId, d]));
   const merged: GrowthOsDecision[] = [];
 
@@ -43,11 +44,38 @@ export async function syncDecisionsFromRecommendations(
   const preserved = payload.decisions.filter(
     (d) => !recommendations.some((r) => r.id === d.recommendationId),
   );
-  payload.decisions = [...merged, ...preserved].sort(
+  return [...merged, ...preserved].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
-  await saveGrowthOsPayload(payload);
-  return payload.decisions;
+}
+
+export async function syncDecisionsFromRecommendations(
+  recommendations: Recommendation[],
+): Promise<GrowthOsDecision[]> {
+  const payload = await loadGrowthOsPayload();
+  const existingRecIds = new Set(payload.decisions.map((d) => d.recommendationId));
+  const newRecs = recommendations.filter((rec) => !existingRecIds.has(rec.id));
+  if (newRecs.length === 0) {
+    return mergeDecisionsFromRecommendations(payload, recommendations);
+  }
+
+  const fresh = await loadGrowthOsPayload();
+  const freshByRecId = new Set(fresh.decisions.map((d) => d.recommendationId));
+  let added = false;
+  for (const rec of newRecs) {
+    if (!freshByRecId.has(rec.id)) {
+      fresh.decisions.push(mapRecommendationToDecision(rec));
+      added = true;
+    }
+  }
+  if (added) {
+    fresh.decisions.sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    await saveGrowthOsPayload(fresh);
+  }
+
+  return mergeDecisionsFromRecommendations(fresh, recommendations);
 }
 
 export async function listDecisions(): Promise<GrowthOsDecision[]> {
