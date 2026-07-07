@@ -11,6 +11,7 @@ import {
   Lock,
   RefreshCw,
   Shield,
+  TrendingUp,
   Volume2,
   Zap,
 } from "lucide-react";
@@ -471,6 +472,15 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/admin/growth">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/15"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Growth Intel
+              </button>
+            </Link>
             <Link href="/admin/infant-parenting">
               <button
                 type="button"

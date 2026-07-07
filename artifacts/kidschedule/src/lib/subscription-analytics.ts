@@ -37,7 +37,10 @@ export type SubscriptionAnalyticsEvent =
   | "post_purchase_upsell_shown"
   | "post_purchase_upsell_accepted"
   | "post_purchase_upsell_dismissed"
-  | "paywall_deferred_activation";
+  | "paywall_deferred_activation"
+  | "value_bridge_shown"
+  | "value_bridge_dismissed"
+  | "value_bridge_clicked";
 
 export type SubscriptionAnalyticsPayload = {
   event: SubscriptionAnalyticsEvent;

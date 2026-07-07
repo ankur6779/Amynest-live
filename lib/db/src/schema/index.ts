@@ -104,6 +104,7 @@ export * from "./child_prediction_snapshots";
 export * from "./family_learning_graphs";
 export * from "./global_learning_graph";
 export * from "./system_meta_state";
+export * from "./growth_os_state";
 export * from "./nba_decision_logs";
 export * from "./debug_logs";
 export * from "./child_daily_signals";

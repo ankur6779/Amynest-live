@@ -23,6 +23,7 @@ import { DailyGoalsCard } from "@/components/retention/daily-goals-card";
 import { StreakCelebration } from "@/components/retention/streak-celebration";
 import { StreakShieldDialog } from "@/components/retention/streak-shield-dialog";
 import { TrialPremiumSpotlight } from "@/components/retention/trial-premium-spotlight";
+import { SubscriptionValueBridgeBanner } from "@/components/subscription-value-bridge-banner";
 import { WinbackBanner } from "@/components/retention/winback-banner";
 import { ChildProgressDashboard } from "@/components/retention/child-progress-dashboard";
 import { WeeklySummaryCard } from "@/components/retention/weekly-summary-card";
@@ -302,6 +303,8 @@ export function DailyCheckInCard({
       ) : null}
 
       {isSunday ? <WeeklySummaryCard summary={data.weeklySummary} parentingScore={score} /> : null}
+
+      <SubscriptionValueBridgeBanner moment="weekly_summary" />
 
       <AnimatePresence>
         {celebrateMilestone != null && !reduceMotion ? (

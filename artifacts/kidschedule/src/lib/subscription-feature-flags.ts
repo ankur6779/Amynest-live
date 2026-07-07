@@ -27,6 +27,12 @@ export const FF_POST_ONBOARDING_TRIAL =
 /** Trial countdown banner + header chip. */
 export const FF_TRIAL_STATUS_UI = envFlag("VITE_FF_SUB_TRIAL_STATUS_UI", true);
 
+/** Contextual value → premium inline banners at accomplishment moments. */
+export const FF_VALUE_BRIDGE_INVITES = envFlag(
+  "VITE_FF_VALUE_BRIDGE_INVITES",
+  false,
+);
+
 /** Win-back modal on app open for lapsed subscribers. */
 export const FF_WINBACK_MODAL = envFlag("VITE_FF_SUB_WINBACK_MODAL", true);
 

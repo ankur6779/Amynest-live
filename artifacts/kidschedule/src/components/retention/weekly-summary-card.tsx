@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BarChart3, Share2 } from "lucide-react";
+import { BarChart3, Check, Share2 } from "lucide-react";
 import { DashboardGlassCard } from "@/components/dashboard-glass-card";
 import { DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 import { trackRetentionEvent } from "@/lib/retention/retention-analytics";
+import { notifyValueBridgeMoment } from "@/lib/value-bridge-notify";
 
 type WeeklySummary = {
   routineCompletionPct?: number;
@@ -21,6 +22,7 @@ type Props = {
 export function WeeklySummaryCard({ summary, parentingScore = 0 }: Props) {
   const { t } = useTranslation();
   const s = (summary ?? {}) as WeeklySummary;
+  const [closed, setClosed] = useState(false);
 
   useEffect(() => {
     trackRetentionEvent("weekly_summary_viewed", {
@@ -38,6 +40,16 @@ export function WeeklySummaryCard({ summary, parentingScore = 0 }: Props) {
   ];
 
   const shareText = rows.map((r) => `${r.label}: ${r.value}`).join("\n");
+
+  const handleClose = () => {
+    if (closed) return;
+    setClosed(true);
+    notifyValueBridgeMoment("weekly_summary");
+  };
+
+  if (closed) {
+    return null;
+  }
 
   return (
     <DashboardGlassCard tintRgb={DASHBOARD_TINTS.journey}>
@@ -70,6 +82,15 @@ export function WeeklySummaryCard({ summary, parentingScore = 0 }: Props) {
         >
           <Share2 className="h-3.5 w-3.5" aria-hidden />
           {t("retention.share_week", "Share your week")}
+        </button>
+        <button
+          type="button"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-sky-400/30 bg-sky-500/15 py-2.5 text-xs font-bold text-white hover:bg-sky-500/25"
+          onClick={handleClose}
+          data-testid="weekly-summary-done"
+        >
+          <Check className="h-3.5 w-3.5" aria-hidden />
+          {t("retention.weekly_summary_done", "Done")}
         </button>
       </div>
     </DashboardGlassCard>

@@ -41,6 +41,12 @@ import { RoutineDayPanel } from "@/components/routine-day-panel";
 import { RoutineProgressRail } from "@/components/routine-progress-rail";
 import { MealOptionPills } from "@/components/routines/meal-option-pills";
 import { RoutineRevealOverlay } from "@/components/routines/routine-reveal-overlay";
+import { SubscriptionValueBridgeBanner } from "@/components/subscription-value-bridge-banner";
+import {
+  markFirstRoutineItemEverCompleted,
+  wasFirstRoutineItemEverCompleted,
+} from "@/lib/value-bridge";
+import { notifyValueBridgeMoment } from "@/lib/value-bridge-notify";
 import { RoutineNowHero } from "@/components/routines/routine-now-hero";
 import { RoutineNowBar } from "@/components/routines/routine-now-bar";
 import { RoutineCelebration } from "@/components/routines/routine-celebration";
@@ -1100,6 +1106,10 @@ export default function RoutineDetail() {
         if (status === "completed") {
           const nextItems = prev.map((item, i) => (i === index ? { ...item, status } : item));
           const allDone = nextItems.every((item) => item.status === "completed" || item.status === "skipped");
+          if (!wasFirstRoutineItemEverCompleted()) {
+            markFirstRoutineItemEverCompleted();
+            notifyValueBridgeMoment("routine_completion");
+          }
           if (allDone && nextItems.some((item) => item.status === "completed")) {
             import("@/lib/review-service").then(({ notifyReviewTrigger }) => {
               notifyReviewTrigger("routine_completed", { routineId: routine?.id ?? 0 });
@@ -1633,6 +1643,7 @@ export default function RoutineDetail() {
       </div>;
   }
   return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 max-w-3xl mx-auto", dateMode === "today" ? "pb-28 sm:pb-10" : "pb-10")}>
+      <SubscriptionValueBridgeBanner moment="routine_completion" className="mb-1" />
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" asChild className="rounded-full -ml-2 text-muted-foreground hover:text-foreground">
