@@ -330,6 +330,7 @@ function NotifyPromptRouteGuard() {
 }
 
 const CHILD_OPTIONAL_ROUTE_PREFIXES = [
+  "/admin",
   "/parent-profile",
   "/profile",
   "/pricing",

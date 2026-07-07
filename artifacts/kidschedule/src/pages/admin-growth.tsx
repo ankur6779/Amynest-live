@@ -51,7 +51,8 @@ export default function AdminGrowthPage() {
         <Lock className="h-10 w-10 text-muted-foreground" />
         <p className="font-semibold">Admin access required</p>
         <p className="text-sm text-muted-foreground max-w-sm">
-          Your Firebase UID must be listed in <code>ADMIN_USER_IDS</code>.
+          Sign in with an account listed in <code>ADMIN_USER_IDS</code> or{" "}
+          <code>ADMIN_GROWTH_EMAILS</code> (e.g. demo@amynest.in).
         </p>
         <Link href="/dashboard">
           <Button variant="outline">Back to app</Button>
@@ -135,7 +136,13 @@ export default function AdminGrowthPage() {
           </div>
         )}
 
-        {data && section === "overview" && (
+        {data && !data.executive && section === "overview" && !isLoading && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+            Dashboard loaded but executive intelligence is missing. Refresh or check the API deploy.
+          </div>
+        )}
+
+        {data?.executive && section === "overview" && (
           <AdminGrowthOverview data={data} viewMode={viewMode} />
         )}
 

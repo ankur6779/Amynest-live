@@ -156,7 +156,14 @@ export function GosSectionContent({
   switch (section) {
     case "executive": {
       const execData = d as ExecutiveSectionData;
-      const exec = execData.dashboard.executive;
+      const exec = execData.dashboard?.executive;
+      if (!exec) {
+        return (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+            Executive data is unavailable for this period.
+          </div>
+        );
+      }
       return (
         <div className="space-y-6">
           <ExecutiveSummaryPanel summary={exec.summary} />

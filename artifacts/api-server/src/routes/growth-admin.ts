@@ -4,6 +4,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
 import { getAuth } from "../lib/auth.js";
+import { isGrowthAdminUser } from "../lib/growth-admin-access.js";
 import { asyncRoute } from "../middlewares/async-route.js";
 import { computeGrowthDashboard } from "../services/growth-dashboard/index.js";
 import {
@@ -18,18 +19,17 @@ import {
 
 const router: IRouter = Router();
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
-
-function requireAdmin(req: Request, res: Response, userId: string | null): userId is string {
-  if (!isAdminUser(userId)) {
+function requireGrowthAdmin(
+  req: Request,
+  res: Response,
+  auth: ReturnType<typeof getAuth>,
+): auth is ReturnType<typeof getAuth> & { userId: string } {
+  if (!isGrowthAdminUser(auth.userId, auth.email)) {
     res.status(403).json({ error: "forbidden" });
+    return false;
+  }
+  if (!auth.userId) {
+    res.status(401).json({ error: "unauthorized" });
     return false;
   }
   return true;
@@ -62,8 +62,8 @@ const GOS_SECTIONS = new Set<GosSection>([
 router.get(
   "/admin/growth/dashboard",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId)) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
 
     const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
     const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
@@ -78,8 +78,8 @@ router.get(
 router.get(
   "/admin/growth/gos/:section",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId)) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
 
     const section = String(req.params.section ?? "") as GosSection;
     if (!GOS_SECTIONS.has(section)) {
@@ -113,8 +113,9 @@ const decisionBody = z.object({
 router.post(
   "/admin/growth/decisions/:id/status",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId) || !userId) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+    const userId = auth.userId;
 
     const parsed = decisionBody.safeParse(req.body);
     if (!parsed.success) {
@@ -156,8 +157,9 @@ const experimentBody = z.object({
 router.post(
   "/admin/growth/experiments",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId) || !userId) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+    const userId = auth.userId;
 
     const parsed = experimentBody.safeParse(req.body);
     if (!parsed.success) {
@@ -191,8 +193,9 @@ const alertBody = z.object({
 router.post(
   "/admin/growth/alerts/:id/workflow",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId) || !userId) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+    const userId = auth.userId;
 
     const parsed = alertBody.safeParse(req.body);
     if (!parsed.success) {
@@ -226,8 +229,9 @@ const settingsBody = z.object({
 router.post(
   "/admin/growth/settings",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId) || !userId) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+    const userId = auth.userId;
 
     const parsed = settingsBody.safeParse(req.body);
     if (!parsed.success) {
@@ -246,8 +250,8 @@ const copilotBody = z.object({ question: z.string().min(1).max(500) });
 router.post(
   "/admin/growth/copilot",
   asyncRoute(async (req, res) => {
-    const { userId } = getAuth(req);
-    if (!requireAdmin(req, res, userId)) return;
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
 
     const parsed = copilotBody.safeParse(req.body);
     if (!parsed.success) {

@@ -424,8 +424,16 @@ export default function SignInPage() {
     isSignedIn
   } = useAuth();
   const [mode, setMode] = useState<ViewMode>("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const demoLoginEmail =
+    import.meta.env.VITE_AMYNEST_ENV !== "production"
+      ? (import.meta.env.VITE_DEMO_LOGIN_EMAIL as string | undefined)?.trim() ?? ""
+      : "";
+  const demoLoginPassword =
+    import.meta.env.VITE_AMYNEST_ENV !== "production"
+      ? (import.meta.env.VITE_DEMO_LOGIN_PASSWORD as string | undefined) ?? ""
+      : "";
+  const [email, setEmail] = useState(demoLoginEmail);
+  const [password, setPassword] = useState(demoLoginPassword);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

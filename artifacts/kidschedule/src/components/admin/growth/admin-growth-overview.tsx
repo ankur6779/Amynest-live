@@ -63,6 +63,16 @@ export function AdminGrowthOverview({
   const showCeo = viewMode === "ceo";
   const showCto = viewMode === "cto";
 
+  if (!exec) {
+    return (
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+        Executive intelligence is unavailable for this response. The API may be on an older
+        version — try Refresh, or confirm the backend deploy includes the growth dashboard
+        executive layer.
+      </div>
+    );
+  }
+
   return (
     <>
       {(showFull || showCeo) && <ExecutiveSummaryPanel summary={exec.summary} />}

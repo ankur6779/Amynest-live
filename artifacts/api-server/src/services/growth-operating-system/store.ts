@@ -26,33 +26,43 @@ function mergePayload(raw: unknown): GrowthOsPayload {
 }
 
 export async function loadGrowthOsPayload(): Promise<GrowthOsPayload> {
-  const rows = await db
-    .select()
-    .from(growthOsStateTable)
-    .where(eq(growthOsStateTable.id, SINGLETON_ID))
-    .limit(1);
-  const row = rows[0];
-  if (!row) return { ...EMPTY_GROWTH_OS_PAYLOAD };
-  return mergePayload(row.payload);
+  try {
+    const rows = await db
+      .select()
+      .from(growthOsStateTable)
+      .where(eq(growthOsStateTable.id, SINGLETON_ID))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return { ...EMPTY_GROWTH_OS_PAYLOAD };
+    return mergePayload(row.payload);
+  } catch (err) {
+    console.error("[growth-os] loadGrowthOsPayload failed — using defaults", err);
+    return { ...EMPTY_GROWTH_OS_PAYLOAD };
+  }
 }
 
 export async function saveGrowthOsPayload(payload: GrowthOsPayload): Promise<void> {
-  const existing = await db
-    .select({ id: growthOsStateTable.id })
-    .from(growthOsStateTable)
-    .where(eq(growthOsStateTable.id, SINGLETON_ID))
-    .limit(1);
+  try {
+    const existing = await db
+      .select({ id: growthOsStateTable.id })
+      .from(growthOsStateTable)
+      .where(eq(growthOsStateTable.id, SINGLETON_ID))
+      .limit(1);
 
-  if (existing[0]) {
-    await db
-      .update(growthOsStateTable)
-      .set({ payload, updatedAt: new Date() })
-      .where(eq(growthOsStateTable.id, SINGLETON_ID));
-  } else {
-    await db.insert(growthOsStateTable).values({
-      id: SINGLETON_ID,
-      payload,
-    });
+    if (existing[0]) {
+      await db
+        .update(growthOsStateTable)
+        .set({ payload, updatedAt: new Date() })
+        .where(eq(growthOsStateTable.id, SINGLETON_ID));
+    } else {
+      await db.insert(growthOsStateTable).values({
+        id: SINGLETON_ID,
+        payload,
+      });
+    }
+  } catch (err) {
+    console.error("[growth-os] saveGrowthOsPayload failed", err);
+    throw err;
   }
 }
 
