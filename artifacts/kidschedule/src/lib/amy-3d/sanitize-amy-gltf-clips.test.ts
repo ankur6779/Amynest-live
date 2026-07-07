@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AnimationClip, QuaternionKeyframeTrack } from "three";
 import {
   isBlockedAmyRootRotationTrack,
+  removeYawTwistFromQuaternionTrack,
   sanitizeAmyGltfClip,
 } from "./sanitize-amy-gltf-clips";
 
@@ -12,21 +13,11 @@ describe("sanitize-amy-gltf-clips", () => {
     expect(isBlockedAmyRootRotationTrack({ name: "Pelvis.quaternion" } as never)).toBe(true);
   });
 
-  it("keeps arm and head tracks", () => {
-    expect(isBlockedAmyRootRotationTrack({ name: "L_UpperArm.quaternion" } as never)).toBe(
+  it("keeps arm and head tracks out of the root-block filter", () => {
+    expect(isBlockedAmyRootRotationTrack({ name: "L_Upperarm.quaternion" } as never)).toBe(
       false,
     );
-    expect(isBlockedAmyRootRotationTrack({ name: "Head.position" } as never)).toBe(false);
-  });
-
-  it("removes blocked tracks from clip clones", () => {
-    const clip = new AnimationClip("warmup", 2, [
-      new QuaternionKeyframeTrack("Root.quaternion", [0], [0, 0, 0, 1]),
-      new QuaternionKeyframeTrack("L_UpperArm.quaternion", [0], [0, 0, 0, 1]),
-    ]);
-    const sanitized = sanitizeAmyGltfClip(clip);
-    expect(sanitized.tracks).toHaveLength(1);
-    expect(sanitized.tracks[0]?.name).toBe("L_UpperArm.quaternion");
+    expect(isBlockedAmyRootRotationTrack({ name: "Head.quaternion" } as never)).toBe(false);
   });
 
   function quatAngleDeg(x: number, y: number, z: number, w: number): number {
@@ -40,10 +31,31 @@ describe("sanitize-amy-gltf-clips", () => {
     return (2 * Math.atan2(axisLen, w) * 180) / Math.PI;
   }
 
-  /** A ~90° turn around an arbitrary axis, as seen in imported "wave"/"talk" clips. */
+  /** A ~120° turn around an arbitrary axis, as seen in imported "wave"/"talk" clips. */
   const bigTurnQuat: [number, number, number, number] = [0.5, 0.5, 0.5, 0.5];
 
-  it("clamps large Head rotation so Amy never turns into side profile", () => {
+  it("drops root/hip and the whole torso chain, keeps arm gestures", () => {
+    const clip = new AnimationClip("warmup", 2, [
+      new QuaternionKeyframeTrack("Root.quaternion", [0], [0, 0, 0, 1]),
+      new QuaternionKeyframeTrack("Hip.quaternion", [0], [0, 0, 0, 1]),
+      new QuaternionKeyframeTrack("Spine01.quaternion", [0], bigTurnQuat),
+      new QuaternionKeyframeTrack("Spine02.quaternion", [0], bigTurnQuat),
+      new QuaternionKeyframeTrack("NeckTwist01.quaternion", [0], bigTurnQuat),
+      new QuaternionKeyframeTrack("Waist.quaternion", [0], bigTurnQuat),
+      new QuaternionKeyframeTrack("L_Upperarm.quaternion", [0], bigTurnQuat),
+    ]);
+    const sanitized = sanitizeAmyGltfClip(clip);
+    const names = sanitized.tracks.map((t) => t.name);
+    expect(names).toEqual(["L_Upperarm.quaternion"]);
+    // arm gesture preserved at full amplitude
+    expect(
+      quatAngleDeg(
+        ...(Array.from(sanitized.tracks[0]!.values) as [number, number, number, number]),
+      ),
+    ).toBeGreaterThan(80);
+  });
+
+  it("keeps a small, clamped Head nod so Amy stays attentive but upright", () => {
     const clip = new AnimationClip("wave", 1, [
       new QuaternionKeyframeTrack("Head.quaternion", [0, 0.5, 1], [
         0, 0, 0, 1,
@@ -53,33 +65,37 @@ describe("sanitize-amy-gltf-clips", () => {
     ]);
     const sanitized = sanitizeAmyGltfClip(clip);
     const track = sanitized.tracks[0]!;
-    const midAngle = quatAngleDeg(track.values[4], track.values[5], track.values[6], track.values[7]);
-    expect(midAngle).toBeLessThanOrEqual(12.01);
+    expect(track.name).toBe("Head.quaternion");
+    const midAngle = quatAngleDeg(
+      track.values[4],
+      track.values[5],
+      track.values[6],
+      track.values[7],
+    );
+    expect(midAngle).toBeLessThanOrEqual(9.01);
   });
 
-  it("clamps Neck and Spine rotation but leaves arm gestures untouched", () => {
-    const clip = new AnimationClip("wave", 1, [
-      new QuaternionKeyframeTrack("NeckTwist01.quaternion", [0], bigTurnQuat),
-      new QuaternionKeyframeTrack("Spine02.quaternion", [0], bigTurnQuat),
-      new QuaternionKeyframeTrack("L_Upperarm.quaternion", [0], bigTurnQuat),
-    ]);
-    const sanitized = sanitizeAmyGltfClip(clip);
-    const byName = Object.fromEntries(sanitized.tracks.map((t) => [t.name, t]));
+  describe("removeYawTwistFromQuaternionTrack", () => {
+    it("removes a pure Y-axis (yaw) rotation entirely", () => {
+      const yaw = Math.PI / 4; // 45deg left/right turn
+      const q: [number, number, number, number] = [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)];
+      const out = removeYawTwistFromQuaternionTrack(
+        new QuaternionKeyframeTrack("Head.quaternion", [0], q),
+      );
+      expect(quatAngleDeg(...(Array.from(out.values) as [number, number, number, number]))).toBeLessThan(
+        0.01,
+      );
+    });
 
-    const neckAngle = quatAngleDeg(...(Array.from(byName["NeckTwist01.quaternion"]!.values) as [number, number, number, number]));
-    const spineAngle = quatAngleDeg(...(Array.from(byName["Spine02.quaternion"]!.values) as [number, number, number, number]));
-    const armAngle = quatAngleDeg(...(Array.from(byName["L_Upperarm.quaternion"]!.values) as [number, number, number, number]));
-
-    expect(neckAngle).toBeLessThanOrEqual(10.01);
-    expect(spineAngle).toBeLessThanOrEqual(7.01);
-    expect(armAngle).toBeGreaterThan(80); // arm gestures preserved at full amplitude
-  });
-
-  it("leaves rest-pose bones (Waist) untouched even though their baked value is far from identity", () => {
-    const clip = new AnimationClip("idle", 1, [
-      new QuaternionKeyframeTrack("Waist.quaternion", [0], bigTurnQuat),
-    ]);
-    const sanitized = sanitizeAmyGltfClip(clip);
-    expect(Array.from(sanitized.tracks[0]!.values)).toEqual(bigTurnQuat);
+    it("preserves a pure X-axis (pitch/nod) rotation", () => {
+      const pitch = Math.PI / 6; // 30deg nod
+      const q: [number, number, number, number] = [Math.sin(pitch / 2), 0, 0, Math.cos(pitch / 2)];
+      const out = removeYawTwistFromQuaternionTrack(
+        new QuaternionKeyframeTrack("Head.quaternion", [0], q),
+      );
+      expect(
+        quatAngleDeg(...(Array.from(out.values) as [number, number, number, number])),
+      ).toBeCloseTo(30, 1);
+    });
   });
 });

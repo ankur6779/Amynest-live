@@ -40,7 +40,8 @@ export const AMY_GLTF_FADE_SEC = 0.35;
 
 /**
  * Y rotation (radians) that turns the Tripo rig to face the camera head-on.
- * Empirically tuned against the live GLB so Amy establishes eye contact and
- * never presents a side profile or back view.
+ * Empirically tuned against the live GLB (with the torso rotation stripped by
+ * sanitizeAmyGltfClips, so this angle alone fully determines her facing) — Amy
+ * establishes eye contact and never presents a side profile or back view.
  */
-export const AMY_GLTF_FACING_Y = -0.6;
+export const AMY_GLTF_FACING_Y = -0.95;

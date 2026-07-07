@@ -22,7 +22,7 @@ describe("amy-gltf-clips", () => {
   });
 
   it("faces Tripo rig toward the default camera (front-facing, never a side profile)", () => {
-    expect(AMY_GLTF_FACING_Y).toBeCloseTo(-0.6);
+    expect(AMY_GLTF_FACING_Y).toBeCloseTo(-0.95);
   });
 
   it("loops ambient states and one-shots celebrate and wave", () => {

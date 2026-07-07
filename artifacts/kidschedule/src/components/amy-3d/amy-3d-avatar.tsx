@@ -12,14 +12,11 @@ import {
   Component,
   Suspense,
   lazy,
-  useCallback,
-  useState,
   type ReactNode,
   type RefObject,
 } from "react";
 import { AmyStageAvatar } from "@/components/amy/amy-stage-avatar";
 import { AmyStageWaveform } from "@/components/amy/amy-stage-waveform";
-import { Amy3DMouthOverlay } from "@/components/amy-3d/amy-3d-mouth-overlay";
 import { squareSizeToStageHeight } from "@/lib/amy/use-amy-stage-height";
 import { AMY_FULL_ASPECT } from "@/lib/amy/amy-stage-assets";
 import { canRenderLive3D } from "@/lib/amy-3d/webgl-support";
@@ -83,8 +80,6 @@ export function Amy3DAvatar({
   verticalOffset = 0,
 }: Amy3DAvatarProps) {
   const wantLive3D = canRenderLive3D();
-  const [is3DActive, setIs3DActive] = useState(false);
-  const onReady = useCallback(() => setIs3DActive(true), []);
 
   const stageHeight = squareSizeToStageHeight(size);
   const stageWidth = Math.round(stageHeight * AMY_FULL_ASPECT);
@@ -135,8 +130,6 @@ export function Amy3DAvatar({
     );
   }
 
-  const mouthActive = is3DActive && (isTalking || listenForAudio);
-
   return (
     <div className={className} style={wrapperStyle}>
       <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
@@ -150,20 +143,9 @@ export function Amy3DAvatar({
               showHalo={showHalo}
               modelScale={modelScale}
               verticalOffset={verticalOffset}
-              onReady={onReady}
             />
           </Suspense>
         </Amy3DErrorBoundary>
-        {mouthActive && (
-          <Amy3DMouthOverlay
-            width={size}
-            height={size}
-            speaking={isTalking}
-            listenForAudio={listenForAudio}
-            audioLevelRef={audioLevelRef}
-            audioMeterActiveRef={audioMeterActiveRef}
-          />
-        )}
       </div>
       {waveform}
     </div>
