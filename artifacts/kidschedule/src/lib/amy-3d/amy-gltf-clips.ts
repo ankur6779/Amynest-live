@@ -38,5 +38,9 @@ export const AMY_SESSION_START_FADE_SEC = 0.3;
 /** Default crossfade between ambient states. */
 export const AMY_GLTF_FADE_SEC = 0.35;
 
-/** Tripo rig exports profile (+X); rotate to face the default camera on +Z. */
-export const AMY_GLTF_FACING_Y = -Math.PI / 2;
+/**
+ * Y rotation (radians) that turns the Tripo rig to face the camera head-on.
+ * Empirically tuned against the live GLB so Amy establishes eye contact and
+ * never presents a side profile or back view.
+ */
+export const AMY_GLTF_FACING_Y = -0.6;

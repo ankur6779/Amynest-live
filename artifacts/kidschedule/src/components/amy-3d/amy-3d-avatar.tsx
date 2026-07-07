@@ -45,6 +45,8 @@ export interface Amy3DAvatarProps {
   waitingForSession?: boolean;
   /** Extra in-canvas scale for hero framing (Speech Coach). */
   modelScale?: number;
+  /** World-space vertical nudge to center the rig in the canvas. */
+  verticalOffset?: number;
 }
 
 class Amy3DErrorBoundary extends Component<
@@ -78,6 +80,7 @@ export function Amy3DAvatar({
   modelUrl,
   waitingForSession = false,
   modelScale = 1,
+  verticalOffset = 0,
 }: Amy3DAvatarProps) {
   const wantLive3D = canRenderLive3D();
   const [is3DActive, setIs3DActive] = useState(false);
@@ -146,6 +149,7 @@ export function Amy3DAvatar({
               waitingForSession={waitingForSession}
               showHalo={showHalo}
               modelScale={modelScale}
+              verticalOffset={verticalOffset}
               onReady={onReady}
             />
           </Suspense>

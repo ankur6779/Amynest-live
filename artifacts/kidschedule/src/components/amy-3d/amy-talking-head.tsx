@@ -17,6 +17,8 @@ interface AmyTalkingHeadProps {
   waitingForSession?: boolean;
   /** Extra in-canvas scale (default tuned for Speech Coach hero). */
   modelScale?: number;
+  /** World-space vertical nudge to center Amy in the hero canvas. */
+  verticalOffset?: number;
   /** @deprecated Stage layout is always full-body; circle crop removed. */
   presentation?: "circle" | "stage";
   className?: string;
@@ -32,7 +34,8 @@ export function AmyTalkingHead({
   debugMouth = false,
   halo = false,
   waitingForSession = false,
-  modelScale = 1.15,
+  modelScale = 0.8,
+  verticalOffset = -0.15,
   className,
 }: AmyTalkingHeadProps) {
   const state: Amy3DState = speaking
@@ -55,6 +58,7 @@ export function AmyTalkingHead({
       showWaveform
       waitingForSession={waitingForSession}
       modelScale={modelScale}
+      verticalOffset={verticalOffset}
       className={className}
     />
   );

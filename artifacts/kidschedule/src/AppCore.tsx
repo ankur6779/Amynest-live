@@ -152,6 +152,7 @@ const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
 const AdminAudioHealthPage = lazyPage(() => import("@/pages/admin-audio-health"));
 const AdminDashboardPage = lazyPage(() => import("@/pages/admin-dashboard"));
 const AdminInfantParentingPage = lazyPage(() => import("@/pages/admin-infant-parenting"));
+const AdminGrowthPage = lazyPage(() => import("@/pages/admin-growth"));
 const FeatureSeoLandingPage = lazyPage(() => import("@/pages/feature-seo-landing"));
 const AsOLandingPage = lazyPage(() => import("@/pages/aso-landing-page"));
 const GuidesIndexPage = lazyPage(() => import("@/pages/guides-index"));
@@ -186,6 +187,7 @@ import { DeviceLimitGate } from "@/components/device-limit-dialog";
 import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
 import { SubscriptionFunnelOrchestrator } from "@/components/subscription-funnel-orchestrator";
+import { ValueBridgeProvider } from "@/contexts/value-bridge-context";
 // ReactInstanceRecovery is rendered by the parent App.tsx (the eager
 // shell), so it is NOT imported here — keeping it out of this lazy chunk
 // shrinks the initial bundle further and ensures the recovery boundary
@@ -574,6 +576,7 @@ const AdminFeedbackRoute = makeProtectedRoute(AdminFeedbackPage);
 const AdminAudioHealthRoute = makeProtectedRoute(AdminAudioHealthPage);
 const AdminDashboardRoute = makeProtectedRoute(AdminDashboardPage);
 const AdminInfantParentingRoute = makeProtectedRoute(AdminInfantParentingPage);
+const AdminGrowthRoute = makeProtectedRoute(AdminGrowthPage);
 
 /** Dev/QA routes must not render in production bundles — redirect to dashboard. */
 function DevRouteRedirect() {
@@ -770,6 +773,7 @@ function AppRoutes() {
         <TooltipProvider>
           <DebugProvider>
           <PaywallProvider>
+            <ValueBridgeProvider>
             <DeviceRegistrationProvider>
             <AnalyticsBootstrap />
             <DeviceLimitGate />
@@ -945,6 +949,8 @@ function AppRoutes() {
           <Route path="/admin/feedback" component={AdminFeedbackRoute} />
           <Route path="/admin/dashboard" component={AdminDashboardRoute} />
           <Route path="/admin/infant-parenting" component={AdminInfantParentingRoute} />
+          <Route path="/admin/growth/:section" component={AdminGrowthRoute} />
+          <Route path="/admin/growth" component={AdminGrowthRoute} />
           <Route path="/admin/audio-health" component={AdminAudioHealthRoute} />
           <Route component={RouteFailedPage} />
             </Switch>
@@ -958,6 +964,7 @@ function AppRoutes() {
             <DebugPanel />
             <AudioHealthOverlay />
           </DeviceRegistrationProvider>
+            </ValueBridgeProvider>
           </PaywallProvider>
           </DebugProvider>
         </TooltipProvider>

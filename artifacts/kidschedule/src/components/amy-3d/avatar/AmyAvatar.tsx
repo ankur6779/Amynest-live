@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 import { isMouthMoving } from "@/lib/amy-3d/use-amy-3d-state";
 import { prefersReducedMotion } from "@/lib/amy-3d/webgl-support";
@@ -54,6 +55,8 @@ export interface AmyAvatarProps {
   showHalo?: boolean;
   /** Scales the rig inside the canvas (1 = default framing). */
   modelScale?: number;
+  /** World-space vertical nudge (negative = lower) to center the big-head chibi. */
+  verticalOffset?: number;
   /** Receives the lip-sync controller so a future TTS layer can push visemes. */
   onLipSyncReady?: (controller: LipSyncController) => void;
 }
@@ -83,6 +86,7 @@ export function AmyAvatar({
   waitingForSession,
   showHalo = true,
   modelScale = 1,
+  verticalOffset = 0,
   onLipSyncReady,
 }: AmyAvatarProps) {
   const gltf = useGLTF(url);
@@ -108,8 +112,12 @@ export function AmyAvatar({
   });
 
   // Clone so multiple hero instances each get independent morph/transform state.
+  // NOTE: must use SkeletonUtils.clone (not Object3D.clone(true)) — a plain deep
+  // clone leaves the cloned SkinnedMesh bound to the ORIGINAL skeleton, so the
+  // visible mesh ignores this instance's parent transform AND the animation
+  // mixer (it renders a frozen rest pose). SkeletonUtils rebinds the skeleton.
   const built = useMemo(() => {
-    const scene = gltf.scene.clone(true);
+    const scene = cloneSkeleton(gltf.scene) as THREE.Group;
     const box = new THREE.Box3().setFromObject(scene);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
@@ -207,7 +215,7 @@ export function AmyAvatar({
       {/* Centered + uniformly scaled model (skeletal clips target this root). */}
       <group
         ref={animRoot}
-        position={built.offset}
+        position={[built.offset.x, built.offset.y + verticalOffset, built.offset.z]}
         scale={built.fit}
         rotation={[0, AMY_GLTF_FACING_Y, 0]}
       >

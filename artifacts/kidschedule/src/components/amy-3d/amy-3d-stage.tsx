@@ -33,6 +33,7 @@ export interface Amy3DStageProps {
   waitingForSession?: boolean;
   showHalo?: boolean;
   modelScale?: number;
+  verticalOffset?: number;
   /** Fires once after the GLB has actually mounted (fully loaded, no error). */
   onReady?: () => void;
 }
@@ -45,6 +46,7 @@ export default function Amy3DStage({
   waitingForSession,
   showHalo = true,
   modelScale = 1,
+  verticalOffset = 0,
   onReady,
 }: Amy3DStageProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
@@ -92,6 +94,7 @@ export default function Amy3DStage({
           waitingForSession={waitingForSession}
           showHalo={showHalo}
           modelScale={modelScale}
+          verticalOffset={verticalOffset}
         />
       </Canvas>
     </div>
