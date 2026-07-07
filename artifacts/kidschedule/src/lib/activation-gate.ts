@@ -13,7 +13,6 @@ const PRE_ACTIVATION_DEFER_REASONS = new Set<PaywallReason>([
   "phonics_workbook",
   "hub_nutrition",
   "nutrition_library",
-  "audio_lessons",
   "speech_coach",
   "premium_insight",
   "personalized_coaching",

@@ -7,9 +7,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --import tsx/esm --test src/engine.test.ts src/delivery/delivery-guard.test.ts"
+    "test": "node --import tsx/esm --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@workspace/db": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

@@ -19,9 +19,19 @@ const BLOCKED_ROTATION_TRACK =
 const TORSO_LOCK_CHAIN =
   /^(NeckTwist\d*|Neck|Spine\d*|Chest|UpperChest|Waist|Torso|Bosom)$/i;
 
-/** The head keeps a small, yaw-free nod so Amy still feels attentive. */
+/** Ambient clips fully freeze the head; the talk clip animates it (see below). */
 const HEAD_BONE = /^Head$/i;
-const HEAD_MAX_DEGREES = 9;
+
+/**
+ * The "talk" clip is the singing/talking animation played ONLY while Amy is
+ * speaking. Unlike the ambient clips we don't fully freeze the torso here —
+ * instead we strip the yaw (so she never turns side-on) and clamp the remaining
+ * swing to a moderate angle, so she visibly sings/sways while staying upright
+ * and facing the camera. Larger than the ambient head cap, small enough to never
+ * become a side profile or a deep forward bend.
+ */
+const TALK_CLIP_NAME = /^talk$/i;
+const TALK_HEAD_MAX_DEGREES = 14;
 
 function isTorsoLockTrack(track: KeyframeTrack): boolean {
   const [bone, prop] = track.name.split(".");
@@ -129,17 +139,50 @@ export function clampQuaternionTrackAngle(
   );
 }
 
-export function sanitizeAmyGltfClip(clip: AnimationClip): AnimationClip {
+/**
+ * Talk clip (played ONLY while Amy is speaking): this is the "singing" clip.
+ *
+ * The torso chain is dropped just like the ambient clips — clamping each of the
+ * 5-6 spine/neck bones individually is unsafe because their forward pitch
+ * COMPOUNDS down the chain and folds Amy into a deep hunch. Instead the singing
+ * feel comes from her expressive arm/hand gestures (kept at full amplitude) plus
+ * an animated head that bobs/nods — yaw-stripped and clamped so she stays
+ * upright and locked onto the camera while she talks.
+ */
+function sanitizeAmyTalkClip(clip: AnimationClip): AnimationClip {
   const tracks = clip.tracks
-    // Drop root/hip and the whole torso chain so Amy stays upright + forward.
     .filter((t) => !isBlockedAmyRootRotationTrack(t) && !isTorsoLockTrack(t))
     .map((t) => {
-      if (!isHeadTrack(t) || !(t instanceof QuaternionKeyframeTrack)) return t;
-      // Head keeps a small, yaw-free nod so Amy still feels attentive.
-      const noYaw = removeYawTwistFromQuaternionTrack(t);
-      return clampQuaternionTrackAngle(noYaw, HEAD_MAX_DEGREES);
+      if (isHeadTrack(t) && t instanceof QuaternionKeyframeTrack) {
+        return clampQuaternionTrackAngle(
+          removeYawTwistFromQuaternionTrack(t),
+          TALK_HEAD_MAX_DEGREES,
+        );
+      }
+      return t;
     });
   return new AnimationClip(clip.name, clip.duration, tracks);
+}
+
+/**
+ * Ambient clips (idle / warmup / listening / thinking / wave / celebrate):
+ * fully front-locked. Drop root/hip, the whole torso chain AND the head so those
+ * bones rest at their upright, forward bind pose — Amy holds dead-on eye contact
+ * and never drifts into a turn while she is not speaking. Arm/hand gestures and
+ * the procedural idle layer (breathing, float, micro-tilt) keep her alive.
+ */
+function sanitizeAmyAmbientClip(clip: AnimationClip): AnimationClip {
+  const tracks = clip.tracks.filter(
+    (t) =>
+      !isBlockedAmyRootRotationTrack(t) && !isTorsoLockTrack(t) && !isHeadTrack(t),
+  );
+  return new AnimationClip(clip.name, clip.duration, tracks);
+}
+
+export function sanitizeAmyGltfClip(clip: AnimationClip): AnimationClip {
+  return TALK_CLIP_NAME.test(clip.name)
+    ? sanitizeAmyTalkClip(clip)
+    : sanitizeAmyAmbientClip(clip);
 }
 
 export function sanitizeAmyGltfClips(clips: AnimationClip[]): AnimationClip[] {

@@ -39,6 +39,7 @@ const AuthCallbackPage = lazyPage(() => import("@/pages/auth-callback"));
 const ResetPasswordPage = lazyPage(() => import("@/pages/reset-password"));
 import RouteFailedPage from "@/pages/route-failed";
 const SpeechCoachV2DebugPage = lazyPage(() => import("@/pages/speech-coach-v2-debug"));
+const AmyAvatarQaPage = lazyPage(() => import("@/pages/amy-avatar-qa"));
 const OpenAiRealtimeTestPage = lazyPage(() => import("@/pages/openai-realtime-test"));
 const OpenAiRealtimeMinimalTestPage = lazyPage(() => import("@/pages/openai-realtime-minimal-test"));
 import { FirebaseActionGate } from "@/components/firebase-action-gate";
@@ -842,6 +843,7 @@ function AppRoutes() {
           {!import.meta.env.PROD && (
             <>
               <Route path="/speech-coach-v2-debug" component={SpeechCoachV2DebugPage} />
+              <Route path="/amy-avatar-qa" component={AmyAvatarQaPage} />
               <Route path="/openai-realtime-test" component={OpenAiRealtimeTestPage} />
               <Route path="/openai-realtime-minimal-test" component={OpenAiRealtimeMinimalTestPage} />
             </>

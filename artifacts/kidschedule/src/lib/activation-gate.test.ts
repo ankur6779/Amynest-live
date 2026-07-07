@@ -17,6 +17,10 @@ describe("activation-gate", () => {
     expect(shouldDeferPaywallForActivation("ai_quota", 0)).toBe(false);
   });
 
+  it("does not defer audio lessons — free samples and paywall must stay on-page", () => {
+    expect(shouldDeferPaywallForActivation("audio_lessons", 0)).toBe(false);
+  });
+
   it("does not defer after routine exists", () => {
     expect(shouldDeferPaywallForActivation("hub_locked", 2)).toBe(false);
   });

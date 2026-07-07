@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-07-07T16:35:00.000Z",
+  "reportDate": "2026-07-07",
+  "activePhase": "baseline",
+  "flags": {
+    "valueBridge": "false",
+    "dashboardPriority": "false"
+  },
+  "day": {
+    "dau": 29,
+    "dashboard_viewers": 15,
+    "routine_generated_users": 1,
+    "routine_completed_users": 1,
+    "daily_checkin_users": 6,
+    "resume_click_users": 0,
+    "crash_users": 0,
+    "crash_events": 0
+  },
+  "routineCompletionRate": 100,
+  "valueBridge": {
+    "shownUsers": 0,
+    "shownEvents": 0,
+    "clickedUsers": 0,
+    "dismissedUsers": 0,
+    "ctr": null,
+    "dismissRate": null,
+    "checkoutUsers": 0,
+    "checkoutRate": null,
+    "purchaseUsers": 0,
+    "purchaseRate": null
+  },
+  "dashboard": {
+    "viewers": 15,
+    "toRoutineUsers": 0,
+    "toHubUsers": 0,
+    "weeklySummaryUsers": 0,
+    "dashboardLeavers": 0,
+    "routineCtr": null,
+    "hubCtr": null,
+    "weeklySummaryCtr": null,
+    "exitRate": null
+  },
+  "checkout": [
+    { "step": "trial_expired", "source": "server", "users": 6, "events": 6 },
+    { "step": "trial_started", "source": "server", "users": 2, "events": 2 }
+  ],
+  "retention": {
+    "d1": 6.1,
+    "d7": 6.3,
+    "d1Retained": 13,
+    "d7Retained": 6,
+    "d1Eligible": 214,
+    "d7Eligible": 96
+  },
+  "recommendation": {
+    "action": "WATCH",
+    "reason": "Baseline — both flags OFF. Phase 1 env staged on Render; manual deploy required."
+  }
+}

@@ -10,6 +10,7 @@ import { FF_VALUE_BRIDGE_INVITES } from "@/lib/subscription-feature-flags";
 import {
   isValueBridgeEligible,
   markValueBridgeShownToday,
+  markValueBridgeVisibleThisSession,
   valueBridgeCopy,
   type ValueBridgeMoment,
 } from "@/lib/value-bridge";
@@ -21,8 +22,11 @@ type Props = {
   className?: string;
 };
 
+const VISIBILITY_THRESHOLD = 0.25;
+
 /**
  * Phase 1 inline contextual premium invitation — reuses trial banner styling.
+ * Analytics: shown fires only after IntersectionObserver confirms visibility.
  */
 export function SubscriptionValueBridgeBanner({ moment, className }: Props) {
   const { t } = useTranslation();
@@ -33,25 +37,56 @@ export function SubscriptionValueBridgeBanner({ moment, className }: Props) {
     clearValueBridge,
     analyticsMeta,
   } = useValueBridge();
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const visibleAtMs = useRef<number | null>(null);
   const shownRef = useRef(false);
+  const clickLoggedRef = useRef(false);
+  const dismissLoggedRef = useRef(false);
 
   const isActive = active?.moment === moment;
+  const isEligible = isValueBridgeEligible(entitlements);
 
   useEffect(() => {
-    if (!isActive || !isValueBridgeEligible(entitlements) || shownRef.current) {
+    if (!isActive || !isEligible || shownRef.current) return;
+
+    const el = bannerRef.current;
+    if (!el) return;
+
+    const recordVisible = () => {
+      if (shownRef.current) return;
+      shownRef.current = true;
+      const ts = Date.now();
+      visibleAtMs.current = ts;
+      markValueBridgeShownToday(moment);
+      markValueBridgeVisibleThisSession();
+      const copy = valueBridgeCopy(moment);
+      trackValueBridgeEvent("value_bridge_shown", copy.source, analyticsMeta, {
+        visible_timestamp: new Date(ts).toISOString(),
+      });
+    };
+
+    if (typeof IntersectionObserver === "undefined") {
+      recordVisible();
       return;
     }
-    shownRef.current = true;
-    markValueBridgeShownToday(moment);
-    const copy = valueBridgeCopy(moment);
-    trackValueBridgeEvent("value_bridge_shown", copy.source, analyticsMeta);
-  }, [isActive, entitlements, moment, analyticsMeta]);
 
-  if (
-    !FF_VALUE_BRIDGE_INVITES ||
-    !isActive ||
-    !isValueBridgeEligible(entitlements)
-  ) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting || entry.intersectionRatio < VISIBILITY_THRESHOLD) {
+          return;
+        }
+        recordVisible();
+        observer.disconnect();
+      },
+      { threshold: [VISIBILITY_THRESHOLD] },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isActive, isEligible, moment, analyticsMeta]);
+
+  if (!FF_VALUE_BRIDGE_INVITES || !isActive || !isEligible) {
     return null;
   }
 
@@ -65,13 +100,28 @@ export function SubscriptionValueBridgeBanner({ moment, className }: Props) {
     defaultValue: copy.cta,
   });
 
+  const visibleDurationMs = (): number => {
+    if (visibleAtMs.current == null) return 0;
+    return Math.max(0, Date.now() - visibleAtMs.current);
+  };
+
   const onDismiss = () => {
-    trackValueBridgeEvent("value_bridge_dismissed", copy.source, analyticsMeta);
+    if (dismissLoggedRef.current) return;
+    dismissLoggedRef.current = true;
+    const duration = visibleDurationMs();
+    trackValueBridgeEvent("value_bridge_dismissed", copy.source, analyticsMeta, {
+      dismiss_after_ms: duration,
+      visible_duration_ms: duration,
+    });
     dismissValueBridge();
   };
 
   const onCta = () => {
-    trackValueBridgeEvent("value_bridge_clicked", copy.source, analyticsMeta);
+    if (clickLoggedRef.current) return;
+    clickLoggedRef.current = true;
+    trackValueBridgeEvent("value_bridge_clicked", copy.source, analyticsMeta, {
+      time_since_banner_visible_ms: visibleDurationMs(),
+    });
     trackSubscriptionEvent({
       event: "checkout_started",
       source: copy.source,
@@ -87,6 +137,7 @@ export function SubscriptionValueBridgeBanner({ moment, className }: Props) {
 
   return (
     <div
+      ref={bannerRef}
       className={[
         "flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 text-sm",
         className ?? "mx-4 mb-3",

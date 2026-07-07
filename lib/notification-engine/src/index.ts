@@ -11,5 +11,17 @@ export * from "./analytics.js";
 export * from "./global/index.js";
 export * from "./outcomes/index.js";
 export * from "./delivery/index.js";
+export * from "./lifecycle/index.js";
+export * from "./decision/index.js";
+export * from "./conversion/index.js";
+export * from "./reengagement/index.js";
+export * from "./context/index.js";
+export * from "./persona/index.js";
+export * from "./value/index.js";
+export * from "./diversity/index.js";
+export * from "./quality/index.js";
+export * from "./timeline/index.js";
+export * from "./suppression/index.js";
+export * from "./analytics/notification-intelligence-dashboard.js";
 
 export { MIN_POOL_SIZES } from "./types.js";

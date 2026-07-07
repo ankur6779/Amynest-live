@@ -7,6 +7,17 @@ export type ValueBridgeMoment = "routine_completion" | "weekly_summary";
 
 export type ValueBridgeSource = "routine_completion" | "weekly_summary";
 
+export type ValueBridgeSuppressionReason =
+  | "feature_flag_off"
+  | "already_seen_today"
+  | "already_seen_this_session"
+  | "not_trial"
+  | "paid_user"
+  | "priority_banner_active"
+  | "cooldown"
+  | "not_eligible"
+  | "missing_value_moment";
+
 export type ValueBridgeInvite = {
   moment: ValueBridgeMoment;
 };
@@ -14,6 +25,7 @@ export type ValueBridgeInvite = {
 const STORAGE_PREFIX = "amynest:value_bridge:";
 const FIRST_ROUTINE_ITEM_KEY = `${STORAGE_PREFIX}first_routine_item_done`;
 const SESSION_MOMENT_KEY = `${STORAGE_PREFIX}session_moment`;
+const VISIBLE_SESSION_KEY = `${STORAGE_PREFIX}visible_session`;
 
 export const VALUE_BRIDGE_PRIORITY: Record<ValueBridgeMoment, number> = {
   routine_completion: 100,
@@ -34,6 +46,12 @@ export function momentToSource(moment: ValueBridgeMoment): ValueBridgeSource {
   return moment;
 }
 
+export function isValidValueBridgeMoment(
+  moment: string,
+): moment is ValueBridgeMoment {
+  return moment === "routine_completion" || moment === "weekly_summary";
+}
+
 export function wasValueBridgeShownToday(moment: ValueBridgeMoment): boolean {
   try {
     return localStorage.getItem(`${STORAGE_PREFIX}shown:${moment}:${dayKey()}`) === "1";
@@ -45,6 +63,22 @@ export function wasValueBridgeShownToday(moment: ValueBridgeMoment): boolean {
 export function markValueBridgeShownToday(moment: ValueBridgeMoment): void {
   try {
     localStorage.setItem(`${STORAGE_PREFIX}shown:${moment}:${dayKey()}`, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function wasValueBridgeVisibleThisSession(): boolean {
+  try {
+    return sessionStorage.getItem(VISIBLE_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markValueBridgeVisibleThisSession(): void {
+  try {
+    sessionStorage.setItem(VISIBLE_SESSION_KEY, "1");
   } catch {
     /* ignore */
   }
@@ -91,22 +125,36 @@ export function isValueBridgeEligible(
   return isInternalTrial(entitlements);
 }
 
+/**
+ * Returns a suppression reason, or null when the bridge may be shown.
+ * Order matters — first matching gate wins.
+ */
+export function evaluateValueBridgeSuppression(
+  moment: ValueBridgeMoment,
+  entitlements: Entitlements | null | undefined,
+): ValueBridgeSuppressionReason | null {
+  if (!FF_VALUE_BRIDGE_INVITES) return "feature_flag_off";
+  if (!entitlements) return "not_eligible";
+  if (entitlements.isPremiumSubscriber) return "paid_user";
+  if (!isInternalTrial(entitlements)) return "not_trial";
+  if (wasValueBridgeShownToday(moment)) return "already_seen_today";
+  if (wasValueBridgeVisibleThisSession()) return "cooldown";
+
+  const sessionMoment = getSessionBridgeMoment();
+  if (sessionMoment) {
+    const cmp = compareValueBridgePriority(sessionMoment, moment);
+    if (cmp > 0) return "priority_banner_active";
+    if (cmp === 0) return "already_seen_this_session";
+  }
+
+  return null;
+}
+
 export function shouldTriggerValueBridge(
   moment: ValueBridgeMoment,
   entitlements: Entitlements | null | undefined,
 ): boolean {
-  if (!isValueBridgeEligible(entitlements)) return false;
-  if (wasValueBridgeShownToday(moment)) return false;
-
-  const sessionMoment = getSessionBridgeMoment();
-  if (
-    sessionMoment &&
-    compareValueBridgePriority(sessionMoment, moment) >= 0
-  ) {
-    return false;
-  }
-
-  return true;
+  return evaluateValueBridgeSuppression(moment, entitlements) === null;
 }
 
 export function compareValueBridgePriority(

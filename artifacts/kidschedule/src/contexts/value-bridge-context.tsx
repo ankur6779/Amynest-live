@@ -12,9 +12,16 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTrialState } from "@/hooks/use-trial-state";
 import {
+  trackValueBridgeEligible,
+  trackValueBridgeNotShown,
+  trackValueBridgeSuppressed,
+} from "@/lib/value-bridge-analytics";
+import {
   compareValueBridgePriority,
+  evaluateValueBridgeSuppression,
+  isValueBridgeEligible,
+  momentToSource,
   setSessionBridgeMoment,
-  shouldTriggerValueBridge,
   type ValueBridgeInvite,
   type ValueBridgeMoment,
 } from "@/lib/value-bridge";
@@ -55,7 +62,26 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
 
   const triggerValueBridge = useCallback(
     (moment: ValueBridgeMoment) => {
-      if (!shouldTriggerValueBridge(moment, entitlements)) return;
+      const source = momentToSource(moment);
+      const suppression = evaluateValueBridgeSuppression(moment, entitlements);
+
+      if (!isValueBridgeEligible(entitlements)) {
+        if (suppression) {
+          trackValueBridgeNotShown(suppression, source, analyticsMeta, {
+            moment,
+          });
+        }
+        return;
+      }
+
+      trackValueBridgeEligible(moment, analyticsMeta);
+
+      if (suppression) {
+        trackValueBridgeSuppressed(suppression, source, analyticsMeta, {
+          moment,
+        });
+        return;
+      }
 
       setActive((current) => {
         if (
@@ -68,7 +94,7 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
         return { moment };
       });
     },
-    [entitlements],
+    [entitlements, analyticsMeta],
   );
 
   useEffect(() => {
@@ -77,7 +103,7 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
   }, [triggerValueBridge]);
 
   const commitShown = useCallback((_invite: ValueBridgeInvite) => {
-    /* Analytics fired from banner once per render cycle. */
+    /* Shown analytics fire from banner visibility observer. */
   }, []);
 
   const dismissValueBridge = useCallback(() => {

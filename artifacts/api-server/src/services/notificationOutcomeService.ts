@@ -10,7 +10,7 @@ import {
   subscriptionsTable,
   userActivationJourneyTable,
 } from "@workspace/db";
-import type { OutcomeSignals } from "@workspace/notification-engine";
+import type { OutcomeSignals, SubscriptionStatus } from "@workspace/notification-engine";
 import { detectChildLifecycleStage, detectParentMilestones } from "@workspace/notification-engine";
 
 function todayLocalDateString(timezone: string): string {
@@ -65,9 +65,19 @@ export async function loadOutcomeSignals(
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
 
-  const [subscription, activationJourney, lastToken, recentOpens] = await Promise.all([
+  const [subscription, activationJourney, lastToken, recentLog] = await Promise.all([
     db
-      .select({ status: subscriptionsTable.status, plan: subscriptionsTable.plan })
+      .select({
+        status: subscriptionsTable.status,
+        plan: subscriptionsTable.plan,
+        provider: subscriptionsTable.provider,
+        subscriptionState: subscriptionsTable.subscriptionState,
+        providerSubscriptionId: subscriptionsTable.providerSubscriptionId,
+        trialEndsAt: subscriptionsTable.trialEndsAt,
+        currentPeriodEnd: subscriptionsTable.currentPeriodEnd,
+        expiresAt: subscriptionsTable.expiresAt,
+        cancelAtPeriodEnd: subscriptionsTable.cancelAtPeriodEnd,
+      })
       .from(subscriptionsTable)
       .where(eq(subscriptionsTable.userId, userId))
       .limit(1)
@@ -90,7 +100,12 @@ export async function loadOutcomeSignals(
       .limit(1)
       .then((r) => r[0]),
     db
-      .select({ openedAt: notificationLogTable.openedAt })
+      .select({
+        openedAt: notificationLogTable.openedAt,
+        dismissedAt: notificationLogTable.dismissedAt,
+        status: notificationLogTable.status,
+        sentAt: notificationLogTable.sentAt,
+      })
       .from(notificationLogTable)
       .where(
         and(
@@ -98,13 +113,29 @@ export async function loadOutcomeSignals(
           gte(notificationLogTable.sentAt, sevenDaysAgo),
         ),
       )
-      .then((rows) => rows.filter((r) => r.openedAt).length),
+      .orderBy(desc(notificationLogTable.sentAt)),
   ]);
+
+  // Delivered notifications only (exclude throttled/duplicate/no_tokens rows).
+  const deliveredLog = recentLog.filter((r) => r.status === "sent");
+  const recentOpens = deliveredLog.filter((r) => r.openedAt).length;
+  const dismissed7d = deliveredLog.filter((r) => r.dismissedAt).length;
+  const notificationsSent7d = deliveredLog.length;
+  // Consecutive ignores: walk newest→oldest until we hit an opened notification.
+  let consecutiveIgnored = 0;
+  for (const r of deliveredLog) {
+    if (r.openedAt) break;
+    consecutiveIgnored++;
+  }
 
   const isPremium =
     subscription?.status === "active" ||
     subscription?.status === "trialing" ||
     (subscription?.plan != null && subscription.plan !== "free");
+
+  const subscriptionSignals = subscription
+    ? buildSubscriptionSignals(subscription)
+    : undefined;
 
   const lastActive = lastToken?.lastSeenAt ?? accountStart;
   const daysSinceLastActive = daysBetween(lastActive, new Date());
@@ -117,6 +148,7 @@ export async function loadOutcomeSignals(
   let streakBrokenDaysAgo: number | null = null;
   let hadSevenDayStreak = false;
   let firstRoutineCompleted = false;
+  let routineDaysCompleted7d = 0;
 
   if (child) {
     const localToday = todayLocalDateString(timezone);
@@ -154,6 +186,7 @@ export async function loadOutcomeSignals(
       if (routineAge <= 7) {
         completed7 += completed;
         total7 += total;
+        if (completed > 0) routineDaysCompleted7d++;
       }
 
       daysWithRoutine++;
@@ -278,12 +311,90 @@ export async function loadOutcomeSignals(
     churnRisk7d: 0,
     churnRisk30d: 0,
     churnRisk90d: 0,
+    subscription: subscriptionSignals,
+    engagement: {
+      notificationsSent7d,
+      notificationsDismissed7d: dismissed7d,
+      consecutiveIgnored,
+      preferredHourLocal: null,
+      preferredHourConfidence: 0,
+      permissionGranted: true,
+    },
+    // Per-domain activity for persona/value engines. Only the domains AmyNest
+    // can cheaply measure today are populated; speech/nutrition/stories/
+    // worksheets/coach are left undefined (treated as 0) until their event
+    // sources are wired — the engines degrade gracefully.
+    activity: {
+      routinesCompleted7d: routineDaysCompleted7d,
+      lessonsCompleted7d,
+      weekdayActiveDays7d: Math.min(5, sessionsLast7d),
+      weekendActiveDays7d: Math.max(0, Math.min(2, sessionsLast7d - 5)),
+    },
   };
 
   partial.childLifecycleStage = detectChildLifecycleStage(partial);
   partial.parentMilestones = detectParentMilestones(partial);
 
   return partial;
+}
+
+interface SubscriptionRow {
+  status: string;
+  plan: string;
+  provider: string;
+  subscriptionState: string;
+  providerSubscriptionId: string | null;
+  trialEndsAt: Date | null;
+  currentPeriodEnd: Date | null;
+  expiresAt: Date | null;
+  cancelAtPeriodEnd: number;
+}
+
+/** Whole days from now until `at` (0 = today, negative = already past). */
+function daysUntil(at: Date | null): number | null {
+  if (!at) return null;
+  return Math.ceil((at.getTime() - Date.now()) / 86400000);
+}
+
+/**
+ * Map a subscriptions row into the notification engine's lifecycle signals.
+ * Uses subscriptionState as the source of truth (it encodes GRACE_PERIOD /
+ * CANCELLED / EXPIRED beyond the coarse `status` column).
+ */
+function buildSubscriptionSignals(row: SubscriptionRow): OutcomeSignals["subscription"] {
+  let status: SubscriptionStatus;
+  switch (row.subscriptionState) {
+    case "TRIAL": status = "trialing"; break;
+    case "ACTIVE": status = "active"; break;
+    case "GRACE_PERIOD": status = "past_due"; break;
+    case "CANCELLED": status = "canceled"; break;
+    case "EXPIRED": status = "expired"; break;
+    case "FREE":
+    default:
+      // Fall back to the coarse status column for legacy rows.
+      status =
+        row.status === "trialing" || row.status === "active" ||
+        row.status === "past_due" || row.status === "canceled"
+          ? (row.status as SubscriptionStatus)
+          : "free";
+  }
+
+  const everSubscribed =
+    row.provider !== "none" ||
+    row.providerSubscriptionId != null ||
+    (row.subscriptionState !== "FREE" && row.subscriptionState !== "TRIAL");
+
+  const lapseAt = row.currentPeriodEnd ?? row.expiresAt;
+
+  return {
+    status,
+    trialDaysRemaining: status === "trialing" ? daysUntil(row.trialEndsAt) : null,
+    subscriptionDaysRemaining:
+      status === "canceled" || status === "past_due" || row.cancelAtPeriodEnd === 1
+        ? daysUntil(lapseAt)
+        : null,
+    everSubscribed,
+  };
 }
 
 export async function loadCampaignProgress(userId: string) {

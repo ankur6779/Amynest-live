@@ -40,7 +40,10 @@ export type SubscriptionAnalyticsEvent =
   | "paywall_deferred_activation"
   | "value_bridge_shown"
   | "value_bridge_dismissed"
-  | "value_bridge_clicked";
+  | "value_bridge_clicked"
+  | "value_bridge_eligible"
+  | "value_bridge_suppressed"
+  | "value_bridge_not_shown";
 
 export type SubscriptionAnalyticsPayload = {
   event: SubscriptionAnalyticsEvent;

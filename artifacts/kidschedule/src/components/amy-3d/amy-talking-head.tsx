@@ -34,8 +34,8 @@ export function AmyTalkingHead({
   debugMouth = false,
   halo = false,
   waitingForSession = false,
-  modelScale = 0.8,
-  verticalOffset = -0.15,
+  modelScale = 0.92,
+  verticalOffset = -0.5,
   className,
 }: AmyTalkingHeadProps) {
   const state: Amy3DState = speaking

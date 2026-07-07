@@ -82,7 +82,113 @@ export interface OutcomeSignals {
   churnRisk7d: number;
   churnRisk30d: number;
   churnRisk90d: number;
+
+  /**
+   * Optional subscription-lifecycle signals. When present they unlock the
+   * premium conversion lifecycle journeys (trial, paywall, winback). When
+   * absent (undefined) the engine behaves exactly as before — every field is
+   * optional so existing callers remain fully backward compatible.
+   */
+  subscription?: SubscriptionLifecycleSignals;
+
+  /**
+   * Optional engagement-affinity signals used by the decision engine and the
+   * smart send-time learner. Absent → decision engine falls back to defaults.
+   */
+  engagement?: EngagementAffinitySignals;
+
+  /** Optional contextual/seasonal signals (birthday, weekend, weather). */
+  context?: ContextualSignals;
+
+  /**
+   * Optional per-domain activity signals. Power the persona and parent-value
+   * engines. Absent fields are treated as 0 so callers can populate only what
+   * they cheaply have — the engines degrade gracefully.
+   */
+  activity?: ActivitySignals;
 }
+
+export interface ActivitySignals {
+  routinesCompleted7d?: number;
+  lessonsCompleted7d?: number;
+  speechSessions7d?: number;
+  nutritionPlans7d?: number;
+  storiesPlayed7d?: number;
+  worksheetsCompleted7d?: number;
+  coachInteractions7d?: number;
+  weekdayActiveDays7d?: number;
+  weekendActiveDays7d?: number;
+}
+
+/** Billing state — mirrors subscription lifecycle without coupling to the billing schema. */
+export type SubscriptionStatus =
+  | "free"
+  | "trialing"
+  | "active"
+  | "canceled"
+  | "expired"
+  | "past_due";
+
+export interface SubscriptionLifecycleSignals {
+  status: SubscriptionStatus;
+  /** Whole days until the trial ends (0 = ends today, negative = ended). */
+  trialDaysRemaining?: number | null;
+  /** Whole days until a canceled/expiring subscription lapses. */
+  subscriptionDaysRemaining?: number | null;
+  /** Days since the user last opened a paywall/pricing surface without buying. */
+  paywallViewedDaysAgo?: number | null;
+  /** How many times the paywall was viewed without converting. */
+  paywallViewCount?: number;
+  /** Last plan the user inspected on the paywall, e.g. "yearly". */
+  lastPlanViewed?: string | null;
+  /** True once the user has ever held a paid/trial entitlement (winback vs. new). */
+  everSubscribed?: boolean;
+}
+
+export interface EngagementAffinitySignals {
+  /** Notifications delivered in the trailing 7 days. */
+  notificationsSent7d: number;
+  /** Notifications dismissed (swiped away) in the trailing 7 days. */
+  notificationsDismissed7d: number;
+  /** Consecutive notifications sent without an open — primary fatigue driver. */
+  consecutiveIgnored: number;
+  /** Learned preferred local open hour 0–23, or null when not yet learned. */
+  preferredHourLocal?: number | null;
+  /** Confidence 0–1 in the learned preferred hour. */
+  preferredHourConfidence?: number;
+  /** OS notification permission is currently granted. */
+  permissionGranted?: boolean;
+}
+
+export interface ContextualSignals {
+  /** Whole days until the child's next birthday (0 = today). */
+  childBirthdayInDays?: number | null;
+  /** True when the local day is Saturday/Sunday. */
+  isWeekend?: boolean;
+}
+
+/**
+ * Comprehensive lifecycle stage spanning acquisition, activation, monetization
+ * and re-engagement. Distinct from ChildLifecycleStage (behavioral only): this
+ * unifies billing + behavior + inactivity into one strategy-driving stage.
+ */
+export type LifecycleStage =
+  | "NEW_INSTALL"
+  | "ONBOARDING"
+  | "ROUTINE_CREATED"
+  | "FIRST_SUCCESS"
+  | "DAILY_USER"
+  | "POWER_USER"
+  | "TRIAL_USER"
+  | "TRIAL_ENDING"
+  | "HIGH_PURCHASE_INTENT"
+  | "PREMIUM_SUBSCRIBER"
+  | "SUBSCRIPTION_EXPIRING"
+  | "INACTIVE_1D"
+  | "INACTIVE_3D"
+  | "INACTIVE_7D"
+  | "INACTIVE_14D"
+  | "RETURNING_USER";
 
 export interface OutcomeContext {
   signals: OutcomeSignals;

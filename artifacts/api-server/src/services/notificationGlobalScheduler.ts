@@ -6,7 +6,15 @@ import {
   culturalRegionFromCountry,
   resolveOutcomeStrategy,
   buildOutcomeContextForCategory,
+  detectLifecycleStage,
+  assessFatigue,
+  decideNotification,
+  evaluateQuality,
+  evaluateSuppression,
+  inferParentPersona,
+  computeParentValueScore,
   type ScheduledNotificationJob,
+  type OutcomeSignals,
 } from "@workspace/notification-engine";
 import type { NotificationCategory } from "@workspace/db";
 import { inArray } from "drizzle-orm";
@@ -48,6 +56,114 @@ const JOB_BUILDERS: Record<string, BuilderFn> = {
   good_night: buildGoodNight,
   weekly_report: buildWeeklyReport,
 };
+
+type DecisionMode = "off" | "shadow" | "enforce";
+
+/**
+ * Expected-value decision engine mode (feature flag):
+ *   off      → no behavior change (default; safest)
+ *   shadow   → evaluate + log decisions, but always dispatch (observability)
+ *   enforce  → suppress negative-expected-value / fatigued sends
+ */
+function decisionEngineMode(): DecisionMode {
+  const raw = (process.env.NOTIF_DECISION_ENGINE ?? "off").toLowerCase();
+  if (raw === "shadow" || raw === "enforce") return raw;
+  return "off";
+}
+
+interface IntelligenceGateResult {
+  proceed: boolean;
+  send: boolean;
+  expectedValue: number;
+  reason: string;
+  factors: string[];
+  fatigueLevel: string;
+  lifecycleStage: string;
+  persona: string;
+  valueScore: number;
+  qualityScore: number;
+  qualityPassed: boolean;
+  suppressionReason: string | null;
+  suppressionReasons: string[];
+}
+
+/**
+ * Full notification-intelligence gate for a candidate send. Composes the
+ * expected-value decision engine, copy-level quality AI, and the unified
+ * suppression engine, and derives persona + parent-value for analytics.
+ *
+ * Pure computation on already-loaded signals + the built copy — no extra DB
+ * round-trips. The caller decides whether to enforce based on the flag mode.
+ */
+function evaluateIntelligenceGate(
+  signals: OutcomeSignals,
+  opts: {
+    goal: string;
+    priority: number;
+    critical: boolean;
+    category: NotificationCategory;
+    title: string;
+    body: string;
+  },
+): IntelligenceGateResult {
+  const eng = signals.engagement;
+  const sent7d = eng?.notificationsSent7d ?? 0;
+  const opened7d = signals.notificationsOpened7d ?? 0;
+  const fatigue = assessFatigue({
+    sent7d,
+    opened7d,
+    dismissed7d: eng?.notificationsDismissed7d ?? 0,
+    consecutiveIgnored: eng?.consecutiveIgnored ?? 0,
+    permissionGranted: eng?.permissionGranted ?? true,
+  });
+  const lifecycleStage = detectLifecycleStage(signals);
+  const monetization = opts.goal === "GOAL_SUBSCRIPTION";
+
+  const decision = decideNotification(
+    { goal: opts.goal, priority: opts.priority, monetization, critical: opts.critical },
+    {
+      lifecycleStage,
+      fatigue,
+      isPremium: signals.isPremium,
+      highPurchaseIntent: lifecycleStage === "HIGH_PURCHASE_INTENT",
+      openRate7d: sent7d > 0 ? opened7d / sent7d : undefined,
+    },
+  );
+
+  const quality = evaluateQuality({
+    title: opts.title,
+    body: opts.body,
+    goal: opts.goal,
+    monetization,
+  });
+
+  // Critical, time-sensitive messages bypass the soft quality/diversity gates
+  // (a slightly imperfect bedtime reminder still beats silence), but never the
+  // hard decision blocks.
+  const verdict = evaluateSuppression({
+    decision,
+    quality: opts.critical ? null : quality,
+  });
+
+  const persona = inferParentPersona(signals);
+  const value = computeParentValueScore(signals);
+
+  return {
+    proceed: !verdict.suppress,
+    send: decision.send,
+    expectedValue: decision.expectedValue,
+    reason: decision.reason,
+    factors: decision.factors,
+    fatigueLevel: fatigue.level,
+    lifecycleStage,
+    persona: persona.primary,
+    valueScore: value.score,
+    qualityScore: quality.score,
+    qualityPassed: quality.passed,
+    suppressionReason: verdict.reason,
+    suppressionReasons: verdict.reasons,
+  };
+}
 
 function categoryEnabled(
   prefs: Awaited<ReturnType<typeof getOrCreatePreferences>>,
@@ -142,6 +258,7 @@ export async function runGlobalScheduleTick(now = new Date()): Promise<{
   let throttled = 0;
   let failed = 0;
 
+  const decisionMode = decisionEngineMode();
   const users = await loadUserScheduleRows();
   const signalsCache = new Map<string, Awaited<ReturnType<typeof loadOutcomeSignals>>>();
   const campaignCache = new Map<string, Awaited<ReturnType<typeof loadCampaignProgress>>>();
@@ -260,6 +377,57 @@ export async function runGlobalScheduleTick(now = new Date()): Promise<{
             experimentId: ctx.experimentId,
             experimentVariant: ctx.experimentVariant,
           };
+        }
+
+        // ── Notification intelligence gate (feature-flagged) ────────────────
+        if (decisionMode !== "off" && signals) {
+          const gate = evaluateIntelligenceGate(signals, {
+            goal: built.outcomeMeta?.goal ?? "GOAL_PARENT_ENGAGEMENT",
+            priority: built.contentMeta?.businessImpactScore ?? 50,
+            critical: Boolean(job.slot.critical),
+            category: job.category,
+            title: built.title,
+            body: built.body,
+          });
+
+          // Attach intelligence metadata for downstream analytics (migration-free).
+          built.data = {
+            ...built.data,
+            lifecycleStage: gate.lifecycleStage,
+            persona: gate.persona,
+            parentValueScore: gate.valueScore,
+            qualityScore: gate.qualityScore,
+            decisionExpectedValue: gate.expectedValue,
+          };
+
+          if (!gate.proceed) {
+            logger.info(
+              {
+                evt: "NOTIFICATION_INTELLIGENCE_GATE",
+                mode: decisionMode,
+                userId: user.userId,
+                job: job.jobId,
+                category: job.category,
+                expectedValue: gate.expectedValue,
+                reason: gate.reason,
+                suppressionReason: gate.suppressionReason,
+                suppressionReasons: gate.suppressionReasons,
+                fatigueLevel: gate.fatigueLevel,
+                lifecycleStage: gate.lifecycleStage,
+                persona: gate.persona,
+                valueScore: gate.valueScore,
+                qualityScore: gate.qualityScore,
+                qualityPassed: gate.qualityPassed,
+                factors: gate.factors,
+                enforced: decisionMode === "enforce",
+              },
+              "Notification intelligence gate suppressed candidate",
+            );
+            if (decisionMode === "enforce") {
+              throttled++;
+              continue;
+            }
+          }
         }
 
         const dedupKey = built.dedupKey ?? jobDedupKey(job.jobId, local.localDate);

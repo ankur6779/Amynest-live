@@ -12,9 +12,17 @@ type SeriesCardProps = {
   locked?: boolean;
   disabled?: boolean;
   onStart: () => void;
+  onUnlock?: () => void;
 };
 
-export function SeriesCard({ series, progress, locked = false, disabled = false, onStart }: SeriesCardProps) {
+export function SeriesCard({
+  series,
+  progress,
+  locked = false,
+  disabled = false,
+  onStart,
+  onUnlock,
+}: SeriesCardProps) {
   const { t } = useTranslation();
   const totalMin = totalSeriesMinutes(series);
   const isComplete = progress.percent === 100;
@@ -145,7 +153,13 @@ export function SeriesCard({ series, progress, locked = false, disabled = false,
       <div style={{ padding: "0 14px 14px" }}>
         <button
           type="button"
-          onClick={onStart}
+          onClick={() => {
+            if (locked) {
+              onUnlock?.();
+              return;
+            }
+            onStart();
+          }}
           disabled={disabled || isComplete}
           style={{
             width: "100%",

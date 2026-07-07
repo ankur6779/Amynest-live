@@ -347,6 +347,25 @@ export default function AudioLessonsPage() {
     [handlePickLesson, selectedAge],
   );
 
+  const isLessonPlayable = useCallback(
+    (lesson: Lesson) => getLessonAccessForLesson(lesson) !== "locked",
+    [getLessonAccessForLesson],
+  );
+
+  const quickPlayLesson = useMemo(() => {
+    const card = amyHome.quickPlay;
+    if (!card) return null;
+    const lesson = getLessonById(card.lessonId);
+    return lesson && isLessonPlayable(lesson) ? { card, lesson } : null;
+  }, [amyHome.quickPlay, isLessonPlayable]);
+
+  const dailyPickLesson = useMemo(() => {
+    const card = amyHome.dailyPick;
+    if (!card) return null;
+    const lesson = getLessonById(card.lessonId);
+    return lesson && isLessonPlayable(lesson) ? { card, lesson } : null;
+  }, [amyHome.dailyPick, isLessonPlayable]);
+
   const handleEmergencySelect = useCallback(
     (type: EmergencyType) => {
       setEmergencyOpen(false);
@@ -470,16 +489,16 @@ export default function AudioLessonsPage() {
           )}
 
           <div className="amynest-page-inset" style={{ paddingTop: 12, display: "grid", gap: 10 }}>
-            {amyHome.quickPlay && (
+            {quickPlayLesson && (
               <AmyQuickPlayCard
-                card={amyHome.quickPlay}
-                onPlay={() => playLessonById(amyHome.quickPlay!.lessonId, true)}
+                card={quickPlayLesson.card}
+                onPlay={() => playLessonById(quickPlayLesson.lesson.id, true)}
               />
             )}
-            {amyHome.dailyPick && (
+            {dailyPickLesson && (
               <AmyDailyPickCard
-                card={amyHome.dailyPick}
-                onPlay={() => playLessonById(amyHome.dailyPick!.lessonId, true)}
+                card={dailyPickLesson.card}
+                onPlay={() => playLessonById(dailyPickLesson.lesson.id, true)}
               />
             )}
           </div>

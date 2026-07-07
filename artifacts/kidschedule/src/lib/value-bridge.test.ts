@@ -1,8 +1,9 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import {
   compareValueBridgePriority,
-  getSessionBridgeMoment,
+  evaluateValueBridgeSuppression,
   markValueBridgeShownToday,
+  markValueBridgeVisibleThisSession,
   setSessionBridgeMoment,
   shouldTriggerValueBridge,
   valueBridgeCopy,
@@ -43,8 +44,8 @@ describe("value-bridge phase 1", () => {
     );
     markValueBridgeShownToday("routine_completion");
     expect(wasValueBridgeShownToday("routine_completion")).toBe(true);
-    expect(shouldTriggerValueBridge("routine_completion", internalTrial)).toBe(
-      false,
+    expect(evaluateValueBridgeSuppression("routine_completion", internalTrial)).toBe(
+      "already_seen_today",
     );
   });
 
@@ -53,8 +54,16 @@ describe("value-bridge phase 1", () => {
     expect(shouldTriggerValueBridge("routine_completion", internalTrial)).toBe(
       true,
     );
-    expect(shouldTriggerValueBridge("weekly_summary", internalTrial)).toBe(
-      false,
+    setSessionBridgeMoment("routine_completion");
+    expect(evaluateValueBridgeSuppression("weekly_summary", internalTrial)).toBe(
+      "priority_banner_active",
+    );
+  });
+
+  it("suppresses with cooldown after a visible banner this session", () => {
+    markValueBridgeVisibleThisSession();
+    expect(evaluateValueBridgeSuppression("routine_completion", internalTrial)).toBe(
+      "cooldown",
     );
   });
 

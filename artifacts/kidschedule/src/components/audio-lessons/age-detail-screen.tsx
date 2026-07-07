@@ -291,6 +291,7 @@ export function AgeDetailScreen({
                       locked={seriesLocked}
                       disabled={unlocking}
                       onStart={() => onStartSeries(series)}
+                      onUnlock={onUnlock}
                     />
                   );
                 })}

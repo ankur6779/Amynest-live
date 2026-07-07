@@ -56,8 +56,18 @@ import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { computeRoutineStreak } from "@/lib/routine-streak";
 import { shouldBypassRoutineGeneratePaywall } from "@/lib/activation-gate";
 import { ActivationResumeBanner } from "@/components/activation-resume-banner";
+import { readActivationResume } from "@/lib/activation-resume";
 import { RetentionHubSection } from "@/components/retention/retention-hub";
 import { FeatureDiscoveryStrip } from "@/components/feature-discovery-strip";
+import { FF_DASHBOARD_PRIORITY_ORDER } from "@/lib/dashboard-feature-flags";
+import {
+  resolveDashboardUserState,
+  shouldShowActivationResumeBanner,
+  shouldShowFeatureDiscovery,
+  timelineFlexOrderClass,
+} from "@/lib/dashboard-priority";
+import { useRetention } from "@/hooks/use-retention";
+import { useTrialState } from "@/hooks/use-trial-state";
 import { pickRoutineForIntelligence, resolveFamilyIntelligenceSurface } from "@/lib/family-intelligence-surface";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
@@ -952,6 +962,7 @@ export default function Dashboard() {
     entitlements,
     loading: subLoading,
   } = useSubscription();
+  const { trialDaysRemaining } = useTrialState();
   const {
     openPaywall
   } = usePaywall();
@@ -1100,6 +1111,48 @@ export default function Dashboard() {
     };
   }, [allRoutines, selectedChildId]);
 
+  const routineCompletionPct =
+    todayProgress.total > 0
+      ? Math.round((todayProgress.done / todayProgress.total) * 100)
+      : 0;
+  const {
+    data: retentionData,
+    isLoading: retentionLoading,
+    isError: retentionError,
+  } = useRetention({ routineCompletionPct });
+  const dashboardUserState = useMemo(
+    () =>
+      resolveDashboardUserState({
+        hasTodayRoutine,
+        todayDone: todayProgress.done,
+        todayTotal: todayProgress.total,
+        checkedInToday: retentionData?.checkedInToday ?? false,
+        entitlements,
+        trialDaysRemaining,
+        inactiveDays: retentionData?.state?.inactiveDays,
+      }),
+    [
+      hasTodayRoutine,
+      todayProgress.done,
+      todayProgress.total,
+      retentionData?.checkedInToday,
+      retentionData?.state?.inactiveDays,
+      entitlements,
+      trialDaysRemaining,
+    ],
+  );
+  const localActivationResume = readActivationResume();
+  const showActivationResume = shouldShowActivationResumeBanner(
+    FF_DASHBOARD_PRIORITY_ORDER,
+    localActivationResume,
+    !retentionLoading && !retentionError && retentionData != null,
+  );
+  const showFeatureDiscovery = shouldShowFeatureDiscovery(
+    FF_DASHBOARD_PRIORITY_ORDER,
+    dashboardUserState,
+  );
+  const timelineOrderClass = timelineFlexOrderClass(FF_DASHBOARD_PRIORITY_ORDER);
+
   useEffect(() => {
     // Single-flight ref lock — once the parent-profile fetch has been
     // attempted (success OR error), we never re-fire it from this effect.
@@ -1231,17 +1284,13 @@ export default function Dashboard() {
             <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />
             <ContentReveal.Stagger className="relative z-10 flex flex-col gap-4">
             <ContentReveal.Item>
-              <ActivationResumeBanner />
+              {showActivationResume ? <ActivationResumeBanner /> : null}
             </ContentReveal.Item>
 
             <ContentReveal.Item>
               <RetentionHubSection
                 childName={selectedChild?.name ?? null}
-                routineCompletionPct={
-                  todayProgress.total > 0
-                    ? Math.round((todayProgress.done / todayProgress.total) * 100)
-                    : 0
-                }
+                routineCompletionPct={routineCompletionPct}
                 hasTodayRoutine={hasTodayRoutine}
                 onGenerateRoutine={handleGenerateRoutine}
                 learningHref="/parenting-hub"
@@ -1252,7 +1301,7 @@ export default function Dashboard() {
               <SevenDayJourneyCard />
             </ContentReveal.Item>
 
-            <ContentReveal.Item className="order-1 md:order-none">
+            <ContentReveal.Item className={timelineOrderClass}>
               <NowNextTimeline
                 routines={filteredRoutines}
                 selectedChildName={selectedChild?.name ?? null}
@@ -1307,12 +1356,14 @@ export default function Dashboard() {
               />
             </ContentReveal.Item>
 
+            {showFeatureDiscovery ? (
             <ContentReveal.Item>
               <FeatureDiscoveryStrip
                 childAgeYears={selectedChild?.age}
                 hasRoutines={allRoutinesSafe.length > 0}
               />
             </ContentReveal.Item>
+            ) : null}
 
             <ContentReveal.Item>
               <DashboardMoreInsightsSection
