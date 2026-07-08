@@ -33,8 +33,7 @@ export function isPremiumSubscriberNow(s: Subscription): boolean {
  */
 export function isPremiumNow(s: Subscription): boolean {
   const hasExplicitV2State =
-    s.provider === "revenuecat" ||
-    s.subscriptionState !== "FREE" ||
+    (s.subscriptionState != null && s.subscriptionState !== "FREE") ||
     !!s.expiresAt ||
     !!s.gracePeriodExpiresAt;
   if (hasExplicitV2State) {
