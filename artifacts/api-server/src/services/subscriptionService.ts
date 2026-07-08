@@ -618,7 +618,11 @@ export async function healStaleSubscriptionRecord(
     return fixed ?? sub;
   }
 
-  if (!["revenuecat", "razorpay", "none"].includes(sub.provider ?? "none")) {
+  if (sub.provider === "revenuecat" || sub.provider === "razorpay") {
+    return sub;
+  }
+
+  if ((sub.provider ?? "none") !== "none") {
     return sub;
   }
 
