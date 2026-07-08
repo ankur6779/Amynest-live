@@ -1,0 +1,145 @@
+<!doctype html>
+<!-- Dev-only harness: renders every animation clip of the Amy GLB in a grid
+     (one viewport per clip, single WebGL context via scissor test).
+     Usage:  python3 -m http.server 8123  (from repo root)
+             open http://localhost:8123/scripts/amy-clip-viewer.html
+     Params: ?rotY=-1.15  model yaw (radians)
+             ?clip=5      fullscreen single clip
+             ?speed=1     playback speed -->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { margin: 0; background: #0b1026; overflow: hidden; font-family: monospace; }
+  #labels { position: fixed; inset: 0; pointer-events: none; }
+  .lbl { position: absolute; color: #9ee; font-size: 11px; padding: 2px 4px;
+         background: rgba(0,0,0,.55); border-radius: 3px; white-space: nowrap; }
+  canvas { display: block; }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="labels"></div>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
+
+const params = new URLSearchParams(location.search);
+const ROT_Y = parseFloat(params.get("rotY") ?? "-1.15");
+const SINGLE = params.get("clip");
+const SPEED = parseFloat(params.get("speed") ?? "1");
+// strip=N: freeze-frame filmstrip of one clip at N staggered times.
+const STRIP = SINGLE !== null ? parseInt(params.get("strip") ?? "0", 10) : 0;
+// rotYs=a,b,c: bind pose (no animation) at multiple yaw angles.
+const ROT_YS = (params.get("rotYs") ?? "").split(",").map(parseFloat).filter((v) => !isNaN(v));
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(1);
+renderer.setSize(innerWidth, innerHeight);
+renderer.setScissorTest(true);
+document.body.appendChild(renderer.domElement);
+
+const loader = new GLTFLoader();
+const gltf = await loader.loadAsync("/AMY%2B3d%2Bcharacter.glb").catch(() =>
+  loader.loadAsync("/AMY+3d+character.glb"));
+
+const clips = gltf.animations;
+const BIND_MODE = ROT_YS.length > 0;
+const indices = BIND_MODE
+  ? ROT_YS.map(() => -1)
+  : STRIP > 0
+    ? Array(STRIP).fill(parseInt(SINGLE, 10))
+    : SINGLE !== null
+      ? [parseInt(SINGLE, 10)]
+      : clips.map((_, i) => i);
+const cols = BIND_MODE
+  ? Math.min(ROT_YS.length, 4)
+  : STRIP > 0
+    ? Math.min(STRIP, 4)
+    : SINGLE !== null
+      ? 1
+      : 5;
+const rows = Math.ceil(indices.length / cols);
+const cellW = Math.floor(innerWidth / cols);
+const cellH = Math.floor(innerHeight / rows);
+
+const labels = document.getElementById("labels");
+const cells = indices.map((clipIdx, i) => {
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.4);
+  dir.position.set(2, 3, 4);
+  scene.add(dir);
+
+  const model = cloneSkeleton(gltf.scene);
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const fit = 1.7 / Math.max(size.x, size.y, size.z);
+  const root = new THREE.Group();
+  root.rotation.y = BIND_MODE ? ROT_YS[i] : ROT_Y;
+  const inner = new THREE.Group();
+  inner.position.copy(center).multiplyScalar(-fit);
+  inner.scale.setScalar(fit);
+  inner.add(model);
+  root.add(inner);
+  scene.add(root);
+
+  const camera = new THREE.PerspectiveCamera(30, cellW / cellH, 0.1, 100);
+  camera.position.set(0, 0.1, SINGLE !== null && STRIP === 0 ? 3.6 : 6.5);
+  camera.lookAt(0, 0, 0);
+
+  const mixer = new THREE.AnimationMixer(model);
+  let frozen = false;
+  if (!BIND_MODE) {
+    const action = mixer.clipAction(clips[clipIdx]);
+    action.play();
+    if (STRIP > 0) {
+      const t = (clips[clipIdx].duration * i) / STRIP;
+      mixer.update(t);
+      frozen = true;
+    }
+  } else {
+    frozen = true;
+  }
+
+  const col = i % cols;
+  const row = Math.floor(i / cols);
+  const lbl = document.createElement("div");
+  lbl.className = "lbl";
+  lbl.style.left = col * cellW + 4 + "px";
+  lbl.style.top = row * cellH + 4 + "px";
+  lbl.textContent = BIND_MODE
+    ? `rotY=${ROT_YS[i].toFixed(2)}`
+    : STRIP > 0
+      ? `#${clipIdx} t=${((clips[clipIdx].duration * i) / STRIP).toFixed(1)}s`
+      : `#${clipIdx} ${clips[clipIdx].name} (${clips[clipIdx].duration.toFixed(1)}s)`;
+  labels.appendChild(lbl);
+
+  return { scene, camera, mixer, col, row, frozen };
+});
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = clock.getDelta() * SPEED;
+  for (const c of cells) {
+    if (!c.frozen) c.mixer.update(dt);
+    const x = c.col * cellW;
+    const y = innerHeight - (c.row + 1) * cellH;
+    renderer.setViewport(x, y, cellW, cellH);
+    renderer.setScissor(x, y, cellW, cellH);
+    renderer.render(c.scene, c.camera);
+  }
+  requestAnimationFrame(frame);
+}
+frame();
+window.__amyViewerReady = true;
+</script>
+</body>
+</html>

@@ -212,7 +212,7 @@ export function applyAmyAnimationState(input: AmyAnimationStateInput): boolean {
   }
 
   if (state === "encouraging") {
-    const clip = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.wave);
+    const clip = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.cheer);
     if (!clip) return true;
     controller.once(clip, () => {
       const current = getState();

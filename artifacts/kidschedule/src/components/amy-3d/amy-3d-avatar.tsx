@@ -117,7 +117,7 @@ export function Amy3DAvatar({
     display: "flex" as const,
     flexDirection: "column" as const,
     alignItems: "center" as const,
-    gap: Math.round(stageHeight * 0.06),
+    gap: Math.round(stageHeight * 0.04),
     flexShrink: 0,
   };
 

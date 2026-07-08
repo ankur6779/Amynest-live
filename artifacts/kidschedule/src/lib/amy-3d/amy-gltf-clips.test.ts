@@ -22,7 +22,9 @@ describe("amy-gltf-clips", () => {
   });
 
   it("faces Tripo rig toward the default camera (front-facing, never a side profile)", () => {
-    expect(AMY_GLTF_FACING_Y).toBeCloseTo(-1.15);
+    // Rig bind pose faces +X; a -90° yaw gives dead-on eye contact with the
+    // fixed camera (verified via bind-pose yaw sweep in scripts/amy-clip-viewer.html).
+    expect(AMY_GLTF_FACING_Y).toBeCloseTo(-Math.PI / 2);
   });
 
   it("loops ambient states and one-shots celebrate and wave", () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { Heart } from "lucide-react";
 import {
@@ -10,40 +10,74 @@ import {
 import { Button } from "@/components/ui/button";
 import { WIN_BACK } from "@workspace/subscription-marketing";
 import { useSubscription } from "@/hooks/use-subscription";
-import { isLapsedSubscriber } from "@/components/subscription-win-back-banner";
-import { getTrialStartedLocally } from "@/lib/subscription-funnel-storage";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import {
   markWinbackDismissed,
   wasWinbackDismissedRecently,
 } from "@/lib/subscription-funnel-storage";
 import { FF_WINBACK_MODAL } from "@/lib/subscription-feature-flags";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import {
+  evaluateWinbackEligibility,
+  winbackDiagnosticEvent,
+  type WinbackEligibilityResult,
+} from "@/lib/winback-eligibility";
 
+/**
+ * Winback modal — only after entitlements are fully resolved from the server.
+ * Must never fire on placeholder FREE / loading isTrialing=false (prod bug T5OX4fdY).
+ */
 export function SubscriptionWinbackModal() {
-  const { entitlements, isPremium } = useSubscription();
+  const { entitlements, isFetched, isPlaceholderData, isFetching } =
+    useSubscription();
+  const { isSignedIn, isLoaded } = useAuth();
   const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
+  const lastDiagKey = useRef<string | null>(null);
 
-  const expiredTrial =
-    !isPremium &&
-    !!getTrialStartedLocally() &&
-    entitlements?.status === "free" &&
-    !entitlements?.isTrialing;
+  const eligibility: WinbackEligibilityResult = evaluateWinbackEligibility(
+    entitlements,
+    {
+      featureEnabled: FF_WINBACK_MODAL,
+      isSignedIn: !!isLoaded && !!isSignedIn,
+      isFetched,
+      isPlaceholderData,
+      isFetching,
+      dismissedRecently: wasWinbackDismissedRecently(),
+    },
+  );
 
-  const show =
-    FF_WINBACK_MODAL &&
-    !isPremium &&
-    (isLapsedSubscriber(entitlements) || expiredTrial) &&
-    !wasWinbackDismissedRecently();
+  const show = eligibility.show;
+
+  // Diagnostics: loading / active-trial blocks (deduped per reason+state)
+  useEffect(() => {
+    const diag = winbackDiagnosticEvent(eligibility);
+    if (!diag || diag === "winback_shown") return;
+    const key = `${diag}:${eligibility.reason}`;
+    if (lastDiagKey.current === key) return;
+    lastDiagKey.current = key;
+    trackSubscriptionEvent({
+      event: diag,
+      source: "app_open",
+      reason: eligibility.reason,
+    });
+  }, [eligibility]);
 
   useEffect(() => {
-    if (!show) return;
+    if (!show) {
+      setOpen(false);
+      return;
+    }
     const t = window.setTimeout(() => {
       setOpen(true);
-      trackSubscriptionEvent({ event: "winback_shown", source: "app_open" });
+      trackSubscriptionEvent({
+        event: "winback_shown",
+        source: "app_open",
+        reason: eligibility.reason,
+      });
     }, 1200);
     return () => window.clearTimeout(t);
-  }, [show]);
+  }, [show, eligibility.reason]);
 
   if (!show) return null;
 
@@ -51,7 +85,14 @@ export function SubscriptionWinbackModal() {
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!v) markWinbackDismissed();
+        if (!v) {
+          markWinbackDismissed();
+          trackSubscriptionEvent({
+            event: "winback_dismissed",
+            source: "winback_modal",
+            reason: eligibility.reason,
+          });
+        }
         setOpen(v);
       }}
     >
@@ -76,6 +117,7 @@ export function SubscriptionWinbackModal() {
                 event: "winback_clicked",
                 source: "winback_modal",
                 plan: "yearly",
+                reason: eligibility.reason,
               });
               setOpen(false);
               setLocation("/pricing?plan=yearly&source=winback");
@@ -89,6 +131,11 @@ export function SubscriptionWinbackModal() {
             onClick={() => {
               setOpen(false);
               markWinbackDismissed();
+              trackSubscriptionEvent({
+                event: "winback_dismissed",
+                source: "winback_modal_secondary",
+                reason: eligibility.reason,
+              });
               setLocation("/pricing?source=winback_secondary");
             }}
           >

@@ -6,8 +6,8 @@ export default function AmyAvatarQaPage() {
   const [mode, setMode] = useState<"waiting" | "speaking" | "listening" | "idle">(
     "waiting",
   );
-  const [vo, setVo] = useState(-0.5);
-  const [ms, setMs] = useState(0.92);
+  const [vo, setVo] = useState(-0.8);
+  const [ms, setMs] = useState(1);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f1a2e", color: "#fff", padding: 12 }}>
@@ -31,7 +31,7 @@ export default function AmyAvatarQaPage() {
       <div style={{ display: "flex", gap: 12, marginBottom: 8, fontSize: 13 }}>
         <label>
           vOffset {vo.toFixed(2)}
-          <input type="range" min={-0.8} max={0.3} step={0.05} value={vo}
+          <input type="range" min={-1.2} max={0.3} step={0.05} value={vo}
             onChange={(e) => setVo(Number(e.target.value))} />
         </label>
         <label>

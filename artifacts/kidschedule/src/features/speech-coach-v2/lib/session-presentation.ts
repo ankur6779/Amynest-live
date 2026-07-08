@@ -26,26 +26,41 @@ export function useSpeechCoachHeroSize(): number {
   return size;
 }
 
+export interface SpeechCoachConnectionLabelOptions {
+  /** Amy's output audio is currently playing. */
+  amySpeaking?: boolean;
+  /** Session bootstrap still in flight (pre-session). */
+  loading?: boolean;
+}
+
+/**
+ * Child-facing status line under the Amy hero.
+ *
+ * "Connection issue" is reserved for REAL failures — the realtime session
+ * failed after the retry limit ("error") or the connection dropped mid-session
+ * ("disconnected" while live). Normal startup (idle/connecting/reconnecting)
+ * always reads as "Preparing Amy...", never as an error.
+ */
 export function speechCoachConnectionLabel(
   state: RealtimeConnectionState,
   live: boolean,
+  options: SpeechCoachConnectionLabelOptions = {},
 ): string {
   if (live) {
     switch (state) {
       case "connected":
-        return "Listening";
-      case "connecting":
-        return "Connecting...";
-      case "reconnecting":
-        return "Reconnecting…";
+        return options.amySpeaking ? "Amy is speaking" : "Listening...";
       case "error":
       case "disconnected":
         return "Connection issue";
+      case "idle":
+      case "connecting":
+      case "reconnecting":
       default:
-        return "Connecting...";
+        return "Preparing Amy...";
     }
   }
 
-  if (state === "connecting") return "Connecting...";
-  return "Tap to start speaking with Amy";
+  if (options.loading || state === "connecting") return "Preparing Amy...";
+  return "Ready to talk";
 }

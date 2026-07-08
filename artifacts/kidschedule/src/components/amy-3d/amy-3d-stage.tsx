@@ -81,7 +81,10 @@ export default function Amy3DStage({
         frameloop={frameloop}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: "default" }}
-        camera={{ position: [0, 0.15, 3.6], fov: 30 }}
+        // Fixed camera (no orbit / auto-rotate). Longer focal length (fov 28)
+        // keeps the chibi proportions friendly, distance compensates so the
+        // framing matches; y sits near Amy's eye line for natural eye contact.
+        camera={{ position: [0, 0.05, 3.75], fov: 28 }}
         style={{ width: "100%", height: "100%", background: "transparent" }}
       >
         <ambientLight intensity={0.9} />

@@ -18,15 +18,31 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SRC = ROOT / "AMY+3d+character.glb"
 OUT = ROOT / "artifacts/kidschedule/public/amy-3d/amy.glb"
 
-# Tripo export → semantic clip names consumed by useAmyGltfActions.
+# Tripo export → semantic clip names consumed by the runtime animation map.
+#
+# Mapping verified clip-by-clip (scripts/inspect-amy-gltf-clips.py numeric bone
+# analysis + scripts/amy-clip-viewer.html visual filmstrips, Jul 2026):
+#   .013  near-still breathing idle                     → idle
+#   .004  short friendly wave, hand by face, front      → wave
+#   .008  gentle sway + soft arm motion, front          → warmup
+#   .005  talk/sing gestures + head bobs                → talk
+#   .015  punchy arm-raise cheer, 3.5s, lands front     → celebrate
+#   .006  bouncy energetic hand-raise ("hooray")        → cheer (encouraging)
+#   .003  calm attentive hand micro-movements, front    → listening
+#   .011  cute head tilts + hands-up gesture, front     → thinking
+#
+# Rejected: .000/.007/.016 (turn sideways/around), .002/.017 (deep bow, cap
+# fills frame), .010 (tumble — upside down), .009/.018 (head looks away),
+# .001/.012/.014 (redundant or too long/wild for their slot).
 CLIP_RENAMES: dict[str, str] = {
     "NlaTrack.013": "idle",
-    "NlaTrack.012": "wave",
-    "NlaTrack.004": "warmup",  # ~2.8s speech intro before talk loop
-    "NlaTrack.005": "talk",  # sing-style head bob (~9s)
-    "NlaTrack.010": "celebrate",
-    "NlaTrack.008": "listening",
-    "NlaTrack.003": "thinking",
+    "NlaTrack.004": "wave",
+    "NlaTrack.008": "warmup",
+    "NlaTrack.005": "talk",
+    "NlaTrack.015": "celebrate",
+    "NlaTrack.006": "cheer",
+    "NlaTrack.003": "listening",
+    "NlaTrack.011": "thinking",
 }
 
 

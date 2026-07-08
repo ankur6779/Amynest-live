@@ -307,6 +307,18 @@ export function useSubscription() {
     }
   }, [authFetch, qc, refresh]);
 
+  /**
+   * True only after a real /api/subscription (or cache/fallback) result —
+   * not React Query placeholderData (EMPTY_SUBSCRIPTION_RESPONSE).
+   * Winback and other race-sensitive UI must gate on this.
+   */
+  const entitlementsResolved =
+    isLoaded &&
+    isSignedIn &&
+    query.isFetched &&
+    !query.isPlaceholderData &&
+    !query.isFetching;
+
   return {
     data: query.data,
     entitlements: query.data?.entitlements ?? null,
@@ -314,6 +326,11 @@ export function useSubscription() {
     isPremium: !!query.data?.entitlements?.isPremium,
     aiRemaining: query.data?.entitlements?.usage.aiQueriesRemaining ?? null,
     loading: query.isLoading,
+    /** @see entitlementsResolved */
+    isFetched: query.isFetched,
+    isPlaceholderData: !!query.isPlaceholderData,
+    isFetching: query.isFetching,
+    entitlementsResolved,
     refresh,
     startTrial,
     checkout,

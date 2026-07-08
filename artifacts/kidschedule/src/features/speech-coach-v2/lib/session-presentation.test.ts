@@ -25,11 +25,28 @@ describe("amy-stage-layout", () => {
 });
 
 describe("speechCoachConnectionLabel", () => {
-  it("shows startup and listening copy without false errors", () => {
-    expect(speechCoachConnectionLabel("idle", true)).toBe("Connecting...");
-    expect(speechCoachConnectionLabel("connecting", true)).toBe("Connecting...");
-    expect(speechCoachConnectionLabel("connected", true)).toBe("Listening");
+  it("never shows a connection error during normal startup", () => {
+    expect(speechCoachConnectionLabel("idle", true)).toBe("Preparing Amy...");
+    expect(speechCoachConnectionLabel("connecting", true)).toBe("Preparing Amy...");
+    expect(speechCoachConnectionLabel("reconnecting", true)).toBe("Preparing Amy...");
+    expect(speechCoachConnectionLabel("idle", false, { loading: true })).toBe(
+      "Preparing Amy...",
+    );
+  });
+
+  it("shows live states once connected", () => {
+    expect(speechCoachConnectionLabel("connected", true)).toBe("Listening...");
+    expect(
+      speechCoachConnectionLabel("connected", true, { amySpeaking: true }),
+    ).toBe("Amy is speaking");
+  });
+
+  it("reserves connection issue for real failures", () => {
     expect(speechCoachConnectionLabel("error", true)).toBe("Connection issue");
-    expect(speechCoachConnectionLabel("idle", false)).toBe("Tap to start speaking with Amy");
+    expect(speechCoachConnectionLabel("disconnected", true)).toBe("Connection issue");
+  });
+
+  it("shows readiness before the session starts", () => {
+    expect(speechCoachConnectionLabel("idle", false)).toBe("Ready to talk");
   });
 });

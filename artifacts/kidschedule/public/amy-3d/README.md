@@ -11,8 +11,10 @@ Assets for the Amy companion avatar (`src/components/amy-3d/`).
   `AmyIcon` everywhere (headers, lists, chat bubbles).
 - `amy.glb` — rigged Tripo 3D model (41 bones, 19 clips). Run
   `python3 scripts/prepare-amy-gltf.py` after updating `AMY+3d+character.glb`
-  at repo root. Semantic clips: `idle`, `wave`, `talk`, `celebrate`,
-  `listening`, `thinking`.
+  at repo root. Semantic clips: `idle`, `wave`, `warmup`, `talk`, `celebrate`,
+  `cheer`, `listening`, `thinking`. To re-verify the clip mapping, use
+  `scripts/inspect-amy-gltf-clips.py` (per-bone motion analysis) and
+  `scripts/amy-clip-viewer.html` (visual filmstrip per clip).
 
 ## How rendering works (tiered)
 

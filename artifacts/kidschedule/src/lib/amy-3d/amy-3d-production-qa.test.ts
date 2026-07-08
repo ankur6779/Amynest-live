@@ -35,13 +35,16 @@ function allSemanticClips(): AnimationClip[] {
 }
 
 describe("Amy 3D production QA (automated)", () => {
-  it("maps idle, wave, celebrate, talk clips for QA states", () => {
+  it("maps idle, cheer, celebrate, talk clips for QA states", () => {
     expect(AMY_GLTF_CLIP_FOR_STATE.idle).toBe("idle");
-    expect(AMY_GLTF_CLIP_FOR_STATE.encouraging).toBe("wave");
+    expect(AMY_GLTF_CLIP_FOR_STATE.encouraging).toBe("cheer");
     expect(AMY_GLTF_CLIP_FOR_STATE.celebrating).toBe("celebrate");
     expect(AMY_GLTF_CLIP_FOR_STATE.speaking).toBe("talk");
+    expect(AMY_GLTF_CLIP_FOR_STATE.listening).toBe("listening");
+    expect(AMY_GLTF_CLIP_FOR_STATE.thinking).toBe("thinking");
     expect(AMY_GLTF_LOOPING_CLIPS.has("idle")).toBe(true);
     expect(AMY_GLTF_LOOPING_CLIPS.has("wave")).toBe(false);
+    expect(AMY_GLTF_LOOPING_CLIPS.has("cheer")).toBe(false);
     expect(AMY_GLTF_LOOPING_CLIPS.has("celebrate")).toBe(false);
   });
 
@@ -60,7 +63,7 @@ describe("Amy 3D production QA (automated)", () => {
     ctrl.dispose();
   });
 
-  it("starts wave once for encouraging greeting", () => {
+  it("starts cheer once for encouraging", () => {
     const clips = allSemanticClips();
     const actions = Object.fromEntries(clips.map((c) => [c.name, mockAction()]));
     const ctrl = new AmyAnimationController(actions, clips);
@@ -71,7 +74,7 @@ describe("Amy 3D production QA (automated)", () => {
       reduced: false,
       getState: () => "encouraging",
     });
-    expect(actions.wave?.play).toHaveBeenCalled();
+    expect(actions.cheer?.play).toHaveBeenCalled();
     ctrl.dispose();
   });
 

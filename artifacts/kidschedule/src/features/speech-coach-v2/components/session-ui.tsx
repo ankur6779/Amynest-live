@@ -46,6 +46,7 @@ export function SpeechCoachV2SessionUi(props: {
   } = props;
 
   const heroSize = useSpeechCoachHeroSize();
+  const realtimeReady = live && connectionState === "connected";
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-gradient-to-b from-sky-950 via-indigo-950 to-slate-950 text-white">
@@ -68,16 +69,18 @@ export function SpeechCoachV2SessionUi(props: {
           size={heroSize}
           presentation="stage"
           speaking={amySpeaking}
-          listening={live && connectionState === "connected" && !amySpeaking}
+          listening={realtimeReady && !amySpeaking}
           listenForAudio={live}
-          waitingForSession={!live}
+          // Keep the warmup loop running through connect so there is no idle
+          // freeze between tapping Start and Amy's first talk crossfade.
+          waitingForSession={!realtimeReady}
           audioLevelRef={amyAudioLevel}
           audioMeterActiveRef={amyAudioMeterActive}
           debugMouth={showRealtimeDiagnostics()}
         />
         <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
         <p className="mt-1 text-xs text-white/60">
-          {speechCoachConnectionLabel(connectionState, live)}
+          {speechCoachConnectionLabel(connectionState, live, { amySpeaking, loading })}
         </p>
         {live && diagnostics && showRealtimeDiagnostics() && (
           <RealtimeDiagnosticsPanel diagnostics={diagnostics} />

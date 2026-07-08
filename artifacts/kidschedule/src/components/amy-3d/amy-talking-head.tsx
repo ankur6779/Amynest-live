@@ -34,8 +34,11 @@ export function AmyTalkingHead({
   debugMouth = false,
   halo = false,
   waitingForSession = false,
-  modelScale = 0.92,
-  verticalOffset = -0.5,
+  // Hero framing tuned live on /amy-avatar-qa: full-size rig sitting low in
+  // the square (close to the waveform) with cap headroom for every clip's
+  // head-bob — nothing clips top or bottom in any animation state.
+  modelScale = 1,
+  verticalOffset = -0.8,
   className,
 }: AmyTalkingHeadProps) {
   const state: Amy3DState = speaking
