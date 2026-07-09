@@ -1,54 +1,53 @@
-// useLipSync — reusable, audio-free viseme system.
+// useLipSync — reusable, audio-free viseme / mouth system.
 //
-// IMPORTANT (speech-coach-engine-freeze.mdc): this hook NEVER touches the mic,
-// an AudioContext, or playback. It only consumes *viseme events* pushed in from
-// above and drives morph targets. Two modes:
-//
-//   1. Event-driven  — call controller.speak([{ viseme, duration }, …]) with a
-//      real viseme timeline (e.g. produced alongside TTS). Best quality.
-//   2. Procedural     — when `speaking` is true but no events are queued, a
-//      freeze-safe time-based mouth-flap cycles through AA→OH→EE→IH→OU with an
-//      open/close envelope so Amy looks like she's talking with zero audio.
-//
-// When neither applies the mouth eases shut. If the rig has no viseme blend
-// shapes the manager setters are no-ops and this degrades silently.
+// Never touches mic / AudioContext / playback (speech-coach-engine-freeze).
+// Procedural mouth uses organic noise envelopes (not metronomic sine stacks).
+// Speech energy drives jaw amplitude; smile is owned by AmyAvatar compose
+// (dynamic while talking) — this hook only moves the mouth open channel.
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import type { MorphTargetManager, Viseme, VisemeOrRest } from "./visemes";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
+import type { FaceDriver } from "./face-driver";
+import type { HybridFaceDriver } from "./hybrid-face-driver";
+import type { Viseme, VisemeOrRest } from "./visemes";
+import { createOrganicPhases, organic } from "./organic-noise";
 
 export interface VisemeEvent {
   viseme: VisemeOrRest;
-  /** How long this shape is held, in seconds. */
   duration: number;
 }
 
 export interface LipSyncController {
-  /** Replace the queue with a fresh viseme timeline. */
   speak(events: VisemeEvent[]): void;
-  /** Append a single shape (durationMs) to the queue. */
   enqueue(viseme: VisemeOrRest, durationMs: number): void;
-  /** Clear the queue and ease the mouth shut. */
   stop(): void;
 }
 
 export interface LipSyncOptions {
-  /** Drives the procedural fallback when no events are queued. */
   speaking?: boolean;
   reduced?: boolean;
+  speechEnergyRef?: RefObject<number>;
 }
 
 const PROC_CYCLE: Viseme[] = ["AA", "OH", "EE", "IH", "OU"];
 
+function isHybrid(face: FaceDriver): face is HybridFaceDriver {
+  return face.kind === "hybrid" && "hasVisemes" in face;
+}
+
 export function useLipSync(
-  manager: MorphTargetManager | null,
+  face: FaceDriver | null,
   options: LipSyncOptions = {},
 ): LipSyncController {
-  const { speaking = false, reduced = false } = options;
+  const { speaking = false, reduced = false, speechEnergyRef } = options;
 
   const queue = useRef<VisemeEvent[]>([]);
   const current = useRef<VisemeEvent | null>(null);
   const currentEnd = useRef(0);
+  const mouthOpen = useRef(0);
+  const speakingRef = useRef(speaking);
+  speakingRef.current = speaking;
+  const phases = useRef(createOrganicPhases());
 
   const controller = useMemo<LipSyncController>(
     () => ({
@@ -70,13 +69,14 @@ export function useLipSync(
   );
 
   useFrame((ctx) => {
-    if (!manager || !manager.hasVisemes) return;
+    if (!face || !face.hasMouth) return;
     const t = ctx.clock.elapsedTime;
-    const targets: Partial<Record<Viseme, number>> = {};
+    const energy = Math.max(0, Math.min(1, speechEnergyRef?.current ?? 0.55));
+    const hybrid = isHybrid(face) ? face : null;
+    const useMorphVisemes = hybrid?.hasVisemes ?? false;
+    const p = phases.current;
 
-    // 1. Event-driven timeline. Items are scheduled relative to playback time,
-    //    so timing tracks when speech actually started (not mount time).
-    if (current.current || queue.current.length > 0) {
+    if (useMorphVisemes && hybrid && (current.current || queue.current.length > 0)) {
       if (!current.current || t >= currentEnd.current) {
         current.current = queue.current.shift() ?? null;
         if (current.current) {
@@ -84,43 +84,65 @@ export function useLipSync(
         }
       }
       const active = current.current;
-      if (active && active.viseme !== "REST") targets[active.viseme] = 1;
-      manager.lerpVisemes(targets, 0.45);
-      // Drop a finished item that has no successor so we can fall through to
-      // the procedural / rest paths next frame.
+      const targets: Partial<Record<Viseme, number>> = {};
+      if (active && active.viseme !== "REST") {
+        targets[active.viseme] = 0.7 + energy * 0.3;
+      }
+      hybrid.lerpVisemes(targets, 0.45);
       if (active && t >= currentEnd.current && queue.current.length === 0) {
         current.current = null;
       }
       return;
     }
 
-    if (speaking && !reduced) {
-      // Procedural mouth-flap (freeze-safe, no audio).
-      const speed = 6.5; // ~syllables/sec
-      const phase = t * speed;
-      const idx = Math.floor(phase) % PROC_CYCLE.length;
-      const frac = phase - Math.floor(phase);
-      const cur = PROC_CYCLE[idx];
-      const next = PROC_CYCLE[(idx + 1) % PROC_CYCLE.length];
-      // Open/close envelope so the jaw isn't perpetually wide open.
-      const env = 0.3 + 0.7 * Math.abs(Math.sin(t * 5.2));
-      targets[cur] = (1 - frac) * env;
-      targets[next] = Math.max(targets[next] ?? 0, frac * env);
-      manager.lerpVisemes(targets, 0.4);
+    if (speakingRef.current && !reduced) {
+      if (useMorphVisemes && hybrid) {
+        // Organic syllable pacing — noise picks shape weights.
+        const pace = (organic(t, p.breath, 0.9, 131) * 0.5 + 0.5) * 6.2 + 4.5;
+        const phase = t * pace;
+        const idx = Math.floor(phase) % PROC_CYCLE.length;
+        const frac = phase - Math.floor(phase);
+        const cur = PROC_CYCLE[idx];
+        const next = PROC_CYCLE[(idx + 1) % PROC_CYCLE.length];
+        const env =
+          (0.22 + 0.78 * Math.abs(organic(t, p.sway, 1.4, 137))) *
+          (0.5 + energy * 0.5);
+        hybrid.lerpVisemes(
+          { [cur]: (1 - frac) * env, [next]: frac * env },
+          0.4,
+        );
+        return;
+      }
+
+      // Procedural jaw: organic envelope + lip relaxation between peaks.
+      const syllable = Math.abs(organic(t, p.breath, 1.35, 149));
+      const secondary = Math.abs(organic(t, p.sway, 1.8, 151));
+      const relax = Math.max(0, organic(t, p.head, 0.55, 157)) ** 2;
+      const open =
+        (0.1 + syllable * 0.58 + secondary * 0.16) *
+        (0.48 + energy * 0.52) *
+        (1 - relax * 0.28);
+      mouthOpen.current += (open - mouthOpen.current) * 0.35;
+      face.setMouthOpen(mouthOpen.current);
       return;
     }
 
-    // Rest: ease everything shut.
-    manager.lerpVisemes({}, 0.25);
+    // Speech finish: ease mouth shut gently — never snap.
+    if (useMorphVisemes && hybrid) {
+      hybrid.lerpVisemes({}, 0.12);
+    } else {
+      mouthOpen.current += (0 - mouthOpen.current) * 0.1;
+      face.setMouthOpen(mouthOpen.current);
+    }
   });
 
-  // Cleanup: ease the mouth shut on unmount / when lip-sync is torn down.
   useEffect(() => {
     return () => {
       queue.current = [];
-      manager?.closeMouth();
+      if (face && isHybrid(face)) face.closeMouth();
+      else face?.setMouthOpen(0);
     };
-  }, [manager]);
+  }, [face]);
 
   return controller;
 }

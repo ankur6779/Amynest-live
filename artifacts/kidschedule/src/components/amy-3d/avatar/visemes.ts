@@ -12,6 +12,7 @@
 // (ARKit / RPM / VRoid visemes) is dropped in.
 
 import type * as THREE from "three";
+import type { FaceDriver, FaceGaze } from "./face-driver";
 
 /** The five canonical mouth shapes the lip-sync system understands. */
 export type Viseme = "AA" | "EE" | "IH" | "OH" | "OU";
@@ -74,8 +75,12 @@ const BLINK_MORPH_CANDIDATES = [
  * Resolves and drives morph targets on a loaded scene. One instance owns all
  * viseme + blink channels and exposes simple setters used by the hooks. All
  * influences it touched are zeroed on `dispose()` so re-mounts start clean.
+ *
+ * Implements {@link FaceDriver} so a future rigged GLB needs no API changes —
+ * callers already talk to FaceDriver.
  */
-export class MorphTargetManager {
+export class MorphTargetManager implements FaceDriver {
+  readonly kind = "morph" as const;
   private visemeChannels = new Map<Viseme, MorphChannel[]>();
   private blinkChannels: MorphChannel[] = [];
   private smileChannels: MorphChannel[] = [];
@@ -137,6 +142,14 @@ export class MorphTargetManager {
     return this.blinkChannels.length > 0;
   }
 
+  get hasMouth(): boolean {
+    return this.visemeChannels.size > 0;
+  }
+
+  get hasSmile(): boolean {
+    return this.smileChannels.length > 0;
+  }
+
   /** Set the weight (0..1) for one viseme. */
   setViseme(v: Viseme, weight: number): void {
     const w = clamp01(weight);
@@ -176,6 +189,27 @@ export class MorphTargetManager {
   lerpSmile(target: number, alpha: number): void {
     this.setSmile(this.smileValue + (clamp01(target) - this.smileValue) * alpha);
   }
+
+  /**
+   * Map a single openness value onto the AA (jaw-open) viseme when present.
+   * Used by FaceDriver callers that don't speak full viseme timelines.
+   */
+  setMouthOpen(value: number): void {
+    const w = clamp01(value);
+    if (this.visemeChannels.has("AA")) {
+      this.lerpVisemes({ AA: w }, 0.55);
+    }
+  }
+
+  /** Morph backends have no specular overlay — no-op. */
+  setEyeHighlight(_value: number): void {}
+
+  setEyeOpen(_value: number): void {}
+
+  setCheekLift(_value: number): void {}
+
+  /** Morph backends rely on eye bones for gaze — no-op here. */
+  setGaze(_gaze: FaceGaze): void {}
 
   /** Zero every influence we ever touched — call on unmount. */
   dispose(): void {

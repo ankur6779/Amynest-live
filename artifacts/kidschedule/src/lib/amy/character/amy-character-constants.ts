@@ -13,14 +13,14 @@ export const AMY_ERROR_RECOVERY_MS = 3500;
 /** Waveform bar count beneath the stage avatar. */
 export const AMY_WAVEFORM_BAR_COUNT = 9;
 
-/** Blink duration (ms). */
-export const AMY_BLINK_CLOSE_MS = 105;
+/** Blink duration (ms) — 120–180ms range; primary close uses midpoint. */
+export const AMY_BLINK_CLOSE_MS = 150;
 export const AMY_BLINK_DOUBLE_GAP_MS = 220;
-export const AMY_BLINK_DOUBLE_CLOSE_MS = 92;
+export const AMY_BLINK_DOUBLE_CLOSE_MS = 130;
 
-/** Default blink interval range (ms). */
+/** Default blink interval range (ms) — average every 3–6s. */
 export const AMY_BLINK_INTERVAL_MIN_MS = 3000;
-export const AMY_BLINK_INTERVAL_MAX_MS = 7000;
+export const AMY_BLINK_INTERVAL_MAX_MS = 6000;
 
 /** Responsive height bounds (px). */
 export const AMY_STAGE_HEIGHT_MIN = 220;

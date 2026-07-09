@@ -28,6 +28,23 @@ Assets for the Amy companion avatar (`src/components/amy-3d/`).
 No live WebGL canvas is ever mounted on small spots, so it stays smooth on
 low-end Android WebView / iOS.
 
+## How facial life works (presentation only)
+
+`amy.glb` (Tripo) currently has **no morph targets** and **no eye/jaw bones** —
+only a body skeleton (`Head`, `NeckTwist*`, limbs) plus clips (`idle`, `talk`,
+`listening`, `thinking`, …).
+
+Runtime face life therefore uses a **FaceDriver**:
+
+1. **MorphTargetManager** — auto-detects ARKit/RPM/VRoid blink, smile, visemes.
+   No-ops when absent (today's GLB).
+2. **ProceduralFaceDriver** — lightweight planes parented to the **Head bone**
+   (blink lids, pupil drift, smile, mouth open). Never floats in world space.
+3. **HybridFaceDriver** — prefers morphs; fills missing channels procedurally.
+
+Dropping a rigged GLB with blend shapes requires **no API changes** — morphs
+light up automatically and procedural overlays only cover gaps.
+
 ## Adding the rigged model (real viseme lip-sync + eye-tracking)
 
 The runtime is already wired — you only need to produce `amy.glb`.

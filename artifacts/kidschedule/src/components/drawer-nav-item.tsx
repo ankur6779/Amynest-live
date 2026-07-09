@@ -65,6 +65,8 @@ type DrawerNavItemProps = {
   isActive?: boolean;
   /** cascade order for the enter animation */
   index?: number;
+  /** Disable slide-in animation (desktop sidebar). */
+  animate?: boolean;
   variant?: "default" | "sign-out";
   onNavigate?: () => void;
   tourId?: string;
@@ -81,6 +83,7 @@ export function DrawerNavItem({
   tone,
   isActive = false,
   index = 0,
+  animate = true,
   variant = "default",
   onNavigate,
   tourId,
@@ -146,7 +149,7 @@ export function DrawerNavItem({
   const rowClass = cn(
     "group relative flex min-h-[64px] w-full items-center gap-3 overflow-hidden rounded-[22px] border px-3 text-left",
     "transition-all duration-300 ease-out will-change-transform",
-    "animate-in fade-in slide-in-from-left-2 fill-mode-both",
+    animate && "animate-in fade-in slide-in-from-left-2 fill-mode-both",
     "active:scale-[0.99]",
     isActive
       ? cn("border-white/16 bg-gradient-to-r to-transparent", t.activeWrap, t.glow)
@@ -155,7 +158,9 @@ export function DrawerNavItem({
         : "border-white/[0.06] bg-white/[0.03] hover:-translate-y-[1px] hover:border-white/14 hover:bg-white/[0.06] hover:shadow-[0_12px_30px_-16px_rgba(0,0,0,0.65)]",
   );
 
-  const style = { animationDelay: `${Math.min(index, 16) * 40}ms`, animationDuration: "340ms" };
+  const style = animate
+    ? { animationDelay: `${Math.min(index, 16) * 40}ms`, animationDuration: "340ms" }
+    : undefined;
 
   if (isSignOut) {
     return (

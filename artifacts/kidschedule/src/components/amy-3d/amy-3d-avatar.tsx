@@ -143,6 +143,7 @@ export function Amy3DAvatar({
               showHalo={showHalo}
               modelScale={modelScale}
               verticalOffset={verticalOffset}
+              speechEnergyRef={audioLevelRef}
             />
           </Suspense>
         </Amy3DErrorBoundary>

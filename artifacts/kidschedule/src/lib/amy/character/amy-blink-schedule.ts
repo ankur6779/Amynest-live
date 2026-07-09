@@ -10,17 +10,21 @@ export interface AmyBlinkSchedule {
   doubleChance: number;
 }
 
-/** Per-state blink timing — natural 3–7 s baseline with state overrides. */
+/** Per-state blink timing — natural 3–6 s baseline with state overrides. */
 export function blinkSchedule(state: AmyCharacterState): AmyBlinkSchedule {
   switch (state) {
     case "listening":
-      return { minMs: 5500, maxMs: 9500, doubleChance: 0.06 };
+      // Normal blink while listening.
+      return { minMs: 3000, maxMs: 5500, doubleChance: 0.18 };
     case "thinking":
     case "waiting":
+      // Slower blink while thinking.
+      return { minMs: 4500, maxMs: 7500, doubleChance: 0.12 };
     case "sleeping":
       return { minMs: 4500, maxMs: 8200, doubleChance: 0.1 };
     case "talking":
-      return { minMs: AMY_BLINK_INTERVAL_MIN_MS, maxMs: AMY_BLINK_INTERVAL_MAX_MS, doubleChance: 0.14 };
+      // Slightly less frequent while speaking.
+      return { minMs: 4000, maxMs: 7000, doubleChance: 0.14 };
     case "celebrating":
     case "happy":
       return { minMs: 2800, maxMs: 5200, doubleChance: 0.26 };

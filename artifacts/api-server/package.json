@@ -41,6 +41,7 @@
     "@workspace/education-stages": "workspace:*",
     "@workspace/environment": "workspace:*",
     "@workspace/event-prep": "workspace:*",
+    "@workspace/worksheet-studio": "workspace:*",
     "@workspace/explainability": "workspace:*",
     "@workspace/family-intelligence": "workspace:*",
     "@workspace/family-routine": "workspace:*",

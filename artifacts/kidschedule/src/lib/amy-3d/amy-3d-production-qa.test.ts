@@ -78,6 +78,22 @@ describe("Amy 3D production QA (automated)", () => {
     ctrl.dispose();
   });
 
+  it("celebrates with wave then celebrate — never snaps to idle", () => {
+    const clips = allSemanticClips();
+    const actions = Object.fromEntries(clips.map((c) => [c.name, mockAction()]));
+    const ctrl = new AmyAnimationController(actions, clips);
+    applyAmyAnimationState({
+      controller: ctrl,
+      clips,
+      state: "celebrating",
+      reduced: false,
+      getState: () => "celebrating",
+    });
+    // First step of the chain is wave.
+    expect(actions.wave?.play).toHaveBeenCalled();
+    ctrl.dispose();
+  });
+
   it("speech coach hero size targets phone/tablet/desktop bands", () => {
     expect(useSpeechCoachHeroSize).toBeTypeOf("function");
   });

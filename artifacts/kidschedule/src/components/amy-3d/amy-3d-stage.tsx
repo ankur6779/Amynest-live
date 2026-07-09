@@ -2,7 +2,7 @@
 // logic lives here: Amy3DAvatar (the host) owns the Suspense/ErrorBoundary
 // that decides whether this component is even mounted.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
@@ -34,6 +34,8 @@ export interface Amy3DStageProps {
   showHalo?: boolean;
   modelScale?: number;
   verticalOffset?: number;
+  /** Presentation-only 0..1 energy for mouth/gesture emphasis. */
+  speechEnergyRef?: RefObject<number>;
   /** Fires once after the GLB has actually mounted (fully loaded, no error). */
   onReady?: () => void;
 }
@@ -47,6 +49,7 @@ export default function Amy3DStage({
   showHalo = true,
   modelScale = 1,
   verticalOffset = 0,
+  speechEnergyRef,
   onReady,
 }: Amy3DStageProps) {
   const reduced = useMemo(() => prefersReducedMotion(), []);
@@ -98,6 +101,7 @@ export default function Amy3DStage({
           showHalo={showHalo}
           modelScale={modelScale}
           verticalOffset={verticalOffset}
+          speechEnergyRef={speechEnergyRef}
         />
       </Canvas>
     </div>

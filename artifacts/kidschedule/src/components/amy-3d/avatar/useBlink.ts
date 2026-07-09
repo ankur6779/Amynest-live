@@ -1,100 +1,127 @@
-// useBlink — natural eyelid blinking.
+// useBlink — natural eyelid blinking + cheek / smile coupling.
 //
-//   • fires every 3–5s at random
-//   • each blink lasts 100–150ms with smooth (eased) eyelid travel
-//   • ~25% of the time it's a double-blink (a quick second blink right after)
+//   • 3–6s random (state-tuned)
+//   • 120–180ms eased lids
+//   • occasional double-blink
+//   • during blink: tiny cheek lift + smile boost (Pixar soft squash)
 //
-// Drives the blink channel through the MorphTargetManager. If the rig has no
-// eyelid blend shapes (e.g. a raw Tripo head) this is a harmless no-op — the
-// manager's setBlink simply has nothing to write to.
+// Writes pose.face.blink / cheekLift / smileBoost; FaceDriver applied in compose.
 
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import type { MorphTargetManager } from "./visemes";
+import type { FaceDriver } from "./face-driver";
+import type { AmyExpressionPreset } from "./expression-presets";
+import type { AmyPose } from "./pose";
 
 export interface BlinkOptions {
   reduced?: boolean;
-  minInterval?: number; // seconds
-  maxInterval?: number; // seconds
-  minDuration?: number; // seconds
-  maxDuration?: number; // seconds
-  doubleBlinkChance?: number; // 0..1
+  expression?: AmyExpressionPreset;
+  pose?: AmyPose;
+  minInterval?: number;
+  maxInterval?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  doubleBlinkChance?: number;
 }
 
 type Phase = "wait" | "blinking";
 
 interface BlinkRuntime {
   phase: Phase;
-  next: number; // wall-clock time of next blink
-  start: number; // start time of current blink
-  duration: number; // current blink duration
+  next: number;
+  start: number;
+  duration: number;
   pendingDouble: boolean;
 }
 
-/**
- * Eased 0→1→0 lid curve. A raised-sine gives a soft close and a snappy-but-
- * smooth re-open, which looks far more lifelike than a linear triangle.
- */
 function lidCurve(p: number): number {
   const x = p < 0 ? 0 : p > 1 ? 1 : p;
-  // sin(pi*x) peaks at x=0.5; square it slightly for a crisper close.
   return Math.sin(Math.PI * x) ** 0.85;
 }
 
 export function useBlink(
-  manager: MorphTargetManager | null,
+  face: FaceDriver | null,
   options: BlinkOptions = {},
 ): void {
   const {
     reduced = false,
-    minInterval = 3,
-    maxInterval = 5,
-    minDuration = 0.1,
-    maxDuration = 0.15,
-    doubleBlinkChance = 0.25,
+    expression,
+    pose,
+    minInterval = expression?.blinkMin ?? 3,
+    maxInterval = expression?.blinkMax ?? 6,
+    minDuration = expression?.blinkDurMin ?? 0.12,
+    maxDuration = expression?.blinkDurMax ?? 0.18,
+    doubleBlinkChance = expression?.doubleBlinkChance ?? 0.22,
   } = options;
 
+  const exprRef = useRef(expression);
+  exprRef.current = expression;
+  const poseRef = useRef(pose);
+  poseRef.current = pose;
+
+  // Independent start delay so blink never syncs with breath/eyes on mount.
   const rt = useRef<BlinkRuntime>({
     phase: "wait",
-    next: 1 + Math.random() * 2,
+    next: 1.4 + Math.random() * 2.8,
     start: 0,
-    duration: 0.12,
+    duration: 0.14,
     pendingDouble: false,
   });
 
   useFrame((ctx) => {
-    if (reduced || !manager) return;
+    if (reduced || !face || !face.hasBlink) return;
     const t = ctx.clock.elapsedTime;
     const r = rt.current;
+    const ex = exprRef.current;
+    const faceLife = poseRef.current?.face;
+    const iMin = ex?.blinkMin ?? minInterval;
+    const iMax = ex?.blinkMax ?? maxInterval;
+    const dMin = ex?.blinkDurMin ?? minDuration;
+    const dMax = ex?.blinkDurMax ?? maxDuration;
+    const dbl = ex?.doubleBlinkChance ?? doubleBlinkChance;
 
     if (r.phase === "wait") {
+      if (faceLife) {
+        faceLife.blink = 0;
+        faceLife.cheekLift *= 0.85;
+      }
       if (t >= r.next) {
         r.phase = "blinking";
         r.start = t;
-        r.duration = minDuration + Math.random() * (maxDuration - minDuration);
+        r.duration = dMin + Math.random() * (dMax - dMin);
         if (!r.pendingDouble) {
-          r.pendingDouble = Math.random() < doubleBlinkChance;
+          r.pendingDouble = Math.random() < dbl;
         }
       }
       return;
     }
 
-    // phase === "blinking"
     const p = (t - r.start) / r.duration;
     if (p >= 1) {
-      manager.setBlink(0);
+      face.setBlink(0);
+      if (faceLife) {
+        faceLife.blink = 0;
+        faceLife.cheekLift = 0;
+      }
       if (r.pendingDouble) {
-        // Immediate, slightly shorter second blink.
         r.pendingDouble = false;
         r.phase = "blinking";
         r.start = t;
-        r.duration = (minDuration + Math.random() * (maxDuration - minDuration)) * 0.85;
+        r.duration = (dMin + Math.random() * (dMax - dMin)) * 0.85;
       } else {
         r.phase = "wait";
-        r.next = t + minInterval + Math.random() * (maxInterval - minInterval);
+        r.next = t + iMin + Math.random() * (iMax - iMin);
       }
       return;
     }
-    manager.setBlink(lidCurve(p));
+
+    const lid = lidCurve(p);
+    face.setBlink(lid);
+    if (faceLife) {
+      faceLife.blink = lid;
+      // Cheek lift peaks mid-blink; tiny smile increase — very subtle.
+      faceLife.cheekLift = lid * 0.55;
+      faceLife.smileBoost = Math.max(faceLife.smileBoost, lid * 0.045);
+    }
   });
 }

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="56" stroke="#1e3a5f" stroke-width="4" fill="#ffffff"/>
+  <path d="M60 24 L72 48 L96 52 L78 70 L82 94 L60 82 L38 94 L42 70 L24 52 L48 48 Z" fill="#c9a227" stroke="#1e3a5f" stroke-width="2"/>
+  <text x="60" y="108" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="bold" fill="#1e3a5f">LPS</text>
+</svg>

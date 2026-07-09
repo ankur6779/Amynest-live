@@ -122,6 +122,7 @@ import crashIntelligenceRouter from "./crash-intelligence";
 import otaRouter from "./ota";
 import contentOrchestrationRouter from "./content-orchestration";
 import eventPrepRouter from "./event-prep";
+import worksheetStudioRouter from "./worksheet-studio";
 import ptmPrepRouter from "./ptm-prep";
 import contentBankRouter from "./content-bank";
 import { audioSignedUrlPublicRouter } from "./audio-signed-url";
@@ -284,6 +285,7 @@ router.use(speechCoachV2CostAdminRouter);
 router.use(crashIntelligenceRouter);
 router.use(contentOrchestrationRouter);
 router.use(eventPrepRouter);
+router.use(worksheetStudioRouter);
 router.use(ptmPrepRouter);
 router.use(contentBankRouter);
 

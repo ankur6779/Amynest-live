@@ -33,7 +33,8 @@ import { INFANT_HUB_OPEN_SECTION_EVENT } from "@/lib/hub-activity-cross-link";
 import { trackInfantHubOpened } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { HubCollapsibleSubTile } from "@/components/hub-collapsible-sub-tile";
+import { InfantHubPremiumSection } from "@/components/infant-hub-premium-section";
+import type { InfantHubCardId } from "@/lib/infant-hub-card-config";
 import { InfantAskAmyCta } from "@/components/infant/infant-ask-amy-cta";
 import { InfantSleepCoachingPanel } from "@/components/infant/infant-sleep-coaching-panel";
 import { InfantFeedingPlanPanel } from "@/components/infant/infant-feeding-plan-panel";
@@ -168,49 +169,35 @@ function weeklyFocusDoneKey(childId: number): string {
 // ─── Collapsible Section ──────────────────────────────────────────────────────
 function IHSection({
   sectionId,
+  cardId,
   icon,
   title,
   badge,
-  defaultOpen = false,
   open,
   onOpenChange,
-  accentClass = "bg-gradient-to-br from-primary to-primary",
-  cardColor,
-  tintRgb,
-  children
+  children,
 }: {
   sectionId?: string;
+  cardId?: InfantHubCardId;
   icon: React.ReactNode;
   title: string;
   badge?: string;
-  defaultOpen?: boolean;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  accentClass?: string;
-  cardColor?: string;
-  tintRgb?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }) {
-  const tile = (
-    <HubCollapsibleSubTile
+  return (
+    <InfantHubPremiumSection
+      sectionId={sectionId}
+      cardId={cardId}
       icon={icon}
       title={title}
       badge={badge}
-      accentClass={accentClass}
-      tintRgb={tintRgb}
-      cardClass={cardColor}
-      defaultOpen={defaultOpen}
       open={open}
       onOpenChange={onOpenChange}
     >
       {children}
-    </HubCollapsibleSubTile>
-  );
-  if (!sectionId) return tile;
-  return (
-    <section id={sectionId} className="scroll-mt-24">
-      {tile}
-    </section>
+    </InfantHubPremiumSection>
   );
 }
 
@@ -622,8 +609,6 @@ export function InfantHub({
         sectionId="infant-cry"
         icon={<MessageCircle className="h-4 w-4" />}
         title={t("components.infant_hub.cry_insight")}
-        accentClass="bg-gradient-to-br from-rose-400 to-pink-500"
-        cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)"
         badge={t("components.infant_hub.badge_smart")}
         open={openSections.has("infant-cry")}
         onOpenChange={(v) => setSectionOpen("infant-cry", v)}
@@ -642,8 +627,6 @@ export function InfantHub({
         sectionId="infant-sleep"
         icon={<BedDouble className="h-4 w-4" />}
         title={t("components.infant_hub.sleep_system")}
-        accentClass="bg-gradient-to-br from-blue-400 to-indigo-500"
-        cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)"
         badge="Live"
         open={openSections.has("infant-sleep")}
         onOpenChange={(v) => setSectionOpen("infant-sleep", v)}
@@ -670,8 +653,6 @@ export function InfantHub({
         sectionId="infant-milestones"
         icon={<Activity className="h-4 w-4" />}
         title={t("components.infant_hub.milestone_buddy")}
-        accentClass="bg-gradient-to-br from-violet-400 to-purple-500"
-        cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)"
         badge={t("components.infant_hub.badge_track")}
         open={openSections.has("infant-milestones")}
         onOpenChange={(v) => setSectionOpen("infant-milestones", v)}
@@ -683,8 +664,6 @@ export function InfantHub({
         sectionId="infant-feeding"
         icon={<Flame className="h-4 w-4" />}
         title={t("components.infant_hub.feeding_tracker")}
-        accentClass="bg-gradient-to-br from-red-400 to-orange-500"
-        cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)"
         open={openSections.has("infant-feeding")}
         onOpenChange={(v) => setSectionOpen("infant-feeding", v)}
       >
@@ -714,7 +693,6 @@ export function InfantHub({
         sectionId="infant-growth"
         icon={<TrendingUp className="h-4 w-4" />}
         title={t("components.infant_hub.growth", "Growth tracking")}
-        accentClass="bg-gradient-to-br from-emerald-400 to-teal-500"
         open={openSections.has("infant-growth")}
         onOpenChange={(v) => setSectionOpen("infant-growth", v)}
       >
@@ -725,7 +703,6 @@ export function InfantHub({
         sectionId="infant-wellbeing"
         icon={<Heart className="h-4 w-4" />}
         title={t("components.infant_hub.wellbeing", "Parent wellbeing")}
-        accentClass="bg-gradient-to-br from-pink-400 to-rose-500"
         open={openSections.has("infant-wellbeing")}
         onOpenChange={(v) => setSectionOpen("infant-wellbeing", v)}
       >
@@ -736,7 +713,6 @@ export function InfantHub({
         sectionId="infant-health"
         icon={<Syringe className="h-4 w-4" />}
         title={t("components.infant_hub.health_care")}
-        accentClass="bg-gradient-to-br from-teal-400 to-cyan-500"
         open={openSections.has("infant-health")}
         onOpenChange={(v) => setSectionOpen("infant-health", v)}
       >
@@ -747,7 +723,6 @@ export function InfantHub({
         sectionId="infant-doctor"
         icon={<FileDown className="h-4 w-4" />}
         title={t("components.infant_hub.doctor_report", "Doctor visit")}
-        accentClass="bg-gradient-to-br from-cyan-400 to-blue-500"
         open={openSections.has("infant-doctor")}
         onOpenChange={(v) => setSectionOpen("infant-doctor", v)}
       >
@@ -759,7 +734,6 @@ export function InfantHub({
         sectionId="infant-coparent"
         icon={<Users className="h-4 w-4" />}
         title={t("components.infant_hub.coparent", "Co-parent")}
-        accentClass="bg-gradient-to-br from-indigo-400 to-violet-500"
         open={openSections.has("infant-coparent")}
         onOpenChange={(v) => setSectionOpen("infant-coparent", v)}
       >
@@ -770,9 +744,10 @@ export function InfantHub({
       <InfantNotificationPrefs childId={childId} ageMonths={ageMonths} />
 
       <IHSection
+        sectionId="infant-sounds"
+        cardId="sounds"
         icon={<Music2 className="h-4 w-4" />}
         title={t("components.infant_hub.white_noise_lullabies")}
-        accentClass="bg-gradient-to-br from-cyan-400 to-teal-500"
         open={openSections.has("infant-sounds")}
         onOpenChange={(v) => setSectionOpen("infant-sounds", v)}
       >
@@ -780,9 +755,10 @@ export function InfantHub({
       </IHSection>
 
       <IHSection
+        sectionId="infant-weekly-focus"
+        cardId="weekly-focus"
         icon={<Star className="h-4 w-4" />}
         title={t("components.infant_hub.weekly_focus")}
-        accentClass="bg-gradient-to-br from-amber-400 to-yellow-500"
         open={openSections.has("infant-weekly-focus")}
         onOpenChange={(v) => setSectionOpen("infant-weekly-focus", v)}
       >
@@ -790,9 +766,10 @@ export function InfantHub({
       </IHSection>
 
       <IHSection
+        sectionId="infant-amy-suggests"
+        cardId="amy-suggests"
         icon={<Brain className="h-4 w-4" />}
         title={t("infant_hub.amy_suggests")}
-        accentClass="bg-gradient-to-br from-purple-400 to-indigo-500"
         open={openSections.has("infant-amy-suggests")}
         onOpenChange={(v) => setSectionOpen("infant-amy-suggests", v)}
       >
@@ -810,9 +787,10 @@ export function InfantHub({
       </IHSection>
 
       <IHSection
+        sectionId="infant-coaching"
+        cardId="coaching"
         icon={<ListChecks className="h-4 w-4" />}
         title={t("components.infant_hub.parent_coaching")}
-        accentClass="bg-gradient-to-br from-purple-400 to-indigo-500"
         open={openSections.has("infant-coaching")}
         onOpenChange={(v) => setSectionOpen("infant-coaching", v)}
       >
@@ -822,9 +800,10 @@ export function InfantHub({
 
       {(INFANT_ACTIVITIES[getInfantAgeBand(ageMonths)] ?? []).length > 0 && (
         <IHSection
+          sectionId="infant-activities"
+          cardId="activities"
           icon={<Zap className="h-4 w-4" />}
           title={t("components.infant_hub.today_s_activities")}
-          accentClass="bg-gradient-to-br from-emerald-400 to-green-500"
           open={openSections.has("infant-activities")}
           onOpenChange={(v) => setSectionOpen("infant-activities", v)}
         >

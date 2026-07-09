@@ -184,8 +184,8 @@ export function getNavPremiumId(href: string): NavPremiumRouteId | undefined {
   return NAV_HREF_TO_PREMIUM_ID[href];
 }
 
-/* ── Mobile drawer grouping (premium redesign) ──────────────────────────────
- * Groups only affect the mobile navigation drawer, not the desktop sidebar.
+/* ── Navigation drawer grouping (premium redesign) ───────────────────────────
+ * Groups affect both the mobile drawer and the desktop sidebar tile navigation.
  * Every existing route is placed into exactly one group; ordering here defines
  * the drawer's information hierarchy (profile-first, then most-used actions).
  */

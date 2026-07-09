@@ -199,15 +199,36 @@ export function applyAmyAnimationState(input: AmyAnimationStateInput): boolean {
   }
 
   if (state === "celebrating") {
-    const clip = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.celebrate);
-    if (!clip) return true;
-    controller.once(clip, () => {
-      const current = getState();
-      if (current === "celebrating" || current === "idle") {
-        const idle = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.idle);
-        if (idle) controller.crossfade(idle, true);
-      }
-    });
+    const wave = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.wave);
+    const celebrate = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.celebrate);
+    if (wave && celebrate) {
+      // wave → happy bounce (celebrate) → settle into idle (never snap).
+      controller.queue(
+        [
+          { name: wave, loop: false },
+          { name: celebrate, loop: false },
+        ],
+        () => {
+          const current = getState();
+          if (current === "celebrating" || current === "idle") {
+            const idle = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.idle);
+            // Longer fade so celebration settles naturally.
+            if (idle) controller.crossfade(idle, true, 0.55);
+          }
+        },
+      );
+      return true;
+    }
+    if (celebrate) {
+      controller.once(celebrate, () => {
+        const current = getState();
+        if (current === "celebrating" || current === "idle") {
+          const idle = resolveAmyGltfClipName(clips, AMY_GLTF_CLIP.idle);
+          if (idle) controller.crossfade(idle, true, 0.55);
+        }
+      });
+      return true;
+    }
     return true;
   }
 

@@ -1,19 +1,15 @@
 // AmyAvatar — the living mascot, rendered INSIDE a react-three-fiber <Canvas>.
 //
-// Loads the existing amy.glb (no geometry changes — liveliness is 100% runtime)
-// and layers four reusable animation systems on top:
-//   • useIdleAnimation — float, breathing, sway, micro head-tilts
-//   • useEyeMovement   — idle saccades + desktop cursor tracking
-//   • useBlink         — natural 3–5s blinks with the occasional double-blink
-//   • useLipSync       — viseme controller (event-driven or procedural)
-// plus an animated neon halo and a speaking "attentive" posture.
+// Layers (each with independent organic phase — never start together):
+//   • useIdleAnimation — fbm breathing, sway, listening nods (6–10s)
+//   • useEyeMovement   — noise gaze, thinking glance, speech eye react
+//   • useBlink         — lids + cheek lift + smile boost
+//   • useLipSync       — jaw / visemes from speech energy
+//   • compose          — slow smile drift, face channels → FaceDriver
 //
-// All transform writes funnel through a single shared pose buffer + one compose
-// frame, so the hooks never fight over the group's rotation/position. Morph
-// features auto-detect blend shapes and no-op when the rig (e.g. a raw Tripo
-// head) has none — the avatar still feels alive via motion, gaze and halo.
+// FaceDriver prefers GLB morphs; otherwise Head-parented procedural overlays.
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -22,21 +18,25 @@ import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 import { isMouthMoving } from "@/lib/amy-3d/use-amy-3d-state";
 import { prefersReducedMotion } from "@/lib/amy-3d/webgl-support";
 import { MorphTargetManager } from "./visemes";
+import { createFaceDriver, type HybridFaceDriver } from "./hybrid-face-driver";
 import { createPose } from "./pose";
+import { expressionForState } from "./expression-presets";
 import { useIdleAnimation } from "./useIdleAnimation";
 import { useEyeMovement } from "./useEyeMovement";
 import { useBlink } from "./useBlink";
 import { useLipSync, type LipSyncController } from "./useLipSync";
+import { useEmotionalPresence } from "./useEmotionalPresence";
 import { useAmyAnimationState } from "./useAmyAnimationState";
 import { AMY_GLTF_FACING_Y } from "@/lib/amy-3d/amy-gltf-clips";
 import { sanitizeAmyGltfClips } from "@/lib/amy-3d/sanitize-amy-gltf-clips";
+import { createOrganicPhases, organic } from "./organic-noise";
 
 const DEG = Math.PI / 180;
-const FIT_HEIGHT = 1.7; // target world-space height of the head
+const FIT_HEIGHT = 1.7;
 const HEAD_BONE_KEYS = ["head", "neck"];
 const EYE_BONE_KEYS = ["lefteye", "righteye", "eye_l", "eye_r", "eyeball"];
+const HAND_BONE_KEYS = ["l_hand", "r_hand", "lefthand", "righthand", "hand_l", "hand_r"];
 
-// Per-state halo colour (matches the neon glow design tokens).
 const HALO_COLOR: Record<Amy3DState, string> = {
   idle: "#8B5CF6",
   listening: "#22D3EE",
@@ -49,26 +49,33 @@ const HALO_COLOR: Record<Amy3DState, string> = {
 export interface AmyAvatarProps {
   url: string;
   state: Amy3DState;
-  /** Speech Coach pre-session: greeting wave then continuous warmup loop. */
   waitingForSession?: boolean;
-  /** Neon torus above the head — off for Speech Coach (reads as a stray arc). */
   showHalo?: boolean;
-  /** Scales the rig inside the canvas (1 = default framing). */
   modelScale?: number;
-  /** World-space vertical nudge (negative = lower) to center the big-head chibi. */
   verticalOffset?: number;
-  /** Receives the lip-sync controller so a future TTS layer can push visemes. */
   onLipSyncReady?: (controller: LipSyncController) => void;
+  /** Presentation-only 0..1 energy — drives smile / eyes / gesture amp. */
+  speechEnergyRef?: RefObject<number>;
 }
 
 function findOne(root: THREE.Object3D, keys: string[]): THREE.Object3D | null {
-  let hit: THREE.Object3D | null = null;
+  let best: THREE.Object3D | null = null;
+  let bestScore = -1;
   root.traverse((o) => {
-    if (hit) return;
     const n = o.name?.toLowerCase() ?? "";
-    if (n && keys.some((k) => n.includes(k))) hit = o;
+    if (!n) return;
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (!n.includes(k)) continue;
+      const exact = n === k ? 100 : 0;
+      const score = exact + (keys.length - i) * 10;
+      if (score > bestScore) {
+        bestScore = score;
+        best = o;
+      }
+    }
   });
-  return hit;
+  return best;
 }
 
 function findAll(root: THREE.Object3D, keys: string[]): THREE.Object3D[] {
@@ -88,15 +95,24 @@ export function AmyAvatar({
   modelScale = 1,
   verticalOffset = 0,
   onLipSyncReady,
+  speechEnergyRef,
 }: AmyAvatarProps) {
   const gltf = useGLTF(url);
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const pose = useMemo(() => createPose(), []);
+  const expression = expressionForState(state);
+  const smilePhases = useRef(createOrganicPhases());
+  const requestBlinkRef = useRef(false);
+  const pendingBlinkClear = useRef(0);
 
   const outer = useRef<THREE.Group>(null);
   const animRoot = useRef<THREE.Group>(null);
   const halo = useRef<THREE.Mesh>(null);
   const haloMat = useRef<THREE.MeshBasicMaterial>(null);
+  const faceRef = useRef<HybridFaceDriver | null>(null);
+  const energyInternal = useRef(0);
+  const energyRef = speechEnergyRef ?? energyInternal;
+  const handRest = useRef<Map<THREE.Object3D, number>>(new Map());
 
   const sanitizedClips = useMemo(
     () => sanitizeAmyGltfClips(gltf.animations),
@@ -111,11 +127,6 @@ export function AmyAvatar({
     waitingForSession,
   });
 
-  // Clone so multiple hero instances each get independent morph/transform state.
-  // NOTE: must use SkeletonUtils.clone (not Object3D.clone(true)) — a plain deep
-  // clone leaves the cloned SkinnedMesh bound to the ORIGINAL skeleton, so the
-  // visible mesh ignores this instance's parent transform AND the animation
-  // mixer (it renders a frozen rest pose). SkeletonUtils rebinds the skeleton.
   const built = useMemo(() => {
     const scene = cloneSkeleton(gltf.scene) as THREE.Group;
     const box = new THREE.Box3().setFromObject(scene);
@@ -124,73 +135,159 @@ export function AmyAvatar({
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
     const fit = (FIT_HEIGHT * modelScale) / maxDim;
 
-    const manager = new MorphTargetManager();
-    manager.resolve(scene);
+    const morph = new MorphTargetManager();
+    morph.resolve(scene);
 
     const headObj = findOne(scene, HEAD_BONE_KEYS);
     const eyeObjs = findAll(scene, EYE_BONE_KEYS);
-    // Halo y above the very top of the head, in centered+scaled space.
+    const handObjs = findAll(scene, HAND_BONE_KEYS);
+    const face = createFaceDriver(morph, headObj);
     const haloY = (box.max.y - center.y) * fit + 0.12;
 
     return {
       scene,
-      manager,
+      morph,
+      face,
       fit,
       offset: center.clone().multiplyScalar(-fit),
       headObj,
       eyeObjs,
+      handObjs,
       haloY,
       hasEyeObjs: eyeObjs.length > 0,
       hasHeadObj: !!headObj,
     };
   }, [gltf.scene, modelScale]);
 
-  // Animation layers (each is a single-writer of its channel).
+  faceRef.current = built.face;
+
+  useEffect(() => {
+    handRest.current.clear();
+    for (const h of built.handObjs) {
+      handRest.current.set(h, h.scale.x);
+    }
+  }, [built.handObjs]);
+
   const attentive = state === "speaking" || state === "celebrating";
   const proceduralDamp = skeletalActive ? 0.22 : 1;
-  useIdleAnimation(pose, { reduced, attentive, floatAmplitude: 0.015 * proceduralDamp });
-  useEyeMovement(pose, { reduced, attentive, skeletalDamp: proceduralDamp });
-  useBlink(built.manager, { reduced: reduced || !built.manager.hasBlink });
-  const lipSync = useLipSync(built.manager, {
+
+  useEmotionalPresence({ state, reduced, pose });
+
+  useIdleAnimation(pose, {
+    reduced,
+    attentive,
+    floatAmplitude: 0.012 * proceduralDamp,
+    expression,
+    speechEnergyRef: energyRef,
+    requestBlinkRef,
+  });
+  useEyeMovement(pose, {
+    reduced,
+    attentive: attentive || state === "listening",
+    skeletalDamp: proceduralDamp,
+    expression,
+    thinkingActive: state === "thinking",
+    face: built.face,
+    speechEnergyRef: energyRef,
+    requestBlinkRef,
+  });
+  useBlink(built.face, {
+    reduced: reduced || !built.face.hasBlink,
+    expression,
+    pose,
+  });
+  const lipSync = useLipSync(built.face, {
     speaking: isMouthMoving(state),
     reduced,
+    speechEnergyRef: energyRef,
   });
 
-  // Expose the controller upward (optional; for real viseme timelines later).
   useEffect(() => {
     onLipSyncReady?.(lipSync);
   }, [lipSync, onLipSyncReady]);
 
-  // Reset morphs when the model is swapped / unmounted.
   useEffect(() => {
-    const mgr = built.manager;
-    return () => mgr.dispose();
-  }, [built.manager]);
+    const face = built.face;
+    return () => face.dispose();
+  }, [built.face]);
 
-  // Single compose frame — registered last, so it runs after every hook has
-  // written its slice. Applies the composed pose to real Object3Ds.
+  // Single compose frame — smile drift, face channels, head/hand emphasis.
   useFrame((ctx) => {
     const g = outer.current;
     if (!g) return;
-    const { idle, gaze } = pose;
+    const { idle, gaze, face: faceLife } = pose;
+    const t = ctx.clock.elapsedTime;
+    const sp = smilePhases.current;
 
-    // Speaking lean: a touch forward + slight smile (when the rig supports it).
-    const lean = attentive && !reduced ? 4 * DEG : 0;
-    built.manager.lerpSmile(attentive ? 0.4 : 0, 0.1);
+    // Thinking glance requested a blink — soft one-shot, then clear.
+    if (requestBlinkRef.current && built.face.hasBlink) {
+      requestBlinkRef.current = false;
+      faceLife.blink = 1;
+      faceLife.cheekLift = 0.4;
+      faceLife.smileBoost = Math.max(faceLife.smileBoost, 0.03);
+      built.face.setBlink(0.85);
+      pendingBlinkClear.current = t + 0.14;
+    }
+    if (pendingBlinkClear.current > 0 && t >= pendingBlinkClear.current) {
+      built.face.setBlink(0);
+      faceLife.blink = 0;
+      faceLife.cheekLift *= 0.5;
+      pendingBlinkClear.current = 0;
+    }
 
-    g.position.y = idle.posY;
-    g.scale.setScalar(idle.scale);
+    const raw = Math.max(0, Math.min(1, energyRef.current ?? 0));
+    pose.energy.level += (raw - pose.energy.level) * 0.2;
+    const energy = pose.energy.level;
 
-    // If the rig has no head/eye objects, fold gaze into the whole-head turn so
-    // Amy still visibly looks around / toward the cursor.
+    // Smile: blended base (presence) + organic drift + boosts. Never snaps.
+    // Happy 25% / listening 15% / thinking 10% / talking dynamic.
+    let smileTarget = pose.face.smileBase || expression.smile;
+    smileTarget += organic(t, sp.smile, 0.07, 163) * (expression.smileDrift ?? 0.03);
+    if (isMouthMoving(state) && pose.presence.phase !== "anticipate") {
+      smileTarget =
+        pose.face.smileBase +
+        energy * 0.12 +
+        organic(t, sp.smile + 8, 0.35, 167) * 0.04;
+    }
+    smileTarget += faceLife.smileBoost;
+    faceLife.smileBoost *= 0.94;
+
+    if (!reduced) {
+      // ~220ms blend (alpha ≈ 0.08 at 60fps for 220ms tau).
+      built.face.lerpSmile(THREE.MathUtils.clamp(smileTarget, 0.05, 0.45), 0.08);
+      built.face.setCheekLift?.(faceLife.cheekLift);
+      built.face.setEyeHighlight(faceLife.eyeBright);
+      built.face.setEyeOpen?.(faceLife.eyeOpen);
+    }
+
+    g.position.y = idle.posY + pose.presence.headLift * 0.08;
+    const celebrateBounce =
+      (state === "celebrating" || pose.presence.phase === "celebrateSettle") &&
+      !reduced
+        ? 1 +
+          Math.abs(organic(t, sp.breath, 0.55, 173)) *
+            (state === "celebrating" ? 0.014 : 0.006)
+        : 1;
+    g.scale.setScalar(idle.scale * celebrateBounce);
+
     const headFold = built.hasHeadObj ? 0 : 1;
-    g.rotation.x = idle.rotX - lean + gaze.headPitch * headFold;
+    const speakEmphasis =
+      isMouthMoving(state) &&
+      !reduced &&
+      pose.presence.phase !== "anticipate"
+        ? energy * 0.45 * DEG * idle.gestureAmp
+        : 0;
+
+    g.rotation.x =
+      idle.rotX + gaze.headPitch * headFold - speakEmphasis * 0.35;
     g.rotation.y = idle.rotY + gaze.headYaw * headFold;
     g.rotation.z = idle.rotZ;
 
-    if (built.headObj && proceduralDamp > 0.35) {
-      built.headObj.rotation.y = gaze.headYaw * proceduralDamp;
-      built.headObj.rotation.x = gaze.headPitch * proceduralDamp;
+    if (built.headObj && proceduralDamp > 0.15) {
+      const damp = Math.max(proceduralDamp, 0.35);
+      built.headObj.rotation.y = gaze.headYaw * damp;
+      built.headObj.rotation.x =
+        gaze.headPitch * damp - speakEmphasis * 0.55 * damp;
     }
     if (built.hasEyeObjs) {
       for (const eye of built.eyeObjs) {
@@ -199,12 +296,29 @@ export function AmyAvatar({
       }
     }
 
-    // Halo: slow pulse (scale 1.0–1.05) + glow intensity variation.
+    // Hand gesture intensity from speech energy.
+    if (isMouthMoving(state) && !reduced && built.handObjs.length) {
+      const handAmp = 1 + energy * 0.04 * idle.gestureAmp;
+      for (const h of built.handObjs) {
+        const rest = handRest.current.get(h) ?? 1;
+        h.scale.setScalar(rest * handAmp);
+      }
+    } else if (built.handObjs.length) {
+      for (const h of built.handObjs) {
+        const rest = handRest.current.get(h) ?? 1;
+        const cur = h.scale.x;
+        h.scale.setScalar(cur + (rest - cur) * 0.15);
+      }
+    }
+
     if (showHalo && halo.current && haloMat.current) {
-      const t = ctx.clock.elapsedTime;
-      const pulse = reduced ? 1 : 1 + (Math.sin(t * 1.4) * 0.5 + 0.5) * 0.05;
+      const pulse = reduced
+        ? 1
+        : 1 + (organic(t, sp.breath + 20, 0.2, 179) * 0.5 + 0.5) * 0.05;
       halo.current.scale.setScalar(pulse);
-      haloMat.current.opacity = reduced ? 0.55 : 0.4 + (Math.sin(t * 1.4) * 0.5 + 0.5) * 0.35;
+      haloMat.current.opacity = reduced
+        ? 0.55
+        : 0.4 + (organic(t, sp.breath + 21, 0.2, 181) * 0.5 + 0.5) * 0.35;
     }
   });
 
@@ -212,7 +326,6 @@ export function AmyAvatar({
 
   return (
     <group ref={outer}>
-      {/* Centered + uniformly scaled model (skeletal clips target this root). */}
       <group
         ref={animRoot}
         position={[built.offset.x, built.offset.y + verticalOffset, built.offset.z]}

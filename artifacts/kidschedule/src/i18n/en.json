@@ -3772,6 +3772,50 @@
         "chip_3": "Discover"
       }
     },
+    "infant_hub_cards": {
+      "cry": {
+        "description": "Record & analyze — likely causes in seconds"
+      },
+      "sleep": {
+        "description": "Wake windows, routines & sleep coaching"
+      },
+      "milestones": {
+        "description": "Track development week by week"
+      },
+      "feeding": {
+        "description": "Log feeds, plan meals & diaper tracking"
+      },
+      "growth": {
+        "description": "Weight, height & WHO percentiles"
+      },
+      "wellbeing": {
+        "description": "Your energy & mental health check-ins"
+      },
+      "health": {
+        "description": "Vaccines & common issues at this age"
+      },
+      "doctor": {
+        "description": "Export a visit-ready health summary"
+      },
+      "coparent": {
+        "description": "Share updates with your partner"
+      },
+      "sounds": {
+        "description": "White noise & lullabies for calm"
+      },
+      "weekly_focus": {
+        "description": "One insight to try this week"
+      },
+      "amy_suggests": {
+        "description": "Age-matched tips from Amy"
+      },
+      "coaching": {
+        "description": "Baby cues & communication coaching"
+      },
+      "activities": {
+        "description": "Daily play ideas for this age"
+      }
+    },
     "gaming_hub_cards": {
       "section": {
         "chip_1": "Play",

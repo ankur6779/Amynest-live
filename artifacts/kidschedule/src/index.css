@@ -1055,6 +1055,49 @@
     rgba(96, 165, 250, 0.11);
 }
 
+/* Infant hub tiles — dynamic accent via CSS variables (same language as hub sections) */
+.hub-section-card[data-hub-section^="infant-"] .hub-section-shell {
+  background-color: rgba(10, 12, 26, 0.9);
+  background-image:
+    var(--hub-section-noise),
+    radial-gradient(ellipse 115% 85% at 0% 0%, rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.28), transparent 56%),
+    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(0, 0, 0, 0.45), transparent 52%),
+    linear-gradient(152deg, rgba(var(--hub-section-r), var(--hub-section-g), var(--hub-section-b), 0.14) 0%, rgba(12, 14, 28, 0.78) 48%, rgba(8, 8, 18, 0.94) 100%);
+  background-blend-mode: soft-light, normal, multiply, normal;
+  background-size: 128px 128px, auto, auto, auto;
+}
+
+.hub-section-card[data-hub-section^="infant-"] .hub-section-shell::before {
+  background:
+    radial-gradient(ellipse 95% 75% at 6% 8%, rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.18), transparent 54%),
+    radial-gradient(ellipse 80% 55% at 85% 95%, rgba(0, 0, 0, 0.18), transparent 48%);
+  opacity: 0.92;
+}
+
+.hub-section-card[data-hub-section^="infant-"] .hub-section-shell::after {
+  background:
+    linear-gradient(140deg, rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.07) 0%, transparent 32%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0%, transparent 16%);
+}
+
+.hub-section-card[data-hub-section^="infant-"] .hub-section-ambient {
+  opacity: 0.28;
+  filter: blur(26px);
+}
+
+.hub-section-card[data-hub-section^="infant-"] .hub-section-icon-shell {
+  border-color: rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.24);
+  background:
+    linear-gradient(155deg, rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.24) 0%, rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.12) 42%, rgba(16, 18, 32, 0.55) 100%);
+}
+
+.hub-section-card[data-hub-section^="infant-"] .hub-section-open-pill {
+  border-color: rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(var(--hub-section-accent-r), var(--hub-section-accent-g), var(--hub-section-accent-b), 0.11);
+}
+
 .hub-section-ambient {
   opacity: 0.24;
   filter: blur(24px);
@@ -4130,6 +4173,27 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   .health-lab-dance-floor,
   .health-lab-dance-lights {
     animation: none !important;
+  }
+}
+
+@keyframes worksheet-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .worksheet-print-target,
+  .worksheet-print-target * {
+    visibility: visible;
+  }
+  .worksheet-print-target {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
   }
 }
 
