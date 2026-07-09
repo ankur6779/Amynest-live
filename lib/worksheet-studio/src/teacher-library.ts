@@ -1,42 +1,13 @@
 import type { WorksheetDocument } from "./types.js";
 import { DRAFT_DB_NAME } from "./constants.js";
 import { duplicateWorksheetDocument } from "./teacher-productivity.js";
+import type { LibraryEntry, LibraryFilter, LibrarySort, SavedTeacherTemplate } from "./library-types.js";
+
+export type { LibraryEntry, LibraryFilter, LibrarySort, SavedTeacherTemplate } from "./library-types.js";
 
 export const LIBRARY_STORE = "library";
 export const TEMPLATES_STORE = "teacher_templates";
 const DB_VERSION = 4;
-
-export type LibrarySort = "updated" | "title" | "topic";
-export type LibraryFilter = "all" | "favorites" | "recent" | "archived" | "trash";
-
-export interface LibraryEntry {
-  id: string;
-  documentId: string;
-  title: string;
-  topic: string;
-  tags: string[];
-  folder: string;
-  collection?: string;
-  favorite: boolean;
-  archived: boolean;
-  trashed: boolean;
-  document: WorksheetDocument;
-  updatedAt: string;
-  createdAt: string;
-}
-
-export interface SavedTeacherTemplate {
-  id: string;
-  name: string;
-  category: string;
-  favorite: boolean;
-  version: number;
-  request: import("./types.js").WorksheetGenerateRequest;
-  sourceDocumentId?: string;
-  useCount: number;
-  updatedAt: string;
-  createdAt: string;
-}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

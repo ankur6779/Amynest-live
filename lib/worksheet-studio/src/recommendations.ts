@@ -1,4 +1,4 @@
-import type { LibraryEntry } from "./teacher-library.js";
+import type { LibraryEntry } from "./library-types.js";
 import type { WorksheetDocument, WorksheetGenerateRequest } from "./types.js";
 import { suggestNextTopics, type CurriculumTopic } from "./curriculum-engine.js";
 import { buildVariantRequest, type WorksheetVariant } from "./teacher-productivity.js";

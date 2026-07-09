@@ -17,6 +17,8 @@ export {
   getAnalyticsDashboard,
   createShareLinkMeta,
   getShareUrl,
+  type AnalyticsDashboard,
+  type AnalyticsEvent,
 } from "./worksheet-analytics.js";
 export {
   getActiveBrandingProfile,

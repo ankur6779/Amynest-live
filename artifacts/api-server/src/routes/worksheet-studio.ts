@@ -117,7 +117,7 @@ router.post(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const doc = parsed.data.document as WorksheetDocument;
+    const doc = parsed.data.document as unknown as WorksheetDocument;
     const fallback = parseCopilotCommand(parsed.data.message, doc);
     const openAiPayload: OpenAiChatPayload = {
       namespace: `worksheet_copilot_v1:${doc.id}`,

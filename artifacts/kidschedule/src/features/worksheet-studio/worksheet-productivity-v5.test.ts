@@ -14,10 +14,12 @@ import {
   getSchoolBranding,
   setSchoolBranding,
   applyBrandingToDocument,
-  getAnalyticsDashboard,
-  recordStudioAnalytics,
   duplicateWorksheetDocument,
 } from "@workspace/worksheet-studio";
+import {
+  getAnalyticsDashboard,
+  recordStudioAnalytics,
+} from "@workspace/worksheet-studio/client";
 
 const baseReq = {
   prompt: "UKG sea animals fish dolphin",

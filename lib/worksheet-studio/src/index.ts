@@ -1,5 +1,6 @@
 export * from "./types.js";
 export * from "./constants.js";
+export * from "./library-types.js";
 export * from "./local-generator.js";
 export * from "./ai-prompt.js";
 export * from "./parse-ai-response.js";
@@ -31,5 +32,5 @@ export * from "./brand-themes.js";
 export * from "./header-engine.js";
 export * from "./footer-engine.js";
 export * from "./i18n-engine.js";
-export * from "./worksheet-analytics.js";
-export * from "./bulk-export.js";
+// Browser-only modules (IndexedDB, canvas, window) live in ./client — do not
+// re-export them here or Node/API typecheck pulls in DOM globals.
