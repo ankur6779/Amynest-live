@@ -31,8 +31,19 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @workspace/db exec tsc --build
+      # Do NOT use `pnpm test -- <files>`: api-server's test script is a long
+      # `&&` chain, so extra args never replace the suite and unrelated tests
+      # (e.g. p0-cost-safety-guards) run and can fail this Health Lab job.
       - name: Merge + metrics + two-device sync tests
-        run: pnpm --filter @workspace/api-server test -- src/lib/healthLabProgressService.test.ts src/lib/healthLabTwoDeviceSync.test.ts src/routes/health-lab-metrics.test.ts src/services/__tests__/health-lab-metrics-store.test.ts
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL || 'postgresql://test:test@127.0.0.1:5432/test?connect_timeout=1' }}
+        run: |
+          cd artifacts/api-server
+          node --import tsx/esm --test \
+            src/lib/healthLabProgressService.test.ts \
+            src/lib/healthLabTwoDeviceSync.test.ts \
+            src/routes/health-lab-metrics.test.ts \
+            src/services/__tests__/health-lab-metrics-store.test.ts
 
   unit-tests:
     name: Health Lab unit tests
