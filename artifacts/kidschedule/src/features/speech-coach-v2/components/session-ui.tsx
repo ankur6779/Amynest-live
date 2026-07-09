@@ -80,7 +80,11 @@ export function SpeechCoachV2SessionUi(props: {
         />
         <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
         <p className="mt-1 text-xs text-white/60">
-          {speechCoachConnectionLabel(connectionState, live, { amySpeaking, loading })}
+          {speechCoachConnectionLabel(connectionState, live, {
+            amySpeaking,
+            loading,
+            micFailed: diagnostics?.mic === "fail",
+          })}
         </p>
         {live && diagnostics && showRealtimeDiagnostics() && (
           <RealtimeDiagnosticsPanel diagnostics={diagnostics} />

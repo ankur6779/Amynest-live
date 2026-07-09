@@ -18,7 +18,17 @@ export interface AmyAvatarProps {
   className?: string;
   audioLevelRef?: RefObject<number>;
   speaking?: boolean;
+  /**
+   * Hero framing — match Speech Coach (`AmyTalkingHead`) so the Tripo head
+   * stays inside the canvas (default 0 clips the cap/headphones at the top).
+   */
+  modelScale?: number;
+  verticalOffset?: number;
 }
+
+/** Same defaults as AmyTalkingHead / Speech Coach hero. */
+export const AMY_HERO_MODEL_SCALE = 1;
+export const AMY_HERO_VERTICAL_OFFSET = -0.8;
 
 export function AmyAvatar({
   state = "idle",
@@ -30,6 +40,8 @@ export function AmyAvatar({
   className,
   audioLevelRef,
   speaking = false,
+  modelScale = AMY_HERO_MODEL_SCALE,
+  verticalOffset = AMY_HERO_VERTICAL_OFFSET,
 }: AmyAvatarProps) {
   const iconFallback = (
     <AmyIcon size={size} ring={ring} bounce={bounce} className={className} speaking={speaking} />
@@ -50,6 +62,8 @@ export function AmyAvatar({
       modelUrl={modelUrl}
       className={className}
       showWaveform={false}
+      modelScale={modelScale}
+      verticalOffset={verticalOffset}
     />
   );
 }

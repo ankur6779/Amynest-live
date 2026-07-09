@@ -100,6 +100,20 @@ function micFailure(err: unknown): never {
   throw error;
 }
 
+/** Mic / permission failures should not be retried as network reconnects. */
+export function isSpeechCoachMicFailureMessage(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("microphone")
+    || lower.includes("getusermedia")
+    || lower.includes("notallowederror")
+    || lower.includes("permission denied")
+    || lower.includes("permissiondismissed")
+    || lower.includes("notreadableerror")
+    || lower.includes("trackstarterror")
+  );
+}
+
 export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOptions) {
   const {
     authFetch,
@@ -725,12 +739,20 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
         err instanceof Error && "diagnostics" in err
           ? (err as Error & { diagnostics?: RealtimeSdpExchangeDiagnostics }).diagnostics?.responseBody
           : null;
-      rtLog("connect.fail", { message });
+      const failMessage = diagBody ?? message;
+      rtLog("connect.fail", { message: failMessage });
       setDiagnostics((d) => ({
         ...d,
-        lastError: diagBody ?? message,
+        lastError: failMessage,
         audio: d.audio === "ok" ? "ok" : d.audio,
       }));
+
+      // Mic permission / capture failures will not recover via reconnect.
+      if (isSpeechCoachMicFailureMessage(failMessage)) {
+        setConnected(false, "error");
+        onErrorRef.current?.(failMessage);
+        return;
+      }
 
       if (reconnectAttemptRef.current < 3) {
         reconnectAttemptRef.current += 1;
@@ -746,25 +768,32 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
     }
   };
 
+  // Unmount-only hard teardown. Do NOT also cleanup on every `enabled` flip —
+  // `setLive(true)` on Start re-runs the old effect and aborted the in-flight
+  // `connectFromUserGesture()` (mic → token) from the same click.
   useEffect(() => {
     mountedRef.current = true;
-    if (!enabled) {
-      cleanup();
-      setConnectionState("idle");
-      return () => {
-        mountedRef.current = false;
-        cleanup();
-      };
-    }
-
-    sessionStartedAtRef.current = Date.now();
-    reconnectAttemptRef.current = 0;
-
     return () => {
       mountedRef.current = false;
       cleanup();
-      setConnectionState("disconnected");
     };
+  }, [cleanup]);
+
+  useEffect(() => {
+    if (!enabled) {
+      // Leave an in-flight Start connect alone (enabled may still be false for
+      // one frame while connectingRef is already true). End/Back disconnect
+      // explicitly; limit-reached only flips live off and needs this path.
+      if (connectingRef.current) return;
+      cleanup();
+      setConnectionState("idle");
+      return;
+    }
+
+    sessionStartedAtRef.current = Date.now();
+    if (!connectingRef.current) {
+      reconnectAttemptRef.current = 0;
+    }
   }, [enabled, sessionId, tabLockToken, cleanup]);
 
   useEffect(() => {

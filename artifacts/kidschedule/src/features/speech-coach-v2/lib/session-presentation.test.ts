@@ -46,6 +46,12 @@ describe("speechCoachConnectionLabel", () => {
     expect(speechCoachConnectionLabel("disconnected", true)).toBe("Connection issue");
   });
 
+  it("surfaces mic permission failures clearly", () => {
+    expect(
+      speechCoachConnectionLabel("error", true, { micFailed: true }),
+    ).toBe("Microphone needed — allow access and try again");
+  });
+
   it("shows readiness before the session starts", () => {
     expect(speechCoachConnectionLabel("idle", false)).toBe("Ready to talk");
   });

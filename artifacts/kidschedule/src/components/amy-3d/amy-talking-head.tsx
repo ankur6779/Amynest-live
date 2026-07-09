@@ -2,6 +2,10 @@
 
 import { type RefObject } from "react";
 import { Amy3DAvatar } from "@/components/amy-3d/amy-3d-avatar";
+import {
+  AMY_HERO_MODEL_SCALE,
+  AMY_HERO_VERTICAL_OFFSET,
+} from "@/components/amy-3d/amy-avatar";
 import type { Amy3DState } from "@/lib/amy-3d/use-amy-3d-state";
 
 interface AmyTalkingHeadProps {
@@ -34,11 +38,10 @@ export function AmyTalkingHead({
   debugMouth = false,
   halo = false,
   waitingForSession = false,
-  // Hero framing tuned live on /amy-avatar-qa: full-size rig sitting low in
-  // the square (close to the waveform) with cap headroom for every clip's
-  // head-bob — nothing clips top or bottom in any animation state.
-  modelScale = 1,
-  verticalOffset = -0.8,
+  // Shared with Talking Amy / AmyAvatar hero — full-size rig sitting low in
+  // the square with cap headroom so headphones never clip the top edge.
+  modelScale = AMY_HERO_MODEL_SCALE,
+  verticalOffset = AMY_HERO_VERTICAL_OFFSET,
   className,
 }: AmyTalkingHeadProps) {
   const state: Amy3DState = speaking

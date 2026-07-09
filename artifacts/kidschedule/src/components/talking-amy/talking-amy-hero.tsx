@@ -1,6 +1,10 @@
 import { useEffect, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
-import { AmyAvatar } from "@/components/amy-3d/amy-avatar";
+import {
+  AmyAvatar,
+  AMY_HERO_MODEL_SCALE,
+  AMY_HERO_VERTICAL_OFFSET,
+} from "@/components/amy-3d/amy-avatar";
 import {
   avatarInputsToAmyState,
   buildTalkingAmyAvatarInputs,
@@ -370,6 +374,10 @@ export function TalkingAmyHero({
           bounce={shouldBounce}
           state={amyState}
           audioLevelRef={audioLevelRef}
+          // Match Speech Coach hero framing — without this the Tripo head
+          // sits too high and clips against the top of the canvas/circle.
+          modelScale={AMY_HERO_MODEL_SCALE}
+          verticalOffset={AMY_HERO_VERTICAL_OFFSET}
         />
       </motion.div>
     </motion.div>

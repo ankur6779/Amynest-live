@@ -170,6 +170,47 @@ describe("useSpeechCoachV2Realtime verification trace (TEST 2/3 simulated runtim
     expect(trace.some((e) => e.tag === "MIC_REQUEST_SUCCESS")).toBe(false);
     expect(result.current.connectionState).toBe("error");
   });
+
+  it("does not abort an in-flight connect when enabled flips true mid-connect", async () => {
+    let resolveMic!: () => void;
+    const micGate = new Promise<void>((resolve) => {
+      resolveMic = resolve;
+    });
+    prepareMicMock.mockImplementation(async () => {
+      await micGate;
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { enabled: boolean }) =>
+        useSpeechCoachV2Realtime({
+          authFetch: vi.fn(),
+          childId: 1,
+          sessionId: "11111111-1111-1111-1111-111111111111",
+          tabLockToken: "22222222-2222-2222-2222-222222222222",
+          instructions: "Warm up with Amy using simple words.",
+          enabled: props.enabled,
+        }),
+      { initialProps: { enabled: false } },
+    );
+
+    let connectPromise!: Promise<void>;
+    await act(async () => {
+      connectPromise = result.current.connectFromUserGesture();
+    });
+
+    // Mirrors session-page: setLive(true) while connect is awaiting mic.
+    rerender({ enabled: true });
+
+    await act(async () => {
+      resolveMic();
+      await connectPromise;
+    });
+
+    expect(mintMock).toHaveBeenCalled();
+    expect(result.current.connectionState).toBe("connected");
+    expect(result.current.diagnostics.mic).toBe("ok");
+    expect(result.current.diagnostics.token).toBe("ok");
+  });
 });
 
 describe("greeting trace tags", () => {

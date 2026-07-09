@@ -31,6 +31,8 @@ export interface SpeechCoachConnectionLabelOptions {
   amySpeaking?: boolean;
   /** Session bootstrap still in flight (pre-session). */
   loading?: boolean;
+  /** Mic step failed — show a clearer child-facing hint than "Connection issue". */
+  micFailed?: boolean;
 }
 
 /**
@@ -52,7 +54,9 @@ export function speechCoachConnectionLabel(
         return options.amySpeaking ? "Amy is speaking" : "Listening...";
       case "error":
       case "disconnected":
-        return "Connection issue";
+        return options.micFailed
+          ? "Microphone needed — allow access and try again"
+          : "Connection issue";
       case "idle":
       case "connecting":
       case "reconnecting":
