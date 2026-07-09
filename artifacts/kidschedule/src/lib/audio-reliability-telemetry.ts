@@ -8,6 +8,7 @@ import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { getModuleLatencyAverages } from "@/lib/audio-latency-metrics";
 import { getPlaybackQueueStats } from "@/lib/audio-playback-queue";
 import { getHotCacheStats } from "@/lib/audio-hot-cache";
+import { getGlobalAudioCacheStats } from "@/lib/global-audio-cache";
 
 export type AudioReliabilityEvent =
   | "audio_requested"
@@ -655,10 +656,49 @@ export type LatencyReportRow = {
 /** Phase 11 — aggregate latency + cache + queue stats (no new telemetry events). */
 export function getLatencyReport(): {
   modules: LatencyReportRow[];
+  latency: {
+    overall: {
+      count: number;
+      avg: number;
+      min: number;
+      max: number;
+      p50: number;
+      p95: number;
+      p99: number;
+    };
+    by_module: Record<
+      string,
+      {
+        count: number;
+        avg: number;
+        min: number;
+        max: number;
+        p50: number;
+        p95: number;
+        p99: number;
+      }
+    >;
+  };
   queue_interruptions: number;
   stale_audio_prevented: number;
   queue_depth: number;
   hot_cache: ReturnType<typeof getHotCacheStats>;
+  memory_cache: ReturnType<typeof getGlobalAudioCacheStats>;
+  source_mix: {
+    bundled: number;
+    local_cache: number;
+    static_gcs: number;
+    dynamic_tts: number;
+    fallback: number;
+    tts_percent: number;
+    bundled_percent: number;
+    memory_percent: number;
+    filesystem_percent: number;
+    cdn_percent: number;
+  };
+  failures: number;
+  retries: number;
+  watchdog_count: number;
   targets: {
     learning_zone: { avg_ms: number; p95_ms: number; success_pct: number };
     speech_coach: { avg_ms: number; p95_ms: number; success_pct: number };
@@ -689,12 +729,85 @@ export function getLatencyReport(): {
   const coach = modules.find((m) => m.module === "speech_coach");
   const hub = modules.find((m) => m.module === "parent_hub");
 
+  const source_mix = {
+    bundled: 0,
+    local_cache: 0,
+    static_gcs: 0,
+    dynamic_tts: 0,
+    fallback: 0,
+    tts_percent: 0,
+  };
+  for (const ev of events) {
+    if (ev.event !== "audio_play_started" && ev.event !== "audio_completed") continue;
+    switch (ev.sourceLayer) {
+      case "BUNDLED":
+        source_mix.bundled += 1;
+        break;
+      case "LOCAL_CACHE":
+        source_mix.local_cache += 1;
+        break;
+      case "STATIC_GCS":
+        source_mix.static_gcs += 1;
+        break;
+      case "DYNAMIC_TTS":
+        source_mix.dynamic_tts += 1;
+        break;
+      case "FALLBACK":
+        source_mix.fallback += 1;
+        break;
+      default:
+        break;
+    }
+  }
+  const layered =
+    source_mix.bundled +
+    source_mix.local_cache +
+    source_mix.static_gcs +
+    source_mix.dynamic_tts +
+    source_mix.fallback;
+  source_mix.tts_percent =
+    layered === 0 ? 0 : Math.round((source_mix.dynamic_tts / layered) * 10_000) / 100;
+
+  const allSamples: number[] = [];
+  const by_module: Record<string, ReturnType<typeof latencyStats>> = {};
+  for (const [mod, samples] of latencySamples.entries()) {
+    allSamples.push(...samples);
+    by_module[mod] = latencyStats(samples);
+  }
+
+  let failures = 0;
+  let retries = 0;
+  let watchdog_count = 0;
+  for (const d of dashboard) {
+    failures += d.playFailed + d.timeouts;
+    retries += d.recovered;
+    watchdog_count += d.timeouts;
+  }
+
+  const pct = (n: number) =>
+    layered === 0 ? 0 : Math.round((n / layered) * 10_000) / 100;
+
   return {
     modules,
+    latency: {
+      overall: latencyStats(allSamples),
+      by_module,
+    },
     queue_interruptions: queue.interruptions,
     stale_audio_prevented: queue.stale_audio_prevented,
     queue_depth: queue.queue_depth,
     hot_cache: getHotCacheStats(),
+    memory_cache: getGlobalAudioCacheStats(),
+    source_mix: {
+      ...source_mix,
+      bundled_percent: pct(source_mix.bundled),
+      memory_percent: pct(source_mix.local_cache),
+      filesystem_percent: pct(source_mix.local_cache),
+      cdn_percent: pct(source_mix.static_gcs),
+    },
+    failures,
+    retries,
+    watchdog_count,
     targets: {
       learning_zone: {
         avg_ms: lz?.avg_first_sound_ms ?? 0,
@@ -726,6 +839,46 @@ function percentile(values: number[], p: number): number {
   const sorted = [...values].sort((a, b) => a - b);
   const idx = Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length));
   return sorted[idx] ?? 0;
+}
+
+function latencyStats(samples: number[]): {
+  count: number;
+  avg: number;
+  min: number;
+  max: number;
+  p50: number;
+  p95: number;
+  p99: number;
+} {
+  if (samples.length === 0) {
+    return { count: 0, avg: 0, min: 0, max: 0, p50: 0, p95: 0, p99: 0 };
+  }
+  const sum = samples.reduce((a, b) => a + b, 0);
+  return {
+    count: samples.length,
+    avg: Math.round(sum / samples.length),
+    min: Math.min(...samples),
+    max: Math.max(...samples),
+    p50: percentile(samples, 50),
+    p95: percentile(samples, 95),
+    p99: percentile(samples, 99),
+  };
+}
+
+/** Human-readable summary for device QA paste. */
+export function formatLatencyReportSummary(
+  report: ReturnType<typeof getLatencyReport> = getLatencyReport(),
+): string {
+  const o = report.latency.overall;
+  const s = report.source_mix;
+  return [
+    "=== AmyNest Audio Latency Report ===",
+    `Latency ms — n=${o.count} avg=${o.avg} min=${o.min} max=${o.max} p50=${o.p50} p95=${o.p95} p99=${o.p99}`,
+    `Sources % — bundled=${s.bundled_percent} memory/fs=${s.memory_percent} cdn=${s.cdn_percent} tts=${s.tts_percent}`,
+    `Counts — bundled=${s.bundled} local_cache=${s.local_cache} cdn=${s.static_gcs} tts=${s.dynamic_tts} fallback=${s.fallback}`,
+    `Failures=${report.failures} retries=${report.retries} watchdog=${report.watchdog_count}`,
+    `Memory cache — size=${report.memory_cache.size} ready=${report.memory_cache.readyCount} pinned=${report.memory_cache.pinned}`,
+  ].join("\n");
 }
 
 function pushEvent(record: AudioReliabilityRecord): void {
@@ -1070,6 +1223,7 @@ declare global {
       deviceMatrixTemplate: () => ReturnType<typeof exportDeviceMatrixTemplate>;
       speechCoachCache: () => { hitRate: number; topRegenerated: ReturnType<typeof getSpeechCoachTopRegenerated> };
       latencyReport: () => ReturnType<typeof getLatencyReport>;
+      latencySummary: () => string;
       reset: () => void;
     };
   }
@@ -1093,6 +1247,7 @@ export function installAudioReliabilityDevTools(): void {
       topRegenerated: getSpeechCoachTopRegenerated(10),
     }),
     latencyReport: getLatencyReport,
+    latencySummary: formatLatencyReportSummary,
     reset: () => resetAudioReliabilityTelemetry(true),
   };
 }

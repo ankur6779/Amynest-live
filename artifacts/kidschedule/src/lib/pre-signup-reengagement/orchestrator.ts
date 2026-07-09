@@ -8,10 +8,18 @@ import {
   handleNativePreSignupAnalyticsEvents,
 } from "./analytics";
 import {
+  trackPreSignupCampaignBlocked,
+  trackPreSignupCampaignEligible,
+  trackPreSignupNativeScheduleResult,
+  trackPreSignupPermissionChecked,
+  updatePreSignupDebugSnapshot,
+} from "./diagnostics";
+import { isPreSignupReengagementEnabled, readPreSignupFeatureFlags } from "@/lib/pre-signup-feature-flags";
+import {
   cancelPreSignupLocalNotifications,
   canUsePreSignupLocalNotifications,
   initPreSignupLocalNotificationListeners,
-  resolvePreSignupNotificationPermission,
+  resolvePreSignupPermissionDetailed,
   schedulePreSignupLocalNotifications,
 } from "./local-notifications";
 import {
@@ -61,13 +69,18 @@ function resolveNotificationsEnabled(): boolean {
 export async function resolvePreSignupAudienceInput(
   overrides: Partial<PreSignupAudienceInput> = {},
 ): Promise<PreSignupAudienceInput> {
-  const permission = await resolvePreSignupNotificationPermission();
+  const permissionDetail = await resolvePreSignupPermissionDetailed();
+  trackPreSignupPermissionChecked({
+    permissionStatus: permissionDetail.status,
+    permissionSource: permissionDetail.source,
+    permissionApiUsed: permissionDetail.apiUsed,
+  });
   return {
     appInstalled: overrides.appInstalled ?? isAmyNestWrapper(),
     isAuthenticated: overrides.isAuthenticated ?? false,
     signupCompleted: overrides.signupCompleted ?? false,
     notificationsEnabled: overrides.notificationsEnabled ?? resolveNotificationsEnabled(),
-    notificationsGranted: overrides.notificationsGranted ?? permission === "granted",
+    notificationsGranted: overrides.notificationsGranted ?? permissionDetail.status === "granted",
   };
 }
 
@@ -85,31 +98,64 @@ export function buildAudienceInput(
   };
 }
 
+/** Phase A rollback: cancel alarms when parent feature flag is OFF. */
+export async function disablePreSignupReengagementIfFlagOff(): Promise<void> {
+  if (isPreSignupReengagementEnabled()) return;
+  await exitPreSignupCampaign("feature_flag_off");
+  updatePreSignupDebugSnapshot({ lifecycleState: "disabled" });
+}
+
 /** Start or refresh the pre-signup local notification campaign. Idempotent. */
 export async function syncPreSignupCampaign(
   audience: PreSignupAudienceInput,
 ): Promise<void> {
-  if (!canUsePreSignupLocalNotifications()) return;
+  updatePreSignupDebugSnapshot({
+    featureFlags: readPreSignupFeatureFlags(),
+    wrapperDetected: isAmyNestWrapper(),
+    lifecycleState: isPreSignupReengagementEnabled() ? "idle" : "disabled",
+  });
 
-  if (shouldExitPreSignupSegment(audience)) {
+  if (!isPreSignupReengagementEnabled()) {
+    trackPreSignupCampaignBlocked("feature_flag_off");
     return;
   }
 
-  const permission = await resolvePreSignupNotificationPermission();
+  if (!canUsePreSignupLocalNotifications()) {
+    trackPreSignupCampaignBlocked("not_wrapper");
+    return;
+  }
 
-  if (permission === "denied") {
+  if (shouldExitPreSignupSegment(audience)) {
+    if (audience.isAuthenticated) trackPreSignupCampaignBlocked("authenticated");
+    if (audience.signupCompleted) trackPreSignupCampaignBlocked("signup_completed");
+    return;
+  }
+
+  const permissionDetail = await resolvePreSignupPermissionDetailed();
+  trackPreSignupPermissionChecked({
+    permissionStatus: permissionDetail.status,
+    permissionSource: permissionDetail.source,
+    permissionApiUsed: permissionDetail.apiUsed,
+  });
+
+  if (permissionDetail.status === "denied") {
+    trackPreSignupCampaignBlocked("permission_denied");
     await exitPreSignupCampaign("permission_denied");
     return;
   }
 
-  if (permission !== "granted") {
+  if (permissionDetail.status !== "granted") {
+    trackPreSignupCampaignBlocked("permission_default");
     return;
   }
 
   clearPermissionDeniedExit();
 
   const segment = evaluatePreSignupSegment(audience);
-  if (!segment) return;
+  if (!segment) {
+    trackPreSignupCampaignBlocked("segment_ineligible");
+    return;
+  }
 
   await initPreSignupLocalNotificationListeners();
 
@@ -118,6 +164,7 @@ export async function syncPreSignupCampaign(
   const firstOpenAtMs = recordFirstOpenIfNeeded(now);
 
   if (isCampaignExpired(installAtMs, now)) {
+    trackPreSignupCampaignBlocked("campaign_expired");
     await exitPreSignupCampaign("day7_complete");
     return;
   }
@@ -140,6 +187,7 @@ export async function syncPreSignupCampaign(
   });
 
   if (scheduled.length === 0) {
+    trackPreSignupCampaignBlocked("no_pending_milestones");
     if (existing?.segment === PRE_SIGNUP_SEGMENT) {
       writeCampaignState({
         ...existing,
@@ -173,15 +221,27 @@ export async function syncPreSignupCampaign(
   }
 
   await cancelPreSignupLocalNotifications(allMilestoneIds());
-  const ok = await schedulePreSignupLocalNotifications(scheduled);
+  const scheduleOutcome = await schedulePreSignupLocalNotifications(scheduled);
 
-  if (ok) {
+  trackPreSignupNativeScheduleResult({
+    result: scheduleOutcome.nativeScheduleResult,
+    scheduleFailureReason: scheduleOutcome.scheduleFailureReason,
+    pendingCount: scheduleOutcome.pendingCount,
+  });
+
+  if (scheduleOutcome.ok) {
+    trackPreSignupCampaignEligible({
+      segment: PRE_SIGNUP_SEGMENT,
+      scheduledCount: scheduleOutcome.pendingCount,
+    });
     trackCampaignScheduled({
       variant,
       count: scheduled.length,
       milestones: scheduled.map((s) => s.milestone),
       fingerprint: nextFingerprint,
     });
+  } else {
+    trackPreSignupCampaignBlocked("schedule_failed");
   }
 }
 

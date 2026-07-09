@@ -105,6 +105,27 @@ function resolvePhraseScope(): {
   label: string;
   audioLessonsOnly: boolean;
 } {
+  const phrasesFileIdx = process.argv.indexOf("--phrases-file");
+  if (phrasesFileIdx >= 0) {
+    const filePath = process.argv[phrasesFileIdx + 1];
+    if (!filePath) {
+      throw new Error("--phrases-file requires a path argument");
+    }
+    const abs = filePath.startsWith("/") ? filePath : `${REPO_ROOT}/${filePath}`;
+    const lines = readFileSync(abs, "utf8")
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#"));
+    const phrases = lines.map((text) => ({
+      text,
+      normalizedKey: normalizeStaticAudioKey(text),
+      mode: "default" as StaticAudioMode,
+      source: "p0_curriculum",
+      objectKey: getStaticAudioObjectKey(text, "default"),
+      hash: getStaticAudioObjectKey(text, "default"),
+    }));
+    return { phrases, label: `phrases_file:${lines.length}`, audioLessonsOnly: false };
+  }
   const audioLessonsOnly = process.argv.includes("--audio-lessons-only");
   if (audioLessonsOnly) {
     const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source.startsWith("audio_lessons"));
@@ -231,22 +252,31 @@ function isEntryComplete(map: StaticAudioMap, mode: StaticAudioMode, text: strin
   return isValidMapUrl(map[mode]?.[mapKey]);
 }
 
+/** Scope-local missing count (works for --phrases-file, not only full corpus). */
+function countScopeMissing(
+  map: StaticAudioMap,
+  scopePhrases: typeof ALL_CORPUS_PHRASES,
+): number {
+  let missing = 0;
+  for (const entry of scopePhrases) {
+    if (!isEntryComplete(map, entry.mode, entry.text)) missing += 1;
+  }
+  return missing;
+}
+
 function logCoverageSummary(
   map: StaticAudioMap,
   passLabel: string,
   scopePhrases: typeof ALL_CORPUS_PHRASES,
 ): number {
-  const scopeKeys = new Set(
-    scopePhrases.map((e) => staticAudioMissingKey(e.mode, e.normalizedKey)),
-  );
-  const missing = computeCorpusMissingStaticAudioKeys(map).filter((k) => scopeKeys.has(k));
-  const covered = scopePhrases.length - missing.length;
+  const missing = countScopeMissing(map, scopePhrases);
+  const covered = scopePhrases.length - missing;
   console.log(`[COVERAGE] ${passLabel}`, {
     scope: scopePhrases.length,
     covered,
-    missing: missing.length,
+    missing,
   });
-  return missing.length;
+  return missing;
 }
 
 async function gcsObjectExists(
@@ -538,8 +568,10 @@ async function run(): Promise<void> {
 
   const storage = buildStorage();
   const forceAll = process.argv.includes("--force-all");
+  const phrasesFileMode = process.argv.includes("--phrases-file");
   const { phrases: scopePhrases, label: scopeLabel, audioLessonsOnly } = resolvePhraseScope();
-  const skipExisting = audioLessonsOnly ? false : !forceAll;
+  // phrases-file / audio-lessons always regenerate — map may point at placeholders
+  const skipExisting = phrasesFileMode || audioLessonsOnly ? false : !forceAll;
 
   console.log("[CONFIG]", {
     bucketName,
@@ -550,6 +582,7 @@ async function run(): Promise<void> {
     ttsTimeoutMs: TTS_TIMEOUT_MS,
     skipExisting,
     audioLessonsOnly,
+    phrasesFileMode,
     forceAll,
   });
 
@@ -559,7 +592,7 @@ async function run(): Promise<void> {
   let missingCount = logCoverageSummary(map, "initial", scopePhrases);
   let retryCount = 0;
 
-  if (missingCount === 0 && !forceAll && !audioLessonsOnly) {
+  if (missingCount === 0 && !forceAll && !audioLessonsOnly && !phrasesFileMode) {
     console.log(
       "[SKIP] Map already has 100% corpus coverage — no OpenAI TTS calls were made.",
     );
@@ -578,13 +611,18 @@ async function run(): Promise<void> {
     console.log(`[CONFIG] Current voice=${OPENAI_VOICE} model=${OPENAI_MODEL}`);
   }
 
-  if (missingCount > 0 || forceAll || audioLessonsOnly) {
+  if (missingCount > 0 || forceAll || audioLessonsOnly || phrasesFileMode) {
     if (forceAll) {
       console.log(`[FORCE-ALL] Regenerating every phrase with voice=${OPENAI_VOICE} (~30–90 min in CI)`);
     }
     if (audioLessonsOnly) {
       console.log(
         `[AUDIO-LESSONS] Regenerating ${scopePhrases.length} lesson paragraph/title phrase(s) with voice=${OPENAI_VOICE}`,
+      );
+    }
+    if (phrasesFileMode) {
+      console.log(
+        `[PHRASES-FILE] Generating ${scopePhrases.length} phrase(s) with voice=${OPENAI_VOICE}`,
       );
     }
     const firstPass = await runCatalogPass(
@@ -619,7 +657,7 @@ async function run(): Promise<void> {
   }
 
   writeStaticAudioMap(map);
-  const finalMissing = computeCorpusMissingStaticAudioKeys(map).filter((k) => scopeKeySet.has(k));
+  const finalMissing = countScopeMissing(map, scopePhrases);
 
   console.log("[SUMMARY]", {
     scope: scopeLabel,
@@ -629,18 +667,21 @@ async function run(): Promise<void> {
     skipped: totals.skipped,
     failed: totals.failed,
     retryPasses: retryCount,
-    missing: finalMissing.length,
+    missing: finalMissing,
   });
 
-  if (finalMissing.length > 0) {
-    console.error("Still missing:", finalMissing.slice(0, 50));
-    if (finalMissing.length > 50) {
-      console.error(`... and ${finalMissing.length - 50} more`);
+  if (finalMissing > 0) {
+    const missingTexts = scopePhrases
+      .filter((e) => !isEntryComplete(map, e.mode, e.text))
+      .map((e) => e.text);
+    console.error("Still missing:", missingTexts.slice(0, 50));
+    if (missingTexts.length > 50) {
+      console.error(`... and ${missingTexts.length - 50} more`);
     }
     process.exit(1);
   }
 
-  if (!audioLessonsOnly) {
+  if (!audioLessonsOnly && !phrasesFileMode) {
     const fullMissing = computeCorpusMissingStaticAudioKeys(map);
     if (fullMissing.length > 0) {
       console.error(

@@ -1355,7 +1355,9 @@ phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<
   logger.warn({ evt: "phonics.sound_placeholder", letter: raw }, "phonics sound missing corpus text");
   const { getPlaceholderMp3 } = await import("../services/staticAudioPlaceholder.js");
   const { serveStaticAudioBuffer } = await import("../services/staticAudioServe.js");
-  serveStaticAudioBuffer(req, res, raw, getPlaceholderMp3(), "memory");
+  serveStaticAudioBuffer(req, res, raw, getPlaceholderMp3(), "memory", {
+    staticSource: "placeholder",
+  });
 });
 
 // ─── Phonics curriculum engine ───────────────────────────────────────────────

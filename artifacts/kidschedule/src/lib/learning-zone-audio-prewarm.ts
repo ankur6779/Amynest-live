@@ -8,9 +8,11 @@
 import type { AuthFetchFn } from "@/lib/poll-result";
 import {
   deleteGlobalAudioCacheEntry,
+  ensureAudioPredecoded,
   getGlobalAudioCacheEntry,
   globalAudioCacheKeys,
   hasGlobalAudioCacheEntry,
+  pinPredictiveSequence,
   setGlobalAudioCacheEntry,
 } from "@/lib/global-audio-cache";
 import { audioManager } from "@/lib/audio-manager";
@@ -55,8 +57,8 @@ export type LearningZonePrewarmContext = {
 
 const BATCH_SIZE = 4;
 const BATCH_GAP_MS = 40;
-const MAX_MEMORY_CLIPS = 48;
-const MAX_PREDICTIVE = 20;
+const MAX_MEMORY_CLIPS = 64;
+const MAX_PREDICTIVE = 28;
 
 const activeJobKeys = new Set<string>();
 const invalidatedStateKeys = new Set<string>();
@@ -133,7 +135,11 @@ function enforceMemoryLimit(): void {
 }
 
 async function loadClipToMemory(cacheKey: string, url: string, localKey: string): Promise<void> {
-  if (!url || hasGlobalAudioCacheEntry(cacheKey)) return;
+  if (!url) return;
+  if (hasGlobalAudioCacheEntry(cacheKey)) {
+    const existing = getGlobalAudioCacheEntry(cacheKey);
+    if (existing && existing.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
+  }
 
   void warmLocalCacheFromUrl(localKey, url);
   prefetchStaticAudioUrl(url);
@@ -141,25 +147,10 @@ async function loadClipToMemory(cacheKey: string, url: string, localKey: string)
   const audio = audioManager.getCached(url, { forceReload: false });
   audio.preload = "auto";
 
-  await new Promise<void>((resolve, reject) => {
-    const onReady = () => {
-      audio.removeEventListener("error", onError);
-      resolve();
-    };
-    const onError = () => {
-      audio.removeEventListener("canplaythrough", onReady);
-      reject(new Error("audio_load_failed"));
-    };
-    if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
-      resolve();
-      return;
-    }
-    audio.addEventListener("canplaythrough", onReady, { once: true });
-    audio.addEventListener("error", onError, { once: true });
-    audio.load();
-  }).catch(() => undefined);
+  await ensureAudioPredecoded(audio);
 
   setGlobalAudioCacheEntry(cacheKey, audio);
+  pinPredictiveSequence([cacheKey]);
   enforceMemoryLimit();
 }
 

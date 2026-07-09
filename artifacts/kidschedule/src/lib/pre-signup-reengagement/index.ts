@@ -5,4 +5,5 @@ export * from "./schedule";
 export * from "./storage";
 export * from "./analytics";
 export * from "./local-notifications";
+export * from "./diagnostics";
 export * from "./orchestrator";

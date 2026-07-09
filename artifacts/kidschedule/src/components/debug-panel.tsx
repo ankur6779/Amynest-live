@@ -35,6 +35,7 @@ const SCREEN_NAMES: Record<string, string> = {
   "/audio-lessons": "Audio Lessons",
   "/notification-settings": "Notification Settings",
   "/notification-diagnostics": "Notification Diagnostics",
+  "/debug/pre-signup": "Pre-Signup Debug",
   "/insights": "Insights",
   "/rewards": "Rewards",
   "/referrals": "Referrals",

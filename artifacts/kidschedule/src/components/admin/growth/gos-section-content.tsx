@@ -34,6 +34,7 @@ import { FeatureImpactLabPanel } from "./feature-impact-lab-panel";
 import { AlertsWorkflowPanel } from "./alerts-workflow-panel";
 import { PredictionV2Panel } from "./prediction-v2-panel";
 import { SettingsPanel } from "./settings-panel";
+import { PreSignupFunnelPanel } from "./pre-signup-funnel-panel";
 import type {
   DecisionsSectionData,
   ExecutiveSectionData,
@@ -313,6 +314,12 @@ export function GosSectionContent({
       return (
         <Section title="Growth OS Settings">
           <SettingsPanel settings={(d as { settings: import("./gos-types").GrowthOsSettings }).settings} />
+        </Section>
+      );
+    case "pre-signup":
+      return (
+        <Section title="Pre-Signup Notification Funnel">
+          <PreSignupFunnelPanel preset={preset} customStart={customStart} customEnd={customEnd} />
         </Section>
       );
     default:

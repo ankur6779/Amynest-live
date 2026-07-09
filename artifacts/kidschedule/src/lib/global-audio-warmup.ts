@@ -380,6 +380,9 @@ export function initGlobalAudioWarmup(): void {
     } catch {
       /* soft-fail boot warm */
     }
+    void import("@/lib/background-learning-pack").then((m) => {
+      m.scheduleBackgroundLearningPackOnIdle();
+    });
   });
 
   logAmyVoiceDiag("global_audio_warmup_init", {

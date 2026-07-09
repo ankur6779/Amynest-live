@@ -143,7 +143,8 @@ describe("amy-speech-mode", () => {
     expect(policy.phrases).toHaveLength(1);
     expect(policy.normalizedText).toBe(long);
     expect(policy.preferDynamicTts).toBe(false);
-    expect(policy.retryDynamicTts).toBe(true);
+    expect(policy.forbidDynamicTts).toBe(true);
+    expect(policy.retryDynamicTts).toBe(false);
     expect(policy.dynamicTimeoutMs).toBeGreaterThanOrEqual(12_000);
     expect(prepareAmySpeechInput(long, { lessonParagraph: true }).phrases).toHaveLength(1);
   });

@@ -16,6 +16,7 @@ import { buildGrowthCalendar } from "./growth-calendar/index.js";
 import { exploreJourney, listJourneyFilterOptions } from "./journey-explorer/index.js";
 import { computePredictionsV2 } from "./prediction-engine/index.js";
 import { buildRevenueAttribution } from "./revenue-attribution/index.js";
+import { computePreSignupFunnel } from "./pre-signup-funnel/index.js";
 import { loadGrowthOsPayload, updateSettings } from "./store.js";
 import type { GrowthOsExperiment, GrowthOsSettings } from "./types.js";
 
@@ -39,7 +40,8 @@ export type GosSection =
   | "calendar"
   | "feature-impact"
   | "decisions"
-  | "copilot";
+  | "copilot"
+  | "pre-signup";
 
 export async function loadGosSection(
   section: GosSection,
@@ -163,6 +165,9 @@ export async function loadGosSection(
       break;
     case "copilot":
       payload = answerCopilotQuestion({ question: input.question ?? "" });
+      break;
+    case "pre-signup":
+      payload = await computePreSignupFunnel(range);
       break;
     default:
       payload = { dashboard };

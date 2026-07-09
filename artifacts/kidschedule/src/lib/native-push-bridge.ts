@@ -478,6 +478,14 @@ function readPermissionNew(): NativePushPermission {
   return cachedToken ? "granted" : "default";
 }
 
+/**
+ * Read Android POST_NOTIFICATIONS state via the existing PushBridge.
+ * Reused by pre-signup local notifications (F1) — do not duplicate permission logic.
+ */
+export function readAndroidPushPermissionStatus(): NativePushPermission {
+  return readPermissionNew();
+}
+
 function tryGetTokenNew(): string | null {
   if (cachedToken) return cachedToken;
   const ap = getAndroidPush();

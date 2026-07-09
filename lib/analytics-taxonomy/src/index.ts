@@ -388,6 +388,45 @@ const EVENT_PROP_SCHEMAS = {
     campaign: z.string().max(64).optional(),
   }),
 
+  // ── pre-signup Phase A diagnostics (observability only) ────────────────
+  pre_signup_permission_checked: z.object({
+    permission_status: z.string().max(16).optional(),
+    permission_source: z.string().max(32).optional(),
+    permission_api_used: z.string().max(48).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+    wrapper_version: z.string().max(32).optional(),
+    platform: z.string().max(32).optional(),
+    android_api_level: z.number().int().optional(),
+  }),
+  pre_signup_campaign_blocked: z.object({
+    block_reason: z.string().max(48).optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+    wrapper_version: z.string().max(32).optional(),
+    platform: z.string().max(32).optional(),
+    android_api_level: z.number().int().optional(),
+  }),
+  pre_signup_campaign_eligible: z.object({
+    segment: z.string().max(32).optional(),
+    scheduled_count: z.number().int().nonnegative().optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+    wrapper_version: z.string().max(32).optional(),
+    platform: z.string().max(32).optional(),
+    android_api_level: z.number().int().optional(),
+  }),
+  pre_signup_native_schedule_result: z.object({
+    native_schedule_result: z.string().max(32).optional(),
+    schedule_failure_reason: z.string().max(64).optional(),
+    pending_count: z.number().int().nonnegative().optional(),
+    device_id: z.string().max(128).optional(),
+    campaign: z.string().max(64).optional(),
+    wrapper_version: z.string().max(32).optional(),
+    platform: z.string().max(32).optional(),
+    android_api_level: z.number().int().optional(),
+  }),
+
   // ── Speech Coach V2 (Realtime) ─────────────────────────────────────────
   speech_coach_v2_session_start: z.object({
     childId: z.number().int().optional(),
@@ -537,6 +576,10 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   pre_signup_signup_completed: "growth",
   pre_signup_login_completed: "growth",
   pre_signup_signup_conversion: "growth",
+  pre_signup_permission_checked: "growth",
+  pre_signup_campaign_blocked: "growth",
+  pre_signup_campaign_eligible: "growth",
+  pre_signup_native_schedule_result: "growth",
   speech_coach_v2_session_start: "session",
   speech_coach_v2_session_complete: "session",
   speech_coach_v2_daily_limit: "session",

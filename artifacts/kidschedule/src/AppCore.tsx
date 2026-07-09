@@ -146,6 +146,7 @@ const ManageDevicesPage = lazyPage(() => import("@/pages/manage-devices"));
 const NotificationDiagnosticsPage = lazyPage(() => import("@/pages/notification-diagnostics"));
 const NotifyPromptPage = lazyPage(() => import("@/pages/notify-prompt"));
 const DebugParityPage = lazyPage(() => import("@/pages/debug-parity"));
+const PreSignupDebugPage = lazyPage(() => import("@/pages/pre-signup-debug"));
 const PhonicsAudioPreviewPage = lazyPage(() => import("@/pages/phonics-audio-preview"));
 const RhymesAudioAbPage = lazyPage(() => import("@/pages/rhymes-audio-ab"));
 const EnvironmentPage = lazyPage(() => import("@/pages/environment"));
@@ -940,12 +941,14 @@ function AppRoutes() {
           {import.meta.env.PROD ? (
             <>
               <Route path="/debug-parity" component={DevRouteRedirect} />
+              <Route path="/debug/pre-signup" component={DevRouteRedirect} />
               <Route path="/dev/phonics-audio-preview" component={DevRouteRedirect} />
               <Route path="/dev/rhymes-audio-ab" component={DevRouteRedirect} />
             </>
           ) : (
             <>
               <Route path="/debug-parity" component={DebugParityPage} />
+              <Route path="/debug/pre-signup" component={PreSignupDebugPage} />
               <Route path="/dev/phonics-audio-preview" component={PhonicsAudioPreviewPage} />
               <Route path="/dev/rhymes-audio-ab" component={RhymesAudioAbPage} />
             </>

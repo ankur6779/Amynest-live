@@ -61,7 +61,8 @@ export function isStaticAudioProxyUrl(url: string): boolean {
   if (!trimmed) return false;
   try {
     const path = trimmed.startsWith("http") ? new URL(trimmed).pathname : trimmed;
-    return STATIC_PROXY_PATH_RE.test(path);
+    // Curriculum map may point at curated phonics-library CVC clips (same-origin API).
+    return STATIC_PROXY_PATH_RE.test(path) || PHONICS_LIBRARY_PROXY_PATH_RE.test(path);
   } catch {
     return false;
   }

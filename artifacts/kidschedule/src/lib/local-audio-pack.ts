@@ -11,7 +11,9 @@ export type LocalAudioPackCategory =
   | "phonics-word"
   | "phonics-phoneme"
   | "coach"
-  | "spelling";
+  | "spelling"
+  | "feedback"
+  | "ui";
 
 type PackManifest = {
   version: number;

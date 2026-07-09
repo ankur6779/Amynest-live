@@ -63,7 +63,9 @@ phonicsLibraryPublicRouter.get("/phonics-library/*objectPath", async (req, res):
       { evt: "phonics_library.gcs_unconfigured", objectPath },
       "phonics library proxy — GCS not configured",
     );
-    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
     return;
   }
 
@@ -74,17 +76,23 @@ phonicsLibraryPublicRouter.get("/phonics-library/*objectPath", async (req, res):
         { evt: "phonics_library.missing", objectPath },
         "phonics library object missing in GCS",
       );
-      serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+      serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+        staticSource: "placeholder",
+      });
       return;
     }
 
-    serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs");
+    serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs", {
+      staticSource: "asset",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error(
       { evt: "phonics_library.stream_failed", objectPath, message },
       "phonics library stream failed",
     );
-    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
   }
 });

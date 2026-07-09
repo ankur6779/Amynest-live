@@ -7,7 +7,9 @@ import {
   onPreSignupSignupCompleted,
   resolvePreSignupAudienceInput,
   syncPreSignupCampaign,
+  disablePreSignupReengagementIfFlagOff,
 } from "@/lib/pre-signup-reengagement/orchestrator";
+import { isPreSignupReengagementEnabled } from "@/lib/pre-signup-feature-flags";
 import { consumePreSignupSignupFlowActive, readCampaignState } from "@/lib/pre-signup-reengagement/storage";
 import { PRE_SIGNUP_SEGMENT } from "@/lib/pre-signup-reengagement/types";
 import {
@@ -32,6 +34,12 @@ export function PreSignupReengagementOrchestrator() {
 
     wireAndroidPreSignupTapMetaHandler();
     void initPreSignupLocalNotificationListeners();
+
+    void disablePreSignupReengagementIfFlagOff();
+
+    if (!isPreSignupReengagementEnabled()) {
+      return undefined;
+    }
 
     if (isSignedIn && wasSignedOutRef.current) {
       wasSignedOutRef.current = false;

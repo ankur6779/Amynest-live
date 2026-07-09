@@ -103,6 +103,11 @@ export type AmySpeechPolicy = {
   pipelineMode: "default" | "phonics";
   forcePhonicsOnly: boolean;
   preferDynamicTts: boolean;
+  /**
+   * Educational / curriculum lines — never call runtime TTS.
+   * Static + cache + bundled only; speechSynthesis visual fallback OK.
+   */
+  forbidDynamicTts?: boolean;
   allowPhonicsFallback: boolean;
   allowPhonicsSequence: boolean;
   allowSpeechCoachSplit: boolean;
@@ -555,6 +560,7 @@ function buildPolicy(
     pipelineMode: speechMode === "phonics" || speechMode === "spelling" ? "phonics" : "default",
     forcePhonicsOnly: false,
     preferDynamicTts: false,
+    forbidDynamicTts: false,
     allowPhonicsFallback: false,
     allowPhonicsSequence: false,
     allowSpeechCoachSplit: false,
@@ -593,6 +599,8 @@ function buildPolicy(
         allowPhonicsSequence: true,
         allowSpeechCoachSplit: false,
         preferDynamicTts: false,
+        forbidDynamicTts: true,
+        retryDynamicTts: false,
       };
     case "spelling":
       return {
@@ -602,6 +610,8 @@ function buildPolicy(
         allowPhonicsSequence: true,
         allowSpeechCoachSplit: false,
         preferDynamicTts: false,
+        forbidDynamicTts: true,
+        retryDynamicTts: false,
       };
     case "speech_coach":
       return {
@@ -695,7 +705,8 @@ export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   policy.allowSpeechCoachSplit = false;
   policy.allowPhonicsSequence = false;
   policy.preferDynamicTts = false;
-  policy.retryDynamicTts = true;
+  policy.forbidDynamicTts = true;
+  policy.retryDynamicTts = false;
   policy.preferSpeechSynthesisFallback = true;
   policy.dynamicTimeoutMs = getTtsRequestTimeoutMs();
   return enforceAmySpeechPolicyInvariants(policy);
@@ -712,6 +723,7 @@ export function prepareAmyCatalogSpeech(raw: string): AmySpeechPolicy {
   policy.allowPhonicsSequence = false;
   policy.allowSpeechCoachSplit = false;
   policy.preferDynamicTts = false;
+  policy.forbidDynamicTts = true;
   policy.retryDynamicTts = false;
   policy.preferSpeechSynthesisFallback = true;
   return enforceAmySpeechPolicyInvariants(policy);
@@ -750,6 +762,8 @@ export function preparePhonicsSpeech(raw: string, opts?: SpeakOptions): AmySpeec
   /** Single tile = single sound; CVC blending uses playPhonicsBlend / opts.word finale. */
   policy.allowPhonicsSequence = false;
   policy.preferDynamicTts = false;
+  policy.forbidDynamicTts = true;
+  policy.retryDynamicTts = false;
   policy.prosody = getProsodyProfile("phonics", playbackKey, 1);
   return enforceAmySpeechPolicyInvariants(policy);
 }

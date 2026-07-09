@@ -127,3 +127,21 @@ export function warmPhonicsRouteOnOpen(): void {
 
   warmPhonicsLibraryOnRouteOpen();
 }
+
+/**
+ * Prefetch phonics hot pack on hub tile pointerdown — before route navigation.
+ * Decode happens here so first tap inside Phonics is instant.
+ */
+export function warmPhonicsOnHubIntent(): void {
+  if (typeof window === "undefined") return;
+  warmPhonicsRouteOnOpen();
+  void ensureStaticAudioMapLoaded().then(() => {
+    const letters = "abcdefghijklmnopqrstuvwxyz".split("");
+    preloadStaticPhrases(letters, "phonics", 26);
+    const urls = collectStaticAudioUrls(
+      ["try again", "great job!", "well done", "cat", "dog", "sun"],
+      "default",
+    );
+    prefetchStaticAudioUrlsBatch(urls);
+  });
+}

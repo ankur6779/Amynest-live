@@ -41,7 +41,7 @@ export class AudioPlaybackStateMachine {
   private loadingWatchdog: ReturnType<typeof setTimeout> | null = null;
   private onWatchdogFire: ((requestId: string) => void) | null = null;
 
-  constructor(watchdogMs = 3_000) {
+  constructor(watchdogMs = 2_000) {
     this.watchdogMs = watchdogMs;
   }
 

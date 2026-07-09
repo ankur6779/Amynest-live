@@ -20,7 +20,8 @@ export type GosNavSection =
   | "recommendations"
   | "alerts"
   | "predictions"
-  | "settings";
+  | "settings"
+  | "pre-signup";
 
 export type IntelligenceTab =
   | "insights"
@@ -206,6 +207,7 @@ export const GOS_NAV: Array<{ id: GosNavSection; label: string }> = [
   { id: "retention", label: "Retention" },
   { id: "revenue", label: "Revenue" },
   { id: "campaigns", label: "Campaigns" },
+  { id: "pre-signup", label: "Pre-Signup" },
   { id: "experiments", label: "Experiments" },
   { id: "intelligence", label: "Intelligence" },
   { id: "recommendations", label: "Recommendations" },

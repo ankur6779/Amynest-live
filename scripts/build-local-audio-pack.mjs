@@ -2,9 +2,15 @@
 /**
  * Build bundled recovery clips into kidschedule/public/audio-pack (release / CI).
  *
- *   node scripts/build-local-audio-pack.mjs [--tier minimal|full] [--spelling-limit 500] [--force]
+ *   node scripts/build-local-audio-pack.mjs [--tier minimal|core|full] [--spelling-limit N] [--force]
  *
  * Downloads via production static-audio API (GCS is not public). Validates unique clips.
+ *
+ * Tiers:
+ *   minimal — letters + digraphs + ~20 CVC + coach lines + spelling seed (~3MB)
+ *   core    — production hot pack: letters, phonemes, numbers, colors, animals,
+ *             shapes, common words, spelling starters, feedback UI (~20–40MB target)
+ *   full    — broader phonics map + up to spelling-limit words
  */
 import {
   readFileSync,
@@ -24,16 +30,19 @@ const repoRoot = join(__dirname, "..");
 const packRoot = join(repoRoot, "artifacts/kidschedule/public/audio-pack");
 const staticMapPath = join(repoRoot, "artifacts/kidschedule/src/data/static-audio-map.json");
 
-const tier = process.argv.includes("--tier")
+const tierArg = process.argv.includes("--tier")
   ? process.argv[process.argv.indexOf("--tier") + 1]
   : "minimal";
+const tier = ["minimal", "core", "full"].includes(tierArg) ? tierArg : "minimal";
 const force = process.argv.includes("--force");
 const spellingLimit = Number(
   process.argv.includes("--spelling-limit")
     ? process.argv[process.argv.indexOf("--spelling-limit") + 1]
     : tier === "full"
       ? 500
-      : 60,
+      : tier === "core"
+        ? 200
+        : 60,
 );
 
 const staticMap = JSON.parse(readFileSync(staticMapPath, "utf8"));
@@ -63,9 +72,58 @@ const LETTER_FOR = {
   x: "x for x-ray",
 };
 
+const DIGRAPHS = ["sh", "ch", "th", "ng", "wh", "ck", "qu"];
+
 const CVC_WORDS = [
   "cat", "bat", "mat", "sat", "pat", "dog", "log", "fog", "pen", "hen", "ten",
-  "sit", "hit", "cup", "sun", "hat", "rat", "pig", "bed", "bus",
+  "sit", "hit", "cup", "sun", "hat", "rat", "pig", "bed", "bus", "run", "fun",
+  "jam", "map", "tap", "red", "big", "box", "fox", "mop", "top", "hop", "pop",
+  "net", "wet", "jet", "leg", "peg", "mug", "bug", "rug", "hug", "cut", "nut",
+  "fin", "pin", "win", "bin", "lip", "zip", "kid", "lid", "mad", "sad", "dad",
+];
+
+const NUMBERS = [
+  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+  "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+  "seventeen", "eighteen", "nineteen", "twenty",
+];
+
+const COLORS = [
+  "red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "black", "white",
+];
+
+const ANIMALS = [
+  "cat", "dog", "pig", "hen", "cow", "duck", "fish", "bird", "lion", "bear", "frog",
+];
+
+const SHAPES = [
+  "circle", "square", "triangle", "rectangle", "star", "heart", "oval",
+];
+
+const COMMON_WORDS = [
+  "apple", "ball", "book", "car", "home", "water", "food", "milk", "baby", "mom",
+  "dad", "yes", "no", "hello", "goodbye", "please", "thank you", "sorry", "love",
+  "happy", "sad", "big", "small", "hot", "cold", "up", "down", "in", "out",
+  "go", "stop", "look", "listen", "say", "read", "write", "count", "draw",
+];
+
+const FEEDBACK_LINES = [
+  "try again",
+  "great job!",
+  "good job!",
+  "well done",
+  "nice try.",
+  "that was excellent.",
+  "listen carefully",
+  "your turn.",
+  "let's begin!",
+  "ready? let's start!",
+  "take your time.",
+  "let's try together.",
+  "let's try again",
+  "not quite — try again!",
+  "great work today!",
+  "correct! well done!",
 ];
 
 const COACH_LINES = [
@@ -91,6 +149,18 @@ const COACH_LINES = [
 const SPELLING_SEED = [
   "cat", "dog", "sun", "hat", "bat", "pig", "cup", "bus", "bed", "pen", "run", "fun",
   "hen", "ten", "red", "big", "log", "fog", "jam", "map", "tap", "sat", "mat", "rat",
+  "box", "fox", "mop", "top", "net", "wet", "leg", "mug", "bug", "cut", "nut", "fin",
+  "pin", "win", "lip", "zip", "kid", "mad", "sad", "dad", "mom", "yes", "no", "go",
+  "up", "in", "out", "hot", "cold", "book", "ball", "car", "fish", "bird", "frog",
+  "lion", "bear", "duck", "cow", "apple", "water", "milk", "baby", "love", "happy",
+];
+
+const LESSON_INTROS = [
+  "let's begin!",
+  "ready? let's start!",
+  "listen carefully",
+  "your turn.",
+  "take your time.",
 ];
 
 function slug(s) {
@@ -107,6 +177,12 @@ function hashFromGcsUrl(gcsUrl) {
   return m?.[1]?.toLowerCase() ?? null;
 }
 
+function isPhonicsLibraryProxyUrl(url) {
+  return /\/api\/phonics-library\/phonics\/[a-z0-9_-]+\/[a-z0-9_.%-]+\.mp3$/i.test(
+    String(url ?? "").trim(),
+  );
+}
+
 function urlForAudioKey(key) {
   const raw = key.trim();
   const lower = raw.toLowerCase();
@@ -120,23 +196,35 @@ function urlForAudioKey(key) {
 }
 
 async function downloadClip(gcsUrl, destPath) {
-  const hash = hashFromGcsUrl(gcsUrl);
-  if (!hash) return false;
-
   if (existsSync(destPath) && !force) {
     const buf = readFileSync(destPath);
-    if (buf.length > 0 && buf.length < 200_000) return true;
+    if (buf.length >= 512 && buf.length < 200_000) return true;
   }
 
-  const apiUrl = `${ORIGIN}/api/static-audio/${hash}.mp3`;
+  let apiUrl = null;
+  const hash = hashFromGcsUrl(gcsUrl);
+  if (hash) {
+    apiUrl = `${ORIGIN}/api/static-audio/${hash}.mp3`;
+  } else if (isPhonicsLibraryProxyUrl(gcsUrl)) {
+    const path = String(gcsUrl).startsWith("http")
+      ? new URL(gcsUrl).pathname
+      : String(gcsUrl);
+    apiUrl = `${ORIGIN}${path}`;
+  } else if (String(gcsUrl).startsWith("http")) {
+    apiUrl = gcsUrl;
+  } else {
+    return false;
+  }
+
   let res = await fetch(apiUrl);
-  if (!res.ok) {
+  if (!res.ok && hash) {
     res = await fetch(gcsUrl);
   }
   if (!res.ok) return false;
 
   const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length < 512) return false;
+  // Reject placeholder / corrupt clips (<2KB typical stub)
+  if (buf.length < 2000) return false;
 
   mkdirSync(dirname(destPath), { recursive: true });
   writeFileSync(destPath, buf);
@@ -183,6 +271,7 @@ function clearStubMp3s() {
 function validatePack() {
   const hashes = new Map();
   let mp3Count = 0;
+  let totalBytes = 0;
   for (const name of readdirSync(packRoot)) {
     const p = join(packRoot, name);
     if (!statSync(p).isDirectory()) continue;
@@ -190,21 +279,23 @@ function validatePack() {
       if (!fn.endsWith(".mp3")) continue;
       mp3Count += 1;
       const buf = readFileSync(join(p, fn));
+      totalBytes += buf.length;
       const h = createHash("sha256").update(buf).digest("hex");
       hashes.set(h, (hashes.get(h) ?? 0) + 1);
     }
   }
   const unique = hashes.size;
   const maxDup = Math.max(0, ...hashes.values());
-  if (mp3Count < 40) {
-    throw new Error(`Pack too small: ${mp3Count} mp3 files (need >= 40)`);
+  const minFiles = tier === "core" ? 120 : 40;
+  if (mp3Count < minFiles) {
+    throw new Error(`Pack too small: ${mp3Count} mp3 files (need >= ${minFiles} for tier=${tier})`);
   }
   if (unique < Math.min(30, Math.floor(mp3Count * 0.5))) {
     throw new Error(
       `Pack looks like stubs: ${unique} unique hashes across ${mp3Count} files (max dup ${maxDup})`,
     );
   }
-  return { mp3Count, uniqueHashes: unique };
+  return { mp3Count, uniqueHashes: unique, totalBytes };
 }
 
 async function main() {
@@ -213,14 +304,10 @@ async function main() {
 
   const letters =
     tier === "full"
-      ? Object.keys(phonicsMap)
-      : [
-          ..."abcdefghijklmnopqrstuvwxyz".split(""),
-          "sh",
-          "ch",
-          "th",
-          "ng",
-        ];
+      ? Object.keys(phonicsMap).length > 0
+        ? Object.keys(phonicsMap)
+        : [..."abcdefghijklmnopqrstuvwxyz".split(""), ...DIGRAPHS]
+      : [..."abcdefghijklmnopqrstuvwxyz".split(""), ...(tier === "core" ? DIGRAPHS : ["sh", "ch", "th", "ng"])];
 
   for (const L of letters) {
     const phrase = LETTER_ALIAS[L] ?? L;
@@ -233,35 +320,95 @@ async function main() {
   const words =
     tier === "full"
       ? Object.keys(phonicsMap).filter((k) => k.length <= 5 && !k.includes(" "))
-      : CVC_WORDS;
+      : tier === "core"
+        ? [...new Set([...CVC_WORDS, ...COMMON_WORDS, ...ANIMALS])]
+        : CVC_WORDS;
   for (const w of words) {
     await addEntry("phonics-word", w, urlForAudioKey(w));
+  }
+
+  if (tier === "core" || tier === "full") {
+    for (const n of NUMBERS) {
+      await addEntry("phonics-word", n, urlForAudioKey(n));
+    }
+    for (const c of COLORS) {
+      await addEntry("phonics-word", c, urlForAudioKey(c));
+    }
+    for (const s of SHAPES) {
+      await addEntry("phonics-word", s, urlForAudioKey(s));
+    }
   }
 
   for (const line of COACH_LINES) {
     await addEntry("coach", line, urlForAudioKey(line.toLowerCase()) ?? urlForAudioKey(line));
   }
 
-  const spellingWords = [...new Set([...SPELLING_SEED, ...CVC_WORDS])].slice(0, spellingLimit);
+  if (tier === "core" || tier === "full") {
+    for (const line of FEEDBACK_LINES) {
+      await addEntry("coach", line, urlForAudioKey(line.toLowerCase()) ?? urlForAudioKey(line));
+    }
+    for (const line of LESSON_INTROS) {
+      await addEntry("coach", line, urlForAudioKey(line.toLowerCase()) ?? urlForAudioKey(line));
+    }
+  }
+
+  const spellingWords = [
+    ...new Set([...SPELLING_SEED, ...CVC_WORDS, ...(tier === "core" ? COMMON_WORDS : [])]),
+  ].slice(0, spellingLimit);
   for (const w of spellingWords) {
     await addEntry("spelling", w, urlForAudioKey(w));
   }
 
+  // Core pack: pull additional high-frequency short catalog keys (fruits, animals, UI)
+  // so the hot pack approaches the 20–40MB production budget without bundling the full library.
+  if (tier === "core" || tier === "full") {
+    const EXTRA_CORE = [
+      "horse", "tiger", "elephant", "monkey", "rabbit",
+      "banana", "mango", "grapes", "strawberry", "watermelon", "pineapple", "bread", "rice",
+      "amazing!", "keep going!", "nice work!", "your turn!", "diamond",
+      "meow", "moo", "woof", "quack", "roar!",
+    ];
+    for (const w of EXTRA_CORE) {
+      await addEntry("phonics-word", w, urlForAudioKey(w));
+    }
+    // Auto-fill: short default-map keys not already covered (cap to stay under ~40MB).
+    const already = new Set(Object.keys(entries).map((k) => k.split(":").slice(1).join(":").toLowerCase()));
+    const autoKeys = Object.keys(defaultMap)
+      .filter((k) => {
+        const t = k.trim().toLowerCase();
+        if (already.has(t)) return false;
+        if (t.length > 24) return false;
+        if (t.split(/\s+/).length > 4) return false;
+        return Boolean(defaultMap[k]);
+      })
+      .slice(0, tier === "full" ? 800 : 350);
+    for (const k of autoKeys) {
+      await addEntry("phonics-word", k, urlForAudioKey(k));
+    }
+  }
+
   const stats = validatePack();
+  const sizeMb = (stats.totalBytes / (1024 * 1024)).toFixed(1);
   const manifest = {
-    version: 1,
+    version: tier === "core" ? 2 : 1,
     generatedAt: new Date().toISOString(),
     tier,
     origin: ORIGIN,
+    sizeBytes: stats.totalBytes,
     entries,
   };
   writeFileSync(join(packRoot, "manifest.json"), JSON.stringify(manifest, null, 2));
   console.log(
-    `Pack: ${ok} ok, ${fail} failed, ${Object.keys(entries).length} manifest keys, ` +
-      `${stats.mp3Count} mp3, ${stats.uniqueHashes} unique → ${packRoot}`,
+    `Pack: tier=${tier} ${ok} ok, ${fail} failed, ${Object.keys(entries).length} manifest keys, ` +
+      `${stats.mp3Count} mp3, ${stats.uniqueHashes} unique, ${sizeMb}MB → ${packRoot}`,
   );
-  if (fail > 0) {
+  // Soft-fail: missing catalog keys are expected; hard-fail only if pack is unusable.
+  const failRatio = ok + fail === 0 ? 1 : fail / (ok + fail);
+  if (failRatio > 0.55 && ok < 80) {
+    console.error(`Pack coverage too low: ok=${ok} fail=${fail}`);
     process.exitCode = 1;
+  } else if (fail > 0) {
+    console.warn(`Warning: ${fail} clips missing from static map (pack still usable).`);
   }
 }
 

@@ -83,6 +83,8 @@ function unlockAudio(fromUserGesture = false): void {
     if (isCapacitorIosShell()) {
       void prepareIosAudioSessionForPlayback();
     }
+    // Guarantee future HTMLAudioElement.play() — silent 10ms buffer + dispose path
+    // lives inside audioManager.warmMediaPipeline → playSilentUnlockBuffer.
   }
   void import("@/lib/static-audio-telemetry").then((m) => m.resetClientStaticAudioCircuit());
   if (fromUserGesture) {
@@ -90,6 +92,14 @@ function unlockAudio(fromUserGesture = false): void {
       m.audioManager.warmMediaPipeline(true, { fromUserGesture: true }),
     );
   }
+}
+
+/**
+ * Call from every Play / Speak CTA in the same user-gesture turn.
+ * Idempotent — unlocks AudioContext, warms media pipeline, plays silent buffer.
+ */
+export function guaranteeAudioUnlockedFromGesture(): void {
+  unlockAudio(true);
 }
 
 /**
@@ -156,6 +166,9 @@ export function installTtsGestureListener(): void {
 export function recordTtsUserGesture(): void {
   unlockAudio(true);
 }
+
+/** Alias — Play / Speak CTAs should call this for guaranteed unlock. */
+export { guaranteeAudioUnlockedFromGesture as unlockAudioForPlayback };
 
 export function isAudioUnlocked(): boolean {
   return audioUnlocked;

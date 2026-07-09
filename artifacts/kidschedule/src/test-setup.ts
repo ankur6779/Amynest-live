@@ -1,9 +1,9 @@
 import "@testing-library/jest-dom";
 import "./i18n";
 
-if (typeof globalThis.localStorage === "undefined") {
+function installStoragePolyfill(target: "localStorage" | "sessionStorage"): void {
   const store = new Map<string, string>();
-  globalThis.localStorage = {
+  const storage = {
     get length() {
       return store.size;
     },
@@ -23,4 +23,11 @@ if (typeof globalThis.localStorage === "undefined") {
       store.set(key, value);
     },
   };
+  Object.defineProperty(globalThis, target, {
+    configurable: true,
+    value: storage,
+  });
 }
+
+installStoragePolyfill("localStorage");
+installStoragePolyfill("sessionStorage");

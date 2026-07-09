@@ -57,9 +57,11 @@ function serveBuffer(
   buffer: Buffer,
   source: "memory" | "gcs",
   objectPath: string,
+  staticSource: "asset" | "placeholder" = "asset",
 ): void {
   serveStaticAudioBuffer(req, res, etagKey, buffer, source, {
     contentType: contentTypeForPath(objectPath),
+    staticSource,
   });
 }
 
@@ -129,7 +131,7 @@ worldsLibraryPublicRouter.get(
       }
 
       if (isAudio) {
-        serveBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", objectPath);
+        serveBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", objectPath, "placeholder");
       } else {
         res.status(404).json({ error: "asset_missing" });
       }
@@ -137,7 +139,7 @@ worldsLibraryPublicRouter.get(
       const message = err instanceof Error ? err.message : String(err);
       logger.error({ evt: "worlds_library.stream_failed", objectPath, worldId, message });
       if (isAudio) {
-        serveBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", objectPath);
+        serveBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", objectPath, "placeholder");
       } else {
         res.status(500).json({ error: "stream_failed" });
       }

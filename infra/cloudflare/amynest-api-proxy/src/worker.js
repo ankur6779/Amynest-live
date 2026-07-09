@@ -105,9 +105,19 @@ function isSignedUrlMetadataPath(pathname) {
   return SIGNED_URL_METADATA_RE.test(pathname) || RHYMES_CATALOG_RE.test(pathname);
 }
 
-/** @param {string} pathname @param {string} contentType */
-function shouldStoreInEdgeCache(pathname, contentType) {
+/**
+ * Never persist placeholder / no-store responses in the Worker Cache API.
+ * A prior incident cached 256-byte placeholders under real hash URLs forever.
+ * @param {string} pathname
+ * @param {string} contentType
+ * @param {Headers} [headers]
+ */
+function shouldStoreInEdgeCache(pathname, contentType, headers) {
   if (!contentType) return false;
+  const source = headers?.get("x-amynest-static-source") ?? "";
+  if (source === "placeholder") return false;
+  const cc = headers?.get("cache-control") ?? "";
+  if (/no-store|no-cache|private/i.test(cc)) return false;
   if (isSignedUrlMetadataPath(pathname)) return contentType.includes("json");
   if (isCacheableAudioPath(pathname)) return contentType.includes("audio");
   if (WORLDS_LIBRARY_RE.test(pathname) || ANIMAL_WORLD_LIBRARY_RE.test(pathname)) {
@@ -239,7 +249,19 @@ async function proxyToBackend(request, env, url) {
   if (traceId) out.set(COACH_GENERATE_TRACE_HEADER, traceId);
   out.set("x-amynest-trace-cf-ms", String(cfMs));
 
-  if (isCacheableMediaPath(url.pathname) && response.ok) {
+  const staticSource = out.get("x-amynest-static-source") ?? "";
+  const contentLength = Number(out.get("content-length") || 0);
+  const isPlaceholderAudio =
+    staticSource === "placeholder" ||
+    (isCacheableAudioPath(url.pathname) && contentLength > 0 && contentLength <= 512);
+
+  // Never let Cloudflare CDN cache placeholder stubs as immutable.
+  if (isPlaceholderAudio) {
+    out.set("Cache-Control", "private, no-store, no-cache, max-age=0, must-revalidate");
+    out.set("CDN-Cache-Control", "no-store");
+    out.set("Cloudflare-CDN-Cache-Control", "no-store");
+    out.set("Surrogate-Control", "no-store");
+  } else if (isCacheableMediaPath(url.pathname) && response.ok) {
     const existing = out.get("Cache-Control");
     if (!existing || !existing.includes("max-age")) {
       out.set("Cache-Control", MEDIA_CACHE_TTL_FALLBACK);
@@ -284,7 +306,16 @@ async function fetchWithEdgeCache(request, env, ctx, url) {
   if (!hasRange) {
     const cached = await cache.match(cacheKey);
     if (cached) {
-      return withEdgeCacheHeaders(cached, url, "HIT", request);
+      const source = cached.headers.get("x-amynest-static-source") ?? "";
+      const contentLength = Number(cached.headers.get("content-length") || 0);
+      // Never serve poisoned placeholder stubs from the Worker Cache API.
+      const isPoison =
+        source === "placeholder" ||
+        (contentLength > 0 && contentLength <= 512);
+      if (!isPoison) {
+        return withEdgeCacheHeaders(cached, url, "HIT", request);
+      }
+      ctx.waitUntil(cache.delete(cacheKey));
     }
   }
 
@@ -296,7 +327,7 @@ async function fetchWithEdgeCache(request, env, ctx, url) {
     request.method === "GET" &&
     response.ok &&
     response.status === 200 &&
-    shouldStoreInEdgeCache(url.pathname, contentType)
+    shouldStoreInEdgeCache(url.pathname, contentType, response.headers)
   ) {
     const toStore = response.clone();
     ctx.waitUntil(cache.put(cacheKey, toStore));

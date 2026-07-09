@@ -55,7 +55,7 @@ export type PreSignupCampaignState = {
   campaignStartedAtMs: number;
   scheduled: ScheduledNotif[];
   completedAtMs?: number;
-  exitReason?: "signup" | "login" | "permission_denied" | "day7_complete";
+  exitReason?: "signup" | "login" | "permission_denied" | "day7_complete" | "feature_flag_off";
   checksum?: string;
 };
 

@@ -66,4 +66,40 @@ assert.equal(isReelsGcsOriginEnabled({ REELS_GCS_ORIGIN: "1" }), true);
 assert.equal(isReelsGcsOriginEnabled({ REELS_GCS_ORIGIN: "0" }), false);
 assert.equal(isReelsGcsOriginEnabled({}), false);
 
+/** Mirrors worker.js shouldStoreInEdgeCache placeholder / no-store guards. */
+function shouldStoreInEdgeCache(pathname, contentType, headers) {
+  if (!contentType) return false;
+  const source = headers?.get("x-amynest-static-source") ?? "";
+  if (source === "placeholder") return false;
+  const cc = headers?.get("cache-control") ?? "";
+  if (/no-store|no-cache|private/i.test(cc)) return false;
+  if (isCacheableAudioPath(pathname)) return contentType.includes("audio");
+  return false;
+}
+
+assert.equal(
+  shouldStoreInEdgeCache(
+    "/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3",
+    "audio/mpeg",
+    new Headers({ "x-amynest-static-source": "asset" }),
+  ),
+  true,
+);
+assert.equal(
+  shouldStoreInEdgeCache(
+    "/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3",
+    "audio/mpeg",
+    new Headers({ "x-amynest-static-source": "placeholder" }),
+  ),
+  false,
+);
+assert.equal(
+  shouldStoreInEdgeCache(
+    "/api/static-audio/f6b24e6cd11393e9b8f7775b13635898.mp3",
+    "audio/mpeg",
+    new Headers({ "cache-control": "private, no-store" }),
+  ),
+  false,
+);
+
 console.log("worker.test.mjs OK");

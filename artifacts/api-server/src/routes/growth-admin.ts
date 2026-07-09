@@ -56,6 +56,7 @@ const GOS_SECTIONS = new Set<GosSection>([
   "feature-impact",
   "decisions",
   "copilot",
+  "pre-signup",
 ]);
 
 /** GET /api/admin/growth/dashboard?preset=last_7_days&start=&end= */

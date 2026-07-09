@@ -7,6 +7,14 @@ export const STATIC_AUDIO_CACHE_CONTROL =
 export const STATIC_AUDIO_CDN_CACHE_CONTROL =
   "public, max-age=31536000, stale-while-revalidate=86400";
 
+/**
+ * Placeholders must NEVER be edge-cached as immutable.
+ * A prior bug cached 256-byte placeholders for 1 year under the real hash URL,
+ * poisoning Cloudflare HIT responses even after GCS had the real MP3.
+ */
+export const STATIC_AUDIO_PLACEHOLDER_CACHE_CONTROL =
+  "private, no-store, no-cache, max-age=0, must-revalidate";
+
 type ByteRange = { start: number; end: number };
 
 function parseRangeHeader(rangeHeader: string | undefined, size: number): ByteRange | null {
@@ -37,16 +45,25 @@ function applyEdgeCacheHeaders(
   contentType = "audio/mpeg",
   staticSource: "asset" | "placeholder" = "asset",
 ): void {
-  const etag = `"${hash}"`;
+  // Distinct ETag so a later real asset (`"hash"`) is not treated as 304 of a placeholder.
+  const etag = staticSource === "placeholder" ? `"${hash}-placeholder"` : `"${hash}"`;
   res.setHeader("Content-Type", contentType);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader(STATIC_AUDIO_SOURCE_HEADER, staticSource);
   res.setHeader("ETag", etag);
-  res.setHeader("Cache-Control", STATIC_AUDIO_CACHE_CONTROL);
-  res.setHeader("CDN-Cache-Control", STATIC_AUDIO_CDN_CACHE_CONTROL);
-  res.setHeader("Cloudflare-CDN-Cache-Control", STATIC_AUDIO_CDN_CACHE_CONTROL);
-  res.setHeader("Surrogate-Control", "max-age=31536000");
-  res.setHeader("Cache-Tag", `static-audio,static-audio-${hash}`);
+  if (staticSource === "placeholder") {
+    res.setHeader("Cache-Control", STATIC_AUDIO_PLACEHOLDER_CACHE_CONTROL);
+    res.setHeader("CDN-Cache-Control", STATIC_AUDIO_PLACEHOLDER_CACHE_CONTROL);
+    res.setHeader("Cloudflare-CDN-Cache-Control", STATIC_AUDIO_PLACEHOLDER_CACHE_CONTROL);
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("Cache-Tag", `static-audio-placeholder,static-audio-${hash}`);
+  } else {
+    res.setHeader("Cache-Control", STATIC_AUDIO_CACHE_CONTROL);
+    res.setHeader("CDN-Cache-Control", STATIC_AUDIO_CDN_CACHE_CONTROL);
+    res.setHeader("Cloudflare-CDN-Cache-Control", STATIC_AUDIO_CDN_CACHE_CONTROL);
+    res.setHeader("Surrogate-Control", "max-age=31536000");
+    res.setHeader("Cache-Tag", `static-audio,static-audio-${hash}`);
+  }
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Vary", "Accept-Encoding");
   res.setHeader("Content-Length", String(byteLength));
@@ -73,10 +90,15 @@ export function serveStaticAudioBuffer(
 ): void {
   const contentType = options?.contentType ?? "audio/mpeg";
   const size = buffer.byteLength;
-  const etag = `"${hash}"`;
+  const staticSource = options?.staticSource ?? "asset";
+  const etag = staticSource === "placeholder" ? `"${hash}-placeholder"` : `"${hash}"`;
   const ifNoneMatch = req.headers["if-none-match"];
 
-  if (ifNoneMatch === etag || ifNoneMatch === hash) {
+  // Never 304 a placeholder — clients must revalidate until real bytes exist.
+  if (
+    staticSource === "asset" &&
+    (ifNoneMatch === etag || ifNoneMatch === hash || ifNoneMatch === `"${hash}"`)
+  ) {
     res.setHeader("Cache-Control", STATIC_AUDIO_CACHE_CONTROL);
     res.setHeader("CDN-Cache-Control", STATIC_AUDIO_CDN_CACHE_CONTROL);
     res.status(304).end();
@@ -84,8 +106,6 @@ export function serveStaticAudioBuffer(
   }
 
   const range = parseRangeHeader(req.headers.range, size);
-
-  const staticSource = options?.staticSource ?? "asset";
 
   if (!range) {
     applyEdgeCacheHeaders(res, hash, size, originCache, contentType, staticSource);

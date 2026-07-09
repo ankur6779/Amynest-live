@@ -27,6 +27,7 @@ export function HubLaunchCard({
   testId,
   sectionId,
   onNavigate,
+  onPointerDown,
 }: {
   href: string;
   title: string;
@@ -39,6 +40,8 @@ export function HubLaunchCard({
   testId: string;
   sectionId?: string;
   onNavigate?: () => void;
+  /** Prefetch / unlock before navigation (instant audio). */
+  onPointerDown?: () => void;
 }) {
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
@@ -48,6 +51,9 @@ export function HubLaunchCard({
   return (
     <AppLink
       href={href}
+      onPointerDown={() => {
+        onPointerDown?.();
+      }}
       onClick={() => {
         awardSectionPoints(tileId);
         onNavigate?.();

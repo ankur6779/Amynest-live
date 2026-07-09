@@ -87,7 +87,9 @@ animalWorldLibraryPublicRouter.get(
         "animal world library proxy — GCS not configured",
       );
       if (isAudio) {
-        serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+        serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+          staticSource: "placeholder",
+        });
       } else {
         res.status(404).json({ error: "asset_unavailable" });
       }
@@ -102,7 +104,9 @@ animalWorldLibraryPublicRouter.get(
           "animal world object missing in GCS",
         );
         if (isAudio) {
-          serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+          serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+            staticSource: "placeholder",
+          });
         } else {
           res.status(404).json({ error: "asset_missing" });
         }
@@ -117,7 +121,9 @@ animalWorldLibraryPublicRouter.get(
         "animal world library stream failed",
       );
       if (isAudio) {
-        serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+        serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+          staticSource: "placeholder",
+        });
       } else {
         res.status(500).json({ error: "stream_failed" });
       }

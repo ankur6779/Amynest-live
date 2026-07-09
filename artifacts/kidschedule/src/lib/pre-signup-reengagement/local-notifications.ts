@@ -3,10 +3,34 @@
  */
 
 import { Capacitor } from "@capacitor/core";
-import { isAmyNestWrapper, isCapacitorNativePlatform, getBrowserNotificationPermission } from "@/lib/native-push-bridge";
+import {
+  getBrowserNotificationPermission,
+  isAmyNestWrapper,
+  isCapacitorNativePlatform,
+  readAndroidPushPermissionStatus,
+} from "@/lib/native-push-bridge";
+import { isPreSignupPermNativeEnabled } from "@/lib/pre-signup-feature-flags";
+import type {
+  PreSignupNativeScheduleResult,
+  PreSignupPermissionApi,
+  PreSignupPermissionSource,
+} from "./diagnostics";
 import type { ScheduledNotif } from "./types";
 
 export const PRE_SIGNUP_NOTIF_CATEGORY = "pre_signup_reengagement";
+
+export type PreSignupScheduleOutcome = {
+  ok: boolean;
+  nativeScheduleResult: PreSignupNativeScheduleResult;
+  scheduleFailureReason?: string;
+  pendingCount: number;
+};
+
+export type PreSignupPermissionResolution = {
+  status: "granted" | "denied" | "default";
+  source: PreSignupPermissionSource;
+  apiUsed: PreSignupPermissionApi;
+};
 
 declare global {
   interface Window {
@@ -38,29 +62,55 @@ function isAndroidWebViewBridge(): boolean {
 export async function resolvePreSignupNotificationPermission(): Promise<
   "granted" | "denied" | "default"
 > {
+  const resolved = await resolvePreSignupPermissionDetailed();
+  return resolved.status;
+}
+
+/** Detailed permission resolution for diagnostics (F1). */
+export async function resolvePreSignupPermissionDetailed(): Promise<PreSignupPermissionResolution> {
   if (isAndroidWebViewBridge()) {
+    if (isPreSignupPermNativeEnabled()) {
+      const status = readAndroidPushPermissionStatus();
+      return {
+        status,
+        source: "android_push",
+        apiUsed: "AndroidPush.getPermissionStatus",
+      };
+    }
     const browser = getBrowserNotificationPermission();
-    if (browser === "granted") return "granted";
-    if (browser === "denied") return "denied";
-    return "default";
+    if (browser === "granted") {
+      return { status: "granted", source: "browser_notification", apiUsed: "Notification.permission" };
+    }
+    if (browser === "denied") {
+      return { status: "denied", source: "browser_notification", apiUsed: "Notification.permission" };
+    }
+    return { status: "default", source: "browser_notification", apiUsed: "Notification.permission" };
   }
 
   if (Capacitor.isNativePlatform()) {
     try {
       const { LocalNotifications } = await import("@capacitor/local-notifications");
       const perm = await LocalNotifications.checkPermissions();
-      if (perm.display === "granted") return "granted";
-      if (perm.display === "denied") return "denied";
-      return "default";
+      if (perm.display === "granted") {
+        return { status: "granted", source: "capacitor_local", apiUsed: "LocalNotifications.checkPermissions" };
+      }
+      if (perm.display === "denied") {
+        return { status: "denied", source: "capacitor_local", apiUsed: "LocalNotifications.checkPermissions" };
+      }
+      return { status: "default", source: "capacitor_local", apiUsed: "LocalNotifications.checkPermissions" };
     } catch {
-      return "default";
+      return { status: "default", source: "unavailable", apiUsed: "none" };
     }
   }
 
   const browser = getBrowserNotificationPermission();
-  if (browser === "granted") return "granted";
-  if (browser === "denied") return "denied";
-  return "default";
+  if (browser === "granted") {
+    return { status: "granted", source: "browser_notification", apiUsed: "Notification.permission" };
+  }
+  if (browser === "denied") {
+    return { status: "denied", source: "browser_notification", apiUsed: "Notification.permission" };
+  }
+  return { status: "default", source: "browser_notification", apiUsed: "Notification.permission" };
 }
 
 async function scheduleCapacitorLocal(notifications: ScheduledNotif[]): Promise<boolean> {
@@ -139,17 +189,49 @@ function scheduleAndroidWebView(notifications: ScheduledNotif[]): boolean {
 
 export async function schedulePreSignupLocalNotifications(
   notifications: ScheduledNotif[],
-): Promise<boolean> {
-  if (!canUsePreSignupLocalNotifications()) return false;
+): Promise<PreSignupScheduleOutcome> {
+  const pending = notifications.filter((n) => n.status === "pending" && n.fireAtMs > Date.now());
 
-  const permission = await resolvePreSignupNotificationPermission();
-  if (permission !== "granted") return false;
-
-  if (isAndroidWebViewBridge()) {
-    return scheduleAndroidWebView(notifications);
+  if (!canUsePreSignupLocalNotifications()) {
+    return {
+      ok: false,
+      nativeScheduleResult: "skipped_no_bridge",
+      scheduleFailureReason: "not_native_shell",
+      pendingCount: pending.length,
+    };
   }
 
-  return scheduleCapacitorLocal(notifications);
+  const permission = await resolvePreSignupNotificationPermission();
+  if (permission !== "granted") {
+    return {
+      ok: false,
+      nativeScheduleResult: "skipped_permission",
+      scheduleFailureReason: `permission_${permission}`,
+      pendingCount: pending.length,
+    };
+  }
+
+  if (isAndroidWebViewBridge()) {
+    const submitted = scheduleAndroidWebView(notifications);
+    return {
+      ok: submitted,
+      nativeScheduleResult: submitted ? "submitted" : "skipped_no_bridge",
+      scheduleFailureReason: submitted ? undefined : "android_local_notif_bridge_missing",
+      pendingCount: pending.length,
+    };
+  }
+
+  const capacitorOk = await scheduleCapacitorLocal(notifications);
+  return {
+    ok: capacitorOk,
+    nativeScheduleResult: capacitorOk
+      ? pending.length > 0
+        ? "capacitor_scheduled"
+        : "capacitor_empty"
+      : "capacitor_failed",
+    scheduleFailureReason: capacitorOk ? undefined : "capacitor_schedule_error",
+    pendingCount: pending.length,
+  };
 }
 
 export async function cancelPreSignupLocalNotifications(

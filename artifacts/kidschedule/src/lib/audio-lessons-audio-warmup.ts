@@ -18,8 +18,8 @@ import { preloadStaticPhrases } from "@/lib/static-audio";
 export { AMY_TTS_VOICE_ID as LESSON_VOICE_ID, AMY_TTS_MODEL_ID as LESSON_MODEL_ID } from "@workspace/static-audio/browser";
 
 const MAX_WARM_LESSONS = 3;
-const MAX_PARAGRAPHS_PER_LESSON = 4;
-const BATCH_GAP_MS = 60;
+const MAX_PARAGRAPHS_PER_LESSON = 5;
+const BATCH_GAP_MS = 40;
 
 export type AudioLessonsWarmResumeTarget = {
   lesson: Lesson;

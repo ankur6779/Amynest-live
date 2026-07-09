@@ -754,6 +754,47 @@ async function attemptCachePlay(
     for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       const key = localCacheKeyForPhrase(candidate, tryMode);
+
+      // Phase 6 — filesystem-equivalent cache (native shells) before IndexedDB phrase store
+      try {
+        const { getFilesystemCachedAudioUrl } = await import(
+          "@/lib/native-audio-filesystem-cache"
+        );
+        const fsUrl = await getFilesystemCachedAudioUrl(`fs:${key}`);
+        if (fsUrl) {
+          const audio = playAudio(fsUrl);
+          if (audio) {
+            const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+              proxyUrl: fsUrl,
+              phrase: candidate,
+              mode: tryMode,
+              source: "cache",
+              waitUntilEnd,
+            });
+            URL.revokeObjectURL(fsUrl);
+            if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+            if (play.ok) {
+              tracePipelineCacheHit(ctx, "LOCAL_CACHE");
+              recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
+              return {
+                ok: true,
+                layer: "cache",
+                playedDuration: play.playedDuration,
+                expectedDuration: play.expectedDuration,
+                stopPlayback: () => {
+                  audio.pause();
+                  audio.currentTime = 0;
+                },
+              };
+            }
+          } else {
+            URL.revokeObjectURL(fsUrl);
+          }
+        }
+      } catch {
+        /* filesystem layer optional */
+      }
+
       const objectUrl = await getLocalCachedAudioUrl(key);
       if (!objectUrl) continue;
 
@@ -1547,6 +1588,7 @@ async function tryLearnableLayerPlay(
     case "api":
     case "elevenlabs":
       if (phonicsOnly || policy.forcePhonicsOnly) return null;
+      if (policy.forbidDynamicTts) return null;
       if (isAmyVoiceOffline() || shouldDeferElevenLabsFallback()) return null;
       if (!policy.preferDynamicTts) {
         return tryPlayWithWatchdog(
@@ -1865,6 +1907,7 @@ export async function speakAmyVoice(
 
   const runDynamic = async (): Promise<PlayAttemptResult | null> => {
     if (policy.forcePhonicsOnly || shallow) return null;
+    if (policy.forbidDynamicTts) return null;
     if (isAmyVoiceOffline() || shouldDeferElevenLabsFallback()) return null;
     if (isSlowNetwork() && strategy !== "dynamic_first" && policy.preferDynamicTts) return null;
     pipelineFlags.dynamicAttempted = true;

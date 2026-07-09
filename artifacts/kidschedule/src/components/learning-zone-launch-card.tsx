@@ -5,6 +5,7 @@ import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render
 import type { LearningZoneCardId } from "@/lib/learning-zone-card-config";
 import { HUB_TILE_TRIGGER } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 type LearningZoneLaunchCardProps = {
   cardId: LearningZoneCardId;
@@ -34,10 +35,18 @@ export function LearningZoneLaunchCard({
   const awardSectionPoints = useHubSectionPoints();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
 
+  const warmOnIntent = () => {
+    recordTtsUserGesture();
+    if (cardId === "phonics") {
+      void import("@/lib/app-audio-prefetch").then((m) => m.warmPhonicsOnHubIntent());
+    }
+  };
+
   return (
     <div className="h-full">
       <AppLink
         href={href}
+        onPointerDown={warmOnIntent}
         onClick={() => {
           awardSectionPoints(tileId);
           onNavigate?.();

@@ -79,9 +79,9 @@ function mapPlaybackSource(meta: AudioPlayMeta): AudioPlaybackSource {
   if (raw.includes("emergency")) return "emergency";
   return "unknown";
 }
-/** P0 SLA: audio must start within 3s or fail + fallback */
-const PLAYBACK_WATCHDOG_MS = 3_000;
-const ANDROID_WEBVIEW_WATCHDOG_MS = 3_000;
+/** Instant-playback SLA: audible start within 2s or local/bundled retry + fallback */
+const PLAYBACK_WATCHDOG_MS = 2_000;
+const ANDROID_WEBVIEW_WATCHDOG_MS = 2_000;
 
 function playbackWatchdogMs(): number {
   return isAndroidAmyNestAudioClient() ? ANDROID_WEBVIEW_WATCHDOG_MS : PLAYBACK_WATCHDOG_MS;

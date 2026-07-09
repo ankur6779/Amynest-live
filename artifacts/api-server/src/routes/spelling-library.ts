@@ -76,14 +76,18 @@ spellingLibraryPublicRouter.get("/spelling-library/*objectPath", async (req, res
       { evt: "spelling_library.gcs_unconfigured", objectPath },
       "spelling library proxy — GCS not configured",
     );
-    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
     return;
   }
 
   try {
     const buffer = await readGcsObjectBytes(objectPath);
     if (buffer?.byteLength) {
-      serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs");
+      serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs", {
+        staticSource: "asset",
+      });
       return;
     }
 
@@ -91,13 +95,17 @@ spellingLibraryPublicRouter.get("/spelling-library/*objectPath", async (req, res
       { evt: "spelling_library.missing", objectPath },
       "spelling library object missing in GCS",
     );
-    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error(
       { evt: "spelling_library.stream_failed", objectPath, message },
       "spelling library stream failed",
     );
-    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
   }
 });

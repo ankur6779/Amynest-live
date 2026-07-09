@@ -4,13 +4,17 @@ import { getStaticTtsEntries } from "./phrases.js";
 import type { StaticAudioMap, StaticAudioMode } from "./types.js";
 
 const STATIC_AUDIO_PROXY_RE = /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i;
+/** Curated phonics library clips — allowed as static-map targets for curriculum words. */
+const PHONICS_LIBRARY_PROXY_RE =
+  /^\/api\/phonics-library\/phonics\/[a-z0-9_-]+\/[a-z0-9_.%-]+\.mp3$/i;
 
 /** Valid shipped map URLs: legacy public GCS HTTPS or same-origin API proxy path. */
 export function isValidStaticAudioMapEntryUrl(url: string | undefined): boolean {
   const trimmed = (url ?? "").trim();
   if (!trimmed || trimmed.includes("undefined")) return false;
   if (trimmed.startsWith("https://")) return true;
-  return STATIC_AUDIO_PROXY_RE.test(trimmed);
+  if (STATIC_AUDIO_PROXY_RE.test(trimmed)) return true;
+  return PHONICS_LIBRARY_PROXY_RE.test(trimmed);
 }
 
 export function staticAudioMissingKey(mode: StaticAudioMode, normalized: string): string {
