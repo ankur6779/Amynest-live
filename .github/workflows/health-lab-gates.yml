@@ -50,8 +50,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Do NOT use `pnpm test -- health-lab.test.ts`: kidschedule's test script
+      # chains vitest && identity checks with `&&`, so extra args never reach vitest
+      # and the full suite runs (timeout + unrelated nutrition/speech failures).
       - name: Vitest health-lab
-        run: pnpm --filter @workspace/kidschedule test -- health-lab.test.ts
+        run: pnpm --filter @workspace/kidschedule exec vitest run --config vitest.config.ts src/features/health-lab/health-lab.test.ts
 
   e2e:
     name: Health Lab Playwright certification
