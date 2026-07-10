@@ -574,10 +574,12 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
     onPageModified: (cb: () => void) => {
       const handler = () => cb();
       canvas.on("object:modified", handler);
-      canvas.on("text:changed", handler);
+      canvas.on("object:added", handler);
+      canvas.on("object:removed", handler);
       return () => {
         canvas.off("object:modified", handler);
-        canvas.off("text:changed", handler);
+        canvas.off("object:added", handler);
+        canvas.off("object:removed", handler);
       };
     },
     onSelectionChange: (cb) => {

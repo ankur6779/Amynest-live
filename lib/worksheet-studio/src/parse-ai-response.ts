@@ -75,8 +75,11 @@ export function parseAiWorksheetResponse(
     const illustrationSrc = q.illustrationEmoji || q.illustrationLabel
       ? getIllustration(detected)
       : undefined;
-    const height = estimateQuestionBlockHeight(meta.classLevel, Boolean(q.options?.length))
-      + (illustrationSrc ? 24 : 0);
+    const height = estimateQuestionBlockHeight(
+      meta.classLevel,
+      q.options?.length ?? 0,
+      Boolean(illustrationSrc),
+    );
     return {
       block: {
         questionNumber: i + 1,
@@ -100,7 +103,7 @@ export function parseAiWorksheetResponse(
     blocks,
     meta,
     page1ContentStartY(meta.classLevel),
-    continuationContentStartY(),
+    continuationContentStartY(meta.classLevel),
     req.pageCount,
   );
 

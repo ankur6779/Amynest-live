@@ -15,6 +15,7 @@ export {
 export {
   recordStudioAnalytics,
   getAnalyticsDashboard,
+  getAiAnalyticsDashboard,
   createShareLinkMeta,
   getShareUrl,
   type AnalyticsDashboard,

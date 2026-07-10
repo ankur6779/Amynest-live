@@ -2,6 +2,7 @@ import { parseApiJson } from "@/lib/safe-json-response";
 import { useCallback, useState } from "react";
 import {
   generateWorksheetLocal,
+  stripReferencesForApi,
   type WorksheetDocument,
   type WorksheetGenerateRequest,
   type WorksheetGenerateResponse,
@@ -45,11 +46,15 @@ export function useWorksheetAi(authFetch: AuthFetch) {
     async (req: WorksheetGenerateRequest): Promise<WorksheetGenerateResponse> => {
       setLoading(true);
       const local = generateWorksheetLocal(req);
+      const apiBody = {
+        ...req,
+        references: req.references?.length ? stripReferencesForApi(req.references) : undefined,
+      };
       try {
         const res = await fetchWithRetry(authFetch, "/api/worksheet-studio/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(req),
+          body: JSON.stringify(apiBody),
         });
         if (res.ok) {
           const data = await parseApiJson<WorksheetGenerateResponse & { usedFallback?: boolean; qualityScore?: number }>(res);

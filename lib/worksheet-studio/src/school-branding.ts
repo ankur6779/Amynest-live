@@ -9,6 +9,7 @@ import {
 } from "./brand-themes.js";
 import { buildSchoolHeaderElements, computeSchoolContentStartY } from "./header-engine.js";
 import { buildSchoolFooterElements, hasActiveFooter } from "./footer-engine.js";
+import { applyPageFramesToDocument, stripPageFrameElements } from "./page-frame-engine.js";
 
 export type { BrandColors, BrandThemeId };
 export { BRAND_THEME_LABELS, THEME_COLORS, applyThemeColors, PRESET_SCHOOL_NAMES } from "./brand-themes.js";
@@ -77,6 +78,7 @@ const DEFAULT_FOOTER: FooterToggles = {
 export function createDefaultProfile(overrides?: Partial<SchoolBrandingProfile>): SchoolBrandingProfile {
   const now = new Date().toISOString();
   const themeId: BrandThemeId = overrides?.themeId ?? "lps_default";
+  const baseColors = applyThemeColors(themeId, overrides?.colors);
   return {
     id: overrides?.id ?? "lps-default",
     name: overrides?.name ?? "Lucknow Public School",
@@ -96,12 +98,26 @@ export function createDefaultProfile(overrides?: Partial<SchoolBrandingProfile>)
     footerText: overrides?.footerText,
     signatureSrc: overrides?.signatureSrc,
     stampSrc: overrides?.stampSrc,
-    colors: overrides?.colors ?? applyThemeColors(themeId),
-    footer: overrides?.footer ?? { ...DEFAULT_FOOTER },
+    colors: { ...baseColors, ...(overrides?.colors ?? {}) },
+    footer: { ...DEFAULT_FOOTER, ...(overrides?.footer ?? {}) },
     footerConfidentialText: overrides?.footerConfidentialText,
     createdAt: overrides?.createdAt ?? now,
     updatedAt: overrides?.updatedAt ?? now,
   };
+}
+
+/** Repair partial/corrupt profiles from localStorage or imports */
+export function normalizeBrandingProfile(raw: Partial<SchoolBrandingProfile>): SchoolBrandingProfile {
+  return createDefaultProfile({
+    ...raw,
+    id: raw.id ?? "lps-default",
+    name: raw.name ?? raw.schoolName ?? LPS_SCHOOL_NAME,
+    schoolName: raw.schoolName ?? LPS_SCHOOL_NAME,
+    themeId: raw.themeId ?? "lps_default",
+    logoSrc: raw.logoSrc || "/illustrations/worksheet-studio/lps-logo.svg",
+    colors: raw.colors,
+    footer: raw.footer,
+  });
 }
 
 export const DEFAULT_BRANDING: SchoolBranding = {
@@ -146,12 +162,30 @@ function migrateLegacy(): BrandingStorageV2 | null {
   }
 }
 
+function canUseLocalStorage(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && localStorage != null;
+  } catch {
+    return false;
+  }
+}
+
 function loadStorage(): BrandingStorageV2 {
+  if (!canUseLocalStorage()) {
+    const defaultProfile = createDefaultProfile();
+    return { version: 2, activeProfileId: defaultProfile.id, profiles: [defaultProfile] };
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as BrandingStorageV2;
-      if (parsed.version === 2 && parsed.profiles?.length) return parsed;
+      if (parsed.version === 2 && parsed.profiles?.length) {
+        const profiles = parsed.profiles.map((p) => normalizeBrandingProfile(p));
+        const activeProfileId = profiles.some((p) => p.id === parsed.activeProfileId)
+          ? parsed.activeProfileId
+          : profiles[0]!.id;
+        return { version: 2, activeProfileId, profiles };
+      }
     }
   } catch { /* */ }
   const migrated = migrateLegacy();
@@ -166,9 +200,17 @@ function loadStorage(): BrandingStorageV2 {
 }
 
 function saveStorage(state: BrandingStorageV2): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  const active = state.profiles.find((p) => p.id === state.activeProfileId) ?? state.profiles[0]!;
-  localStorage.setItem(LEGACY_KEY, JSON.stringify(profileToLegacy(active)));
+  if (!canUseLocalStorage()) return;
+  try {
+    const normalized: BrandingStorageV2 = {
+      version: 2,
+      activeProfileId: state.activeProfileId,
+      profiles: state.profiles.map((p) => normalizeBrandingProfile(p)),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    const active = normalized.profiles.find((p) => p.id === normalized.activeProfileId) ?? normalized.profiles[0]!;
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(profileToLegacy(active)));
+  } catch { /* quota / private mode */ }
 }
 
 function profileToLegacy(profile: SchoolBrandingProfile): SchoolBranding {
@@ -190,7 +232,8 @@ export function listSchoolProfiles(): SchoolBrandingProfile[] {
 
 export function getActiveBrandingProfile(): SchoolBrandingProfile {
   const state = loadStorage();
-  return state.profiles.find((p) => p.id === state.activeProfileId) ?? state.profiles[0]!;
+  const raw = state.profiles.find((p) => p.id === state.activeProfileId) ?? state.profiles[0];
+  return normalizeBrandingProfile(raw ?? {});
 }
 
 export function switchSchoolProfile(id: string): SchoolBrandingProfile | null {
@@ -354,18 +397,21 @@ export function applyBrandingToDocument(
   doc: WorksheetDocument,
   profile = getActiveBrandingProfile(),
 ): WorksheetDocument {
-  const out = stripBrandedElements(doc);
+  const safeProfile = normalizeBrandingProfile(profile);
+  let out = stripBrandedElements(doc);
+  out = stripPageFrameElements(out);
   const totalPages = out.pages.length;
 
   for (const page of out.pages) {
     if (page.showLpsHeader && page.pageNumber === 1) {
-      page.elements = [...buildSchoolHeaderElements(out.meta, profile), ...page.elements];
+      page.elements = [...buildSchoolHeaderElements(out.meta, safeProfile), ...page.elements];
     }
-    if (hasActiveFooter(profile)) {
-      page.elements.push(...buildSchoolFooterElements(profile, page.pageNumber, totalPages));
+    if (hasActiveFooter(safeProfile)) {
+      page.elements.push(...buildSchoolFooterElements(safeProfile, page.pageNumber, totalPages));
     }
   }
 
+  applyPageFramesToDocument(out, safeProfile);
   out.meta.updatedAt = new Date().toISOString();
   return out;
 }

@@ -60,16 +60,23 @@ const FOOTER_TOGGLES: Array<{ key: keyof FooterToggles; label: string }> = [
 
 export function WorksheetBrandingSheet({ open, onOpenChange, onBrandingSaved }: Props) {
   const [tab, setTab] = useState<Tab>("school");
-  const [draft, setDraft] = useState<SchoolBrandingProfile>(() => getActiveBrandingProfile());
-  const [savedSnapshot, setSavedSnapshot] = useState<SchoolBrandingProfile>(() => getActiveBrandingProfile());
-  const [profiles, setProfiles] = useState<SchoolBrandingProfile[]>(() => listSchoolProfiles());
+  const [draft, setDraft] = useState<SchoolBrandingProfile>(() => createDefaultProfile());
+  const [savedSnapshot, setSavedSnapshot] = useState<SchoolBrandingProfile>(() => createDefaultProfile());
+  const [profiles, setProfiles] = useState<SchoolBrandingProfile[]>([]);
   const importRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(() => {
-    const active = getActiveBrandingProfile();
-    setDraft(structuredClone(active));
-    setSavedSnapshot(structuredClone(active));
-    setProfiles(listSchoolProfiles());
+    try {
+      const active = getActiveBrandingProfile();
+      setDraft(structuredClone(active));
+      setSavedSnapshot(structuredClone(active));
+      setProfiles(listSchoolProfiles());
+    } catch {
+      const fallback = createDefaultProfile();
+      setDraft(fallback);
+      setSavedSnapshot(fallback);
+      setProfiles([fallback]);
+    }
   }, []);
 
   useEffect(() => {
@@ -77,15 +84,20 @@ export function WorksheetBrandingSheet({ open, onOpenChange, onBrandingSaved }: 
   }, [open, refresh]);
 
   const previewDoc = useMemo(() => {
-    const base = generateWorksheetLocal({
-      prompt: "Preview worksheet — animals and colours",
-      classLevel: "ukg",
-      subject: "english",
-      difficulty: "easy",
-      pageCount: 1,
-    });
-    return applyBrandingToDocument(base, draft);
-  }, [draft]);
+    if (!open) return null;
+    try {
+      const base = generateWorksheetLocal({
+        prompt: "Preview worksheet — animals and colours",
+        classLevel: "ukg",
+        subject: "english",
+        difficulty: "easy",
+        pageCount: 1,
+      });
+      return applyBrandingToDocument(base, draft);
+    } catch {
+      return null;
+    }
+  }, [open, draft]);
 
   const patch = (partial: Partial<SchoolBrandingProfile>) => {
     setDraft((prev) => ({ ...prev, ...partial, updatedAt: new Date().toISOString() }));
@@ -119,7 +131,7 @@ export function WorksheetBrandingSheet({ open, onOpenChange, onBrandingSaved }: 
     reader.readAsDataURL(file);
   };
 
-  const headerPreview = previewDoc.pages[0]?.elements.filter((e) => e.id.startsWith("brand_")) ?? [];
+  const headerPreview = previewDoc?.pages[0]?.elements.filter((e) => e.id.startsWith("brand_")) ?? [];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -165,7 +177,7 @@ export function WorksheetBrandingSheet({ open, onOpenChange, onBrandingSaved }: 
             <p className="text-xs font-semibold" style={{ color: draft.colors.title }}>Topic – Preview Worksheet</p>
           </div>
           <p className="mt-2 text-center text-[9px]" style={{ color: draft.colors.text }}>
-            {headerPreview.length} header elements · {previewDoc.pages[0]?.elements.filter((e) => e.id.startsWith("footer_")).length ?? 0} footer elements
+            {headerPreview.length} header elements · {previewDoc?.pages[0]?.elements.filter((e) => e.id.startsWith("footer_")).length ?? 0} footer elements
           </p>
         </div>
 

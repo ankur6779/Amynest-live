@@ -1,8 +1,10 @@
 import type { WorksheetDocument, WorksheetGenerateRequest, WorksheetImproveAction } from "./types.js";
+import { tryConversationalEdit } from "./conversational-editor.js";
 
 export type CopilotResult =
   | { kind: "action"; action: WorksheetImproveAction }
   | { kind: "regenerate"; request: Partial<WorksheetGenerateRequest> }
+  | { kind: "edit"; document: WorksheetDocument; summary: string }
   | { kind: "message"; text: string };
 
 const RULES: Array<{ re: RegExp; result: CopilotResult }> = [
@@ -38,6 +40,12 @@ const RULES: Array<{ re: RegExp; result: CopilotResult }> = [
 
 export function parseCopilotCommand(message: string, doc: WorksheetDocument): CopilotResult {
   const trimmed = message.trim();
+
+  const conversational = tryConversationalEdit(trimmed, doc);
+  if (conversational) {
+    return { kind: "edit", document: conversational.document, summary: conversational.summary };
+  }
+
   for (const { re, result } of RULES) {
     if (re.test(trimmed)) return result;
   }
@@ -61,11 +69,13 @@ export function parseCopilotCommand(message: string, doc: WorksheetDocument): Co
 }
 
 export function buildCopilotAiSystemPrompt(): string {
-  return `You are the LPS Worksheet Copilot. Parse teacher requests into JSON:
-{ "action": "easier"|"harder"|"more_questions"|"fewer_questions"|"to_bw"|"to_color"|"answer_key"|"translate_hindi"|"translate_english"|"replace_images"|"increase_spacing"|"more_writing"|"easier_words"|"reduce_colour"|"handwriting_practice"|"homework_mode"|"assessment_mode"|"low_ink"|"revision_questions"|"blooms_taxonomy" }
-OR { "regenerate": { "prompt"?: string, "classLevel"?: string, "pageCount"?: number } }
+  return `You are the LPS Worksheet Copilot. Prefer IN-PLACE edits over full regeneration.
+Parse teacher requests into JSON:
+{ "edit": { "summary": string, "documentPatch": { "difficulty"?: string, "colorMode"?: string, "scaleImages"?: boolean, "replaceText"?: { "from": string, "to": string } } } }
+OR { "action": "easier"|"harder"|... }
+OR { "regenerate": { "prompt"?: string } } — only if topic completely changes
 OR { "message": string }
-Output ONLY valid JSON.`;
+Never copy copyrighted content. Output ONLY valid JSON.`;
 }
 
 export function buildCopilotAiUserPrompt(message: string, doc: WorksheetDocument): string {
@@ -78,9 +88,26 @@ export function buildCopilotAiUserPrompt(message: string, doc: WorksheetDocument
   });
 }
 
-export function parseCopilotAiResponse(raw: unknown, fallback: CopilotResult): CopilotResult {
+export function parseCopilotAiResponse(raw: unknown, fallback: CopilotResult, doc?: WorksheetDocument): CopilotResult {
   if (!raw || typeof raw !== "object") return fallback;
   const j = raw as Record<string, unknown>;
+  if (j.edit && typeof j.edit === "object" && doc) {
+    const edit = j.edit as { summary?: string; documentPatch?: Record<string, unknown> };
+    let result = doc;
+    const patch = edit.documentPatch;
+    if (patch?.replaceText && typeof patch.replaceText === "object") {
+      const { from, to } = patch.replaceText as { from?: string; to?: string };
+      if (from && to) {
+        const conv = tryConversationalEdit(`replace ${from} with ${to}`, doc);
+        if (conv) result = conv.document;
+      }
+    }
+    if (patch?.scaleImages) {
+      const conv = tryConversationalEdit("make images larger", result);
+      if (conv) result = conv.document;
+    }
+    return { kind: "edit", document: result, summary: edit.summary ?? "AI applied your changes." };
+  }
   if (typeof j.action === "string") return { kind: "action", action: j.action as WorksheetImproveAction };
   if (j.regenerate && typeof j.regenerate === "object") return { kind: "regenerate", request: j.regenerate as Partial<WorksheetGenerateRequest> };
   if (typeof j.message === "string") return { kind: "message", text: j.message };

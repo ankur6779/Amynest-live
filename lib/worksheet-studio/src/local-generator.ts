@@ -38,12 +38,30 @@ interface QuestionTemplate {
 
 const TOPIC_BANK: Record<string, QuestionTemplate[]> = {
   "sea animals": [
-    { type: "circle", prompt: "Circle the fish.", emoji: "🐟", options: ["🐟", "🐕", "🐱", "🐦"] },
-    { type: "match", prompt: "Match the animal to its home.", options: ["Fish → Water", "Bird → Sky"] },
-    { type: "colour", prompt: "Colour the dolphin.", emoji: "🐬", label: "Dolphin" },
-    { type: "count", prompt: "How many starfish do you see?", emoji: "⭐", answerLine: true },
-    { type: "trace", prompt: "Trace the word: FISH", answerLine: true },
-    { type: "odd_one_out", prompt: "Cross the one that is NOT a sea animal.", options: ["🐠", "🐙", "🐘", "🦀"] },
+    {
+      type: "reading",
+      prompt: "Read the sentences and colour the correct sea animal.\na. I see a fish.\nb. I see a shark.\nc. I see a whale.\nd. I see a crab.",
+      options: ["Fish", "Shark", "Whale", "Crab"],
+      label: "fish",
+    },
+    {
+      type: "circle",
+      prompt: "Circle the water animals.",
+      options: ["Fish", "Dog", "Shark", "Cat", "Whale", "Bird"],
+      label: "shark",
+    },
+    {
+      type: "beginning_sounds",
+      prompt: "Look at the picture and colour the letter that matches its beginning sound.",
+      options: ["f", "s", "w", "c", "t", "o", "w", "f", "a", "o", "e", "s"],
+      label: "whale",
+    },
+    {
+      type: "match",
+      prompt: "Match the animal to its name.",
+      options: ["Octopus", "Fish", "Turtle", "Crab"],
+      label: "octopus",
+    },
   ],
   default: [
     { type: "circle", prompt: "Circle the correct answer.", options: ["A", "B", "C", "D"] },
@@ -73,9 +91,25 @@ const TOPIC_BANK: Record<string, QuestionTemplate[]> = {
   ],
 };
 
+function formatTopicLabel(key: string): string {
+  const labels: Record<string, string> = {
+    "sea animals": "Sea Animals",
+    fruits: "Fruits",
+    colours: "Colours",
+    tracing: "Tracing",
+    default: "Practice",
+    math: "Math",
+    hindi: "Hindi",
+    phonics: "Phonics",
+  };
+  if (labels[key]) return labels[key]!;
+  return key.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function detectTopic(prompt: string): string {
   const lower = prompt.toLowerCase();
-  if (lower.includes("sea") || lower.includes("animal")) return "sea animals";
+  if (lower.includes("sea") && lower.includes("animal")) return "sea animals";
+  if (lower.includes("sea animal")) return "sea animals";
   if (lower.includes("hindi") || lower.includes("swar")) return "hindi";
   if (lower.includes("phonics") || lower.includes("sound") || lower.includes("rhym")) return "phonics";
   if (lower.includes("addition") || lower.includes("math") || lower.includes("subtract")) return "math";
@@ -93,13 +127,27 @@ function templatesForRequest(req: WorksheetGenerateRequest): QuestionTemplate[] 
   if (req.subject === "phonics") pool = [...TOPIC_BANK.phonics, ...pool];
 
   const standard = getLpsStandard(req.classLevel);
-  const perPage = standard.questionsPerPage[req.difficulty];
-  const total = perPage * req.pageCount;
+  let perPage = standard.questionsPerPage[req.difficulty];
+  let pageCount = req.pageCount;
+
+  /** LPS Sea Animals reference layout: 2 questions per page across 2 pages */
+  if (topic === "sea animals" && pool === TOPIC_BANK["sea animals"]) {
+    perPage = 2;
+    pageCount = Math.max(req.pageCount, 2);
+  }
+
+  const total = perPage * pageCount;
   const shuffled = shuffleInPlace([...pool]);
   const raw: QuestionTemplate[] = [];
   for (let i = 0; i < shuffled.length * 2 && raw.length < total * 2; i++) {
     raw.push(shuffled[i % shuffled.length]!);
   }
+
+  /** LPS reference worksheets — preserve exact activity sequence */
+  if (topic === "sea animals" && pool === TOPIC_BANK["sea animals"]) {
+    return pool.slice(0, Math.min(total, pool.length));
+  }
+
   return diversifyQuestionTemplates(dedupePrompts(raw), total, req.classLevel, req.difficulty);
 }
 
@@ -132,12 +180,16 @@ function layoutQuestionsOnPages(
     const illustrationSrc = scaled.emoji || scaled.label || visualTypes.has(scaled.type) || hasKeyword
       ? getIllustration(detected)
       : undefined;
-    const height = estimateQuestionBlockHeight(meta.classLevel, Boolean(opts?.length)) + (illustrationSrc ? 24 : 0);
+    const height = estimateQuestionBlockHeight(
+      meta.classLevel,
+      opts?.length ?? 0,
+      Boolean(illustrationSrc),
+    );
     return {
       block: {
         questionNumber: globalQNum,
         questionType: scaled.type,
-        prompt: `Question ${globalQNum}. ${scaled.prompt}`,
+        prompt: `${globalQNum}  ${scaled.prompt}`,
         options: opts,
         answerLine: scaled.answerLine,
         illustrationEmoji: scaled.emoji,
@@ -156,7 +208,7 @@ function layoutQuestionsOnPages(
     blocks,
     meta,
     page1ContentStartY(meta.classLevel),
-    continuationContentStartY(),
+    continuationContentStartY(meta.classLevel),
     meta.pageCount,
   );
 
@@ -176,14 +228,15 @@ export function generateWorksheetLocalCore(req: WorksheetGenerateRequest): Works
   resetIdCounter();
   globalQNum = 0;
 
-  const topic = req.prompt.trim() || "Practice Worksheet";
+  const topicKey = detectTopic(req.prompt);
+  const effectivePageCount = topicKey === "sea animals" ? Math.max(req.pageCount, 2) : req.pageCount;
   const meta: WorksheetMeta = {
-    title: topic,
-    topic: topic.split(/worksheet|on|for/i).pop()?.trim() || topic,
+    title: req.prompt.trim() || "Practice Worksheet",
+    topic: formatTopicLabel(topicKey),
     classLevel: req.classLevel,
     subject: req.subject,
     difficulty: req.difficulty,
-    pageCount: req.pageCount,
+    pageCount: effectivePageCount,
     colorMode: "color",
     isAnswerKey: req.answerKey ?? false,
     createdAt: new Date().toISOString(),

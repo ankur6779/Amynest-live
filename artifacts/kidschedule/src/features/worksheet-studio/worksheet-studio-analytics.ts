@@ -13,7 +13,11 @@ type WorksheetEvent =
   | "worksheet_bulk_export"
   | "worksheet_pack_generate"
   | "worksheet_branding_open"
-  | "worksheet_error";
+  | "worksheet_prompt_enhance"
+  | "worksheet_reference_upload"
+  | "worksheet_vision_analyze"
+  | "worksheet_vision_template_apply"
+  | "worksheet_copilot_edit";
 
 export function trackWorksheetEvent(
   event: WorksheetEvent,

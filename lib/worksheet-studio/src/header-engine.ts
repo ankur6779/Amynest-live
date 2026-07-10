@@ -5,7 +5,7 @@ import {
   type WorksheetMeta,
   type WorksheetTextElement,
 } from "./types.js";
-import { FONT_SIZES_BY_CLASS } from "./constants.js";
+import { CLASS_LABELS, FONT_SIZES_BY_CLASS } from "./constants.js";
 import type { SchoolBrandingProfile } from "./school-branding.js";
 
 let idCounter = 0;
@@ -122,25 +122,27 @@ export function buildSchoolHeaderElements(
   const boxH = 26;
   const standardFields = [
     { id: "brand_name", label: "Name", row: 0, col: 0 },
-    { id: "brand_class", label: "Class", row: 0, col: 1 },
-    { id: "brand_section", label: "Section", row: 1, col: 0 },
+    { id: "brand_class", label: "Class", row: 0, col: 1, prefilled: CLASS_LABELS[meta.classLevel] },
+    { id: "brand_section", label: "Sec", row: 1, col: 0 },
     { id: "brand_date", label: "Date", row: 1, col: 1 },
   ];
 
-  const allFields = [...standardFields];
+  const allFields: Array<{ id: string; label: string; row: number; col: number; prefilled?: string }> = [...standardFields];
   if (showTeacher || showSession) {
     if (showTeacher) allFields.push({ id: "brand_teacher", label: "Teacher", row: 2, col: 0 });
     if (showSession) allFields.push({ id: "brand_session", label: "Session", row: 2, col: showTeacher ? 1 : 0 });
   }
 
-  allFields.forEach(({ id, label, row, col }) => {
+  allFields.forEach(({ id, label, row, col, prefilled }) => {
     const x = PAGE_MARGIN + col * (boxW + 12);
     const y = boxY + row * (boxH + 14);
     const displayLabel = id === "brand_teacher" && profile.teacherName
       ? `Teacher : ${profile.teacherName}`
       : id === "brand_session" && profile.academicSession
         ? `Session : ${profile.academicSession}`
-        : `${label} :`;
+        : prefilled
+          ? `${label} : ${prefilled}`
+          : `${label} :`;
     elements.push(
       textElement(id, displayLabel, x, y, profile, {
         fontSize: 12,
@@ -150,7 +152,7 @@ export function buildSchoolHeaderElements(
         color: c.text,
       }),
     );
-    if (!id.includes("teacher") && !id.includes("session")) {
+    if (!id.includes("teacher") && !id.includes("session") && !prefilled) {
       elements.push({
         id: `${id}_box`,
         type: "shape",

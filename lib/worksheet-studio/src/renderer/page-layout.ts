@@ -14,6 +14,7 @@ import {
   SUBJECT_LABELS,
 } from "../constants.js";
 import { buildSchoolHeaderElements } from "../header-engine.js";
+import { frameContinuationContentStartY } from "../page-frame-engine.js";
 import { computeSchoolContentStartY, getActiveBrandingProfile } from "../school-branding.js";
 
 let idCounter = 0;
@@ -99,18 +100,21 @@ export function page1ContentStartY(classLevel: WorksheetMeta["classLevel"]): num
   );
 }
 
-/** Content start Y for pages 2+ */
-export function continuationContentStartY(): number {
-  return PAGE_MARGIN + 16;
+/** Content start Y for pages 2+ (below continuation topic bar) */
+export function continuationContentStartY(classLevel: WorksheetMeta["classLevel"]): number {
+  return frameContinuationContentStartY(classLevel);
 }
 
 export function estimateQuestionBlockHeight(
   classLevel: WorksheetMeta["classLevel"],
-  hasOptions: boolean,
+  optionCount = 0,
+  hasIllustration = false,
 ): number {
   const fonts = FONT_SIZES_BY_CLASS[classLevel];
-  const base = fonts.prompt + fonts.body + 24;
-  return hasOptions ? base + 48 : base + 32;
+  let h = fonts.prompt + fonts.body + 36;
+  if (optionCount > 0) h += Math.ceil(optionCount / 2) * 30;
+  if (hasIllustration) h += 72;
+  return h;
 }
 
 export function formatWorksheetTitle(meta: WorksheetMeta): string {

@@ -1,10 +1,17 @@
-import { A4_HEIGHT, A4_WIDTH, PAGE_MARGIN, type WorksheetDocument } from "./types.js";
+import { A4_HEIGHT, A4_WIDTH, PAGE_MARGIN, type WorksheetDocument, type WorksheetElement } from "./types.js";
 import { FONT_SIZES_BY_CLASS, EXPORT_DPI } from "./constants.js";
 import { getLpsStandard } from "./lps-standards.js";
 import type { ValidationIssue } from "./educational-quality-engine.js";
+import { isPageFrameElement } from "./page-frame-engine.js";
 
 const MIN_EXPORT_FONT = 11;
 const SAFE_BOTTOM = 48;
+
+function isDecorativeElement(el: WorksheetElement): boolean {
+  if (isPageFrameElement(el.id)) return true;
+  if (el.id.startsWith("brand_") || el.id.startsWith("footer_")) return true;
+  return false;
+}
 
 export function validatePrintReadiness(doc: WorksheetDocument): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -12,7 +19,8 @@ export function validatePrintReadiness(doc: WorksheetDocument): ValidationIssue[
   const fonts = FONT_SIZES_BY_CLASS[doc.meta.classLevel];
 
   for (const page of doc.pages) {
-    for (const el of page.elements) {
+    const contentEls = page.elements.filter((e) => !isDecorativeElement(e));
+    for (const el of contentEls) {
       if (el.x < PAGE_MARGIN - 2) {
         issues.push({
           code: "MARGIN_LEFT",
@@ -64,8 +72,8 @@ export function validatePrintReadiness(doc: WorksheetDocument): ValidationIssue[
       }
     }
 
-    const qCount = page.elements.filter((e) => e.type === "question_block").length;
-    const usedHeight = page.elements.reduce((max, e) => Math.max(max, e.y + e.height), 0);
+    const qCount = contentEls.filter((e) => e.type === "question_block").length;
+    const usedHeight = contentEls.reduce((max, e) => Math.max(max, e.y + e.height), 0);
     const fillRatio = usedHeight / (A4_HEIGHT - PAGE_MARGIN * 2);
     if (qCount > 0 && fillRatio < 0.35 && doc.pages.length > 1) {
       issues.push({
@@ -103,6 +111,7 @@ export function repairPrintIssues(doc: WorksheetDocument): WorksheetDocument {
     .map((page) => {
       let elements = [...page.elements];
       elements = elements.map((el) => {
+        if (isDecorativeElement(el)) return el;
         const next = { ...el };
         if (next.x < PAGE_MARGIN) next.x = PAGE_MARGIN;
         if (next.x + next.width > A4_WIDTH - PAGE_MARGIN) {

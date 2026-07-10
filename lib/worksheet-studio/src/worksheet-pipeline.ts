@@ -13,6 +13,12 @@ import {
   type QualityScore,
 } from "./quality-scoring-engine.js";
 import { diversifyActivityOrder } from "./question-diversity-engine.js";
+import {
+  applyPageFramesToDocument,
+  defaultFrameProfile,
+  stripPageFrameElements,
+} from "./page-frame-engine.js";
+import { getActiveBrandingProfile } from "./school-branding.js";
 
 export interface FinalizeResult {
   document: WorksheetDocument;
@@ -30,7 +36,7 @@ function renumberQuestions(doc: WorksheetDocument): WorksheetDocument {
       if (el.type === "question_block") {
         n += 1;
         el.questionNumber = n;
-        el.prompt = el.prompt.replace(/Question \d+\./, `Question ${n}.`);
+        el.prompt = el.prompt.replace(/^\d+\s{1,2}/, `${n}  `);
       }
     }
   }
@@ -54,6 +60,7 @@ export function finalizeWorksheet(
   threshold = QUALITY_THRESHOLD,
 ): FinalizeResult {
   let current = renumberQuestions(removeEmptyPages(doc));
+  current = stripPageFrameElements(current);
   let repaired = false;
   const regenerated = false;
 
@@ -71,6 +78,13 @@ export function finalizeWorksheet(
     repaired = true;
     issues = [...validateEducationalQuality(current)];
     quality = scoreWorksheet(current);
+  }
+
+  try {
+    const profile = getActiveBrandingProfile();
+    applyPageFramesToDocument(current, profile);
+  } catch {
+    applyPageFramesToDocument(current, defaultFrameProfile());
   }
 
   current.meta.updatedAt = new Date().toISOString();

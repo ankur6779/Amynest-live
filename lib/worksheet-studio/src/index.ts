@@ -32,5 +32,16 @@ export * from "./brand-themes.js";
 export * from "./header-engine.js";
 export * from "./footer-engine.js";
 export * from "./i18n-engine.js";
+export * from "./reference-limits.js";
+export * from "./prompt-suggestions.js";
+export * from "./prompt-enhancer.js";
+export * from "./prompt-history.js";
+export * from "./generation-summary.js";
+export * from "./page-frame-engine.js";
+export * from "./vision-analysis.js";
+export * from "./prompt-quality-engine.js";
+export * from "./conversational-editor.js";
+export * from "./quality-insights.js";
+export * from "./post-generation-recs.js";
 // Browser-only modules (IndexedDB, canvas, window) live in ./client — do not
 // re-export them here or Node/API typecheck pulls in DOM globals.

@@ -1,6 +1,6 @@
-import type { WorksheetDocument } from "./types.js";
+import type { WorksheetDocument, WorksheetLanguage } from "./types.js";
 
-export type WorksheetLanguage = "english" | "hindi" | "bilingual";
+export type { WorksheetLanguage };
 
 export function applyLanguageToDocument(doc: WorksheetDocument, lang: WorksheetLanguage): WorksheetDocument {
   const out = structuredClone(doc);

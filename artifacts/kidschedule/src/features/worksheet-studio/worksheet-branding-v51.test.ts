@@ -150,6 +150,42 @@ describe("apply branding to document", () => {
   });
 });
 
+describe("corrupt branding recovery", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("repairs partial profile missing colors and footer", () => {
+    localStorage.setItem(
+      "worksheet-studio-branding-v2",
+      JSON.stringify({
+        version: 2,
+        activeProfileId: "broken",
+        profiles: [{ id: "broken", schoolName: "BROKEN SCHOOL" }],
+      }),
+    );
+    const profile = getActiveBrandingProfile();
+    expect(profile.schoolName).toBe("BROKEN SCHOOL");
+    expect(profile.colors.primary).toBeTruthy();
+    expect(profile.footer.showPageNumber).toBeDefined();
+  });
+
+  it("applyBrandingToDocument survives corrupt stored profile", () => {
+    localStorage.setItem(
+      "worksheet-studio-branding-v2",
+      JSON.stringify({
+        version: 2,
+        activeProfileId: "broken",
+        profiles: [{ id: "broken", colors: { primary: "#112233" } }],
+      }),
+    );
+    const doc = generateWorksheetLocal(baseReq);
+    expect(() => applyBrandingToDocument(doc)).not.toThrow();
+    const branded = applyBrandingToDocument(doc);
+    expect(branded.pages[0]!.elements.some((e) => e.id.startsWith("brand_"))).toBe(true);
+  });
+});
+
 describe("legacy branding API", () => {
   beforeEach(() => {
     localStorage.clear();

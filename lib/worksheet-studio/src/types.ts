@@ -138,6 +138,149 @@ export interface WorksheetGenerateRequest {
   difficulty: WorksheetDifficulty;
   pageCount: number;
   answerKey?: boolean;
+  /** v6.1 — AI-enhanced prompt (used for generation when set) */
+  enhancedPrompt?: string;
+  /** v6.1 — how uploaded reference images inform generation */
+  imageMode?: ReferenceImageMode;
+  /** v6.1 — analyzed reference files (summaries + thumbnails, not raw copyrighted content) */
+  references?: WorksheetReferenceContext[];
+  language?: WorksheetLanguage;
+}
+
+export type WorksheetLanguage = "english" | "hindi" | "bilingual";
+
+export type ReferenceImageMode =
+  | "same_style"
+  | "similar_style"
+  | "ignore_images"
+  | "images_only";
+
+export type ReferenceFileKind = "pdf" | "docx" | "image" | "svg";
+
+export interface WorksheetReferenceContext {
+  id: string;
+  filename: string;
+  kind: ReferenceFileKind;
+  mimeType: string;
+  sizeBytes: number;
+  pageCount?: number;
+  imageCount?: number;
+  textSnippet?: string;
+  layoutHints?: string[];
+  thumbnailDataUrl?: string;
+  pageThumbnails?: string[];
+}
+
+export interface PromptHistoryEntry {
+  id: string;
+  prompt: string;
+  enhancedPrompt?: string;
+  classLevel: WorksheetClass;
+  subject: WorksheetSubject;
+  difficulty: WorksheetDifficulty;
+  pageCount: number;
+  favorite: boolean;
+  createdAt: string;
+  referenceCount: number;
+}
+
+export type PromptQualityLabel = "Basic" | "Good" | "Excellent";
+
+export interface GenerationSummary {
+  classLabel: string;
+  subjectLabel: string;
+  pages: number;
+  referenceFiles: number;
+  imagesFound: number;
+  promptQuality: PromptQualityLabel;
+  qualityEstimate: number;
+  imageMode: ReferenceImageMode;
+  languageLabel: string;
+  effectivePrompt: string;
+}
+
+export interface EnhancePromptRequest {
+  prompt: string;
+  classLevel: WorksheetClass;
+  subject: WorksheetSubject;
+  difficulty: WorksheetDifficulty;
+  pageCount: number;
+  language?: WorksheetLanguage;
+  references?: WorksheetReferenceContext[];
+}
+
+export interface EnhancePromptResponse {
+  enhancedPrompt: string;
+  source: "ai" | "local";
+}
+
+/** v6.2 — AI vision / reference analysis */
+export interface ReferenceAnalysis {
+  referenceId: string;
+  classLevel?: WorksheetClass;
+  subject?: WorksheetSubject;
+  topic?: string;
+  difficulty?: WorksheetDifficulty;
+  worksheetStyle: string;
+  questionTypes: string[];
+  hasWritingPractice: boolean;
+  illustrationDensity: "low" | "medium" | "high";
+  estimatedAge: string;
+  pageCount?: number;
+  language?: WorksheetLanguage;
+  curriculum?: string;
+  brandingDetected?: string;
+  layoutFeatures: string[];
+  confidence: number;
+  source: "local" | "ai";
+}
+
+export interface LivePromptQuality {
+  stars: 1 | 2 | 3 | 4 | 5;
+  label: PromptQualityLabel;
+  scorePercent: number;
+  included: string[];
+  suggestions: string[];
+}
+
+export interface WorksheetQualityBreakdown {
+  overall: number;
+  educational: number;
+  print: number;
+  visual: number;
+  diversity: number;
+  spacing: number;
+  ageSuitability: number;
+  readability: number;
+  writingPractice: number;
+  bloomCoverage: number;
+  difficultyBalance: number;
+  improvements: string[];
+}
+
+export interface DocumentChangeSummary {
+  summary: string;
+  changedElements: number;
+  highlights: string[];
+}
+
+export interface PostGenerationRecommendation {
+  id: string;
+  label: string;
+  description: string;
+  action: WorksheetImproveAction | "regenerate_variant";
+  variant?: "homework" | "assessment" | "revision" | "coloring" | "writing" | "flashcards";
+}
+
+export interface AiAnalyticsDashboard {
+  promptEnhancements: number;
+  referenceUploads: number;
+  visionAnalyses: number;
+  avgPromptLength: number;
+  copilotEdits: number;
+  avgWorksheetScore: number;
+  topSubjects: Array<{ subject: string; count: number }>;
+  topClasses: Array<{ classLevel: string; count: number }>;
 }
 
 export interface WorksheetGenerateResponse {
@@ -187,5 +330,5 @@ export interface WorksheetDraftRecord {
 /** A4 dimensions at 72 DPI — used by renderer and export */
 export const A4_WIDTH = 595;
 export const A4_HEIGHT = 842;
-export const PAGE_MARGIN = 20;
+export const PAGE_MARGIN = 28;
 export const PAGE_BORDER_RADIUS = 12;

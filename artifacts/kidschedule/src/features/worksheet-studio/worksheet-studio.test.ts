@@ -60,7 +60,7 @@ describe("LPS header", () => {
     };
     const els = buildLpsHeaderElements(meta);
     const texts = els.filter((e) => e.type === "text").map((e) => e.type === "text" ? e.content : "");
-    expect(texts.some((t) => t.includes("Section"))).toBe(true);
+    expect(texts.some((t) => t.includes("Sec"))).toBe(true);
     expect(texts.some((t) => t.includes("LUCKNOW PUBLIC SCHOOL"))).toBe(true);
   });
 });
@@ -147,10 +147,13 @@ describe("copilot", () => {
     if (r.kind === "action") expect(r.action).toBe("easier");
   });
 
-  it("parses replace command", () => {
+  it("parses replace command as in-place edit", () => {
     const doc = baseDoc();
     const r = parseCopilotCommand("replace whale with dolphin", doc);
-    expect(r.kind).toBe("regenerate");
+    expect(r.kind).toBe("edit");
+    if (r.kind === "edit") {
+      expect(r.summary).toContain("dolphin");
+    }
   });
 });
 

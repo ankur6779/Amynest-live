@@ -25,14 +25,13 @@ export const DIFFICULTY_LABELS: Record<WorksheetDifficulty, string> = {
 };
 
 export const PROMPT_PLACEHOLDERS = [
-  "Create a UKG worksheet on Sea Animals",
-  "Make an LKG tracing worksheet",
-  "Addition 1-20",
-  "Circle the fruits",
-  "Match the colours",
-  "Beginning sounds",
-  "Rhyming words",
-  "Hindi Swar worksheet",
+  "Create a UKG worksheet on Sea Animals.",
+  "Create an LKG tracing worksheet for letter A.",
+  "Generate a Grade 1 subtraction worksheet with pictures.",
+  "Create a bilingual English-Hindi worksheet on Fruits.",
+  "Circle the fruits and match the colours",
+  "Beginning sounds with large illustrations",
+  "Hindi Swar worksheet with tracing",
 ] as const;
 
 export const LPS_SCHOOL_NAME = "LUCKNOW PUBLIC SCHOOL";

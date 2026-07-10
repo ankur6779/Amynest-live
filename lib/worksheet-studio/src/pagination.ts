@@ -41,19 +41,18 @@ export function paginateQuestions(
   maxPages: number,
 ): Array<Array<WorksheetQuestionBlock & { x: number; y: number }>> {
   const pages: Array<Array<WorksheetQuestionBlock & { x: number; y: number }>> = [];
-  let pageIdx = 0;
   let y = page1StartY;
   let currentPage: Array<WorksheetQuestionBlock & { x: number; y: number }> = [];
+  let onFirstPage = true;
 
   const maxY = A4_HEIGHT - PAGE_MARGIN - BOTTOM_SAFE;
 
   for (const { block, height } of blocks) {
     if (y + height > maxY) {
-      pages.push(currentPage);
-      pageIdx += 1;
-      if (pageIdx >= maxPages) break;
+      if (currentPage.length) pages.push(currentPage);
       currentPage = [];
       y = continuationStartY;
+      onFirstPage = false;
     }
 
     currentPage.push({
@@ -69,11 +68,12 @@ export function paginateQuestions(
     y += height + QUESTION_GAP;
   }
 
-  if (currentPage.length > 0 && pages.length < maxPages) {
-    pages.push(currentPage);
-  }
+  if (currentPage.length) pages.push(currentPage);
 
-  return pages;
+  void meta;
+  void maxPages;
+  void onFirstPage;
+  return pages.length ? pages : [[]];
 }
 
 export function randomizeOptions(options?: string[]): string[] | undefined {

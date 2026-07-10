@@ -3,7 +3,8 @@
 const CACHE = new Map<string, string>();
 
 export type IllustrationKind =
-  | "fish" | "dolphin" | "starfish" | "apple" | "banana" | "car" | "bus"
+  | "fish" | "dolphin" | "starfish" | "shark" | "whale" | "crab" | "octopus" | "turtle"
+  | "apple" | "banana" | "car" | "bus"
   | "tree" | "flower" | "sun" | "moon" | "cat" | "dog" | "bird" | "butterfly"
   | "circle" | "square" | "triangle" | "star";
 
@@ -11,6 +12,11 @@ const SVG_TEMPLATES: Record<IllustrationKind, string> = {
   fish: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"><ellipse cx="50" cy="40" rx="35" ry="22" fill="none" stroke="#111" stroke-width="3"/><polygon points="85,40 110,25 110,55" fill="none" stroke="#111" stroke-width="3"/><circle cx="35" cy="35" r="4" fill="#111"/></svg>`,
   dolphin: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"><path d="M20,50 Q50,10 90,35 Q70,45 85,55 Q50,70 20,50Z" fill="none" stroke="#111" stroke-width="3"/><circle cx="75" cy="32" r="3" fill="#111"/></svg>`,
   starfish: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><polygon points="40,5 48,30 75,30 52,48 60,75 40,58 20,75 28,48 5,30 32,30" fill="none" stroke="#111" stroke-width="2.5"/></svg>`,
+  shark: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70"><path d="M15,40 Q45,15 95,32 L110,28 L100,40 L110,52 L95,48 Q45,58 15,40Z" fill="none" stroke="#111" stroke-width="3"/><circle cx="78" cy="30" r="3" fill="#111"/></svg>`,
+  whale: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70"><ellipse cx="55" cy="38" rx="42" ry="22" fill="none" stroke="#111" stroke-width="3"/><path d="M95,30 Q110,20 115,35 Q108,45 95,40Z" fill="none" stroke="#111" stroke-width="2.5"/><circle cx="35" cy="32" r="3" fill="#111"/></svg>`,
+  crab: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 70"><ellipse cx="45" cy="42" rx="28" ry="16" fill="none" stroke="#111" stroke-width="3"/><path d="M20,35 L8,25 M20,48 L8,55 M70,35 L82,25 M70,48 L82,55" stroke="#111" stroke-width="2.5" fill="none"/></svg>`,
+  octopus: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90"><circle cx="45" cy="32" r="22" fill="none" stroke="#111" stroke-width="3"/><path d="M28,50 Q25,70 30,82 M38,52 Q36,72 40,85 M45,54 Q45,75 45,88 M52,52 Q54,72 50,85 M62,50 Q65,70 60,82" stroke="#111" stroke-width="2.5" fill="none"/></svg>`,
+  turtle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70"><ellipse cx="50" cy="38" rx="32" ry="20" fill="none" stroke="#111" stroke-width="3"/><circle cx="78" cy="38" r="10" fill="none" stroke="#111" stroke-width="2.5"/><path d="M22,38 L10,30 M22,45 L10,50" stroke="#111" stroke-width="2" fill="none"/></svg>`,
   apple: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 90"><path d="M40,25 Q20,30 22,55 Q24,78 40,82 Q56,78 58,55 Q60,30 40,25Z" fill="none" stroke="#111" stroke-width="3"/></svg>`,
   banana: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 50"><path d="M10,35 Q40,5 80,20 Q50,45 10,35Z" fill="none" stroke="#111" stroke-width="3"/></svg>`,
   car: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60"><rect x="15" y="25" width="90" height="25" rx="5" fill="none" stroke="#111" stroke-width="3"/><circle cx="35" cy="50" r="8" fill="none" stroke="#111" stroke-width="3"/><circle cx="85" cy="50" r="8" fill="none" stroke="#111" stroke-width="3"/></svg>`,
@@ -42,7 +48,9 @@ export function getIllustration(kind: IllustrationKind): string {
 }
 
 const KEYWORD_MAP: Array<[RegExp, IllustrationKind]> = [
-  [/fish/i, "fish"], [/dolphin/i, "dolphin"], [/apple/i, "apple"], [/banana/i, "banana"],
+  [/fish/i, "fish"], [/dolphin/i, "dolphin"], [/shark/i, "shark"], [/whale/i, "whale"],
+  [/crab/i, "crab"], [/octopus/i, "octopus"], [/turtle/i, "turtle"], [/starfish/i, "starfish"],
+  [/apple/i, "apple"], [/banana/i, "banana"],
   [/car/i, "car"], [/bus/i, "bus"], [/tree/i, "tree"], [/flower/i, "flower"],
   [/sun/i, "sun"], [/moon/i, "moon"], [/cat/i, "cat"], [/dog/i, "dog"],
   [/bird/i, "bird"], [/butterfly/i, "butterfly"],

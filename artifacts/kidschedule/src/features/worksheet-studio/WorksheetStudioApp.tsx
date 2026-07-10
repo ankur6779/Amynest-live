@@ -10,6 +10,9 @@ import {
   generateAnswerKeyDocument,
   markTopicCompleted,
   scoreWorksheet,
+  summarizeDocumentChanges,
+  type DocumentChangeSummary,
+  type PostGenerationRecommendation,
 } from "@workspace/worksheet-studio";
 import { exportBulkPdfs, loadLatestDraft, saveToLibrary, applyBrandingToDocument } from "@workspace/worksheet-studio/client";
 import { WorksheetHome } from "./WorksheetHome";
@@ -19,6 +22,8 @@ import { WorksheetErrorBoundary } from "./WorksheetErrorBoundary";
 import { WorksheetLibrarySheet } from "./WorksheetLibrarySheet";
 import { WorksheetProductivityHub } from "./WorksheetProductivityHub";
 import { WorksheetBrandingSheet } from "./WorksheetBrandingSheet";
+import { CopilotChangePreview } from "./CopilotChangePreview";
+import { PostGenerationSheet } from "./PostGenerationSheet";
 import { useWorksheetAi } from "./use-worksheet-ai";
 import { useWorksheetAutosave } from "./use-worksheet-autosave";
 import { useWorksheetCopilot, copilotToAction, copilotToGeneratePatch } from "./use-worksheet-copilot";
@@ -65,6 +70,14 @@ export function WorksheetStudioApp() {
   const [productivityOpen, setProductivityOpen] = useState(false);
   const [brandingOpen, setBrandingOpen] = useState(false);
   const [brandingVersion, setBrandingVersion] = useState(0);
+  const [postGenOpen, setPostGenOpen] = useState(false);
+  const [postGenDoc, setPostGenDoc] = useState<WorksheetDocument | null>(null);
+  const [editPreviewOpen, setEditPreviewOpen] = useState(false);
+  const [pendingEdit, setPendingEdit] = useState<{
+    document: WorksheetDocument;
+    summary: string;
+    changeSummary: DocumentChangeSummary;
+  } | null>(null);
   const requestBuilderRef = useRef<(() => WorksheetGenerateRequest) | null>(null);
   const languageRef = useRef<WorksheetLanguage>("english");
 
@@ -102,7 +115,12 @@ export function WorksheetStudioApp() {
   }, []);
 
   const openDocument = useCallback(async (doc: WorksheetDocument) => {
-    const branded = applyBrandingToDocument(doc);
+    let branded = doc;
+    try {
+      branded = applyBrandingToDocument(doc);
+    } catch {
+      toast.error("Could not apply school branding", { description: "Using default layout." });
+    }
     setView({ kind: "editor", document: branded });
     try {
       await saveNow(branded);
@@ -116,16 +134,27 @@ export function WorksheetStudioApp() {
   }, []);
 
   const handleGenerate = async (req: WorksheetGenerateRequest) => {
-    trackWorksheetEvent("worksheet_generate_start", { subject: req.subject });
+    const promptText = req.enhancedPrompt?.trim() || req.prompt;
+    trackWorksheetEvent("worksheet_generate_start", {
+      subject: req.subject,
+      promptLength: promptText.length,
+      classLevel: req.classLevel,
+    });
     try {
       const result = await generate(req);
       let doc = result.document;
-      if (languageRef.current !== "english") {
-        doc = applyLanguageToDocument(doc, languageRef.current);
+      if ((req.language ?? languageRef.current) !== "english") {
+        doc = applyLanguageToDocument(doc, req.language ?? languageRef.current);
       }
-      doc = applyBrandingToDocument(doc);
+      try {
+        doc = applyBrandingToDocument(doc);
+      } catch {
+        /* use unbranded doc */
+      }
       const quality = result.qualityScore ?? scoreWorksheet(doc).overall;
       setView({ kind: "editor", document: doc });
+      setPostGenDoc(doc);
+      setPostGenOpen(true);
       void hapticWorksheetSuccess();
       const sourceLabel = result.usedFallback
         ? "Offline template (saved locally)"
@@ -142,10 +171,46 @@ export function WorksheetStudioApp() {
       }
       void saveToLibrary(doc).catch(() => {});
       trackCurriculumCompletion(doc);
-      trackWorksheetEvent("worksheet_generate_done", { source: result.source });
+      trackWorksheetEvent("worksheet_generate_done", {
+        source: result.source,
+        qualityScore: quality,
+        topic: doc.meta.topic,
+        classLevel: doc.meta.classLevel,
+      });
     } catch {
       toast.error("Generation failed", { description: "Please try again — your settings are saved." });
     }
+  };
+
+  const handlePostGenRecommendation = async (rec: PostGenerationRecommendation) => {
+    if (view.kind !== "editor") return;
+    const doc = view.document;
+    if (rec.action === "regenerate_variant") {
+      await handleGenerate({
+        prompt: `${doc.prompt} — ${rec.label}`,
+        classLevel: doc.meta.classLevel,
+        subject: doc.meta.subject,
+        difficulty: doc.meta.difficulty,
+        pageCount: doc.meta.pageCount,
+      });
+      return;
+    }
+    await handleImprove(rec.action);
+  };
+
+  const applyPendingEdit = async () => {
+    if (!pendingEdit || view.kind !== "editor") return;
+    setView({ kind: "editor", document: pendingEdit.document });
+    try {
+      await saveNow(pendingEdit.document);
+      void saveToLibrary(pendingEdit.document).catch(() => {});
+    } catch {
+      toast.error("Could not save changes");
+    }
+    trackWorksheetEvent("worksheet_copilot_edit");
+    toast.success("Changes applied", { description: pendingEdit.summary });
+    setEditPreviewOpen(false);
+    setPendingEdit(null);
   };
 
   const handleOpenPack = useCallback(async (docs: WorksheetDocument[], label: string) => {
@@ -153,7 +218,13 @@ export function WorksheetStudioApp() {
     const localized = languageRef.current === "english"
       ? docs
       : docs.map((d) => applyLanguageToDocument(d, languageRef.current));
-    const branded = localized.map((d) => applyBrandingToDocument(d));
+    const branded = localized.map((d) => {
+      try {
+        return applyBrandingToDocument(d);
+      } catch {
+        return d;
+      }
+    });
     for (const doc of branded) {
       void saveToLibrary(doc, { collection: label }).catch(() => {});
       trackCurriculumCompletion(doc);
@@ -216,6 +287,16 @@ export function WorksheetStudioApp() {
         toast.message(result.text);
         return;
       }
+      if (result.kind === "edit") {
+        const changeSummary = summarizeDocumentChanges(view.document, result.document);
+        setPendingEdit({
+          document: result.document,
+          summary: result.summary,
+          changeSummary,
+        });
+        setEditPreviewOpen(true);
+        return;
+      }
       const action = copilotToAction(result);
       if (action) {
         await handleImprove(action);
@@ -261,33 +342,62 @@ export function WorksheetStudioApp() {
         />
       )}
 
-      <WorksheetLibrarySheet
-        open={libraryOpen}
-        onOpenChange={setLibraryOpen}
-        onOpenDocument={(doc) => void openDocument(doc)}
-        onBulkExport={(entries) => void handleBulkExport(entries)}
-        onOpenBranding={() => { setLibraryOpen(false); openBranding(); }}
+      {libraryOpen ? (
+        <WorksheetLibrarySheet
+          open={libraryOpen}
+          onOpenChange={setLibraryOpen}
+          onOpenDocument={(doc) => void openDocument(doc)}
+          onBulkExport={(entries) => void handleBulkExport(entries)}
+          onOpenBranding={() => { setLibraryOpen(false); openBranding(); }}
+        />
+      ) : null}
+
+      {brandingOpen ? (
+        <WorksheetBrandingSheet
+          open={brandingOpen}
+          onOpenChange={setBrandingOpen}
+          onBrandingSaved={() => {
+            setBrandingVersion((v) => v + 1);
+            if (view.kind === "editor") {
+              void openDocument(view.document);
+            }
+          }}
+        />
+      ) : null}
+
+      {productivityOpen ? (
+        <WorksheetProductivityHub
+          key={brandingVersion}
+          open={productivityOpen}
+          onOpenChange={setProductivityOpen}
+          buildRequest={buildRequest}
+          onOpenDocument={(doc) => void openDocument(doc)}
+          onOpenPack={(docs, label) => void handleOpenPack(docs, label)}
+          loading={loading}
+        />
+      ) : null}
+
+      <PostGenerationSheet
+        open={postGenOpen}
+        onOpenChange={setPostGenOpen}
+        document={postGenDoc}
+        onRecommendation={(rec) => void handlePostGenRecommendation(rec)}
       />
 
-      <WorksheetBrandingSheet
-        open={brandingOpen}
-        onOpenChange={setBrandingOpen}
-        onBrandingSaved={() => {
-          setBrandingVersion((v) => v + 1);
-          if (view.kind === "editor") {
-            void openDocument(view.document);
-          }
+      <CopilotChangePreview
+        open={editPreviewOpen}
+        onOpenChange={(open) => {
+          setEditPreviewOpen(open);
+          if (!open) setPendingEdit(null);
         }}
-      />
-
-      <WorksheetProductivityHub
-        key={brandingVersion}
-        open={productivityOpen}
-        onOpenChange={setProductivityOpen}
-        buildRequest={buildRequest}
-        onOpenDocument={(doc) => void openDocument(doc)}
-        onOpenPack={(docs, label) => void handleOpenPack(docs, label)}
-        loading={loading}
+        summary={pendingEdit?.changeSummary ?? null}
+        editSummary={pendingEdit?.summary ?? ""}
+        onAccept={() => void applyPendingEdit()}
+        onReject={() => {
+          setEditPreviewOpen(false);
+          setPendingEdit(null);
+          toast.message("Changes discarded");
+        }}
       />
 
       {view.kind === "editor" ? (

@@ -1,18 +1,24 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   CLASS_LABELS,
   DIFFICULTY_LABELS,
   PROMPT_PLACEHOLDERS,
   SUBJECT_LABELS,
+  buildGenerationSummary,
+  savePromptHistory,
+  incrementPromptUsage,
+  type ReferenceImageMode,
   type WorksheetClass,
   type WorksheetDifficulty,
   type WorksheetGenerateRequest,
+  type WorksheetLanguage,
+  type WorksheetReferenceContext,
   type WorksheetSubject,
   type WorksheetTemplate,
 } from "@workspace/worksheet-studio";
-import type { WorksheetLanguage } from "@workspace/worksheet-studio";
 import { BookOpen, CalendarDays, FileText, FolderOpen, KeyRound, Loader2, Settings2, Sparkles } from "lucide-react";
 import {
   WS_CHIP,
@@ -21,11 +27,19 @@ import {
   WS_HERO_GRADIENT,
   WS_PAGE,
   WS_PRIMARY_BTN,
-  WS_PROMPT_BOX,
   WS_SECTION_LABEL,
 } from "./worksheet-studio-theme";
 import { WorksheetTemplates } from "./WorksheetTemplates";
+import { WorksheetPromptComposer } from "./WorksheetPromptComposer";
+import { GenerationSummaryDialog } from "./GenerationSummaryDialog";
+import { PromptHistorySheet } from "./PromptHistorySheet";
+import { PromptQualityMeter } from "./PromptQualityMeter";
+import { ReferenceAnalysisCard } from "./ReferenceAnalysisCard";
+import { useWorksheetPromptEnhancer } from "./use-worksheet-prompt-enhancer";
+import { useReferenceVision } from "./use-reference-vision";
 import { hapticWorksheetTap } from "./worksheet-haptics";
+import { trackWorksheetEvent } from "./worksheet-studio-analytics";
+import type { PromptHistoryEntry } from "@workspace/worksheet-studio";
 
 const CLASSES = Object.keys(CLASS_LABELS) as WorksheetClass[];
 const SUBJECTS = Object.keys(SUBJECT_LABELS) as WorksheetSubject[];
@@ -87,43 +101,132 @@ function ChipRow<T extends string>({
 export function WorksheetHome({
   onGenerate, onOpenDrafts, onOpenLibrary, onOpenProductivity, onOpenBranding, onRegisterBuilder, onRegisterLanguage, loading, hasDraft,
 }: Props) {
+  const authFetch = useAuthFetch();
+  const { enhance, enhancing } = useWorksheetPromptEnhancer(authFetch);
+  const { analyze, analyzing, merged, setMerged } = useReferenceVision(authFetch);
+
   const [prompt, setPrompt] = useState("");
+  const [originalPrompt, setOriginalPrompt] = useState("");
+  const [enhancedPrompt, setEnhancedPrompt] = useState<string | undefined>();
+  const [references, setReferences] = useState<WorksheetReferenceContext[]>([]);
+  const [imageMode, setImageMode] = useState<ReferenceImageMode>("similar_style");
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [analysisApplied, setAnalysisApplied] = useState(false);
   const [classLevel, setClassLevel] = useState<WorksheetClass>("ukg");
   const [subject, setSubject] = useState<WorksheetSubject>("english");
   const [difficulty, setDifficulty] = useState<WorksheetDifficulty>("easy");
   const [pageCount, setPageCount] = useState(1);
   const [language, setLanguage] = useState<WorksheetLanguage>("english");
-  const [placeholderIdx, setPlaceholderIdx] = useState(0);
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setPlaceholderIdx((i) => (i + 1) % PROMPT_PLACEHOLDERS.length);
-    }, 4000);
-    return () => window.clearInterval(id);
-  }, []);
+  const [placeholderIdx] = useState(0);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [pendingAnswerKey, setPendingAnswerKey] = useState(false);
 
   const placeholder = PROMPT_PLACEHOLDERS[placeholderIdx]!;
 
-  const buildRequest = (answerKey: boolean): WorksheetGenerateRequest => ({
+  const buildRequest = useCallback((answerKey: boolean): WorksheetGenerateRequest => ({
     prompt: prompt.trim() || placeholder,
     classLevel,
     subject,
     difficulty,
     pageCount,
     answerKey,
-  });
+    enhancedPrompt: enhancedPrompt?.trim() || undefined,
+    references: references.length ? references : undefined,
+    imageMode: references.length ? imageMode : undefined,
+    language,
+  }), [prompt, classLevel, subject, difficulty, pageCount, placeholder, enhancedPrompt, references, imageMode, language]);
 
   useEffect(() => {
     onRegisterBuilder?.(() => buildRequest(false));
-  }, [prompt, classLevel, subject, difficulty, pageCount, placeholder, onRegisterBuilder]);
+  }, [buildRequest, onRegisterBuilder]);
 
   useEffect(() => {
     onRegisterLanguage?.(language);
   }, [language, onRegisterLanguage]);
 
-  const handleGenerate = (answerKey: boolean) => {
+  const summary = buildGenerationSummary({
+    classLevel,
+    subject,
+    difficulty,
+    pageCount,
+    prompt: prompt.trim() || placeholder,
+    enhancedPrompt,
+    references,
+    imageMode,
+    language,
+  });
+
+  const handleEnhance = async () => {
+    trackWorksheetEvent("worksheet_prompt_enhance");
+    setOriginalPrompt(prompt.trim() || placeholder);
+    const result = await enhance({
+      prompt: prompt.trim() || placeholder,
+      classLevel,
+      subject,
+      difficulty,
+      pageCount,
+      language,
+      references,
+    });
+    setEnhancedPrompt(result.enhancedPrompt);
+  };
+
+  useEffect(() => {
+    if (references.length > 0) {
+      setShowAnalysis(true);
+      void analyze(references).then(() => {
+        trackWorksheetEvent("worksheet_vision_analyze", { count: references.length });
+      });
+    } else {
+      setShowAnalysis(false);
+      setAnalysisApplied(false);
+      setMerged({});
+    }
+  }, [references.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const applyAnalysis = () => {
+    if (merged.classLevel) setClassLevel(merged.classLevel);
+    if (merged.subject) setSubject(merged.subject);
+    if (merged.difficulty) setDifficulty(merged.difficulty);
+    if (merged.pageCount && merged.pageCount >= 1) setPageCount(Math.min(4, merged.pageCount));
+    if (merged.language) setLanguage(merged.language);
+    if (merged.topic && !prompt.trim()) setPrompt(`Create a worksheet on ${merged.topic}`);
+    setAnalysisApplied(true);
+    trackWorksheetEvent("worksheet_vision_template_apply");
+  };
+
+  const promptQualityInput = {
+    prompt: prompt.trim() || placeholder,
+    classLevel,
+    subject,
+    difficulty,
+    pageCount,
+    language,
+    enhancedPrompt,
+    referenceCount: references.length,
+    analysis: merged,
+  };
+
+  const confirmGenerate = () => {
+    const req = buildRequest(pendingAnswerKey);
+    savePromptHistory({
+      prompt: req.prompt,
+      enhancedPrompt: req.enhancedPrompt,
+      classLevel: req.classLevel,
+      subject: req.subject,
+      difficulty: req.difficulty,
+      pageCount: req.pageCount,
+      referenceCount: references.length,
+    });
+    setSummaryOpen(false);
+    onGenerate(req);
+  };
+
+  const requestGenerate = (answerKey: boolean) => {
     void hapticWorksheetTap();
-    onGenerate(buildRequest(answerKey));
+    setPendingAnswerKey(answerKey);
+    setSummaryOpen(true);
   };
 
   const applyTemplate = (t: WorksheetTemplate) => {
@@ -132,6 +235,17 @@ export function WorksheetHome({
     setSubject(t.request.subject);
     setDifficulty(t.request.difficulty);
     setPageCount(t.request.pageCount);
+    setEnhancedPrompt(undefined);
+  };
+
+  const restoreHistory = (entry: PromptHistoryEntry) => {
+    incrementPromptUsage(entry.id);
+    setPrompt(entry.prompt);
+    setEnhancedPrompt(entry.enhancedPrompt);
+    setClassLevel(entry.classLevel);
+    setSubject(entry.subject);
+    setDifficulty(entry.difficulty);
+    setPageCount(entry.pageCount);
   };
 
   return (
@@ -173,19 +287,31 @@ export function WorksheetHome({
 
         <WorksheetTemplates onSelect={applyTemplate} />
 
-        <div className={cn(WS_GLASS_CARD, "p-4")}>
-          <label className="block space-y-2">
-            <p className={WS_SECTION_LABEL}>Describe your worksheet</p>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={placeholder}
-              rows={4}
-              aria-label="Worksheet description"
-              className={WS_PROMPT_BOX}
-            />
-          </label>
-        </div>
+        <WorksheetPromptComposer
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          enhancedPrompt={enhancedPrompt}
+          originalPrompt={originalPrompt}
+          onEnhancedPromptChange={setEnhancedPrompt}
+          references={references}
+          onReferencesChange={setReferences}
+          imageMode={imageMode}
+          onImageModeChange={setImageMode}
+          onEnhance={() => void handleEnhance()}
+          enhancing={enhancing}
+          onOpenHistory={() => setHistoryOpen(true)}
+        />
+
+        <ReferenceAnalysisCard
+          visible={showAnalysis && references.length > 0 && !analysisApplied}
+          merged={merged}
+          analyzing={analyzing}
+          onAnalyze={() => void analyze(references, true)}
+          onUseTemplate={applyAnalysis}
+          onIgnore={() => { setShowAnalysis(false); setAnalysisApplied(true); }}
+        />
+
+        <PromptQualityMeter input={promptQualityInput} />
 
         <div className={cn(WS_GLASS_CARD, "space-y-4 p-4")}>
           <ChipRow label="Age / Class" options={CLASSES} labels={CLASS_LABELS} value={classLevel} onChange={setClassLevel} />
@@ -229,7 +355,7 @@ export function WorksheetHome({
         </div>
 
         <div className="flex flex-col gap-3">
-          <Button className={WS_PRIMARY_BTN} disabled={loading} onClick={() => handleGenerate(false)}>
+          <Button className={WS_PRIMARY_BTN} disabled={loading} onClick={() => requestGenerate(false)}>
             {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
             Generate Worksheet
           </Button>
@@ -238,7 +364,7 @@ export function WorksheetHome({
             variant="outline"
             className="h-14 rounded-2xl border-[#1e3a5f]/20 bg-white/80 text-base font-semibold touch-manipulation"
             disabled={loading}
-            onClick={() => handleGenerate(true)}
+            onClick={() => requestGenerate(true)}
           >
             <KeyRound className="mr-2 h-5 w-5" />
             Generate Answer Key
@@ -250,6 +376,21 @@ export function WorksheetHome({
           Official LPS header on page 1 · Auto-saved offline
         </p>
       </div>
+
+      <GenerationSummaryDialog
+        open={summaryOpen}
+        onOpenChange={setSummaryOpen}
+        summary={summary}
+        onConfirm={confirmGenerate}
+        loading={loading}
+        answerKey={pendingAnswerKey}
+      />
+
+      <PromptHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onRestore={restoreHistory}
+      />
     </div>
   );
 }

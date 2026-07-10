@@ -9,7 +9,7 @@ export interface LayoutBlock extends PaginatedBlock {
 }
 
 function blockTotalHeight(block: LayoutBlock): number {
-  return block.height + (block.hasIllustration ? 72 : 0);
+  return block.height + (block.keepTogether ? 8 : 0);
 }
 
 export function layoutQuestionBlocks(
@@ -88,11 +88,23 @@ function balancePageDensity(
   if (idx < allBlocks.length && redistributed.length) {
     const last = redistributed[redistributed.length - 1]!;
     let y = last.length ? last[last.length - 1]!.y + last[last.length - 1]!.height + 24 : continuationStartY;
+    const overflow: typeof last = [];
     for (const b of allBlocks.slice(idx)) {
-      if (y + b.height > maxY) break;
-      last.push({ ...b, y });
+      if (y + b.height > maxY) {
+        if (overflow.length) {
+          redistributed.push(overflow);
+          overflow.length = 0;
+          y = continuationStartY;
+        }
+        if (y + b.height > maxY) {
+          redistributed.push([{ ...b, y: continuationStartY }]);
+          continue;
+        }
+      }
+      overflow.push({ ...b, y });
       y += b.height + 24;
     }
+    if (overflow.length) redistributed.push(overflow);
   }
 
   void avgRatio;

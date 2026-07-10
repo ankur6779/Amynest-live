@@ -1,6 +1,24 @@
 import type { WorksheetGenerateRequest } from "./types.js";
 import { CLASS_LABELS, DIFFICULTY_LABELS, SUBJECT_LABELS } from "./constants.js";
 
+function referenceBlock(req: WorksheetGenerateRequest): Record<string, unknown> | null {
+  if (!req.references?.length) return null;
+  return {
+    referenceCount: req.references.length,
+    imageMode: req.imageMode ?? "similar_style",
+    files: req.references.map((r) => ({
+      name: r.filename,
+      kind: r.kind,
+      pages: r.pageCount,
+      images: r.imageCount,
+      layoutHints: r.layoutHints,
+      textSnippet: r.textSnippet?.slice(0, 300),
+    })),
+    instruction:
+      "Use references for layout, question style, and illustration inspiration ONLY. Generate original content. Never copy copyrighted text or images verbatim.",
+  };
+}
+
 export function buildWorksheetAiSystemPrompt(): string {
   return `You are an expert primary-school worksheet designer for Lucknow Public School (LPS), India.
 Output ONLY valid JSON matching this schema:
@@ -29,17 +47,21 @@ Rules:
 - Use simple emoji or text labels instead of copyrighted images.
 - For colouring, mention "black outline" style via illustrationLabel.
 - Progress difficulty gently across questions.
+- When teacher uploaded reference files, match layout/style inspiration — create ORIGINAL questions.
 - No markdown. No extra keys.`;
 }
 
 export function buildWorksheetAiUserPrompt(req: WorksheetGenerateRequest): string {
+  const teacherPrompt = req.enhancedPrompt?.trim() || req.prompt;
   return JSON.stringify({
-    teacherPrompt: req.prompt,
+    teacherPrompt,
     class: CLASS_LABELS[req.classLevel],
     subject: SUBJECT_LABELS[req.subject],
     difficulty: DIFFICULTY_LABELS[req.difficulty],
     pages: req.pageCount,
     answerKey: req.answerKey ?? false,
+    language: req.language ?? "english",
     questionsNeeded: req.pageCount * (req.difficulty === "easy" ? 4 : req.difficulty === "medium" ? 5 : 6),
+    references: referenceBlock(req),
   });
 }
