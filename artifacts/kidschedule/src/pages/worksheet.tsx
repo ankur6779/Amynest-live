@@ -1,11 +1,11 @@
-import { TeacherOsApp } from "@/features/teacher-os/TeacherOsApp";
-import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
+import { WorksheetStudioApp } from "@/features/worksheet-studio/WorksheetStudioApp";
+import { WorksheetStudioAccessGate } from "@/components/worksheet-studio-access-gate";
 
-/** Backward-compatible deep link — opens Worksheet Studio tab inside Teacher OS */
+/** LPS Worksheet Studio — desktop browser + premium only (direct URL). */
 export default function WorksheetPage() {
   return (
-    <HubModuleGateWrap featureId="hub_worksheets">
-      <TeacherOsApp defaultModule="studio" />
-    </HubModuleGateWrap>
+    <WorksheetStudioAccessGate>
+      <WorksheetStudioApp />
+    </WorksheetStudioAccessGate>
   );
 }

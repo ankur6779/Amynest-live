@@ -2849,6 +2849,18 @@ html.amynest-native-shell .drawer-overlay {
   overflow-wrap: break-word;
   word-wrap: break-word;
 }
+.worksheet-studio input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.ws-root input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  color: #1e3a5f !important;
+  -webkit-text-fill-color: #1e3a5f;
+  background-color: #ffffff;
+  color-scheme: light;
+}
+.worksheet-studio input[type="date"]::-webkit-date-and-time-value,
+.ws-root input[type="date"]::-webkit-date-and-time-value {
+  color: #1e3a5f;
+  -webkit-text-fill-color: #1e3a5f;
+}
 .worksheet-studio img,
 .ws-root img {
   max-width: 100%;

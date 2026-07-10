@@ -8,7 +8,9 @@ import {
   applyLanguageToDocument,
   CURRICULUM_TOPICS,
   generateAnswerKeyDocument,
+  generateWorksheetLocal,
   markTopicCompleted,
+  reconstructWorksheetLocal,
   scoreWorksheet,
   summarizeDocumentChanges,
   type DocumentChangeSummary,
@@ -76,6 +78,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
   const [view, setView] = useState<View>({ kind: "home" });
   const [showOnboarding, setShowOnboarding] = useState(() => !embedded && shouldShowOnboarding);
   const [hasDraft, setHasDraft] = useState(false);
+  const [lastWorksheetTitle, setLastWorksheetTitle] = useState<string | null>(null);
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [productivityOpen, setProductivityOpen] = useState(false);
@@ -103,10 +106,54 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
 
   const handleRestore = useCallback((doc: WorksheetDocument) => {
     setView({ kind: "editor", document: doc });
+    onViewChange?.(true);
+    setHasDraft(true);
+    setLastWorksheetTitle(doc.meta.title || doc.meta.topic);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     toast.info("Draft restored", { description: "Your worksheet was recovered automatically." });
-  }, []);
+  }, [onViewChange]);
 
   const { saveNow, saveState, savedAt } = useWorksheetAutosave(document, handleRestore);
+
+  const enterEditor = useCallback(async (
+    doc: WorksheetDocument,
+    opts?: { persist?: boolean; announce?: string },
+  ) => {
+    let branded = doc;
+    try {
+      branded = applyBrandingToDocument(doc);
+    } catch {
+      toast.error("Could not apply school branding", { description: "Using default layout." });
+    }
+    setView({ kind: "editor", document: branded });
+    onViewChange?.(true);
+    setHasDraft(true);
+    setLastWorksheetTitle(branded.meta.title || branded.meta.topic);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (opts?.announce) {
+      toast.success(opts.announce, {
+        description: "Tap anywhere on the worksheet to edit text, move items, or export PDF.",
+        action: {
+          label: "Edit now",
+          onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+        },
+      });
+    }
+    if (opts?.persist !== false) {
+      try {
+        await saveNow(branded);
+      } catch {
+        toast.error("Could not save draft", { description: "Export still works for this session." });
+      }
+    }
+    return branded;
+  }, [onViewChange, saveNow]);
+
+  useEffect(() => {
+    if (view.kind === "editor" && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [view.kind, view.kind === "editor" ? view.document.id : ""]);
 
   usePageBackHandler(() => {
     if (libraryOpen) { setLibraryOpen(false); return true; }
@@ -128,20 +175,8 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
   }, []);
 
   const openDocument = useCallback(async (doc: WorksheetDocument) => {
-    let branded = doc;
-    try {
-      branded = applyBrandingToDocument(doc);
-    } catch {
-      toast.error("Could not apply school branding", { description: "Using default layout." });
-    }
-    setView({ kind: "editor", document: branded });
-    onViewChange?.(true);
-    try {
-      await saveNow(branded);
-    } catch {
-      toast.error("Could not save draft locally", { description: "Your worksheet is open — edits still work in this session." });
-    }
-  }, [saveNow, onViewChange]);
+    await enterEditor(doc);
+  }, [enterEditor]);
 
   const handleDocumentChange = useCallback((doc: WorksheetDocument) => {
     setView((v) => (v.kind === "editor" ? { kind: "editor", document: doc } : v));
@@ -159,16 +194,15 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
       const result = await generate(req);
       const genMs = Date.now() - genStart;
       let doc = result.document;
+      if (!doc?.pages?.length) {
+        doc = generateWorksheetLocal(req);
+        toast.info("Using offline template", { description: "AI response was incomplete — editable worksheet created locally." });
+      }
       if ((req.language ?? languageRef.current) !== "english") {
         doc = applyLanguageToDocument(doc, req.language ?? languageRef.current);
       }
-      try {
-        doc = applyBrandingToDocument(doc);
-      } catch {
-        /* use unbranded doc */
-      }
       const quality = result.qualityScore ?? scoreWorksheet(doc).overall;
-      setView({ kind: "editor", document: doc });
+      await enterEditor(doc);
       setPostGenDoc(doc);
       setPostGenOpen(true);
       void hapticWorksheetSuccess();
@@ -178,14 +212,9 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
           ? "AI-generated"
           : "Template";
       toast.success("Worksheet ready!", {
-        description: `${sourceLabel} · Quality ${quality}/100`,
+        description: `${sourceLabel} · Quality ${quality}/100 · Opening editor…`,
       });
       onWorksheetReady?.(`generate:${doc.meta.topic}`);
-      try {
-        await saveNow(doc);
-      } catch {
-        toast.error("Could not save draft", { description: "Export still works for this session." });
-      }
       void saveToLibrary(doc).catch(() => {});
       trackCurriculumCompletion(doc);
       trackWorksheetEvent("worksheet_generate_done", {
@@ -209,14 +238,14 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
     try {
       const result = await reconstruct(req);
       let doc = result.document;
+      if (!doc?.pages?.length) {
+        doc = reconstructWorksheetLocal(req).document ?? doc;
+      }
       if ((req.language ?? languageRef.current) !== "english") {
         doc = applyLanguageToDocument(doc, req.language ?? languageRef.current);
       }
-      try {
-        doc = applyBrandingToDocument(doc);
-      } catch { /* unbranded */ }
       const quality = result.qualityScore ?? scoreWorksheet(doc).overall;
-      setView({ kind: "editor", document: doc });
+      await enterEditor(doc);
       setPostGenDoc(doc);
       setPostGenOpen(true);
       void hapticWorksheetSuccess();
@@ -230,11 +259,6 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         toast.info("Review uncertain areas", {
           description: result.uncertainAreas.slice(0, 2).join(" · "),
         });
-      }
-      try {
-        await saveNow(doc);
-      } catch {
-        toast.error("Could not save draft", { description: "Export still works for this session." });
       }
       void saveToLibrary(doc).catch(() => {});
       trackCurriculumCompletion(doc);
@@ -387,10 +411,14 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
   const resumeDraft = async () => {
     try {
       const draft = await loadLatestDraft();
-      if (draft?.document) handleRestore(draft.document);
-      else toast.info("No draft found");
+      if (draft?.document) {
+        await enterEditor(draft.document, { persist: false });
+        toast.info("Worksheet opened", { description: "Edit text, move items, or tap Export for PDF." });
+      } else {
+        toast.info("No worksheet found", { description: "Generate a new worksheet or check Library." });
+      }
     } catch {
-      toast.error("Could not restore draft");
+      toast.error("Could not open worksheet");
     }
   };
 
@@ -456,6 +484,10 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         onOpenChange={setPostGenOpen}
         document={postGenDoc}
         onRecommendation={(rec) => void handlePostGenRecommendation(rec)}
+        onEditNow={() => {
+          setPostGenOpen(false);
+          if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
       />
 
       <CopilotChangePreview
@@ -499,6 +531,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         <WorksheetHome
           loading={loading || reconstructing}
           hasDraft={hasDraft}
+          lastWorksheetTitle={lastWorksheetTitle}
           onOpenDrafts={() => void resumeDraft()}
           onOpenLibrary={() => { trackWorksheetEvent("worksheet_library_open"); setLibraryOpen(true); }}
           onOpenProductivity={() => { trackWorksheetEvent("worksheet_productivity_open"); setProductivityOpen(true); }}

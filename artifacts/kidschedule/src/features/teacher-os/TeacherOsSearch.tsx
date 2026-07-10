@@ -5,7 +5,7 @@ import { searchTeachingPack, searchTopicCatalog } from "@workspace/teacher-os";
 import { CURRICULUM_TOPICS } from "@workspace/worksheet-studio";
 import type { TeacherOsModuleId } from "@workspace/teacher-os";
 import { useTeacherOs } from "./context/teacher-os-context";
-import { WS_GLASS_CARD, WS_MUTED_TEXT, WS_CONTAINER } from "@/features/worksheet-studio/worksheet-studio-theme";
+import { WS_GLASS_CARD, WS_MUTED_TEXT, WS_CONTAINER, WS_INPUT } from "@/features/worksheet-studio/worksheet-studio-theme";
 
 const ENABLED_MODULES = new Set<TeacherOsModuleId>([
   "dashboard", "teaching_pack", "daily_planner", "weekly_planner", "curriculum",
@@ -34,7 +34,7 @@ export function TeacherOsSearch() {
         <h2 className="text-lg font-bold text-[#1e3a5f]">Smart Search</h2>
       </header>
       <input
-        className={cn(WS_GLASS_CARD, "w-full px-4 py-3 text-sm")}
+        className={cn(WS_GLASS_CARD, WS_INPUT, "px-4 py-3")}
         placeholder="Search e.g. Sea Animals"
         value={query}
         onChange={(e) => setQuery(e.target.value)}

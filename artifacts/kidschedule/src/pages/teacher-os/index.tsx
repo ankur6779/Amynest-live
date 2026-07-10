@@ -1,10 +1,6 @@
-import { TeacherOsApp } from "@/features/teacher-os/TeacherOsApp";
-import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
+import { Redirect } from "wouter";
 
+/** Teacher OS shell removed from product — legacy URL forwards to Worksheet Studio. */
 export default function TeacherOsPage() {
-  return (
-    <HubModuleGateWrap featureId="hub_worksheets">
-      <TeacherOsApp />
-    </HubModuleGateWrap>
-  );
+  return <Redirect to="/worksheet" />;
 }

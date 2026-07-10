@@ -27,7 +27,6 @@ export const LEARNING_ZONE_ROUTE_PREFIXES = [
   "/olympiad",
   "/event-prep",
   "/worksheet",
-  "/teacher-os",
 ] as const;
 
 export function isLearningZoneRoute(path: string): boolean {

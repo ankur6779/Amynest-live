@@ -33,7 +33,6 @@ const EXACT_ROUTE_LOADERS: Record<string, ChunkLoader> = {
   "/spelling": () => import("@/pages/spelling"),
   "/olympiad": () => import("@/pages/olympiad"),
   "/worksheet": () => import("@/pages/worksheet"),
-  "/teacher-os": () => import("@/pages/teacher-os"),
   "/kids-control-center": () => import("@/pages/kids-control-center"),
   "/notification-settings": () => import("@/pages/notification-settings"),
   "/manage-devices": () => import("@/pages/manage-devices"),

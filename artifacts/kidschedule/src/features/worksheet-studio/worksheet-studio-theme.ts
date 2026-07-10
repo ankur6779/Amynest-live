@@ -108,6 +108,20 @@ export const WS_TEXTAREA = cn(
   "placeholder:text-[#3d5a73]/80",
 );
 
+/** Single-line inputs — force readable text on mobile (fixes invisible date/topic in dark mode). */
+export const WS_INPUT = cn(
+  "w-full min-w-0 rounded-xl border border-[#d4cfc4]/60 bg-white",
+  "px-3 py-2.5 min-h-11 text-sm font-medium text-[#1e3a5f]",
+  "[color-scheme:light]",
+  "shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]",
+  "outline-none transition-all duration-200",
+  "placeholder:text-[#3d5a73]/75",
+  "focus:border-[#1e3a5f]/45 focus:ring-2 focus:ring-[#1e3a5f]/10",
+);
+
+/** Class/subject context line — darker than WS_MUTED_TEXT for legibility */
+export const WS_CONTEXT_LINE = "text-sm font-medium text-[#1e3a5f]/80";
+
 /* ─── Buttons ───────────────────────────────────────────────────────── */
 
 export const WS_OUTLINE_BTN = cn(

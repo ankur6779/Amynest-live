@@ -1411,30 +1411,6 @@ function ParentingHubPage() {
         </FeatureGate>;
     }
   },
-  {
-    id: "teacher-os",
-    bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-    render: () => {
-      return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_worksheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <CreativityPremiumSection
-            id="teacher-os"
-            title={t("parent_hub.tiles.teacher_os.title")}
-            description={t("parent_hub.tiles.teacher_os.desc")}
-            tryFree={tryFreeFor("hub_worksheets")}
-            onOpen={() => markHubUsed("hub_worksheets")}
-          >
-            <AppLink
-              href="/teacher-os"
-              className="inline-flex min-h-11 items-center rounded-xl bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white touch-manipulation"
-            >
-              {t("parent_hub.tiles.teacher_os.cta")}
-            </AppLink>
-          </CreativityPremiumSection>
-        </FeatureGate>
-      );
-    }
-  },
   // ── GRID — band-based ─────────────────────────────────────────────────
   {
     id: "story-hub",

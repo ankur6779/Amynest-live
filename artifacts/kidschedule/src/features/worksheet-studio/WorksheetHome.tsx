@@ -21,7 +21,7 @@ import {
   type WorksheetSubject,
   type WorksheetTemplate,
 } from "@workspace/worksheet-studio";
-import { BookOpen, CalendarDays, FileText, FolderOpen, KeyRound, Loader2, Settings2, Sparkles } from "lucide-react";
+import { BookOpen, CalendarDays, FileText, FolderOpen, KeyRound, Loader2, PenLine, Settings2, Sparkles } from "lucide-react";
 import {
   WS_CHIP,
   WS_CHIP_ACTIVE,
@@ -75,6 +75,7 @@ type Props = {
   onRegisterLanguage?: (lang: WorksheetLanguage) => void;
   loading: boolean;
   hasDraft?: boolean;
+  lastWorksheetTitle?: string | null;
 };
 
 function ChipRow<T extends string>({
@@ -115,7 +116,7 @@ function ChipRow<T extends string>({
 }
 
 export function WorksheetHome({
-  onGenerate, onReconstruct, onOpenDrafts, onOpenLibrary, onOpenProductivity, onOpenBranding, onRegisterBuilder, onRegisterLanguage, loading, hasDraft,
+  onGenerate, onReconstruct, onOpenDrafts, onOpenLibrary, onOpenProductivity, onOpenBranding, onRegisterBuilder, onRegisterLanguage, loading, hasDraft, lastWorksheetTitle,
 }: Props) {
   const authFetch = useAuthFetch();
   const { enhance, enhancing } = useWorksheetPromptEnhancer(authFetch);
@@ -287,6 +288,28 @@ export function WorksheetHome({
   return (
     <div className={WS_PAGE}>
       <div className={WS_CONTAINER}>
+        {hasDraft && onOpenDrafts && (
+          <button
+            type="button"
+            onClick={() => { void hapticWorksheetTap(); onOpenDrafts(); }}
+            className={cn(
+              WS_GLASS_CARD,
+              "mb-4 flex w-full min-w-0 items-center gap-3 border-2 border-[#c9a227]/40 bg-[#fffef5] p-4 text-left touch-manipulation",
+            )}
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1e3a5f] text-white">
+              <PenLine className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1e3a5f]">Your worksheet is ready</p>
+              <p className={cn("truncate text-xs", WS_MUTED_TEXT)}>
+                {lastWorksheetTitle ? `${lastWorksheetTitle} — ` : ""}Tap to edit, move items &amp; export PDF
+              </p>
+            </span>
+            <span className="shrink-0 text-xs font-semibold text-[#c9a227]">Open →</span>
+          </button>
+        )}
+
         <header className={cn(WS_GLASS_CARD, "w-full min-w-0 px-4 py-6 text-center sm:px-5")}>
           <img
             src={LPS_BANNER_LOGO}

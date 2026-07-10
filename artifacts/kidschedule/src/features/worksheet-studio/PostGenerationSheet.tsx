@@ -7,15 +7,16 @@ import {
   type WorksheetDocument,
   type WorksheetImproveAction,
 } from "@workspace/worksheet-studio";
-import { Sparkles, TrendingUp } from "lucide-react";
+import { PenLine, Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WS_SHEET, WS_MUTED_TEXT, WS_CHIP_GRID, WS_GLASS_CARD } from "./worksheet-studio-theme";
+import { WS_SHEET, WS_MUTED_TEXT, WS_CHIP_GRID, WS_GLASS_CARD, WS_PRIMARY_BTN } from "./worksheet-studio-theme";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   document: WorksheetDocument | null;
   onRecommendation: (rec: PostGenerationRecommendation) => void;
+  onEditNow?: () => void;
 };
 
 function ScoreRow({ label, value }: { label: string; value: number }) {
@@ -28,7 +29,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function PostGenerationSheet({ open, onOpenChange, document, onRecommendation }: Props) {
+export function PostGenerationSheet({ open, onOpenChange, document, onRecommendation, onEditNow }: Props) {
   if (!document) return null;
   const breakdown = getQualityBreakdown(document);
   const recs = getPostGenerationRecommendations(document);
@@ -38,9 +39,22 @@ export function PostGenerationSheet({ open, onOpenChange, document, onRecommenda
       <SheetContent side="bottom" className={WS_SHEET}>
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-[#1e3a5f]">
-            <TrendingUp className="h-5 w-5 text-[#c9a227]" /> Worksheet Quality
+            <TrendingUp className="h-5 w-5 text-[#c9a227]" /> Worksheet ready — {document.meta.topic}
           </SheetTitle>
         </SheetHeader>
+        <p className={cn("mt-2 text-sm", WS_MUTED_TEXT)}>
+          Your worksheet is open in the editor. Tap below to start editing text, moving items, or exporting PDF.
+        </p>
+        <Button
+          className={cn(WS_PRIMARY_BTN, "mt-4 w-full min-h-12")}
+          onClick={() => {
+            onEditNow?.();
+            onOpenChange(false);
+          }}
+        >
+          <PenLine className="mr-2 h-5 w-5" />
+          Open Editor &amp; Edit
+        </Button>
         <div className={cn(WS_GLASS_CARD, "mt-4 p-4")}>
           <p className="text-3xl font-bold text-[#1e3a5f]">{breakdown.overall}%</p>
           <p className="text-sm text-muted-foreground">Overall quality score</p>

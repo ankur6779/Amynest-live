@@ -4,7 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { generateWeeklyPlan } from "@workspace/worksheet-studio";
 import { recordTeacherOsEvent } from "@workspace/teacher-os";
 import { useTeacherOs } from "./context/teacher-os-context";
-import { WS_GLASS_CARD, WS_MUTED_TEXT, WS_CONTAINER } from "@/features/worksheet-studio/worksheet-studio-theme";
+import { WS_GLASS_CARD, WS_MUTED_TEXT, WS_CONTAINER, WS_INPUT, WS_CONTEXT_LINE, WS_PRIMARY_BTN } from "@/features/worksheet-studio/worksheet-studio-theme";
 
 type Props = {
   onOpenDocuments: (docs: import("@workspace/worksheet-studio").WorksheetDocument[], label: string) => void;
@@ -35,9 +35,12 @@ export function TeacherOsWeeklyPlanner({ onOpenDocuments }: Props) {
         </div>
       </header>
       <section className={cn(WS_GLASS_CARD, "space-y-3 p-4")}>
-        <input className="w-full rounded-xl border px-3 py-2 text-sm" placeholder="Week topic" value={topic} onChange={(e) => setTopic(e.target.value)} />
-        <Button className="w-full" onClick={generate}>Generate weekly plan</Button>
-        <p className={cn("text-xs", WS_MUTED_TEXT)}>Avoids repetition · balances activities · tracks curriculum</p>
+        <label className="block space-y-1.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#1e3a5f]">Week topic</span>
+          <input className={WS_INPUT} placeholder="e.g. Sea Animals" value={topic} onChange={(e) => setTopic(e.target.value)} />
+        </label>
+        <Button className={cn(WS_PRIMARY_BTN, "w-full")} onClick={generate}>Generate weekly plan</Button>
+        <p className={WS_CONTEXT_LINE}>Avoids repetition · balances activities · tracks curriculum</p>
       </section>
     </div>
   );

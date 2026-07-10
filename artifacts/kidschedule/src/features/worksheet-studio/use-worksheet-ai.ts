@@ -89,11 +89,12 @@ export function useWorksheetAi(authFetch: AuthFetch) {
             WorksheetGenerateResponse & { usedFallback?: boolean; qualityScore?: number }
           >(res, authFetch, { poll: AI_POLL });
           if (!mountedRef.current) return { document: local, source: "local", usedFallback: true, qualityScore: scoreWorksheet(local).overall };
+          const doc = data?.document?.pages?.length ? data.document : local;
           return {
-            document: data.document,
-            source: data.source ?? (data.usedFallback ? "local" : "ai"),
-            usedFallback: data.usedFallback,
-            qualityScore: data.qualityScore,
+            document: doc,
+            source: data.source ?? (data.usedFallback || doc === local ? "local" : "ai"),
+            usedFallback: data.usedFallback ?? doc === local,
+            qualityScore: data.qualityScore ?? scoreWorksheet(doc).overall,
           };
         }
         return { document: local, source: "local", usedFallback: true, qualityScore: scoreWorksheet(local).overall };
