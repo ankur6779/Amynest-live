@@ -78,6 +78,7 @@ import { initCapacitorOta } from "@/lib/capacitor-ota";
 import { AnalyticsProvider } from "@/lib/analytics/analytics-provider";
 import { AnalyticsScreenTracker } from "@/lib/analytics/screen-tracker";
 import { AnalyticsBootstrap } from "@/lib/analytics/analytics-bootstrap";
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
@@ -666,21 +667,39 @@ function ClientTelemetryBootstrap() {
   authFetchRef.current = authFetch;
   const { isSignedIn } = useAuth();
   const telemetryStartedRef = useRef(false);
+  const appOpenTrackedRef = useRef(false);
+
+  useEffect(() => {
+    getAnalyticsService().setAuthFetch(authFetch);
+  }, [authFetch]);
+
+  // P1: first_open + install_source before sign-in (preauth flush).
+  useEffect(() => {
+    if (appOpenTrackedRef.current) return;
+    appOpenTrackedRef.current = true;
+    void import("@/lib/analytics").then(({ trackAppOpen, flushAnalytics }) => {
+      trackAppOpen();
+      void flushAnalytics();
+    });
+  }, []);
+
+  useEffect(() => {
+    const flush = () => {
+      void import("@/lib/client-logs").then(({ flushClientLogs }) => {
+        if (isSignedIn) flushClientLogs(authFetchRef.current);
+      });
+      void import("@/lib/analytics").then(({ flushAnalytics }) => {
+        void flushAnalytics(isSignedIn ? authFetchRef.current : undefined);
+      });
+    };
+    flush();
+    const id = setInterval(flush, 30_000);
+    return () => clearInterval(id);
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (!isSignedIn || telemetryStartedRef.current) return;
     telemetryStartedRef.current = true;
-    const flush = () => {
-      void import("@/lib/client-logs").then(({ flushClientLogs }) =>
-        flushClientLogs(authFetchRef.current),
-      );
-      void import("@/lib/analytics").then(({ flushAnalytics }) =>
-        flushAnalytics(authFetchRef.current),
-      );
-    };
-    void import("@/lib/analytics").then(({ trackAppOpen }) => trackAppOpen());
-    flush();
-    const id = setInterval(flush, 30_000);
 
     let stopOpsPolling: (() => void) | undefined;
     void import("@/lib/admin-audio-ops").then(({ startAdminAudioOpsPolling, stopAdminAudioOpsPolling }) => {
@@ -689,7 +708,6 @@ function ClientTelemetryBootstrap() {
     });
 
     return () => {
-      clearInterval(id);
       stopOpsPolling?.();
     };
   }, [isSignedIn]);

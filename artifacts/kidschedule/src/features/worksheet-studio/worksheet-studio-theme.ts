@@ -206,9 +206,9 @@ export const WS_EDITOR_HEADER = cn(
   "overflow-x-hidden",
 );
 
-/** A4 preview — scales down on narrow phones */
+/** A4 preview — scales down on narrow phones; inner fabric canvas sets exact pixel width */
 export const WS_EDITOR_CANVAS = cn(
-  "relative w-full min-w-0 max-w-[min(30rem,100%)]",
+  "relative mx-auto w-full min-w-0 max-w-[min(30rem,100%)]",
 );
 
 export const WS_EDITOR_VIEWPORT = cn(

@@ -98,22 +98,18 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
   const document = view.kind === "editor" ? view.document : null;
 
   useEffect(() => {
-    void loadLatestDraft().then((d) => setHasDraft(!!d));
+    void loadLatestDraft().then((d) => {
+      setHasDraft(!!d);
+      if (d?.document) {
+        setLastWorksheetTitle(d.document.meta.title || d.document.meta.topic);
+      }
+    });
     void flushOfflineQueue(authFetch).then((n) => {
       if (n > 0) toast.success(`Synced ${n} offline request${n > 1 ? "s" : ""}`);
     });
   }, [authFetch]);
 
-  const handleRestore = useCallback((doc: WorksheetDocument) => {
-    setView({ kind: "editor", document: doc });
-    onViewChange?.(true);
-    setHasDraft(true);
-    setLastWorksheetTitle(doc.meta.title || doc.meta.topic);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-    toast.info("Draft restored", { description: "Your worksheet was recovered automatically." });
-  }, [onViewChange]);
-
-  const { saveNow, saveState, savedAt } = useWorksheetAutosave(document, handleRestore);
+  const { saveNow, saveState, savedAt } = useWorksheetAutosave(document);
 
   const enterEditor = useCallback(async (
     doc: WorksheetDocument,

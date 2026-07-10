@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { buildSnapContext, computeSnap } from "./fabric-alignment-guides";
 import { detectObjectType, extractSelectionStyle, FONT_FAMILIES } from "./selection-style";
+import { computeWorksheetCanvasDimensions, computeWorksheetCanvasScale } from "./fabric-editor";
+
+describe("worksheet canvas scale", () => {
+  it("falls back when container width is 0", () => {
+    expect(computeWorksheetCanvasScale(0)).toBeGreaterThan(0.4);
+  });
+
+  it("fits phone width without undershooting", () => {
+    const { width, scale } = computeWorksheetCanvasDimensions(390);
+    expect(scale).toBeGreaterThan(0.55);
+    expect(width).toBeGreaterThan(320);
+  });
+
+  it("caps at full A4 on wide desktop", () => {
+    expect(computeWorksheetCanvasScale(1200)).toBe(1);
+    expect(computeWorksheetCanvasDimensions(1200).width).toBe(595);
+  });
+});
 
 describe("alignment guides", () => {
   it("snaps object to center", () => {

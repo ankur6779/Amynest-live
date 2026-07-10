@@ -5,6 +5,7 @@
  * Usage:
  *   DATABASE_URL=postgresql://... node scripts/growth-experiments/generate-daily-experiment-report.mjs
  *   DATABASE_URL=... node scripts/growth-experiments/generate-daily-experiment-report.mjs --date 2026-07-07
+ *   DATABASE_URL=... node scripts/growth-experiments/generate-daily-experiment-report.mjs --google-ads-installs 112
  *   DATABASE_URL=... node scripts/growth-experiments/generate-daily-experiment-report.mjs --phase value_bridge
  *
  * Env (optional overrides for active flags during rollout):
@@ -32,6 +33,11 @@ const reportDate =
   dateIdx >= 0 && args[dateIdx + 1]
     ? args[dateIdx + 1]
     : new Date().toISOString().slice(0, 10);
+const googleAdsIdx = args.indexOf("--google-ads-installs");
+const googleAdsInstalls =
+  googleAdsIdx >= 0 && args[googleAdsIdx + 1]
+    ? Number(args[googleAdsIdx + 1])
+    : null;
 const phaseIdx = args.indexOf("--phase");
 const activePhase =
   phaseIdx >= 0 && args[phaseIdx + 1] ? args[phaseIdx + 1] : "baseline";
@@ -243,6 +249,52 @@ function valueBridgeHealthCheck(vb, suppression) {
   return { targets, checks, allPass: checks.every((c) => c.pass) };
 }
 
+const DISTINCT_ACTOR = `COALESCE(NULLIF(props->>'device_id', ''), user_id)`;
+
+async function installAttributionMetrics() {
+  const [row] = await q(
+    `
+    SELECT
+      count(DISTINCT ${DISTINCT_ACTOR}) FILTER (
+        WHERE event_name IN ('first_open', 'install_source')
+      )::int AS device_activations,
+      count(DISTINCT user_id) FILTER (
+        WHERE event_name = 'first_open' AND user_id NOT LIKE 'device:%'
+      )::int AS auth_activations,
+      count(DISTINCT ${DISTINCT_ACTOR}) FILTER (
+        WHERE event_name = 'install_source' AND props->>'source' = 'google_ads'
+      )::int AS google_attributed,
+      count(DISTINCT ${DISTINCT_ACTOR}) FILTER (
+        WHERE event_name = 'install_source' AND props->>'source' = 'organic'
+      )::int AS organic_attributed,
+      count(DISTINCT ${DISTINCT_ACTOR}) FILTER (
+        WHERE event_name = 'install_source' AND props->>'source' = 'play_referrer'
+      )::int AS play_referrer_attributed,
+      count(DISTINCT user_id) FILTER (
+        WHERE event_name = 'growth_funnel_event' AND props->>'step' = 'signup_completed'
+      )::int AS signups
+    FROM analytics_events
+    WHERE server_ts >= $1::date AND server_ts < ($1::date + interval '1 day')
+  `,
+    [reportDate],
+  );
+  const deviceActivations = Number(row?.device_activations ?? 0);
+  const authActivations = Number(row?.auth_activations ?? 0);
+  const googleAds = googleAdsInstalls;
+  return {
+    googleAdsInstalls: googleAds,
+    deviceActivations,
+    authActivations,
+    googleAttributed: Number(row?.google_attributed ?? 0),
+    organicAttributed: Number(row?.organic_attributed ?? 0),
+    playReferrerAttributed: Number(row?.play_referrer_attributed ?? 0),
+    signups: Number(row?.signups ?? 0),
+    installToActivationRate: pct(deviceActivations, googleAds),
+    adsToAuthRate: pct(authActivations, googleAds),
+    activationGap: googleAds != null ? googleAds - deviceActivations : null,
+  };
+}
+
 async function dashboardFunnel() {
   const [nav] = await q(
     `
@@ -396,7 +448,26 @@ function markdown(report) {
 
 ---
 
-## 2. Revenue Funnel (day)
+## 2. Install Attribution (Google Ads vs DB)
+
+| Metric | Value |
+|--------|-------|
+| Google Ads installs (manual) | ${report.installs.googleAdsInstalls ?? "— (pass --google-ads-installs N)"} |
+| **DB device activations** (\`first_open\` / \`install_source\`, device + auth) | **${report.installs.deviceActivations}** |
+| DB auth activations (signed-in \`first_open\`) | ${report.installs.authActivations} |
+| Activation gap (Ads − DB) | ${report.installs.activationGap ?? "—"} |
+| Install → activation rate | ${rateLabel(report.installs.installToActivationRate)} |
+| Ads → auth rate | ${rateLabel(report.installs.adsToAuthRate)} |
+| Google-attributed (\`source=google_ads\`) | ${report.installs.googleAttributed} |
+| Organic attributed | ${report.installs.organicAttributed} |
+| Play referrer attributed | ${report.installs.playReferrerAttributed} |
+| Signups | ${report.installs.signups} |
+
+*Device activations use \`COALESCE(props.device_id, user_id)\` — includes pre-auth \`device:*\` rows after P0 deploy.*
+
+---
+
+## 3. Revenue Funnel (day)
 
 | Metric | Users |
 |--------|-------|
@@ -406,7 +477,7 @@ function markdown(report) {
 
 ---
 
-## 3. Dashboard Funnel
+## 4. Dashboard Funnel
 
 | Metric | Value |
 |--------|-------|
@@ -419,7 +490,7 @@ function markdown(report) {
 
 ---
 
-## 4. Value Bridge Funnel
+## 5. Value Bridge Funnel
 
 | Metric | Value |
 |--------|-------|
@@ -448,27 +519,27 @@ ${report.valueBridgeHealth.checks.map((c) => `| ${c.name} | ${c.pass ? "✅" : "
 
 ---
 
-## 5. Checkout Funnel (by source)
+## 6. Checkout Funnel (by source)
 
 ${report.checkout.length ? report.checkout.map((c) => `- \`${c.step}\` / \`${c.source ?? "—"}\`: **${c.users}** users (${c.events} events)`).join("\n") : "- No checkout events"}
 
 ---
 
-## 6. Purchase Funnel
+## 7. Purchase Funnel
 
 | Purchases | ${report.valueBridge.purchaseUsers} |
 | Purchase rate (of checkout) | ${rateLabel(report.valueBridge.purchaseRate)} |
 
 ---
 
-## 7. Crash Summary
+## 8. Crash Summary
 
 | Crash users | ${report.day.crash_users} |
 | Crash events | ${report.day.crash_events} |
 
 ---
 
-## 8. D1 Retention
+## 9. D1 Retention
 
 | Metric | Rate | Retained / Eligible |
 |--------|------|---------------------|
@@ -476,7 +547,7 @@ ${report.checkout.length ? report.checkout.map((c) => `- \`${c.step}\` / \`${c.s
 
 ---
 
-## 9. D7 Retention
+## 10. D7 Retention
 
 | Metric | Rate | Retained / Eligible |
 |--------|------|---------------------|
@@ -484,7 +555,7 @@ ${report.checkout.length ? report.checkout.map((c) => `- \`${c.step}\` / \`${c.s
 
 ---
 
-## 10. Routine Health
+## 11. Routine Health
 
 | Metric | Value |
 |--------|-------|
@@ -507,7 +578,7 @@ ${r.reason}
 
 async function main() {
   await client.connect();
-  const [dayRows, valueBridge, valueBridgeSuppression, dashboard, checkout, retention] =
+  const [dayRows, valueBridge, valueBridgeSuppression, dashboard, checkout, retention, installs] =
     await Promise.all([
       dayWindow(),
       valueBridgeFunnel(),
@@ -515,6 +586,7 @@ async function main() {
       dashboardFunnel(),
       checkoutFunnel(),
       retentionRates(),
+      installAttributionMetrics(),
     ]);
   await client.end();
 
@@ -541,6 +613,7 @@ async function main() {
     dashboard,
     checkout,
     retention,
+    installs,
     baselines: {
       routineCompletionRate,
       crashUsers: Number(day.crash_users ?? 0),

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { WorksheetDocument, WorksheetGenerateRequest } from "@workspace/worksheet-studio";
 import {
   AUTO_SAVE_INTERVAL_MS,
-  loadLatestDraft,
   saveDraftVersion,
 } from "@workspace/worksheet-studio/client";
 
@@ -23,25 +22,10 @@ function documentContentHash(doc: WorksheetDocument): string {
   });
 }
 
-export function useWorksheetAutosave(
-  document: WorksheetDocument | null,
-  onRestore?: (doc: WorksheetDocument) => void,
-) {
-  const restored = useRef(false);
+export function useWorksheetAutosave(document: WorksheetDocument | null) {
   const lastHash = useRef("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (restored.current || document) return;
-    restored.current = true;
-    void loadLatestDraft().then((draft) => {
-      if (draft?.document && onRestore) {
-        onRestore(draft.document);
-        setSavedAt(draft.savedAt);
-      }
-    });
-  }, [document, onRestore]);
 
   useEffect(() => {
     if (!document) return;

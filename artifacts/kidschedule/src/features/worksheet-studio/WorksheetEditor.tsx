@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Grid3x3, Home, Loader2, Maximize2, Ruler } from "lucide-react";
+import { Grid3x3, Loader2, Maximize2, Ruler } from "lucide-react";
 import type { WorksheetDocument, WorksheetDraftVersion, WorksheetImproveAction } from "@workspace/worksheet-studio";
 import type { PrintMode } from "@workspace/worksheet-studio";
 import { generateAnswerKeyDocument } from "@workspace/worksheet-studio";
@@ -25,7 +25,7 @@ import { WorksheetAutosaveIndicator } from "./WorksheetAutosaveIndicator";
 import { WorksheetDraftHistorySheet } from "./WorksheetDraftHistorySheet";
 import { WorksheetImagePicker } from "./WorksheetImagePicker";
 import { useWorksheetGestures } from "./use-worksheet-gestures";
-import { WS_EDITOR_HEADER, WS_PAGE, WS_PAPER_SHADOW, WS_EDITOR_CANVAS, WS_EDITOR_VIEWPORT, WS_OVERLAY, WS_CONTEXT_MENU, WS_MUTED_TEXT } from "./worksheet-studio-theme";
+import { WS_EDITOR_HEADER, WS_PAGE, WS_PAPER_SHADOW, WS_EDITOR_CANVAS, WS_EDITOR_VIEWPORT, WS_OVERLAY, WS_CONTEXT_MENU, WS_MUTED_TEXT, WS_OUTLINE_BTN } from "./worksheet-studio-theme";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 import { trackWorksheetEvent } from "./worksheet-studio-analytics";
 import { WorksheetPropertyPanel } from "./WorksheetPropertyPanel";
@@ -47,6 +47,7 @@ export function WorksheetEditor({
   document, onBack, onImprove, onCopilotMessage, improving, copilotBusy, saveState, savedAt, onRestoreVersion, onDocumentChange,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<WorksheetCanvasHandle | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
@@ -76,24 +77,40 @@ export function WorksheetEditor({
   const page = document.pages[pageIndex];
   const colorMode = document.meta.colorMode;
 
+  const measureCanvasWidth = useCallback(() => {
+    const container = canvasContainerRef.current;
+    const measured = container?.clientWidth ?? 0;
+    if (measured >= 200) return measured;
+    return Math.min(window.innerWidth, 480);
+  }, []);
+
   const initCanvas = useCallback(async () => {
     if (!canvasRef.current) return;
     setCanvasError(false);
     setCanvasReady(false);
     try {
       handleRef.current?.dispose();
-      const width = canvasRef.current.parentElement?.clientWidth ?? window.innerWidth;
+      let width = measureCanvasWidth();
+      if (width < 200) {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        width = measureCanvasWidth();
+      }
       const handle = await createWorksheetCanvas(canvasRef.current, width);
       handleRef.current = handle;
       setCanvasHandle(handle);
       const pg = documentRef.current.pages[pageIndexRef.current];
-      if (pg) await handle.renderPage(pg, documentRef.current.meta.colorMode);
+      if (pg) {
+        await handle.renderPage(pg, documentRef.current.meta.colorMode);
+        handle.resetViewport();
+      }
       setCanvasReady(true);
     } catch {
       setCanvasError(true);
       toast.error("Editor failed to load", { description: "Please go back and reopen the worksheet." });
     }
-  }, []);
+  }, [measureCanvasWidth]);
 
   useEffect(() => {
     void initCanvas();
@@ -104,8 +121,24 @@ export function WorksheetEditor({
   }, [initCanvas]);
 
   useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      const handle = handleRef.current;
+      if (!handle || !canvasReady) return;
+      const width = measureCanvasWidth();
+      const pg = documentRef.current.pages[pageIndexRef.current];
+      void handle.resizeToWidth(width, pg);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [canvasReady, measureCanvasWidth]);
+
+  useEffect(() => {
     const h = handleRef.current;
-    if (h && page) void h.renderPage(page, colorMode);
+    if (h && page) {
+      void h.renderPage(page, colorMode).then(() => h.resetViewport());
+    }
   }, [page, document.version, colorMode]);
 
   const syncDocumentFromCanvas = useCallback(() => {
@@ -273,8 +306,14 @@ export function WorksheetEditor({
   return (
     <div className={cn(WS_PAGE, "flex flex-col")}>
       <header className={WS_EDITOR_HEADER}>
-        <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 touch-manipulation" onClick={onBack} aria-label="Back to home">
-          <Home className="h-6 w-6" />
+        <Button
+          variant="outline"
+          className={cn(WS_OUTLINE_BTN, "h-11 shrink-0 gap-1 px-2.5 touch-manipulation sm:px-3")}
+          onClick={onBack}
+          aria-label="Back to Worksheet Studio home"
+        >
+          <ChevronLeft className="h-5 w-5 shrink-0" aria-hidden />
+          <span className="text-sm font-semibold">Studio</span>
         </Button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-[#1e3a5f]">{document.meta.topic}</p>
@@ -283,16 +322,16 @@ export function WorksheetEditor({
             <WorksheetAutosaveIndicator state={saveState} savedAt={savedAt} onHistory={() => void openHistory()} />
           </div>
         </div>
-        <Button variant="outline" size="icon" className="h-11 w-11 touch-manipulation" disabled={pageIndex === 0} onClick={() => goPage(-1)} aria-label="Previous page">
+        <Button variant="outline" size="icon" className="hidden h-11 w-11 touch-manipulation sm:inline-flex" disabled={pageIndex === 0} onClick={() => goPage(-1)} aria-label="Previous page">
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <Button variant="outline" size="icon" className="h-11 w-11 touch-manipulation" disabled={pageIndex >= document.pages.length - 1} onClick={() => goPage(1)} aria-label="Next page">
+        <Button variant="outline" size="icon" className="hidden h-11 w-11 touch-manipulation sm:inline-flex" disabled={pageIndex >= document.pages.length - 1} onClick={() => goPage(1)} aria-label="Next page">
           <ChevronRight className="h-5 w-5" />
         </Button>
         <Button
           variant={gridOn ? "default" : "outline"}
           size="icon"
-          className="h-11 w-11 touch-manipulation"
+          className="hidden h-11 w-11 touch-manipulation sm:inline-flex"
           onClick={() => {
             const next = !gridOn;
             setGridOn(next);
@@ -305,7 +344,7 @@ export function WorksheetEditor({
         <Button
           variant={safeAreaOn ? "default" : "outline"}
           size="icon"
-          className="h-11 w-11 touch-manipulation"
+          className="hidden h-11 w-11 touch-manipulation sm:inline-flex"
           onClick={() => {
             const next = !safeAreaOn;
             setSafeAreaOn(next);
@@ -334,9 +373,12 @@ export function WorksheetEditor({
         role="application"
         aria-label="Worksheet editor canvas"
       >
-        <div className={cn(WS_PAPER_SHADOW, WS_EDITOR_CANVAS, "transition-all duration-300 ease-out", pageFlip && "scale-[0.97] opacity-85 rotate-[0.5deg]")}>
+        <div
+          ref={canvasContainerRef}
+          className={cn(WS_PAPER_SHADOW, WS_EDITOR_CANVAS, "relative transition-all duration-300 ease-out", pageFlip && "scale-[0.97] opacity-85 rotate-[0.5deg]")}
+        >
           {!canvasReady && !canvasError && (
-            <div className="flex min-h-[min(70dvh,40rem)] items-center justify-center rounded-2xl bg-white" role="status" aria-live="polite">
+            <div className="absolute inset-0 z-10 flex min-h-[min(70dvh,40rem)] items-center justify-center rounded-2xl bg-white" role="status" aria-live="polite">
               <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" aria-hidden />
               <span className="sr-only">Loading editor</span>
             </div>
@@ -347,7 +389,11 @@ export function WorksheetEditor({
               <Button variant="outline" onClick={() => void initCanvas()}>Retry</Button>
             </div>
           )}
-          <canvas ref={canvasRef} className={cn("block w-full touch-manipulation worksheet-print-target", (!canvasReady || canvasError) && "hidden")} />
+          <canvas
+            ref={canvasRef}
+            className={cn("mx-auto block max-w-full touch-manipulation worksheet-print-target", canvasError && "hidden")}
+            aria-hidden={!canvasReady || canvasError}
+          />
         </div>
       </div>
 
@@ -410,6 +456,7 @@ export function WorksheetEditor({
       />
 
       <WorksheetToolbar
+        onBack={onBack}
         onText={() => h()?.addTextBox()}
         onImage={() => setShowImagePicker((v) => !v)}
         onShape={() => h()?.addRectShape()}

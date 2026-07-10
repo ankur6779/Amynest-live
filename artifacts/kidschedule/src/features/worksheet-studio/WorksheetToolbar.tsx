@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  AlignCenter, AlignLeft, AlignRight, Bold, ClipboardPaste, Copy, FlipHorizontal,
+  AlignCenter, AlignLeft, AlignRight, Bold, ChevronLeft, ClipboardPaste, Copy, FlipHorizontal,
   Group, ImagePlus, Layers, Lock,
   Redo2, RotateCw,
   Shapes, Trash2, Type, Undo2,
 } from "lucide-react";
-import { WS_TOOLBAR } from "./worksheet-studio-theme";
+import { WS_TOOLBAR, WS_OUTLINE_BTN } from "./worksheet-studio-theme";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 
 type Props = {
+  onBack?: () => void;
   onText: () => void;
   onImage: () => void;
   onShape: () => void;
@@ -71,6 +72,17 @@ export function WorksheetToolbar(props: Props) {
         <ToolBtn label="Rotate" onClick={props.onRotate}><RotateCw className="h-5 w-5" /></ToolBtn>
       </div>
       <div className="flex gap-2 px-3 py-2.5">
+        {props.onBack && (
+          <Button
+            variant="outline"
+            className={cn(WS_OUTLINE_BTN, "h-12 shrink-0 gap-1 px-3 text-sm font-semibold touch-manipulation")}
+            onClick={props.onBack}
+            aria-label="Back to Worksheet Studio home"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            Studio
+          </Button>
+        )}
         <Button
           variant="outline"
           className="h-12 flex-1 rounded-xl border-[#1e3a5f]/15 bg-white/80 text-sm font-semibold touch-manipulation"

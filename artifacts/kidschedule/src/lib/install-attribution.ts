@@ -3,11 +3,13 @@
  * and referral codes into a unified install_source payload for analytics.
  */
 
+import { detectDevicePlatform } from "@/lib/device-id";
 import { trackGrowthEvent } from "@/lib/growth-analytics";
 import { initMetaAttribution } from "@/lib/meta-attribution";
 
 const STORAGE_KEY = "amynest:install_attribution";
 const CAPTURED_KEY = "amynest:install_attribution_captured";
+const ANDROID_REFERRER_WAIT_MS = 2500;
 
 export type InstallAttribution = {
   utmSource?: string;
@@ -53,6 +55,29 @@ function writeAttribution(data: InstallAttribution): void {
   }
 }
 
+function parseReferrerQuery(referrer: string): Partial<InstallAttribution> {
+  const result: Partial<InstallAttribution> = {};
+  if (!referrer.trim()) return result;
+  try {
+    const params = new URLSearchParams(referrer);
+    const utmSource = params.get("utm_source") ?? params.get("source");
+    const utmMedium = params.get("utm_medium") ?? params.get("medium");
+    const utmCampaign = params.get("utm_campaign") ?? params.get("campaign");
+    const utmContent = params.get("utm_content");
+    const utmTerm = params.get("utm_term");
+    const gclid = params.get("gclid");
+    if (utmSource && utmSource !== "(not set)") result.utmSource = utmSource;
+    if (utmMedium && utmMedium !== "(not set)") result.utmMedium = utmMedium;
+    if (utmCampaign && utmCampaign !== "(not set)") result.utmCampaign = utmCampaign;
+    if (utmContent) result.utmContent = utmContent;
+    if (utmTerm) result.utmTerm = utmTerm;
+    if (gclid) result.gclid = gclid;
+  } catch {
+    /* ignore malformed referrer strings */
+  }
+  return result;
+}
+
 function parseUtmFromUrl(): Partial<InstallAttribution> {
   if (typeof window === "undefined") return {};
   const params = new URLSearchParams(window.location.search);
@@ -78,11 +103,43 @@ function parseUtmFromUrl(): Partial<InstallAttribution> {
 }
 
 function mergePlayReferrer(existing: InstallAttribution, play: PlayInstallReferrer): InstallAttribution {
+  const fromReferrer = play.referrer ? parseReferrerQuery(play.referrer) : {};
   return {
     ...existing,
+    ...fromReferrer,
     playReferrer: play.referrer ?? existing.playReferrer,
     playClickTimestamp: play.clickTimestamp ?? existing.playClickTimestamp,
     playInstallTimestamp: play.installTimestamp ?? existing.playInstallTimestamp,
+    utmSource: fromReferrer.utmSource ?? existing.utmSource,
+    utmMedium: fromReferrer.utmMedium ?? existing.utmMedium,
+    utmCampaign: fromReferrer.utmCampaign ?? existing.utmCampaign,
+    utmContent: fromReferrer.utmContent ?? existing.utmContent,
+    utmTerm: fromReferrer.utmTerm ?? existing.utmTerm,
+    gclid: fromReferrer.gclid ?? existing.gclid,
+  };
+}
+
+function resolveInstallSource(attr: InstallAttribution): string {
+  if (attr.gclid) return "google_ads";
+  const utm = attr.utmSource?.toLowerCase() ?? "";
+  if (utm.includes("google")) return "google_ads";
+  if (attr.utmSource) return attr.utmSource;
+  if (attr.ref) return "referral";
+  if (attr.playReferrer) return "play_referrer";
+  return "organic";
+}
+
+function buildInstallSourcePayload(attr: InstallAttribution) {
+  const source = resolveInstallSource(attr);
+  return {
+    source,
+    utm_source: attr.utmSource,
+    utm_medium: attr.utmMedium,
+    utm_campaign: attr.utmCampaign,
+    gclid: attr.gclid,
+    ref: attr.ref,
+    landing_path: attr.landingPath,
+    play_referrer: attr.playReferrer,
   };
 }
 
@@ -116,33 +173,23 @@ export function capturePlayInstallReferrer(): void {
   writeAttribution(mergePlayReferrer(existing, play));
 }
 
-/** Emit install_source once per device for dashboard funnels. */
+/** Emit install_source once per device fingerprint for dashboard funnels. */
 export function emitInstallSourceOnce(): void {
+  const attr = readAttribution() ?? captureCampaignAttribution();
+  const payload = buildInstallSourcePayload(attr);
+  const fingerprint = JSON.stringify(payload);
+
   try {
-    if (localStorage.getItem(CAPTURED_KEY)) return;
+    const prev = localStorage.getItem(CAPTURED_KEY);
+    if (prev === fingerprint) return;
   } catch {
     return;
   }
 
-  const attr = readAttribution() ?? captureCampaignAttribution();
-  const source =
-    attr.utmSource ??
-    (attr.ref ? "referral" : undefined) ??
-    (attr.playReferrer ? "play_referrer" : undefined) ??
-    "organic";
-
-  trackGrowthEvent("install_source", {
-    source,
-    utm_source: attr.utmSource,
-    utm_medium: attr.utmMedium,
-    utm_campaign: attr.utmCampaign,
-    ref: attr.ref,
-    landing_path: attr.landingPath,
-    play_referrer: attr.playReferrer,
-  });
+  trackGrowthEvent("install_source", payload);
 
   try {
-    localStorage.setItem(CAPTURED_KEY, "1");
+    localStorage.setItem(CAPTURED_KEY, fingerprint);
   } catch {
     /* ignore */
   }
@@ -150,6 +197,25 @@ export function emitInstallSourceOnce(): void {
 
 export function getInstallAttribution(): InstallAttribution | null {
   return readAttribution();
+}
+
+function scheduleInstallSourceEmit(): void {
+  if (detectDevicePlatform() === "android") {
+    let fallbackScheduled = false;
+    const onReferrer = () => {
+      capturePlayInstallReferrer();
+      emitInstallSourceOnce();
+    };
+    window.addEventListener("amynest-install-referrer", onReferrer);
+    window.setTimeout(() => {
+      if (fallbackScheduled) return;
+      fallbackScheduled = true;
+      capturePlayInstallReferrer();
+      emitInstallSourceOnce();
+    }, ANDROID_REFERRER_WAIT_MS);
+    return;
+  }
+  emitInstallSourceOnce();
 }
 
 export function initInstallAttributionListeners(): void {
@@ -160,5 +226,5 @@ export function initInstallAttributionListeners(): void {
     capturePlayInstallReferrer();
     emitInstallSourceOnce();
   });
-  emitInstallSourceOnce();
+  scheduleInstallSourceEmit();
 }

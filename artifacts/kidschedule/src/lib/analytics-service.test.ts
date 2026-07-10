@@ -13,6 +13,7 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("@/lib/device-id", () => ({
   applyDeviceHeaders: (h: Headers) => h,
+  getOrCreateDeviceId: () => "test-device-id-12345678",
 }));
 
 type Body = {
@@ -58,17 +59,36 @@ describe("AnalyticsService", () => {
   });
 
   it("requeues events on network failure (offline support)", async () => {
-    const fetchMock = vi.fn(async () => {
+    const failingFetch = vi.fn(async () => {
       throw new Error("offline");
     });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("offline");
+      }),
+    );
     const service = getAnalyticsService();
     service.track("app_open", {});
-    await service.flush(fetchMock);
+    await service.flush(failingFetch);
 
-    expect(fetchMock).toHaveBeenCalled();
+    expect(failingFetch).toHaveBeenCalled();
     const stored = localStorage.getItem(PERSISTENT_QUEUE_KEY);
     expect(stored).toBeTruthy();
     expect(service.pendingCount()).toBeGreaterThan(0);
+    vi.unstubAllGlobals();
+  });
+
+  it("flushes via preauth endpoint when auth fetch is unavailable", async () => {
+    const preauthFetch = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", preauthFetch);
+    const service = getAnalyticsService();
+    service.track("first_open", { cold: true });
+    await service.flush();
+    expect(preauthFetch).toHaveBeenCalled();
+    const url = String(preauthFetch.mock.calls[0][0]);
+    expect(url).toContain("/api/analytics/preauth-events");
+    vi.unstubAllGlobals();
   });
 
   it("dedupes identical events within 300ms", async () => {

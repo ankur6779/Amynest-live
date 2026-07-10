@@ -139,6 +139,43 @@ describe("analytics routes — smoke", { skip: !dbIntegrationOk }, () => {
     assert.ok("d1" in body.retention && "d7" in body.retention && "d30" in body.retention);
   });
 
+  it("ingests preauth events with device id (no Firebase auth)", async () => {
+    const deviceId = `preauthtest${randomUUID().replace(/-/g, "").slice(0, 20)}`;
+    const deviceUserId = `device:${deviceId}`;
+    const res = await fetch(`${baseUrl}/analytics/preauth-events`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-amynest-device-id": deviceId,
+      },
+      body: JSON.stringify({
+        platform: "android",
+        events: [
+          { name: "first_open", props: { cold: true } },
+          { name: "install_source", props: { source: "google_ads", gclid: "test-gclid" } },
+          { name: "routine_viewed", props: { routineId: 1, dateMode: "today" } },
+        ],
+      }),
+    });
+    assert.equal(res.status, 202);
+    const body = (await res.json()) as {
+      accepted: number;
+      rejected: number;
+      rejectedPreauthPolicy: number;
+    };
+    assert.equal(body.accepted, 2);
+    assert.equal(body.rejectedPreauthPolicy, 1);
+
+    const rows = await db
+      .select()
+      .from(analyticsEventsTable)
+      .where(eq(analyticsEventsTable.userId, deviceUserId));
+    assert.equal(rows.length, 2);
+    const names = rows.map((r) => r.eventName).sort();
+    assert.deepEqual(names, ["first_open", "install_source"]);
+    await db.delete(analyticsEventsTable).where(eq(analyticsEventsTable.userId, deviceUserId));
+  });
+
   it("forbids non-admins from the readouts", async () => {
     // A fresh app whose injected user is NOT in ADMIN_USER_IDS.
     const app = express();

@@ -3,6 +3,7 @@ import {
   type AnalyticsEventProps,
 } from "@workspace/analytics-taxonomy";
 import type { AnalyticsRuntimeContext } from "./context";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 import { getAnalyticsRuntimeContext } from "./context";
 import { AnalyticsEventQueue } from "./event-queue";
 import { buildEnvelopeFields, scrubAnalyticsProps } from "./privacy";
@@ -122,6 +123,7 @@ export class AnalyticsService {
       os: ctx.os,
       browser: ctx.browser,
       language: ctx.language,
+      device_id: getOrCreateDeviceId(),
     };
     if (ctx.subscriptionState) props.subscription_state = ctx.subscriptionState;
     if (ctx.childAgeBand) props.child_age_band = ctx.childAgeBand;

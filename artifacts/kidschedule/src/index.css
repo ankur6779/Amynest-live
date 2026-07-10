@@ -2866,6 +2866,18 @@ html.amynest-native-shell .drawer-overlay {
   max-width: 100%;
   height: auto;
 }
+/* Fabric.js canvas — keep display size in sync with internal A4 scale (no CSS stretch) */
+.worksheet-studio .canvas-container,
+.ws-root .canvas-container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%;
+}
+.worksheet-studio .canvas-container canvas,
+.ws-root .canvas-container canvas {
+  display: block;
+  max-width: 100%;
+}
 .ws-container,
 .ws-card,
 .ws-sheet,

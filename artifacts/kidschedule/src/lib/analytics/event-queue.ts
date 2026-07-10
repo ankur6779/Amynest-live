@@ -20,6 +20,35 @@ export type FlushResult = {
   requeued: number;
 };
 
+async function postAnalyticsBatch(
+  endpoint: string,
+  batch: QueuedAnalyticsEvent[],
+  ctx: AnalyticsRuntimeContext,
+  fetcher: (url: string, init: RequestInit) => Promise<Response>,
+): Promise<boolean> {
+  const body = JSON.stringify({
+    events: batch,
+    platform: ctx.platform,
+    appVersion: ctx.appVersion,
+    buildNumber: ctx.buildNumber,
+    environment: ctx.environment,
+  });
+
+  const headers = new Headers({ "Content-Type": "application/json" });
+  applyDeviceHeaders(headers);
+
+  const res = await fetcher(getApiUrl(endpoint), {
+    method: "POST",
+    headers,
+    body,
+  });
+  return res.ok || res.status === 202;
+}
+
+function preauthFetcher(): (url: string, init: RequestInit) => Promise<Response> {
+  return (url, init) => fetch(url, init);
+}
+
 export class AnalyticsEventQueue {
   private memory: QueuedAnalyticsEvent[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -56,9 +85,8 @@ export class AnalyticsEventQueue {
 
   async flush(authFetch?: AuthFetchFn): Promise<FlushResult> {
     if (authFetch) this.lastAuthFetch = authFetch;
-    const fetcher = this.lastAuthFetch;
-    if (!fetcher || this.memory.length === 0 || this.flushing) {
-      return { sent: 0, failed: 0, requeued: 0 };
+    if (this.memory.length === 0 || this.flushing) {
+      return { sent: 0, failed: 0, requeued: this.memory.length };
     }
 
     if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -69,37 +97,44 @@ export class AnalyticsEventQueue {
     let sent = 0;
     let failed = 0;
     const failedBatch: QueuedAnalyticsEvent[] = [];
+    const ctx = this.getContext();
 
     try {
       while (this.memory.length > 0) {
         const batch = this.memory.splice(0, ANALYTICS_MAX_BATCH);
-        const ctx = this.getContext();
-        const body = JSON.stringify({
-          events: batch,
-          platform: ctx.platform,
-          appVersion: ctx.appVersion,
-          buildNumber: ctx.buildNumber,
-          environment: ctx.environment,
-        });
+        const authFetcher = this.lastAuthFetch;
+        let delivered = false;
 
-        const headers = new Headers({ "Content-Type": "application/json" });
-        applyDeviceHeaders(headers);
-
-        try {
-          const res = await fetcher(getApiUrl("/api/analytics/events"), {
-            method: "POST",
-            headers,
-            body,
-          });
-          if (res.ok || res.status === 202) {
-            sent += batch.length;
-            this.backoffMs = 0;
-          } else {
-            failed += batch.length;
-            failedBatch.push(...batch);
-            break;
+        if (authFetcher) {
+          try {
+            delivered = await postAnalyticsBatch(
+              "/api/analytics/events",
+              batch,
+              ctx,
+              authFetcher,
+            );
+          } catch {
+            delivered = false;
           }
-        } catch {
+        }
+
+        if (!delivered) {
+          try {
+            delivered = await postAnalyticsBatch(
+              "/api/analytics/preauth-events",
+              batch,
+              ctx,
+              preauthFetcher(),
+            );
+          } catch {
+            delivered = false;
+          }
+        }
+
+        if (delivered) {
+          sent += batch.length;
+          this.backoffMs = 0;
+        } else {
           failed += batch.length;
           failedBatch.push(...batch);
           break;

@@ -75,6 +75,7 @@ export interface WorksheetCanvasHandle {
   setSafeAreaVisible: (visible: boolean) => void;
   panBy: (dx: number, dy: number) => void;
   resetViewport: () => void;
+  resizeToWidth: (viewportWidth: number, page?: WorksheetPage) => Promise<void>;
   exportPageState: (page: WorksheetPage) => WorksheetPage;
   onPageModified: (cb: () => void) => () => void;
 }
@@ -178,15 +179,16 @@ async function mapElement(el: WorksheetElement, scale: number, fabric: FabricMod
 export async function createWorksheetCanvas(container: HTMLCanvasElement, viewportWidth: number): Promise<WorksheetCanvasHandle> {
   const fabric = await loadFabric();
   const { Canvas, Rect } = fabric;
-  const scale = Math.min(1, (viewportWidth - 24) / A4_WIDTH);
-  const height = A4_HEIGHT * scale;
+  let scale = computeWorksheetCanvasScale(viewportWidth);
+  let canvasWidth = Math.round(A4_WIDTH * scale);
+  let canvasHeight = Math.round(A4_HEIGHT * scale);
   let zoomFactor = 1;
   let clipboard: import("fabric").FabricObject | null = null;
   let colorMode: "color" | "bw" = "color";
 
   const canvas = new Canvas(container, {
-    width: A4_WIDTH * scale,
-    height,
+    width: canvasWidth,
+    height: canvasHeight,
     backgroundColor: "#f8f6f2",
     selection: true,
     preserveObjectStacking: true,
@@ -212,13 +214,27 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
   canvas.on("object:added", pushHistory);
 
   const pageBorder = new Rect({
-    left: 0, top: 0, width: A4_WIDTH * scale, height: A4_HEIGHT * scale,
+    left: 0, top: 0, width: canvasWidth, height: canvasHeight,
     fill: "#ffffff", stroke: "#d4cfc4", strokeWidth: 2,
     rx: PAGE_BORDER_RADIUS * scale, ry: PAGE_BORDER_RADIUS * scale,
     selectable: false, evented: false,
   });
   canvas.add(pageBorder);
   canvas.sendObjectToBack(pageBorder);
+
+  const syncCanvasDimensions = (nextScale: number) => {
+    scale = nextScale;
+    canvasWidth = Math.round(A4_WIDTH * scale);
+    canvasHeight = Math.round(A4_HEIGHT * scale);
+    canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+    pageBorder.set({
+      width: canvasWidth,
+      height: canvasHeight,
+      rx: PAGE_BORDER_RADIUS * scale,
+      ry: PAGE_BORDER_RADIUS * scale,
+    });
+    pageBorder.setCoords();
+  };
 
   const detachSnap = attachSnapping(canvas, scale, fabric);
   let selectionCb: ((style: SelectionStyle | null) => void) | null = null;
@@ -287,9 +303,34 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
       const obj = await mapElement(el, scale, fabric, mode);
       if (obj) canvas.add(obj);
     }
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    zoomFactor = 1;
     canvas.requestRenderAll();
     skipHistory = false;
     pushHistory();
+  };
+
+  const resizeToWidth = async (nextViewportWidth: number, page?: WorksheetPage) => {
+    const nextScale = computeWorksheetCanvasScale(nextViewportWidth);
+    if (Math.abs(nextScale - scale) < 0.01 && !page) return;
+    syncCanvasDimensions(nextScale);
+    if (gridVisible) {
+      gridObjects.forEach((g) => canvas.remove(g));
+      gridObjects = attachGridOverlay(canvas, fabric, scale, true);
+      gridObjects.forEach((g) => canvas.sendObjectToBack(g));
+    }
+    if (safeAreaVisible) {
+      if (safeAreaObj) canvas.remove(safeAreaObj);
+      safeAreaObj = attachSafeAreaOverlay(canvas, fabric, scale);
+      if (safeAreaObj) canvas.bringObjectToFront(safeAreaObj);
+    }
+    canvas.sendObjectToBack(pageBorder);
+    if (page) await renderPage(page, colorMode);
+    else {
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      zoomFactor = 1;
+      canvas.requestRenderAll();
+    }
   };
 
   const addImageFromDataUrl = async (dataUrl: string) => {
@@ -525,6 +566,7 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
       zoomFactor = 1;
       canvas.requestRenderAll();
     },
+    resizeToWidth,
     exportPageState: (page: WorksheetPage): WorksheetPage => {
       const byId = new Map(page.elements.map((e) => [e.id, structuredClone(e)]));
       const extras: WorksheetElement[] = [];
@@ -590,3 +632,20 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
 }
 
 export { EXPORT_SCALE_MULTIPLIER };
+
+const MIN_VIEWPORT_WIDTH = 280;
+
+/** Fit A4 page width to container — guards against 0-width measure during layout. */
+export function computeWorksheetCanvasScale(viewportWidth: number): number {
+  const w = Math.max(MIN_VIEWPORT_WIDTH, viewportWidth);
+  return Math.min(1, (w - 16) / A4_WIDTH);
+}
+
+export function computeWorksheetCanvasDimensions(viewportWidth: number): { width: number; height: number; scale: number } {
+  const scale = computeWorksheetCanvasScale(viewportWidth);
+  return {
+    scale,
+    width: Math.round(A4_WIDTH * scale),
+    height: Math.round(A4_HEIGHT * scale),
+  };
+}
