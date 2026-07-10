@@ -25,7 +25,7 @@ import { WorksheetAutosaveIndicator } from "./WorksheetAutosaveIndicator";
 import { WorksheetDraftHistorySheet } from "./WorksheetDraftHistorySheet";
 import { WorksheetImagePicker } from "./WorksheetImagePicker";
 import { useWorksheetGestures } from "./use-worksheet-gestures";
-import { WS_EDITOR_HEADER, WS_PAGE, WS_PAPER_SHADOW } from "./worksheet-studio-theme";
+import { WS_EDITOR_HEADER, WS_PAGE, WS_PAPER_SHADOW, WS_EDITOR_CANVAS, WS_EDITOR_VIEWPORT, WS_OVERLAY, WS_CONTEXT_MENU, WS_MUTED_TEXT } from "./worksheet-studio-theme";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 import { trackWorksheetEvent } from "./worksheet-studio-analytics";
 import { WorksheetPropertyPanel } from "./WorksheetPropertyPanel";
@@ -245,8 +245,11 @@ export function WorksheetEditor({
       });
       setExportProgress(100);
       if (page && handleRef.current) await handleRef.current.renderPage(page, colorMode);
-    } catch {
+    } catch (err) {
       toast.error("PDF export failed", { description: "Please try again." });
+      void import("@/features/teacher-os/teacher-os-analytics").then((m) => {
+        m.trackExportFailure("pdf", err instanceof Error ? err.message : "unknown");
+      }).catch(() => { /* */ });
       throw new Error("PDF export failed");
     } finally {
       setExportBusy(false);
@@ -326,20 +329,20 @@ export function WorksheetEditor({
       )}
 
       <div
-        className="flex flex-1 justify-center overflow-auto px-3 py-4 pb-48"
+        className={WS_EDITOR_VIEWPORT}
         {...gestures}
         role="application"
         aria-label="Worksheet editor canvas"
       >
-        <div className={cn(WS_PAPER_SHADOW, "relative w-full max-w-[480px] transition-all duration-300 ease-out", pageFlip && "scale-[0.97] opacity-85 rotate-[0.5deg]")}>
+        <div className={cn(WS_PAPER_SHADOW, WS_EDITOR_CANVAS, "transition-all duration-300 ease-out", pageFlip && "scale-[0.97] opacity-85 rotate-[0.5deg]")}>
           {!canvasReady && !canvasError && (
-            <div className="flex h-[min(70dvh,640px)] items-center justify-center rounded-2xl bg-white" role="status" aria-live="polite">
+            <div className="flex min-h-[min(70dvh,40rem)] items-center justify-center rounded-2xl bg-white" role="status" aria-live="polite">
               <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" aria-hidden />
               <span className="sr-only">Loading editor</span>
             </div>
           )}
           {canvasError && (
-            <div className="flex h-[min(70dvh,640px)] flex-col items-center justify-center gap-2 rounded-2xl bg-white p-6 text-center" role="alert">
+            <div className="flex min-h-[min(70dvh,40rem)] flex-col items-center justify-center gap-2 rounded-2xl bg-white p-6 text-center" role="alert">
               <p className="text-sm font-semibold text-[#1e3a5f]">Editor could not load</p>
               <Button variant="outline" onClick={() => void initCanvas()}>Retry</Button>
             </div>
@@ -350,7 +353,7 @@ export function WorksheetEditor({
 
       {previewOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className={cn(WS_OVERLAY, "z-50 items-center bg-black/70")}
           onClick={() => setPreviewOpen(false)}
           onKeyDown={(e) => { if (e.key === "Escape") setPreviewOpen(false); }}
           role="dialog"
@@ -367,8 +370,8 @@ export function WorksheetEditor({
 
       {contextMenu && (
         <div
-          className="fixed z-50 min-w-[160px] rounded-xl border bg-white p-1 shadow-xl"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className={WS_CONTEXT_MENU}
+          style={{ left: Math.min(contextMenu.x, window.innerWidth - 160), top: contextMenu.y }}
           role="menu"
           onPointerDown={(e) => e.stopPropagation()}
         >
@@ -438,7 +441,14 @@ export function WorksheetEditor({
         onAnswerKey={document.meta.isAnswerKey ? undefined : handleExportAnswerKey}
         onDocx={async () => {
           syncDocumentFromCanvas();
-          await exportWorksheetDocx(exportDoc());
+          try {
+            await exportWorksheetDocx(exportDoc());
+          } catch (err) {
+            void import("@/features/teacher-os/teacher-os-analytics").then((m) => {
+              m.trackExportFailure("docx", err instanceof Error ? err.message : "unknown");
+            }).catch(() => { /* */ });
+            throw err;
+          }
         }}
         onPng={async () => {
           const url = h()?.toDataURL(EXPORT_SCALE_MULTIPLIER);
@@ -450,7 +460,15 @@ export function WorksheetEditor({
           if (!url) throw new Error("Canvas not ready");
           await exportCanvasJpeg(url, `worksheet-page-${pageIndex + 1}.jpg`);
         }}
-        onPrint={() => window.print()}
+        onPrint={() => {
+          syncDocumentFromCanvas();
+          if (document.pages.length > 1) {
+            toast.info("Printing current page", {
+              description: "For all pages, use PDF export.",
+            });
+          }
+          window.print();
+        }}
         onShare={async () => {
           const url = h()?.toDataURL(EXPORT_SCALE_MULTIPLIER);
           if (!url) throw new Error("Canvas not ready");

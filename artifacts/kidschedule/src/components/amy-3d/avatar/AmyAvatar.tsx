@@ -30,6 +30,17 @@ import { useAmyAnimationState } from "./useAmyAnimationState";
 import { AMY_GLTF_FACING_Y } from "@/lib/amy-3d/amy-gltf-clips";
 import { sanitizeAmyGltfClips } from "@/lib/amy-3d/sanitize-amy-gltf-clips";
 import { createOrganicPhases, organic } from "./organic-noise";
+import { getQaFaceOverride } from "./qa-face-override";
+
+/** DEV QA screenshot hold — URL or button override on amy-avatar-qa only. */
+function readQaFaceHold(): { blink?: number; mouthOpen?: number } | null {
+  if (!import.meta.env.DEV || typeof window === "undefined") return null;
+  if (!window.location.pathname.includes("amy-avatar-qa")) return null;
+  const hold = new URLSearchParams(window.location.search).get("faceHold");
+  if (hold === "blink") return { blink: 0.9, mouthOpen: 0 };
+  if (hold === "talk") return { blink: 0, mouthOpen: 0.65 };
+  return getQaFaceOverride();
+}
 
 const DEG = Math.PI / 180;
 const FIT_HEIGHT = 1.7;
@@ -87,6 +98,31 @@ function findAll(root: THREE.Object3D, keys: string[]): THREE.Object3D[] {
   return hits;
 }
 
+/** Remove leftover procedural face meshes (HMR / cache pollution). */
+function purgeAmyProcOverlays(root: THREE.Object3D): void {
+  const doomed: THREE.Object3D[] = [];
+  root.traverse((o) => {
+    if (
+      o.name === "AmyProceduralFace" ||
+      o.name.startsWith("AmyProc")
+    ) {
+      doomed.push(o);
+    }
+  });
+  for (const o of doomed) {
+    o.parent?.remove(o);
+    o.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh) {
+        mesh.geometry?.dispose();
+        const mat = mesh.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else (mat as THREE.Material | undefined)?.dispose();
+      }
+    });
+  }
+}
+
 export function AmyAvatar({
   url,
   state,
@@ -128,7 +164,13 @@ export function AmyAvatar({
   });
 
   const built = useMemo(() => {
+    // Prior procedural drivers may have parented overlays onto the cached
+    // useGLTF scene; strip them from the source before cloning.
+    purgeAmyProcOverlays(gltf.scene);
+
     const scene = cloneSkeleton(gltf.scene) as THREE.Group;
+    purgeAmyProcOverlays(scene);
+
     const box = new THREE.Box3().setFromObject(scene);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
@@ -319,6 +361,22 @@ export function AmyAvatar({
       haloMat.current.opacity = reduced
         ? 0.55
         : 0.4 + (organic(t, sp.breath + 21, 0.2, 181) * 0.5 + 0.5) * 0.35;
+    }
+
+    // DEV QA only: hold a face pose for screenshots (does not change schedulers).
+    const qa = readQaFaceHold();
+    if (qa) {
+      if (qa.blink != null) built.face.setBlink(qa.blink);
+      if (qa.mouthOpen != null) built.face.setMouthOpen(qa.mouthOpen);
+      const proc = built.face.proceduralDriver;
+      const overlay = proc?.getOverlayState?.();
+      document.documentElement.dataset.amyQaFace = `b${qa.blink ?? "-"}-m${qa.mouthOpen ?? "-"}`;
+      document.documentElement.dataset.amyQaOverlay = overlay
+        ? `proc=1;lid=${overlay.lidVisible ? 1 : 0};mouth=${overlay.mouthOpenVisible ? 1 : 0};bv=${overlay.blink.toFixed(2)};mv=${overlay.mouthOpen.toFixed(2)}`
+        : `proc=0;hasBlink=${built.face.hasBlink ? 1 : 0}`;
+    } else if (document.documentElement.dataset.amyQaFace) {
+      delete document.documentElement.dataset.amyQaFace;
+      delete document.documentElement.dataset.amyQaOverlay;
     }
   });
 

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { WS_SHEET } from "./worksheet-studio-theme";
 import type { SchoolBrandingProfile, BrandThemeId, FooterToggles } from "@workspace/worksheet-studio";
 import {
   BRAND_THEME_LABELS,
@@ -135,7 +136,7 @@ export function WorksheetBrandingSheet({ open, onOpenChange, onBrandingSaved }: 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[94dvh] overflow-y-auto rounded-t-3xl pb-[max(env(safe-area-inset-bottom),1rem)]">
+      <SheetContent side="bottom" className={cn(WS_SHEET, "rounded-t-3xl")}>
         <SheetHeader>
           <SheetTitle className="text-left text-lg font-bold" style={{ color: draft.colors.primary }}>
             School Branding

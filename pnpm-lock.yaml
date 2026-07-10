@@ -885,6 +885,9 @@ importers:
       '@workspace/nature-sounds-world':
         specifier: workspace:*
         version: link:../../lib/nature-sounds-world
+      '@workspace/teacher-os':
+        specifier: workspace:*
+        version: link:../../lib/teacher-os
       '@workspace/vehicle-world':
         specifier: workspace:*
         version: link:../../lib/vehicle-world
@@ -1820,6 +1823,12 @@ importers:
   lib/study-zone: {}
 
   lib/subscription-marketing: {}
+
+  lib/teacher-os:
+    dependencies:
+      '@workspace/worksheet-studio':
+        specifier: workspace:*
+        version: link:../worksheet-studio
 
   lib/tiffin-feedback: {}
 

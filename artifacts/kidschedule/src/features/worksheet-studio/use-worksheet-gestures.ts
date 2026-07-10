@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 type GestureHandlers = {
   onSwipeLeft?: () => void;
@@ -122,6 +122,13 @@ export function useWorksheetGestures(handlers: GestureHandlers) {
     touchStart.current = null;
     lastMove.current = null;
   }, [handlers]);
+
+  useEffect(() => {
+    return () => {
+      stopInertia();
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+  }, []);
 
   return { onTouchStart, onTouchMove, onTouchEnd };
 }

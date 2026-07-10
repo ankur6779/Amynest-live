@@ -290,6 +290,92 @@ export interface WorksheetGenerateResponse {
   qualityScore?: number;
 }
 
+/** v7.0 — AI Worksheet Reconstruction Engine */
+export type ReconstructionStyle =
+  | "exact"
+  | "improve_layout"
+  | "modern"
+  | "lps"
+  | "low_ink"
+  | "color"
+  | "assessment"
+  | "homework";
+
+export type ReconstructionProgressStage =
+  | "uploading"
+  | "cleaning"
+  | "detecting_layout"
+  | "reading_text"
+  | "understanding"
+  | "generating"
+  | "validating"
+  | "opening";
+
+export interface DetectedDrawing {
+  label: string;
+  illustrationKind?: string;
+  confidence: number;
+  replacedWithSvg: boolean;
+}
+
+export interface DetectedQuestion {
+  number: number;
+  type: string;
+  prompt: string;
+  uncertainWords?: string[];
+  confidence: number;
+}
+
+export interface ReconstructionAnalysis {
+  classLevel?: WorksheetClass;
+  subject?: WorksheetSubject;
+  topic?: string;
+  difficulty?: WorksheetDifficulty;
+  language?: WorksheetLanguage;
+  activities: string[];
+  detectedImages: string[];
+  questions: DetectedQuestion[];
+  drawings: DetectedDrawing[];
+  tables: number;
+  hasHandwriting: boolean;
+  hasStudentAnswers: boolean;
+  pageCount: number;
+  confidence: number;
+  uncertainAreas: string[];
+  source: "local" | "ai";
+}
+
+export interface WorksheetReconstructRequest {
+  sources: WorksheetReferenceContext[];
+  style: ReconstructionStyle;
+  classLevel: WorksheetClass;
+  subject: WorksheetSubject;
+  difficulty: WorksheetDifficulty;
+  topic?: string;
+  language?: WorksheetLanguage;
+  pageCount?: number;
+  /** Teacher-edited analysis overrides */
+  analysis?: ReconstructionAnalysis;
+  /** Compressed page images for vision (data URLs, max 3) */
+  visionImages?: string[];
+}
+
+export interface ReconstructionValidation {
+  passed: boolean;
+  confidence: number;
+  issues: string[];
+  highlights: string[];
+}
+
+export interface WorksheetReconstructResponse {
+  document: WorksheetDocument;
+  source: "ai" | "local";
+  usedFallback?: boolean;
+  qualityScore?: number;
+  validation: ReconstructionValidation;
+  uncertainAreas: string[];
+}
+
 export type WorksheetImproveAction =
   | "easier"
   | "harder"

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { DocumentChangeSummary } from "@workspace/worksheet-studio";
-import { WS_PRIMARY_BTN } from "./worksheet-studio-theme";
+import { WS_PRIMARY_BTN, WS_MUTED_TEXT, WS_DIALOG } from "./worksheet-studio-theme";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -25,10 +25,10 @@ export function CopilotChangePreview({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl">
+      <DialogContent className={cn(WS_DIALOG)}>
         <DialogHeader>
           <DialogTitle className="text-[#1e3a5f]">Review AI changes</DialogTitle>
-          <DialogDescription>Compare before applying conversational edits.</DialogDescription>
+          <DialogDescription className={WS_MUTED_TEXT}>Compare before applying conversational edits.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 rounded-xl border border-[#d4cfc4]/50 bg-[#faf8f5] p-4 text-sm">
           <div>

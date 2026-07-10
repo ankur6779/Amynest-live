@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   CLASS_LABELS,
@@ -15,6 +16,7 @@ import {
   type WorksheetDifficulty,
   type WorksheetGenerateRequest,
   type WorksheetLanguage,
+  type WorksheetReconstructRequest,
   type WorksheetReferenceContext,
   type WorksheetSubject,
   type WorksheetTemplate,
@@ -28,8 +30,16 @@ import {
   WS_PAGE,
   WS_PRIMARY_BTN,
   WS_SECTION_LABEL,
+  WS_OUTLINE_BTN,
+  WS_MUTED_TEXT,
+  WS_CAPTION,
+  WS_CONTAINER,
+  WS_TOUCH,
+  WS_HEADING,
+  WS_ACTION_STACK,
 } from "./worksheet-studio-theme";
 import { WorksheetTemplates } from "./WorksheetTemplates";
+import { WorksheetReconstructionPanel } from "./WorksheetReconstructionPanel";
 import { WorksheetPromptComposer } from "./WorksheetPromptComposer";
 import { GenerationSummaryDialog } from "./GenerationSummaryDialog";
 import { PromptHistorySheet } from "./PromptHistorySheet";
@@ -40,6 +50,8 @@ import { useReferenceVision } from "./use-reference-vision";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 import { trackWorksheetEvent } from "./worksheet-studio-analytics";
 import type { PromptHistoryEntry } from "@workspace/worksheet-studio";
+
+const LPS_BANNER_LOGO = "/illustrations/worksheet-studio/lps-banner-logo.png";
 
 const CLASSES = Object.keys(CLASS_LABELS) as WorksheetClass[];
 const SUBJECTS = Object.keys(SUBJECT_LABELS) as WorksheetSubject[];
@@ -54,6 +66,7 @@ const LANGUAGES: { id: WorksheetLanguage; label: string }[] = [
 
 type Props = {
   onGenerate: (req: WorksheetGenerateRequest) => void;
+  onReconstruct?: (req: WorksheetReconstructRequest) => void;
   onOpenDrafts?: () => void;
   onOpenLibrary?: () => void;
   onOpenProductivity?: () => void;
@@ -80,13 +93,16 @@ function ChipRow<T extends string>({
   return (
     <div className="space-y-2.5">
       <p className={WS_SECTION_LABEL}>{label}</p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full min-w-0 flex-wrap gap-2">
         {options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => { void hapticWorksheetTap(); onChange(opt); }}
-            className={cn(value === opt ? WS_CHIP_ACTIVE : WS_CHIP, "min-w-[4.5rem] touch-manipulation")}
+            className={cn(
+              value === opt ? WS_CHIP_ACTIVE : WS_CHIP,
+              "min-h-12 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto touch-manipulation",
+            )}
             aria-pressed={value === opt}
             aria-label={`${label}: ${labels[opt]}`}
           >
@@ -99,7 +115,7 @@ function ChipRow<T extends string>({
 }
 
 export function WorksheetHome({
-  onGenerate, onOpenDrafts, onOpenLibrary, onOpenProductivity, onOpenBranding, onRegisterBuilder, onRegisterLanguage, loading, hasDraft,
+  onGenerate, onReconstruct, onOpenDrafts, onOpenLibrary, onOpenProductivity, onOpenBranding, onRegisterBuilder, onRegisterLanguage, loading, hasDraft,
 }: Props) {
   const authFetch = useAuthFetch();
   const { enhance, enhancing } = useWorksheetPromptEnhancer(authFetch);
@@ -121,8 +137,10 @@ export function WorksheetHome({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [pendingAnswerKey, setPendingAnswerKey] = useState(false);
+  const generateGuardRef = useRef(false);
 
   const placeholder = PROMPT_PLACEHOLDERS[placeholderIdx]!;
+  const effectivePrompt = prompt.trim() || placeholder;
 
   const buildRequest = useCallback((answerKey: boolean): WorksheetGenerateRequest => ({
     prompt: prompt.trim() || placeholder,
@@ -158,18 +176,27 @@ export function WorksheetHome({
   });
 
   const handleEnhance = async () => {
+    if (enhancing) return;
     trackWorksheetEvent("worksheet_prompt_enhance");
-    setOriginalPrompt(prompt.trim() || placeholder);
-    const result = await enhance({
-      prompt: prompt.trim() || placeholder,
-      classLevel,
-      subject,
-      difficulty,
-      pageCount,
-      language,
-      references,
-    });
-    setEnhancedPrompt(result.enhancedPrompt);
+    setOriginalPrompt(effectivePrompt);
+    try {
+      const result = await enhance({
+        prompt: effectivePrompt,
+        classLevel,
+        subject,
+        difficulty,
+        pageCount,
+        language,
+        references,
+      });
+      if (result.enhancedPrompt?.trim()) {
+        setEnhancedPrompt(result.enhancedPrompt);
+      } else {
+        toast.error("Could not enhance prompt", { description: "Please try again." });
+      }
+    } catch {
+      toast.error("Enhance failed", { description: "Check your connection and try again." });
+    }
   };
 
   useEffect(() => {
@@ -209,6 +236,8 @@ export function WorksheetHome({
   };
 
   const confirmGenerate = () => {
+    if (loading || generateGuardRef.current) return;
+    generateGuardRef.current = true;
     const req = buildRequest(pendingAnswerKey);
     savePromptHistory({
       prompt: req.prompt,
@@ -220,11 +249,18 @@ export function WorksheetHome({
       referenceCount: references.length,
     });
     setSummaryOpen(false);
+    toast.info("Generating worksheet…", { description: "This usually takes under 20 seconds." });
     onGenerate(req);
+    window.setTimeout(() => { generateGuardRef.current = false; }, 1500);
   };
 
   const requestGenerate = (answerKey: boolean) => {
+    if (loading) return;
     void hapticWorksheetTap();
+    if (!effectivePrompt.trim()) {
+      toast.error("Add a prompt first", { description: "Describe your worksheet or pick a template." });
+      return;
+    }
     setPendingAnswerKey(answerKey);
     setSummaryOpen(true);
   };
@@ -249,31 +285,33 @@ export function WorksheetHome({
   };
 
   return (
-    <div className={cn(WS_PAGE, "pb-28")}>
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pt-[max(env(safe-area-inset-top),1rem)]">
-        <header className={cn(WS_GLASS_CARD, "px-5 py-6 text-center")}>
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1e3a5f] to-[#2a5a8a] shadow-lg">
-            <Sparkles className="h-7 w-7 text-[#c9a227]" aria-hidden />
-          </div>
-          <h1 className={cn("text-2xl font-bold tracking-tight sm:text-3xl", WS_HERO_GRADIENT)}>
+    <div className={WS_PAGE}>
+      <div className={WS_CONTAINER}>
+        <header className={cn(WS_GLASS_CARD, "w-full min-w-0 px-4 py-6 text-center sm:px-5")}>
+          <img
+            src={LPS_BANNER_LOGO}
+            alt="Lucknow Public School — C.P. Singh Foundation"
+            className="mx-auto h-16 w-auto max-w-full object-contain sm:h-[4.5rem]"
+          />
+          <h1 className={cn(WS_HEADING, WS_HERO_GRADIENT)}>
             LPS AI Worksheet Studio
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className={cn("mt-2 text-sm", WS_MUTED_TEXT)}>
             Create beautiful worksheets in seconds — mobile-first, print-ready.
           </p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             {onOpenLibrary && (
-              <Button variant="outline" size="sm" className="h-10 rounded-full touch-manipulation" onClick={onOpenLibrary}>
+              <Button variant="outline" size="sm" className={cn(WS_OUTLINE_BTN, "h-10 rounded-full")} onClick={onOpenLibrary}>
                 <FolderOpen className="mr-1.5 h-4 w-4" /> Library
               </Button>
             )}
             {onOpenProductivity && (
-              <Button variant="outline" size="sm" className="h-10 rounded-full touch-manipulation" onClick={onOpenProductivity}>
+              <Button variant="outline" size="sm" className={cn(WS_OUTLINE_BTN, "h-10 rounded-full")} onClick={onOpenProductivity}>
                 <CalendarDays className="mr-1.5 h-4 w-4" /> Productivity
               </Button>
             )}
             {onOpenBranding && (
-              <Button variant="outline" size="sm" className="h-10 rounded-full touch-manipulation" onClick={onOpenBranding}>
+              <Button variant="outline" size="sm" className={cn(WS_OUTLINE_BTN, "h-10 rounded-full")} onClick={onOpenBranding}>
                 <Settings2 className="mr-1.5 h-4 w-4" /> Branding
               </Button>
             )}
@@ -287,6 +325,17 @@ export function WorksheetHome({
 
         <WorksheetTemplates onSelect={applyTemplate} />
 
+        {onReconstruct && (
+          <WorksheetReconstructionPanel
+            classLevel={classLevel}
+            subject={subject}
+            difficulty={difficulty}
+            language={language}
+            onReconstruct={onReconstruct}
+            loading={loading}
+          />
+        )}
+
         <WorksheetPromptComposer
           prompt={prompt}
           onPromptChange={setPrompt}
@@ -299,6 +348,7 @@ export function WorksheetHome({
           onImageModeChange={setImageMode}
           onEnhance={() => void handleEnhance()}
           enhancing={enhancing}
+          canEnhance={Boolean(effectivePrompt.trim())}
           onOpenHistory={() => setHistoryOpen(true)}
         />
 
@@ -313,7 +363,7 @@ export function WorksheetHome({
 
         <PromptQualityMeter input={promptQualityInput} />
 
-        <div className={cn(WS_GLASS_CARD, "space-y-4 p-4")}>
+        <div className={cn(WS_GLASS_CARD, "w-full min-w-0 space-y-4 p-4")}>
           <ChipRow label="Age / Class" options={CLASSES} labels={CLASS_LABELS} value={classLevel} onChange={setClassLevel} />
           <ChipRow label="Subject" options={SUBJECTS} labels={SUBJECT_LABELS} value={subject} onChange={setSubject} />
           <ChipRow label="Difficulty" options={DIFFICULTIES} labels={DIFFICULTY_LABELS} value={difficulty} onChange={setDifficulty} />
@@ -354,15 +404,15 @@ export function WorksheetHome({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Button className={WS_PRIMARY_BTN} disabled={loading} onClick={() => requestGenerate(false)}>
+        <div className={WS_ACTION_STACK}>
+          <Button className={cn(WS_PRIMARY_BTN, WS_TOUCH, "w-full")} disabled={loading} onClick={() => requestGenerate(false)}>
             {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-            Generate Worksheet
+            {loading ? "Generating…" : "Generate Worksheet"}
           </Button>
           <Button
             size="lg"
             variant="outline"
-            className="h-14 rounded-2xl border-[#1e3a5f]/20 bg-white/80 text-base font-semibold touch-manipulation"
+            className={cn(WS_OUTLINE_BTN, WS_TOUCH, "h-14 w-full rounded-2xl text-base")}
             disabled={loading}
             onClick={() => requestGenerate(true)}
           >
@@ -371,7 +421,7 @@ export function WorksheetHome({
           </Button>
         </div>
 
-        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+        <p className={cn("flex items-center justify-center gap-1.5 text-center", WS_CAPTION)}>
           <BookOpen className="h-3.5 w-3.5" aria-hidden />
           Official LPS header on page 1 · Auto-saved offline
         </p>

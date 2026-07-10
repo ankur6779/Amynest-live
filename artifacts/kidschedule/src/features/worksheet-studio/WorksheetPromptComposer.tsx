@@ -25,7 +25,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { WS_GLASS_CARD, WS_SECTION_LABEL } from "./worksheet-studio-theme";
+import { WS_GLASS_CARD, WS_SECTION_LABEL, WS_OUTLINE_BTN, WS_MUTED_TEXT, WS_CAPTION, WS_TEXTAREA, WS_BTN_GRID, WS_TOUCH, WS_OVERLAY, WS_DIALOG } from "./worksheet-studio-theme";
 import {
   compressPastedImage,
   filesFromClipboardEvent,
@@ -55,6 +55,7 @@ type Props = {
   onImageModeChange: (m: ReferenceImageMode) => void;
   onEnhance: () => void;
   enhancing: boolean;
+  canEnhance?: boolean;
   onOpenHistory: () => void;
   showEnhancedEditor?: boolean;
 };
@@ -86,7 +87,7 @@ function ReferenceCard({
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-[#1e3a5f]">{item.filename}</p>
-        <p className="text-xs text-muted-foreground">
+        <p className={cn(WS_CAPTION, "mt-1")}>
           {item.kind.toUpperCase()}
           {item.pageCount ? ` · ${item.pageCount} pg` : ""}
           {item.imageCount ? ` · ${item.imageCount} img` : ""}
@@ -129,6 +130,7 @@ export function WorksheetPromptComposer({
   onImageModeChange,
   onEnhance,
   enhancing,
+  canEnhance = true,
   onOpenHistory,
   originalPrompt,
   showEnhancedEditor = true,
@@ -156,7 +158,7 @@ export function WorksheetPromptComposer({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 280)}px`;
+    el.style.height = `${el.scrollHeight}px`;
   }, []);
 
   useEffect(() => {
@@ -215,94 +217,95 @@ export function WorksheetPromptComposer({
   };
 
   return (
-    <div className={cn(WS_GLASS_CARD, "overflow-hidden p-0")}>
-      <div className="flex items-center justify-between border-b border-[#d4cfc4]/40 px-4 py-3">
-        <p className={WS_SECTION_LABEL}>AI Prompt Composer</p>
-        <Button type="button" variant="ghost" size="sm" className="h-9 rounded-full" onClick={onOpenHistory} aria-label="Prompt history">
+    <div className={cn(WS_GLASS_CARD, "w-full min-w-0 overflow-hidden p-0")}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d4cfc4]/40 px-4 py-3">
+        <p className={cn(WS_SECTION_LABEL, "min-w-0")}>AI Prompt Composer</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn(WS_OUTLINE_BTN, WS_TOUCH, "h-12 shrink-0 rounded-xl px-4")}
+          onClick={onOpenHistory}
+          aria-label="Prompt history"
+        >
           <Clock className="mr-1.5 h-4 w-4" /> History
         </Button>
       </div>
 
       <div
         className={cn(
-          "relative px-4 pt-4 transition-colors duration-200",
+          "relative w-full min-w-0 px-4 pt-4 pb-4 transition-colors duration-200",
           dragOver && "bg-[#1e3a5f]/5",
         )}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => { if (window.matchMedia("(min-width: 768px)").matches) { e.preventDefault(); setDragOver(true); } }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => void handleDrop(e)}
+        onDrop={(e) => { if (window.matchMedia("(min-width: 768px)").matches) void handleDrop(e); }}
       >
-        <div className="flex flex-wrap items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={(e) => {
-                if (e.target.value.length <= PROMPT_MAX_CHARS) onPromptChange(e.target.value);
-              }}
-              onPaste={(e) => void handlePaste(e)}
-              placeholder={placeholder}
-              rows={3}
-              aria-label="Worksheet description"
-              className={cn(
-                "w-full resize-none rounded-2xl border border-[#d4cfc4]/50 bg-white/95 px-4 py-3.5",
-                "text-base leading-relaxed shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]",
-                "outline-none transition-all duration-200",
-                "focus:border-[#1e3a5f]/35 focus:shadow-[0_0_0_3px_rgba(30,58,95,0.1)]",
-                "placeholder:text-muted-foreground/55 touch-manipulation",
-              )}
-            />
-          </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-11 min-w-[7rem] rounded-xl touch-manipulation"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {uploading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Upload className="mr-1.5 h-4 w-4" />}
-              Reference
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-11 rounded-xl touch-manipulation sm:hidden"
-              onClick={() => cameraInputRef.current?.click()}
-            >
-              <Camera className="mr-1.5 h-4 w-4" /> Camera
-            </Button>
-          </div>
+        <textarea
+          ref={textareaRef}
+          value={prompt}
+          onChange={(e) => {
+            if (e.target.value.length <= PROMPT_MAX_CHARS) onPromptChange(e.target.value);
+          }}
+          onInput={autoResize}
+          onPaste={(e) => void handlePaste(e)}
+          placeholder={placeholder}
+          rows={3}
+          aria-label="Worksheet description"
+          className={cn(WS_TEXTAREA, WS_TOUCH)}
+        />
+
+        <div className={cn(WS_BTN_GRID, "mt-3")}>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(WS_OUTLINE_BTN, WS_TOUCH, "h-12 w-full rounded-xl")}
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Upload File
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(WS_OUTLINE_BTN, WS_TOUCH, "h-12 w-full rounded-xl")}
+            disabled={uploading}
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            <Camera className="mr-2 h-4 w-4" /> Camera
+          </Button>
         </div>
 
-        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <span>{dragOver ? "Drop files here" : "Drag & drop · Paste image · PDF · DOCX"}</span>
-          <span className={cn(charCount > PROMPT_MAX_CHARS * 0.9 && "text-amber-600")}>
+        <div className={cn("mt-2 flex flex-wrap items-center justify-between gap-1", WS_CAPTION)}>
+          <span className="min-w-0 break-words">
+            <span className="md:hidden">Tap Upload or Camera · PDF · DOCX · PNG</span>
+            <span className="hidden md:inline">{dragOver ? "Drop files here" : "Drag & drop · Upload · Paste · PDF · DOCX"}</span>
+          </span>
+          <span className={cn("shrink-0 tabular-nums", charCount > PROMPT_MAX_CHARS * 0.9 && "font-semibold text-amber-700")}>
             {charCount}/{PROMPT_MAX_CHARS}
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            className="h-10 rounded-full bg-gradient-to-r from-[#c9a227] to-[#e8c547] text-[#1e3a5f] font-semibold touch-manipulation"
-            disabled={enhancing || !prompt.trim()}
-            onClick={() => { void hapticWorksheetTap(); onEnhance(); }}
-          >
-            {enhancing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
-            Enhance Prompt
-          </Button>
-        </div>
+        <Button
+          type="button"
+          className={cn(
+            "mt-3 h-12 w-full rounded-2xl bg-gradient-to-r from-[#c9a227] to-[#e8c547] text-[#1e3a5f] font-semibold",
+            WS_TOUCH,
+          )}
+          disabled={enhancing || !canEnhance}
+          onClick={() => { void hapticWorksheetTap(); onEnhance(); }}
+        >
+          {enhancing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+          {enhancing ? "Enhancing…" : "Enhance Prompt"}
+        </Button>
 
         {showEnhancedEditor && enhancedPrompt && (
           <div className="mt-3 animate-in slide-in-from-top-2 rounded-xl border border-[#c9a227]/40 bg-[#fffdf5] p-3 duration-200">
             <p className="text-xs font-bold uppercase tracking-wider text-[#c9a227]">Enhanced prompt</p>
             {originalPrompt && (
-              <div className="mt-2 rounded-lg bg-white/80 p-2 text-xs text-muted-foreground">
-                <span className="font-semibold text-[#1e3a5f]/60">Original: </span>
+              <div className={cn("mt-2 rounded-lg bg-white/80 p-2 text-xs", WS_MUTED_TEXT)}>
+                <span className="font-semibold text-[#1e3a5f]">Original: </span>
                 {originalPrompt.slice(0, 120)}{originalPrompt.length > 120 ? "…" : ""}
               </div>
             )}
@@ -310,24 +313,24 @@ export function WorksheetPromptComposer({
               value={enhancedPrompt}
               onChange={(e) => onEnhancedPromptChange(e.target.value)}
               rows={6}
-              className="mt-2 w-full resize-y rounded-lg border border-[#d4cfc4]/40 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-[#1e3a5f]/30"
+              className={cn(WS_TEXTAREA, "mt-2 text-sm")}
               aria-label="Enhanced prompt"
             />
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => onEnhancedPromptChange(undefined)}>
+            <div className={cn(WS_BTN_GRID, "mt-2")}>
+              <Button type="button" variant="outline" className={cn(WS_OUTLINE_BTN, "h-12 rounded-xl")} onClick={() => onEnhancedPromptChange(undefined)}>
                 <X className="mr-1 h-3 w-3" /> Reject
               </Button>
-              <Button type="button" size="sm" className="h-8 rounded-lg bg-[#1e3a5f] text-white" onClick={() => onPromptChange(enhancedPrompt)}>
+              <Button type="button" className="h-12 rounded-xl bg-[#1e3a5f] text-white" onClick={() => onPromptChange(enhancedPrompt)}>
                 <Check className="mr-1 h-3 w-3" /> Accept
               </Button>
-              <Button type="button" size="sm" variant="ghost" className="h-8 rounded-lg" disabled={enhancing} onClick={onEnhance}>
+              <Button type="button" variant="outline" className={cn(WS_OUTLINE_BTN, "col-span-2 h-12 rounded-xl sm:col-span-1")} disabled={enhancing} onClick={onEnhance}>
                 <RefreshCw className="mr-1 h-3 w-3" /> Regenerate
               </Button>
             </div>
           </div>
         )}
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mt-3 flex flex-wrap gap-2">
           {PROMPT_SUGGESTIONS.map((s) => (
             <button
               key={s.id}
@@ -336,7 +339,10 @@ export function WorksheetPromptComposer({
                 void hapticWorksheetTap();
                 onPromptChange(insertSuggestionIntoPrompt(prompt, s.insert));
               }}
-              className="shrink-0 rounded-full border border-[#1e3a5f]/15 bg-white/90 px-3 py-2 text-xs font-medium text-[#1e3a5f] touch-manipulation active:scale-95"
+              className={cn(
+                "rounded-full border border-[#1e3a5f]/20 bg-white px-3 py-2.5 text-xs font-semibold text-[#1e3a5f]",
+                WS_TOUCH, "active:scale-95",
+              )}
             >
               {s.label}
             </button>
@@ -409,12 +415,12 @@ export function WorksheetPromptComposer({
 
       {previewRef && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className={cn(WS_OVERLAY, "z-[70] items-center bg-black/60 backdrop-blur-sm")}
           role="dialog"
           aria-modal
           onClick={() => setPreviewRef(null)}
         >
-          <div className="max-h-[90dvh] max-w-lg overflow-auto rounded-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
+          <div className={cn(WS_DIALOG, "bg-white")} onClick={(e) => e.stopPropagation()}>
             <p className="font-semibold text-[#1e3a5f]">{previewRef.filename}</p>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {(previewRef.pageThumbnails ?? (previewRef.thumbnailDataUrl ? [previewRef.thumbnailDataUrl] : [])).map((src, i) => (

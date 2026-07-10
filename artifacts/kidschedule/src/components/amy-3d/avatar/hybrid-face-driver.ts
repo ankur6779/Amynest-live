@@ -7,7 +7,7 @@
 import type * as THREE from "three";
 import type { FaceDriver, FaceGaze } from "./face-driver";
 import type { MorphTargetManager, Viseme } from "./visemes";
-import { ProceduralFaceDriver } from "./procedural-face";
+import type { ProceduralFaceDriver } from "./procedural-face";
 
 export class HybridFaceDriver implements FaceDriver {
   readonly kind = "hybrid" as const;
@@ -36,6 +36,11 @@ export class HybridFaceDriver implements FaceDriver {
 
   get morphManager(): MorphTargetManager {
     return this.morph;
+  }
+
+  /** Procedural backend when morphs are missing (null if unused). */
+  get proceduralDriver(): ProceduralFaceDriver | null {
+    return this.procedural;
   }
 
   setBlink(value: number): void {
@@ -116,8 +121,9 @@ export function createFaceDriver(
   morph: MorphTargetManager,
   head: THREE.Object3D | null,
 ): HybridFaceDriver {
-  const needsProc =
-    !!head && (!morph.hasBlink || !morph.hasSmile || !morph.hasVisemes);
-  const procedural = needsProc && head ? new ProceduralFaceDriver(head) : null;
-  return new HybridFaceDriver(morph, procedural);
+  // No procedural overlay meshes on amy.glb (lids/mouth looked wrong).
+  // Keep an empty driver only so smile lerp / dispose stay wired; morphs win
+  // when a future rigged GLB arrives.
+  void head;
+  return new HybridFaceDriver(morph, null);
 }

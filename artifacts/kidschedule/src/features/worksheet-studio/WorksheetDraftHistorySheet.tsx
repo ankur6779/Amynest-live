@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { WorksheetDraftVersion } from "@workspace/worksheet-studio";
 import { History, RotateCcw } from "lucide-react";
+import { WS_SHEET, WS_SCROLL_Y } from "./worksheet-studio-theme";
+import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -15,13 +17,13 @@ type Props = {
 export function WorksheetDraftHistorySheet({ open, onOpenChange, versions, onRestore, loading }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[70dvh] rounded-t-3xl">
+      <SheetContent side="bottom" className={cn(WS_SHEET, "rounded-t-3xl")}>
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-left">
             <History className="h-5 w-5" aria-hidden /> Version history
           </SheetTitle>
         </SheetHeader>
-        <ul className="mt-4 space-y-2 overflow-y-auto">
+        <ul className={cn("mt-4 space-y-2", WS_SCROLL_Y)}>
           {loading && (
             <li className="py-8 text-center text-sm text-muted-foreground" role="status">Loading versions…</li>
           )}

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { WS_SHEET } from "./worksheet-studio-theme";
 import type { WorksheetDocument } from "@workspace/worksheet-studio";
 import {
   listLibrary,
@@ -96,7 +97,7 @@ export function WorksheetLibrarySheet({ open, onOpenChange, onOpenDocument, onBu
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[92dvh] rounded-t-3xl pb-[max(env(safe-area-inset-bottom),1rem)]">
+      <SheetContent side="bottom" className={cn(WS_SHEET, "rounded-t-3xl")}>
         <SheetHeader className="flex-row items-center justify-between gap-2">
           <SheetTitle className="text-left text-lg font-bold text-[#1e3a5f]">My Library</SheetTitle>
           {onOpenBranding && (

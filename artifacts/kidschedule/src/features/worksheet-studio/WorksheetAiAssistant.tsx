@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { cn } from "@/lib/utils";
 import type { WorksheetImproveAction } from "@workspace/worksheet-studio";
 import { Loader2, Send, Sparkles, X } from "lucide-react";
-import { WS_FAB } from "./worksheet-studio-theme";
+import { WS_FAB, WS_SHEET } from "./worksheet-studio-theme";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 
 const QUICK: { id: WorksheetImproveAction; label: string }[] = [
@@ -41,7 +41,7 @@ export function WorksheetAiAssistant({ onAction, onCopilotMessage, busy }: Props
         <Sparkles className="h-6 w-6" />
       </button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-3xl pb-[max(env(safe-area-inset-bottom),1rem)]">
+        <SheetContent side="bottom" className={cn(WS_SHEET, "rounded-t-3xl")}>
           <SheetHeader className="flex-row items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-left">
               <Sparkles className="h-5 w-5 text-[#c9a227]" /> AI Copilot

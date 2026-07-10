@@ -43,5 +43,8 @@ export * from "./prompt-quality-engine.js";
 export * from "./conversational-editor.js";
 export * from "./quality-insights.js";
 export * from "./post-generation-recs.js";
+export * from "./reconstruction-engine.js";
+export * from "./reconstruction-prompt.js";
+export * from "./parse-reconstruction-response.js";
 // Browser-only modules (IndexedDB, canvas, window) live in ./client — do not
 // re-export them here or Node/API typecheck pulls in DOM globals.

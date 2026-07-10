@@ -27,6 +27,7 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { WS_SHEET } from "./worksheet-studio-theme";
 
 type Props = {
   open: boolean;
@@ -70,7 +71,7 @@ export function WorksheetProductivityHub({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto rounded-t-3xl pb-[max(env(safe-area-inset-bottom),1rem)]">
+      <SheetContent side="bottom" className={cn(WS_SHEET, "rounded-t-3xl")}>
         <SheetHeader>
           <SheetTitle className="text-left text-lg font-bold text-[#1e3a5f]">Teacher Productivity</SheetTitle>
         </SheetHeader>

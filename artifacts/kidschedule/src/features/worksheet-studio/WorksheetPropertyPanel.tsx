@@ -28,7 +28,7 @@ type Props = {
 
 function ColorInput({ label, value, onChange }: { label: string; value?: string; onChange: (v: string) => void }) {
   return (
-    <label className="flex min-w-[88px] flex-col gap-1 text-xs">
+    <label className="flex min-w-0 flex-1 basis-[5rem] flex-col gap-1 text-xs">
       {label}
       <input
         type="color"
@@ -45,7 +45,7 @@ function NumInput({ label, value, onChange, min, max }: {
   label: string; value?: number; onChange: (v: number) => void; min?: number; max?: number;
 }) {
   return (
-    <label className="flex min-w-[72px] flex-1 flex-col gap-1 text-xs">
+    <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs">
       {label}
       <input
         type="number"
@@ -77,7 +77,7 @@ function WorksheetPropertyPanelInner({ handle, onReplaceImage, className }: Prop
   return (
     <aside
       className={cn(
-        "max-h-[38dvh] overflow-y-auto border-t border-white/30 bg-white/95 px-3 py-3 backdrop-blur-md",
+        "max-h-[38dvh] w-full min-w-0 overflow-x-hidden overflow-y-auto border-t border-white/30 bg-white/95 px-3 py-3 backdrop-blur-md",
         className,
       )}
       aria-label="Object properties"
@@ -215,7 +215,7 @@ function WorksheetPropertyPanelInner({ handle, onReplaceImage, className }: Prop
 
       {/* Common */}
       <div className="flex flex-wrap items-end gap-3">
-        <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs">
           Opacity
           <Slider
             value={[Math.round((style.opacity ?? 1) * 100)]}

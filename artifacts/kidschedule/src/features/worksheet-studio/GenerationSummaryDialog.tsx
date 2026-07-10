@@ -7,10 +7,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { GenerationSummary } from "@workspace/worksheet-studio";
 import { Sparkles } from "lucide-react";
-import { WS_PRIMARY_BTN } from "./worksheet-studio-theme";
-import { cn } from "@/lib/utils";
+import { WS_PRIMARY_BTN, WS_MUTED_TEXT, WS_DIALOG } from "./worksheet-studio-theme";
 
 type Props = {
   open: boolean;
@@ -24,7 +24,7 @@ type Props = {
 function Row({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
+      <span className={WS_MUTED_TEXT}>{label}</span>
       <span className="font-semibold text-[#1e3a5f]">{value}</span>
     </div>
   );
@@ -37,10 +37,12 @@ export function GenerationSummaryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl">
+      <DialogContent className={cn(WS_DIALOG)}>
         <DialogHeader>
           <DialogTitle className="text-[#1e3a5f]">Ready to generate</DialogTitle>
-          <DialogDescription>Review your worksheet request before AI creates it.</DialogDescription>
+          <DialogDescription className={WS_MUTED_TEXT}>
+            Review your worksheet request, then tap Generate.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-2.5 rounded-xl border border-[#d4cfc4]/50 bg-[#faf8f5] p-4">
           <Row label="Class" value={summary.classLabel} />
@@ -52,7 +54,7 @@ export function GenerationSummaryDialog({
           <Row label="Prompt quality" value={summary.promptQuality} />
           <Row label="Quality estimate" value={`${summary.qualityEstimate}%`} />
         </div>
-        <p className="max-h-24 overflow-y-auto text-xs leading-relaxed text-muted-foreground">
+        <p className={cn("max-h-24 overflow-y-auto text-xs leading-relaxed", WS_MUTED_TEXT)}>
           {summary.effectivePrompt.slice(0, 280)}
           {summary.effectivePrompt.length > 280 ? "…" : ""}
         </p>

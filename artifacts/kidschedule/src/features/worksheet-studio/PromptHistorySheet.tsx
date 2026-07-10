@@ -15,6 +15,7 @@ import {
 } from "@workspace/worksheet-studio";
 import { Clock, Copy, Heart, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WS_SHEET, WS_CHIP_ROW } from "./worksheet-studio-theme";
 
 type Props = {
   open: boolean;
@@ -97,7 +98,7 @@ export function PromptHistorySheet({ open, onOpenChange, onRestore }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl">
+      <SheetContent side="bottom" className={WS_SHEET}>
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-[#1e3a5f]">
             <Clock className="h-5 w-5" /> Prompt history
@@ -114,7 +115,7 @@ export function PromptHistorySheet({ open, onOpenChange, onRestore }: Props) {
           />
         </div>
         {!query.trim() && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className={cn(WS_CHIP_ROW, "mt-3")}>
             {TABS.map((t) => (
               <button
                 key={t.id}

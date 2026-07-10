@@ -55,6 +55,10 @@ export const AUTO_SAVE_INTERVAL_MS = 3000;
 export const DRAFT_DB_NAME = "amynest-worksheet-studio";
 export const DRAFT_STORE_NAME = "drafts";
 export const VERSION_STORE_NAME = "versions";
+export const LIBRARY_STORE_NAME = "library";
+export const TEMPLATES_STORE_NAME = "teacher_templates";
+/** Unified IndexedDB schema version — keep auto-save and teacher-library in sync. */
+export const DRAFT_DB_VERSION = 4;
 /** Print export resolution — 300 DPI relative to 72 DPI canvas */
 export const EXPORT_DPI = 300;
 export const SCREEN_DPI = 72;

@@ -1,5 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AmyTalkingHead } from "@/components/amy-3d/amy-talking-head";
+import { setQaFaceOverride } from "@/components/amy-3d/avatar/qa-face-override";
+
+function readFaceHoldFromUrl(): "none" | "blink" | "talk" {
+  try {
+    const hold = new URLSearchParams(window.location.search).get("faceHold");
+    if (hold === "blink" || hold === "talk") return hold;
+  } catch {
+    /* ignore */
+  }
+  return "none";
+}
 
 // TEMP dev-only QA harness for verifying Amy front-facing + framing + talk anim.
 export default function AmyAvatarQaPage() {
@@ -8,6 +19,26 @@ export default function AmyAvatarQaPage() {
   );
   const [vo, setVo] = useState(-0.8);
   const [ms, setMs] = useState(1);
+  const [faceHold, setFaceHold] = useState<"none" | "blink" | "talk">(() =>
+    typeof window !== "undefined" ? readFaceHoldFromUrl() : "none",
+  );
+
+  const applyFaceHold = (next: "none" | "blink" | "talk") => {
+    setFaceHold(next);
+    if (next === "blink") setQaFaceOverride({ blink: 0.9, mouthOpen: 0 });
+    else if (next === "talk") setQaFaceOverride({ blink: 0, mouthOpen: 0.65 });
+    else setQaFaceOverride(null);
+    const url = new URL(window.location.href);
+    if (next === "none") url.searchParams.delete("faceHold");
+    else url.searchParams.set("faceHold", next);
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  useEffect(() => {
+    const initial = readFaceHoldFromUrl();
+    if (initial !== "none") applyFaceHold(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount sync from URL only
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f1a2e", color: "#fff", padding: 12 }}>
@@ -25,6 +56,21 @@ export default function AmyAvatarQaPage() {
             }}
           >
             {m}
+          </button>
+        ))}
+        {(["none", "blink", "talk"] as const).map((h) => (
+          <button
+            key={h}
+            onClick={() => applyFaceHold(h)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 8,
+              border: faceHold === h ? "2px solid #22d3ee" : "1px solid #555",
+              background: faceHold === h ? "#0e3a45" : "transparent",
+              color: "#fff",
+            }}
+          >
+            face:{h}
           </button>
         ))}
       </div>

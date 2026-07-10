@@ -9,6 +9,7 @@ import {
 } from "@workspace/worksheet-studio";
 import { Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WS_SHEET, WS_MUTED_TEXT, WS_CHIP_GRID, WS_GLASS_CARD } from "./worksheet-studio-theme";
 
 type Props = {
   open: boolean;
@@ -21,7 +22,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   const color = value >= 90 ? "text-emerald-600" : value >= 75 ? "text-[#1e3a5f]" : "text-amber-600";
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
+      <span className={WS_MUTED_TEXT}>{label}</span>
       <span className={cn("font-semibold", color)}>{value}%</span>
     </div>
   );
@@ -34,13 +35,13 @@ export function PostGenerationSheet({ open, onOpenChange, document, onRecommenda
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90dvh] rounded-t-2xl">
+      <SheetContent side="bottom" className={WS_SHEET}>
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-[#1e3a5f]">
             <TrendingUp className="h-5 w-5 text-[#c9a227]" /> Worksheet Quality
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-4 rounded-xl border border-[#d4cfc4]/50 bg-white/80 p-4">
+        <div className={cn(WS_GLASS_CARD, "mt-4 p-4")}>
           <p className="text-3xl font-bold text-[#1e3a5f]">{breakdown.overall}%</p>
           <p className="text-sm text-muted-foreground">Overall quality score</p>
           <div className="mt-4 space-y-2">
@@ -62,7 +63,7 @@ export function PostGenerationSheet({ open, onOpenChange, document, onRecommenda
           )}
         </div>
         <p className="mt-4 text-xs font-bold uppercase tracking-wider text-[#1e3a5f]/60">One-tap variants</p>
-        <div className="mt-2 grid grid-cols-2 gap-2 pb-6">
+        <div className={cn(WS_CHIP_GRID, "mt-2 pb-6")}>
           {recs.map((rec) => (
             <Button
               key={rec.id}

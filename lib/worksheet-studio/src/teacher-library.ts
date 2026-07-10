@@ -1,17 +1,16 @@
 import type { WorksheetDocument } from "./types.js";
-import { DRAFT_DB_NAME } from "./constants.js";
+import { DRAFT_DB_NAME, DRAFT_DB_VERSION, LIBRARY_STORE_NAME, TEMPLATES_STORE_NAME } from "./constants.js";
 import { duplicateWorksheetDocument } from "./teacher-productivity.js";
 import type { LibraryEntry, LibraryFilter, LibrarySort, SavedTeacherTemplate } from "./library-types.js";
 
 export type { LibraryEntry, LibraryFilter, LibrarySort, SavedTeacherTemplate } from "./library-types.js";
 
-export const LIBRARY_STORE = "library";
-export const TEMPLATES_STORE = "teacher_templates";
-const DB_VERSION = 4;
+export const LIBRARY_STORE = LIBRARY_STORE_NAME;
+export const TEMPLATES_STORE = TEMPLATES_STORE_NAME;
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DRAFT_DB_NAME, DB_VERSION);
+    const req = indexedDB.open(DRAFT_DB_NAME, DRAFT_DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts", { keyPath: "id" });

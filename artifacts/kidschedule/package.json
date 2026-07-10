@@ -95,6 +95,7 @@
     "@workspace/intent-recovery": "workspace:*",
     "@workspace/nature-sounds-world": "workspace:*",
     "@workspace/vehicle-world": "workspace:*",
+    "@workspace/teacher-os": "workspace:*",
     "@workspace/worksheet-studio": "workspace:*",
     "@workspace/world-engine": "workspace:*",
     "class-variance-authority": "catalog:",

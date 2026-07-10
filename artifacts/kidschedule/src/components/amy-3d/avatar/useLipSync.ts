@@ -115,12 +115,14 @@ export function useLipSync(
       }
 
       // Procedural jaw: organic envelope + lip relaxation between peaks.
+      // Floor keeps mouth readable when speechEnergyRef is present but still 0
+      // (QA / pre-audio); energy still scales amplitude when the meter is live.
       const syllable = Math.abs(organic(t, p.breath, 1.35, 149));
       const secondary = Math.abs(organic(t, p.sway, 1.8, 151));
       const relax = Math.max(0, organic(t, p.head, 0.55, 157)) ** 2;
       const open =
-        (0.1 + syllable * 0.58 + secondary * 0.16) *
-        (0.48 + energy * 0.52) *
+        (0.18 + syllable * 0.62 + secondary * 0.18) *
+        (0.62 + energy * 0.38) *
         (1 - relax * 0.28);
       mouthOpen.current += (open - mouthOpen.current) * 0.35;
       face.setMouthOpen(mouthOpen.current);

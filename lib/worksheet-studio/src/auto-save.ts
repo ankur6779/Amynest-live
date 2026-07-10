@@ -2,12 +2,14 @@ import type { WorksheetDocument } from "./types.js";
 import {
   AUTO_SAVE_INTERVAL_MS,
   DRAFT_DB_NAME,
+  DRAFT_DB_VERSION,
   DRAFT_STORE_NAME,
+  LIBRARY_STORE_NAME,
+  TEMPLATES_STORE_NAME,
+  VERSION_STORE_NAME,
 } from "./constants.js";
 import type { WorksheetDraftRecord } from "./types.js";
 
-export const VERSION_STORE_NAME = "versions";
-const DB_VERSION = 3;
 const MAX_VERSIONS_PER_DOC = 20;
 
 export interface WorksheetDraftVersion {
@@ -20,7 +22,7 @@ export interface WorksheetDraftVersion {
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DRAFT_DB_NAME, DB_VERSION);
+    const req = indexedDB.open(DRAFT_DB_NAME, DRAFT_DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(DRAFT_STORE_NAME)) {
@@ -31,10 +33,16 @@ function openDb(): Promise<IDBDatabase> {
         store.createIndex("documentId", "documentId", { unique: false });
         store.createIndex("savedAt", "savedAt", { unique: false });
       }
-      if (!db.objectStoreNames.contains("library")) {
-        const ls = db.createObjectStore("library", { keyPath: "id" });
+      if (!db.objectStoreNames.contains(LIBRARY_STORE_NAME)) {
+        const ls = db.createObjectStore(LIBRARY_STORE_NAME, { keyPath: "id" });
         ls.createIndex("updatedAt", "updatedAt", { unique: false });
         ls.createIndex("favorite", "favorite", { unique: false });
+        ls.createIndex("folder", "folder", { unique: false });
+      }
+      if (!db.objectStoreNames.contains(TEMPLATES_STORE_NAME)) {
+        const ts = db.createObjectStore(TEMPLATES_STORE_NAME, { keyPath: "id" });
+        ts.createIndex("useCount", "useCount", { unique: false });
+        ts.createIndex("favorite", "favorite", { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);

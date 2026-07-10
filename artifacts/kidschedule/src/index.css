@@ -2834,6 +2834,34 @@ html.amynest-native-shell .drawer-overlay {
 .ws-no-scrollbar::-webkit-scrollbar { display: none; }
 .ws-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* LPS Worksheet Studio — mobile-safe layout */
+.ws-app-shell,
+.worksheet-studio,
+.ws-root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  min-width: 0;
+  -webkit-text-size-adjust: 100%;
+}
+.worksheet-studio textarea,
+.ws-root textarea {
+  overflow: hidden !important;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.worksheet-studio img,
+.ws-root img {
+  max-width: 100%;
+  height: auto;
+}
+.ws-container,
+.ws-card,
+.ws-sheet,
+.ws-dialog {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* ─── Print / Save-as-PDF support for Amy Coach plan ─────────────────── */
 .ws-print-only { display: none; }
 @media print {

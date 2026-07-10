@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
 import { trackWorksheetEvent } from "./worksheet-studio-analytics";
+import { WS_ROOT, WS_MUTED_TEXT, WS_HEADING_SM, WS_PAD_X } from "./worksheet-studio-theme";
+import { cn } from "@/lib/utils";
 
 type Props = { children: ReactNode; onReset?: () => void };
 type State = { error: Error | null };
@@ -24,10 +26,10 @@ export class WorksheetErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#faf8f5] px-6 text-center" role="alert">
+        <div className={cn(WS_ROOT, "flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#faf8f5] text-center", WS_PAD_X)} role="alert">
           <AlertTriangle className="h-12 w-12 text-amber-600" aria-hidden />
-          <h2 className="text-xl font-bold text-[#1e3a5f]">Something went wrong</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
+          <h2 className={WS_HEADING_SM}>Something went wrong</h2>
+          <p className={cn("max-w-sm", WS_MUTED_TEXT)}>
             Your drafts are saved locally. Try again — we&apos;ll restore your work automatically.
           </p>
           <Button

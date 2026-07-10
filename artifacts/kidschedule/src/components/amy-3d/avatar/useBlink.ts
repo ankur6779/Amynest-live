@@ -85,6 +85,9 @@ export function useBlink(
         faceLife.blink = 0;
         faceLife.cheekLift *= 0.85;
       }
+      // Keep lids closed when not blinking. AmyAvatar QA hold runs after this
+      // and can re-apply a forced blink for screenshots.
+      face.setBlink(0);
       if (t >= r.next) {
         r.phase = "blinking";
         r.start = t;

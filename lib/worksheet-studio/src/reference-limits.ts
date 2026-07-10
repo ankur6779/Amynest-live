@@ -11,6 +11,9 @@ const EXT_MAP: Record<string, ReferenceFileKind> = {
   png: "image",
   jpg: "image",
   jpeg: "image",
+  heic: "image",
+  heif: "image",
+  webp: "image",
   svg: "svg",
 };
 
@@ -20,6 +23,9 @@ const MIME_MAP: Record<string, ReferenceFileKind> = {
   "image/png": "image",
   "image/jpeg": "image",
   "image/jpg": "image",
+  "image/heic": "image",
+  "image/heif": "image",
+  "image/webp": "image",
   "image/svg+xml": "svg",
 };
 
@@ -34,9 +40,52 @@ export function acceptReferenceMimeTypes(): string {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "image/png",
     "image/jpeg",
+    "image/heic",
+    "image/heif",
+    "image/webp",
     "image/svg+xml",
-    ".pdf,.docx,.png,.jpg,.jpeg,.svg",
+    ".pdf,.docx,.png,.jpg,.jpeg,.heic,.heif,.webp,.svg",
   ].join(",");
+}
+
+/** v7 — accept string for reconstruction uploads (camera, scans, WhatsApp images) */
+export function acceptReconstructionMimeTypes(): string {
+  return acceptReferenceMimeTypes();
+}
+
+const VISION_IMAGE_MAX = 3;
+const VISION_DATA_URL_MAX_CHARS = 120_000;
+
+/** Prepare lightweight vision payload for reconstruction API */
+export function prepareVisionImagesForApi(
+  sources: WorksheetReferenceContext[],
+): string[] {
+  const images: string[] = [];
+  for (const s of sources) {
+    if (s.thumbnailDataUrl) images.push(s.thumbnailDataUrl);
+    if (s.pageThumbnails) images.push(...s.pageThumbnails);
+    if (images.length >= VISION_IMAGE_MAX) break;
+  }
+  return images
+    .slice(0, VISION_IMAGE_MAX)
+    .map((url) => (url.length > VISION_DATA_URL_MAX_CHARS ? url.slice(0, VISION_DATA_URL_MAX_CHARS) : url));
+}
+
+/** Strip heavy fields but keep reconstruction metadata */
+export function stripSourcesForReconstructionApi(
+  sources: WorksheetReferenceContext[],
+): WorksheetReferenceContext[] {
+  return sources.map((r) => ({
+    id: r.id,
+    filename: r.filename,
+    kind: r.kind,
+    mimeType: r.mimeType,
+    sizeBytes: r.sizeBytes,
+    pageCount: r.pageCount,
+    imageCount: r.imageCount,
+    textSnippet: r.textSnippet?.slice(0, 500),
+    layoutHints: r.layoutHints,
+  }));
 }
 
 export interface ReferenceValidationResult {

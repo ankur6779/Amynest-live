@@ -24,8 +24,20 @@ import {
   mergeReferenceAnalyses,
   buildVisionAnalysisSystemPrompt,
   buildVisionAnalysisUserPayload,
+  analyzeReconstructionSources,
+  mergeReconstructionAnalyses,
+  reconstructWorksheetLocal,
+  validateReconstructionDocument,
+  buildReconstructionSystemPrompt,
+  buildReconstructionUserPayload,
+  buildReconstructionAnalysisSystemPrompt,
+  buildReconstructionAnalysisUserPayload,
+  parseReconstructionResponse,
+  buildReconstructionFallback,
+  prepareVisionImagesForApi,
+  stripSourcesForReconstructionApi,
 } from "@workspace/worksheet-studio";
-import type { EnhancePromptRequest, WorksheetDocument, WorksheetGenerateRequest, WorksheetReferenceContext } from "@workspace/worksheet-studio";
+import type { EnhancePromptRequest, WorksheetDocument, WorksheetGenerateRequest, WorksheetReferenceContext, WorksheetReconstructRequest } from "@workspace/worksheet-studio";
 
 const router: IRouter = Router();
 
@@ -296,6 +308,161 @@ router.post(
           logger.warn(`worksheet-studio/analyze-reference failed: ${err instanceof Error ? err.message : String(err)}`);
         }
         return { analyses: localAnalyses, merged, source: "local" as const };
+      },
+      buildAsyncBody: (jobId) => ({ jobId, status: "processing", pollUrl: `/api/ai/jobs/${jobId}` }),
+    });
+  },
+);
+
+const ReconstructSourceSchema = ReferenceSchema.extend({
+  textSnippet: z.string().max(500).optional(),
+}).passthrough();
+
+const ReconstructSchema = z.object({
+  sources: z.array(ReconstructSourceSchema).min(1).max(10),
+  style: z.enum(["exact", "improve_layout", "modern", "lps", "low_ink", "color", "assessment", "homework"]),
+  classLevel: z.enum(["nursery", "lkg", "ukg", "grade1", "grade2"]),
+  subject: z.enum(["english", "math", "evs", "hindi", "gk", "phonics", "drawing"]),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  topic: z.string().max(200).optional(),
+  language: z.enum(["english", "hindi", "bilingual"]).optional(),
+  pageCount: z.number().int().min(1).max(4).optional(),
+  visionImages: z.array(z.string().max(150_000)).max(3).optional(),
+  analysis: z.record(z.unknown()).optional(),
+});
+
+router.post(
+  "/worksheet-studio/analyze-reconstruction",
+  hubModuleGate("hub_worksheets"),
+  aiUsageGate,
+  async (req, res): Promise<void> => {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const parsed = z.object({
+      sources: z.array(ReconstructSourceSchema).min(1).max(10),
+      visionImages: z.array(z.string().max(150_000)).max(3).optional(),
+    }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const sources = parsed.data.sources as WorksheetReferenceContext[];
+    const localAnalyses = analyzeReconstructionSources(sources);
+    const merged = mergeReconstructionAnalyses(localAnalyses);
+
+    const openAiPayload: OpenAiChatPayload = {
+      namespace: `${NAMESPACE}:reconstruct_analyze`,
+      model: MODEL,
+      json: true,
+      max_completion_tokens: 1200,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: buildReconstructionAnalysisSystemPrompt() },
+        { role: "user", content: buildReconstructionAnalysisUserPayload(sources, parsed.data.visionImages) },
+      ],
+    };
+
+    await submitAiJobAndRespond({
+      res,
+      userId,
+      type: "openai.chat_json",
+      payload: openAiPayload,
+      buildSyncBody: (result) => {
+        const raw = (result as { content: string | null; timedOut?: boolean }).content;
+        if (!raw || (result as { timedOut?: boolean }).timedOut) {
+          return { analyses: localAnalyses, merged, source: "local" as const };
+        }
+        try {
+          const json = JSON.parse(raw) as { analyses?: typeof localAnalyses };
+          if (json.analyses?.length) {
+            const aiAnalyses = json.analyses.map((a) => ({ ...a, source: "ai" as const }));
+            return { analyses: aiAnalyses, merged: mergeReconstructionAnalyses(aiAnalyses), source: "ai" as const };
+          }
+        } catch (err) {
+          logger.warn(`worksheet-studio/analyze-reconstruction failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        return { analyses: localAnalyses, merged, source: "local" as const };
+      },
+      buildAsyncBody: (jobId) => ({ jobId, status: "processing", pollUrl: `/api/ai/jobs/${jobId}` }),
+    });
+  },
+);
+
+router.post(
+  "/worksheet-studio/reconstruct",
+  hubModuleGate("hub_worksheets"),
+  aiUsageGate,
+  async (req, res): Promise<void> => {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const parsed = ReconstructSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const reqBody = parsed.data as WorksheetReconstructRequest;
+    const fallbackResult = reconstructWorksheetLocal(reqBody);
+
+    const openAiPayload: OpenAiChatPayload = {
+      namespace: `${NAMESPACE}:reconstruct:${reqBody.style}`,
+      model: MODEL,
+      json: true,
+      max_completion_tokens: 3000,
+      temperature: 0.45,
+      messages: [
+        { role: "system", content: buildReconstructionSystemPrompt() },
+        { role: "user", content: buildReconstructionUserPayload(reqBody) },
+      ],
+    };
+
+    await submitAiJobAndRespond({
+      res,
+      userId,
+      type: "openai.chat_json",
+      payload: openAiPayload,
+      buildSyncBody: (result) => {
+        const raw = (result as { content: string | null; timedOut?: boolean }).content;
+        if (!raw || (result as { timedOut?: boolean }).timedOut) {
+          return {
+            document: fallbackResult.document,
+            source: "local" as const,
+            usedFallback: true,
+            qualityScore: fallbackResult.qualityScore,
+            validation: fallbackResult.validation,
+            uncertainAreas: fallbackResult.uncertainAreas,
+          };
+        }
+        try {
+          const json = JSON.parse(raw) as unknown;
+          const fb = buildReconstructionFallback(reqBody);
+          const { document, uncertainAreas } = parseReconstructionResponse(json, reqBody, fb);
+          const validation = validateReconstructionDocument(document, reqBody.analysis);
+          const quality = scoreWorksheet(document).overall;
+          return {
+            document,
+            source: "ai" as const,
+            usedFallback: false,
+            qualityScore: quality,
+            validation,
+            uncertainAreas,
+          };
+        } catch (err) {
+          logger.warn(`worksheet-studio/reconstruct parse failed: ${err instanceof Error ? err.message : String(err)}`);
+          return {
+            document: fallbackResult.document,
+            source: "local" as const,
+            usedFallback: true,
+            qualityScore: fallbackResult.qualityScore,
+            validation: fallbackResult.validation,
+            uncertainAreas: fallbackResult.uncertainAreas,
+          };
+        }
       },
       buildAsyncBody: (jobId) => ({ jobId, status: "processing", pollUrl: `/api/ai/jobs/${jobId}` }),
     });

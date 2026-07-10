@@ -155,6 +155,16 @@ describe("Amy face polish — landmarks + pose", () => {
     expect(AMY_FACE_LANDMARKS.rightCheek.y).toBeLessThan(AMY_FACE_LANDMARKS.rightEye.y);
   });
 
+  it("keeps eye/mouth landmarks on the camera-facing Head-local −Z face shell", () => {
+    expect(AMY_FACE_LANDMARKS.leftEye.z).toBeLessThan(-0.25);
+    expect(AMY_FACE_LANDMARKS.rightEye.z).toBeLessThan(-0.25);
+    expect(AMY_FACE_LANDMARKS.mouth.z).toBeLessThan(-0.25);
+    // Must sit on painted eyes, not the visor/forehead (runtime: y≈0.32 was too high).
+    expect(AMY_FACE_LANDMARKS.leftEye.y).toBeGreaterThan(0.15);
+    expect(AMY_FACE_LANDMARKS.leftEye.y).toBeLessThan(0.24);
+    expect(AMY_FACE_LANDMARKS.mouth.y).toBeLessThan(AMY_FACE_LANDMARKS.leftEye.y);
+  });
+
   it("creates face-life + energy + presence slices on the shared pose buffer", () => {
     const pose = createPose();
     expect(pose.face.smileBase).toBeGreaterThan(0);
@@ -164,6 +174,34 @@ describe("Amy face polish — landmarks + pose", () => {
     expect(pose.presence.anticipate).toBe(0);
     pose.energy.level = 0.4;
     expect(pose.energy.level).toBe(0.4);
+  });
+});
+
+describe("Amy face polish — procedural renderer visibility", () => {
+  it("draws nothing: no lid/mouth meshes on the head", async () => {
+    const THREE = await import("three");
+    const { ProceduralFaceDriver } = await import(
+      "@/components/amy-3d/avatar/procedural-face"
+    );
+    const head = new THREE.Object3D();
+    head.name = "Head";
+    const face = new ProceduralFaceDriver(head);
+    expect(face.hasBlink).toBe(false);
+    expect(face.hasMouth).toBe(false);
+
+    const idle = face.getOverlayState();
+    expect(idle.lidVisible).toBe(false);
+    expect(idle.mouthOpenVisible).toBe(false);
+    expect(head.getObjectByName("AmyProceduralFace")).toBeTruthy();
+    expect(head.getObjectByName("AmyProcLid_L")).toBeFalsy();
+    expect(head.getObjectByName("AmyProcMouthOpen")).toBeFalsy();
+
+    face.setBlink(1);
+    face.setMouthOpen(0.7);
+    expect(face.getOverlayState().lidVisible).toBe(false);
+    expect(face.getOverlayState().mouthOpenVisible).toBe(false);
+    expect(head.getObjectByName("AmyProcMouthOpen")).toBeFalsy();
+    face.dispose();
   });
 });
 
