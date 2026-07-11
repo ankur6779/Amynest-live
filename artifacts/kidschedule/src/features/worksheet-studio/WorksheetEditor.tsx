@@ -317,20 +317,28 @@ export function WorksheetEditor({
 
   // When parent document version changes after teacher intent → bump token (single re-paint).
   const prevDocVersionRef = useRef(document.version);
+  const prevDocIdRef = useRef(document.id);
   useAuditedEffect("document.version.gate", () => {
     const prev = prevDocVersionRef.current;
-    if (document.version === prev) return;
+    const prevId = prevDocIdRef.current;
+    if (document.version === prev && document.id === prevId) return;
     prevDocVersionRef.current = document.version;
+    prevDocIdRef.current = document.id;
     if (!initPaintDoneRef.current) return;
 
     const audit = getEditorSyncAudit();
+    if (document.id !== prevId) {
+      bumpRenderToken(`document.id ${prevId}→${document.id}`);
+      audit?.consumePendingRepaint();
+      return;
+    }
     if (audit?.consumePendingRepaint()) {
       bumpRenderToken(`document.version ${prev}→${document.version}`);
       return;
     }
     // Version advanced without repaint request (e.g. canvas_edit_sync already on canvas) — sync cache only
     lastPaintKeyRef.current = paintKey(pageIndex, document.version, renderTokenRef.current, colorMode);
-  }, [document.version, bumpRenderToken, paintKey, pageIndex, colorMode]);
+  }, [document.version, document.id, bumpRenderToken, paintKey, pageIndex, colorMode]);
 
   const syncDocumentFromCanvas = useCallback(() => {
     const handle = handleRef.current;

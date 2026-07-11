@@ -25,7 +25,7 @@ import {
   WORKSHEET_GENERATOR_VERSION,
 } from "@workspace/worksheet-studio";
 import { exportBulkPdfs, loadLatestDraft, saveToLibrary, applyBrandingToDocument, deleteDraft } from "@workspace/worksheet-studio/client";
-import { getEditorSyncAudit } from "./editor-state-sync-audit";
+import { getEditorSyncAudit, requestEditorDocumentRepaint } from "./editor-state-sync-audit";
 import { setWorksheetDebugOrigin } from "./WorksheetDebugPanel";
 import { WorksheetHome } from "./WorksheetHome";
 import { WorksheetGeneratingOverlay } from "./WorksheetGeneratingOverlay";
@@ -158,6 +158,9 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         throw err;
       }
     }
+    if (view.kind === "editor") {
+      requestEditorDocumentRepaint("enter_editor_replace");
+    }
     setView({ kind: "editor", document: branded });
     onViewChange?.(true);
     setHasDraft(true);
@@ -180,7 +183,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
       }
     }
     return branded;
-  }, [onViewChange, saveNow]);
+  }, [onViewChange, saveNow, view.kind]);
 
   useEffect(() => {
     if (view.kind === "editor" && typeof window !== "undefined") {
@@ -357,6 +360,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
 
   const applyPendingEdit = async () => {
     if (!pendingEdit || view.kind !== "editor") return;
+    requestEditorDocumentRepaint("copilot_apply");
     setView({ kind: "editor", document: pendingEdit.document });
     try {
       await saveNow(pendingEdit.document);
@@ -387,6 +391,9 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
       trackCurriculumCompletion(doc);
     }
     if (branded[0]) {
+      if (view.kind === "editor") {
+        requestEditorDocumentRepaint("open_pack");
+      }
       setView({ kind: "editor", document: branded[0] });
       onViewChange?.(true);
       try {
@@ -397,7 +404,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         description: `${branded.length} worksheets saved to your library.`,
       });
     }
-  }, [saveNow, onViewChange]);
+  }, [saveNow, onViewChange, view.kind]);
 
   useEffect(() => {
     onRegisterOpenPack?.(handleOpenPack);
