@@ -31,6 +31,7 @@ import {
 } from "@/lib/startup-orchestrator";
 import { scheduleAmyAssetPreload } from "@/lib/amy/character/amy-asset-preload";
 import { schedulePostRenderStartup } from "@/lib/startup-background";
+import { initStartupFunnelTelemetry, trackStartupFunnel, trackStartupFunnelFailure } from "@/lib/startup-funnel";
 
 declare global {
   interface Window {
@@ -118,9 +119,11 @@ const mark = (p: string) => {
  */
 function bootstrap(): void {
   initStartupOrchestrator();
+  initStartupFunnelTelemetry();
 
   try {
     mark("bundle-loaded");
+    trackStartupFunnel("react_bundle_loaded");
 
     const rootEl = document.getElementById("root");
     if (!rootEl) {
@@ -137,6 +140,7 @@ function bootstrap(): void {
 
     mark("react-rendered");
     markReactRendered();
+    trackStartupFunnel("react_first_render");
     patchBootDiagnostics({ hostname: window.location.hostname });
 
     /* Never await — failures must not block the shell. */
@@ -148,6 +152,7 @@ function bootstrap(): void {
   } catch (err) {
     console.error("[amynest:bootstrap] Failed to start app", err);
     mark("bootstrap-failed");
+    trackStartupFunnelFailure("react_render_failed", err, { startupPhase: "react_render" });
     trackStartupEvent("boot_timeout", {
       stage: "phase1_mount",
       message: err instanceof Error ? err.message : String(err),
@@ -202,6 +207,11 @@ function startSplashDismissal(): void {
     const minElapsed = elapsed >= SPLASH_MIN_MS;
     if (!minElapsed) return false;
     splashDismissed = true;
+    try {
+      window.__amynestFunnelTrack?.("native_splash_finished");
+    } catch {
+      /* ignore */
+    }
     if (pollHandle !== null) {
       clearInterval(pollHandle);
       pollHandle = null;

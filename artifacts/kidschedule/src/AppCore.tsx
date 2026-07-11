@@ -174,6 +174,8 @@ import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissi
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { CampaignAttributionBridge } from "@/components/campaign-attribution-bridge";
 import { GrowthBootstrap } from "@/components/growth-bootstrap";
+import { StartupFunnelScreenTracker } from "@/components/startup-funnel-screen-tracker";
+import { trackStartupFunnel } from "@/lib/startup-funnel";
 import { PreSignupReengagementOrchestrator } from "@/components/pre-signup-reengagement-orchestrator";
 import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
 import { useOnlineStatus } from "@/components/offline-screen";
@@ -246,6 +248,30 @@ function HomeRedirect() {
   // still loading, which can kick off duplicate /api/onboarding fetches once
   // auth resolves on the next render.
   const authLoading = !isLoaded || authStatus === "loading";
+  const authBlocked =
+    isError && error instanceof Error && error.message === "auth-unauthorized";
+
+  useEffect(() => {
+    if (!isSignedIn || !isLoaded || authLoading) return;
+    if (isError && !authBlocked) return;
+    if (setupDone && childrenFetched && (childrenList?.length ?? 0) > 0) {
+      trackStartupFunnel("home_visible", { meta: { route: "/dashboard" } });
+      return;
+    }
+    if (setupDone) {
+      trackStartupFunnel("home_visible", { meta: { route: "/onboarding" } });
+    }
+  }, [
+    isSignedIn,
+    isLoaded,
+    authLoading,
+    isError,
+    authBlocked,
+    setupDone,
+    childrenFetched,
+    childrenList?.length,
+  ]);
+
   if (authLoading) return <RouteLoadingShell />;
 
   if (!isSignedIn) {
@@ -254,9 +280,6 @@ function HomeRedirect() {
     }
     return <LandingPage />;
   }
-
-  const authBlocked =
-    isError && error instanceof Error && error.message === "auth-unauthorized";
 
   if (isError && !authBlocked) {
     const timedOut = error instanceof FetchTimeoutError;
@@ -817,6 +840,7 @@ function AppRoutes() {
             <ReferralAttributionBridge />
             <CampaignAttributionBridge />
             <GrowthBootstrap />
+            <StartupFunnelScreenTracker />
             <PreSignupReengagementOrchestrator />
             <GiftAttributionBridge />
             <FcmForegroundHandler />
@@ -1029,6 +1053,7 @@ function AppCoreMountMarker() {
       startAdminAudioOpsPolling();
     });
     markAppCoreReady();
+    trackStartupFunnel("appcore_loaded");
     bootMark("appcore-mounted");
   }, []);
   return null;

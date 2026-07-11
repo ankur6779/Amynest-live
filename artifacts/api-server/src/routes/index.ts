@@ -4,6 +4,10 @@ import {
   startupTelemetryAdminRouter,
   startupTelemetryPublicRouter,
 } from "./startup-telemetry";
+import {
+  startupFunnelAdminRouter,
+  startupFunnelPublicRouter,
+} from "./startup-funnel";
 import remoteConfigRouter from "./remote-config";
 import chatPlatformHealthRouter from "./chat-platform-health";
 import clientLogsRouter from "./client-logs";
@@ -176,6 +180,7 @@ router.use(storiesPublicRouter);
 router.use(audioSignedUrlPublicRouter);
 router.use(learningSeedPublicRouter);
 router.use(startupTelemetryPublicRouter);
+router.use(startupFunnelPublicRouter);
 router.use(nutritionSharePublicRouter);
 router.use(remoteConfigRouter);
 router.use(appVersionPolicyRouter);
@@ -190,6 +195,7 @@ router.use(requireRegisteredDevice);
 router.use(staticAudioAuthRouter);
 router.use(chatPlatformHealthRouter);
 router.use(startupTelemetryAdminRouter);
+router.use(startupFunnelAdminRouter);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);
 router.use(childrenRouter);

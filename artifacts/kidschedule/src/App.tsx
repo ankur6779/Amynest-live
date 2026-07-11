@@ -18,6 +18,7 @@ import {
   installVersionAnalyticsRetry,
   trackVersionAnalytics,
 } from "@/lib/version-analytics";
+import { trackStartupFunnel } from "@/lib/startup-funnel";
 
 // Everything heavy — Firebase Auth, providers, the router, every page route,
 // and the Layout shell — lives in AppCore. The shell starts the AppCore import
@@ -44,9 +45,13 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    trackStartupFunnel("version_check_started");
     void evaluateVersionGate()
       .then((decision) => {
         if (cancelled) return;
+        trackStartupFunnel("version_check_finished", {
+          meta: { decision: decision.kind },
+        });
         setVersionDecision(decision);
         const isHardUpdate = decision.kind === "hard-update";
         setNativeForceUpdateActive(isHardUpdate);
@@ -105,6 +110,7 @@ function App() {
     const id = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(() => {
         if (!cancelled) setShouldLoadAppCore(true);
+        trackStartupFunnel("appcore_started");
       });
     });
     return () => {

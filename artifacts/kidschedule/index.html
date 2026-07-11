@@ -166,6 +166,24 @@
     <script>
       (function () {
         try {
+          window.__AMYNEST_LAUNCH_TS = Date.now();
+          window.__amynestFunnelQueueEarly = window.__amynestFunnelQueueEarly || [];
+          window.__amynestFunnelTrack = function (name, opts) {
+            try {
+              window.__amynestFunnelQueueEarly.push({
+                name: name,
+                opts: opts || {},
+                ts: Date.now(),
+              });
+            } catch (_q) { /* ignore */ }
+          };
+          window.__amynestFunnelTrack("native_splash_started");
+          if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            window.__amynestFunnelTrack("offline_launch");
+          }
+        } catch (_launch) { /* ignore */ }
+
+        try {
           console.info("[amynest:boot] Pre-React", {
             hostname: location.hostname,
             href: location.href,
@@ -1561,6 +1579,7 @@
         // an immediate reload doesn't see a half-finished boot trail.
         try { localStorage.removeItem("__amynest_boot_v1"); } catch (_eRec) { /* ignore */ }
         try { console.info("[Refresh] Started", { kind: "pre_bundle_recovery" }); } catch (_logStart) { /* ignore */ }
+        try { window.__amynestFunnelTrack && window.__amynestFunnelTrack("cache_recovery", { meta: { kind: "pre_bundle_recovery" } }); } catch (_f1) { /* ignore */ }
         try { console.info("[Refresh] Clearing cache"); } catch (_logClear) { /* ignore */ }
         var recoveryTimeout = setTimeout(function () {
           try { console.error("[Refresh] Timeout"); } catch (_logTimeout) { /* ignore */ }
@@ -1577,6 +1596,7 @@
           .then(function () {
             clearTimeout(recoveryTimeout);
             try { console.info("[Refresh] Reloading"); } catch (_logReload) { /* ignore */ }
+            try { window.__amynestFunnelTrack && window.__amynestFunnelTrack("reload_triggered", { meta: { kind: "pre_bundle_recovery" } }); } catch (_f2) { /* ignore */ }
             location.reload();
           })
           .catch(function () {

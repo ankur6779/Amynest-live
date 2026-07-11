@@ -19,6 +19,7 @@ const EXEMPT_PATH_PREFIXES = [
   "/analytics/events",
   "/logs",
   "/startup-events",
+  "/startup-funnel-events",
   "/push/register",
   "/admin/analytics",
 ];

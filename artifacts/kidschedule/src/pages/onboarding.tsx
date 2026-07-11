@@ -1066,6 +1066,9 @@ export default function OnboardingPage() {
         step: "done",
         ...buildOnboardingAnalyticsContext({ country: countryCode, children }),
       });
+      void import("@/lib/startup-funnel").then(({ trackStartupFunnel }) => {
+        trackStartupFunnel("onboarding_complete");
+      });
       import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
         trackOnboardingMilestone("signup_completed");
       });

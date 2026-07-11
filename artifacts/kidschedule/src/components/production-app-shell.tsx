@@ -7,6 +7,7 @@ import { isProductionEnvironment } from "@/lib/runtime-crash-policy";
 import { initializeFirebase, type FirebaseInitResult } from "@/lib/firebase";
 import { beginFirebaseOAuthRedirectResolution } from "@/lib/firebase-oauth-redirect";
 import { patchBootDiagnostics } from "@/lib/boot-store";
+import { trackStartupFunnel, trackStartupFunnelFailure } from "@/lib/startup-funnel";
 
 type Props = { children: ReactNode };
 
@@ -31,11 +32,17 @@ function FirebaseInitGate({ children }: Props) {
   const [init, setInit] = useState<FirebaseInitResult | null>(null);
 
   useEffect(() => {
+    trackStartupFunnel("firebase_init_started");
     const init = initializeFirebase();
     if (init.status === "ok") {
       beginFirebaseOAuthRedirectResolution();
     }
     setInit(init);
+    if (init.status === "ok") {
+      trackStartupFunnel("firebase_init_finished");
+    } else if (init.status === "fail") {
+      trackStartupFunnelFailure("firebase_failed", init.error ?? "firebase_init_failed");
+    }
   }, []);
 
   if (!init || init.status === "pending") {

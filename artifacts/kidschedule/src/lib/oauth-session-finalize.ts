@@ -7,6 +7,7 @@ import {
 import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { trackStartupFunnel } from "@/lib/startup-funnel";
 import type { User, UserCredential } from "firebase/auth";
 
 const NATIVE_SYNC_TIMEOUT_MS = 15_000;
@@ -40,6 +41,9 @@ export async function finalizeOAuthCredentialSignIn(
   }
 
   const isNewUser = isOAuthNewUser(result);
+  if (isNewUser) {
+    trackStartupFunnel("account_created", { meta: { method: "oauth" } });
+  }
   void import("@/lib/meta-attribution").then(({ trackMetaCompleteRegistration, trackMetaLogin }) => {
     if (isNewUser) {
       trackMetaCompleteRegistration("oauth");

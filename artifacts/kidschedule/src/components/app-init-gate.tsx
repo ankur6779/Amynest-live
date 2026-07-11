@@ -8,6 +8,7 @@ import {
 } from "@/contexts/onboarding-status-context";
 import { devLog } from "@/lib/dev-log";
 import { setNavigationBootstrapComplete } from "@/lib/navigation-orchestrator";
+import { trackStartupFunnel } from "@/lib/startup-funnel";
 import {
   forceSyncAuthFromCurrentUser,
   hasUsableAuthSession,
@@ -72,6 +73,11 @@ export function AppInitGate({ children }: { children: ReactNode }) {
   }, []);
 
   const ready = isAppReady || forcedReady;
+
+  useEffect(() => {
+    if (!ready) return;
+    trackStartupFunnel("router_ready");
+  }, [ready]);
 
   useEffect(() => {
     setNavigationBootstrapComplete(ready);

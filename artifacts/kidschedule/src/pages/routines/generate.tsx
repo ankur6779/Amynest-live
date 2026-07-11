@@ -1694,6 +1694,11 @@ export default function RoutineGenerate() {
                 itemCount: Array.isArray(routine.items) ? routine.items.length : undefined,
                 source: "family",
               });
+              void import("@/lib/startup-funnel").then(({ trackStartupFunnel }) => {
+                trackStartupFunnel("routine_generated", {
+                  meta: { routineId: savedRoutine.id, childId: child.id },
+                });
+              });
               void import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
                 trackOnboardingMilestone("first_routine_generated", {
                   routineId: savedRoutine.id,

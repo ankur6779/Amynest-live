@@ -6,6 +6,7 @@ import {
 } from "@/lib/crash-logger";
 import { installProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { isBenignRuntimeError } from "@/lib/runtime-crash-policy";
+import { trackStartupFunnelFailure } from "@/lib/startup-funnel";
 
 const TAG = "[amynest:boot]";
 
@@ -63,6 +64,10 @@ export function installGlobalErrorHandlers(): void {
       .join(" | ");
     logCrashError(err, `boot:${detail}`);
     recordError("window.onerror", msg, detail);
+    trackStartupFunnelFailure("javascript_exception", event.error ?? msg, {
+      failureFile: event.filename,
+      failureLine: event.lineno ?? undefined,
+    });
     event.preventDefault();
   });
 
@@ -74,6 +79,7 @@ export function installGlobalErrorHandlers(): void {
     const msg = formatUnknown(event.reason);
     logCrashError(event.reason, "boot:unhandledrejection");
     recordError("unhandledrejection", msg);
+    trackStartupFunnelFailure("javascript_exception", event.reason ?? msg);
     event.preventDefault();
   });
 

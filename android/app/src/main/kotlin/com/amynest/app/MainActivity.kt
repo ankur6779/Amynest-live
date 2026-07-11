@@ -103,6 +103,9 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Log.d(TAG, "Notification permission result: $granted")
             pushBridge.setPermission(granted)
+            if (!granted) {
+                injectStartupFunnelEvent(webView, "permission_denied", """{"permission":"notifications"}""")
+            }
             askLocationAndMicPermission()
         }
 
@@ -237,6 +240,8 @@ class MainActivity : AppCompatActivity() {
         localNotifBridge = LocalNotifBridge.installOn(webView, this)
         installMicrophoneBridge(webView)
         installAppVersionBridge(webView)
+        installDeviceInfoBridge(webView)
+        injectStartupFunnelEvent(webView, "webview_created")
         reviewBridge = ReviewBridge.installOn(this, webView)
         InstallReferrerBridge.fetchOn(this, webView)
 
@@ -427,6 +432,26 @@ class MainActivity : AppCompatActivity() {
                     ?: super.shouldInterceptRequest(view, request)
             }
 
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: android.webkit.WebResourceError?,
+            ) {
+                super.onReceivedError(view, request, error)
+                if (view != null && request?.isForMainFrame == true) {
+                    val desc = error?.description?.toString() ?: "unknown"
+                    val code = error?.errorCode ?: -1
+                    injectStartupFunnelEvent(
+                        view,
+                        "webview_error",
+                        """{"code":$code,"description":${JSONObject.quote(desc)}}""",
+                    )
+                    if (code == android.webkit.WebViewClient.ERROR_HOST_LOOKUP) {
+                        injectStartupFunnelEvent(view, "dns_failure", """{"description":${JSONObject.quote(desc)}}""")
+                    }
+                }
+            }
+
             override fun shouldOverrideUrlLoading(
                 view: WebView,
                 request: WebResourceRequest,
@@ -459,6 +484,9 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                if (view != null) {
+                    injectStartupFunnelEvent(view, "webview_page_started", """{"url":${JSONObject.quote(url ?: "")}}""")
+                }
             }
 
             /**
@@ -468,6 +496,8 @@ class MainActivity : AppCompatActivity() {
              */
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
+
+                injectStartupFunnelEvent(view, "webview_page_finished", """{"url":${JSONObject.quote(url)}}""")
 
                 ViewCompat.getRootWindowInsets(view)?.let { applyWebSafeAreaInsets(it) }
 
@@ -780,6 +810,49 @@ class MainActivity : AppCompatActivity() {
             null,
         )
         Log.d(TAG, "Android microphone permission bridge installed")
+    }
+
+    @SuppressLint("JavascriptInterface")
+    private fun installDeviceInfoBridge(wv: WebView) {
+        wv.addJavascriptInterface(AndroidDeviceInfoInterface(), "AmyNestDeviceNative")
+        val launchTs = System.currentTimeMillis()
+        wv.evaluateJavascript(
+            "window.__AMYNEST_NATIVE_LAUNCH_TS=$launchTs;" +
+                "try{window.__AMYNEST_DEVICE_INFO=JSON.parse(" +
+                "${JSONObject.quote(AndroidDeviceInfoInterface().getDeviceInfo())});}catch(e){}",
+            null,
+        )
+        Log.d(TAG, "Android device info bridge installed")
+    }
+
+    private fun injectStartupFunnelEvent(
+        wv: WebView,
+        eventName: String,
+        metaJson: String = "{}",
+    ) {
+        val js =
+            "(function(){try{" +
+                "if(typeof window.__amynestFunnelTrack==='function'){" +
+                    "window.__amynestFunnelTrack(${JSONObject.quote(eventName)},{meta:$metaJson});" +
+                "}" +
+            "}catch(e){}})();"
+        wv.post { wv.evaluateJavascript(js, null) }
+    }
+
+    inner class AndroidDeviceInfoInterface {
+        @JavascriptInterface
+        fun getDeviceInfo(): String {
+            val info = JSONObject()
+            info.put("device_model", Build.MODEL ?: "unknown")
+            info.put("manufacturer", Build.MANUFACTURER ?: "unknown")
+            info.put("android_version", Build.VERSION.RELEASE ?: "unknown")
+            info.put("webview_version", android.webkit.WebView.getCurrentWebViewPackage()?.versionName ?: "unknown")
+            info.put("app_version", BuildConfig.VERSION_NAME)
+            info.put("build_number", BuildConfig.VERSION_NAME)
+            info.put("platform", "android")
+            info.put("cpu_architecture", Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown")
+            return info.toString()
+        }
     }
 
     @SuppressLint("JavascriptInterface")

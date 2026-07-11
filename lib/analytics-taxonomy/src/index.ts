@@ -662,3 +662,15 @@ export function validateAnalyticsEvent(
 export const ANALYTICS_MAX_BATCH = 50;
 /** Serialized props larger than this (bytes) are rejected as malformed. */
 export const ANALYTICS_MAX_PROPS_BYTES = 8_000;
+
+export {
+  STARTUP_FUNNEL_MILESTONE_EVENTS,
+  STARTUP_FUNNEL_FAILURE_EVENTS,
+  STARTUP_FUNNEL_EVENT_NAMES,
+  classifyStartupFunnelEvent,
+  startupFunnelEventBodySchema,
+  startupFunnelBatchBodySchema,
+  type StartupFunnelEventName,
+  type StartupFunnelEventType,
+  type StartupFunnelEventPayload,
+} from "./startup-funnel-events.js";

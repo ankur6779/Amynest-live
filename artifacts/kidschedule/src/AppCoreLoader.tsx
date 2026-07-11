@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { trackStartupEvent } from "@/lib/startup-orchestrator";
 import { safeImportModule } from "@/lib/safe-import";
 import { isLowMemoryIosClient } from "@/lib/device-lite";
+import { trackStartupFunnel, trackStartupFunnelFailure } from "@/lib/startup-funnel";
 import {
   diagnosticsToTelemetry,
   logStartupDiagnostics,
@@ -33,6 +34,14 @@ function loadAppCoreWithTimeout() {
         stage: "appcore_import",
         ...diagnosticsToTelemetry(diag),
       });
+      trackStartupFunnel("startup_timeout", {
+        meta: { stage: "appcore_import" },
+      });
+      trackStartupFunnelFailure(
+        "chunk_load_failed",
+        new Error("AppCore chunk import timeout"),
+        { meta: { stage: "appcore_import" } },
+      );
       reject(
         new Error(
           "AppCore chunk did not load in time — recovering (check your connection).",
@@ -51,6 +60,7 @@ function loadAppCoreWithTimeout() {
         if (settled) return;
         settled = true;
         window.clearTimeout(timer);
+        trackStartupFunnelFailure("chunk_load_failed", err, { meta: { stage: "appcore_import" } });
         reject(err);
       },
     );

@@ -5,6 +5,7 @@ import {
 } from "@/lib/auto-recovery";
 import { clearRefreshCompleteFlag } from "@/lib/refresh-orchestrator";
 import { trackStartupEvent } from "@/lib/startup-orchestrator";
+import { trackStartupFunnel } from "@/lib/startup-funnel";
 import {
   collectStartupDiagnostics,
   diagnosticsToTelemetry,
@@ -86,6 +87,12 @@ export function StartupWatchdogGate({ children }: { children: ReactNode }) {
       trackStartupEvent("boot_timeout", {
         source: "startup_watchdog_gate",
         ...diagnosticsToTelemetry(diag),
+      });
+      trackStartupFunnel("startup_timeout", {
+        meta: { source: "startup_watchdog_gate" },
+      });
+      trackStartupFunnel("blank_screen_detected", {
+        meta: { source: "startup_watchdog_gate" },
       });
 
       forceDismissHtmlSplash();

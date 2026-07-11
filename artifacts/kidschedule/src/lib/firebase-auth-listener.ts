@@ -6,6 +6,7 @@ import { isEmailVerificationBypassEmail } from "./email-verification-bypass";
 import { devLog } from "@/lib/dev-log";
 import { isFirebaseOAuthRedirectResolving } from "@/lib/firebase-oauth-redirect";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { trackStartupFunnel, trackStartupFunnelFailure } from "@/lib/startup-funnel";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 const AUTH_RACE_TIMEOUT_MS = isNativeAmyNestShell() ? 25_000 : 10_000;
@@ -22,6 +23,7 @@ let listenerAttached = false;
 let firstAuthEventReceived = false;
 let raceTimeoutId: ReturnType<typeof setTimeout> | null = null;
 const snapshotListeners = new Set<SnapshotListener>();
+let authFinishedTracked = false;
 
 type FirebaseUserLike = {
   uid: string;
@@ -131,6 +133,12 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
   }
   latestSnapshot = { shim, authStatus };
   devLog("AUTH STATE CHANGED", { authStatus, uid });
+  if (!authFinishedTracked && authStatus !== "loading") {
+    authFinishedTracked = true;
+    trackStartupFunnel("auth_finished", {
+      meta: { authStatus },
+    });
+  }
   for (const listener of snapshotListeners) {
     try {
       listener(latestSnapshot);
@@ -157,6 +165,7 @@ function notifyTimeout(): void {
   }
   firstAuthEventReceived = true;
   console.warn(`${AUTH_TAG} auth race timeout (${AUTH_RACE_TIMEOUT_MS}ms)`);
+  trackStartupFunnel("auth_timeout");
   latestSnapshot = { shim: null, authStatus: "timeout" };
   for (const listener of snapshotListeners) {
     try {
@@ -180,10 +189,12 @@ export function ensureFirebaseAuthListener(): void {
     auth = getFirebaseAuth();
   } catch (err) {
     recordBootError("getFirebaseAuth", err);
+    trackStartupFunnelFailure("auth_failed", err);
     notifyTimeout();
     return;
   }
 
+  trackStartupFunnel("auth_started");
   raceTimeoutId = setTimeout(notifyTimeout, AUTH_RACE_TIMEOUT_MS);
 
   onAuthStateChanged(auth, (fbUser) => {

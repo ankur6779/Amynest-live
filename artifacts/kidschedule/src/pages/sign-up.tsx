@@ -24,6 +24,7 @@ import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { onPreSignupSignupStarted } from "@/lib/pre-signup-reengagement/orchestrator";
 import { markPreSignupSignupFlowActive } from "@/lib/pre-signup-reengagement/storage";
+import { trackStartupFunnel } from "@/lib/startup-funnel";
 import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
@@ -394,6 +395,7 @@ export default function SignUpPage() {
       void import("@/lib/meta-attribution").then(({ trackMetaCompleteRegistration }) => {
         trackMetaCompleteRegistration("email");
       });
+      trackStartupFunnel("account_created", { meta: { method: "email" } });
       const signupEmail = (cred.user.email ?? email.trim()).toLowerCase().trim();
       if (isEmailVerificationBypassEmail(signupEmail)) {
         try {
