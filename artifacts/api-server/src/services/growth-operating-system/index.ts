@@ -18,6 +18,9 @@ import { computePredictionsV2 } from "./prediction-engine/index.js";
 import { buildRevenueAttribution } from "./revenue-attribution/index.js";
 import { computePreSignupFunnel } from "./pre-signup-funnel/index.js";
 import { loadGrowthOsPayload, updateSettings } from "./store.js";
+import { computeGrowthObservatory, computeDailyBrief } from "../growth-observatory/index.js";
+import { computeGrowthOperations } from "../growth-os-v2/index.js";
+import { computeRevenueIntelligence } from "../revenue-intelligence/index.js";
 import type { GrowthOsExperiment, GrowthOsSettings } from "./types.js";
 
 export type GosSection =
@@ -41,7 +44,10 @@ export type GosSection =
   | "feature-impact"
   | "decisions"
   | "copilot"
-  | "pre-signup";
+  | "pre-signup"
+  | "observatory"
+  | "operations"
+  | "revenue-intelligence";
 
 export async function loadGosSection(
   section: GosSection,
@@ -87,7 +93,8 @@ export async function loadGosSection(
     case "retention":
       payload = { retention: dashboard.retention };
       break;
-    case "revenue":
+    case "revenue": {
+      const revenueIntelligence = await computeRevenueIntelligence(input);
       payload = {
         subscriptions: dashboard.subscriptions,
         charts: {
@@ -100,8 +107,10 @@ export async function loadGosSection(
           subscriptionRevenue: dashboard.kpis.subscriptionRevenue,
         },
         attribution: buildRevenueAttribution(dashboard.funnel),
+        revenueIntelligence,
       };
       break;
+    }
     case "campaigns":
       payload = await getCampaignHub(range);
       break;
@@ -168,6 +177,21 @@ export async function loadGosSection(
       break;
     case "pre-signup":
       payload = await computePreSignupFunnel(range);
+      break;
+    case "observatory": {
+      const [observatory, brief, operations] = await Promise.all([
+        computeGrowthObservatory(input),
+        computeDailyBrief(input),
+        computeGrowthOperations({ ...input, persistKnowledge: true }),
+      ]);
+      payload = { observatory, brief, operations };
+      break;
+    }
+    case "operations":
+      payload = await computeGrowthOperations({ ...input, persistKnowledge: true });
+      break;
+    case "revenue-intelligence":
+      payload = await computeRevenueIntelligence(input);
       break;
     default:
       payload = { dashboard };

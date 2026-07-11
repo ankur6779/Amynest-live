@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Grid3x3, Loader2, Maximize2, Ruler } from "lucide-react";
 import type { WorksheetDocument, WorksheetDraftVersion, WorksheetImproveAction } from "@workspace/worksheet-studio";
 import type { PrintMode } from "@workspace/worksheet-studio";
-import { generateAnswerKeyDocument } from "@workspace/worksheet-studio";
+import { generateAnswerKeyDocument, PAGE_MARGIN, scoreVisualQuality, optimizeForPrinting, QUALITY_THRESHOLD } from "@workspace/worksheet-studio";
 import { toast } from "sonner";
 import {
   listVersions,
@@ -19,6 +19,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createWorksheetCanvas, EXPORT_SCALE_MULTIPLIER, type WorksheetCanvasHandle, type FabricLayoutDebugInfo, type PipelineVerifyResult } from "./fabric-editor";
 import { WorksheetAiAssistant } from "./WorksheetAiAssistant";
+import { QuestionBlockAiBar } from "./QuestionBlockAiBar";
 import { WorksheetToolbar } from "./WorksheetToolbar";
 import { WorksheetExportSheet } from "./WorksheetExportSheet";
 import { WorksheetAutosaveIndicator } from "./WorksheetAutosaveIndicator";
@@ -93,7 +94,9 @@ export function WorksheetEditor({
     setCanvasHandleRaw(v);
   };
   const [gridOn, setGridOn] = useState(false);
-  const [safeAreaOn, setSafeAreaOn] = useState(false);
+  const [safeAreaOn, setSafeAreaOn] = useState(true);
+  const [printPreviewOn, setPrintPreviewOn] = useState(false);
+  const [selectedQuestionNumber, setSelectedQuestionNumber] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [printMode, setPrintMode] = useState<PrintMode>("colour");
   const [canvasReady, setCanvasReadyRaw] = useState(false);
@@ -253,6 +256,7 @@ export function WorksheetEditor({
           { allowed: true, skipCache: true },
         );
         handle.resetViewport();
+        handle.setSafeAreaVisible(true);
       }
       // STEP 2 — canvas ready: do nothing else. Page already painted.
       setCanvasReady(true);
@@ -366,17 +370,35 @@ export function WorksheetEditor({
 
   useAuditedEffect("selection.change", () => {
     const handle = handleRef.current;
-    if (!handle || !layoutDebugOn || !canvasReady) {
+    if (!handle || !canvasReady) {
       setSelectionLayoutDebug(null);
       setParityWarnings([]);
       setVerifyResult(null);
+      setSelectedQuestionNumber(null);
       return;
     }
     const refresh = () => {
       getEditorSyncAudit()?.logOp("selection", "Selection", "selection_change");
-      setSelectionLayoutDebug(handle.getLayoutDebugForSelection());
-      setParityWarnings(handle.auditLayoutParity(2).filter((w) => w.warning));
-      setVerifyResult(handle.getLastVerifyResult());
+      if (layoutDebugOn) {
+        setSelectionLayoutDebug(handle.getLayoutDebugForSelection());
+        setParityWarnings(handle.auditLayoutParity(2).filter((w) => w.warning));
+        setVerifyResult(handle.getLastVerifyResult());
+      }
+      const obj = handle.getActiveObject() as { data?: { elementId?: string; parentId?: string; layoutKind?: string } } | undefined;
+      const elementId = obj?.data?.elementId;
+      let qNum: number | null = null;
+      if (elementId) {
+        for (const page of documentRef.current.pages) {
+          for (const el of page.elements) {
+            if (el.type === "question_block" && el.id === elementId) {
+              qNum = el.questionNumber;
+              break;
+            }
+          }
+          if (qNum != null) break;
+        }
+      }
+      setSelectedQuestionNumber(qNum);
     };
     refresh();
     const detach = handle.onSelectionChange(() => refresh());
@@ -499,16 +521,40 @@ export function WorksheetEditor({
   };
 
   const exportDoc = () => applyPrintMode(prepareWorksheetForExport(document), printMode);
+  const visualQuality = useMemo(() => scoreVisualQuality(document), [document]);
+
+  const handleOptimizePrint = () => {
+    getEditorSyncAudit()?.allowTeacher("optimize_for_printing");
+    const { document: next, quality } = optimizeForPrinting(document);
+    onDocumentChange?.(next);
+    toast.success("Optimized for printing", { description: `Quality ${quality}/100` });
+  };
 
   const handleExportPdf = async () => {
+    syncDocumentFromCanvas();
+    let working = document;
+    let quality = scoreVisualQuality(working);
+    if (!quality.pass) {
+      const repaired = optimizeForPrinting(working);
+      working = repaired.document;
+      quality = scoreVisualQuality(working);
+      onDocumentChange?.(working);
+      if (!quality.pass) {
+        toast.error("Export blocked", {
+          description: `Visual quality ${quality.overall}/100 (need ≥${QUALITY_THRESHOLD}). Review issues, then retry.`,
+        });
+        setExportOpen(true);
+        return;
+      }
+      toast.info("Auto-repaired for print quality", { description: `Now ${quality.overall}/100` });
+    }
     setExportBusy(true);
     setExportProgress(10);
     trackWorksheetEvent("worksheet_export_pdf");
-    syncDocumentFromCanvas();
-    const prepared = exportDoc();
+    const prepared = applyPrintMode(prepareWorksheetForExport(working), printMode);
     try {
       await exportAndDownloadBestPdf(prepared, async (idx) => {
-        const pg = document.pages[idx];
+        const pg = working.pages[idx];
         if (!pg || !handleRef.current) return new Uint8Array();
         const prepPage = prepared.pages[idx] ?? pg;
         await auditedRenderPage(
@@ -519,7 +565,7 @@ export function WorksheetEditor({
           prepared.meta.classLevel,
           getLayoutPage(pageIndex),
         );
-        setExportProgress(10 + Math.round(((idx + 1) / document.pages.length) * 80));
+        setExportProgress(10 + Math.round(((idx + 1) / working.pages.length) * 80));
         const dataUrl = handleRef.current.toDataURL(EXPORT_SCALE_MULTIPLIER);
         const b64 = dataUrl.split(",")[1] ?? "";
         return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -577,6 +623,9 @@ export function WorksheetEditor({
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">Page {pageIndex + 1} / {document.pages.length}</p>
             <WorksheetAutosaveIndicator state={saveState} savedAt={savedAt} onHistory={() => void openHistory()} />
+            <span className={cn("hidden text-[10px] font-semibold sm:inline", visualQuality.pass ? "text-emerald-700" : "text-amber-700")}>
+              Q {visualQuality.overall}
+            </span>
           </div>
         </div>
         <Button variant="outline" size="icon" className="hidden h-11 w-11 touch-manipulation sm:inline-flex" disabled={pageIndex === 0} onClick={() => goPage(-1)} aria-label="Previous page">
@@ -612,6 +661,22 @@ export function WorksheetEditor({
           <Ruler className="h-5 w-5" />
         </Button>
         <Button
+          variant={printPreviewOn ? "default" : "outline"}
+          size="sm"
+          className="hidden h-11 touch-manipulation sm:inline-flex"
+          onClick={() => {
+            const next = !printPreviewOn;
+            setPrintPreviewOn(next);
+            if (next) {
+              setSafeAreaOn(true);
+              canvasHandle?.setSafeAreaVisible(true);
+            }
+          }}
+          aria-label="Toggle print preview"
+        >
+          Print
+        </Button>
+        <Button
           variant={layoutDebugOn ? "default" : "outline"}
           size="icon"
           className="hidden h-11 w-11 touch-manipulation sm:inline-flex"
@@ -634,6 +699,7 @@ export function WorksheetEditor({
         </div>
       )}
 
+      <div className="flex min-h-0 flex-1">
       <div
         className={WS_EDITOR_VIEWPORT}
         {...gestures}
@@ -642,8 +708,16 @@ export function WorksheetEditor({
       >
         <div
           ref={canvasContainerRef}
-          className={cn(WS_PAPER_SHADOW, WS_EDITOR_CANVAS, "relative transition-all duration-300 ease-out", pageFlip && "scale-[0.97] opacity-85 rotate-[0.5deg]")}
+          className={cn(WS_PAPER_SHADOW, WS_EDITOR_CANVAS, "relative transition-all duration-300 ease-out", pageFlip && "scale-[0.97] opacity-85 rotate-[0.5deg]", printPreviewOn && "ring-2 ring-[#3b82f6]/40")}
         >
+          {canvasReady && (
+            <QuestionBlockAiBar
+              questionNumber={selectedQuestionNumber}
+              busy={copilotBusy || improving !== null}
+              onAction={(msg) => { void onCopilotMessage(msg); }}
+              onClose={() => setSelectedQuestionNumber(null)}
+            />
+          )}
           {!canvasReady && !canvasError && (
             <div className="absolute inset-0 z-10 flex min-h-[min(70dvh,40rem)] items-center justify-center rounded-2xl bg-white" role="status" aria-live="polite">
               <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" aria-hidden />
@@ -661,6 +735,15 @@ export function WorksheetEditor({
             className={cn("mx-auto block max-w-full touch-manipulation worksheet-print-target", canvasError && "hidden")}
             aria-hidden={!canvasReady || canvasError}
           />
+          {printPreviewOn && canvasReady && (
+            <div
+              className="pointer-events-none absolute inset-0 z-[5] rounded-2xl"
+              aria-hidden
+              style={{
+                boxShadow: `inset ${PAGE_MARGIN}px ${PAGE_MARGIN}px 0 0 rgba(59,130,246,0.06), inset -${PAGE_MARGIN}px -${PAGE_MARGIN}px 0 0 rgba(59,130,246,0.06)`,
+              }}
+            />
+          )}
           {canvasReady && (
             <WorksheetLayoutDebugOverlay
               layoutTree={layoutTree}
@@ -682,6 +765,16 @@ export function WorksheetEditor({
           />
         </div>
       </div>
+      <WorksheetAiAssistant
+        docked
+        busy={copilotBusy || improving !== null}
+        onAction={(a) => {
+          getEditorSyncAudit()?.allowTeacher(`improve:${a}`);
+          void onImprove(a);
+        }}
+        onCopilotMessage={onCopilotMessage}
+      />
+      </div>
 
       {previewOpen && (
         <div
@@ -690,13 +783,16 @@ export function WorksheetEditor({
           onKeyDown={(e) => { if (e.key === "Escape") setPreviewOpen(false); }}
           role="dialog"
           aria-modal="true"
-          aria-label="Worksheet preview"
+          aria-label="Print preview"
         >
-          {h()?.toDataURL(EXPORT_SCALE_MULTIPLIER) ? (
-            <img src={h()!.toDataURL(EXPORT_SCALE_MULTIPLIER)} alt="Worksheet preview" className="max-h-full max-w-full rounded-lg bg-white shadow-2xl" />
-          ) : (
-            <p className="rounded-lg bg-white px-6 py-4 text-sm text-muted-foreground">Preview unavailable</p>
-          )}
+          <div className="relative max-h-full max-w-full" onClick={(e) => e.stopPropagation()}>
+            {h()?.toDataURL(EXPORT_SCALE_MULTIPLIER) ? (
+              <img src={h()!.toDataURL(EXPORT_SCALE_MULTIPLIER)} alt="Print preview matching PDF page" className="max-h-[90dvh] max-w-full rounded-lg bg-white shadow-2xl" />
+            ) : (
+              <p className="rounded-lg bg-white px-6 py-4 text-sm text-muted-foreground">Preview unavailable</p>
+            )}
+            <p className="mt-2 text-center text-xs text-white/90">Print preview · A4 · margins {PAGE_MARGIN}pt · matches PDF</p>
+          </div>
         </div>
       )}
 
@@ -756,7 +852,7 @@ export function WorksheetEditor({
         onCopy={() => h()?.copySelected()}
         onPaste={() => h()?.pasteClipboard()}
         onGroup={() => h()?.groupSelected()}
-        onPreview={() => setPreviewOpen(true)}
+        onPreview={() => { setPrintPreviewOn(true); setPreviewOpen(true); }}
         onExport={() => setExportOpen(true)}
         onBold={() => h()?.toggleBold()}
         onAlign={(a) => h()?.setTextAlign(a)}
@@ -773,6 +869,9 @@ export function WorksheetEditor({
         onPrintModeChange={setPrintMode}
         busy={exportBusy}
         progress={exportProgress}
+        qualityScore={visualQuality.overall}
+        qualityPass={visualQuality.pass}
+        onOptimizePrint={handleOptimizePrint}
         onPdf={handleExportPdf}
         onAnswerKey={document.meta.isAnswerKey ? undefined : handleExportAnswerKey}
         onDocx={async () => {

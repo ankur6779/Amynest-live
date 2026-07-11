@@ -61,6 +61,15 @@ import { RetentionHubSection } from "@/components/retention/retention-hub";
 import { FeatureDiscoveryStrip } from "@/components/feature-discovery-strip";
 import { FF_DASHBOARD_PRIORITY_ORDER } from "@/lib/dashboard-feature-flags";
 import {
+  FF_FIRST_VALUE_HERO,
+  FF_FIRST_VALUE_DASHBOARD_PRIORITY,
+} from "@/lib/first-value-activation-flags";
+import {
+  trackDashboardView,
+  trackRoutineCtaClicked,
+} from "@/lib/first-value-telemetry";
+import { FirstValueHeroCard } from "@/components/first-value-hero-card";
+import {
   resolveDashboardUserState,
   shouldShowActivationResumeBanner,
   shouldShowFeatureDiscovery,
@@ -1141,17 +1150,40 @@ export default function Dashboard() {
       trialDaysRemaining,
     ],
   );
+  const dashboardPriorityEnabled =
+    FF_DASHBOARD_PRIORITY_ORDER || FF_FIRST_VALUE_DASHBOARD_PRIORITY;
   const localActivationResume = readActivationResume();
   const showActivationResume = shouldShowActivationResumeBanner(
-    FF_DASHBOARD_PRIORITY_ORDER,
+    dashboardPriorityEnabled,
     localActivationResume,
     !retentionLoading && !retentionError && retentionData != null,
   );
   const showFeatureDiscovery = shouldShowFeatureDiscovery(
-    FF_DASHBOARD_PRIORITY_ORDER,
+    dashboardPriorityEnabled,
     dashboardUserState,
   );
-  const timelineOrderClass = timelineFlexOrderClass(FF_DASHBOARD_PRIORITY_ORDER);
+  const timelineOrderClass = timelineFlexOrderClass(dashboardPriorityEnabled);
+  const showFirstValueHero =
+    FF_FIRST_VALUE_HERO &&
+    dashboardUserState === "no_routine" &&
+    !journeyHandlesGenerate;
+
+  useEffect(() => {
+    if (!shellReady || !isSignedIn) return;
+    trackDashboardView({
+      userState: dashboardUserState,
+      hasTodayRoutine,
+      routineCount: allRoutinesSafe.length,
+      childCount: childrenSafe.length,
+    });
+  }, [
+    shellReady,
+    isSignedIn,
+    dashboardUserState,
+    hasTodayRoutine,
+    allRoutinesSafe.length,
+    childrenSafe.length,
+  ]);
 
   useEffect(() => {
     // Single-flight ref lock — once the parent-profile fetch has been
@@ -1227,14 +1259,22 @@ export default function Dashboard() {
   const isDashboardRefreshing = fetchingSummary || fetchingChildren || fetchingStats;
   const generateRoutineLocked =
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
-  function handleGenerateRoutine() {
+  function handleGenerateRoutine(source = "dashboard_default") {
+    trackRoutineCtaClicked({
+      source,
+      screen: "/dashboard",
+      childId: selectedChildId ?? undefined,
+      userState: dashboardUserState,
+    });
     if (
       generateRoutineLocked &&
       !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
     ) {
       openPaywall("routines_limit");
     } else {
-      setLocation("/routines/generate");
+      const childQuery =
+        selectedChildId != null ? `?childId=${selectedChildId}&source=${source}` : `?source=${source}`;
+      setLocation(`/routines/generate${childQuery}`);
     }
   }
   const summaryFallback = (summary as CachedDashboardSummary | undefined)?.fallback === true;
@@ -1284,6 +1324,15 @@ export default function Dashboard() {
             <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />
             <ContentReveal.Stagger className="relative z-10 flex flex-col gap-4">
             <ContentReveal.Item>
+              {showFirstValueHero ? (
+                <FirstValueHeroCard
+                  childName={selectedChild?.name ?? childrenSafe[0]?.name}
+                  onGenerate={() => handleGenerateRoutine("first_value_hero")}
+                />
+              ) : null}
+            </ContentReveal.Item>
+
+            <ContentReveal.Item>
               {showActivationResume ? <ActivationResumeBanner /> : null}
             </ContentReveal.Item>
 
@@ -1292,7 +1341,7 @@ export default function Dashboard() {
                 childName={selectedChild?.name ?? null}
                 routineCompletionPct={routineCompletionPct}
                 hasTodayRoutine={hasTodayRoutine}
-                onGenerateRoutine={handleGenerateRoutine}
+                onGenerateRoutine={() => handleGenerateRoutine("retention_checkin")}
                 learningHref="/parenting-hub"
               />
             </ContentReveal.Item>
@@ -1305,7 +1354,7 @@ export default function Dashboard() {
               <NowNextTimeline
                 routines={filteredRoutines}
                 selectedChildName={selectedChild?.name ?? null}
-                onGenerate={showTimelineGenerate ? handleGenerateRoutine : undefined}
+                onGenerate={showTimelineGenerate ? () => handleGenerateRoutine("timeline_empty") : undefined}
                 journeyHandlesGenerate={journeyHandlesGenerate}
               />
             </ContentReveal.Item>

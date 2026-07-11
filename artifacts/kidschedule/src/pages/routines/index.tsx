@@ -24,6 +24,8 @@ import { RoutineChildChips } from "@/components/routines/routine-child-chips";
 import { RoutineStickyPill } from "@/components/routines/routine-sticky-pill";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
+import { shouldBypassRoutineGeneratePaywall } from "@/lib/activation-gate";
+import { trackRoutineCtaClicked } from "@/lib/first-value-telemetry";
 import { useTranslation } from "react-i18next";
 import ForecastPage from "@/pages/forecast";
 import HouseholdPage from "@/pages/household";
@@ -299,13 +301,23 @@ export default function RoutinesList() {
     setLocation(`/routines/${id}`);
   }
 
-  function handleGenerateClick(childId?: number) {
-    if (generateLocked) {
+  function handleGenerateClick(childId?: number, source = "routines_list") {
+    trackRoutineCtaClicked({
+      source,
+      screen: "/routines",
+      childId: childId ?? activeChildId ?? undefined,
+    });
+    if (
+      generateLocked &&
+      !shouldBypassRoutineGeneratePaywall(allRoutines.length)
+    ) {
       openPaywall("routines_limit");
       return;
     }
     const targetChildId = childId ?? activeChildId ?? undefined;
-    const query = targetChildId ? `?childId=${targetChildId}` : "";
+    const queryParts = [`source=${source}`];
+    if (targetChildId) queryParts.unshift(`childId=${targetChildId}`);
+    const query = `?${queryParts.join("&")}`;
     setLocation(`/routines/generate${query}`);
   }
 
@@ -318,7 +330,10 @@ export default function RoutinesList() {
   }
 
   function handleGatedNavigate(path: string) {
-    if (generateLocked) {
+    if (
+      generateLocked &&
+      !shouldBypassRoutineGeneratePaywall(allRoutines.length)
+    ) {
       openPaywall("routines_limit");
     } else {
       setLocation(path);

@@ -16,6 +16,12 @@ import {
   updateSettings,
   upsertExperiment,
 } from "../services/growth-operating-system/index.js";
+import {
+  computeDailyBrief,
+  computeGrowthObservatory,
+} from "../services/growth-observatory/index.js";
+import { computeGrowthOperations } from "../services/growth-os-v2/index.js";
+import { computeRevenueIntelligence } from "../services/revenue-intelligence/index.js";
 
 const router: IRouter = Router();
 
@@ -57,6 +63,9 @@ const GOS_SECTIONS = new Set<GosSection>([
   "decisions",
   "copilot",
   "pre-signup",
+  "observatory",
+  "operations",
+  "revenue-intelligence",
 ]);
 
 /** GET /api/admin/growth/dashboard?preset=last_7_days&start=&end= */
@@ -261,6 +270,102 @@ router.post(
     }
 
     res.json({ ok: true, ...answerCopilotQuestion(parsed.data) });
+  }),
+);
+
+/** GET /api/admin/growth/observatory?preset=last_7_days&start=&end= */
+router.get(
+  "/admin/growth/observatory",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+
+    const payload = await computeGrowthObservatory({ preset, start, end });
+    res.json({ ok: true, ...payload });
+  }),
+);
+
+/** GET /api/admin/growth/daily-brief?preset=last_7_days&start=&end= */
+router.get(
+  "/admin/growth/daily-brief",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+
+    const brief = await computeDailyBrief({ preset, start, end });
+    res.json({ ok: true, brief });
+  }),
+);
+
+/** GET /api/admin/growth/operations?preset=last_7_days&start=&end= */
+router.get(
+  "/admin/growth/operations",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+
+    const payload = await computeGrowthOperations({ preset, start, end, persistKnowledge: true });
+    res.json({ ok: true, ...payload });
+  }),
+);
+
+/** GET /api/admin/growth/weekly-brief?preset=last_7_days&start=&end= */
+router.get(
+  "/admin/growth/weekly-brief",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+
+    const ops = await computeGrowthOperations({ preset, start, end });
+    res.json({ ok: true, review: ops.weeklyReview, actionQueue: ops.actionQueue });
+  }),
+);
+
+/** GET /api/admin/growth/revenue-intelligence?preset=last_7_days&start=&end= */
+router.get(
+  "/admin/growth/revenue-intelligence",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+
+    const payload = await computeRevenueIntelligence({ preset, start, end });
+    res.json({ ok: true, ...payload });
+  }),
+);
+
+/** GET /api/admin/growth/finance-brief?preset=last_7_days */
+router.get(
+  "/admin/growth/finance-brief",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+
+    const ri = await computeRevenueIntelligence({ preset, start, end });
+    res.json({ ok: true, brief: ri.financeBrief, dataGaps: ri.dataGaps });
   }),
 );
 

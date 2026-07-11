@@ -64,7 +64,7 @@ export async function computeSubscriptions(range: GrowthTimeRange) {
     `),
     db.execute(sql`
       SELECT
-        coalesce(nullif(trim(platform), ''), 'unknown') AS platform,
+        coalesce(nullif(trim(store), ''), 'unknown') AS platform,
         count(*)::int AS users,
         sum(CASE plan
           WHEN 'monthly' THEN ${RAZORPAY_PLAN_PRICES_INR.monthly.amount}

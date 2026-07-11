@@ -5,7 +5,7 @@ const CACHE = new Map<string, string>();
 export type IllustrationKind =
   | "fish" | "dolphin" | "starfish" | "shark" | "whale" | "crab" | "octopus" | "turtle"
   | "apple" | "banana" | "car" | "bus"
-  | "tree" | "flower" | "sun" | "moon" | "cat" | "dog" | "bird" | "butterfly"
+  | "tree" | "flower" | "sun" | "moon" | "cat" | "dog" | "bird" | "butterfly" | "bee" | "elephant"
   | "circle" | "square" | "triangle" | "star";
 
 const SVG_TEMPLATES: Record<IllustrationKind, string> = {
@@ -29,6 +29,8 @@ const SVG_TEMPLATES: Record<IllustrationKind, string> = {
   dog: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 80"><ellipse cx="45" cy="48" rx="30" ry="25" fill="none" stroke="#111" stroke-width="3"/></svg>`,
   bird: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 70"><ellipse cx="40" cy="38" rx="25" ry="18" fill="none" stroke="#111" stroke-width="3"/></svg>`,
   butterfly: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 70"><ellipse cx="25" cy="30" rx="20" ry="25" fill="none" stroke="#111" stroke-width="2"/><ellipse cx="65" cy="30" rx="20" ry="25" fill="none" stroke="#111" stroke-width="2"/></svg>`,
+  bee: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 70"><ellipse cx="45" cy="40" rx="22" ry="14" fill="none" stroke="#111" stroke-width="3"/><line x1="38" y1="32" x2="38" y2="48" stroke="#111" stroke-width="2"/><line x1="52" y1="32" x2="52" y2="48" stroke="#111" stroke-width="2"/><ellipse cx="28" cy="28" rx="10" ry="14" fill="none" stroke="#111" stroke-width="2"/><ellipse cx="62" cy="28" rx="10" ry="14" fill="none" stroke="#111" stroke-width="2"/><circle cx="58" cy="40" r="2" fill="#111"/></svg>`,
+  elephant: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 80"><ellipse cx="50" cy="45" rx="32" ry="22" fill="none" stroke="#111" stroke-width="3"/><circle cx="78" cy="38" r="14" fill="none" stroke="#111" stroke-width="3"/><path d="M88,48 Q95,70 78,72" fill="none" stroke="#111" stroke-width="2.5"/><circle cx="84" cy="34" r="2.5" fill="#111"/></svg>`,
   circle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="none" stroke="#111" stroke-width="3"/></svg>`,
   square: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect x="10" y="10" width="60" height="60" fill="none" stroke="#111" stroke-width="3"/></svg>`,
   triangle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><polygon points="40,10 70,70 10,70" fill="none" stroke="#111" stroke-width="3"/></svg>`,
@@ -48,17 +50,34 @@ export function getIllustration(kind: IllustrationKind): string {
 }
 
 const KEYWORD_MAP: Array<[RegExp, IllustrationKind]> = [
-  [/fish/i, "fish"], [/dolphin/i, "dolphin"], [/shark/i, "shark"], [/whale/i, "whale"],
-  [/crab/i, "crab"], [/octopus/i, "octopus"], [/turtle/i, "turtle"], [/starfish/i, "starfish"],
-  [/apple/i, "apple"], [/banana/i, "banana"],
-  [/car/i, "car"], [/bus/i, "bus"], [/tree/i, "tree"], [/flower/i, "flower"],
-  [/sun/i, "sun"], [/moon/i, "moon"], [/cat/i, "cat"], [/dog/i, "dog"],
-  [/bird/i, "bird"], [/butterfly/i, "butterfly"],
+  [/fish|🐟|🐠/i, "fish"], [/dolphin|🐬/i, "dolphin"], [/shark|🦈/i, "shark"], [/whale|🐋|🐳/i, "whale"],
+  [/crab|🦀/i, "crab"], [/octopus|🐙/i, "octopus"], [/turtle|🐢/i, "turtle"], [/starfish|⭐/i, "starfish"],
+  [/apple|🍎|🍏/i, "apple"], [/banana|🍌/i, "banana"],
+  [/car|🚗/i, "car"], [/bus|🚌/i, "bus"], [/tree|🌳|🌲/i, "tree"], [/flower|🌸|🌺|🌹/i, "flower"],
+  [/sun|☀️|🌞/i, "sun"], [/moon|🌙/i, "moon"], [/cat|🐱|🐈/i, "cat"], [/dog|🐶|🐕/i, "dog"],
+  [/bird|🐦/i, "bird"], [/butterfly|🦋/i, "butterfly"], [/bee|🐝/i, "bee"], [/elephant|🐘/i, "elephant"],
 ];
 
+/** Map leftover Unicode pictographs to AmyNest line-art (never render emoji on worksheets). */
+const EMOJI_TO_KIND: Record<string, IllustrationKind> = {
+  "🐟": "fish", "🐠": "fish", "🐬": "dolphin", "🦈": "shark", "🐋": "whale", "🐳": "whale",
+  "🦀": "crab", "🐙": "octopus", "🐢": "turtle", "🍎": "apple", "🍏": "apple", "🍌": "banana",
+  "🐱": "cat", "🐈": "cat", "🐶": "dog", "🐕": "dog", "🐦": "bird", "🦋": "butterfly",
+  "🐝": "bee", "🐘": "elephant", "🌳": "tree", "🌸": "flower", "🔵": "circle", "⭐": "star",
+};
+
 export function detectIllustrationFromText(text: string): IllustrationKind {
+  for (const [emoji, kind] of Object.entries(EMOJI_TO_KIND)) {
+    if (text.includes(emoji)) return kind;
+  }
   for (const [re, kind] of KEYWORD_MAP) if (re.test(text)) return kind;
   return "star";
+}
+
+/** Resolve printable SVG; never leave emoji as the rendered illustration. */
+export function resolvePrintableIllustration(labelOrEmoji?: string | null): string | undefined {
+  if (!labelOrEmoji?.trim()) return undefined;
+  return getIllustration(detectIllustrationFromText(labelOrEmoji));
 }
 
 export function batchGenerateIllustrations(labels: string[]): Map<string, string> {

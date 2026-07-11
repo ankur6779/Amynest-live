@@ -91,9 +91,9 @@ async function drawLayoutNode(
           const w = (img.width / img.height) * h;
           page.drawImage(img, { x: r.x + (r.width - w) / 2, y: toPdfY(r.y + h), width: w, height: h });
         }
-      } else if (p.emoji || p.label) {
-        page.drawText(p.emoji ?? p.label ?? "", {
-          x: r.x, y: toPdfY(r.y + r.height), size: 20, font: fonts.reg, color: colorFn("#333333"),
+      } else if (p.label) {
+        page.drawText(p.label, {
+          x: r.x, y: toPdfY(r.y + r.height), size: 12, font: fonts.reg, color: colorFn("#555555"),
         });
       }
       break;

@@ -203,18 +203,16 @@ async function renderLayoutNodeToFabric(
           return null;
         }
       }
-      const tb = new Textbox(
-        colorMode === "bw" ? `⬜ ${p.label ?? "Picture"}` : (p.emoji ?? p.label ?? ""),
-        {
+      const tb = new Textbox(p.label ?? "Picture", {
           ...TOP_LEFT,
           left,
           top,
           width,
-          fontSize: 20 * scale,
+          fontSize: 14 * scale,
           textAlign: "center",
+          fill: "#555",
           editable: true,
-        },
-      );
+        });
       return attachLayoutData(tb, node, pageRect);
     }
     case "answer_line": {

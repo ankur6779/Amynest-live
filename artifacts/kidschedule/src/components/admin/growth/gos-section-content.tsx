@@ -35,11 +35,14 @@ import { AlertsWorkflowPanel } from "./alerts-workflow-panel";
 import { PredictionV2Panel } from "./prediction-v2-panel";
 import { SettingsPanel } from "./settings-panel";
 import { PreSignupFunnelPanel } from "./pre-signup-funnel-panel";
+import { RevenueIntelligenceSection } from "./revenue-intelligence-section";
+import { ObservatoryPanel } from "./observatory-panel";
 import type {
   DecisionsSectionData,
   ExecutiveSectionData,
   IntelligenceSectionData,
   PredictionsSectionData,
+  ObservatorySectionData,
 } from "./gos-types";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -235,23 +238,32 @@ export function GosSectionContent({
           </Section>
         </div>
       );
-    case "revenue":
+    case "revenue": {
+      const rev = d as {
+        subscriptions: import("./types").GrowthDashboardData["subscriptions"];
+        charts: import("./types").GrowthDashboardData["charts"];
+        attribution: { stages: import("./gos-types").AttributionStage[]; note: string | null };
+        revenueIntelligence?: import("./gos-types").RevenueIntelligencePayload;
+      };
       return (
         <div className="space-y-6">
           <Section title="Subscription Analytics">
-            <SubscriptionPanel subscriptions={(d as { subscriptions: import("./types").GrowthDashboardData["subscriptions"] }).subscriptions} />
+            <SubscriptionPanel subscriptions={rev.subscriptions} />
           </Section>
           <Section title="Revenue Trends">
-            <RevenueCharts charts={(d as { charts: import("./types").GrowthDashboardData["charts"] }).charts} />
+            <RevenueCharts charts={rev.charts} />
           </Section>
           <Section title="Revenue Attribution">
-            <AttributionPanel
-              stages={(d as { attribution: { stages: import("./gos-types").AttributionStage[]; note: string | null } }).attribution.stages}
-              note={(d as { attribution: { note: string | null } }).attribution.note}
-            />
+            <AttributionPanel stages={rev.attribution.stages} note={rev.attribution.note} />
           </Section>
+          {rev.revenueIntelligence && (
+            <Section title="Revenue Intelligence">
+              <RevenueIntelligenceSection data={rev.revenueIntelligence} />
+            </Section>
+          )}
         </div>
       );
+    }
     case "campaigns": {
       const hub = d as {
         rows: import("./gos-types").CampaignHubRow[];
@@ -316,6 +328,14 @@ export function GosSectionContent({
           <SettingsPanel settings={(d as { settings: import("./gos-types").GrowthOsSettings }).settings} />
         </Section>
       );
+    case "observatory": {
+      const obs = d as ObservatorySectionData;
+      return (
+        <Section title="Growth Observatory">
+          <ObservatoryPanel observatory={obs.observatory} brief={obs.brief} operations={obs.operations} />
+        </Section>
+      );
+    }
     case "pre-signup":
       return (
         <Section title="Pre-Signup Notification Funnel">

@@ -13,6 +13,8 @@ import {
   reconstructWorksheetLocal,
   scoreWorksheet,
   summarizeDocumentChanges,
+  ensurePrintableIllustrations,
+  autoCorrectLayout,
   type DocumentChangeSummary,
   type PostGenerationRecommendation,
   getLivePipelineSession,
@@ -143,9 +145,13 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
     let branded = doc;
     try {
       getEditorSyncAudit()?.logOp("branding", "Branding", "applyBrandingToDocument (enterEditor)");
-      branded = applyBrandingToDocument(doc);
+      branded = applyBrandingToDocument(autoCorrectLayout(ensurePrintableIllustrations(doc)));
     } catch {
-      toast.error("Could not apply school branding", { description: "Using default layout." });
+      try {
+        branded = ensurePrintableIllustrations(doc);
+      } catch {
+        toast.error("Could not apply school branding", { description: "Using default layout." });
+      }
     }
     session.captureStage("after_branding", branded, "applyBrandingToDocument");
     if (!opts?.skipPipelineAssert) {

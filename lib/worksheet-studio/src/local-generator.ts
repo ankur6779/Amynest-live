@@ -66,26 +66,26 @@ const TOPIC_BANK: Record<string, QuestionTemplate[]> = {
   default: [
     { type: "circle", prompt: "Circle the correct answer.", options: ["A", "B", "C", "D"] },
     { type: "fill_blank", prompt: "Fill in the blank: The sky is ____.", answerLine: true },
-    { type: "match", prompt: "Draw a line to match.", options: ["🍎 Apple", "🍌 Banana"] },
+    { type: "match", prompt: "Draw a line to match.", options: ["Apple", "Banana"], label: "apple" },
     { type: "tick", prompt: "Tick (✓) the bigger one.", options: ["Big", "Small"] },
-    { type: "count", prompt: "Count the objects and write the number.", emoji: "🔵", answerLine: true },
+    { type: "count", prompt: "Count the objects and write the number.", label: "circle", answerLine: true },
     { type: "pattern", prompt: "Complete the pattern: A B A B ___", answerLine: true },
   ],
   math: [
     { type: "math", prompt: "2 + 3 = ___", answerLine: true },
     { type: "math", prompt: "5 − 2 = ___", answerLine: true },
-    { type: "count", prompt: "Count and write.", emoji: "🍎🍎🍎", answerLine: true },
+    { type: "count", prompt: "Count and write.", label: "apple", answerLine: true },
     { type: "circle", prompt: "Circle the number that is greater.", options: ["7", "3"] },
     { type: "pattern", prompt: "2, 4, 6, ___", answerLine: true },
   ],
   hindi: [
     { type: "hindi", prompt: "स्वर लिखें: अ", answerLine: true },
     { type: "trace", prompt: "Trace: क ख ग", answerLine: true },
-    { type: "match", prompt: "Match the picture to the word.", options: ["कमल", "किताब"] },
+    { type: "match", prompt: "Match the picture to the word.", options: ["कमल", "किताब"], label: "flower" },
     { type: "fill_blank", prompt: "___ से कबूतर (fill the missing letter)", answerLine: true },
   ],
   phonics: [
-    { type: "beginning_sounds", prompt: "Circle the picture that starts with /b/.", options: ["🐝", "🐱", "🐶"] },
+    { type: "beginning_sounds", prompt: "Circle the picture that starts with /b/.", options: ["dog", "bee"], label: "bee" },
     { type: "phonics", prompt: "Write a word that rhymes with cat.", answerLine: true },
     { type: "missing_letters", prompt: "C _ T (fill the missing letter)", answerLine: true },
   ],
@@ -177,7 +177,7 @@ function layoutQuestionsOnPages(
     const detected = detectIllustrationFromText(label);
     const visualTypes = new Set<QuestionTemplate["type"]>(["colour", "circle", "trace", "draw", "picture_recognition", "count"]);
     const hasKeyword = detected !== "star";
-    const illustrationSrc = scaled.emoji || scaled.label || visualTypes.has(scaled.type) || hasKeyword
+    const illustrationSrc = scaled.label || visualTypes.has(scaled.type) || hasKeyword
       ? getIllustration(detected)
       : undefined;
     const prompt = `${globalQNum}  ${scaled.prompt}`;
@@ -187,7 +187,6 @@ function layoutQuestionsOnPages(
         options: opts,
         answerLine: scaled.answerLine,
         illustrationSrc,
-        illustrationEmoji: scaled.emoji,
       },
       meta.classLevel,
       CONTENT_WIDTH,
@@ -199,7 +198,6 @@ function layoutQuestionsOnPages(
         prompt,
         options: opts,
         answerLine: scaled.answerLine,
-        illustrationEmoji: scaled.emoji,
         illustrationLabel: scaled.label,
         illustrationSrc,
         width: CONTENT_WIDTH,

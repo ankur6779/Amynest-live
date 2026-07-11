@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, Link, useSearch } from "wouter";
 import { AddChildLink } from "@/components/add-child-link";
-import { useListChildren, getListChildrenQueryKey, useGenerateRoutine, useCreateRoutine, getListRoutinesQueryKey } from "@workspace/api-client-react";
+import { useListChildren, getListChildrenQueryKey, useGenerateRoutine, useCreateRoutine, getListRoutinesQueryKey, useListRoutines } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ import {
 import { getApiUrl } from "@/lib/api";
 import { track } from "@/lib/analytics";
 import { trackRoutineGeneratedOnce } from "@/lib/routine-generation-analytics";
+import { FF_FIRST_VALUE_QUICK_ROUTINE } from "@/lib/first-value-activation-flags";
+import { trackRoutineGenerationCompleted } from "@/lib/first-value-telemetry";
 import {
   formatCategoryLabel,
   formatRoutineDurationShort,
@@ -581,6 +583,7 @@ export default function RoutineGenerate() {
         weather:   sp.get("weather"),
         caregiver: sp.get("caregiver"),
         override:  sp.get("override"),
+        source:    sp.get("source"),
       };
     } catch { return {}; }
   })();
@@ -739,6 +742,18 @@ export default function RoutineGenerate() {
       queryKey: getListChildrenQueryKey()
     }
   });
+  const { data: existingRoutinesList } = useListRoutines(undefined, {
+    query: { queryKey: getListRoutinesQueryKey() },
+  });
+  const priorRoutineCountRef = useRef(
+    Array.isArray(existingRoutinesList) ? existingRoutinesList.length : 0,
+  );
+  useEffect(() => {
+    if (Array.isArray(existingRoutinesList)) {
+      priorRoutineCountRef.current = existingRoutinesList.length;
+    }
+  }, [existingRoutinesList]);
+  const analyticsSource = urlParams.source ?? "generate_page";
 
   // Parent profile — region sent in generation payload, dietType used for
   // display fallback when child hasn't set a custom diet preference.
@@ -798,6 +813,23 @@ export default function RoutineGenerate() {
     const exists = children.find(c => c.id === urlChildId);
     if (exists) setSelectedChild(urlChildId);
   }, [urlChildId, children, selectedChild]);
+
+  const quickRoutinePrimedRef = useRef(false);
+  useEffect(() => {
+    if (!FF_FIRST_VALUE_QUICK_ROUTINE) return;
+    if (quickRoutinePrimedRef.current) return;
+    if (priorRoutineCountRef.current > 0) return;
+    if (!selectedChild || !children) return;
+    const data = children.find((c) => c.id === selectedChild) as
+      | { wakeUpTime?: string | null }
+      | undefined;
+    if (!data) return;
+    quickRoutinePrimedRef.current = true;
+    const wake = data.wakeUpTime;
+    if (wake && !getStoredWakeTime(selectedChild, date)) {
+      storeWakeTime(selectedChild, date, wake);
+    }
+  }, [selectedChild, children, date]);
 
   // Track the latest generation settings in a ref so saveGeneratedRoutine
   // can persist them without needing them as useCallback deps.
@@ -998,7 +1030,26 @@ export default function RoutineGenerate() {
           childId: selectedChild ?? undefined,
           mode: (data as { fallback?: boolean }).fallback ? "fallback" : "ai",
           itemCount: Array.isArray(data.items) ? data.items.length : 0,
-          source: "single",
+          source: analyticsSource,
+        });
+        trackRoutineGenerationCompleted({
+          routineId: savedRoutine.id,
+          childId: selectedChild ?? undefined,
+          mode: (data as { fallback?: boolean }).fallback ? "fallback" : "ai",
+          itemCount: Array.isArray(data.items) ? data.items.length : 0,
+          source: analyticsSource,
+          routineCountBefore: priorRoutineCountRef.current,
+        });
+        void import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
+          trackOnboardingMilestone("first_routine_generated", {
+            routineId: savedRoutine.id,
+            ...(selectedChild != null ? { childId: selectedChild } : {}),
+          });
+        });
+        void import("@/lib/startup-funnel/tracker").then(({ trackStartupFunnel }) => {
+          trackStartupFunnel("routine_generated", {
+            meta: { source: analyticsSource, routine_id: savedRoutine.id },
+          });
         });
         toast({
           title: shouldOverride ? "🔄 Routine replaced!" : "✨ Routine generated!"
@@ -1071,7 +1122,7 @@ export default function RoutineGenerate() {
         });
       }
     });
-  }, [createMutation, selectedChild, selectedChildData, date, toast, queryClient, setLocation, children, authFetch, t, hasSchool, serializedFixedActivities]);
+  }, [createMutation, selectedChild, selectedChildData, date, toast, queryClient, setLocation, children, authFetch, t, hasSchool, serializedFixedActivities, analyticsSource]);
 
   const applyWakeAndTodayAdjustments = React.useCallback((
     generatedData: GeneratedRoutine,
@@ -1275,7 +1326,7 @@ export default function RoutineGenerate() {
         authFetch,
         buildGeneratePayload(wakeTime, weatherForCall),
         {
-          source: "generate_page_standard",
+          source: analyticsSource,
           childName: selectedChildData?.name,
           allowClientEmergency: true,
         },
@@ -1337,7 +1388,7 @@ export default function RoutineGenerate() {
       const generatedData = await fetchAmyAiRoutine(authFetch, payload, {
         onSlow: () => setAiGeneratingSlow(true),
         userId,
-        source: "generate_page_ai",
+        source: analyticsSource,
         childName: selectedChildData?.name,
         allowClientEmergency: true,
       });

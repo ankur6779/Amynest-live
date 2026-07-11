@@ -61,7 +61,9 @@ Rules:
 - Every question id must appear on exactly one page; pageNumber must match.
 - At least 1 page and at least 1 question.
 - Nursery/LKG: fewer words, more pictures. Grade 1/2: more writing and reading.
-- Use simple emoji or text labels instead of copyrighted images.
+- NEVER use emoji or Unicode icons in prompts, options, or illustrationEmoji.
+- Always set illustrationLabel to a plain English noun (e.g. "bee", "dog", "apple").
+- Set illustrationEmoji to null always — printable black-outline SVG is resolved server-side.
 - No markdown. No extra keys. No partial documents.`;
 }
 

@@ -41,9 +41,9 @@ function nodeToParagraph(
         spacing: { after: 80 },
       });
     case "illustration":
-      if (p.emoji || p.label) {
+      if (p.label) {
         return new Paragraph({
-          text: p.emoji ?? p.label ?? "",
+          text: p.label,
           alignment: AlignmentType.CENTER,
           spacing: { after: 120 },
         });

@@ -3,6 +3,7 @@ import { generateWorksheetLocal } from "./local-generator.js";
 import { nextId } from "./renderer/page-layout.js";
 import { generateWorksheetVariant } from "./teacher-productivity.js";
 import { applyPrintMode } from "./print-optimizer.js";
+import { detectIllustrationFromText, getIllustration } from "./illustration-engine.js";
 
 export function applyWorksheetImprovement(
   doc: WorksheetDocument,
@@ -88,8 +89,11 @@ export function applyWorksheetImprovement(
     case "replace_images":
       updated.pages.forEach((p) =>
         p.elements.forEach((el) => {
-          if (el.type === "question_block" && el.illustrationEmoji) {
-            el.illustrationLabel = `${el.illustrationLabel ?? "Picture"} (outline)`;
+          if (el.type === "question_block") {
+            const label = el.illustrationLabel ?? el.prompt;
+            el.illustrationSrc = getIllustration(detectIllustrationFromText(label));
+            el.illustrationLabel = label.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "").trim() || "picture";
+            delete el.illustrationEmoji;
           }
         }),
       );

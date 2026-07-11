@@ -270,3 +270,5 @@ services:
         value: "1"
       - key: VITE_FF_ONBOARDING_SHORT_CHILD_BRANCH
         value: "1"
+      - key: VITE_FF_FIRST_VALUE_ACTIVATION
+        value: "1"

@@ -17,6 +17,7 @@ import {
 import { measureQuestionBlockHeight, CONTENT_WIDTH } from "./flow-layout-engine.js";
 import { layoutQuestionBlocks } from "./layout-engine.js";
 import { detectIllustrationFromText, getIllustration } from "./illustration-engine.js";
+import { stripEmojiText as stripEmojiFromText } from "./professional-polish.js";
 import { finalizeWorksheet } from "./worksheet-pipeline.js";
 import { generateWorksheetLocal } from "./local-generator.js";
 import {
@@ -65,20 +66,20 @@ export function buildDocumentFromAiContract(
   const orderedQuestions = contract.pages.flatMap((p) => byPage.get(p.pageNumber) ?? []);
 
   const blocks = orderedQuestions.map((q, i) => {
-    const prompt = q.prompt;
-    const label = q.illustrationLabel ?? prompt;
-    const detected = detectIllustrationFromText(label);
-    const illustrationSrc = q.illustrationEmoji || q.illustrationLabel
-      ? getIllustration(detected)
-      : undefined;
-    const options = q.options ?? undefined;
+    const prompt = stripEmojiFromText(q.prompt);
+    const rawLabel = q.illustrationLabel ?? q.illustrationEmoji ?? prompt;
+    const label = stripEmojiFromText(String(rawLabel || prompt)) || prompt;
+    const illustrationSrc =
+      q.illustrationEmoji || q.illustrationLabel
+        ? getIllustration(detectIllustrationFromText(String(rawLabel)))
+        : undefined;
+    const options = q.options?.map((o) => stripEmojiFromText(o) || o) ?? undefined;
     const height = measureQuestionBlockHeight(
       {
         prompt,
         options,
         answerLine: q.answerLine,
         illustrationSrc,
-        illustrationEmoji: q.illustrationEmoji ?? undefined,
       },
       meta.classLevel,
       CONTENT_WIDTH,
@@ -90,8 +91,7 @@ export function buildDocumentFromAiContract(
         prompt,
         options,
         answerLine: q.answerLine,
-        illustrationEmoji: q.illustrationEmoji ?? undefined,
-        illustrationLabel: q.illustrationLabel ?? undefined,
+        illustrationLabel: label || undefined,
         illustrationSrc,
         width: CONTENT_WIDTH,
         height,

@@ -21,12 +21,16 @@ type Props = {
   onJpeg: () => Promise<void>;
   onPrint: () => void;
   onShare: () => Promise<void>;
+  onOptimizePrint?: () => void;
+  qualityScore?: number | null;
+  qualityPass?: boolean;
   busy: boolean;
   progress?: number;
 };
 
 export function WorksheetExportSheet({
-  open, onOpenChange, printMode, onPrintModeChange, onPdf, onAnswerKey, onDocx, onPng, onJpeg, onPrint, onShare, busy, progress = 0,
+  open, onOpenChange, printMode, onPrintModeChange, onPdf, onAnswerKey, onDocx, onPng, onJpeg, onPrint, onShare,
+  onOptimizePrint, qualityScore, qualityPass, busy, progress = 0,
 }: Props) {
   const run = (fn: () => Promise<void>, label: string) => () => {
     void fn()
@@ -42,7 +46,27 @@ export function WorksheetExportSheet({
         <SheetHeader>
           <SheetTitle className="text-left text-lg font-bold text-[#1e3a5f]">Export worksheet</SheetTitle>
         </SheetHeader>
-        <p className="text-sm text-muted-foreground">Print-validated · A4 · 300 DPI PDF</p>
+        <p className="text-sm text-muted-foreground">Print-validated · A4 · quality ≥90 · no watermark</p>
+
+        {typeof qualityScore === "number" && (
+          <div className={cn(
+            "mt-3 rounded-xl border px-3 py-2 text-sm",
+            qualityPass ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-950",
+          )}>
+            Visual quality {qualityScore}/100 {qualityPass ? "· Ready to export" : "· Below 90 — optimize before export"}
+          </div>
+        )}
+
+        {onOptimizePrint && (
+          <Button
+            className="mt-3 h-12 w-full rounded-2xl font-semibold touch-manipulation"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => onOptimizePrint()}
+          >
+            <Printer className="mr-2 h-4 w-4" /> Optimize for Printing
+          </Button>
+        )}
 
         <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Print mode">
           {PRINT_MODES.map((mode) => (

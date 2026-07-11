@@ -5,6 +5,13 @@ import { useLocation, Link, useParams, useSearch } from "wouter";
 import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey, useUpdateRoutineUiPrefs } from "@workspace/api-client-react";
 import { RoutineFeedbackBar, feedbackActivityKey, type RoutineFeedbackSignal } from "@/components/routines/routine-feedback-bar";
 import { track } from "@/lib/analytics";
+import { FF_FIRST_VALUE_POST_ROUTINE } from "@/lib/first-value-activation-flags";
+import {
+  trackRoutineOpened,
+  trackRoutineShared,
+} from "@/lib/first-value-telemetry";
+import { FirstValuePostRoutineStrip } from "@/components/first-value-post-routine-strip";
+import { hasOnboardingMilestone } from "@/lib/retention-engine";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getActivityImage } from "@/lib/activity-images";
 import { Button } from "@/components/ui/button";
@@ -823,6 +830,12 @@ export default function RoutineDetail() {
   const copyShareMessage = () => {
     const msg = buildShareMessage();
     navigator.clipboard.writeText(msg).then(() => {
+      trackRoutineShared({
+        routineId: routine?.id,
+        childId: routine?.childId,
+        method: "copy",
+        source: "routine_detail",
+      });
       toast({
         title: t("toasts.routines_detail.copied_title"),
         description: t("toasts.routines_detail.copied_body")
@@ -1434,6 +1447,10 @@ export default function RoutineDetail() {
   const routineDateStr = routine?.date?.slice(0, 10) ?? "";
   const todayStr = new Date().toISOString().slice(0, 10);
   const dateMode: "past" | "today" | "future" = !routineDateStr ? "today" : routineDateStr < todayStr ? "past" : routineDateStr > todayStr ? "future" : "today";
+  const showFirstValuePostRoutine =
+    FF_FIRST_VALUE_POST_ROUTINE &&
+    revealActive &&
+    hasOnboardingMilestone("first_routine_generated");
 
   // Analytics: fire routine_viewed once per loaded routine.
   const viewedTrackedRef = useRef<number | null>(null);
@@ -1446,6 +1463,14 @@ export default function RoutineDetail() {
       childId: routine.childId ?? undefined,
       dateMode,
       itemCount: totalCount,
+    });
+    trackRoutineOpened({
+      routineId: routine.id,
+      childId: routine.childId ?? undefined,
+      dateMode,
+      itemCount: totalCount,
+      source: new URLSearchParams(search).get("reveal") === "1" ? "first_reveal" : "detail",
+      isFirstRoutine: hasOnboardingMilestone("first_routine_generated"),
     });
   }, [routine?.id, routine?.childId, dateMode, totalCount]);
 
@@ -1731,6 +1756,14 @@ export default function RoutineDetail() {
               href={`https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                trackRoutineShared({
+                  routineId: routine?.id,
+                  childId: routine?.childId,
+                  method: "whatsapp",
+                  source: "routine_detail_header",
+                });
+              }}
             >
               {/* audit-ok: border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 — WhatsApp brand green */}
               <Button variant="outline" size="sm" className="rounded-full gap-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10">
@@ -1810,6 +1843,14 @@ export default function RoutineDetail() {
               <span className="text-lg">🗂️</span>
               <span><strong>{t("pages.routines.detail.past_routine")}</strong> {t("pages.routines.detail.this_is_a_read_only_record_generate_a_new_routine_to_plan_up")}</span>
             </div>}
+          {showFirstValuePostRoutine ? (
+            <div className="mt-4">
+              <FirstValuePostRoutineStrip
+                childName={routine.childName}
+                routineId={routine.id}
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* Why this routine? — adaptive intelligence */}

@@ -65,8 +65,19 @@ export type GrowthOsActionLog = {
   action: string;
   reason: string | null;
   outcome: string | null;
-  entityType: "decision" | "alert" | "experiment" | "settings";
+  entityType: "decision" | "alert" | "experiment" | "settings" | "operations";
   entityId: string;
+};
+
+export type GrowthOsKnowledgeBase = {
+  id: string;
+  at: string;
+  type: "incident" | "experiment_success" | "experiment_failure" | "regression" | "deployment";
+  title: string;
+  summary: string;
+  evidence: string;
+  outcome: string | null;
+  tags: string[];
 };
 
 export type GrowthOsSettings = {
@@ -83,6 +94,7 @@ export type GrowthOsPayload = {
   experiments: GrowthOsExperiment[];
   alertWorkflows: GrowthOsAlertWorkflow[];
   actionHistory: GrowthOsActionLog[];
+  knowledgeBase: GrowthOsKnowledgeBase[];
   settings: GrowthOsSettings;
 };
 
@@ -100,5 +112,6 @@ export const EMPTY_GROWTH_OS_PAYLOAD: GrowthOsPayload = {
   experiments: [],
   alertWorkflows: [],
   actionHistory: [],
+  knowledgeBase: [],
   settings: DEFAULT_GROWTH_OS_SETTINGS,
 };

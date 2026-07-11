@@ -303,7 +303,6 @@ function buildQuestionBlockNode(el: WorksheetQuestionBlock, pageIndex: number, c
       parentId,
       payload: Object.freeze({
         src: el.illustrationSrc,
-        emoji: el.illustrationEmoji,
         label: el.illustrationLabel,
         elementType: "question_block" as const,
       }),

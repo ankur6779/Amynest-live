@@ -9,6 +9,10 @@ import {
   PHASE1_EVENT_CATEGORY,
   PHASE1_EVENT_PROP_SCHEMAS,
 } from "./phase1-events.js";
+import {
+  FIRST_VALUE_EVENT_CATEGORY,
+  FIRST_VALUE_EVENT_PROP_SCHEMAS,
+} from "./first-value-events.js";
 
 export {
   ANALYTICS_EVENT_VERSION,
@@ -517,6 +521,7 @@ const EVENT_PROP_SCHEMAS = {
   }),
 
   ...PHASE1_EVENT_PROP_SCHEMAS,
+  ...FIRST_VALUE_EVENT_PROP_SCHEMAS,
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -597,6 +602,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   origami_model_completed: "learning",
   origami_certificate_downloaded: "learning",
   ...PHASE1_EVENT_CATEGORY,
+  ...FIRST_VALUE_EVENT_CATEGORY,
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(
@@ -674,6 +680,7 @@ export {
   type StartupFunnelEventType,
   type StartupFunnelEventPayload,
 } from "./startup-funnel-events.js";
+export type { FirstValueEventName } from "./first-value-events.js";
 export {
   CHILD_JOURNEY_EVENT_NAMES,
   CHILD_JOURNEY_STEP_VIEW_EVENT,

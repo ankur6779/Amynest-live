@@ -1,7 +1,9 @@
 import type { Canvas, FabricObject, Line } from "fabric";
+import { PAGE_MARGIN } from "@workspace/worksheet-studio";
 
 export const GUIDE_COLOR = "#3b82f6";
-export const SAFE_MARGIN = 20;
+/** Print-safe margin — matches LayoutTree / PDF PAGE_MARGIN. */
+export const SAFE_MARGIN = PAGE_MARGIN;
 
 export interface SnapResult {
   left: number;

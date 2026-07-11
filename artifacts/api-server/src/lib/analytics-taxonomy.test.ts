@@ -66,4 +66,13 @@ describe("analytics taxonomy", () => {
     const r = validateAnalyticsEvent("app_open", { cold: true, futureField: "x" });
     assert.equal(r.valid, true);
   });
+
+  it("validates first-value activation events", () => {
+    assert.equal(isKnownAnalyticsEvent("dashboard_view"), true);
+    assert.equal(isKnownAnalyticsEvent("routine_cta_clicked"), true);
+    assert.equal(isKnownAnalyticsEvent("first_value_achieved"), true);
+    const r = validateAnalyticsEvent("routine_cta_clicked", { source: "first_value_hero" });
+    assert.equal(r.valid, true);
+    if (r.valid) assert.equal(r.category, "growth");
+  });
 });

@@ -72,7 +72,7 @@ const DEFAULT_FOOTER: FooterToggles = {
   showWebsite: false,
   showConfidential: false,
   showPageNumber: true,
-  showGeneratedBy: true,
+  showGeneratedBy: false,
 };
 
 export function createDefaultProfile(overrides?: Partial<SchoolBrandingProfile>): SchoolBrandingProfile {

@@ -21,6 +21,7 @@ function mergePayload(raw: unknown): GrowthOsPayload {
     experiments: Array.isArray(p.experiments) ? p.experiments : [],
     alertWorkflows: Array.isArray(p.alertWorkflows) ? p.alertWorkflows : [],
     actionHistory: Array.isArray(p.actionHistory) ? p.actionHistory : [],
+    knowledgeBase: Array.isArray(p.knowledgeBase) ? p.knowledgeBase : [],
     settings: { ...DEFAULT_GROWTH_OS_SETTINGS, ...(p.settings ?? {}) },
   };
 }
