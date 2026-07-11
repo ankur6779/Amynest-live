@@ -1,0 +1,4 @@
+FROM ik6ml2uhw6op765lo14wn5m3:b789d0099cc20b0596977834ffdbb9af624068bd
+USER root
+COPY dist /app/dist
+USER nodejs

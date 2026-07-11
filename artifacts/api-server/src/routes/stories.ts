@@ -59,6 +59,14 @@ storiesPublicRouter.get("/stories/stream/:driveFileId", async (req, res): Promis
 });
 
 storiesPublicRouter.post("/stories/gcs-sync/cron", async (req, res): Promise<void> => {
+  const { shouldAcceptHttpCronTrigger, schedulerStandbyResponse } = await import(
+    "../lib/single-active-scheduler.js"
+  );
+  if (!shouldAcceptHttpCronTrigger()) {
+    const standby = schedulerStandbyResponse();
+    res.status(standby.status).json(standby.body);
+    return;
+  }
   const expected =
     process.env["STORY_GCS_CRON_SECRET"] ?? process.env["NOTIFICATION_CRON_SECRET"];
   const provided = req.headers["x-cron-secret"];

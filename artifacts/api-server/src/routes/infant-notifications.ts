@@ -177,6 +177,14 @@ router.post("/infant-notifications/outcome", async (req, res): Promise<void> => 
 
 /** Admin/cron ping — evaluate infant notifications once. */
 router.post("/infant-notifications/tick", async (req, res): Promise<void> => {
+  const { shouldAcceptHttpCronTrigger, schedulerStandbyResponse } = await import(
+    "../lib/single-active-scheduler.js"
+  );
+  if (!shouldAcceptHttpCronTrigger()) {
+    const standby = schedulerStandbyResponse();
+    res.status(standby.status).json(standby.body);
+    return;
+  }
   const cronSecret = process.env["CRON_SECRET"];
   const header = req.headers["x-cron-secret"];
   if (cronSecret && header !== cronSecret) {

@@ -698,6 +698,14 @@ router.get("/notifications/analytics/executive", async (req, res): Promise<void>
  * Header: x-cron-secret: <NOTIFICATION_CRON_SECRET>
  */
 router.post("/notifications/cron/ping", async (req, res): Promise<void> => {
+  const { shouldAcceptHttpCronTrigger, schedulerStandbyResponse } = await import(
+    "../lib/single-active-scheduler.js"
+  );
+  if (!shouldAcceptHttpCronTrigger()) {
+    const standby = schedulerStandbyResponse();
+    res.status(standby.status).json(standby.body);
+    return;
+  }
   const expected = process.env["NOTIFICATION_CRON_SECRET"];
   const provided = req.headers["x-cron-secret"];
   if (!expected || provided !== expected) {

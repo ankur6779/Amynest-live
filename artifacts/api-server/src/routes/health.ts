@@ -29,6 +29,7 @@ import { fetchOpenAiTtsStream } from "../services/openaiTtsService.js";
 import { getAdminOpsState } from "../services/admin-ops-store.js";
 import { getApiDomainMetrics } from "../lib/api-domain-metrics.js";
 import { getAnalyticsQuality } from "../services/analyticsIngestService.js";
+import { getSchedulerSnapshot, SCHEDULER_JOB_CATALOG } from "../lib/single-active-scheduler.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -90,6 +91,7 @@ router.get("/healthz/env", async (req, res) => {
       ? queue.redis
       : queue.queueMode === "inline" || queue.queueMode === "memory";
   const openAiTtsConfigured = !!getOpenAiApiKeyForFetch();
+  const schedulerSnap = getSchedulerSnapshot();
   res.json({
     ok: drive.resolved && openAiTtsConfigured && openai.configured && aiQueueOk,
     amynestEnv,
@@ -106,6 +108,14 @@ router.get("/healthz/env", async (req, res) => {
       status: queue.status,
       bullmq: queue.bullmq,
     },
+    scheduler: {
+      ...schedulerSnap,
+      schedulerOwner: schedulerSnap.owner,
+      jobs: SCHEDULER_JOB_CATALOG.map((j) => j.id),
+    },
+    schedulerOwner: schedulerSnap.owner,
+    BACKGROUND_TASKS_ENABLED: schedulerSnap.background_tasks_enabled,
+    NOTIFICATIONS_ENABLED: schedulerSnap.notifications_enabled,
     services: {
       googleDrive: {
         configured: drive.resolved,

@@ -137,6 +137,8 @@ services:
         sync: false
       - key: NOTIFICATIONS_ENABLED
         sync: false
+      - key: SCHEDULER_ACTIVE_PLANE
+        value: render
       - key: EMAIL_FROM
         sync: false
       - key: TTS_ORPHAN_CLEANUP_DRY_RUN

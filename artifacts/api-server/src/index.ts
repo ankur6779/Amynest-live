@@ -22,6 +22,7 @@ import {
   logBootProfile,
   registerBootSignalHandlers,
 } from "./lib/boot-diagnostics.js";
+import { isSingleActiveSchedulerMode } from "./lib/single-active-scheduler.js";
 import { startFastMemoryPoll } from "./lib/memory-poll.js";
 
 const rawPort = process.env["PORT"];
@@ -90,8 +91,7 @@ async function startBackgroundTasks(): Promise<void> {
     await validateSpeechCoachV2RealtimeModelAtBoot();
   });
 
-  // Auto push notifications: always start the in-process cron when enabled,
-  // even if other background tasks are disabled (Render free tier / minimal boot).
+  // Auto push notifications + content crons — gated by single-active scheduler.
   if (isModuleEnabled("crons") && isNotificationCronEnabled()) {
     await runBackgroundPhase("notification_cron", async () => {
       const { startNotificationCron } = await import("./lib/notificationCron.js");
@@ -134,7 +134,10 @@ async function startBackgroundTasks(): Promise<void> {
   if (!isBackgroundTasksEnabled()) {
     console.log("[bg] skipped (disabled)");
     logger.info(
-      { evt: "background.skipped", reason: "BACKGROUND_TASKS_ENABLED=false" },
+      {
+        evt: "background.skipped",
+        reason: isSingleActiveSchedulerMode() ? "scheduler_standby" : "BACKGROUND_TASKS_ENABLED=false",
+      },
       "Non-cron background tasks skipped",
     );
     return;

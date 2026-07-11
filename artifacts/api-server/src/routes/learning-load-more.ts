@@ -41,6 +41,14 @@ const router: IRouter = Router();
 export const learningSeedPublicRouter: IRouter = Router();
 
 learningSeedPublicRouter.post("/learning/seed-weekly/cron", async (req, res): Promise<void> => {
+  const { shouldAcceptHttpCronTrigger, schedulerStandbyResponse } = await import(
+    "../lib/single-active-scheduler.js"
+  );
+  if (!shouldAcceptHttpCronTrigger()) {
+    const standby = schedulerStandbyResponse();
+    res.status(standby.status).json(standby.body);
+    return;
+  }
   const expected =
     process.env["LEARNING_SEED_CRON_SECRET"] ?? process.env["NOTIFICATION_CRON_SECRET"];
   const provided = req.headers["x-cron-secret"];

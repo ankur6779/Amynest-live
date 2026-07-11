@@ -1,6 +1,12 @@
 import { logger } from "./logger";
 import { resolveAmynestEnv } from "./loadEnv.js";
 import { getMemorySnapshot } from "../utils/memory-monitor.js";
+import {
+  getSchedulerSnapshot,
+  isSingleActiveSchedulerMode,
+  shouldRunBackgroundCrons,
+  shouldRunNotificationCrons,
+} from "./single-active-scheduler.js";
 
 /**
  * Boot diagnostics — opt-in instrumentation for diagnosing production crashes.
@@ -148,6 +154,7 @@ function envNotificationsEnabled(): boolean {
  * Defaults ON unless explicitly disabled — auto pushes depend on this.
  */
 export function isNotificationCronEnabled(): boolean {
+  if (isSingleActiveSchedulerMode()) return shouldRunNotificationCrons();
   if (process.env["DISABLE_NOTIFICATION_CRON"] === "1") return false;
   return envNotificationsEnabled();
 }
@@ -158,6 +165,7 @@ export function isNotificationCronEnabled(): boolean {
  * or NOTIFICATIONS_ENABLED=false (so scheduled pushes are not silently skipped).
  */
 export function isBackgroundTasksEnabled(): boolean {
+  if (isSingleActiveSchedulerMode()) return shouldRunBackgroundCrons();
   const raw = process.env["BACKGROUND_TASKS_ENABLED"]?.trim().toLowerCase();
   if (raw === "true" || raw === "1" || raw === "on" || raw === "yes") return true;
   if (raw === "false" || raw === "0" || raw === "off" || raw === "no") return false;
@@ -189,6 +197,7 @@ export function logBootProfile(): void {
       notificationCronEnabled: isNotificationCronEnabled(),
       workerEnabled: process.env["WORKER_ENABLED"] ?? "(default)",
       backgroundTasksEnabled: isBackgroundTasksEnabled(),
+      scheduler: getSchedulerSnapshot(),
       redisUnstable: process.env["REDIS_UNSTABLE"]?.trim() === "1",
       pid: process.pid,
       node: process.version,
