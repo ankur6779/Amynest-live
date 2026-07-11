@@ -59,6 +59,15 @@ import {
   trackOnboardingFunnel,
 } from "@/lib/onboarding-analytics";
 import {
+  isOnboardingShortChildBranchActive,
+  resolveOnboardingShortBranchVariant,
+} from "@/lib/onboarding-conversion-flags";
+import { buildShortBranchChildDraft } from "@/lib/onboarding-short-branch";
+import {
+  hasActiveOnboardingChatSession,
+  shouldSkipOnboardingPage,
+} from "@/lib/onboarding-setup-gate";
+import {
   getAmyAcknowledgement,
   prependAcknowledgement,
 } from "@/lib/onboarding-acknowledgements";
@@ -561,7 +570,7 @@ export default function OnboardingPage() {
   };
 
   const restoredSession = useMemo(() => {
-    if (isSetupComplete(readOnboardingCache())) {
+    if (shouldSkipOnboardingPage(readOnboardingCache())) {
       clearOnboardingChatSession();
       return null;
     }
@@ -779,7 +788,10 @@ export default function OnboardingPage() {
       event: "step_viewed",
       step,
       ...funnelContext(),
-      extra: { previousStep: prevStepRef.current },
+      extra: {
+        previousStep: prevStepRef.current,
+        experiment_variant: resolveOnboardingShortBranchVariant(),
+      },
     });
     prevStepRef.current = step;
   }, [step, countryCode, curr, children]);
@@ -827,6 +839,7 @@ export default function OnboardingPage() {
   // If the server already has a complete profile (e.g. prior partial save), skip onboarding.
   useEffect(() => {
     if (!isSignedIn || isFinishing) return;
+    if (hasActiveOnboardingChatSession()) return;
     let cancelled = false;
     void (async () => {
       await logOnboardingPipelineSnapshot("bootstrap-after-reload", authFetch, {
@@ -834,7 +847,7 @@ export default function OnboardingPage() {
         extra: { trigger: "onboarding-page-mount" },
       });
       const status = await resolveSetupStatus(authFetch);
-      if (cancelled || !isSetupComplete(status)) return;
+      if (cancelled || !shouldSkipOnboardingPage(status)) return;
       persistOnboardingCache(status);
       queryClient.setQueryData(["onboarding-status"], status);
       clearOnboardingChatSession();
@@ -844,6 +857,18 @@ export default function OnboardingPage() {
       cancelled = true;
     };
   }, [authFetch, isFinishing, isSignedIn, queryClient, setLocation, user?.id]);
+
+  // Resumed sessions never re-fire step_viewed on step change — log the resume point once.
+  useEffect(() => {
+    if (!sessionRestored) return;
+    trackOnboardingFunnel({
+      event: "step_viewed",
+      step,
+      ...funnelContext(),
+      extra: { restored: true, experiment_variant: resolveOnboardingShortBranchVariant() },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only resume telemetry
+  }, []);
 
   // Persist chat transcript + step for resume after app restart (debounced).
   useEffect(() => {
@@ -1192,7 +1217,7 @@ export default function OnboardingPage() {
       readOnboardingCache(),
       queryClient.getQueryData<SetupStatus>(["onboarding-status"]),
     );
-    const canEnterApp = cachedComplete || isSetupComplete(status);
+    const canEnterApp = cachedComplete || shouldSkipOnboardingPage(status);
     if (!canEnterApp) {
       console.warn("[onboarding] setup still incomplete after refresh — staying on onboarding");
       setNavigatingToDashboard(false);
@@ -1300,6 +1325,12 @@ export default function OnboardingPage() {
       longitude: opts?.coords?.longitude,
       locationSource: source,
     }));
+    trackOnboardingFunnel({
+      event: "step_completed",
+      step: "country-confirm",
+      ...funnelContext(),
+      extra: { country: code, locationSource: source },
+    });
     amySays(t("screens.onboarding.child_name_after_country"), 300);
     scheduleOnboardingTimeout(() => setStep("child-name"), 1300);
   }
@@ -1385,6 +1416,38 @@ export default function OnboardingPage() {
       dobIsEstimated: true,
       selectedAgeBand,
     }));
+
+    if (isOnboardingShortChildBranchActive()) {
+      const { child, reply } = buildShortBranchChildDraft({
+        name,
+        years,
+        months,
+        bandId,
+        countryCode,
+        t,
+      });
+      trackOnboardingFunnel({
+        event: "step_completed",
+        step: "child-dob",
+        ...funnelContext(),
+        extra: {
+          experiment: "short_child_branch",
+          variant: "short",
+        },
+      });
+      trackOnboardingFunnel({
+        event: "step_skipped",
+        step: "child-birthday",
+        ...funnelContext(),
+        extra: { reason: "short_child_branch" },
+      });
+      setChildren([child as ChildData]);
+      setCurr({});
+      const ack = getAmyAcknowledgement("age", { childName: name, t });
+      advanceToParentAfterFirstChild(reply, ack);
+      return;
+    }
+
     const reply = formatAgeBandReply(years, months, t);
     const ack = getAmyAcknowledgement("age", { childName: name, t });
     const delightKey = getAgeMilestoneDelightKey(years);

@@ -5,6 +5,7 @@ import {
   logOnboardingFinish,
   mergeSetupStatusPreferComplete,
 } from "@/lib/onboarding-completion";
+import { isOnboardingStrictCompleteGateEnabled } from "@/lib/onboarding-conversion-flags";
 
 export type SetupStatus = {
   onboardingComplete: boolean;
@@ -170,7 +171,7 @@ export async function resolveSetupStatus(
 
   try {
     const childrenRes = await authFetch("/api/children");
-    if (childrenRes.ok) {
+    if (childrenRes.ok && !isOnboardingStrictCompleteGateEnabled()) {
       const children = (await parseApiJson<unknown>(childrenRes));
       if (Array.isArray(children) && children.length > 0) {
         const fromChildren = { onboardingComplete: true, profileComplete: true };

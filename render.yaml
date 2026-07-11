@@ -149,6 +149,8 @@ services:
         sync: false
       - key: DISABLE_TTS_ORPHAN_CLEANUP_CRON
         sync: false
+      - key: ONBOARDING_STRICT_COMPLETE_GATE
+        value: "1"
 
   # ─── Production AI worker (Docker — separate image from API / frontend) ──────
   - type: worker
@@ -264,3 +266,7 @@ services:
         sync: false
       - key: VITE_GA4_MEASUREMENT_ID
         sync: false
+      - key: VITE_FF_ONBOARDING_STRICT_COMPLETE_GATE
+        value: "1"
+      - key: VITE_FF_ONBOARDING_SHORT_CHILD_BRANCH
+        value: "1"

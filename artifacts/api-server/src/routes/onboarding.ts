@@ -11,6 +11,8 @@ import { safeRoute } from "../lib/safe-route-handler.js";
 const router: IRouter = Router();
 
 async function readOnboardingState(userId: string) {
+  const strictCompleteGate = process.env.ONBOARDING_STRICT_COMPLETE_GATE === "1";
+
   const [profile] = await db
     .select()
     .from(onboardingProfilesTable)
@@ -30,27 +32,33 @@ async function readOnboardingState(userId: string) {
 
   const hasChild = !!childRow;
   const hasParent = !!parentRow;
-  const profileComplete = hasChild;
-  let onboardingComplete = !!profile?.onboardingComplete || hasChild;
+  const profileComplete = strictCompleteGate
+    ? !!profile?.onboardingComplete && hasChild
+    : hasChild;
+  let onboardingComplete = !!profile?.onboardingComplete;
 
-  if (!onboardingComplete && hasChild && hasParent) {
-    const now = new Date();
-    if (profile) {
-      await db
-        .update(onboardingProfilesTable)
-        .set({ onboardingComplete: true, updatedAt: now })
-        .where(eq(onboardingProfilesTable.userId, userId));
-    } else {
-      await db.insert(onboardingProfilesTable).values({
-        userId,
-        children: [],
-        parent: {},
-        priorityGoal: null,
-        onboardingComplete: true,
-        updatedAt: now,
-      });
+  if (!strictCompleteGate) {
+    onboardingComplete = onboardingComplete || hasChild;
+
+    if (!onboardingComplete && hasChild && hasParent) {
+      const now = new Date();
+      if (profile) {
+        await db
+          .update(onboardingProfilesTable)
+          .set({ onboardingComplete: true, updatedAt: now })
+          .where(eq(onboardingProfilesTable.userId, userId));
+      } else {
+        await db.insert(onboardingProfilesTable).values({
+          userId,
+          children: [],
+          parent: {},
+          priorityGoal: null,
+          onboardingComplete: true,
+          updatedAt: now,
+        });
+      }
+      onboardingComplete = true;
     }
-    onboardingComplete = true;
   }
 
   return {
