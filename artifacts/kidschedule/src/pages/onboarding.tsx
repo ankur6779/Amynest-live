@@ -68,6 +68,12 @@ import {
   shouldSkipOnboardingPage,
 } from "@/lib/onboarding-setup-gate";
 import {
+  initChildJourneyTelemetry,
+  trackChildJourneyComplete,
+  trackChildJourneySkipped,
+  trackChildJourneyView,
+} from "@/lib/child-journey-telemetry";
+import {
   getAmyAcknowledgement,
   prependAcknowledgement,
 } from "@/lib/onboarding-acknowledgements";
@@ -641,6 +647,21 @@ export default function OnboardingPage() {
     return buildOnboardingAnalyticsContext({ country: countryCode, curr, children });
   }
 
+  function childJourneyCtx(extra?: Record<string, string | boolean>) {
+    return {
+      childAgeYears: curr.age,
+      childAgeMonths: curr.ageMonths,
+      educationStage:
+        typeof curr.educationStage === "string" ? curr.educationStage : undefined,
+      experimentVariant: resolveOnboardingShortBranchVariant(),
+      ...extra,
+    };
+  }
+
+  useEffect(() => {
+    initChildJourneyTelemetry();
+  }, []);
+
   // Facebook / Google / Apple often supply displayName — seed parent name for profile save.
   useEffect(() => {
     if (!authLoaded || !isSignedIn) return;
@@ -692,6 +713,7 @@ export default function OnboardingPage() {
       step,
       ...funnelContext(),
     });
+    trackChildJourneyComplete(step, childJourneyCtx());
     setMessages((m) => [...m, chatMessage("user", text)]);
     setSelected("");
     setTextInput("");
@@ -793,6 +815,7 @@ export default function OnboardingPage() {
         experiment_variant: resolveOnboardingShortBranchVariant(),
       },
     });
+    trackChildJourneyView(step, childJourneyCtx({ restored: false }));
     prevStepRef.current = step;
   }, [step, countryCode, curr, children]);
 
@@ -867,6 +890,7 @@ export default function OnboardingPage() {
       ...funnelContext(),
       extra: { restored: true, experiment_variant: resolveOnboardingShortBranchVariant() },
     });
+    trackChildJourneyView(step, childJourneyCtx({ restored: true }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only resume telemetry
   }, []);
 
@@ -1435,6 +1459,24 @@ export default function OnboardingPage() {
           variant: "short",
         },
       });
+      trackChildJourneyComplete("child-dob", childJourneyCtx({ skipped: false }));
+      trackChildJourneySkipped(
+        [
+          "child-birthday",
+          "infant-feeding",
+          "infant-sleep",
+          "child-education-stage",
+          "child-class-grade",
+          "child-schedule-known",
+          "child-school-start",
+          "child-school-end",
+          "child-school-days",
+          "child-wake",
+          "child-sleep",
+        ],
+        "short_child_branch",
+        childJourneyCtx(),
+      );
       trackOnboardingFunnel({
         event: "step_skipped",
         step: "child-birthday",

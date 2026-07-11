@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CHILD_JOURNEY_EVENT_NAMES } from "./child-journey-events.js";
 
 /** Milestone events along the install → signup funnel. */
 export const STARTUP_FUNNEL_MILESTONE_EVENTS = [
@@ -53,6 +54,7 @@ export const STARTUP_FUNNEL_FAILURE_EVENTS = [
 
 export const STARTUP_FUNNEL_EVENT_NAMES = [
   ...STARTUP_FUNNEL_MILESTONE_EVENTS,
+  ...CHILD_JOURNEY_EVENT_NAMES,
   ...STARTUP_FUNNEL_FAILURE_EVENTS,
 ] as const;
 

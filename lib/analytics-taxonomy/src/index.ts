@@ -674,3 +674,10 @@ export {
   type StartupFunnelEventType,
   type StartupFunnelEventPayload,
 } from "./startup-funnel-events.js";
+export {
+  CHILD_JOURNEY_EVENT_NAMES,
+  CHILD_JOURNEY_STEP_VIEW_EVENT,
+  CHILD_JOURNEY_STEP_COMPLETE_EVENT,
+  type ChildJourneyEventName,
+  type ChildJourneyOnboardingStep,
+} from "./child-journey-events.js";
