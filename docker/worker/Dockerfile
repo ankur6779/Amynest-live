@@ -23,24 +23,26 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
 # Coolify injects build-time NODE_ENV=production onto RUN; force non-production
 # so pnpm fetch/install still include build tooling (esbuild, etc.).
+# CI=true prevents interactive pnpm prompts that abort non-TTY Coolify builds.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
+    CI=true NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
     pnpm fetch --frozen-lockfile
 
 FROM deps AS build
 
+ENV CI=true
 ENV NODE_ENV=development
 ENV PNPM_CONFIG_PRODUCTION=false
 
 COPY . .
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
+    CI=true NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
     pnpm install --frozen-lockfile --offline --prod=false --filter "@workspace/api-server..."
 
-RUN NODE_ENV=development node -e "const {createRequire}=require('node:module'); const {join}=require('node:path'); createRequire(join('/app/artifacts/api-server','package.json'))('esbuild'); console.log('[docker/worker] esbuild OK')"
+RUN CI=true NODE_ENV=development node -e "const {createRequire}=require('node:module'); const {join}=require('node:path'); createRequire(join('/app/artifacts/api-server','package.json'))('esbuild'); console.log('[docker/worker] esbuild OK')"
 
-RUN NODE_ENV=development pnpm --filter @workspace/api-server build
+RUN CI=true NODE_ENV=development pnpm --filter @workspace/api-server build
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm --filter @workspace/api-server deploy --prod /deploy

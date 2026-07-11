@@ -23,30 +23,31 @@ FROM base AS deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
-# Coolify injects build-time NODE_ENV=production (ARG + optional secret mounts)
-# onto every RUN, which makes pnpm fetch/install skip devDependencies. Force
-# non-production mode on the command line so it wins over Coolify injection.
+# Coolify injects build-time NODE_ENV=production (ARG after each FROM), which
+# makes pnpm skip devDependencies. CI=true also prevents interactive prompts
+# that otherwise abort install in non-TTY Coolify builds.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
+    CI=true NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
     pnpm fetch --frozen-lockfile
 
 # ── build: source changes invalidate from here, not the fetch layer ───────────
 FROM deps AS build
 
+ENV CI=true
 ENV NODE_ENV=development
 ENV PNPM_CONFIG_PRODUCTION=false
 
 COPY . .
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
+    CI=true NODE_ENV=development PNPM_CONFIG_PRODUCTION=false \
     pnpm install --frozen-lockfile --offline --prod=false --filter "@workspace/api-server..."
 
 # esbuild is required by artifacts/api-server/build.mjs — fail fast with a clear
 # message if Coolify/production filtering still dropped it.
-RUN NODE_ENV=development node -e "const {createRequire}=require('node:module'); const {join}=require('node:path'); createRequire(join('/app/artifacts/api-server','package.json'))('esbuild'); console.log('[docker/backend] esbuild OK')"
+RUN CI=true NODE_ENV=development node -e "const {createRequire}=require('node:module'); const {join}=require('node:path'); createRequire(join('/app/artifacts/api-server','package.json'))('esbuild'); console.log('[docker/backend] esbuild OK')"
 
-RUN NODE_ENV=development pnpm --filter @workspace/api-server build
+RUN CI=true NODE_ENV=development pnpm --filter @workspace/api-server build
 
 # Schema sync when DATABASE_URL is available (Render injects it at image build time).
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
