@@ -11,11 +11,11 @@ import {
   buildQuestionElement,
   continuationContentStartY,
   createEmptyPage,
-  estimateQuestionBlockHeight,
   nextId,
   page1ContentStartY,
   resetIdCounter,
 } from "./renderer/page-layout.js";
+import { measureQuestionBlockHeight, CONTENT_WIDTH } from "./flow-layout-engine.js";
 import type {
   DetectedDrawing,
   DetectedQuestion,
@@ -219,7 +219,11 @@ export function reconstructWorksheetLocal(req: WorksheetReconstructRequest): Wor
       const illSrc = analysis.drawings.length
         ? getIllustration(detectIllustrationFromText(analysis.drawings[0]!.label))
         : undefined;
-      const height = estimateQuestionBlockHeight(req.classLevel, 0, Boolean(illSrc));
+      const height = measureQuestionBlockHeight(
+        { prompt: q.prompt, illustrationSrc: illSrc },
+        req.classLevel,
+        CONTENT_WIDTH,
+      );
       return {
         block: {
           questionNumber: q.number,
@@ -227,7 +231,7 @@ export function reconstructWorksheetLocal(req: WorksheetReconstructRequest): Wor
           prompt: q.prompt,
           illustrationSrc: illSrc,
           illustrationLabel: analysis.drawings[0]?.label,
-          width: 555,
+          width: CONTENT_WIDTH,
           height,
         },
         height,

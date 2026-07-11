@@ -2,6 +2,7 @@ import type { WorksheetDocument, WorksheetImproveAction } from "./types.js";
 import { applyWorksheetImprovement } from "./improvements.js";
 import { detectIllustrationFromText, getIllustration } from "./illustration-engine.js";
 import { buildQuestionElement, nextId } from "./renderer/page-layout.js";
+import { CONTENT_WIDTH } from "./flow-layout-engine.js";
 import type { DocumentChangeSummary } from "./types.js";
 
 export interface ConversationalEditResult {
@@ -75,7 +76,7 @@ export function tryConversationalEdit(message: string, doc: WorksheetDocument): 
         options: ["Option A", "Option B"],
         x: 28,
         y,
-        width: 555,
+        width: CONTENT_WIDTH,
         height: 100,
       });
       lastPage.elements.push(el);

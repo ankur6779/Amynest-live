@@ -2,21 +2,31 @@ import { A4_HEIGHT, A4_WIDTH, PAGE_MARGIN, type WorksheetDocument, type Workshee
 import { FONT_SIZES_BY_CLASS, EXPORT_DPI } from "./constants.js";
 import { getLpsStandard } from "./lps-standards.js";
 import type { ValidationIssue } from "./educational-quality-engine.js";
-import { isPageFrameElement } from "./page-frame-engine.js";
+import {
+  CONTENT_WIDTH,
+  isDecorativeLayoutElement,
+  reflowDocumentLayout,
+  validateLayoutGeometry,
+} from "./flow-layout-engine.js";
 
 const MIN_EXPORT_FONT = 11;
-const SAFE_BOTTOM = 48;
 
 function isDecorativeElement(el: WorksheetElement): boolean {
-  if (isPageFrameElement(el.id)) return true;
-  if (el.id.startsWith("brand_") || el.id.startsWith("footer_")) return true;
-  return false;
+  return isDecorativeLayoutElement(el.id);
 }
 
 export function validatePrintReadiness(doc: WorksheetDocument): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const standard = getLpsStandard(doc.meta.classLevel);
   const fonts = FONT_SIZES_BY_CLASS[doc.meta.classLevel];
+
+  for (const layoutIssue of validateLayoutGeometry(doc)) {
+    issues.push({
+      code: "LAYOUT_OVERLAP",
+      severity: "error",
+      message: layoutIssue,
+    });
+  }
 
   for (const page of doc.pages) {
     const contentEls = page.elements.filter((e) => !isDecorativeElement(e));
@@ -34,14 +44,6 @@ export function validatePrintReadiness(doc: WorksheetDocument): ValidationIssue[
           code: "MARGIN_RIGHT",
           severity: "error",
           message: "Object outside right print margin.",
-          pageNumber: page.pageNumber,
-        });
-      }
-      if (el.y + el.height > A4_HEIGHT - PAGE_MARGIN - SAFE_BOTTOM) {
-        issues.push({
-          code: "OVERFLOW",
-          severity: "error",
-          message: "Content may clip at bottom of page.",
           pageNumber: page.pageNumber,
         });
       }
@@ -101,48 +103,35 @@ export function validatePrintReadiness(doc: WorksheetDocument): ValidationIssue[
   return issues;
 }
 
-/** Auto-repair common print issues without changing pedagogy. */
+/** Auto-repair print issues — reflows through the flow layout engine (no hardcoded Y). */
 export function repairPrintIssues(doc: WorksheetDocument): WorksheetDocument {
   const repaired = structuredClone(doc);
   const standard = getLpsStandard(repaired.meta.classLevel);
-  const maxY = A4_HEIGHT - PAGE_MARGIN - SAFE_BOTTOM;
 
-  repaired.pages = repaired.pages
-    .map((page) => {
-      let elements = [...page.elements];
-      elements = elements.map((el) => {
-        if (isDecorativeElement(el)) return el;
-        const next = { ...el };
-        if (next.x < PAGE_MARGIN) next.x = PAGE_MARGIN;
-        if (next.x + next.width > A4_WIDTH - PAGE_MARGIN) {
-          next.width = A4_WIDTH - PAGE_MARGIN * 2 - next.x;
-        }
-        if (next.y + next.height > maxY) {
-          next.y = Math.max(PAGE_MARGIN + 120, maxY - next.height);
-        }
-        if (next.type === "text" && next.fontSize < MIN_EXPORT_FONT) {
-          next.fontSize = standard.minPromptFontSize;
-        }
-        if (next.type === "question_block" && next.answerLine && next.height < standard.writingAreaMinHeight) {
+  repaired.pages = repaired.pages.map((page) => {
+    const elements = page.elements.map((el) => {
+      if (isDecorativeElement(el)) return el;
+      const next = { ...el };
+      if (next.x < PAGE_MARGIN) next.x = PAGE_MARGIN;
+      if (next.x + next.width > A4_WIDTH - PAGE_MARGIN) {
+        next.width = CONTENT_WIDTH;
+      }
+      if (next.type === "text" && next.fontSize < MIN_EXPORT_FONT) {
+        next.fontSize = standard.minPromptFontSize;
+      }
+      if (next.type === "question_block") {
+        next.locked = false;
+        if (next.answerLine && next.height < standard.writingAreaMinHeight) {
           next.height = standard.writingAreaMinHeight;
         }
-        return next;
-      });
-
-      const qs = elements.filter((e) => e.type === "question_block");
-      let y = page.pageNumber === 1 ? 200 : 48;
-      for (const q of qs) {
-        const idx = elements.findIndex((e) => e.id === q.id);
-        if (idx >= 0) {
-          elements[idx] = { ...elements[idx]!, y } as typeof elements[number];
-          y += elements[idx]!.height + standard.sectionGap;
-        }
       }
-      return { ...page, elements };
-    })
-    .filter((page) => page.elements.some((e) => e.type === "question_block") || repaired.pages.length === 1);
+      return next;
+    });
+    return { ...page, elements };
+  });
 
-  repaired.meta.updatedAt = new Date().toISOString();
-  repaired.meta.pageCount = repaired.pages.length;
-  return repaired;
+  const reflowed = reflowDocumentLayout(repaired);
+  reflowed.meta.updatedAt = new Date().toISOString();
+  reflowed.meta.pageCount = reflowed.pages.length;
+  return reflowed;
 }

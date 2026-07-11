@@ -10,10 +10,10 @@ import {
   buildQuestionElement,
   continuationContentStartY,
   createEmptyPage,
-  estimateQuestionBlockHeight,
   page1ContentStartY,
   resetIdCounter,
 } from "./renderer/page-layout.js";
+import { measureQuestionBlockHeight, CONTENT_WIDTH } from "./flow-layout-engine.js";
 import { layoutQuestionBlocks } from "./layout-engine.js";
 import { detectIllustrationFromText, getIllustration } from "./illustration-engine.js";
 import { finalizeWorksheet } from "./worksheet-pipeline.js";
@@ -75,10 +75,16 @@ export function parseAiWorksheetResponse(
     const illustrationSrc = q.illustrationEmoji || q.illustrationLabel
       ? getIllustration(detected)
       : undefined;
-    const height = estimateQuestionBlockHeight(
+    const height = measureQuestionBlockHeight(
+      {
+        prompt,
+        options: q.options,
+        answerLine: q.answerLine,
+        illustrationSrc,
+        illustrationEmoji: q.illustrationEmoji,
+      },
       meta.classLevel,
-      q.options?.length ?? 0,
-      Boolean(illustrationSrc),
+      CONTENT_WIDTH,
     );
     return {
       block: {
@@ -90,7 +96,7 @@ export function parseAiWorksheetResponse(
         illustrationEmoji: q.illustrationEmoji,
         illustrationLabel: q.illustrationLabel,
         illustrationSrc,
-        width: 555,
+        width: CONTENT_WIDTH,
         height,
       },
       height,

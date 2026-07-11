@@ -7,6 +7,10 @@ import {
   EXPORT_SCALE_MULTIPLIER,
   PAGE_BORDER_RADIUS,
   PAGE_MARGIN,
+  LAYOUT,
+  type LayoutNode,
+  type LayoutPageNode,
+  type WorksheetClass,
   type WorksheetPage,
   type WorksheetElement,
   type WorksheetQuestionBlock,
@@ -36,7 +40,8 @@ export interface WorksheetCanvasHandle {
   canvas: import("fabric").Canvas;
   scale: number;
   dispose: () => void;
-  renderPage: (page: WorksheetPage, colorMode?: "color" | "bw") => Promise<void>;
+  renderPage: (page: WorksheetPage, colorMode?: "color" | "bw", classLevel?: WorksheetClass, layoutPage?: LayoutPageNode) => Promise<void>;
+  resizeToWidth: (viewportWidth: number, page?: WorksheetPage, classLevel?: WorksheetClass, layoutPage?: LayoutPageNode) => Promise<void>;
   toDataURL: (dpiMultiplier?: number) => string;
   getActiveObject: () => import("fabric").FabricObject | undefined;
   undo: () => void;
@@ -75,7 +80,6 @@ export interface WorksheetCanvasHandle {
   setSafeAreaVisible: (visible: boolean) => void;
   panBy: (dx: number, dy: number) => void;
   resetViewport: () => void;
-  resizeToWidth: (viewportWidth: number, page?: WorksheetPage) => Promise<void>;
   exportPageState: (page: WorksheetPage) => WorksheetPage;
   onPageModified: (cb: () => void) => () => void;
 }
@@ -127,37 +131,155 @@ function mapShape(el: WorksheetShapeElement, scale: number, fabric: FabricModule
   return obj;
 }
 
-async function mapQuestion(el: WorksheetQuestionBlock, scale: number, fabric: FabricModule, colorMode: "color" | "bw") {
-  const { Group, Textbox, Rect, FabricImage } = fabric;
-  const items: import("fabric").FabricObject[] = [];
-  items.push(new Textbox(el.prompt, { left: 0, top: 0, width: el.width * scale, fontSize: 15 * scale, fontWeight: "600", fill: "#111", editable: true }));
-  if (el.illustrationSrc) {
-    try {
-      const img = await FabricImage.fromURL(el.illustrationSrc, { crossOrigin: "anonymous" });
-      img.set({ left: (el.width * scale - 56 * scale) / 2, top: 28 * scale, scaleX: (56 * scale) / (img.width || 1), scaleY: (56 * scale) / (img.height || 1), selectable: false });
-      items.push(img);
-    } catch { /* emoji fallback */ }
+async function renderLayoutNodeToFabric(
+  node: LayoutNode,
+  scale: number,
+  fabric: FabricModule,
+  colorMode: "color" | "bw",
+): Promise<import("fabric").FabricObject | null> {
+  const { Group, Textbox, Rect, FabricImage, Line, Circle, Triangle } = fabric;
+  const r = node.rect;
+  const p = node.payload;
+
+  const attachData = (obj: import("fabric").FabricObject) => {
+    (obj as import("fabric").FabricObject & { data?: Record<string, unknown> }).data = {
+      elementId: node.sourceElementId,
+      elementType: p.elementType ?? node.kind,
+      layoutNodeId: node.id,
+    };
+    return obj;
+  };
+
+  switch (node.kind) {
+    case "prompt":
+    case "option":
+    case "text":
+    case "header":
+    case "footer": {
+      const tb = new Textbox(p.content ?? "", {
+        left: r.x * scale,
+        top: r.y * scale,
+        width: r.width * scale,
+        fontSize: (p.fontSize ?? 12) * scale,
+        fontWeight: p.fontWeight === "bold" ? "bold" : "normal",
+        textAlign: p.textAlign ?? "left",
+        fill: p.color ?? "#111",
+        editable: !p.locked,
+        lineHeight: p.lineHeight ?? LAYOUT.LINE_HEIGHT,
+        cornerSize: 14,
+        touchCornerSize: 28,
+      });
+      return attachData(tb);
+    }
+    case "illustration": {
+      if (p.src) {
+        try {
+          const img = await FabricImage.fromURL(p.src, { crossOrigin: "anonymous" });
+          const h = r.height * scale;
+          const w = r.width * scale;
+          img.set({
+            left: r.x * scale,
+            top: r.y * scale,
+            scaleX: w / (img.width || 1),
+            scaleY: h / (img.height || 1),
+            selectable: true,
+            cornerSize: 14,
+            touchCornerSize: 28,
+          });
+          return attachData(img);
+        } catch { return null; }
+      }
+      const tb = new Textbox(
+        colorMode === "bw" ? `⬜ ${p.label ?? "Picture"}` : (p.emoji ?? p.label ?? ""),
+        { left: r.x * scale, top: r.y * scale, fontSize: 20 * scale, editable: true },
+      );
+      return attachData(tb);
+    }
+    case "answer_line": {
+      const line = new Rect({
+        left: r.x * scale,
+        top: r.y * scale,
+        width: r.width * scale,
+        height: Math.max(1, r.height * scale),
+        fill: p.stroke ?? "#333",
+        stroke: p.stroke ?? "#333",
+      });
+      return attachData(line);
+    }
+    case "shape":
+    case "frame": {
+      const common = {
+        left: r.x * scale,
+        top: r.y * scale,
+        stroke: p.stroke ?? "#333",
+        strokeWidth: (p.strokeWidth ?? 1) * scale,
+        fill: p.fill === "transparent" ? "transparent" : (p.fill ?? "transparent"),
+        selectable: !p.locked,
+        cornerSize: 14,
+        touchCornerSize: 28,
+      };
+      if (p.shapeKind === "line") {
+        return attachData(new Line(
+          [r.x * scale, r.y * scale, (r.x + r.width) * scale, r.y * scale],
+          { stroke: p.stroke, strokeWidth: (p.strokeWidth ?? 1) * scale },
+        ));
+      }
+      if (p.shapeKind === "circle") {
+        return attachData(new Circle({ ...common, radius: (r.width / 2) * scale }));
+      }
+      if (p.shapeKind === "triangle") {
+        return attachData(new Triangle({ ...common, width: r.width * scale, height: r.height * scale }));
+      }
+      return attachData(new Rect({ ...common, width: r.width * scale, height: r.height * scale, rx: 4, ry: 4 }));
+    }
+    case "image": {
+      if (!p.src) return null;
+      try {
+        const img = await FabricImage.fromURL(p.src, { crossOrigin: "anonymous" });
+        img.set({
+          left: r.x * scale,
+          top: r.y * scale,
+          scaleX: (r.width * scale) / (img.width || 1),
+          scaleY: (r.height * scale) / (img.height || 1),
+          selectable: !p.locked,
+          cornerSize: 14,
+          touchCornerSize: 28,
+        });
+        return attachData(img);
+      } catch { return null; }
+    }
+    case "question_block": {
+      const items: import("fabric").FabricObject[] = [];
+      for (const child of node.children) {
+        const obj = await renderLayoutNodeToFabric(child, scale, fabric, colorMode);
+        if (obj) items.push(obj);
+      }
+      const group = new Group(items, {
+        left: r.x * scale,
+        top: r.y * scale,
+        subTargetCheck: true,
+        cornerSize: 14,
+        touchCornerSize: 28,
+        lockMovementX: !!p.locked,
+        lockMovementY: !!p.locked,
+      });
+      return attachData(group);
+    }
+    default:
+      return null;
   }
-  if (!el.illustrationSrc && el.illustrationEmoji) {
-    items.push(new Textbox(colorMode === "bw" ? `⬜ ${el.illustrationLabel ?? "Picture"}` : el.illustrationEmoji, { left: 0, top: 32 * scale, fontSize: 28 * scale, editable: false }));
-  }
-  if (el.options?.length) {
-    el.options.forEach((opt, i) => {
-      items.push(new Textbox(opt, { left: (i % 2) * 140 * scale, top: (60 + Math.floor(i / 2) * 28) * scale, fontSize: 13 * scale, width: 130 * scale }));
-    });
-  }
-  if (el.answerLine) {
-    items.push(new Rect({ left: 0, top: (el.options?.length ? 108 : 64) * scale, width: 140 * scale, height: 1, fill: "#333", stroke: "#333" }));
-  }
-  const group = new Group(items, { left: el.x * scale, top: el.y * scale, subTargetCheck: true, cornerSize: 14, touchCornerSize: 28 });
-  (group as import("fabric").FabricObject & { data?: Record<string, unknown> }).data = { elementId: el.id, elementType: "question_block" };
-  return group;
 }
 
-async function mapElement(el: WorksheetElement, scale: number, fabric: FabricModule, colorMode: "color" | "bw") {
+async function mapElement(
+  el: WorksheetElement,
+  scale: number,
+  fabric: FabricModule,
+  colorMode: "color" | "bw",
+  classLevel: WorksheetClass,
+) {
   if (el.type === "text") return mapText(el, scale, fabric);
   if (el.type === "shape") return mapShape(el, scale, fabric);
-  if (el.type === "question_block") return mapQuestion(el, scale, fabric, colorMode);
+  if (el.type === "question_block") return null;
   if (el.type === "image") {
     const { FabricImage } = fabric;
     try {
@@ -185,6 +307,7 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
   let zoomFactor = 1;
   let clipboard: import("fabric").FabricObject | null = null;
   let colorMode: "color" | "bw" = "color";
+  let docClassLevel: WorksheetClass = "ukg";
 
   const canvas = new Canvas(container, {
     width: canvasWidth,
@@ -295,13 +418,28 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
     }
   });
 
-  const renderPage = async (page: WorksheetPage, mode: "color" | "bw" = "color") => {
+  const renderPage = async (
+    page: WorksheetPage,
+    mode: "color" | "bw" = "color",
+    classLevel?: WorksheetClass,
+    layoutPage?: LayoutPageNode,
+  ) => {
     colorMode = mode;
+    if (classLevel) docClassLevel = classLevel;
     skipHistory = true;
     canvas.getObjects().filter((o) => o !== pageBorder).forEach((o) => canvas.remove(o));
-    for (const el of page.elements) {
-      const obj = await mapElement(el, scale, fabric, mode);
-      if (obj) canvas.add(obj);
+
+    if (layoutPage) {
+      const sorted = [...layoutPage.nodes].sort((a, b) => a.zIndex - b.zIndex);
+      for (const node of sorted) {
+        const obj = await renderLayoutNodeToFabric(node, scale, fabric, mode);
+        if (obj) canvas.add(obj);
+      }
+    } else {
+      for (const el of page.elements) {
+        const obj = await mapElement(el, scale, fabric, mode, docClassLevel);
+        if (obj) canvas.add(obj);
+      }
     }
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     zoomFactor = 1;
@@ -310,7 +448,12 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
     pushHistory();
   };
 
-  const resizeToWidth = async (nextViewportWidth: number, page?: WorksheetPage) => {
+  const resizeToWidth = async (
+    nextViewportWidth: number,
+    page?: WorksheetPage,
+    classLevel?: WorksheetClass,
+    layoutPage?: LayoutPageNode,
+  ) => {
     const nextScale = computeWorksheetCanvasScale(nextViewportWidth);
     if (Math.abs(nextScale - scale) < 0.01 && !page) return;
     syncCanvasDimensions(nextScale);
@@ -325,7 +468,7 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
       if (safeAreaObj) canvas.bringObjectToFront(safeAreaObj);
     }
     canvas.sendObjectToBack(pageBorder);
-    if (page) await renderPage(page, colorMode);
+    if (page) await renderPage(page, colorMode, classLevel, layoutPage);
     else {
       canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
       zoomFactor = 1;

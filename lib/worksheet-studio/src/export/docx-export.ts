@@ -2,6 +2,8 @@ import type { WorksheetDocument } from "../types.js";
 import { downloadBlob } from "./pdf-export.js";
 import { getActiveBrandingProfile } from "../school-branding.js";
 import { getBrandedDocxFooterLines, getBrandedDocxHeaderLines } from "../footer-engine.js";
+import { buildDocxParagraphsFromLayoutTree } from "../layout-tree-docx.js";
+import { prepareLayoutForRender } from "../layout-tree.js";
 
 export async function exportWorksheetDocx(document: WorksheetDocument): Promise<void> {
   const {
@@ -63,36 +65,11 @@ export async function exportWorksheetDocx(document: WorksheetDocument): Promise<
     new Paragraph({ text: "", spacing: { after: 300 } }),
   );
 
-  let headerDone = false;
+  const { layoutTree } = prepareLayoutForRender(document);
+  children.push(...buildDocxParagraphsFromLayoutTree(layoutTree, { Paragraph, TextRun, AlignmentType } as typeof import("docx")));
+
   const totalPages = document.pages.length;
   for (const page of document.pages) {
-    if (page.pageNumber > 1) {
-      children.push(new Paragraph({ text: "", pageBreakBefore: true }));
-    }
-    for (const el of page.elements) {
-      if (el.type === "question_block") {
-        if (!headerDone && page.pageNumber === 1) headerDone = true;
-        children.push(new Paragraph({
-          children: [new TextRun({ text: el.prompt, bold: true, size: 24 })],
-          spacing: { before: 200, after: 160 },
-        }));
-        if (el.illustrationEmoji || el.illustrationLabel) {
-          children.push(new Paragraph({
-            text: el.illustrationLabel ?? el.illustrationEmoji ?? "",
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 160 },
-          }));
-        }
-        if (el.options?.length) {
-          children.push(new Paragraph({ text: el.options.join("     "), spacing: { after: 160 } }));
-        }
-        if (el.answerLine) {
-          children.push(new Paragraph({ text: "Answer: ________________________________", spacing: { after: 280 } }));
-        }
-      } else if (el.type === "text" && !el.locked) {
-        children.push(new Paragraph({ text: el.content, spacing: { after: 120 } }));
-      }
-    }
     const footerLines = getBrandedDocxFooterLines(profile, page.pageNumber, totalPages);
     for (const line of footerLines) {
       children.push(new Paragraph({ text: line, alignment: AlignmentType.CENTER, spacing: { before: 200 } }));

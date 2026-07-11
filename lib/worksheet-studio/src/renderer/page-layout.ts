@@ -10,12 +10,12 @@ import {
   type WorksheetTextElement,
 } from "../types.js";
 import {
-  FONT_SIZES_BY_CLASS,
   SUBJECT_LABELS,
 } from "../constants.js";
 import { buildSchoolHeaderElements } from "../header-engine.js";
 import { frameContinuationContentStartY } from "../page-frame-engine.js";
 import { computeSchoolContentStartY, getActiveBrandingProfile } from "../school-branding.js";
+import { measureQuestionBlockHeight, CONTENT_WIDTH } from "../flow-layout-engine.js";
 
 let idCounter = 0;
 export function nextId(prefix = "el"): string {
@@ -109,12 +109,18 @@ export function estimateQuestionBlockHeight(
   classLevel: WorksheetMeta["classLevel"],
   optionCount = 0,
   hasIllustration = false,
+  prompt = "Practice question.",
 ): number {
-  const fonts = FONT_SIZES_BY_CLASS[classLevel];
-  let h = fonts.prompt + fonts.body + 36;
-  if (optionCount > 0) h += Math.ceil(optionCount / 2) * 30;
-  if (hasIllustration) h += 72;
-  return h;
+  const options = optionCount > 0 ? Array.from({ length: optionCount }, (_, i) => `Option ${i + 1}`) : undefined;
+  return measureQuestionBlockHeight(
+    {
+      prompt,
+      options,
+      illustrationSrc: hasIllustration ? "placeholder" : undefined,
+    },
+    classLevel,
+    CONTENT_WIDTH,
+  );
 }
 
 export function formatWorksheetTitle(meta: WorksheetMeta): string {

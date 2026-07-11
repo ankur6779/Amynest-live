@@ -1,8 +1,8 @@
 import { A4_HEIGHT, PAGE_MARGIN, type WorksheetQuestionBlock } from "./types.js";
 import type { WorksheetMeta } from "./types.js";
+import { FOOTER_RESERVED_HEIGHT, CONTENT_WIDTH } from "./flow-layout-engine.js";
 
 const QUESTION_GAP = 20;
-const BOTTOM_SAFE = 48;
 
 /** Shuffle array in place (Fisher–Yates) */
 export function shuffleInPlace<T>(arr: T[]): T[] {
@@ -30,8 +30,7 @@ export interface PaginatedBlock {
 }
 
 /**
- * Intelligently paginate questions — never clip inside page bounds.
- * Returns array of pages, each page is array of positioned blocks.
+ * Flow-based pagination — never clip; move whole blocks to next page.
  */
 export function paginateQuestions(
   blocks: PaginatedBlock[],
@@ -41,18 +40,30 @@ export function paginateQuestions(
   maxPages: number,
 ): Array<Array<WorksheetQuestionBlock & { x: number; y: number }>> {
   const pages: Array<Array<WorksheetQuestionBlock & { x: number; y: number }>> = [];
+  let pageNum = 1;
   let y = page1StartY;
   let currentPage: Array<WorksheetQuestionBlock & { x: number; y: number }> = [];
-  let onFirstPage = true;
 
-  const maxY = A4_HEIGHT - PAGE_MARGIN - BOTTOM_SAFE;
+  const bottomSafe = FOOTER_RESERVED_HEIGHT;
+  const maxY = A4_HEIGHT - PAGE_MARGIN - bottomSafe;
+
+  const startYForPage = (n: number) => (n === 1 ? page1StartY : continuationStartY);
 
   for (const { block, height } of blocks) {
+    const pageStart = startYForPage(pageNum);
+    if (pageNum > 1 && y < pageStart) y = pageStart;
+
     if (y + height > maxY) {
-      if (currentPage.length) pages.push(currentPage);
-      currentPage = [];
-      y = continuationStartY;
-      onFirstPage = false;
+      if (currentPage.length) {
+        pages.push(currentPage);
+        if (pages.length >= maxPages) {
+          currentPage = [{ ...block, type: "question_block", zIndex: 3, x: PAGE_MARGIN, y: pageStart, width: CONTENT_WIDTH, height } as WorksheetQuestionBlock & { x: number; y: number }];
+          break;
+        }
+        pageNum += 1;
+        currentPage = [];
+        y = startYForPage(pageNum);
+      }
     }
 
     currentPage.push({
@@ -61,18 +72,18 @@ export function paginateQuestions(
       zIndex: 3,
       x: PAGE_MARGIN,
       y,
-      width: 555,
+      width: CONTENT_WIDTH,
       height,
     } as WorksheetQuestionBlock & { x: number; y: number });
 
     y += height + QUESTION_GAP;
   }
 
-  if (currentPage.length) pages.push(currentPage);
+  if (currentPage.length && pages.length < maxPages) {
+    pages.push(currentPage);
+  }
 
   void meta;
-  void maxPages;
-  void onFirstPage;
   return pages.length ? pages : [[]];
 }
 

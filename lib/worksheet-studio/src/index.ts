@@ -45,6 +45,11 @@ export * from "./quality-insights.js";
 export * from "./post-generation-recs.js";
 export * from "./reconstruction-engine.js";
 export * from "./reconstruction-prompt.js";
+export * from "./layout-constants.js";
+export * from "./layout-tree.js";
+export * from "./layout-tree-pdf.js";
+export * from "./layout-tree-docx.js";
+export * from "./flow-layout-engine.js";
 export * from "./parse-reconstruction-response.js";
 // Browser-only modules (IndexedDB, canvas, window) live in ./client — do not
 // re-export them here or Node/API typecheck pulls in DOM globals.

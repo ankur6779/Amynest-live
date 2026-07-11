@@ -16,7 +16,7 @@ import {
 import { buildLpsHeaderElements, page1ContentStartY } from "@workspace/worksheet-studio";
 import { generateWorksheetLocal } from "@workspace/worksheet-studio";
 import { WORKSHEET_TEMPLATES, getTemplateById } from "@workspace/worksheet-studio";
-import { applyWorksheetImprovement } from "@workspace/worksheet-studio";
+import { applyWorksheetImprovement, CONTENT_WIDTH } from "@workspace/worksheet-studio";
 
 describe("pagination", () => {
   it("dedupes prompts", () => {
@@ -35,7 +35,7 @@ describe("pagination", () => {
         questionNumber: i + 1,
         questionType: "fill_blank" as const,
         prompt: `Q${i}`,
-        width: 555,
+        width: CONTENT_WIDTH,
         height: 80,
       },
       height: 80,
@@ -189,7 +189,7 @@ describe("layout-engine", () => {
         questionNumber: i + 1,
         questionType: "colour" as const,
         prompt: `Q${i}`,
-        width: 555,
+        width: CONTENT_WIDTH,
         height: 90,
         illustrationSrc: getIllustration("fish"),
       },

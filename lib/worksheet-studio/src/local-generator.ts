@@ -21,11 +21,11 @@ import {
   buildQuestionElement,
   continuationContentStartY,
   createEmptyPage,
-  estimateQuestionBlockHeight,
   nextId,
   page1ContentStartY,
   resetIdCounter,
 } from "./renderer/page-layout.js";
+import { measureQuestionBlockHeight, CONTENT_WIDTH } from "./flow-layout-engine.js";
 
 interface QuestionTemplate {
   type: QuestionType;
@@ -180,22 +180,29 @@ function layoutQuestionsOnPages(
     const illustrationSrc = scaled.emoji || scaled.label || visualTypes.has(scaled.type) || hasKeyword
       ? getIllustration(detected)
       : undefined;
-    const height = estimateQuestionBlockHeight(
+    const prompt = `${globalQNum}  ${scaled.prompt}`;
+    const height = measureQuestionBlockHeight(
+      {
+        prompt,
+        options: opts,
+        answerLine: scaled.answerLine,
+        illustrationSrc,
+        illustrationEmoji: scaled.emoji,
+      },
       meta.classLevel,
-      opts?.length ?? 0,
-      Boolean(illustrationSrc),
+      CONTENT_WIDTH,
     );
     return {
       block: {
         questionNumber: globalQNum,
         questionType: scaled.type,
-        prompt: `${globalQNum}  ${scaled.prompt}`,
+        prompt,
         options: opts,
         answerLine: scaled.answerLine,
         illustrationEmoji: scaled.emoji,
         illustrationLabel: scaled.label,
         illustrationSrc,
-        width: 555,
+        width: CONTENT_WIDTH,
         height,
       },
       height,

@@ -20,11 +20,11 @@ import {
   buildQuestionElement,
   continuationContentStartY,
   createEmptyPage,
-  estimateQuestionBlockHeight,
   nextId,
   page1ContentStartY,
   resetIdCounter,
 } from "./renderer/page-layout.js";
+import { measureQuestionBlockHeight, CONTENT_WIDTH } from "./flow-layout-engine.js";
 
 const VALID_TYPES = new Set<string>([
   "colour", "circle", "match", "trace", "draw", "join", "tick", "cross",
@@ -167,7 +167,16 @@ function mapPageElements(elements: AiElementJson[], classLevel: WorksheetMeta["c
       const label = el.illustrationLabel ?? el.prompt;
       const illSrc = el.illustrationLabel ? getIllustration(detectIllustrationFromText(label)) : undefined;
       const qType = VALID_TYPES.has(el.type ?? "") ? (el.type as QuestionType) : "fill_blank";
-      const height = estimateQuestionBlockHeight(classLevel, el.options?.length ?? 0, Boolean(illSrc));
+      const height = measureQuestionBlockHeight(
+        {
+          prompt: el.prompt,
+          options: el.options,
+          answerLine: el.answerLine,
+          illustrationSrc: illSrc,
+        },
+        classLevel,
+        CONTENT_WIDTH,
+      );
       questionBlocks.push({
         block: {
           questionNumber: el.number ?? questionBlocks.length + 1,
@@ -177,7 +186,7 @@ function mapPageElements(elements: AiElementJson[], classLevel: WorksheetMeta["c
           answerLine: el.answerLine,
           illustrationLabel: el.illustrationLabel,
           illustrationSrc: illSrc,
-          width: 555,
+          width: CONTENT_WIDTH,
           height,
         },
         height,

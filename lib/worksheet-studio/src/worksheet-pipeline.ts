@@ -95,7 +95,7 @@ export function finalizeWorksheet(
 export function prepareWorksheetForExport(doc: WorksheetDocument): WorksheetDocument {
   const branded = applyBrandingToDocument(doc);
   const { document } = finalizeWorksheet(branded, undefined, 75);
-  return repairPrintIssues(document);
+  return document;
 }
 
 export { diversifyActivityOrder };

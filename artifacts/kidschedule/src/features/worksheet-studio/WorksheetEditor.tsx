@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Grid3x3, Loader2, Maximize2, Ruler } from "lucide-react";
@@ -25,10 +25,12 @@ import { WorksheetAutosaveIndicator } from "./WorksheetAutosaveIndicator";
 import { WorksheetDraftHistorySheet } from "./WorksheetDraftHistorySheet";
 import { WorksheetImagePicker } from "./WorksheetImagePicker";
 import { useWorksheetGestures } from "./use-worksheet-gestures";
+import { prepareLayoutForRender } from "@workspace/worksheet-studio";
 import { WS_EDITOR_HEADER, WS_PAGE, WS_PAPER_SHADOW, WS_EDITOR_CANVAS, WS_EDITOR_VIEWPORT, WS_OVERLAY, WS_CONTEXT_MENU, WS_MUTED_TEXT, WS_OUTLINE_BTN } from "./worksheet-studio-theme";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 import { trackWorksheetEvent } from "./worksheet-studio-analytics";
 import { WorksheetPropertyPanel } from "./WorksheetPropertyPanel";
+import { WorksheetLayoutDebugOverlay } from "./WorksheetLayoutDebugOverlay";
 
 type Props = {
   document: WorksheetDocument;
@@ -65,6 +67,9 @@ export function WorksheetEditor({
   const [printMode, setPrintMode] = useState<PrintMode>("colour");
   const [canvasReady, setCanvasReady] = useState(false);
   const [canvasError, setCanvasError] = useState(false);
+  const [layoutDebugOn, setLayoutDebugOn] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("layoutDebug"),
+  );
   const [historyLoading, setHistoryLoading] = useState(false);
   const syncTimerRef = useRef<number | null>(null);
   const pinchRafRef = useRef<number | null>(null);
@@ -76,12 +81,18 @@ export function WorksheetEditor({
 
   const page = document.pages[pageIndex];
   const colorMode = document.meta.colorMode;
+  const layoutTree = useMemo(() => prepareLayoutForRender(document).layoutTree, [document]);
 
   const measureCanvasWidth = useCallback(() => {
     const container = canvasContainerRef.current;
     const measured = container?.clientWidth ?? 0;
     if (measured >= 200) return measured;
     return Math.min(window.innerWidth, 480);
+  }, []);
+
+  const getLayoutPage = useCallback((pageIdx: number) => {
+    const { layoutTree } = prepareLayoutForRender(documentRef.current);
+    return layoutTree.pages[pageIdx];
   }, []);
 
   const initCanvas = useCallback(async () => {
@@ -102,7 +113,12 @@ export function WorksheetEditor({
       setCanvasHandle(handle);
       const pg = documentRef.current.pages[pageIndexRef.current];
       if (pg) {
-        await handle.renderPage(pg, documentRef.current.meta.colorMode);
+        await handle.renderPage(
+          pg,
+          documentRef.current.meta.colorMode,
+          documentRef.current.meta.classLevel,
+          getLayoutPage(pageIndexRef.current),
+        );
         handle.resetViewport();
       }
       setCanvasReady(true);
@@ -110,7 +126,7 @@ export function WorksheetEditor({
       setCanvasError(true);
       toast.error("Editor failed to load", { description: "Please go back and reopen the worksheet." });
     }
-  }, [measureCanvasWidth]);
+  }, [measureCanvasWidth, getLayoutPage]);
 
   useEffect(() => {
     void initCanvas();
@@ -128,18 +144,19 @@ export function WorksheetEditor({
       if (!handle || !canvasReady) return;
       const width = measureCanvasWidth();
       const pg = documentRef.current.pages[pageIndexRef.current];
-      void handle.resizeToWidth(width, pg);
+      void handle.resizeToWidth(width, pg, documentRef.current.meta.classLevel, getLayoutPage(pageIndexRef.current));
+      void handle.renderPage(pg, documentRef.current.meta.colorMode, documentRef.current.meta.classLevel, getLayoutPage(pageIndexRef.current));
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [canvasReady, measureCanvasWidth]);
+  }, [canvasReady, measureCanvasWidth, getLayoutPage]);
 
   useEffect(() => {
     const h = handleRef.current;
     if (h && page) {
-      void h.renderPage(page, colorMode).then(() => h.resetViewport());
+      void h.renderPage(page, colorMode, document.meta.classLevel, getLayoutPage(pageIndex)).then(() => h.resetViewport());
     }
-  }, [page, document.version, colorMode]);
+  }, [page, document.version, colorMode, pageIndex, getLayoutPage]);
 
   const syncDocumentFromCanvas = useCallback(() => {
     const handle = handleRef.current;
@@ -270,14 +287,16 @@ export function WorksheetEditor({
         const pg = document.pages[idx];
         if (!pg || !handleRef.current) return new Uint8Array();
         const prepPage = prepared.pages[idx] ?? pg;
-        await handleRef.current.renderPage(prepPage, prepared.meta.colorMode);
+        await handleRef.current.renderPage(prepPage, prepared.meta.colorMode, prepared.meta.classLevel, getLayoutPage(pageIndex));
         setExportProgress(10 + Math.round(((idx + 1) / document.pages.length) * 80));
         const dataUrl = handleRef.current.toDataURL(EXPORT_SCALE_MULTIPLIER);
         const b64 = dataUrl.split(",")[1] ?? "";
         return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
       });
       setExportProgress(100);
-      if (page && handleRef.current) await handleRef.current.renderPage(page, colorMode);
+      if (page && handleRef.current) {
+        await handleRef.current.renderPage(page, colorMode, document.meta.classLevel, getLayoutPage(pageIndex));
+      }
     } catch (err) {
       toast.error("PDF export failed", { description: "Please try again." });
       void import("@/features/teacher-os/teacher-os-analytics").then((m) => {
@@ -354,6 +373,16 @@ export function WorksheetEditor({
         >
           <Ruler className="h-5 w-5" />
         </Button>
+        <Button
+          variant={layoutDebugOn ? "default" : "outline"}
+          size="icon"
+          className="hidden h-11 w-11 touch-manipulation sm:inline-flex"
+          onClick={() => setLayoutDebugOn((v) => !v)}
+          aria-label="Toggle layout debug overlay"
+          title="Layout tree debug"
+        >
+          <Ruler className="h-5 w-5 rotate-90" />
+        </Button>
         <Button variant="outline" size="icon" className="h-11 w-11 touch-manipulation" onClick={() => canvasHandle?.resetViewport()} aria-label="Reset zoom">
           <Maximize2 className="h-5 w-5" />
         </Button>
@@ -394,6 +423,14 @@ export function WorksheetEditor({
             className={cn("mx-auto block max-w-full touch-manipulation worksheet-print-target", canvasError && "hidden")}
             aria-hidden={!canvasReady || canvasError}
           />
+          {canvasReady && (
+            <WorksheetLayoutDebugOverlay
+              layoutTree={layoutTree}
+              pageIndex={pageIndex}
+              scale={canvasHandle?.scale ?? 1}
+              visible={layoutDebugOn}
+            />
+          )}
         </div>
       </div>
 

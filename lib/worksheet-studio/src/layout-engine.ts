@@ -1,15 +1,11 @@
-import { A4_HEIGHT, PAGE_MARGIN, type WorksheetMeta, type WorksheetQuestionBlock } from "./types.js";
+import { PAGE_MARGIN, type WorksheetMeta, type WorksheetQuestionBlock } from "./types.js";
 import { paginateQuestions, type PaginatedBlock } from "./pagination.js";
-
-const SECTION_GAP = 24;
+import { getLpsStandard } from "./lps-standards.js";
+import { measureQuestionBlockHeight, CONTENT_WIDTH } from "./flow-layout-engine.js";
 
 export interface LayoutBlock extends PaginatedBlock {
   hasIllustration?: boolean;
   keepTogether?: boolean;
-}
-
-function blockTotalHeight(block: LayoutBlock): number {
-  return block.height + (block.keepTogether ? 8 : 0);
 }
 
 export function layoutQuestionBlocks(
@@ -19,94 +15,41 @@ export function layoutQuestionBlocks(
   continuationStartY: number,
   maxPages: number,
 ): Array<Array<WorksheetQuestionBlock & { x: number; y: number }>> {
+  const standard = getLpsStandard(meta.classLevel);
+  const gap = standard.sectionGap;
+
   const enriched: PaginatedBlock[] = blocks.map((b) => ({
     block: b.block,
-    height: blockTotalHeight(b) + (b.keepTogether ? 8 : 0),
+    height: measureQuestionBlockHeight(
+      {
+        prompt: b.block.prompt,
+        options: b.block.options,
+        answerLine: b.block.answerLine,
+        illustrationSrc: b.block.illustrationSrc,
+        illustrationEmoji: b.block.illustrationEmoji,
+      },
+      meta.classLevel,
+      CONTENT_WIDTH,
+    ) + (b.keepTogether ? 8 : 0),
   }));
 
   const rawPages = paginateQuestions(enriched, meta, page1StartY, continuationStartY, maxPages);
 
-  const spaced = rawPages.map((pageBlocks, pageIdx) => {
+  return rawPages.map((pageBlocks, pageIdx) => {
     const startY = pageIdx === 0 ? page1StartY : continuationStartY;
-    const usedHeight = pageBlocks.reduce((sum, b) => sum + b.height + SECTION_GAP, 0);
-    const freeSpace = A4_HEIGHT - PAGE_MARGIN - 48 - startY - usedHeight;
-    const extraGap = pageBlocks.length > 1 ? Math.min(12, Math.floor(freeSpace / pageBlocks.length)) : 0;
     let y = startY;
     return pageBlocks.map((b) => {
-      const positioned = { ...b, x: PAGE_MARGIN, y, type: "question_block" as const, zIndex: 3 };
-      y += b.height + SECTION_GAP + extraGap;
+      const positioned = {
+        ...b,
+        x: PAGE_MARGIN,
+        y,
+        width: CONTENT_WIDTH,
+        type: "question_block" as const,
+        zIndex: 3,
+        locked: false,
+      };
+      y += b.height + gap;
       return positioned;
     });
   });
-
-  return balancePageDensity(spaced, meta, page1StartY, continuationStartY);
-}
-
-/** V2 — redistribute blocks to avoid sparse or overcrowded pages. */
-function balancePageDensity(
-  pages: Array<Array<WorksheetQuestionBlock & { x: number; y: number }>>,
-  meta: WorksheetMeta,
-  page1StartY: number,
-  continuationStartY: number,
-): Array<Array<WorksheetQuestionBlock & { x: number; y: number }>> {
-  if (pages.length <= 1) return pages;
-
-  const maxY = A4_HEIGHT - PAGE_MARGIN - 48;
-  const densities = pages.map((p) => {
-    const used = p.reduce((sum, b) => sum + b.height, 0);
-    const capacity = maxY - (p === pages[0] ? page1StartY : continuationStartY);
-    return { used, capacity, ratio: used / Math.max(1, capacity) };
-  });
-
-  const allBlocks = pages.flat();
-  const avgRatio = densities.reduce((s, d) => s + d.ratio, 0) / densities.length;
-
-  if (densities.every((d) => d.ratio >= 0.45 && d.ratio <= 0.88)) {
-    return pages;
-  }
-
-  const targetPerPage = Math.ceil(allBlocks.length / pages.length);
-  const redistributed: typeof pages = [];
-  let idx = 0;
-
-  for (let p = 0; p < pages.length; p++) {
-    const slice = allBlocks.slice(idx, idx + targetPerPage);
-    idx += slice.length;
-    if (!slice.length) continue;
-    const startY = p === 0 ? page1StartY : continuationStartY;
-    let y = startY;
-    const gap = meta.classLevel === "nursery" ? 28 : meta.classLevel === "grade2" ? 20 : 24;
-    redistributed.push(
-      slice.map((b) => {
-        const positioned = { ...b, y };
-        y += b.height + gap;
-        return positioned;
-      }),
-    );
-  }
-
-  if (idx < allBlocks.length && redistributed.length) {
-    const last = redistributed[redistributed.length - 1]!;
-    let y = last.length ? last[last.length - 1]!.y + last[last.length - 1]!.height + 24 : continuationStartY;
-    const overflow: typeof last = [];
-    for (const b of allBlocks.slice(idx)) {
-      if (y + b.height > maxY) {
-        if (overflow.length) {
-          redistributed.push(overflow);
-          overflow.length = 0;
-          y = continuationStartY;
-        }
-        if (y + b.height > maxY) {
-          redistributed.push([{ ...b, y: continuationStartY }]);
-          continue;
-        }
-      }
-      overflow.push({ ...b, y });
-      y += b.height + 24;
-    }
-    if (overflow.length) redistributed.push(overflow);
-  }
-
-  void avgRatio;
-  return redistributed.length ? redistributed : pages;
 }
