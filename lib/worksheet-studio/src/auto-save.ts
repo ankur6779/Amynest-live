@@ -9,6 +9,11 @@ import {
   VERSION_STORE_NAME,
 } from "./constants.js";
 import type { WorksheetDraftRecord } from "./types.js";
+import {
+  WORKSHEET_GENERATOR_VERSION,
+  WORKSHEET_LAYOUT_VERSION,
+  WORKSHEET_SCHEMA_VERSION,
+} from "./live-pipeline-audit.js";
 
 const MAX_VERSIONS_PER_DOC = 20;
 
@@ -56,6 +61,9 @@ export async function saveDraft(document: WorksheetDocument): Promise<void> {
     id: document.id,
     document: { ...document, meta: { ...document.meta, updatedAt: new Date().toISOString() } },
     savedAt: new Date().toISOString(),
+    schemaVersion: WORKSHEET_SCHEMA_VERSION,
+    layoutVersion: WORKSHEET_LAYOUT_VERSION,
+    generatorVersion: WORKSHEET_GENERATOR_VERSION,
   };
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(DRAFT_STORE_NAME, "readwrite");

@@ -50,6 +50,9 @@ export * from "./layout-tree.js";
 export * from "./layout-tree-pdf.js";
 export * from "./layout-tree-docx.js";
 export * from "./flow-layout-engine.js";
+export * from "./document-layout-integrity.js";
+export * from "./live-pipeline-audit.js";
+export * from "./ai-response-contract.js";
 export * from "./parse-reconstruction-response.js";
 // Browser-only modules (IndexedDB, canvas, window) live in ./client — do not
 // re-export them here or Node/API typecheck pulls in DOM globals.

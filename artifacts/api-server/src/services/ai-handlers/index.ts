@@ -172,6 +172,13 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       return runLifeSkillsAiGenerate(input as Parameters<typeof runLifeSkillsAiGenerate>[0]);
     }
 
+    case "worksheet.generate": {
+      const { runWorksheetAiContractGeneration } = await import("../worksheet-ai-generate.js");
+      return runWorksheetAiContractGeneration(
+        input as Parameters<typeof runWorksheetAiContractGeneration>[0],
+      );
+    }
+
     default:
       throw new Error(`unknown_job_type:${type}`);
   }

@@ -34,7 +34,8 @@ export type AiJobType =
   | "audio.warmup"
   | "smart-math-tricks.ai_generate"
   | "phonics.load_more_words"
-  | "life-skills.ai_generate";
+  | "life-skills.ai_generate"
+  | "worksheet.generate";
 
 export interface AiJobRecord {
   id: string;

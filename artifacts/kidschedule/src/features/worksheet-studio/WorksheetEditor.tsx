@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Grid3x3, Loader2, Maximize2, Ruler } from "lucide-react";
@@ -17,7 +17,7 @@ import {
   applyPrintMode,
 } from "@workspace/worksheet-studio/client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { createWorksheetCanvas, EXPORT_SCALE_MULTIPLIER, type WorksheetCanvasHandle } from "./fabric-editor";
+import { createWorksheetCanvas, EXPORT_SCALE_MULTIPLIER, type WorksheetCanvasHandle, type FabricLayoutDebugInfo, type PipelineVerifyResult } from "./fabric-editor";
 import { WorksheetAiAssistant } from "./WorksheetAiAssistant";
 import { WorksheetToolbar } from "./WorksheetToolbar";
 import { WorksheetExportSheet } from "./WorksheetExportSheet";
@@ -25,12 +25,19 @@ import { WorksheetAutosaveIndicator } from "./WorksheetAutosaveIndicator";
 import { WorksheetDraftHistorySheet } from "./WorksheetDraftHistorySheet";
 import { WorksheetImagePicker } from "./WorksheetImagePicker";
 import { useWorksheetGestures } from "./use-worksheet-gestures";
-import { prepareLayoutForRender } from "@workspace/worksheet-studio";
+import { prepareLayoutForRender, auditDocumentToLayoutTree, getLivePipelineSession } from "@workspace/worksheet-studio";
 import { WS_EDITOR_HEADER, WS_PAGE, WS_PAPER_SHADOW, WS_EDITOR_CANVAS, WS_EDITOR_VIEWPORT, WS_OVERLAY, WS_CONTEXT_MENU, WS_MUTED_TEXT, WS_OUTLINE_BTN } from "./worksheet-studio-theme";
 import { hapticWorksheetTap } from "./worksheet-haptics";
 import { trackWorksheetEvent } from "./worksheet-studio-analytics";
 import { WorksheetPropertyPanel } from "./WorksheetPropertyPanel";
 import { WorksheetLayoutDebugOverlay } from "./WorksheetLayoutDebugOverlay";
+import { WorksheetDebugPanel } from "./WorksheetDebugPanel";
+import {
+  beginEditorSyncAudit,
+  endEditorSyncAudit,
+  getEditorSyncAudit,
+} from "./editor-state-sync-audit";
+import { useAuditedEffect } from "./use-audited-effect";
 
 type Props = {
   document: WorksheetDocument;
@@ -48,10 +55,30 @@ type Props = {
 export function WorksheetEditor({
   document, onBack, onImprove, onCopilotMessage, improving, copilotBusy, saveState, savedAt, onRestoreVersion, onDocumentChange,
 }: Props) {
+  // Ensure audit exists before first paint logs (effects run after render).
+  if (!getEditorSyncAudit()) beginEditorSyncAudit();
+  // STEP 1 — every React render
+  getEditorSyncAudit()?.logReactRender(`WorksheetEditor doc=${document.id} v=${document.version}`);
+
+  useAuditedEffect("audit.session", () => {
+    if (!getEditorSyncAudit()) beginEditorSyncAudit();
+    return () => {
+      endEditorSyncAudit();
+    };
+  }, []);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<WorksheetCanvasHandle | null>(null);
-  const [pageIndex, setPageIndex] = useState(0);
+  const [pageIndex, setPageIndexRaw] = useState(0);
+  const setPageIndex: typeof setPageIndexRaw = (action) => {
+    setPageIndexRaw((prev) => {
+      const next = typeof action === "function" ? action(prev) : action;
+      getEditorSyncAudit()?.logSetState("Page", "pageIndex", next);
+      if (next !== prev) getEditorSyncAudit()?.notePageChange(prev, next);
+      return next;
+    });
+  };
   const [exportOpen, setExportOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
@@ -60,17 +87,35 @@ export function WorksheetEditor({
   const [versions, setVersions] = useState<WorksheetDraftVersion[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [pageFlip, setPageFlip] = useState(false);
-  const [canvasHandle, setCanvasHandle] = useState<WorksheetCanvasHandle | null>(null);
+  const [canvasHandle, setCanvasHandleRaw] = useState<WorksheetCanvasHandle | null>(null);
+  const setCanvasHandle: typeof setCanvasHandleRaw = (v) => {
+    getEditorSyncAudit()?.logSetState("Canvas", "canvasHandle", v);
+    setCanvasHandleRaw(v);
+  };
   const [gridOn, setGridOn] = useState(false);
   const [safeAreaOn, setSafeAreaOn] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [printMode, setPrintMode] = useState<PrintMode>("colour");
-  const [canvasReady, setCanvasReady] = useState(false);
+  const [canvasReady, setCanvasReadyRaw] = useState(false);
+  const setCanvasReady: typeof setCanvasReadyRaw = (v) => {
+    getEditorSyncAudit()?.logSetState("Canvas", "canvasReady", v);
+    setCanvasReadyRaw(v);
+  };
   const [canvasError, setCanvasError] = useState(false);
   const [layoutDebugOn, setLayoutDebugOn] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("layoutDebug"),
+    () =>
+      typeof window !== "undefined" &&
+      (new URLSearchParams(window.location.search).has("layoutDebug") ||
+        new URLSearchParams(window.location.search).has("editorSyncAudit")),
   );
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectionLayoutDebug, setSelectionLayoutDebugRaw] = useState<FabricLayoutDebugInfo | null>(null);
+  const setSelectionLayoutDebug: typeof setSelectionLayoutDebugRaw = (v) => {
+    getEditorSyncAudit()?.logSetState("Selection", "selectionLayoutDebug", v);
+    setSelectionLayoutDebugRaw(v);
+  };
+  const [parityWarnings, setParityWarnings] = useState<FabricLayoutDebugInfo[]>([]);
+  const [verifyResult, setVerifyResult] = useState<PipelineVerifyResult | null>(null);
   const syncTimerRef = useRef<number | null>(null);
   const pinchRafRef = useRef<number | null>(null);
   const pinchFactorRef = useRef(1);
@@ -79,9 +124,38 @@ export function WorksheetEditor({
   documentRef.current = document;
   pageIndexRef.current = pageIndex;
 
+  /** Increases only on teacher-driven document changes (not canvasReady / mount). */
+  const renderTokenRef = useRef(0);
+  const [renderToken, setRenderToken] = useState(0);
+  const initPaintDoneRef = useRef(false);
+  const lastPaintKeyRef = useRef<string | null>(null);
+
+  const bumpRenderToken = useCallback((reason: string) => {
+    renderTokenRef.current += 1;
+    setRenderToken(renderTokenRef.current);
+    getEditorSyncAudit()?.requestTeacherRepaint(reason);
+  }, []);
+
   const page = document.pages[pageIndex];
   const colorMode = document.meta.colorMode;
-  const layoutTree = useMemo(() => prepareLayoutForRender(document).layoutTree, [document]);
+  const layoutTree = useMemo(() => {
+    getEditorSyncAudit()?.logSetState("LayoutTree", "layoutTree.memo", document.version);
+    if (layoutDebugOn) {
+      const audit = auditDocumentToLayoutTree(document);
+      if (!audit.ok) {
+        console.error("[DocLayoutIntegrity] Document→LayoutTree issues", audit.firstCorruptionStage, audit.issues);
+      }
+      const session = getLivePipelineSession();
+      if (session && !session.stages.some((s) => s.stage === "pre_render_assert")) {
+        try {
+          session.assertBeforeRender(document);
+        } catch (err) {
+          console.error("[LivePipelineAudit] STEP9 pre-render assert failed", err);
+        }
+      }
+    }
+    return prepareLayoutForRender(document).layoutTree;
+  }, [document, layoutDebugOn]);
 
   const measureCanvasWidth = useCallback(() => {
     const container = canvasContainerRef.current;
@@ -91,14 +165,70 @@ export function WorksheetEditor({
   }, []);
 
   const getLayoutPage = useCallback((pageIdx: number) => {
-    const { layoutTree } = prepareLayoutForRender(documentRef.current);
-    return layoutTree.pages[pageIdx];
+    const { layoutTree: tree } = prepareLayoutForRender(documentRef.current);
+    return tree.pages[pageIdx];
   }, []);
+
+  const paintKey = useCallback(
+    (pageIdx: number, version: number, token: number, mode: string, zoom = 1) =>
+      `${pageIdx}|v${version}|t${token}|${mode}|z${zoom}`,
+    [],
+  );
+
+  const auditedRenderPage = useCallback(
+    async (
+      handle: WorksheetCanvasHandle,
+      reason: string,
+      pg: NonNullable<typeof page>,
+      mode: "color" | "bw",
+      classLevel: typeof document.meta.classLevel,
+      layoutPage: ReturnType<typeof getLayoutPage>,
+      opts?: { allowed?: boolean; effect?: string; skipCache?: boolean },
+    ) => {
+      const zoom = typeof handle.getZoom === "function" ? handle.getZoom() : 1;
+      const key = paintKey(
+        pageIndexRef.current,
+        documentRef.current.version,
+        renderTokenRef.current,
+        mode,
+        Math.round(zoom * 100) / 100,
+      );
+      // STEP 6 — page cache: same page + token + version + zoom → skip
+      if (!opts?.skipCache && lastPaintKeyRef.current === key && initPaintDoneRef.current) {
+        getEditorSyncAudit()?.logOp("reflow", "Canvas", `skip_cached_paint (${reason})`);
+        return;
+      }
+
+      const isInit = reason === "initCanvas.first_render";
+      const allowed =
+        opts?.allowed === true ||
+        isInit ||
+        reason.startsWith("teacher:") ||
+        reason.startsWith("page_change") ||
+        reason.startsWith("export.");
+
+      getEditorSyncAudit()?.logCanvasRender(reason, {
+        allowed,
+        effect: opts?.effect,
+        deps: [pageIndexRef.current, documentRef.current.version, renderTokenRef.current],
+      });
+
+      await handle.renderPage(pg, mode, classLevel, layoutPage);
+      lastPaintKeyRef.current = key;
+      if (isInit) {
+        initPaintDoneRef.current = true;
+        getEditorSyncAudit()?.markFirstSuccessfulRender(documentRef.current);
+      }
+    },
+    [paintKey],
+  );
 
   const initCanvas = useCallback(async () => {
     if (!canvasRef.current) return;
     setCanvasError(false);
     setCanvasReady(false);
+    initPaintDoneRef.current = false;
+    lastPaintKeyRef.current = null;
     try {
       handleRef.current?.dispose();
       let width = measureCanvasWidth();
@@ -113,65 +243,147 @@ export function WorksheetEditor({
       setCanvasHandle(handle);
       const pg = documentRef.current.pages[pageIndexRef.current];
       if (pg) {
-        await handle.renderPage(
+        await auditedRenderPage(
+          handle,
+          "initCanvas.first_render",
           pg,
           documentRef.current.meta.colorMode,
           documentRef.current.meta.classLevel,
           getLayoutPage(pageIndexRef.current),
+          { allowed: true, skipCache: true },
         );
         handle.resetViewport();
       }
+      // STEP 2 — canvas ready: do nothing else. Page already painted.
       setCanvasReady(true);
     } catch {
       setCanvasError(true);
       toast.error("Editor failed to load", { description: "Please go back and reopen the worksheet." });
     }
-  }, [measureCanvasWidth, getLayoutPage]);
+  }, [measureCanvasWidth, getLayoutPage, auditedRenderPage]);
 
-  useEffect(() => {
+  useAuditedEffect("initCanvas", () => {
     void initCanvas();
     return () => {
       handleRef.current?.dispose();
       setCanvasHandle(null);
+      initPaintDoneRef.current = false;
+      lastPaintKeyRef.current = null;
     };
   }, [initCanvas]);
 
-  useEffect(() => {
+  // STEP 5 — ResizeObserver: viewport/CSS only — never renderPage
+  useAuditedEffect("resizeObserver", () => {
     const container = canvasContainerRef.current;
     if (!container) return;
     const observer = new ResizeObserver(() => {
       const handle = handleRef.current;
       if (!handle || !canvasReady) return;
       const width = measureCanvasWidth();
-      const pg = documentRef.current.pages[pageIndexRef.current];
-      void handle.resizeToWidth(width, pg, documentRef.current.meta.classLevel, getLayoutPage(pageIndexRef.current));
-      void handle.renderPage(pg, documentRef.current.meta.colorMode, documentRef.current.meta.classLevel, getLayoutPage(pageIndexRef.current));
+      void handle.resizeToWidth(width);
+      getEditorSyncAudit()?.logOp("reflow", "Reflow", "ResizeObserver → resizeToWidth only (no renderPage)");
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [canvasReady, measureCanvasWidth, getLayoutPage]);
+  }, [canvasReady, measureCanvasWidth]);
 
-  useEffect(() => {
+  /**
+   * STEP 3+4 — Only re-paint when pageIndex or renderToken changes after init.
+   * Does NOT depend on document.version (gated separately) or canvasReady alone.
+   */
+  useAuditedEffect("pageOrToken→renderPage", () => {
+    if (!initPaintDoneRef.current) return;
     const h = handleRef.current;
-    if (h && page) {
-      void h.renderPage(page, colorMode, document.meta.classLevel, getLayoutPage(pageIndex)).then(() => h.resetViewport());
+    if (!h || !page || !canvasReady) return;
+
+    const key = paintKey(pageIndex, documentRef.current.version, renderToken, colorMode);
+    if (lastPaintKeyRef.current === key) return;
+
+    void auditedRenderPage(
+      h,
+      renderToken > 0
+        ? `teacher:token=${renderToken}.page=${pageIndex}`
+        : `page_change:${pageIndex}`,
+      page,
+      colorMode,
+      document.meta.classLevel,
+      getLayoutPage(pageIndex),
+      {
+        allowed: true,
+        effect: "pageOrToken→renderPage",
+      },
+    ).then(() => h.resetViewport());
+  }, [pageIndex, renderToken, colorMode, canvasReady, page, getLayoutPage, auditedRenderPage, paintKey]);
+
+  // When parent document version changes after teacher intent → bump token (single re-paint).
+  const prevDocVersionRef = useRef(document.version);
+  useAuditedEffect("document.version.gate", () => {
+    const prev = prevDocVersionRef.current;
+    if (document.version === prev) return;
+    prevDocVersionRef.current = document.version;
+    if (!initPaintDoneRef.current) return;
+
+    const audit = getEditorSyncAudit();
+    if (audit?.consumePendingRepaint()) {
+      bumpRenderToken(`document.version ${prev}→${document.version}`);
+      return;
     }
-  }, [page, document.version, colorMode, pageIndex, getLayoutPage]);
+    // Version advanced without repaint request (e.g. canvas_edit_sync already on canvas) — sync cache only
+    lastPaintKeyRef.current = paintKey(pageIndex, document.version, renderTokenRef.current, colorMode);
+  }, [document.version, bumpRenderToken, paintKey, pageIndex, colorMode]);
 
   const syncDocumentFromCanvas = useCallback(() => {
     const handle = handleRef.current;
     if (!handle || !onDocumentChange || !page) return;
+    // Fabric already has the edit — persist document without rebuild (repaint: false).
+    getEditorSyncAudit()?.allowTeacher("canvas_edit_sync", { repaint: false });
+    getEditorSyncAudit()?.logOp("document_change", "WorksheetDocument", "syncDocumentFromCanvas (teacher edit)");
     const updatedPage = handle.exportPageState(page);
     const pages = document.pages.map((p, i) => (i === pageIndex ? updatedPage : p));
-    onDocumentChange({
+    const next = {
       ...document,
       pages,
       version: document.version + 1,
       meta: { ...document.meta, updatedAt: new Date().toISOString() },
-    });
+    };
+    onDocumentChange(next);
   }, [document, onDocumentChange, page, pageIndex]);
 
-  useEffect(() => {
+  // layoutDebug: never re-render page on canvasReady — only toggle verify flag / read existing
+  useAuditedEffect("layoutDebug.verify", () => {
+    const handle = handleRef.current;
+    if (!handle) return;
+    handle.setVerifyDebug(layoutDebugOn);
+    if (!layoutDebugOn || !canvasReady) {
+      setVerifyResult(null);
+      setParityWarnings([]);
+      return;
+    }
+    // Read current canvas state — do NOT call renderPage
+    setVerifyResult(handle.getLastVerifyResult());
+    setParityWarnings(handle.auditLayoutParity(2).filter((w) => w.warning));
+  }, [layoutDebugOn, canvasReady, canvasHandle]);
+
+  useAuditedEffect("selection.change", () => {
+    const handle = handleRef.current;
+    if (!handle || !layoutDebugOn || !canvasReady) {
+      setSelectionLayoutDebug(null);
+      setParityWarnings([]);
+      setVerifyResult(null);
+      return;
+    }
+    const refresh = () => {
+      getEditorSyncAudit()?.logOp("selection", "Selection", "selection_change");
+      setSelectionLayoutDebug(handle.getLayoutDebugForSelection());
+      setParityWarnings(handle.auditLayoutParity(2).filter((w) => w.warning));
+      setVerifyResult(handle.getLastVerifyResult());
+    };
+    refresh();
+    const detach = handle.onSelectionChange(() => refresh());
+    return detach;
+  }, [layoutDebugOn, canvasReady, canvasHandle, pageIndex]);
+
+  useAuditedEffect("pageModified→autosync", () => {
     const handle = handleRef.current;
     if (!handle) return;
     const detach = handle.onPageModified(() => {
@@ -184,7 +396,7 @@ export function WorksheetEditor({
     };
   }, [canvasHandle, syncDocumentFromCanvas]);
 
-  useEffect(() => {
+  useAuditedEffect("keydown.undo_history", () => {
     const isTyping = () => {
       const el = window.document.activeElement;
       if (!el) return false;
@@ -194,8 +406,18 @@ export function WorksheetEditor({
     const onKey = (e: KeyboardEvent) => {
       const h = handleRef.current;
       if (!h || isTyping()) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); h.undo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === "y") { e.preventDefault(); h.redo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        getEditorSyncAudit()?.allowTeacher("undo");
+        getEditorSyncAudit()?.logOp("undo", "Undo", "⌘Z");
+        h.undo();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "y") {
+        e.preventDefault();
+        getEditorSyncAudit()?.allowTeacher("redo");
+        getEditorSyncAudit()?.logOp("redo", "Undo", "⌘Y");
+        h.redo();
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === "d") { e.preventDefault(); h.duplicateSelected(); }
       if ((e.metaKey || e.ctrlKey) && e.key === "c") { h.copySelected(); }
       if ((e.metaKey || e.ctrlKey) && e.key === "v") { e.preventDefault(); h.pasteClipboard(); }
@@ -206,7 +428,7 @@ export function WorksheetEditor({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
+  useAuditedEffect("paste.image", () => {
     const onPaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
       if (!items) return;
@@ -214,6 +436,7 @@ export function WorksheetEditor({
         if (item.type.startsWith("image/")) {
           const file = item.getAsFile();
           if (file) {
+            getEditorSyncAudit()?.allowTeacher("paste_image");
             void import("./image-service").then(({ readFileAsDataUrl }) =>
               readFileAsDataUrl(file).then((url) => handleRef.current?.addImageFromDataUrl(url)),
             );
@@ -232,7 +455,7 @@ export function WorksheetEditor({
     setPageIndex((i) => Math.max(0, Math.min(document.pages.length - 1, i + delta)));
   };
 
-  useEffect(() => {
+  useAuditedEffect("contextMenu.close", () => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
     window.addEventListener("pointerdown", close);
@@ -261,6 +484,7 @@ export function WorksheetEditor({
   const h = () => handleRef.current;
 
   const openHistory = async () => {
+    getEditorSyncAudit()?.logOp("history", "History", "open_history_sheet");
     setHistoryLoading(true);
     setHistoryOpen(true);
     try {
@@ -287,7 +511,14 @@ export function WorksheetEditor({
         const pg = document.pages[idx];
         if (!pg || !handleRef.current) return new Uint8Array();
         const prepPage = prepared.pages[idx] ?? pg;
-        await handleRef.current.renderPage(prepPage, prepared.meta.colorMode, prepared.meta.classLevel, getLayoutPage(pageIndex));
+        await auditedRenderPage(
+          handleRef.current,
+          `export.pdf.page_${idx}`,
+          prepPage,
+          prepared.meta.colorMode,
+          prepared.meta.classLevel,
+          getLayoutPage(pageIndex),
+        );
         setExportProgress(10 + Math.round(((idx + 1) / document.pages.length) * 80));
         const dataUrl = handleRef.current.toDataURL(EXPORT_SCALE_MULTIPLIER);
         const b64 = dataUrl.split(",")[1] ?? "";
@@ -295,7 +526,14 @@ export function WorksheetEditor({
       });
       setExportProgress(100);
       if (page && handleRef.current) {
-        await handleRef.current.renderPage(page, colorMode, document.meta.classLevel, getLayoutPage(pageIndex));
+        await auditedRenderPage(
+          handleRef.current,
+          "export.pdf.restore_page",
+          page,
+          colorMode,
+          document.meta.classLevel,
+          getLayoutPage(pageIndex),
+        );
       }
     } catch (err) {
       toast.error("PDF export failed", { description: "Please try again." });
@@ -429,8 +667,19 @@ export function WorksheetEditor({
               pageIndex={pageIndex}
               scale={canvasHandle?.scale ?? 1}
               visible={layoutDebugOn}
+              selectionDebug={selectionLayoutDebug}
+              parityWarnings={parityWarnings}
+              verifyResult={verifyResult}
             />
           )}
+          <WorksheetDebugPanel
+            document={document}
+            pageIndex={pageIndex}
+            zoom={canvasHandle?.getZoom() ?? 1}
+            viewportWidth={measureCanvasWidth()}
+            isDraft={savedAt != null || saveState === "saved" || saveState === "saving"}
+            visible={layoutDebugOn && canvasReady}
+          />
         </div>
       </div>
 
@@ -488,7 +737,10 @@ export function WorksheetEditor({
 
       <WorksheetAiAssistant
         busy={copilotBusy || improving !== null}
-        onAction={(a) => void onImprove(a)}
+        onAction={(a) => {
+          getEditorSyncAudit()?.allowTeacher(`improve:${a}`);
+          void onImprove(a);
+        }}
         onCopilotMessage={onCopilotMessage}
       />
 
@@ -568,7 +820,11 @@ export function WorksheetEditor({
         onOpenChange={setHistoryOpen}
         versions={versions}
         loading={historyLoading}
-        onRestore={(v) => onRestoreVersion(v.document)}
+        onRestore={(v) => {
+          getEditorSyncAudit()?.allowTeacher("history_restore");
+          getEditorSyncAudit()?.logOp("history", "History", "restore_version", { versionId: v.id });
+          onRestoreVersion(v.document);
+        }}
       />
     </div>
   );

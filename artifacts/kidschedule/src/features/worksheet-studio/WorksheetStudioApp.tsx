@@ -15,8 +15,18 @@ import {
   summarizeDocumentChanges,
   type DocumentChangeSummary,
   type PostGenerationRecommendation,
+  getLivePipelineSession,
+  endLivePipelineSession,
+  beginLivePipelineSession,
+  evaluateDraftSchema,
+  shouldSkipDraftRestore,
+  WORKSHEET_SCHEMA_VERSION,
+  WORKSHEET_LAYOUT_VERSION,
+  WORKSHEET_GENERATOR_VERSION,
 } from "@workspace/worksheet-studio";
-import { exportBulkPdfs, loadLatestDraft, saveToLibrary, applyBrandingToDocument } from "@workspace/worksheet-studio/client";
+import { exportBulkPdfs, loadLatestDraft, saveToLibrary, applyBrandingToDocument, deleteDraft } from "@workspace/worksheet-studio/client";
+import { getEditorSyncAudit } from "./editor-state-sync-audit";
+import { setWorksheetDebugOrigin } from "./WorksheetDebugPanel";
 import { WorksheetHome } from "./WorksheetHome";
 import { WorksheetGeneratingOverlay } from "./WorksheetGeneratingOverlay";
 import { WorksheetOnboarding, shouldShowOnboarding } from "./WorksheetOnboarding";
@@ -92,12 +102,26 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
     summary: string;
     changeSummary: DocumentChangeSummary;
   } | null>(null);
+  const [legacyDraft, setLegacyDraft] = useState<{
+    document: WorksheetDocument;
+    draftId: string;
+    message: string;
+    savedAt: string;
+  } | null>(null);
   const requestBuilderRef = useRef<(() => WorksheetGenerateRequest) | null>(null);
   const languageRef = useRef<WorksheetLanguage>("english");
 
   const document = view.kind === "editor" ? view.document : null;
 
   useEffect(() => {
+    if (shouldSkipDraftRestore()) {
+      setHasDraft(false);
+      console.info("[LivePipelineAudit] STEP8 cleanSession — draft restore disabled");
+      void flushOfflineQueue(authFetch).then((n) => {
+        if (n > 0) toast.success(`Synced ${n} offline request${n > 1 ? "s" : ""}`);
+      });
+      return;
+    }
     void loadLatestDraft().then((d) => {
       setHasDraft(!!d);
       if (d?.document) {
@@ -113,13 +137,26 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
 
   const enterEditor = useCallback(async (
     doc: WorksheetDocument,
-    opts?: { persist?: boolean; announce?: string },
+    opts?: { persist?: boolean; announce?: string; skipPipelineAssert?: boolean },
   ) => {
+    const session = getLivePipelineSession() ?? beginLivePipelineSession();
     let branded = doc;
     try {
+      getEditorSyncAudit()?.logOp("branding", "Branding", "applyBrandingToDocument (enterEditor)");
       branded = applyBrandingToDocument(doc);
     } catch {
       toast.error("Could not apply school branding", { description: "Using default layout." });
+    }
+    session.captureStage("after_branding", branded, "applyBrandingToDocument");
+    if (!opts?.skipPipelineAssert) {
+      try {
+        session.assertBeforeRender(branded);
+      } catch (err) {
+        toast.error("Pipeline assertion failed", {
+          description: err instanceof Error ? err.message : "Document failed pre-render checks",
+        });
+        throw err;
+      }
     }
     setView({ kind: "editor", document: branded });
     onViewChange?.(true);
@@ -135,7 +172,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         },
       });
     }
-    if (opts?.persist !== false) {
+    if (opts?.persist !== false && !shouldSkipDraftRestore()) {
       try {
         await saveNow(branded);
       } catch {
@@ -175,6 +212,18 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
   }, [enterEditor]);
 
   const handleDocumentChange = useCallback((doc: WorksheetDocument) => {
+    const audit = getEditorSyncAudit();
+    if (audit) {
+      try {
+        audit.noteDocumentChange(doc);
+      } catch (err) {
+        console.error(err);
+        toast.error("Automatic document change blocked", {
+          description: "Editor state mutated after render without teacher action.",
+        });
+        return;
+      }
+    }
     setView((v) => (v.kind === "editor" ? { kind: "editor", document: doc } : v));
   }, []);
 
@@ -190,26 +239,38 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
       const result = await generate(req);
       const genMs = Date.now() - genStart;
       let doc = result.document;
-      if (!doc?.pages?.length) {
+      const blockedBroken =
+        !doc?.pages?.length ||
+        !doc.pages.some((p) => p.elements.some((e) => e.type === "question_block"));
+      if (blockedBroken) {
         doc = generateWorksheetLocal(req);
-        toast.info("Using offline template", { description: "AI response was incomplete — editable worksheet created locally." });
       }
       if ((req.language ?? languageRef.current) !== "english") {
         doc = applyLanguageToDocument(doc, req.language ?? languageRef.current);
       }
+      // Acceptance: never open editor with an invalid document
+      if (!doc.pages.length || !doc.pages.some((p) => p.elements.some((e) => e.type === "question_block"))) {
+        doc = generateWorksheetLocal(req);
+      }
+      const usedLocal = Boolean(result.usedFallback || blockedBroken);
+      setWorksheetDebugOrigin(usedLocal || result.source !== "ai" ? "local" : "ai");
       const quality = result.qualityScore ?? scoreWorksheet(doc).overall;
       await enterEditor(doc);
       setPostGenDoc(doc);
       setPostGenOpen(true);
       void hapticWorksheetSuccess();
-      const sourceLabel = result.usedFallback
-        ? "Offline template (saved locally)"
-        : result.source === "ai"
-          ? "AI-generated"
-          : "Template";
-      toast.success("Worksheet ready!", {
-        description: `${sourceLabel} · Quality ${quality}/100 · Opening editor…`,
-      });
+      if (usedLocal) {
+        toast.info("AI response invalid. Local worksheet generated.", {
+          description:
+            result.attemptCount && result.attemptCount > 1
+              ? `Schema validation failed after ${result.attemptCount} attempts.`
+              : "Broken AI output was blocked before the editor.",
+        });
+      } else {
+        toast.success("Worksheet ready!", {
+          description: `AI-generated · Quality ${quality}/100 · Opening editor…`,
+        });
+      }
       onWorksheetReady?.(`generate:${doc.meta.topic}`);
       void saveToLibrary(doc).catch(() => {});
       trackCurriculumCompletion(doc);
@@ -221,7 +282,17 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         durationMs: genMs,
         usedFallback: Boolean(result.usedFallback),
       });
+      const session = getLivePipelineSession();
+      const wantDownload =
+        typeof window !== "undefined" &&
+        (new URLSearchParams(window.location.search).has("pipelineAudit") ||
+          new URLSearchParams(window.location.search).has("layoutDebug"));
+      if (wantDownload && session) {
+        session.downloadInBrowser();
+      }
+      endLivePipelineSession();
     } catch {
+      endLivePipelineSession();
       toast.error("Generation failed", { description: "Please try again — your settings are saved." });
     }
   };
@@ -349,14 +420,17 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
       throw new Error("No worksheet open");
     }
     try {
+      getEditorSyncAudit()?.allowTeacher(`improve:${action}`);
       if (action === "answer_key") {
         const key = generateAnswerKeyDocument(view.document);
+        getEditorSyncAudit()?.noteDocumentChange(key);
         setView({ kind: "editor", document: key });
         await saveNow(key);
         toast.success("Answer key generated");
         return key;
       }
       const next = await improve(view.document, action);
+      getEditorSyncAudit()?.noteDocumentChange(next);
       setView({ kind: "editor", document: next });
       await saveNow(next);
       void saveToLibrary(next).catch(() => {});
@@ -405,14 +479,44 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
   };
 
   const resumeDraft = async () => {
+    if (shouldSkipDraftRestore()) {
+      toast.info("Clean session", { description: "Draft restore is disabled (?cleanSession=1)." });
+      return;
+    }
     try {
       const draft = await loadLatestDraft();
-      if (draft?.document) {
-        await enterEditor(draft.document, { persist: false });
-        toast.info("Worksheet opened", { description: "Edit text, move items, or tap Export for PDF." });
-      } else {
+      if (!draft?.document) {
         toast.info("No worksheet found", { description: "Generate a new worksheet or check Library." });
+        return;
       }
+      const gate = evaluateDraftSchema({
+        schemaVersion: draft.schemaVersion,
+        layoutVersion: draft.layoutVersion,
+        document: draft.document,
+      });
+      if (!gate.compatible) {
+        setLegacyDraft({
+          document: draft.document,
+          draftId: draft.id,
+          message: gate.message,
+          savedAt: draft.savedAt,
+        });
+        return;
+      }
+      const session = beginLivePipelineSession();
+      session.recordDraftRestore({
+        restored: true,
+        draftId: draft.id,
+        schemaVersion: draft.schemaVersion ?? WORKSHEET_SCHEMA_VERSION,
+        layoutVersion: draft.layoutVersion ?? WORKSHEET_LAYOUT_VERSION,
+        generatorVersion: draft.generatorVersion ?? WORKSHEET_GENERATOR_VERSION,
+        createdAt: draft.savedAt,
+        before: draft.document,
+        after: draft.document,
+      });
+      await enterEditor(draft.document, { persist: false });
+      endLivePipelineSession();
+      toast.info("Worksheet opened", { description: "Edit text, move items, or tap Export for PDF." });
     } catch {
       toast.error("Could not open worksheet");
     }
@@ -518,7 +622,36 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
             savedAt={savedAt}
             onDocumentChange={handleDocumentChange}
             onRestoreVersion={(doc) => {
+              const audit = getEditorSyncAudit();
+              audit?.allowTeacher("history_restore");
+              audit?.logOp("draft_restore", "DraftRestore", "version_restore", { id: doc.id });
+              const before = view.kind === "editor" ? view.document : doc;
+              beginLivePipelineSession().recordDraftRestore({
+                restored: true,
+                draftId: doc.id,
+                schemaVersion: WORKSHEET_SCHEMA_VERSION,
+                layoutVersion: WORKSHEET_LAYOUT_VERSION,
+                generatorVersion: WORKSHEET_GENERATOR_VERSION,
+                createdAt: new Date().toISOString(),
+                before,
+                after: doc,
+              });
+              if (getLivePipelineSession()?.firstCorruptionStage === "draft_restore") {
+                toast.error("Draft restore mutated document", {
+                  description: "Open aborted — see console [LivePipelineAudit].",
+                });
+                endLivePipelineSession();
+                return;
+              }
+              try {
+                audit?.noteDocumentChange(doc);
+              } catch {
+                toast.error("Automatic document change blocked");
+                endLivePipelineSession();
+                return;
+              }
               setView({ kind: "editor", document: doc });
+              endLivePipelineSession();
               toast.success("Version restored");
             }}
           />
@@ -526,7 +659,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
       ) : (
         <WorksheetHome
           loading={loading || reconstructing}
-          hasDraft={hasDraft}
+          hasDraft={hasDraft && !shouldSkipDraftRestore()}
           lastWorksheetTitle={lastWorksheetTitle}
           onOpenDrafts={() => void resumeDraft()}
           onOpenLibrary={() => { trackWorksheetEvent("worksheet_library_open"); setLibraryOpen(true); }}
@@ -538,6 +671,76 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
           onReconstruct={(req) => void handleReconstruct(req)}
         />
       )}
+      {legacyDraft ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="legacy-draft-title"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h2 id="legacy-draft-title" className="text-lg font-semibold text-[#1e3a5f]">
+              Legacy draft detected
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">{legacyDraft.message}</p>
+            <p className="mt-1 text-xs text-slate-400">Saved {legacyDraft.savedAt}</p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                className="rounded-lg bg-[#1e3a5f] px-4 py-2.5 text-sm font-medium text-white"
+                onClick={async () => {
+                  const d = legacyDraft;
+                  setLegacyDraft(null);
+                  await enterEditor(d.document, { persist: false, skipPipelineAssert: true });
+                  toast.info("Opened read-only", { description: "Legacy schema — edits will not auto-upgrade." });
+                }}
+              >
+                Open Read Only
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-[#1e3a5f]"
+                onClick={async () => {
+                  const d = legacyDraft;
+                  setLegacyDraft(null);
+                  const upgraded = {
+                    ...structuredClone(d.document),
+                    id: `ws_${Date.now()}`,
+                    version: (d.document.version ?? 1) + 1,
+                  };
+                  await enterEditor(upgraded, { persist: true });
+                  toast.success("Upgrade copy created");
+                }}
+              >
+                Upgrade Copy
+              </button>
+              <button
+                type="button"
+                className="rounded-lg px-4 py-2.5 text-sm font-medium text-red-600"
+                onClick={async () => {
+                  try {
+                    await deleteDraft(legacyDraft.draftId);
+                    setHasDraft(false);
+                    setLegacyDraft(null);
+                    toast.message("Draft discarded");
+                  } catch {
+                    toast.error("Could not discard draft");
+                  }
+                }}
+              >
+                Discard Draft
+              </button>
+              <button
+                type="button"
+                className="rounded-lg px-4 py-2 text-sm text-slate-500"
+                onClick={() => setLegacyDraft(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       </div>
     </WorksheetErrorBoundary>
   );

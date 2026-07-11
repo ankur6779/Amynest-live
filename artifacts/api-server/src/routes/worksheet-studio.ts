@@ -5,12 +5,10 @@ import { logger } from "../lib/logger.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
+import { wrapJobInput } from "../queue/ai-job-payload.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import {
-  buildWorksheetAiSystemPrompt,
-  buildWorksheetAiUserPrompt,
   buildFallbackDocument,
-  parseAiWorksheetResponse,
   parseCopilotCommand,
   buildCopilotAiSystemPrompt,
   buildCopilotAiUserPrompt,
@@ -36,8 +34,12 @@ import {
   buildReconstructionFallback,
   prepareVisionImagesForApi,
   stripSourcesForReconstructionApi,
+  getAiContractHealth,
+  listRawAiResponses,
+  downloadableRawAiResponsesJson,
 } from "@workspace/worksheet-studio";
 import type { EnhancePromptRequest, WorksheetDocument, WorksheetGenerateRequest, WorksheetReferenceContext, WorksheetReconstructRequest } from "@workspace/worksheet-studio";
+import type { WorksheetAiGenerateJobResult } from "../services/worksheet-ai-generate.js";
 
 const router: IRouter = Router();
 
@@ -97,41 +99,48 @@ router.post(
     }
 
     const reqBody = parsed.data as WorksheetGenerateRequest;
-    const fallback = buildFallbackDocument(reqBody);
-
-    const openAiPayload: OpenAiChatPayload = {
-      namespace: `${NAMESPACE}:${reqBody.classLevel}:${reqBody.subject}`,
-      model: MODEL,
-      json: true,
-      max_completion_tokens: 2000,
-      temperature: 0.65,
-      messages: [
-        { role: "system", content: buildWorksheetAiSystemPrompt() },
-        { role: "user", content: buildWorksheetAiUserPrompt(reqBody) },
-      ],
-    };
 
     await submitAiJobAndRespond({
       res,
       userId,
-      type: "openai.chat_json",
-      payload: openAiPayload,
+      type: "worksheet.generate",
+      payload: wrapJobInput("worksheet-studio/generate", reqBody),
+      // Contract generation may retry OpenAI up to 3 times — allow a longer sync wait in dev.
+      waitMs: 90_000,
       buildSyncBody: (result) => {
-        const raw = (result as { content: string | null; timedOut?: boolean }).content;
-        if (!raw || (result as { timedOut?: boolean }).timedOut) {
-          return { document: fallback, source: "local" as const, usedFallback: true, qualityScore: scoreWorksheet(fallback).overall };
-        }
-        try {
-          const json = JSON.parse(raw) as unknown;
-          const document = parseAiWorksheetResponse(json, reqBody, fallback);
-          const quality = scoreWorksheet(document).overall;
-          return { document, source: "ai" as const, usedFallback: false, qualityScore: quality };
-        } catch (err) {
+        const job = result as WorksheetAiGenerateJobResult;
+        // Safety: never ship an empty/broken document to the client editor.
+        if (!job?.document?.pages?.length) {
+          const fallback = buildFallbackDocument(reqBody);
           logger.warn(
-            `worksheet-studio/generate parse failed: ${err instanceof Error ? err.message : String(err)}`,
+            { evt: "worksheet.generate.safety_fallback" },
+            "Job result missing pages — local fallback",
           );
-          return { document: fallback, source: "local" as const, usedFallback: true, qualityScore: scoreWorksheet(fallback).overall };
+          return {
+            document: fallback,
+            source: "local" as const,
+            usedFallback: true,
+            qualityScore: scoreWorksheet(fallback).overall,
+            retryCount: job?.retryCount ?? 0,
+            attemptCount: job?.attemptCount ?? 0,
+            schemaFailureCount: job?.schemaFailureCount ?? 0,
+            fallbackReason: "missing_pages_safety",
+            health: getAiContractHealth(),
+          };
         }
+        return {
+          document: job.document,
+          source: job.source,
+          usedFallback: job.usedFallback,
+          qualityScore: job.qualityScore ?? scoreWorksheet(job.document).overall,
+          retryCount: job.retryCount,
+          attemptCount: job.attemptCount,
+          schemaFailureCount: job.schemaFailureCount,
+          fallbackReason: job.fallbackReason,
+          health: job.health ?? getAiContractHealth(),
+          pipelineAudit: job.pipelineAudit,
+          rawResponses: process.env.NODE_ENV === "production" ? undefined : job.rawResponses,
+        };
       },
       buildAsyncBody: (jobId) => ({
         jobId,
@@ -139,6 +148,42 @@ router.post(
         pollUrl: `/api/ai/jobs/${jobId}`,
       }),
     });
+  },
+);
+
+router.get(
+  "/worksheet-studio/ai-contract-health",
+  hubModuleGate("hub_worksheets"),
+  async (req, res): Promise<void> => {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    res.json({
+      health: getAiContractHealth(),
+      rawCount: listRawAiResponses().length,
+      raw: process.env.NODE_ENV === "production" ? undefined : listRawAiResponses(),
+    });
+  },
+);
+
+router.get(
+  "/worksheet-studio/ai-raw-responses.json",
+  hubModuleGate("hub_worksheets"),
+  async (req, res): Promise<void> => {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    if (process.env.NODE_ENV === "production") {
+      res.status(404).json({ error: "not_available_in_production" });
+      return;
+    }
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", 'attachment; filename="worksheet-ai-raw-responses.json"');
+    res.send(downloadableRawAiResponsesJson());
   },
 );
 

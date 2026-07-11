@@ -56,6 +56,34 @@ export async function shapePollApiResult(
     case "tts/generate":
     case "tts/synthesize":
       return shapeTtsGeneratePoll(rawResult);
+    case "worksheet-studio/generate": {
+      const job = rawResult as {
+        document?: unknown;
+        source?: string;
+        usedFallback?: boolean;
+        qualityScore?: number;
+        retryCount?: number;
+        attemptCount?: number;
+        schemaFailureCount?: number;
+        fallbackReason?: string;
+        health?: unknown;
+        pipelineAudit?: unknown;
+        rawResponses?: unknown;
+      };
+      return {
+        document: job.document,
+        source: job.source,
+        usedFallback: job.usedFallback,
+        qualityScore: job.qualityScore,
+        retryCount: job.retryCount,
+        attemptCount: job.attemptCount,
+        schemaFailureCount: job.schemaFailureCount,
+        fallbackReason: job.fallbackReason,
+        health: job.health,
+        pipelineAudit: job.pipelineAudit,
+        rawResponses: process.env.NODE_ENV === "production" ? undefined : job.rawResponses,
+      };
+    }
     case "learning-load-more/smart-study":
     case "learning-load-more/olympiad":
     case "learning-load-more/spelling":

@@ -13,9 +13,6 @@ import {
   type WorksheetClass,
   type WorksheetPage,
   type WorksheetElement,
-  type WorksheetQuestionBlock,
-  type WorksheetShapeElement,
-  type WorksheetTextElement,
 } from "@workspace/worksheet-studio";
 import { attachSnapping } from "./fabric-snapping";
 import {
@@ -24,8 +21,21 @@ import {
   type SelectionObjectType,
 } from "./selection-style";
 import { attachGridOverlay, attachSafeAreaOverlay } from "./fabric-alignment-guides";
+import {
+  auditFabricLayoutParity,
+  compareFabricToLayout,
+  logFabricObjectBeforeAdd,
+  runPostRenderVerification,
+  type FabricLayoutDebugInfo,
+  type PipelineVerifyResult,
+} from "./fabric-layout-verify";
 
 export type { SelectionStyle, SelectionObjectType };
+export type { FabricLayoutDebugInfo, PipelineVerifyResult };
+export { compareFabricToLayout, auditFabricLayoutParity } from "./fabric-layout-verify";
+
+/** Fabric must draw LayoutTree with top-left anchors — never center origin. */
+const TOP_LEFT = { originX: "left" as const, originY: "top" as const };
 
 let fabricMod: FabricModule | null = null;
 
@@ -41,7 +51,8 @@ export interface WorksheetCanvasHandle {
   scale: number;
   dispose: () => void;
   renderPage: (page: WorksheetPage, colorMode?: "color" | "bw", classLevel?: WorksheetClass, layoutPage?: LayoutPageNode) => Promise<void>;
-  resizeToWidth: (viewportWidth: number, page?: WorksheetPage, classLevel?: WorksheetClass, layoutPage?: LayoutPageNode) => Promise<void>;
+  /** Viewport/CSS size only — does not call renderPage or rebuild objects. */
+  resizeToWidth: (viewportWidth: number) => Promise<void>;
   toDataURL: (dpiMultiplier?: number) => string;
   getActiveObject: () => import("fabric").FabricObject | undefined;
   undo: () => void;
@@ -82,73 +93,66 @@ export interface WorksheetCanvasHandle {
   resetViewport: () => void;
   exportPageState: (page: WorksheetPage) => WorksheetPage;
   onPageModified: (cb: () => void) => () => void;
+  getLayoutDebugForSelection: () => FabricLayoutDebugInfo | null;
+  auditLayoutParity: (tolerancePx?: number) => FabricLayoutDebugInfo[];
+  setVerifyDebug: (enabled: boolean) => void;
+  getLastVerifyResult: () => PipelineVerifyResult | null;
 }
 
-function mapText(el: WorksheetTextElement, scale: number, fabric: FabricModule) {
-  const { Textbox } = fabric;
-  const tb = new Textbox(el.content, {
-    left: el.x * scale,
-    top: el.y * scale,
-    width: el.width * scale,
-    fontSize: el.fontSize * scale,
-    fontWeight: el.fontWeight,
-    textAlign: el.textAlign,
-    fill: el.color,
-    editable: !el.locked,
-    selectable: !el.locked,
-    lockMovementX: el.locked,
-    lockMovementY: el.locked,
-    lineHeight: el.lineHeight ?? 1.4,
-    cornerSize: 14,
-    touchCornerSize: 28,
-    transparentCorners: false,
-    borderColor: "#1e3a5f",
-    cornerColor: "#1e3a5f",
-    cornerStyle: "circle",
-  });
-  (tb as import("fabric").FabricObject & { data?: Record<string, unknown> }).data = { elementId: el.id, elementType: "text" };
-  return tb;
-}
+type LayoutObjData = {
+  elementId: string;
+  elementType: string;
+  layoutNodeId: string;
+  layoutKind: string;
+  parentId?: string;
+  layoutRect: { x: number; y: number; width: number; height: number };
+};
 
-function mapShape(el: WorksheetShapeElement, scale: number, fabric: FabricModule) {
-  const { Rect, Circle, Line, Triangle } = fabric;
-  const common = {
-    left: el.x * scale,
-    top: el.y * scale,
-    stroke: el.stroke,
-    strokeWidth: el.strokeWidth * scale,
-    fill: el.fill === "transparent" ? "transparent" : el.fill,
-    selectable: !el.locked,
-    cornerSize: 14,
-    touchCornerSize: 28,
+function attachLayoutData(
+  obj: import("fabric").FabricObject,
+  node: LayoutNode,
+  pageRect: { x: number; y: number; width: number; height: number },
+) {
+  (obj as import("fabric").FabricObject & { data?: LayoutObjData }).data = {
+    elementId: node.sourceElementId,
+    elementType: node.payload.elementType ?? node.kind,
+    layoutNodeId: node.id,
+    layoutKind: node.kind,
+    parentId: node.parentId,
+    layoutRect: { ...pageRect },
   };
-  let obj;
-  if (el.shapeKind === "circle") obj = new Circle({ ...common, radius: (el.width / 2) * scale });
-  else if (el.shapeKind === "line") obj = new Line([el.x * scale, el.y * scale, (el.x + el.width) * scale, el.y * scale], { stroke: el.stroke, strokeWidth: el.strokeWidth * scale });
-  else if (el.shapeKind === "triangle") obj = new Triangle({ ...common, width: el.width * scale, height: el.height * scale });
-  else obj = new Rect({ ...common, width: el.width * scale, height: el.height * scale, rx: 4, ry: 4 });
-  (obj as import("fabric").FabricObject & { data?: Record<string, unknown> }).data = { elementId: el.id, elementType: "shape" };
   return obj;
 }
 
+/**
+ * Pure LayoutTree → Fabric draw. Never computes layout.
+ * Roots use page-absolute rects. Question-block children use relative rects inside the group.
+ */
 async function renderLayoutNodeToFabric(
   node: LayoutNode,
   scale: number,
   fabric: FabricModule,
   colorMode: "color" | "bw",
+  opts?: {
+    /** Parent block page origin — used to store absolute layoutRect for debug. */
+    parentAbs?: { x: number; y: number };
+    /** When true, Fabric left/top use node.rect (parent-relative). */
+    relativeToParent?: boolean;
+  },
 ): Promise<import("fabric").FabricObject | null> {
-  const { Group, Textbox, Rect, FabricImage, Line, Circle, Triangle } = fabric;
+  const { Group, Textbox, Rect, FabricImage, Line, Circle, Triangle, LayoutManager, FixedLayout } = fabric as FabricModule & {
+    LayoutManager?: new (strategy?: unknown) => unknown;
+    FixedLayout?: new () => unknown;
+  };
   const r = node.rect;
   const p = node.payload;
-
-  const attachData = (obj: import("fabric").FabricObject) => {
-    (obj as import("fabric").FabricObject & { data?: Record<string, unknown> }).data = {
-      elementId: node.sourceElementId,
-      elementType: p.elementType ?? node.kind,
-      layoutNodeId: node.id,
-    };
-    return obj;
-  };
+  const pageX = opts?.parentAbs ? opts.parentAbs.x + r.x : r.x;
+  const pageY = opts?.parentAbs ? opts.parentAbs.y + r.y : r.y;
+  const pageRect = { x: pageX, y: pageY, width: r.width, height: r.height };
+  const left = (opts?.relativeToParent ? r.x : pageX) * scale;
+  const top = (opts?.relativeToParent ? r.y : pageY) * scale;
+  const width = r.width * scale;
+  const height = r.height * scale;
 
   switch (node.kind) {
     case "prompt":
@@ -157,60 +161,94 @@ async function renderLayoutNodeToFabric(
     case "header":
     case "footer": {
       const tb = new Textbox(p.content ?? "", {
-        left: r.x * scale,
-        top: r.y * scale,
-        width: r.width * scale,
+        ...TOP_LEFT,
+        left,
+        top,
+        width,
         fontSize: (p.fontSize ?? 12) * scale,
         fontWeight: p.fontWeight === "bold" ? "bold" : "normal",
         textAlign: p.textAlign ?? "left",
         fill: p.color ?? "#111",
         editable: !p.locked,
+        selectable: !p.locked,
+        lockMovementX: !!p.locked,
+        lockMovementY: !!p.locked,
         lineHeight: p.lineHeight ?? LAYOUT.LINE_HEIGHT,
         cornerSize: 14,
         touchCornerSize: 28,
       });
-      return attachData(tb);
+      return attachLayoutData(tb, node, pageRect);
     }
     case "illustration": {
       if (p.src) {
         try {
           const img = await FabricImage.fromURL(p.src, { crossOrigin: "anonymous" });
-          const h = r.height * scale;
-          const w = r.width * scale;
+          const natW = img.width || 1;
+          const natH = img.height || 1;
+          const fit = Math.min(width / natW, height / natH);
+          const drawW = natW * fit;
+          const drawH = natH * fit;
           img.set({
-            left: r.x * scale,
-            top: r.y * scale,
-            scaleX: w / (img.width || 1),
-            scaleY: h / (img.height || 1),
+            ...TOP_LEFT,
+            left: left + (width - drawW) / 2,
+            top: top + (height - drawH) / 2,
+            scaleX: fit,
+            scaleY: fit,
             selectable: true,
             cornerSize: 14,
             touchCornerSize: 28,
           });
-          return attachData(img);
-        } catch { return null; }
+          return attachLayoutData(img, node, pageRect);
+        } catch {
+          return null;
+        }
       }
       const tb = new Textbox(
         colorMode === "bw" ? `⬜ ${p.label ?? "Picture"}` : (p.emoji ?? p.label ?? ""),
-        { left: r.x * scale, top: r.y * scale, fontSize: 20 * scale, editable: true },
+        {
+          ...TOP_LEFT,
+          left,
+          top,
+          width,
+          fontSize: 20 * scale,
+          textAlign: "center",
+          editable: true,
+        },
       );
-      return attachData(tb);
+      return attachLayoutData(tb, node, pageRect);
     }
     case "answer_line": {
       const line = new Rect({
-        left: r.x * scale,
-        top: r.y * scale,
-        width: r.width * scale,
-        height: Math.max(1, r.height * scale),
+        ...TOP_LEFT,
+        left,
+        top,
+        width,
+        height: Math.max(1 * scale, height),
         fill: p.stroke ?? "#333",
         stroke: p.stroke ?? "#333",
+        selectable: true,
+        cornerSize: 14,
+        touchCornerSize: 28,
       });
-      return attachData(line);
+      return attachLayoutData(line, node, pageRect);
     }
     case "shape":
     case "frame": {
+      if (p.shapeKind === "line") {
+        const line = new Line([0, 0, width, 0], {
+          ...TOP_LEFT,
+          left,
+          top,
+          stroke: p.stroke ?? "#333",
+          strokeWidth: (p.strokeWidth ?? 1) * scale,
+          selectable: !p.locked,
+        });
+        return attachLayoutData(line, node, pageRect);
+      }
       const common = {
-        left: r.x * scale,
-        top: r.y * scale,
+        ...TOP_LEFT,
+        left,
+        top,
         stroke: p.stroke ?? "#333",
         strokeWidth: (p.strokeWidth ?? 1) * scale,
         fill: p.fill === "transparent" ? "transparent" : (p.fill ?? "transparent"),
@@ -218,84 +256,76 @@ async function renderLayoutNodeToFabric(
         cornerSize: 14,
         touchCornerSize: 28,
       };
-      if (p.shapeKind === "line") {
-        return attachData(new Line(
-          [r.x * scale, r.y * scale, (r.x + r.width) * scale, r.y * scale],
-          { stroke: p.stroke, strokeWidth: (p.strokeWidth ?? 1) * scale },
-        ));
-      }
       if (p.shapeKind === "circle") {
-        return attachData(new Circle({ ...common, radius: (r.width / 2) * scale }));
+        return attachLayoutData(new Circle({ ...common, radius: width / 2 }), node, pageRect);
       }
       if (p.shapeKind === "triangle") {
-        return attachData(new Triangle({ ...common, width: r.width * scale, height: r.height * scale }));
+        return attachLayoutData(new Triangle({ ...common, width, height }), node, pageRect);
       }
-      return attachData(new Rect({ ...common, width: r.width * scale, height: r.height * scale, rx: 4, ry: 4 }));
+      return attachLayoutData(
+        new Rect({ ...common, width, height, rx: 4, ry: 4 }),
+        node,
+        pageRect,
+      );
     }
     case "image": {
       if (!p.src) return null;
       try {
         const img = await FabricImage.fromURL(p.src, { crossOrigin: "anonymous" });
         img.set({
-          left: r.x * scale,
-          top: r.y * scale,
-          scaleX: (r.width * scale) / (img.width || 1),
-          scaleY: (r.height * scale) / (img.height || 1),
+          ...TOP_LEFT,
+          left,
+          top,
+          scaleX: width / (img.width || 1),
+          scaleY: height / (img.height || 1),
           selectable: !p.locked,
           cornerSize: 14,
           touchCornerSize: 28,
         });
-        return attachData(img);
-      } catch { return null; }
+        return attachLayoutData(img, node, pageRect);
+      } catch {
+        return null;
+      }
     }
     case "question_block": {
+      // Place children at PAGE-ABSOLUTE coords first, then Group.
+      // Fabric converts them to group-local coords and sets group left/top to the bbox origin.
       const items: import("fabric").FabricObject[] = [];
       for (const child of node.children) {
-        const obj = await renderLayoutNodeToFabric(child, scale, fabric, colorMode);
-        if (obj) items.push(obj);
+        const childObj = await renderLayoutNodeToFabric(child, scale, fabric, colorMode, {
+          parentAbs: { x: r.x, y: r.y },
+          relativeToParent: false,
+        });
+        if (childObj) items.push(childObj);
       }
-      const group = new Group(items, {
-        left: r.x * scale,
-        top: r.y * scale,
+      if (items.length === 0) return null;
+
+      const groupOpts: Record<string, unknown> = {
+        ...TOP_LEFT,
         subTargetCheck: true,
+        interactive: true,
         cornerSize: 14,
         touchCornerSize: 28,
         lockMovementX: !!p.locked,
         lockMovementY: !!p.locked,
+      };
+      if (typeof LayoutManager === "function" && typeof FixedLayout === "function") {
+        groupOpts.layoutManager = new LayoutManager(new FixedLayout());
+      }
+
+      const group = new Group(items, groupOpts);
+      // Pin group to LayoutTree rect — never trust auto-layout drift.
+      group.set({
+        ...TOP_LEFT,
+        left: r.x * scale,
+        top: r.y * scale,
       });
-      return attachData(group);
+      group.setCoords();
+      return attachLayoutData(group, node, { x: r.x, y: r.y, width: r.width, height: r.height });
     }
     default:
       return null;
   }
-}
-
-async function mapElement(
-  el: WorksheetElement,
-  scale: number,
-  fabric: FabricModule,
-  colorMode: "color" | "bw",
-  classLevel: WorksheetClass,
-) {
-  if (el.type === "text") return mapText(el, scale, fabric);
-  if (el.type === "shape") return mapShape(el, scale, fabric);
-  if (el.type === "question_block") return null;
-  if (el.type === "image") {
-    const { FabricImage } = fabric;
-    try {
-      const img = await FabricImage.fromURL(el.src, { crossOrigin: "anonymous" });
-      img.set({
-        left: el.x * scale, top: el.y * scale,
-        scaleX: (el.width * scale) / (img.width || 1),
-        scaleY: (el.height * scale) / (img.height || 1),
-        selectable: !el.locked, cornerSize: 14, touchCornerSize: 28,
-        borderColor: "#1e3a5f", cornerColor: "#1e3a5f",
-      });
-      (img as import("fabric").FabricObject & { data?: Record<string, unknown> }).data = { elementId: el.id, elementType: "image" };
-      return img;
-    } catch { return null; }
-  }
-  return null;
 }
 
 export async function createWorksheetCanvas(container: HTMLCanvasElement, viewportWidth: number): Promise<WorksheetCanvasHandle> {
@@ -307,7 +337,8 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
   let zoomFactor = 1;
   let clipboard: import("fabric").FabricObject | null = null;
   let colorMode: "color" | "bw" = "color";
-  let docClassLevel: WorksheetClass = "ukg";
+  let verifyDebug = false;
+  let lastVerifyResult: PipelineVerifyResult | null = null;
 
   const canvas = new Canvas(container, {
     width: canvasWidth,
@@ -337,6 +368,7 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
   canvas.on("object:added", pushHistory);
 
   const pageBorder = new Rect({
+    ...TOP_LEFT,
     left: 0, top: 0, width: canvasWidth, height: canvasHeight,
     fill: "#ffffff", stroke: "#d4cfc4", strokeWidth: 2,
     rx: PAGE_BORDER_RADIUS * scale, ry: PAGE_BORDER_RADIUS * scale,
@@ -425,55 +457,61 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
     layoutPage?: LayoutPageNode,
   ) => {
     colorMode = mode;
-    if (classLevel) docClassLevel = classLevel;
     skipHistory = true;
     canvas.getObjects().filter((o) => o !== pageBorder).forEach((o) => canvas.remove(o));
 
-    if (layoutPage) {
-      const sorted = [...layoutPage.nodes].sort((a, b) => a.zIndex - b.zIndex);
-      for (const node of sorted) {
-        const obj = await renderLayoutNodeToFabric(node, scale, fabric, mode);
-        if (obj) canvas.add(obj);
-      }
-    } else {
-      for (const el of page.elements) {
-        const obj = await mapElement(el, scale, fabric, mode, docClassLevel);
-        if (obj) canvas.add(obj);
-      }
+    if (!layoutPage) {
+      console.error("[FabricLayoutVerify] STEP8 — layoutPage required. Legacy element renderer removed.");
+      skipHistory = false;
+      throw new Error("Fabric render requires LayoutTree page (layoutPage). Legacy path removed.");
     }
+
+    const sorted = [...layoutPage.nodes].sort((a, b) => a.zIndex - b.zIndex);
+    for (const node of sorted) {
+      const obj = await renderLayoutNodeToFabric(node, scale, fabric, mode);
+      if (!obj) continue;
+      logFabricObjectBeforeAdd(node, obj.left ?? 0, obj.top ?? 0, scale);
+      canvas.add(obj);
+    }
+
+    // Viewport reset — visual only; does not rewrite object geometry.
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     zoomFactor = 1;
     canvas.requestRenderAll();
+
+    if (verifyDebug) {
+      lastVerifyResult = runPostRenderVerification({
+        layoutPage,
+        canvas,
+        scale,
+        zoomFactor,
+        pageBorder,
+        tolerancePx: 2,
+        failFast: true,
+      });
+      if (!lastVerifyResult.ok) {
+        console.error("[FabricLayoutVerify] pipeline failed", lastVerifyResult.stoppedAt, lastVerifyResult.logs);
+      }
+    }
+
     skipHistory = false;
     pushHistory();
   };
 
-  const resizeToWidth = async (
-    nextViewportWidth: number,
-    page?: WorksheetPage,
-    classLevel?: WorksheetClass,
-    layoutPage?: LayoutPageNode,
-  ) => {
+  /**
+   * Viewport / CSS size only — never rebuilds Fabric page objects.
+   * Scale change without re-layout keeps existing objects; caller must not expect a full reflow.
+   */
+  const resizeToWidth = async (nextViewportWidth: number) => {
     const nextScale = computeWorksheetCanvasScale(nextViewportWidth);
-    if (Math.abs(nextScale - scale) < 0.01 && !page) return;
-    syncCanvasDimensions(nextScale);
-    if (gridVisible) {
-      gridObjects.forEach((g) => canvas.remove(g));
-      gridObjects = attachGridOverlay(canvas, fabric, scale, true);
-      gridObjects.forEach((g) => canvas.sendObjectToBack(g));
-    }
-    if (safeAreaVisible) {
-      if (safeAreaObj) canvas.remove(safeAreaObj);
-      safeAreaObj = attachSafeAreaOverlay(canvas, fabric, scale);
-      if (safeAreaObj) canvas.bringObjectToFront(safeAreaObj);
-    }
-    canvas.sendObjectToBack(pageBorder);
-    if (page) await renderPage(page, colorMode, classLevel, layoutPage);
-    else {
-      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-      zoomFactor = 1;
+    if (Math.abs(nextScale - scale) < 0.01) {
       canvas.requestRenderAll();
+      return;
     }
+    syncCanvasDimensions(nextScale);
+    // Do not call renderPage() — that recreates objects and causes layout corruption.
+    // Do not rebuild grid/safe-area overlays here (would recreate Fabric objects).
+    canvas.requestRenderAll();
   };
 
   const addImageFromDataUrl = async (dataUrl: string) => {
@@ -492,7 +530,10 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
   };
 
   return {
-    canvas, scale,
+    canvas,
+    get scale() {
+      return scale;
+    },
     dispose: () => { detachSnap(); canvas.dispose(); },
     renderPage,
     toDataURL: (dpiMultiplier = 1) =>
@@ -771,6 +812,16 @@ export async function createWorksheetCanvas(container: HTMLCanvasElement, viewpo
       selectionCb = cb;
       return () => { selectionCb = null; };
     },
+    getLayoutDebugForSelection: () => {
+      const o = canvas.getActiveObject();
+      if (!o || o === pageBorder) return null;
+      return compareFabricToLayout(o, scale);
+    },
+    auditLayoutParity: (tolerancePx = 2) => auditFabricLayoutParity(canvas, scale, pageBorder, tolerancePx),
+    setVerifyDebug: (enabled: boolean) => {
+      verifyDebug = enabled;
+    },
+    getLastVerifyResult: () => lastVerifyResult,
   };
 }
 

@@ -14,7 +14,16 @@ export interface ChatCompletionParams {
   messages: ChatMessage[];
   max_completion_tokens?: number;
   temperature?: number;
-  response_format?: { type: "json_object" };
+  response_format?:
+    | { type: "json_object" }
+    | {
+        type: "json_schema";
+        json_schema: {
+          name: string;
+          strict?: boolean;
+          schema: Record<string, unknown>;
+        };
+      };
   /** When set, emits coach_generate_trace openai.* stages. */
   traceId?: string;
 }

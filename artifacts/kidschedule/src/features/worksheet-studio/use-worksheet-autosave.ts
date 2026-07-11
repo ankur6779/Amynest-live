@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { WorksheetDocument, WorksheetGenerateRequest } from "@workspace/worksheet-studio";
+import type { WorksheetDocument } from "@workspace/worksheet-studio";
+import { shouldSkipDraftRestore } from "@workspace/worksheet-studio";
 import {
   AUTO_SAVE_INTERVAL_MS,
   saveDraftVersion,
 } from "@workspace/worksheet-studio/client";
+import { getEditorSyncAudit } from "./editor-state-sync-audit";
 
 type SaveState = "idle" | "saving" | "saved" | "offline";
 
@@ -26,14 +28,20 @@ export function useWorksheetAutosave(document: WorksheetDocument | null) {
   const lastHash = useRef("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const cleanSession = shouldSkipDraftRestore();
 
   useEffect(() => {
-    if (!document) return;
+    if (!document || cleanSession) return;
 
     const save = async () => {
       const hash = documentContentHash(document);
       if (hash === lastHash.current) return;
       lastHash.current = hash;
+      getEditorSyncAudit()?.logOp("autosave", "Autosave", "interval_save", {
+        documentId: document.id,
+        version: document.version,
+      });
+      // Autosave must NEVER mutate WorksheetDocument — only persist.
       setSaveState("saving");
       try {
         const ver = await saveDraftVersion(document);
@@ -46,7 +54,7 @@ export function useWorksheetAutosave(document: WorksheetDocument | null) {
 
     const timer = window.setInterval(() => void save(), AUTO_SAVE_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [document]);
+  }, [document, cleanSession]);
 
   useEffect(() => {
     const onOnline = () => setSaveState((s) => (s === "offline" ? "saved" : s));
@@ -60,6 +68,14 @@ export function useWorksheetAutosave(document: WorksheetDocument | null) {
   }, []);
 
   const saveNow = useCallback(async (doc: WorksheetDocument) => {
+    if (shouldSkipDraftRestore()) {
+      setSaveState("idle");
+      return;
+    }
+    getEditorSyncAudit()?.logOp("autosave", "Autosave", "saveNow", {
+      documentId: doc.id,
+      version: doc.version,
+    });
     setSaveState("saving");
     try {
       const ver = await saveDraftVersion(doc);

@@ -9,6 +9,8 @@ import {
   type WorksheetGenerateResponse,
   type WorksheetImproveAction,
   applyWorksheetImprovement,
+  beginLivePipelineSession,
+  resumeLivePipelineSessionFromServer,
 } from "@workspace/worksheet-studio";
 import { scoreWorksheet } from "@workspace/worksheet-studio";
 import { enqueueOfflineRequest } from "./worksheet-studio-analytics";
@@ -82,6 +84,9 @@ export function useWorksheetAi(authFetch: AuthFetch) {
           void import("@/features/teacher-os/teacher-os-analytics").then((m) => {
             m.trackOfflineFallback(`entitlement_${res.status}`);
           }).catch(() => { /* */ });
+          const session = beginLivePipelineSession();
+          session.log("client entitlement fallback — local document");
+          session.captureStage("client_received", local, "entitlement local");
           return { document: local, source: "local", usedFallback: true, qualityScore: scoreWorksheet(local).overall };
         }
         if (res.ok) {
@@ -90,12 +95,31 @@ export function useWorksheetAi(authFetch: AuthFetch) {
           >(res, authFetch, { poll: AI_POLL });
           if (!mountedRef.current) return { document: local, source: "local", usedFallback: true, qualityScore: scoreWorksheet(local).overall };
           const doc = data?.document?.pages?.length ? data.document : local;
+          const session = data?.pipelineAudit
+            ? resumeLivePipelineSessionFromServer(data.pipelineAudit)
+            : beginLivePipelineSession();
+          session.captureStage(
+            "client_received",
+            doc,
+            data?.document?.pages?.length ? "API document" : "client local substitute",
+          );
           return {
             document: doc,
             source: data.source ?? (data.usedFallback || doc === local ? "local" : "ai"),
             usedFallback: data.usedFallback ?? doc === local,
             qualityScore: data.qualityScore ?? scoreWorksheet(doc).overall,
+            pipelineAudit: data.pipelineAudit,
+            retryCount: data.retryCount,
+            attemptCount: data.attemptCount,
+            schemaFailureCount: data.schemaFailureCount,
+            fallbackReason: data.fallbackReason,
+            health: data.health,
           };
+        }
+        {
+          const session = beginLivePipelineSession();
+          session.log(`client HTTP ${res.status} — local fallback`);
+          session.captureStage("client_received", local, "http error local");
         }
         return { document: local, source: "local", usedFallback: true, qualityScore: scoreWorksheet(local).overall };
       } catch {
@@ -103,6 +127,9 @@ export function useWorksheetAi(authFetch: AuthFetch) {
         void import("@/features/teacher-os/teacher-os-analytics").then((m) => {
           m.trackOfflineFallback("generate_network");
         }).catch(() => { /* */ });
+        const session = beginLivePipelineSession();
+        session.log("client network error — local fallback");
+        session.captureStage("client_received", local, "network local");
         return { document: local, source: "local", usedFallback: true, qualityScore: scoreWorksheet(local).overall };
       } finally {
         if (mountedRef.current) setLoading(false);

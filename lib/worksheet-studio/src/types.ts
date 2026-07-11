@@ -283,11 +283,41 @@ export interface AiAnalyticsDashboard {
   topClasses: Array<{ classLevel: string; count: number }>;
 }
 
+export interface WorksheetPipelineAuditPayload {
+  rawApi: unknown;
+  stages: unknown[];
+  diffs: unknown[];
+  firstCorruptionStage: string | null;
+  mutationDetected: boolean;
+  logs: string[];
+  report: {
+    staticPath: string;
+    aiPath: string;
+    draftRestore: string;
+    mutationDetected: boolean;
+    firstCorruptionStage: string | null;
+  };
+}
+
 export interface WorksheetGenerateResponse {
   document: WorksheetDocument;
   source: "ai" | "local";
   usedFallback?: boolean;
   qualityScore?: number;
+  /** Live pipeline investigation payload (dev / layoutDebug). */
+  pipelineAudit?: WorksheetPipelineAuditPayload;
+  /** AI contract generation telemetry */
+  retryCount?: number;
+  attemptCount?: number;
+  schemaFailureCount?: number;
+  fallbackReason?: string;
+  health?: {
+    aiSuccessPercent: number;
+    schemaFailures: number;
+    retries: number;
+    fallbackPercent: number;
+    averageRetryCount: number;
+  };
 }
 
 /** v7.0 — AI Worksheet Reconstruction Engine */
@@ -411,6 +441,10 @@ export interface WorksheetDraftRecord {
   id: string;
   document: WorksheetDocument;
   savedAt: string;
+  /** Present on drafts saved after live-pipeline-audit; absent = legacy. */
+  schemaVersion?: number;
+  layoutVersion?: number;
+  generatorVersion?: string;
 }
 
 /** A4 dimensions at 72 DPI — used by renderer and export */
