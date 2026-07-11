@@ -49,9 +49,11 @@ RUN CI=true NODE_ENV=development node -e "const {createRequire}=require('node:mo
 
 RUN CI=true NODE_ENV=development pnpm --filter @workspace/api-server build
 
-# Schema sync when DATABASE_URL is available (Render injects it at image build time).
+# Optional schema sync at image build time (Render only). Coolify injects
+# DATABASE_URL as a build ARG, which would incorrectly trigger a push against a
+# host unreachable from the build container — require an explicit opt-in.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    sh -c 'if [ -n "${DATABASE_URL:-}" ]; then pnpm --filter @workspace/db push; else echo "[docker/backend] skip db push — DATABASE_URL unset"; fi'
+    sh -c 'if [ "${RUN_DB_PUSH_AT_BUILD:-}" = "1" ] && [ -n "${DATABASE_URL:-}" ]; then pnpm --filter @workspace/db push; else echo "[docker/backend] skip db push (set RUN_DB_PUSH_AT_BUILD=1 to enable)"; fi'
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm --filter @workspace/api-server deploy --prod /deploy
