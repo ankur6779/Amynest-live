@@ -1,11 +1,16 @@
+import { createHash } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import {
   getRhymesRegistryCount,
+  getRhymesRegistryEntry,
   listRhymesRegistryEntries,
 } from "@workspace/rhymes-audio";
 import { logger } from "../lib/logger.js";
 import { resolveRhymesSignedUrl } from "../services/rhymesAudioSignedUrlService.js";
+import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioStore.js";
+import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
+import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
 
 const router: IRouter = Router();
 
@@ -57,6 +62,65 @@ router.get("/audio/signed-url/:audioId", async (req, res): Promise<void> => {
     expiresIn: result.expiresIn,
     cached: result.cached,
   });
+});
+
+/**
+ * GET /api/audio/stream/:audioId — same-origin GCS stream for rhymes/lullabies.
+ * Browsers must not fetch storage.googleapis.com directly (no bucket CORS).
+ */
+router.get("/audio/stream/:audioId", async (req, res): Promise<void> => {
+  const parsed = AudioIdParams.safeParse(req.params);
+  if (!parsed.success) {
+    res.status(400).json({ success: false, error: "invalid_audio_id" });
+    return;
+  }
+
+  const { audioId } = parsed.data;
+  const registryEntry = getRhymesRegistryEntry(audioId);
+  if (!registryEntry) {
+    res.status(404).json({ success: false, error: "not_found" });
+    return;
+  }
+
+  const etagKey = createHash("md5").update(registryEntry.id).digest("hex");
+
+  if (!legacyGcsConfigured()) {
+    logger.warn(
+      { evt: "rhymes.stream.gcs_unconfigured", audioId },
+      "rhymes stream — GCS not configured",
+    );
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
+    return;
+  }
+
+  try {
+    const buffer = await readGcsObjectBytes(registryEntry.objectPath);
+    if (!buffer?.byteLength) {
+      logger.warn(
+        { evt: "rhymes.stream.missing", audioId, objectPath: registryEntry.objectPath },
+        "rhymes stream object missing in GCS",
+      );
+      serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+        staticSource: "placeholder",
+      });
+      return;
+    }
+
+    serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs", {
+      staticSource: "asset",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { evt: "rhymes.stream_failed", audioId, objectPath: registryEntry.objectPath, message },
+      "rhymes stream failed",
+    );
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory", {
+      staticSource: "placeholder",
+    });
+  }
 });
 
 /** GET /api/audio/rhymes/catalog — metadata only (no GCS paths). */

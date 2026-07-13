@@ -18,6 +18,7 @@ import {
   isReelsGcsOriginEnabled,
   REELS_STREAM_RE,
 } from "./reels-gcs-origin.js";
+import { selectBackend } from "./canary.js";
 
 const DEFAULT_BACKEND = "https://amynest-backend-dykj.onrender.com";
 const COACH_GENERATE_TRACE_HEADER = "x-amynest-coach-trace-id";
@@ -82,7 +83,8 @@ function isCacheableAudioPath(pathname) {
     TTS_AUDIO_RE.test(pathname) ||
     STATIC_AUDIO_RE.test(pathname) ||
     PHONICS_LIBRARY_RE.test(pathname) ||
-    SPELLING_LIBRARY_RE.test(pathname)
+    SPELLING_LIBRARY_RE.test(pathname) ||
+    RHYMES_STREAM_RE.test(pathname)
   );
 }
 
@@ -98,6 +100,7 @@ function isCacheableMediaPath(pathname) {
 }
 
 const SIGNED_URL_METADATA_RE = /^\/api\/audio\/signed-url\/[a-z0-9-]+$/i;
+const RHYMES_STREAM_RE = /^\/api\/audio\/stream\/[a-z0-9-]+$/i;
 const RHYMES_CATALOG_RE = /^\/api\/audio\/rhymes\/catalog$/i;
 
 /** @param {string} pathname */
@@ -134,7 +137,7 @@ function mediaCacheRequest(url) {
 
 /** @param {Request} request @param {Record<string, string>} env @param {URL} url */
 async function proxyToBackend(request, env, url) {
-  const backend = (env.BACKEND_ORIGIN ?? DEFAULT_BACKEND).replace(/\/$/, "");
+  const { url: backend, lane } = selectBackend(env, request);
   const target = new URL(`${url.pathname}${url.search}`, backend);
   const cfStarted = Date.now();
   const coachTrace = isCoachTracePath(url.pathname);
@@ -248,6 +251,7 @@ async function proxyToBackend(request, env, url) {
   out.set("Access-Control-Allow-Credentials", "true");
   if (traceId) out.set(COACH_GENERATE_TRACE_HEADER, traceId);
   out.set("x-amynest-trace-cf-ms", String(cfMs));
+  out.set("x-amynest-backend", lane);
 
   const staticSource = out.get("x-amynest-static-source") ?? "";
   const contentLength = Number(out.get("content-length") || 0);

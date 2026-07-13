@@ -21,6 +21,8 @@ function shouldSetAudioCrossOrigin(audioSrc?: string): boolean {
     try {
       const resolved = new URL(audioSrc, window.location.href);
       if (resolved.origin === window.location.origin) return false;
+      // GCS signed URLs have no bucket CORS — HTMLAudioElement must load without crossOrigin.
+      if (resolved.hostname === "storage.googleapis.com") return false;
     } catch {
       /* ignore malformed src */
     }
