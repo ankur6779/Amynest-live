@@ -618,7 +618,12 @@ export async function healStaleSubscriptionRecord(
     return fixed ?? sub;
   }
 
-  if (!["revenuecat", "razorpay", "none"].includes(sub.provider ?? "none")) {
+  // Paid-store rows reconcile via webhooks — never downgrade on entitlement read.
+  if (sub.provider === "revenuecat" || sub.provider === "razorpay") {
+    return sub;
+  }
+
+  if ((sub.provider ?? "none") !== "none") {
     return sub;
   }
 

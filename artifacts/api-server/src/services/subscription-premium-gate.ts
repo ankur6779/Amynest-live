@@ -38,13 +38,26 @@ export function isPremiumNow(s: Subscription): boolean {
     !!s.expiresAt ||
     !!s.gracePeriodExpiresAt;
   if (hasExplicitV2State) {
-    return isStatePremium(s.subscriptionState, {
+    const statePremium = isStatePremium(s.subscriptionState, {
       currentPeriodEnd: s.currentPeriodEnd,
       expiresAt: s.expiresAt,
       gracePeriodExpiresAt: s.gracePeriodExpiresAt,
       trialEndsAt: s.trialEndsAt,
       bonusExpiresAt: s.bonusExpiresAt,
     });
+    if (statePremium) return true;
+    // Unmigrated RevenueCat/Razorpay rows may still carry legacy status + period end
+    // before webhooks populate subscriptionState — honor those until reconciled.
+    const paidProvider = s.provider === "revenuecat" || s.provider === "razorpay";
+    if (paidProvider && (s.subscriptionState === "FREE" || !s.subscriptionState)) {
+      const now = Date.now();
+      if (s.status === "trialing" && s.trialEndsAt && s.trialEndsAt.getTime() > now) return true;
+      if (s.status === "active" && hasValidPaidPeriodEnd(s)) return true;
+      if ((s.status === "canceled" || s.status === "past_due") && hasValidPaidPeriodEnd(s)) {
+        return true;
+      }
+    }
+    return false;
   }
   const now = Date.now();
   if (s.bonusExpiresAt && s.bonusExpiresAt.getTime() > now) return true;
