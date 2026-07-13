@@ -13,6 +13,11 @@ const SPELLING_LIBRARY_PROXY_PATH_RE =
 /** Legacy — detect direct GCS phonics paths (forbidden at playback time). */
 const PHONICS_GCS_PATH_RE = /\/phonics\/[a-z0-9_/-]+\.mp3(?:\?|$)/i;
 
+/** GCS object host — manifests may reference; browser playback must proxy. */
+export function isGoogleCloudStorageHost(hostname: string): boolean {
+  return hostname === "storage.googleapis.com";
+}
+
 let audioGuardInstalled = false;
 
 /**

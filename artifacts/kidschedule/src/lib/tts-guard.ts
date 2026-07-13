@@ -11,6 +11,7 @@ import {
   isAndroidAmyNestAudioClient,
 } from "@/lib/device-lite";
 import { prepareIosAudioSessionForPlayback } from "@/lib/mic-permission-capacitor";
+import { isGoogleCloudStorageHost } from "@/lib/static-audio-guard";
 
 /** crossOrigin on remote MP3 often breaks playback in installed PWA / WebView shells. */
 function shouldSetAudioCrossOrigin(audioSrc?: string): boolean {
@@ -22,7 +23,7 @@ function shouldSetAudioCrossOrigin(audioSrc?: string): boolean {
       const resolved = new URL(audioSrc, window.location.href);
       if (resolved.origin === window.location.origin) return false;
       // GCS signed URLs have no bucket CORS — HTMLAudioElement must load without crossOrigin.
-      if (resolved.hostname === "storage.googleapis.com") return false;
+      if (isGoogleCloudStorageHost(resolved.hostname)) return false;
     } catch {
       /* ignore malformed src */
     }
