@@ -54,11 +54,12 @@ router.get("/audio/signed-url/:audioId", async (req, res): Promise<void> => {
   }
 
   res.setHeader("Cache-Control", "private, max-age=600, stale-while-revalidate=120");
+  const streamUrl = `/api/audio/stream/${encodeURIComponent(result.audioId)}`;
   res.json({
     success: true,
     audioId: result.audioId,
     title: result.title,
-    signedUrl: result.signedUrl,
+    signedUrl: streamUrl,
     expiresIn: result.expiresIn,
     cached: result.cached,
   });

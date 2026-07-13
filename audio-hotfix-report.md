@@ -81,7 +81,8 @@ cf-cache-status: HIT (real assets, not 256-byte stubs)
 **File:** `artifacts/api-server/src/routes/audio-signed-url.ts`
 
 - Added `GET /api/audio/stream/:audioId` — streams allowlisted GCS objects through the API (same pattern as `phonics-library`).
-- Public route, mounted before `requireAuth`.
+- **Backward-compatible:** `GET /api/audio/signed-url/:audioId` now returns `signedUrl: "/api/audio/stream/:id"` so **already-deployed web clients** pick up the fix without a frontend redeploy.
+- Public routes, mounted before `requireAuth`.
 
 ### 2. Client: use stream URL for lullaby playback
 
