@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-13  
 **Incident:** Production audio failure after Render → Coolify migration  
-**Status:** Hotfix applied — pending deploy
+**Status:** Hotfix committed & pushed — **Render manual deploy required** (autoDeploy off). Canary rolled back to Render (`CANARY_PERCENT=0`).
 
 ---
 
