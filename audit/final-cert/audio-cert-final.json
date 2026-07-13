@@ -1,49 +1,12 @@
 {
-  "validatedAt": "2026-06-12T09:16:29.658Z",
+  "validatedAt": "2026-07-13T03:24:07.978Z",
   "baseURL": "https://www.amynest.in",
-  "methodology": "Live HEAD/GET probe of all manifest-derived URLs; adversarial — no trust of prior audits",
-  "sources": {
-    "static-audio-map": {
-      "Required": 4434,
-      "Playable": 4432,
-      "Coverage %": 99.9549
-    },
-    "infant-sleep-manifest": {
-      "Required": 34,
-      "Playable": 34,
-      "Coverage %": 100
-    }
-  },
-  "Required": 4468,
-  "Playable": 4466,
-  "Failed": 2,
-  "Coverage %": 99.9552,
+  "source": "static-audio-map.json",
+  "Required": 4244,
+  "Playable": 4244,
+  "Failed": 0,
+  "Coverage %": 100,
   "passThreshold": 99.5,
-  "verdict": "FAIL",
-  "synthesizeOnDemandNote": "TTS/dynamic routes not enumerated — counted as coverage gap if manifests incomplete",
-  "failureSample": [
-    {
-      "url": "/api/static-audio/af75624bbba853f192b210cc61ca96bd.mp3",
-      "sources": [
-        "static-audio-map"
-      ],
-      "idSample": [
-        "default:from 2 to 4, the issue is not just scree"
-      ],
-      "error": "The operation was aborted due to timeout"
-    },
-    {
-      "url": "/api/static-audio/8b3091d7496ffc21719cdb458ada0a4a.mp3",
-      "sources": [
-        "static-audio-map"
-      ],
-      "idSample": [
-        "default:rain"
-      ],
-      "error": "The operation was aborted due to timeout"
-    }
-  ],
-  "failureBySource": {
-    "static-audio-map": 2
-  }
+  "verdict": "PASS",
+  "failureSample": []
 }

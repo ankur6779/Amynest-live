@@ -47,8 +47,9 @@ Thumbs.db
 # Cursor debug logs
 .cursor/debug-*.log
 
-# Python cache
-scripts/__pycache__/
+# Migration artifacts (may contain production data)
+audit/render-to-coolify/dumps/
+audit/render-to-coolify/*.dump
 
 # Environment (keep *.example templates)
 .env

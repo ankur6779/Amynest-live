@@ -9,6 +9,7 @@
     "migrate:render-to-coolify:delta": "tsx ./src/render-to-coolify/delta-sync.ts",
     "migrate:render-to-coolify:smoke": "tsx ./src/render-to-coolify/coolify-smoke.ts",
     "migrate:render-to-coolify:canary-monitor": "tsx ./src/render-to-coolify/canary-monitor.ts",
+    "migrate:render-to-coolify:monitor-soak": "tsx ./src/render-to-coolify/monitor-soak.ts",
     "migrate:render-to-coolify:data-plane-audit": "tsx ./src/render-to-coolify/data-plane-audit.ts",
     "migrate:render-to-coolify:verify-scheduler": "tsx ./src/render-to-coolify/verify-scheduler-singleton.ts",
     "migrate:render-to-coolify:dashboard:serve": "bash ../render-to-coolify/08-dashboard-serve.sh",

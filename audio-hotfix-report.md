@@ -128,13 +128,19 @@ cf-cache-status: HIT (real assets, not 256-byte stubs)
 
 **Deploy commands:**
 
-1. Coolify API — redeploy backend with hotfix commit
-2. Static site — rebuild/deploy kidschedule if client changes bundled in OTA
-3. `wrangler deploy` in `infra/cloudflare/amynest-api-proxy/` for Worker cache rule
+1. **Render API (required)** — `autoDeployTrigger: off` in `render.yaml`; trigger manually:
+   ```bash
+   render deploys create Amynest-backend --commit 3e420af91 --wait
+   ```
+2. Cloudflare Worker — **deployed** (rhymes stream cache + `CANARY_PERCENT=0` emergency rollback while Coolify was 503)
+3. Static site — optional; backward-compatible API change covers deployed clients
 
 **Post-deploy probe:**
 
 ```bash
+curl -sS "https://www.amynest.in/api/audio/signed-url/twinkle-twinkle-little-star" | jq .signedUrl
+# Expect: "/api/audio/stream/twinkle-twinkle-little-star" (not storage.googleapis.com)
+
 curl -I "https://www.amynest.in/api/audio/stream/twinkle-twinkle-little-star"
 # Expect: HTTP 200, content-type: audio/mpeg, x-amynest-static-source: asset
 ```
