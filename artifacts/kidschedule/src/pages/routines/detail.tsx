@@ -33,6 +33,7 @@ import { saveActivationResume, clearActivationResume } from "@/lib/activation-re
 import {
   enrichRoutinePayload,
   fetchRoutineWithResilience,
+  persistGeneratedRoutine,
   RoutineGenerationPaywallError,
 } from "@/lib/routine-generation-client";
 import { sanitizeRoutineItems } from "@/lib/routine-item-safety";
@@ -1030,17 +1031,24 @@ export default function RoutineDetail() {
         }),
         { childName, source: "routine_detail_next_day" },
       );
+      const saved = await persistGeneratedRoutine(
+        authFetch,
+        generated,
+        { childId: pendingNextDayChildId, date: dateStr },
+        { override: true },
+      );
       toast({
         title: generated.fallback
           ? t("toasts.routines_detail.tomorrow_backup_title", {
               defaultValue: "Tomorrow's backup routine ready",
             })
           : `🌅 Tomorrow's routine ready!`,
-        description: `${isWeekend ? "Weekend" : "School day"} routine generated for ${childName ?? "your child"}.`,
+        description: `${isWeekend ? "Weekend" : "School day"} routine saved for ${childName ?? "your child"}.`,
       });
       queryClient.invalidateQueries({
         queryKey: getListRoutinesQueryKey(),
       });
+      setLocation(`/routines/${saved.routineId}?reveal=1`);
     } catch (err) {
       if (err instanceof RoutineGenerationPaywallError) {
         setNextDayDialogOpen(false);
