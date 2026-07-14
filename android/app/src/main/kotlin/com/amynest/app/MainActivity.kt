@@ -91,6 +91,9 @@ class MainActivity : AppCompatActivity() {
     private var pendingMicPermissionCallbackId: String? = null
     private var forceUpdateActive = false
 
+    /** Defer notification prompt until after first paint — avoids dialog stack on cold start. */
+    private var deferredNotificationScheduled = false
+
     private var systemAudioManager: AudioManager? = null
 
     private val micPermissionPrefs by lazy {
@@ -106,7 +109,6 @@ class MainActivity : AppCompatActivity() {
             if (!granted) {
                 injectStartupFunnelEvent(webView, "permission_denied", """{"permission":"notifications"}""")
             }
-            askLocationAndMicPermission()
         }
 
     /** Reactive mic / geolocation prompts from WebChromeClient. */
@@ -135,15 +137,6 @@ class MainActivity : AppCompatActivity() {
                     granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
                 geoCb.invoke(geoOrigin, allowed, false)
             }
-        }
-
-    /** Proactive startup location + microphone (system dialog on first install). */
-    private val startupPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-            /* WebChromeClient handles follow-up when web features run. */
-            recordMicrophonePermissionResultIfPresent(granted)
-            Log.d(TAG, "Startup permission result mic=${microphonePermissionStatus()}")
-            broadcastMicrophonePermissionStatus("startup")
         }
 
     /** Explicit microphone requests from the web app before Speech Coach starts recording. */
@@ -251,8 +244,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "FCM token bootstrapped from FirebaseMessaging API")
             }
         }
-
-        askNotificationPermission()
 
         clearStaleWebCacheIfNeeded(webView)
 
@@ -392,7 +383,8 @@ class MainActivity : AppCompatActivity() {
             allowContentAccess = true
             loadsImagesAutomatically = true
             allowFileAccess = false
-            cacheMode = WebSettings.LOAD_NO_CACHE
+            // LOAD_DEFAULT: reuse HTTP cache on repeat opens (LOAD_NO_CACHE caused slow cold starts).
+            cacheMode = WebSettings.LOAD_DEFAULT
             userAgentString = (userAgentString ?: "") + " AmyNestAndroid/1.0"
 
             // Optimal PWA scroll settings
@@ -498,6 +490,7 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
 
                 injectStartupFunnelEvent(view, "webview_page_finished", """{"url":${JSONObject.quote(url)}}""")
+                scheduleDeferredNotificationPermission(url)
 
                 ViewCompat.getRootWindowInsets(view)?.let { applyWebSafeAreaInsets(it) }
 
@@ -1227,10 +1220,28 @@ class MainActivity : AppCompatActivity() {
 
     // ── Notification permission ──────────────────────────────────────────────
 
+    /**
+     * Ask POST_NOTIFICATIONS once, ~5s after the first AmyNest page finishes loading.
+     * Location and microphone are requested only when a feature needs them
+     * (WebChromeClient geolocation, JS microphone bridge) — not at cold start.
+     */
+    private fun scheduleDeferredNotificationPermission(pageUrl: String) {
+        if (deferredNotificationScheduled) return
+        val host = try {
+            Uri.parse(pageUrl).host?.lowercase()
+        } catch (_: Throwable) {
+            null
+        } ?: return
+        if (host != "www.amynest.in" && host != "amynest.in") return
+        deferredNotificationScheduled = true
+        webView.postDelayed({
+            askNotificationPermission()
+        }, 5_000)
+    }
+
     private fun askNotificationPermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             pushBridge.setPermission(true)
-            askLocationAndMicPermission()
             return
         }
         if (ContextCompat.checkSelfPermission(
@@ -1239,37 +1250,9 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             pushBridge.setPermission(true)
-            askLocationAndMicPermission()
             return
         }
         notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    /** Request location + microphone on cold start (system dialogs). */
-    private fun askLocationAndMicPermission() {
-        val needed = buildList {
-            if (ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                add(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-            if (ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    Manifest.permission.RECORD_AUDIO,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                add(Manifest.permission.RECORD_AUDIO)
-            }
-        }
-        if (needed.isNotEmpty()) {
-            if (needed.contains(Manifest.permission.RECORD_AUDIO)) {
-                micPermissionPrefs.edit().putBoolean(MIC_PERMISSION_REQUESTED_KEY, true).apply()
-            }
-            Log.d(TAG, "Launching startup permissions: ${needed.joinToString()}")
-            startupPermissionLauncher.launch(needed.toTypedArray())
-        }
     }
 
     /** Serve bundled /audio-pack/ and /infant-sleep-audio/ from APK assets (offline). */

@@ -27,7 +27,7 @@ BACKEND_ORIGIN = "https://amynest-backend-dykj.onrender.com"
 # Canary — Render stays primary until CANARY_PERCENT reaches 100.
 # Deploy with CANARY_PERCENT=0 for no canary traffic (safe default).
 CANARY_BACKEND_ORIGIN = "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io"
-CANARY_PERCENT = "0"
+CANARY_PERCENT = "100"
 GCS_BUCKET = "amynest-audio-storage"
 REELS_CATALOG_GCS_PATH = "reels-hub/phase1/catalog.v1.json"
 # Set to "1" after Phase 2B certification. Rollback: set to "0" and redeploy Worker.

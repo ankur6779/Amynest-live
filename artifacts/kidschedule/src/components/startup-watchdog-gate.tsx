@@ -11,6 +11,8 @@ import {
   diagnosticsToTelemetry,
 } from "@/lib/startup-diagnostics";
 
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+
 /**
  * Global startup watchdog.
  *
@@ -29,7 +31,7 @@ import {
  * impossible: the user always gets a way forward within 10 seconds.
  */
 
-const WATCHDOG_DEADLINE_MS = 10_000;
+const WATCHDOG_DEADLINE_MS = isNativeAmyNestAndroidWrapper() ? 18_000 : 10_000;
 const READY_POLL_MS = 250;
 
 function appCoreReady(): boolean {

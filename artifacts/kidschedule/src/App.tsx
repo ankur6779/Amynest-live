@@ -55,6 +55,9 @@ function App() {
         setVersionDecision(decision);
         const isHardUpdate = decision.kind === "hard-update";
         setNativeForceUpdateActive(isHardUpdate);
+        if (isHardUpdate) {
+          setShouldLoadAppCore(false);
+        }
         if (decision.kind === "hard-update") {
           const { platform, installedVersion, policy } = decision;
           trackVersionAnalytics(
@@ -103,8 +106,9 @@ function App() {
     };
   }, []);
 
+  // Start AppCore immediately after first paint — do not block on version API.
+  // Hard-update replaces the tree when versionDecision arrives.
   useEffect(() => {
-    if (!versionDecision || versionDecision.kind === "hard-update") return;
     let cancelled = false;
     let secondFrame: number | null = null;
     const id = window.requestAnimationFrame(() => {
@@ -120,7 +124,7 @@ function App() {
         window.cancelAnimationFrame(secondFrame);
       }
     };
-  }, [versionDecision]);
+  }, []);
 
   if (versionDecision?.kind === "hard-update") {
     const { platform, installedVersion, policy } = versionDecision;
