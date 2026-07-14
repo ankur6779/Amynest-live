@@ -188,4 +188,31 @@ describe("useLessonPlayback lesson switch safety", () => {
       expect.objectContaining({ lessonParagraph: true }),
     );
   });
+
+  it("stops on early_completion instead of silently skipping paragraphs", async () => {
+    speakMock.mockResolvedValue({ success: false, error: "early_completion", layer: "api" });
+
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["First paragraph.", "Second paragraph.", "Third paragraph."],
+        lessonId: "lesson-early",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+
+    await vi.waitFor(() => {
+      expect(result.current.playbackError).toBe("early_completion");
+      expect(result.current.intent).toBe("idle");
+      expect(result.current.paragraphIdx).toBe(0);
+    });
+    expect(pauseMock).toHaveBeenCalled();
+    expect(speakMock).toHaveBeenCalledTimes(1);
+  });
 });

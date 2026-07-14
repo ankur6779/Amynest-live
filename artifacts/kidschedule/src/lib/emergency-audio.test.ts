@@ -75,4 +75,42 @@ describe("emergency-audio", () => {
       layer: "emergency_local",
     });
   });
+
+  it("attempts full synthesis for long lesson paragraphs before tone fallback", async () => {
+    const longParagraph =
+      "When your child feels big emotions, pause and breathe together before you respond with words.";
+    const speak = vi.fn();
+    const utterance = {
+      onstart: null as (() => void) | null,
+      onend: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+    };
+    Object.defineProperty(window, "speechSynthesis", {
+      value: {
+        cancel: vi.fn(),
+        speak: (u: typeof utterance) => {
+          speak(u);
+          u.onstart?.();
+          u.onend?.();
+        },
+        speaking: false,
+        pending: false,
+        getVoices: () => [],
+      },
+      configurable: true,
+    });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", {
+      value: function SpeechSynthesisUtterance(this: typeof utterance, text: string) {
+        Object.assign(this, utterance, { text });
+        return this;
+      },
+      configurable: true,
+    });
+
+    const { playEmergencyPhrase } = await import("@/lib/emergency-audio");
+    const played = playEmergencyPhrase(longParagraph);
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(played).resolves.toBe(true);
+    expect(speak).toHaveBeenCalled();
+  });
 });

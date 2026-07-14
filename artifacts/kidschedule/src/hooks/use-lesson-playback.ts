@@ -155,14 +155,6 @@ export function useLessonPlayback({
 
     if (!heard) {
       const errMsg = res && !res.success ? res.error : "playback_failed";
-      // FIX 4: a clip that started and played but tripped the early-completion
-      // guard must NOT halt the lesson. Treat it as completed and schedule the
-      // next paragraph instead of forcing the idle state.
-      if (errMsg === "early_completion") {
-        setPlaybackError(null);
-        advanceParagraph(session);
-        return;
-      }
       console.warn("[LessonPlayback] paragraph failed — staying on paragraph", {
         error: errMsg,
         layer: res?.layer,

@@ -145,10 +145,26 @@ function speakWithSynthesis(text: string, rate = 0.92): Promise<boolean> {
       u.onend = () => finish(true);
       u.onerror = () => finish(false);
       window.speechSynthesis.speak(u);
-      setTimeout(() => {
+      const startedAt = Date.now();
+      const maxWaitMs = Math.min(120_000, 2000 + text.length * 120);
+      const pollCompletion = () => {
+        if (done) return;
         const synth = window.speechSynthesis;
-        finish(started || synth.speaking || synth.pending);
-      }, Math.min(4000, 400 + text.length * 80));
+        if (!started && Date.now() - startedAt > 800) {
+          finish(false);
+          return;
+        }
+        if (started && !synth.speaking && !synth.pending) {
+          finish(true);
+          return;
+        }
+        if (Date.now() - startedAt >= maxWaitMs) {
+          finish(started);
+          return;
+        }
+        setTimeout(pollCompletion, 200);
+      };
+      setTimeout(pollCompletion, 200);
     } catch {
       resolve(false);
     }
@@ -168,14 +184,16 @@ export function resolveEmergencyPhrase(rawText: string): string | null {
 
 /** Play emergency phrase: synthesis first, then placeholder tone. */
 export async function playEmergencyPhrase(rawText: string): Promise<boolean> {
-  const phrase = resolveEmergencyPhrase(rawText);
-  if (!phrase) {
-    const idx = (rawText.codePointAt(0) ?? 65) % 26;
-    return playPhonicsPlaceholderTone(idx);
-  }
-  const spoke = await speakWithSynthesis(phrase);
+  const text = (rawText ?? "").trim();
+  if (!text) return playPhonicsPlaceholderTone(0);
+
+  const phrase = resolveEmergencyPhrase(text);
+  const synthesisTarget = phrase ?? text;
+  const spoke = await speakWithSynthesis(synthesisTarget);
   if (spoke) return true;
-  const key = normalizePhonicsLetterKey(phrase) ?? phrase[0]?.toLowerCase() ?? "a";
+
+  const key =
+    normalizePhonicsLetterKey(phrase ?? text) ?? text[0]?.toLowerCase() ?? "a";
   const idx = key.charCodeAt(0) - 97;
   return playPhonicsPlaceholderTone(Number.isFinite(idx) ? idx : 0);
 }

@@ -1864,7 +1864,11 @@ export async function speakAmyVoice(
       });
       pushFailure(failureChain, staticOnly, "static", cacheKey);
       fallbackUsed = true;
-      if (!shouldDeferElevenLabsFallback() && !isAmyVoiceOffline()) {
+      if (
+        !policy.forbidDynamicTts &&
+        !shouldDeferElevenLabsFallback() &&
+        !isAmyVoiceOffline()
+      ) {
         beginLayerTry(telemetry, "elevenlabs_catalog_fallback");
         const elevenFallback = await tryPlayWithWatchdog(
           "elevenlabs",
