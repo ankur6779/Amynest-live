@@ -280,10 +280,31 @@ export async function pruneStaleTokens(maxDays = 60): Promise<number> {
   return removed.length;
 }
 
+/** Remove legacy Capacitor APNs hex rows — never deliverable via FCM. */
+export async function pruneApnsHexTokens(): Promise<number> {
+  const removed = await db
+    .delete(pushTokensTable)
+    .where(sql`trim(${pushTokensTable.token}) ~ '^[0-9a-fA-F]{64}$'`)
+    .returning({ id: pushTokensTable.id });
+  if (removed.length > 0) {
+    logger.info({ removed: removed.length }, "Pruned undeliverable APNs hex push tokens");
+  }
+  return removed.length;
+}
+
 const FCM_INVALID_CODES = new Set([
   "messaging/registration-token-not-registered",
   "messaging/invalid-registration-token",
 ]);
+
+function fcmErrorMessage(err: unknown): string {
+  if (!err || typeof err !== "object") return "";
+  const e = err as { message?: unknown; errorInfo?: { message?: unknown } };
+  return (
+    (typeof e.message === "string" ? e.message : "") ||
+    (e.errorInfo && typeof e.errorInfo.message === "string" ? e.errorInfo.message : "")
+  );
+}
 
 export function isFcmInvalidTokenError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -293,7 +314,33 @@ export function isFcmInvalidTokenError(err: unknown): boolean {
     e.errorInfo && typeof e.errorInfo === "object" && typeof e.errorInfo.code === "string"
       ? e.errorInfo.code
       : "";
-  return FCM_INVALID_CODES.has(code) || FCM_INVALID_CODES.has(infoCode);
+  if (FCM_INVALID_CODES.has(code) || FCM_INVALID_CODES.has(infoCode)) return true;
+  const msg = fcmErrorMessage(err).toLowerCase();
+  return msg.includes("requested entity was not found");
+}
+
+/** Firebase/APNs project misconfiguration — not a bad device token. */
+export function isFcmApnsConfigurationError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { code?: unknown; errorInfo?: { code?: unknown; message?: unknown }; message?: unknown };
+  const code = typeof e.code === "string" ? e.code : "";
+  const infoCode =
+    e.errorInfo && typeof e.errorInfo === "object" && typeof e.errorInfo.code === "string"
+      ? e.errorInfo.code
+      : "";
+  if (code === "messaging/third-party-auth-error" || infoCode === "messaging/third-party-auth-error") {
+    return true;
+  }
+  const msg = (
+    (typeof e.message === "string" ? e.message : "") ||
+    (e.errorInfo && typeof e.errorInfo.message === "string" ? e.errorInfo.message : "")
+  ).toLowerCase();
+  return (
+    msg.includes("authentication credential") ||
+    msg.includes("oauth 2 access token") ||
+    msg.includes("apns credentials") ||
+    msg.includes("third-party-auth")
+  );
 }
 
 /** Capacitor iOS registers a 32-byte APNs token as 64 hex chars — not an FCM registration token. */
@@ -762,10 +809,17 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
           if (isFcmInvalidTokenError(err)) {
             await pruneInvalidToken(t.token, "fcm:unregistered");
           }
-          logger.error(
-            { err, userId: input.userId, token: t.token.slice(0, 20) },
-            "FCM iOS push failed",
-          );
+          if (isFcmApnsConfigurationError(err)) {
+            logger.warn(
+              { err: lastIosFcmError, userId: input.userId },
+              "FCM iOS push skipped — Firebase/APNs project configuration issue",
+            );
+          } else {
+            logger.error(
+              { err, userId: input.userId, token: t.token.slice(0, 20) },
+              "FCM iOS push failed",
+            );
+          }
           return false;
         }
       }),

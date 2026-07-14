@@ -263,8 +263,9 @@ router.get("/healthz/audio", async (_req, res) => {
       } else {
         const reader = streamRes.body.getReader();
         let bytes = 0;
-        const deadline = Date.now() + 8_000;
+        const deadline = Date.now() + 6_000;
         while (Date.now() < deadline) {
+          if (res.headersSent) break;
           const { done, value } = await reader.read();
           if (done) break;
           if (value?.length) bytes += value.length;
@@ -299,6 +300,8 @@ router.get("/healthz/audio", async (_req, res) => {
   };
 
   const ok = openAiConfigured && gcsReady && ttsStreamProbe.ok;
+
+  if (res.headersSent) return;
 
   res.status(ok ? 200 : 503).json({
     ok,

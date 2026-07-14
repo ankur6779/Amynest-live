@@ -13,6 +13,7 @@ import { logger } from "./logger";
 import {
   dispatchNotification,
   getOrCreatePreferences,
+  pruneApnsHexTokens,
   pruneStaleTokens,
 } from "../services/notificationDispatchService";
 import {
@@ -364,12 +365,17 @@ export function startNotificationCron(): void {
 
   // Token health sweep — daily at 03:00 UTC (global maintenance window).
   schedule("token_sweep", "0 3 * * *", async () => {
+    const hexRemoved = await withSafeDb(
+      "notification.token_sweep.apns_hex",
+      () => pruneApnsHexTokens(),
+      0,
+    );
     const removed = await withSafeDb(
       "notification.token_sweep",
       () => pruneStaleTokens(60),
       0,
     );
-    logger.info({ removed, job: "token_sweep" }, "Token sweep summary");
+    logger.info({ removed, hexRemoved, job: "token_sweep" }, "Token sweep summary");
   });
 
   // Legacy category crons replaced by global_notification_tick (per-user TZ).

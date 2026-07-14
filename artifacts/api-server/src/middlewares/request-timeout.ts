@@ -6,6 +6,16 @@ const REQUEST_TIMEOUT_MS = Number(process.env.API_REQUEST_TIMEOUT_MS ?? "5000");
 const LONG_REQUEST_TIMEOUT_MS = Number(
   process.env.API_LONG_REQUEST_TIMEOUT_MS ?? String(COACH_GATEWAY_TIMEOUT_MS),
 );
+/** Audio/TTS health probes stream from OpenAI + GCS — exceed default 5s API timeout. */
+const HEALTH_PROBE_TIMEOUT_MS = Number(process.env.API_HEALTH_PROBE_TIMEOUT_MS ?? "15000");
+
+/** Deep health probes (OpenAI TTS stream, Drive list, etc.). */
+const HEALTH_PROBE_PATH_PREFIXES = [
+  "/api/healthz/audio",
+  "/api/healthz/tts",
+  "/api/healthz/drive",
+  "/api/healthz/reels-catalog",
+];
 
 /** Routes that may wait on AI workers — must exceed worker timeout (45s). */
 const LONG_RUNNING_PATH_PREFIXES = [
@@ -29,6 +39,9 @@ const LONG_RUNNING_PATH_PREFIXES = [
 
 function resolveTimeoutMs(req: Request): number {
   const path = req.originalUrl?.split("?")[0] ?? "";
+  if (HEALTH_PROBE_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return HEALTH_PROBE_TIMEOUT_MS;
+  }
   if (LONG_RUNNING_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return LONG_REQUEST_TIMEOUT_MS;
   }

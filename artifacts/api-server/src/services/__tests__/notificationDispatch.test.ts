@@ -5,9 +5,11 @@ import { isDbIntegrationAvailable } from "../../test/db-integration.js";
 import { eq } from "drizzle-orm";
 import {
   pruneInvalidToken,
+  pruneApnsHexTokens,
   pruneStaleTokens,
   dispatchNotification,
   getOrCreatePreferences,
+  isFcmApnsConfigurationError,
   isFcmInvalidTokenError,
 } from "../notificationDispatchService";
 
@@ -67,6 +69,41 @@ test("isFcmInvalidTokenError flags only per-device unregistered errors", () => {
   assert.equal(isFcmInvalidTokenError(new Error("network")), false);
   assert.equal(isFcmInvalidTokenError(null), false);
   assert.equal(isFcmInvalidTokenError(undefined), false);
+});
+
+test("isFcmInvalidTokenError flags iOS NOT_FOUND entity messages", () => {
+  assert.equal(
+    isFcmInvalidTokenError({ message: "Requested entity was not found." }),
+    true,
+  );
+});
+
+test("isFcmApnsConfigurationError flags Firebase/APNs auth misconfiguration", () => {
+  assert.equal(
+    isFcmApnsConfigurationError({ code: "messaging/third-party-auth-error" }),
+    true,
+  );
+  assert.equal(
+    isFcmApnsConfigurationError({
+      message: "Request is missing required authentication credential",
+    }),
+    true,
+  );
+  assert.equal(
+    isFcmApnsConfigurationError({ code: "messaging/registration-token-not-registered" }),
+    false,
+  );
+});
+
+dbTest("pruneApnsHexTokens removes 64-char hex legacy APNs rows", async () => {
+  await cleanup(userId);
+  const hexToken = "a".repeat(64);
+  await db.insert(pushTokensTable).values({ userId, token: hexToken, platform: "ios" });
+  const removed = await pruneApnsHexTokens();
+  assert.ok(removed >= 1);
+  const rows = await db.select().from(pushTokensTable).where(eq(pushTokensTable.token, hexToken));
+  assert.equal(rows.length, 0);
+  await cleanup(userId);
 });
 
 dbTest("pruneInvalidToken removes the matching token row", async () => {
