@@ -191,6 +191,11 @@ export type PlayPreparedUrlOptions = {
   srcType?: AudioSrcType;
   isCancelled?: () => boolean;
   waitUntilEnd?: boolean;
+  /**
+   * Skip async blob prepare before play(). Required for lesson / catalog clips started
+   * from a tap — mobile WebViews drop the user-gesture token across fetch awaits.
+   */
+  preferDirectStream?: boolean;
 };
 
 export type SpeakResult =
@@ -1057,8 +1062,25 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     let traceEnd = "playPreparedUrl_exit";
     try {
-      const prepared = await prepareRemotePlaybackAudio(proxyUrl);
-      const audio = prepared ?? audioManager.create(proxyUrl);
+      // Lessons (and any preferDirectStream caller) must call audio.play() without an
+      // intervening fetch await — otherwise Android/iOS WebViews throw NotAllowedError
+      // and the lesson pipeline reports a false "couldn't play" failure.
+      const preferDirect =
+        opts.preferDirectStream === true ||
+        source === "lesson" ||
+        source === "spelling" ||
+        source === "catalog";
+
+      let audio: HTMLAudioElement;
+      if (preferDirect) {
+        audioManager.unlockFromUserGesture();
+        audioManager.primeSpeechUrlInUserGesture(proxyUrl);
+        audio = audioManager.create(proxyUrl);
+      } else {
+        const prepared = await prepareRemotePlaybackAudio(proxyUrl);
+        audio = prepared ?? audioManager.create(proxyUrl);
+      }
+
       const rate = opts.playbackRate ?? 1;
       if (rate !== 1) audio.playbackRate = rate;
 
@@ -1087,13 +1109,20 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
 
       if (!played) {
-        traceEnd = "play_failed";
+        const lastErr = audioManager.getLastPlayError() ?? "play_failed";
+        traceEnd = lastErr;
         emitAudioPlaybackEvent("audio_failed", {
           source: source as "spelling" | "poem_player" | "amy_voice",
-          error: "play_failed",
+          error: lastErr,
           phrase: opts.phrase,
         });
-        return { success: false, error: "play_failed" };
+        console.warn("[AmyVoicePlayback] playPreparedUrl play() failed", {
+          source,
+          error: lastErr,
+          proxyUrl: proxyUrl.slice(0, 120),
+          phrase: opts.phrase?.slice(0, 80),
+        });
+        return { success: false, error: lastErr };
       }
 
       if (opts.waitUntilEnd !== false) {
@@ -1108,25 +1137,6 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
             error: ended.error ?? "interrupted",
           });
           return { success: false, error: ended.error ?? "interrupted" };
-        }
-
-        if (source === "lesson") {
-          const playedSec = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
-          const expectedSec =
-            Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
-          const tooShort =
-            expectedSec > 1
-              ? playedSec < Math.min(0.25, expectedSec * 0.05)
-              : playedSec < 0.2;
-          if (tooShort) {
-            traceEnd = "early_completion";
-            emitAudioPlaybackEvent("audio_failed", {
-              source: source as "spelling" | "poem_player" | "amy_voice",
-              error: "early_completion",
-              phrase: opts.phrase,
-            });
-            return { success: false, error: "early_completion", layer: "static" };
-          }
         }
       }
 
@@ -1143,6 +1153,11 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         source: source as "spelling" | "poem_player" | "amy_voice",
         error: message,
         phrase: opts.phrase,
+      });
+      console.warn("[AmyVoicePlayback] playPreparedUrl exception", {
+        source,
+        error: message,
+        phrase: opts.phrase?.slice(0, 80),
       });
       return { success: false, error: message };
     } finally {

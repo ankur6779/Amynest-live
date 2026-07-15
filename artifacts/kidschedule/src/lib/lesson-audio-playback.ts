@@ -20,15 +20,45 @@ export async function playLessonParagraphStatic(
 ): Promise<SpeakResult> {
   const url = lookupStaticAudioUrlStrict(identity.text, "default");
   if (!url) {
+    console.warn("[LessonPlayback] static URL miss", {
+      lessonId: identity.lessonId,
+      paragraphIdx: identity.paragraphIdx,
+      textPreview: identity.text.slice(0, 100),
+      hash: identity.hash,
+    });
     return { success: false, error: "static_failed", layer: "static" };
   }
 
-  return amyVoiceController.playPreparedUrl(url, {
+  console.info("[LessonPlayback] static play start", {
+    lessonId: identity.lessonId,
+    paragraphIdx: identity.paragraphIdx,
+    url,
+    textPreview: identity.text.slice(0, 80),
+  });
+
+  const result = await amyVoiceController.playPreparedUrl(url, {
     source: "lesson",
     phrase: identity.text,
     srcType: "static",
     playbackRate: opts.playbackRate ?? 1,
     isCancelled: opts.isCancelled,
     waitUntilEnd: true,
+    preferDirectStream: true,
   });
+
+  if (!result.success) {
+    console.warn("[LessonPlayback] static play failed", {
+      lessonId: identity.lessonId,
+      paragraphIdx: identity.paragraphIdx,
+      url,
+      error: result.error,
+    });
+  } else {
+    console.info("[LessonPlayback] static play ended", {
+      lessonId: identity.lessonId,
+      paragraphIdx: identity.paragraphIdx,
+    });
+  }
+
+  return result;
 }

@@ -219,7 +219,7 @@ describe("TTS system validation", () => {
       });
 
       await waitFor(() => {
-        expect(result.current.playbackError).toBe("tts_no_audible_layer");
+        expect(result.current.playbackError).toBe("static_failed");
         expect(result.current.intent).toBe("idle");
       });
       expect(pauseMock).toHaveBeenCalled();

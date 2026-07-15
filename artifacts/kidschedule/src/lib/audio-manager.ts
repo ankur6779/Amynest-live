@@ -1476,12 +1476,14 @@ class AudioManagerImpl {
   ): Promise<AudioPlayResult> {
     return new Promise((resolve) => {
       let settled = false;
+      let fallbackTimer: number | undefined;
+      let pollTimer: number | undefined;
       const channel = this.channelForAudio(audio);
 
       const done = (result: AudioPlayResult) => {
         if (settled) return;
         settled = true;
-        window.clearTimeout(fallbackTimer);
+        if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
         if (pollTimer !== undefined) window.clearInterval(pollTimer);
         audio.onended = null;
         audio.onerror = null;
@@ -1494,13 +1496,23 @@ class AudioManagerImpl {
         resolve(result);
       };
 
+      // If play() already finished the clip (short / cached), onended may have
+      // fired before we attached the listener — treat as complete, never skip.
+      if (isCancelled()) {
+        done({ ok: false, error: "audio_cancelled" });
+        return;
+      }
+      if (audio.ended) {
+        done({ ok: true });
+        return;
+      }
+
       const durationSec =
         Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
       const defaultFallbackMs = durationSec > 0 ? (durationSec + 1) * 1000 : 30_000;
       const fallbackMs = options?.maxWaitMs ?? defaultFallbackMs;
 
-      let pollTimer: number | undefined;
-      const pollMs = options?.pollMs ?? 0;
+      const pollMs = options?.pollMs ?? 100;
       if (pollMs > 0) {
         pollTimer = window.setInterval(() => {
           if (isCancelled()) {
@@ -1513,7 +1525,7 @@ class AudioManagerImpl {
         }, pollMs);
       }
 
-      const fallbackTimer = window.setTimeout(() => {
+      fallbackTimer = window.setTimeout(() => {
         if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
         logStructured("waitUntilEnd fallback timeout", new Error("wait_until_end_timeout"), {
           attempt: 0,

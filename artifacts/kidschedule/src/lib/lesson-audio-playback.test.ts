@@ -40,6 +40,7 @@ describe("playLessonParagraphStatic", () => {
         srcType: "static",
         playbackRate: 1.1,
         waitUntilEnd: true,
+        preferDirectStream: true,
       }),
     );
   });

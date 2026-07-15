@@ -12,6 +12,10 @@ import {
 } from "@/lib/lesson-audio-identity";
 import { playLessonParagraphStatic } from "@/lib/lesson-audio-playback";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { audioManager } from "@/lib/audio-manager";
+import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
+import { resolveApiMediaUrl } from "@/lib/api";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 
 const LESSON_AUDIBLE_LAYERS = new Set([
   "static",
@@ -155,14 +159,21 @@ export function useLessonPlayback({
 
     if (!heard) {
       const errMsg = res && !res.success ? res.error : "playback_failed";
+      const gestureBlocked =
+        errMsg === "USER_INTERACTION_REQUIRED" ||
+        errMsg === "GESTURE_BLOCKED" ||
+        /user.?interaction|notallowed|gesture/i.test(errMsg);
       console.warn("[LessonPlayback] paragraph failed — staying on paragraph", {
         error: errMsg,
         layer: res?.layer,
+        paragraphIdx: paragraphIdxRef.current,
+        lessonId: lessonIdRef.current,
+        gestureBlocked,
       });
       intentRef.current = "idle";
       setIntent("idle");
       pauseVoice();
-      setPlaybackError(errMsg);
+      setPlaybackError(gestureBlocked ? "playback_blocked_tap_again" : errMsg);
       return;
     }
     setPlaybackError(null);
@@ -225,6 +236,7 @@ export function useLessonPlayback({
 
   const play = useCallback(() => {
     recordTtsUserGesture();
+    audioManager.unlockFromUserGesture();
     setPlaybackError(null);
     intentRef.current = "playing";
     setIntent("playing");
@@ -236,6 +248,10 @@ export function useLessonPlayback({
       idx,
     );
     if (identity) {
+      const staticUrl = lookupStaticAudioUrlStrict(identity.text, "default");
+      if (staticUrl) {
+        audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(staticUrl));
+      }
       prefetchLessonParagraph(identity, authFetch, voiceId, modelId);
     }
     speakParagraphAtRef.current(idx);
@@ -283,8 +299,16 @@ export function useLessonPlayback({
     setParagraphIdxState(nextIdx);
     paragraphIdxRef.current = nextIdx;
 
+    // Auto-play from useEffect is outside the user-gesture stack. On Android
+    // WebView that makes audio.play() fail immediately — show tap-to-start
+    // instead of a hard failure on open.
     if (autoPlay) {
+      if (isAndroidAmyNestAudioClient()) {
+        setPlaybackError("playback_blocked_tap_again");
+        return;
+      }
       recordTtsUserGesture();
+      audioManager.unlockFromUserGesture();
       intentRef.current = "playing";
       setIntent("playing");
       skipParagraphEffectRef.current = true;
