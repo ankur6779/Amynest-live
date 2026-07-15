@@ -5,6 +5,7 @@ import { useLessonPlayback } from "@/hooks/use-lesson-playback";
 const speakMock = vi.fn().mockResolvedValue({ success: true, layer: "static" });
 const pauseMock = vi.fn();
 const prefetchMock = vi.fn();
+const playLessonStaticMock = vi.fn().mockResolvedValue({ success: true, layer: "static" });
 
 vi.mock("@/hooks/use-amy-voice", () => ({
   useAmyVoice: () => ({
@@ -15,6 +16,10 @@ vi.mock("@/hooks/use-amy-voice", () => ({
     pause: pauseMock,
     primeSpeakGesture: vi.fn(),
   }),
+}));
+
+vi.mock("@/lib/lesson-audio-playback", () => ({
+  playLessonParagraphStatic: (...args: unknown[]) => playLessonStaticMock(...args),
 }));
 
 vi.mock("@/hooks/use-auth-fetch", () => ({
@@ -34,6 +39,8 @@ describe("useLessonPlayback lesson switch safety", () => {
     speakMock.mockClear();
     pauseMock.mockClear();
     prefetchMock.mockClear();
+    playLessonStaticMock.mockClear();
+    playLessonStaticMock.mockResolvedValue({ success: true, layer: "static" });
   });
 
   it("starts Lesson B from its resume index without Lesson A carryover", () => {
@@ -61,22 +68,25 @@ describe("useLessonPlayback lesson switch safety", () => {
       { initialProps: lessonA },
     );
 
-    expect(speakMock).toHaveBeenCalled();
-    const firstCall = speakMock.mock.calls.at(-1);
-    expect(firstCall?.[0]).toBe("A3");
-    expect(firstCall?.[1]?.audioIdentity?.lessonId).toBe("lesson-a");
-    expect(firstCall?.[1]?.audioIdentity?.paragraphIdx).toBe(3);
+    expect(playLessonStaticMock).toHaveBeenCalled();
+    const firstCall = playLessonStaticMock.mock.calls.at(-1);
+    expect(firstCall?.[0]).toMatchObject({
+      lessonId: "lesson-a",
+      paragraphIdx: 3,
+      text: "A3",
+    });
 
-    speakMock.mockClear();
+    playLessonStaticMock.mockClear();
 
     rerender(lessonB);
 
-    expect(speakMock).toHaveBeenCalled();
-    const secondCall = speakMock.mock.calls.at(-1);
-    expect(secondCall?.[0]).toBe("B1");
-    expect(secondCall?.[1]?.audioIdentity?.lessonId).toBe("lesson-b");
-    expect(secondCall?.[1]?.audioIdentity?.paragraphIdx).toBe(1);
-    expect(secondCall?.[1]?.audioIdentity?.text).toBe("B1");
+    expect(playLessonStaticMock).toHaveBeenCalled();
+    const secondCall = playLessonStaticMock.mock.calls.at(-1);
+    expect(secondCall?.[0]).toMatchObject({
+      lessonId: "lesson-b",
+      paragraphIdx: 1,
+      text: "B1",
+    });
   });
 
   it("passes audioIdentity on play after manual paragraph jump", () => {
@@ -99,9 +109,8 @@ describe("useLessonPlayback lesson switch safety", () => {
       result.current.play();
     });
 
-    const lastCall = speakMock.mock.calls.at(-1);
-    expect(lastCall?.[0]).toBe("P2");
-    expect(lastCall?.[1]?.audioIdentity).toMatchObject({
+    const lastCall = playLessonStaticMock.mock.calls.at(-1);
+    expect(lastCall?.[0]).toMatchObject({
       lessonId: "lesson-jump",
       paragraphIdx: 2,
       text: "P2",
@@ -158,12 +167,68 @@ describe("useLessonPlayback lesson switch safety", () => {
     });
   });
 
-  it("auto-advances to the next paragraph when onFinished fires", async () => {
+  it("auto-advances to the next paragraph when static playback succeeds", async () => {
+    playLessonStaticMock
+      .mockResolvedValueOnce({ success: true, layer: "static" })
+      .mockResolvedValueOnce({ success: true, layer: "static" });
+
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["First paragraph.", "Second paragraph."],
+        lessonId: "lesson-chain",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+
+    await vi.waitFor(() => {
+      expect(result.current.paragraphIdx).toBe(1);
+    });
+    expect(playLessonStaticMock).toHaveBeenCalled();
+    expect(speakMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to speak when static playback fails", async () => {
+    playLessonStaticMock.mockResolvedValueOnce({ success: false, error: "play_failed", layer: "static" });
+    speakMock.mockImplementation((_text: string, opts?: { onFinished?: () => void }) => {
+      opts?.onFinished?.();
+      return Promise.resolve({ success: true, layer: "emergency_local" });
+    });
+
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["First paragraph.", "Second paragraph."],
+        lessonId: "lesson-fallback",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+
+    await vi.waitFor(() => {
+      expect(speakMock).toHaveBeenCalled();
+      expect(result.current.paragraphIdx).toBe(1);
+    });
+  });
+
+  it("auto-advances to the next paragraph when speak fallback onFinished fires", async () => {
+    playLessonStaticMock.mockResolvedValue({ success: false, error: "static_failed", layer: "static" });
     speakMock.mockImplementation((text: string, opts?: { onFinished?: () => void }) => {
       if (text === "First paragraph.") {
         opts?.onFinished?.();
       }
-      return Promise.resolve({ success: true, layer: "static" });
+      return Promise.resolve({ success: true, layer: "emergency_local" });
     });
 
     const { result } = renderHook(() =>
@@ -181,15 +246,18 @@ describe("useLessonPlayback lesson switch safety", () => {
       result.current.play();
     });
 
-    expect(result.current.paragraphIdx).toBe(1);
+    await vi.waitFor(() => {
+      expect(result.current.paragraphIdx).toBe(1);
+    });
     expect(result.current.intent).toBe("playing");
-    expect(speakMock).toHaveBeenLastCalledWith(
-      "Second paragraph.",
+    expect(speakMock).toHaveBeenCalledWith(
+      "First paragraph.",
       expect.objectContaining({ lessonParagraph: true }),
     );
   });
 
   it("stops on early_completion instead of silently skipping paragraphs", async () => {
+    playLessonStaticMock.mockResolvedValueOnce({ success: false, error: "static_failed", layer: "static" });
     speakMock.mockResolvedValue({ success: false, error: "early_completion", layer: "api" });
 
     const { result } = renderHook(() =>

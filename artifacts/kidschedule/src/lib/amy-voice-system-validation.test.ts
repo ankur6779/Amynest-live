@@ -30,6 +30,7 @@ vi.mock("@/hooks/use-auth-fetch", () => ({
 
 const speakMock = vi.fn();
 const pauseMock = vi.fn();
+const playLessonStaticMock = vi.fn();
 let amyState = { speaking: false, loading: false, error: null as string | null };
 
 vi.mock("@/hooks/use-amy-voice", () => ({
@@ -41,6 +42,10 @@ vi.mock("@/hooks/use-amy-voice", () => ({
     loading: amyState.loading,
     error: amyState.error,
   }),
+}));
+
+vi.mock("@/lib/lesson-audio-playback", () => ({
+  playLessonParagraphStatic: (...args: unknown[]) => playLessonStaticMock(...args),
 }));
 
 describe("TTS system validation", () => {
@@ -160,15 +165,8 @@ describe("TTS system validation", () => {
   });
 
   describe("5. Audio Lessons — paragraph chaining", () => {
-    it("play starts paragraph; onFinished advances; pause stops chain", async () => {
-      speakMock.mockImplementation((_text: string, opts?: { onFinished?: () => void }) => {
-        amyState.speaking = true;
-        return Promise.resolve({ success: true, layer: "static" }).then((res) => {
-          opts?.onFinished?.();
-          amyState.speaking = false;
-          return res;
-        });
-      });
+    it("play starts paragraph; static playback advances; pause stops chain", async () => {
+      playLessonStaticMock.mockResolvedValue({ success: true, layer: "static" });
 
       const onComplete = vi.fn();
       const { result } = renderHook(() =>
@@ -185,9 +183,9 @@ describe("TTS system validation", () => {
       });
 
       await waitFor(() => {
-        expect(speakMock).toHaveBeenCalledWith(
-          "First paragraph.",
-          expect.objectContaining({ waitUntilEnd: true, lessonParagraph: true }),
+        expect(playLessonStaticMock).toHaveBeenCalledWith(
+          expect.objectContaining({ text: "First paragraph.", paragraphIdx: 0 }),
+          expect.any(Object),
         );
       });
 
@@ -204,6 +202,7 @@ describe("TTS system validation", () => {
     });
 
     it("failed paragraph sets playbackError and stops (no silent hang)", async () => {
+      playLessonStaticMock.mockResolvedValue({ success: false, error: "static_failed", layer: "static" });
       speakMock.mockResolvedValue({ success: false, error: "tts_no_audible_layer", layer: "text_visual" });
 
       const { result } = renderHook(() =>

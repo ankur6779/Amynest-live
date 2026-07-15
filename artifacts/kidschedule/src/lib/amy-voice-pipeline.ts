@@ -1560,6 +1560,42 @@ function finalizeSuccess(
       });
       return { success: false, error: "early_completion", layer: result.layer };
     }
+    if (
+      ctx.playbackMode === "full-required" &&
+      expected > 0 &&
+      !shouldTriggerCompletion({
+        mode: ctx.playbackMode,
+        actualPlayedDuration: played,
+        expectedDuration: expected,
+      })
+    ) {
+      logTtsEarlyCompletion({
+        errorType: "early_completion",
+        mode: ctx.playbackMode,
+        playedDuration: played,
+        expectedDuration: expected,
+        usedStreaming: result.usedStreaming,
+      });
+      return { success: false, error: "early_completion", layer: result.layer };
+    }
+    if (
+      ctx.playbackMode === "full-required" &&
+      expected <= 0 &&
+      (result.layer === "static" ||
+        result.layer === "cache" ||
+        result.layer === "api" ||
+        result.layer === "elevenlabs") &&
+      played < 0.2
+    ) {
+      logTtsEarlyCompletion({
+        errorType: "early_completion",
+        mode: ctx.playbackMode,
+        playedDuration: played,
+        expectedDuration: expected,
+        usedStreaming: result.usedStreaming,
+      });
+      return { success: false, error: "early_completion", layer: result.layer };
+    }
     if (ctx.completionFinalized) {
       return { success: true, layer: result.layer };
     }

@@ -10,6 +10,7 @@ import {
   logLessonAudioIdentity,
   type AudioIdentity,
 } from "@/lib/lesson-audio-identity";
+import { playLessonParagraphStatic } from "@/lib/lesson-audio-playback";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 const LESSON_AUDIBLE_LAYERS = new Set([
@@ -166,7 +167,7 @@ export function useLessonPlayback({
       return;
     }
     setPlaybackError(null);
-  }, [pauseVoice, advanceParagraph]);
+  }, [pauseVoice]);
 
   const speakParagraphAt = useCallback(
     (idx: number) => {
@@ -183,29 +184,45 @@ export function useLessonPlayback({
       logLessonAudioIdentity(identity, { phase: "playback_start" });
 
       const session = ++playbackSessionRef.current;
-      void speak(identity.text, {
-        waitUntilEnd: true,
-        lessonParagraph: true,
-        audioIdentity: identity,
-        lessonId: activeLessonId,
-        lessonParagraphIndex: idx,
-        playbackMode: "full-required",
-        onFinished: () => advanceParagraph(session),
-      })
-        .then((res) => handleSpeakResult(session, res))
-        .catch((err: unknown) => {
-          if (session !== playbackSessionRef.current) return;
-          if (intentRef.current !== "playing") return;
-          console.warn("[LessonPlayback] speak rejected", err);
-          intentRef.current = "idle";
-          setIntent("idle");
-          pauseVoice();
-          setPlaybackError(
-            err instanceof Error ? err.message : "playback_failed",
-          );
+      const isCancelled = () =>
+        session !== playbackSessionRef.current || intentRef.current !== "playing";
+
+      void (async () => {
+        const staticRes = await playLessonParagraphStatic(identity, {
+          playbackRate,
+          isCancelled,
         });
+        if (isCancelled()) return;
+
+        if (staticRes.success) {
+          handleSpeakResult(session, { ...staticRes, layer: "static" });
+          advanceParagraph(session);
+          return;
+        }
+
+        void speak(identity.text, {
+          waitUntilEnd: true,
+          lessonParagraph: true,
+          audioIdentity: identity,
+          lessonId: activeLessonId,
+          lessonParagraphIndex: idx,
+          playbackMode: "full-required",
+          onFinished: () => advanceParagraph(session),
+        })
+          .then((res) => handleSpeakResult(session, res))
+          .catch((err: unknown) => {
+            if (isCancelled()) return;
+            console.warn("[LessonPlayback] speak rejected", err);
+            intentRef.current = "idle";
+            setIntent("idle");
+            pauseVoice();
+            setPlaybackError(
+              err instanceof Error ? err.message : "playback_failed",
+            );
+          });
+      })();
     },
-    [speak, advanceParagraph, handleSpeakResult, pauseVoice],
+    [speak, playbackRate, advanceParagraph, handleSpeakResult, pauseVoice],
   );
 
   speakParagraphAtRef.current = speakParagraphAt;
