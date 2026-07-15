@@ -20,6 +20,13 @@ import {
   type LessonSeries,
   type LessonTier,
 } from "@/lib/audio-lessons";
+import { createAudioIdentity } from "@/lib/lesson-audio-identity";
+import {
+  ensureLessonParagraphWarmed,
+  warmLessonParagraphStatic,
+} from "@/lib/lesson-audio-playback";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { audioManager } from "@/lib/audio-manager";
 import {
   AGE_TILE_META,
   findResumeTarget,
@@ -267,6 +274,29 @@ export default function AudioLessonsPage() {
     async (l: Lesson, opts?: { series?: LessonSeries | null; autoPlay?: boolean }) => {
       if (unlocking) return;
       const access = getLessonAccess(l);
+
+      // Warm paragraph audio during the lesson-card gesture so Play can use a
+      // local blob URL (required on Android WebView for reliable decode).
+      recordTtsUserGesture();
+      audioManager.unlockFromUserGesture();
+      const paragraphs = getLessonText(l).paragraphs;
+      const resumeIdx = loadResume()[l.id] ?? 0;
+      const startIdx =
+        resumeIdx > 0 && resumeIdx < paragraphs.length ? resumeIdx : 0;
+      const startText = paragraphs[startIdx];
+      if (startText?.trim()) {
+        try {
+          const identity = createAudioIdentity(l.id, startIdx, startText);
+          warmLessonParagraphStatic(identity);
+          await ensureLessonParagraphWarmed(identity, 4_000);
+          const next = paragraphs[startIdx + 1];
+          if (next?.trim()) {
+            warmLessonParagraphStatic(createAudioIdentity(l.id, startIdx + 1, next));
+          }
+        } catch (err) {
+          console.warn("[AudioLessons] warm before open failed", err);
+        }
+      }
 
       if (access === "free-sample") {
         openLessonPlayer(l, opts);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Gauge, Loader2, Pause, Play, SkipBack, SkipForward, X } from "lucide-react";
 import {
@@ -10,10 +10,13 @@ import {
 import { useLessonPlayback } from "@/hooks/use-lesson-playback";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
+import { warmLessonParagraphStatic } from "@/lib/lesson-audio-playback";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { createAudioIdentity } from "@/lib/lesson-audio-identity";
 import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
+import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 
 import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
 
@@ -50,6 +53,7 @@ export function PlayerSheet({
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const [rate, setRate] = useState<number>(1);
+  const playStartedFromPointerRef = useRef(false);
 
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs.length > 0 ? text.paragraphs : [""];
@@ -83,6 +87,21 @@ export function PlayerSheet({
   });
 
   const playing = intent === "playing";
+
+  // Warm current + next paragraph blobs as soon as the sheet is visible so Play
+  // never has to await fetch (mobile WebView gesture + Range/206 constraints).
+  useEffect(() => {
+    if (!visible) return;
+    for (const idx of [paragraphIdx, paragraphIdx + 1]) {
+      const txt = paragraphs[idx];
+      if (!txt?.trim()) continue;
+      try {
+        warmLessonParagraphStatic(createAudioIdentity(lesson.id, idx, txt));
+      } catch {
+        /* identity validation */
+      }
+    }
+  }, [visible, lesson.id, paragraphIdx, paragraphs]);
 
   useEffect(() => {
     onPlaybackChange?.({ playing, loading: loading && !speaking, play, pause });
@@ -320,9 +339,23 @@ export function PlayerSheet({
               primeSpeakGesture(txt);
               primeStaticAudioInUserGesture(txt, "default");
               const identity = createAudioIdentity(lesson.id, paragraphIdx, txt);
+              warmLessonParagraphStatic(identity);
               prefetchLessonParagraph(identity, authFetch, VOICE_AMY_EN, MODEL_EN);
+              // Android WebView: start play inside pointerdown so audio.play()
+              // keeps the user-gesture token (click is often too late after await).
+              if (
+                !playing &&
+                (isAndroidAmyNestAudioClient() || isMobileStaticAudioDevice())
+              ) {
+                playStartedFromPointerRef.current = true;
+                play();
+              }
             }}
             onClick={() => {
+              if (playStartedFromPointerRef.current) {
+                playStartedFromPointerRef.current = false;
+                return;
+              }
               if (playing) pause();
               else play();
             }}
