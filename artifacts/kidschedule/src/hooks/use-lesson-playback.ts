@@ -134,7 +134,6 @@ export function useLessonPlayback({
     speaking,
     loading,
     error,
-    speak,
     pause: pauseVoice,
     primeSpeakGesture,
   } = useAmyVoice({
@@ -200,29 +199,18 @@ export function useLessonPlayback({
           return;
         }
 
-        void speak(identity.text, {
-          waitUntilEnd: true,
-          lessonParagraph: true,
-          audioIdentity: identity,
+        // Lessons are 100% pre-generated static catalog — never fall back to the Amy
+        // voice pipeline (emergency tones + onFinished would chain-skip paragraphs).
+        console.warn("[LessonPlayback] static playback failed — stopping", {
+          error: staticRes.error,
+          layer: staticRes.layer,
+          paragraphIdx: idx,
           lessonId: activeLessonId,
-          lessonParagraphIndex: idx,
-          playbackMode: "full-required",
-          onFinished: () => advanceParagraph(session),
-        })
-          .then((res) => handleSpeakResult(session, res))
-          .catch((err: unknown) => {
-            if (isCancelled()) return;
-            console.warn("[LessonPlayback] speak rejected", err);
-            intentRef.current = "idle";
-            setIntent("idle");
-            pauseVoice();
-            setPlaybackError(
-              err instanceof Error ? err.message : "playback_failed",
-            );
-          });
+        });
+        handleSpeakResult(session, { ...staticRes, layer: staticRes.layer ?? "static" });
       })();
     },
-    [speak, playbackRate, advanceParagraph, handleSpeakResult, pauseVoice],
+    [playbackRate, advanceParagraph, handleSpeakResult],
   );
 
   speakParagraphAtRef.current = speakParagraphAt;

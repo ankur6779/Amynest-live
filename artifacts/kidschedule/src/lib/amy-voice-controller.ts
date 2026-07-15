@@ -1109,6 +1109,25 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           });
           return { success: false, error: ended.error ?? "interrupted" };
         }
+
+        if (source === "lesson") {
+          const playedSec = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+          const expectedSec =
+            Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+          const tooShort =
+            expectedSec > 1
+              ? playedSec < Math.min(0.25, expectedSec * 0.05)
+              : playedSec < 0.2;
+          if (tooShort) {
+            traceEnd = "early_completion";
+            emitAudioPlaybackEvent("audio_failed", {
+              source: source as "spelling" | "poem_player" | "amy_voice",
+              error: "early_completion",
+              phrase: opts.phrase,
+            });
+            return { success: false, error: "early_completion", layer: "static" };
+          }
+        }
       }
 
       emitAudioPlaybackEvent("audio_completed", {
