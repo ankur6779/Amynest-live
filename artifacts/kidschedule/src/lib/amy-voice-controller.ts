@@ -116,6 +116,7 @@ import {
 } from "@/lib/audio-root-cause-trace";
 import {
   resolvePlaybackMode,
+  waitForSafePlaybackCompletion,
   type PlaybackMode,
 } from "@/lib/amy-voice-playback-contract";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
@@ -1126,17 +1127,33 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
 
       if (opts.waitUntilEnd !== false) {
-        const ended = await audioManager.waitUntilEnd(
-          audio,
-          opts.isCancelled ?? (() => false),
-        );
-        if (!ended.ok) {
-          traceEnd = ended.error ?? "interrupted";
-          emitAudioPlaybackEvent("audio_interrupted", {
-            source: source as "spelling" | "poem_player" | "amy_voice",
-            error: ended.error ?? "interrupted",
+        const isCancelled = opts.isCancelled ?? (() => false);
+        if (source === "lesson") {
+          const completion = await waitForSafePlaybackCompletion({
+            audio,
+            mode: "full-required",
+            isCancelled,
           });
-          return { success: false, error: ended.error ?? "interrupted" };
+          if (!completion.ok) {
+            const err = completion.earlyCompletion ? "early_completion" : "interrupted";
+            traceEnd = err;
+            emitAudioPlaybackEvent("audio_failed", {
+              source: source as "spelling" | "poem_player" | "amy_voice",
+              error: err,
+              phrase: opts.phrase,
+            });
+            return { success: false, error: err, layer: "static" };
+          }
+        } else {
+          const ended = await audioManager.waitUntilEnd(audio, isCancelled);
+          if (!ended.ok) {
+            traceEnd = ended.error ?? "interrupted";
+            emitAudioPlaybackEvent("audio_interrupted", {
+              source: source as "spelling" | "poem_player" | "amy_voice",
+              error: ended.error ?? "interrupted",
+            });
+            return { success: false, error: ended.error ?? "interrupted" };
+          }
         }
       }
 

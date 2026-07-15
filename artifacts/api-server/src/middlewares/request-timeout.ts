@@ -17,6 +17,9 @@ const HEALTH_PROBE_PATH_PREFIXES = [
   "/api/healthz/reels-catalog",
 ];
 
+/** Same-origin GCS audio streams (rhymes/lullabies) — full-buffer download can exceed 5s. */
+const AUDIO_STREAM_PATH_PREFIXES = ["/api/audio/stream/"];
+
 /** Routes that may wait on AI workers — must exceed worker timeout (45s). */
 const LONG_RUNNING_PATH_PREFIXES = [
   "/api/routines/generate-ai",
@@ -37,9 +40,12 @@ const LONG_RUNNING_PATH_PREFIXES = [
   "/api/ai/",
 ];
 
-function resolveTimeoutMs(req: Request): number {
+export function resolveRequestTimeoutMs(req: Request): number {
   const path = req.originalUrl?.split("?")[0] ?? "";
   if (HEALTH_PROBE_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return HEALTH_PROBE_TIMEOUT_MS;
+  }
+  if (AUDIO_STREAM_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return HEALTH_PROBE_TIMEOUT_MS;
   }
   if (LONG_RUNNING_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
@@ -53,7 +59,7 @@ function resolveTimeoutMs(req: Request): number {
  * Coach paths use COACH_GATEWAY_TIMEOUT_MS (65s) so the gateway never fires before the worker (45s).
  */
 export function requestTimeout(req: Request, res: Response, next: NextFunction): void {
-  const timeoutMs = resolveTimeoutMs(req);
+  const timeoutMs = resolveRequestTimeoutMs(req);
   const timer = setTimeout(() => {
     if (res.headersSent) return;
     void (async () => {
