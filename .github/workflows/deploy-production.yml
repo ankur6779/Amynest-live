@@ -1,7 +1,8 @@
-# Production deploy — runs all CI gates first; Render/Hetzner deploy only when green.
+# Production deploy — runs all CI gates first; then Pages (static), Render API standby, Hetzner worker.
 #
-# Render autoDeployTrigger is off in render.yaml; this workflow is the sole main-branch
-# deploy path (plus workflow_dispatch on legacy deploy-* workflows for emergencies).
+# Live static: Cloudflare Pages (amynest-web) → www.amynest.in
+# Live API: Coolify (auto-deploy via Coolify Git webhook — not this workflow)
+# Render autoDeployTrigger is off in render.yaml; API standby is triggered here.
 
 name: Production deploy (gated)
 
@@ -51,10 +52,10 @@ jobs:
       - name: Typecheck (libs + artifacts + scripts)
         run: pnpm run typecheck
 
-  deploy-render:
-    name: Trigger Render deploys
+  deploy-pages:
+    name: Deploy static SPA (Cloudflare Pages)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: [crash-release-gates, routine-engine-gates, audio-gates, chat-platform-gates, typecheck-gate]
     if: |
       !contains(needs.*.result, 'failure') &&
@@ -63,21 +64,54 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Trigger production deploys
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Deploy to Cloudflare Pages
         env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: |
-          if [ -z "$RENDER_API_KEY" ]; then
-            echo "RENDER_API_KEY not configured — cannot deploy (Render autoDeploy is off)."
-            exit 1
-          fi
-          bash scripts/trigger-render-deploy.sh "${{ github.sha }}"
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+          VITE_APP_API_ORIGIN: https://www.amynest.in
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_VAPID_KEY: ${{ secrets.VITE_FIREBASE_VAPID_KEY }}
+          VITE_GA4_MEASUREMENT_ID: ${{ secrets.VITE_GA4_MEASUREMENT_ID }}
+        run: bash scripts/deploy-cloudflare-pages.sh
 
       - name: Post-deploy smoke (production)
         run: bash scripts/post-deploy-smoke.sh
         env:
           SMOKE_BASE_URL: https://www.amynest.in
-          SMOKE_API_URL: https://amynest-backend-dykj.onrender.com
+          SMOKE_API_URL: https://www.amynest.in
+
+  deploy-render-api:
+    name: Trigger Render API standby deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [crash-release-gates, routine-engine-gates, audio-gates, chat-platform-gates, typecheck-gate]
+    if: |
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      github.repository == 'ankur6779/Amynest-live'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Render API standby deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "RENDER_API_KEY not configured — skipping Render API standby deploy."
+            exit 0
+          fi
+          bash scripts/trigger-render-deploy.sh "${{ github.sha }}"
 
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker

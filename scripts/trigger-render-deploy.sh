@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Trigger Render deploys for AmyNest production services (main branch).
+# Trigger Render API hot-standby deploy (main branch).
+# Static SPA is on Cloudflare Pages — see scripts/deploy-cloudflare-pages.sh.
 # Requires RENDER_API_KEY (Account Settings → API Keys on render.com).
 set -euo pipefail
 
@@ -10,11 +11,10 @@ fi
 
 COMMIT_ID="${1:-}"
 
-# Production service IDs (Render Dashboard → service → Settings).
+# Render API hot standby only — live API is Coolify (www.amynest.in/api/* via CF Worker).
 # AI worker runs on Hetzner (see docs/hetzner-ai-worker.md), not Render.
 SERVICES=(
-  "srv-d85k80jtqb8s7382m7i0" # Amynest-live-1 (static web)
-  "srv-d85k8jbtqb8s7382mjng" # Amynest-backend (API)
+  "srv-d85k8jbtqb8s7382mjng" # Amynest-backend (API standby)
 )
 
 failed=0

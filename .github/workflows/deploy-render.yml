@@ -1,4 +1,5 @@
 # DEPRECATED entry point — use "Production deploy (gated)" on main pushes.
+# Triggers Render API hot standby only (static is Cloudflare Pages).
 # Kept for manual emergency deploy only (bypasses CI gates — use with care).
 
 name: Deploy Render (production)

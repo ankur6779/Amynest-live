@@ -101,6 +101,11 @@ import {
 } from "@/lib/tts-playback";
 import { prepareRemotePlaybackAudio } from "@/lib/static-audio";
 import {
+  attachAudioPipelineElementListeners,
+  logAudioPipeline,
+  setAudioPipelineMachineState,
+} from "@/lib/debug-audio-pipeline";
+import {
   logAudioHealthFailure,
   logAudioHealthFallback,
   logAudioHealthSuccess,
@@ -1072,6 +1077,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         source === "catalog";
 
       let audio: HTMLAudioElement;
+      let detachPipelineListeners = () => {};
       if (preferDirect) {
         audioManager.unlockFromUserGesture();
         audioManager.primeSpeechUrlInUserGesture(proxyUrl);
@@ -1080,6 +1086,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         const prepared = await prepareRemotePlaybackAudio(proxyUrl);
         audio = prepared ?? audioManager.create(proxyUrl);
       }
+      detachPipelineListeners = attachAudioPipelineElementListeners(audio, source);
 
       const rate = opts.playbackRate ?? 1;
       if (rate !== 1) audio.playbackRate = rate;
@@ -1104,6 +1111,8 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         { channel: "speech", interrupt: true },
       );
 
+      setAudioPipelineMachineState("audible_start", { played, source });
+
       if (traceModule) {
         traceAudioManagerPlayResult(traceModule, played);
       }
@@ -1122,6 +1131,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           proxyUrl: proxyUrl.slice(0, 120),
           phrase: opts.phrase?.slice(0, 80),
         });
+        logAudioPipeline("playPreparedUrl_failed", {
+          detail: { source, error: lastErr, preferDirect },
+        });
+        detachPipelineListeners();
         return { success: false, error: lastErr };
       }
 
@@ -1132,10 +1145,14 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         );
         if (!ended.ok) {
           traceEnd = ended.error ?? "interrupted";
+          logAudioPipeline("playPreparedUrl_interrupted", {
+            detail: { error: ended.error, source },
+          });
           emitAudioPlaybackEvent("audio_interrupted", {
             source: source as "spelling" | "poem_player" | "amy_voice",
             error: ended.error ?? "interrupted",
           });
+          detachPipelineListeners();
           return { success: false, error: ended.error ?? "interrupted" };
         }
       }
@@ -1144,6 +1161,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         source: source as "spelling" | "poem_player" | "amy_voice",
         phrase: opts.phrase,
       });
+      logAudioPipeline("playPreparedUrl_success", {
+        detail: { source, preferDirect, waitUntilEnd: opts.waitUntilEnd !== false },
+      });
+      detachPipelineListeners();
       traceEnd = "playPreparedUrl_success";
       return { success: true, layer: "static" };
     } catch (err) {
@@ -1159,6 +1180,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         error: message,
         phrase: opts.phrase?.slice(0, 80),
       });
+      logAudioPipeline("playPreparedUrl_exception", { detail: { source, error: message } });
       return { success: false, error: message };
     } finally {
       if (playbackTraceId) {

@@ -17,6 +17,7 @@ import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
+import { AudioDiagnosticsPanel } from "@/components/audio-lessons/audio-diagnostics-panel";
 
 import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
 
@@ -235,6 +236,13 @@ export function PlayerSheet({
                 : "Amy's voice couldn't play this paragraph. Tap Play to try again."}
           </div>
         )}
+
+        <AudioDiagnosticsPanel
+          paragraphIdx={paragraphIdx}
+          lessonId={lesson.id}
+          intent={intent}
+          playbackError={playbackError}
+        />
 
         <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
           {paragraphs.map((_, i) => (

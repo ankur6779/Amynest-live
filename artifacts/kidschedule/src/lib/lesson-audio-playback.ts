@@ -15,7 +15,13 @@ import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 import {
   lookupStaticAudioUrlStrict,
   prepareRemotePlaybackAudio,
+  isStaticAudioMapReady,
 } from "@/lib/static-audio";
+import {
+  logAudioPipeline,
+  setAudioPipelineContext,
+  setAudioPipelineMachineState,
+} from "@/lib/debug-audio-pipeline";
 
 export type PlayLessonParagraphOptions = {
   playbackRate?: number;
@@ -105,7 +111,20 @@ export async function playLessonParagraphStatic(
   opts: PlayLessonParagraphOptions = {},
 ): Promise<SpeakResult> {
   const proxyUrl = lookupStaticAudioUrlStrict(identity.text, "default");
+  setAudioPipelineMachineState("static_lookup", {
+    mapReady: isStaticAudioMapReady(),
+    paragraphIdx: identity.paragraphIdx,
+  });
   if (!proxyUrl) {
+    logAudioPipeline("static_url_miss", {
+      paragraphIdx: identity.paragraphIdx,
+      lessonId: identity.lessonId,
+      detail: {
+        mapReady: isStaticAudioMapReady(),
+        hash: identity.hash,
+        textPreview: identity.text.slice(0, 80),
+      },
+    });
     console.warn("[LessonPlayback] static URL miss", {
       lessonId: identity.lessonId,
       paragraphIdx: identity.paragraphIdx,
@@ -118,16 +137,22 @@ export async function playLessonParagraphStatic(
   // Prefer already-warmed blob (mobile-safe). Never await fetch here — that drops
   // the user-gesture token and causes NotAllowedError / play_failed on WebViews.
   const playUrl = resolvePlayUrl(identity, proxyUrl);
-  if (!playUrl.startsWith("blob:")) {
+  const warmed = playUrl.startsWith("blob:");
+  if (!warmed) {
     warmLessonParagraphStatic(identity);
   }
 
-  console.info("[LessonPlayback] static play start", {
-    lessonId: identity.lessonId,
+  setAudioPipelineContext({
+    audioUrl: warmed ? `blob:warmed(${identity.hash})` : playUrl,
     paragraphIdx: identity.paragraphIdx,
-    url: playUrl.startsWith("blob:") ? "blob:warmed" : playUrl,
-    textPreview: identity.text.slice(0, 80),
-    mobile: isMobileStaticAudioDevice(),
+    lessonId: identity.lessonId,
+  });
+  setAudioPipelineMachineState("static_play", { warmed, proxyUrl });
+  logAudioPipeline("static_play_start", {
+    paragraphIdx: identity.paragraphIdx,
+    lessonId: identity.lessonId,
+    audioUrl: warmed ? "blob:warmed" : playUrl,
+    detail: { mobile: isMobileStaticAudioDevice(), warmed },
   });
 
   const result = await amyVoiceController.playPreparedUrl(playUrl, {
@@ -141,6 +166,11 @@ export async function playLessonParagraphStatic(
   });
 
   if (!result.success) {
+    logAudioPipeline("static_play_failed", {
+      paragraphIdx: identity.paragraphIdx,
+      lessonId: identity.lessonId,
+      detail: { error: result.error },
+    });
     console.warn("[LessonPlayback] static play failed", {
       lessonId: identity.lessonId,
       paragraphIdx: identity.paragraphIdx,
@@ -148,10 +178,11 @@ export async function playLessonParagraphStatic(
       error: result.error,
     });
   } else {
-    console.info("[LessonPlayback] static play ended", {
-      lessonId: identity.lessonId,
+    logAudioPipeline("static_play_ended", {
       paragraphIdx: identity.paragraphIdx,
+      lessonId: identity.lessonId,
     });
+    setAudioPipelineMachineState("wait_until_end", { success: true });
   }
 
   return result;

@@ -38,6 +38,10 @@ import {
 } from "@/lib/playback-trace";
 import { logAudioDebug } from "@/lib/audio-debug";
 import {
+  logAudioPipeline,
+  setAudioPipelineMachineState,
+} from "@/lib/debug-audio-pipeline";
+import {
   classifyAudibleStartFailure,
   logAudibleStartGate,
   snapshotAudibleElement,
@@ -1007,6 +1011,9 @@ class AudioManagerImpl {
 
     try {
       playbackTracePlayCalled(traceId, "AudioManager", audio);
+      logAudioPipeline("play_called", {
+        detail: { source: meta?.source, channel, attempt },
+      });
       await playWithAudibleStartGuarantee({
         audio,
         layer: meta?.source,
@@ -1016,6 +1023,12 @@ class AudioManagerImpl {
         unlockGesture: () => this.unlockFromUserGesture(),
       });
       playbackTracePlaySettled(traceId, "AudioManager", true, audio);
+      logAudioPipeline("play_resolved", {
+        detail: {
+          source: meta?.source,
+          ...snapshotAudibleElement(audio),
+        },
+      });
     } catch (err) {
       playbackTracePlaySettled(traceId, "AudioManager", false, audio, err);
       const msg = err instanceof Error ? err.message : String(err);
@@ -1512,6 +1525,15 @@ class AudioManagerImpl {
       const defaultFallbackMs = durationSec > 0 ? (durationSec + 1) * 1000 : 30_000;
       const fallbackMs = options?.maxWaitMs ?? defaultFallbackMs;
 
+      logAudioPipeline("waitUntilEnd_start", {
+        detail: {
+          durationSec,
+          fallbackMs,
+          ...snapshotAudibleElement(audio),
+        },
+      });
+      setAudioPipelineMachineState("wait_until_end", { fallbackMs });
+
       const pollMs = options?.pollMs ?? 100;
       if (pollMs > 0) {
         pollTimer = window.setInterval(() => {
@@ -1541,12 +1563,14 @@ class AudioManagerImpl {
 
       audio.onended = () => {
         if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
+        logAudioPipeline("waitUntilEnd_ended", { detail: snapshotAudibleElement(audio) ?? {} });
         done({ ok: true });
       };
 
       audio.onerror = () => {
         if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
         const code = audio.error?.code ?? "unknown";
+        logAudioPipeline("waitUntilEnd_error", { detail: { code } });
         logStructured("waitUntilEnd media error", new Error(`media_error_${code}`), {
           attempt: 0,
           srcType: inferSrcType(audio.src),

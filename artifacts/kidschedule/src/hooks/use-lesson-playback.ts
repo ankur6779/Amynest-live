@@ -16,6 +16,11 @@ import { audioManager } from "@/lib/audio-manager";
 import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
+import {
+  logAudioPipeline,
+  setAudioPipelineContext,
+  setAudioPipelineMachineState,
+} from "@/lib/debug-audio-pipeline";
 
 const LESSON_AUDIBLE_LAYERS = new Set([
   "static",
@@ -116,10 +121,20 @@ export function useLessonPlayback({
       if (intentRef.current !== "playing") return;
 
       const current = paragraphIdxRef.current;
+      logAudioPipeline("advanceParagraph", {
+        paragraphIdx: current,
+        lessonId,
+        detail: { session, next: current + 1 },
+        trace: true,
+      });
+      setAudioPipelineMachineState("advance", { from: current, session });
+
       if (current + 1 >= paragraphs.length) {
         playbackSessionRef.current += 1;
         intentRef.current = "idle";
         setIntent("idle");
+        setAudioPipelineContext({ intent: "idle" });
+        setAudioPipelineMachineState("idle", { reason: "lesson_complete" });
         onLessonComplete?.(lessonId);
         return;
       }
@@ -128,6 +143,7 @@ export function useLessonPlayback({
       playbackSessionRef.current += 1;
       paragraphIdxRef.current = next;
       setParagraphIdxState(next);
+      setAudioPipelineContext({ paragraphIdx: next });
       skipParagraphEffectRef.current = true;
       speakParagraphAtRef.current(next);
     },
@@ -170,13 +186,28 @@ export function useLessonPlayback({
         lessonId: lessonIdRef.current,
         gestureBlocked,
       });
+      logAudioPipeline("handleSpeakResult_failure", {
+        paragraphIdx: paragraphIdxRef.current,
+        lessonId: lessonIdRef.current,
+        detail: { errMsg, layer: res?.layer, gestureBlocked, success: res?.success },
+      });
+      setAudioPipelineMachineState("error", { errMsg });
       intentRef.current = "idle";
       setIntent("idle");
       pauseVoice();
-      setPlaybackError(gestureBlocked ? "playback_blocked_tap_again" : errMsg);
+      const shown = gestureBlocked ? "playback_blocked_tap_again" : errMsg;
+      setPlaybackError(shown);
+      setAudioPipelineContext({ intent: "idle", playbackError: shown });
       return;
     }
+    logAudioPipeline("handleSpeakResult_success", {
+      paragraphIdx: paragraphIdxRef.current,
+      lessonId: lessonIdRef.current,
+      detail: { layer: res?.layer },
+    });
+    setAudioPipelineMachineState("handle_result", { success: true });
     setPlaybackError(null);
+    setAudioPipelineContext({ playbackError: null });
   }, [pauseVoice]);
 
   const speakParagraphAt = useCallback(
@@ -197,12 +228,32 @@ export function useLessonPlayback({
       const isCancelled = () =>
         session !== playbackSessionRef.current || intentRef.current !== "playing";
 
+      setAudioPipelineContext({
+        paragraphIdx: idx,
+        lessonId: activeLessonId,
+        intent: "playing",
+      });
+      setAudioPipelineMachineState("speak_start", { idx, session });
+      logAudioPipeline("speakParagraphAt", {
+        paragraphIdx: idx,
+        lessonId: activeLessonId,
+        detail: { session },
+      });
+
       void (async () => {
         const staticRes = await playLessonParagraphStatic(identity, {
           playbackRate,
           isCancelled,
         });
-        if (isCancelled()) return;
+        if (isCancelled()) {
+          logAudioPipeline("speakParagraphAt_cancelled", {
+            paragraphIdx: idx,
+            lessonId: activeLessonId,
+            detail: { session },
+          });
+          setAudioPipelineMachineState("cancelled", { session });
+          return;
+        }
 
         if (staticRes.success) {
           handleSpeakResult(session, { ...staticRes, layer: "static" });
@@ -240,6 +291,17 @@ export function useLessonPlayback({
     setPlaybackError(null);
     intentRef.current = "playing";
     setIntent("playing");
+    setAudioPipelineContext({
+      intent: "playing",
+      playbackError: null,
+      lessonId: lessonIdRef.current,
+      paragraphIdx: paragraphIdxRef.current,
+    });
+    setAudioPipelineMachineState("playing");
+    logAudioPipeline("play_tap", {
+      paragraphIdx: paragraphIdxRef.current,
+      lessonId: lessonIdRef.current,
+    });
     skipParagraphEffectRef.current = true;
     const idx = paragraphIdxRef.current;
     const identity = identityForParagraph(
