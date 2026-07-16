@@ -9,7 +9,12 @@ export {
   AMY_TTS_STREAM_LATENCY,
   resolveAmyTtsModelId,
 } from "./amy-tts-config.js";
-export { normalizeStaticAudioKey, normalizeSpeakTextForLookup } from "./normalize.js";
+export {
+  canonicalizeStaticAudioText,
+  normalizeStaticAudioKey,
+  normalizeSpeakTextForLookup,
+  staticAudioLookupKeyVariants,
+} from "./normalize.js";
 export {
   staticAudioMissingKey,
   parseStaticAudioMissingKey,

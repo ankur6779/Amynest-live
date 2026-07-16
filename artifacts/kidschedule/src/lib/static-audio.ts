@@ -19,11 +19,13 @@ import {
 } from "@/lib/static-audio-telemetry";
 import {
   isStaticTtsText,
+  canonicalizeStaticAudioText,
   normalizeStaticAudioKey,
   normalizeSpeakTextForLookup,
   staticAudioMissingKey,
   type StaticAudioMode,
 } from "@workspace/static-audio/browser";
+import { buildStaticAudioLookupMissReport } from "@/lib/static-audio-lookup-diag";
 import { replaceCoachPersonalNameWithFriend } from "@workspace/speech-coach";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 import {
@@ -132,6 +134,50 @@ export function ensureStaticAudioMapLoaded(): Promise<void> {
 
 export function isStaticAudioMapReady(): boolean {
   return map !== null;
+}
+
+/** Catalog keys from the loaded map (default mode). For lookup-miss diagnostics. */
+export function getLoadedStaticAudioCatalogKeys(mode: StaticAudioMode = "default"): string[] {
+  if (!map) return [];
+  return Object.keys(map[mode] ?? {});
+}
+
+/** Loaded catalog bucket (normalized key → proxy URL). */
+export function getLoadedStaticAudioCatalog(
+  mode: StaticAudioMode = "default",
+): Record<string, string> {
+  if (!map) return {};
+  return { ...(map[mode] ?? {}) };
+}
+
+function logStaticAudioLookupMiss(
+  rawText: string,
+  mode: StaticAudioMode,
+  extra?: Record<string, unknown>,
+): void {
+  const bucket = map?.[mode] ?? {};
+  const report = buildStaticAudioLookupMissReport(rawText, bucket, {
+    mapReady: map !== null,
+    lessonIdentityHash:
+      typeof extra?.lessonIdentityHash === "string" ? extra.lessonIdentityHash : undefined,
+  });
+  console.warn("[static-audio] lookup miss", {
+    ...extra,
+    mapReady: report.mapReady,
+    normalizedKey: report.normalizedKey,
+    lookupVariants: report.lookupVariants,
+    lessonIdentityHash: report.lessonIdentityHash,
+    note:
+      "lessonIdentityHash is the lesson pipeline cache key — NOT the static-audio-map MP3 hash",
+    closestCatalogKeys: report.closestCatalogKeys.map((c) => ({
+      levenshtein: c.levenshtein,
+      catalogHash: c.catalogHashFromUrl,
+      keyPreview: c.key.slice(0, 100),
+      diff: c.diff,
+    })),
+    canonicalText: report.canonicalText,
+    codepoints: report.codepoints.slice(0, 40),
+  });
 }
 
 export function normalize(text: string): string {
@@ -336,7 +382,10 @@ function lookupStaticAudioUrlForMode(
 ): string | null {
   const text = rawText.trim();
   const resolved = resolveMapEntry(text, mode);
-  if (!resolved) return null;
+  if (!resolved) {
+    logStaticAudioLookupMiss(text, mode);
+    return null;
+  }
 
   const { mapEntry, normalized } = resolved;
   const proxyUrl = resolveStaticPlaybackUrl(mapEntry, { text, mode });

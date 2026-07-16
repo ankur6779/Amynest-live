@@ -12,7 +12,19 @@ export {
   staticAudioGcsObjectName,
   staticAudioPublicUrl,
 } from "./keys.js";
-export { normalizeStaticAudioKey, normalizeSpeakTextForLookup } from "./normalize.js";
+export {
+  canonicalizeStaticAudioText,
+  normalizeStaticAudioKey,
+  normalizeSpeakTextForLookup,
+  staticAudioLookupKeyVariants,
+} from "./normalize.js";
+export {
+  diagnoseStaticAudioLookup,
+  diffNormalizedTexts,
+  levenshteinDistance,
+  type StaticAudioLookupDiagnostic,
+  type StaticAudioLookupDiff,
+} from "./lookup-diagnostics.js";
 export {
   computeCatalogMissingStaticAudioKeys,
   computeCorpusMissingStaticAudioKeys,

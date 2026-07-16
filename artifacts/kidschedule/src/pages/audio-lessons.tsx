@@ -54,6 +54,7 @@ import {
 } from "@/lib/amy-signals";
 import type { EmergencyType } from "@workspace/amy-intelligence";
 import { warmAudioLessonsOnPageOpen } from "@/lib/audio-lessons-audio-warmup";
+import { ensureStaticAudioMapLoaded } from "@/lib/static-audio";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -187,6 +188,9 @@ export default function AudioLessonsPage() {
   }, [selectedAge, amySignals, coachGoalId]);
 
   useEffect(() => {
+    void ensureStaticAudioMapLoaded().catch((err) => {
+      console.error("[audio-lessons] static-audio map preload failed", err);
+    });
     warmAudioLessonsOnPageOpen(authFetch, {
       lang,
       amyHome,

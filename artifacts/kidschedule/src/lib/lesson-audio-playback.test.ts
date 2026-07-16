@@ -14,6 +14,8 @@ vi.mock("@/lib/static-audio", () => ({
     text ? `/api/static-audio/mockhash.mp3` : null,
   ),
   isStaticAudioMapReady: () => true,
+  ensureStaticAudioMapLoaded: vi.fn(() => Promise.resolve()),
+  getLoadedStaticAudioCatalog: vi.fn(() => ({})),
   prepareRemotePlaybackAudio: (...args: unknown[]) => prepareRemoteMock(...args),
 }));
 
@@ -24,6 +26,12 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("@/lib/static-audio-edge", () => ({
   isMobileStaticAudioDevice: () => false,
+}));
+
+vi.mock("@/lib/debug-audio-pipeline", () => ({
+  logAudioPipeline: vi.fn(),
+  setAudioPipelineContext: vi.fn(),
+  setAudioPipelineMachineState: vi.fn(),
 }));
 
 describe("playLessonParagraphStatic", () => {

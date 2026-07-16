@@ -16,7 +16,10 @@ import {
   lookupStaticAudioUrlStrict,
   prepareRemotePlaybackAudio,
   isStaticAudioMapReady,
+  ensureStaticAudioMapLoaded,
+  getLoadedStaticAudioCatalog,
 } from "@/lib/static-audio";
+import { buildStaticAudioLookupMissReport } from "@/lib/static-audio-lookup-diag";
 import {
   logAudioPipeline,
   setAudioPipelineContext,
@@ -71,7 +74,9 @@ function startWarm(identity: AudioIdentity): Promise<string | null> {
 
 /** Prefetch paragraph MP3 into a blob: URL so Play can start without awaiting fetch. */
 export function warmLessonParagraphStatic(identity: AudioIdentity): void {
-  void startWarm(identity);
+  void ensureStaticAudioMapLoaded()
+    .catch(() => {})
+    .finally(() => startWarm(identity));
 }
 
 /**
@@ -110,26 +115,42 @@ export async function playLessonParagraphStatic(
   identity: AudioIdentity,
   opts: PlayLessonParagraphOptions = {},
 ): Promise<SpeakResult> {
+  await ensureStaticAudioMapLoaded().catch((err) => {
+    console.error("[LessonPlayback] static-audio map load failed", err);
+  });
+
   const proxyUrl = lookupStaticAudioUrlStrict(identity.text, "default");
   setAudioPipelineMachineState("static_lookup", {
     mapReady: isStaticAudioMapReady(),
     paragraphIdx: identity.paragraphIdx,
   });
   if (!proxyUrl) {
+    const missReport = buildStaticAudioLookupMissReport(
+      identity.text,
+      getLoadedStaticAudioCatalog("default"),
+      { mapReady: isStaticAudioMapReady(), lessonIdentityHash: identity.hash },
+    );
     logAudioPipeline("static_url_miss", {
       paragraphIdx: identity.paragraphIdx,
       lessonId: identity.lessonId,
       detail: {
-        mapReady: isStaticAudioMapReady(),
-        hash: identity.hash,
-        textPreview: identity.text.slice(0, 80),
+        mapReady: missReport.mapReady,
+        lessonIdentityHash: identity.hash,
+        normalizedKey: missReport.normalizedKey,
+        closestCatalogKeys: missReport.closestCatalogKeys,
+        note: "lessonIdentityHash ≠ static MP3 hash (4df9e01b… is catalog file hash)",
       },
     });
     console.warn("[LessonPlayback] static URL miss", {
       lessonId: identity.lessonId,
       paragraphIdx: identity.paragraphIdx,
-      textPreview: identity.text.slice(0, 100),
-      hash: identity.hash,
+      lessonIdentityHash: identity.hash,
+      mapReady: missReport.mapReady,
+      normalizedKey: missReport.normalizedKey,
+      lookupVariants: missReport.lookupVariants,
+      closestCatalogKeys: missReport.closestCatalogKeys,
+      canonicalText: missReport.canonicalText,
+      codepoints: missReport.codepoints,
     });
     return { success: false, error: "static_failed", layer: "static" };
   }

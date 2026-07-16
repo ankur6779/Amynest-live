@@ -8,7 +8,8 @@ import { config } from "dotenv";
 import { execSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { computeCorpusMissingStaticAudioKeys } from "@workspace/static-audio";
+import { computeCorpusMissingStaticAudioKeys, normalizeStaticAudioKey } from "@workspace/static-audio";
+import { LESSONS } from "@workspace/audio-lessons";
 import { listCatalogMissingKeys, loadStaticAudioMap, REPO_ROOT } from "./static-audio-paths.js";
 
 config({ path: `${REPO_ROOT}/.env` });
@@ -108,6 +109,42 @@ if (missingDefault.length > 0) {
 }
 
 assertNoClientDirectGcsPlayback();
+
+function assertLessonParagraphStaticCoverage(): void {
+  const map = loadStaticAudioMap();
+  const missing: string[] = [];
+
+  for (const lesson of LESSONS) {
+    lesson.paragraphs.en.forEach((para, paragraphIdx) => {
+      const text = para.trim();
+      if (!text) return;
+      const key = normalizeStaticAudioKey(text);
+      const url = map.default[key];
+      if (!url || !url.includes("/api/static-audio/")) {
+        missing.push(`${lesson.id}[${paragraphIdx}] ${key.slice(0, 72)}…`);
+      }
+    });
+  }
+
+  if (missing.length > 0) {
+    console.error("Lesson paragraph static-audio coverage failed:\n");
+    for (const line of missing.slice(0, 30)) {
+      console.error(`  - ${line}`);
+    }
+    if (missing.length > 30) {
+      console.error(`  … and ${missing.length - 30} more`);
+    }
+    console.error(
+      "\nEvery lesson paragraph must resolve via normalizeStaticAudioKey in static-audio-map.json.\n" +
+        "Run: pnpm --filter @workspace/scripts run rebuild-static-audio-map\n",
+    );
+    process.exit(1);
+  }
+
+  console.log(`Lesson static-audio coverage: ${LESSONS.length} lessons, all paragraphs mapped.`);
+}
+
+assertLessonParagraphStaticCoverage();
 
 const requireFullCorpus =
   process.env.STATIC_AUDIO_REQUIRE_FULL_CORPUS === "1" ||

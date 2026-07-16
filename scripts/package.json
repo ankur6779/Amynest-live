@@ -40,6 +40,7 @@
     "check-static-audio-duplicates": "tsx ./check-static-audio-duplicates.ts",
     "check-phonics-letter-static-map": "tsx ./check-phonics-letter-static-map.ts",
     "dedupe-static-audio-map": "tsx ./dedupe-static-audio-map.ts",
+    "rebuild-static-audio-map": "tsx ./rebuild-static-audio-map.ts",
     "audit-audio-modules": "tsx ./audit-audio-modules.ts",
     "check-audio-release-certification": "tsx ./check-audio-release-certification.ts",
     "check-audio-device-certification": "tsx ./check-audio-device-certification.ts",
