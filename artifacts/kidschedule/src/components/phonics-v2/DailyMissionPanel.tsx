@@ -38,6 +38,8 @@ type DailyMissionPanelProps = {
   mastery?: PhonicsMasteryState;
   retention?: PhonicsRetentionState;
   curriculumLevel?: number | null;
+  /** SATPIN letter group from curriculum progress. */
+  letterGroupIndex?: number | null;
   plan?: PhonicsDailyPlan | null;
   missionStoryId?: string;
   onCompleteCurriculumActivity?: (activityId: string) => Promise<void>;
@@ -53,6 +55,7 @@ export function DailyMissionPanel({
   mastery,
   retention,
   curriculumLevel,
+  letterGroupIndex,
   plan,
   missionStoryId,
   onCompleteCurriculumActivity,
@@ -79,7 +82,7 @@ export function DailyMissionPanel({
       (mastery
         ? {
             dateKey,
-            ...            buildAdaptiveDailyMission({
+            ...buildAdaptiveDailyMission({
               childId,
               items,
               progress,
@@ -87,6 +90,7 @@ export function DailyMissionPanel({
               retention,
               streakDay: habit.weekly.practiceDays,
               curriculumLevel: curriculumLevel ?? undefined,
+              letterGroupIndex: letterGroupIndex ?? undefined,
               storyId: missionStoryId,
             }),
           }
@@ -98,7 +102,16 @@ export function DailyMissionPanel({
           }));
     setMission(built);
     if (!existing) persistPhonicsV3Mission(childId, built);
-  }, [childId, items, progress, mastery, retention, curriculumLevel, missionStoryId]);
+  }, [
+    childId,
+    items,
+    progress,
+    mastery,
+    retention,
+    curriculumLevel,
+    letterGroupIndex,
+    missionStoryId,
+  ]);
 
   useEffect(() => {
     if (!mission) return;

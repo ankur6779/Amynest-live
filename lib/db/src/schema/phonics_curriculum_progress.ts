@@ -28,9 +28,12 @@ export const phonicsCurriculumProgressTable = pgTable(
     lastPlayedAt: timestamp("last_played_at", { withTimezone: true }),
     lastTestScore: integer("last_test_score"),
     lastTestAt: timestamp("last_test_at", { withTimezone: true }),
-    /** Activity ids completed today (reset when date changes). */
+    /**
+     * Activity ids completed today (reset when date changes).
+     * Also stores letterGroupIndex (SATPIN progression) without a schema migration.
+     */
     completedToday: jsonb("completed_today")
-      .$type<{ date: string; ids: string[] }>()
+      .$type<{ date: string; ids: string[]; letterGroupIndex?: number }>()
       .notNull()
       .default({ date: "", ids: [] }),
     createdAt: timestamp("created_at", { withTimezone: true })

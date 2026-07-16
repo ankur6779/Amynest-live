@@ -45,8 +45,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 88
-        versionName = "1.4.45"
+        versionCode = 95
+        versionName = "1.4.52"
         resValue(
             "string",
             "facebook_client_token",
@@ -212,6 +212,7 @@ dependencies {
     // Firebase BOM — keeps all Firebase versions aligned
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 
     // Native Google Sign-In (AuthBridge → Firebase idToken on web layer)
     implementation("com.google.android.gms:play-services-auth:21.2.0")

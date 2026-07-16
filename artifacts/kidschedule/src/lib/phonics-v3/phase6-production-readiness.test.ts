@@ -32,10 +32,14 @@ function visibleWords(level: number): string[] {
 }
 
 describe("Phase 6 — Child Journey Simulation", () => {
-  it("Child A (L1): letters only, no CVC or stories", () => {
-    expect(isContentUnlocked("a", 1, "letter")).toBe(true);
-    expect(isContentUnlocked("cat", 1, "word")).toBe(false);
-    expect(isContentUnlocked("ship", 1, "word")).toBe(false);
+  it("Child A (L1 Group 1): SATPIN letters + early blends, no Group 2+ or stories", () => {
+    const g1 = { letterGroupIndex: 1 };
+    expect(isContentUnlocked("a", 1, "letter", g1)).toBe(true);
+    expect(isContentUnlocked("s", 1, "letter", g1)).toBe(true);
+    expect(isContentUnlocked("m", 1, "letter", g1)).toBe(false);
+    expect(isContentUnlocked("sat", 1, "word", g1)).toBe(true);
+    expect(isContentUnlocked("cat", 1, "word", g1)).toBe(false);
+    expect(isContentUnlocked("ship", 1, "word", g1)).toBe(false);
 
     const stories = getUnlockedStoriesV3({
       masteredFamilies: [],
@@ -119,8 +123,8 @@ describe("Phase 6 — Story Validation", () => {
 });
 
 describe("Phase 6 — Mission Selector Gating", () => {
-  it("L1 mission excludes CVC words from adaptive picks", () => {
-    const items = mockItems(["cat", "hat", "a"]);
+  it("L1 Group 1 mission excludes Group 2+ words from adaptive picks", () => {
+    const items = mockItems(["cat", "hat", "sat", "a"]);
     let mastery = defaultMasteryState();
     mastery = recordMasteryEvent(mastery, "word", "cat", "heard");
     const mission = buildAdaptiveDailyMission({
@@ -130,9 +134,12 @@ describe("Phase 6 — Mission Selector Gating", () => {
       mastery,
       streakDay: 1,
       curriculumLevel: 1,
+      letterGroupIndex: 1,
     });
     const words = mission.adaptivePicks.map((p) => p.word);
-    expect(words.every((w) => isContentUnlocked(w, 1, "word"))).toBe(true);
+    expect(
+      words.every((w) => isContentUnlocked(w, 1, "word", { letterGroupIndex: 1 })),
+    ).toBe(true);
     expect(words.includes("cat")).toBe(false);
   });
 });

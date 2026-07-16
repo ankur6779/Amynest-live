@@ -9,14 +9,16 @@ import {
 import {
   isBlendPathwayAvailable,
   isContentUnlocked,
-  isCvccPathwayAvailable,
   isDigraphPathwayAvailable,
+  isCvccPathwayAvailable,
   SIGHT_WORDS,
 } from "./level-gating.js";
+import { SATPIN_LETTER_ORDER } from "./letter-groups.js";
 import { PHONICS_CURRICULUM_LEVELS, WORD_FAMILY_IDS } from "./levels.js";
 import type { CurriculumLevel } from "./types.js";
 
-const LETTERS = "abcdefghijklmnopqrstuvwxyz".split("");
+/** Letters in Synthetic Phonics introduction order (not A–Z). */
+const LETTERS = [...SATPIN_LETTER_ORDER];
 
 /** Master symbol universe for visibility snapshots. */
 export function getAllCurriculumSymbols(): string[] {
@@ -54,31 +56,42 @@ export interface VisibleContentSnapshot {
   };
 }
 
-/** Symbols unlocked at a curriculum level (mastery assumed sufficient for pathways). */
+/**
+ * Symbols unlocked at a curriculum level.
+ * L1 snapshots assume letterGroupIndex = full groups for regression of the
+ * stage ladder; use getVisibleContentSnapshotForGroup for SATPIN drip tests.
+ */
 export function getVisibleContentSnapshot(
   level: CurriculumLevel,
   masteryScore = 100,
+  letterGroupIndex?: number,
 ): VisibleContentSnapshot {
-  const letters = LETTERS.filter((l) => isContentUnlocked(l, level, "letter"));
+  const opts = {
+    letterGroupIndex:
+      letterGroupIndex ?? (level >= 2 ? 8 : 1),
+  };
+  const letters = LETTERS.filter((l) =>
+    isContentUnlocked(l, level, "letter", opts),
+  );
   const words: string[] = [];
   const patterns: string[] = [];
   const sentences: string[] = [];
 
   for (const sym of getAllCurriculumSymbols()) {
     if (sym.startsWith("pattern:")) {
-      if (isContentUnlocked(sym, level)) patterns.push(sym);
+      if (isContentUnlocked(sym, level, undefined, opts)) patterns.push(sym);
       continue;
     }
     if (sym.includes(" ")) {
-      if (isContentUnlocked(sym, level, "sentence")) sentences.push(sym);
+      if (isContentUnlocked(sym, level, "sentence", opts)) sentences.push(sym);
       continue;
     }
     if (sym.length === 1) continue;
     if (WORD_FAMILY_IDS.includes(sym as (typeof WORD_FAMILY_IDS)[number])) {
-      if (isContentUnlocked(sym, level)) patterns.push(sym);
+      if (isContentUnlocked(sym, level, undefined, opts)) patterns.push(sym);
       continue;
     }
-    if (isContentUnlocked(sym, level, "word")) words.push(sym);
+    if (isContentUnlocked(sym, level, "word", opts)) words.push(sym);
   }
 
   return {

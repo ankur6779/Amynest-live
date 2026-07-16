@@ -1,11 +1,12 @@
-import { CVC_WORDS, getCvcWordEntry } from "@workspace/phonics-sounds";
+import { CVC_WORDS } from "@workspace/phonics-sounds";
 import type { CurriculumLevel } from "./types.js";
 import {
   WORD_FAMILY_ANCHOR_WORDS,
   WORD_FAMILY_IDS,
   getCurriculumLevelDef,
 } from "./levels.js";
-import { isContentUnlocked } from "./level-gating.js";
+import { getLevelWordPool, isContentUnlocked } from "./level-gating.js";
+import { getUnlockedGroupWords } from "./letter-groups.js";
 
 /** Words that reinforce a weak vowel/consonant phoneme. */
 export function wordsForWeakPhoneme(phoneme: string, limit = 4): string[] {
@@ -18,13 +19,13 @@ export function wordsForWeakPhoneme(phoneme: string, limit = 4): string[] {
 }
 
 const PHONICS_WEAK_FALLBACK: Record<string, string[]> = {
-  ɪ: ["sit", "hit", "pin", "pig"],
-  æ: ["cat", "bat", "mat", "hat"],
-  ɛ: ["pen", "hen", "ten", "bed"],
-  ɒ: ["dog", "log", "fog", "pot"],
-  ʌ: ["cup", "sun", "bus", "rug"],
-  i: ["sit", "hit", "pin"],
-  a: ["cat", "bat", "mat"],
+  ɪ: ["sit", "pin", "tin", "sip"],
+  æ: ["sat", "pan", "tap", "pat"],
+  ɛ: ["pen", "net", "red", "bed"],
+  ɒ: ["dog", "got", "cot", "mop"],
+  ʌ: ["cup", "run", "rug", "bus"],
+  i: ["sit", "pin", "tin"],
+  a: ["sat", "pan", "tap"],
 };
 
 function pickFamilyPracticeTargets(
@@ -59,16 +60,22 @@ export function pickPracticeTargets(
   weakPhonemes: string[],
   count: number,
   seed: number,
+  letterGroupIndex = 1,
 ): string[] {
   if (level === 3) {
     return pickFamilyPracticeTargets(weakPhonemes, count, seed);
   }
 
-  const def = getCurriculumLevelDef(level);
-  const pool = [...def.content];
+  const opts = { letterGroupIndex };
+  const pool =
+    level === 1
+      ? [...getLevelWordPool(1, opts), ...getUnlockedGroupWords(letterGroupIndex)]
+      : [...getCurriculumLevelDef(level).content];
+
   for (const ph of weakPhonemes.slice(0, 2)) {
     for (const w of wordsForWeakPhoneme(ph, 2)) {
-      if (isContentUnlocked(w, level, "word")) pool.push(w);
+      // At L1 only schedule weak-word drills the child can decode.
+      if (isContentUnlocked(w, level, "word", opts)) pool.push(w);
     }
   }
   const unique = [...new Set(pool.map((s) => s.trim().toLowerCase()).filter(Boolean))];
@@ -77,12 +84,18 @@ export function pickPracticeTargets(
   for (const item of shuffled) {
     if (out.length >= count) break;
     const word = item.replace(/\.$/, "").split(/\s+/)[0]!;
-    if (word.length <= 12 && isContentUnlocked(word, level)) out.push(word);
+    if (word.length <= 12 && isContentUnlocked(word, level, undefined, opts)) {
+      out.push(word);
+    }
   }
   while (out.length < count && unique.length > 0) {
     const candidate = unique[out.length % unique.length]!;
     const word = candidate.replace(/\.$/, "").split(/\s+/)[0]!;
-    if (word.length <= 12 && isContentUnlocked(word, level) && !out.includes(word)) {
+    if (
+      word.length <= 12 &&
+      isContentUnlocked(word, level, undefined, opts) &&
+      !out.includes(word)
+    ) {
       out.push(word);
     } else {
       break;

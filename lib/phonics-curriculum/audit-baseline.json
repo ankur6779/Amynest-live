@@ -1,12 +1,11 @@
 {
   "version": 1,
   "knownFindingKeys": [
+    "level_leak:duck",
     "orphan_word:fun",
-    "orphan_word:run",
     "orphan_word:bun",
     "orphan_word:den",
     "orphan_word:cog",
-    "orphan_word:dig",
     "orphan_word:big",
     "orphan_word:wig",
     "orphan_word:damp",

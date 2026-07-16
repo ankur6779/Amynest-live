@@ -50,6 +50,11 @@ class BillingBridge(
     fun onPaywallResult(result: PaywallResult) {
         val pending = pendingPaywallReply ?: return
         pendingPaywallReply = null
+        if (result is PaywallResult.Purchased) {
+            activityRef.get()?.applicationContext?.let { ctx ->
+                FirebaseSubscriptionAnalytics.logSubscriptionConvert(ctx, source = "rc_paywall")
+            }
+        }
         resolve(pending.first, pending.second, paywallResultToJson(result))
     }
 
@@ -177,6 +182,16 @@ class BillingBridge(
                         )
                     },
                     onSuccess = { _, customerInfo ->
+                        activityRef.get()?.applicationContext?.let { ctx ->
+                            val price = pkg.product.price
+                            FirebaseSubscriptionAnalytics.logSubscriptionPurchase(
+                                context = ctx,
+                                productId = pkg.product.id,
+                                currency = price.currencyCode,
+                                value = price.amountMicros / 1_000_000.0,
+                                source = "billing_bridge",
+                            )
+                        }
                         sendRaw(
                             replyProxy, cbId,
                             JSONObject()

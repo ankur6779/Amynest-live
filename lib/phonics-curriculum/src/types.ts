@@ -14,6 +14,12 @@ export interface ChildCurriculumProgress {
   lastPlayedAt: string | null;
   lastTestScore: number | null;
   lastTestAt: string | null;
+  /**
+   * Highest SATPIN-style letter group unlocked (1–8).
+   * Group 1 = SATPIN; blending words unlock immediately after Group 1.
+   * Absent/undefined → treat as 1 for new learners; migrate from mastered letters.
+   */
+  letterGroupIndex?: number;
 }
 
 export type PlanActivityKind =
@@ -61,6 +67,8 @@ export interface TestOutcomeInput {
   scorePct: number;
   weakConceptIds: number[];
   weakPhonemesFromContent?: string[];
+  /** Letters the child has mastered — used to advance SATPIN groups. */
+  masteredLetters?: string[];
 }
 
 export interface TestOutcomeResult {
@@ -70,4 +78,7 @@ export interface TestOutcomeResult {
   weakPhonemes: string[];
   repeatLevel: boolean;
   insight: string;
+  /** Updated SATPIN letter group after the test (if advanced). */
+  letterGroupIndex?: number;
+  letterGroupAdvanced?: boolean;
 }

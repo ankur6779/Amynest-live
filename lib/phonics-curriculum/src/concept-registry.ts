@@ -23,6 +23,7 @@ import {
   WORD_FAMILY_ANCHOR_WORDS,
   WORD_FAMILY_IDS,
 } from "./levels.js";
+import { getUnlockedGroupWords } from "./letter-groups.js";
 import type { CurriculumLevel } from "./types.js";
 
 export interface ConceptRecord {
@@ -75,8 +76,22 @@ export function buildConceptRegistry(): ConceptRecord[] {
     records.push(recordFromLevel(key, level));
   };
 
-  for (const letter of "abcdefghijklmnopqrstuvwxyz") {
+  // SATPIN introduction order (q last — taught as qu).
+  for (const letter of [
+    "s", "a", "t", "p", "i", "n",
+    "m", "d", "g", "o", "c", "k",
+    "e", "u", "r",
+    "h", "b", "f", "l",
+    "j",
+    "v", "w", "x", "y", "z",
+    "q",
+  ]) {
     add(letter, 1);
+  }
+
+  // Early SATPIN-decodable banks are owned by L1 (blending-first).
+  for (const w of getUnlockedGroupWords(7)) {
+    add(w, 1);
   }
 
   for (const w of CVC_WORDS.map((e) => e.word)) {

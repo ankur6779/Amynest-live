@@ -89,6 +89,14 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     });
   }
 
+  if (payload.event === "checkout_started") {
+    void import("@/lib/firebase-subscription-attribution").then(
+      ({ trackFirebaseBeginCheckout }) => {
+        trackFirebaseBeginCheckout(payload.plan, { source: payload.source });
+      },
+    );
+  }
+
   if (payload.event === "purchase_success") {
     import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
       trackPremiumConversion(payload.source ?? "subscription");
@@ -104,6 +112,19 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
         currency,
       });
     });
+    void import("@/lib/firebase-subscription-attribution").then(
+      ({ trackFirebaseSubscriptionPurchase }) => {
+        const value =
+          typeof payload.extra?.value === "number" ? payload.extra.value : undefined;
+        const currency =
+          typeof payload.extra?.currency === "string" ? payload.extra.currency : undefined;
+        trackFirebaseSubscriptionPurchase(payload.plan, {
+          source: payload.source,
+          value,
+          currency,
+        });
+      },
+    );
   }
 
   if (import.meta.env.DEV) {

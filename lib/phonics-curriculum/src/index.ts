@@ -1,4 +1,5 @@
 export * from "./constants.js";
+export * from "./letter-groups.js";
 export * from "./types.js";
 export * from "./levels.js";
 export * from "./games.js";

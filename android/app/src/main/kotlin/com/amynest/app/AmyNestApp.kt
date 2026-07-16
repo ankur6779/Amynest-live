@@ -2,6 +2,7 @@ package com.amynest.app
 
 import android.app.Application
 import android.util.Log
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.facebook.FacebookSdk
 import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginBehavior
@@ -27,9 +28,19 @@ class AmyNestApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        initFirebaseAnalytics()
         initFacebookSdk()
         initRevenueCat()
         NotifCategory.createAll(this)
+    }
+
+    private fun initFirebaseAnalytics() {
+        try {
+            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
+            Log.d(TAG, "Firebase Analytics initialised")
+        } catch (t: Throwable) {
+            Log.e(TAG, "Firebase Analytics init failed", t)
+        }
     }
 
     private fun initFacebookSdk() {

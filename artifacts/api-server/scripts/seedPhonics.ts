@@ -40,41 +40,37 @@ const TIER_12_24M: SeedItem[] = [
   { ageGroup: "12_24m", level: 10, type: "sound", symbol: "Ding",  sound: "Ding ding.",  emoji: "🔔", hint: "Bell says…" },
 ];
 
-// ─── 2–3 years: A–Z phonics ──────────────────────────────────────────────────
-// Each row: [letter, phonetic, primaryExampleWord, emoji, [3-4 more examples]]
-// `primaryExampleWord` drives the legacy single-example caption; `extraExamples`
-// becomes the multi-example chip row in the new Phonics learning UI (T002).
-// Synthetic-phonics rules: the `phonetic` column is the LETTER KEY (a–z) so
-// runtime audio resolves to the curated pure-phoneme clip — never a schwa-laden
-// "buh"/"kuh" TTS hint. Example words must begin with the taught short-vowel /
-// consonant phoneme (no "Ice" for short i, no "Arm"/"Orange" for short a/o).
+// ─── 2–3 years: SATPIN Synthetic Phonics order (not A–Z) ─────────────────────
+// Order matches LETTER_INTRODUCTION_GROUPS / SATPIN_LETTER_ORDER so hub free
+// drip (slice by level) surfaces s,a,t,p,i,n first.
+// Each row: [letter, phonetic key, primaryExampleWord, emoji, examples]
 const ALPHABET: Array<[string, string, string, string, string[]]> = [
+  ["S", "s", "Sun",      "☀️",  ["Sun", "Snake", "Sock"]],
   ["A", "a", "Apple",    "🍎",  ["Apple", "Ant", "Axe"]],
-  ["B", "b", "Ball",     "⚽",  ["Ball", "Bat", "Banana", "Bear"]],
-  ["C", "c", "Cat",      "🐱",  ["Cat", "Cup", "Cot"]],
-  ["D", "d", "Dog",      "🐶",  ["Dog", "Duck", "Door"]],
-  ["E", "e", "Egg",      "🥚",  ["Egg", "Elephant", "Elbow"]],
-  ["F", "f", "Fish",     "🐟",  ["Fish", "Fan", "Frog", "Foot"]],
-  ["G", "g", "Goat",     "🐐",  ["Goat", "Gift", "Grape"]],
-  ["H", "h", "Hat",      "🎩",  ["Hat", "House", "Horse"]],
+  ["T", "t", "Tap",      "🚰",  ["Tap", "Tin", "Top"]],
+  ["P", "p", "Pan",      "🍳",  ["Pan", "Pin", "Pat"]],
   ["I", "i", "Igloo",    "🧊",  ["Igloo", "Insect", "In"]],
-  ["J", "j", "Jug",      "🫙",  ["Jug", "Jam", "Jeep"]],
-  ["K", "k", "Kite",     "🪁",  ["Kite", "King", "Key"]],
-  ["L", "l", "Lion",     "🦁",  ["Lion", "Leaf", "Leg"]],
+  ["N", "n", "Nest",     "🪺",  ["Nest", "Nip", "Nut"]],
   ["M", "m", "Mat",      "🧶",  ["Mat", "Mango", "Mum"]],
-  ["N", "n", "Nest",     "🪺",  ["Nest", "Nose", "Nut"]],
+  ["D", "d", "Dog",      "🐶",  ["Dog", "Dig", "Door"]],
+  ["G", "g", "Goat",     "🐐",  ["Goat", "Got", "Grape"]],
   ["O", "o", "Octopus",  "🐙",  ["Octopus", "Ox", "On"]],
-  ["P", "p", "Pig",      "🐷",  ["Pig", "Pen", "Pot", "Pan"]],
-  ["Q", "q", "Queen",    "👑",  ["Queen", "Quilt", "Quick"]],
-  ["R", "r", "Rat",      "🐀",  ["Rat", "Rabbit", "Ring"]],
-  ["S", "s", "Sun",      "☀️",  ["Sun", "Snake", "Star", "Sock"]],
-  ["T", "t", "Tap",      "🚰",  ["Tap", "Tiger", "Top"]],
+  ["C", "c", "Cat",      "🐱",  ["Cat", "Cot", "Cup"]],
+  ["K", "k", "Kit",      "🪁",  ["Kit", "Kite", "Key"]],
+  ["E", "e", "Egg",      "🥚",  ["Egg", "Elephant", "Elbow"]],
   ["U", "u", "Umbrella", "☂️",  ["Umbrella", "Up", "Under"]],
+  ["R", "r", "Rat",      "🐀",  ["Rat", "Run", "Ring"]],
+  ["H", "h", "Hat",      "🎩",  ["Hat", "Hop", "Horse"]],
+  ["B", "b", "Ball",     "⚽",  ["Ball", "Bat", "Bed"]],
+  ["F", "f", "Fish",     "🐟",  ["Fish", "Fan", "Fog"]],
+  ["L", "l", "Lion",     "🦁",  ["Lion", "Log", "Lip"]],
+  ["J", "j", "Jam",      "🫙",  ["Jam", "Jet", "Jug"]],
   ["V", "v", "Van",      "🚐",  ["Van", "Vase", "Violin"]],
-  ["W", "w", "Water",    "💧",  ["Water", "Wind", "Wolf"]],
+  ["W", "w", "Water",    "💧",  ["Water", "Win", "Wet"]],
   ["X", "x", "Box",      "📦",  ["Box", "Fox", "Six"]],
   ["Y", "y", "Yak",      "🐂",  ["Yak", "Yes", "Yum"]],
-  ["Z", "z", "Zebra",    "🦓",  ["Zebra", "Zoo", "Zip"]],
+  ["Z", "z", "Zip",      "🦓",  ["Zip", "Zoo", "Zebra"]],
+  ["Q", "q", "Quilt",    "👑",  ["Quilt", "Queen", "Quick"]],
 ];
 
 const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji, examples], i) => ({
@@ -96,13 +92,15 @@ const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji, examples
 
 // ─── 3–4 years: CVC blending words ───────────────────────────────────────────
 const CVC_WORDS: Array<[string, string, string]> = [
-  // [word, blend hint, emoji]
-  ["cat", "c–a–t", "🐱"], ["bat", "b–a–t", "🦇"], ["hat", "h–a–t", "🎩"],
-  ["mat", "m–a–t", "🧶"], ["rat", "r–a–t", "🐀"], ["pen", "p–e–n", "🖊️"],
-  ["hen", "h–e–n", "🐔"], ["bed", "b–e–d", "🛏️"], ["pig", "p–i–g", "🐷"],
-  ["pin", "p–i–n", "📍"], ["sit", "s–i–t", "🪑"], ["dog", "d–o–g", "🐶"],
-  ["pot", "p–o–t", "🪴"], ["cup", "c–u–p", "🥤"], ["bus", "b–u–s", "🚌"],
-  ["sun", "s–u–n", "☀️"],
+  // SATPIN-first blending bank — children can read these after Group 1–2.
+  ["sat", "s–a–t", "😋"], ["sit", "s–i–t", "🪑"], ["pin", "p–i–n", "📍"],
+  ["pan", "p–a–n", "🍳"], ["tap", "t–a–p", "🚰"], ["pat", "p–a–t", "👋"],
+  ["nip", "n–i–p", "✂️"], ["tin", "t–i–n", "🥫"],
+  ["dog", "d–o–g", "🐶"], ["dig", "d–i–g", "🕳️"], ["got", "g–o–t", "✅"],
+  ["mat", "m–a–t", "🧶"], ["cat", "c–a–t", "🐱"], ["cot", "c–o–t", "🛏️"],
+  ["kit", "k–i–t", "🧰"], ["mop", "m–o–p", "🧹"],
+  ["pen", "p–e–n", "🖊️"], ["bed", "b–e–d", "🛏️"], ["cup", "c–u–p", "🥤"],
+  ["bus", "b–u–s", "🚌"], ["hat", "h–a–t", "🎩"], ["sun", "s–u–n", "☀️"],
 ];
 
 const TIER_3_4Y: SeedItem[] = CVC_WORDS.map(([word, blend, emoji], i) => ({
@@ -213,10 +211,54 @@ async function main() {
 
   console.log(`Seeding ${all.length} phonics rows…`);
 
+  // SATPIN reorder: park existing letter/word rows at high temporary levels so
+  // (ageGroup, level, symbol) upserts can land on the new pedagogical order
+  // without unique collisions, while preserving content ids / progress FKs.
+  for (const ageGroup of ["2_3y", "3_4y"] as const) {
+    await db.execute(sql`
+      UPDATE phonics_content
+      SET level = 9000 + id, updated_at = now()
+      WHERE age_group = ${ageGroup}
+        AND active = true
+        AND type IN ('letter', 'word')
+    `);
+  }
+
   let inserted = 0;
   let updated = 0;
 
   for (const item of all) {
+    // Prefer updating the existing row for this symbol (keeps contentId stable).
+    const existing = await db
+      .select({ id: phonicsContentTable.id })
+      .from(phonicsContentTable)
+      .where(
+        sql`${phonicsContentTable.ageGroup} = ${item.ageGroup}
+            AND ${phonicsContentTable.symbol} = ${item.symbol}`,
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      await db
+        .update(phonicsContentTable)
+        .set({
+          level: item.level,
+          type: item.type,
+          sound: item.sound,
+          phoneme: item.phoneme ?? null,
+          example: item.example ?? null,
+          examples: item.examples ?? null,
+          emoji: item.emoji ?? null,
+          hint: item.hint ?? null,
+          audioUrl: item.audioUrl ?? null,
+          active: true,
+          updatedAt: sql`now()`,
+        })
+        .where(sql`${phonicsContentTable.id} = ${existing[0].id}`);
+      updated++;
+      continue;
+    }
+
     const result = await db
       .insert(phonicsContentTable)
       .values({ ...item, active: true })

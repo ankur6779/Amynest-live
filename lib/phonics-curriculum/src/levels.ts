@@ -44,14 +44,35 @@ const L3_FAMILY_CONTENT = [
 export const PHONICS_CURRICULUM_LEVELS: CurriculumLevelDef[] = [
   {
     level: 1,
-    name: "Letter Sounds",
-    skills: ["phoneme recognition"],
-    content: ["a-z phonics sounds"],
+    name: "Letter Sounds & First Blends",
+    skills: [
+      "phoneme recognition",
+      "SATPIN groups",
+      "early CVC blending",
+      "beginning/ending sounds",
+    ],
+    // Concrete SATPIN targets — never the opaque "a-z phonics sounds" token.
+    content: [
+      "s",
+      "a",
+      "t",
+      "p",
+      "i",
+      "n",
+      "sat",
+      "sit",
+      "pin",
+      "pan",
+      "tap",
+      "pat",
+      "nip",
+      "tin",
+    ],
   },
   {
     level: 2,
     name: "CVC Decoding",
-    skills: ["blending", "decoding"],
+    skills: ["blending", "decoding", "full letter set"],
     content: CVC_POOL,
   },
   {

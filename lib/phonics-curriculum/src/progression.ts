@@ -1,10 +1,13 @@
 import type {
   ChildCurriculumProgress,
-  CurriculumLevel,
   TestOutcomeInput,
   TestOutcomeResult,
 } from "./types.js";
 import { clampCurriculumLevel, MAX_CURRICULUM_LEVEL } from "./levels.js";
+import {
+  clampLetterGroupIndex,
+  nextLetterGroupAfterMastery,
+} from "./letter-groups.js";
 
 const MASTERY_BOOST_PASS = 8;
 const MASTERY_PENALTY_FAIL = 12;
@@ -16,13 +19,15 @@ const LEVEL_REPEAT_THRESHOLD = 50;
  */
 export function applyTestOutcome(
   progress: ChildCurriculumProgress,
-  input: TestOutcomeInput,
+  input: TestOutcomeInput & { masteredLetters?: string[] },
 ): TestOutcomeResult {
   const score = Math.max(0, Math.min(100, Math.round(input.scorePct)));
   let mastery = progress.masteryScore;
   let level = progress.currentLevel;
   let levelChanged = false;
   let repeatLevel = false;
+  let letterGroupIndex = clampLetterGroupIndex(progress.letterGroupIndex ?? 1);
+  let letterGroupAdvanced = false;
 
   if (score > 80) {
     mastery = Math.min(100, mastery + MASTERY_BOOST_PASS);
@@ -33,10 +38,31 @@ export function applyTestOutcome(
     mastery = Math.min(100, mastery + Math.round((score - 50) / 10));
   }
 
-  if (mastery >= LEVEL_UP_THRESHOLD && level < MAX_CURRICULUM_LEVEL) {
+  // Advance SATPIN group on strong tests when letters in the current group are mastered.
+  if (score >= 70 && level === 1 && input.masteredLetters?.length) {
+    const next = nextLetterGroupAfterMastery(letterGroupIndex, input.masteredLetters);
+    if (next > letterGroupIndex) {
+      letterGroupIndex = next;
+      letterGroupAdvanced = true;
+    }
+  }
+
+  // Full letter groups complete → unlock curriculum L2 (full CVC decoding).
+  if (
+    letterGroupIndex >= 7 &&
+    mastery >= LEVEL_UP_THRESHOLD &&
+    level === 1
+  ) {
+    level = 2;
+    mastery = 40;
+    levelChanged = true;
+  } else if (mastery >= LEVEL_UP_THRESHOLD && level < MAX_CURRICULUM_LEVEL && level >= 2) {
     level = clampCurriculumLevel(level + 1);
     mastery = 40;
     levelChanged = true;
+  } else if (mastery >= LEVEL_UP_THRESHOLD && level === 1 && letterGroupIndex < 7) {
+    // Stay on L1 but nudge mastery so group practice continues; don't skip to L2 early.
+    mastery = Math.min(84, mastery);
   }
 
   const weakPhonemes = mergeWeakPhonemes(
@@ -46,7 +72,9 @@ export function applyTestOutcome(
   );
 
   let insight: string;
-  if (levelChanged) {
+  if (letterGroupAdvanced) {
+    insight = `New letter group unlocked! Keep blending your new sounds.`;
+  } else if (levelChanged) {
     insight = `Level up! Moving to level ${level}. Keep blending every day.`;
   } else if (repeatLevel) {
     insight = `Let's repeat this level — extra practice on tricky sounds tomorrow.`;
@@ -63,6 +91,8 @@ export function applyTestOutcome(
     weakPhonemes,
     repeatLevel,
     insight,
+    letterGroupIndex,
+    letterGroupAdvanced,
   };
 }
 

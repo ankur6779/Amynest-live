@@ -298,14 +298,22 @@ function PhonicsLearningContent({
     phonicsCurriculum.data?.progress?.currentLevel ?? phonicsCurriculum.data?.plan?.currentLevel,
     totalAgeMonths,
   );
+  const letterGroupIndex =
+    phonicsCurriculum.data?.progress?.letterGroupIndex ?? 1;
 
   const curriculumFilteredItems = useMemo(
-    () => filterItemsByCurriculumLevel(items ?? [], curriculumLevel),
-    [items, curriculumLevel],
+    () =>
+      filterItemsByCurriculumLevel(items ?? [], curriculumLevel, {
+        letterGroupIndex,
+      }),
+    [items, curriculumLevel, letterGroupIndex],
   );
   const curriculumFilteredDaily = useMemo(
-    () => filterItemsByCurriculumLevel(dailyItems ?? [], curriculumLevel),
-    [dailyItems, curriculumLevel],
+    () =>
+      filterItemsByCurriculumLevel(dailyItems ?? [], curriculumLevel, {
+        letterGroupIndex,
+      }),
+    [dailyItems, curriculumLevel, letterGroupIndex],
   );
 
   const journeyApplied = useMemo(
@@ -435,6 +443,7 @@ function PhonicsLearningContent({
           progress={safeProgress}
           recordPlay={recordPlay}
           curriculumLevel={curriculumLevel}
+          letterGroupIndex={letterGroupIndex}
           curriculumPlan={phonicsCurriculum.data?.plan ?? null}
           curriculumMasteryScore={phonicsCurriculum.data?.progress?.masteryScore ?? 0}
           curriculumLastTestAt={phonicsCurriculum.data?.progress?.lastTestAt ?? null}

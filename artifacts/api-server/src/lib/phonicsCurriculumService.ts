@@ -1,15 +1,19 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   db,
+  phonicsContentTable,
   phonicsCurriculumProgressTable,
   phonicsDailyPlansTable,
+  phonicsProgressTable,
   type PhonicsCurriculumProgressRow,
 } from "@workspace/db";
 import {
   applyTestOutcome,
   defaultLevelForAgeMonths,
   generateDailyPlan,
+  inferLetterGroupFromMasteredLetters,
   migrateCurriculumLevel,
+  migrateLetterGroupIndex,
   planCompletionPct,
   recordActivityDay,
   weakPhonemesFromSymbols,
@@ -26,18 +30,73 @@ export function todayIsoUtc(d = new Date()): string {
 
 function rowToProgress(
   row: PhonicsCurriculumProgressRow,
+  letterGroupOverride?: number,
 ): ChildCurriculumProgress {
+  const level = migrateCurriculumLevel(row.currentLevel);
+  const completed = row.completedToday ?? { date: "", ids: [] };
   return {
     childId: row.childId,
     userId: row.userId,
-    currentLevel: migrateCurriculumLevel(row.currentLevel),
+    currentLevel: level,
     masteryScore: row.masteryScore,
     weakPhonemes: Array.isArray(row.weakPhonemes) ? row.weakPhonemes : [],
     streak: row.streak,
     lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
     lastTestScore: row.lastTestScore,
     lastTestAt: row.lastTestAt?.toISOString() ?? null,
+    letterGroupIndex: migrateLetterGroupIndex(
+      letterGroupOverride ?? completed.letterGroupIndex,
+      level,
+    ),
   };
+}
+
+/**
+ * One-time (lazy) SATPIN migration: if letterGroupIndex was never stored,
+ * infer it from mastered letter tiles so A–Z progress is not reset.
+ */
+async function ensureLetterGroupMigrated(
+  row: PhonicsCurriculumProgressRow,
+): Promise<ChildCurriculumProgress> {
+  const completed = row.completedToday ?? { date: "", ids: [] };
+  const level = migrateCurriculumLevel(row.currentLevel);
+  if (completed.letterGroupIndex != null && Number.isFinite(completed.letterGroupIndex)) {
+    return rowToProgress(row);
+  }
+
+  const masteredRows = await db
+    .select({ symbol: phonicsContentTable.symbol })
+    .from(phonicsProgressTable)
+    .innerJoin(
+      phonicsContentTable,
+      eq(phonicsProgressTable.contentId, phonicsContentTable.id),
+    )
+    .where(
+      and(
+        eq(phonicsProgressTable.childId, row.childId),
+        eq(phonicsProgressTable.userId, row.userId),
+        eq(phonicsProgressTable.mastered, true),
+        sql`${phonicsContentTable.type} = 'letter'`,
+      ),
+    );
+
+  const masteredLetters = masteredRows.map((r) => r.symbol);
+  const inferred = inferLetterGroupFromMasteredLetters(masteredLetters, level);
+
+  const nextCompleted = {
+    ...completed,
+    letterGroupIndex: inferred,
+  };
+  const updated = await db
+    .update(phonicsCurriculumProgressTable)
+    .set({
+      completedToday: nextCompleted,
+      updatedAt: new Date(),
+    })
+    .where(eq(phonicsCurriculumProgressTable.id, row.id))
+    .returning();
+
+  return rowToProgress(updated[0] ?? row, inferred);
 }
 
 function planSeed(childId: number, dateIso: string): number {
@@ -67,7 +126,7 @@ export async function getOrCreateCurriculumProgress(
       )
       .limit(1);
 
-    if (existing[0]) return rowToProgress(existing[0]);
+    if (existing[0]) return ensureLetterGroupMigrated(existing[0]);
 
     const level = defaultLevelForAgeMonths(totalAgeMonths);
     const inserted = await db
@@ -79,7 +138,7 @@ export async function getOrCreateCurriculumProgress(
         masteryScore: 0,
         weakPhonemes: [],
         streak: 0,
-        completedToday: { date: "", ids: [] },
+        completedToday: { date: "", ids: [], letterGroupIndex: 1 },
       })
       .returning();
     return rowToProgress(inserted[0]!);
@@ -106,7 +165,7 @@ export async function loadCurriculumProgress(
         )
         .limit(1);
 
-      return existing[0] ? rowToProgress(existing[0]) : null;
+      return existing[0] ? ensureLetterGroupMigrated(existing[0]) : null;
     },
     null,
   );
@@ -209,16 +268,18 @@ export async function markPlanActivityComplete(
       prev.date === dateIso
         ? [...new Set([...prev.ids, activityId])]
         : [activityId];
+    const progressBefore = rowToProgress(row);
 
-    const { streak, lastPlayedAt } = recordActivityDay(
-      rowToProgress(row),
-      dateIso,
-    );
+    const { streak, lastPlayedAt } = recordActivityDay(progressBefore, dateIso);
 
     const updated = await db
       .update(phonicsCurriculumProgressTable)
       .set({
-        completedToday: { date: dateIso, ids },
+        completedToday: {
+          date: dateIso,
+          ids,
+          letterGroupIndex: progressBefore.letterGroupIndex,
+        },
         streak,
         lastPlayedAt: new Date(lastPlayedAt),
         updatedAt: new Date(),
@@ -235,7 +296,7 @@ export async function markPlanActivityComplete(
 export async function applyCurriculumTestResult(
   childId: number,
   userId: string,
-  input: TestOutcomeInput & { weakSymbols?: string[] },
+  input: TestOutcomeInput & { weakSymbols?: string[]; masteredLetters?: string[] },
 ): Promise<{
   progress: ChildCurriculumProgress;
   outcome: ReturnType<typeof applyTestOutcome>;
@@ -266,8 +327,10 @@ export async function applyCurriculumTestResult(
         ...(input.weakPhonemesFromContent ?? []),
         ...weakFromSymbols,
       ],
+      masteredLetters: input.masteredLetters,
     });
 
+    const prevCompleted = row.completedToday ?? { date: "", ids: [] };
     const updated = await db
       .update(phonicsCurriculumProgressTable)
       .set({
@@ -276,6 +339,11 @@ export async function applyCurriculumTestResult(
         weakPhonemes: outcome.weakPhonemes,
         lastTestScore: Math.round(input.scorePct),
         lastTestAt: new Date(),
+        completedToday: {
+          ...prevCompleted,
+          letterGroupIndex:
+            outcome.letterGroupIndex ?? progress.letterGroupIndex ?? 1,
+        },
         updatedAt: new Date(),
       })
       .where(eq(phonicsCurriculumProgressTable.id, row.id))

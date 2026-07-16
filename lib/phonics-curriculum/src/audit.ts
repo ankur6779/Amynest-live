@@ -81,31 +81,38 @@ function auditLevelContentOwnership(): PhonicsAuditFinding[] {
         owner = 3;
       } else if (item.includes(" ")) {
         owner = 7;
-      } else if (CVC_SET.has(item) && def.level !== 2) {
-        findings.push({
-          kind: "level_leak",
-          id: item,
-          detail: `CVC word "${item}" listed in L${def.level} content (owner L2)`,
-        });
-        continue;
       } else {
         owner = requiredLevelForSymbol(item, "word") as CurriculumLevel;
       }
 
+      // Non-SATPIN CVC belongs in L2 only. Early SATPIN blends may list in L1.
+      if (CVC_SET.has(item) && def.level !== 2 && owner !== 1) {
+        findings.push({
+          kind: "level_leak",
+          id: item,
+          detail: `CVC word "${item}" listed in L${def.level} content (owner L${owner})`,
+        });
+        continue;
+      }
+
       const prev = introOwner.get(item);
       if (prev != null && prev !== def.level) {
-        findings.push({
-          kind: "duplicate_concept",
-          id: item,
-          detail: `Introduced at L${prev} and L${def.level}`,
-        });
+        // L2 may reinforce L1 SATPIN blends — not a duplicate introduction.
+        if (!(prev === 1 && def.level === 2 && owner === 1)) {
+          findings.push({
+            kind: "duplicate_concept",
+            id: item,
+            detail: `Introduced at L${prev} and L${def.level}`,
+          });
+        }
       } else {
         introOwner.set(item, def.level);
       }
 
       if (owner !== def.level && !item.startsWith("pattern:")) {
         const anchorOk = def.level === 2 && ANCHOR_SET.has(item);
-        if (!anchorOk) {
+        const satpinReinforceOk = def.level === 2 && owner === 1;
+        if (!anchorOk && !satpinReinforceOk) {
           findings.push({
             kind: "level_leak",
             id: item,

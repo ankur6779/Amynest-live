@@ -42,10 +42,14 @@ function hashChildDay(childId: number, dateKey: string): number {
   return Math.abs(h);
 }
 
-function wordUnlocked(word: string, level: CurriculumLevel): boolean {
+function wordUnlocked(
+  word: string,
+  level: CurriculumLevel,
+  letterGroupIndex = 1,
+): boolean {
   const w = word.trim().toLowerCase();
   if (!/^[a-z]+$/.test(w)) return false;
-  return isContentUnlocked(w, level, "word");
+  return isContentUnlocked(w, level, "word", { letterGroupIndex });
 }
 
 function symbolFromItem(item: DisplayPhonicsItem | undefined): string | undefined {
@@ -113,8 +117,11 @@ export function selectAdaptiveLessons(opts: {
   totalCount?: number;
   now?: number;
   currentLevel?: number;
+  /** SATPIN letter group (1–8); gates L1 CVC / letter picks. */
+  letterGroupIndex?: number;
 }): AdaptiveLessonPick[] {
   const level = (opts.currentLevel ?? 1) as CurriculumLevel;
+  const letterGroupIndex = opts.letterGroupIndex ?? 1;
   const profile = buildWeakSkillProfile(opts.mastery, opts.items, opts.progress);
   const seed = hashChildDay(opts.childId, opts.dateKey);
   const total = opts.totalCount ?? 10;
@@ -143,7 +150,9 @@ export function selectAdaptiveLessons(opts: {
     });
   }
 
-  const weakPool = profile.weakWords.filter((w) => wordUnlocked(w, level));
+  const weakPool = profile.weakWords.filter((w) =>
+    wordUnlocked(w, level, letterGroupIndex),
+  );
 
   for (let i = 0; i < weakSlots; i++) {
     if (weakPool.length === 0) break;
@@ -163,7 +172,7 @@ export function selectAdaptiveLessons(opts: {
     if (reviewed.length === 0) break;
     const item = reviewed[(seed + i + 3) % reviewed.length];
     const word = symbolFromItem(item);
-    if (!word || !wordUnlocked(word, level)) continue;
+    if (!word || !wordUnlocked(word, level, letterGroupIndex)) continue;
     picks.push({
       word,
       reason: "review",
@@ -179,7 +188,7 @@ export function selectAdaptiveLessons(opts: {
     if (newPool.length === 0) break;
     const item = newPool[(seed + i + 7) % newPool.length];
     const word = symbolFromItem(item);
-    if (!word || !wordUnlocked(word, level)) continue;
+    if (!word || !wordUnlocked(word, level, letterGroupIndex)) continue;
     picks.push({
       word,
       reason: "new",
@@ -201,9 +210,11 @@ export function buildAdaptiveDailyMission(opts: {
   storyId?: string;
   now?: number;
   curriculumLevel?: number;
+  letterGroupIndex?: number;
 }): Omit<DailyReadingMission, "dateKey"> & { adaptivePicks: AdaptiveLessonPick[] } {
   const dateKey = new Date().toISOString().slice(0, 10);
   const curriculumLevel = opts.curriculumLevel ?? 1;
+  const letterGroupIndex = opts.letterGroupIndex ?? 1;
   const masteryAvg =
     Object.values(opts.mastery.words).length > 0
       ? Math.round(
@@ -241,6 +252,7 @@ export function buildAdaptiveDailyMission(opts: {
     totalCount: 6,
     now: opts.now,
     currentLevel: curriculumLevel,
+    letterGroupIndex,
   });
 
   const overdue = picks.filter((p) => p.reason === "overdue");

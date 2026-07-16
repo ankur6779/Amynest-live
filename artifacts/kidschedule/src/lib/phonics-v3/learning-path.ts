@@ -42,6 +42,8 @@ export type LearningPathInput = {
   childId: number;
   /** From curriculum API when known; otherwise derived from ageMonths. */
   curriculumLevel?: number;
+  /** SATPIN letter group (1–8); defaults to 1 at L1. */
+  letterGroupIndex?: number;
   ageMonths?: number;
   now?: number;
   /** Test seam — inject state instead of reading localStorage. */
@@ -52,6 +54,7 @@ export type LearningPathInput = {
 export type MasteryContext = {
   childId: number;
   level: CurriculumLevel;
+  letterGroupIndex: number;
   mastery: PhonicsMasteryState;
   retention: PhonicsRetentionState;
   completedStoryIds: string[];
@@ -91,10 +94,14 @@ function clampLevel(level: number): CurriculumLevel {
   return Math.max(1, Math.min(7, Math.round(level))) as CurriculumLevel;
 }
 
-function wordUnlocked(word: string, level: CurriculumLevel): boolean {
+function wordUnlocked(
+  word: string,
+  level: CurriculumLevel,
+  letterGroupIndex = 1,
+): boolean {
   const w = word.trim().toLowerCase();
   if (!/^[a-z]+$/.test(w)) return false;
-  return isContentUnlocked(w, level, "word");
+  return isContentUnlocked(w, level, "word", { letterGroupIndex });
 }
 
 /** Load (or accept injected) child state and derive aggregate signals. */
@@ -117,10 +124,13 @@ export function buildMasteryContext(input: LearningPathInput): MasteryContext {
     input.curriculumLevel ??
       (input.ageMonths != null ? defaultLevelForAgeMonths(input.ageMonths) : 1),
   );
+  const letterGroupIndex =
+    level >= 2 ? 8 : Math.max(1, Math.min(8, Math.round(input.letterGroupIndex ?? 1)));
 
   return {
     childId: input.childId,
     level,
+    letterGroupIndex,
     mastery,
     retention,
     completedStoryIds: Object.keys(storyProgress.completed ?? {}),
@@ -132,8 +142,10 @@ export function buildMasteryContext(input: LearningPathInput): MasteryContext {
 }
 
 /** Deterministic level-appropriate "new" word pool (no dynamic content list). */
-function levelNewWordPool(level: CurriculumLevel): string[] {
-  const fromCurriculum = getLevelWordPool(level).filter((w) => /^[a-z]+$/.test(w));
+function levelNewWordPool(level: CurriculumLevel, letterGroupIndex = 1): string[] {
+  const fromCurriculum = getLevelWordPool(level, { letterGroupIndex }).filter((w) =>
+    /^[a-z]+$/.test(w),
+  );
   if (fromCurriculum.length > 0) return fromCurriculum;
   return CVC_WORDS.map((e) => e.word);
 }
@@ -150,7 +162,7 @@ export function getNextRecommendedWordPack(ctx: MasteryContext): {
   const seen = new Set<string>();
   const push = (word: string, reason: RecommendationReason) => {
     const w = word.trim().toLowerCase();
-    if (!w || seen.has(w) || !wordUnlocked(w, ctx.level)) return;
+    if (!w || seen.has(w) || !wordUnlocked(w, ctx.level, ctx.letterGroupIndex)) return;
     seen.add(w);
     picks.push({ word: w, reason });
   };
@@ -161,7 +173,7 @@ export function getNextRecommendedWordPack(ctx: MasteryContext): {
   const masteredWords = new Set(
     Object.values(ctx.mastery.words).filter((r) => r.isMastered).map((r) => r.id),
   );
-  const newPool = levelNewWordPool(ctx.level).slice(0, NEW_POOL_SCAN);
+  const newPool = levelNewWordPool(ctx.level, ctx.letterGroupIndex).slice(0, NEW_POOL_SCAN);
   for (const w of newPool) {
     if (picks.length >= MAX_WORDS) break;
     if (!masteredWords.has(w.toLowerCase())) push(w, ctx.hasMasteryData ? "new" : "starter");
@@ -231,7 +243,7 @@ export function getNextRecommendedAssessment(
 /** Phase 2 — getNextRecommendedRemediation (overdue + at-risk + weak). */
 export function getNextRecommendedRemediation(ctx: MasteryContext): RemediationRecommendation {
   const overdueWords = getOverdueWordIds(ctx.retention, ctx.now).filter((w) =>
-    wordUnlocked(w, ctx.level),
+    wordUnlocked(w, ctx.level, ctx.letterGroupIndex),
   );
   const atRisk = getSkillsAtRisk(ctx.retention, ctx.now);
   const weakWords = getWeakestWords(ctx.mastery, 8).map((r) => r.id);

@@ -18,7 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
-import { migrateCurriculumLevel } from "@workspace/phonics-curriculum";
+import {
+  getGroupCompletionReward,
+  getLetterGroup,
+  migrateCurriculumLevel,
+} from "@workspace/phonics-curriculum";
 import type { DisplayPhonicsItem, PhonicsInsight, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import type { PhonicsLevel } from "@/lib/phonics-content";
@@ -138,6 +142,9 @@ export function PhonicsJourneyHub({
   const streak = plan?.streak ?? curriculumProgress?.streak ?? 0;
   const weakPhonemes = plan?.weakPhonemes ?? curriculumProgress?.weakPhonemes ?? [];
   const lastTestScore = curriculumProgress?.lastTestScore ?? null;
+  const letterGroupIndex = curriculumProgress?.letterGroupIndex ?? 1;
+  const letterGroup = getLetterGroup(letterGroupIndex);
+  const groupReward = getGroupCompletionReward(Math.max(1, letterGroupIndex - 1));
 
   const activeStage = useMemo(
     () => resolveActiveJourneyStage(curriculumLevel, totalAgeMonths),
@@ -912,6 +919,46 @@ export function PhonicsJourneyHub({
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SATPIN letter group — blending-first progression */}
+      {(curriculumLevel == null || curriculumLevel <= 1) && (
+        <Card
+          className={cn(CARD_SURFACE, "border-amber-500/20 bg-gradient-to-br from-amber-500/[0.06] to-transparent")}
+          data-testid="phonics-satpin-group"
+        >
+          <CardContent className="space-y-2 p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl" aria-hidden>
+                {letterGroup.treasureEmoji}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                  Letter group {letterGroup.id} · {letterGroup.name}
+                </p>
+                <p className="font-quicksand text-sm font-bold text-foreground">
+                  {letterGroup.description}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Sounds: {letterGroup.graphemes.map((g) => g.toUpperCase()).join(" · ")}
+                </p>
+                {letterGroup.words.length > 0 && (
+                  <p className="mt-1 text-[11px] font-medium text-foreground/80">
+                    Blend words: {letterGroup.words.slice(0, 6).join(", ")}
+                  </p>
+                )}
+              </div>
+              <Badge variant="secondary" className="shrink-0 text-[10px]">
+                {letterGroup.badge}
+              </Badge>
+            </div>
+            {letterGroupIndex > 1 && (
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                {groupReward.treasureEmoji} Treasure unlocked: {groupReward.label}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

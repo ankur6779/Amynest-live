@@ -32,6 +32,9 @@ for k, v in updates.items():
 PY
 REMOTE
 
+echo "==> Ensure Traefik HTTPS labels before redeploy"
+bash "$(dirname "$0")/19-ensure-coolify-traefik-https.sh"
+
 echo "==> Redeploy Coolify container (force-recreate)"
 ssh -i "$SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes "root@$COOLIFY_HOST" \
   "cd $APP_DIR && docker compose up -d --force-recreate"

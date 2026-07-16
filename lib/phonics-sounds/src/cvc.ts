@@ -58,43 +58,69 @@ const IPA_CACHE_SLUG: Record<string, string> = {
   ʌ: "u",
 };
 
+/**
+ * CVC pool ordered for Synthetic Phonics blending-first progression.
+ * level 1 = SATPIN-decodable (Group 1–2 core); level 2 = wider short vowels.
+ */
 export const CVC_WORDS: CvcWordEntry[] = [
-  { word: "cat", phonemes: ["k", "æ", "t"], level: 1 },
-  { word: "bat", phonemes: ["b", "æ", "t"], level: 1 },
-  { word: "mat", phonemes: ["m", "æ", "t"], level: 1 },
+  // Group 1 SATPIN — blend immediately after s,a,t,p,i,n
   { word: "sat", phonemes: ["s", "æ", "t"], level: 1 },
-  { word: "pat", phonemes: ["p", "æ", "t"], level: 1 },
-  { word: "hat", phonemes: ["h", "æ", "t"], level: 1 },
-  { word: "rat", phonemes: ["r", "æ", "t"], level: 1 },
-  { word: "can", phonemes: ["k", "æ", "n"], level: 1 },
-  { word: "fan", phonemes: ["f", "æ", "n"], level: 1 },
-  { word: "man", phonemes: ["m", "æ", "n"], level: 1 },
+  { word: "sit", phonemes: ["s", "ɪ", "t"], level: 1 },
+  { word: "pin", phonemes: ["p", "ɪ", "n"], level: 1 },
   { word: "pan", phonemes: ["p", "æ", "n"], level: 1 },
+  { word: "tap", phonemes: ["t", "æ", "p"], level: 1 },
+  { word: "pat", phonemes: ["p", "æ", "t"], level: 1 },
+  { word: "nip", phonemes: ["n", "ɪ", "p"], level: 1 },
+  { word: "tin", phonemes: ["t", "ɪ", "n"], level: 1 },
+  { word: "sip", phonemes: ["s", "ɪ", "p"], level: 1 },
+  { word: "tip", phonemes: ["t", "ɪ", "p"], level: 1 },
+  { word: "nap", phonemes: ["n", "æ", "p"], level: 1 },
+  { word: "tan", phonemes: ["t", "æ", "n"], level: 1 },
 
-  { word: "dog", phonemes: ["d", "ɒ", "g"], level: 2 },
+  // Group 2 MDGOCK
+  { word: "dog", phonemes: ["d", "ɒ", "g"], level: 1 },
+  { word: "dig", phonemes: ["d", "ɪ", "g"], level: 1 },
+  { word: "got", phonemes: ["g", "ɒ", "t"], level: 1 },
+  { word: "mat", phonemes: ["m", "æ", "t"], level: 1 },
+  { word: "cat", phonemes: ["k", "æ", "t"], level: 1 },
+  { word: "cot", phonemes: ["k", "ɒ", "t"], level: 1 },
+  { word: "kit", phonemes: ["k", "ɪ", "t"], level: 1 },
+  { word: "mop", phonemes: ["m", "ɒ", "p"], level: 1 },
+  { word: "can", phonemes: ["k", "æ", "n"], level: 1 },
+  { word: "man", phonemes: ["m", "æ", "n"], level: 1 },
+  { word: "pot", phonemes: ["p", "ɒ", "t"], level: 1 },
+  { word: "pig", phonemes: ["p", "ɪ", "g"], level: 1 },
+
+  // Wider short-vowel CVC (Groups 3–6)
+  { word: "bat", phonemes: ["b", "æ", "t"], level: 2 },
+  { word: "hat", phonemes: ["h", "æ", "t"], level: 2 },
+  { word: "rat", phonemes: ["r", "æ", "t"], level: 2 },
+  { word: "fan", phonemes: ["f", "æ", "n"], level: 2 },
   { word: "log", phonemes: ["l", "ɒ", "g"], level: 2 },
   { word: "fog", phonemes: ["f", "ɒ", "g"], level: 2 },
-
   { word: "pen", phonemes: ["p", "ɛ", "n"], level: 2 },
   { word: "hen", phonemes: ["h", "ɛ", "n"], level: 2 },
   { word: "ten", phonemes: ["t", "ɛ", "n"], level: 2 },
   { word: "bed", phonemes: ["b", "ɛ", "d"], level: 2 },
-
-  { word: "sit", phonemes: ["s", "ɪ", "t"], level: 2 },
   { word: "hit", phonemes: ["h", "ɪ", "t"], level: 2 },
-  { word: "pin", phonemes: ["p", "ɪ", "n"], level: 2 },
   { word: "win", phonemes: ["w", "ɪ", "n"], level: 2 },
   { word: "fin", phonemes: ["f", "ɪ", "n"], level: 2 },
-  { word: "pig", phonemes: ["p", "ɪ", "g"], level: 2 },
-  { word: "sip", phonemes: ["s", "ɪ", "p"], level: 2 },
   { word: "lip", phonemes: ["l", "ɪ", "p"], level: 2 },
-  { word: "tip", phonemes: ["t", "ɪ", "p"], level: 2 },
-
   { word: "cup", phonemes: ["k", "ʌ", "p"], level: 2 },
   { word: "sun", phonemes: ["s", "ʌ", "n"], level: 2 },
   { word: "bus", phonemes: ["b", "ʌ", "s"], level: 2 },
-
-  { word: "pot", phonemes: ["p", "ɒ", "t"], level: 2 },
+  { word: "red", phonemes: ["r", "ɛ", "d"], level: 2 },
+  { word: "run", phonemes: ["r", "ʌ", "n"], level: 2 },
+  { word: "rug", phonemes: ["r", "ʌ", "g"], level: 2 },
+  { word: "net", phonemes: ["n", "ɛ", "t"], level: 2 },
+  { word: "hop", phonemes: ["h", "ɒ", "p"], level: 2 },
+  { word: "van", phonemes: ["v", "æ", "n"], level: 2 },
+  { word: "wet", phonemes: ["w", "ɛ", "t"], level: 2 },
+  { word: "box", phonemes: ["b", "ɒ", "ks"], level: 2 },
+  { word: "fox", phonemes: ["f", "ɒ", "ks"], level: 2 },
+  { word: "jam", phonemes: ["j", "æ", "m"], level: 2 },
+  { word: "jet", phonemes: ["j", "ɛ", "t"], level: 2 },
+  { word: "zip", phonemes: ["z", "ɪ", "p"], level: 2 },
 ];
 
 /** Phoneme key for a grapheme slot in a CVC blend (index matches c–a–t splits). */

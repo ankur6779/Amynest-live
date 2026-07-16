@@ -60,9 +60,8 @@ private const val BASE_URL = "https://www.amynest.in"
  *         loads so the web layer can show a "Opened from notification" toast
  *         and fire analytics.
  *
- *  4. Requests POST_NOTIFICATIONS, location, and microphone on cold start
- *     (Android system dialogs), and re-requests when the web page calls
- *     geolocation / getUserMedia via [WebChromeClient].
+ *  4. Defers notification permission until after first page load; location and
+ *     microphone are requested only when a feature needs them.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -93,6 +92,12 @@ class MainActivity : AppCompatActivity() {
 
     /** Defer notification prompt until after first paint — avoids dialog stack on cold start. */
     private var deferredNotificationScheduled = false
+
+    /** Gate keyboard inset JS/layout churn until the SPA has finished its first load. */
+    private var webContentReady = false
+
+    /** Ensures deferred startup wiring runs at most once. */
+    private var deferredStartupInstalled = false
 
     private var systemAudioManager: AudioManager? = null
 
@@ -194,16 +199,33 @@ class MainActivity : AppCompatActivity() {
 
             configureWebView(wv)
         }
-        systemAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         setContentView(webView)
 
-        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
-            applyWebSafeAreaInsets(insets)
-            insets
-        }
-        installImeAnimationTracking()
-        installVisibleFrameKeyboardFallback()
-        ViewCompat.requestApplyInsets(webView)
+        // Push bridge must register document-start scripts before navigation begins.
+        pushBridge = PushBridge(
+            context = this,
+            permissionRequester = { askNotificationPermission() },
+        )
+        pushBridge.install(webView)
+        injectStartupFunnelEvent(webView, "webview_created")
+
+        // PaywallActivityLauncher registers Activity Result observers — must run in
+        // onCreate (before STARTED). webView.post is too late and crashes.
+        installLifecycleBoundComponents()
+
+        scheduleStaleWebCacheClearIfNeeded(webView)
+
+        val launchUrl = buildLaunchUrl(intent)
+        webView.loadUrl(launchUrl)
+        Log.d(TAG, "Loading: $launchUrl (wrapper version=${PushBridge.WRAPPER_VERSION})")
+
+        // Defer non-lifecycle bridge wiring until after the first frame is scheduled.
+        webView.post { installDeferredStartupComponents() }
+    }
+
+    /** Billing/auth bridges that register lifecycle observers — onCreate only. */
+    private fun installLifecycleBoundComponents() {
+        systemAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
         billingBridge = BillingBridge.installOn(this, webView)
         if (billingBridge != null) {
@@ -224,17 +246,29 @@ class MainActivity : AppCompatActivity() {
             bridge.attachSignInLauncher { intent -> googleSignInLauncher.launch(intent) }
         }
         Log.d(TAG, "AuthBridge installed for Google Sign-In (see logcat GoogleSignInConfig on first sign-in)")
+    }
 
-        pushBridge = PushBridge(
-            context = this,
-            permissionRequester = { askNotificationPermission() },
-        )
-        pushBridge.install(webView)
+    /**
+     * Keyboard inset listeners and JS bridges that do not register Activity Result
+     * observers. Running on the next choreographer tick avoids stacking work on the
+     * first GPU draw (Play Console ANR: HardwareRenderer.syncAndDrawFrame).
+     */
+    private fun installDeferredStartupComponents() {
+        if (!::webView.isInitialized || deferredStartupInstalled) return
+        deferredStartupInstalled = true
+
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
+            applyWebSafeAreaInsets(insets)
+            insets
+        }
+        installImeAnimationTracking()
+        installVisibleFrameKeyboardFallback()
+        ViewCompat.requestApplyInsets(webView)
+
         localNotifBridge = LocalNotifBridge.installOn(webView, this)
         installMicrophoneBridge(webView)
         installAppVersionBridge(webView)
         installDeviceInfoBridge(webView)
-        injectStartupFunnelEvent(webView, "webview_created")
         reviewBridge = ReviewBridge.installOn(this, webView)
         InstallReferrerBridge.fetchOn(this, webView)
 
@@ -244,12 +278,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "FCM token bootstrapped from FirebaseMessaging API")
             }
         }
-
-        clearStaleWebCacheIfNeeded(webView)
-
-        val launchUrl = buildLaunchUrl(intent)
-        webView.loadUrl(launchUrl)
-        Log.d(TAG, "Loading: $launchUrl (wrapper version=${PushBridge.WRAPPER_VERSION})")
     }
 
     override fun onResume() {
@@ -408,7 +436,7 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             ServiceWorkerController.getInstance()
                 .serviceWorkerWebSettings
-                .cacheMode = WebSettings.LOAD_NO_CACHE
+                .cacheMode = WebSettings.LOAD_DEFAULT
         }
         
         wv.overScrollMode = View.OVER_SCROLL_NEVER
@@ -491,6 +519,7 @@ class MainActivity : AppCompatActivity() {
 
                 injectStartupFunnelEvent(view, "webview_page_finished", """{"url":${JSONObject.quote(url)}}""")
                 scheduleDeferredNotificationPermission(url)
+                markWebContentReadyIfAmyNestHost(url)
 
                 ViewCompat.getRootWindowInsets(view)?.let { applyWebSafeAreaInsets(it) }
 
@@ -664,22 +693,41 @@ class MainActivity : AppCompatActivity() {
      * Play Store WebView loads live https://www.amynest.in — not bundled JS.
      * After a wrapper upgrade, clear native + in-page caches so users pick up
      * the latest onboarding and other web deploys instead of stale chunks.
+     *
+     * Disk + cookie work is posted to the next frame so it does not stack on the
+     * first GPU draw (Play Console ANR: HardwareRenderer.syncAndDrawFrame).
      */
-    private fun clearStaleWebCacheIfNeeded(wv: WebView) {
+    private fun scheduleStaleWebCacheClearIfNeeded(wv: WebView) {
         val prefs = getSharedPreferences("amynest_webview", MODE_PRIVATE)
         val lastVersion = prefs.getString("wrapper_version", null)
         if (lastVersion == PushBridge.WRAPPER_VERSION) return
 
-        wv.clearCache(true)
-        wv.clearHistory()
-        CookieManager.getInstance().removeAllCookies(null)
-        CookieManager.getInstance().flush()
         prefs.edit().putString("wrapper_version", PushBridge.WRAPPER_VERSION).apply()
         pendingWebCachePurge = true
-        Log.d(
-            TAG,
-            "Cleared WebView cache for wrapper upgrade ($lastVersion → ${PushBridge.WRAPPER_VERSION})",
-        )
+        wv.post {
+            try {
+                wv.clearCache(true)
+                wv.clearHistory()
+                CookieManager.getInstance().removeAllCookies(null)
+                CookieManager.getInstance().flush()
+                Log.d(
+                    TAG,
+                    "Deferred WebView cache clear for wrapper upgrade ($lastVersion → ${PushBridge.WRAPPER_VERSION})",
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "Deferred WebView cache clear failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun markWebContentReadyIfAmyNestHost(pageUrl: String) {
+        val host = try {
+            Uri.parse(pageUrl).host?.lowercase()
+        } catch (_: Throwable) {
+            null
+        } ?: return
+        if (host != "www.amynest.in" && host != "amynest.in") return
+        webContentReady = true
     }
 
     private fun purgeWebCachesInPage(view: WebView) {
@@ -1142,7 +1190,7 @@ class MainActivity : AppCompatActivity() {
     private fun installVisibleFrameKeyboardFallback() {
         val root = window.decorView
         root.viewTreeObserver.addOnGlobalLayoutListener {
-            if (!::webView.isInitialized) return@addOnGlobalLayoutListener
+            if (!::webView.isInitialized || !webContentReady) return@addOnGlobalLayoutListener
             val imeFromInsets = ViewCompat.getRootWindowInsets(webView)
                 ?.getInsets(WindowInsetsCompat.Type.ime())
                 ?.bottom ?: 0
@@ -1166,6 +1214,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun applyImeBottomInset(imeBottomPx: Int) {
         if (!::webView.isInitialized) return
+        if (!webContentReady) return
         if (imeBottomPx == lastAppliedImePx) return
         lastAppliedImePx = imeBottomPx
 

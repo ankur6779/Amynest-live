@@ -101,6 +101,7 @@ export type PhonicsV2Props = {
   progress: PhonicsProgressMap;
   recordPlay: (id: string, contentId?: number) => void;
   curriculumLevel?: number | null;
+  letterGroupIndex?: number | null;
   curriculumPlan?: PhonicsDailyPlan | null;
   curriculumMasteryScore?: number;
   curriculumLastTestAt?: string | null;
@@ -118,6 +119,7 @@ export function PhonicsV2({
   progress,
   recordPlay,
   curriculumLevel,
+  letterGroupIndex,
   curriculumPlan,
   curriculumMasteryScore = 0,
   curriculumLastTestAt,
@@ -369,6 +371,7 @@ export function PhonicsV2({
         mastery={mastery}
         retention={retention}
         curriculumLevel={curriculumLevel}
+        letterGroupIndex={letterGroupIndex}
         plan={curriculumPlan}
         missionStoryId={unlockedStories[0]?.id}
         onCompleteCurriculumActivity={onCompleteCurriculumActivity}

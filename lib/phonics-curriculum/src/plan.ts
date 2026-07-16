@@ -84,7 +84,13 @@ export function generateDailyPlan(input: GenerateDailyPlanInput): PhonicsDailyPl
   const level = progress.currentLevel;
   const levelDef = getCurriculumLevelDef(level);
 
-  const practiceTargets = pickPracticeTargets(level, progress.weakPhonemes, 2, seed);
+  const practiceTargets = pickPracticeTargets(
+    level,
+    progress.weakPhonemes,
+    2,
+    seed,
+    progress.letterGroupIndex ?? 1,
+  );
   const practice: PlanActivity[] = practiceTargets.map((target, i) => {
     const kind = activityKindForTarget(level, target);
     const id = `${dateIso}-practice-${i}-${target}`;
