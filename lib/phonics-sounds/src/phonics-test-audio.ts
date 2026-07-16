@@ -26,37 +26,57 @@ export const PHONICS_TEST_ANIMAL_SOUNDS = [
   "Ding ding.",
 ] as const;
 
-/** Bare phonemes from letter rows — `extractSound()` for sound_to_letter / identify. */
+/**
+ * Sound lines from letter rows — `extractSound()` for sound_to_letter / identify.
+ * "X as in word" lines resolve to curated pure-phoneme clips in phonics mode.
+ * Legacy schwa labels ("buh") are kept only for rows seeded before 2026-07.
+ */
 export const PHONICS_TEST_LETTER_PHONEMES = [
-  "ah",
-  "buh",
-  "kuh",
-  "duh",
-  "eh",
-  "fff",
-  "guh",
-  "huh",
-  "ih",
-  "juh",
-  "lll",
-  "mmm",
-  "nnn",
-  "oh",
-  "puh",
-  "kwuh",
-  "rrr",
-  "sss",
-  "tuh",
-  "uh",
-  "vvv",
-  "wuh",
-  "ks",
-  "yuh",
-  "zzz",
+  "a as in apple",
+  "b as in ball",
+  "c as in cat",
+  "d as in dog",
+  "e as in egg",
+  "f as in fish",
+  "g as in goat",
+  "h as in hat",
+  "i as in igloo",
+  "j as in jug",
+  "k as in kite",
+  "l as in lion",
+  "m as in mat",
+  "n as in nest",
+  "o as in octopus",
+  "p as in pig",
+  "q as in queen",
+  "r as in rat",
+  "s as in sun",
+  "t as in tap",
+  "u as in umbrella",
+  "v as in van",
+  "w as in water",
+  "x as in box",
+  "y as in yak",
+  "z as in zebra",
+  // Legacy pre-2026-07 seeded labels (still resolvable in older DB rows).
+  "ah", "buh", "kuh", "duh", "eh", "fff", "guh", "huh", "ih", "juh", "lll",
+  "mmm", "nnn", "oh", "puh", "kwuh", "rrr", "sss", "tuh", "uh", "vvv", "wuh",
+  "ks", "yuh", "zzz",
 ] as const;
 
-/** Digraph phonemes for 5–6y identify questions. */
-export const PHONICS_TEST_DIGRAPH_PHONEMES = ["shhh", "chuh", "thhh", "wuh", "fff", "kuh"] as const;
+/** Digraph sound lines for 5–6y identify questions (+ legacy labels). */
+export const PHONICS_TEST_DIGRAPH_PHONEMES = [
+  "sh as in ship",
+  "ch as in chip",
+  "th as in thin",
+  "wh as in whip",
+  "ng as in ring",
+  "ck as in duck",
+  "qu as in quilt",
+  "ph as in phone",
+  // Legacy pre-2026-07 seeded labels.
+  "shhh", "chuh", "thhh", "wuh", "fff", "kuh",
+] as const;
 
 /** Core CVC + word-bank symbols used as listening / build_word / missing_letter ttsText. */
 export const PHONICS_TEST_WORD_TTS = [

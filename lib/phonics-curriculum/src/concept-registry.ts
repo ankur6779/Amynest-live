@@ -75,7 +75,7 @@ export function buildConceptRegistry(): ConceptRecord[] {
     records.push(recordFromLevel(key, level));
   };
 
-  for (const letter of Object.keys("abcdefghijklmnopqrstuvwxyz")) {
+  for (const letter of "abcdefghijklmnopqrstuvwxyz") {
     add(letter, 1);
   }
 

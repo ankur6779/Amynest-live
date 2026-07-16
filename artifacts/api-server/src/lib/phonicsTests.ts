@@ -156,8 +156,15 @@ export function shuffle<T>(arr: T[], rng: () => number): T[] {
 
 // ─── Helpers to read the existing content rows ───────────────────────────────
 
-/** Extract the bare phonetic sound from `sound` like "B says buh. B for Ball." */
+/**
+ * Extract the speakable sound line from `sound`.
+ * New seed format: "b as in ball" (kept whole — the phonics audio pipeline
+ * resolves "X as in …" lines to the curated pure-phoneme clip).
+ * Legacy format: "B says buh. B for Ball." → "buh".
+ */
 function extractSound(row: PhonicsContentRow): string {
+  const asIn = row.sound.match(/^\s*([a-z]{1,2}\s+as\s+in\s+[a-z][a-z\s-]*)/i);
+  if (asIn && asIn[1]) return asIn[1].trim().toLowerCase();
   const m = row.sound.match(/says\s+([a-zA-Z]+)/i);
   if (m && m[1]) return m[1].toLowerCase();
   // For 12_24m animal rows the sound IS the symbol (e.g. "Moo").

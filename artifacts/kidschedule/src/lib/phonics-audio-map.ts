@@ -32,8 +32,13 @@ export function resolvePhonicsLibraryPlaybackUrl(
   asset: PhonicsAudioManifestAsset | null | undefined,
 ): string | null {
   const gcsPath = asset?.gcsPath?.trim();
-  if (!gcsPath || !isValidPhonicsGcsObjectPath(gcsPath)) return null;
-  return getApiUrl(phonicsLibraryProxyPath(gcsPath));
+  if (!asset || !gcsPath || !isValidPhonicsGcsObjectPath(gcsPath)) return null;
+  const base = getApiUrl(phonicsLibraryProxyPath(gcsPath));
+  // Content-derived cache-buster: GCS object paths are stable across
+  // regenerations, but browser/CDN/SW caches treat the URL as immutable for a
+  // year. The checksum query flips every cache key when audio bytes change.
+  const version = asset.checksum?.slice(0, 8) ?? String(asset.version ?? 1);
+  return `${base}?v=${version}`;
 }
 
 export function getPhonicsLibraryManifest(): PhonicsAudioLibraryManifest {

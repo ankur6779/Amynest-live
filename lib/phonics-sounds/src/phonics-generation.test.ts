@@ -6,6 +6,7 @@ import {
   buildPhonicsElevenLabsPrompt,
   ELEVENLABS_SPEAK_TEXT,
   getElevenLabsPhonemeSpeakText,
+  getElevenLabsSpeakOverride,
   getPhonemeSynthesisText,
   isPhonicsStopSoundKey,
   PHONICS_ELEVENLABS_VOICE_ID_DEFAULT,
@@ -21,11 +22,25 @@ describe("phonics-generation", () => {
   it("uses minimal pure phoneme hints (no sound, no instructions)", () => {
     assert.equal(getElevenLabsPhonemeSpeakText("b"), "b.");
     assert.equal(getElevenLabsPhonemeSpeakText("c"), "k.");
-    assert.equal(getElevenLabsPhonemeSpeakText("a"), "ah");
+    assert.equal(getElevenLabsPhonemeSpeakText("a"), "ahh");
     assert.equal(getElevenLabsPhonemeSpeakText("m"), "mmm");
     assert.equal(getElevenLabsPhonemeSpeakText("s"), "sss");
-    assert.equal(getElevenLabsPhonemeSpeakText("th1"), "thh");
+    assert.equal(getElevenLabsPhonemeSpeakText("th1"), "thhh.");
     assert.doesNotMatch(getElevenLabsPhonemeSpeakText("b"), /sound/i);
+  });
+
+  it("routes IPA phoneme-tag entries to a tag-capable model", () => {
+    assert.match(getElevenLabsPhonemeSpeakText("i"), /<phoneme alphabet="ipa"/);
+    assert.match(getElevenLabsPhonemeSpeakText("o"), /<phoneme alphabet="ipa"/);
+    for (const [key, text] of Object.entries(ELEVENLABS_SPEAK_TEXT)) {
+      if (text.includes("<phoneme")) {
+        const override = getElevenLabsSpeakOverride(key);
+        assert.ok(
+          override?.modelId,
+          `${key} uses a phoneme tag but has no tag-capable model override`,
+        );
+      }
+    }
   });
 
   it("covers every catalog audioKey with forbidden-word guard", () => {

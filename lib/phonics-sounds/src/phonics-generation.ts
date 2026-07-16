@@ -30,25 +30,32 @@ export function getPhonicsGenerationPhonemeLabel(audioKey: string): string {
 /**
  * Minimal phoneme hints for ElevenLabs — pure sounds, no extra words.
  * Period on stops (b., k., t.) encourages crisp closure without schwa.
+ *
+ * 2026-07 phoneme audit (v2): texts retuned after acoustic QA found the shipped
+ * clips for b/d/j/p drifting into letter names (bee/dee/jay/pee) and h/i/o/q/x
+ * producing wrong or muddled sounds. IPA phoneme tags (i, o) require a
+ * tag-capable model — see ELEVENLABS_SPEAK_OVERRIDES. TTS output for isolated
+ * phonemes is NON-DETERMINISTIC: every generated clip must pass the acoustic
+ * QA gate (scripts/phonics-phoneme-qa.py) before it may ship.
  */
 export const ELEVENLABS_SPEAK_TEXT: Record<string, string> = {
-  a: "ah",
+  a: "ahh",
   b: "b.",
   c: "k.",
   d: "d.",
   e: "eh",
-  f: "fff",
+  f: "ff",
   g: "g.",
   h: "hhh",
-  i: "ih",
+  i: '<phoneme alphabet="ipa" ph="ɪ">i</phoneme>',
   j: "j.",
   k: "k.",
   l: "lll",
   m: "mmm",
   n: "nnn",
-  o: "aw",
+  o: '<phoneme alphabet="ipa" ph="ɒ">o</phoneme>',
   p: "p.",
-  q: "kw",
+  q: "kwuh",
   r: "rrr",
   s: "sss",
   t: "t.",
@@ -60,15 +67,35 @@ export const ELEVENLABS_SPEAK_TEXT: Record<string, string> = {
   z: "zzz",
 
   sh: "shh",
-  ch: "chh",
-  th1: "thh",
+  ch: "tch",
+  th1: "thhh.",
   th2: "thuh",
-  ph: "fff",
-  ng: "ng",
+  ph: "ff",
+  ng: "nng",
   wh: "wh",
   ck: "k.",
-  qu: "kw",
+  qu: "kwuh",
 };
+
+/** Per-key generation overrides (model / speed) for isolated phoneme clips. */
+export type PhonicsSpeakOverride = {
+  /** SSML phoneme tags need a tag-capable model (eleven_flash_v2 / turbo_v2). */
+  modelId?: string;
+  /** ElevenLabs voice speed multiplier for this clip only. */
+  speed?: number;
+};
+
+/** IPA-tag entries must run on eleven_flash_v2; slower speed helps breathy /h/ and /f/. */
+export const ELEVENLABS_SPEAK_OVERRIDES: Record<string, PhonicsSpeakOverride> = {
+  i: { modelId: "eleven_flash_v2" },
+  o: { modelId: "eleven_flash_v2" },
+  h: { speed: 0.9 },
+  ph: { speed: 0.95 },
+};
+
+export function getElevenLabsSpeakOverride(audioKey: string): PhonicsSpeakOverride | undefined {
+  return ELEVENLABS_SPEAK_OVERRIDES[audioKey.trim().toLowerCase()];
+}
 
 const FORBIDDEN_SPEAK_PATTERNS = [/\bsound\b/i, /\bletter\b/i, /\bsays\b/i, /\bas in\b/i];
 

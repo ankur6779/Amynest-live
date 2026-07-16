@@ -53,6 +53,10 @@ async function runFfmpegMastering(inputPath: string, outputPath: string): Promis
     String(PHONICS_OUTPUT_SAMPLE_RATE),
     "-ac",
     String(PHONICS_OUTPUT_CHANNELS),
+    // Explicit CBR 128k: lame's mono default (~64k) halved the size-based
+    // duration estimate and let overlong clips slip past the 900ms gate.
+    "-b:a",
+    "128k",
     outputPath,
   ]);
 

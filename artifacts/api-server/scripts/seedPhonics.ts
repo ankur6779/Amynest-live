@@ -44,33 +44,37 @@ const TIER_12_24M: SeedItem[] = [
 // Each row: [letter, phonetic, primaryExampleWord, emoji, [3-4 more examples]]
 // `primaryExampleWord` drives the legacy single-example caption; `extraExamples`
 // becomes the multi-example chip row in the new Phonics learning UI (T002).
+// Synthetic-phonics rules: the `phonetic` column is the LETTER KEY (a–z) so
+// runtime audio resolves to the curated pure-phoneme clip — never a schwa-laden
+// "buh"/"kuh" TTS hint. Example words must begin with the taught short-vowel /
+// consonant phoneme (no "Ice" for short i, no "Arm"/"Orange" for short a/o).
 const ALPHABET: Array<[string, string, string, string, string[]]> = [
-  ["A", "ah",   "Apple",    "🍎",  ["Apple", "Ant", "Arm"]],
-  ["B", "buh",  "Ball",     "⚽",  ["Ball", "Bat", "Banana", "Bear"]],
-  ["C", "kuh",  "Cat",      "🐱",  ["Cat", "Cup", "Car"]],
-  ["D", "duh",  "Dog",      "🐶",  ["Dog", "Duck", "Door"]],
-  ["E", "eh",   "Egg",      "🥚",  ["Egg", "Elephant", "Ear"]],
-  ["F", "fff",  "Fish",     "🐟",  ["Fish", "Fan", "Frog", "Foot"]],
-  ["G", "guh",  "Goat",     "🐐",  ["Goat", "Gift", "Grape"]],
-  ["H", "huh",  "Hat",      "🎩",  ["Hat", "House", "Horse"]],
-  ["I", "ih",   "Igloo",    "🧊",  ["Igloo", "Ice", "Insect"]],
-  ["J", "juh",  "Jug",      "🫙",  ["Jug", "Jam", "Jeep"]],
-  ["K", "kuh",  "Kite",     "🪁",  ["Kite", "King", "Key"]],
-  ["L", "lll",  "Lion",     "🦁",  ["Lion", "Leaf", "Leg"]],
-  ["M", "mmm",  "Moon",     "🌙",  ["Moon", "Mango", "Mum"]],
-  ["N", "nnn",  "Nest",     "🪺",  ["Nest", "Nose", "Nine"]],
-  ["O", "oh",   "Orange",   "🍊",  ["Orange", "Owl", "Ox"]],
-  ["P", "puh",  "Pig",      "🐷",  ["Pig", "Pen", "Pot", "Pan"]],
-  ["Q", "kwuh", "Queen",    "👑",  ["Queen", "Quilt", "Question"]],
-  ["R", "rrr",  "Rain",     "🌧️", ["Rain", "Rabbit", "Ring"]],
-  ["S", "sss",  "Sun",      "☀️",  ["Sun", "Snake", "Star", "Sock"]],
-  ["T", "tuh",  "Tiger",    "🐯",  ["Tiger", "Tap", "Top"]],
-  ["U", "uh",   "Umbrella", "☂️",  ["Umbrella", "Up", "Under"]],
-  ["V", "vvv",  "Van",      "🚐",  ["Van", "Vase", "Violin"]],
-  ["W", "wuh",  "Water",    "💧",  ["Water", "Wind", "Wolf"]],
-  ["X", "ks",   "Box",      "📦",  ["Box", "Fox", "Six"]],
-  ["Y", "yuh",  "Yo-yo",    "🪀",  ["Yo-yo", "Yak", "Yellow"]],
-  ["Z", "zzz",  "Zebra",    "🦓",  ["Zebra", "Zoo", "Zip"]],
+  ["A", "a", "Apple",    "🍎",  ["Apple", "Ant", "Axe"]],
+  ["B", "b", "Ball",     "⚽",  ["Ball", "Bat", "Banana", "Bear"]],
+  ["C", "c", "Cat",      "🐱",  ["Cat", "Cup", "Cot"]],
+  ["D", "d", "Dog",      "🐶",  ["Dog", "Duck", "Door"]],
+  ["E", "e", "Egg",      "🥚",  ["Egg", "Elephant", "Elbow"]],
+  ["F", "f", "Fish",     "🐟",  ["Fish", "Fan", "Frog", "Foot"]],
+  ["G", "g", "Goat",     "🐐",  ["Goat", "Gift", "Grape"]],
+  ["H", "h", "Hat",      "🎩",  ["Hat", "House", "Horse"]],
+  ["I", "i", "Igloo",    "🧊",  ["Igloo", "Insect", "In"]],
+  ["J", "j", "Jug",      "🫙",  ["Jug", "Jam", "Jeep"]],
+  ["K", "k", "Kite",     "🪁",  ["Kite", "King", "Key"]],
+  ["L", "l", "Lion",     "🦁",  ["Lion", "Leaf", "Leg"]],
+  ["M", "m", "Mat",      "🧶",  ["Mat", "Mango", "Mum"]],
+  ["N", "n", "Nest",     "🪺",  ["Nest", "Nose", "Nut"]],
+  ["O", "o", "Octopus",  "🐙",  ["Octopus", "Ox", "On"]],
+  ["P", "p", "Pig",      "🐷",  ["Pig", "Pen", "Pot", "Pan"]],
+  ["Q", "q", "Queen",    "👑",  ["Queen", "Quilt", "Quick"]],
+  ["R", "r", "Rat",      "🐀",  ["Rat", "Rabbit", "Ring"]],
+  ["S", "s", "Sun",      "☀️",  ["Sun", "Snake", "Star", "Sock"]],
+  ["T", "t", "Tap",      "🚰",  ["Tap", "Tiger", "Top"]],
+  ["U", "u", "Umbrella", "☂️",  ["Umbrella", "Up", "Under"]],
+  ["V", "v", "Van",      "🚐",  ["Van", "Vase", "Violin"]],
+  ["W", "w", "Water",    "💧",  ["Water", "Wind", "Wolf"]],
+  ["X", "x", "Box",      "📦",  ["Box", "Fox", "Six"]],
+  ["Y", "y", "Yak",      "🐂",  ["Yak", "Yes", "Yum"]],
+  ["Z", "z", "Zebra",    "🦓",  ["Zebra", "Zoo", "Zip"]],
 ];
 
 const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji, examples], i) => ({
@@ -78,9 +82,11 @@ const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji, examples
   level: i + 1,
   type: "letter",
   symbol: letter,
-  sound: `${letter} says ${phon}. ${letter} for ${word}.`,
-  // Bare phoneme — used by the Phonics learning UI in `mode: "phonics"` so
-  // the child hears just /buh/ instead of "B says buh, B for Ball".
+  // "as in" instructional form — the phonics audio pipeline recognises it and
+  // resolves to the curated pure-phoneme clip (never letter-name TTS).
+  sound: `${letter.toLowerCase()} as in ${word.toLowerCase()}`,
+  // Letter key (a–z) — resolves directly to the curated phoneme clip so the
+  // child hears the pure sound, never "buh"/"bee".
   phoneme: phon,
   example: word,
   examples,
@@ -150,13 +156,15 @@ const TIER_4_5Y: SeedItem[] = [
 
 // ─── 5–6 years: digraphs + short stories ─────────────────────────────────────
 const DIGRAPHS: Array<[string, string, string, string]> = [
-  // [digraph, phonetic, exampleWord, emoji]
-  ["sh", "shhh",  "ship",  "🚢"],
-  ["ch", "chuh",  "chop",  "🪓"],
-  ["th", "thhh",  "thumb", "👍"],
-  ["wh", "wuh",   "whale", "🐋"],
-  ["ph", "fff",   "phone", "📱"],
-  ["ck", "kuh",   "duck",  "🦆"],
+  // [digraph, phoneme key (resolves to curated clip), exampleWord, emoji]
+  ["sh", "sh", "ship",  "🚢"],
+  ["ch", "ch", "chip",  "🍟"],
+  ["th", "th", "thin",  "🪡"],
+  ["wh", "wh", "whip",  "🌀"],
+  ["ng", "ng", "ring",  "💍"],
+  ["ck", "ck", "duck",  "🦆"],
+  ["qu", "qu", "quilt", "🛏️"],
+  ["ph", "ph", "phone", "📱"],
 ];
 
 const STORY_LINES: Array<[string, string]> = [
@@ -173,8 +181,8 @@ const TIER_5_6Y: SeedItem[] = [
     level: i + 1,
     type: "letter", // rendered as a card with an example word
     symbol: dig,
-    sound: `${dig} says ${phon}, like in ${word}.`,
-    // Bare phoneme so digraph tiles in phonics mode play just the blended sound.
+    sound: `${dig} as in ${word}`,
+    // Digraph key so phonics mode plays just the curated digraph phoneme clip.
     phoneme: phon,
     example: word,
     emoji,
@@ -238,7 +246,34 @@ async function main() {
     else updated++;
   }
 
-  console.log(`✓ Done. Inserted ${inserted}, updated ${updated}.`);
+  // Deactivate stale rows in seeded age groups (e.g. after reordering symbols
+  // across levels) so each (ageGroup, level) has exactly one active symbol.
+  const ageGroups = [...new Set(all.map((i) => i.ageGroup))];
+  let deactivated = 0;
+  for (const ageGroup of ageGroups) {
+    const keep = all.filter((i) => i.ageGroup === ageGroup);
+    const keepKeys = new Set(keep.map((i) => `${i.level}\0${i.symbol}`));
+    const rows = await db
+      .select({
+        id: phonicsContentTable.id,
+        level: phonicsContentTable.level,
+        symbol: phonicsContentTable.symbol,
+        active: phonicsContentTable.active,
+      })
+      .from(phonicsContentTable)
+      .where(sql`${phonicsContentTable.ageGroup} = ${ageGroup}`);
+    for (const row of rows) {
+      if (row.active && !keepKeys.has(`${row.level}\0${row.symbol}`)) {
+        await db
+          .update(phonicsContentTable)
+          .set({ active: false, updatedAt: sql`now()` })
+          .where(sql`${phonicsContentTable.id} = ${row.id}`);
+        deactivated++;
+      }
+    }
+  }
+
+  console.log(`✓ Done. Inserted ${inserted}, updated ${updated}, deactivated ${deactivated} stale rows.`);
   process.exit(0);
 }
 

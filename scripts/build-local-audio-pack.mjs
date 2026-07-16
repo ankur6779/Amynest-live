@@ -50,6 +50,26 @@ const defaultMap = staticMap.default ?? {};
 const phonicsMap = staticMap.phonics ?? {};
 const audioUrlMap = { ...defaultMap, ...phonicsMap };
 
+// Phonics library manifest (pure phonemes) — the ONLY valid source for letter /
+// digraph clips. The static map's "a as in apple" clips are letter-name audio
+// and must never be bundled as phonics-letter assets.
+const phonicsLibraryMapPath = join(
+  repoRoot,
+  "artifacts/kidschedule/src/data/phonics-audio-map.json",
+);
+const phonicsLibrary = JSON.parse(readFileSync(phonicsLibraryMapPath, "utf8"));
+const PHONEME_KEY_ALIAS = { th: "th1" };
+
+function phonemeUrlForLetter(key) {
+  const id = PHONEME_KEY_ALIAS[key] ?? key;
+  const asset =
+    phonicsLibrary.assets?.[`letter:${id}`] ?? phonicsLibrary.assets?.[`digraph:${id}`];
+  if (!asset?.url) return null;
+  // Version-bust shared HTTP/CDN caches so we never bundle stale bytes.
+  const v = asset.checksum?.slice(0, 8) ?? asset.version ?? null;
+  return v ? `${asset.url}?v=${v}` : asset.url;
+}
+
 const ORIGIN =
   process.env.STATIC_AUDIO_ORIGIN?.replace(/\/$/, "") ?? "https://www.amynest.in";
 
@@ -178,7 +198,7 @@ function hashFromGcsUrl(gcsUrl) {
 }
 
 function isPhonicsLibraryProxyUrl(url) {
-  return /\/api\/phonics-library\/phonics\/[a-z0-9_-]+\/[a-z0-9_.%-]+\.mp3$/i.test(
+  return /\/api\/phonics-library\/phonics\/[a-z0-9_-]+\/[a-z0-9_.%-]+\.mp3(\?[^#]*)?$/i.test(
     String(url ?? "").trim(),
   );
 }
@@ -310,10 +330,16 @@ async function main() {
       : [..."abcdefghijklmnopqrstuvwxyz".split(""), ...(tier === "core" ? DIGRAPHS : ["sh", "ch", "th", "ng"])];
 
   for (const L of letters) {
-    const phrase = LETTER_ALIAS[L] ?? L;
-    await addEntry("phonics-letter", L, urlForAudioKey(phrase) ?? urlForAudioKey(L));
+    // Pure phoneme from the phonics library — never the "as in"/letter-name clips.
+    const url = phonemeUrlForLetter(L) ?? urlForAudioKey(L);
+    await addEntry("phonics-letter", L, url);
     if (LETTER_ALIAS[L]) {
-      await addEntry("phonics-letter", LETTER_ALIAS[L], urlForAudioKey(LETTER_ALIAS[L]));
+      // Alias key ("a as in apple") points at the same pure phoneme clip so any
+      // legacy lookup path still hears the phoneme, not the letter name.
+      const file = `phonics-letter/${slug(L)}.mp3`;
+      if (entries[`phonics-letter:${L}`]) {
+        entries[`phonics-letter:${LETTER_ALIAS[L]}`] = file;
+      }
     }
   }
 

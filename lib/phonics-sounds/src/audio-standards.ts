@@ -36,8 +36,13 @@ export const PHONICS_ACCEPTED_MODELS: readonly string[] = [
 /** Bump when curriculum scope/sequence changes (forces asset re-certification). */
 export const PHONICS_CURRICULUM_VERSION = 1;
 
-/** Bump when the canonical phoneme registry / spoken-text mappings change. */
-export const PHONICS_PHONEME_VERSION = 1;
+/**
+ * Bump when the canonical phoneme registry / spoken-text mappings change.
+ * v2 (2026-07): full letter+digraph regeneration after the phoneme audit found
+ * letter-name drift (b→"bee", d→"dee", j→"jay", p→"pee") and wrong sounds for
+ * h/i/o/q/x in the v1 clips.
+ */
+export const PHONICS_PHONEME_VERSION = 2;
 
 /** Bump when the audio normalization profile (loudness/bitrate/trim) changes. */
 export const PHONICS_NORMALIZATION_VERSION = 1;

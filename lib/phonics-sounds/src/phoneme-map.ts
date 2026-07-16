@@ -49,7 +49,6 @@ const DIGRAPH_KEY_ALIASES: Record<string, string> = {
   th: "th_unvoiced",
   th_unvoiced: "th_unvoiced",
   th_voiced: "th_voiced",
-  ck: "c",
 };
 
 /** IndexedDB / prefetch cache key for a single phoneme file. */

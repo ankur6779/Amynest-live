@@ -119,8 +119,11 @@ export function selectAdaptiveLessons(opts: {
   const seed = hashChildDay(opts.childId, opts.dateKey);
   const total = opts.totalCount ?? 10;
   const now = opts.now ?? Date.now();
+  // Overdue IDs come from the retention state, i.e. skills the child was already
+  // taught — reviews must not be dropped by current-level gating (only guard
+  // against malformed symbols).
   const overdueIds = (opts.retention ? getOverdueWordIds(opts.retention, now) : []).filter(
-    (w) => wordUnlocked(w, level),
+    (w) => /^[a-z]+$/.test(w.trim().toLowerCase()),
   );
   const overdueSlots = Math.min(overdueIds.length, total);
   const remaining = total - overdueSlots;

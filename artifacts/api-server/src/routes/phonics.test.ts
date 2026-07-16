@@ -10,7 +10,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { db, phonicsContentTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const VALID_AGE_GROUPS = ["12_24m", "2_3y", "3_4y", "4_5y", "5_6y"] as const;
 const VALID_TYPES = ["sound", "letter", "word", "sentence", "story"] as const;
@@ -117,10 +117,14 @@ describe("phonics — seeded content integrity", () => {
 
   it("level numbers within an age group are unique", async () => {
     for (const ag of VALID_AGE_GROUPS) {
+      // Only active rows are served to clients — retired rows are kept
+      // deactivated (not deleted) by the seed script and may reuse levels.
       const rows = await db
         .select()
         .from(phonicsContentTable)
-        .where(eq(phonicsContentTable.ageGroup, ag));
+        .where(
+          and(eq(phonicsContentTable.ageGroup, ag), eq(phonicsContentTable.active, true)),
+        );
       const levels = rows.map((r) => r.level);
       assert.equal(
         new Set(levels).size,

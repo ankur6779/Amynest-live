@@ -13,6 +13,7 @@ vi.mock("@/lib/static-audio", () => ({
   lookupStaticAudioUrlStrict: vi.fn((text: string) =>
     text ? `/api/static-audio/mockhash.mp3` : null,
   ),
+  isStaticAudioMapReady: () => true,
   prepareRemotePlaybackAudio: (...args: unknown[]) => prepareRemoteMock(...args),
 }));
 

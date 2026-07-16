@@ -28,10 +28,11 @@ const CACHE_VERSION = "amynest-v16";
  * audio is regenerated so every client drops stale / mixed-voice clips and the
  * 1-year-immutable CDN entries are superseded by a fresh cache namespace.
  */
-const AUDIO_CACHE_VERSION = "v5";
+const AUDIO_CACHE_VERSION = "v6";
 
 function resolveDeployVersion(): string {
   const sha =
+    process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7) ??
     process.env.RENDER_GIT_COMMIT?.slice(0, 7) ??
     process.env.GITHUB_SHA?.slice(0, 7);
   const date = new Date().toISOString().slice(0, 10);

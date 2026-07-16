@@ -28,6 +28,7 @@ import {
 } from "@workspace/phonics-sounds";
 import { loadFullPhonicsCatalog } from "./phonics-audio-coverage.js";
 import {
+  getElevenLabsSpeakOverride,
   PHONICS_ELEVENLABS_MODEL_DEFAULT,
   PHONICS_ELEVENLABS_VOICE_ID_DEFAULT,
   validatePhonicsMp3Buffer,
@@ -161,6 +162,7 @@ function buildStorage(): Storage {
 async function callElevenLabs(
   speakText: string,
   profile: PhonicsVoiceProfile,
+  overrides?: { modelId?: string; speed?: number },
 ): Promise<Buffer> {
   const apiKey = readEnvApiKey();
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY required");
@@ -180,13 +182,13 @@ async function callElevenLabs(
       },
       body: JSON.stringify({
         text: speakText,
-        model_id: MODEL_ID,
+        model_id: overrides?.modelId ?? MODEL_ID,
         voice_settings: {
           stability: profile.stability,
           similarity_boost: profile.similarity_boost,
           style: profile.style,
           use_speaker_boost: profile.use_speaker_boost,
-          speed: profile.speed,
+          speed: overrides?.speed ?? profile.speed,
         },
       }),
       signal: controller.signal,
@@ -219,10 +221,14 @@ async function synthesizeEntry(
   useFfmpeg: boolean,
 ): Promise<{ buffer: Buffer; durationMs: number; source: "elevenlabs" | "fallback_tone" }> {
   const profile = getPhonicsGenerationProfile(modeForAssetType(entry.type));
+  // Isolated phonemes may need a tag-capable model (IPA) or per-clip speed.
+  const overrides = entry.isolatedPhoneme
+    ? getElevenLabsSpeakOverride(entry.id)
+    : undefined;
   let lastError = "unknown";
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      const raw = await callElevenLabs(entry.speakText, profile);
+      const raw = await callElevenLabs(entry.speakText, profile, overrides);
       const buffer = await postProcess(raw, entry, useFfmpeg);
       const validation = validatePhonicsMp3Buffer(
         buffer,

@@ -27,7 +27,9 @@ export const LETTER_SOUNDS: Record<string, LetterSoundEntry> = {
   l: { phoneme: "l", example: "lion", audioKey: "l" },
   m: { phoneme: "mmm", example: "man", audioKey: "m" },
   n: { phoneme: "nnn", example: "nest", audioKey: "n" },
-  o: { phoneme: "ah", example: "octopus", audioKey: "o" },
+  // "aw" (short /ɒ/) — deliberately distinct from a's "ah" (/æ/); matches the
+  // ElevenLabs speak text + phoneme registry disambiguation.
+  o: { phoneme: "aw", example: "octopus", audioKey: "o" },
   p: { phoneme: "p", example: "pen", audioKey: "p" },
   q: { phoneme: "kw", example: "queen", audioKey: "q" },
   r: { phoneme: "r", example: "rat", audioKey: "r" },

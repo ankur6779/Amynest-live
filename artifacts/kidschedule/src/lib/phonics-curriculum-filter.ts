@@ -2,6 +2,7 @@
  * Client-side curriculum level filtering for phonics content tiles.
  */
 import {
+  clampCurriculumLevel,
   isContentUnlocked,
   migrateCurriculumLevel,
   type CurriculumLevel,
@@ -27,7 +28,9 @@ export function filterItemsByCurriculumLevel(
   items: DisplayPhonicsItem[],
   currentLevel: CurriculumLevel,
 ): DisplayPhonicsItem[] {
-  const safeLevel = migrateCurriculumLevel(currentLevel);
+  // currentLevel is already a CurriculumLevel in the 7-level scheme; do NOT run
+  // the legacy 6→7 migration here or L6 users would see L7 sight words early.
+  const safeLevel = clampCurriculumLevel(currentLevel);
   return sanitizeDisplayPhonicsItems(items).filter((item) =>
     isContentUnlocked(item.symbol, safeLevel, item.type),
   );
