@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { audioManager } from "@/lib/audio-manager";
@@ -18,6 +18,12 @@ import {
   buildSpeechFeedback,
   type SpeechFeedbackResult,
 } from "@/lib/phonics-v3/speech-feedback";
+import {
+  evaluateReadingCoachAttempt,
+  normalizeScore01,
+  type CoachEvaluation,
+  type CoachTargetKind,
+} from "@/lib/phonics-v3/ai-reading-coach";
 
 export type PhonicsVoicePhase = "idle" | "listen" | "evaluating" | "feedback";
 
@@ -26,12 +32,17 @@ export function usePhonicsVoiceRound(opts: {
   childName: string;
   totalAgeMonths: number;
   word: string;
+  /** phoneme for single sounds; word (default) for CVC / reading */
+  targetKind?: CoachTargetKind;
   onOutcome?: (
     outcome: PronunciationOutcome,
     feedback: string,
     speech: SpeechFeedbackResult,
   ) => void;
+  /** Rich AI Reading Coach evaluation (preferred for lessons). */
+  onCoachEvaluation?: (evaluation: CoachEvaluation) => void;
 }) {
+  const targetKind: CoachTargetKind = opts.targetKind ?? "word";
   const getAuthToken = useCallback(async () => {
     try {
       return (await getFirebaseAuth().currentUser?.getIdToken()) ?? null;
@@ -45,22 +56,29 @@ export function usePhonicsVoiceRound(opts: {
   const [outcome, setOutcome] = useState<PronunciationOutcome | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [speechFeedback, setSpeechFeedback] = useState<SpeechFeedbackResult | null>(null);
+  const [coachEval, setCoachEval] = useState<CoachEvaluation | null>(null);
   const processedRef = useRef("");
 
-  const prompt: PronouncePrompt = {
-    id: `phonics-v2-${opts.word}`,
-    kind: "word",
-    text: opts.word,
-    speakText: opts.word,
-    ageBands: ["2y", "3y", "4y_plus"],
-    i18nKeyHint: "screens.speech_coach.pronunciation.hint_word",
-  };
+  const promptKind = targetKind === "phoneme" ? "phonic" : targetKind === "sentence" || targetKind === "phrase" ? "sentence" : "word";
+
+  const prompt: PronouncePrompt = useMemo(
+    () => ({
+      id: `phonics-coach-${targetKind}-${opts.word}`,
+      kind: promptKind,
+      text: opts.word,
+      speakText: opts.word,
+      ageBands: ["2y", "3y", "4y_plus"],
+      i18nKeyHint: "screens.speech_coach.pronunciation.hint_word",
+    }),
+    [opts.word, promptKind, targetKind],
+  );
 
   const startListening = useCallback(() => {
     processedRef.current = "";
     setOutcome(null);
     setFeedback(null);
     setSpeechFeedback(null);
+    setCoachEval(null);
     stt.reset();
     audioManager.unlockFromUserGesture();
     setPhase("listen");
@@ -82,7 +100,7 @@ export function usePhonicsVoiceRound(opts: {
     const ctx = createCoachDialogueContext({
       childName: opts.childName,
       ageMonths: opts.totalAgeMonths,
-      promptKind: "word",
+      promptKind,
       sessionIndex: 0,
       sessionTotal: 1,
       streak: 0,
@@ -91,19 +109,43 @@ export function usePhonicsVoiceRound(opts: {
       toddler: opts.totalAgeMonths < 36,
     });
     const result = evaluateCoachResponse(prompt, transcript, ctx);
-    const resolved = outcomeFromCoachScore(result.correct, result.score);
+    const score01 = normalizeScore01(result.score);
+    const confidence01 = normalizeScore01(result.confidence);
+
+    const evaluation = evaluateReadingCoachAttempt({
+      expected: opts.word,
+      transcript,
+      targetKind,
+      score: score01,
+      confidence: confidence01,
+      correct: result.correct,
+    });
+
+    const resolved = outcomeFromCoachScore(evaluation.correct, score01);
     const speech = buildSpeechFeedback({
       word: opts.word,
       transcript,
-      correct: result.correct,
-      score: result.score,
-      coachFeedback: result.displayFeedback ?? result.feedback,
+      correct: evaluation.correct,
+      score: score01,
+      coachFeedback: evaluation.feedback,
     });
-    const fb = speech.guidance;
 
     setOutcome(resolved);
-    setFeedback(fb);
-    setSpeechFeedback(speech);
+    setFeedback(evaluation.feedback);
+    setSpeechFeedback({
+      ...speech,
+      guidance: evaluation.feedback,
+      label:
+        evaluation.tier === "excellent"
+          ? "Excellent!"
+          : evaluation.tier === "good"
+            ? "Good!"
+            : evaluation.tier === "almost"
+              ? "Almost there!"
+              : "Let's try again",
+      confidence: evaluation.confidencePct,
+    });
+    setCoachEval(evaluation);
     setPhase("feedback");
 
     const scores = loadPronunciationScores(opts.childId);
@@ -112,20 +154,25 @@ export function usePhonicsVoiceRound(opts: {
       recordPronunciationScore(scores, {
         word: opts.word,
         outcome: resolved,
-        confidence: Math.round(result.confidence * 100),
+        confidence: evaluation.confidencePct,
       }),
     );
-    opts.onOutcome?.(resolved, fb, speech);
+    opts.onCoachEvaluation?.(evaluation);
+    opts.onOutcome?.(resolved, evaluation.feedback, speech);
   }, [
     phase,
     stt.transcript,
     stt.listening,
     stt.transcribing,
     prompt,
+    promptKind,
+    targetKind,
     opts.childId,
     opts.childName,
     opts.totalAgeMonths,
+    opts.word,
     opts.onOutcome,
+    opts.onCoachEvaluation,
   ]);
 
   return {
@@ -133,6 +180,7 @@ export function usePhonicsVoiceRound(opts: {
     outcome,
     feedback,
     speechFeedback,
+    coachEval,
     listening: stt.listening,
     transcribing: stt.transcribing,
     transcript: stt.transcript,
@@ -144,6 +192,7 @@ export function usePhonicsVoiceRound(opts: {
       setOutcome(null);
       setFeedback(null);
       setSpeechFeedback(null);
+      setCoachEval(null);
       stt.reset();
     },
   };

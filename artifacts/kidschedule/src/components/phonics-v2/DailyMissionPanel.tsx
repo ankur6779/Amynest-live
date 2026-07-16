@@ -45,6 +45,8 @@ type DailyMissionPanelProps = {
   onCompleteCurriculumActivity?: (activityId: string) => Promise<void>;
   onMissionSummaryChange?: (summary: MissionSummary) => void;
   onTaskComplete?: (taskId: string) => void;
+  /** Opens the full 10-step reading lesson for today's focus sound. */
+  onStartReadingLesson?: () => void;
 };
 
 export function DailyMissionPanel({
@@ -60,6 +62,7 @@ export function DailyMissionPanel({
   missionStoryId,
   onCompleteCurriculumActivity,
   onMissionSummaryChange,
+  onStartReadingLesson,
 }: DailyMissionPanelProps) {
   const authFetch = useAuthFetch();
   const [mission, setMission] = useState<DailyReadingMission | null>(null);
@@ -192,7 +195,12 @@ export function DailyMissionPanel({
                   size="sm"
                   className="rounded-full text-[10px] h-7 shrink-0"
                   onClick={() => {
-                    if (task.slot === "challenge" && task.word) {
+                    if (task.slot === "challenge" && onStartReadingLesson) {
+                      setActiveBlend(null);
+                      setActiveStory(null);
+                      onStartReadingLesson();
+                      complete(task.id);
+                    } else if (task.slot === "challenge" && task.word) {
                       setActiveBlend(task.word);
                       setActiveStory(null);
                     } else if (task.slot === "story" && task.storyId) {
@@ -203,7 +211,7 @@ export function DailyMissionPanel({
                     }
                   }}
                 >
-                  Go
+                  {task.slot === "challenge" && onStartReadingLesson ? "Lesson" : "Go"}
                 </Button>
               )}
             </div>

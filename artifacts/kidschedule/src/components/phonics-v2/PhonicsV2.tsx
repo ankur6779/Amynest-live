@@ -10,8 +10,33 @@ import { DecodableStoryReader } from "./DecodableStoryReader";
 import { ParentInsightsV3Card } from "./ParentInsightsV3Card";
 import { DigraphPathwayPanel } from "./DigraphPathwayPanel";
 import { BlendListenCheck } from "./BlendListenCheck";
+import { ReadingLessonRunner } from "./lesson/ReadingLessonRunner";
+import { ReadingParentDashboard } from "./lesson/ReadingParentDashboard";
+import { SegmentWordRound } from "./lesson/SegmentWordRound";
+import { ReadingAcademyHub } from "./academy/ReadingAcademyHub";
 import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
 import type { MissionSummary } from "./DailyMissionPanel";
+import {
+  pickNextLessonGrapheme,
+} from "@/lib/phonics-v3/reading-lesson-engine";
+import {
+  loadReadingSkillsState,
+  recordLessonSkills,
+  saveReadingSkillsState,
+  type ReadingSkillsState,
+} from "@/lib/phonics-v3/reading-skills";
+import {
+  loadCoachConfusions,
+  recordCoachAttempt,
+  saveCoachConfusions,
+  focusGraphemesForPractice,
+  type CoachConfusionState,
+} from "@/lib/phonics-v3/coach-confusions";
+import { generateDecodableStory } from "@/lib/phonics-v3/ai-decodable-stories";
+import {
+  normalizeScore01,
+  type CoachEvaluation,
+} from "@/lib/phonics-v3/ai-reading-coach";
 import {
   loadFamilyProgress,
   recordFamilyWordPractice,
@@ -148,6 +173,14 @@ export function PhonicsV2({
   const [integrity, setIntegrity] = useState<MasteryIntegrityState>(() =>
     loadIntegrityState(childId),
   );
+  const [readingSkills, setReadingSkills] = useState<ReadingSkillsState>(() =>
+    loadReadingSkillsState(childId),
+  );
+  const [lessonOpen, setLessonOpen] = useState(false);
+  const [segmentPracticeWord, setSegmentPracticeWord] = useState<string | null>(null);
+  const [coachConfusions, setCoachConfusions] = useState<CoachConfusionState>(() =>
+    loadCoachConfusions(childId),
+  );
   const karaokeAttemptsRef = useRef<Record<string, number>>({});
   const voiceAttemptsRef = useRef<Record<string, number>>({});
 
@@ -224,6 +257,10 @@ export function PhonicsV2({
     const nextRetention = syncMasteredTracks(loadRetentionState(childId), nextMastery);
     setRetention(nextRetention);
     setIntegrity(loadIntegrityState(childId));
+    setReadingSkills(loadReadingSkillsState(childId));
+    setCoachConfusions(loadCoachConfusions(childId));
+    setLessonOpen(false);
+    setSegmentPracticeWord(null);
   }, [childId]);
 
   const applyGatedMastery = useCallback(
@@ -322,6 +359,18 @@ export function PhonicsV2({
 
   const masteryAvg = avgMasteryScore(mastery);
   const storyCatalogLevel = curriculumLevel ?? 1;
+  const groupIndex = letterGroupIndex ?? 1;
+  const lessonGrapheme = useMemo(() => {
+    const masteredLetters = Object.entries(progress.mastered ?? {})
+      .filter(([, v]) => v)
+      .map(([id]) => {
+        const item = safeItems.find((i) => i.id === id);
+        return item?.symbol?.toLowerCase() ?? "";
+      })
+      .filter(Boolean);
+    return pickNextLessonGrapheme(groupIndex, masteredLetters);
+  }, [groupIndex, progress.mastered, safeItems]);
+
   const unlockedStories = useMemo(() => {
     const masteredFamilies = Object.values(mastery.families)
       .filter((f) => f.isMastered)
@@ -333,6 +382,132 @@ export function PhonicsV2({
     });
   }, [mastery, masteryAvg, storyCatalogLevel]);
   const storyCount = useMemo(() => getStoryCount(), []);
+  const storiesCompletedCount = useMemo(
+    () => Object.keys(loadStoryProgressLocal(childId).completed ?? {}).length,
+    [childId, fluency, readingSkills.wordsRead.length],
+  );
+  const aiStory = useMemo(
+    () => generateDecodableStory(groupIndex, childId + groupIndex),
+    [groupIndex, childId],
+  );
+  const coachFocus = useMemo(
+    () => focusGraphemesForPractice(coachConfusions, 2),
+    [coachConfusions],
+  );
+
+  const handleCoachEvaluation = useCallback(
+    (evaluation: CoachEvaluation) => {
+      const next = recordCoachAttempt(coachConfusions, {
+        pronunciationScore: evaluation.pronunciationScore,
+        confusion: evaluation.confusion,
+      });
+      setCoachConfusions(next);
+      saveCoachConfusions(childId, next);
+      setPronunciation(loadPronunciationScores(childId));
+    },
+    [coachConfusions, childId],
+  );
+
+  const handleLessonComplete = useCallback(
+    (payload: {
+      grapheme: string;
+      focusWord: string;
+      starsEarned: number;
+      results: { stepId: string; correct: boolean; skipped?: boolean }[];
+      coachEvaluations?: CoachEvaluation[];
+    }) => {
+      const nextSkills = recordLessonSkills(
+        readingSkills,
+        payload.results,
+        payload.starsEarned,
+        payload.focusWord,
+      );
+      const readOk = payload.results.some(
+        (r) => r.stepId === "read_independent" && r.correct,
+      );
+      const blendOk = payload.results.some(
+        (r) => r.stepId === "build_word" && r.correct,
+      );
+      const withFluency = readOk
+        ? {
+            ...nextSkills,
+            skills: {
+              ...nextSkills.skills,
+              fluency: {
+                skill: "fluency" as const,
+                score: Math.min(
+                  100,
+                  Math.round((nextSkills.skills.fluency?.score ?? 40) * 0.8 + 20),
+                ),
+                attempts: (nextSkills.skills.fluency?.attempts ?? 0) + 1,
+                correct: (nextSkills.skills.fluency?.correct ?? 0) + 1,
+                lastAt: Date.now(),
+              },
+            },
+          }
+        : nextSkills;
+      setReadingSkills(withFluency);
+      saveReadingSkillsState(childId, withFluency);
+      trackSkillIntroduction(payload.focusWord);
+      if (blendOk) {
+        applyGatedMastery({
+          word: payload.focusWord,
+          dimension: "blended",
+          activity: "karaoke",
+          passed: true,
+          accuracy: 0.9,
+          attemptNumber: 1,
+        });
+      }
+      const voicePass = (payload.coachEvaluations ?? []).some(
+        (e) => e.correct && (e.targetKind === "word" || e.targetKind === "phoneme"),
+      );
+      const voiceConfidence =
+        (payload.coachEvaluations ?? [])
+          .filter((e) => e.correct)
+          .map((e) => normalizeScore01(e.confidencePct))
+          .pop() ?? 0.8;
+
+      if (readOk) {
+        applyGatedMastery({
+          word: payload.focusWord,
+          dimension: "identified",
+          activity: "identify",
+          passed: true,
+          accuracy: 0.9,
+          attemptNumber: 1,
+        });
+        applyFluency((f) => recordWordAttempt(f, true));
+        handleRetentionReview(payload.focusWord, true);
+      } else {
+        applyFluency((f) => recordWordAttempt(f, false));
+      }
+      if (voicePass) {
+        applyGatedMastery({
+          word: payload.focusWord,
+          dimension: "spoken",
+          activity: "voice",
+          passed: true,
+          confidence: voiceConfidence,
+          attemptNumber: 1,
+        });
+      }
+      const jp = markV2StageComplete(journeyProgress, "letter_sounds");
+      setJourneyProgress(jp);
+      saveV2JourneyProgress(childId, jp);
+      setLessonOpen(false);
+      setSegmentPracticeWord(payload.focusWord);
+    },
+    [
+      readingSkills,
+      childId,
+      applyFluency,
+      applyGatedMastery,
+      trackSkillIntroduction,
+      handleRetentionReview,
+      journeyProgress,
+    ],
+  );
 
   return (
     <div id="phonics-v2" data-testid="phonics-v2" className="space-y-4">
@@ -344,10 +519,10 @@ export function PhonicsV2({
           <div>
             <h2 className="font-quicksand text-base font-bold">Early Reading Journey</h2>
             <p className="text-[11px] text-muted-foreground">
-              True mastery tracking · {storyCount}+ stories · adaptive missions.
+              Hear → blend → read · {storyCount}+ stories · SATPIN groups.
             </p>
             <Badge variant="secondary" className="mt-1 text-[9px]">
-              Mastery avg {masteryAvg}%
+              Mastery avg {masteryAvg}% · {readingSkills.wordsRead.length} words read
             </Badge>
           </div>
         </CardContent>
@@ -377,7 +552,137 @@ export function PhonicsV2({
         onCompleteCurriculumActivity={onCompleteCurriculumActivity}
         onMissionSummaryChange={onMissionSummaryChange}
         onTaskComplete={() => setPronunciation(loadPronunciationScores(childId))}
+        onStartReadingLesson={() => setLessonOpen(true)}
       />
+
+      <ReadingAcademyHub
+        childId={childId}
+        childName={childName}
+        totalAgeMonths={totalAgeMonths}
+        letterGroupIndex={groupIndex}
+        curriculumLevel={curriculumLevel ?? 1}
+        blendingScore={readingSkills.skills.blending?.score ?? 0}
+        pronunciationAvg={pronunciation.confidenceAvg}
+      />
+
+      <Card
+        id="phonics-reading-lesson"
+        data-testid="phonics-reading-lesson-card"
+        className="rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.06] to-transparent scroll-mt-24"
+      >
+        <CardContent className="space-y-3 p-5">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                Complete reading lesson
+              </p>
+              <h3 className="font-quicksand text-base font-bold">
+                Today&apos;s sound: /{lessonGrapheme}/
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                Hear → mouth → repeat → letter → trace → sounds → build → read
+              </p>
+            </div>
+            {!lessonOpen && (
+              <button
+                type="button"
+                className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+                onClick={() => setLessonOpen(true)}
+              >
+                Start lesson
+              </button>
+            )}
+          </div>
+          {lessonOpen && (
+            <ReadingLessonRunner
+              grapheme={lessonGrapheme}
+              letterGroupIndex={groupIndex}
+              childId={childId}
+              childName={childName}
+              totalAgeMonths={totalAgeMonths}
+              onComplete={handleLessonComplete}
+              onCancel={() => setLessonOpen(false)}
+              onCoachEvaluation={handleCoachEvaluation}
+            />
+          )}
+          {segmentPracticeWord && !lessonOpen && (
+            <div className="border-t border-border pt-3">
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                Bonus: segment {segmentPracticeWord}
+              </p>
+              <SegmentWordRound
+                word={segmentPracticeWord}
+                onComplete={(correct) => {
+                  const next = {
+                    ...readingSkills,
+                    skills: {
+                      ...readingSkills.skills,
+                      segmenting: {
+                        skill: "segmenting" as const,
+                        score: Math.min(
+                          100,
+                          Math.round(
+                            (readingSkills.skills.segmenting?.score ?? 40) * 0.75 +
+                              (correct ? 25 : 5),
+                          ),
+                        ),
+                        attempts: (readingSkills.skills.segmenting?.attempts ?? 0) + 1,
+                        correct:
+                          (readingSkills.skills.segmenting?.correct ?? 0) + (correct ? 1 : 0),
+                        lastAt: Date.now(),
+                      },
+                    },
+                  };
+                  setReadingSkills(next);
+                  saveReadingSkillsState(childId, next);
+                  setSegmentPracticeWord(null);
+                }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <ReadingParentDashboard
+        letterGroupIndex={groupIndex}
+        skills={readingSkills}
+        coachConfusions={coachConfusions}
+        storiesCompleted={storiesCompletedCount}
+        pronunciationAvg={pronunciation.confidenceAvg}
+        className="rounded-3xl border border-white/[0.08] bg-card/90"
+      />
+
+      <Card
+        data-testid="ai-decodable-story-card"
+        className="rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.05] to-transparent"
+      >
+        <CardContent className="space-y-3 p-5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-sky-600" />
+            <h3 className="font-quicksand text-sm font-bold">
+              My level story: {aiStory.title}
+            </h3>
+            <Badge variant="outline" className="ml-auto text-[9px]">
+              Group {groupIndex} only
+            </Badge>
+          </div>
+          <div className="space-y-1">
+            {aiStory.lines.map((line) => (
+              <p
+                key={line.text}
+                className="font-quicksand text-lg font-bold tracking-wide text-foreground"
+              >
+                {line.text}
+              </p>
+            ))}
+          </div>
+          {coachFocus.length > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              Extra coach focus today: {coachFocus.map((g) => `/${g}/`).join(", ")}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {blendableWords.length > 0 && karaokeWord && (
       <div id="phonics-v2-karaoke" className="scroll-mt-24">

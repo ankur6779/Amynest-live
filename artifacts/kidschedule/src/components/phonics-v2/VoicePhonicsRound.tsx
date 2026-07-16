@@ -34,7 +34,10 @@ export function VoicePhonicsRound({
     word,
     onOutcome: (outcome, _fb, speech) => {
       const passed = outcome === "correct";
-      onReviewOutcome?.({ passed, confidence: speech.confidence });
+      // Integrity gates expect confidence on a 0–1 scale.
+      const confidence01 =
+        speech.confidence > 1 ? speech.confidence / 100 : speech.confidence;
+      onReviewOutcome?.({ passed, confidence: confidence01 });
       if (passed) onComplete?.();
     },
   });
