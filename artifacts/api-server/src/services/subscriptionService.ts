@@ -622,6 +622,11 @@ export async function healStaleSubscriptionRecord(
     return sub;
   }
 
+  // Paid-store subscriptions are reconciled via webhooks — never downgrade on read.
+  if (sub.provider === "revenuecat" || sub.provider === "razorpay") {
+    return sub;
+  }
+
   const now = new Date();
   const wasTrial = sub.status === "trialing" || sub.subscriptionState === "TRIAL";
   const [updated] = await dbExec
