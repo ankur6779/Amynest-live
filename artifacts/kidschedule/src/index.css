@@ -2658,6 +2658,16 @@ html.amynest-native-shell .drawer-overlay {
   pointer-events: auto;
 }
 
+/* Ask Amy FAB avatar — responsive visible size (46px mobile → 50px tablet →
+   54px desktop) with a soft resting shadow for prominence. The transparent
+   padding of the full-body render is cropped away in AmyFabAvatar, so this
+   box IS the visible mascot size. Touch target (≥56px) comes from the Link. */
+.amy-fab-avatar {
+  width: clamp(46px, 40px + 1.3vw, 54px);
+  height: clamp(46px, 40px + 1.3vw, 54px);
+  filter: drop-shadow(0 4px 12px rgba(88, 28, 135, 0.35));
+}
+
 /* Fallback when not embedded (non-dashboard routes). */
 #amy-fab-floating:not(.amy-fab-in-footer) {
   position: fixed !important;
