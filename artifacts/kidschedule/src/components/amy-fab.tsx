@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
-import { AmyBlinkFace } from "@/components/amy-3d/amy-blink-face";
-import { AMY_FULL_ASPECT } from "@/lib/amy/amy-stage-assets";
-import { useElementSize } from "@/hooks/use-element-size";
+import { AMY_FAB_ICON_SRC } from "@/lib/amy/amy-stage-assets";
 import { useTranslation } from "react-i18next";
 import { safePathStartsWith } from "@/lib/safe-route";
 
@@ -12,59 +10,19 @@ type AmyFabProps = {
   embedded?: boolean;
 };
 
-/**
- * Mascot bounding box on the 720×900 full-body render (UV fractions,
- * measured from amy-idle.webp alpha). Everything outside is transparent
- * padding — cropping to it makes the FAB avatar visually fill its box
- * instead of rendering the mascot at ~43% of the container height.
- */
-const AMY_FAB_CROP = {
-  x0: 65 / 720,
-  x1: 655 / 720,
-  y0: 459 / 900,
-  y1: 846 / 900,
-} as const;
-
-/**
- * Responsive Amy avatar for the FAB: a square crop window (sized via the
- * `.amy-fab-avatar` clamp) over an enlarged AmyBlinkFace, so the visible
- * mascot fills the window while blink/float/glow animations stay intact.
- */
+/** Square-cropped mascot — fills the FAB box without JS layout measurement. */
 function AmyFabAvatar() {
-  const [cropRef, cropSize] = useElementSize<HTMLDivElement>();
-  const side = cropSize.width || 46;
-
-  // Mascot extents as fractions of the blink-face box height (box width = AMY_FULL_ASPECT × height).
-  const mascotWFrac = (AMY_FAB_CROP.x1 - AMY_FAB_CROP.x0) * AMY_FULL_ASPECT;
-  const mascotHFrac = AMY_FAB_CROP.y1 - AMY_FAB_CROP.y0;
-  const faceSize = side / Math.max(mascotWFrac, mascotHFrac);
-  const mascotW = mascotWFrac * faceSize;
-  const mascotH = mascotHFrac * faceSize;
-  const offsetLeft = (side - mascotW) / 2 - AMY_FAB_CROP.x0 * AMY_FULL_ASPECT * faceSize;
-  const offsetTop = (side - mascotH) / 2 - AMY_FAB_CROP.y0 * faceSize;
-
   return (
     <div className="amy-fab-avatar amy-mascot-outer" aria-hidden>
-      <div
-        className="amy-mascot-float"
-        style={{ width: "100%", height: "100%", position: "relative" }}
-      >
-        <div
-          className="amy-mascot-hover-ring"
-          style={{ position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none", zIndex: 4 }}
-        />
-        <div
-          className="amy-mascot-glow"
-          style={{ position: "absolute", inset: 0, zIndex: 1 }}
-        >
-          <div
-            ref={cropRef}
-            style={{ position: "absolute", inset: 0, overflow: "hidden" }}
-          >
-            <div style={{ position: "absolute", left: offsetLeft, top: offsetTop }}>
-              <AmyBlinkFace size={faceSize} />
-            </div>
-          </div>
+      <div className="amy-mascot-float amy-fab-avatar__float">
+        <div className="amy-mascot-hover-ring amy-fab-avatar__ring" />
+        <div className="amy-mascot-glow amy-fab-avatar__glow">
+          <img
+            src={AMY_FAB_ICON_SRC}
+            alt=""
+            draggable={false}
+            className="amy-fab-avatar__img"
+          />
         </div>
       </div>
     </div>

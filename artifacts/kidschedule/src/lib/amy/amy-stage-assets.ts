@@ -16,3 +16,6 @@ export const AMY_STAGE_ASSETS = {
 
 /** Small icon derived from the same full-body render (never face-only crop). */
 export const AMY_ICON_SRC = AMY_STAGE_ASSETS.idle;
+
+/** Square mascot crop for the floating Ask-Amy FAB (590×590, no transparent padding). */
+export const AMY_FAB_ICON_SRC = "/amy/fab-icon.webp";
