@@ -11,7 +11,10 @@ import {
   evaluateTtsPhase,
   skippedPhase,
 } from "../audio-health-gate.js";
-import { validateProductionSecrets } from "../audio-health-gate-runner.js";
+import {
+  evaluateStaticAudioResponse,
+  validateProductionSecrets,
+} from "../audio-health-gate-runner.js";
 
 const healthyInput = {
   infraAudioOk: true,
@@ -212,5 +215,35 @@ describe("audio-health-gate", () => {
     const skipped = skippedPhase("Queue health", "INTERNAL_HEALTH_SECRET not configured");
     assert.equal(skipped.status, "SKIPPED");
     assert.equal(skipped.metrics.skipReason, "INTERNAL_HEALTH_SECRET not configured");
+  });
+
+  it("accepts valid MP3 when Content-Length is missing (CDN/edge)", () => {
+    const mpeg = new Uint8Array(600);
+    mpeg[0] = 0xff;
+    mpeg[1] = 0xfb;
+    const judged = evaluateStaticAudioResponse({
+      status: 200,
+      contentType: "audio/mpeg",
+      contentLengthHeader: null,
+      body: mpeg,
+      staticSource: "asset",
+    });
+    assert.equal(judged.ok, true);
+    assert.equal(judged.contentLength, 600);
+  });
+
+  it("rejects CDN placeholder bodies even with audio MIME", () => {
+    const mpeg = new Uint8Array(256);
+    mpeg[0] = 0xff;
+    mpeg[1] = 0xfb;
+    const judged = evaluateStaticAudioResponse({
+      status: 200,
+      contentType: "audio/mpeg",
+      contentLengthHeader: 256,
+      body: mpeg,
+      staticSource: "placeholder",
+    });
+    assert.equal(judged.ok, false);
+    assert.match(judged.error ?? "", /placeholder/i);
   });
 });

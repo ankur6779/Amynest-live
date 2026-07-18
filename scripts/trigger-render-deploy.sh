@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Trigger Render API hot-standby deploy (main branch).
-# Static SPA is on Cloudflare Pages — see scripts/deploy-cloudflare-pages.sh.
-# Requires RENDER_API_KEY (Account Settings → API Keys on render.com).
+# DEPRECATED — Render API standby is suspended; live API is Coolify (www.amynest.in).
+# Kept for emergency manual use only (workflow_dispatch deploy-render.yml).
+# Exits 0 when the service is suspended so operators are not blocked by a retired standby.
 set -euo pipefail
 
 if [[ -z "${RENDER_API_KEY:-}" ]]; then
@@ -11,13 +11,13 @@ fi
 
 COMMIT_ID="${1:-}"
 
-# Render API hot standby only — live API is Coolify (www.amynest.in/api/* via CF Worker).
-# AI worker runs on Hetzner (see docs/hetzner-ai-worker.md), not Render.
+# Render API hot standby only — live API is Coolify; AI worker is Hetzner.
 SERVICES=(
-  "srv-d85k8jbtqb8s7382mjng" # Amynest-backend (API standby)
+  "srv-d85k8jbtqb8s7382mjng" # Amynest-backend (API standby — suspended)
 )
 
 failed=0
+suspended=0
 
 for service_id in "${SERVICES[@]}"; do
   body='{}'
@@ -36,10 +36,17 @@ for service_id in "${SERVICES[@]}"; do
   )"
 
   if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
-    echo "ERROR: Render deploy request failed for ${service_id} (HTTP ${http_code})"
-    cat "$response_file"
-    echo
-    failed=1
+    if grep -qi 'suspended' "$response_file"; then
+      echo "WARN: Render service ${service_id} is suspended — standby deploy skipped (Coolify is production)."
+      cat "$response_file"
+      echo
+      suspended=1
+    else
+      echo "ERROR: Render deploy request failed for ${service_id} (HTTP ${http_code})"
+      cat "$response_file"
+      echo
+      failed=1
+    fi
   else
     echo "OK (${http_code}): $(cat "$response_file")"
   fi
@@ -49,6 +56,11 @@ done
 if [[ "$failed" -ne 0 ]]; then
   echo "One or more Render deploy requests failed."
   exit 1
+fi
+
+if [[ "$suspended" -ne 0 ]]; then
+  echo "Render standby is suspended — no deploy queued (expected after Coolify cutover)."
+  exit 0
 fi
 
 echo "All deploy requests queued."

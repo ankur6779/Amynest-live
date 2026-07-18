@@ -1,8 +1,9 @@
-# Production deploy — runs all CI gates first; then Pages (static), Render API standby, Hetzner worker.
+# Production deploy — runs all CI gates first; then Pages (static) + Hetzner worker.
 #
 # Live static: Cloudflare Pages (amynest-web) → www.amynest.in
 # Live API: Coolify (auto-deploy via Coolify Git webhook — not this workflow)
-# Render autoDeployTrigger is off in render.yaml; API standby is triggered here.
+# AI worker: Hetzner (path-filtered SSH deploy)
+# Render API standby is retired (service suspended) — do not trigger from CI.
 
 name: Production deploy (gated)
 
@@ -90,28 +91,6 @@ jobs:
         env:
           SMOKE_BASE_URL: https://www.amynest.in
           SMOKE_API_URL: https://www.amynest.in
-
-  deploy-render-api:
-    name: Trigger Render API standby deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [crash-release-gates, routine-engine-gates, audio-gates, chat-platform-gates, typecheck-gate]
-    if: |
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled') &&
-      github.repository == 'ankur6779/Amynest-live'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Trigger Render API standby deploy
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: |
-          if [ -z "$RENDER_API_KEY" ]; then
-            echo "RENDER_API_KEY not configured — skipping Render API standby deploy."
-            exit 0
-          fi
-          bash scripts/trigger-render-deploy.sh "${{ github.sha }}"
 
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker

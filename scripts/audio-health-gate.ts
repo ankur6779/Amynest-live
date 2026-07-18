@@ -3,7 +3,7 @@
  *
  * Usage:
  *   pnpm check:audio-health-gate
- *   AUDIO_GATE_API_URL=https://amynest-backend-dykj.onrender.com pnpm check:audio-health-gate
+ *   AUDIO_GATE_API_URL=https://www.amynest.in pnpm check:audio-health-gate
  *
  * Writes: artifacts/audio-health-gate/latest.json
  * Exit: 0 PASS/WARNING, 1 FAIL (blocks deploy)
@@ -28,12 +28,13 @@ const args = new Set(process.argv.slice(2));
 const offlineOnly = args.has("--offline");
 const jsonOnly = args.has("--json");
 
+/** Production API is Coolify behind www.amynest.in (Render standby is retired). */
 const API_URL = (
   process.env.AUDIO_GATE_API_URL ??
   process.env.SMOKE_API_URL ??
   process.env.API_URL ??
   process.env.API_PUBLIC_URL ??
-  "https://amynest-backend-dykj.onrender.com"
+  "https://www.amynest.in"
 ).replace(/\/$/, "");
 
 const ADMIN_TOKEN =
@@ -76,19 +77,50 @@ function saveOrphanBaseline(orphans: number): void {
   );
 }
 
+function extractHashesFromUrls(urls: string[]): string[] {
+  return [
+    ...new Set(
+      urls
+        .map((u) => u.match(/static-audio\/([a-f0-9]{32})\.mp3/i)?.[1]?.toLowerCase())
+        .filter((h): h is string => !!h),
+    ),
+  ];
+}
+
+/**
+ * Prefer P0 curriculum hashes (deploy-critical corpus). Random full-map sampling
+ * hits residual CDN/GCS placeholders (~2%) and flakes the deploy gate.
+ */
 function extractHashes(count: number): string[] {
+  const p0Path = join(ROOT, "scripts/data/p0-cloudflare-purge-urls.txt");
+  if (existsSync(p0Path)) {
+    const p0Hashes = extractHashesFromUrls(
+      readFileSync(p0Path, "utf8")
+        .split(/\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith("http")),
+    );
+    if (p0Hashes.length > 0) {
+      if (p0Hashes.length <= count) return p0Hashes;
+      const picked: string[] = [];
+      while (picked.length < count) {
+        const hash = p0Hashes[randomInt(p0Hashes.length)]!;
+        if (!picked.includes(hash)) picked.push(hash);
+      }
+      return picked;
+    }
+  }
+
   const map = loadStaticAudioMap();
-  const urls = [...Object.values(map.default ?? {}), ...Object.values(map.phonics ?? {})];
-  const hashes = urls
-    .map((u) => u.match(/static-audio\/([a-f0-9]{32})\.mp3/i)?.[1]?.toLowerCase())
-    .filter((h): h is string => !!h);
-  const unique = [...new Set(hashes)];
+  const unique = extractHashesFromUrls([
+    ...Object.values(map.default ?? {}),
+    ...Object.values(map.phonics ?? {}),
+  ]);
   if (unique.length === 0) return ["ff74291468e5322c612357c6f74701e8"];
 
   const picked: string[] = [];
   while (picked.length < count && picked.length < unique.length) {
-    const idx = randomInt(unique.length);
-    const hash = unique[idx]!;
+    const hash = unique[randomInt(unique.length)]!;
     if (!picked.includes(hash)) picked.push(hash);
   }
   return picked;

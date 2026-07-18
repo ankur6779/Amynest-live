@@ -117,11 +117,11 @@
     "@workspace/db": "workspace:*",
     "dotenv": "^16.6.1",
     "pg": "^8.20.0",
-    "sharp": "^0.34.2"
+    "sharp": "^0.34.2",
+    "tsx": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/pg": "^8.18.0",
-    "tsx": "catalog:"
+    "@types/pg": "^8.18.0"
   }
 }

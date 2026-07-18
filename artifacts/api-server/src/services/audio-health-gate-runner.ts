@@ -113,6 +113,73 @@ async function gateFetch(
   }
 }
 
+/** Minimum accepted static/TTS audio body size (rejects CDN poison placeholders). */
+export const MIN_AUDIO_BODY_BYTES = 500;
+
+/**
+ * Evaluate a static-audio HTTP response using the body as source of truth.
+ * Cloudflare/edge often omit Content-Length; header-only checks false-fail valid MP3s.
+ */
+export function evaluateStaticAudioResponse(opts: {
+  status: number;
+  contentType: string;
+  contentLengthHeader: number | null;
+  body: ArrayBuffer | Uint8Array;
+  staticSource?: string | null;
+}): { ok: boolean; contentLength: number; error?: string } {
+  const bytes =
+    opts.body instanceof Uint8Array ? opts.body : new Uint8Array(opts.body);
+  const contentLength =
+    bytes.byteLength > 0
+      ? bytes.byteLength
+      : Math.max(0, opts.contentLengthHeader ?? 0);
+  const contentType = (opts.contentType ?? "").toLowerCase();
+  const staticSource = (opts.staticSource ?? "").toLowerCase();
+
+  if (opts.status < 200 || opts.status >= 300) {
+    return { ok: false, contentLength, error: `HTTP ${opts.status}` };
+  }
+  if (staticSource === "placeholder") {
+    return {
+      ok: false,
+      contentLength,
+      error: `CDN placeholder (${contentLength} bytes)`,
+    };
+  }
+  if (contentLength < MIN_AUDIO_BODY_BYTES) {
+    return {
+      ok: false,
+      contentLength,
+      error: `body too small (${contentLength} bytes)`,
+    };
+  }
+
+  const hasId3 = bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33;
+  const hasMpegFrame = bytes[0] === 0xff && ((bytes[1] ?? 0) & 0xe0) === 0xe0;
+  const mimeLooksAudio =
+    contentType.includes("audio") ||
+    contentType.includes("mpeg") ||
+    contentType.includes("octet-stream") ||
+    contentType === "";
+
+  if (!mimeLooksAudio && !hasId3 && !hasMpegFrame) {
+    return {
+      ok: false,
+      contentLength,
+      error: `unexpected content-type (${opts.contentType || "missing"})`,
+    };
+  }
+  if (bytes.byteLength > 0 && !hasId3 && !hasMpegFrame) {
+    return {
+      ok: false,
+      contentLength,
+      error: "body is not MPEG/ID3 audio",
+    };
+  }
+
+  return { ok: true, contentLength };
+}
+
 async function probeStaticSamples(
   apiUrl: string,
   hashes: string[],
@@ -124,22 +191,29 @@ async function probeStaticSamples(
         method: "GET",
         signal: AbortSignal.timeout(20_000),
       });
-      const contentLength = Number(res.headers.get("content-length") ?? "0");
       const contentType = res.headers.get("content-type") ?? "";
-      let ok = res.ok && contentLength >= 500 && contentType.includes("audio");
-      let error: string | undefined;
+      const clHeader = res.headers.get("content-length");
+      const contentLengthHeader =
+        clHeader != null && clHeader !== "" ? Number(clHeader) : null;
+      const buf = await res.arrayBuffer();
+      const judged = evaluateStaticAudioResponse({
+        status: res.status,
+        contentType,
+        contentLengthHeader: Number.isFinite(contentLengthHeader)
+          ? contentLengthHeader
+          : null,
+        body: buf,
+        staticSource: res.headers.get("x-amynest-static-source"),
+      });
 
-      if (res.ok) {
-        const buf = await res.arrayBuffer();
-        if (buf.byteLength < 500) {
-          ok = false;
-          error = `body too small (${buf.byteLength} bytes)`;
-        }
-      } else {
-        error = `HTTP ${res.status}`;
-      }
-
-      out.push({ hash, ok, status: res.status, contentLength: contentLength || 0, contentType, error });
+      out.push({
+        hash,
+        ok: judged.ok,
+        status: res.status,
+        contentLength: judged.contentLength,
+        contentType,
+        error: judged.error,
+      });
     } catch (err) {
       out.push({
         hash,
@@ -221,7 +295,7 @@ async function pollTtsJobResult(
 }
 
 async function verifyPlaybackUrl(
-  apiUrl: string,
+  _apiUrl: string,
   playbackUrl: string,
   adminToken?: string,
 ): Promise<boolean> {
@@ -233,10 +307,19 @@ async function verifyPlaybackUrl(
       headers,
       signal: AbortSignal.timeout(20_000),
     });
-    if (!res.ok) return false;
-    const buf = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") ?? "";
-    return buf.byteLength >= 500 && contentType.includes("audio");
+    const clHeader = res.headers.get("content-length");
+    const contentLengthHeader =
+      clHeader != null && clHeader !== "" ? Number(clHeader) : null;
+    const judged = evaluateStaticAudioResponse({
+      status: res.status,
+      contentType: res.headers.get("content-type") ?? "",
+      contentLengthHeader: Number.isFinite(contentLengthHeader)
+        ? contentLengthHeader
+        : null,
+      body: await res.arrayBuffer(),
+      staticSource: res.headers.get("x-amynest-static-source"),
+    });
+    return judged.ok;
   } catch {
     return false;
   }
