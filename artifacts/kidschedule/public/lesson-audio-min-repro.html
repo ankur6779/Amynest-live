@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AmyNest lesson audio min repro</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #120f24;
+        color: #fff;
+        padding: 24px;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      button {
+        width: 100%;
+        padding: 16px;
+        font-size: 18px;
+        font-weight: 700;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        color: #fff;
+        margin: 8px 0;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: rgba(255, 255, 255, 0.06);
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Minimal lesson MP3 repro</h1>
+    <p>No React. No AudioManager. No WebAudio. One button → one MP3.</p>
+    <button id="play" type="button">Play bullying paragraph MP3</button>
+    <button id="prime" type="button">Prime keepPlaying then await play()</button>
+    <pre id="log"></pre>
+    <script>
+      const URL =
+        "https://www.amynest.in/api/static-audio/4df9e01b8d07bd9228cc592cf4d09aa8.mp3";
+      const logEl = document.getElementById("log");
+      const lines = [];
+      function log(msg) {
+        const line = `[${new Date().toISOString()}] ${msg}`;
+        lines.push(line);
+        logEl.textContent = lines.join("\n");
+        console.log(line);
+      }
+
+      function wireEvents(audio, label) {
+        for (const ev of [
+          "loadstart",
+          "loadedmetadata",
+          "loadeddata",
+          "canplay",
+          "canplaythrough",
+          "play",
+          "playing",
+          "waiting",
+          "pause",
+          "stalled",
+          "abort",
+          "error",
+          "ended",
+          "timeupdate",
+        ]) {
+          audio.addEventListener(ev, () => {
+            if (ev === "timeupdate" && audio.currentTime > 0.25 && audio.currentTime < 0.35) {
+              log(`${label} timeupdate t=${audio.currentTime.toFixed(2)}`);
+            } else if (ev !== "timeupdate") {
+              log(
+                `${label} ${ev} paused=${audio.paused} t=${audio.currentTime.toFixed(2)} rs=${audio.readyState} ns=${audio.networkState}` +
+                  (audio.error ? ` err=${audio.error.code}` : ""),
+              );
+            }
+          });
+        }
+      }
+
+      document.getElementById("play").onclick = async () => {
+        log("SIMPLE path: new Audio → play()");
+        const audio = new Audio(URL);
+        audio.setAttribute("playsinline", "true");
+        audio.setAttribute("webkit-playsinline", "true");
+        wireEvents(audio, "simple");
+        console.time("simple-play");
+        try {
+          await audio.play();
+          log("SIMPLE PLAY RESOLVED");
+        } catch (e) {
+          log(`SIMPLE PLAY FAIL name=${e.name} message=${e.message}`);
+        }
+        console.timeEnd("simple-play");
+      };
+
+      document.getElementById("prime").onclick = async () => {
+        log("GESTURE path: prime play → await microtask → take same element");
+        const primed = new Audio(URL);
+        primed.setAttribute("playsinline", "true");
+        primed.volume = 1;
+        wireEvents(primed, "primed");
+        const primedId = Math.random().toString(36).slice(2, 8);
+        primed.dataset.id = primedId;
+        log(`Primed Audio ID: ${primedId}`);
+        try {
+          void primed.play();
+        } catch (e) {
+          log(`prime sync play throw ${e.message}`);
+        }
+        await Promise.resolve();
+        await ensureStaticMapFake();
+        const playback = primed; // must be same object
+        log(`Playback Audio ID: ${playback.dataset.id} same=${playback === primed}`);
+        console.time("gesture-play");
+        try {
+          if (playback.paused) await playback.play();
+          else log("already playing from prime — no second play()");
+          log("GESTURE PLAY OK");
+        } catch (e) {
+          log(`GESTURE PLAY FAIL name=${e.name} message=${e.message}`);
+        }
+        console.timeEnd("gesture-play");
+      };
+
+      async function ensureStaticMapFake() {
+        // Simulate await ensureStaticAudioMapLoaded()
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    </script>
+  </body>
+</html>

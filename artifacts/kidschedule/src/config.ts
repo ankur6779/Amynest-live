@@ -5,7 +5,9 @@
  * Referral share links use `VITE_APP_WEB_ORIGIN` (see `lib/referral-links.ts`).
  */
 export const API_ORIGINS = {
-  production: "https://amynest-backend-dykj.onrender.com",
+  // Production API is Coolify behind Cloudflare (www.amynest.in). The legacy
+  // Render service is suspended (HTTP 503) and must not remain a fallback.
+  production: "https://www.amynest.in",
   development: "https://amynest-dev.onrender.com",
   local: "http://localhost:5000",
 } as const;

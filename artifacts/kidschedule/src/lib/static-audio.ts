@@ -118,16 +118,27 @@ function buildMapFromRaw(raw: StaticAudioMapFile): void {
 export function ensureStaticAudioMapLoaded(): Promise<void> {
   if (map) return Promise.resolve();
   if (!staticAudioMapLoadPromise) {
-    staticAudioMapLoadPromise = import("@/data/static-audio-map.json")
-      .then((mod) => {
+    const loadOnce = (): Promise<void> =>
+      import("@/data/static-audio-map.json").then((mod) => {
         const raw = (mod.default ?? mod) as StaticAudioMapFile;
+        if (!raw || typeof raw !== "object" || !("default" in raw)) {
+          throw new Error("static_audio_map_invalid_shape");
+        }
         buildMapFromRaw(raw);
-      })
-      .catch((err) => {
-        staticAudioMapLoadPromise = null;
-        console.error("[static-audio] map load failed", err);
-        throw err;
       });
+
+    staticAudioMapLoadPromise = loadOnce().catch(async (err) => {
+      // One retry — transient chunk fetch failures otherwise leave mapReady=false
+      // and every lesson logs a false "static URL miss".
+      console.warn("[static-audio] map load failed — retrying once", err);
+      try {
+        await loadOnce();
+      } catch (retryErr) {
+        staticAudioMapLoadPromise = null;
+        console.error("[static-audio] map load failed", retryErr);
+        throw retryErr;
+      }
+    });
   }
   return staticAudioMapLoadPromise;
 }
@@ -155,6 +166,15 @@ function logStaticAudioLookupMiss(
   mode: StaticAudioMode,
   extra?: Record<string, unknown>,
 ): void {
+  // Map still loading — not a catalog gap. Reporting /missing here causes
+  // HTTP 401 spam for signed-out users and confuses playback diagnostics.
+  if (map === null) {
+    console.warn("[static-audio] lookup deferred — map not ready", {
+      mode,
+      textPreview: rawText.slice(0, 80),
+    });
+    return;
+  }
   const bucket = map?.[mode] ?? {};
   const report = buildStaticAudioLookupMissReport(rawText, bucket, {
     mapReady: map !== null,
@@ -210,6 +230,10 @@ function recordMissingStaticAudio(
   enqueueServer = true,
 ): void {
   if (!normalized) return;
+  // Never enqueue authenticated /missing reports while the catalog chunk is
+  // still loading — that path returns HTTP 401 for anonymous sessions and is
+  // unrelated to playback authorization.
+  if (map === null) return;
   const key = staticAudioMissingKey(mode, normalized);
   missingKeys.add(key);
   warnOnce(`missing:${key}`, "Missing static audio:", normalized, `(p${priority})`);

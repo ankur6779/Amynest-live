@@ -114,6 +114,7 @@
     "release:intelligence": "pnpm --filter @workspace/scripts run release-intelligence",
     "backfill:spelling-static-audio": "pnpm run generate:spelling-audio",
     "check:static-audio": "pnpm --filter @workspace/scripts run check-static-audio",
+    "validate:lesson-static-audio-live": "pnpm --filter @workspace/scripts run validate-lesson-static-audio-live",
     "check:audio-manifest-urls": "pnpm --filter @workspace/scripts run check-audio-manifest-urls",
     "normalize:audio-manifest-urls": "pnpm --filter @workspace/scripts run normalize-audio-manifest-urls",
     "load:audio": "pnpm --filter @workspace/scripts run audio-load-test",

@@ -146,6 +146,25 @@ function assertLessonParagraphStaticCoverage(): void {
 
 assertLessonParagraphStaticCoverage();
 
+const skipLive =
+  process.env.STATIC_AUDIO_LIVE_VALIDATE === "0" ||
+  process.env.STATIC_AUDIO_LIVE_VALIDATE === "false";
+if (!skipLive) {
+  try {
+    execSync("tsx ./validate-lesson-static-audio-live.ts", {
+      stdio: "inherit",
+      cwd: import.meta.dirname,
+      env: process.env,
+    });
+  } catch {
+    process.exit(1);
+  }
+} else {
+  console.warn(
+    "[static-audio] skipped live lesson MP3 validation (STATIC_AUDIO_LIVE_VALIDATE=0)",
+  );
+}
+
 const requireFullCorpus =
   process.env.STATIC_AUDIO_REQUIRE_FULL_CORPUS === "1" ||
   process.env.STATIC_AUDIO_REQUIRE_FULL_CORPUS === "true";

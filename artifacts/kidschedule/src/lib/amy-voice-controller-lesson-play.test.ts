@@ -12,6 +12,8 @@ vi.mock("@/lib/phonics-player", () => ({
   isPhonicsPlaying: vi.fn(() => false),
 }));
 
+const takePrimedMock = vi.fn(() => null);
+
 vi.mock("@/lib/audio-manager", () => ({
   audioManager: {
     isSpeechPlaying: vi.fn(() => false),
@@ -22,6 +24,7 @@ vi.mock("@/lib/audio-manager", () => ({
     waitUntilEnd: (...args: unknown[]) => waitUntilEndMock(...args),
     unlockFromUserGesture: (...args: unknown[]) => unlockMock(...args),
     primeSpeechUrlInUserGesture: (...args: unknown[]) => primeMock(...args),
+    takeGesturePrimedElement: (...args: unknown[]) => takePrimedMock(...args),
     create: (...args: unknown[]) => createMock(...args),
     getLastPlayError: vi.fn(() => null),
     warmMediaPipeline: vi.fn(),
@@ -39,6 +42,8 @@ describe("playPreparedUrl lesson direct stream", () => {
     createMock.mockReset();
     unlockMock.mockReset();
     primeMock.mockReset();
+    takePrimedMock.mockReset();
+    takePrimedMock.mockReturnValue(null);
     prepareRemoteMock.mockReset();
     playMock.mockResolvedValue(true);
     waitUntilEndMock.mockResolvedValue({ ok: true });
@@ -64,5 +69,30 @@ describe("playPreparedUrl lesson direct stream", () => {
     expect(primeMock).toHaveBeenCalled();
     expect(playMock).toHaveBeenCalled();
     expect(waitUntilEndMock).toHaveBeenCalled();
+  });
+
+  it("reuses a keepPlaying gesture-primed element instead of creating a new Audio", async () => {
+    const primed = { playbackRate: 1, paused: false, muted: false, volume: 1 } as HTMLAudioElement;
+    takePrimedMock.mockReturnValueOnce(primed);
+
+    const { amyVoiceController } = await import("@/lib/amy-voice-controller");
+    amyVoiceController.pause();
+
+    const res = await amyVoiceController.playPreparedUrl("/api/static-audio/abc.mp3", {
+      source: "lesson",
+      phrase: "Ask open questions.",
+      srcType: "static",
+      waitUntilEnd: true,
+      preferDirectStream: true,
+    });
+
+    expect(res.success).toBe(true);
+    expect(createMock).not.toHaveBeenCalled();
+    expect(playMock).toHaveBeenCalledWith(
+      primed,
+      expect.objectContaining({ source: "lesson" }),
+      expect.anything(),
+    );
+    expect(waitUntilEndMock).toHaveBeenCalledWith(primed, expect.any(Function));
   });
 });

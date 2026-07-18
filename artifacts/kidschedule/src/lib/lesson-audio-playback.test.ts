@@ -2,10 +2,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const playPreparedUrlMock = vi.fn();
 const prepareRemoteMock = vi.fn();
+const primeSpeechMock = vi.fn();
+const unlockMock = vi.fn();
 
 vi.mock("@/lib/amy-voice-controller", () => ({
   amyVoiceController: {
     playPreparedUrl: (...args: unknown[]) => playPreparedUrlMock(...args),
+  },
+}));
+
+vi.mock("@/lib/audio-manager", () => ({
+  audioManager: {
+    unlockFromUserGesture: (...args: unknown[]) => unlockMock(...args),
+    primeSpeechUrlInUserGesture: (...args: unknown[]) => primeSpeechMock(...args),
+    takeGesturePrimedElement: vi.fn(() => null),
   },
 }));
 
@@ -103,6 +113,37 @@ describe("playLessonParagraphStatic", () => {
     expect(playPreparedUrlMock).toHaveBeenCalledWith(
       "blob:lesson-warm",
       expect.objectContaining({ preferDirectStream: true, source: "lesson" }),
+    );
+  });
+
+  it("primeLessonParagraphInUserGesture starts keepPlaying on the proxy URL (not blob)", async () => {
+    primeSpeechMock.mockReset();
+    unlockMock.mockReset();
+    prepareRemoteMock.mockResolvedValue({ src: "blob:should-not-use" });
+    const mod = await import("@/lib/lesson-audio-playback");
+    const identity = {
+      lessonId: "lesson-1",
+      paragraphIdx: 0,
+      text: "First paragraph of the lesson.",
+      hash: "gesture-hash",
+    };
+
+    await mod.ensureLessonParagraphWarmed(identity, 1000);
+    const url = mod.primeLessonParagraphInUserGesture(identity);
+
+    // Must stay on https proxy so takeGesturePrimedElement matches after await.
+    expect(url).toBe("https://api.test/api/static-audio/mockhash.mp3");
+    expect(unlockMock).toHaveBeenCalled();
+    expect(primeSpeechMock).toHaveBeenCalledWith(
+      "https://api.test/api/static-audio/mockhash.mp3",
+      expect.objectContaining({ keepPlaying: true, volume: 1 }),
+    );
+
+    const res = await mod.playLessonParagraphStatic(identity);
+    expect(res.success).toBe(true);
+    expect(playPreparedUrlMock).toHaveBeenCalledWith(
+      "https://api.test/api/static-audio/mockhash.mp3",
+      expect.objectContaining({ source: "lesson" }),
     );
   });
 });

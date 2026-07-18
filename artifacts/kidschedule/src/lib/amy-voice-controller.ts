@@ -1048,10 +1048,14 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     recordTtsUserGesture();
     resetGuardForUserSpeak();
-    this.stopCurrentAudio();
 
     const proxyUrl = resolveApiMediaUrl(trimmed);
     const source = opts.source ?? "amy_voice";
+    // Claim gesture-primed element BEFORE stopCurrentAudio so lesson Play that
+    // already called audio.play() in pointerdown is not discarded.
+    const gesturePrimed = audioManager.takeGesturePrimedElement(proxyUrl);
+    this.stopCurrentAudio();
+
     const playbackTraceId = beginPlaybackTrace({
       owner: playbackTraceOwnerFromModule(traceModule, "AmyVoiceController"),
       requestedUrl: proxyUrl,
@@ -1078,10 +1082,22 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
       let audio: HTMLAudioElement;
       let detachPipelineListeners = () => {};
-      if (preferDirect) {
+      const alreadyPlayingFromGesture = Boolean(gesturePrimed && !gesturePrimed.paused);
+
+      if (gesturePrimed) {
+        audio = gesturePrimed;
+        audio.muted = false;
+        audio.volume = 1;
+        if (alreadyPlayingFromGesture) {
+          logAudioPipeline("playPreparedUrl_gesture_continue", {
+            detail: { source, proxyUrl: proxyUrl.slice(0, 80) },
+          });
+        }
+      } else if (preferDirect) {
         audioManager.unlockFromUserGesture();
         audioManager.primeSpeechUrlInUserGesture(proxyUrl);
-        audio = audioManager.create(proxyUrl);
+        audio =
+          audioManager.takeGesturePrimedElement(proxyUrl) ?? audioManager.create(proxyUrl);
       } else {
         const prepared = await prepareRemotePlaybackAudio(proxyUrl);
         audio = prepared ?? audioManager.create(proxyUrl);
@@ -1097,6 +1113,8 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         phrase: opts.phrase,
       });
 
+      // If the gesture already started this element, audio.play() is a no-op that
+      // resolves without needing a fresh user activation (HTML media element rules).
       const played = await audioManager.play(
         audio,
         {
@@ -1111,7 +1129,11 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         { channel: "speech", interrupt: true },
       );
 
-      setAudioPipelineMachineState("audible_start", { played, source });
+      setAudioPipelineMachineState("audible_start", {
+        played,
+        source,
+        alreadyPlayingFromGesture,
+      });
 
       if (traceModule) {
         traceAudioManagerPlayResult(traceModule, played);
@@ -1132,7 +1154,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           phrase: opts.phrase?.slice(0, 80),
         });
         logAudioPipeline("playPreparedUrl_failed", {
-          detail: { source, error: lastErr, preferDirect },
+          detail: { source, error: lastErr, preferDirect, alreadyPlayingFromGesture },
         });
         detachPipelineListeners();
         return { success: false, error: lastErr };
@@ -1162,7 +1184,12 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         phrase: opts.phrase,
       });
       logAudioPipeline("playPreparedUrl_success", {
-        detail: { source, preferDirect, waitUntilEnd: opts.waitUntilEnd !== false },
+        detail: {
+          source,
+          preferDirect,
+          alreadyPlayingFromGesture,
+          waitUntilEnd: opts.waitUntilEnd !== false,
+        },
       });
       detachPipelineListeners();
       traceEnd = "playPreparedUrl_success";

@@ -178,6 +178,7 @@ export function useLessonPlayback({
       const gestureBlocked =
         errMsg === "USER_INTERACTION_REQUIRED" ||
         errMsg === "GESTURE_BLOCKED" ||
+        errMsg === "map_not_ready" ||
         /user.?interaction|notallowed|gesture/i.test(errMsg);
       console.warn("[LessonPlayback] paragraph failed — staying on paragraph", {
         error: errMsg,

@@ -84,7 +84,11 @@ export async function validateAudioBlobDecodable(blob: Blob): Promise<void> {
     (window as unknown as { webkitAudioContext?: AudioCtxCtor }).webkitAudioContext;
   if (!Ctor) return;
 
-  if (!decodeCtx) {
+  if (
+    !decodeCtx ||
+    decodeCtx.state === "closed" ||
+    (decodeCtx.state as string) === "interrupted"
+  ) {
     try {
       decodeCtx = new Ctor();
     } catch {
@@ -92,13 +96,34 @@ export async function validateAudioBlobDecodable(blob: Blob): Promise<void> {
     }
   }
   if (decodeCtx.state === "suspended") {
-    await decodeCtx.resume().catch(() => {});
+    try {
+      await decodeCtx.resume();
+    } catch {
+      try {
+        void decodeCtx.close();
+      } catch {
+        /* ignore */
+      }
+      decodeCtx = null;
+      try {
+        decodeCtx = new Ctor();
+      } catch {
+        return;
+      }
+    }
   }
 
   const buffer = await blob.arrayBuffer();
   try {
     await decodeCtx.decodeAudioData(buffer.slice(0));
   } catch {
+    // Context may be permanently dead after WebView AudioContext errors.
+    try {
+      void decodeCtx.close();
+    } catch {
+      /* ignore */
+    }
+    decodeCtx = null;
     throw new Error("invalid_audio_blob_decode");
   }
 }

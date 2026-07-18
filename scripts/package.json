@@ -37,6 +37,7 @@
     "validate-static-audio-cdn": "node ./validate-static-audio-cdn.mjs",
     "list-static-audio-purge-urls": "node ./list-static-audio-purge-urls.mjs",
     "check-static-audio": "tsx ./check-static-audio.ts",
+    "validate-lesson-static-audio-live": "tsx ./validate-lesson-static-audio-live.ts",
     "check-static-audio-duplicates": "tsx ./check-static-audio-duplicates.ts",
     "check-phonics-letter-static-map": "tsx ./check-phonics-letter-static-map.ts",
     "dedupe-static-audio-map": "tsx ./dedupe-static-audio-map.ts",

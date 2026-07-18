@@ -5,11 +5,13 @@
  *
  * Mobile WebViews cannot reliably stream cross-origin MP3s (Range/206 decode
  * bugs) AND cannot call audio.play() after an await (gesture token lost).
- * Solution: warm a blob URL before Play, then play that blob synchronously.
+ * Solution: warm a blob URL before Play, and on pointerdown start playback on
+ * a keepPlaying gesture-primed element so play() after await reuses that element.
  */
 
 import { resolveApiMediaUrl } from "@/lib/api";
 import { amyVoiceController, type SpeakResult } from "@/lib/amy-voice-controller";
+import { audioManager } from "@/lib/audio-manager";
 import type { AudioIdentity } from "@/lib/lesson-audio-identity";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 import {
@@ -33,6 +35,12 @@ export type PlayLessonParagraphOptions = {
 
 const readyBlobByHash = new Map<string, string>();
 const warmInFlight = new Map<string, Promise<string | null>>();
+/** URL that pointerdown primed — must match playPreparedUrl lookup key. */
+const primedUrlByHash = new Map<string, string>();
+
+// Eager-load the catalog as soon as this module is imported (audio-lessons route)
+// so Play never awaits a 400KB+ chunk inside the user-gesture stack.
+void ensureStaticAudioMapLoaded().catch(() => {});
 
 function lessonWarmKey(identity: AudioIdentity): string {
   return identity.hash;
@@ -110,6 +118,27 @@ function resolvePlayUrl(identity: AudioIdentity, proxyUrl: string): string {
   return resolveApiMediaUrl(proxyUrl);
 }
 
+/**
+ * Synchronous gesture entry — must run inside pointerdown/click with no await.
+ * Starts HTMLAudioElement.play() on the lesson URL while the user activation
+ * is still valid (Android WebView requirement).
+ */
+export function primeLessonParagraphInUserGesture(identity: AudioIdentity): string | null {
+  if (!isStaticAudioMapReady()) {
+    void ensureStaticAudioMapLoaded().catch(() => {});
+    return null;
+  }
+  const proxyUrl = lookupStaticAudioUrlStrict(identity.text, "default");
+  if (!proxyUrl) return null;
+  // Stick to one concrete URL for the whole gesture→play handoff. Switching to a
+  // blob URL after warm completes would miss takeGesturePrimedElement(httpsUrl).
+  const playUrl = resolveApiMediaUrl(proxyUrl);
+  primedUrlByHash.set(lessonWarmKey(identity), playUrl);
+  audioManager.unlockFromUserGesture();
+  audioManager.primeSpeechUrlInUserGesture(playUrl, { keepPlaying: true, volume: 1 });
+  return playUrl;
+}
+
 /** Play one lesson paragraph from the pre-generated static catalog (GCS via /api/static-audio). */
 export async function playLessonParagraphStatic(
   identity: AudioIdentity,
@@ -118,6 +147,18 @@ export async function playLessonParagraphStatic(
   await ensureStaticAudioMapLoaded().catch((err) => {
     console.error("[LessonPlayback] static-audio map load failed", err);
   });
+
+  if (!isStaticAudioMapReady()) {
+    logAudioPipeline("static_map_not_ready", {
+      paragraphIdx: identity.paragraphIdx,
+      lessonId: identity.lessonId,
+    });
+    console.warn("[LessonPlayback] static map not ready — not a catalog miss", {
+      lessonId: identity.lessonId,
+      paragraphIdx: identity.paragraphIdx,
+    });
+    return { success: false, error: "map_not_ready", layer: "static" };
+  }
 
   const proxyUrl = lookupStaticAudioUrlStrict(identity.text, "default");
   setAudioPipelineMachineState("static_lookup", {
@@ -155,11 +196,13 @@ export async function playLessonParagraphStatic(
     return { success: false, error: "static_failed", layer: "static" };
   }
 
-  // Prefer already-warmed blob (mobile-safe). Never await fetch here — that drops
-  // the user-gesture token and causes NotAllowedError / play_failed on WebViews.
-  const playUrl = resolvePlayUrl(identity, proxyUrl);
+  // Prefer the URL that pointerdown already primed (same HTMLAudioElement).
+  // Only fall back to warmed blob when no gesture prime exists for this paragraph.
+  const primedUrl = primedUrlByHash.get(lessonWarmKey(identity));
+  if (primedUrl) primedUrlByHash.delete(lessonWarmKey(identity));
+  const playUrl = primedUrl ?? resolvePlayUrl(identity, proxyUrl);
   const warmed = playUrl.startsWith("blob:");
-  if (!warmed) {
+  if (!warmed && !primedUrl) {
     warmLessonParagraphStatic(identity);
   }
 
@@ -213,4 +256,5 @@ export async function playLessonParagraphStatic(
 export function __resetLessonAudioWarmCacheForTests(): void {
   readyBlobByHash.clear();
   warmInFlight.clear();
+  primedUrlByHash.clear();
 }

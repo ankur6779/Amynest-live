@@ -10,13 +10,17 @@ import {
 import { useLessonPlayback } from "@/hooks/use-lesson-playback";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
-import { warmLessonParagraphStatic } from "@/lib/lesson-audio-playback";
+import {
+  primeLessonParagraphInUserGesture,
+  warmLessonParagraphStatic,
+} from "@/lib/lesson-audio-playback";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { createAudioIdentity } from "@/lib/lesson-audio-identity";
 import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
+import { ensureStaticAudioMapLoaded } from "@/lib/static-audio";
 import { AudioDiagnosticsPanel } from "@/components/audio-lessons/audio-diagnostics-panel";
 
 import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
@@ -89,10 +93,11 @@ export function PlayerSheet({
 
   const playing = intent === "playing";
 
-  // Warm current + next paragraph blobs as soon as the sheet is visible so Play
-  // never has to await fetch (mobile WebView gesture + Range/206 constraints).
+  // Warm catalog map + current/next paragraph blobs as soon as the sheet is
+  // visible so Play never awaits a chunk load or fetch inside the gesture stack.
   useEffect(() => {
     if (!visible) return;
+    void ensureStaticAudioMapLoaded().catch(() => {});
     for (const idx of [paragraphIdx, paragraphIdx + 1]) {
       const txt = paragraphs[idx];
       if (!txt?.trim()) continue;
@@ -231,7 +236,8 @@ export function PlayerSheet({
           >
             {error
               ? "Couldn't load Amy's voice right now. Please try again in a moment — you can still read the lesson below."
-              : playbackError === "playback_blocked_tap_again"
+              : playbackError === "playback_blocked_tap_again" ||
+                  playbackError === "map_not_ready"
                 ? "Tap Play again to start Amy's voice."
                 : "Amy's voice couldn't play this paragraph. Tap Play to try again."}
           </div>
@@ -345,8 +351,13 @@ export function PlayerSheet({
               if (!txt) return;
               recordTtsUserGesture();
               primeSpeakGesture(txt);
-              primeStaticAudioInUserGesture(txt, "default");
               const identity = createAudioIdentity(lesson.id, paragraphIdx, txt);
+              // Sync: start HTMLAudioElement.play() while the gesture is valid.
+              // playLessonParagraphStatic later reuses this same element.
+              const primedUrl = primeLessonParagraphInUserGesture(identity);
+              if (!primedUrl) {
+                primeStaticAudioInUserGesture(txt, "default");
+              }
               warmLessonParagraphStatic(identity);
               prefetchLessonParagraph(identity, authFetch, VOICE_AMY_EN, MODEL_EN);
               // Android WebView: start play inside pointerdown so audio.play()

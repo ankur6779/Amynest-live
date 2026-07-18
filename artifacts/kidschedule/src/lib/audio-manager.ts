@@ -605,29 +605,30 @@ class AudioManagerImpl {
   /**
    * Start play() synchronously inside pointerdown/click — Android PWA/WebView often
    * rejects audio.play() after await fetch/prepare even when gestures are unlocked.
+   *
+   * @param opts.keepPlaying When true (lesson Play), do not pause after unlock —
+   *   the same element is taken over by playPreparedUrl so audio.play() never
+   *   needs a second call after an await (Android WebView NotAllowedError).
    */
-  primeSpeechUrlInUserGesture(proxyUrl: string): void {
+  primeSpeechUrlInUserGesture(
+    proxyUrl: string,
+    opts: { keepPlaying?: boolean; volume?: number } = {},
+  ): HTMLAudioElement | null {
     const trimmed = (proxyUrl ?? "").trim();
-    if (!trimmed) return;
+    if (!trimmed) return null;
     recordTtsUserGesture();
     void import("@/lib/mic-permission-capacitor").then(({ prepareIosAudioSessionForPlayback, isCapacitorIosNative }) => {
       if (isCapacitorIosNative()) void prepareIosAudioSessionForPlayback();
     });
+    // Reuse the shared unlock AudioContext — never create+close throwaways
+    // (WebView reports "The AudioContext encountered an error" after that churn).
     if (!isAndroidAmyNestAudioClient() && !trimmed.startsWith("blob:")) {
-      try {
-        const Ctx =
-          window.AudioContext ??
-          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (Ctx) {
-          const ctx = new Ctx();
-          if (ctx.state === "suspended") void ctx.resume().catch(() => undefined);
-          void ctx.close().catch(() => undefined);
-        }
-      } catch {
-        /* ignore */
-      }
+      void import("@/lib/tts-guard").then(({ resumeSharedAudioContextFromGesture }) => {
+        resumeSharedAudioContextFromGesture();
+      });
     }
-    if (!isAndroidAmyNestAudioClient()) return;
+    const needsHtmlPrime = isAndroidAmyNestAudioClient() || opts.keepPlaying === true;
+    if (!needsHtmlPrime) return null;
     try {
       const resolved = trimmed.startsWith("blob:") ? trimmed : resolveApiMediaUrl(trimmed);
       let prime = this.gesturePrimeElements.get(resolved);
@@ -651,22 +652,65 @@ class AudioManagerImpl {
           }
         }
       }
-      prime.pause();
-      prime.currentTime = 0;
-      prime.volume = 0.02;
+      const keepPlaying = opts.keepPlaying === true;
       prime.muted = false;
+      prime.volume = keepPlaying ? (opts.volume ?? 1) : 0.02;
+      if (!keepPlaying) {
+        prime.pause();
+        prime.currentTime = 0;
+      }
       const p = prime.play();
-      if (p) {
+      if (p && !keepPlaying) {
         void p
           .then(() => {
             prime!.pause();
             prime!.currentTime = 0;
           })
           .catch(() => {});
+      } else if (p) {
+        void p.catch(() => {});
+      }
+      return prime;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Claim a gesture-primed element for real playback (lesson path).
+   * Removes it from the prime map so stopAll cannot race a second owner.
+   */
+  takeGesturePrimedElement(proxyUrl: string): HTMLAudioElement | null {
+    const trimmed = (proxyUrl ?? "").trim();
+    if (!trimmed) return null;
+    const resolved = trimmed.startsWith("blob:") ? trimmed : resolveApiMediaUrl(trimmed);
+    const candidates = [resolved, trimmed];
+    // Also match by pathname when absolute vs relative differ.
+    try {
+      if (resolved.startsWith("http")) {
+        candidates.push(new URL(resolved).pathname);
       }
     } catch {
-      /* best-effort */
+      /* ignore */
     }
+    for (const key of candidates) {
+      const el = this.gesturePrimeElements.get(key);
+      if (el) {
+        this.gesturePrimeElements.delete(key);
+        return el;
+      }
+    }
+    // Last resort: single primed speech element whose src ends with the same hash.mp3
+    const hash = resolved.match(/([a-f0-9]{32})\.mp3/i)?.[1]?.toLowerCase();
+    if (hash) {
+      for (const [key, el] of this.gesturePrimeElements) {
+        if (key.toLowerCase().includes(hash)) {
+          this.gesturePrimeElements.delete(key);
+          return el;
+        }
+      }
+    }
+    return null;
   }
 
   isPlaybackAllowed(): boolean {
@@ -691,19 +735,8 @@ class AudioManagerImpl {
 
     this.pipelineWarmed = true;
 
-    if (!isAndroidAmyNestAudioClient()) {
-      try {
-        const Ctx =
-          window.AudioContext ??
-          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (Ctx) {
-          const ctx = new Ctx();
-          void ctx.resume().catch(() => {});
-        }
-      } catch {
-        /* optional */
-      }
-    }
+    // AudioContext unlock is owned by tts-guard (shared instance). Do not
+    // create throwaway contexts here — WebViews enter an error state after churn.
 
     if (fromGesture || !isAndroidAmyNestAudioClient()) {
       this.playSilentUnlockBuffer();

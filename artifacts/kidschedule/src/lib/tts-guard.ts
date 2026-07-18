@@ -65,15 +65,35 @@ function resumeUnlockAudioContext(): void {
   const AudioContextClass = getAudioContextClass();
   if (!AudioContextClass) return;
   try {
-    if (!unlockCtx || unlockCtx.state === "closed") {
+    // Recreate when closed or in an unrecoverable interrupted/error-like state.
+    if (
+      !unlockCtx ||
+      unlockCtx.state === "closed" ||
+      (unlockCtx.state as string) === "interrupted"
+    ) {
       unlockCtx = new AudioContextClass();
     }
     if (unlockCtx.state === "suspended") {
-      void unlockCtx.resume().catch(() => {});
+      void unlockCtx.resume().catch(() => {
+        // Context may be permanently dead — drop and recreate next gesture.
+        try {
+          void unlockCtx?.close();
+        } catch {
+          /* ignore */
+        }
+        unlockCtx = null;
+      });
     }
   } catch {
+    unlockCtx = null;
     /* best-effort — HTMLAudioElement unlock is primary */
   }
+}
+
+/** Public: resume/recreate the shared unlock AudioContext (no orphan contexts). */
+export function resumeSharedAudioContextFromGesture(): void {
+  audioUnlocked = true;
+  resumeUnlockAudioContext();
 }
 
 /**
