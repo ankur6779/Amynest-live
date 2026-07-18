@@ -90,8 +90,41 @@ for (const lesson of LESSONS) {
   });
 }
 
-const concurrency = 8;
+/** Coolify/Pages can overlap on main push; tolerate brief origin 502/503 during API restart. */
+const MAX_ATTEMPTS = Math.max(1, Number(process.env.STATIC_AUDIO_LIVE_RETRIES ?? "5"));
+const RETRY_BASE_MS = Math.max(100, Number(process.env.STATIC_AUDIO_LIVE_RETRY_MS ?? "750"));
+const concurrency = Math.max(1, Number(process.env.STATIC_AUDIO_LIVE_CONCURRENCY ?? "6"));
 let cursor = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientHttp(status: number): boolean {
+  return status === 502 || status === 503 || status === 504 || status === 429;
+}
+
+async function probeOnce(url: string): Promise<{
+  status: number;
+  contentType: string | null;
+  staticSource: string | null;
+  buf: Buffer;
+}> {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "AmyNest-LessonStaticValidate/1.0",
+      "Cache-Control": "no-cache",
+    },
+    signal: AbortSignal.timeout(30_000),
+  });
+  const buf = Buffer.from(await res.arrayBuffer());
+  return {
+    status: res.status,
+    contentType: res.headers.get("content-type"),
+    staticSource: res.headers.get("x-amynest-static-source"),
+    buf,
+  };
+}
 
 async function worker(): Promise<void> {
   while (cursor < rows.length) {
@@ -99,39 +132,46 @@ async function worker(): Promise<void> {
     const row = rows[idx]!;
     if (!row.requestUrl) continue;
 
-    try {
-      const res = await fetch(row.requestUrl, {
-        headers: {
-          "User-Agent": "AmyNest-LessonStaticValidate/1.0",
-          "Cache-Control": "no-cache",
-        },
-      });
-      const buf = Buffer.from(await res.arrayBuffer());
-      row.status = res.status;
-      row.contentType = res.headers.get("content-type");
-      row.contentLength = buf.byteLength;
-      row.staticSource = res.headers.get("x-amynest-static-source");
+    let lastErr = "";
+    let ok = false;
 
-      const ok =
-        res.status === 200 &&
-        buf.byteLength > 2000 &&
-        row.staticSource === "asset" &&
-        /audio\/mpeg/i.test(row.contentType ?? "") &&
-        isMp3(buf);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const probed = await probeOnce(row.requestUrl);
+        row.status = probed.status;
+        row.contentType = probed.contentType;
+        row.contentLength = probed.buf.byteLength;
+        row.staticSource = probed.staticSource;
 
-      row.exists = ok;
-      if (!ok) {
-        row.why = [
-          `HTTP ${res.status}`,
-          `content-type=${row.contentType ?? "?"}`,
-          `bytes=${buf.byteLength}`,
-          `x-amynest-static-source=${row.staticSource ?? "?"}`,
-          isMp3(buf) ? "mp3-magic=ok" : "mp3-magic=FAIL",
+        ok =
+          probed.status === 200 &&
+          probed.buf.byteLength > 2000 &&
+          probed.staticSource === "asset" &&
+          /audio\/mpeg/i.test(probed.contentType ?? "") &&
+          isMp3(probed.buf);
+
+        if (ok) break;
+
+        lastErr = [
+          `HTTP ${probed.status}`,
+          `content-type=${probed.contentType ?? "?"}`,
+          `bytes=${probed.buf.byteLength}`,
+          `x-amynest-static-source=${probed.staticSource ?? "?"}`,
+          isMp3(probed.buf) ? "mp3-magic=ok" : "mp3-magic=FAIL",
         ].join("; ");
-        failures.push(row);
+
+        if (!isTransientHttp(probed.status) && attempt === MAX_ATTEMPTS) break;
+        if (!isTransientHttp(probed.status) && probed.status === 200) break;
+        await sleep(RETRY_BASE_MS * attempt);
+      } catch (err) {
+        lastErr = `fetch error: ${err instanceof Error ? err.message : String(err)}`;
+        if (attempt < MAX_ATTEMPTS) await sleep(RETRY_BASE_MS * attempt);
       }
-    } catch (err) {
-      row.why = `fetch error: ${err instanceof Error ? err.message : String(err)}`;
+    }
+
+    row.exists = ok;
+    if (!ok) {
+      row.why = lastErr || "unknown probe failure";
       failures.push(row);
     }
   }
