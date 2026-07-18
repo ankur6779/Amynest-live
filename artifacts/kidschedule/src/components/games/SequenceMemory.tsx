@@ -10,7 +10,9 @@ import { feedbackCorrect, feedbackWrong, feedbackTap } from "@/lib/game-feedback
 import {
   GAME_SESSION_ROUNDS,
   sessionSequenceLengths,
+  sessionSequenceReverse,
 } from "@/lib/game-session-progression";
+import { getActiveSessionPlan, microFlashScale } from "@/lib/game-adaptive-progression";
 import { scaleDurationMs } from "@/lib/game-a11y";
 import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
 import { usePageVisible } from "@/hooks/use-page-visible";
@@ -31,9 +33,14 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
   const { timeScale, reducedMotion } = useA11yPrefs();
   const pageVisible = usePageVisible();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
+  const reverseMode = sessionSequenceReverse();
   const lengths = useMemo(() => sessionSequenceLengths(GAME_SESSION_ROUNDS), []);
   const sequences = useMemo(() => lengths.map(buildSequence), [lengths]);
-  const flashMs = scaleDurationMs(SEQUENCE_FLASH_MS[difficulty], timeScale);
+  const micro = getActiveSessionPlan()?.micro ?? "normal";
+  const flashMs = scaleDurationMs(
+    Math.round(SEQUENCE_FLASH_MS[difficulty] * microFlashScale(micro)),
+    timeScale,
+  );
 
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -78,12 +85,14 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
 
   if (round >= GAME_SESSION_ROUNDS) return null;
 
+  const expectedOrder = reverseMode ? [...sequence].reverse() : sequence;
+
   const tap = (id: string) => {
     if (phase !== "input") return;
     void feedbackTap();
-    if (id === sequence[inputIdx]) {
+    if (id === expectedOrder[inputIdx]) {
       const next = inputIdx + 1;
-      if (next >= sequence.length) {
+      if (next >= expectedOrder.length) {
         setPhase("feedback");
         setFeedback("correct");
         void feedbackCorrect();
@@ -121,7 +130,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
     phase === "showing"
       ? "Watch carefully…"
       : phase === "input"
-        ? `Repeat: ${inputIdx} / ${sequence.length}`
+        ? `${reverseMode ? "Reverse" : "Repeat"}: ${inputIdx} / ${expectedOrder.length}`
         : feedback === "correct"
           ? "Great memory!"
           : "Almost — next round!";
@@ -133,11 +142,19 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
       score={score}
       subtitle={phaseLabel}
       feedback={feedback}
-      idleHint="Watch the pattern carefully — then tap it back in order."
+      idleHint={
+        reverseMode
+          ? "Watch carefully — then tap the colours in reverse order."
+          : "Watch the pattern carefully — then tap it back in order."
+      }
       showDifficulty
       difficulty={difficulty}
       onDifficultyChange={resetDifficulty}
-      title="Watch, then tap the colours in order"
+      title={
+        reverseMode
+          ? "Watch, then tap the colours backwards"
+          : "Watch, then tap the colours in order"
+      }
     >
       <div
         role="group"

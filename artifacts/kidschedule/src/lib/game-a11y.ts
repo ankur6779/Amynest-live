@@ -144,4 +144,21 @@ export const GAME_A11Y_STYLES = `
       padding-inline: max(24px, env(safe-area-inset-left)) max(24px, env(safe-area-inset-right));
     }
   }
+
+  /* Phone landscape — keep play boards usable in short viewports */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .game-shell-root {
+      max-height: min(78dvh, 520px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .game-landscape-board {
+      max-width: min(420px, 92vw) !important;
+      gap: 6px !important;
+    }
+    .game-choice-a11y {
+      min-height: 44px !important;
+      padding-block: 8px !important;
+    }
+  }
 `;

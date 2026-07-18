@@ -147,6 +147,8 @@ const PlayBody = z.object({
   gameId: z.string().min(1).max(64),
   score: z.number().int().min(0),
   total: z.number().int().min(1),
+  /** Client finish id — safe retries after flaky networks must not double-award. */
+  idempotencyKey: z.string().min(8).max(120).optional(),
 });
 
 router.post("/gaming-rewards/play", async (req, res): Promise<void> => {

@@ -4,11 +4,14 @@
  */
 import type { GameDef } from "@/lib/games";
 import {
-  getChildLearningReflection,
   getGameLearning,
   getLearningPracticeSummary,
 } from "@/lib/game-learning";
 import { formatSkillTimeLine } from "@/lib/game-hub-meta";
+import {
+  formatParentMastery,
+  getPracticeSkillFamily,
+} from "@/lib/game-mastery";
 
 const CORRECT_LINES = [
   "Great job!",
@@ -83,7 +86,8 @@ export function getGameIntro(game: GameDef): GameIntroCopy {
 /** Parent-facing practice summary — learning science clarity, no analytics. */
 export function getParentPracticeNote(game: GameDef, score: number, total: number): string {
   const summary = getLearningPracticeSummary(game, score, total);
-  return `${summary.headline}. ${summary.body} ${summary.tip}`;
+  const mastery = formatParentMastery(game.id, true);
+  return `${summary.headline}. ${summary.body} Growth: ${mastery}. ${summary.tip}`;
 }
 
 export function getChildResultHeadline(perfect: boolean, score: number, total: number): string {
@@ -95,11 +99,65 @@ export function getChildResultHeadline(perfect: boolean, score: number, total: n
 }
 
 export function getChildResultSubline(game: GameDef): string {
-  return `${getChildLearningReflection(game)} · ${formatSkillTimeLine(game)}`;
+  const family = getPracticeSkillFamily(game.id);
+  return `Today you practised ${family}`;
+}
+
+export function getChildPracticeFamily(game: GameDef): string {
+  return getPracticeSkillFamily(game.id);
 }
 
 /** Idle hint delay — gentle, not pressure. */
 export const GAME_IDLE_HINT_MS = 12_000;
 
-/** Intro auto-advance if child doesn't tap (ms). */
-export const GAME_INTRO_AUTO_MS = 4_500;
+/**
+ * Intro auto-advance — intentionally long so parents can read “Why it helps”.
+ * Prefer tap-to-start; auto is a fallback only (disabled under reduced motion).
+ */
+export const GAME_INTRO_AUTO_MS = 18_000;
+
+/** Attempts before advancing without revealing the exact answer. */
+export const SOFT_FAIL_MAX_ATTEMPTS = 2;
+
+/** Encouragement on a wrong try — never includes the solution. */
+export function getSoftFailEncouragement(attempt: number, round = 0): string {
+  if (attempt <= 1) return getWrongEncouragement(round);
+  return pickLine(
+    [
+      "Almost — look once more!",
+      "You're close — try a different choice!",
+      "Good thinking — one more look!",
+    ],
+    round + attempt + 3,
+  );
+}
+
+/** Gentle process hint — never names the correct option. */
+export function getSoftFailHint(kind: SoftFailHintKind, attempt: number): string | null {
+  if (attempt < 2) return null;
+  switch (kind) {
+    case "pattern":
+      return "Hint: say the pattern out loud, then pick.";
+    case "odd-one":
+      return "Hint: which one does not match the group?";
+    case "mistake":
+      return "Hint: scan slowly — find the different one.";
+    case "number":
+      return "Hint: count the dots one by one.";
+    case "math":
+      return "Hint: try the sum again carefully.";
+    case "shape":
+      return "Hint: match the shape to its name.";
+    default:
+      return "Hint: take a slow look, then try again.";
+  }
+}
+
+export type SoftFailHintKind =
+  | "pattern"
+  | "odd-one"
+  | "mistake"
+  | "number"
+  | "math"
+  | "shape"
+  | "generic";

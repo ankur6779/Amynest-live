@@ -13,6 +13,7 @@ import {
 } from "@/lib/game-experience";
 import { feedbackStateMark } from "@/lib/game-a11y";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { getActiveTheme, getThemeTint } from "@/lib/game-mastery";
 
 export type GameFeedback = "correct" | "wrong" | null;
 
@@ -62,6 +63,7 @@ export function GameShell({
   const [idleTip, setIdleTip] = useState<string | null>(null);
   const idleTimer = useRef<number | null>(null);
   const lastInteract = useRef(Date.now());
+  const themeTint = getThemeTint(getActiveTheme());
 
   const derivedProgress =
     progress ??
@@ -117,6 +119,11 @@ export function GameShell({
         color: gameTheme.text,
         width: "100%",
         maxWidth: "100%",
+        borderRadius: 16,
+        // Visual theme only — no gameplay advantage.
+        background: themeTint ?? undefined,
+        boxShadow: themeTint ? `inset 0 0 0 1px ${gameTheme.glassBorder}` : undefined,
+        padding: themeTint ? "4px 2px" : undefined,
       }}
     >
       {(subtitle || (round != null && totalRounds != null) || score != null) && (

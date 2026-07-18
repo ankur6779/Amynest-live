@@ -11,6 +11,11 @@ import {
   GAME_SESSION_ROUNDS,
   sessionMathConfig,
 } from "@/lib/game-session-progression";
+import {
+  getSoftFailEncouragement,
+  getSoftFailHint,
+  SOFT_FAIL_MAX_ATTEMPTS,
+} from "@/lib/game-experience";
 import { scaleSeconds } from "@/lib/game-a11y";
 import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
 import { usePageVisible } from "@/hooks/use-page-visible";
@@ -32,8 +37,11 @@ function buildRound(roundIndex: number, difficulty: GameDifficulty): Round {
     maxNum: Math.max(5, base.maxNum + bonus.maxNumBonus),
     allowMultiply: base.allowMultiply,
     allowDivide: base.allowDivide,
+    preferSubtract: base.preferSubtract,
+    wordProblem: base.wordProblem,
   };
-  const ops: string[] = ["+", "-"];
+  const ops: string[] = ["+"];
+  if (cfg.preferSubtract || roundIndex > 0) ops.push("-");
   if (cfg.allowMultiply) ops.push("×");
   if (cfg.allowDivide) ops.push("÷");
   const op = ops[Math.floor(Math.random() * ops.length)];
@@ -62,7 +70,14 @@ function buildRound(roundIndex: number, difficulty: GameDifficulty): Round {
     if (w !== correct && w >= 0) wrongs.add(w);
   }
   const choices = [correct, ...Array.from(wrongs)].sort(() => Math.random() - 0.5);
-  return { question: `${a} ${op} ${b}`, correct, choices, perQSeconds: cfg.perQSeconds };
+  let question = `${a} ${op} ${b}`;
+  if (cfg.wordProblem && (op === "+" || op === "-")) {
+    question =
+      op === "+"
+        ? `${a} apples + ${b} more = ?`
+        : `${a} apples, give away ${b} = ?`;
+  }
+  return { question, correct, choices, perQSeconds: cfg.perQSeconds };
 }
 
 export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
@@ -79,32 +94,74 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
   );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
+  const [attempts, setAttempts] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [feedbackText, setFeedbackText] = useState<string | undefined>();
+  const [pickedWrong, setPickedWrong] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(rounds[0]?.perQSeconds ?? 10);
   const tickRef = useRef<number | null>(null);
   const resolvedRef = useRef(false);
+  const attemptsRef = useRef(0);
 
   const resetDifficulty = (level: GameDifficulty) => {
     setGameDifficulty(level);
     setDifficulty(level);
     setIdx(0);
     setScore(0);
+    setAttempts(0);
+    attemptsRef.current = 0;
     setFeedback(null);
+    setFeedbackText(undefined);
+    setPickedWrong(null);
     resolvedRef.current = false;
   };
 
-  const advance = (correctPick: boolean) => {
-    if (resolvedRef.current) return;
-    resolvedRef.current = true;
-    if (tickRef.current) window.clearInterval(tickRef.current);
-    setFeedback(correctPick ? "correct" : "wrong");
-    void (correctPick ? feedbackCorrect() : feedbackWrong());
-    if (correctPick) setScore((s) => s + 1);
+  const goNext = (nextScore: number) => {
+    setFeedback(null);
+    setFeedbackText(undefined);
+    setPickedWrong(null);
+    setAttempts(0);
+    attemptsRef.current = 0;
+    resolvedRef.current = false;
+    if (idx + 1 >= GAME_SESSION_ROUNDS) onFinish(nextScore, GAME_SESSION_ROUNDS);
+    else setIdx((n) => n + 1);
+  };
+
+  const onPick = (value: number, isCorrect: boolean) => {
+    if (feedback || resolvedRef.current) return;
+    if (isCorrect) {
+      if (tickRef.current) window.clearInterval(tickRef.current);
+      resolvedRef.current = true;
+      setFeedback("correct");
+      setFeedbackText("Nice!");
+      void feedbackCorrect();
+      const nextScore = score + 1;
+      setScore(nextScore);
+      setTimeout(() => goNext(nextScore), 700);
+      return;
+    }
+
+    const nextAttempt = attemptsRef.current + 1;
+    attemptsRef.current = nextAttempt;
+    setAttempts(nextAttempt);
+    setPickedWrong(value);
+    setFeedback("wrong");
+    void feedbackWrong();
+    const hint = getSoftFailHint("math", nextAttempt);
+    setFeedbackText(hint ?? getSoftFailEncouragement(nextAttempt, idx));
+
+    if (nextAttempt >= SOFT_FAIL_MAX_ATTEMPTS) {
+      if (tickRef.current) window.clearInterval(tickRef.current);
+      resolvedRef.current = true;
+      setTimeout(() => goNext(score), 900);
+      return;
+    }
+
     setTimeout(() => {
       setFeedback(null);
-      if (idx + 1 >= GAME_SESSION_ROUNDS) onFinish(correctPick ? score + 1 : score, GAME_SESSION_ROUNDS);
-      else setIdx((n) => n + 1);
-    }, 700);
+      setFeedbackText(undefined);
+      setPickedWrong(null);
+    }, 800);
   };
 
   useEffect(() => {
@@ -113,24 +170,33 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
     const perQ = rounds[idx]?.perQSeconds ?? 10;
     setTimeLeft(perQ);
     resolvedRef.current = false;
+    attemptsRef.current = 0;
+    setAttempts(0);
     tickRef.current = window.setInterval(() => {
       setTimeLeft((t) => {
         if (resolvedRef.current) return t;
         if (t <= 1) {
           if (tickRef.current) window.clearInterval(tickRef.current);
-          advance(false);
+          // Time up — move on without revealing the answer.
+          resolvedRef.current = true;
+          setFeedback("wrong");
+          setFeedbackText("Time for the next one — you've got this!");
+          void feedbackWrong();
+          setTimeout(() => goNext(score), 700);
           return 0;
         }
         return t - 1;
       });
     }, 1000);
-    return () => { if (tickRef.current) window.clearInterval(tickRef.current); };
+    return () => {
+      if (tickRef.current) window.clearInterval(tickRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, rounds, pageVisible]);
 
   if (idx >= GAME_SESSION_ROUNDS) return null;
   const r = rounds[idx];
-  const progress = ((idx + (feedback ? 1 : 0)) / GAME_SESSION_ROUNDS) * 100;
+  const progress = ((idx + (feedback === "correct" ? 1 : 0)) / GAME_SESSION_ROUNDS) * 100;
 
   return (
     <GameShell
@@ -140,9 +206,7 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
       progress={progress}
       subtitle={`Question ${idx + 1} of ${GAME_SESSION_ROUNDS} · ⏱ ${timeLeft}s`}
       feedback={feedback}
-      feedbackText={
-        feedback === "correct" ? "Nice!" : feedback === "wrong" ? "Keep going — next one!" : undefined
-      }
+      feedbackText={feedbackText}
       idleHint="Take a breath — you can still solve it."
       showDifficulty
       difficulty={difficulty}
@@ -156,32 +220,34 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
       >
         {r.choices.map((c) => {
           const isCorrect = c === r.correct;
-          const reveal = feedback !== null;
-          const bg = reveal && isCorrect
+          const showCorrect = feedback === "correct" && isCorrect;
+          const showWrongPick = feedback === "wrong" && pickedWrong === c;
+          const bg = showCorrect
             ? "hsl(var(--brand-green-500))"
-            : reveal && !isCorrect
-            ? "hsl(var(--muted) / 0.35)"
-            : "hsl(var(--muted) / 0.25)";
+            : showWrongPick
+              ? "hsl(var(--muted) / 0.45)"
+              : "hsl(var(--muted) / 0.25)";
           return (
             <button
               key={c}
               type="button"
               className="game-choice-a11y"
-              disabled={feedback !== null}
-              onClick={() => advance(isCorrect)}
+              disabled={!!feedback}
+              onClick={() => onPick(c, isCorrect)}
               aria-label={
-                reveal
-                  ? isCorrect
-                    ? `${c}, correct answer`
-                    : `${c}`
-                  : `Answer ${c}`
+                showCorrect
+                  ? `${c}, correct`
+                  : showWrongPick
+                    ? `${c}, try again`
+                    : `Answer ${c}`
               }
               style={{
                 background: bg,
                 color: "hsl(var(--foreground))",
-                border:
-                  reveal && isCorrect
-                    ? "3px solid #fff"
+                border: showCorrect
+                  ? "3px solid #fff"
+                  : showWrongPick
+                    ? "2px solid rgba(251,113,133,0.55)"
                     : `1px solid ${gameTheme.glassBorder}`,
                 borderRadius: 14,
                 padding: "16px 0",
@@ -192,7 +258,7 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
                 fontFamily: "Quicksand, sans-serif",
               }}
             >
-              {reveal && isCorrect ? `✓ ${c}` : c}
+              {showCorrect ? `✓ ${c}` : c}
             </button>
           );
         })}

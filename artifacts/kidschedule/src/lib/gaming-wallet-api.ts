@@ -86,7 +86,7 @@ export async function unlockGamingGame(
 
 export async function recordGamingPlay(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-  body: { gameId: string; score: number; total: number },
+  body: { gameId: string; score: number; total: number; idempotencyKey?: string },
 ): Promise<{ wallet: ServerWalletSnapshot; pointsEarned: number; perfect: boolean }> {
   const res = await authFetch(getApiUrl("/api/gaming-rewards/play"), {
     method: "POST",

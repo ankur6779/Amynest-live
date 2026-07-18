@@ -8,7 +8,10 @@ export function isPageVisible(): boolean {
   return document.visibilityState !== "hidden";
 }
 
-/** Heuristic for Android Go / 2–3GB / Save-Data — reduce blur & decorative work. */
+/**
+ * Heuristic for Android Go / ≤2GB / Save-Data — reduce blur & decorative work.
+ * Do NOT treat typical 4-core mid-range phones as low-power (that stripped polish for most users).
+ */
 export function isLowPowerClient(): boolean {
   if (typeof navigator === "undefined") return false;
   try {
@@ -20,11 +23,17 @@ export function isLowPowerClient(): boolean {
     if (typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2) {
       return true;
     }
-    if (typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency > 0) {
-      if (navigator.hardwareConcurrency <= 4) return true;
-    }
     const et = nav.connection?.effectiveType;
     if (et === "slow-2g" || et === "2g") return true;
+    // Very constrained CPUs only (Android Go-class), not ordinary mid-range.
+    if (
+      typeof navigator.hardwareConcurrency === "number" &&
+      navigator.hardwareConcurrency > 0 &&
+      navigator.hardwareConcurrency <= 2 &&
+      (typeof nav.deviceMemory !== "number" || nav.deviceMemory <= 3)
+    ) {
+      return true;
+    }
   } catch {
     /* ignore */
   }

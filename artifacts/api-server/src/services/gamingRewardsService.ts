@@ -292,6 +292,7 @@ export async function recordGamePlay(
     gameId: string;
     score: number;
     total: number;
+    idempotencyKey?: string;
   },
 ): Promise<
   | { ok: true; snapshot: WalletSnapshot; pointsEarned: number; perfect: boolean }
@@ -307,6 +308,20 @@ export async function recordGamePlay(
     loadOrInitWallet(userId),
     getEntitlements(userId),
   ]);
+
+  const ledger = Array.isArray(wallet.ledger) ? [...wallet.ledger] : [];
+  // Idempotent retries after flaky mobile networks (GA reliability).
+  if (input.idempotencyKey) {
+    const prior = ledger.find((e) => e.idempotencyKey === input.idempotencyKey);
+    if (prior) {
+      return {
+        ok: true,
+        snapshot: await getWalletSnapshot(userId),
+        pointsEarned: prior.points,
+        perfect: /\bPerfect/i.test(prior.activity ?? ""),
+      };
+    }
+  }
 
   const playLog = Array.isArray(wallet.playLog) ? [...wallet.playLog] : [];
   if (dailyLimitReached(playLog, ent.isPremium)) {
@@ -343,12 +358,12 @@ export async function recordGamePlay(
   s.plays += 1;
   skills[cat] = s;
 
-  const ledger = Array.isArray(wallet.ledger) ? [...wallet.ledger] : [];
   ledger.unshift({
     date: new Date().toISOString(),
     childName: "Game Play",
     activity: `${game.id}${perfect ? " — Perfect!" : ""}`,
     points: pointsEarned,
+    idempotencyKey: input.idempotencyKey,
   });
 
   await db

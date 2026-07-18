@@ -2,6 +2,11 @@ import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import {
+  getSoftFailEncouragement,
+  getSoftFailHint,
+  SOFT_FAIL_MAX_ATTEMPTS,
+} from "@/lib/game-experience";
 import { GAME_SESSION_ROUNDS, sessionDotCount } from "@/lib/game-session-progression";
 
 interface Round {
@@ -29,31 +34,57 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
   );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
+  const [attempts, setAttempts] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [feedbackText, setFeedbackText] = useState<string | undefined>();
 
   if (idx >= TOTAL) return null;
 
   const r = rounds[idx];
   const dots = Array.from({ length: r.count });
 
+  const goNext = (nextScore: number) => {
+    setPicked(null);
+    setFeedback(null);
+    setFeedbackText(undefined);
+    setAttempts(0);
+    if (idx + 1 >= TOTAL) onFinish(nextScore, TOTAL);
+    else setIdx((i) => i + 1);
+  };
+
   const onPick = (n: number) => {
-    if (picked !== null) return;
-    setPicked(n);
+    if (feedback) return;
     const ok = n === r.count;
-    setFeedback(ok ? "correct" : "wrong");
     if (ok) {
-      setScore((s) => s + 1);
+      setPicked(n);
+      setFeedback("correct");
+      setFeedbackText("Nice counting!");
+      const nextScore = score + 1;
+      setScore(nextScore);
       void feedbackCorrect();
-    } else {
-      void feedbackWrong();
+      setTimeout(() => goNext(nextScore), 700);
+      return;
     }
+
+    const nextAttempt = attempts + 1;
+    setAttempts(nextAttempt);
+    setPicked(n);
+    setFeedback("wrong");
+    void feedbackWrong();
+    const hint = getSoftFailHint("number", nextAttempt);
+    setFeedbackText(hint ?? getSoftFailEncouragement(nextAttempt, idx));
+
+    if (nextAttempt >= SOFT_FAIL_MAX_ATTEMPTS) {
+      setTimeout(() => goNext(score), 900);
+      return;
+    }
+
     setTimeout(() => {
       setPicked(null);
       setFeedback(null);
-      if (idx + 1 >= TOTAL) onFinish(ok ? score + 1 : score, TOTAL);
-      else setIdx((i) => i + 1);
-    }, 800);
+      setFeedbackText(undefined);
+    }, 900);
   };
 
   return (
@@ -62,6 +93,7 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
       totalRounds={TOTAL}
       score={score}
       feedback={feedback}
+      feedbackText={feedbackText}
       title="How many dots do you see?"
       idleHint="Count carefully — touch each dot in your mind."
     >
@@ -108,42 +140,41 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
         }}
       >
         {r.choices.map((c) => {
-          const reveal = picked !== null;
           const isCorrect = c === r.count;
           const isPicked = picked === c;
-          const bg =
-            reveal && isCorrect
-              ? "hsl(var(--brand-green-500))"
-              : reveal && isPicked && !isCorrect
-                ? "hsl(var(--brand-amber-500))"
-                : "rgba(255,255,255,0.08)";
+          const showCorrect = feedback === "correct" && isCorrect;
+          const showWrongPick = feedback === "wrong" && isPicked && !isCorrect;
+          const bg = showCorrect
+            ? "hsl(var(--brand-green-500))"
+            : showWrongPick
+              ? "hsl(var(--brand-amber-500))"
+              : "rgba(255,255,255,0.08)";
           return (
             <button
               key={c}
               type="button"
               className="game-choice-a11y"
-              disabled={reveal}
+              disabled={!!feedback}
               onClick={() => onPick(c)}
-              aria-label={`${c}${reveal && isCorrect ? ", correct" : reveal && isPicked ? ", not quite" : ""}`}
+              aria-label={`${c}${showCorrect ? ", correct" : showWrongPick ? ", try again" : ""}`}
               style={{
                 background: bg,
                 color: gameTheme.text,
-                border:
-                  reveal && isCorrect
-                    ? "3px solid #fff"
-                    : reveal && isPicked && !isCorrect
-                      ? "2px dashed rgba(251,191,36,0.9)"
-                      : `1px solid ${gameTheme.glassBorder}`,
+                border: showCorrect
+                  ? "3px solid #fff"
+                  : showWrongPick
+                    ? "2px dashed rgba(251,191,36,0.9)"
+                    : `1px solid ${gameTheme.glassBorder}`,
                 borderRadius: 12,
                 padding: "12px 0",
                 minHeight: 48,
                 fontSize: 18,
                 fontWeight: 800,
                 fontFamily: gameTheme.fontDisplay,
-                cursor: reveal ? "default" : "pointer",
+                cursor: feedback ? "default" : "pointer",
               }}
             >
-              {reveal && isCorrect ? `✓ ${c}` : c}
+              {showCorrect ? `✓ ${c}` : c}
             </button>
           );
         })}

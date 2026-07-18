@@ -9,6 +9,30 @@ describe("game-perf", () => {
     expect(typeof isLowPowerClient()).toBe("boolean");
   });
 
+  it("does not mark ordinary 4-core devices as low-power without Save-Data / low memory", () => {
+    const nav = navigator as Navigator & {
+      hardwareConcurrency?: number;
+      deviceMemory?: number;
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    const prevC = nav.hardwareConcurrency;
+    const prevM = nav.deviceMemory;
+    const prevConn = nav.connection;
+    try {
+      Object.defineProperty(navigator, "hardwareConcurrency", { configurable: true, value: 4 });
+      Object.defineProperty(navigator, "deviceMemory", { configurable: true, value: 4 });
+      Object.defineProperty(navigator, "connection", {
+        configurable: true,
+        value: { saveData: false, effectiveType: "4g" },
+      });
+      expect(isLowPowerClient()).toBe(false);
+    } finally {
+      Object.defineProperty(navigator, "hardwareConcurrency", { configurable: true, value: prevC });
+      Object.defineProperty(navigator, "deviceMemory", { configurable: true, value: prevM });
+      Object.defineProperty(navigator, "connection", { configurable: true, value: prevConn });
+    }
+  });
+
   it("scheduleIdle returns a cancel function", async () => {
     let ran = false;
     const cancel = scheduleIdle(() => {

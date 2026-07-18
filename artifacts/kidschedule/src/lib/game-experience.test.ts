@@ -34,7 +34,7 @@ describe("game-experience", () => {
   it("celebrates effort on results without punishment", () => {
     expect(getChildResultHeadline(true, 10, 10)).toMatch(/Amazing/i);
     expect(getChildResultHeadline(false, 2, 10)).toMatch(/trying|practice|great/i);
-    expect(getChildResultSubline(game)).toMatch(/practised/i);
+    expect(getChildResultSubline(game)).toMatch(/Today you practised/i);
   });
 
   it("explains practice for parents", () => {
@@ -44,8 +44,17 @@ describe("game-experience", () => {
     expect(note.length).toBeGreaterThan(40);
   });
 
-  it("keeps timing gentle", () => {
+  it("keeps idle timing gentle and intro auto long (tap-to-start preferred)", () => {
     expect(GAME_IDLE_HINT_MS).toBeGreaterThanOrEqual(10_000);
-    expect(GAME_INTRO_AUTO_MS).toBeLessThanOrEqual(6_000);
+    expect(GAME_INTRO_AUTO_MS).toBeGreaterThanOrEqual(15_000);
+  });
+
+  it("soft-fail copy never reveals emoji or digits as answers", async () => {
+    const { getSoftFailEncouragement, getSoftFailHint } = await import("./game-experience");
+    const line = getSoftFailEncouragement(1, 0);
+    expect(line).toMatch(/try|again|close|effort|going|warmer/i);
+    expect(line).not.toMatch(/look for|answer was|was 🚗/i);
+    expect(getSoftFailHint("pattern", 2)).toMatch(/Hint:/i);
+    expect(getSoftFailHint("pattern", 1)).toBeNull();
   });
 });

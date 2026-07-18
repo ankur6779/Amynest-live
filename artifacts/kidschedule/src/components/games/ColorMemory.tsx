@@ -11,6 +11,7 @@ import {
   GAME_SESSION_ROUNDS,
   sessionSequenceLengths,
 } from "@/lib/game-session-progression";
+import { getActiveSessionPlan, microFlashScale } from "@/lib/game-adaptive-progression";
 import { scaleDurationMs } from "@/lib/game-a11y";
 import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
 import { usePageVisible } from "@/hooks/use-page-visible";
@@ -34,7 +35,11 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
   const sequences = useMemo(() => roundLens.map(buildSequence), [roundLens]);
   const { timeScale } = useA11yPrefs();
   const pageVisible = usePageVisible();
-  const flashMs = scaleDurationMs(COLOR_MEMORY_FLASH_MS[difficulty], timeScale);
+  const micro = getActiveSessionPlan()?.micro ?? "normal";
+  const flashMs = scaleDurationMs(
+    Math.round(COLOR_MEMORY_FLASH_MS[difficulty] * microFlashScale(micro)),
+    timeScale,
+  );
 
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<"show" | "input" | "feedback">("show");

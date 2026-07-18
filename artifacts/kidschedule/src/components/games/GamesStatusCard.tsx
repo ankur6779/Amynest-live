@@ -117,18 +117,34 @@ export function GamesStatusCard({
             {t("screens.games.how_it_works")}
           </AccordionTrigger>
           <AccordionContent className="space-y-2 pb-1 text-[11.5px] leading-relaxed text-muted-foreground">
-            <p>{t("screens.games.earn_to_unlock")}</p>
+            <p>
+              {t("screens.games.mastery_how_it_works", {
+                defaultValue:
+                  "Games grow skill mastery — Starter → Growing → Confident → Explorer → Master. Progress is saved on this device.",
+              })}
+            </p>
             {!isPremium && (
               <p>{t("screens.games.free_tier_hint", { limit: DAILY_LIMIT_FREE })}</p>
             )}
-            <p>
+            {nextUnlockGame && pointsToNextGame !== null && pointsToNextGame > 0 && (
+              <p className="text-muted-foreground/80">
+                {t("screens.games.unlock_secondary_note", {
+                  defaultValue:
+                    "Optional: Nest points can unlock extra games ({{count}} to {{title}}).",
+                  count: pointsToNextGame,
+                  title: nextUnlockGame.title,
+                })}
+              </p>
+            )}
+            {/* Legacy streak unlock kept as secondary note only */}
+            <p className="text-[10px] text-muted-foreground/70">
               {t("screens.games.streak_unlock_hint", {
                 days: STREAK_UNLOCK_DAYS,
                 current: routineStreak,
               })}
             </p>
             {!showComboBadge && perfectStreak > 0 && (
-              <p>
+              <p className="text-[10px] text-muted-foreground/70">
                 {t("screens.games.perfect_combo_progress", {
                   current: perfectStreak,
                   remaining: PERFECT_COMBO_BADGE_AT - perfectStreak,

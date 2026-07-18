@@ -1,9 +1,9 @@
 import { Play } from "lucide-react";
-import { useEffect } from "react";
 import type { GameDef } from "@/lib/games";
 import { formatSkillTimeLine } from "@/lib/game-hub-meta";
 import { getGameLearning } from "@/lib/game-learning";
-import { GAME_INTRO_AUTO_MS, getGameIntro } from "@/lib/game-experience";
+import { formatParentMastery, getPracticeSkillFamily } from "@/lib/game-mastery";
+import { getGameIntro } from "@/lib/game-experience";
 import { feedbackTap } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
 import { GAME_LAYOUT } from "@/lib/game-layout-tokens";
@@ -15,17 +15,13 @@ interface GamePlayIntroProps {
   onStart: () => void;
 }
 
-/** Excited entry before first interaction — educational clarity + warm start. */
+/**
+ * Entry before first interaction — tap to start only (no auto-start yank).
+ */
 export function GamePlayIntro({ game, onStart }: GamePlayIntroProps) {
   const reduced = useReducedMotion();
   const intro = getGameIntro(game);
   const learning = getGameLearning(game);
-
-  useEffect(() => {
-    if (reduced) return;
-    const t = window.setTimeout(onStart, GAME_INTRO_AUTO_MS);
-    return () => window.clearTimeout(t);
-  }, [onStart, reduced]);
 
   return (
     <div
@@ -67,6 +63,16 @@ export function GamePlayIntro({ game, onStart }: GamePlayIntroProps) {
       </p>
       <p
         style={{
+          margin: "0 0 8px",
+          fontSize: 12,
+          fontWeight: 800,
+          color: gameTheme.text,
+        }}
+      >
+        {getPracticeSkillFamily(game.id)} · {formatParentMastery(game.id)}
+      </p>
+      <p
+        style={{
           margin: "0 auto 10px",
           maxWidth: 300,
           fontSize: gameTheme.type.body,
@@ -85,7 +91,14 @@ export function GamePlayIntro({ game, onStart }: GamePlayIntroProps) {
           color: "rgba(199,192,232,0.85)",
         }}
       >
-        <span style={{ fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 9 }}>
+        <span
+          style={{
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            fontSize: 9,
+          }}
+        >
           Why it helps
         </span>
         <br />
@@ -95,6 +108,7 @@ export function GamePlayIntro({ game, onStart }: GamePlayIntroProps) {
       </p>
       <button
         type="button"
+        autoFocus
         className="game-motion-press game-motion-focus"
         onClick={() => {
           void feedbackTap();

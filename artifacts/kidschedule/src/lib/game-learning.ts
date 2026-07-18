@@ -276,7 +276,7 @@ export function getGameLearning(game: GameDef | string): GameLearningProfile {
   return PROFILES[id] ?? FALLBACK;
 }
 
-/** Parent card line: skill · time · ages */
+/** Parent card line: skill · time · ages (hub-meta may prepend mastery). */
 export function formatLearningMetaLine(game: GameDef, minutes: number): string {
   const L = getGameLearning(game);
   return `${L.skillName} · ~${minutes} min · ${L.ageLabel}`;

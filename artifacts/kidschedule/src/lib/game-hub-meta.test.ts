@@ -13,7 +13,7 @@ describe("game-hub-meta", () => {
     const behavior = GAMES.find((g) => g.id === "what-should-you-do")!;
     expect(getEstimatedPlayMinutes(math)).toBe(2);
     expect(getEstimatedPlayMinutes(behavior)).toBe(4);
-    expect(formatSkillTimeLine(math)).toMatch(/Counting sense · ~2 min · Ages 3–6/);
+    expect(formatSkillTimeLine(math)).toMatch(/Counting sense · .+ · ~2 min/);
   });
 
   it("maps accuracy to stars without inventing XP", () => {

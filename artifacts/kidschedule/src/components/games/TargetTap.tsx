@@ -18,6 +18,8 @@ interface Target {
   x: number;
   y: number;
   bornAt: number;
+  /** Decoy — ignore these (inhibitory control). */
+  decoy?: boolean;
 }
 
 export function TargetTapGame({
@@ -60,7 +62,10 @@ export function TargetTapGame({
   const arenaHeight = fitArenaHeight({ viewportHeight: viewportH });
   const targetSize = Math.max(
     GAME_LAYOUT.touchComfort,
-    Math.min(GAME_LAYOUT.cellMaxComfort + 8, Math.round((layoutWidth || 280) * 0.16)),
+    Math.min(
+      GAME_LAYOUT.cellMaxComfort + 8,
+      Math.round((layoutWidth || 280) * 0.16 * waveConfig.sizeScale),
+    ),
   );
 
   const cleanup = () => {
@@ -102,16 +107,20 @@ export function TargetTapGame({
 
     spawnRef.current = window.setInterval(() => {
       if (overRef.current) return;
+      const isDecoy = Boolean(cfg.distractors && Math.random() < 0.28);
       const t: Target = {
         id: ++idRef.current,
         // Keep targets inset so they stay fully inside the arena
         x: 12 + Math.random() * 76,
         y: 12 + Math.random() * 76,
         bornAt: Date.now(),
+        decoy: isDecoy,
       };
       setTargets((arr) => [...arr, t]);
-      totalTargetsRef.current += 1;
-      setWaveTotal((n) => n + 1);
+      if (!isDecoy) {
+        totalTargetsRef.current += 1;
+        setWaveTotal((n) => n + 1);
+      }
     }, spawnMs);
 
     cleanRef.current = window.setInterval(() => {
@@ -125,11 +134,14 @@ export function TargetTapGame({
 
   const onTap = (id: number) => {
     setTargets((arr) => {
-      if (!arr.some((t) => t.id === id)) return arr;
-      scoreRef.current += 1;
-      setScore(scoreRef.current);
-      setWaveHits((h) => h + 1);
+      const hit = arr.find((t) => t.id === id);
+      if (!hit) return arr;
       void feedbackTap();
+      if (!hit.decoy) {
+        scoreRef.current += 1;
+        setScore(scoreRef.current);
+        setWaveHits((h) => h + 1);
+      }
       return arr.filter((t) => t.id !== id);
     });
   };
@@ -146,9 +158,13 @@ export function TargetTapGame({
       subtitle={`Wave hits ${waveHits} · targets ${waveTotal}`}
       progress={Math.min(100, waveProgress)}
       progressLabel={`⏱ ${timeLeft}s · wave ${wave + 1}`}
-      idleHint="Watch for glowing targets — tap when you see them."
-      title="Tap the targets!"
-      footer="Each wave gets faster — tap before targets vanish!"
+      idleHint={
+        waveConfig.distractors
+          ? "Tap only the glowing orange targets — skip the pale ones."
+          : "Watch for glowing targets — tap when you see them."
+      }
+      title={waveConfig.distractors ? "Tap the orange targets only!" : "Tap the targets!"}
+      footer="Each wave gets a little faster — take your time."
     >
       <div
         ref={layoutRef}
@@ -193,18 +209,24 @@ export function TargetTapGame({
                 minWidth: GAME_LAYOUT.touchComfort,
                 minHeight: GAME_LAYOUT.touchComfort,
                 borderRadius: "50%",
-                background:
-                  "radial-gradient(circle at 30% 30%, #fff 0, hsl(var(--brand-amber-300)) 30%, hsl(var(--brand-orange-500)) 70%, hsl(var(--brand-orange-600)) 100%)",
-                border: "3px solid #fff",
+                background: tg.decoy
+                  ? "radial-gradient(circle at 30% 30%, #e2e8f0 0, #94a3b8 70%, #64748b 100%)"
+                  : "radial-gradient(circle at 30% 30%, #fff 0, hsl(var(--brand-amber-300)) 30%, hsl(var(--brand-orange-500)) 70%, hsl(var(--brand-orange-600)) 100%)",
+                border: tg.decoy ? "3px solid rgba(255,255,255,0.45)" : "3px solid #fff",
                 cursor: "pointer",
-                boxShadow: reducedMotion ? "0 0 0 2px rgba(0,0,0,0.35)" : "0 0 14px rgba(251,191,36,0.6)",
+                boxShadow: tg.decoy
+                  ? "none"
+                  : reducedMotion
+                    ? "0 0 0 2px rgba(0,0,0,0.35)"
+                    : "0 0 14px rgba(251,191,36,0.6)",
                 transition: reducedMotion ? "none" : "transform 0.1s",
                 padding: 0,
+                opacity: tg.decoy ? 0.75 : 1,
               }}
-              aria-label="Tap glowing target"
+              aria-label={tg.decoy ? "Skip pale circle" : "Tap glowing target"}
             >
               <span aria-hidden style={{ fontSize: Math.round(targetSize * 0.45), lineHeight: 1 }}>
-                ●
+                {tg.decoy ? "○" : "●"}
               </span>
             </button>
           );

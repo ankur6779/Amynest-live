@@ -4,6 +4,11 @@ import { useElementSize } from "@/hooks/use-element-size";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
 import {
+  getSoftFailEncouragement,
+  getSoftFailHint,
+  SOFT_FAIL_MAX_ATTEMPTS,
+} from "@/lib/game-experience";
+import {
   fitCellFontSize,
   fitChoiceGridMaxWidth,
   fitGridCellSize,
@@ -53,8 +58,10 @@ export function FindMistakeGame({
   );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
+  const [attempts, setAttempts] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [feedbackText, setFeedbackText] = useState<string | undefined>();
 
   if (idx >= TOTAL) return null;
 
@@ -74,23 +81,47 @@ export function FindMistakeGame({
   });
   const fontSize = fitCellFontSize(cellSize, 0.42);
 
+  const goNext = (nextScore: number) => {
+    setPicked(null);
+    setFeedback(null);
+    setFeedbackText(undefined);
+    setAttempts(0);
+    if (idx + 1 >= TOTAL) onFinish(nextScore, TOTAL);
+    else setIdx((n) => n + 1);
+  };
+
   const onPick = (i: number) => {
-    if (picked !== null) return;
-    setPicked(i);
+    if (feedback) return;
     const ok = i === r.mistakeIdx;
-    setFeedback(ok ? "correct" : "wrong");
     if (ok) {
-      setScore((s) => s + 1);
+      setPicked(i);
+      setFeedback("correct");
+      setFeedbackText("You found it!");
+      const nextScore = score + 1;
+      setScore(nextScore);
       void feedbackCorrect();
-    } else {
-      void feedbackWrong();
+      window.setTimeout(() => goNext(nextScore), reducedMotion ? 250 : 700);
+      return;
     }
+
+    const nextAttempt = attempts + 1;
+    setAttempts(nextAttempt);
+    setPicked(i);
+    setFeedback("wrong");
+    void feedbackWrong();
+    const hint = getSoftFailHint("mistake", nextAttempt);
+    setFeedbackText(hint ?? getSoftFailEncouragement(nextAttempt, idx));
+
+    if (nextAttempt >= SOFT_FAIL_MAX_ATTEMPTS) {
+      window.setTimeout(() => goNext(score), reducedMotion ? 400 : 1000);
+      return;
+    }
+
     window.setTimeout(() => {
       setPicked(null);
       setFeedback(null);
-      if (idx + 1 >= TOTAL) onFinish(ok ? score + 1 : score, TOTAL);
-      else setIdx((n) => n + 1);
-    }, reducedMotion ? 250 : 900);
+      setFeedbackText(undefined);
+    }, reducedMotion ? 300 : 900);
   };
 
   return (
@@ -99,6 +130,7 @@ export function FindMistakeGame({
       totalRounds={TOTAL}
       score={score}
       feedback={feedback}
+      feedbackText={feedbackText}
       title="Look closely. Tap the different one."
       idleHint="Look for the one that doesn't match the others."
     >
@@ -118,23 +150,23 @@ export function FindMistakeGame({
           }}
         >
           {r.tiles.map((c, i) => {
-            const reveal = picked !== null;
             const isMistake = i === r.mistakeIdx;
             const isPicked = picked === i;
-            const bg =
-              reveal && isMistake
-                ? "hsl(var(--brand-green-500))"
-                : reveal && isPicked && !isMistake
-                  ? "hsl(var(--brand-amber-500))"
-                  : "rgba(255,255,255,0.08)";
+            const showCorrect = feedback === "correct" && isMistake;
+            const showWrongPick = feedback === "wrong" && isPicked && !isMistake;
+            const bg = showCorrect
+              ? "hsl(var(--brand-green-500))"
+              : showWrongPick
+                ? "hsl(var(--brand-amber-500))"
+                : "rgba(255,255,255,0.08)";
             return (
               <button
                 key={i}
                 type="button"
                 className="game-choice-a11y"
-                disabled={reveal}
+                disabled={!!feedback}
                 onClick={() => onPick(i)}
-                aria-label={`Tile ${i + 1}: ${c}${reveal && isMistake ? ", different one" : reveal && isPicked ? ", not this one" : ""}`}
+                aria-label={`Tile ${i + 1}: ${c}${showCorrect ? ", correct" : showWrongPick ? ", try again" : ""}`}
                 style={{
                   width: cellSize,
                   height: cellSize,
@@ -142,18 +174,17 @@ export function FindMistakeGame({
                   minHeight: GAME_LAYOUT.touchMin,
                   background: bg,
                   color: gameTheme.text,
-                  border:
-                    reveal && isMistake
-                      ? "3px solid #fff"
-                      : reveal && isPicked && !isMistake
-                        ? "2px dashed rgba(255,255,255,0.85)"
-                        : `1px solid ${gameTheme.glassBorder}`,
+                  border: showCorrect
+                    ? "3px solid #fff"
+                    : showWrongPick
+                      ? "2px dashed rgba(255,255,255,0.85)"
+                      : `1px solid ${gameTheme.glassBorder}`,
                   borderRadius: 12,
                   padding: 0,
                   fontSize,
                   fontWeight: 800,
                   fontFamily: gameTheme.fontDisplay,
-                  cursor: reveal ? "default" : "pointer",
+                  cursor: feedback ? "default" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",

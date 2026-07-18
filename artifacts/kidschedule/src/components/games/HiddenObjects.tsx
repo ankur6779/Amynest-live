@@ -4,7 +4,11 @@ import { useElementSize } from "@/hooks/use-element-size";
 import { feedbackCorrect, feedbackTap, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
 import { fitCellFontSize, fitGridCellSize, GAME_LAYOUT } from "@/lib/game-layout-tokens";
-import { GAME_SESSION_ROUNDS, sessionHiddenTargetCount } from "@/lib/game-session-progression";
+import {
+  GAME_SESSION_ROUNDS,
+  sessionHiddenMode,
+  sessionHiddenTargetCount,
+} from "@/lib/game-session-progression";
 
 interface Scene {
   name: string;
@@ -123,6 +127,7 @@ export function HiddenObjectsGame({
     [...found].map((idx) => grid[idx]).filter((e) => scene.targets.slice(0, scene.targetCount).includes(e)),
   );
   const activeTargets = scene.targets.slice(0, scene.targetCount);
+  const hiddenMode = sessionHiddenMode();
 
   return (
     <GameShell
@@ -130,8 +135,16 @@ export function HiddenObjectsGame({
       totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       subtitle={`Scene: ${scene.name}`}
-      title={`Find ${activeTargets.length} items in the picture`}
-      idleHint="Look slowly — one item at a time is perfect."
+      title={
+        hiddenMode === "memory"
+          ? `Remember, then find ${activeTargets.length} items`
+          : `Find ${activeTargets.length} items in the picture`
+      }
+      idleHint={
+        hiddenMode === "memory"
+          ? "The list hid — use your memory and look slowly."
+          : "Look slowly — one item at a time is perfect."
+      }
       footer={
         <>
           Found <strong style={{ color: gameTheme.accentSoft }}>{foundTargets.size}</strong> /{" "}
@@ -149,30 +162,40 @@ export function HiddenObjectsGame({
               gap: GAME_LAYOUT.gridGap,
             }}
           >
-            {activeTargets.map((t) => (
-              <div
-                key={t}
-                aria-hidden
-                style={{
-                  width: hintSize,
-                  height: hintSize,
-                  minWidth: hintSize,
-                  minHeight: hintSize,
-                  fontSize: fitCellFontSize(hintSize, 0.55),
-                  borderRadius: 8,
-                  background: foundTargets.has(t) ? gameTheme.successBg : "rgba(255,255,255,0.08)",
-                  border: `1.5px solid ${
-                    foundTargets.has(t) ? "rgba(34,197,94,0.6)" : gameTheme.glassBorder
-                  }`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  filter: foundTargets.has(t) ? "none" : "grayscale(0.5) opacity(0.7)",
-                }}
-              >
-                {foundTargets.has(t) ? t : "❓"}
-              </div>
-            ))}
+            {hiddenMode !== "memory" &&
+              activeTargets.map((t) => (
+                <div
+                  key={t}
+                  aria-hidden
+                  style={{
+                    width: hintSize,
+                    height: hintSize,
+                    minWidth: hintSize,
+                    minHeight: hintSize,
+                    fontSize: fitCellFontSize(hintSize, 0.55),
+                    borderRadius: 8,
+                    background: foundTargets.has(t) ? gameTheme.successBg : "rgba(255,255,255,0.08)",
+                    border: `1.5px solid ${
+                      foundTargets.has(t) ? "rgba(34,197,94,0.6)" : gameTheme.glassBorder
+                    }`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    filter: foundTargets.has(t)
+                      ? "none"
+                      : hiddenMode === "silhouette"
+                        ? "brightness(0) opacity(0.55)"
+                        : "grayscale(0.5) opacity(0.7)",
+                  }}
+                >
+                  {foundTargets.has(t) ? t : hiddenMode === "silhouette" ? t : "❓"}
+                </div>
+              ))}
+            {hiddenMode === "memory" && (
+              <p style={{ margin: 0, fontSize: 12, color: gameTheme.textMuted, fontWeight: 700 }}>
+                List hidden — find them from memory!
+              </p>
+            )}
           </div>
         </div>
 

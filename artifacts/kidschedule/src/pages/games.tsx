@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppNavigate } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
@@ -6,7 +6,6 @@ import { X } from "lucide-react";
 import {
   GAMES,
   unlockGame,
-  recordPlay,
   gamesPlayedToday,
   dailyLimit,
   amySuggestion,
@@ -33,15 +32,18 @@ import { useLowPowerClient } from "@/hooks/use-low-power-client";
 import {
   getAdventureGame,
   getContinuePlayingGames,
+  getNextBestSkillGame,
   getRecommendedGames,
 } from "@/lib/game-hub-meta";
+import { prepareGameSession } from "@/lib/game-adaptive-progression";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useGamingWallet } from "@/hooks/use-gaming-wallet";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
-import { unlockGamingGame, recordGamingPlay } from "@/lib/gaming-wallet-api";
+import { unlockGamingGame } from "@/lib/gaming-wallet-api";
+import { durableFinishGame, flushPendingPlaySync } from "@/lib/game-finish";
 import { hapticGameSuccess } from "@/lib/game-haptics";
 import { getTotalPoints, addPoints } from "@/lib/rewards";
 import { getLazyGame, prefetchAdventureIdle, prefetchGame } from "@/components/games/game-loaders";
@@ -91,6 +93,8 @@ export default function GamesPage() {
   const [error, setError] = useState<string | null>(null);
   const lowPower = useLowPowerClient();
   const continueEmptyBody = useMemo(() => getAmyContinueEmpty(), []);
+  /** Prevents double onFinish (spam / Strict Mode / rapid remount) from double-awarding. */
+  const finishingRef = useRef(false);
 
   const { data: childProfiles = [] } = useListChildren({
     query: {
@@ -119,6 +123,21 @@ export default function GamesPage() {
     hubUsage.markFeatureUsed("hub_gaming_rewards");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- track hub entry once per mount
   }, [showGamingPreview]);
+
+  // Best-effort drain of deferred play syncs when hub opens / comes online.
+  useEffect(() => {
+    if (showGamingPreview || !isSignedIn) return;
+    void flushPendingPlaySync(authFetch).then((r) => {
+      if (r.flushed > 0) void refreshWallet();
+    });
+    const onOnline = () => {
+      void flushPendingPlaySync(authFetch).then((r) => {
+        if (r.flushed > 0) void refreshWallet();
+      });
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [showGamingPreview, isSignedIn, authFetch, refreshWallet]);
 
   useEffect(() => {
     setPoints(getTotalPoints());
@@ -187,8 +206,10 @@ export default function GamesPage() {
 
   const nextAfterResult = useMemo(() => {
     if (!active || active.kind !== "result") return undefined;
-    const pool = getRecommendedGames(isPremium, [active.game.id], 4);
-    return pool[0] ?? GAMES.find((g) => g.id !== active.game.id && canPlayGame(g, isPremium));
+    return (
+      getNextBestSkillGame(isPremium, [active.game.id]) ??
+      GAMES.find((g) => g.id !== active.game.id && canPlayGame(g, isPremium))
+    );
   }, [active, isPremium, unlockedTick]);
 
   const devGrantPoints = () => {
@@ -236,16 +257,20 @@ export default function GamesPage() {
       }
       setError(null);
       prefetchGame(g.id);
+      // Age-aware mastery plan + adaptive Easy/Normal/Hard (local only).
+      prepareGameSession(g.id, previewAgeMonths);
       setActive({ kind: "play", game: g, stage: "intro" });
     },
-    [isPremium, limit, limitHit, t],
+    [isPremium, limit, limitHit, previewAgeMonths, t],
   );
 
   const onStartPlay = useCallback(() => {
-    setActive((prev) =>
-      prev?.kind === "play" ? { kind: "play", game: prev.game, stage: "play" } : prev,
-    );
-  }, []);
+    setActive((prev) => {
+      if (prev?.kind !== "play") return prev;
+      prepareGameSession(prev.game.id, previewAgeMonths);
+      return { kind: "play", game: prev.game, stage: "play" };
+    });
+  }, [previewAgeMonths]);
 
   const onUpgrade = useCallback(() => goTo("/pricing"), [goTo]);
 
@@ -255,31 +280,50 @@ export default function GamesPage() {
   }, [adventureGame?.id, suggestedGame?.id]);
 
   const finishGame = async (g: GameDef, score: number, total: number) => {
-    const ratio = total === 0 ? 0 : score / total;
-    const perfect = ratio >= 0.95;
-    recordPerfectStreak(perfect);
-    recordLeaderboardEntry(g.id, score, total);
-    let earned = perfect
-      ? g.rewardMax
-      : Math.max(g.rewardMin, Math.round(g.rewardMin + (g.rewardMax - g.rewardMin) * ratio));
+    if (finishingRef.current) return;
+    finishingRef.current = true;
     try {
-      if (isSignedIn) {
-        const out = await recordGamingPlay(authFetch, { gameId: g.id, score, total });
-        earned = out.pointsEarned;
-        void hapticGameSuccess(out.perfect);
-        await refreshWallet();
-      } else {
-        recordPlay(g.id, score, total, perfect, earned);
-        void hapticGameSuccess(perfect);
+      const ratio = total === 0 ? 0 : score / total;
+      const perfect = ratio >= 0.95;
+      recordPerfectStreak(perfect);
+      recordLeaderboardEntry(g.id, score, total);
+      const earnedEstimate = perfect
+        ? g.rewardMax
+        : Math.max(g.rewardMin, Math.round(g.rewardMin + (g.rewardMax - g.rewardMin) * ratio));
+
+      // Never fail-closed: result + mastery always; wallet sync best-effort + idempotent.
+      const out = await durableFinishGame({
+        gameId: g.id,
+        score,
+        total,
+        perfect,
+        pointsEarned: earnedEstimate,
+        isSignedIn,
+        authFetch: isSignedIn ? authFetch : undefined,
+      });
+      void hapticGameSuccess(out.perfect);
+      if (!out.syncPending && isSignedIn) {
+        void refreshWallet();
+      } else if (out.syncPending) {
+        setError(
+          t("screens.games.sync_pending_msg", {
+            defaultValue: "Saved on this device. We’ll sync when you’re back online.",
+          }),
+        );
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("screens.games.limit_reached_msg", { count: limit }));
-      setActive(null);
-      return;
+      setPoints(getTotalPoints());
+      setActive({
+        kind: "result",
+        game: g,
+        score,
+        total,
+        pointsEarned: out.pointsEarned,
+        perfect: out.perfect,
+      });
+      setUnlockedTick((tick) => tick + 1);
+    } finally {
+      finishingRef.current = false;
     }
-    setPoints(getTotalPoints());
-    setActive({ kind: "result", game: g, score, total, pointsEarned: earned, perfect });
-    setUnlockedTick((tick) => tick + 1);
   };
 
   const gamesByCategory = useMemo(() => {

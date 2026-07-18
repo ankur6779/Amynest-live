@@ -1,18 +1,19 @@
 import type { CSSProperties } from "react";
-import { Coins, Play, RotateCcw, Sparkles } from "lucide-react";
+import { Play, RotateCcw, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { GameDef } from "@/lib/games";
 import {
+  getChildPracticeFamily,
   getChildResultHeadline,
   getChildResultSubline,
 } from "@/lib/game-experience";
 import { getLearningPracticeSummary } from "@/lib/game-learning";
 import { getAmyCelebrationLine } from "@/lib/game-amy-voice";
-import { formatSkillTimeLine } from "@/lib/game-hub-meta";
+import { formatSkillTimeLine, getNextBestSkillCue } from "@/lib/game-hub-meta";
+import { formatParentMastery, getPracticeSkillFamily } from "@/lib/game-mastery";
 import { gameTheme } from "@/lib/game-theme";
 import { GAME_LAYOUT } from "@/lib/game-layout-tokens";
 import { ConfettiBurst } from "@/components/study-engagement";
-import { AnimatedPoints } from "@/components/games/AnimatedPoints";
 import { GameEmojiBadge } from "@/components/games/GameEmojiBadge";
 import { prefetchGame } from "@/components/games/game-loaders";
 
@@ -53,6 +54,9 @@ export function GameResultPanel({
   const subline = getChildResultSubline(game);
   const practice = getLearningPracticeSummary(game, score, total);
   const amyLine = getAmyCelebrationLine(perfect, score + total);
+  const practiceFamily = getChildPracticeFamily(game);
+  const parentMastery = formatParentMastery(game.id, true);
+  const nextCue = getNextBestSkillCue(nextGame);
 
   return (
     <div className="game-motion-enter relative px-1 pt-1 text-center" role="status" aria-live="polite">
@@ -97,38 +101,42 @@ export function GameResultPanel({
       </p>
       <p
         style={{
+          color: gameTheme.accentSoft,
+          fontSize: 14,
+          fontWeight: 800,
+          margin: "0 0 6px",
+        }}
+      >
+        <Sparkles className="mr-1 inline h-3.5 w-3.5" aria-hidden />
+        {subline}
+      </p>
+      <p
+        style={{
           color: gameTheme.textMuted,
           fontSize: 12,
           fontWeight: 700,
           margin: "0 0 14px",
         }}
       >
-        <Sparkles className="mr-1 inline h-3.5 w-3.5" aria-hidden />
-        {subline}
+        {practiceFamily}
       </p>
 
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          background: gameTheme.ctaGradient,
-          color: "#fff",
-          padding: "10px 18px",
-          borderRadius: gameTheme.radiusPill,
-          fontSize: 15,
-          fontWeight: 800,
-          boxShadow: gameTheme.playShadow,
-          marginBottom: 14,
-          minHeight: GAME_LAYOUT.touchMin,
-        }}
-      >
-        <Coins size={16} aria-hidden />
-        +<AnimatedPoints value={pointsEarned} /> {t("screens.games.points_hero_label")}
-        {perfect && (
-          <span style={{ fontSize: 11, opacity: 0.85 }}>{t("screens.games.perfect_bonus")}</span>
-        )}
-      </div>
+      {/* Mastery-first — Nest points demoted (legacy unlock currency). */}
+      {pointsEarned > 0 && (
+        <p
+          style={{
+            margin: "0 0 12px",
+            fontSize: 11,
+            fontWeight: 600,
+            color: "rgba(199,192,232,0.75)",
+          }}
+        >
+          {t("screens.games.points_demoted_note", {
+            defaultValue: "Nest points saved for unlocks: +{{count}}",
+            count: pointsEarned,
+          })}
+        </p>
+      )}
 
       <div
         style={{
@@ -162,7 +170,7 @@ export function GameResultPanel({
             color: gameTheme.text,
           }}
         >
-          {practice.headline}
+          {practice.headline} · {parentMastery}
         </p>
         <p
           style={{
@@ -196,37 +204,34 @@ export function GameResultPanel({
           margin: "0 auto",
         }}
       >
-        {canPlayAgain && (
-          <button
-            type="button"
-            className="game-motion-press game-motion-focus"
-            onClick={onPlayAgain}
-            onMouseEnter={() => prefetchGame(game.id)}
-            style={primaryBtn}
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden />
-            {t("screens.games.play_again", { defaultValue: "Play again" })}
-          </button>
-        )}
         {nextGame && canPlayNext && (
           <button
             type="button"
             className="game-motion-press game-motion-focus"
             onClick={onPlayNext}
             onMouseEnter={() => prefetchGame(nextGame.id)}
-            style={secondaryBtn}
+            style={primaryBtn}
           >
             <Play className="h-4 w-4 fill-current" aria-hidden />
-            {t("screens.games.play_next", {
-              defaultValue: "Next: {{title}}",
-              title: nextGame.title,
-            })}
+            {nextCue}
           </button>
         )}
         {nextGame && (
           <p style={{ margin: 0, fontSize: 11, color: gameTheme.textMuted }}>
-            {formatSkillTimeLine(nextGame)}
+            {nextGame.title} · {getPracticeSkillFamily(nextGame.id)} · {formatSkillTimeLine(nextGame)}
           </p>
+        )}
+        {canPlayAgain && (
+          <button
+            type="button"
+            className="game-motion-press game-motion-focus"
+            onClick={onPlayAgain}
+            onMouseEnter={() => prefetchGame(game.id)}
+            style={secondaryBtn}
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden />
+            {t("screens.games.play_again", { defaultValue: "Practice this skill again" })}
+          </button>
         )}
         <button
           type="button"

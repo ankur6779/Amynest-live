@@ -4,12 +4,19 @@ import { BarChart3, CalendarDays, Trophy } from "lucide-react";
 import {
   CATEGORY_EMOJI,
   CATEGORY_LABEL,
+  GAMES,
   getSkills,
   type GameCategory,
   type GameDef,
   type WeeklyGameSummary,
 } from "@/lib/games";
-import { skillLevelFromPercent, skillStarsFromPercent } from "@/lib/game-hub-meta";
+import { skillStarsFromPercent } from "@/lib/game-hub-meta";
+import {
+  formatParentMastery,
+  listMasteryForCatalog,
+  type MasteryStage,
+} from "@/lib/game-mastery";
+import { getGameLearning } from "@/lib/game-learning";
 import { GAMES_GLASS_PANEL } from "@/lib/game-theme";
 import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
 import { GamesStatusCard } from "@/components/games/GamesStatusCard";
@@ -42,8 +49,8 @@ interface GamesInsightsPanelProps {
 }
 
 /**
- * Progress demoted below catalog — parents open when curious;
- * children see stars/levels instead of % as primary (no XP system).
+ * Progress demoted below catalog — parents open when curious.
+ * Mastery stages only (no XP / Level N / %).
  */
 export function GamesInsightsPanel({
   skills,
@@ -55,17 +62,30 @@ export function GamesInsightsPanel({
   const { t } = useTranslation();
   const [tab, setTab] = useState<InsightsTab>("skills");
   const skillRecords = getSkills();
+  const masteryRows: { game: GameDef; stage: MasteryStage; score: number }[] = listMasteryForCatalog()
+    .map((row) => {
+      const game = GAMES.find((g) => g.id === row.gameId);
+      if (!game) return null;
+      return { game, stage: row.stage, score: row.score };
+    })
+    .filter((row): row is { game: GameDef; stage: MasteryStage; score: number } => row != null)
+    .sort((a, b) => b.stage.id - a.stage.id || b.score - a.score)
+    .slice(0, 9);
 
   const tabs: { id: InsightsTab; label: string; icon: typeof BarChart3 }[] = [
-    { id: "skills", label: t("screens.games.tab_skills"), icon: BarChart3 },
+    {
+      id: "skills",
+      label: t("screens.games.tab_mastery", { defaultValue: "Mastery" }),
+      icon: BarChart3,
+    },
     ...(isPremium
       ? [
+          { id: "weekly" as const, label: t("screens.games.tab_weekly"), icon: CalendarDays },
           {
             id: "leaderboard" as const,
             label: t("screens.games.tab_my_bests", { defaultValue: "My Bests" }),
             icon: Trophy,
           },
-          { id: "weekly" as const, label: t("screens.games.tab_weekly"), icon: CalendarDays },
         ]
       : []),
   ];
@@ -107,60 +127,71 @@ export function GamesInsightsPanel({
       </div>
 
       {tab === "skills" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {skills.map(({ cat, pct }) => {
-            const attempts = skillRecords[cat]?.attempts ?? 0;
-            const stars = skillStarsFromPercent(pct, attempts > 0);
-            const level = skillLevelFromPercent(pct, attempts > 0);
-            return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {(masteryRows.length > 0 ? masteryRows : GAMES.slice(0, 6).map((game) => ({
+              game,
+              stage: { id: 1, label: "Starter", emoji: "🌱" },
+              score: 0,
+            }))).map(({ game, stage }) => (
               <div
-                key={cat}
+                key={game.id}
                 className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-2.5 py-2"
               >
                 <div className="flex items-start justify-between gap-1">
                   <span className="truncate text-[11px] font-bold text-foreground">
-                    <span aria-hidden>{CATEGORY_EMOJI[cat]} </span>
-                    {CATEGORY_LABEL[cat].split("&")[0].trim()}
+                    <span aria-hidden>{game.emoji} </span>
+                    {getGameLearning(game).skillName}
                   </span>
-                  {level > 0 ? (
-                    <span className="shrink-0 text-[10px] font-extrabold text-amber-300">
-                      {t("screens.games.skill_level_short", {
-                        defaultValue: "Lv {{level}}",
-                        level,
-                      })}
-                    </span>
-                  ) : (
-                    <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
-                      {t("screens.games.skill_new", { defaultValue: "New" })}
-                    </span>
-                  )}
+                  <span className="shrink-0 text-[10px] font-extrabold text-amber-300">
+                    {formatParentMastery(game.id)}
+                  </span>
                 </div>
-                <div
-                  className="mt-1.5 flex gap-0.5"
-                  aria-label={t("screens.games.skill_stars_aria", {
-                    defaultValue: "{{count}} of 3 stars",
-                    count: stars,
-                  })}
-                >
-                  {[1, 2, 3].map((n) => (
-                    <span
-                      key={n}
-                      className={cn(
-                        "text-sm leading-none",
-                        n <= stars ? "text-amber-300" : "text-white/20",
-                      )}
-                      aria-hidden
-                    >
-                      ★
-                    </span>
-                  ))}
-                </div>
-                {attempts > 0 && (
-                  <p className="mt-1 text-[10px] tabular-nums text-muted-foreground">{pct}%</p>
-                )}
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  {stage.label} ({stage.id}/5) · {game.title}
+                </p>
               </div>
-            );
-          })}
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {skills.map(({ cat, pct }) => {
+              const attempts = skillRecords[cat]?.attempts ?? 0;
+              const stars = skillStarsFromPercent(pct, attempts > 0);
+              return (
+                <div
+                  key={cat}
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-2.5 py-2"
+                >
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="truncate text-[11px] font-bold text-foreground">
+                      <span aria-hidden>{CATEGORY_EMOJI[cat]} </span>
+                      {CATEGORY_LABEL[cat].split("&")[0].trim()}
+                    </span>
+                  </div>
+                  <div
+                    className="mt-1.5 flex gap-0.5"
+                    aria-label={t("screens.games.skill_stars_aria", {
+                      defaultValue: "{{count}} of 3 stars",
+                      count: stars,
+                    })}
+                  >
+                    {[1, 2, 3].map((n) => (
+                      <span
+                        key={n}
+                        className={cn(
+                          "text-sm leading-none",
+                          n <= stars ? "text-amber-300" : "text-white/20",
+                        )}
+                        aria-hidden
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
