@@ -158,12 +158,19 @@ export function AiPronunciationCoach({
       {onSkip && (
         <button
           type="button"
-          className="mx-auto block text-[11px] text-muted-foreground underline"
+          className="mx-auto flex min-h-11 w-full max-w-xs items-center justify-center rounded-xl px-3 text-xs font-medium text-muted-foreground underline-offset-2 hover:underline"
           onClick={onSkip}
         >
           Continue without mic
         </button>
       )}
+
+      <p
+        className="text-center text-[10px] leading-snug text-muted-foreground"
+        data-testid="phonics-coach-privacy-note"
+      >
+        Amy listens briefly to score your sounds. We keep scores only — not voice recordings in the app.
+      </p>
     </div>
   );
 }

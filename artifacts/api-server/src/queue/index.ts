@@ -116,7 +116,13 @@ export async function enqueueBullMqJob(
     await queue.add(
       "process",
       { jobId, type, userId: uid, payload },
-      { jobId },
+      {
+        jobId,
+        // Do not retain speech audio blobs in the completed BullMQ set.
+        ...(type === "speech.transcribe"
+          ? { removeOnComplete: true, removeOnFail: { count: 20 } }
+          : {}),
+      },
     );
     const traceId =
       type === "ai-coach.initial_wins"

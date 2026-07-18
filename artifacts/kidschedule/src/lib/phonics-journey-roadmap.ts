@@ -423,14 +423,14 @@ export function resolvePrimaryCta(params: {
   if (missionStarted) {
     return {
       state: "continue_learning",
-      label: "Continue Learning",
-      scrollTarget: "phonics-practice-sounds",
+      label: "Continue Lesson",
+      scrollTarget: "phonics-reading-lesson",
     };
   }
   return {
     state: "start_mission",
-    label: "Start Today's Mission",
-    scrollTarget: "phonics-today-mission",
+    label: "Start Today's Lesson",
+    scrollTarget: "phonics-start-here",
   };
 }
 

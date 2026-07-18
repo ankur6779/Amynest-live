@@ -14,7 +14,9 @@ import { ReadingLessonRunner } from "./lesson/ReadingLessonRunner";
 import { ReadingParentDashboard } from "./lesson/ReadingParentDashboard";
 import { SegmentWordRound } from "./lesson/SegmentWordRound";
 import { ReadingAcademyHub } from "./academy/ReadingAcademyHub";
+import { PhonicsStartHere } from "./ux/PhonicsStartHere";
 import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
+import { getLetterGroup } from "@workspace/phonics-curriculum";
 import type { MissionSummary } from "./DailyMissionPanel";
 import {
   pickNextLessonGrapheme,
@@ -422,11 +424,12 @@ export function PhonicsV2({
         payload.starsEarned,
         payload.focusWord,
       );
+      // Skips advance the lesson for accessibility but must not inflate mastery/fluency.
       const readOk = payload.results.some(
-        (r) => r.stepId === "read_independent" && r.correct,
+        (r) => r.stepId === "read_independent" && r.correct && !r.skipped,
       );
       const blendOk = payload.results.some(
-        (r) => r.stepId === "build_word" && r.correct,
+        (r) => r.stepId === "build_word" && r.correct && !r.skipped,
       );
       const withFluency = readOk
         ? {
@@ -509,8 +512,19 @@ export function PhonicsV2({
     ],
   );
 
+  const letterGroup = getLetterGroup(groupIndex);
+
   return (
     <div id="phonics-v2" data-testid="phonics-v2" className="space-y-4">
+      <PhonicsStartHere
+        childId={childId}
+        childName={childName}
+        focusSound={lessonGrapheme}
+        letterGroupName={`${letterGroup.id} · ${letterGroup.name}`}
+        estimatedMinutes={5}
+        onStartLesson={() => setLessonOpen(true)}
+      />
+
       <Card className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
         <CardContent className="p-4 flex items-center gap-3">
           <div className="h-11 w-11 rounded-2xl bg-primary/15 flex items-center justify-center">

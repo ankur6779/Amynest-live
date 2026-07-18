@@ -124,9 +124,13 @@ export function recordLessonSkills(
     if (!step) continue;
     next = recordSkillAttempt(next, step.skill, r.correct);
   }
-  const wordsRead = next.wordsRead.includes(focusWord)
-    ? next.wordsRead
-    : [...next.wordsRead, focusWord].slice(-200);
+  const completedIndependentRead = results.some(
+    (r) => r.stepId === "read_independent" && r.correct && !r.skipped,
+  );
+  const wordsRead =
+    completedIndependentRead && !next.wordsRead.includes(focusWord)
+      ? [...next.wordsRead, focusWord].slice(-200)
+      : next.wordsRead;
 
   const badges = new Set(next.badges);
   if (wordsRead.length >= 5) badges.add("first_five_words");

@@ -41,7 +41,11 @@ describe("P0 cost safety — route wiring", () => {
 
   it("abacus tutor uses aiUsageGate", () => {
     const src = readRouteSource("abacus.ts");
-    assert.match(src, /router\.post\("\/abacus\/tutor", infantExploreMutationGate\(\), aiUsageGate/);
+    // hubModuleGate (premium) + infant explore + AI usage — order may gain gates; all required.
+    assert.match(src, /router\.post\(\s*"\/abacus\/tutor"/);
+    assert.match(src, /hubModuleGate\("hub_abacus"/);
+    assert.match(src, /infantExploreMutationGate\(\)/);
+    assert.match(src, /aiUsageGate/);
   });
 });
 

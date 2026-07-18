@@ -12,12 +12,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
-  echo "[pages-deploy] CLOUDFLARE_API_TOKEN is not set — cannot deploy." >&2
+# Prefer CLOUDFLARE_API_TOKEN (CI). Manual/local: wrangler OAuth session is OK
+# when the operator has already run `wrangler login` with Pages Edit scope.
+if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+  export CLOUDFLARE_API_TOKEN
+  echo "[pages-deploy] Using CLOUDFLARE_API_TOKEN."
+elif npx --yes wrangler@4 whoami >/dev/null 2>&1; then
+  echo "[pages-deploy] CLOUDFLARE_API_TOKEN unset — using wrangler OAuth session (manual fallback)."
+else
+  echo "[pages-deploy] CLOUDFLARE_API_TOKEN is not set and wrangler is not logged in." >&2
+  echo "[pages-deploy] Set the GitHub secret or run: npx wrangler login" >&2
   exit 1
 fi
 
-export CLOUDFLARE_API_TOKEN
 export NODE_ENV=production
 export CF_PAGES_COMMIT_SHA="${GITHUB_SHA:-}"
 export VITE_AMYNEST_ENV=production

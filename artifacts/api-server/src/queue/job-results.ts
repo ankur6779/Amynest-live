@@ -134,7 +134,13 @@ export async function patchJobRecord(
   patch: Partial<
     Pick<
       AiJobRecord,
-      "status" | "result" | "apiResult" | "sideEffectsApplied" | "error" | "timedOut"
+      | "status"
+      | "result"
+      | "apiResult"
+      | "sideEffectsApplied"
+      | "error"
+      | "timedOut"
+      | "payload"
     >
   >,
 ): Promise<AiJobRecord | undefined> {

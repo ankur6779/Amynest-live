@@ -31,6 +31,20 @@ describe("reading-skills", () => {
     expect(state.readingStars).toBe(10);
   });
 
+  it("does not count skipped independent reads toward wordsRead", () => {
+    let state = defaultReadingSkillsState();
+    state = recordLessonSkills(
+      state,
+      [
+        { stepId: "hear", correct: true },
+        { stepId: "read_independent", correct: true, skipped: true },
+      ],
+      0,
+      "sat",
+    );
+    expect(state.wordsRead).not.toContain("sat");
+  });
+
   it("surfaces weak skills for adaptive practice", () => {
     let state = defaultReadingSkillsState();
     state = recordSkillAttempt(state, "blending", true);

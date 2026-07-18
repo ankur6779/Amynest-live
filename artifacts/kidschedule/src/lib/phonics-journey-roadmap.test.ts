@@ -92,9 +92,22 @@ describe("phonics-journey-roadmap", () => {
   });
 
   it("resolves primary CTA states", () => {
-    expect(resolvePrimaryCta({ missionStarted: false, missionComplete: false, dailyQuizComplete: false }).label).toBe(
-      "Start Today's Mission",
-    );
+    const start = resolvePrimaryCta({
+      missionStarted: false,
+      missionComplete: false,
+      dailyQuizComplete: false,
+    });
+    expect(start.label).toBe("Start Today's Lesson");
+    expect(start.scrollTarget).toBe("phonics-start-here");
+
+    const cont = resolvePrimaryCta({
+      missionStarted: true,
+      missionComplete: false,
+      dailyQuizComplete: false,
+    });
+    expect(cont.label).toBe("Continue Lesson");
+    expect(cont.scrollTarget).toBe("phonics-reading-lesson");
+
     expect(resolvePrimaryCta({ missionStarted: true, missionComplete: true, dailyQuizComplete: false }).label).toBe(
       "Start Quick Check",
     );

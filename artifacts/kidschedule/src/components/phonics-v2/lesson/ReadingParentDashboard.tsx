@@ -110,6 +110,13 @@ export function ReadingParentDashboard({
         </div>
 
         <p className="text-xs text-muted-foreground">{group.description}</p>
+        <p
+          className="text-[10px] leading-snug text-muted-foreground"
+          data-testid="phonics-parent-privacy-note"
+        >
+          Voice practice scores pronunciation from a short listen. AmyNest stores scores and tips
+          on this device — not your child&apos;s voice recordings in the app.
+        </p>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Stat

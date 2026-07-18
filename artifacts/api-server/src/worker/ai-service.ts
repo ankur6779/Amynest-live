@@ -45,6 +45,31 @@ function resolveJobTimeoutMs(type: string): number {
   return ms > 0 ? ms : 10_000;
 }
 
+/** Strip raw audio from persisted speech job records after processing. */
+function redactSpeechTranscribePayload(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object") return payload;
+  const root = { ...(payload as Record<string, unknown>) };
+  if (typeof root.audioBase64 === "string") {
+    root.audioBase64 = "[redacted]";
+  }
+  if (root.input && typeof root.input === "object") {
+    const input = { ...(root.input as Record<string, unknown>) };
+    if (typeof input.audioBase64 === "string") {
+      input.audioBase64 = "[redacted]";
+    }
+    root.input = input;
+  }
+  return root;
+}
+
+function speechPayloadRedaction(
+  type: string,
+  payload: unknown,
+): { payload: unknown } | Record<string, never> {
+  if (type !== "speech.transcribe") return {};
+  return { payload: redactSpeechTranscribePayload(payload) };
+}
+
 /**
  * Process one BullMQ AI job — OpenAI / ElevenLabs with timeout + Redis result storage.
  */
@@ -110,6 +135,7 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
         status: "timed_out",
         timedOut: true,
         error: "AI job timed out",
+        ...speechPayloadRedaction(type, existing?.payload ?? payload),
       });
       if (AUDIO_JOB_TYPES.has(type)) {
         logger.error(
@@ -134,7 +160,10 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
         userId,
         reason: "timed_out",
         route: type,
-        payload,
+        payload:
+          type === "speech.transcribe"
+            ? redactSpeechTranscribePayload(payload)
+            : payload,
         error: `AI job timed out after ${timeoutMs}ms`,
       });
       const { captureBullMqJobFailure } = await import("../lib/sentry.js");
@@ -146,7 +175,11 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
       throw new Error(`AI job timed out after ${timeoutMs}ms`);
     }
 
-    await patchJobRecord(jobId, { status: "completed", result });
+    await patchJobRecord(jobId, {
+      status: "completed",
+      result,
+      ...speechPayloadRedaction(type, existing?.payload ?? payload),
+    });
     if (traceId) {
       const { logCoachGenerateTrace } = await import("../lib/coach-generate-trace.js");
       logCoachGenerateTrace("bullmq.job_completed", {
@@ -197,6 +230,7 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
     }
     await patchJobRecord(jobId, {
       status: "failed",
+      ...speechPayloadRedaction(type, existing?.payload ?? payload),
       error: message.slice(0, 500),
     });
     if (!COACH_JOB_TYPES.has(type) && !AUDIO_JOB_TYPES.has(type)) {
@@ -210,7 +244,10 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
       userId,
       reason: "failed",
       route: type,
-      payload,
+      payload:
+        type === "speech.transcribe"
+          ? redactSpeechTranscribePayload(payload)
+          : payload,
       error: message,
     });
     const { captureBullMqJobFailure } = await import("../lib/sentry.js");
