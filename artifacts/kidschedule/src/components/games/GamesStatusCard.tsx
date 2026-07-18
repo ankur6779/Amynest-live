@@ -46,9 +46,13 @@ export function GamesStatusCard({
     : null;
 
   return (
-    <div className={cn(GAMES_GLASS_PANEL, "rounded-2xl p-3.5")}>
+    <div className={cn(GAMES_GLASS_PANEL, "game-a11y-solid-surface rounded-2xl p-3.5")}>
       <div className="flex items-center gap-3">
-        <div className="relative h-14 w-14 shrink-0">
+        <div
+          className="relative h-14 w-14 shrink-0"
+          role="img"
+          aria-label={`${playedToday} of ${limit} plays today`}
+        >
           <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56" aria-hidden>
             <circle
               cx="28"
@@ -62,7 +66,7 @@ export function GamesStatusCard({
               cx="28"
               cy="28"
               r="22"
-              className={limitHit ? "stroke-red-400" : "stroke-amber-400"}
+              className={limitHit ? "stroke-amber-300" : "stroke-amber-400"}
               strokeWidth="5"
               strokeLinecap="round"
               fill="none"
@@ -136,16 +140,20 @@ export function GamesStatusCard({
       </Accordion>
 
       <div
-        className="mt-2 h-1.5 overflow-hidden rounded-full"
+        className="mt-2 h-2 overflow-hidden rounded-full border border-white/10"
         style={{ background: gameTheme.progressTrack }}
-        aria-hidden
+        role="progressbar"
+        aria-valuenow={Math.round(dailyPct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={t("screens.games.daily_plays_title")}
       >
         <div
           className="hub-progress-fill h-full rounded-full"
           style={{
             width: `${dailyPct}%`,
             background: limitHit
-              ? "linear-gradient(90deg, hsl(var(--brand-red-500)), hsl(var(--brand-red-300)))"
+              ? "repeating-linear-gradient(90deg, hsl(var(--brand-amber-300)), hsl(var(--brand-amber-300)) 6px, hsl(var(--brand-orange-400)) 6px, hsl(var(--brand-orange-400)) 12px)"
               : "linear-gradient(90deg, rgba(255,184,0,0.95), rgba(251,191,36,0.95))",
             transition: "width 0.35s ease",
           }}

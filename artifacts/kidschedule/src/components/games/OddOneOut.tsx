@@ -69,7 +69,7 @@ export function OddOneOutGame({
       void feedbackCorrect();
     } else {
       setFeedback("wrong");
-      setFeedbackText(`The odd one was ${r.odd}`);
+      setFeedbackText(`Nice try! The odd one was ${r.odd}`);
       void feedbackWrong();
     }
     setTimeout(() => {
@@ -87,8 +87,11 @@ export function OddOneOutGame({
       feedback={feedback}
       feedbackText={feedbackText}
       title="Which one does not belong?"
+      idleHint="Which item feels different from the rest?"
     >
       <div
+        role="group"
+        aria-label="Pick the odd one out"
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${r.items.length > 4 ? 3 : 2}, 1fr)`,
@@ -97,27 +100,50 @@ export function OddOneOutGame({
           margin: "0 auto",
         }}
       >
-        {r.items.map((it) => (
-          <button
-            key={it}
-            type="button"
-            onClick={() => onPick(it)}
-            style={{
-              fontSize: 38,
-              padding: "14px 0",
-              borderRadius: 14,
-              background:
-                feedback && it === r.odd ? gameTheme.successBg : "rgba(255,255,255,0.08)",
-              border:
-                "1px solid " +
-                (feedback && it === r.odd ? "rgba(34,197,94,0.6)" : gameTheme.glassBorder),
-              cursor: feedback ? "default" : "pointer",
-              color: gameTheme.text,
-            }}
-          >
-            {it}
-          </button>
-        ))}
+        {r.items.map((it, i) => {
+          const isOdd = it === r.odd;
+          const revealCorrect = !!feedback && isOdd;
+          return (
+            <button
+              key={`${it}-${i}`}
+              type="button"
+              className="game-choice-a11y"
+              onClick={() => onPick(it)}
+              disabled={!!feedback}
+              aria-label={`Choice ${i + 1}${revealCorrect ? ", the odd one" : ""}`}
+              style={{
+                fontSize: 38,
+                padding: "14px 0",
+                minHeight: 56,
+                borderRadius: 14,
+                background: revealCorrect ? gameTheme.successBg : "rgba(255,255,255,0.08)",
+                border: revealCorrect
+                  ? "3px solid rgba(34,197,94,0.85)"
+                  : `1px solid ${gameTheme.glassBorder}`,
+                cursor: feedback ? "default" : "pointer",
+                color: gameTheme.text,
+                position: "relative",
+              }}
+            >
+              {it}
+              {revealCorrect && (
+                <span
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 6,
+                    fontSize: 14,
+                    fontWeight: 900,
+                    color: gameTheme.success,
+                  }}
+                >
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </GameShell>
   );

@@ -167,7 +167,8 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
             : undefined
       }
       subtitle={`Picture: ${pic.label}`}
-      title="Pick a colour, then tap cells to fill them"
+      title="Pick a colour. Fill to match the picture."
+      idleHint="Check the preview picture — match each colour one cell at a time."
       footer="Use shape markers + target preview to match the pattern."
     >
       <style>{COLOR_FILL_STYLES}</style>
@@ -375,9 +376,9 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
       <AnimatePresence>
         {checkResult?.kind === "error" && (
           <ResultModal
-            title="❌ Not Quite Right"
-            body={`${checkResult.wrongCount} cell${checkResult.wrongCount === 1 ? "" : "s"} need fixing · ${checkResult.percent}% complete`}
-            primaryLabel="Try Again"
+            title="Almost there!"
+            body={`${checkResult.wrongCount} cell${checkResult.wrongCount === 1 ? "" : "s"} still need a tweak · ${checkResult.percent}% matching. You can fix them!`}
+            primaryLabel="Keep going"
             onPrimary={() => {
               setCheckResult(null);
               setFeedback(null);
@@ -386,9 +387,8 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
         )}
         {checkResult?.kind === "success" && celebrate && (
           <ResultModal
-            title="✅ Great Job!"
-            body="Pattern completed successfully."
-            extra="Rewards: +XP · +Coins · +Streak"
+            title="Beautiful match!"
+            body="You practised colour matching and careful checking."
             onPrimary={() => {}}
             hideButton
           />

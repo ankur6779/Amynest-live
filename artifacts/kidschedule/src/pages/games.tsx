@@ -1,20 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppNavigate } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { X } from "lucide-react";
 import {
-  Trophy, X, Coins,
-} from "lucide-react";
-import {
-  GAMES, unlockGame, recordPlay,
-  gamesPlayedToday, dailyLimit, amySuggestion, getSkillPercent,
-  canPlayGame, ensureStarterUnlocks, getWeeklyGameSummary, getCachedRoutineStreak,
+  GAMES,
+  unlockGame,
+  recordPlay,
+  gamesPlayedToday,
+  dailyLimit,
+  amySuggestion,
+  getSkillPercent,
+  canPlayGame,
+  ensureStarterUnlocks,
+  getWeeklyGameSummary,
+  getCachedRoutineStreak,
   requiresPremiumToPlay,
-  getPerfectStreak, hasPerfectComboBadge, recordPerfectStreak, recordLeaderboardEntry,
+  getPerfectStreak,
+  hasPerfectComboBadge,
+  recordPerfectStreak,
+  recordLeaderboardEntry,
   isGameUnlockedForPlay,
-  type GameDef, type GameCategory,
+  type GameDef,
+  type GameCategory,
 } from "@/lib/games";
 import { gameTheme } from "@/lib/game-theme";
+import { GAME_MOTION_STYLES } from "@/lib/game-motion";
+import { GAME_A11Y_STYLES } from "@/lib/game-a11y";
+import { GAME_PERF_STYLES } from "@/lib/game-perf";
+import { getAmyContinueEmpty } from "@/lib/game-amy-voice";
+import { useLowPowerClient } from "@/hooks/use-low-power-client";
+import {
+  getAdventureGame,
+  getContinuePlayingGames,
+  getRecommendedGames,
+} from "@/lib/game-hub-meta";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useGamingWallet } from "@/hooks/use-gaming-wallet";
@@ -24,28 +44,19 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { unlockGamingGame, recordGamingPlay } from "@/lib/gaming-wallet-api";
 import { hapticGameSuccess } from "@/lib/game-haptics";
 import { getTotalPoints, addPoints } from "@/lib/rewards";
-import { PatternMatchGame } from "@/components/games/PatternMatch";
-import { OddOneOutGame } from "@/components/games/OddOneOut";
-import { CardFlipGame } from "@/components/games/CardFlip";
-import { SequenceMemoryGame } from "@/components/games/SequenceMemory";
-import { BehaviorChoiceGame } from "@/components/games/BehaviorChoice";
-import { SpeedMathGame } from "@/components/games/SpeedMath";
-import { NumberMatchGame } from "@/components/games/NumberMatch";
-import { FindMistakeGame } from "@/components/games/FindMistake";
-import { ColorMemoryGame } from "@/components/games/ColorMemory";
-import { TargetTapGame } from "@/components/games/TargetTap";
-import { MazeEscapeGame } from "@/components/games/MazeEscape";
-import { ShapeMatchingGame } from "@/components/games/ShapeMatching";
-import { ColorFillGame } from "@/components/games/ColorFill";
-import { HiddenObjectsGame } from "@/components/games/HiddenObjects";
-import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifference";
-import { AmySuggestionPanel } from "@/components/games/AmySuggestionPanel";
+import { getLazyGame, prefetchAdventureIdle, prefetchGame } from "@/components/games/game-loaders";
+import { GamePlayIntro } from "@/components/games/GamePlayIntro";
+import { GameResultPanel } from "@/components/games/GameResultPanel";
+import { GameChunkLoader } from "@/components/games/GameChunkLoader";
+import { GameEmojiBadge } from "@/components/games/GameEmojiBadge";
+import { GamesDialogSurface } from "@/components/games/GamesDialogSurface";
+import { GamesEmptyState } from "@/components/games/GamesEmptyState";
+import { GamesExitConfirm } from "@/components/games/GamesExitConfirm";
+import { GamesHeroAdventure } from "@/components/games/GamesHeroAdventure";
+import { GamesHorizontalStrip } from "@/components/games/GamesHorizontalStrip";
 import { GameCategorySection } from "@/components/games/GameCategorySection";
 import { GamesInsightsPanel } from "@/components/games/GamesInsightsPanel";
 import { GamesPageHeader } from "@/components/games/GamesPageHeader";
-import { GamesStatusCard } from "@/components/games/GamesStatusCard";
-import { ConfettiBurst } from "@/components/study-engagement";
-import { AnimatedPoints } from "@/components/games/AnimatedPoints";
 import { cn } from "@/lib/utils";
 import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
@@ -54,8 +65,15 @@ import { isGamingHubPreviewAge } from "@/lib/hub-visibility";
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
 type ActiveGame =
-  | { kind: "play"; game: GameDef }
-  | { kind: "result"; game: GameDef; score: number; total: number; pointsEarned: number; perfect: boolean }
+  | { kind: "play"; game: GameDef; stage: "intro" | "play" }
+  | {
+      kind: "result";
+      game: GameDef;
+      score: number;
+      total: number;
+      pointsEarned: number;
+      perfect: boolean;
+    }
   | null;
 
 export default function GamesPage() {
@@ -69,7 +87,10 @@ export default function GamesPage() {
   const [points, setPoints] = useState<number>(getTotalPoints());
   const [unlockedTick, setUnlockedTick] = useState(0);
   const [active, setActive] = useState<ActiveGame>(null);
+  const [exitConfirm, setExitConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lowPower = useLowPowerClient();
+  const continueEmptyBody = useMemo(() => getAmyContinueEmpty(), []);
 
   const { data: childProfiles = [] } = useListChildren({
     query: {
@@ -81,8 +102,11 @@ export default function GamesPage() {
   const previewAgeMonths = useMemo(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
-    const child = (childProfiles as Array<{ id: number; age: number; ageMonths?: number | null }>)
-      .find((c) => c.id === saved) ?? (childProfiles[0] as { id: number; age: number; ageMonths?: number | null } | undefined);
+    const child =
+      (childProfiles as Array<{ id: number; age: number; ageMonths?: number | null }>).find(
+        (c) => c.id === saved,
+      ) ??
+      (childProfiles[0] as { id: number; age: number; ageMonths?: number | null } | undefined);
     if (!child) return null;
     return child.age * 12 + (child.ageMonths ?? 0);
   }, [childProfiles]);
@@ -96,38 +120,76 @@ export default function GamesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- track hub entry once per mount
   }, [showGamingPreview]);
 
-  // Re-sync after game results, unlocks, and signed-in wallet hydration.
-  useEffect(() => { setPoints(getTotalPoints()); }, [active, serverWallet, unlockedTick]);
+  useEffect(() => {
+    setPoints(getTotalPoints());
+  }, [active, serverWallet, unlockedTick]);
+
+  const requestCloseModal = useCallback(() => {
+    if (active?.kind === "play" && active.stage === "play") {
+      setExitConfirm(true);
+      return;
+    }
+    setExitConfirm(false);
+    setActive(null);
+  }, [active]);
 
   usePageBackHandler(() => {
+    if (exitConfirm) {
+      setExitConfirm(false);
+      return true;
+    }
     if (active) {
+      if (active.kind === "play" && active.stage === "play") {
+        setExitConfirm(true);
+        return true;
+      }
       setActive(null);
       return true;
     }
     back("games-exit");
     return true;
-  }, [active, back]);
+  }, [active, back, exitConfirm]);
 
   const playedToday = serverWallet?.gamesPlayedToday ?? gamesPlayedToday();
   const limit = serverWallet?.dailyLimit ?? dailyLimit(isPremium);
   const limitHit = playedToday >= limit;
+  const playsRemaining = Math.max(0, limit - playedToday);
   const suggestion = useMemo(() => amySuggestion(isPremium), [unlockedTick, active, isPremium]);
   const weekly = useMemo(() => getWeeklyGameSummary(), [unlockedTick, active]);
   const routineStreak = serverWallet?.routineStreakDays ?? getCachedRoutineStreak();
+  const adventureGame = useMemo(() => getAdventureGame(isPremium), [unlockedTick, active, isPremium]);
+  const continueGames = useMemo(
+    () => getContinuePlayingGames(isPremium, 6),
+    [unlockedTick, active, isPremium],
+  );
+  const recommendedGames = useMemo(
+    () =>
+      getRecommendedGames(
+        isPremium,
+        continueGames.map((g) => g.id),
+        6,
+      ),
+    [unlockedTick, active, isPremium, continueGames],
+  );
   const nextUnlockGame = useMemo(
     () =>
-      GAMES
-        .filter((game) =>
+      GAMES.filter(
+        (game) =>
           game.status === "ready" &&
           !requiresPremiumToPlay(game) &&
-          !isGameUnlockedForPlay(game.id, isPremium)
-        )
-        .sort((a, b) => a.unlockCost - b.unlockCost)[0] ?? null,
+          !isGameUnlockedForPlay(game.id, isPremium),
+      ).sort((a, b) => a.unlockCost - b.unlockCost)[0] ?? null,
     [isPremium, serverWallet, unlockedTick],
   );
   const suggestedGame = suggestion.gameId
     ? GAMES.find((g) => g.id === suggestion.gameId)
     : undefined;
+
+  const nextAfterResult = useMemo(() => {
+    if (!active || active.kind !== "result") return undefined;
+    const pool = getRecommendedGames(isPremium, [active.game.id], 4);
+    return pool[0] ?? GAMES.find((g) => g.id !== active.game.id && canPlayGame(g, isPremium));
+  }, [active, isPremium, unlockedTick]);
 
   const devGrantPoints = () => {
     addPoints("DEV", "DEV: test grant", 1000);
@@ -135,46 +197,62 @@ export default function GamesPage() {
     setUnlockedTick((tick) => tick + 1);
   };
 
-  const onUnlock = async (g: GameDef) => {
-    setError(null);
-    if (requiresPremiumToPlay(g) && !isPremium) {
-      setError(t("screens.games.premium_required"));
-      return;
-    }
-    try {
-      if (isSignedIn) {
-        await unlockGamingGame(authFetch, g.id);
-        setPoints(getTotalPoints());
-        await refreshWallet();
-      } else {
-        const r = unlockGame(g.id, { isPremium });
-        if (!r.ok) setError(r.reason ?? t("screens.games.could_not_unlock"));
-        else setPoints(getTotalPoints());
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("screens.games.could_not_unlock"));
-    }
-    setUnlockedTick((tick) => tick + 1);
-  };
-
-  const onPlay = (g: GameDef) => {
-    if (!canPlayGame(g, isPremium)) {
+  const onUnlock = useCallback(
+    async (g: GameDef) => {
+      setError(null);
       if (requiresPremiumToPlay(g) && !isPremium) {
         setError(t("screens.games.premium_required"));
+        return;
       }
-      return;
-    }
-    if (limitHit) {
-      setError(t("screens.games.limit_reached_msg", { count: limit }));
-      return;
-    }
-    setError(null);
-    setActive({ kind: "play", game: g });
-  };
+      try {
+        if (isSignedIn) {
+          await unlockGamingGame(authFetch, g.id);
+          setPoints(getTotalPoints());
+          await refreshWallet();
+        } else {
+          const r = unlockGame(g.id, { isPremium });
+          if (!r.ok) setError(r.reason ?? t("screens.games.could_not_unlock"));
+          else setPoints(getTotalPoints());
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("screens.games.could_not_unlock"));
+      }
+      setUnlockedTick((tick) => tick + 1);
+    },
+    [authFetch, isPremium, isSignedIn, refreshWallet, t],
+  );
 
-  const onPlaySuggested = () => {
-    if (suggestedGame) onPlay(suggestedGame);
-  };
+  const onPlay = useCallback(
+    (g: GameDef) => {
+      if (!canPlayGame(g, isPremium)) {
+        if (requiresPremiumToPlay(g) && !isPremium) {
+          setError(t("screens.games.premium_required"));
+        }
+        return;
+      }
+      if (limitHit) {
+        setError(t("screens.games.limit_reached_msg", { count: limit }));
+        return;
+      }
+      setError(null);
+      prefetchGame(g.id);
+      setActive({ kind: "play", game: g, stage: "intro" });
+    },
+    [isPremium, limit, limitHit, t],
+  );
+
+  const onStartPlay = useCallback(() => {
+    setActive((prev) =>
+      prev?.kind === "play" ? { kind: "play", game: prev.game, stage: "play" } : prev,
+    );
+  }, []);
+
+  const onUpgrade = useCallback(() => goTo("/pricing"), [goTo]);
+
+  useEffect(() => {
+    const adventureId = adventureGame?.id ?? suggestedGame?.id;
+    return prefetchAdventureIdle(adventureId);
+  }, [adventureGame?.id, suggestedGame?.id]);
 
   const finishGame = async (g: GameDef, score: number, total: number) => {
     const ratio = total === 0 ? 0 : score / total;
@@ -204,9 +282,17 @@ export default function GamesPage() {
     setUnlockedTick((tick) => tick + 1);
   };
 
-  // Group games by category for the grid
   const gamesByCategory = useMemo(() => {
-    const order: GameCategory[] = ["brain", "memory", "math", "focus", "creativity", "behavior", "action", "puzzle"];
+    const order: GameCategory[] = [
+      "brain",
+      "memory",
+      "math",
+      "focus",
+      "creativity",
+      "behavior",
+      "action",
+      "puzzle",
+    ];
     const map = new Map<GameCategory, GameDef[]>();
     for (const g of GAMES) {
       if (!map.has(g.category)) map.set(g.category, []);
@@ -215,7 +301,6 @@ export default function GamesPage() {
     return order.filter((c) => map.has(c)).map((c) => [c, map.get(c)!] as const);
   }, []);
 
-  // Skills (re-read on every render via tick)
   const skillCats: GameCategory[] = ["brain", "memory", "math", "focus", "behavior", "action"];
   const skills = skillCats.map((c) => ({ cat: c, pct: getSkillPercent(c) }));
   const dailyPct = limit > 0 ? Math.min(100, (playedToday / limit) * 100) : 0;
@@ -226,11 +311,14 @@ export default function GamesPage() {
     const previewItems = ["games", "rewards", "insights"] as const;
 
     return (
-      <div className={cn(PARENT_HUB_PAGE, "mx-auto max-w-[720px]")} style={{
-        minHeight: "100dvh",
-        color: gameTheme.text,
-        paddingBottom: 80,
-      }}>
+      <div
+        className={cn(PARENT_HUB_PAGE, "mx-auto max-w-[720px]")}
+        style={{
+          minHeight: "100dvh",
+          color: gameTheme.text,
+          paddingBottom: 80,
+        }}
+      >
         <header className="hub-page-enter sticky top-0 z-30 border-b border-white/10 bg-[#09152b]/90 px-4 py-3 backdrop-blur">
           <button
             type="button"
@@ -271,72 +359,96 @@ export default function GamesPage() {
   }
 
   return (
-    <div className={cn(PARENT_HUB_PAGE, "mx-auto max-w-[720px]")} style={{
-      minHeight: "100dvh",
-      color: gameTheme.text,
-      paddingBottom: 80,
-    }}>
-      <style>{`
-        @keyframes gamesCardFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-2px); }
-        }
-        .games-card-float {
-          animation: gamesCardFloat 1.6s ease-in-out infinite;
-        }
-      `}</style>
+    <div
+      className={cn(
+        PARENT_HUB_PAGE,
+        "game-a11y-root game-a11y-tablet-pad mx-auto max-w-[720px]",
+        lowPower && "game-perf-low",
+      )}
+      style={{
+        minHeight: "100dvh",
+        color: gameTheme.text,
+        paddingBottom: 80,
+      }}
+    >
+      <style>{`${GAME_MOTION_STYLES}\n${GAME_A11Y_STYLES}\n${GAME_PERF_STYLES}`}</style>
+      <a href="#games-main" className="game-a11y-skip">
+        {t("screens.games.skip_to_games", { defaultValue: "Skip to games" })}
+      </a>
       <GamesPageHeader
         points={points}
         showComboBadge={showComboBadge}
         perfectStreak={perfectStreak}
         isPremium={isPremium}
         onBack={() => back("games-exit")}
-        onUpgrade={() => goTo("/pricing")}
+        onUpgrade={onUpgrade}
         onDevGrant={import.meta.env.DEV ? devGrantPoints : undefined}
       />
 
-      <div className="hub-today-stack">
-        {showGamingPreview ? (
-          <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-4">
-            <InfantExplorePreviewBanner messageKey="parent_hub.web_tiles.gaming-rewards.preview_banner" />
-          </div>
-        ) : null}
-        <div className="hub-page-enter mx-auto max-w-[720px] space-y-3 px-4 pb-1 pt-4">
-          <GamesStatusCard
-            playedToday={playedToday}
-            limit={limit}
+      <main id="games-main" className="hub-today-stack" tabIndex={-1}>
+        <div className="hub-page-enter mx-auto max-w-[720px] space-y-4 px-4 pb-1 pt-4">
+          <GamesHeroAdventure
+            game={adventureGame ?? suggestedGame}
+            canPlay={!!(adventureGame && canPlayGame(adventureGame, isPremium) && !limitHit)}
             limitHit={limitHit}
-            dailyPct={dailyPct}
-            isPremium={isPremium}
-            routineStreak={routineStreak}
-            perfectStreak={perfectStreak}
-            showComboBadge={showComboBadge}
-            points={points}
-            nextUnlockGame={nextUnlockGame}
+            playsRemaining={playsRemaining}
+            onPlay={() => adventureGame && onPlay(adventureGame)}
           />
-          <AmySuggestionPanel
-            line={suggestion.line}
-            suggestedGame={suggestedGame}
-            canPlay={!!(suggestedGame && canPlayGame(suggestedGame, isPremium) && !limitHit)}
-            onPlay={onPlaySuggested}
-          />
-        </div>
 
-        <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-3">
-          <GamesInsightsPanel skills={skills} isPremium={isPremium} weekly={weekly} />
+          <GamesHorizontalStrip
+            title={t("screens.games.continue_title")}
+            subtitle={t("screens.games.continue_subtitle")}
+            games={continueGames}
+            isPremium={isPremium}
+            limitHit={limitHit}
+            onPlay={onPlay}
+            onUnlock={onUnlock}
+            onUpgrade={onUpgrade}
+            empty={
+              <GamesEmptyState
+                emoji="🛤️"
+                title={t("screens.games.continue_empty_title", {
+                  defaultValue: "Your trail starts here",
+                })}
+                body={continueEmptyBody}
+              />
+            }
+          />
+
+          <GamesHorizontalStrip
+            title={t("screens.games.recommended_title")}
+            subtitle={t("screens.games.recommended_subtitle")}
+            games={recommendedGames}
+            isPremium={isPremium}
+            limitHit={limitHit}
+            onPlay={onPlay}
+            onUnlock={onUnlock}
+            onUpgrade={onUpgrade}
+            empty={
+              <GamesEmptyState
+                emoji="🌟"
+                title={t("screens.games.recommended_empty_title", {
+                  defaultValue: "Unlock a starter to begin",
+                })}
+                body={t("screens.games.recommended_empty_body", {
+                  defaultValue: "Play today’s adventure — Amy will suggest more games next.",
+                })}
+              />
+            }
+          />
         </div>
 
         {error && (
           <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-3">
             <div
-              className="flex items-center justify-between gap-3 rounded-xl border border-red-500/40 bg-red-500/15 px-3.5 py-2.5 text-sm text-red-200"
+              className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3.5 py-2.5 text-sm text-amber-100"
               role="alert"
             >
               <span>{error}</span>
               <button
                 type="button"
                 onClick={() => setError(null)}
-                className="shrink-0 border-none bg-transparent text-red-200"
+                className="shrink-0 border-none bg-transparent text-amber-100"
                 aria-label={t("screens.games.close")}
               >
                 <X size={14} />
@@ -346,6 +458,12 @@ export default function GamesPage() {
         )}
 
         <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-0 pt-4">
+          <div className="mb-3">
+            <h2 className="font-quicksand text-lg font-extrabold text-foreground">
+              {t("screens.games.browse_title")}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t("screens.games.browse_subtitle")}</p>
+          </div>
           {gamesByCategory.map(([cat, list]) => (
             <GameCategorySection
               key={cat}
@@ -355,119 +473,142 @@ export default function GamesPage() {
               limitHit={limitHit}
               onPlay={onPlay}
               onUnlock={onUnlock}
-              onUpgrade={() => goTo("/pricing")}
+              onUpgrade={onUpgrade}
             />
           ))}
         </div>
-      </div>
 
-      {/* Active game / result modal */}
+        <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-2 pt-2">
+          <GamesInsightsPanel
+            skills={skills}
+            isPremium={isPremium}
+            weekly={weekly}
+            collapsible
+            status={{
+              playedToday,
+              limit,
+              limitHit,
+              dailyPct,
+              routineStreak,
+              perfectStreak,
+              showComboBadge,
+              points,
+              nextUnlockGame,
+            }}
+          />
+        </div>
+      </main>
+
       {active && (
         <GameModal
           state={active}
-          onClose={() => setActive(null)}
-          onFinish={(score, total) => active.kind === "play" && finishGame(active.game, score, total)}
+          nextGame={nextAfterResult}
+          canPlayAgain={!limitHit && canPlayGame(active.game, isPremium)}
+          canPlayNext={
+            !!nextAfterResult && !limitHit && canPlayGame(nextAfterResult, isPremium)
+          }
+          onClose={requestCloseModal}
+          onStartPlay={onStartPlay}
+          onFinish={(score, total) => {
+            if (active.kind === "play") void finishGame(active.game, score, total);
+          }}
+          onPlayAgain={() => {
+            if (active.kind === "result") onPlay(active.game);
+          }}
+          onPlayNext={() => {
+            if (nextAfterResult) onPlay(nextAfterResult);
+          }}
+        />
+      )}
+
+      {exitConfirm && active?.kind === "play" && (
+        <GamesExitConfirm
+          gameTitle={active.game.title}
+          onKeepPlaying={() => setExitConfirm(false)}
+          onLeave={() => {
+            setExitConfirm(false);
+            setActive(null);
+          }}
         />
       )}
     </div>
   );
 }
 
-// ─── Game modal ──────────────────────────────────────────────────────
 function GameModal({
-  state, onClose, onFinish,
-}: { state: NonNullable<ActiveGame>; onClose: () => void; onFinish: (score: number, total: number) => void }) {
+  state,
+  nextGame,
+  canPlayAgain,
+  canPlayNext,
+  onClose,
+  onStartPlay,
+  onFinish,
+  onPlayAgain,
+  onPlayNext,
+}: {
+  state: NonNullable<ActiveGame>;
+  nextGame?: GameDef;
+  canPlayAgain: boolean;
+  canPlayNext: boolean;
+  onClose: () => void;
+  onStartPlay: () => void;
+  onFinish: (score: number, total: number) => void;
+  onPlayAgain: () => void;
+  onPlayNext: () => void;
+}) {
   const { t } = useTranslation();
   const game = state.game;
-  const confettiTrigger = state.kind === "result" && state.perfect ? 1 : 0;
+  const LazyGame = state.kind === "play" && state.stage === "play" ? getLazyGame(game.id) : null;
+  const showChrome =
+    state.kind === "result" || (state.kind === "play" && state.stage === "play");
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 60,
-      background: gameTheme.overlay, backdropFilter: "blur(8px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 16,
-    }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%", maxWidth: 440,
-          background: gameTheme.modalBg,
-          borderRadius: 24, padding: "16px 18px 22px",
-          color: gameTheme.text, boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
-          maxHeight: "92vh", overflowY: "auto",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 26 }}>{game.emoji}</div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, fontFamily: "Quicksand, sans-serif" }}>{game.title}</h3>
-              <div style={{ fontSize: 11, color: "#a99fd9" }}>{game.blurb}</div>
-            </div>
-          </div>
-          <button onClick={onClose} aria-label={t("screens.games.close")}
-            style={{ color: gameTheme.textSoft, background: "rgba(122,92,255,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(122,92,255,0.25)", cursor: "pointer" }}>
-            <X size={16} />
-          </button>
+    <GamesDialogSurface
+      ariaLabel={game.title}
+      onClose={onClose}
+      title={showChrome ? game.title : undefined}
+      subtitle={state.kind === "play" && state.stage === "play" ? game.blurb : undefined}
+      leading={
+        showChrome ? (
+          <GameEmojiBadge emoji={game.emoji} category={game.category} size="sm" />
+        ) : undefined
+      }
+    >
+      {state.kind === "play" && state.stage === "intro" && (
+        <GamePlayIntro game={game} onStart={onStartPlay} />
+      )}
+
+      {state.kind === "play" && state.stage === "play" && (
+        <div style={{ paddingTop: 6 }}>
+          <Suspense fallback={<GameChunkLoader salt={game.title.length} />}>
+            {LazyGame ? (
+              <LazyGame onFinish={onFinish} />
+            ) : (
+              <GamesEmptyState
+                emoji="⏳"
+                title={t("screens.games.coming_soon")}
+                body={t("screens.games.loading_game", { defaultValue: "Getting ready…" })}
+              />
+            )}
+          </Suspense>
         </div>
+      )}
 
-        {state.kind === "play" && (
-          <div style={{ paddingTop: 6 }}>
-            {game.id === "pattern-match" && <PatternMatchGame onFinish={onFinish} />}
-            {game.id === "odd-one-out" && <OddOneOutGame onFinish={onFinish} />}
-            {game.id === "card-flip" && <CardFlipGame onFinish={onFinish} />}
-            {game.id === "sequence" && <SequenceMemoryGame onFinish={onFinish} />}
-            {game.id === "color-memory" && <ColorMemoryGame onFinish={onFinish} />}
-            {game.id === "speed-math" && <SpeedMathGame onFinish={onFinish} />}
-            {game.id === "number-match" && <NumberMatchGame onFinish={onFinish} />}
-            {game.id === "find-mistake" && <FindMistakeGame onFinish={onFinish} />}
-            {game.id === "target-tap" && <TargetTapGame onFinish={onFinish} />}
-            {game.id === "what-should-you-do" && <BehaviorChoiceGame onFinish={onFinish} />}
-            {game.id === "maze-escape" && <MazeEscapeGame onFinish={onFinish} />}
-            {game.id === "shape-match" && <ShapeMatchingGame onFinish={onFinish} />}
-            {game.id === "color-fill" && <ColorFillGame onFinish={onFinish} />}
-            {game.id === "hidden-objects" && <HiddenObjectsGame onFinish={onFinish} />}
-            {game.id === "spot-difference" && <SpotTheDifferenceGame onFinish={onFinish} />}
-          </div>
-        )}
-
-        {state.kind === "result" && (
-          <div className="relative text-center" style={{ padding: "8px 4px 0" }}>
-            <ConfettiBurst trigger={confettiTrigger} />
-            <Trophy size={48} color={state.perfect ? "hsl(var(--brand-amber-300))" : "hsl(var(--brand-violet-300))"} style={{ margin: "12px auto" }} />
-            <h3 style={{ margin: "0 0 6px", fontSize: 20, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>
-              {state.perfect ? t("screens.games.perfect_score") : t("screens.games.nice_work")}
-            </h3>
-            <p style={{ color: "#c7c0e8", fontSize: 14, margin: "0 0 14px" }}>
-              {t("screens.games.you_scored")} <strong>{state.score} / {state.total}</strong>.
-            </p>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: gameTheme.ctaGradient,
-              color: "#fff", padding: "10px 18px", borderRadius: 999,
-              fontSize: 15, fontWeight: 800,
-              boxShadow: gameTheme.playShadow,
-              marginBottom: 16,
-            }}>
-              <Coins size={16} />
-              +<AnimatedPoints value={state.pointsEarned} /> {t("screens.games.points_hero_label")}
-              {state.perfect && <span style={{ fontSize: 11, opacity: 0.85 }}>{t("screens.games.perfect_bonus")}</span>}
-            </div>
-            <div>
-              <button
-                onClick={onClose}
-                style={{
-                  background: gameTheme.playGradient,
-                  color: "#fff", border: "none", borderRadius: 999,
-                  padding: "10px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer",
-                  boxShadow: gameTheme.playShadow,
-                }}
-              >{t("screens.games.done")}</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      {state.kind === "result" && (
+        <GameResultPanel
+          game={state.game}
+          score={state.score}
+          total={state.total}
+          pointsEarned={state.pointsEarned}
+          perfect={state.perfect}
+          nextGame={nextGame}
+          canPlayAgain={canPlayAgain}
+          canPlayNext={canPlayNext}
+          onPlayAgain={onPlayAgain}
+          onPlayNext={onPlayNext}
+          onDone={onClose}
+        />
+      )}
+    </GamesDialogSurface>
   );
 }
-

@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
+import { useElementSize } from "@/hooks/use-element-size";
 import { feedbackCorrect, feedbackTap, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import { fitCellFontSize, fitGridCellSize, GAME_LAYOUT } from "@/lib/game-layout-tokens";
 import { GAME_SESSION_ROUNDS, sessionHiddenTargetCount } from "@/lib/game-session-progression";
 
 interface Scene {
@@ -56,6 +58,16 @@ export function HiddenObjectsGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
+  const [layoutRef, { width: layoutWidth }] = useElementSize();
+  const cellSize = fitGridCellSize({
+    containerWidth: layoutWidth || GAME_LAYOUT.breakpoints.md,
+    columns: COLS,
+    minCell: GAME_LAYOUT.touchMin,
+    maxCell: GAME_LAYOUT.cellMaxComfort,
+  });
+  const fontSize = fitCellFontSize(cellSize, 0.45);
+  const hintSize = Math.max(GAME_LAYOUT.touchMin - 8, Math.min(40, cellSize * 0.75));
+
   const sceneOrder = useMemo(() => {
     const shuffled = [...SCENES].sort(() => Math.random() - 0.5);
     return Array.from({ length: GAME_SESSION_ROUNDS }, (_, i) => {
@@ -118,7 +130,8 @@ export function HiddenObjectsGame({
       totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       subtitle={`Scene: ${scene.name}`}
-      title={`Find these ${activeTargets.length} items`}
+      title={`Find ${activeTargets.length} items in the picture`}
+      idleHint="Look slowly — one item at a time is perfect."
       footer={
         <>
           Found <strong style={{ color: gameTheme.accentSoft }}>{foundTargets.size}</strong> /{" "}
@@ -126,88 +139,98 @@ export function HiddenObjectsGame({
         </>
       }
     >
-      <div style={{ marginBottom: 10 }}>
+      <div ref={layoutRef} style={{ width: "100%", maxWidth: "100%" }}>
+        <div style={{ marginBottom: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: GAME_LAYOUT.gridGap,
+            }}
+          >
+            {activeTargets.map((t) => (
+              <div
+                key={t}
+                aria-hidden
+                style={{
+                  width: hintSize,
+                  height: hintSize,
+                  minWidth: hintSize,
+                  minHeight: hintSize,
+                  fontSize: fitCellFontSize(hintSize, 0.55),
+                  borderRadius: 8,
+                  background: foundTargets.has(t) ? gameTheme.successBg : "rgba(255,255,255,0.08)",
+                  border: `1.5px solid ${
+                    foundTargets.has(t) ? "rgba(34,197,94,0.6)" : gameTheme.glassBorder
+                  }`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  filter: foundTargets.has(t) ? "none" : "grayscale(0.5) opacity(0.7)",
+                }}
+              >
+                {foundTargets.has(t) ? t : "❓"}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 6,
+            display: "grid",
+            gridTemplateColumns: `repeat(${COLS}, ${cellSize}px)`,
+            gap: GAME_LAYOUT.gridGap,
+            margin: "0 auto",
+            width: "fit-content",
+            maxWidth: "100%",
+            background: "rgba(255,255,255,0.04)",
+            padding: GAME_LAYOUT.gridPadding,
+            borderRadius: 16,
+            border: `1px solid ${gameTheme.glassBorder}`,
+            boxSizing: "border-box",
           }}
         >
-          {activeTargets.map((t) => (
-            <div
-              key={t}
-              style={{
-                width: 36,
-                height: 36,
-                fontSize: 22,
-                borderRadius: 8,
-                background: foundTargets.has(t) ? gameTheme.successBg : "rgba(255,255,255,0.08)",
-                border: `1.5px solid ${
-                  foundTargets.has(t) ? "rgba(34,197,94,0.6)" : gameTheme.glassBorder
-                }`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                filter: foundTargets.has(t) ? "none" : "grayscale(0.5) opacity(0.7)",
-                transition: "all 0.2s",
-              }}
-            >
-              {foundTargets.has(t) ? t : "❓"}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${COLS}, 56px)`,
-          gap: 6,
-          margin: "0 auto",
-          width: "fit-content",
-          background: "rgba(255,255,255,0.04)",
-          padding: 8,
-          borderRadius: 16,
-          border: `1px solid ${gameTheme.glassBorder}`,
-        }}
-      >
-        {grid.map((emoji, i) => {
-          const isFound = found.has(i);
-          const isWrong = wrong === i;
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => tap(i)}
-              style={{
-                width: 56,
-                height: 56,
-                fontSize: 24,
-                borderRadius: 10,
-                background: isFound
-                  ? gameTheme.successBg
-                  : isWrong
-                    ? gameTheme.errorBg
-                    : "rgba(255,255,255,0.06)",
-                border: `1.5px solid ${
-                  isFound
-                    ? "rgba(34,197,94,0.6)"
+          {grid.map((emoji, i) => {
+            const isFound = found.has(i);
+            const isWrong = wrong === i;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => tap(i)}
+                aria-label={isFound ? `Found ${emoji}` : `Find item ${i + 1}`}
+                style={{
+                  width: cellSize,
+                  height: cellSize,
+                  minWidth: GAME_LAYOUT.touchMin,
+                  minHeight: GAME_LAYOUT.touchMin,
+                  fontSize,
+                  borderRadius: 10,
+                  background: isFound
+                    ? gameTheme.successBg
                     : isWrong
-                      ? "rgba(239,68,68,0.5)"
-                      : gameTheme.glassBorder
-                }`,
-                cursor: isFound ? "default" : "pointer",
-                transition: "all 0.15s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {emoji}
-            </button>
-          );
-        })}
+                      ? gameTheme.errorBg
+                      : "rgba(255,255,255,0.06)",
+                  border: `1.5px solid ${
+                    isFound
+                      ? "rgba(34,197,94,0.6)"
+                      : isWrong
+                        ? "rgba(239,68,68,0.5)"
+                        : gameTheme.glassBorder
+                  }`,
+                  cursor: isFound ? "default" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                }}
+              >
+                {emoji}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </GameShell>
   );

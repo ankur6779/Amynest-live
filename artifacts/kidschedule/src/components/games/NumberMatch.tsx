@@ -63,6 +63,7 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
       score={score}
       feedback={feedback}
       title="How many dots do you see?"
+      idleHint="Count carefully — touch each dot in your mind."
     >
       <div
         style={{
@@ -79,9 +80,11 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
           margin: "0 auto 18px",
         }}
       >
+        <div className="game-sr-only">{r.count} dots</div>
         {dots.map((_, i) => (
           <span
             key={i}
+            aria-hidden
             style={{
               width: 22,
               height: 22,
@@ -94,10 +97,12 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
         ))}
       </div>
       <div
+        role="group"
+        aria-label="How many dots"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 8,
+          gap: 10,
           maxWidth: 320,
           margin: "0 auto",
         }}
@@ -110,27 +115,35 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
             reveal && isCorrect
               ? "hsl(var(--brand-green-500))"
               : reveal && isPicked && !isCorrect
-                ? "hsl(var(--brand-red-500))"
+                ? "hsl(var(--brand-amber-500))"
                 : "rgba(255,255,255,0.08)";
           return (
             <button
               key={c}
               type="button"
+              className="game-choice-a11y"
               disabled={reveal}
               onClick={() => onPick(c)}
+              aria-label={`${c}${reveal && isCorrect ? ", correct" : reveal && isPicked ? ", not quite" : ""}`}
               style={{
                 background: bg,
                 color: gameTheme.text,
-                border: `1px solid ${gameTheme.glassBorder}`,
+                border:
+                  reveal && isCorrect
+                    ? "3px solid #fff"
+                    : reveal && isPicked && !isCorrect
+                      ? "2px dashed rgba(251,191,36,0.9)"
+                      : `1px solid ${gameTheme.glassBorder}`,
                 borderRadius: 12,
                 padding: "12px 0",
+                minHeight: 48,
                 fontSize: 18,
                 fontWeight: 800,
                 fontFamily: gameTheme.fontDisplay,
                 cursor: reveal ? "default" : "pointer",
               }}
             >
-              {c}
+              {reveal && isCorrect ? `✓ ${c}` : c}
             </button>
           );
         })}

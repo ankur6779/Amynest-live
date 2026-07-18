@@ -30,7 +30,12 @@ export function AmySuggestionPanel({
     >
       <div className="flex gap-3">
         {suggestedGame ? (
-          <GamePreviewTile gameId={suggestedGame.id} emoji={suggestedGame.emoji} active />
+          <GamePreviewTile
+            gameId={suggestedGame.id}
+            emoji={suggestedGame.emoji}
+            category={suggestedGame.category}
+            active
+          />
         ) : (
           <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-violet-500/10 text-2xl">
             ✨

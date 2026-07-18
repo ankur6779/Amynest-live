@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } fr
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiBurst } from "@/components/study-engagement";
 import { GameShell } from "@/components/games/GameShell";
+import { useElementSize } from "@/hooks/use-element-size";
 import {
   getGameDifficulty,
   setGameDifficulty,
@@ -17,10 +18,12 @@ import {
   type MazeDir,
 } from "@/lib/maze-generator";
 import { gameTheme } from "@/lib/game-theme";
+import { fitCellFontSize, fitGridCellSize, GAME_LAYOUT } from "@/lib/game-layout-tokens";
 import {
   GAME_SESSION_ROUNDS,
   sessionMazeMaxMoves,
 } from "@/lib/game-session-progression";
+import { useReducedMotion } from "@/lib/reduced-motion";
 
 const WALL = 3;
 const SWIPE_THRESHOLD = 28;
@@ -83,14 +86,9 @@ function buildRound(roundIdx: number, difficulty: GameDifficulty): RoundState {
   };
 }
 
-function cellSizeForGrid(size: number): number {
-  if (size <= 6) return 54;
-  if (size <= 8) return 42;
-  if (size <= 10) return 36;
-  return 30;
-}
-
 export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
+  const reducedMotion = useReducedMotion();
+  const [layoutRef, { width: layoutWidth }] = useElementSize();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const [roundIdx, setRoundIdx] = useState(0);
   const [sessionScore, setSessionScore] = useState(0);
@@ -117,7 +115,17 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
   const backtracksRef = useRef(0);
   const lastPosRef = useRef<[number, number]>([0, 0]);
   const last = mazeSize - 1;
-  const cellSize = cellSizeForGrid(mazeSize);
+  // Difficulty (mazeSize) unchanged — only visual cell scale adapts to width.
+  const cellSize = fitGridCellSize({
+    containerWidth: layoutWidth || GAME_LAYOUT.breakpoints.md,
+    columns: mazeSize,
+    gap: 0,
+    padding: 0,
+    chrome: WALL * 2,
+    minCell: mazeSize >= 10 ? 18 : mazeSize >= 8 ? 22 : 28,
+    maxCell: mazeSize <= 6 ? 54 : mazeSize <= 8 ? 42 : 36,
+  });
+  const glyphSize = fitCellFontSize(cellSize, mazeSize <= 6 ? 0.5 : 0.42);
 
   const loadRound = useCallback((idx: number, level: GameDifficulty) => {
     const next = buildRound(idx, level);
@@ -259,9 +267,9 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
     () =>
       done
         ? won
-          ? "You escaped! 🎉"
-          : "Out of moves — next maze!"
-        : "Arrow keys, swipe, or D-pad to move.",
+          ? "You made it — great planning!"
+          : "Moves used up — nice try! Next maze."
+        : "Swipe, arrows, or D-pad to move.",
     [done, won],
   );
 
@@ -270,16 +278,17 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
       round={roundIdx + 1}
       totalRounds={GAME_SESSION_ROUNDS}
       score={sessionScore}
-      subtitle={`Guide 🟣 from 🚀 to 🏁 · ${mazeSize}×${mazeSize} · Moves ${moves}/${maxMoves}`}
+      subtitle={`Path planning · ${mazeSize}×${mazeSize} · Moves ${moves}/${maxMoves}`}
       progress={movePct}
-      progressLabel="Move budget"
+      progressLabel="Moves left"
+      idleHint="Plan your path — take your time."
       showDifficulty
       difficulty={difficulty}
       onDifficultyChange={resetForDifficulty}
       footer={footer}
     >
-      <style>{MAZE_STYLES}</style>
-      <div style={{ position: "relative" }}>
+      {!reducedMotion && <style>{MAZE_STYLES}</style>}
+      <div ref={layoutRef} style={{ position: "relative", width: "100%", maxWidth: "100%" }}>
         <ConfettiBurst trigger={confettiTrigger} />
         <div
           onTouchStart={onTouchStart}
@@ -287,22 +296,29 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
           style={{
             touchAction: "none",
             userSelect: "none",
-            animation: shakeGrid ? "mazeShake 0.32s ease" : undefined,
+            animation: !reducedMotion && shakeGrid ? "mazeShake 0.32s ease" : undefined,
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            overflow: "visible",
           }}
         >
         <div
           key={revealKey}
           data-testid="maze-grid"
           style={{
-              display: "inline-grid",
+              display: "grid",
               gridTemplateColumns: `repeat(${mazeSize}, ${cellSize}px)`,
               gap: 0,
               border: `${WALL}px solid hsl(var(--brand-violet-600))`,
               borderRadius: 14,
               overflow: "hidden",
               margin: "0 auto 16px",
-              boxShadow:
-                "0 10px 32px rgba(139,92,246,0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              boxShadow: reducedMotion
+                ? "none"
+                : "0 10px 32px rgba(139,92,246,0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
               background: "hsl(var(--muted) / 0.08)",
             }}
           >
@@ -344,16 +360,18 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: mazeSize <= 6 ? 22 : mazeSize <= 8 ? 18 : 15,
-                      transition: "background 0.2s ease",
-                      animation: [
-                        `mazeCellReveal 0.35s ease ${revealDelay}s both`,
-                        onPath && !isPlayer && !showVictory ? "mazePathGlow 2.4s ease-in-out infinite" : "",
-                        wallHitCell === key ? "mazeWallHit 0.32s ease" : "",
-                        showVictory ? "mazeVictoryPath 0.6s ease forwards" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(", "),
+                      fontSize: glyphSize,
+                      transition: reducedMotion ? "none" : "background 0.2s ease",
+                      animation: reducedMotion
+                        ? undefined
+                        : [
+                            `mazeCellReveal 0.35s ease ${revealDelay}s both`,
+                            onPath && !isPlayer && !showVictory ? "mazePathGlow 2.4s ease-in-out infinite" : "",
+                            wallHitCell === key ? "mazeWallHit 0.32s ease" : "",
+                            showVictory ? "mazeVictoryPath 0.6s ease forwards" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(", "),
                       boxShadow:
                         onPath && onSolution && !showVictory
                           ? "inset 0 0 8px rgba(167,139,250,0.2)"
@@ -364,17 +382,27 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
                       <span
                         style={{
                           display: "inline-block",
-                          animation: playerBounce
-                            ? "mazePlayerBounce 0.28s ease"
-                            : escaped
-                              ? undefined
-                              : "mazePlayerPulse 1.6s ease-in-out infinite",
+                          animation: reducedMotion
+                            ? undefined
+                            : playerBounce
+                              ? "mazePlayerBounce 0.28s ease"
+                              : escaped
+                                ? undefined
+                                : "mazePlayerPulse 1.6s ease-in-out infinite",
                         }}
                       >
                         {escaped ? "🎉" : "🟣"}
                       </span>
                     ) : isExit ? (
-                      <span style={{ animation: "mazeGoalSparkle 1.8s ease-in-out infinite" }}>🏁</span>
+                      <span
+                        style={{
+                          animation: reducedMotion
+                            ? undefined
+                            : "mazeGoalSparkle 1.8s ease-in-out infinite",
+                        }}
+                      >
+                        🏁
+                      </span>
                     ) : isStart && !onPath ? (
                       "🚀"
                     ) : null}
@@ -386,15 +414,24 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "44px 44px 44px", gap: 6, margin: "0 auto", width: "fit-content" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(3, ${GAME_LAYOUT.touchMin}px)`,
+          gap: GAME_LAYOUT.gridGap,
+          margin: "0 auto",
+          width: "fit-content",
+          maxWidth: "100%",
+        }}
+      >
         <div />
-        <DPadBtn onClick={() => move("up")} label="▲" />
+        <DPadBtn onClick={() => move("up")} label="▲" ariaLabel="Move up" />
         <div />
-        <DPadBtn onClick={() => move("left")} label="◀" />
+        <DPadBtn onClick={() => move("left")} label="◀" ariaLabel="Move left" />
         <div />
-        <DPadBtn onClick={() => move("right")} label="▶" />
+        <DPadBtn onClick={() => move("right")} label="▶" ariaLabel="Move right" />
         <div />
-        <DPadBtn onClick={() => move("down")} label="▼" />
+        <DPadBtn onClick={() => move("down")} label="▼" ariaLabel="Move down" />
         <div />
       </div>
 
@@ -419,14 +456,25 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
   );
 }
 
-function DPadBtn({ onClick, label }: { onClick: () => void; label: string }) {
+function DPadBtn({
+  onClick,
+  label,
+  ariaLabel,
+}: {
+  onClick: () => void;
+  label: string;
+  ariaLabel: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label={ariaLabel}
       style={{
-        width: 44,
-        height: 44,
+        width: GAME_LAYOUT.touchMin,
+        height: GAME_LAYOUT.touchMin,
+        minWidth: GAME_LAYOUT.touchMin,
+        minHeight: GAME_LAYOUT.touchMin,
         borderRadius: 12,
         background: "linear-gradient(145deg, rgba(139,92,246,0.35), rgba(139,92,246,0.15))",
         border: "1px solid rgba(167,139,250,0.45)",
@@ -437,6 +485,7 @@ function DPadBtn({ onClick, label }: { onClick: () => void; label: string }) {
         alignItems: "center",
         justifyContent: "center",
         boxShadow: "0 2px 8px rgba(139,92,246,0.2)",
+        padding: 0,
       }}
     >
       {label}

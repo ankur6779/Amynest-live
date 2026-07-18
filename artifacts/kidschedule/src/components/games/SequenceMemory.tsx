@@ -11,12 +11,16 @@ import {
   GAME_SESSION_ROUNDS,
   sessionSequenceLengths,
 } from "@/lib/game-session-progression";
+import { scaleDurationMs } from "@/lib/game-a11y";
+import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
+import { usePageVisible } from "@/hooks/use-page-visible";
+import { GAME_LAYOUT } from "@/lib/game-layout-tokens";
 
 const COLORS = [
-  { id: "red", bg: "hsl(var(--brand-red-500))", glow: "hsl(var(--brand-red-300))" },
-  { id: "blue", bg: "hsl(var(--brand-blue-500))", glow: "hsl(var(--brand-blue-300))" },
-  { id: "green", bg: "hsl(var(--brand-green-500))", glow: "hsl(var(--brand-green-300))" },
-  { id: "yellow", bg: "hsl(var(--brand-yellow-500))", glow: "hsl(var(--brand-amber-200))" },
+  { id: "red", name: "Red", symbol: "1", bg: "hsl(var(--brand-red-500))", glow: "hsl(var(--brand-red-300))" },
+  { id: "blue", name: "Blue", symbol: "2", bg: "hsl(var(--brand-blue-500))", glow: "hsl(var(--brand-blue-300))" },
+  { id: "green", name: "Green", symbol: "3", bg: "hsl(var(--brand-green-500))", glow: "hsl(var(--brand-green-300))" },
+  { id: "yellow", name: "Yellow", symbol: "4", bg: "hsl(var(--brand-yellow-500))", glow: "hsl(var(--brand-amber-200))" },
 ];
 
 function buildSequence(len: number): string[] {
@@ -24,10 +28,12 @@ function buildSequence(len: number): string[] {
 }
 
 export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
+  const { timeScale, reducedMotion } = useA11yPrefs();
+  const pageVisible = usePageVisible();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const lengths = useMemo(() => sessionSequenceLengths(GAME_SESSION_ROUNDS), []);
   const sequences = useMemo(() => lengths.map(buildSequence), [lengths]);
-  const flashMs = SEQUENCE_FLASH_MS[difficulty];
+  const flashMs = scaleDurationMs(SEQUENCE_FLASH_MS[difficulty], timeScale);
 
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -51,7 +57,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
   const sequence = sequences[round] ?? [];
 
   useEffect(() => {
-    if (phase !== "showing" || sequence.length === 0) return;
+    if (phase !== "showing" || sequence.length === 0 || !pageVisible) return;
     let i = 0;
     setShowingIdx(0);
     timerRef.current = window.setInterval(() => {
@@ -68,7 +74,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
       }
     }, flashMs);
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [round, phase, sequence.length, flashMs]);
+  }, [round, phase, sequence.length, flashMs, pageVisible]);
 
   if (round >= GAME_SESSION_ROUNDS) return null;
 
@@ -127,33 +133,45 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
       score={score}
       subtitle={phaseLabel}
       feedback={feedback}
+      idleHint="Watch the pattern carefully — then tap it back in order."
       showDifficulty
       difficulty={difficulty}
       onDifficultyChange={resetDifficulty}
-      title="Remember and repeat the colour sequence"
+      title="Watch, then tap the colours in order"
     >
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, maxWidth: 240, margin: "0 auto" }}>
+      <div
+        role="group"
+        aria-label="Colour pads"
+        style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, maxWidth: 240, margin: "0 auto" }}
+      >
         {COLORS.map((c) => {
           const lit = showingIdx !== null && sequence[showingIdx] === c.id;
           return (
             <button
               key={c.id}
               type="button"
+              className="game-choice-a11y"
               onClick={() => tap(c.id)}
               disabled={phase !== "input"}
+              aria-label={`${c.name} pad${lit ? ", lit" : ""}${phase === "input" ? "" : ", wait"}`}
               style={{
                 aspectRatio: "1 / 1",
+                minHeight: GAME_LAYOUT.touchComfort,
                 borderRadius: 16,
                 background: c.bg,
-                border: "none",
+                border: lit ? "4px solid #fff" : "2px solid rgba(255,255,255,0.35)",
                 cursor: phase === "input" ? "pointer" : "default",
                 opacity: lit ? 1 : phase === "input" ? 0.95 : 0.55,
-                boxShadow: lit ? `0 0 32px ${c.glow}, 0 0 0 4px ${c.glow}` : "0 4px 12px rgba(0,0,0,0.3)",
-                transition: "all 0.15s",
+                boxShadow: lit
+                  ? `0 0 32px ${c.glow}, 0 0 0 4px ${c.glow}`
+                  : "0 4px 12px rgba(0,0,0,0.3)",
+                transition: reducedMotion ? "none" : "all 0.15s",
+                color: "#fff",
+                fontWeight: 900,
+                fontSize: 18,
               }}
-              aria-label={c.id}
             >
-              &nbsp;
+              <span aria-hidden>{c.symbol}</span>
             </button>
           );
         })}

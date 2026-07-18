@@ -27,21 +27,21 @@ export const DAILY_LIMIT_FREE = 3;
 export const DAILY_LIMIT_PREMIUM = 12;
 
 export const GAMES: GameDef[] = [
-  { id: "pattern-match",    title: "Pattern Match",    category: "brain",     emoji: "🧩", blurb: "Spot the next shape in the pattern.",          unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  { id: "odd-one-out",      title: "Odd One Out",      category: "brain",     emoji: "🔍", blurb: "Find the one that does not belong.",           unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  { id: "card-flip",        title: "Card Flip Match",  category: "memory",    emoji: "🃏", blurb: "Flip and match the pairs.",                    unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "4+" },
-  { id: "sequence",         title: "Sequence Memory",  category: "memory",    emoji: "🎵", blurb: "Repeat the colour sequence.",                  unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  { id: "color-memory",     title: "Color Memory",     category: "memory",    emoji: "🎨", blurb: "Watch the colours, then recall in order.",     unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  { id: "speed-math",       title: "Speed Math",       category: "math",      emoji: "➕", blurb: "Solve quick sums against the clock.",          unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "6+" },
-  { id: "number-match",     title: "Number Match",     category: "math",      emoji: "🔢", blurb: "Match the number to the count of dots.",       unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "4+" },
-  { id: "find-mistake",     title: "Find the Mistake", category: "focus",     emoji: "🕵️", blurb: "Spot the wrong character in a row.",           unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "6+" },
-  { id: "target-tap",       title: "Target Tap",       category: "action",    emoji: "🎯", blurb: "Tap targets before they vanish.",              unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  { id: "what-should-you-do", title: "What Should You Do?", category: "behavior", emoji: "💛", blurb: "Pick the kind, smart choice in real-life situations.", unlockCost: 50, rewardMin: 8, rewardMax: 15, status: "ready", ageHint: "6+" },
-  { id: "spot-difference",  title: "Spot the Difference", category: "focus",     emoji: "👀", blurb: "Find what changed between two pictures.",  unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", premiumOnly: true },
-  { id: "hidden-objects",   title: "Hidden Objects",      category: "focus",     emoji: "🔭", blurb: "Find hidden items in the scene.",          unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", premiumOnly: true },
-  { id: "color-fill",       title: "Color Fill",          category: "creativity",emoji: "🖍️", blurb: "Fill the picture with the right colours.", unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
-  { id: "shape-match",      title: "Shape Matching",      category: "creativity",emoji: "🔷", blurb: "Drag shapes into matching slots.",         unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
-  { id: "maze-escape",      title: "Maze Escape",         category: "action",    emoji: "🗺️", blurb: "Guide the dot out of the maze.",           unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
+  { id: "pattern-match",    title: "Pattern Match",    category: "brain",     emoji: "🧩", blurb: "What comes next in the pattern?",              unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 5–8" },
+  { id: "odd-one-out",      title: "Odd One Out",      category: "brain",     emoji: "🔍", blurb: "Which one does not belong?",                   unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 5–8" },
+  { id: "card-flip",        title: "Card Flip Match",  category: "memory",    emoji: "🃏", blurb: "Flip cards and find matching pairs.",          unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 4–7" },
+  { id: "sequence",         title: "Sequence Memory",  category: "memory",    emoji: "🎵", blurb: "Watch the colours, then tap them in order.",   unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 5–8" },
+  { id: "color-memory",     title: "Color Memory",     category: "memory",    emoji: "🎨", blurb: "Remember the colour order and tap it back.",   unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 5–8" },
+  { id: "speed-math",       title: "Speed Math",       category: "math",      emoji: "➕", blurb: "Solve friendly sums — start on Easy if new.", unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 6–8" },
+  { id: "number-match",     title: "Number Match",     category: "math",      emoji: "🔢", blurb: "Count the dots, then tap the number.",         unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 3–6" },
+  { id: "find-mistake",     title: "Find the Mistake", category: "focus",     emoji: "🕵️", blurb: "Look carefully — tap the different one.",     unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 6–8" },
+  { id: "target-tap",       title: "Target Tap",       category: "action",    emoji: "🎯", blurb: "Tap the glowing targets when you see them.",   unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "Ages 5–8" },
+  { id: "what-should-you-do", title: "What Should You Do?", category: "behavior", emoji: "💛", blurb: "Pick the kindest choice in real-life moments.", unlockCost: 50, rewardMin: 8, rewardMax: 15, status: "ready", ageHint: "Ages 6–8" },
+  { id: "spot-difference",  title: "Spot the Difference", category: "focus",     emoji: "👀", blurb: "Compare two pictures — tap what changed.", unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", premiumOnly: true, ageHint: "Ages 6–8" },
+  { id: "hidden-objects",   title: "Hidden Objects",      category: "focus",     emoji: "🔭", blurb: "Find each listed item hiding in the scene.", unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", premiumOnly: true, ageHint: "Ages 5–8" },
+  { id: "color-fill",       title: "Color Fill",          category: "creativity",emoji: "🖍️", blurb: "Fill cells to match the colour picture.", unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", ageHint: "Ages 4–7" },
+  { id: "shape-match",      title: "Shape Matching",      category: "creativity",emoji: "🔷", blurb: "Pick a shape, then tap its name.",        unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", ageHint: "Ages 3–6" },
+  { id: "maze-escape",      title: "Maze Escape",         category: "action",    emoji: "🗺️", blurb: "Plan a path and guide your friend out.",  unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", ageHint: "Ages 5–8" },
 ];
 
 export const CATEGORY_LABEL: Record<GameCategory, string> = {
@@ -61,14 +61,14 @@ export const CATEGORY_EMOJI: Record<GameCategory, string> = {
 };
 
 export const CATEGORY_BLURB: Record<GameCategory, string> = {
-  brain: "Pattern thinking & logic",
-  memory: "Recall & working memory",
-  math: "Numbers & mental math",
-  focus: "Attention & observation",
-  creativity: "Colour, shape & imagination",
-  behavior: "Kind choices & decisions",
-  action: "Reflexes & coordination",
-  puzzle: "Problem-solving puzzles",
+  brain: "Flexible thinking & patterns",
+  memory: "Working memory & recall",
+  math: "Number sense & counting",
+  focus: "Attention & careful looking",
+  creativity: "Shapes, colour & matching",
+  behavior: "Kind choices & self-control",
+  action: "Planning, timing & coordination",
+  puzzle: "Problem-solving play",
 };
 
 const UNLOCKED_KEY  = "amynest_unlocked_games_v1";
@@ -331,14 +331,14 @@ export function amySuggestion(isPremium = false): { gameId: string | null; line:
   });
   const pick = playable[0];
   const lines: Record<GameCategory, string> = {
-    behavior:   `Try '${pick.title}' — it builds the kind, calm choice-making muscle.`,
-    memory:     `A memory game like '${pick.title}' improves focus and working memory.`,
-    brain:      `Warm up the brain with '${pick.title}' — pattern thinking helps maths and reading.`,
-    math:       `Try '${pick.title}' to build mental-math speed and confidence.`,
-    focus:      `Try '${pick.title}' to sharpen focus and visual attention.`,
-    creativity: `Get creative with '${pick.title}'.`,
-    action:     `Sharpen reflexes with '${pick.title}'.`,
-    puzzle:     `Build problem-solving with '${pick.title}'.`,
+    behavior:   `Try '${pick.title}' — practise kind choices and calm thinking.`,
+    memory:     `'${pick.title}' gently trains working memory — great for following steps.`,
+    brain:      `'${pick.title}' builds pattern thinking that helps maths and reading later.`,
+    math:       `'${pick.title}' grows number confidence — start Easy if it feels new.`,
+    focus:      `'${pick.title}' strengthens careful looking and attention stamina.`,
+    creativity: `'${pick.title}' links shapes and colours with calm matching play.`,
+    action:     `'${pick.title}' practises planning and controlled movement.`,
+    puzzle:     `'${pick.title}' grows problem-solving through playful challenge.`,
   };
   return { gameId: pick.id, line: `Amy suggests: ${lines[pick.category]}` };
 }

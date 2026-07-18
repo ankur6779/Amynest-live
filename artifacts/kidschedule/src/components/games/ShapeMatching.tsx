@@ -90,8 +90,9 @@ export function ShapeMatchingGame({ onFinish }: { onFinish: (score: number, tota
       totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       feedback={feedback}
-      feedbackText={feedback === "wrong" ? "Not quite — try again!" : undefined}
+      feedbackText={feedback === "wrong" ? "Almost — try another shape!" : undefined}
       title="Pick a shape, then tap its name!"
+      idleHint="Name the shape first — then find that word."
       subtitle={
         selected
           ? `Selected: ${selectedShape?.emoji} ${selectedShape?.label} — tap the matching name`

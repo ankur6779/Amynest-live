@@ -17,6 +17,9 @@ export const gameTheme = {
   accentAmber: "rgba(255,184,0,1)",
   success: "hsl(var(--brand-green-400))",
   successBg: "rgba(34,197,94,0.18)",
+  /** Soft caution — prefer over harsh red for child-facing misses / limits. */
+  warn: "hsl(var(--brand-amber-200))",
+  warnBg: "rgba(251,191,36,0.16)",
   error: "hsl(var(--brand-red-300))",
   errorBg: "rgba(239,68,68,0.18)",
   progressTrack: "rgba(255,255,255,0.06)",
@@ -24,16 +27,31 @@ export const gameTheme = {
   modalBg: "linear-gradient(180deg, rgba(18,28,60,0.98) 0%, rgba(11,23,48,0.98) 100%)",
   fontDisplay: "Quicksand, sans-serif",
   glass: "rgba(18,28,60,0.72)",
-  glassBorder: "rgba(255,255,255,0.08)",
+  glassBorder: "rgba(255,255,255,0.10)",
+  /** Radius scale — one family. */
+  radiusCard: 16,
+  radiusDialog: 24,
+  radiusPill: 999,
+  /** Depth */
+  dialogShadow: "0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
+  cardShadow: "0 8px 28px rgba(0,0,0,0.28)",
   /** Primary CTA — Parent Hub amber. */
   ctaGradient: "linear-gradient(135deg, rgba(255,184,0,0.95), rgba(251,146,60,0.95))",
   playGradient: "linear-gradient(135deg, rgba(255,184,0,0.95), rgba(251,146,60,0.95))",
-  playShadow: "0 4px 12px rgba(255,184,0,0.35)",
+  playShadow: "0 4px 14px rgba(255,184,0,0.38)",
   /** Secondary accent — Parent Hub learning violet. */
   violetGradient: "linear-gradient(135deg, rgba(122,92,255,0.95), rgba(168,85,247,0.95))",
   violetShadow: "0 4px 12px rgba(122,92,255,0.35)",
   hubBorderActive: "rgba(255,184,0,0.55)",
   hubChipActive: "rgba(255,184,0,0.14)",
+  /** Type rhythm */
+  type: {
+    hero: "clamp(1.25rem, 4.5vw, 1.5rem)",
+    title: "clamp(1.05rem, 3.8vw, 1.2rem)",
+    body: "clamp(0.8125rem, 3.2vw, 0.9375rem)",
+    label: "0.6875rem",
+    micro: "0.625rem",
+  },
 } as const;
 
 export type GameThemeTokens = typeof gameTheme;
@@ -48,9 +66,9 @@ export const GAMES_HEADER_SHELL = cn(
   "border-b border-white/[0.08]",
 );
 
-/** Round icon control used in games chrome. */
+/** Round icon control used in games chrome — 44×44 touch target. */
 export const GAMES_ICON_BUTTON = cn(
-  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+  "game-motion-focus flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
   "border border-violet-500/25 bg-violet-500/15 text-violet-200",
   "transition-colors duration-200",
   "hover:border-fuchsia-400/40 hover:bg-fuchsia-500/15",
@@ -111,13 +129,14 @@ export const GAMES_CATEGORY_ACCENT: Record<
   },
 };
 
+/** @deprecated Prefer GameEmojiBadge — kept for any remaining className consumers. */
 export function gamesEmojiShell(category: string): string {
   const accent = GAMES_CATEGORY_ACCENT[category] ?? GAMES_CATEGORY_ACCENT.brain;
   return cn(
     "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-[2rem] leading-none",
     "bg-[rgba(255,255,255,0.08)] backdrop-blur-md",
-    "bg-gradient-to-br from-white/[0.14] via-white/[0.04] to-transparent",
-    "border shadow-[inset_0_1px_rgba(255,255,255,0.28)]",
+    "bg-gradient-to-br from-white/[0.16] via-white/[0.05] to-transparent",
+    "border shadow-[inset_0_1px_rgba(255,255,255,0.28),0_6px_18px_rgba(0,0,0,0.22)]",
     accent.shell,
   );
 }

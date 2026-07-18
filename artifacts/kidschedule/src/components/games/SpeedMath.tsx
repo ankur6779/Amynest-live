@@ -11,6 +11,11 @@ import {
   GAME_SESSION_ROUNDS,
   sessionMathConfig,
 } from "@/lib/game-session-progression";
+import { scaleSeconds } from "@/lib/game-a11y";
+import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
+import { usePageVisible } from "@/hooks/use-page-visible";
+import { GAME_LAYOUT } from "@/lib/game-layout-tokens";
+import { gameTheme } from "@/lib/game-theme";
 
 interface Round {
   question: string;
@@ -61,10 +66,16 @@ function buildRound(roundIndex: number, difficulty: GameDifficulty): Round {
 }
 
 export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
+  const { timeScale } = useA11yPrefs();
+  const pageVisible = usePageVisible();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const rounds = useMemo(
-    () => Array.from({ length: GAME_SESSION_ROUNDS }, (_, i) => buildRound(i, difficulty)),
-    [difficulty],
+    () =>
+      Array.from({ length: GAME_SESSION_ROUNDS }, (_, i) => {
+        const r = buildRound(i, difficulty);
+        return { ...r, perQSeconds: scaleSeconds(r.perQSeconds, timeScale) };
+      }),
+    [difficulty, timeScale],
   );
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -97,10 +108,11 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
   };
 
   useEffect(() => {
+    if (tickRef.current) window.clearInterval(tickRef.current);
+    if (!pageVisible) return;
     const perQ = rounds[idx]?.perQSeconds ?? 10;
     setTimeLeft(perQ);
     resolvedRef.current = false;
-    if (tickRef.current) window.clearInterval(tickRef.current);
     tickRef.current = window.setInterval(() => {
       setTimeLeft((t) => {
         if (resolvedRef.current) return t;
@@ -114,7 +126,7 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
     }, 1000);
     return () => { if (tickRef.current) window.clearInterval(tickRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, rounds]);
+  }, [idx, rounds, pageVisible]);
 
   if (idx >= GAME_SESSION_ROUNDS) return null;
   const r = rounds[idx];
@@ -128,13 +140,20 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
       progress={progress}
       subtitle={`Question ${idx + 1} of ${GAME_SESSION_ROUNDS} · ⏱ ${timeLeft}s`}
       feedback={feedback}
-      feedbackText={feedback === "correct" ? "Nice!" : "Time's up or wrong answer"}
+      feedbackText={
+        feedback === "correct" ? "Nice!" : feedback === "wrong" ? "Keep going — next one!" : undefined
+      }
+      idleHint="Take a breath — you can still solve it."
       showDifficulty
       difficulty={difficulty}
       onDifficultyChange={resetDifficulty}
       title={`${r.question} = ?`}
     >
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, maxWidth: 280, margin: "0 auto" }}>
+      <div
+        role="group"
+        aria-label="Answer choices"
+        style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, maxWidth: 280, margin: "0 auto" }}
+      >
         {r.choices.map((c) => {
           const isCorrect = c === r.correct;
           const reveal = feedback !== null;
@@ -147,21 +166,33 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
             <button
               key={c}
               type="button"
+              className="game-choice-a11y"
               disabled={feedback !== null}
               onClick={() => advance(isCorrect)}
+              aria-label={
+                reveal
+                  ? isCorrect
+                    ? `${c}, correct answer`
+                    : `${c}`
+                  : `Answer ${c}`
+              }
               style={{
                 background: bg,
                 color: "hsl(var(--foreground))",
-                border: "1px solid hsl(var(--card-border))",
+                border:
+                  reveal && isCorrect
+                    ? "3px solid #fff"
+                    : `1px solid ${gameTheme.glassBorder}`,
                 borderRadius: 14,
                 padding: "16px 0",
-                fontSize: 22,
+                minHeight: GAME_LAYOUT.touchComfort,
+                fontSize: "clamp(1.125rem, 4vw, 1.375rem)",
                 fontWeight: 800,
                 cursor: feedback ? "default" : "pointer",
                 fontFamily: "Quicksand, sans-serif",
               }}
             >
-              {c}
+              {reveal && isCorrect ? `✓ ${c}` : c}
             </button>
           );
         })}

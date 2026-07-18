@@ -70,9 +70,11 @@ export async function feedbackCorrect(): Promise<void> {
   await nativeNotification("success");
 }
 
+/** Soft miss cue — encouraging, not punitive (child psychology 3–8). */
 export async function feedbackWrong(): Promise<void> {
-  playTone(220, 120, "triangle", 0.05);
-  await nativeNotification("error");
+  playTone(320, 70, "sine", 0.03);
+  setTimeout(() => playTone(280, 80, "sine", 0.025), 60);
+  await nativeNotification("warning");
 }
 
 export async function feedbackTap(): Promise<void> {

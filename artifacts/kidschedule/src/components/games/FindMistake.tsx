@@ -1,8 +1,16 @@
 import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
+import { useElementSize } from "@/hooks/use-element-size";
 import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import {
+  fitCellFontSize,
+  fitChoiceGridMaxWidth,
+  fitGridCellSize,
+  GAME_LAYOUT,
+} from "@/lib/game-layout-tokens";
 import { GAME_SESSION_ROUNDS, sessionGridSide } from "@/lib/game-session-progression";
+import { useReducedMotion } from "@/lib/reduced-motion";
 
 interface Round {
   tiles: string[];
@@ -36,6 +44,8 @@ export function FindMistakeGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
+  const reducedMotion = useReducedMotion();
+  const [layoutRef, { width: layoutWidth }] = useElementSize();
   const TOTAL = GAME_SESSION_ROUNDS;
   const rounds = useMemo(
     () => Array.from({ length: TOTAL }, (_, i) => buildRound(i)),
@@ -49,6 +59,20 @@ export function FindMistakeGame({
   if (idx >= TOTAL) return null;
 
   const r = rounds[idx];
+  const side = Math.round(Math.sqrt(r.tiles.length));
+  const gridMax = fitChoiceGridMaxWidth(
+    layoutWidth || GAME_LAYOUT.breakpoints.md,
+    side > 3 ? GAME_LAYOUT.choiceGridMaxPx : 280,
+  );
+  const cellSize = fitGridCellSize({
+    containerWidth: gridMax,
+    columns: side,
+    gap: GAME_LAYOUT.gridGap,
+    padding: 0,
+    minCell: GAME_LAYOUT.touchMin,
+    maxCell: side > 3 ? 56 : 72,
+  });
+  const fontSize = fitCellFontSize(cellSize, 0.42);
 
   const onPick = (i: number) => {
     if (picked !== null) return;
@@ -61,12 +85,12 @@ export function FindMistakeGame({
     } else {
       void feedbackWrong();
     }
-    setTimeout(() => {
+    window.setTimeout(() => {
       setPicked(null);
       setFeedback(null);
       if (idx + 1 >= TOTAL) onFinish(ok ? score + 1 : score, TOTAL);
       else setIdx((n) => n + 1);
-    }, 900);
+    }, reducedMotion ? 250 : 900);
   };
 
   return (
@@ -75,49 +99,72 @@ export function FindMistakeGame({
       totalRounds={TOTAL}
       score={score}
       feedback={feedback}
-      title="Tap the one that's different"
+      title="Look closely. Tap the different one."
+      idleHint="Look for the one that doesn't match the others."
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${Math.round(Math.sqrt(r.tiles.length))}, 1fr)`,
-          gap: 8,
-          maxWidth: r.tiles.length > 9 ? 300 : 260,
-          margin: "0 auto",
-        }}
-      >
-        {r.tiles.map((c, i) => {
-          const reveal = picked !== null;
-          const isMistake = i === r.mistakeIdx;
-          const isPicked = picked === i;
-          const bg =
-            reveal && isMistake
-              ? "hsl(var(--brand-green-500))"
-              : reveal && isPicked && !isMistake
-                ? "hsl(var(--brand-red-500))"
-                : "rgba(255,255,255,0.08)";
-          return (
-            <button
-              key={i}
-              type="button"
-              disabled={reveal}
-              onClick={() => onPick(i)}
-              style={{
-                background: bg,
-                color: gameTheme.text,
-                border: `1px solid ${gameTheme.glassBorder}`,
-                borderRadius: 12,
-                padding: "16px 0",
-                fontSize: 26,
-                fontWeight: 800,
-                fontFamily: gameTheme.fontDisplay,
-                cursor: reveal ? "default" : "pointer",
-              }}
-            >
-              {c}
-            </button>
-          );
-        })}
+      <div ref={layoutRef} style={{ width: "100%", maxWidth: "100%" }}>
+        <div
+          role="group"
+          aria-label="Find the mistake grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${side}, ${cellSize}px)`,
+            gap: GAME_LAYOUT.gridGap,
+            width: "fit-content",
+            maxWidth: "100%",
+            margin: "0 auto",
+            justifyContent: "center",
+            boxSizing: "border-box",
+          }}
+        >
+          {r.tiles.map((c, i) => {
+            const reveal = picked !== null;
+            const isMistake = i === r.mistakeIdx;
+            const isPicked = picked === i;
+            const bg =
+              reveal && isMistake
+                ? "hsl(var(--brand-green-500))"
+                : reveal && isPicked && !isMistake
+                  ? "hsl(var(--brand-amber-500))"
+                  : "rgba(255,255,255,0.08)";
+            return (
+              <button
+                key={i}
+                type="button"
+                className="game-choice-a11y"
+                disabled={reveal}
+                onClick={() => onPick(i)}
+                aria-label={`Tile ${i + 1}: ${c}${reveal && isMistake ? ", different one" : reveal && isPicked ? ", not this one" : ""}`}
+                style={{
+                  width: cellSize,
+                  height: cellSize,
+                  minWidth: GAME_LAYOUT.touchMin,
+                  minHeight: GAME_LAYOUT.touchMin,
+                  background: bg,
+                  color: gameTheme.text,
+                  border:
+                    reveal && isMistake
+                      ? "3px solid #fff"
+                      : reveal && isPicked && !isMistake
+                        ? "2px dashed rgba(255,255,255,0.85)"
+                        : `1px solid ${gameTheme.glassBorder}`,
+                  borderRadius: 12,
+                  padding: 0,
+                  fontSize,
+                  fontWeight: 800,
+                  fontFamily: gameTheme.fontDisplay,
+                  cursor: reveal ? "default" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: reducedMotion ? "none" : "background 0.15s ease",
+                }}
+              >
+                {c}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </GameShell>
   );

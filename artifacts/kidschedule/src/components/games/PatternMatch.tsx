@@ -81,7 +81,7 @@ export function PatternMatchGame({
       void feedbackCorrect();
     } else {
       setFeedback("wrong");
-      setFeedbackText(`Almost — the answer was ${round.correct}`);
+      setFeedbackText(`Good try! Next time look for ${round.correct}`);
       void feedbackWrong();
     }
     setTimeout(() => {
@@ -99,6 +99,7 @@ export function PatternMatchGame({
       feedback={feedback}
       feedbackText={feedbackText}
       title="What comes next in the pattern?"
+      idleHint="Say the pattern out loud — then pick what comes next."
     >
       <div
         style={{
@@ -134,39 +135,43 @@ export function PatternMatchGame({
         ))}
       </div>
       <div
+        role="group"
+        aria-label="What comes next"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 10,
+          gap: 12,
           maxWidth: 240,
           margin: "0 auto",
         }}
       >
-        {round.choices.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => onPick(c)}
-            style={{
-              fontSize: 30,
-              padding: "12px 0",
-              borderRadius: 12,
-              background:
-                feedback && c === round.correct
-                  ? gameTheme.successBg
-                  : "rgba(255,255,255,0.08)",
-              border:
-                "1px solid " +
-                (feedback && c === round.correct
-                  ? "rgba(34,197,94,0.6)"
-                  : gameTheme.glassBorder),
-              cursor: feedback ? "default" : "pointer",
-              color: gameTheme.text,
-            }}
-          >
-            {c}
-          </button>
-        ))}
+        {round.choices.map((c) => {
+          const isCorrect = !!feedback && c === round.correct;
+          return (
+            <button
+              key={c}
+              type="button"
+              className="game-choice-a11y"
+              onClick={() => onPick(c)}
+              disabled={!!feedback}
+              aria-label={`Choice ${c}${isCorrect ? ", correct" : ""}`}
+              style={{
+                fontSize: 30,
+                padding: "12px 0",
+                minHeight: 52,
+                borderRadius: 12,
+                background: isCorrect ? gameTheme.successBg : "rgba(255,255,255,0.08)",
+                border: isCorrect
+                  ? "3px solid rgba(34,197,94,0.85)"
+                  : `1px solid ${gameTheme.glassBorder}`,
+                cursor: feedback ? "default" : "pointer",
+                color: gameTheme.text,
+              }}
+            >
+              {isCorrect ? `✓ ${c}` : c}
+            </button>
+          );
+        })}
       </div>
     </GameShell>
   );

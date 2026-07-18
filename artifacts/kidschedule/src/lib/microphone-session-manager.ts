@@ -23,7 +23,20 @@ export interface RecordingSessionConfig {
   onStop?: (chunks: Blob[]) => void;
   onError?: (err: Error, mappedCode: MicrophoneRuntimeErrorCode) => void;
   onStateChange?: (state: MicrophoneSessionState) => void;
+  /**
+   * When true, stopRecording parks the MediaStream (keeps tracks live) so the
+   * next startRecording can skip getUserMedia. Opt-in — Speech Coach leaves this
+   * unset so the mic is fully released after each utterance.
+   */
+  keepAlive?: boolean;
 }
+
+export type MicrophoneWarmResult = {
+  ok: boolean;
+  reused: boolean;
+  latencyMs: number;
+  reason?: "permission" | "busy" | "superseded" | "unavailable";
+};
 
 export type MicrophoneSessionState =
   | "idle"
@@ -46,6 +59,12 @@ export class MicrophoneSessionManager {
   private activeSessionToken: string | null = null;
   private watchdogTimeoutId: any = null;
   private stateChangeCallbacks: Set<(state: MicrophoneSessionState) => void> = new Set();
+  /** Opt-in persistent stream for low-latency features (Talking Amy). */
+  private keepAliveEnabled = false;
+  private warmConstraints: MediaTrackConstraints | null = null;
+  private warmInFlight: Promise<MicrophoneWarmResult> | null = null;
+  private lastStartLatencyMs: number | null = null;
+  private lastStartReusedWarm = false;
 
   // ── Mic level meter (read-only, parasitic) ───────────────────────────────
   // A passive AnalyserNode tap on the active stream, used ONLY to expose a
@@ -158,23 +177,186 @@ export class MicrophoneSessionManager {
   }
 
   /**
+   * Opt-in persistent mic session. When enabled, stopRecording parks the stream
+   * instead of stopping tracks so the next start can hit <150ms.
+   */
+  public setKeepAlive(enabled: boolean): void {
+    this.keepAliveEnabled = enabled;
+    this.log(`Keep-alive ${enabled ? "enabled" : "disabled"}`);
+    if (!enabled && this.state !== "recording" && this.mediaRecorder == null) {
+      this.releaseWarmStream();
+    }
+  }
+
+  public isKeepAliveEnabled(): boolean {
+    return this.keepAliveEnabled;
+  }
+
+  /** True when a healthy parked stream is ready for instant MediaRecorder start. */
+  public isWarmed(): boolean {
+    return !!(this.stream && this.isStreamHealthy(this.stream) && this.mediaRecorder == null);
+  }
+
+  public getLastStartDiagnostics(): { latencyMs: number | null; reusedWarm: boolean } {
+    return { latencyMs: this.lastStartLatencyMs, reusedWarm: this.lastStartReusedWarm };
+  }
+
+  /**
+   * Acquire (or reuse) a live mic stream without starting MediaRecorder.
+   * Safe to call from idle screens after a user gesture or when permission is already granted.
+   */
+  public async warmMicrophone(
+    config?: Pick<RecordingSessionConfig, "echoCancellation" | "noiseSuppression" | "autoGainControl">,
+  ): Promise<MicrophoneWarmResult> {
+    if (this.warmInFlight) return this.warmInFlight;
+
+    const run = async (): Promise<MicrophoneWarmResult> => {
+      const startTimer = performance.now();
+      if (this.state === "recording") {
+        return { ok: true, reused: true, latencyMs: 0 };
+      }
+      if (this.isWarmed()) {
+        this.startLevelMeter();
+        return { ok: true, reused: true, latencyMs: performance.now() - startTimer };
+      }
+
+      this.keepAliveEnabled = true;
+      this.warmConstraints = {
+        echoCancellation: config?.echoCancellation ?? true,
+        noiseSuppression: config?.noiseSuppression ?? true,
+        autoGainControl: config?.autoGainControl ?? true,
+      };
+
+      this.updateState("preparing");
+      this.error = null;
+
+      try {
+        await prepareForMicrophoneAcquisition();
+        await this.ensureAudioContext(false);
+
+        const access = await requestMicrophoneAccess({ forFeature: true, skipProbeStream: true });
+        const osPermissionState = await queryOsMicrophonePermissionState();
+        if (!access.granted && isOsMicrophonePermissionDenied(osPermissionState)) {
+          this.updateState("idle");
+          return {
+            ok: false,
+            reused: false,
+            latencyMs: performance.now() - startTimer,
+            reason: "permission",
+          };
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: this.warmConstraints });
+        if (!this.isStreamHealthy(stream)) {
+          stream.getTracks().forEach((t) => t.stop());
+          this.updateState("error");
+          return {
+            ok: false,
+            reused: false,
+            latencyMs: performance.now() - startTimer,
+            reason: "busy",
+          };
+        }
+
+        // Replace any stale stream without settling delay when we weren't recording.
+        if (this.stream && this.stream !== stream) {
+          this.stream.getTracks().forEach((t) => {
+            try {
+              t.stop();
+            } catch {
+              /* ignore */
+            }
+          });
+        }
+        this.stream = stream;
+        this.startLevelMeter();
+        this.updateState("idle");
+        this.log("Warm mic session ready", { latencyMs: performance.now() - startTimer });
+        return { ok: true, reused: false, latencyMs: performance.now() - startTimer };
+      } catch (err) {
+        this.log("warmMicrophone failed", err);
+        this.updateState("idle");
+        return {
+          ok: false,
+          reused: false,
+          latencyMs: performance.now() - startTimer,
+          reason: "unavailable",
+        };
+      } finally {
+        this.warmInFlight = null;
+      }
+    };
+
+    this.warmInFlight = run();
+    return this.warmInFlight;
+  }
+
+  /** Release a parked keep-alive stream (page unmount / leave feature). */
+  public releaseWarmStream(): void {
+    this.log("Releasing warm mic stream");
+    this.keepAliveEnabled = false;
+    this.warmConstraints = null;
+    this.cleanup({ releaseStream: true });
+    this.updateState("idle");
+  }
+
+  /**
    * Start a reliable recording session.
    * Handles cleanup, permission checking, getUserMedia, health checks, watchdog timers,
    * and automatic recovery retries on Android failures.
+   * Fast path: reuses a keep-alive warm stream (no getUserMedia) when healthy.
    */
   public async startRecording(config: RecordingSessionConfig): Promise<boolean> {
     this.stats.totalSessionsStarted++;
-    
-    // 1. Single mic owner: completely stop any previous recording & invalidate token
-    const hadActiveTracks = !!(this.stream || this.mediaRecorder);
-    if (hadActiveTracks) {
-      this.updateState("refreshing");
-      this.cleanup();
-      // Android audio hardware releases slowly. Add ~150ms settle delay after track.stop() before next getUserMedia
-      this.log("Settle delay: Waiting 150ms for audio hardware to fully release...");
-      await new Promise((resolve) => setTimeout(resolve, 150));
+    this.lastStartLatencyMs = null;
+    this.lastStartReusedWarm = false;
+
+    if (config.keepAlive) {
+      this.keepAliveEnabled = true;
+    }
+
+    const startTimer = performance.now();
+    const canReuseWarm =
+      this.keepAliveEnabled &&
+      this.stream != null &&
+      this.isStreamHealthy(this.stream) &&
+      (this.mediaRecorder == null || this.mediaRecorder.state === "inactive");
+
+    if (canReuseWarm) {
+      this.log("Fast path: reusing warm microphone stream");
+      // Tear down a leftover inactive recorder only — keep the stream.
+      this.cleanup({ releaseStream: false });
+      this.currentConfig = config;
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      this.activeSessionToken = sessionToken;
+      this.error = null;
+      this.updateState("preparing");
+
+      try {
+        await this.ensureAudioContext(false);
+        const success = await this.attachRecorderAndStart(config, sessionToken, this.stream!);
+        if (success) {
+          this.lastStartLatencyMs = performance.now() - startTimer;
+          this.lastStartReusedWarm = true;
+          this.log(`Warm-path recording started in ${this.lastStartLatencyMs.toFixed(1)}ms`);
+          return true;
+        }
+      } catch (err) {
+        this.log("Warm-path start failed — falling through to cold acquire", err);
+        this.cleanup({ releaseStream: true });
+      }
     } else {
-      this.cleanup();
+      // 1. Single mic owner: stop previous recording; settle only when tracks are released
+      const hadActiveTracks = !!(this.stream || this.mediaRecorder);
+      const willRelease = !this.keepAliveEnabled || !this.isWarmed();
+      if (hadActiveTracks && willRelease) {
+        this.updateState("refreshing");
+        this.cleanup({ releaseStream: true });
+        this.log("Settle delay: Waiting 150ms for audio hardware to fully release...");
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      } else if (this.mediaRecorder) {
+        this.cleanup({ releaseStream: false });
+      }
     }
 
     this.currentConfig = config;
@@ -189,13 +371,13 @@ export class MicrophoneSessionManager {
     await prepareForMicrophoneAcquisition();
     await this.ensureAudioContext(true);
 
-    const startTimer = performance.now();
     this.log("Mic acquire timeline", getAudioSessionDiagnostics());
     try {
       const success = await this.attemptStartRecording(config, sessionToken);
       if (success) {
-        const latency = performance.now() - startTimer;
-        this.log(`Recording started successfully. getUserMedia latency: ${latency.toFixed(1)}ms`);
+        this.lastStartLatencyMs = performance.now() - startTimer;
+        this.lastStartReusedWarm = false;
+        this.log(`Recording started successfully. getUserMedia latency: ${this.lastStartLatencyMs.toFixed(1)}ms`);
         return true;
       }
     } catch (err: any) {
@@ -213,7 +395,7 @@ export class MicrophoneSessionManager {
     this.log("First attempt failed. Initiating automatic microphone recovery with audio focus reset...");
     this.updateState("reconnecting");
 
-    this.cleanup();
+    this.cleanup({ releaseStream: true });
     this.activeSessionToken = sessionToken;
     this.currentConfig = config;
 
@@ -230,6 +412,8 @@ export class MicrophoneSessionManager {
       const success = await this.attemptStartRecording(config, sessionToken);
       if (success) {
         this.stats.recoverySuccesses++;
+        this.lastStartLatencyMs = performance.now() - startTimer;
+        this.lastStartReusedWarm = false;
         this.log("Recovery successful: Recording started on second attempt");
         return true;
       }
@@ -242,7 +426,7 @@ export class MicrophoneSessionManager {
   }
 
   /**
-   * Internal wrapper to perform a single startup attempt
+   * Internal wrapper to perform a single cold-start attempt (getUserMedia + recorder).
    */
   private async attemptStartRecording(config: RecordingSessionConfig, sessionToken: string): Promise<boolean> {
     // A. Perform permission/native check. Since config.forFeature is true on user action,
@@ -262,6 +446,7 @@ export class MicrophoneSessionManager {
       noiseSuppression: config.noiseSuppression ?? true,
       autoGainControl: config.autoGainControl ?? true,
     };
+    this.warmConstraints = constraints;
 
     this.log("Calling getUserMedia with fresh constraints", constraints);
     let stream: MediaStream;
@@ -294,6 +479,18 @@ export class MicrophoneSessionManager {
       );
     }
 
+    return this.attachRecorderAndStart(config, sessionToken, stream);
+  }
+
+  /**
+   * Attach MediaRecorder to an already-live stream and start capturing.
+   * Used by both cold getUserMedia and warm keep-alive paths.
+   */
+  private async attachRecorderAndStart(
+    config: RecordingSessionConfig,
+    sessionToken: string,
+    stream: MediaStream,
+  ): Promise<boolean> {
     // C2. Start the read-only input-level meter (UI listening halo). Non-fatal.
     this.startLevelMeter();
 
@@ -349,7 +546,7 @@ export class MicrophoneSessionManager {
       if (!startedSuccessfully && this.activeSessionToken === sessionToken) {
         this.log("Watchdog triggered: MediaRecorder failed to start recording within 4 seconds");
         this.stats.watchdogTimeouts++;
-        this.cleanup();
+        this.cleanup({ releaseStream: true });
         void this.handleError(new DOMException("Microphone start timed out", "NotReadableError"), config);
       }
     }, 4000);
@@ -358,13 +555,12 @@ export class MicrophoneSessionManager {
       this.log("Starting MediaRecorder", { timeslice: config.timeslice ?? 400, mimeType });
       recorder.start(config.timeslice ?? 400);
       startedSuccessfully = true;
-      
-      // Clear watchdog timer once recording has actually started
+
       if (this.watchdogTimeoutId !== null) {
         clearTimeout(this.watchdogTimeoutId);
         this.watchdogTimeoutId = null;
       }
-      
+
       this.updateState("recording");
       return true;
     } catch (startErr) {
@@ -378,16 +574,18 @@ export class MicrophoneSessionManager {
   }
 
   /**
-   * Stop active recording and return the final audio Blob
+   * Stop active recording and return the final audio Blob.
+   * With keep-alive, parks the MediaStream so the next start skips getUserMedia.
    */
   public stopRecording(): Promise<Blob | null> {
     return new Promise((resolve) => {
       const rec = this.mediaRecorder;
       const mimeType = this.pickRecorderMimeType();
+      const parkStream = this.keepAliveEnabled || !!this.currentConfig?.keepAlive;
 
       if (!rec || rec.state === "inactive") {
         this.log("stopRecording called but MediaRecorder is not active");
-        this.cleanup();
+        this.cleanup({ releaseStream: !parkStream });
         this.updateState("idle");
         resolve(null);
         return;
@@ -398,8 +596,11 @@ export class MicrophoneSessionManager {
       // Wrap original onStop callback to capture and resolve final Blob
       const originalOnStop = this.currentConfig?.onStop;
       rec.onstop = () => {
-        this.log("MediaRecorder stopped on demand", { chunks: this.chunks.length });
-        
+        this.log("MediaRecorder stopped on demand", {
+          chunks: this.chunks.length,
+          parkStream,
+        });
+
         let blob: Blob | null = null;
         if (this.chunks.length > 0) {
           blob = new Blob(this.chunks, { type: mimeType });
@@ -413,7 +614,10 @@ export class MicrophoneSessionManager {
           }
         }
 
-        this.cleanup();
+        this.cleanup({ releaseStream: !parkStream });
+        if (parkStream && this.stream && this.isStreamHealthy(this.stream)) {
+          this.startLevelMeter();
+        }
         resolve(blob);
       };
 
@@ -429,18 +633,23 @@ export class MicrophoneSessionManager {
         rec.stop();
       } catch (e) {
         this.log("Error stopping MediaRecorder", e);
-        this.cleanup();
+        this.cleanup({ releaseStream: !parkStream });
         resolve(null);
       }
     });
   }
 
   /**
-   * Cancel the current recording, discarding any recorded buffers and cleaning up fully.
+   * Cancel the current recording, discarding any recorded buffers.
+   * Keep-alive parks the stream; otherwise fully releases the mic.
    */
   public cancelRecording(): void {
     this.log("Recording session cancelled on demand");
-    this.cleanup();
+    const parkStream = this.keepAliveEnabled;
+    this.cleanup({ releaseStream: !parkStream });
+    if (parkStream && this.stream && this.isStreamHealthy(this.stream)) {
+      this.startLevelMeter();
+    }
     this.updateState("idle");
   }
 
@@ -449,7 +658,9 @@ export class MicrophoneSessionManager {
    */
   public reset(): void {
     this.log("reset() — invalidating mic session after native lifecycle change");
-    this.cleanup();
+    this.keepAliveEnabled = false;
+    this.warmConstraints = null;
+    this.cleanup({ releaseStream: true });
     void this.destroyAudioContext();
     this.currentConfig = null;
     this.error = null;
@@ -457,12 +668,15 @@ export class MicrophoneSessionManager {
   }
 
   /**
-   * Deep cleanup of old tracks, event listeners, and media objects
+   * Cleanup recorder (+ optionally stream tracks).
+   * When keep-alive parks the stream, pass `{ releaseStream: false }`.
    */
-  public cleanup(): void {
-    this.log("Executing deep cleanup of microphone session assets");
+  public cleanup(options?: { releaseStream?: boolean }): void {
+    const releaseStream = options?.releaseStream ?? true;
+    this.log("Executing cleanup of microphone session assets", { releaseStream });
 
     // Tear down the level meter first so its rAF/analyser release before tracks stop.
+    // When parking the stream, restart the meter after recorder teardown.
     this.stopLevelMeter();
 
     if (this.watchdogTimeoutId !== null) {
@@ -474,7 +688,7 @@ export class MicrophoneSessionManager {
       this.mediaRecorder.ondataavailable = null;
       this.mediaRecorder.onerror = null;
       this.mediaRecorder.onstop = null;
-      
+
       if (this.mediaRecorder.state !== "inactive") {
         try {
           this.mediaRecorder.stop();
@@ -485,7 +699,7 @@ export class MicrophoneSessionManager {
       this.mediaRecorder = null;
     }
 
-    if (this.stream) {
+    if (releaseStream && this.stream) {
       this.stream.getTracks().forEach((track) => {
         try {
           track.stop();
@@ -495,6 +709,7 @@ export class MicrophoneSessionManager {
         }
       });
       this.stream = null;
+      this.warmConstraints = null;
     }
 
     this.chunks = [];

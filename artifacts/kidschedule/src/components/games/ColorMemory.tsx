@@ -11,6 +11,9 @@ import {
   GAME_SESSION_ROUNDS,
   sessionSequenceLengths,
 } from "@/lib/game-session-progression";
+import { scaleDurationMs } from "@/lib/game-a11y";
+import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
+import { usePageVisible } from "@/hooks/use-page-visible";
 
 const COLORS = [
   { id: "r", name: "Red", bg: "hsl(var(--brand-red-500))" },
@@ -29,7 +32,9 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const roundLens = useMemo(() => sessionSequenceLengths(GAME_SESSION_ROUNDS), []);
   const sequences = useMemo(() => roundLens.map(buildSequence), [roundLens]);
-  const flashMs = COLOR_MEMORY_FLASH_MS[difficulty];
+  const { timeScale } = useA11yPrefs();
+  const pageVisible = usePageVisible();
+  const flashMs = scaleDurationMs(COLOR_MEMORY_FLASH_MS[difficulty], timeScale);
 
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<"show" | "input" | "feedback">("show");
@@ -55,7 +60,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
   const seq = sequences[round] ?? [];
 
   useEffect(() => {
-    if (phase !== "show" || seq.length === 0) return;
+    if (phase !== "show" || seq.length === 0 || !pageVisible) return;
     setShowIdx(0);
     let i = 0;
     timerRef.current = window.setInterval(() => {
@@ -68,7 +73,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       }
     }, flashMs);
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [round, phase, seq.length, flashMs]);
+  }, [round, phase, seq.length, flashMs, pageVisible]);
 
   if (round >= sequences.length) return null;
 
@@ -97,8 +102,10 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       round={round + 1}
       totalRounds={sequences.length}
       score={score}
-      subtitle={`Length ${seq.length} colours`}
+      subtitle={`${seq.length} colours to remember`}
       feedback={feedback}
+      idleHint="Watch carefully — then tap the colours in order."
+      title="Watch the colours. Tap them back."
       showDifficulty
       difficulty={difficulty}
       onDifficultyChange={resetDifficulty}
@@ -106,40 +113,75 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       <div style={{ height: 86, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
         {phase === "show" && (
           <div
+            role="img"
+            aria-label={`${COLORS.find((c) => c.id === seq[showIdx])?.name ?? "Colour"} light`}
             style={{
               width: 64,
               height: 64,
               borderRadius: 16,
               background: COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff",
+              border: "3px solid #fff",
               boxShadow: `0 0 30px ${COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff"}55`,
               transition: "background 0.15s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontWeight: 900,
+              fontSize: 14,
             }}
-          />
+          >
+            <span aria-hidden>{COLORS.find((c) => c.id === seq[showIdx])?.name?.[0] ?? "?"}</span>
+          </div>
         )}
         {phase === "input" && (
-          <div style={{ color: "hsl(var(--muted-foreground))", fontSize: 13 }}>
+          <div
+            role="status"
+            aria-live="polite"
+            style={{ color: "hsl(var(--muted-foreground))", fontSize: 13 }}
+          >
             Tap the colours in order ({input.length}/{seq.length})
           </div>
         )}
         {phase === "feedback" && (
-          <div style={{ fontSize: 32, color: correctRound ? "hsl(var(--brand-green-500))" : "hsl(var(--brand-red-500))", fontWeight: 800 }}>
-            {correctRound ? "✓" : "✗"}
+          <div
+            role="status"
+            aria-live="assertive"
+            style={{
+              fontSize: 28,
+              fontWeight: 800,
+              color: correctRound ? "hsl(var(--brand-green-500))" : "hsl(var(--brand-amber-200))",
+              border: correctRound
+                ? "2px solid rgba(34,197,94,0.7)"
+                : "2px dashed rgba(251,191,36,0.8)",
+              borderRadius: 12,
+              padding: "6px 14px",
+            }}
+          >
+            {correctRound ? "✓ Nice!" : "! Almost"}
           </div>
         )}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 260, margin: "0 auto" }}>
+      <div
+        role="group"
+        aria-label="Colour buttons"
+        style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, maxWidth: 260, margin: "0 auto" }}
+      >
         {COLORS.map((c) => (
           <button
             key={c.id}
             type="button"
+            className="game-choice-a11y"
             disabled={phase !== "input"}
             onClick={() => onPick(c.id)}
+            aria-label={`${c.name} colour`}
             style={{
               background: c.bg,
               color: "#fff",
-              border: "none",
+              border: "2px solid rgba(255,255,255,0.45)",
               borderRadius: 12,
               padding: "20px 0",
+              minHeight: 48,
               fontSize: 12,
               fontWeight: 800,
               fontFamily: "Quicksand, sans-serif",

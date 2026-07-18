@@ -4,13 +4,22 @@ import { BarChart3, CalendarDays, Trophy } from "lucide-react";
 import {
   CATEGORY_EMOJI,
   CATEGORY_LABEL,
+  getSkills,
   type GameCategory,
+  type GameDef,
   type WeeklyGameSummary,
 } from "@/lib/games";
-import { gameTheme } from "@/lib/game-theme";
+import { skillLevelFromPercent, skillStarsFromPercent } from "@/lib/game-hub-meta";
 import { GAMES_GLASS_PANEL } from "@/lib/game-theme";
 import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
+import { GamesStatusCard } from "@/components/games/GamesStatusCard";
 import { cn } from "@/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type InsightsTab = "skills" | "leaderboard" | "weekly";
 
@@ -18,86 +27,145 @@ interface GamesInsightsPanelProps {
   skills: { cat: GameCategory; pct: number }[];
   isPremium: boolean;
   weekly: WeeklyGameSummary;
+  status?: {
+    playedToday: number;
+    limit: number;
+    limitHit: boolean;
+    dailyPct: number;
+    routineStreak: number;
+    perfectStreak: number;
+    showComboBadge: boolean;
+    points: number;
+    nextUnlockGame: GameDef | null;
+  };
+  collapsible?: boolean;
 }
 
-export function GamesInsightsPanel({ skills, isPremium, weekly }: GamesInsightsPanelProps) {
+/**
+ * Progress demoted below catalog — parents open when curious;
+ * children see stars/levels instead of % as primary (no XP system).
+ */
+export function GamesInsightsPanel({
+  skills,
+  isPremium,
+  weekly,
+  status,
+  collapsible = true,
+}: GamesInsightsPanelProps) {
   const { t } = useTranslation();
-  const defaultTab: InsightsTab = "skills";
-  const [tab, setTab] = useState<InsightsTab>(defaultTab);
+  const [tab, setTab] = useState<InsightsTab>("skills");
+  const skillRecords = getSkills();
 
-  const tabs: { id: InsightsTab; label: string; icon: typeof BarChart3; premium?: boolean }[] = [
+  const tabs: { id: InsightsTab; label: string; icon: typeof BarChart3 }[] = [
     { id: "skills", label: t("screens.games.tab_skills"), icon: BarChart3 },
     ...(isPremium
       ? [
-          { id: "leaderboard" as const, label: t("screens.games.tab_leaderboard"), icon: Trophy, premium: true },
-          { id: "weekly" as const, label: t("screens.games.tab_weekly"), icon: CalendarDays, premium: true },
+          {
+            id: "leaderboard" as const,
+            label: t("screens.games.tab_my_bests", { defaultValue: "My Bests" }),
+            icon: Trophy,
+          },
+          { id: "weekly" as const, label: t("screens.games.tab_weekly"), icon: CalendarDays },
         ]
       : []),
   ];
 
-  return (
-    <div className={cn(GAMES_GLASS_PANEL, "rounded-2xl p-3.5")}>
-      <div className="mb-3 flex gap-1 rounded-xl bg-white/[0.04] p-1">
+  const body = (
+    <div className="space-y-3">
+      {status && (
+        <GamesStatusCard
+          playedToday={status.playedToday}
+          limit={status.limit}
+          limitHit={status.limitHit}
+          dailyPct={status.dailyPct}
+          isPremium={isPremium}
+          routineStreak={status.routineStreak}
+          perfectStreak={status.perfectStreak}
+          showComboBadge={status.showComboBadge}
+          points={status.points}
+          nextUnlockGame={status.nextUnlockGame}
+        />
+      )}
+
+      <div className="mb-1 flex gap-1 rounded-xl bg-white/[0.04] p-1">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setTab(id)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold transition-all",
+              "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-[11px] font-bold transition-colors",
               tab === id
-                ? "bg-gradient-to-r from-amber-500/25 to-fuchsia-500/15 text-foreground shadow-sm"
+                ? "bg-white/10 text-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="truncate">{label}</span>
           </button>
         ))}
       </div>
 
       {tab === "skills" && (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {skills.map(({ cat, pct }) => (
-            <div key={cat}>
-              <div className="mb-1 flex justify-between text-[11px] text-foreground">
-                <span className="truncate">
-                  {CATEGORY_EMOJI[cat]} {CATEGORY_LABEL[cat].split("&")[0].trim()}
-                </span>
-                <span
-                  className={cn(
-                    "ml-1 shrink-0 font-extrabold tabular-nums",
-                    pct >= 75 ? "text-emerald-400" : pct >= 40 ? "text-amber-300" : "text-muted-foreground",
-                  )}
-                >
-                  {pct}%
-                </span>
-              </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {skills.map(({ cat, pct }) => {
+            const attempts = skillRecords[cat]?.attempts ?? 0;
+            const stars = skillStarsFromPercent(pct, attempts > 0);
+            const level = skillLevelFromPercent(pct, attempts > 0);
+            return (
               <div
-                className="h-1.5 overflow-hidden rounded-full"
-                style={{ background: gameTheme.progressTrack }}
+                key={cat}
+                className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-2.5 py-2"
               >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="truncate text-[11px] font-bold text-foreground">
+                    <span aria-hidden>{CATEGORY_EMOJI[cat]} </span>
+                    {CATEGORY_LABEL[cat].split("&")[0].trim()}
+                  </span>
+                  {level > 0 ? (
+                    <span className="shrink-0 text-[10px] font-extrabold text-amber-300">
+                      {t("screens.games.skill_level_short", {
+                        defaultValue: "Lv {{level}}",
+                        level,
+                      })}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
+                      {t("screens.games.skill_new", { defaultValue: "New" })}
+                    </span>
+                  )}
+                </div>
                 <div
-                  className="hub-progress-fill h-full rounded-full"
-                  style={{
-                    width: `${pct}%`,
-                    background:
-                      pct >= 75
-                        ? "linear-gradient(90deg,hsl(var(--brand-green-500)),hsl(var(--brand-green-400)))"
-                        : pct >= 40
-                          ? gameTheme.playGradient
-                          : gameTheme.violetGradient,
-                    transition: "width 0.4s",
-                  }}
-                />
+                  className="mt-1.5 flex gap-0.5"
+                  aria-label={t("screens.games.skill_stars_aria", {
+                    defaultValue: "{{count}} of 3 stars",
+                    count: stars,
+                  })}
+                >
+                  {[1, 2, 3].map((n) => (
+                    <span
+                      key={n}
+                      className={cn(
+                        "text-sm leading-none",
+                        n <= stars ? "text-amber-300" : "text-white/20",
+                      )}
+                      aria-hidden
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                {attempts > 0 && (
+                  <p className="mt-1 text-[10px] tabular-nums text-muted-foreground">{pct}%</p>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {tab === "leaderboard" && isPremium && (
-        <div className="-mx-1 -mb-1">
+        <div className="-mx-1">
           <GamesLeaderboard embedded />
         </div>
       )}
@@ -130,10 +198,37 @@ export function GamesInsightsPanel({ skills, isPremium, weekly }: GamesInsightsP
       )}
 
       {!isPremium && (
-        <p className="mt-2.5 text-[10.5px] text-muted-foreground">
+        <p className="text-[10.5px] text-muted-foreground">
           {t("screens.games.insights_premium_hint")}
         </p>
       )}
     </div>
+  );
+
+  if (!collapsible) {
+    return <div className={cn(GAMES_GLASS_PANEL, "rounded-2xl p-3.5")}>{body}</div>;
+  }
+
+  return (
+    <Accordion type="single" collapsible className={cn(GAMES_GLASS_PANEL, "rounded-2xl px-3.5")}>
+      <AccordionItem value="progress" className="border-none">
+        <AccordionTrigger className="py-3.5 text-left hover:no-underline [&[data-state=open]>svg]:text-amber-300">
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <BarChart3 className="h-4 w-4 shrink-0 text-amber-300/90" aria-hidden />
+            <span className="min-w-0">
+              <span className="block font-quicksand text-sm font-extrabold text-foreground">
+                {t("screens.games.progress_section_title", { defaultValue: "Your progress" })}
+              </span>
+              <span className="block text-[11px] font-medium text-muted-foreground">
+                {t("screens.games.progress_section_subtitle", {
+                  defaultValue: "Skills, bests, and weekly summary",
+                })}
+              </span>
+            </span>
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="pb-3.5 pt-0">{body}</AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }

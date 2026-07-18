@@ -1,8 +1,15 @@
 import { useMemo, useState } from "react";
 import { GameShell } from "@/components/games/GameShell";
+import { useElementSize } from "@/hooks/use-element-size";
 import { feedbackCorrect, feedbackTap, feedbackWrong } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
+import {
+  fitCellFontSize,
+  fitGridCellSize,
+  GAME_LAYOUT,
+} from "@/lib/game-layout-tokens";
 import { GAME_SESSION_ROUNDS } from "@/lib/game-session-progression";
+import { useReducedMotion } from "@/lib/reduced-motion";
 
 interface SDScene {
   name: string;
@@ -98,11 +105,15 @@ const ALL_SCENES: SDScene[] = [
   },
 ];
 
+const GRID_COLS = 4;
+
 export function SpotTheDifferenceGame({
   onFinish,
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
+  const reducedMotion = useReducedMotion();
+  const [layoutRef, { width: layoutWidth }] = useElementSize();
   const scenes = useMemo(() => {
     const shuffled = [...ALL_SCENES].sort(() => Math.random() - 0.5);
     const out = [...shuffled];
@@ -119,6 +130,33 @@ export function SpotTheDifferenceGame({
   const total = scene.diffs.length;
   const diffSet = useMemo(() => new Set(scene.diffs.map(([r, c]) => `${r}-${c}`)), [scene]);
 
+  const panelGap = GAME_LAYOUT.gridGap * 2;
+  // Prefer stacking when side-by-side cells would fall under touch-min.
+  const sideBySideCell =
+    layoutWidth > 0
+      ? fitGridCellSize({
+          containerWidth: (layoutWidth - panelGap) / 2,
+          columns: GRID_COLS,
+          minCell: 1,
+          maxCell: GAME_LAYOUT.cellMaxComfort,
+        })
+      : 0;
+  const stackPanels =
+    layoutWidth <= 0 ||
+    layoutWidth < GAME_LAYOUT.stackPanelsBelow ||
+    sideBySideCell < GAME_LAYOUT.touchMin;
+  const panelWidth = stackPanels
+    ? layoutWidth || GAME_LAYOUT.breakpoints.sm
+    : (layoutWidth - panelGap) / 2;
+
+  const cellSize = fitGridCellSize({
+    containerWidth: Math.max(panelWidth, GAME_LAYOUT.touchMin * GRID_COLS),
+    columns: GRID_COLS,
+    minCell: GAME_LAYOUT.touchMin,
+    maxCell: GAME_LAYOUT.cellMaxComfort,
+  });
+  const fontSize = fitCellFontSize(cellSize, 0.46);
+
   const tapRight = (r: number, c: number) => {
     const key = `${r}-${c}`;
     if (foundDiffs.has(key) || roundDone) return;
@@ -131,7 +169,7 @@ export function SpotTheDifferenceGame({
         setScore(newScore);
         setRoundDone(true);
         void feedbackCorrect();
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (roundIdx + 1 >= GAME_SESSION_ROUNDS) {
             onFinish(newScore, GAME_SESSION_ROUNDS);
           } else {
@@ -140,27 +178,31 @@ export function SpotTheDifferenceGame({
             setWrongCell(null);
             setRoundDone(false);
           }
-        }, 800);
+        }, reducedMotion ? 200 : 800);
       }
     } else {
       void feedbackWrong();
       setWrongCell(key);
-      setTimeout(() => setWrongCell(null), 500);
+      window.setTimeout(() => setWrongCell(null), reducedMotion ? 200 : 500);
     }
   };
 
-  const CELL_SIZE = 52;
-
   const renderGrid = (grid: string[][], isRight: boolean) => (
     <div
+      role={isRight ? "group" : "img"}
+      aria-label={isRight ? "Changed picture — tap differences" : "Original picture"}
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(4, ${CELL_SIZE}px)`,
-        gap: 3,
+        gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, ${cellSize}px))`,
+        gap: GAME_LAYOUT.gridGap / 2,
         background: "rgba(255,255,255,0.04)",
-        padding: 6,
+        padding: GAME_LAYOUT.gridPadding,
         borderRadius: 12,
         border: `1px solid ${gameTheme.glassBorder}`,
+        width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box",
+        justifyContent: "center",
       }}
     >
       {grid.map((row, r) =>
@@ -172,11 +214,21 @@ export function SpotTheDifferenceGame({
             <button
               key={key}
               type="button"
+              disabled={!isRight || isFound || roundDone}
               onClick={() => isRight && tapRight(r, c)}
+              aria-label={
+                isRight
+                  ? isFound
+                    ? `Difference found at row ${r + 1} column ${c + 1}`
+                    : `Cell row ${r + 1} column ${c + 1}`
+                  : undefined
+              }
               style={{
-                width: CELL_SIZE,
-                height: CELL_SIZE,
-                fontSize: 24,
+                width: cellSize,
+                height: cellSize,
+                minWidth: GAME_LAYOUT.touchMin,
+                minHeight: GAME_LAYOUT.touchMin,
+                fontSize,
                 borderRadius: 8,
                 background: isFound
                   ? gameTheme.successBg
@@ -194,18 +246,21 @@ export function SpotTheDifferenceGame({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.12s",
+                transition: reducedMotion ? "none" : "all 0.12s",
                 position: "relative",
+                color: gameTheme.text,
+                padding: 0,
               }}
             >
               {emoji}
               {isRight && isFound && (
                 <span
+                  aria-hidden
                   style={{
                     position: "absolute",
                     top: 2,
                     right: 3,
-                    fontSize: 11,
+                    fontSize: Math.max(10, fitCellFontSize(cellSize, 0.22)),
                     color: gameTheme.success,
                   }}
                 >
@@ -225,23 +280,29 @@ export function SpotTheDifferenceGame({
       totalRounds={GAME_SESSION_ROUNDS}
       score={score}
       subtitle={`${scene.name} — found ${foundDiffs.size} / ${total}`}
-      title="Tap the differences in the right picture"
+      title="Compare both pictures. Tap what changed."
+      idleHint="Compare left and right — look for one small change."
       feedback={roundDone ? "correct" : null}
       feedbackText={roundDone ? `All ${total} differences found!` : undefined}
     >
       <div
+        ref={layoutRef}
         style={{
           display: "flex",
+          flexDirection: stackPanels ? "column" : "row",
           justifyContent: "center",
-          alignItems: "flex-start",
-          gap: 12,
+          alignItems: stackPanels ? "stretch" : "flex-start",
+          gap: panelGap,
+          width: "100%",
+          maxWidth: "100%",
+          boxSizing: "border-box",
         }}
       >
-        <div>
+        <div style={{ flex: stackPanels ? undefined : "1 1 0", minWidth: 0, width: stackPanels ? "100%" : undefined }}>
           <div
             style={{
               color: gameTheme.textMuted,
-              fontSize: 10,
+              fontSize: "clamp(10px, 2.8vw, 12px)",
               marginBottom: 4,
               textTransform: "uppercase",
               letterSpacing: 0.5,
@@ -251,11 +312,11 @@ export function SpotTheDifferenceGame({
           </div>
           {renderGrid(scene.base, false)}
         </div>
-        <div>
+        <div style={{ flex: stackPanels ? undefined : "1 1 0", minWidth: 0, width: stackPanels ? "100%" : undefined }}>
           <div
             style={{
               color: gameTheme.accentSoft,
-              fontSize: 10,
+              fontSize: "clamp(10px, 2.8vw, 12px)",
               marginBottom: 4,
               textTransform: "uppercase",
               letterSpacing: 0.5,

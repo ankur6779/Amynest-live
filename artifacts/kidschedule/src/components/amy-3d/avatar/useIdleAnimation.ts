@@ -31,9 +31,9 @@ export function useIdleAnimation(
 ): void {
   const {
     reduced = false,
-    breathingAmplitude = 0.008,
+    breathingAmplitude = 0.011,
     tiltAmplitude = MAX_TILT,
-    floatAmplitude = 0.012,
+    floatAmplitude = 0.014,
     attentive = false,
     expression,
     speechEnergyRef,

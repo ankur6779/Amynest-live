@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-09T10:19:21.450Z",
+  "generatedAt": "2026-07-18T05:30:34.808Z",
   "decision": "FAIL",
   "score": 100,
   "categories": {
@@ -9,11 +9,9 @@
       "issues": []
     },
     "TTS": {
-      "score": null,
-      "status": "skip",
-      "issues": [
-        "ADMIN_AUTH_TOKEN not configured"
-      ]
+      "score": 100,
+      "status": "pass",
+      "issues": []
     },
     "Queue": {
       "score": null,
@@ -83,9 +81,15 @@
     },
     {
       "name": "TTS health",
-      "status": "SKIPPED",
+      "status": "PASS",
       "metrics": {
-        "skipReason": "ADMIN_AUTH_TOKEN not configured"
+        "generationOk": true,
+        "playbackUrlValid": true,
+        "ttfaMs": null,
+        "generationLatencyMs": null,
+        "cacheLatencyMs": null,
+        "openAiConfigured": true,
+        "storageOk": true
       },
       "blockers": [],
       "warnings": []
@@ -174,7 +178,6 @@
     "staticSamplesTotal": 10
   },
   "blockers": [
-    "ADMIN_AUTH_TOKEN missing — production gate requires admin telemetry probes",
     "INTERNAL_HEALTH_SECRET missing — production gate requires queue health probes"
   ],
   "warnings": [

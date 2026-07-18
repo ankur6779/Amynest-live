@@ -129,7 +129,14 @@ export function BehaviorChoiceGame({ onFinish }: { onFinish: (score: number, tot
       totalRounds={rounds.length}
       score={score}
       feedback={feedback}
-      feedbackText={feedback === "correct" ? "Great choice!" : feedback === "wrong" ? "Think about it…" : undefined}
+      feedbackText={
+        feedback === "correct"
+          ? "Great choice!"
+          : feedback === "wrong"
+            ? "Good thinking — what feels kindest?"
+            : undefined
+      }
+      idleHint="What would help everyone feel safe and kind?"
     >
       <div style={{ fontSize: 44, marginBottom: 6 }}>{r.emoji}</div>
       <h3
@@ -143,42 +150,51 @@ export function BehaviorChoiceGame({ onFinish }: { onFinish: (score: number, tot
       >
         {r.question}
       </h3>
-      <div style={{ display: "grid", gap: 10, maxWidth: 320, margin: "0 auto" }}>
+      <div
+        role="group"
+        aria-label="Kind choices"
+        style={{ display: "grid", gap: 12, maxWidth: 320, margin: "0 auto" }}
+      >
         {r.options.map((o, i) => {
           const isPicked = picked === i;
           const reveal = picked !== null;
+          const isCorrect = reveal && o.correct;
+          const isWrongPick = reveal && isPicked && !o.correct;
           return (
             <button
               key={i}
               type="button"
+              className="game-choice-a11y"
               onClick={() => onPick(i)}
               disabled={reveal}
+              aria-label={`${o.text}${isCorrect ? ", kind choice" : isWrongPick ? ", try a kinder choice" : ""}`}
               style={{
                 textAlign: "left",
-                padding: "11px 14px",
+                padding: "12px 14px",
+                minHeight: 48,
                 borderRadius: 12,
-                background:
-                  reveal && o.correct
-                    ? gameTheme.successBg
-                    : reveal && isPicked
-                      ? gameTheme.errorBg
-                      : "rgba(255,255,255,0.08)",
-                border:
-                  "1px solid" +
-                  (reveal && o.correct
-                    ? "rgba(34,197,94,0.6)"
-                    : reveal && isPicked
-                      ? "rgba(239,68,68,0.5)"
-                      : gameTheme.glassBorder),
+                background: isCorrect
+                  ? gameTheme.successBg
+                  : isWrongPick
+                    ? gameTheme.warnBg
+                    : "rgba(255,255,255,0.08)",
+                border: isCorrect
+                  ? "2px solid rgba(34,197,94,0.75)"
+                  : isWrongPick
+                    ? "2px dashed rgba(251,191,36,0.8)"
+                    : `1px solid ${gameTheme.glassBorder}`,
                 color: gameTheme.text,
-                fontSize: 13.5,
-                lineHeight: 1.4,
+                fontSize: "clamp(0.8125rem, 3.4vw, 0.9rem)",
+                lineHeight: 1.45,
                 cursor: reveal ? "default" : "pointer",
               }}
             >
+              {isCorrect ? "✓ " : isWrongPick ? "! " : ""}
               {o.text}
               {reveal && (o.correct || isPicked) && (
-                <div style={{ marginTop: 6, fontSize: 11.5, color: gameTheme.textSoft }}>{o.why}</div>
+                <div style={{ marginTop: 6, fontSize: "0.75rem", color: gameTheme.textSoft }}>
+                  {o.why}
+                </div>
               )}
             </button>
           );

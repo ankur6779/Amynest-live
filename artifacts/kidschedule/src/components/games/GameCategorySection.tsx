@@ -24,6 +24,11 @@ interface GameCategorySectionProps {
   onUpgrade: () => void;
 }
 
+/**
+ * Catalog stays 2-column grid (Khan library / Apple browse density).
+ * Horizontal carousels are reserved for Continue/Recommended only —
+ * mixing both reduces scroll fatigue without hiding the full set.
+ */
 export function GameCategorySection({
   category,
   games,
@@ -38,29 +43,38 @@ export function GameCategorySection({
   const oddLast = games.length % 2 === 1;
 
   return (
-    <section className="mb-5">
-      <div className="mb-3 flex items-stretch gap-2.5">
+    <section
+      className="game-perf-contain mb-7"
+      aria-labelledby={`games-cat-${category}`}
+    >
+      <div className="mb-3.5 flex items-stretch gap-2.5">
         <div className={gamesCategoryBar(category)} aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="text-lg" aria-hidden>
               {CATEGORY_EMOJI[category]}
             </span>
-            <h3 className="font-quicksand text-sm font-extrabold uppercase tracking-wide text-foreground">
+            <h3
+              id={`games-cat-${category}`}
+              className="font-quicksand text-[13px] font-extrabold tracking-wide text-foreground"
+            >
               {CATEGORY_LABEL[category]}
             </h3>
-            <span className="ml-auto text-[11px] text-muted-foreground">
+            <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
               {t("screens.games.games_count", { count: games.length })}
             </span>
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{CATEGORY_BLURB[category]}</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            {CATEGORY_BLURB[category]}
+          </p>
         </div>
       </div>
 
       <div
         className={cn(
           "grid grid-cols-2 gap-3",
-          oddLast && "[&>*:last-child]:col-span-2 [&>*:last-child]:mx-auto [&>*:last-child]:w-full [&>*:last-child]:max-w-[calc(50%-6px)]",
+          oddLast &&
+            "[&>*:last-child]:col-span-2 [&>*:last-child]:mx-auto [&>*:last-child]:w-full [&>*:last-child]:max-w-[calc(50%-6px)]",
         )}
       >
         {games.map((g) => {

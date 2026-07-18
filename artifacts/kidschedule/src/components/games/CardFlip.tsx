@@ -55,7 +55,8 @@ export function CardFlipGame({
       score={pairsFound}
       progress={progress}
       progressLabel="Pairs matched"
-      title="Find all the matching pairs"
+      title="Flip two cards. Find a matching pair!"
+      idleHint="Remember where you saw each card — then find its twin."
     >
       <div
         style={{
