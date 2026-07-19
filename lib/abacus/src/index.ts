@@ -284,15 +284,24 @@ function pickInt(rand: () => number, min: number, max: number): number {
   return Math.floor(rand() * (max - min + 1)) + min;
 }
 
+export type GenerateProblemOptions = {
+  /** Soft adaptive ease — <1 easier numbers, >1 harder. Default 1. */
+  easeFactor?: number;
+};
+
 /** Generate a single problem appropriate for the given level. */
 export function generateProblem(
   level: LevelId,
   rand: () => number,
+  options?: GenerateProblemOptions,
 ): AbacusProblem {
   const def = getLevel(level);
+  const ease = options?.easeFactor ?? 1;
+  const range = scaleOperandRangeForProblem(def.operandRange, ease);
+
   switch (def.slug) {
     case "numbers": {
-      const n = pickInt(rand, def.operandRange[0], def.operandRange[1]);
+      const n = pickInt(rand, range[0], range[1]);
       return {
         prompt: String(n),
         answer: n,
@@ -304,8 +313,8 @@ export function generateProblem(
       };
     }
     case "addition": {
-      const a = pickInt(rand, def.operandRange[0], def.operandRange[1]);
-      const b = pickInt(rand, def.operandRange[0], 9 - a); // keep within one rod
+      const a = pickInt(rand, range[0], Math.min(range[1], 4));
+      const b = pickInt(rand, range[0], 9 - a); // keep within one rod
       return {
         prompt: `${a} + ${b}`,
         answer: a + b,
@@ -315,7 +324,7 @@ export function generateProblem(
       };
     }
     case "subtraction": {
-      const a = pickInt(rand, 3, def.operandRange[1]);
+      const a = pickInt(rand, Math.max(3, range[0]), range[1]);
       const b = pickInt(rand, 1, a);
       return {
         prompt: `${a} − ${b}`,
@@ -326,9 +335,9 @@ export function generateProblem(
       };
     }
     case "multidigit": {
-      const a = pickInt(rand, def.operandRange[0], def.operandRange[1]);
+      const a = pickInt(rand, range[0], range[1]);
       const max = 99 - a; // keep total under 3-digit overflow
-      const b = pickInt(rand, def.operandRange[0], Math.max(def.operandRange[0], max));
+      const b = pickInt(rand, range[0], Math.max(range[0], Math.min(range[1], max)));
       return {
         prompt: `${a} + ${b}`,
         answer: a + b,
@@ -340,8 +349,8 @@ export function generateProblem(
     case "mental": {
       const op = rand() < 0.5 ? "+" : "−";
       if (op === "+") {
-        const a = pickInt(rand, 1, def.operandRange[1]);
-        const b = pickInt(rand, 1, def.operandRange[1]);
+        const a = pickInt(rand, 1, range[1]);
+        const b = pickInt(rand, 1, range[1]);
         return {
           prompt: `${a} + ${b}`,
           answer: a + b,
@@ -349,7 +358,7 @@ export function generateProblem(
           hint: `Picture the abacus in your head — add ${b} to ${a}.`,
         };
       }
-      const a = pickInt(rand, 5, def.operandRange[1]);
+      const a = pickInt(rand, Math.max(5, range[0]), range[1]);
       const b = pickInt(rand, 1, a);
       return {
         prompt: `${a} − ${b}`,
@@ -359,8 +368,8 @@ export function generateProblem(
       };
     }
     case "multiplication": {
-      const a = pickInt(rand, def.operandRange[0], def.operandRange[1]);
-      const b = pickInt(rand, def.operandRange[0], def.operandRange[1]);
+      const a = pickInt(rand, Math.max(2, range[0]), Math.min(9, range[1]));
+      const b = pickInt(rand, Math.max(2, range[0]), Math.min(9, range[1]));
       const answer = a * b;
       const rods = answer >= 100 ? 3 : 2;
       return {
@@ -373,7 +382,7 @@ export function generateProblem(
     }
     case "division": {
       const b = pickInt(rand, 2, 9);
-      const quotient = pickInt(rand, 2, 9);
+      const quotient = pickInt(rand, 2, ease < 1 ? 6 : 9);
       const a = b * quotient;
       return {
         prompt: `${a} ÷ ${b}`,
@@ -384,6 +393,22 @@ export function generateProblem(
       };
     }
   }
+}
+
+function scaleOperandRangeForProblem(
+  range: readonly [number, number],
+  easeFactor: number,
+): [number, number] {
+  const [lo, hi] = range;
+  if (hi <= lo) return [lo, hi];
+  const span = hi - lo;
+  const factor = Math.min(1.5, Math.max(0.5, easeFactor));
+  if (factor >= 1) {
+    const grow = Math.round(span * (factor - 1) * 0.5);
+    return [lo, hi + grow];
+  }
+  const shrink = Math.round(span * (1 - factor));
+  return [lo, Math.max(lo, hi - shrink)];
 }
 
 /** Generate a deterministic batch of problems for Challenge mode. */
@@ -616,22 +641,33 @@ export function buildAbacusTutorPrompt(input: {
   ageYears: number;
   language: import("./language.js").AbacusLang;
   question: string;
+  /** Optional V3 living-coach fragment (additive; older callers omit). */
+  coachFragment?: string;
 }): { system: string; user: string } {
   const def = getLevel(input.level);
   const langLine =
     input.language === "hi"
-      ? `Reply in clear, simple Hindi (Devanagari) that a child age ${input.ageYears} can follow. Keep number digits as Arabic numerals (0-9).`
+      ? `Reply mainly in natural Hindi (Devanagari or simple Hinglish) a child age ${input.ageYears} can follow. Keep number digits as Arabic numerals (0-9). Prefer phrases like "Ab 5 mein 2 jodo" and "3 neeche wali beads upar dhakelo" instead of stiff English.`
       : `Reply in clear, simple English a child age ${input.ageYears} can follow.`;
+
+  const beadLang =
+    input.language === "hi"
+      ? "Use bead-movement language in Hindi: '3 neeche wali beads upar dhakelo', '1 upar wali bead neeche lao', 'agli rod pe 1 carry karo'."
+      : "Use bead-movement language: 'push 3 lower beads up', 'push 1 upper bead down', 'carry 1 to the next rod'.";
 
   const system = [
     "You are Amy, a warm, patient Indian-style abacus tutor for kids age 2–10.",
     "You teach the soroban: 1 upper bead (worth 5) and 4 lower beads (worth 1) per rod.",
-    "Keep answers SHORT — 2 to 4 sentences. Use bead-movement language: 'push 3 lower beads up', 'push 1 upper bead down', 'carry 1 to the next rod'.",
+    "Keep answers SHORT — 2 to 4 sentences.",
+    beadLang,
     "Never use jargon. Never give long lectures. Never write code or math symbols other than + − × ÷ =.",
-    "Always end with a tiny encouragement like 'try it!' or 'you can do it!'.",
+    "Always end with a tiny encouragement like 'try it!' / 'tum kar sakte ho!'.",
     `Current level: Level ${def.id} (${def.slug}). Operands ${def.operandRange[0]}–${def.operandRange[1]}.`,
     langLine,
-  ].join(" ");
+    input.coachFragment?.trim() ? input.coachFragment.trim() : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const user = (input.question || "").trim().slice(0, 500);
   return { system, user };
@@ -639,3 +675,33 @@ export function buildAbacusTutorPrompt(input: {
 
 export * from "./badges.js";
 export * from "./tutor-visual.js";
+export {
+  recommendedLevelForAge,
+  isLevelAgeRecommended,
+  ageSoftLockMessage,
+  resolveAgeLevelAccess,
+  type AgeLevelAccess,
+} from "./age-adaptive.js";
+export {
+  verifyChallengeAnswers,
+  type ChallengeAnswerPayload,
+  type ChallengeVerifyResult,
+} from "./challenge-verify.js";
+export * from "./adaptive.js";
+export * from "./mastery.js";
+export * from "./micro-games.js";
+export * from "./missions.js";
+export * from "./collections.js";
+export * from "./tutor-coach.js";
+export * from "./curriculum.js";
+export * from "./learning-dna.js";
+export * from "./emotion.js";
+export * from "./story-worlds.js";
+export * from "./boss.js";
+export * from "./spaced-repetition.js";
+export * from "./achievements-v2.js";
+export * from "./certificates.js";
+export * from "./family.js";
+export * from "./practice-generator.js";
+export * from "./competitions.js";
+export * from "./parent-insights-v4.js";

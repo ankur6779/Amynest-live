@@ -7,26 +7,164 @@ import { Volume2, VolumeX, Sparkles, Lock, RotateCw, Trophy, Zap, Medal, Home } 
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
-  inferTutorAbacusVisual,
-  resolveAbacusLanguage,
   abacusValue,
+  applyMasteryAttempt,
+  applyReviewResult,
+  bossForLevel,
+  buildLearningPath,
   buildLessonScript,
+  buildLivingTutorCoachFragment,
+  buildParentInsightsV4,
+  currentWeeklyEvent,
+  deriveAdaptiveProfile,
+  detectEmotion,
+  dnaEaseFactor,
   emptyAbacus,
+  emotionCue,
+  evaluateCollectionUnlocks,
+  foldAttempt,
+  generateAdaptivePractice,
   generateChallenge,
   generateProblem,
+  getMicroGame,
+  grantGems,
+  grantStars,
   highestUnlockedLevel,
   isLevelUnlocked,
+  isWildGuess,
   LEVELS,
+  livingCoachLine,
+  markMissionStep,
+  masterySummary,
+  microGamesForMode,
+  minAgeForLevel,
+  missionProgress,
+  nextReviewSkill,
+  recommendedLevelForAge,
+  resolveAgeLevelAccess,
   rng,
   scoreAnswer,
   setLowerCount,
+  skillForLevelMode,
   summarizeSession,
   toggleUpper,
+  unlockedWorlds,
   type AbacusProblem,
+  type AbacusSkillId,
   type AbacusState,
+  type AchievementV2Id,
+  type BossDef,
+  type CollectionItemId,
   type LevelId,
+  type MicroGameId,
 } from "@workspace/abacus";
 import { AbacusTutorKeyboardPanel } from "@/components/abacus/abacus-tutor-keyboard-panel";
+import { MentalMode as MentalModeV2 } from "@/components/abacus/abacus-mental-mode";
+import {
+  AbacusLearnToProUpsell,
+  AbacusPremiumValuePanel,
+} from "@/components/abacus/abacus-premium-upsell";
+import { AbacusReminderBanner } from "@/components/abacus/abacus-reminder-banner";
+import { AbacusWarmupCard, AbacusWarmupSession } from "@/components/abacus/abacus-warmup";
+import { AbacusDailyAdventureCard } from "@/components/abacus/abacus-daily-adventure";
+import { AbacusCollectionShelf } from "@/components/abacus/abacus-collection-shelf";
+import {
+  AbacusMicroGameBanner,
+  AbacusMicroGamePicker,
+} from "@/components/abacus/abacus-micro-game-chrome";
+import { AbacusCoachBubble } from "@/components/abacus/abacus-finger-hint";
+import { AbacusJourneyMap } from "@/components/abacus/abacus-journey-map";
+import { AbacusStoryWorldsStrip } from "@/components/abacus/abacus-story-worlds";
+import { AbacusBossIntro, AbacusBossVictory } from "@/components/abacus/abacus-boss-chrome";
+import { AbacusFamilyPanel } from "@/components/abacus/abacus-family-panel";
+import { AbacusCertificateCard } from "@/components/abacus/abacus-certificate-card";
+import { AbacusAchievementsV2 } from "@/components/abacus/abacus-achievements-v2";
+import { AbacusCompetitionBanner } from "@/components/abacus/abacus-competition-banner";
+import { AbacusVoicePractice } from "@/components/abacus/abacus-voice-practice";
+import { abacusSfx as sfx } from "@/components/abacus/abacus-sfx";
+import {
+  bumpEmotionRotate,
+  bumpReviewsCompleted,
+  bumpStreak,
+  DAILY_PRACTICE_GOAL,
+  daysSinceLastActive,
+  enqueueOffline,
+  hasCompletedFirstLearn,
+  markBossDefeated,
+  markFamilyChallengeDone,
+  markFirstLearnComplete,
+  markLastActive,
+  markWeekendMissionDone,
+  readAchievementsV2,
+  readAdaptiveStats,
+  readAgeOverrides,
+  readBossesDefeated,
+  readCachedProgress,
+  readCollection,
+  readDailyPractice,
+  readFamilyProgress,
+  readLearningDna,
+  readMastery,
+  readMission,
+  readOfflineQueue,
+  readPreferredMicroGame,
+  readPreviousLearningDna,
+  readReviewSchedule,
+  readReviewsCompleted,
+  readStreak,
+  readTutorAsksV4,
+  readWarmup,
+  readWeekendMissionDone,
+  readWeeklySnap,
+  refreshLearningDna,
+  syncAchievementsV2,
+  todayDateKey,
+  weekKeyUtc,
+  writeAdaptiveStats,
+  writeAgeOverride,
+  writeCachedProgress,
+  writeCollection,
+  writeDailyPractice,
+  writeMastery,
+  writeMission,
+  writeOfflineQueue,
+  writePreferredMicroGame,
+  writeReviewSchedule,
+  writeWarmup,
+  writeWeeklySnap,
+  type DailyPracticeShape,
+} from "@/components/abacus/abacus-storage";
+import {
+  trackAbacusAchievementUnlocked,
+  trackAbacusAgeOverride,
+  trackAbacusBossCompleted,
+  trackAbacusBossStarted,
+  trackAbacusChallengeCompleted,
+  trackAbacusCollectionUnlock,
+  trackAbacusCompetitionView,
+  trackAbacusDnaUpdated,
+  trackAbacusEmotionCue,
+  trackAbacusFamilyChallenge,
+  trackAbacusGamePlayed,
+  trackAbacusHomeOpen,
+  trackAbacusLessonCompleted,
+  trackAbacusLevelUnlocked,
+  trackAbacusMentalCompleted,
+  trackAbacusMissionCompleted,
+  trackAbacusMissionStarted,
+  trackAbacusModeCompleted,
+  trackAbacusModeStarted,
+  trackAbacusPracticeCompleted,
+  trackAbacusPremiumBlocked,
+  trackAbacusPremiumClicked,
+  trackAbacusQuitMidSession,
+  trackAbacusReviewScheduled,
+  trackAbacusStoryWorldView,
+  trackAbacusVoiceAnswer,
+  trackAbacusWarmupCompleted,
+  trackAbacusWarmupStarted,
+  trackAbacusThinkingTime,
+} from "@/lib/abacus-analytics";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   scheduleLearningZoneAudioPrewarm,
@@ -51,26 +189,7 @@ import {
   PremiumActionGate,
   type HubModuleActionGateState,
 } from "@/components/hub-module-page-shell";
-
-// ─── Tiny WebAudio bleeps for bead taps + correct/wrong/unlock cues ────
-import { playProceduralTone } from "@/lib/procedural-sfx";
-
-function playTone(freq: number, durationMs: number, type: OscillatorType = "sine", gain = 0.06) {
-  playProceduralTone(freq, durationMs, type, gain);
-}
-const sfx = {
-  bead: () => playTone(900, 60, "triangle", 0.04),
-  correct: () => {
-    playTone(660, 90, "sine", 0.06);
-    setTimeout(() => playTone(990, 140, "sine", 0.06), 70);
-  },
-  wrong: () => playTone(220, 200, "sawtooth", 0.05),
-  unlock: () => {
-    playTone(523, 100);
-    setTimeout(() => playTone(659, 100), 90);
-    setTimeout(() => playTone(784, 180), 180);
-  },
-};
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 function useAbacusAmyVoice() {
   const amy = useAmyVoice();
@@ -178,99 +297,12 @@ function useAbacusAmyVoice() {
   };
 }
 
-// ─── localStorage helpers for offline-first progress hydration ─────────
-const PROGRESS_LS_KEY = (childId: number) => `abacus.progress.v1.${childId}`;
-function readCachedProgress<T = unknown>(childId: number): T | null {
-  try {
-    if (typeof window === "undefined") return null;
-    const raw = window.localStorage.getItem(PROGRESS_LS_KEY(childId));
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch { return null; }
-}
-function writeCachedProgress(childId: number, value: unknown): void {
-  try {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(PROGRESS_LS_KEY(childId), JSON.stringify(value));
-  } catch { /* noop (quota / privacy mode) */ }
-}
-
-const DAILY_PRACTICE_LS_KEY = (childId: number) => `abacus.daily.v1.${childId}`;
-const DAILY_PRACTICE_GOAL = 5;
-
-function todayDateKey(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-interface DailyPracticeShape {
-  date: string;
-  correct: number;
-  attempts: number;
-}
-
-function readDailyPractice(childId: number): DailyPracticeShape {
-  const empty = { date: todayDateKey(), correct: 0, attempts: 0 };
-  try {
-    if (typeof window === "undefined") return empty;
-    const raw = window.localStorage.getItem(DAILY_PRACTICE_LS_KEY(childId));
-    if (!raw) return empty;
-    const parsed = JSON.parse(raw) as DailyPracticeShape;
-    if (parsed.date !== todayDateKey()) return empty;
-    return parsed;
-  } catch {
-    return empty;
-  }
-}
-
-function writeDailyPractice(childId: number, value: DailyPracticeShape): void {
-  try {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(DAILY_PRACTICE_LS_KEY(childId), JSON.stringify(value));
-  } catch { /* noop */ }
-}
-
-const STREAK_LS_KEY = (childId: number) => `abacus.streak.v1.${childId}`;
-
-interface StreakShape {
-  lastDate: string;
-  days: number;
-}
-
-function yesterdayDateKey(): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-
-function readStreak(childId: number): StreakShape {
-  const empty = { lastDate: "", days: 0 };
-  try {
-    if (typeof window === "undefined") return empty;
-    const raw = window.localStorage.getItem(STREAK_LS_KEY(childId));
-    return raw ? (JSON.parse(raw) as StreakShape) : empty;
-  } catch {
-    return empty;
-  }
-}
-
-function writeStreak(childId: number, value: StreakShape): void {
-  try {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STREAK_LS_KEY(childId), JSON.stringify(value));
-  } catch { /* noop */ }
-}
-
-function bumpStreak(childId: number): StreakShape {
-  const today = todayDateKey();
-  const prev = readStreak(childId);
-  if (prev.lastDate === today) return prev;
-  const days = prev.lastDate === yesterdayDateKey() ? prev.days + 1 : 1;
-  const next = { lastDate: today, days };
-  writeStreak(childId, next);
-  return next;
-}
-
-type ZoneScreen = "home" | "play";
+type ZoneScreen = "home" | "play" | "warmup";
 type ViewMode = "child" | "parent";
+
+function microGamesForModeFallback(mode: "practice" | "mental" | "challenge"): MicroGameId {
+  return microGamesForMode(mode)[0]?.id ?? "classic";
+}
 
 type BoardFeedback = "none" | "correct" | "wrong";
 
@@ -664,26 +696,31 @@ function LearnMode({
   onStop,
   onPrime,
   speaking,
+  onLessonComplete,
 }: {
   level: LevelId;
   onSpeak: (text: string) => void;
   onStop: () => void;
   onPrime: (text: string) => void;
   speaking: boolean;
+  onLessonComplete?: () => void;
 }) {
   const { t } = useAbacusTranslation();
   const authFetch = useAuthFetch();
   const script = useMemo(() => buildLessonScript(level), [level]);
   const [step, setStep] = useState(0);
+  const completedRef = useRef(false);
 
   useEffect(() => {
     setStep(0);
+    completedRef.current = false;
   }, [level]);
 
   const cur = script.steps[step];
   const stepValue = abacusValue(cur.state);
   const stepPct = script.steps.length <= 1 ? 100 : Math.round(((step + 1) / script.steps.length) * 100);
   const [boardState, setBoardState] = useState(cur.state);
+  const isLastStep = step >= script.steps.length - 1;
 
   useEffect(() => {
     const texts = script.steps.map((s) => s.text);
@@ -777,12 +814,21 @@ function LearnMode({
         </button>
         <button
           type="button"
-          disabled={step >= script.steps.length - 1}
-          onClick={() => setStep((s) => Math.min(script.steps.length - 1, s + 1))}
+          disabled={isLastStep && completedRef.current}
+          onClick={() => {
+            if (isLastStep) {
+              if (!completedRef.current) {
+                completedRef.current = true;
+                onLessonComplete?.();
+              }
+              return;
+            }
+            setStep((s) => Math.min(script.steps.length - 1, s + 1));
+          }}
           className="rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 disabled:opacity-40 text-white text-xs font-semibold px-3 py-2"
           data-testid="abacus-learn-next"
         >
-          {t("abacus.next")} →
+          {isLastStep ? t("abacus.finish_lesson", "Finish lesson") : `${t("abacus.next")} →`}
         </button>
       </div>
     </div>
@@ -793,13 +839,36 @@ function PracticeMode({
   level,
   onAttempt,
   childView,
+  easeFactor,
+  reviewSkill,
+  enableVoice,
+  onVoiceResult,
 }: {
   level: LevelId;
-  onAttempt: (correct: boolean) => void;
+  onAttempt: (correct: boolean, meta?: { elapsedMs?: number; answer?: number; expected?: number; prompt?: string }) => void;
   childView?: boolean;
+  easeFactor?: number;
+  reviewSkill?: AbacusSkillId | null;
+  enableVoice?: boolean;
+  onVoiceResult?: (meta: {
+    heard: string;
+    correct: boolean;
+    confidence: "high" | "medium" | "low";
+    responseMs: number;
+  }) => void;
 }) {
-  const { t } = useAbacusTranslation();
-  const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
+  const { t, i18n } = useAbacusTranslation();
+  const sessionSalt = useRef(Date.now());
+  const startedAt = useRef(Date.now());
+  const [problem, setProblem] = useState<AbacusProblem>(() =>
+    generateAdaptivePractice({
+      level,
+      sessionSalt: Date.now(),
+      reviewSkill: reviewSkill ?? null,
+      generateProblem,
+      rng,
+    }),
+  );
   const [board, setBoard] = useState<AbacusState>(() => problem.initialState ?? emptyAbacus(problem.rods));
   const [feedback, setFeedback] = useState<BoardFeedback>("none");
   const [showHint, setShowHint] = useState(false);
@@ -807,12 +876,21 @@ function PracticeMode({
   const [sessionAttempts, setSessionAttempts] = useState(0);
 
   const next = useCallback(() => {
-    const p = generateProblem(level, rng(Date.now() + Math.floor(Math.random() * 1000)));
+    sessionSalt.current += 997;
+    startedAt.current = Date.now();
+    const p = generateAdaptivePractice({
+      level,
+      sessionSalt: sessionSalt.current,
+      reviewSkill: reviewSkill ?? null,
+      generateProblem: (lvl, rand, opts) =>
+        generateProblem(lvl, rand, { easeFactor: easeFactor ?? opts?.easeFactor }),
+      rng,
+    });
     setProblem(p);
     setBoard(p.initialState ?? emptyAbacus(p.rods));
     setFeedback("none");
     setShowHint(false);
-  }, [level]);
+  }, [easeFactor, level, reviewSkill]);
 
   useEffect(() => {
     next();
@@ -831,7 +909,12 @@ function PracticeMode({
     } else {
       sfx.wrong();
     }
-    onAttempt(ok);
+    onAttempt(ok, {
+      elapsedMs: Date.now() - startedAt.current,
+      answer: v,
+      expected: problem.answer,
+      prompt: problem.prompt,
+    });
   };
 
   return (
@@ -880,6 +963,30 @@ function PracticeMode({
           </motion.p>
         )}
       </AnimatePresence>
+      {enableVoice && (
+        <AbacusVoicePractice
+          expectedAnswer={problem.answer}
+          language={i18n.language}
+          disabled={feedback === "correct"}
+          onResult={(meta) => {
+            onVoiceResult?.(meta);
+            setFeedback(meta.correct ? "correct" : "wrong");
+            setSessionAttempts((n) => n + 1);
+            if (meta.correct) {
+              setSessionCorrect((n) => n + 1);
+              sfx.correct();
+            } else {
+              sfx.wrong();
+            }
+            onAttempt(meta.correct, {
+              elapsedMs: meta.responseMs,
+              answer: meta.correct ? problem.answer : NaN,
+              expected: problem.answer,
+              prompt: problem.prompt,
+            });
+          }}
+        />
+      )}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -929,23 +1036,70 @@ function PracticeMode({
 
 function ChallengeMode({
   level,
+  childId,
   onComplete,
 }: {
   level: LevelId;
-  onComplete: (accuracyPct: number, points: number) => void;
+  childId: number;
+  onComplete: (
+    accuracyPct: number,
+    points: number,
+    meta?: {
+      sessionToken?: string;
+      seed?: number;
+      answers?: number[];
+      elapsedMs?: number[];
+    },
+  ) => void;
 }) {
   const { t } = useAbacusTranslation();
+  const authFetch = useAuthFetch();
   const lvlDef = useMemo(() => LEVELS.find((l) => l.id === level)!, [level]);
-  const [seed] = useState(() => Date.now());
+  const [seed, setSeed] = useState(() => Date.now());
+  const [sessionToken, setSessionToken] = useState<string | undefined>();
   const problems = useMemo(() => generateChallenge(level, seed), [level, seed]);
   const [idx, setIdx] = useState(0);
   const [board, setBoard] = useState<AbacusState>(() => problems[0].initialState ?? emptyAbacus(problems[0].rods));
-  const [results, setResults] = useState<{ correct: boolean; points: number }[]>([]);
+  const [results, setResults] = useState<{ correct: boolean; points: number; answer: number; elapsedMs: number }[]>([]);
   const [tLeft, setTLeft] = useState(lvlDef.challengeSecondsPerQ);
   const startedAt = useRef(Date.now());
 
+  useEffect(() => {
+    let cancelled = false;
+    void authFetch("/api/abacus/challenge/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ childId, level }),
+    })
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return parseApiJson<{ sessionToken?: string; seed?: number }>(r);
+      })
+      .then((data) => {
+        if (cancelled || !data?.sessionToken || typeof data.seed !== "number") return;
+        setSessionToken(data.sessionToken);
+        setSeed(data.seed);
+        setIdx(0);
+        setResults([]);
+        setTLeft(lvlDef.challengeSecondsPerQ);
+        startedAt.current = Date.now();
+      })
+      .catch(() => {
+        /* offline / free preview — local seed still works */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch, childId, level, lvlDef.challengeSecondsPerQ]);
+
+  useEffect(() => {
+    const p = problems[0];
+    if (!p) return;
+    setBoard(p.initialState ?? emptyAbacus(p.rods));
+  }, [problems]);
+
   const advance = useCallback(
-    (correct: boolean, elapsedMs: number) => {
+    (correct: boolean, elapsedMs: number, submittedAnswer: number) => {
       const score = scoreAnswer({
         correct,
         elapsedMs,
@@ -953,10 +1107,15 @@ function ChallengeMode({
         fastBonusFraction: lvlDef.fastBonusFraction,
       });
       setResults((rs) => {
-        const next = [...rs, { correct, points: score.points }];
+        const next = [...rs, { correct, points: score.points, answer: submittedAnswer, elapsedMs }];
         if (next.length >= problems.length) {
           const summary = summarizeSession(level, next);
-          onComplete(summary.accuracyPct, summary.totalPoints);
+          onComplete(summary.accuracyPct, summary.totalPoints, {
+            sessionToken,
+            seed,
+            answers: next.map((r) => r.answer),
+            elapsedMs: next.map((r) => r.elapsedMs),
+          });
         }
         return next;
       });
@@ -969,7 +1128,7 @@ function ChallengeMode({
         startedAt.current = Date.now();
       }
     },
-    [idx, level, lvlDef, onComplete, problems],
+    [idx, level, lvlDef, onComplete, problems, seed, sessionToken],
   );
 
   useEffect(() => {
@@ -978,7 +1137,7 @@ function ChallengeMode({
       setTLeft((s) => {
         if (s <= 1) {
           clearInterval(id);
-          advance(false, lvlDef.challengeSecondsPerQ * 1000);
+          advance(false, lvlDef.challengeSecondsPerQ * 1000, -1);
           return lvlDef.challengeSecondsPerQ;
         }
         return s - 1;
@@ -1043,8 +1202,11 @@ function ChallengeMode({
       <AbacusBoard state={board} onChange={(s) => { sfx.bead(); setBoard(s); }} />
       <button
         type="button"
-        onClick={() => advance(abacusValue(board) === cur.answer, Date.now() - startedAt.current)}
-        className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-sm font-bold py-3 shadow-md active:scale-[0.99] transition-transform"
+        onClick={() => {
+          const submitted = abacusValue(board);
+          advance(submitted === cur.answer, Date.now() - startedAt.current, submitted);
+        }}
+        className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-sm font-bold py-3 shadow-md active:scale-[0.99] transition-transform min-h-[44px]"
         data-testid="abacus-challenge-submit"
       >
         ✓ {t("abacus.submit")}
@@ -1053,145 +1215,13 @@ function ChallengeMode({
   );
 }
 
-function MentalNumberPad({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: string;
-  onChange: (next: string) => void;
-  disabled?: boolean;
-}) {
-  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "C"] as const;
-  const press = (key: (typeof keys)[number]) => {
-    if (disabled) return;
-    if (key === "⌫") onChange(value.slice(0, -1));
-    else if (key === "C") onChange("");
-    else if (value.length < 4) onChange(value + key);
-  };
-  return (
-    <div className="grid grid-cols-3 gap-2" data-testid="abacus-mental-pad">
-      {keys.map((k) => (
-        <button
-          key={k}
-          type="button"
-          disabled={disabled}
-          onClick={() => press(k)}
-          className={cn(
-            "min-h-[52px] rounded-xl text-xl font-black transition-all active:scale-95",
-            k === "⌫" || k === "C"
-              ? "bg-muted text-muted-foreground text-base font-bold"
-              : "bg-gradient-to-br from-teal-500/15 to-cyan-500/10 border border-teal-500/20 text-foreground hover:from-teal-500/25",
-          )}
-          data-testid={k === "⌫" ? "abacus-mental-backspace" : k === "C" ? "abacus-mental-clear" : `abacus-mental-key-${k}`}
-        >
-          {k}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function MentalMode({ level }: { level: LevelId }) {
-  const { t } = useAbacusTranslation();
-  const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
-  const [answer, setAnswer] = useState("");
-  const [feedback, setFeedback] = useState<BoardFeedback>("none");
-
-  const next = useCallback(() => {
-    setProblem(generateProblem(level, rng(Date.now() + Math.floor(Math.random() * 1000))));
-    setAnswer("");
-    setFeedback("none");
-  }, [level]);
-
-  useEffect(() => {
-    next();
-  }, [level, next]);
-
-  const check = () => {
-    const ok = Number(answer) === problem.answer;
-    setFeedback(ok ? "correct" : "wrong");
-    if (ok) sfx.correct();
-    else sfx.wrong();
-  };
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground text-center">{t("abacus.mental_intro")}</p>
-      <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/5 border border-teal-500/15 p-4 text-center">
-        <p className="text-4xl sm:text-5xl font-black text-foreground font-quicksand">{problem.prompt}</p>
-      </div>
-
-      <div
-        className={cn(
-          "rounded-2xl border-2 bg-background px-4 py-3 text-center min-h-[4rem] flex items-center justify-center",
-          feedback === "correct" && "border-emerald-400 bg-emerald-500/5",
-          feedback === "wrong" && "border-rose-400 bg-rose-500/5",
-          feedback === "none" && "border-border",
-        )}
-        data-testid="abacus-mental-answer"
-        aria-live="polite"
-      >
-        <span className={cn("text-4xl font-black font-quicksand tabular-nums", !answer && "text-muted-foreground/40")}>
-          {answer || "?"}
-        </span>
-      </div>
-
-      <MentalNumberPad
-        value={answer}
-        onChange={(v) => { setAnswer(v); setFeedback("none"); }}
-        disabled={feedback === "correct"}
-      />
-
-      <AnimatePresence>
-        {feedback !== "none" && (
-          <motion.p
-            key={feedback}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className={cn(
-              "text-center font-bold text-sm rounded-xl p-2.5 border",
-              feedback === "correct"
-                ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-400/40"
-                : "bg-rose-500/10 text-rose-800 dark:text-rose-200 border-rose-400/40",
-            )}
-            data-testid={`abacus-mental-feedback-${feedback}`}
-          >
-            {feedback === "correct" ? `🎉 ${t("abacus.correct")}` : `❌ ${t("abacus.try_again")} — ${t("abacus.answer_was", { n: problem.answer })}`}
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={check}
-          disabled={!answer.trim()}
-          className="flex-1 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 disabled:opacity-40 text-white text-sm font-bold py-3 min-h-[44px]"
-          data-testid="abacus-mental-check"
-        >
-          {t("abacus.check")}
-        </button>
-        <button
-          type="button"
-          onClick={next}
-          className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-sm font-bold px-4 py-3 min-h-[44px]"
-          data-testid="abacus-mental-next"
-        >
-          {t("abacus.new_problem")} →
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// TutorMode moved to AbacusTutorKeyboardPanel (KeyboardSafeShell)
+// MentalMode → @/components/abacus/abacus-mental-mode (V2: logs progress)
+// TutorMode → AbacusTutorKeyboardPanel (KeyboardSafeShell + visual board)
 
 // ─── Top-level component ────────────────────────────────────────────────
 
 export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
-  const { t } = useAbacusTranslation();
+  const { t, i18n } = useAbacusTranslation();
   const authFetch = useAuthFetch();
   const voice = useAbacusAmyVoice();
   const [progress, setProgress] = useState<ProgressShape | null>(null);
@@ -1203,6 +1233,89 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
   const [streak, setStreak] = useState(() => readStreak(childId));
   const [zoneScreen, setZoneScreen] = useState<ZoneScreen>("home");
   const [viewMode, setViewMode] = useState<ViewMode>("child");
+  const [showProUpsell, setShowProUpsell] = useState(false);
+  const [previewPractice, setPreviewPractice] = useState(false);
+  const [ageOverrides, setAgeOverrides] = useState<number[]>(() => readAgeOverrides(childId));
+  const [warmup, setWarmup] = useState(() => readWarmup(childId));
+  const [ageConfirmLevel, setAgeConfirmLevel] = useState<LevelId | null>(null);
+  const [mastery, setMastery] = useState(() => readMastery(childId));
+  const [collection, setCollection] = useState(() => readCollection(childId));
+  const [mission, setMission] = useState(() => readMission(childId, 1));
+  const [adaptiveStats, setAdaptiveStats] = useState(() => readAdaptiveStats(childId));
+  const [coachLine, setCoachLine] = useState("");
+  const [newUnlocks, setNewUnlocks] = useState<CollectionItemId[]>([]);
+  const [microCorrect, setMicroCorrect] = useState(0);
+  const [microGameId, setMicroGameId] = useState<MicroGameId>(() =>
+    readPreferredMicroGame(childId, "practice") ?? "magic_beads",
+  );
+  const [prevWeekAccuracy] = useState(() => readWeeklySnap(childId)?.accuracy ?? null);
+  const [learningDna, setLearningDna] = useState(() => readLearningDna(childId));
+  const [achievementsV2, setAchievementsV2] = useState(() => readAchievementsV2(childId));
+  const [achievementToast, setAchievementToast] = useState<AchievementV2Id | null>(null);
+  const [familyProgress, setFamilyProgress] = useState(() => readFamilyProgress(childId));
+  const [bossIntro, setBossIntro] = useState<BossDef | null>(null);
+  const [bossVictory, setBossVictory] = useState<BossDef | null>(null);
+  const [bossFightActive, setBossFightActive] = useState(false);
+  const lastMistakePrompt = useRef<string | undefined>(undefined);
+  const sessionStartedAt = useRef<number>(Date.now());
+  const homeTracked = useRef(false);
+  const competitionTracked = useRef(false);
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const adaptiveProfile = useMemo(
+    () => deriveAdaptiveProfile(adaptiveStats),
+    [adaptiveStats],
+  );
+  const practiceEase = useMemo(
+    () => (learningDna ? dnaEaseFactor(learningDna) : adaptiveProfile.easeFactor),
+    [adaptiveProfile.easeFactor, learningDna],
+  );
+  const reviewSkill = useMemo(
+    () => nextReviewSkill(readReviewSchedule(childId), mastery),
+    [childId, mastery],
+  );
+  const learningPath = useMemo(
+    () =>
+      buildLearningPath({
+        currentLevel: level,
+        completedLevels: (progress?.completedLevels ?? []) as LevelId[],
+        mastery,
+      }),
+    [level, mastery, progress?.completedLevels],
+  );
+  const weeklyEvent = useMemo(
+    () => currentWeeklyEvent(weekKeyUtc(), ageYears),
+    [ageYears],
+  );
+  const parentInsightsV4 = useMemo(() => {
+    if (!learningDna) return null;
+    return buildParentInsightsV4({
+      dna: learningDna,
+      previousDna: readPreviousLearningDna(childId),
+      mastery,
+      review: readReviewSchedule(childId),
+      currentLevel: level,
+    });
+  }, [childId, learningDna, level, mastery]);
+  const coachFragment = useMemo(
+    () =>
+      buildLivingTutorCoachFragment({
+        stats: adaptiveStats,
+        profile: adaptiveProfile,
+        mastery,
+        lastMistakePrompt: lastMistakePrompt.current,
+        language: i18n.language?.startsWith("hi") ? "hi" : "en",
+      }),
+    [adaptiveProfile, adaptiveStats, i18n.language, mastery],
+  );
+  const activeMicroGame = useMemo(() => {
+    try {
+      return getMicroGame(microGameId);
+    } catch {
+      return getMicroGame("classic");
+    }
+  }, [microGameId]);
   const actionGate = gate ?? {
     locked: false,
     previewMode: false,
@@ -1211,10 +1324,60 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
     entitlementState: "premium" as const,
   };
 
+  const analyticsCtx = useMemo(
+    () => ({
+      childId,
+      age: ageYears,
+      language: i18n.language,
+      subscription: actionGate.entitlementState,
+      level,
+    }),
+    [actionGate.entitlementState, ageYears, childId, i18n.language, level],
+  );
+
   const recordActivity = useCallback(() => {
     const next = bumpStreak(childId);
     setStreak(next);
+    markLastActive(childId);
   }, [childId]);
+
+  useEffect(() => {
+    if (homeTracked.current) return;
+    if (loading || zoneScreen !== "home") return;
+    homeTracked.current = true;
+    trackAbacusHomeOpen(analyticsCtx);
+    if (!competitionTracked.current) {
+      competitionTracked.current = true;
+      trackAbacusCompetitionView(analyticsCtx, weeklyEvent.id, weeklyEvent.bracket);
+      trackAbacusStoryWorldView(analyticsCtx, learningPath.currentChapter.worldId);
+    }
+  }, [analyticsCtx, learningPath.currentChapter.worldId, loading, weeklyEvent.bracket, weeklyEvent.id, zoneScreen]);
+
+  // Flush offline progress queue when back online.
+  useEffect(() => {
+    const flush = async () => {
+      const queue = readOfflineQueue(childId);
+      if (queue.length === 0) return;
+      const remaining = [];
+      for (const item of queue) {
+        try {
+          const res = await authFetch(item.path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item.body),
+          });
+          if (!res.ok) remaining.push(item);
+        } catch {
+          remaining.push(item);
+        }
+      }
+      writeOfflineQueue(childId, remaining);
+    };
+    void flush();
+    const onOnline = () => void flush();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [authFetch, childId]);
 
   // Pull the friends/family leaderboard. Lightweight — re-fetched on
   // mount and after every challenge completion so the strip reflects
@@ -1272,12 +1435,90 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
   useEffect(() => {
     setDailyPractice(readDailyPractice(childId));
     setStreak(readStreak(childId));
+    setAgeOverrides(readAgeOverrides(childId));
+    setWarmup(readWarmup(childId));
+    setMastery(readMastery(childId));
+    setCollection(readCollection(childId));
+    setMission(readMission(childId, level));
+    setAdaptiveStats(readAdaptiveStats(childId));
+    setLearningDna(readLearningDna(childId));
+    setAchievementsV2(readAchievementsV2(childId));
+    setFamilyProgress(readFamilyProgress(childId));
+    setBossIntro(null);
+    setBossVictory(null);
+    setBossFightActive(false);
+    setAchievementToast(null);
+    setMicroGameId(readPreferredMicroGame(childId, "practice") ?? "magic_beads");
     setZoneScreen("home");
-  }, [childId]);
+    setShowProUpsell(false);
+    setPreviewPractice(false);
+    setMicroCorrect(0);
+    homeTracked.current = false;
+    competitionTracked.current = false;
+  }, [childId]); // eslint-disable-line react-hooks/exhaustive-deps -- reset on child change only
+
+  useEffect(() => {
+    setMission(readMission(childId, level));
+  }, [childId, level]);
+
+  useEffect(() => {
+    if (mode !== "practice" && mode !== "mental" && mode !== "challenge") return;
+    const pref = readPreferredMicroGame(childId, mode);
+    setMicroGameId(pref ?? microGamesForModeFallback(mode));
+    setMicroCorrect(0);
+  }, [childId, mode]);
+
+  const refreshCollectionFromSignals = useCallback(
+    (extra?: Partial<Parameters<typeof evaluateCollectionUnlocks>[1]>) => {
+      const nextMastery = readMastery(childId);
+      const mental = nextMastery.mental_speed;
+      const addition = nextMastery.addition;
+      const ctx = {
+        totalCorrect: progress?.totalCorrect ?? 0,
+        streakDays: streak.days,
+        perfectChallenge: false,
+        warmupDone: readWarmup(childId).completed,
+        missionComplete: missionProgress(readMission(childId, level)).allCoreDone,
+        tutorAsks: readCollection(childId).tutorAsks,
+        levelUnlocked: false,
+        learnComplete: hasCompletedFirstLearn(childId),
+        playedLightning: microGameId === "lightning",
+        playedMagicBeads: microGameId === "magic_beads",
+        mentalTierAtLeastDeveloping:
+          mental.tier === "developing" ||
+          mental.tier === "strong" ||
+          mental.tier === "master" ||
+          mental.tier === "legend",
+        additionMaster: addition.tier === "master" || addition.tier === "legend",
+        anyMaster: Object.values(nextMastery).some(
+          (s) => s.tier === "master" || s.tier === "legend",
+        ),
+        mentalLegend: mental.tier === "legend",
+        missionsCompleted: readCollection(childId).missionsCompleted,
+        ...extra,
+      };
+      const { state, newlyUnlocked } = evaluateCollectionUnlocks(readCollection(childId), ctx);
+      writeCollection(childId, state);
+      setCollection(state);
+      if (newlyUnlocked.length) {
+        setNewUnlocks(newlyUnlocked);
+        for (const item of newlyUnlocked) {
+          trackAbacusCollectionUnlock(analyticsCtx, item);
+        }
+        sfx.celebrate();
+      }
+    },
+    [analyticsCtx, childId, level, microGameId, progress?.totalCorrect, streak.days],
+  );
 
   const logPracticeAttempt = useCallback(
-    async (correct: boolean) => {
+    async (
+      correct: boolean,
+      source: "practice" | "mental" | "warmup" = "practice",
+      meta?: { elapsedMs?: number; answer?: number; expected?: number; prompt?: string },
+    ) => {
       recordActivity();
+      const elapsedMs = meta?.elapsedMs ?? 0;
       setDailyPractice((prev) => {
         const nextDaily: DailyPracticeShape = {
           date: todayDateKey(),
@@ -1300,22 +1541,207 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
         return updated;
       });
 
-      await authFetch("/api/abacus/progress", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "log_session",
-          childId,
-          totalCorrect: correct ? 1 : 0,
-          totalAttempts: 1,
-          totalPoints: correct ? 10 : 0,
+      // V3 adaptive + mastery + coach
+      const repeated =
+        !correct &&
+        Boolean(meta?.prompt) &&
+        meta?.prompt === lastMistakePrompt.current;
+      if (!correct && meta?.prompt) lastMistakePrompt.current = meta.prompt;
+      const nextAdaptive = foldAttempt(adaptiveStats, {
+        correct,
+        elapsedMs,
+        repeatedMistake: repeated,
+        wildGuess:
+          typeof meta?.answer === "number" && typeof meta?.expected === "number"
+            ? isWildGuess(meta.answer, meta.expected)
+            : false,
+      });
+      writeAdaptiveStats(childId, nextAdaptive);
+      setAdaptiveStats(nextAdaptive);
+      const profile = deriveAdaptiveProfile(nextAdaptive);
+      setCoachLine(
+        livingCoachLine({
+          stats: nextAdaptive,
+          profile,
+          mastery,
+          lastMistakePrompt: lastMistakePrompt.current,
+          language: i18n.language?.startsWith("hi") ? "hi" : "en",
         }),
-      }).catch(() => {});
+      );
+
+      const skill = skillForLevelMode(
+        level,
+        source === "warmup" ? "warmup" : source,
+      );
+      const nextMastery = applyMasteryAttempt(mastery, skill, {
+        correct,
+        elapsedMs,
+      });
+      writeMastery(childId, nextMastery);
+      setMastery(nextMastery);
+
+      // V4: Learning DNA + emotion + spaced repetition + achievements
+      const dna = refreshLearningDna(childId, {
+        stats: nextAdaptive,
+        mastery: nextMastery,
+        preferredGameMode: microGameId,
+        activeDaysLastTwoWeeks: Math.min(14, streak.days),
+      });
+      setLearningDna(dna);
+      trackAbacusDnaUpdated(analyticsCtx, {
+        accuracy: dna.accuracy,
+        confidence: dna.confidence,
+        tutor_style: dna.preferredTutorStyle,
+      });
+
+      const emotionState = detectEmotion({
+        stats: nextAdaptive,
+        profile,
+        dna,
+      });
+      const cue = emotionCue({
+        state: emotionState,
+        language: i18n.language?.startsWith("hi") ? "hi" : "en",
+        rotate: bumpEmotionRotate(childId),
+      });
+      setCoachLine(cue.line);
+      trackAbacusEmotionCue(analyticsCtx, emotionState);
+
+      const quality = (correct
+        ? elapsedMs > 0 && elapsedMs < 4000
+          ? 5
+          : 4
+        : 1) as 0 | 1 | 2 | 3 | 4 | 5;
+      const nextReview = applyReviewResult(readReviewSchedule(childId), skill, quality);
+      writeReviewSchedule(childId, nextReview);
+      if (correct) {
+        bumpReviewsCompleted(childId);
+        trackAbacusReviewScheduled(analyticsCtx, skill);
+      }
+
+      const { earned, newlyUnlocked } = syncAchievementsV2(childId, {
+        streakDays: streak.days,
+        totalCorrect: (progress?.totalCorrect ?? 0) + (correct ? 1 : 0),
+        dnaSpeed: dna.speed,
+        dnaConsistency: dna.consistency,
+        mastery: nextMastery,
+        collection: readCollection(childId),
+        tutorAsks: readTutorAsksV4(childId),
+        weekendMissionDone: readWeekendMissionDone(childId),
+        bossesDefeated: readBossesDefeated(childId).length,
+        worldsUnlocked: unlockedWorlds(
+          highestUnlockedLevel((progress?.completedLevels ?? []) as LevelId[]),
+        ).length,
+        reviewsCompleted: readReviewsCompleted(childId),
+      });
+      setAchievementsV2(earned);
+      if (newlyUnlocked[0]) {
+        setAchievementToast(newlyUnlocked[0]);
+        for (const id of newlyUnlocked) trackAbacusAchievementUnlocked(analyticsCtx, id);
+        sfx.celebrate();
+      }
+
+      if (correct) {
+        setMicroCorrect((n) => n + 1);
+      }
+      if (elapsedMs > 0) trackAbacusThinkingTime(analyticsCtx, elapsedMs, correct);
+
+      if (source === "mental") trackAbacusMentalCompleted(analyticsCtx, correct, elapsedMs);
+      else if (source === "practice") trackAbacusPracticeCompleted(analyticsCtx, correct, elapsedMs);
+
+      const body = {
+        action: "log_session" as const,
+        childId,
+        totalCorrect: correct ? 1 : 0,
+        totalAttempts: 1,
+        totalPoints: correct ? 10 : 0,
+      };
+
+      try {
+        const res = await authFetch("/api/abacus/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) enqueueOffline(childId, "/api/abacus/progress", body);
+      } catch {
+        enqueueOffline(childId, "/api/abacus/progress", body);
+      }
 
       if (correct) refreshLeaderboard();
+      refreshCollectionFromSignals();
+
+      // Persist weekly snap for parent week-over-week.
+      const wk = weekKeyUtc();
+      const snap = readWeeklySnap(childId);
+      const acc =
+        (progress?.totalAttempts ?? 0) + 1 > 0
+          ? Math.round(
+              (((progress?.totalCorrect ?? 0) + (correct ? 1 : 0)) /
+                ((progress?.totalAttempts ?? 0) + 1)) *
+                100,
+            )
+          : 0;
+      if (!snap || snap.weekKey !== wk) {
+        writeWeeklySnap(childId, {
+          weekKey: wk,
+          accuracy: acc,
+          totalPoints: (progress?.totalPoints ?? 0) + (correct ? 10 : 0),
+          learningMinutes: Math.max(1, Math.round(elapsedMs / 60_000)),
+          averageScore: masterySummary(nextMastery).averageScore,
+        });
+      }
     },
-    [authFetch, childId, refreshLeaderboard, recordActivity],
+    [
+      adaptiveStats,
+      analyticsCtx,
+      authFetch,
+      childId,
+      i18n.language,
+      level,
+      mastery,
+      microGameId,
+      progress,
+      refreshCollectionFromSignals,
+      refreshLeaderboard,
+      recordActivity,
+      streak.days,
+    ],
   );
+
+  const completeMissionStep = useCallback(
+    (stepId: string) => {
+      const next = markMissionStep(mission, stepId);
+      writeMission(childId, next);
+      setMission(next);
+      refreshCollectionFromSignals({
+        missionComplete: missionProgress(next).allCoreDone,
+      });
+    },
+    [childId, mission, refreshCollectionFromSignals],
+  );
+
+  const claimMissionTreasure = useCallback(() => {
+    if (mission.treasureClaimed) return;
+    let nextCol = grantGems(collection, mission.rewardGems);
+    nextCol = grantStars(nextCol, mission.rewardStars);
+    nextCol = {
+      ...nextCol,
+      missionsCompleted: nextCol.missionsCompleted + 1,
+    };
+    let nextMission = markMissionStep(mission, "treasure");
+    nextMission = { ...nextMission, treasureClaimed: true };
+    writeCollection(childId, nextCol);
+    writeMission(childId, nextMission);
+    setCollection(nextCol);
+    setMission(nextMission);
+    trackAbacusMissionCompleted(analyticsCtx, mission.rewardGems, mission.rewardStars);
+    sfx.celebrate();
+    refreshCollectionFromSignals({
+      missionComplete: true,
+      missionsCompleted: nextCol.missionsCompleted,
+    });
+  }, [analyticsCtx, childId, collection, mission, refreshCollectionFromSignals]);
 
   const persistMode = useCallback(
     (next: Mode, lvl: LevelId) => {
@@ -1329,10 +1755,30 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
   );
 
   const onChallengeComplete = useCallback(
-    async (accuracyPct: number, points: number) => {
+    async (
+      accuracyPct: number,
+      points: number,
+      meta?: {
+        sessionToken?: string;
+        seed?: number;
+        answers?: number[];
+        elapsedMs?: number[];
+      },
+    ) => {
       recordActivity();
       const def = LEVELS.find((l) => l.id === level)!;
-      if (accuracyPct >= def.unlockAccuracyPct) {
+      const passed = accuracyPct >= def.unlockAccuracyPct;
+      trackAbacusChallengeCompleted(analyticsCtx, {
+        accuracy: accuracyPct,
+        points,
+        passed,
+        duration_ms: Date.now() - sessionStartedAt.current,
+      });
+      trackAbacusModeCompleted(analyticsCtx, "challenge", {
+        accuracy: accuracyPct,
+        duration_ms: Date.now() - sessionStartedAt.current,
+      });
+      if (passed) {
         const res = await authFetch("/api/abacus/progress", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1342,9 +1788,17 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
             level,
             accuracyPct,
             points,
+            ...(meta?.sessionToken
+              ? {
+                  sessionToken: meta.sessionToken,
+                  seed: meta.seed,
+                  answers: meta.answers,
+                  elapsedMs: meta.elapsedMs,
+                }
+              : {}),
           }),
         });
-        const data = await parseApiJson<{ progress?: ProgressShape }>(res).catch(() => null);
+        const data = await parseApiJson<{ progress?: ProgressShape; unlocked?: number | null }>(res).catch(() => null);
         if (data?.progress) {
           const np: ProgressShape = {
             ...(progress ?? {
@@ -1365,35 +1819,114 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
           setProgress(np);
           writeCachedProgress(childId, np);
           sfx.unlock();
+          if (data.unlocked) {
+            trackAbacusLevelUnlocked(analyticsCtx, data.unlocked);
+          }
         }
       }
       // Always log the session totals so the lifetime counters move.
-      await authFetch("/api/abacus/progress", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "log_session",
-          childId,
-          totalCorrect: Math.round((accuracyPct / 100) * def.challengeCount),
-          totalAttempts: def.challengeCount,
-          totalPoints: points,
-        }),
-      }).catch(() => {});
-      // Refresh the leaderboard so the strip updates with the new score.
+      const sessionBody = {
+        action: "log_session" as const,
+        childId,
+        totalCorrect: Math.round((accuracyPct / 100) * def.challengeCount),
+        totalAttempts: def.challengeCount,
+        totalPoints: points,
+      };
+      try {
+        const res = await authFetch("/api/abacus/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sessionBody),
+        });
+        if (!res.ok) enqueueOffline(childId, "/api/abacus/progress", sessionBody);
+      } catch {
+        enqueueOffline(childId, "/api/abacus/progress", sessionBody);
+      }
       refreshLeaderboard();
+
+      if (bossFightActive) {
+        const boss = bossForLevel(level);
+        const won = accuracyPct >= def.unlockAccuracyPct;
+        trackAbacusBossCompleted(analyticsCtx, boss.id, { level, won });
+        if (won) {
+          markBossDefeated(childId, level);
+          setBossVictory(boss);
+          sfx.celebrate();
+        }
+        setBossFightActive(false);
+      }
     },
-    [authFetch, childId, level, mode, progress, refreshLeaderboard, recordActivity],
+    [
+      analyticsCtx,
+      authFetch,
+      bossFightActive,
+      childId,
+      level,
+      mode,
+      progress,
+      refreshLeaderboard,
+      recordActivity,
+    ],
   );
 
   const startPlay = useCallback(
     (nextMode?: Mode) => {
+      const m = nextMode ?? mode;
       if (nextMode) {
         setMode(nextMode);
         persistMode(nextMode, level);
       }
+      sessionStartedAt.current = Date.now();
+      trackAbacusModeStarted(analyticsCtx, m);
       setZoneScreen("play");
+      setShowProUpsell(false);
+      setPreviewPractice(false);
     },
-    [level, persistMode],
+    [analyticsCtx, level, mode, persistMode],
+  );
+
+  const onLessonComplete = useCallback(() => {
+    trackAbacusLessonCompleted(analyticsCtx);
+    trackAbacusModeCompleted(analyticsCtx, "learn");
+    if (!hasCompletedFirstLearn(childId)) {
+      markFirstLearnComplete(childId);
+      if (actionGate.previewMode && actionGate.locked) {
+        setShowProUpsell(true);
+      }
+    }
+  }, [actionGate.locked, actionGate.previewMode, analyticsCtx, childId]);
+
+  const selectLevel = useCallback(
+    (next: LevelId, unlocked: boolean) => {
+      if (!unlocked) return;
+      const access = resolveAgeLevelAccess({
+        level: next,
+        ageYears,
+        minAgeForLevel: minAgeForLevel(next),
+        progressionUnlocked: unlocked,
+        parentOverride: ageOverrides.includes(next),
+      });
+      if (access.softLocked) {
+        setAgeConfirmLevel(next);
+        return;
+      }
+      setLevel(next);
+      persistMode(mode, next);
+    },
+    [ageOverrides, ageYears, mode, persistMode],
+  );
+
+  const confirmAgeOverride = useCallback(
+    (by: "parent" | "child_confirmed") => {
+      if (!ageConfirmLevel) return;
+      writeAgeOverride(childId, ageConfirmLevel);
+      setAgeOverrides(readAgeOverrides(childId));
+      trackAbacusAgeOverride(analyticsCtx, ageConfirmLevel, by);
+      setLevel(ageConfirmLevel);
+      persistMode(mode, ageConfirmLevel);
+      setAgeConfirmLevel(null);
+    },
+    [ageConfirmLevel, analyticsCtx, childId, mode, persistMode],
   );
 
   if (loading) {
@@ -1443,43 +1976,199 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
       )}
 
       {viewMode === "parent" && progress && (
-        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm space-y-3">
           <AbacusParentPanel
             progress={progress}
             streakDays={streak.days}
             dailyCorrect={dailyPractice.correct}
             dailyGoal={DAILY_PRACTICE_GOAL}
+            mastery={mastery}
+            previousWeekAccuracy={prevWeekAccuracy}
+            insightsV4={parentInsightsV4}
             t={t}
+          />
+          <AbacusCertificateCard
+            childId={childId}
+            childName={childName}
+            mastery={mastery}
+            chapterTitle={learningPath.currentChapter.title}
+            ageYears={ageYears}
+          />
+          <AbacusFamilyPanel
+            completedIds={familyProgress.completedIds}
+            onStart={(c) => {
+              trackAbacusFamilyChallenge(analyticsCtx, c.id, "start");
+              if (c.id === "weekend_quest") markWeekendMissionDone(childId);
+              if (c.childMode === "warmup") {
+                setZoneScreen("warmup");
+                return;
+              }
+              startPlay(c.childMode);
+            }}
+            onMarkDone={(id) => {
+              setFamilyProgress(markFamilyChallengeDone(childId, id));
+              trackAbacusFamilyChallenge(analyticsCtx, id, "complete");
+              if (id === "weekend_quest") markWeekendMissionDone(childId);
+            }}
           />
         </div>
       )}
 
+      <AbacusBossIntro
+        boss={bossIntro ?? bossForLevel(level)}
+        open={Boolean(bossIntro)}
+        onDismiss={() => setBossIntro(null)}
+        onFight={() => {
+          if (!bossIntro) return;
+          trackAbacusBossStarted(analyticsCtx, bossIntro.id, bossIntro.level);
+          setLevel(bossIntro.level);
+          setBossFightActive(true);
+          setBossIntro(null);
+          startPlay("challenge");
+        }}
+      />
+      <AbacusBossVictory
+        boss={bossVictory ?? bossForLevel(level)}
+        open={Boolean(bossVictory)}
+        onClose={() => setBossVictory(null)}
+      />
+      <AbacusAchievementsV2
+        earned={achievementsV2}
+        showGrid={viewMode === "child" && zoneScreen === "home"}
+        toastId={achievementToast}
+        onDismissToast={() => setAchievementToast(null)}
+      />
+
       {viewMode === "child" && zoneScreen === "home" && progress && (
-        <PremiumActionGate gate={actionGate} label="Unlock Abacus practice">
-          <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-            <AbacusHomeDashboard
-              childName={childName}
-              progress={progress}
-              level={level}
-              mode={mode}
-              streakDays={streak.days}
-              dailyCorrect={dailyPractice.correct}
-              dailyGoal={DAILY_PRACTICE_GOAL}
-              leaderboard={leaderboard}
-              onContinue={() => startPlay()}
-              onQuickStart={(m) => startPlay(m)}
-              t={t}
-            />
-          </div>
-        </PremiumActionGate>
+        <div className="space-y-3">
+          <AbacusReminderBanner
+            daysAway={daysSinceLastActive(childId)}
+            easier={daysSinceLastActive(childId) >= 7}
+            onResume={() => {
+              const easy = daysSinceLastActive(childId) >= 7;
+              if (easy) setLevel(recommendedLevelForAge(Math.max(2, ageYears - 1)) as LevelId);
+              startPlay("learn");
+            }}
+          />
+          {actionGate.previewMode && <AbacusPremiumValuePanel />}
+          <AbacusJourneyMap
+            path={learningPath}
+            reducedMotion={reducedMotion}
+            onOpenBoss={(lvl) => setBossIntro(bossForLevel(lvl as LevelId))}
+          />
+          <AbacusStoryWorldsStrip
+            highestUnlocked={highestUnlockedLevel(progress.completedLevels as LevelId[])}
+            reducedMotion={reducedMotion}
+          />
+          <AbacusCompetitionBanner event={weeklyEvent} />
+          <AbacusDailyAdventureCard
+            mission={mission}
+            onStart={(stepId) => {
+              trackAbacusMissionStarted(analyticsCtx, stepId);
+              if (stepId === "warmup") {
+                trackAbacusWarmupStarted(analyticsCtx);
+                setZoneScreen("warmup");
+                return;
+              }
+              const step = mission.steps.find((s) => s.id === stepId);
+              if (step?.microGameId) {
+                setMicroGameId(step.microGameId);
+                writePreferredMicroGame(
+                  childId,
+                  step.kind === "practice" || step.kind === "mental" || step.kind === "challenge"
+                    ? step.kind
+                    : "practice",
+                  step.microGameId,
+                );
+              }
+              if (step?.kind === "practice" || step?.kind === "mental" || step?.kind === "challenge") {
+                setMicroCorrect(0);
+                startPlay(step.kind);
+              }
+            }}
+            onClaimTreasure={claimMissionTreasure}
+          />
+          <AbacusWarmupCard
+            completedToday={warmup.completed}
+            onStart={() => {
+              trackAbacusWarmupStarted(analyticsCtx);
+              sessionStartedAt.current = Date.now();
+              setZoneScreen("warmup");
+            }}
+          />
+          <AbacusCollectionShelf collection={collection} highlight={newUnlocks} />
+          <PremiumActionGate gate={actionGate} label="Unlock Abacus practice">
+            <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+              <AbacusHomeDashboard
+                childName={childName}
+                progress={progress}
+                level={level}
+                mode={mode}
+                streakDays={streak.days}
+                dailyCorrect={dailyPractice.correct}
+                dailyGoal={DAILY_PRACTICE_GOAL}
+                leaderboard={leaderboard}
+                onContinue={() => startPlay()}
+                onQuickStart={(m) => startPlay(m)}
+                t={t}
+              />
+            </div>
+          </PremiumActionGate>
+        </div>
+      )}
+
+      {viewMode === "child" && zoneScreen === "warmup" && (
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+          <AbacusWarmupSession
+            level={level}
+            onAttempt={(ok) => void logPracticeAttempt(ok, "warmup")}
+            onComplete={(bonus) => {
+              const nextWarmup = { date: todayDateKey(), completed: true, bonusAwarded: true };
+              writeWarmup(childId, nextWarmup);
+              setWarmup(nextWarmup);
+              trackAbacusWarmupCompleted(analyticsCtx, bonus);
+              completeMissionStep("warmup");
+              setProgress((prev) => {
+                if (!prev) return prev;
+                const updated = { ...prev, totalPoints: prev.totalPoints + bonus };
+                writeCachedProgress(childId, updated);
+                return updated;
+              });
+              // Bonus XP only — attempts already logged via onAttempt during the warm-up.
+              const body = {
+                action: "log_session" as const,
+                childId,
+                totalCorrect: 0,
+                totalAttempts: 0,
+                totalPoints: bonus,
+              };
+              void authFetch("/api/abacus/progress", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              }).catch(() => enqueueOffline(childId, "/api/abacus/progress", body));
+              refreshCollectionFromSignals({ warmupDone: true });
+            }}
+            onExit={() => setZoneScreen("home")}
+          />
+        </div>
       )}
 
       {viewMode === "child" && zoneScreen === "play" && (
         <>
           <button
             type="button"
-            onClick={() => setZoneScreen("home")}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 dark:text-teal-300"
+            onClick={() => {
+              trackAbacusQuitMidSession(
+                analyticsCtx,
+                mode,
+                Date.now() - sessionStartedAt.current,
+              );
+              setZoneScreen("home");
+              setShowProUpsell(false);
+              setPreviewPractice(false);
+            }}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 dark:text-teal-300 min-h-[40px]"
             data-testid="abacus-back-home"
           >
             <Home className="h-3.5 w-3.5" />
@@ -1530,30 +2219,46 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
             </div>
           )}
 
+          <p className="text-[11px] text-muted-foreground font-semibold">
+            ⭐ {t("abacus.recommended_for_age", "Recommended for age {{age}}", { age: ageYears })}:{" "}
+            Level {recommendedLevelForAge(ageYears)}
+          </p>
+
           <div className="flex flex-wrap gap-1.5">
             {LEVELS.map((l) => {
               const unlocked = isLevelUnlocked(l.id, completed);
               const active = l.id === level;
+              const access = resolveAgeLevelAccess({
+                level: l.id,
+                ageYears,
+                minAgeForLevel: minAgeForLevel(l.id),
+                progressionUnlocked: unlocked,
+                parentOverride: ageOverrides.includes(l.id),
+              });
+              const softLocked = access.softLocked;
               return (
                 <button
                   key={l.id}
                   type="button"
                   disabled={!unlocked}
-                  onClick={() => {
-                    setLevel(l.id);
-                    persistMode(mode, l.id);
-                  }}
+                  title={softLocked ? access.message : undefined}
+                  onClick={() => selectLevel(l.id, unlocked)}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold border-2 transition-colors",
+                    "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold border-2 transition-colors min-h-[36px]",
                     active
                       ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent shadow-sm"
-                      : unlocked
-                        ? "bg-background text-foreground border-border hover:bg-muted"
-                        : "bg-muted text-muted-foreground border-muted opacity-60",
+                      : softLocked
+                        ? "bg-muted/80 text-muted-foreground border-dashed border-amber-400/50"
+                        : unlocked
+                          ? "bg-background text-foreground border-border hover:bg-muted"
+                          : "bg-muted text-muted-foreground border-muted opacity-60",
                   )}
                   data-testid={`abacus-level-${l.id}`}
+                  data-age-soft-locked={softLocked ? "true" : "false"}
                 >
                   {!unlocked && <Lock className="h-3 w-3" />}
+                  {softLocked && unlocked && <span aria-hidden>🔒</span>}
+                  {access.recommended && unlocked && !softLocked && <span aria-hidden>⭐</span>}
                   L{l.id} •{" "}
                   {isAbacusLevelSlug(l.slug)
                     ? t(`abacus.level_${l.slug}`, abacusLevelLabelDefault(l.slug))
@@ -1563,6 +2268,46 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
             })}
           </div>
 
+          {ageConfirmLevel != null && (
+            <div
+              className="rounded-2xl border border-amber-400/40 bg-amber-500/10 p-3 space-y-2"
+              data-testid="abacus-age-confirm"
+              role="dialog"
+              aria-labelledby="abacus-age-confirm-title"
+            >
+              <p id="abacus-age-confirm-title" className="text-sm font-bold">
+                {resolveAgeLevelAccess({
+                  level: ageConfirmLevel,
+                  ageYears,
+                  minAgeForLevel: minAgeForLevel(ageConfirmLevel),
+                  progressionUnlocked: true,
+                  parentOverride: false,
+                }).message}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("abacus.age_confirm_child", "Ask a parent to unlock this level.")}{" "}
+                {t("abacus.age_confirm_parent", "Parents can override this recommendation.")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAgeConfirmLevel(null)}
+                  className="rounded-xl bg-muted text-foreground text-xs font-bold px-3 py-2 min-h-[40px]"
+                >
+                  {t("abacus.back")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => confirmAgeOverride("parent")}
+                  className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-xs font-bold px-3 py-2 min-h-[40px]"
+                  data-testid="abacus-age-override"
+                >
+                  {t("abacus.age_override", "Open anyway")}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-none">
             {MODES.map((m) => {
               const button = (
@@ -1570,11 +2315,18 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
                   key={m.id}
                   type="button"
                   onClick={() => {
+                    if (m.id !== "learn" && actionGate.previewMode && actionGate.locked) {
+                      trackAbacusPremiumBlocked(analyticsCtx, "mode_chip", m.id);
+                    }
                     setMode(m.id);
                     persistMode(m.id, level);
+                    sessionStartedAt.current = Date.now();
+                    trackAbacusModeStarted(analyticsCtx, m.id);
+                    setShowProUpsell(false);
+                    if (m.id === "practice") setPreviewPractice(false);
                   }}
                   className={cn(
-                    "shrink-0 min-w-[4.5rem] rounded-xl text-xs font-semibold py-2 px-2 border transition-all",
+                    "shrink-0 min-w-[4.5rem] rounded-xl text-xs font-semibold py-2 px-2 border transition-all min-h-[44px]",
                     mode === m.id
                       ? "bg-gradient-to-br from-teal-500 to-cyan-500 text-white border-transparent shadow-md scale-[1.02]"
                       : "bg-background text-foreground border-border hover:bg-muted",
@@ -1593,29 +2345,164 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
             })}
           </div>
 
+          {coachLine && mode !== "learn" && (
+            <AbacusCoachBubble text={coachLine} celebrate={adaptiveProfile.signal === "fast_learner"} />
+          )}
+
+          {(mode === "practice" || mode === "mental" || mode === "challenge") && (
+            <div className="space-y-2">
+              <AbacusMicroGamePicker
+                mode={mode}
+                selected={
+                  activeMicroGame.baseMode === mode ? microGameId : microGamesForModeFallback(mode)
+                }
+                onSelect={(id) => {
+                  setMicroGameId(id);
+                  writePreferredMicroGame(childId, mode, id);
+                  setMicroCorrect(0);
+                  trackAbacusGamePlayed(analyticsCtx, id, mode);
+                }}
+              />
+              <AbacusMicroGameBanner
+                game={
+                  activeMicroGame.baseMode === mode
+                    ? activeMicroGame
+                    : getMicroGame(microGamesForModeFallback(mode))
+                }
+                correct={microCorrect}
+                target={
+                  activeMicroGame.baseMode === mode
+                    ? activeMicroGame.targetCorrect
+                    : getMicroGame(microGamesForModeFallback(mode)).targetCorrect
+                }
+                coins={
+                  microGameId === "coin_collection" || microGameId === "treasure_hunt"
+                    ? microCorrect
+                    : undefined
+                }
+                amyScore={microGameId === "beat_amy" ? 3 : undefined}
+              />
+            </div>
+          )}
+
           <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
             {mode === "learn" && (
-              <LearnMode
-                level={level}
-                speaking={voice.isActive}
-                onSpeak={(text) => void voice.speak(text)}
-                onStop={voice.stop}
-                onPrime={voice.prime}
-              />
+              <div className="space-y-3">
+                <LearnMode
+                  level={level}
+                  speaking={voice.isActive}
+                  onSpeak={(text) => void voice.speak(text)}
+                  onStop={voice.stop}
+                  onPrime={voice.prime}
+                  onLessonComplete={onLessonComplete}
+                />
+                {showProUpsell && (
+                  <AbacusLearnToProUpsell
+                    onContinueFree={() => setShowProUpsell(false)}
+                    onTryPro={() => {
+                      trackAbacusPremiumClicked(analyticsCtx, "learn_upsell");
+                      openSubscriptionGate({
+                        reason: "hub_locked",
+                        source: "abacus_learn_upsell",
+                        module: "hub_abacus",
+                        action: "practice",
+                        entitlementState: actionGate.entitlementState,
+                      });
+                    }}
+                    onPreviewPractice={() => {
+                      setPreviewPractice(true);
+                      setMode("practice");
+                    }}
+                  />
+                )}
+              </div>
             )}
             {mode === "practice" && (
-              <PremiumActionGate gate={actionGate} label="Unlock Abacus practice">
-                <PracticeMode level={level} onAttempt={logPracticeAttempt} childView />
-              </PremiumActionGate>
+              previewPractice && actionGate.locked ? (
+                <div className="space-y-3" data-testid="abacus-practice-preview">
+                  <p className="text-xs text-muted-foreground text-center font-semibold">
+                    Preview — try one question, then unlock Practice Mode
+                  </p>
+                  <PracticeMode
+                    level={level}
+                    onAttempt={() => {
+                      setPreviewPractice(false);
+                      setShowProUpsell(true);
+                      setMode("learn");
+                      trackAbacusPremiumBlocked(analyticsCtx, "practice_preview", "practice");
+                    }}
+                    childView
+                  />
+                  <AbacusLearnToProUpsell
+                    onContinueFree={() => {
+                      setPreviewPractice(false);
+                      setMode("learn");
+                    }}
+                    onTryPro={() => {
+                      trackAbacusPremiumClicked(analyticsCtx, "practice_preview");
+                      openSubscriptionGate({
+                        reason: "hub_locked",
+                        source: "abacus_practice_preview",
+                        module: "hub_abacus",
+                        action: "practice",
+                        entitlementState: actionGate.entitlementState,
+                      });
+                    }}
+                    onPreviewPractice={() => undefined}
+                  />
+                </div>
+              ) : (
+                <PremiumActionGate gate={actionGate} label="Unlock Abacus practice">
+                  <PracticeMode
+                    level={level}
+                    easeFactor={practiceEase}
+                    reviewSkill={reviewSkill}
+                    enableVoice
+                    onVoiceResult={(meta) =>
+                      trackAbacusVoiceAnswer(analyticsCtx, {
+                        correct: meta.correct,
+                        confidence: meta.confidence,
+                        response_ms: meta.responseMs,
+                      })
+                    }
+                    onAttempt={(ok, meta) => {
+                      void logPracticeAttempt(ok, "practice", meta);
+                      if (ok && microCorrect + 1 >= activeMicroGame.targetCorrect) {
+                        completeMissionStep("practice");
+                      }
+                    }}
+                    childView
+                  />
+                </PremiumActionGate>
+              )
             )}
             {mode === "challenge" && (
               <PremiumActionGate gate={actionGate} label="Unlock Abacus challenge mode">
-                <ChallengeMode level={level} onComplete={onChallengeComplete} />
+                <ChallengeMode
+                  level={level}
+                  childId={childId}
+                  onComplete={(accuracyPct, points, meta) => {
+                    void onChallengeComplete(accuracyPct, points, meta);
+                    completeMissionStep("challenge");
+                    if (accuracyPct >= 100) {
+                      refreshCollectionFromSignals({ perfectChallenge: true });
+                    }
+                  }}
+                />
               </PremiumActionGate>
             )}
             {mode === "mental" && (
               <PremiumActionGate gate={actionGate} label="Unlock mental math mode">
-                <MentalMode level={level} />
+                <MentalModeV2
+                  level={level}
+                  easeFactor={adaptiveProfile.easeFactor}
+                  onAttempt={(meta) => {
+                    void logPracticeAttempt(meta.correct, "mental", meta);
+                    if (meta.correct && microCorrect + 1 >= activeMicroGame.targetCorrect) {
+                      completeMissionStep("mental");
+                    }
+                  }}
+                />
               </PremiumActionGate>
             )}
             {mode === "tutor" && (
@@ -1625,6 +2512,8 @@ export function AbacusZone({ childId, childName, ageYears, gate }: Props) {
                   level={level}
                   ageYears={ageYears}
                   voice={voice}
+                  coachLine={coachLine}
+                  coachFragment={coachFragment}
                 />
               </PremiumActionGate>
             )}

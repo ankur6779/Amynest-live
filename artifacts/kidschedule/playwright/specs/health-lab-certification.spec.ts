@@ -56,62 +56,90 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector("text=Amy Health Lab", { timeout: 30_000 });
 });
 
+async function expandGrownUps(page: import("@playwright/test").Page) {
+  const grownUps = page.getByRole("button", { name: /For grown-ups/i });
+  if (await grownUps.isVisible().catch(() => false)) {
+    const expanded = await grownUps.getAttribute("aria-expanded");
+    if (expanded !== "true") await grownUps.click();
+  }
+}
+
+async function expandGoals(page: import("@playwright/test").Page) {
+  const goals = page.getByRole("button", { name: /Daily Quests/i });
+  if (await goals.isVisible().catch(() => false)) {
+    const expanded = await goals.getAttribute("aria-expanded");
+    if (expanded !== "true") await goals.click();
+  }
+}
+
+async function launchAdventure(page: import("@playwright/test").Page, title: string) {
+  await page.getByText(title).click();
+  const ready = page.getByRole("button", { name: /I'm Ready!/i });
+  if (await ready.isVisible().catch(() => false)) {
+    await ready.click();
+  }
+}
+
 test.describe("Health Lab home", () => {
   test("home loads with hero and CTAs", async ({ page }) => {
-    await expect(page.getByText("Start Health Quest")).toBeVisible();
-    await expect(page.getByText("Wellness Challenges")).toBeVisible();
+    await expect(page.getByText("Start Today's Adventure")).toBeVisible();
+    await expect(page.getByText("Today's Adventures")).toBeVisible();
   });
 
-  test("shows six challenge cards", async ({ page }) => {
+  test("shows playable adventures and health passport", async ({ page }) => {
     await expect(page.getByText("Balloon Journey Adventure")).toBeVisible();
     await expect(page.getByText("Sky Island Survival")).toBeVisible();
     await expect(page.getByText("Rocket Launch Academy")).toBeVisible();
     await expect(page.getByText("Crystal Garden Challenge")).toBeVisible();
     await expect(page.getByText("Crystal Core Reactor")).toBeVisible();
+    await expandGrownUps(page);
+    await expect(page.getByText("Health Passport")).toBeVisible();
     await expect(page.getByText("Amy Wellness Report")).toBeVisible();
   });
 
   test("daily quests section visible", async ({ page }) => {
     await expect(page.getByText("Daily Quests")).toBeVisible();
+    await expandGoals(page);
     await expect(page.getByText("Triple Play")).toBeVisible();
   });
 });
 
 test.describe("Game launch", () => {
   test("launches Breath Control onboarding", async ({ page }) => {
-    await page.getByText("Balloon Journey Adventure").click();
+    await launchAdventure(page, "Balloon Journey Adventure");
     await expect(page.getByText("Mission Briefing")).toBeVisible();
     await expect(page.getByText("Place your finger on the circle and hold still")).toBeVisible();
     await expect(page.getByRole("button", { name: /Start Journey/i })).toBeVisible();
   });
 
   test("launches Flamingo Balance onboarding", async ({ page }) => {
-    await page.getByText("Sky Island Survival").click();
+    await launchAdventure(page, "Sky Island Survival");
     await expect(page.getByText("Mission Briefing")).toBeVisible();
     await expect(page.getByText("Hold your phone steady like a flamingo!")).toBeVisible();
     await expect(page.getByRole("button", { name: /Start Survival/i })).toBeVisible();
   });
 
   test("launches Reaction Time onboarding", async ({ page }) => {
-    await page.getByText("Rocket Launch Academy").click();
+    await launchAdventure(page, "Rocket Launch Academy");
     await expect(page.getByText("Mission Briefing")).toBeVisible();
     await expect(page.getByText("Wait… then tap FAST when you see GO!")).toBeVisible();
     await expect(page.getByRole("button", { name: /Launch Mission/i })).toBeVisible();
   });
 
   test("launches Freeze Statue onboarding", async ({ page }) => {
-    await page.getByText("Crystal Garden Challenge").click();
+    await launchAdventure(page, "Crystal Garden Challenge");
     await expect(page.getByText("Mission Briefing")).toBeVisible();
     await expect(page.getByRole("button", { name: /Start Dancing/i })).toBeVisible();
   });
 
   test("launches Finger Stability onboarding", async ({ page }) => {
-    await page.getByText("Crystal Core Reactor").click();
+    await launchAdventure(page, "Crystal Core Reactor");
     await expect(page.getByText("Mission Briefing")).toBeVisible();
     await expect(page.getByRole("button", { name: /Power Up Reactor/i })).toBeVisible();
   });
 
   test("launches Calmness Meter onboarding", async ({ page }) => {
+    await expandGrownUps(page);
     await page.getByText("Amy Wellness Report").click();
     await expect(page.getByText("Mission Briefing")).toBeVisible();
     await expect(page.getByRole("button", { name: /View Report|Open Dashboard/i })).toBeVisible();
@@ -120,13 +148,13 @@ test.describe("Game launch", () => {
 
 test.describe("Onboarding and calibration flows", () => {
   test("Sky Island shows calibration overlay after start", async ({ page }) => {
-    await page.getByText("Sky Island Survival").click();
+    await launchAdventure(page, "Sky Island Survival");
     await page.getByRole("button", { name: /Start Survival/i }).click({ force: true });
     await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
   });
 
   test("Sky Island shows progress ring during gameplay", async ({ page }) => {
-    await page.getByText("Sky Island Survival").click();
+    await launchAdventure(page, "Sky Island Survival");
     await page.getByRole("button", { name: /Start Survival/i }).click({ force: true });
     await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
     await page.waitForTimeout(3500);
@@ -134,14 +162,14 @@ test.describe("Onboarding and calibration flows", () => {
   });
 
   test("Balloon Journey reaches gameplay after onboarding", async ({ page }) => {
-    await page.getByText("Balloon Journey Adventure").click();
+    await launchAdventure(page, "Balloon Journey Adventure");
     await page.getByRole("button", { name: /Start Journey/i }).click();
     await expect(page.getByText("Hold time")).toBeVisible();
     await expect(page.getByLabel("Hold to inflate balloon")).toBeVisible();
   });
 
   test("Rocket Launch reaches countdown after onboarding", async ({ page }) => {
-    await page.getByText("Rocket Launch Academy").click();
+    await launchAdventure(page, "Rocket Launch Academy");
     await page.getByRole("button", { name: /Launch Mission/i }).click({ force: true });
     await expect(page.getByText("3").or(page.getByText("GO!"))).toBeVisible({ timeout: 8000 });
   });
@@ -149,17 +177,19 @@ test.describe("Onboarding and calibration flows", () => {
 
 test.describe("Navigation flows", () => {
   test("opens progress screen", async ({ page }) => {
+    await expandGrownUps(page);
     await page.getByRole("button", { name: "Progress" }).click();
     await expect(page.getByText("Your Progress")).toBeVisible();
   });
 
   test("opens parent dashboard", async ({ page }) => {
-    await page.getByText("Parent Dashboard").click();
+    await expandGrownUps(page);
+    await page.getByText("Parent Insights").click();
     await expect(page.getByRole("heading", { name: "Wellness Trends" })).toBeVisible();
   });
 
   test("opens shop from home", async ({ page }) => {
-    await page.getByLabel("Open shop").click();
+    await page.getByLabel(/Open shop/i).click();
     await expect(page.getByText("Lab Shop")).toBeVisible();
   });
 });
@@ -374,7 +404,8 @@ test.describe("Sync & offline", () => {
 
 test.describe("Dashboard & parent value", () => {
   test("dashboard shows weekly summary", async ({ page }) => {
-    await page.getByText("Parent Dashboard").click();
+    await expandGrownUps(page);
+    await page.getByText("Parent Insights").click();
     await expect(page.getByText("Weekly Summary")).toBeVisible();
     await expect(page.getByText("Quarterly Growth")).toBeVisible();
     await expect(page.getByText("Progress Milestones")).toBeVisible();
@@ -382,7 +413,8 @@ test.describe("Dashboard & parent value", () => {
   });
 
   test("dashboard range filters", async ({ page }) => {
-    await page.getByText("Parent Dashboard").click();
+    await expandGrownUps(page);
+    await page.getByText("Parent Insights").click();
     await page.getByRole("button", { name: "30d" }).click();
     await expect(page.getByText("Monthly Wellness Summary")).toBeVisible();
   });

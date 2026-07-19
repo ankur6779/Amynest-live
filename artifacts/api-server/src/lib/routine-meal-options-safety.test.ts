@@ -74,6 +74,111 @@ describe("isMealOptionCompliant", () => {
       true,
     );
   });
+
+  it("C-02: rejects honey for ageInMonths under 12", () => {
+    assert.equal(
+      isMealOptionCompliant("Oatmeal with honey", {
+        dietType: "vegetarian",
+        ageInMonths: 8,
+      }),
+      false,
+    );
+    assert.equal(
+      isMealOptionCompliant("Fruit salad + honey", {
+        dietType: "vegetarian",
+        ageInMonths: 0,
+      }),
+      false,
+    );
+    assert.equal(
+      isMealOptionCompliant("Oatmeal with honey", {
+        dietType: "vegetarian",
+        ageInMonths: 11,
+      }),
+      false,
+    );
+  });
+
+  it("C-02: preserves honey for ageInMonths 12 and older", () => {
+    assert.equal(
+      isMealOptionCompliant("Oatmeal with honey", {
+        dietType: "vegetarian",
+        ageInMonths: 12,
+      }),
+      true,
+    );
+    assert.equal(
+      isMealOptionCompliant("Oatmeal with honey", {
+        dietType: "vegetarian",
+        ageInMonths: 24,
+      }),
+      true,
+    );
+  });
+
+  it("C-02: vegan still rejects honey regardless of age", () => {
+    assert.equal(
+      isMealOptionCompliant("Oatmeal with honey", {
+        dietType: "vegan",
+        ageInMonths: 24,
+      }),
+      false,
+    );
+    assert.equal(
+      isMealOptionCompliant("Oatmeal with honey", {
+        dietType: "vegan",
+        ageInMonths: 8,
+      }),
+      false,
+    );
+  });
+
+  it("C-02: non-honey options unchanged by age gate", () => {
+    assert.equal(
+      isMealOptionCompliant("Soft vegetable khichdi", {
+        dietType: "vegetarian",
+        ageInMonths: 8,
+      }),
+      true,
+    );
+    assert.equal(
+      isMealOptionCompliant("Soft vegetable khichdi", {
+        dietType: "vegetarian",
+        ageInMonths: 24,
+      }),
+      true,
+    );
+  });
+});
+
+describe("sanitizeMealOptions C-02 honey age gate", () => {
+  it("replaces honey options when ageInMonths < 12", () => {
+    const out = sanitizeMealOptions(
+      [
+        "Oatmeal with honey",
+        "Soft idli with sambar",
+        "Fruit with curd",
+        "Soft dal with rice",
+      ],
+      { dietType: "vegetarian", ageInMonths: 9 },
+    );
+    assert.equal(out.length, 4);
+    assert.equal(out.some((o) => /\bhoney\b/i.test(o)), false);
+  });
+
+  it("keeps honey options when ageInMonths >= 12", () => {
+    const out = sanitizeMealOptions(
+      [
+        "Oatmeal with honey",
+        "Soft idli with sambar",
+        "Fruit with curd",
+        "Soft dal with rice",
+      ],
+      { dietType: "vegetarian", ageInMonths: 12 },
+    );
+    assert.equal(out.length, 4);
+    assert.equal(out.some((o) => /\bhoney\b/i.test(o)), true);
+  });
 });
 
 describe("sanitizeMealOptions", () => {

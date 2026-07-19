@@ -1,0 +1,85 @@
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:46072) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:46072) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Pre-repair hot tables (live-source drift)...
+==> Synced 116 sequences from Render
+==> Counting 131 cold + 6 hot tables...
+(node:46072) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+==> analytics_events drift attempt 1: render=493853 coolify=493847 delta=-6
+==> analytics_events drift attempt 2: render=493932 coolify=493923 delta=-9
+==> analytics_events drift attempt 3: render=493976 coolify=493973 delta=-3
+==> analytics_events drift attempt 4: render=494016 coolify=494013 delta=-3
+==> analytics_events drift attempt 5: render=494051 coolify=494047 delta=-4
+==> analytics_events drift attempt 6: render=494087 coolify=494084 delta=-3
+==> analytics_events drift attempt 7: render=494124 coolify=494120 delta=-4
+==> analytics_events drift attempt 8: render=494163 coolify=494160 delta=-3
+==> Post-count repair pass 1 (analytics_events, notification_log, push_tokens)
+==> Skip gap repair for push_tokens: push_tokens: no rows fetched but counts differ (render=38 coolify=39)
+==> Post-count repair pass 2 (analytics_events, push_tokens)
+==> Skip gap repair for push_tokens: push_tokens: no rows fetched but counts differ (render=38 coolify=39)
+==> Post-count repair pass 3 (analytics_events, push_tokens)
+==> Skip gap repair for push_tokens: push_tokens: no rows fetched but counts differ (render=38 coolify=39)
+==> Final gate 1: row repair (analytics_events, push_tokens)
+==> Final gate 1: rows=2 sequences=0
+==> Final gate 2: row repair (analytics_events, push_tokens)
+==> Final gate 2: rows=2 sequences=0
+==> Final gate 3: row repair (analytics_events, push_tokens)
+==> Final gate 3: rows=2 sequences=0
+==> Final gate 4: row repair (analytics_events, push_tokens)
+==> Final gate 4: rows=2 sequences=0
+==> Final gate 5: row repair (analytics_events, push_tokens)
+==> Final gate 5: rows=2 sequences=0
+==> Final gate 6: row repair (analytics_events, push_tokens)
+==> Final gate 6: rows=2 sequences=0
+==> Final gate 7: row repair (analytics_events, push_tokens)
+==> Final gate 7: rows=2 sequences=0
+==> Final gate 8: row repair (analytics_events, push_tokens)
+==> Final gate 8: rows=2 sequences=0
+==> Final gate 9: row repair (analytics_events, push_tokens)
+==> Final gate 9: rows=2 sequences=0
+==> Final gate 10: row repair (analytics_events, push_tokens)
+node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection terminated unexpectedly
+    at Connection.<anonymous> (/Users/macbook/AmyNestProject/AmyNest-AI/node_modules/.pnpm/pg@8.20.0/node_modules/pg/lib/client.js:180:73)
+    at Object.onceWrapper (node:events:630:28)
+    at Connection.emit (node:events:509:20)
+    at Socket.<anonymous> (/Users/macbook/AmyNestProject/AmyNest-AI/node_modules/.pnpm/pg@8.20.0/node_modules/pg/lib/connection.js:61:12)
+    at Socket.emit (node:events:509:20)
+    at TCP.<anonymous> (node:net:350:12)
+Emitted 'error' event on Client instance at:
+    at Client._handleErrorEvent (/Users/macbook/AmyNestProject/AmyNest-AI/node_modules/.pnpm/pg@8.20.0/node_modules/pg/lib/client.js:393:10)
+    at Connection.<anonymous> (/Users/macbook/AmyNestProject/AmyNest-AI/node_modules/.pnpm/pg@8.20.0/node_modules/pg/lib/client.js:198:16)
+    at Object.onceWrapper (node:events:630:28)
+    at Connection.emit (node:events:509:20)
+    at Socket.<anonymous> (/Users/macbook/AmyNestProject/AmyNest-AI/node_modules/.pnpm/pg@8.20.0/node_modules/pg/lib/connection.js:61:12)
+    at Socket.emit (node:events:509:20)
+    at TCP.<anonymous> (node:net:350:12)
+
+Node.js v26.0.0
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.

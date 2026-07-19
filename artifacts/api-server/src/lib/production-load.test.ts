@@ -93,14 +93,29 @@ describe("ai job queue", () => {
 describe("routine cache", () => {
   beforeEach(() => clearRoutineGenerationCache());
 
+  const baseKeyParams = {
+    userId: "u",
+    childId: 1,
+    date: "2026-05-18",
+    mood: "normal" as const,
+    hasSchool: true,
+    schoolMealMode: "full",
+    weatherOutdoor: "yes",
+    wakeTime: "07:00",
+    sleepTime: "21:00",
+    sleepQuality: null as string | null,
+    aqi: 80,
+    fridgeItems: "paneer",
+    fixedActivities: [] as unknown[],
+    caregiver: "mom",
+    specialPlans: null as string | null,
+    allergies: null as string | null,
+    region: "north_indian",
+    foodType: "veg",
+  };
+
   it("stores and returns by user+child+date", () => {
-    const key = routineCacheKey({
-      userId: "u",
-      childId: 1,
-      date: "2026-05-18",
-      mood: "normal",
-      hasSchool: true,
-    });
+    const key = routineCacheKey(baseKeyParams);
     setCachedRoutine(key, {
       title: "Test",
       items: [{ activity: "Breakfast", startTime: "08:00", endTime: "08:30" }],
@@ -113,5 +128,43 @@ describe("routine cache", () => {
       true,
     );
     assert.equal(title, "Test");
+  });
+
+  it("C-03 collision matrix: context fields change cache key", () => {
+    const base = routineCacheKey(baseKeyParams);
+    assert.equal(routineCacheKey(baseKeyParams), base);
+
+    assert.notEqual(
+      routineCacheKey({ ...baseKeyParams, caregiver: "dad" }),
+      base,
+    );
+    assert.notEqual(
+      routineCacheKey({ ...baseKeyParams, allergies: "peanut" }),
+      base,
+    );
+    assert.notEqual(
+      routineCacheKey({ ...baseKeyParams, region: "south_indian" }),
+      base,
+    );
+    assert.notEqual(
+      routineCacheKey({ ...baseKeyParams, foodType: "non_veg" }),
+      base,
+    );
+    assert.notEqual(
+      routineCacheKey({ ...baseKeyParams, specialPlans: "doctor visit" }),
+      base,
+    );
+  });
+
+  it("C-03: different caregiver does not hit prior cache entry", () => {
+    const momKey = routineCacheKey(baseKeyParams);
+    setCachedRoutine(momKey, {
+      title: "PLAN_MOM",
+      items: [{ activity: "Breakfast", startTime: "08:00", endTime: "08:30" }],
+    } as never);
+    const dadKey = routineCacheKey({ ...baseKeyParams, caregiver: "dad" });
+    assert.notEqual(momKey, dadKey);
+    assert.equal(getCachedRoutine(dadKey), null);
+    assert.equal((getCachedRoutine(momKey) as { title?: string }).title, "PLAN_MOM");
   });
 });

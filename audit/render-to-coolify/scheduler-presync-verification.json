@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-07-11T18:25:00Z",
+  "verdict": "PARTIAL_PASS",
+  "can_proceed_data_migration": false,
+  "coolify": {
+    "env_applied": true,
+    "image": "ik6ml2uhw6op765lo14wn5m3:scheduler-presync-20260711235030",
+    "env": {
+      "SCHEDULER_ACTIVE_PLANE": "render",
+      "BACKGROUND_TASKS_ENABLED": "false",
+      "NOTIFICATIONS_ENABLED": "false"
+    },
+    "healthz_env": {
+      "schedulerOwner": false,
+      "BACKGROUND_TASKS_ENABLED": false,
+      "NOTIFICATIONS_ENABLED": false,
+      "scheduler.mode": "single_active",
+      "scheduler.local_plane": "coolify",
+      "scheduler.active_plane": "render"
+    },
+    "cron_log_lines": 0,
+    "status": "PASS"
+  },
+  "render": {
+    "env_scheduled": {
+      "SCHEDULER_ACTIVE_PLANE": "render",
+      "BACKGROUND_TASKS_ENABLED": "true",
+      "NOTIFICATIONS_ENABLED": "true",
+      "note": "Set manually in Render Dashboard — automated MCP update blocked"
+    },
+    "healthz_env": {
+      "schedulerOwner": "NOT_VERIFIED",
+      "reason": "Render image b789d009 lacks scheduler health fields; redeploy required after git push"
+    },
+    "status": "PENDING_REDEPLOY"
+  },
+  "singleton": {
+    "coolify_owner": false,
+    "render_owner": "expected_true_pending_verify",
+    "duplicate_crons": false,
+    "status": "LIKELY_PASS"
+  },
+  "next_steps": [
+    "Push scheduler code to Amynest-live main",
+    "Render Dashboard: set SCHEDULER_ACTIVE_PLANE=render, redeploy Amynest-backend-dykj",
+    "Re-run: INTERNAL_HEALTH_SECRET=... pnpm run migrate:render-to-coolify:verify-scheduler"
+  ]
+}

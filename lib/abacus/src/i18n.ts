@@ -93,6 +93,17 @@ export const ABACUS_I18N_DEFAULTS: Record<string, string> = {
   badge_speed: "Speed star",
   badge_level_cleared: "Level cleared",
   learn_try_beads: "Tap beads to try — then Next → for the next step",
+  finish_lesson: "Finish lesson",
+  recommended_for_age: "Recommended for age {{age}}",
+  age_confirm_child: "Ask a parent to unlock this level.",
+  age_confirm_parent: "Parents can override this recommendation.",
+  age_override: "Open anyway",
+  insights_title: "Insights",
+  insights_accuracy: "Overall accuracy",
+  insights_strongest: "Strongest level",
+  insights_weakest: "Needs practice",
+  insights_next: "Recommended next",
+  insights_all_clear: "Keep polishing with Mental + Tutor",
 };
 
 const LEVEL_SLUGS: readonly AbacusLevelSlug[] = [

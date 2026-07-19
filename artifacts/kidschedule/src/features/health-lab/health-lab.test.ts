@@ -334,3 +334,86 @@ describe("session rewards", () => {
     expect(summary.starsEarned).toBe(72);
   });
 });
+
+describe("play-path (UI helpers)", () => {
+  it("picks first unplayed playable game and skips wellness report", async () => {
+    const { pickNextPlayableGame, PLAYABLE_GAMES, isMotionGame } = await import("./play-path");
+    const state = defaultHealthLabState(1);
+    expect(pickNextPlayableGame(state)).toBe(PLAYABLE_GAMES[0].id);
+    expect(PLAYABLE_GAMES.every((g) => g.id !== "calmness-meter")).toBe(true);
+
+    state.gamesCompletedToday = ["breath-control", "flamingo-balance"];
+    expect(pickNextPlayableGame(state)).toBe("reaction-time");
+    expect(isMotionGame("flamingo-balance")).toBe(true);
+    expect(isMotionGame("breath-control")).toBe(false);
+  });
+
+  it("builds mission coaching for the child", async () => {
+    const { getMissionCoaching } = await import("./play-path");
+    const state = defaultHealthLabState(1);
+    const coaching = getMissionCoaching(state, "Riya", "breath-control");
+    expect(coaching.greeting).toContain("Riya");
+    expect(coaching.missionLine.length).toBeGreaterThan(0);
+    expect(coaching.amyLine.length).toBeGreaterThan(0);
+  });
+
+  it("builds parent insight without empty placeholders", async () => {
+    const { getParentInsightLine } = await import("./play-path");
+    const state = defaultHealthLabState(1);
+    const line = getParentInsightLine(state, "Riya");
+    expect(line.toLowerCase()).toContain("riya");
+    expect(line.includes("—") || line.includes("-")).toBe(true);
+  });
+});
+
+describe("world-evolution (presentation)", () => {
+  it("maps session counts to stages without inventing progression", async () => {
+    const { stageFromSessionCount, getWorldEvolution, getHubVitality } = await import(
+      "./world-evolution"
+    );
+    expect(stageFromSessionCount(0)).toBe(0);
+    expect(stageFromSessionCount(1)).toBe(1);
+    expect(stageFromSessionCount(3)).toBe(2);
+    expect(stageFromSessionCount(6)).toBe(3);
+    expect(stageFromSessionCount(8)).toBe(4);
+
+    const state = defaultHealthLabState(1);
+    expect(getWorldEvolution(state, "breath-control").stage).toBe(0);
+    expect(getHubVitality(state)).toBe(0);
+
+    state.gameHistory = [
+      session({ gameId: "breath-control", score: 50 }),
+      session({ gameId: "breath-control", score: 60 }),
+      session({ gameId: "reaction-time", score: 40 }),
+    ];
+    const balloon = getWorldEvolution(state, "breath-control");
+    expect(balloon.lifetimeSessions).toBe(2);
+    expect(balloon.stage).toBe(2);
+    expect(balloon.milestoneLabel.length).toBeGreaterThan(0);
+    expect(balloon.friendEmoji).toBe("🐦");
+    expect(getHubVitality(state)).toBe(2);
+  });
+
+  it("remembers yesterday restorations and today celebrations", async () => {
+    const { getWorldEvolution, getHubMemoryLine, getAmyWorldStoryLine } = await import(
+      "./world-evolution"
+    );
+    const state = defaultHealthLabState(1);
+    const yesterday = Date.now() - 86400000;
+    state.gameHistory = [
+      session({ gameId: "freeze-statue", score: 70, timestamp: yesterday }),
+    ];
+    const garden = getWorldEvolution(state, "freeze-statue");
+    expect(garden.helpedYesterday).toBe(true);
+    expect(garden.memoryLine.toLowerCase()).toContain("yesterday");
+
+    state.gamesCompletedToday = ["freeze-statue"];
+    const celebrating = getWorldEvolution(state, "freeze-statue");
+    expect(celebrating.helpedToday).toBe(true);
+    expect(celebrating.memoryLine.toLowerCase()).toMatch(/today|celebrating/);
+
+    const hub = getHubMemoryLine(state);
+    expect(hub).toBeTruthy();
+    expect(getAmyWorldStoryLine(state, "breath-control")).toBeTruthy();
+  });
+});

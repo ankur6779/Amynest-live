@@ -1,0 +1,131 @@
+{
+  "current_percent": 1,
+  "stage_index": 0,
+  "stable_since": "2026-07-12T10:39:55.809Z",
+  "last_check": "2026-07-12T10:40:58.097Z",
+  "degraded": false,
+  "degradation_reason": null,
+  "checks_total": 20,
+  "history": [
+    {
+      "at": "2026-07-12T09:17:46.094Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:18:35.927Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:19:38.368Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:20:41.401Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:21:44.424Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:22:46.603Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:23:48.695Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:24:52.319Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:25:54.570Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:26:56.668Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:27:59.527Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:29:01.855Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:30:04.146Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:31:06.626Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:32:08.940Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:33:11.292Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T09:34:13.496Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T10:38:52.469Z",
+      "render_score": 100,
+      "coolify_score": 45,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T10:39:55.809Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    },
+    {
+      "at": "2026-07-12T10:40:58.097Z",
+      "render_score": 100,
+      "coolify_score": 100,
+      "percent": 1
+    }
+  ]
+}

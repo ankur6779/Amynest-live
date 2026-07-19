@@ -1,0 +1,52 @@
+{
+  "phase": "A-B-maze",
+  "beforeReference": {
+    "note": "Prior session: blur-over-hub 13.2 FPS; maze path glow unbounded; TargetTap 3 intervals",
+    "fpsBlurOverHub": 13.2,
+    "mazePathGlowInfinitePerVisitedCell": true,
+    "targetTapIntervals": 3
+  },
+  "after": {
+    "mazePaintRisk": {
+      "boxShadowKeyframes": false,
+      "filterKeyframes": false,
+      "infiniteInGrid": 2,
+      "visitedPathInfinite": false
+    },
+    "perf": {
+      "sampleMs": 2500,
+      "frameCount": 151,
+      "avgFrameMs": 16.665333333333333,
+      "p95FrameMs": 16.800000000000182,
+      "estimatedFps": 60.00480038403072,
+      "droppedFramesOver33ms": 0,
+      "longTaskCount": 0,
+      "longestTaskMs": 0,
+      "longTasksOver50": 0,
+      "mainThreadBlockingMs": 0,
+      "heapUsed": 31200000,
+      "domNodeCount": 130,
+      "activeTimeoutEstimate": 0,
+      "activeIntervalEstimate": 2,
+      "activeRafEstimate": 0,
+      "infiniteAnimations": 2,
+      "paintEntries": 2,
+      "inputLatencySamples": [],
+      "avgInputLatencyMs": 0,
+      "maxInputLatencyMs": 0
+    },
+    "touch": {
+      "samples": [
+        1.300000011920929,
+        1.2000000476837158,
+        1.399999976158142,
+        0.8999999761581421,
+        1.5,
+        2.099999964237213
+      ],
+      "avgMs": 1.399999996026357,
+      "maxMs": 2.099999964237213
+    }
+  },
+  "at": "2026-07-19T10:23:42.692Z"
+}

@@ -1,0 +1,4 @@
+restarts=0 started=2026-07-12T08:33:45.101736577Z
+cpu=0.02% mem=1.94%
+{"ok":true,"workerEnabled":true,"redisConfigured":true,"redisPingOk":true,"bullMqActive":true,"consumerRegistered":true,"memoryDrainActive":false,"idleReason":null,"reasons":[],"timestamp":1783871860235}
+{"wait":0,"active":0,"completed":4,"failed":0,"delayed":0}

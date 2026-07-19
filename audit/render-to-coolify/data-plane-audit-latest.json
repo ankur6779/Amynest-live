@@ -1,0 +1,280 @@
+{
+  "generated_at": "2026-07-13T11:00:24.931Z",
+  "verdict": "SAFE",
+  "canary_approved": true,
+  "summary": "Active stateful plane unified on Coolify; replica certified; Coolify public routing OK. Canary may proceed.",
+  "inconsistencies": [],
+  "plane_counts": {
+    "RENDER": 7,
+    "COOLIFY": 13,
+    "SHARED": 8
+  },
+  "matrix": [
+    {
+      "component": "API traffic (primary)",
+      "service": "Cloudflare Worker",
+      "target": "https://amynest-backend-dykj.onrender.com",
+      "plane": "RENDER",
+      "evidence": "wrangler.toml BACKEND_ORIGIN",
+      "equivalent_group": "routing",
+      "consistent": true
+    },
+    {
+      "component": "API traffic (canary)",
+      "service": "Cloudflare Worker",
+      "target": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+      "plane": "COOLIFY",
+      "evidence": "wrangler.toml CANARY_BACKEND_ORIGIN; CANARY_PERCENT=10",
+      "equivalent_group": "routing",
+      "consistent": true,
+      "notes": "Canary traffic enabled"
+    },
+    {
+      "component": "DATABASE_URL",
+      "service": "Render API (Amynest-backend-dykj)",
+      "target": "Coolify Postgres via 188.245.208.126:5432 proxy",
+      "plane": "COOLIFY",
+      "evidence": "stateful-plane-audit.md STATEFUL PLANE CERTIFIED",
+      "equivalent_group": "database",
+      "consistent": true
+    },
+    {
+      "component": "DATABASE_URL",
+      "service": "Coolify API",
+      "target": "tcl9udyxcuq2zu598ebj0pfu",
+      "plane": "COOLIFY",
+      "evidence": "SSH docker exec printenv",
+      "equivalent_group": "database",
+      "consistent": true
+    },
+    {
+      "component": "DATABASE_URL",
+      "service": "Hetzner AI Worker",
+      "target": "Coolify Postgres via 188.245.208.126:5432 proxy",
+      "plane": "COOLIFY",
+      "evidence": "SSH /opt/amynest/worker.env",
+      "equivalent_group": "database",
+      "consistent": true
+    },
+    {
+      "component": "DATABASE_URL",
+      "service": "Render AI Worker (standby)",
+      "target": "amynest-db-dykj (legacy)",
+      "plane": "RENDER",
+      "evidence": "render.yaml amynest-ai-worker-dykj — WORKER_ENABLED=false",
+      "equivalent_group": "standby",
+      "consistent": true,
+      "notes": "Excluded — disabled standby; not in active data plane"
+    },
+    {
+      "component": "REDIS_URL",
+      "service": "Render API",
+      "target": "Coolify Redis via 188.245.208.126:6379 proxy",
+      "plane": "COOLIFY",
+      "evidence": "stateful-plane-audit.md STATEFUL PLANE CERTIFIED",
+      "equivalent_group": "redis",
+      "consistent": true
+    },
+    {
+      "component": "REDIS_URL",
+      "service": "Coolify API",
+      "target": "g7jotufnm43n4au4e8n6x946",
+      "plane": "COOLIFY",
+      "evidence": "SSH docker exec",
+      "equivalent_group": "redis",
+      "consistent": true
+    },
+    {
+      "component": "REDIS_URL",
+      "service": "Hetzner AI Worker",
+      "target": "Coolify Redis via 188.245.208.126:6379 proxy",
+      "plane": "COOLIFY",
+      "evidence": "SSH worker.env",
+      "equivalent_group": "redis",
+      "consistent": true
+    },
+    {
+      "component": "BullMQ ai-jobs",
+      "service": "Coolify Redis + Hetzner Worker",
+      "target": "wait=0, active=0, completed=18, failed=0",
+      "plane": "COOLIFY",
+      "evidence": "SSH ioredis on amynest-worker (unified queue)",
+      "equivalent_group": "bullmq",
+      "consistent": true,
+      "notes": "Sole consumer on Coolify Redis"
+    },
+    {
+      "component": "BullMQ ai-jobs",
+      "service": "Render API + Coolify API (producers)",
+      "target": "keys=23",
+      "plane": "COOLIFY",
+      "evidence": "Both APIs enqueue to same Coolify Redis",
+      "equivalent_group": "bullmq",
+      "consistent": true
+    },
+    {
+      "component": "RevenueCat webhook",
+      "service": "RevenueCat Dashboard",
+      "target": "https://www.amynest.in/api/subscription/webhook",
+      "plane": "RENDER",
+      "evidence": "Cloudflare → BACKEND_ORIGIN (Render primary)",
+      "equivalent_group": "routing",
+      "consistent": true,
+      "notes": "Single webhook URL; canary splits by device"
+    },
+    {
+      "component": "Razorpay webhook",
+      "service": "Razorpay Dashboard",
+      "target": "https://www.amynest.in/api/subscription/razorpay/webhook",
+      "plane": "RENDER",
+      "evidence": "Cloudflare → BACKEND_ORIGIN",
+      "equivalent_group": "routing",
+      "consistent": true
+    },
+    {
+      "component": "Firebase project",
+      "service": "Render API + Coolify API + Worker",
+      "target": "amynest-836ff",
+      "plane": "SHARED",
+      "evidence": "Same Firebase project on all APIs",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "Firebase Admin",
+      "service": "Render API + Coolify API + Worker",
+      "target": "amynest-836ff",
+      "plane": "SHARED",
+      "evidence": "Coolify SSH: SHARED",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "GCS bucket",
+      "service": "Render API + Coolify API + Worker",
+      "target": "amynest-audio-storage",
+      "plane": "SHARED",
+      "evidence": "Worker + APIs + CF Worker",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "GCS credentials",
+      "service": "Render API + Coolify API + Worker",
+      "target": "amynest-storage@amynest-836ff",
+      "plane": "SHARED",
+      "evidence": "Shared object store",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "OpenAI",
+      "service": "Render API + Coolify API + Worker",
+      "target": "(configured)",
+      "plane": "SHARED",
+      "evidence": "Same provider key on APIs + worker",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "Resend email",
+      "service": "Render API + Coolify API + Worker",
+      "target": "(configured)",
+      "plane": "SHARED",
+      "evidence": "Coolify SSH: set",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "Razorpay API",
+      "service": "Render API + Coolify API + Worker",
+      "target": "(configured)",
+      "plane": "SHARED",
+      "evidence": "Billing API keys",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "RevenueCat API",
+      "service": "Render API + Coolify API + Worker",
+      "target": "(configured)",
+      "plane": "SHARED",
+      "evidence": "Subscription sync keys",
+      "equivalent_group": "third_party",
+      "consistent": true
+    },
+    {
+      "component": "Notification scheduler",
+      "service": "Render API process",
+      "target": "node-cron in Amynest-backend",
+      "plane": "RENDER",
+      "evidence": "notificationCron.ts — schedulerOwner=true",
+      "equivalent_group": "scheduler",
+      "consistent": true,
+      "notes": "Intentional — Render owns crons during canary"
+    },
+    {
+      "component": "Notification scheduler",
+      "service": "Coolify API process",
+      "target": "node-cron in Coolify backend",
+      "plane": "COOLIFY",
+      "evidence": "schedulerOwner=false on Coolify",
+      "equivalent_group": "scheduler",
+      "consistent": true,
+      "notes": "Intentional — Coolify standby; crons disabled"
+    },
+    {
+      "component": "Cron jobs (billing, phonics, TTS, recap)",
+      "service": "Render API process",
+      "target": "15+ node-cron tasks",
+      "plane": "RENDER",
+      "evidence": "artifacts/api-server/src/index.ts background phases",
+      "equivalent_group": "scheduler",
+      "consistent": true,
+      "notes": "Intentional — single active scheduler on Render"
+    },
+    {
+      "component": "Cron jobs",
+      "service": "Coolify API process",
+      "target": "Same cron modules (disabled)",
+      "plane": "COOLIFY",
+      "evidence": "BACKGROUND_TASKS_ENABLED=false on Coolify",
+      "equivalent_group": "scheduler",
+      "consistent": true,
+      "notes": "Intentional — duplicate prevention"
+    },
+    {
+      "component": "HTTP /healthz",
+      "service": "Render API",
+      "target": "https://amynest-backend-dykj.onrender.com",
+      "plane": "RENDER",
+      "evidence": "live probe status=200",
+      "equivalent_group": "health",
+      "consistent": true
+    },
+    {
+      "component": "HTTP /healthz",
+      "service": "Coolify API (public URL)",
+      "target": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+      "plane": "COOLIFY",
+      "evidence": "live probe status=200",
+      "equivalent_group": "health",
+      "consistent": true
+    },
+    {
+      "component": "Postgres row count",
+      "service": "Coolify Postgres (active stateful plane)",
+      "target": "588151",
+      "plane": "COOLIFY",
+      "evidence": "SSH pg_stat_user_tables",
+      "equivalent_group": "database",
+      "consistent": true,
+      "notes": "Replica certified via verify-latest.json"
+    }
+  ],
+  "gates": {
+    "data_replica_synced": true,
+    "coolify_public_routing": true,
+    "stateful_plane_unified": true
+  }
+}

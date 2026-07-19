@@ -8,6 +8,7 @@ import {
   anchorMealSlots,
   generateRuleBasedRoutine,
   generatePartialRoutine,
+  mealFromItems,
   timeToMins,
   minsToTime,
   type ScheduleItem,
@@ -1038,5 +1039,111 @@ describe("generatePartialRoutine — merge integrity", () => {
         `"${it.activity}" runs past lights-out`,
       );
     }
+  });
+});
+
+// ─── C-06 eggetarian meal banks ───────────────────────────────────────────────
+
+const MEAT_RE =
+  /\b(chicken|mutton|beef|pork|lamb|fish|prawn|shrimp|seafood|salmon|tuna|turkey|keema|bacon|ham|sausage|meat)\b/i;
+const EGG_RE = /\b(egg|eggs|omelette|omelet|bhurji|anda)\b/i;
+
+function mealNotesFor(foodType: string, region?: "north_indian" | "pan_indian") {
+  const { items } = generateRuleBasedRoutine({
+    childName: "C06Child",
+    ageGroup: "preschool",
+    totalAgeMonths: 48,
+    wakeUpTime: "07:00",
+    sleepTime: "21:00",
+    schoolStartTime: "09:00",
+    schoolEndTime: "13:00",
+    travelMode: "walk",
+    hasSchool: false,
+    mood: "normal",
+    foodType,
+    region: region ?? "north_indian",
+    caregiver: "mom",
+    weatherOutdoor: "yes",
+    date: "2026-07-20",
+  });
+  return items
+    .filter((i) => i.category === "meal" || i.category === "tiffin")
+    .map((i) => `${i.activity}: ${i.notes ?? ""}`)
+    .join("\n");
+}
+
+describe("C-06 eggetarian rule meals", () => {
+  it("vegetarian never receives eggs", () => {
+    const notes = mealNotesFor("vegetarian");
+    assert.equal(EGG_RE.test(notes), false, notes);
+  });
+
+  it("veg alias never receives eggs", () => {
+    const notes = mealNotesFor("veg");
+    assert.equal(EGG_RE.test(notes), false, notes);
+  });
+
+  it("eggetarian receives eggs", () => {
+    const notes = mealNotesFor("eggetarian");
+    assert.equal(EGG_RE.test(notes), true, notes);
+  });
+
+  it("eggetarian never receives meat", () => {
+    const notes = mealNotesFor("eggetarian");
+    assert.equal(MEAT_RE.test(notes), false, notes);
+  });
+
+  it("non_veg still includes meat or egg options (unchanged family)", () => {
+    const notes = mealNotesFor("non_veg");
+    assert.equal(MEAT_RE.test(notes) || EGG_RE.test(notes), true, notes);
+    assert.equal(MEAT_RE.test(notes), true, "non_veg should still surface meat banks");
+  });
+
+  it("vegan stays on veg banks (no eggs)", () => {
+    const notes = mealNotesFor("vegan");
+    assert.equal(EGG_RE.test(notes), false, notes);
+    assert.equal(MEAT_RE.test(notes), false, notes);
+  });
+
+  it("eggetarian regional fallback yields egg without meat", () => {
+    // Regional banks have no EGGETARIAN_* keys → pan_indian fallback via mealsFor
+    const notes = mealNotesFor("eggetarian", "north_indian");
+    assert.equal(EGG_RE.test(notes), true, notes);
+    assert.equal(MEAT_RE.test(notes), false, notes);
+  });
+
+  it("wake nutrition for eggetarian includes egg", () => {
+    const notes = mealNotesFor("eggetarian");
+    assert.match(notes, /Wake-up Nutrition:[\s\S]*\begg\b/i);
+  });
+
+  it("fridge EGGETARIAN templates produce egg and no meat", () => {
+    const out = mealFromItems("EGGETARIAN_BREAKFAST", ["tomato", "onion"], 3);
+    assert.match(out, /\begg\b/i);
+    assert.equal(MEAT_RE.test(out), false, out);
+  });
+
+  it("infant eggetarian feeding text unchanged (milk path, not non_veg solids)", () => {
+    const { items } = generateRuleBasedRoutine({
+      childName: "InfantEgg",
+      ageGroup: "infant",
+      totalAgeMonths: 4,
+      wakeUpTime: "07:00",
+      sleepTime: "20:00",
+      schoolStartTime: "09:00",
+      schoolEndTime: "13:00",
+      travelMode: "walk",
+      hasSchool: false,
+      mood: "normal",
+      foodType: "eggetarian",
+      region: "north_indian",
+      caregiver: "mom",
+      weatherOutdoor: "yes",
+      date: "2026-07-20",
+    });
+    const mid = items.find((i) => /Mid-Morning Feed/i.test(i.activity));
+    assert.ok(mid);
+    assert.match(mid!.notes ?? "", /Breast milk or formula/i);
+    assert.equal(/age-appropriate solids/i.test(mid!.notes ?? ""), false);
   });
 });

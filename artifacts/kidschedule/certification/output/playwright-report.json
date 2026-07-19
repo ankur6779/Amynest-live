@@ -27,7 +27,7 @@
         "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
         "testIgnore": [],
         "testMatch": [
-          "gaming-hub-certification.spec.ts"
+          "/gaming-hub-(certification|perf-freeze|full-certification)\\.spec\\.ts/"
         ],
         "timeout": 90000
       }
@@ -64,18 +64,18 @@
   },
   "suites": [
     {
-      "title": "gaming-hub-certification.spec.ts",
-      "file": "gaming-hub-certification.spec.ts",
+      "title": "gaming-hub-full-certification.spec.ts",
+      "file": "gaming-hub-full-certification.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "Maze Escape — Easy / Normal / Hard visual difficulty",
+          "title": "Phase A/B — MazeEscape metrics + animation budget (4x CPU)",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 120000,
+              "timeout": 600000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -85,12 +85,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 4892,
+                  "duration": 11777,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-06-14T10:09:43.440Z",
+                  "startTime": "2026-07-19T10:11:00.204Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -98,18 +98,18 @@
               "status": "expected"
             }
           ],
-          "id": "348bfc6c64e30544e0ee-4c6c4d860137293a8e5d",
-          "file": "gaming-hub-certification.spec.ts",
-          "line": 25,
+          "id": "ad23a1c075a4e29d1b49-9bb9558c76d90d5f1d04",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 56,
           "column": 1
         },
         {
-          "title": "Color Fill — wrong answer shows error modal",
+          "title": "Phase C — hub unmount vs blur overlay CPU (6x CPU)",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 120000,
+              "timeout": 600000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -119,12 +119,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3568,
+                  "duration": 11325,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-06-14T10:09:48.797Z",
+                  "startTime": "2026-07-19T10:11:12.426Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -132,18 +132,18 @@
               "status": "expected"
             }
           ],
-          "id": "348bfc6c64e30544e0ee-ab9bf3c9e5ef76727f6e",
-          "file": "gaming-hub-certification.spec.ts",
-          "line": 48,
+          "id": "ad23a1c075a4e29d1b49-0ea72b72cf88a279956f",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 120,
           "column": 1
         },
         {
-          "title": "Color Fill — correct pattern shows success modal",
+          "title": "Phase D/G — profile every game under 4x CPU",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 120000,
+              "timeout": 600000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -153,12 +153,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 4340,
+                  "duration": 71731,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-06-14T10:09:52.394Z",
+                  "startTime": "2026-07-19T10:11:23.809Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -166,18 +166,18 @@
               "status": "expected"
             }
           ],
-          "id": "348bfc6c64e30544e0ee-6a4bd0a9bff4202f2b2d",
-          "file": "gaming-hub-certification.spec.ts",
-          "line": 71,
+          "id": "ad23a1c075a4e29d1b49-67fb912721cf3a4a3e0d",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 184,
           "column": 1
         },
         {
-          "title": "Performance — animation frame rate during maze display",
+          "title": "Phase E — open/exit 100 cycles heap + timer stability",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 120000,
+              "timeout": 600000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -187,12 +187,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1800,
+                  "duration": 112505,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-06-14T10:09:56.780Z",
+                  "startTime": "2026-07-19T10:12:35.610Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -200,9 +200,145 @@
               "status": "expected"
             }
           ],
-          "id": "348bfc6c64e30544e0ee-c3749aec6b926474c566",
-          "file": "gaming-hub-certification.spec.ts",
-          "line": 96,
+          "id": "ad23a1c075a4e29d1b49-d6253679c25b81330e6f",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 237,
+          "column": 1
+        },
+        {
+          "title": "Phase F — touch latency Target Tap + Maze",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 600000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11577,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-19T10:14:28.143Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ad23a1c075a4e29d1b49-27b4a8228bc26522efed",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 283,
+          "column": 1
+        },
+        {
+          "title": "Phase H — low-end profile (6x CPU + 4x network)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 600000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 334413,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-19T10:14:39.741Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ad23a1c075a4e29d1b49-e3d7e059bb61f0085714",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 301,
+          "column": 1
+        },
+        {
+          "title": "Phase I — pause / visibility stops intervals",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 600000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2245,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-19T10:20:14.173Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ad23a1c075a4e29d1b49-059a63a8b6df5df939a8",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 331,
+          "column": 1
+        },
+        {
+          "title": "Phase soak — continuous play without Long Tasks >50ms",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 360000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 185077,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-19T10:20:16.439Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ad23a1c075a4e29d1b49-763ab9d9db1386a1c8c4",
+          "file": "gaming-hub-full-certification.spec.ts",
+          "line": 350,
           "column": 1
         }
       ]
@@ -210,9 +346,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-14T10:09:41.790Z",
-    "duration": 17122.047,
-    "expected": 4,
+    "startTime": "2026-07-19T10:10:54.186Z",
+    "duration": 748340.165,
+    "expected": 8,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

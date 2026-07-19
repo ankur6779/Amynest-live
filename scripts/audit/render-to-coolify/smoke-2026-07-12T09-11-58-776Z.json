@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-07-12T09:11:58.776Z",
+  "api_url": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+  "passed": true,
+  "summary": {
+    "pass": 3,
+    "fail": 0,
+    "skip": 9,
+    "warn": 1
+  },
+  "checks": [
+    {
+      "id": "health",
+      "category": "infra",
+      "status": "pass",
+      "message": "GET /health → 200",
+      "durationMs": 1142
+    },
+    {
+      "id": "ready",
+      "category": "infra",
+      "status": "pass",
+      "message": "GET /ready N/A — /api/healthz + /api/healthz/env readiness OK",
+      "details": {
+        "queue": {
+          "mode": "bullmq",
+          "redis": true,
+          "redisPing": true,
+          "workerExpected": true,
+          "status": "ok",
+          "bullmq": {
+            "waiting": 0,
+            "active": 0,
+            "completed": 2,
+            "failed": 0,
+            "delayed": 0,
+            "paused": 0
+          }
+        }
+      },
+      "durationMs": 1421
+    },
+    {
+      "id": "firebase_login",
+      "category": "auth",
+      "status": "skip",
+      "message": "Set SMOKE_FIREBASE_ID_TOKEN or SMOKE_FIREBASE_UID + FIREBASE_SERVICE_ACCOUNT_JSON + FIREBASE_WEB_API_KEY",
+      "durationMs": 0
+    },
+    {
+      "id": "parent_profile",
+      "category": "data",
+      "status": "skip",
+      "message": "Requires auth token",
+      "durationMs": 0
+    },
+    {
+      "id": "child_profile",
+      "category": "data",
+      "status": "skip",
+      "message": "Requires auth token",
+      "durationMs": 0
+    },
+    {
+      "id": "subscription_lookup",
+      "category": "billing",
+      "status": "skip",
+      "message": "Requires auth token",
+      "durationMs": 0
+    },
+    {
+      "id": "revenuecat_webhook_validation",
+      "category": "billing",
+      "status": "warn",
+      "message": "REVENUECAT_WEBHOOK_SECRET unset — auth rejection only",
+      "durationMs": 488
+    },
+    {
+      "id": "gcs_access",
+      "category": "storage",
+      "status": "pass",
+      "message": "GCS configured and probe OK",
+      "durationMs": 1690
+    },
+    {
+      "id": "push_registration",
+      "category": "notifications",
+      "status": "skip",
+      "message": "Requires auth token",
+      "durationMs": 0
+    },
+    {
+      "id": "routine_generation",
+      "category": "ai",
+      "status": "skip",
+      "message": "Requires auth token and childId",
+      "durationMs": 0
+    },
+    {
+      "id": "bullmq_enqueue",
+      "category": "queue",
+      "status": "skip",
+      "message": "Requires auth token",
+      "durationMs": 0
+    },
+    {
+      "id": "bullmq_processing",
+      "category": "queue",
+      "status": "skip",
+      "message": "Requires enqueue",
+      "durationMs": 0
+    },
+    {
+      "id": "ai_request",
+      "category": "ai",
+      "status": "skip",
+      "message": "Requires auth token",
+      "durationMs": 0
+    }
+  ]
+}

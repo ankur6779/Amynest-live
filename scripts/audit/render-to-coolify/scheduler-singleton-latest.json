@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-07-13T02:04:33.213Z",
+  "passed": true,
+  "owner_count": 1,
+  "active_owner": "Render API",
+  "issues": [
+    "Coolify has schedulers enabled via SSH env (expected false/false during presync)"
+  ],
+  "catalog": {
+    "jobs": 23,
+    "categories": [
+      "notifications",
+      "billing",
+      "recap",
+      "cleanup",
+      "content",
+      "infra"
+    ],
+    "triggers": [
+      "node-cron",
+      "http-cron",
+      "bullmq"
+    ]
+  },
+  "probes": {
+    "render": {
+      "label": "Render API",
+      "url": "https://amynest-backend-dykj.onrender.com",
+      "ok": true,
+      "owner": true,
+      "mode": "single_active",
+      "active_plane": "render",
+      "local_plane": "render",
+      "background_tasks_enabled": true,
+      "notifications_enabled": true,
+      "job_count": 23
+    },
+    "coolify": {
+      "label": "Coolify API",
+      "url": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+      "ok": true,
+      "owner": false,
+      "mode": "single_active",
+      "active_plane": "render",
+      "local_plane": "coolify",
+      "background_tasks_enabled": false,
+      "notifications_enabled": false,
+      "job_count": 23
+    }
+  },
+  "ssh_coolify_env": {
+    "BACKGROUND_TASKS_ENABLED": "OTHER",
+    "NOTIFICATIONS_ENABLED": "OTHER"
+  },
+  "presync_expected": {
+    "render": {
+      "SCHEDULER_ACTIVE_PLANE": "render",
+      "BACKGROUND_TASKS_ENABLED": "true",
+      "NOTIFICATIONS_ENABLED": "true"
+    },
+    "coolify": {
+      "SCHEDULER_ACTIVE_PLANE": "render",
+      "BACKGROUND_TASKS_ENABLED": "false",
+      "NOTIFICATIONS_ENABLED": "false"
+    }
+  }
+}

@@ -6,8 +6,10 @@ export function formatGamePersonalBest(
   score: number | undefined,
   history: GameSessionResult[],
   kind: "duration" | "score" | "percent",
-): { icon: string; label: string; value: string } | null {
-  if (score == null || score <= 0) return null;
+): { icon: string; label: string; value: string; empty?: boolean } {
+  if (score == null || score <= 0) {
+    return { icon: "🏆", label: "Best", value: "Beat your best!", empty: true };
+  }
 
   const bestSession = history
     .filter((s) => s.gameId === gameId)

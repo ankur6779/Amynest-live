@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "label": "initial-copy",
+  "snapshot_at": "2026-07-11T18:52:00.000Z",
+  "dump_file": "/data/coolify/migration/dumps/render-prod-20260711T184856Z.dump",
+  "dump_sha256": "03f0b4637354b7ae70fa0e0b1f7a3d99e38d294a55d8d78a2922179a90c1c050",
+  "dump_bytes": 302645445
+}

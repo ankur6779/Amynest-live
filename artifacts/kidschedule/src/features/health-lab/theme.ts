@@ -8,12 +8,17 @@ export const HEALTH_LAB_THEME = {
     "bg-gradient-to-br from-violet-600/40 via-indigo-600/30 to-cyan-500/20",
   cardGlass:
     "rounded-2xl border border-white/[0.12] bg-white/[0.06] backdrop-blur-xl shadow-[0_12px_40px_-12px_rgba(99,102,241,0.4)]",
+  /** Lighter home surfaces — solid tint, no blur (Android WebView scroll budget). */
+  cardSolid:
+    "rounded-2xl border border-white/[0.12] bg-white/[0.08] shadow-[0_8px_28px_-14px_rgba(99,102,241,0.35)]",
   cardGlow:
     "shadow-[0_0_24px_-4px_rgba(139,92,246,0.45)]",
   ctaPrimary:
     "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white font-bold shadow-[0_4px_20px_-4px_rgba(251,146,60,0.55)] active:scale-[0.97] transition-transform",
   ctaSecondary:
     "bg-white/10 border border-white/20 text-white font-semibold hover:bg-white/15 active:scale-[0.97] transition-all",
+  ctaPlay:
+    "min-h-[56px] min-w-[56px] rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 px-4 text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_18px_-4px_rgba(251,146,60,0.55)]",
   textPrimary: "text-white",
   textMuted: "text-violet-200/70",
   accentViolet: "text-violet-300",

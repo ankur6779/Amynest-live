@@ -1,0 +1,16 @@
+{
+  "started_at": "2026-07-12T18:20:18.505Z",
+  "completed_at": "2026-07-12T19:50:18.510Z",
+  "host": "ubuntu-8gb-nbg1-1",
+  "duration_ms": 5400000,
+  "interval_ms": 30000,
+  "total_cycles": 162,
+  "coolify_unhealthy_cycles": 0,
+  "render_unhealthy_cycles": 0,
+  "composite_failure_cycles": 0,
+  "max_consecutive_unhealthy": 0,
+  "gap_invalidations": 0,
+  "certified": true,
+  "advance_to_100": false,
+  "rollback_recommended": false
+}

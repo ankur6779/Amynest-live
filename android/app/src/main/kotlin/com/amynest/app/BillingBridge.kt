@@ -50,11 +50,6 @@ class BillingBridge(
     fun onPaywallResult(result: PaywallResult) {
         val pending = pendingPaywallReply ?: return
         pendingPaywallReply = null
-        if (result is PaywallResult.Purchased) {
-            activityRef.get()?.applicationContext?.let { ctx ->
-                FirebaseSubscriptionAnalytics.logSubscriptionConvert(ctx, source = "rc_paywall")
-            }
-        }
         resolve(pending.first, pending.second, paywallResultToJson(result))
     }
 
@@ -120,6 +115,7 @@ class BillingBridge(
             )
             "restore" -> restore(replyProxy, cbId)
             "getCustomerInfo" -> getCustomerInfo(replyProxy, cbId)
+            "logSubscriptionAnalytics" -> logSubscriptionAnalytics(replyProxy, cbId, msg)
             else -> resolveError(replyProxy, cbId, "unknown_action:$action")
         }
     }
@@ -182,16 +178,6 @@ class BillingBridge(
                         )
                     },
                     onSuccess = { _, customerInfo ->
-                        activityRef.get()?.applicationContext?.let { ctx ->
-                            val price = pkg.product.price
-                            FirebaseSubscriptionAnalytics.logSubscriptionPurchase(
-                                context = ctx,
-                                productId = pkg.product.id,
-                                currency = price.currencyCode,
-                                value = price.amountMicros / 1_000_000.0,
-                                source = "billing_bridge",
-                            )
-                        }
                         sendRaw(
                             replyProxy, cbId,
                             JSONObject()
@@ -231,6 +217,32 @@ class BillingBridge(
             pendingPaywallReply = null
             resolveError(replyProxy, cbId, t.message ?: "paywall_launch_failed")
         }
+    }
+
+    private fun logSubscriptionAnalytics(
+        replyProxy: JavaScriptReplyProxy,
+        cbId: String,
+        msg: JSONObject,
+    ) {
+        val ctx = activityRef.get()?.applicationContext
+        if (ctx == null) {
+            resolve(replyProxy, cbId, JSONObject().put("ok", false).put("skipped", true))
+            return
+        }
+        val event = msg.optString("event")
+        val productId = msg.optString("productId", "subscription")
+        val currency = msg.optString("currency", "INR")
+        val value = msg.optDouble("value", 0.0)
+        val source = msg.optString("source", "web_bridge")
+        when (event) {
+            FirebaseSubscriptionAnalytics.EVENT_BEGIN_CHECKOUT ->
+                FirebaseSubscriptionAnalytics.logBeginCheckout(ctx, productId, currency, value, source)
+            "purchase", FirebaseSubscriptionAnalytics.EVENT_SUBSCRIPTION_CONVERT ->
+                FirebaseSubscriptionAnalytics.logSubscriptionPurchase(ctx, productId, currency, value, source)
+            else ->
+                FirebaseSubscriptionAnalytics.logSubscriptionConvert(ctx, source)
+        }
+        resolve(replyProxy, cbId, JSONObject().put("ok", true))
     }
 
     private fun restore(replyProxy: JavaScriptReplyProxy, cbId: String) {

@@ -8,7 +8,7 @@ export const HealthLabParticles = memo(function HealthLabParticles({ className }
 
   const particles = useMemo(
     () =>
-      Array.from({ length: reduced ? 4 : 12 }, (_, i) => ({
+      Array.from({ length: reduced ? 2 : 4 }, (_, i) => ({
         id: i,
         left: `${(i * 17 + 7) % 100}%`,
         top: `${(i * 23 + 11) % 100}%`,

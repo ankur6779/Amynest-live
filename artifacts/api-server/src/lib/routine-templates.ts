@@ -299,18 +299,62 @@ const ITEM_MEAL_TEMPLATES: Record<string, string[]> = {
     "{a} fried rice box",
     "{a} biryani box",
   ],
+  // C-06: egg + vegetarian fridge templates (no meat)
+  EGGETARIAN_BREAKFAST: [
+    "Egg omelette with {a}",
+    "Boiled egg with {a}",
+    "{a} egg bhurji",
+    "Scrambled egg with {a}",
+    "Egg toast with {a}",
+  ],
+  EGGETARIAN_LUNCH: [
+    "Egg curry with {a}",
+    "Boiled egg with {a} and rice",
+    "Egg bhurji with {a}",
+    "{a} pulao with boiled egg",
+    "Egg masala with {a}",
+  ],
+  EGGETARIAN_DINNER: [
+    "Egg curry with {a}",
+    "Egg dal with {a}",
+    "Boiled egg with {a}",
+    "Egg bhurji with {a}",
+    "Light egg fried rice with {a}",
+  ],
+  EGGETARIAN_SNACKS: [
+    "Boiled egg with {a}",
+    "Egg toast with {a}",
+    "Egg sandwich with {a}",
+    "{a} with boiled egg",
+    "Egg milkshake with {a}",
+  ],
+  EGGETARIAN_TIFFIN: [
+    "Egg sandwich with {a}",
+    "Egg roll with {a}",
+    "Boiled egg + {a} box",
+    "Egg paratha with {a}",
+    "Egg pulao with {a}",
+  ],
 };
 
 export function mealFromItems(key: MealKey, items: string[], seed: number): string {
   if (items.length === 0) return "Healthy meal";
-  // Fall back to the correct VEG/NONVEG family if a specific key is missing.
-  const isNonVeg = key.startsWith("NONVEG_");
-  const fallback =
-    key.includes("BREAKFAST") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_BREAKFAST! : ITEM_MEAL_TEMPLATES.VEG_BREAKFAST!)
-    : key.includes("LUNCH") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_LUNCH! : ITEM_MEAL_TEMPLATES.VEG_LUNCH!)
-    : key.includes("DINNER") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_DINNER! : ITEM_MEAL_TEMPLATES.VEG_DINNER!)
-    : key.includes("TIFFIN") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_TIFFIN! : ITEM_MEAL_TEMPLATES.VEG_TIFFIN!)
-    : (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_SNACKS! : ITEM_MEAL_TEMPLATES.VEG_SNACKS!);
+  // Fall back to the correct VEG / EGGETARIAN / NONVEG family if a specific key is missing.
+  const family: MealBankFamily = key.startsWith("NONVEG_")
+    ? "NONVEG"
+    : key.startsWith("EGGETARIAN_")
+      ? "EGGETARIAN"
+      : "VEG";
+  const slot = key.includes("BREAKFAST")
+    ? "BREAKFAST"
+    : key.includes("LUNCH")
+      ? "LUNCH"
+      : key.includes("DINNER")
+        ? "DINNER"
+        : key.includes("TIFFIN")
+          ? "TIFFIN"
+          : "SNACKS";
+  const fallback = ITEM_MEAL_TEMPLATES[`${family}_${slot}`]!;
   const templates = ITEM_MEAL_TEMPLATES[key] ?? fallback;
   const tpl = templates[Math.abs(seed) % templates.length]!;
   const a = items[Math.abs(seed) % items.length]!;
@@ -322,14 +366,30 @@ export function mealFromItems(key: MealKey, items: string[], seed: number): stri
 // Each region defines its own meal banks. Missing entries fall back to pan_indian.
 // Each bank contains 5 strings; each string is a "|"-separated set of options.
 
+type MealBankFamily = "VEG" | "EGGETARIAN" | "NONVEG";
+
 type MealKey =
-  | "VEG_BREAKFAST" | "NONVEG_BREAKFAST"
-  | "VEG_LUNCH" | "NONVEG_LUNCH"
-  | "VEG_DINNER" | "NONVEG_DINNER"
-  | "VEG_SNACKS" | "NONVEG_SNACKS"
-  | "VEG_TIFFIN" | "NONVEG_TIFFIN";
+  | "VEG_BREAKFAST" | "NONVEG_BREAKFAST" | "EGGETARIAN_BREAKFAST"
+  | "VEG_LUNCH" | "NONVEG_LUNCH" | "EGGETARIAN_LUNCH"
+  | "VEG_DINNER" | "NONVEG_DINNER" | "EGGETARIAN_DINNER"
+  | "VEG_SNACKS" | "NONVEG_SNACKS" | "EGGETARIAN_SNACKS"
+  | "VEG_TIFFIN" | "NONVEG_TIFFIN" | "EGGETARIAN_TIFFIN";
+
+type MealSlot = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACKS" | "TIFFIN";
 
 type RegionMeals = Partial<Record<MealKey, string[]>>;
+
+/** C-06: ternary diet → meal-bank family (infant milk path still uses isVeg separately). */
+function resolveMealBankFamily(foodType: string): MealBankFamily {
+  const ft = (foodType ?? "").toLowerCase().replace(/-/g, "_").trim();
+  if (ft === "non_veg" || ft === "nonveg") return "NONVEG";
+  if (ft === "eggetarian") return "EGGETARIAN";
+  return "VEG";
+}
+
+function mealKeyFor(family: MealBankFamily, slot: MealSlot): MealKey {
+  return `${family}_${slot}` as MealKey;
+}
 
 const PAN_INDIAN_MEALS: Record<MealKey, string[]> = {
   VEG_BREAKFAST: [
@@ -401,6 +461,42 @@ const PAN_INDIAN_MEALS: Record<MealKey, string[]> = {
     "Boiled egg + bread | Chicken sandwich | Egg pasta",
     "Egg bhurji paratha | Chicken roll | Egg noodles box",
     "Chicken chapati roll | Egg rice | Mutton keema paratha",
+  ],
+  // C-06: egg + reused veg options (never meat/fish). Regional keys fall back here via mealsFor.
+  EGGETARIAN_BREAKFAST: [
+    "Egg omelette with toast | Idli with sambar | Upma with chutney",
+    "Egg bhurji with paratha | Paratha with curd | Poha with peanuts",
+    "Boiled eggs with bread | Dosa with coconut chutney | Moong dal chilla",
+    "Oats with boiled egg | Bread butter with milk | Cornflakes with milk",
+    "Egg uttapam | Paneer paratha | Vegetable uttapam",
+  ],
+  EGGETARIAN_LUNCH: [
+    "Egg curry with roti | Dal rice with sabzi | Rajma chawal",
+    "Egg rice | Paneer sabzi with roti | Chole rice",
+    "Egg dal roti | Sambar rice with papad | Kadhi rice",
+    "Boiled egg with veg pulao | Lemon rice with chutney | Veg biryani",
+    "Egg masala with rice | Dal makhani with paratha | Bhindi sabzi with dal",
+  ],
+  EGGETARIAN_DINNER: [
+    "Egg dal with rice | Roti with dal and sabzi | Khichdi with ghee",
+    "Egg curry light | Paratha with curd | Mixed veg with roti",
+    "Egg chapati | Dahi rice | Vegetable daliya",
+    "Egg bhurji with roti | Chapati with palak paneer | Moong dal khichdi",
+    "Egg fried rice light | Light upma | Tomato soup with bread",
+  ],
+  EGGETARIAN_SNACKS: [
+    "Boiled egg + banana | Fruit bowl + milk | Banana + peanut butter",
+    "Egg toast | Vegetable upma | Sprouts chaat",
+    "Egg sandwich | Poha | Idli with chutney",
+    "Egg paratha slice | Chikki + banana shake | Makhana + milk",
+    "Boiled egg + milk | Vegetable sandwich | Paneer cubes with fruit",
+  ],
+  EGGETARIAN_TIFFIN: [
+    "Egg sandwich | Paneer paratha + curd | Veg sandwich",
+    "Egg roll | Idli with sambar | Poha with peanuts",
+    "Boiled egg + bread | Cheese toast | Vegetable pulao",
+    "Egg bhurji paratha | Pasta with veg | Bread rolls",
+    "Egg rice box | Stuffed capsicum paratha | Veg wrap",
   ],
 };
 
@@ -1509,11 +1605,15 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     : weatherOutdoor;
 
   const seed = dateSeed(date, childName);
-  // Accept both "non_veg" (canonical) and legacy "nonveg"
+  // Accept both "non_veg" (canonical) and legacy "nonveg".
+  // Infant milk-path wording: eggetarian stays with veg (not non_veg solids branch).
   const isVeg = foodType !== "non_veg" && foodType !== "nonveg";
+  // C-06: ternary meal banks (VEG / EGGETARIAN / NONVEG)
+  const mealBank = resolveMealBankFamily(foodType);
   const travelMins = TRAVEL_DURATION[travelMode] ?? 20;
   const fridgeList = parseFridgeItems(fridgeItems);
-  const meal = (key: MealKey, off = 0): string => {
+  const meal = (slot: MealSlot, off = 0): string => {
+    const key = mealKeyFor(mealBank, slot);
     if (fridgeList.length > 0) {
       return mealFromItems(key, fridgeList, seed + off);
     }
@@ -1576,14 +1676,25 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     "Fruit slices (banana, apple, papaya) | Smoothie (banana + milk) | Boiled egg + warm water",
     "Dates milkshake | Warm lemon water + 2 almonds | Coconut water",
   ];
-  const wakeNutritionOpts = (isVeg ? wakeNutritionVeg : wakeNutritionNonVeg)[Math.abs(seed) % 3];
+  const wakeNutritionEggetarian = [
+    "Warm milk | Banana + soaked almonds | Boiled egg + warm water",
+    "Fruit slices (banana, apple, papaya) | Smoothie (banana + milk) | Boiled egg + warm water",
+    "Dates milkshake | Warm lemon water + 2 almonds | Soft boiled egg",
+  ];
+  const wakeNutritionOpts = (
+    mealBank === "NONVEG"
+      ? wakeNutritionNonVeg
+      : mealBank === "EGGETARIAN"
+        ? wakeNutritionEggetarian
+        : wakeNutritionVeg
+  )[Math.abs(seed) % 3];
   add({ activity: "Wake-up Nutrition", duration: 15, category: "meal", notes: `Options: ${wakeNutritionOpts}` });
 
   // 45-min gap between wake-up starter and breakfast (total 60–90 min from wake-up).
   gap(45);
 
   // 2. Breakfast (now naturally 60–90 min after wake-up)
-  const bfOptions = meal(isVeg ? "VEG_BREAKFAST" : "NONVEG_BREAKFAST", 0);
+  const bfOptions = meal("BREAKFAST", 0);
   const bfDuration = ageGroup === "toddler" ? 20 : ageGroup === "preschool" ? 20 : 25;
   add({ activity: "Breakfast", duration: bfDuration, category: "meal", notes: `Options: ${bfOptions}` });
 
@@ -1602,7 +1713,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
         : { activity: "Morning Reading / Revision", duration: 20, category: "homework", notes: "Light reading or reviewing yesterday's lesson. Starts the brain gently." };
       if (tiffinStart - cursor >= 20) add(morningFill);
     }
-    const tiffinOpts = meal(isVeg ? "VEG_TIFFIN" : "NONVEG_TIFFIN", 0);
+    const tiffinOpts = meal("TIFFIN", 0);
     add({ activity: "Tiffin Box Preparation", duration: 20, category: "tiffin", notes: `Options: ${tiffinOpts}` });
     gap(5);
     add({ activity: `Travel to School (${travelMode})`, duration: travelMins, category: "travel", notes: `${travelMode === "walk" ? "Walking — great for morning energy!" : "Stay calm, avoid rushing. Play I-Spy or count trees on the way!"}` });
@@ -1610,7 +1721,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     add({ activity: "School Time", duration: schoolDuration > 0 ? schoolDuration : 360, category: "school", notes: `Class ${params.childClass ? params.childClass : ""} — stay focused, be kind to friends, ask questions!` }, schoolStartMins);
     cursor = schoolEndMins;
     add({ activity: `Return Home from School (${travelMode})`, duration: travelMins, category: "travel", notes: "Transition time — let them decompress. Don't ask about homework immediately." });
-    const snackOpts = meal(isVeg ? "VEG_SNACKS" : "NONVEG_SNACKS", 1);
+    const snackOpts = meal("SNACKS", 1);
     add({ activity: "After-School Snack", duration: 15, category: "meal", notes: `Options: ${snackOpts}` });
     gap(5);
     // Homework block for school-age kids
@@ -1627,7 +1738,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     }
     add({ activity: "Playschool", duration: playschoolDur > 0 ? playschoolDur : 180, category: "school", notes: "Play, friends, songs, and stories. Wonderful early socialisation." }, schoolStartMins);
     cursor = schoolEndMins;
-    const snackOpts = meal(isVeg ? "VEG_SNACKS" : "NONVEG_SNACKS", 2);
+    const snackOpts = meal("SNACKS", 2);
     add({ activity: "Post-School Snack", duration: 15, category: "meal", notes: `Options: ${snackOpts}` });
   } else {
     // No school — fill morning with activities
@@ -1641,7 +1752,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
       filled++;
     }
     if (ageGroup === "toddler" || ageGroup === "preschool") {
-      const snackOpts = meal(isVeg ? "VEG_SNACKS" : "NONVEG_SNACKS", 3);
+      const snackOpts = meal("SNACKS", 3);
       add({ activity: "Mid-Morning Snack", duration: 15, category: "meal", notes: `Options: ${snackOpts}` });
       gap(5);
     }
@@ -1651,13 +1762,13 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
   if (ageGroup === "toddler") {
     // Aim for nap around 1–2 PM
     const napTarget = Math.max(cursor + 30, 12 * 60 + 30);
-    const lunchOpts = meal(isVeg ? "VEG_LUNCH" : "NONVEG_LUNCH", 0);
+    const lunchOpts = meal("LUNCH", 0);
     add({ activity: "Lunch", duration: 25, category: "meal", notes: `Options: ${lunchOpts}` }, napTarget - 30);
     gap(5);
     add(TODDLER_NAP);
     gap(10);
   } else if (ageGroup === "preschool") {
-    const lunchOpts = meal(isVeg ? "VEG_LUNCH" : "NONVEG_LUNCH", 1);
+    const lunchOpts = meal("LUNCH", 1);
     add({ activity: "Lunch", duration: 25, category: "meal", notes: `Options: ${lunchOpts}` });
     gap(5);
     if (!hasSchool) add(PRESCHOOL_REST);
@@ -1666,10 +1777,10 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     // For early_school and pre_teen on school days, lunch already happened at school
     // On no-school days, add lunch
     if (!hasSchool) {
-      const lunchOpts = meal(isVeg ? "VEG_LUNCH" : "NONVEG_LUNCH", 2);
+      const lunchOpts = meal("LUNCH", 2);
       add({ activity: "Lunch", duration: 30, category: "meal", notes: `Options: ${lunchOpts}` });
       gap(5);
-      const snackOpts = meal(isVeg ? "VEG_SNACKS" : "NONVEG_SNACKS", 4);
+      const snackOpts = meal("SNACKS", 4);
       add({ activity: "Afternoon Snack", duration: 15, category: "meal", notes: `Options: ${snackOpts}` });
       gap(5);
     }
@@ -1760,7 +1871,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
 
   // 8. Dinner — anchored ~90 min before sleep but no earlier than 7:00 PM.
   // The anchor pass in applyRoutineV2 further constrains it to 19:30–21:00.
-  const dinnerOpts = meal(isVeg ? "VEG_DINNER" : "NONVEG_DINNER", 0);
+  const dinnerOpts = meal("DINNER", 0);
   const dinnerDur = ageGroup === "toddler" ? 25 : 30;
   const dinnerTarget = Math.max(cursor, Math.max(19 * 60, dinnerMins - 30));
   add({ activity: "Dinner", duration: dinnerDur, category: "meal", notes: `Options: ${dinnerOpts}` }, dinnerTarget);
@@ -1972,9 +2083,10 @@ export function generatePartialRoutine(params: {
 }): ScheduleItem[] {
   const { childName, ageGroup, foodType, region, fridgeItems, keptItems, startMins, sleepMins, newActivity, date, weatherOutdoor } = params;
   const seed = dateSeed(date, childName);
-  const isVeg = foodType !== "non_veg" && foodType !== "nonveg";
+  const mealBank = resolveMealBankFamily(foodType);
   const fridgeList = parseFridgeItems(fridgeItems);
-  const meal = (key: MealKey, off = 0): string => {
+  const meal = (slot: MealSlot, off = 0): string => {
+    const key = mealKeyFor(mealBank, slot);
     if (fridgeList.length > 0) {
       return mealFromItems(key, fridgeList, seed + off);
     }
@@ -2046,7 +2158,7 @@ export function generatePartialRoutine(params: {
 
   // Dinner if not already in kept items and not yet added
   if (!hasDinner && cursor + 30 <= sleepMins - wdReserve) {
-    const dinnerOpts = meal(isVeg ? "VEG_DINNER" : "NONVEG_DINNER", 0);
+    const dinnerOpts = meal("DINNER", 0);
     add(
       { activity: "Dinner", duration: 30, category: "meal", notes: `Options: ${dinnerOpts}` },
       { force: true },

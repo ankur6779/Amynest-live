@@ -14,9 +14,11 @@ export function inferTutorAbacusVisual(
   const def = getLevel(level);
   const rods = Math.min(5, Math.max(1, def.rods));
 
-  const lowerMatch = text.match(/push\s+(\d)\s+lower\s+bead/i);
+  const lowerMatch = text.match(
+    /push\s+(\d)\s+lower\s+bead|(\d)\s+neeche\s+wali\s+bead|(\d)\s+neeche\s+beads?/i,
+  );
   if (lowerMatch) {
-    const n = Math.min(4, Math.max(0, Number(lowerMatch[1])));
+    const n = Math.min(4, Math.max(0, Number(lowerMatch[1] ?? lowerMatch[2] ?? lowerMatch[3])));
     const state = emptyAbacus(1);
     state[0].lower = n as 0 | 1 | 2 | 3 | 4;
     return {
@@ -26,7 +28,9 @@ export function inferTutorAbacusVisual(
     };
   }
 
-  const upperMatch = text.match(/push\s+(?:the\s+)?(?:1\s+)?upper\s+bead\s+down|top\s+bead\s+down/i);
+  const upperMatch = text.match(
+    /push\s+(?:the\s+)?(?:1\s+)?upper\s+bead\s+down|top\s+bead\s+down|upar\s+wali\s+bead|upper\s+bead/i,
+  );
   if (upperMatch) {
     const state = abacusFromValue(5, 1);
     return { state, highlightRod: 0, caption: "Upper bead = 5" };

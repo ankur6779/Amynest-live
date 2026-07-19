@@ -1,0 +1,1862 @@
+[
+  {
+    "id": "0m__school_day",
+    "inputNorm": "92b0e7cc6347fc5c",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "0m__weekend",
+    "inputNorm": "4feb567034a52768",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "ecae03618b2b8d787c75451f2ed33dd1"
+  },
+  {
+    "id": "0m__rain",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "0m__heat_limited_outdoor",
+    "inputNorm": "10305aa221f081da",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "00045ca01a26a19fe0c9bb5a145ee15c"
+  },
+  {
+    "id": "0m__cold_indoor",
+    "inputNorm": "6d693216134c046a",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "0m__vacation",
+    "inputNorm": "af43ea0c414a0744",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "0m__travel",
+    "inputNorm": "2437fca5c88d0b24",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "0m__doctor",
+    "inputNorm": "5d24052c98fca942",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "0m__festival",
+    "inputNorm": "61088511d0f105d3",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "0m__outdoor_blocked",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "0m__poor_sleep",
+    "inputNorm": "5e4b9b09f0a2bde4",
+    "engine": "cb5ad2e49031e69a",
+    "mealSanitize": "fcae60433d9480f9",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "ee904e17cafdd386",
+    "final": "b63caec540f07ffc",
+    "cacheKey": "e7cf2c36570eb9d3295f489cb27918f1"
+  },
+  {
+    "id": "0m__happy_mood",
+    "inputNorm": "4feb567034a52768",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "0m__tired_mood",
+    "inputNorm": "a0d33ef228c7d5ad",
+    "engine": "d633c363791de559",
+    "mealSanitize": "d2b1c20ee4016d41",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b20e0a1b775de9d5",
+    "final": "24a6f9808930b86b",
+    "cacheKey": "1369bccfaeff86619fda24205f5ba0d9"
+  },
+  {
+    "id": "3m__school_day",
+    "inputNorm": "92b0e7cc6347fc5c",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "3m__weekend",
+    "inputNorm": "4feb567034a52768",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "ecae03618b2b8d787c75451f2ed33dd1"
+  },
+  {
+    "id": "3m__rain",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "3m__heat_limited_outdoor",
+    "inputNorm": "10305aa221f081da",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "00045ca01a26a19fe0c9bb5a145ee15c"
+  },
+  {
+    "id": "3m__cold_indoor",
+    "inputNorm": "6d693216134c046a",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "3m__vacation",
+    "inputNorm": "af43ea0c414a0744",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "3m__travel",
+    "inputNorm": "2437fca5c88d0b24",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "3m__doctor",
+    "inputNorm": "5d24052c98fca942",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "3m__festival",
+    "inputNorm": "61088511d0f105d3",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "3m__outdoor_blocked",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "3m__poor_sleep",
+    "inputNorm": "5e4b9b09f0a2bde4",
+    "engine": "7defb264f24f59b8",
+    "mealSanitize": "9e8b5c228fbe5b77",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "2c0f212255f79224",
+    "final": "0aed815378e75d4c",
+    "cacheKey": "e7cf2c36570eb9d3295f489cb27918f1"
+  },
+  {
+    "id": "3m__happy_mood",
+    "inputNorm": "4feb567034a52768",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "3m__tired_mood",
+    "inputNorm": "a0d33ef228c7d5ad",
+    "engine": "bdde9ae475a2181f",
+    "mealSanitize": "6cbc1196a2077d6d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "b324190bc81e4ab5",
+    "final": "bed6cb5d617f707f",
+    "cacheKey": "1369bccfaeff86619fda24205f5ba0d9"
+  },
+  {
+    "id": "6m__school_day",
+    "inputNorm": "92b0e7cc6347fc5c",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "6m__weekend",
+    "inputNorm": "4feb567034a52768",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "ecae03618b2b8d787c75451f2ed33dd1"
+  },
+  {
+    "id": "6m__rain",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "6m__heat_limited_outdoor",
+    "inputNorm": "10305aa221f081da",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "00045ca01a26a19fe0c9bb5a145ee15c"
+  },
+  {
+    "id": "6m__cold_indoor",
+    "inputNorm": "6d693216134c046a",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "6m__vacation",
+    "inputNorm": "af43ea0c414a0744",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "6m__travel",
+    "inputNorm": "2437fca5c88d0b24",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "6m__doctor",
+    "inputNorm": "5d24052c98fca942",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "6m__festival",
+    "inputNorm": "61088511d0f105d3",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "6m__outdoor_blocked",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "6m__poor_sleep",
+    "inputNorm": "5e4b9b09f0a2bde4",
+    "engine": "8b5b932c6f9f0c9c",
+    "mealSanitize": "08e997b9162fd645",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "16accdc8454277dd",
+    "final": "053ad4429ba64820",
+    "cacheKey": "e7cf2c36570eb9d3295f489cb27918f1"
+  },
+  {
+    "id": "6m__happy_mood",
+    "inputNorm": "4feb567034a52768",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "6m__tired_mood",
+    "inputNorm": "a0d33ef228c7d5ad",
+    "engine": "97422ff2552cf423",
+    "mealSanitize": "c6f751d56bbf16d7",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "bf7a0910d86a0979",
+    "cacheKey": "1369bccfaeff86619fda24205f5ba0d9"
+  },
+  {
+    "id": "9m__school_day",
+    "inputNorm": "92b0e7cc6347fc5c",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "9m__weekend",
+    "inputNorm": "4feb567034a52768",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "ecae03618b2b8d787c75451f2ed33dd1"
+  },
+  {
+    "id": "9m__rain",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "9m__heat_limited_outdoor",
+    "inputNorm": "10305aa221f081da",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "00045ca01a26a19fe0c9bb5a145ee15c"
+  },
+  {
+    "id": "9m__cold_indoor",
+    "inputNorm": "6d693216134c046a",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "9m__vacation",
+    "inputNorm": "af43ea0c414a0744",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "9m__travel",
+    "inputNorm": "2437fca5c88d0b24",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "9m__doctor",
+    "inputNorm": "5d24052c98fca942",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "6ecd65398859d5d2598efb8d0162e632"
+  },
+  {
+    "id": "9m__festival",
+    "inputNorm": "61088511d0f105d3",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "9m__outdoor_blocked",
+    "inputNorm": "d4e891b56ba46fde",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "15de39c9bdb6daede89a07375e69aabd"
+  },
+  {
+    "id": "9m__poor_sleep",
+    "inputNorm": "5e4b9b09f0a2bde4",
+    "engine": "9b63d27dc9e2f921",
+    "mealSanitize": "0cd75c235aec624d",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "16accdc8454277dd",
+    "final": "545ee58196f4fa59",
+    "cacheKey": "e7cf2c36570eb9d3295f489cb27918f1"
+  },
+  {
+    "id": "9m__happy_mood",
+    "inputNorm": "4feb567034a52768",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "0c67d2a070751bfb4a01a91c43b91493"
+  },
+  {
+    "id": "9m__tired_mood",
+    "inputNorm": "a0d33ef228c7d5ad",
+    "engine": "2bc8841a7e9d573e",
+    "mealSanitize": "02d46b0794797f92",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "cca562c8ca72dc68",
+    "final": "295e3bd2e25f168a",
+    "cacheKey": "1369bccfaeff86619fda24205f5ba0d9"
+  },
+  {
+    "id": "12m__school_day",
+    "inputNorm": "d8b81ef3f7bf5a33",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "12m__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "52a8ae47679be6e4",
+    "mealSanitize": "b8a70082ad3b7409",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "e771c99f5c7ce49a",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "12m__rain",
+    "inputNorm": "04e903b72572bbbc",
+    "engine": "68201d71d52b84ee",
+    "mealSanitize": "d30769dc1974cb35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "dfe141ede8252fe9",
+    "cacheKey": "12e86314289f2509baa29d1443be2cb7"
+  },
+  {
+    "id": "12m__heat_limited_outdoor",
+    "inputNorm": "4de8ee648bc7262f",
+    "engine": "d8376e3ba7f22c12",
+    "mealSanitize": "cfc16464510fd5d3",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "939817c77a88b08c",
+    "cacheKey": "c50c040b454835a4d71d086caf328829"
+  },
+  {
+    "id": "12m__cold_indoor",
+    "inputNorm": "be4b5c3570097dc3",
+    "engine": "68201d71d52b84ee",
+    "mealSanitize": "d30769dc1974cb35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "dfe141ede8252fe9",
+    "cacheKey": "12e86314289f2509baa29d1443be2cb7"
+  },
+  {
+    "id": "12m__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "f05d773f3e76efa9",
+    "mealSanitize": "d48ca58ea084f398",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "0b020f1c2df8f0aa",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "12m__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "12m__doctor",
+    "inputNorm": "abf44b8da347d5c9",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "12m__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "f05d773f3e76efa9",
+    "mealSanitize": "d48ca58ea084f398",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "0b020f1c2df8f0aa",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "12m__outdoor_blocked",
+    "inputNorm": "04e903b72572bbbc",
+    "engine": "68201d71d52b84ee",
+    "mealSanitize": "d30769dc1974cb35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "dfe141ede8252fe9",
+    "cacheKey": "12e86314289f2509baa29d1443be2cb7"
+  },
+  {
+    "id": "12m__poor_sleep",
+    "inputNorm": "eb842138cbf20041",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "7398b4e7d925622bcac15583e813d54a"
+  },
+  {
+    "id": "12m__happy_mood",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "f05d773f3e76efa9",
+    "mealSanitize": "d48ca58ea084f398",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "0b020f1c2df8f0aa",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "12m__tired_mood",
+    "inputNorm": "df23771d08a18528",
+    "engine": "1d6cef0cdcd52226",
+    "mealSanitize": "2a9a1109cbd26d35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "5de168e7216c7742",
+    "cacheKey": "70e367be666fbb1b4d9823ab1467b35f"
+  },
+  {
+    "id": "2y__school_day",
+    "inputNorm": "d8b81ef3f7bf5a33",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "2y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "52a8ae47679be6e4",
+    "mealSanitize": "b8a70082ad3b7409",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "e771c99f5c7ce49a",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "2y__rain",
+    "inputNorm": "04e903b72572bbbc",
+    "engine": "68201d71d52b84ee",
+    "mealSanitize": "d30769dc1974cb35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "dfe141ede8252fe9",
+    "cacheKey": "12e86314289f2509baa29d1443be2cb7"
+  },
+  {
+    "id": "2y__heat_limited_outdoor",
+    "inputNorm": "4de8ee648bc7262f",
+    "engine": "d8376e3ba7f22c12",
+    "mealSanitize": "cfc16464510fd5d3",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "939817c77a88b08c",
+    "cacheKey": "c50c040b454835a4d71d086caf328829"
+  },
+  {
+    "id": "2y__cold_indoor",
+    "inputNorm": "be4b5c3570097dc3",
+    "engine": "68201d71d52b84ee",
+    "mealSanitize": "d30769dc1974cb35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "dfe141ede8252fe9",
+    "cacheKey": "12e86314289f2509baa29d1443be2cb7"
+  },
+  {
+    "id": "2y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "f05d773f3e76efa9",
+    "mealSanitize": "d48ca58ea084f398",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "0b020f1c2df8f0aa",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "2y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "2y__doctor",
+    "inputNorm": "abf44b8da347d5c9",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "2y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "f05d773f3e76efa9",
+    "mealSanitize": "d48ca58ea084f398",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "0b020f1c2df8f0aa",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "2y__outdoor_blocked",
+    "inputNorm": "04e903b72572bbbc",
+    "engine": "68201d71d52b84ee",
+    "mealSanitize": "d30769dc1974cb35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "dfe141ede8252fe9",
+    "cacheKey": "12e86314289f2509baa29d1443be2cb7"
+  },
+  {
+    "id": "2y__poor_sleep",
+    "inputNorm": "eb842138cbf20041",
+    "engine": "6642ece5291ba170",
+    "mealSanitize": "f827c8ab39b16e77",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "866ba8cdfc400c34",
+    "cacheKey": "7398b4e7d925622bcac15583e813d54a"
+  },
+  {
+    "id": "2y__happy_mood",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "f05d773f3e76efa9",
+    "mealSanitize": "d48ca58ea084f398",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "0b020f1c2df8f0aa",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "2y__tired_mood",
+    "inputNorm": "df23771d08a18528",
+    "engine": "1d6cef0cdcd52226",
+    "mealSanitize": "2a9a1109cbd26d35",
+    "dinnerRepair": "d39ab2b148f0d895",
+    "trust": "7b63a9f8afbad5ca",
+    "final": "5de168e7216c7742",
+    "cacheKey": "70e367be666fbb1b4d9823ab1467b35f"
+  },
+  {
+    "id": "3y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "b1afb978fc275cdc",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62c909ef4c129239",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "3y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "2c83dc8a00cda19a",
+    "mealSanitize": "6aa266b909a394a6",
+    "dinnerRepair": "a128858d3fa36b7a",
+    "trust": "5b78e734105e922a",
+    "final": "6002404058f953f5",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "3y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "2bf729d1f6e68fda",
+    "mealSanitize": "89c43d423b773f16",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "ed3e387071b46963",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "3y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "88af29f559645f59",
+    "mealSanitize": "9ecfc3649e04fa27",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "603e2593fb1013ea",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "3y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "2bf729d1f6e68fda",
+    "mealSanitize": "89c43d423b773f16",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "ed3e387071b46963",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "3y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "6f9f4f935cd229a4",
+    "mealSanitize": "e3049d859c41409a",
+    "dinnerRepair": "a128858d3fa36b7a",
+    "trust": "5b78e734105e922a",
+    "final": "ffdd60a539b37c4d",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "3y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "d15eb90ced292f14",
+    "mealSanitize": "e3049d859c41409a",
+    "dinnerRepair": "a128858d3fa36b7a",
+    "trust": "5b78e734105e922a",
+    "final": "d73dd2d07ad55314",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "3y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "b1afb978fc275cdc",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62c909ef4c129239",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "3y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "6f9f4f935cd229a4",
+    "mealSanitize": "e3049d859c41409a",
+    "dinnerRepair": "a128858d3fa36b7a",
+    "trust": "5b78e734105e922a",
+    "final": "ffdd60a539b37c4d",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "3y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "2bf729d1f6e68fda",
+    "mealSanitize": "89c43d423b773f16",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "ed3e387071b46963",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "3y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "b1afb978fc275cdc",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62c909ef4c129239",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "3y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "97c05838a990959a",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "891dc11fd98e8494",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "9eb60c7e05f106de",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "3y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "c64a84f207b1b449",
+    "mealSanitize": "8167ef1beb0b9e51",
+    "dinnerRepair": "a128858d3fa36b7a",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "ef4eed3ad0a6509a",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "4y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "b1afb978fc275cdc",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "da3db733a006938e",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "b7ee5667d84caaf0",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "4y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "2c83dc8a00cda19a",
+    "mealSanitize": "6aa266b909a394a6",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "f259da85de42769c",
+    "final": "a642f8c8b912ab78",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "4y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "2bf729d1f6e68fda",
+    "mealSanitize": "89c43d423b773f16",
+    "dinnerRepair": "e501611577286f82",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "a292be352ae83b5d",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "4y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "88af29f559645f59",
+    "mealSanitize": "9ecfc3649e04fa27",
+    "dinnerRepair": "da3db733a006938e",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "100286068b3ece86",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "4y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "2bf729d1f6e68fda",
+    "mealSanitize": "89c43d423b773f16",
+    "dinnerRepair": "e501611577286f82",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "a292be352ae83b5d",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "4y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "6f9f4f935cd229a4",
+    "mealSanitize": "e3049d859c41409a",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "f259da85de42769c",
+    "final": "eed85e92a16496c4",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "4y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "d15eb90ced292f14",
+    "mealSanitize": "e3049d859c41409a",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "f259da85de42769c",
+    "final": "c9f86c6a4ec43939",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "4y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "b1afb978fc275cdc",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "da3db733a006938e",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "b7ee5667d84caaf0",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "4y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "6f9f4f935cd229a4",
+    "mealSanitize": "e3049d859c41409a",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "f259da85de42769c",
+    "final": "eed85e92a16496c4",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "4y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "2bf729d1f6e68fda",
+    "mealSanitize": "89c43d423b773f16",
+    "dinnerRepair": "e501611577286f82",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "a292be352ae83b5d",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "4y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "b1afb978fc275cdc",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "da3db733a006938e",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "b7ee5667d84caaf0",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "4y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "97c05838a990959a",
+    "mealSanitize": "d6e456ce94281d88",
+    "dinnerRepair": "da3db733a006938e",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "ed3cc60f8b4f0bce",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "4y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "c64a84f207b1b449",
+    "mealSanitize": "8167ef1beb0b9e51",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4c1d78e74b8a380a",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "5y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "5y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "54f554acdb028706",
+    "mealSanitize": "56452c460663be70",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "36831a1ab2529a88",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "5y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "5y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "e2cb09d9feca34ff",
+    "mealSanitize": "37d2f52a107f75d0",
+    "dinnerRepair": "4821620b8a1f11bb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "80739f3dd5a21dd9",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "5y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "5y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "5y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "bff6e39b09bbfffb",
+    "mealSanitize": "b675ec9972ed1393",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "98d508292d6dfade",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "5y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "5y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "5y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "5y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "5y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "09a127e2ac2b8a37",
+    "mealSanitize": "81ff8261eb5ccbfe",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4a295b4f74e81be4",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "5y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "f2ab7a59b57ed2e8",
+    "mealSanitize": "164cfe61494d1d50",
+    "dinnerRepair": "0c7e6553b313d497",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "d6df5e00c989de79",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "6y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "6y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "54f554acdb028706",
+    "mealSanitize": "56452c460663be70",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "36831a1ab2529a88",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "6y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "6y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "e2cb09d9feca34ff",
+    "mealSanitize": "37d2f52a107f75d0",
+    "dinnerRepair": "4821620b8a1f11bb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "80739f3dd5a21dd9",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "6y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "6y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "6y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "bff6e39b09bbfffb",
+    "mealSanitize": "b675ec9972ed1393",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "98d508292d6dfade",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "6y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "6y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "6y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "6y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "6y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "09a127e2ac2b8a37",
+    "mealSanitize": "81ff8261eb5ccbfe",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4a295b4f74e81be4",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "6y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "f2ab7a59b57ed2e8",
+    "mealSanitize": "164cfe61494d1d50",
+    "dinnerRepair": "0c7e6553b313d497",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "d6df5e00c989de79",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "7y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "7y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "54f554acdb028706",
+    "mealSanitize": "56452c460663be70",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "36831a1ab2529a88",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "7y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "7y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "e2cb09d9feca34ff",
+    "mealSanitize": "37d2f52a107f75d0",
+    "dinnerRepair": "4821620b8a1f11bb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "80739f3dd5a21dd9",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "7y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "7y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "7y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "bff6e39b09bbfffb",
+    "mealSanitize": "b675ec9972ed1393",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "98d508292d6dfade",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "7y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "7y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "7y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "7y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "7y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "09a127e2ac2b8a37",
+    "mealSanitize": "81ff8261eb5ccbfe",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4a295b4f74e81be4",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "7y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "f2ab7a59b57ed2e8",
+    "mealSanitize": "164cfe61494d1d50",
+    "dinnerRepair": "0c7e6553b313d497",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "d6df5e00c989de79",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "8y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "8y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "54f554acdb028706",
+    "mealSanitize": "56452c460663be70",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "36831a1ab2529a88",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "8y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "8y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "e2cb09d9feca34ff",
+    "mealSanitize": "37d2f52a107f75d0",
+    "dinnerRepair": "4821620b8a1f11bb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "80739f3dd5a21dd9",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "8y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "8y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "8y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "bff6e39b09bbfffb",
+    "mealSanitize": "b675ec9972ed1393",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "98d508292d6dfade",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "8y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "8y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "8y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "8y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "8y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "09a127e2ac2b8a37",
+    "mealSanitize": "81ff8261eb5ccbfe",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4a295b4f74e81be4",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "8y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "f2ab7a59b57ed2e8",
+    "mealSanitize": "164cfe61494d1d50",
+    "dinnerRepair": "0c7e6553b313d497",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "d6df5e00c989de79",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "9y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "9y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "54f554acdb028706",
+    "mealSanitize": "56452c460663be70",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "36831a1ab2529a88",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "9y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "9y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "e2cb09d9feca34ff",
+    "mealSanitize": "37d2f52a107f75d0",
+    "dinnerRepair": "4821620b8a1f11bb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "80739f3dd5a21dd9",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "9y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "9y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "9y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "bff6e39b09bbfffb",
+    "mealSanitize": "b675ec9972ed1393",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "98d508292d6dfade",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "9y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "9y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "e021b2065bab228e",
+    "mealSanitize": "3af357f9320e8d79",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "569379bc8c746c86",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "9y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "7b1a9cc58abf1634",
+    "mealSanitize": "8b973229e243f4ff",
+    "dinnerRepair": "b0a9bf898c7bb6bf",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "62e1d9d3eff2a1ee",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "9y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "6bbb7add2f3db0b7",
+    "mealSanitize": "e4ad1e0a929574b0",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1dbe4cffe50edd2d",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "9y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "09a127e2ac2b8a37",
+    "mealSanitize": "81ff8261eb5ccbfe",
+    "dinnerRepair": "f7a9d63adf95310b",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4a295b4f74e81be4",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "9y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "f2ab7a59b57ed2e8",
+    "mealSanitize": "164cfe61494d1d50",
+    "dinnerRepair": "0c7e6553b313d497",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "d6df5e00c989de79",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "10y__school_day",
+    "inputNorm": "a50d582399b730d7",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "10y__weekend",
+    "inputNorm": "76513886c2d0bba3",
+    "engine": "ff3f2677efaca613",
+    "mealSanitize": "a89ff3a78975741e",
+    "dinnerRepair": "082ab1065b747a1d",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "ce19f3b27aa19f96",
+    "cacheKey": "0d9a2ac52813c2425c37eea5546981a1"
+  },
+  {
+    "id": "10y__rain",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "10y__heat_limited_outdoor",
+    "inputNorm": "06116a08d206d510",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "4707558a9b60dccfc63fea52c2c1efea"
+  },
+  {
+    "id": "10y__cold_indoor",
+    "inputNorm": "0535f3cd25588f03",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "10y__vacation",
+    "inputNorm": "28bb7e535670147f",
+    "engine": "b3552f9a977e3c2a",
+    "mealSanitize": "74a07bde927ef4b5",
+    "dinnerRepair": "082ab1065b747a1d",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "fdaed5c9eea6bf23",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "10y__travel",
+    "inputNorm": "c443aff5db3f0b43",
+    "engine": "f83bafa778f624d6",
+    "mealSanitize": "5ea1ece45d2054d5",
+    "dinnerRepair": "d55f1a2239f157ad",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "833e99bb95d18881",
+    "cacheKey": "a4e2d2e45196da31e7f187c62fc881a6"
+  },
+  {
+    "id": "10y__doctor",
+    "inputNorm": "621edb7156539a00",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "470e2608d8744c56a05530135cfb9f9f"
+  },
+  {
+    "id": "10y__festival",
+    "inputNorm": "1ce794e5e78a09db",
+    "engine": "b3552f9a977e3c2a",
+    "mealSanitize": "74a07bde927ef4b5",
+    "dinnerRepair": "082ab1065b747a1d",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "fdaed5c9eea6bf23",
+    "cacheKey": "caabbe91554ee0ebecb229a59089b03d"
+  },
+  {
+    "id": "10y__outdoor_blocked",
+    "inputNorm": "bb419e6b57cd802c",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "8d52ce39b9aa1ef92b1e292ca18a12b8"
+  },
+  {
+    "id": "10y__poor_sleep",
+    "inputNorm": "bdce4de313091820",
+    "engine": "e899c854f0f68d9a",
+    "mealSanitize": "3ff7bc7ade7f98d7",
+    "dinnerRepair": "dab389d61bd5dcdb",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "4d0f1300928ce8c6",
+    "cacheKey": "36ed01092c0b368cbdd0831f58428db2"
+  },
+  {
+    "id": "10y__happy_mood",
+    "inputNorm": "c24da98beb43361a",
+    "engine": "2e42b647ed5c0e9b",
+    "mealSanitize": "5e7af8caf229a240",
+    "dinnerRepair": "d651b815a6637691",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "26a5af9350571d13",
+    "cacheKey": "10659d44d89a53abb613032b83c91d06"
+  },
+  {
+    "id": "10y__tired_mood",
+    "inputNorm": "49c79ab30e1cbfd8",
+    "engine": "e3182760dc454c0a",
+    "mealSanitize": "f8e15a81569d7773",
+    "dinnerRepair": "3c9e08726e2ab833",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "1c7edaa0005e9d0e",
+    "cacheKey": "ce0355118104f04ad17f58eba374131f"
+  },
+  {
+    "id": "4m__emergency",
+    "inputNorm": "5833625e57b613e9",
+    "engine": "98c36fddef0c5f6b",
+    "mealSanitize": "2c781e6f77e29ce3",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "9daf4e69f5410256",
+    "cacheKey": "03d28e213368cd030cf5d5db1d4b27ad"
+  },
+  {
+    "id": "9m__emergency",
+    "inputNorm": "5833625e57b613e9",
+    "engine": "13a07ad6b241b1bf",
+    "mealSanitize": "e0ff926c2011a015",
+    "dinnerRepair": "a6d0cf96ed98dbbd",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "6eb6639ce2594697",
+    "cacheKey": "03d28e213368cd030cf5d5db1d4b27ad"
+  },
+  {
+    "id": "2y__emergency",
+    "inputNorm": "3660c8cd155f89cf",
+    "engine": "cf11865cc7d6814f",
+    "mealSanitize": "f4cc54e0065c7ec8",
+    "dinnerRepair": "1b95ede1485fc730",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "f476a7b2dfd000ed",
+    "cacheKey": "1b981a9683df82562d62aebe5c396bc7"
+  },
+  {
+    "id": "7y__emergency",
+    "inputNorm": "5d2590843c38c7ee",
+    "engine": "cf11865cc7d6814f",
+    "mealSanitize": "f4cc54e0065c7ec8",
+    "dinnerRepair": "3af80ce9dac74a63",
+    "trust": "d23ce2e0b8a12bc7",
+    "final": "6da7a72b240eef56",
+    "cacheKey": "49546f094d71796e2615d2b7b93677f0"
+  }
+]

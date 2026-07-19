@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
@@ -11,11 +12,11 @@ import {
   type AbacusBestScores,
 } from "@workspace/db";
 import {
-  buildAbacusTutorPrompt,
   getLevel,
   highestUnlockedLevel,
   isAbacusEligible,
   LEVELS,
+  verifyChallengeAnswers,
   type LevelId,
 } from "@workspace/abacus";
 import { buildAbacusWeeklySummary } from "../services/abacusWeeklySummary";
@@ -23,6 +24,40 @@ import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { hubModuleGate } from "../middlewares/hubModuleGate.js";
+
+function abacusSessionSecret(): string {
+  return (
+    process.env["ABACUS_SESSION_SECRET"] ??
+    process.env["SESSION_SECRET"] ??
+    "amynest-abacus-dev-secret"
+  );
+}
+
+function b64url(input: string): string {
+  return Buffer.from(input, "utf8").toString("base64url");
+}
+
+function signAbacusPayload(payload: Record<string, unknown>): string {
+  const body = b64url(JSON.stringify(payload));
+  const sig = createHmac("sha256", abacusSessionSecret()).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
+function verifyAbacusToken(token: string): Record<string, unknown> | null {
+  const [body, sig] = token.split(".");
+  if (!body || !sig) return null;
+  const expected = createHmac("sha256", abacusSessionSecret()).update(body).digest("base64url");
+  const expectedBuf = Buffer.from(expected);
+  const actualBuf = Buffer.from(sig);
+  if (expectedBuf.length !== actualBuf.length || !timingSafeEqual(expectedBuf, actualBuf)) {
+    return null;
+  }
+  try {
+    return JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 const router: IRouter = Router();
 
@@ -213,6 +248,11 @@ const CompleteLevelBody = PostBodyBase.extend({
   level: z.number().int().min(1).max(LEVELS.length),
   accuracyPct: z.number().int().min(0).max(100),
   points: z.number().int().min(0).max(1000),
+  /** Optional V2 signed challenge session — when present, server re-scores. */
+  sessionToken: z.string().min(10).max(2000).optional(),
+  seed: z.number().int().optional(),
+  answers: z.array(z.number().int()).max(20).optional(),
+  elapsedMs: z.array(z.number().int().nonnegative()).max(20).optional(),
 });
 
 const LogSessionBody = PostBodyBase.extend({
@@ -273,6 +313,51 @@ router.post(
     }
 
     if (body.action === "complete_level") {
+      let accuracyPct = body.accuracyPct;
+      let points = body.points;
+      const def = getLevel(body.level as LevelId);
+
+      // V2 trusted path: when a session token is provided, re-score server-side.
+      if (body.sessionToken) {
+        const session = verifyAbacusToken(body.sessionToken);
+        if (
+          !session ||
+          session.userId !== userId ||
+          session.childId !== body.childId ||
+          session.level !== body.level ||
+          typeof session.seed !== "number" ||
+          typeof session.exp !== "number" ||
+          Date.now() > (session.exp as number)
+        ) {
+          res.status(400).json({ error: "invalid_challenge_session" });
+          return;
+        }
+        if (!body.answers || !body.elapsedMs) {
+          res.status(400).json({ error: "challenge_answers_required" });
+          return;
+        }
+        const verified = verifyChallengeAnswers({
+          level: body.level as LevelId,
+          seed: session.seed as number,
+          answers: body.answers,
+          elapsedMs: body.elapsedMs,
+        });
+        if (!verified.ok) {
+          res.status(400).json({ error: verified.reason ?? "challenge_verify_failed" });
+          return;
+        }
+        if (!verified.passed) {
+          res.status(400).json({
+            error: "challenge_not_passed",
+            accuracyPct: verified.accuracyPct,
+            needPct: def.unlockAccuracyPct,
+          });
+          return;
+        }
+        accuracyPct = verified.accuracyPct;
+        points = verified.totalPoints;
+      }
+
       const completed = asLevelList(row.completedLevels);
       const next = new Set<LevelId>(completed);
       next.add(body.level as LevelId);
@@ -281,13 +366,13 @@ router.post(
       const prevBest = (row.bestScores as AbacusBestScores) ?? {};
       const key = String(body.level);
       const existing = prevBest[key];
-      const isNewBest = !existing || body.points > existing.points;
+      const isNewBest = !existing || points > existing.points;
       const newBestScores: AbacusBestScores = {
         ...prevBest,
         [key]: isNewBest
           ? {
-              points: body.points,
-              accuracyPct: body.accuracyPct,
+              points,
+              accuracyPct,
               completedAt: new Date().toISOString(),
             }
           : existing,
@@ -313,6 +398,7 @@ router.post(
         progress: updated,
         unlocked: advancedTo > body.level ? advancedTo : null,
         newBest: isNewBest,
+        verified: Boolean(body.sessionToken),
       });
       return;
     }
@@ -345,6 +431,65 @@ router.post(
   }
 });
 
+// ─── POST /api/abacus/challenge/start ───────────────────────────────────
+// Issues a short-lived signed session token + seed for server-verified unlocks.
+const ChallengeStartBody = z.object({
+  childId: z.number().int().positive(),
+  level: z.number().int().min(1).max(LEVELS.length),
+});
+
+router.post(
+  "/abacus/challenge/start",
+  hubModuleGate("hub_abacus", { premiumOnly: true, denyStatus: 403 }),
+  infantExploreMutationGate(),
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const parsed = ChallengeStartBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+      return;
+    }
+    const { childId, level } = parsed.data;
+    try {
+      const child = await loadOwnedChild(childId, userId);
+      if (!child) {
+        res.status(404).json({ error: "child_not_found" });
+        return;
+      }
+      if (!isAbacusEligible(child.age ?? 0)) {
+        res.status(400).json({ error: "child_age_not_eligible" });
+        return;
+      }
+      const seed = Date.now();
+      const exp = Date.now() + 30 * 60 * 1000;
+      const sessionToken = signAbacusPayload({
+        userId,
+        childId,
+        level,
+        seed,
+        exp,
+      });
+      res.json({
+        ok: true,
+        sessionToken,
+        seed,
+        level,
+        expiresAt: new Date(exp).toISOString(),
+        challengeCount: getLevel(level as LevelId).challengeCount,
+      });
+    } catch (err) {
+      logger.error(
+        `abacus challenge/start failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      res.status(500).json({ error: "server_error" });
+    }
+  },
+);
+
 // ─── POST /api/abacus/tutor ─────────────────────────────────────────────
 //
 // Body: { childId, level, language, question }
@@ -357,6 +502,8 @@ const TutorBody = z.object({
   level: z.number().int().min(1).max(LEVELS.length),
   language: z.enum(["en", "hi"]),
   question: z.string().min(1).max(500),
+  /** Optional V3 living-coach context — additive, ignored by older clients. */
+  coachFragment: z.string().max(800).optional(),
 });
 
 router.post(
@@ -375,7 +522,7 @@ router.post(
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
   }
-  const { childId, level, language, question } = parsed.data;
+  const { childId, level, language, question, coachFragment } = parsed.data;
 
   try {
     const child = await loadOwnedChild(childId, userId);
@@ -397,6 +544,7 @@ router.post(
         ageYears: child.age ?? 6,
         language,
         question,
+        coachFragment,
       },
       waitMs: 15_000,
       buildSyncBody: (result) => result,

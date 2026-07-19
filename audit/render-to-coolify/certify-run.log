@@ -1,0 +1,931 @@
+=== Certify attempt 1 ===
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:29896) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:29896) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=453145 coolify=448899 maxId=450081
+round 2: render=453209 coolify=453148 maxId=454330
+round 3: render=453218 coolify=453213 maxId=454395
+round 4: render=453226 coolify=453221 maxId=454403
+round 5: render=453232 coolify=453230 maxId=454412
+round 6: render=453241 coolify=453237 maxId=454419
+round 7: render=453251 coolify=453245 maxId=454427
+round 8: render=453259 coolify=453254 maxId=454436
+round 9: render=453267 coolify=453262 maxId=454444
+round 10: render=453280 coolify=453271 maxId=454453
+round 11: render=453288 coolify=453284 maxId=454466
+round 12: render=453296 coolify=453292 maxId=454474
+round 13: render=453301 coolify=453300 maxId=454482
+round 14: render=453301 coolify=453301 maxId=454483
+MATCH: analytics_events
+final: render=453301 coolify=453301
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:30497) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:30497) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=3717 coolify=3651 maxId=3651
+round 2: render=3717 coolify=3717 maxId=3717
+MATCH: startup_funnel_events
+final: render=3717 coolify=3717
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:30611) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:30611) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=281 coolify=280 maxId=280
+round 2: render=281 coolify=281 maxId=281
+MATCH: user_devices
+final: render=281 coolify=281
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:30721) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:30721) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+Synced 116 sequences from Render
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:31284) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:31284) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Comparing 137 tables...
+==> Comparing extensions, indexes, constraints, sequences...
+(node:31284) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T20:53:50.551Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 473,586 | 473,403 | -183 |
+| Row mismatches | — | — | 1 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 3 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 453,484 | 453,301 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 307 | 307 | ok |
+| tts_cache | 6,056 | 6,056 | ok |
+| user_devices | 281 | 281 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (1)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| analytics_events | 453484 | 453301 | -183 |
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| analytics_events_id_seq | 454755 | 454487 | behind |
+| family_digital_twin_id_seq | 1218086 | 1218048 | behind |
+| family_intelligence_snapshots_id_seq | 1218086 | 1218048 | behind |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T20-53-50-551Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+=== Certify attempt 2 ===
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:31962) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:31962) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=453597 coolify=453301 maxId=454483
+round 2: render=453603 coolify=453599 maxId=454781
+round 3: render=453612 coolify=453607 maxId=454789
+round 4: render=453618 coolify=453615 maxId=454797
+round 5: render=453622 coolify=453619 maxId=454801
+round 6: render=453627 coolify=453624 maxId=454806
+round 7: render=453637 coolify=453629 maxId=454811
+round 8: render=453642 coolify=453637 maxId=454819
+round 9: render=453648 coolify=453645 maxId=454827
+round 10: render=453655 coolify=453652 maxId=454834
+round 11: render=453661 coolify=453656 maxId=454838
+round 12: render=453669 coolify=453665 maxId=454847
+round 13: render=453675 coolify=453673 maxId=454855
+round 14: render=453681 coolify=453678 maxId=454860
+round 15: render=453688 coolify=453684 maxId=454866
+round 16: render=453696 coolify=453692 maxId=454874
+round 17: render=453704 coolify=453699 maxId=454881
+round 18: render=453711 coolify=453708 maxId=454890
+round 19: render=453718 coolify=453714 maxId=454896
+round 20: render=453727 coolify=453722 maxId=454904
+round 21: render=453734 coolify=453730 maxId=454912
+round 22: render=453741 coolify=453735 maxId=454917
+round 23: render=453751 coolify=453745 maxId=454927
+round 24: render=453755 coolify=453752 maxId=454934
+round 25: render=453769 coolify=453758 maxId=454940
+round 26: render=453777 coolify=453772 maxId=454954
+round 27: render=453784 coolify=453779 maxId=454961
+round 28: render=453792 coolify=453788 maxId=454970
+round 29: render=453799 coolify=453796 maxId=454978
+round 30: render=453806 coolify=453803 maxId=454985
+round 31: render=453811 coolify=453809 maxId=454991
+round 32: render=453819 coolify=453814 maxId=454996
+round 33: render=453827 coolify=453822 maxId=455004
+round 34: render=453833 coolify=453829 maxId=455011
+round 35: render=453838 coolify=453835 maxId=455017
+round 36: render=453846 coolify=453841 maxId=455023
+round 37: render=453854 coolify=453848 maxId=455030
+round 38: render=453861 coolify=453857 maxId=455039
+round 39: render=453869 coolify=453864 maxId=455046
+round 40: render=453875 coolify=453872 maxId=455054
+round 41: render=453885 coolify=453879 maxId=455061
+round 42: render=453892 coolify=453887 maxId=455069
+round 43: render=453903 coolify=453900 maxId=455082
+round 44: render=453913 coolify=453907 maxId=455089
+round 45: render=453919 coolify=453916 maxId=455098
+round 46: render=453927 coolify=453923 maxId=455105
+round 47: render=453935 coolify=453931 maxId=455113
+round 48: render=453943 coolify=453938 maxId=455120
+round 49: render=453950 coolify=453945 maxId=455127
+round 50: render=453958 coolify=453954 maxId=455136
+final: render=453964 coolify=453961
+undefined
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: tsx ./src/render-to-coolify/repair-table-gap.ts analytics_events
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:33320) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33320) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=3717 coolify=3717 maxId=3717
+MATCH: startup_funnel_events
+final: render=3717 coolify=3717
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:33410) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33410) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=281 coolify=281 maxId=281
+MATCH: user_devices
+final: render=281 coolify=281
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:33502) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33502) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+Synced 116 sequences from Render
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:33941) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33941) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Comparing 137 tables...
+==> Comparing extensions, indexes, constraints, sequences...
+(node:33941) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T20:56:55.211Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 474,341 | 474,063 | -278 |
+| Row mismatches | — | — | 1 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 3 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 454,239 | 453,961 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 307 | 307 | ok |
+| tts_cache | 6,056 | 6,056 | ok |
+| user_devices | 281 | 281 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (1)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| analytics_events | 454239 | 453961 | -278 |
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| analytics_events_id_seq | 455561 | 455229 | behind |
+| family_digital_twin_id_seq | 1218200 | 1218162 | behind |
+| family_intelligence_snapshots_id_seq | 1218200 | 1218162 | behind |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T20-56-55-211Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+=== Certify attempt 3 ===
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:34375) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:34375) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=454404 coolify=453961 maxId=455143
+round 2: render=454415 coolify=454407 maxId=455589
+round 3: render=454423 coolify=454418 maxId=455600
+round 4: render=454429 coolify=454426 maxId=455608
+round 5: render=454440 coolify=454433 maxId=455615
+round 6: render=454449 coolify=454444 maxId=455626
+round 7: render=454459 coolify=454453 maxId=455635
+round 8: render=454469 coolify=454462 maxId=455644
+round 9: render=454475 coolify=454470 maxId=455652
+round 10: render=454483 coolify=454478 maxId=455660
+round 11: render=454491 coolify=454487 maxId=455669
+round 12: render=454499 coolify=454495 maxId=455677
+round 13: render=454506 coolify=454502 maxId=455684
+round 14: render=454515 coolify=454510 maxId=455692
+round 15: render=454521 coolify=454519 maxId=455701
+round 16: render=454529 coolify=454524 maxId=455706
+round 17: render=454537 coolify=454531 maxId=455713
+round 18: render=454545 coolify=454541 maxId=455723
+round 19: render=454553 coolify=454549 maxId=455731
+round 20: render=454562 coolify=454557 maxId=455739
+round 21: render=454570 coolify=454565 maxId=455747
+round 22: render=454577 coolify=454573 maxId=455755
+round 23: render=454592 coolify=454589 maxId=455771
+round 24: render=454597 coolify=454594 maxId=455776
+round 25: render=454605 coolify=454601 maxId=455783
+round 26: render=454613 coolify=454610 maxId=455792
+round 27: render=454620 coolify=454616 maxId=455798
+round 28: render=454629 coolify=454624 maxId=455806
+round 29: render=454636 coolify=454632 maxId=455814
+round 30: render=454643 coolify=454639 maxId=455821
+round 31: render=454651 coolify=454647 maxId=455829
+round 32: render=454658 coolify=454654 maxId=455836
+round 33: render=454665 coolify=454661 maxId=455843
+round 34: render=454674 coolify=454669 maxId=455851
+round 35: render=454682 coolify=454677 maxId=455859
+round 36: render=454690 coolify=454686 maxId=455868
+round 37: render=454698 coolify=454694 maxId=455876
+round 38: render=454707 coolify=454702 maxId=455884
+round 39: render=454715 coolify=454711 maxId=455893
+round 40: render=454723 coolify=454718 maxId=455900
+round 41: render=454734 coolify=454729 maxId=455911
+round 42: render=454742 coolify=454736 maxId=455918
+round 43: render=454751 coolify=454746 maxId=455928
+round 44: render=454760 coolify=454755 maxId=455937
+round 45: render=454768 coolify=454763 maxId=455945
+round 46: render=454776 coolify=454771 maxId=455953
+round 47: render=454784 coolify=454779 maxId=455961
+round 48: render=454792 coolify=454787 maxId=455969
+round 49: render=454800 coolify=454795 maxId=455977
+round 50: render=454805 coolify=454802 maxId=455984
+final: render=454809 coolify=454806
+undefined
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: tsx ./src/render-to-coolify/repair-table-gap.ts analytics_events
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:35250) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:35250) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=3717 coolify=3717 maxId=3717
+MATCH: startup_funnel_events
+final: render=3717 coolify=3717
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:35312) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:35312) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=281 coolify=281 maxId=281
+MATCH: user_devices
+final: render=281 coolify=281
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:35373) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:35373) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+Synced 116 sequences from Render
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:35918) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:35918) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Comparing 137 tables...
+==> Comparing extensions, indexes, constraints, sequences...
+(node:35918) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T20:59:59.938Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 475,174 | 474,908 | -266 |
+| Row mismatches | — | — | 1 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 3 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 455,072 | 454,806 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 307 | 307 | ok |
+| tts_cache | 6,056 | 6,056 | ok |
+| user_devices | 281 | 281 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (1)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| analytics_events | 455072 | 454806 | -266 |
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| analytics_events_id_seq | 456402 | 456076 | behind |
+| family_digital_twin_id_seq | 1218314 | 1218276 | behind |
+| family_intelligence_snapshots_id_seq | 1218314 | 1218276 | behind |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T20-59-59-938Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+=== Certify attempt 4 ===
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:36585) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:36585) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=455251 coolify=454806 maxId=455988
+round 2: render=455263 coolify=455255 maxId=456437
+round 3: render=455276 coolify=455271 maxId=456453
+round 4: render=455284 coolify=455279 maxId=456461
+round 5: render=455292 coolify=455286 maxId=456468
+round 6: render=455302 coolify=455295 maxId=456477
+round 7: render=455310 coolify=455305 maxId=456487
+round 8: render=455316 coolify=455313 maxId=456495
+round 9: render=455319 coolify=455317 maxId=456499
+round 10: render=455323 coolify=455321 maxId=456503
+round 11: render=455327 coolify=455325 maxId=456507
+round 12: render=455330 coolify=455328 maxId=456510
+round 13: render=455334 coolify=455332 maxId=456514
+round 14: render=455341 coolify=455336 maxId=456518
+round 15: render=455349 coolify=455345 maxId=456527
+round 16: render=455353 coolify=455351 maxId=456533
+round 17: render=455357 coolify=455355 maxId=456537
+round 18: render=455361 coolify=455359 maxId=456541
+round 19: render=455365 coolify=455363 maxId=456545
+round 20: render=455371 coolify=455368 maxId=456550
+round 21: render=455383 coolify=455378 maxId=456560
+round 22: render=455391 coolify=455387 maxId=456569
+round 23: render=455400 coolify=455395 maxId=456577
+round 24: render=455407 coolify=455403 maxId=456585
+round 25: render=455414 coolify=455410 maxId=456592
+round 26: render=455421 coolify=455417 maxId=456599
+round 27: render=455428 coolify=455425 maxId=456607
+round 28: render=455434 coolify=455430 maxId=456612
+round 29: render=455442 coolify=455437 maxId=456619
+round 30: render=455450 coolify=455445 maxId=456627
+round 31: render=455459 coolify=455453 maxId=456635
+round 32: render=455467 coolify=455463 maxId=456645
+round 33: render=455475 coolify=455470 maxId=456652
+round 34: render=455483 coolify=455479 maxId=456661
+round 35: render=455490 coolify=455487 maxId=456669
+round 36: render=455498 coolify=455494 maxId=456676
+round 37: render=455506 coolify=455501 maxId=456683
+round 38: render=455518 coolify=455514 maxId=456696
+round 39: render=455525 coolify=455522 maxId=456704
+round 40: render=455533 coolify=455529 maxId=456711
+round 41: render=455542 coolify=455538 maxId=456720
+round 42: render=455548 coolify=455545 maxId=456727
+round 43: render=455556 coolify=455552 maxId=456734
+round 44: render=455563 coolify=455559 maxId=456741
+round 45: render=455571 coolify=455567 maxId=456749
+round 46: render=455580 coolify=455575 maxId=456757
+round 47: render=455587 coolify=455583 maxId=456765
+round 48: render=455598 coolify=455590 maxId=456772
+round 49: render=455606 coolify=455599 maxId=456781
+round 50: render=455609 coolify=455608 maxId=456790
+final: render=455614 coolify=455610
+undefined
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: tsx ./src/render-to-coolify/repair-table-gap.ts analytics_events
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:37942) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37942) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=3717 coolify=3717 maxId=3717
+MATCH: startup_funnel_events
+final: render=3717 coolify=3717
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:38033) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:38033) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=281 coolify=281 maxId=281
+MATCH: user_devices
+final: render=281 coolify=281
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:38126) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:38126) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+Synced 116 sequences from Render
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:38692) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:38692) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Comparing 137 tables...
+==> Comparing extensions, indexes, constraints, sequences...
+(node:38692) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T21:03:05.177Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 475,972 | 475,712 | -260 |
+| Row mismatches | — | — | 1 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 3 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 455,870 | 455,610 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 307 | 307 | ok |
+| tts_cache | 6,056 | 6,056 | ok |
+| user_devices | 281 | 281 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (1)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| analytics_events | 455870 | 455610 | -260 |
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| analytics_events_id_seq | 457197 | 456867 | behind |
+| family_digital_twin_id_seq | 1218466 | 1218390 | behind |
+| family_intelligence_snapshots_id_seq | 1218466 | 1218390 | behind |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T21-03-05-177Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+=== Certify attempt 5 ===
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:39366) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:39366) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=456047 coolify=455610 maxId=456792
+round 2: render=456060 coolify=456051 maxId=457233
+round 3: render=456060 coolify=456060 maxId=457242
+MATCH: analytics_events
+final: render=456060 coolify=456060
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:39526) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:39526) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=3717 coolify=3717 maxId=3717
+MATCH: startup_funnel_events
+final: render=3717 coolify=3717
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:39625) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:39625) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+round 1: render=281 coolify=281 maxId=281
+MATCH: user_devices
+final: render=281 coolify=281
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+(node:39714) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:39714) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render connected (Render)
+✓ Coolify connected (Coolify)
+Synced 116 sequences from Render
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:40100) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:40100) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Comparing 137 tables...
+==> Comparing extensions, indexes, constraints, sequences...
+(node:40100) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T21:04:49.034Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 476,296 | 476,162 | -134 |
+| Row mismatches | — | — | 1 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 3 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 456,194 | 456,060 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 307 | 307 | ok |
+| tts_cache | 6,056 | 6,056 | ok |
+| user_devices | 281 | 281 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (1)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| analytics_events | 456194 | 456060 | -134 |
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| analytics_events_id_seq | 457440 | 457242 | behind |
+| family_digital_twin_id_seq | 1218504 | 1218466 | behind |
+| family_intelligence_snapshots_id_seq | 1218504 | 1218466 | behind |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T21-04-49-034Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+CERTIFY_FAILED
