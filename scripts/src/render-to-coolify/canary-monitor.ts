@@ -56,9 +56,9 @@ async function loadState(): Promise<CanaryState> {
     const raw = await readFile(STATE_FILE, "utf8");
     const parsed = JSON.parse(raw) as CanaryState;
     return {
-      consecutive_unhealthy_cycles: 0,
-      gap_invalidations: 0,
       ...parsed,
+      consecutive_unhealthy_cycles: parsed.consecutive_unhealthy_cycles ?? 0,
+      gap_invalidations: parsed.gap_invalidations ?? 0,
     };
   } catch {
     return {
