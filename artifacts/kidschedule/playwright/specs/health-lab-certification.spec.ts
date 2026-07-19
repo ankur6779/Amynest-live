@@ -72,7 +72,7 @@ async function expandGoals(page: import("@playwright/test").Page) {
   }
 }
 
-async function adventureButton(page: import("@playwright/test").Page, title: string) {
+function adventureButton(page: import("@playwright/test").Page, title: string) {
   // Prefer playable card aria-label (avoids sr-only "Next up: …" duplicate text).
   return page.getByRole("button", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
 }
@@ -189,7 +189,8 @@ test.describe("Navigation flows", () => {
 
   test("opens parent dashboard", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByRole("button", { name: /Parent Insights/i }).click();
+    // Exact prefix — grown-ups hint also contains "parent insights".
+    await page.getByRole("button", { name: /^Parent Insights/i }).click();
     await expect(page.getByRole("heading", { name: "Wellness Trends" })).toBeVisible();
   });
 
@@ -410,7 +411,7 @@ test.describe("Sync & offline", () => {
 test.describe("Dashboard & parent value", () => {
   test("dashboard shows weekly summary", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByRole("button", { name: /Parent Insights/i }).click();
+    await page.getByRole("button", { name: /^Parent Insights/i }).click();
     await expect(page.getByText("Weekly Summary")).toBeVisible();
     await expect(page.getByText("Quarterly Growth")).toBeVisible();
     await expect(page.getByText("Progress Milestones")).toBeVisible();
@@ -419,7 +420,7 @@ test.describe("Dashboard & parent value", () => {
 
   test("dashboard range filters", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByRole("button", { name: /Parent Insights/i }).click();
+    await page.getByRole("button", { name: /^Parent Insights/i }).click();
     await page.getByRole("button", { name: "30d" }).click();
     await expect(page.getByText("Monthly Wellness Summary")).toBeVisible();
   });
