@@ -13,7 +13,11 @@ import {
   getWeeklyLeaderboard,
   PERFECT_COMBO_BADGE_AT,
   recordLeaderboardEntry,
+  getPlayLog,
+  gamesPlayedToday,
+  getWeeklyGameSummary,
 } from "./games";
+import { getContinuePlayingGames } from "./game-hub-meta";
 import { cacheRoutineStreak, STREAK_UNLOCK_DAYS } from "./routine-streak-cache";
 
 function installLocalStorageMock(): void {
@@ -95,5 +99,37 @@ describe("weekly leaderboard", () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows[0]?.gameId).toBe("pattern-match");
     expect(rows[0]?.bestRatio).toBe(100);
+  });
+});
+
+describe("corrupt localStorage hardening", () => {
+  it("getPlayLog returns empty array for non-array JSON", () => {
+    localStorage.setItem("amynest_game_play_log_v1", '{"oops":true}');
+    expect(getPlayLog()).toEqual([]);
+    expect(gamesPlayedToday()).toBe(0);
+  });
+
+  it("getPlayLog drops entries missing required fields", () => {
+    localStorage.setItem(
+      "amynest_game_play_log_v1",
+      JSON.stringify([
+        { id: "pattern-match" },
+        {
+          id: "card-flip",
+          date: new Date().toISOString(),
+          pointsEarned: 5,
+          perfect: false,
+        },
+      ]),
+    );
+    expect(getPlayLog()).toHaveLength(1);
+    expect(getWeeklyGameSummary().playsLast7Days).toBe(1);
+  });
+
+  it("hub continue strip survives corrupt play log", () => {
+    localStorage.setItem("amynest_game_play_log_v1", "null");
+    ensureStarterUnlocks();
+    expect(() => getContinuePlayingGames(false, 3)).not.toThrow();
+    expect(getContinuePlayingGames(false, 3)).toEqual([]);
   });
 });

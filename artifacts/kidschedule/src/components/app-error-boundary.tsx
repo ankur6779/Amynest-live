@@ -11,6 +11,7 @@ import {
 import { clearRefreshCompleteFlag } from "@/lib/refresh-orchestrator";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
+import { getCrashRouteContext } from "@/lib/crash-route-context";
 import { getFirebaseAuth } from "@/lib/firebase";
 import {
   planComponentCrashRecovery,
@@ -70,6 +71,7 @@ export class AppErrorBoundary extends Component<Props, State> {
       filename: (error as Error & { fileName?: string }).fileName,
       line: (error as Error & { lineNumber?: number }).lineNumber,
       column: (error as Error & { columnNumber?: number }).columnNumber,
+      crashContext: getCrashRouteContext(),
     });
     console.error("APP CRASH:", label, error, info.componentStack);
 

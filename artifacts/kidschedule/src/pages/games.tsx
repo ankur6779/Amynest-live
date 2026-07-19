@@ -63,6 +63,7 @@ import { cn } from "@/lib/utils";
 import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
 import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-banner";
 import { isGamingHubPreviewAge } from "@/lib/hub-visibility";
+import { markSuccessfulScreen } from "@/lib/crash-route-context";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -116,6 +117,10 @@ export default function GamesPage() {
   }, [childProfiles]);
 
   const showGamingPreview = previewAgeMonths != null && isGamingHubPreviewAge(previewAgeMonths);
+
+  useEffect(() => {
+    markSuccessfulScreen("/games");
+  }, []);
 
   useEffect(() => {
     if (showGamingPreview) return;

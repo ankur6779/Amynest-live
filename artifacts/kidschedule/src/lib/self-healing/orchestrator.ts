@@ -11,6 +11,7 @@ import {
   type RecoveryStage,
 } from "@/lib/crash-recovery";
 import { reportCrash } from "@/lib/crash-report";
+import { getCrashRouteContext } from "@/lib/crash-route-context";
 import { isInfiniteRenderError } from "@/lib/runtime-crash-policy";
 import { captureCrashIntelligence } from "@/lib/self-healing/crash-intelligence";
 import { recordFingerprintSpike } from "@/lib/self-healing/feature-mitigation";
@@ -75,6 +76,7 @@ export async function planComponentCrashRecovery(
         mitigationApplied,
         recoveryOutcome,
         selfHealing: true,
+        ...getCrashRouteContext(),
       },
     });
   };

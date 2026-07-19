@@ -1,4 +1,10 @@
 // Gaming Hub — unlock + daily-limit + skill-tracking, layered on lib/rewards.ts.
+import {
+  sanitizeLeaderboardLog,
+  sanitizePlayLog,
+  sanitizeSkillRecord,
+  sanitizeUnlockedGames,
+} from "./game-storage-sanitize";
 import { getTotalPoints } from "./rewards";
 import { canUnlockGameWithStreak, getCachedRoutineStreak, STREAK_UNLOCK_DAYS } from "./routine-streak-cache";
 
@@ -88,7 +94,11 @@ export function dailyLimit(isPremium = false): number {
 }
 
 export function getUnlocked(): string[] {
-  try { return JSON.parse(localStorage.getItem(UNLOCKED_KEY) ?? "[]"); } catch { return []; }
+  try {
+    return sanitizeUnlockedGames(JSON.parse(localStorage.getItem(UNLOCKED_KEY) ?? "[]"));
+  } catch {
+    return [];
+  }
 }
 
 export function isUnlocked(id: string): boolean {
@@ -210,12 +220,16 @@ function daysAgoISO(days: number): string {
 }
 
 export function getPlayLog(): PlayEntry[] {
-  try { return JSON.parse(localStorage.getItem(PLAY_LOG_KEY) ?? "[]"); } catch { return []; }
+  try {
+    return sanitizePlayLog(JSON.parse(localStorage.getItem(PLAY_LOG_KEY) ?? "[]"));
+  } catch {
+    return [];
+  }
 }
 
 export function gamesPlayedToday(): number {
   const today = todayStr();
-  return getPlayLog().filter((e) => e.date.startsWith(today)).length;
+  return getPlayLog().filter((e) => e.date.slice(0, 10) === today).length;
 }
 
 export function dailyLimitReached(isPremium = false): boolean {
@@ -251,25 +265,13 @@ export function getWeeklyGameSummary(): WeeklyGameSummary {
 
 type SkillRecord = Record<GameCategory, { attempts: number; correct: number; plays: number }>;
 
-function emptySkills(): SkillRecord {
-  return {
-    brain:      { attempts: 0, correct: 0, plays: 0 },
-    memory:     { attempts: 0, correct: 0, plays: 0 },
-    math:       { attempts: 0, correct: 0, plays: 0 },
-    focus:      { attempts: 0, correct: 0, plays: 0 },
-    creativity: { attempts: 0, correct: 0, plays: 0 },
-    behavior:   { attempts: 0, correct: 0, plays: 0 },
-    action:     { attempts: 0, correct: 0, plays: 0 },
-    puzzle:     { attempts: 0, correct: 0, plays: 0 },
-  };
-}
-
 export function getSkills(): SkillRecord {
   try {
     const raw = JSON.parse(localStorage.getItem(SKILLS_KEY) ?? "null");
-    if (!raw) return emptySkills();
-    return { ...emptySkills(), ...raw };
-  } catch { return emptySkills(); }
+    return sanitizeSkillRecord(raw);
+  } catch {
+    return sanitizeSkillRecord(null);
+  }
 }
 
 export function getSkillPercent(cat: GameCategory): number {
@@ -375,7 +377,7 @@ export interface LeaderboardEntry {
 
 export function getLeaderboardLog(): LeaderboardEntry[] {
   try {
-    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? "[]");
+    return sanitizeLeaderboardLog(JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? "[]"));
   } catch {
     return [];
   }
