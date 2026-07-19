@@ -1,3 +1,11 @@
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+/security.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
+
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 

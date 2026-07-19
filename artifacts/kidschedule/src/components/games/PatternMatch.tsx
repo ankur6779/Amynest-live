@@ -13,6 +13,7 @@ import {
   sessionPatternLength,
   sessionPatternMode,
 } from "@/lib/game-session-progression";
+import { useTimeoutRegistry } from "@/hooks/use-timeout-registry";
 
 const SHAPES = ["🟥", "🟦", "🟩", "🟨", "⬛", "🟪", "🟧"];
 
@@ -75,6 +76,7 @@ export function PatternMatchGame({
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
+  const { setTimeoutSafe } = useTimeoutRegistry();
   const rounds = useMemo(() => buildPattern(GAME_SESSION_ROUNDS), []);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -111,7 +113,7 @@ export function PatternMatchGame({
       setFeedbackText("Correct! ✨");
       setScore((s) => s + 1);
       void feedbackCorrect();
-      setTimeout(advance, 700);
+      setTimeoutSafe(advance, 700);
       return;
     }
 
@@ -127,14 +129,14 @@ export function PatternMatchGame({
 
     if (nextAttempt >= SOFT_FAIL_MAX_ATTEMPTS) {
       // Exhausted retries — move on without naming/revealing the answer.
-      setTimeout(() => {
+      setTimeoutSafe(() => {
         setFeedbackText("Nice effort — next pattern!");
-        setTimeout(advance, 650);
+        setTimeoutSafe(advance, 650);
       }, 700);
       return;
     }
 
-    setTimeout(() => {
+    setTimeoutSafe(() => {
       setFeedback(null);
       setFeedbackText(undefined);
       setPickedWrong(null);

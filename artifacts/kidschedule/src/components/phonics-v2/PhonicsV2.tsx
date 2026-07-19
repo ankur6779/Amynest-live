@@ -10,17 +10,43 @@ import { DecodableStoryReader } from "./DecodableStoryReader";
 import { ParentInsightsV3Card } from "./ParentInsightsV3Card";
 import { DigraphPathwayPanel } from "./DigraphPathwayPanel";
 import { BlendListenCheck } from "./BlendListenCheck";
-import { ReadingLessonRunner } from "./lesson/ReadingLessonRunner";
 import { ReadingParentDashboard } from "./lesson/ReadingParentDashboard";
-import { SegmentWordRound } from "./lesson/SegmentWordRound";
 import { ReadingAcademyHub } from "./academy/ReadingAcademyHub";
-import { PhonicsStartHere } from "./ux/PhonicsStartHere";
+import { PhonicsLearningHub } from "./ux/PhonicsLearningHub";
+import { DailySessionRunner } from "./session/DailySessionRunner";
 import type { PhonicsDailyPlan } from "@workspace/phonics-curriculum";
 import { getLetterGroup } from "@workspace/phonics-curriculum";
 import type { MissionSummary } from "./DailyMissionPanel";
 import {
+  buildLessonTarget,
   pickNextLessonGrapheme,
 } from "@/lib/phonics-v3/reading-lesson-engine";
+import {
+  buildLearningHubModel,
+  resolveMasteredGraphemeSet,
+} from "@/lib/phonics-v3/learning-hub";
+import {
+  clearLessonResume,
+  loadLessonResume,
+  type LessonResumeSnapshot,
+} from "@/lib/phonics-v3/lesson-resume";
+import {
+  buildSessionPlan,
+  isSessionCompleteToday,
+  isSessionInProgress,
+  primarySessionCta,
+  resolveTodaySession,
+  saveDailySession,
+  startDailySession,
+  type DailySessionState,
+} from "@/lib/phonics-v3/daily-session";
+import {
+  feedReadingPet,
+  loadReadingPetState,
+  saveReadingPetState,
+  READING_PETS,
+} from "@/lib/phonics-v3/reading-pet";
+import { resolvePrimaryCta, type PhonicsPrimaryCta } from "@/lib/phonics-journey-roadmap";
 import {
   loadReadingSkillsState,
   recordLessonSkills,
@@ -135,6 +161,9 @@ export type PhonicsV2Props = {
   curriculumStreak?: number;
   onCompleteCurriculumActivity?: (activityId: string) => Promise<void>;
   onMissionSummaryChange?: (summary: MissionSummary) => void;
+  onPrimaryCtaChange?: (cta: PhonicsPrimaryCta) => void;
+  lessonLaunchToken?: number;
+  onLessonSessionChange?: (open: boolean) => void;
 };
 
 export function PhonicsV2({
@@ -153,6 +182,9 @@ export function PhonicsV2({
   curriculumStreak = 0,
   onCompleteCurriculumActivity,
   onMissionSummaryChange,
+  onPrimaryCtaChange,
+  lessonLaunchToken = 0,
+  onLessonSessionChange,
 }: PhonicsV2Props) {
   const authFetch = useAuthFetch();
   const [familyProgress, setFamilyProgress] = useState(() =>
@@ -178,13 +210,22 @@ export function PhonicsV2({
   const [readingSkills, setReadingSkills] = useState<ReadingSkillsState>(() =>
     loadReadingSkillsState(childId),
   );
-  const [lessonOpen, setLessonOpen] = useState(false);
-  const [segmentPracticeWord, setSegmentPracticeWord] = useState<string | null>(null);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [journeyMapOpen, setJourneyMapOpen] = useState(false);
+  const [lessonGraphemeOverride, setLessonGraphemeOverride] = useState<string | null>(
+    null,
+  );
   const [coachConfusions, setCoachConfusions] = useState<CoachConfusionState>(() =>
     loadCoachConfusions(childId),
   );
+  const [lessonResume, setLessonResume] = useState<LessonResumeSnapshot | null>(() =>
+    loadLessonResume(childId),
+  );
+  const [readingPet, setReadingPet] = useState(() => loadReadingPetState(childId));
+  const [dailySession, setDailySession] = useState<DailySessionState | null>(null);
   const karaokeAttemptsRef = useRef<Record<string, number>>({});
   const voiceAttemptsRef = useRef<Record<string, number>>({});
+  const lastLaunchTokenRef = useRef(0);
 
   const safeItems = useMemo(() => sanitizeDisplayPhonicsItems(items), [items]);
   const practiceWords = useMemo(
@@ -261,9 +302,18 @@ export function PhonicsV2({
     setIntegrity(loadIntegrityState(childId));
     setReadingSkills(loadReadingSkillsState(childId));
     setCoachConfusions(loadCoachConfusions(childId));
-    setLessonOpen(false);
-    setSegmentPracticeWord(null);
+    setSessionActive(false);
+    setLessonGraphemeOverride(null);
+    setJourneyMapOpen(false);
+    setLessonResume(loadLessonResume(childId));
+    setReadingPet(loadReadingPetState(childId));
+    setDailySession(null);
+    lastLaunchTokenRef.current = 0;
   }, [childId]);
+
+  useEffect(() => {
+    onLessonSessionChange?.(sessionActive);
+  }, [sessionActive, onLessonSessionChange]);
 
   const applyGatedMastery = useCallback(
     (
@@ -350,19 +400,10 @@ export function PhonicsV2({
     [progress.practiced],
   );
 
-  const handleStageSelect = useCallback(
-    (stage: PhonicsV2Stage, status: JourneyStageStatus) => {
-      trackJourneyStageSelect(stage.id, status, childId);
-      const el = document.getElementById(stage.scrollTarget);
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    },
-    [childId],
-  );
-
   const masteryAvg = avgMasteryScore(mastery);
   const storyCatalogLevel = curriculumLevel ?? 1;
   const groupIndex = letterGroupIndex ?? 1;
-  const lessonGrapheme = useMemo(() => {
+  const nextLessonGrapheme = useMemo(() => {
     const masteredLetters = Object.entries(progress.mastered ?? {})
       .filter(([, v]) => v)
       .map(([id]) => {
@@ -372,6 +413,128 @@ export function PhonicsV2({
       .filter(Boolean);
     return pickNextLessonGrapheme(groupIndex, masteredLetters);
   }, [groupIndex, progress.mastered, safeItems]);
+
+  const hubFocusGrapheme = lessonGraphemeOverride ?? nextLessonGrapheme;
+
+  const sessionFocusWord = useMemo(() => {
+    const target = buildLessonTarget(hubFocusGrapheme, groupIndex);
+    return target.focusWord;
+  }, [hubFocusGrapheme, groupIndex]);
+
+  const sessionPracticeWords = useMemo(() => {
+    const target = buildLessonTarget(hubFocusGrapheme, groupIndex);
+    const fromBlend = blendableWords.slice(0, 3);
+    const merged = [
+      target.focusWord,
+      ...target.practiceWords,
+      ...fromBlend,
+    ].filter(Boolean);
+    return [...new Set(merged.map((w) => w.toLowerCase()))].slice(0, 3);
+  }, [hubFocusGrapheme, groupIndex, blendableWords]);
+
+  useEffect(() => {
+    if (sessionActive) return;
+    const resolved = resolveTodaySession(childId, {
+      grapheme: hubFocusGrapheme,
+      letterGroupIndex: groupIndex,
+      focusWord: sessionFocusWord,
+      practiceWords: sessionPracticeWords,
+    });
+    setDailySession(resolved);
+  }, [
+    childId,
+    hubFocusGrapheme,
+    groupIndex,
+    sessionFocusWord,
+    sessionPracticeWords,
+    sessionActive,
+  ]);
+
+  const startAdventure = useCallback(
+    (grapheme?: string) => {
+      // Resume unfinished session exactly where Amy left off — no activity picker.
+      if (!grapheme && dailySession && isSessionInProgress(dailySession)) {
+        const started = startDailySession(dailySession);
+        setDailySession(started);
+        saveDailySession(childId, started);
+        setSessionActive(true);
+        requestAnimationFrame(() => {
+          document
+            .getElementById("phonics-daily-session")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        return;
+      }
+
+      const g = (grapheme ?? hubFocusGrapheme).toLowerCase();
+      if (grapheme) setLessonGraphemeOverride(grapheme);
+      const target = buildLessonTarget(g, groupIndex);
+      const words = [
+        target.focusWord,
+        ...target.practiceWords,
+        ...blendableWords,
+      ]
+        .map((w) => w.toLowerCase())
+        .filter(Boolean);
+      const unique = [...new Set(words)].slice(0, 3);
+      const base = resolveTodaySession(childId, {
+        grapheme: g,
+        letterGroupIndex: groupIndex,
+        focusWord: target.focusWord,
+        practiceWords: unique,
+      });
+      // Fresh start only when not mid-session (or explicit lesson pick).
+      const seed =
+        grapheme || !isSessionInProgress(base)
+          ? {
+              ...base,
+              grapheme: g,
+              letterGroupIndex: groupIndex,
+              focusWord: target.focusWord,
+              practiceWords: unique,
+              phase: "idle" as const,
+              stepIndex: 0,
+              lessonCompleted: false,
+              wordsCompleted: [],
+              coachCompleted: false,
+              storyCompleted: false,
+              active: false,
+              completedAt: null,
+            }
+          : base;
+      const started = startDailySession(seed);
+      setDailySession(started);
+      saveDailySession(childId, started);
+      setSessionActive(true);
+      requestAnimationFrame(() => {
+        document
+          .getElementById("phonics-daily-session")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    },
+    [hubFocusGrapheme, groupIndex, blendableWords, dailySession, childId],
+  );
+
+  const handleStageSelect = useCallback(
+    (stage: PhonicsV2Stage, status: JourneyStageStatus) => {
+      trackJourneyStageSelect(stage.id, status, childId);
+      if (status === "locked") return;
+      if (stage.id === "letter_sounds") {
+        startAdventure();
+        return;
+      }
+      const el = document.getElementById(stage.scrollTarget);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [childId, startAdventure],
+  );
+
+  const masteredGraphemes = useMemo(() => {
+    const symbolById = new Map(
+      safeItems.map((i) => [i.id, i.symbol?.toLowerCase() ?? ""] as const),
+    );
+    return resolveMasteredGraphemeSet(progress.mastered ?? {}, symbolById);
+  }, [progress.mastered, safeItems]);
 
   const unlockedStories = useMemo(() => {
     const masteredFamilies = Object.values(mastery.families)
@@ -383,15 +546,108 @@ export function PhonicsV2({
       currentLevel: storyCatalogLevel,
     });
   }, [mastery, masteryAvg, storyCatalogLevel]);
-  const storyCount = useMemo(() => getStoryCount(), []);
   const storiesCompletedCount = useMemo(
     () => Object.keys(loadStoryProgressLocal(childId).completed ?? {}).length,
     [childId, fluency, readingSkills.wordsRead.length],
   );
+
+  const sessionCompleteToday = isSessionCompleteToday(dailySession);
+  const sessionInProgress = isSessionInProgress(dailySession);
+
+  const hubModel = useMemo(() => {
+    const base = buildLearningHubModel({
+      childName,
+      letterGroupIndex: groupIndex,
+      focusGrapheme: hubFocusGrapheme,
+      masteredGraphemes,
+      wordsLearned: readingSkills.wordsRead.length,
+      starsEarned: readingSkills.readingStars,
+      resume: sessionInProgress ? lessonResume : null,
+      pet: readingPet,
+      estimatedMinutes: 8,
+      storiesUnlocked: unlockedStories.length > 0 || storiesCompletedCount > 0,
+      dailyGoalMet: sessionCompleteToday || readingSkills.wordsRead.length > 0,
+    });
+    const cta = primarySessionCta(dailySession);
+    return {
+      ...base,
+      hasResume: cta.kind === "continue",
+      primaryAction: cta.kind === "continue" ? ("continue" as const) : ("start" as const),
+      primaryLabel: cta.label,
+    };
+  }, [
+    childName,
+    groupIndex,
+    hubFocusGrapheme,
+    masteredGraphemes,
+    readingSkills.wordsRead.length,
+    readingSkills.readingStars,
+    sessionInProgress,
+    lessonResume,
+    readingPet,
+    unlockedStories.length,
+    storiesCompletedCount,
+    sessionCompleteToday,
+    dailySession,
+  ]);
+
+  const planItems = useMemo(
+    () =>
+      buildSessionPlan(
+        dailySession ??
+          resolveTodaySession(childId, {
+            grapheme: hubFocusGrapheme,
+            letterGroupIndex: groupIndex,
+            focusWord: sessionFocusWord,
+            practiceWords: sessionPracticeWords,
+          }),
+      ),
+    [dailySession, childId, hubFocusGrapheme, groupIndex, sessionFocusWord, sessionPracticeWords],
+  );
+
+  useEffect(() => {
+    if (sessionCompleteToday) {
+      onPrimaryCtaChange?.({
+        state: "view_progress",
+        label: "Done for today",
+        scrollTarget: "phonics-learning-hub",
+        action: "scroll",
+      });
+      return;
+    }
+    onPrimaryCtaChange?.(
+      resolvePrimaryCta({
+        missionStarted: sessionInProgress,
+        missionComplete: false,
+        dailyQuizComplete: false,
+        hasLessonResume: sessionInProgress,
+      }),
+    );
+  }, [sessionInProgress, sessionCompleteToday, onPrimaryCtaChange]);
+
+  useEffect(() => {
+    if (!lessonLaunchToken || lessonLaunchToken === lastLaunchTokenRef.current) {
+      return;
+    }
+    lastLaunchTokenRef.current = lessonLaunchToken;
+    if (sessionCompleteToday) return;
+    startAdventure();
+  }, [lessonLaunchToken, startAdventure, sessionCompleteToday]);
+
   const aiStory = useMemo(
     () => generateDecodableStory(groupIndex, childId + groupIndex),
     [groupIndex, childId],
   );
+
+  const petLabel = useMemo(() => {
+    const meta = READING_PETS[readingPet.kind] ?? READING_PETS.owl;
+    return `${meta.emoji} ${meta.name}`;
+  }, [readingPet.kind]);
+
+  const tomorrowPreview = useMemo(() => {
+    const nextGroup = getLetterGroup(Math.min(8, groupIndex + (hubModel.lessonsCompletedInGroup >= hubModel.lessonTotal - 1 ? 1 : 0)));
+    return `Group ${nextGroup.id} · keep blending ${nextGroup.name}`;
+  }, [groupIndex, hubModel.lessonsCompletedInGroup, hubModel.lessonTotal]);
   const coachFocus = useMemo(
     () => focusGraphemesForPractice(coachConfusions, 2),
     [coachConfusions],
@@ -498,8 +754,15 @@ export function PhonicsV2({
       const jp = markV2StageComplete(journeyProgress, "letter_sounds");
       setJourneyProgress(jp);
       saveV2JourneyProgress(childId, jp);
-      setLessonOpen(false);
-      setSegmentPracticeWord(payload.focusWord);
+      clearLessonResume(childId);
+      setLessonResume(null);
+      const fed = feedReadingPet(loadReadingPetState(childId), {
+        lesson: true,
+        words: 1,
+        pronunciation: (payload.coachEvaluations ?? []).some((e) => e.correct),
+      });
+      saveReadingPetState(childId, fed);
+      setReadingPet(fed);
     },
     [
       readingSkills,
@@ -512,160 +775,133 @@ export function PhonicsV2({
     ],
   );
 
-  const letterGroup = getLetterGroup(groupIndex);
+  const persistSession = useCallback(
+    (next: DailySessionState) => {
+      setDailySession(next);
+      saveDailySession(childId, next);
+    },
+    [childId],
+  );
 
   return (
     <div id="phonics-v2" data-testid="phonics-v2" className="space-y-4">
-      <PhonicsStartHere
-        childId={childId}
-        childName={childName}
-        focusSound={lessonGrapheme}
-        letterGroupName={`${letterGroup.id} · ${letterGroup.name}`}
-        estimatedMinutes={5}
-        onStartLesson={() => setLessonOpen(true)}
-      />
+      {!sessionActive && (
+        <PhonicsLearningHub
+          model={hubModel}
+          planItems={planItems}
+          estimatedMinutes={8}
+          sessionCompleteToday={sessionCompleteToday}
+          onPrimaryAction={() => startAdventure()}
+          onSelectLesson={(grapheme) => startAdventure(grapheme)}
+          onOpenJourney={() => setJourneyMapOpen((v) => !v)}
+          journeyOpen={journeyMapOpen}
+        />
+      )}
 
-      <Card className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
-        <CardContent className="p-4 flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-primary/15 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="font-quicksand text-base font-bold">Early Reading Journey</h2>
-            <p className="text-[11px] text-muted-foreground">
-              Hear → blend → read · {storyCount}+ stories · SATPIN groups.
-            </p>
-            <Badge variant="secondary" className="mt-1 text-[9px]">
-              Mastery avg {masteryAvg}% · {readingSkills.wordsRead.length} words read
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+      {sessionActive && dailySession && (
+        <DailySessionRunner
+          session={dailySession}
+          childId={childId}
+          childName={childName}
+          totalAgeMonths={totalAgeMonths}
+          story={aiStory}
+          petLabel={petLabel}
+          streak={curriculumStreak}
+          tomorrowPreview={tomorrowPreview}
+          onSessionChange={persistSession}
+          onLessonComplete={handleLessonComplete}
+          onCoachEvaluation={handleCoachEvaluation}
+          onExit={(paused) => {
+            persistSession(paused);
+            setSessionActive(false);
+            setLessonResume(loadLessonResume(childId));
+          }}
+          onFinished={(completed) => {
+            const fed = feedReadingPet(loadReadingPetState(childId), {
+              lesson: true,
+              words: completed.wordsCompleted.length,
+              story: true,
+              pronunciation: completed.coachCompleted,
+            });
+            saveReadingPetState(childId, fed);
+            setReadingPet(fed);
+            persistSession(completed);
+            setSessionActive(false);
+            requestAnimationFrame(() => {
+              document
+                .getElementById("phonics-learning-hub")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
+        />
+      )}
 
-      <JourneyMapV2
-        curriculumLevel={curriculumLevel}
-        masteryScore={curriculumMasteryScore}
-        lastTestAt={curriculumLastTestAt}
-        streak={curriculumStreak}
-        practicedItemCount={practicedItemCount}
-        totalAgeMonths={totalAgeMonths}
-        journeyProgress={journeyProgress}
-        onStageSelect={handleStageSelect}
-      />
+      {journeyMapOpen && !sessionActive && (
+        <section aria-label="My Reading Journey" className="space-y-2">
+          <h3 className="px-1 font-quicksand text-sm font-bold">My Reading Journey</h3>
+          <JourneyMapV2
+            curriculumLevel={curriculumLevel}
+            masteryScore={curriculumMasteryScore}
+            lastTestAt={curriculumLastTestAt}
+            streak={curriculumStreak}
+            practicedItemCount={practicedItemCount}
+            totalAgeMonths={totalAgeMonths}
+            journeyProgress={journeyProgress}
+            onStageSelect={handleStageSelect}
+          />
+        </section>
+      )}
 
-      <DailyMissionPanel
-        childId={childId}
-        items={safeItems}
-        progress={progress}
-        mastery={mastery}
-        retention={retention}
-        curriculumLevel={curriculumLevel}
-        letterGroupIndex={letterGroupIndex}
-        plan={curriculumPlan}
-        missionStoryId={unlockedStories[0]?.id}
-        onCompleteCurriculumActivity={onCompleteCurriculumActivity}
-        onMissionSummaryChange={onMissionSummaryChange}
-        onTaskComplete={() => setPronunciation(loadPronunciationScores(childId))}
-        onStartReadingLesson={() => setLessonOpen(true)}
-      />
+      {/* Anchor kept for legacy scroll targets */}
+      <div id="phonics-reading-lesson" className="sr-only" aria-hidden />
 
-      <ReadingAcademyHub
-        childId={childId}
-        childName={childName}
-        totalAgeMonths={totalAgeMonths}
-        letterGroupIndex={groupIndex}
-        curriculumLevel={curriculumLevel ?? 1}
-        blendingScore={readingSkills.skills.blending?.score ?? 0}
-        pronunciationAvg={pronunciation.confidenceAvg}
-      />
+      {/* Keep mission summary wired for parent sync, but off the primary path */}
+      <div className="hidden" aria-hidden>
+        <DailyMissionPanel
+          childId={childId}
+          items={safeItems}
+          progress={progress}
+          mastery={mastery}
+          retention={retention}
+          curriculumLevel={curriculumLevel}
+          letterGroupIndex={letterGroupIndex}
+          plan={curriculumPlan}
+          missionStoryId={unlockedStories[0]?.id}
+          onCompleteCurriculumActivity={onCompleteCurriculumActivity}
+          onMissionSummaryChange={onMissionSummaryChange}
+          onTaskComplete={() => setPronunciation(loadPronunciationScores(childId))}
+          onStartReadingLesson={() => startAdventure()}
+        />
+      </div>
 
-      <Card
-        id="phonics-reading-lesson"
-        data-testid="phonics-reading-lesson-card"
-        className="rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.06] to-transparent scroll-mt-24"
-      >
-        <CardContent className="space-y-3 p-5">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                Complete reading lesson
-              </p>
-              <h3 className="font-quicksand text-base font-bold">
-                Today&apos;s sound: /{lessonGrapheme}/
-              </h3>
-              <p className="text-[11px] text-muted-foreground">
-                Hear → mouth → repeat → letter → trace → sounds → build → read
-              </p>
-            </div>
-            {!lessonOpen && (
-              <button
-                type="button"
-                className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
-                onClick={() => setLessonOpen(true)}
-              >
-                Start lesson
-              </button>
-            )}
-          </div>
-          {lessonOpen && (
-            <ReadingLessonRunner
-              grapheme={lessonGrapheme}
-              letterGroupIndex={groupIndex}
+      {/* Keep scroll anchors available offline without competing for attention */}
+      <div id="phonics-v2-karaoke" className="sr-only" aria-hidden />
+      <div id="phonics-v2-stories" className="sr-only" aria-hidden />
+      <div id="phonics-v2-digraphs" className="sr-only" aria-hidden />
+
+      {!sessionActive && (
+        <details className="rounded-2xl border border-border bg-muted/10 px-3 py-2">
+          <summary className="min-h-12 cursor-pointer list-none py-2 text-sm font-semibold text-muted-foreground">
+            Practice library
+          </summary>
+          <div className="mt-2 space-y-4 pb-2">
+            <ReadingAcademyHub
               childId={childId}
               childName={childName}
               totalAgeMonths={totalAgeMonths}
-              onComplete={handleLessonComplete}
-              onCancel={() => setLessonOpen(false)}
-              onCoachEvaluation={handleCoachEvaluation}
+              letterGroupIndex={groupIndex}
+              curriculumLevel={curriculumLevel ?? 1}
+              blendingScore={readingSkills.skills.blending?.score ?? 0}
+              pronunciationAvg={pronunciation.confidenceAvg}
             />
-          )}
-          {segmentPracticeWord && !lessonOpen && (
-            <div className="border-t border-border pt-3">
-              <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                Bonus: segment {segmentPracticeWord}
-              </p>
-              <SegmentWordRound
-                word={segmentPracticeWord}
-                onComplete={(correct) => {
-                  const next = {
-                    ...readingSkills,
-                    skills: {
-                      ...readingSkills.skills,
-                      segmenting: {
-                        skill: "segmenting" as const,
-                        score: Math.min(
-                          100,
-                          Math.round(
-                            (readingSkills.skills.segmenting?.score ?? 40) * 0.75 +
-                              (correct ? 25 : 5),
-                          ),
-                        ),
-                        attempts: (readingSkills.skills.segmenting?.attempts ?? 0) + 1,
-                        correct:
-                          (readingSkills.skills.segmenting?.correct ?? 0) + (correct ? 1 : 0),
-                        lastAt: Date.now(),
-                      },
-                    },
-                  };
-                  setReadingSkills(next);
-                  saveReadingSkillsState(childId, next);
-                  setSegmentPracticeWord(null);
-                }}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <ReadingParentDashboard
-        letterGroupIndex={groupIndex}
-        skills={readingSkills}
-        coachConfusions={coachConfusions}
-        storiesCompleted={storiesCompletedCount}
-        pronunciationAvg={pronunciation.confidenceAvg}
-        className="rounded-3xl border border-white/[0.08] bg-card/90"
-      />
-
+            <ReadingParentDashboard
+              letterGroupIndex={groupIndex}
+              skills={readingSkills}
+              coachConfusions={coachConfusions}
+              storiesCompleted={storiesCompletedCount}
+              pronunciationAvg={pronunciation.confidenceAvg}
+              className="rounded-3xl border border-white/[0.08] bg-card/90"
+            />
       <Card
         data-testid="ai-decodable-story-card"
         className="rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.05] to-transparent"
@@ -699,7 +935,7 @@ export function PhonicsV2({
       </Card>
 
       {blendableWords.length > 0 && karaokeWord && (
-      <div id="phonics-v2-karaoke" className="scroll-mt-24">
+      <div className="scroll-mt-24">
         <Card className="rounded-3xl border border-white/[0.08] bg-card/90">
           <CardContent className="p-5">
             <h3 className="font-quicksand text-base font-bold mb-3">Karaoke Blending</h3>
@@ -794,7 +1030,7 @@ export function PhonicsV2({
         onGameComplete={() => recordPlay(`v2-game-${karaokeWord || practiceWords[0]}`)}
       />
 
-      <div id="phonics-v2-stories" className="scroll-mt-24">
+      <div className="scroll-mt-24">
         <Card className="rounded-3xl border border-white/[0.08] bg-card/90">
           <CardContent className="p-5">
             <h3 className="font-quicksand text-base font-bold mb-1">Decodable Stories</h3>
@@ -852,7 +1088,7 @@ export function PhonicsV2({
         </Card>
       </div>
 
-      <div id="phonics-v2-digraphs" className="scroll-mt-24">
+      <div className="scroll-mt-24">
         <DigraphPathwayPanel
           avgMasteryScore={masteryAvg}
           curriculumLevel={curriculumLevel ?? 1}
@@ -904,6 +1140,9 @@ export function PhonicsV2({
         retention={retention}
         curriculumLevel={curriculumLevel ?? 1}
       />
+          </div>
+        </details>
+      )}
     </div>
   );
 }

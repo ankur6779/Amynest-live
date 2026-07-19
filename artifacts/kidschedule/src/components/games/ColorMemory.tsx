@@ -15,6 +15,7 @@ import { getActiveSessionPlan, microFlashScale } from "@/lib/game-adaptive-progr
 import { scaleDurationMs } from "@/lib/game-a11y";
 import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useTimeoutRegistry } from "@/hooks/use-timeout-registry";
 
 const COLORS = [
   { id: "r", name: "Red", bg: "hsl(var(--brand-red-500))" },
@@ -35,6 +36,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
   const sequences = useMemo(() => roundLens.map(buildSequence), [roundLens]);
   const { timeScale } = useA11yPrefs();
   const pageVisible = usePageVisible();
+  const { setTimeoutSafe, setIntervalSafe, clearIntervalSafe } = useTimeoutRegistry();
   const micro = getActiveSessionPlan()?.micro ?? "normal";
   const flashMs = scaleDurationMs(
     Math.round(COLOR_MEMORY_FLASH_MS[difficulty] * microFlashScale(micro)),
@@ -68,17 +70,21 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
     if (phase !== "show" || seq.length === 0 || !pageVisible) return;
     setShowIdx(0);
     let i = 0;
-    timerRef.current = window.setInterval(() => {
+    timerRef.current = setIntervalSafe(() => {
       i += 1;
       if (i >= seq.length) {
-        if (timerRef.current) window.clearInterval(timerRef.current);
-        setTimeout(() => { setPhase("input"); setInput([]); }, 350);
+        clearIntervalSafe(timerRef.current);
+        timerRef.current = null;
+        setTimeoutSafe(() => { setPhase("input"); setInput([]); }, 350);
       } else {
         setShowIdx(i);
       }
     }, flashMs);
-    return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [round, phase, seq.length, flashMs, pageVisible]);
+    return () => {
+      clearIntervalSafe(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [round, phase, seq.length, flashMs, pageVisible, setIntervalSafe, setTimeoutSafe, clearIntervalSafe]);
 
   if (round >= sequences.length) return null;
 
@@ -95,7 +101,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       void (ok ? feedbackCorrect() : feedbackWrong());
       const newScore = ok ? score + 1 : score;
       if (ok) setScore(newScore);
-      setTimeout(() => {
+      setTimeoutSafe(() => {
         if (round + 1 >= sequences.length) onFinish(newScore, sequences.length);
         else { setRound((r) => r + 1); setPhase("show"); setFeedback(null); }
       }, 1100);

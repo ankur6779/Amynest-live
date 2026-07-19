@@ -7,6 +7,7 @@ import { feedbackTap } from "@/lib/game-feedback";
 import { gameTheme } from "@/lib/game-theme";
 import { fitArenaHeight, GAME_LAYOUT } from "@/lib/game-layout-tokens";
 import { scaleDurationMs } from "@/lib/game-a11y";
+import { shouldReduceGameEffects } from "@/lib/game-perf";
 import {
   GAME_SESSION_ROUNDS,
   sessionTargetTapWave,
@@ -18,9 +19,13 @@ interface Target {
   x: number;
   y: number;
   bornAt: number;
+  lifeMs: number;
   /** Decoy — ignore these (inhibitory control). */
   decoy?: boolean;
 }
+
+/** Cap concurrent DOM targets — prevents React + paint storms on low-end Android. */
+const MAX_TARGETS = 6;
 
 export function TargetTapGame({
   onFinish,
@@ -40,16 +45,18 @@ export function TargetTapGame({
   const [waveHits, setWaveHits] = useState(0);
   const [waveTotal, setWaveTotal] = useState(0);
   const [timeLeft, setTimeLeft] = useState(Math.round(TARGET_TAP_WAVE_MS / 1000));
-  const tickRef = useRef<number | null>(null);
-  const spawnRef = useRef<number | null>(null);
-  const cleanRef = useRef<number | null>(null);
+  const loopRef = useRef<number | null>(null);
   const idRef = useRef(0);
   const overRef = useRef(false);
   const scoreRef = useRef(0);
   const totalTargetsRef = useRef(0);
+  const lastSpawnRef = useRef(0);
+  const lastSecondRef = useRef(-1);
+  const reduceEffects = useRef(false);
   const waveConfig = sessionTargetTapWave(wave, GAME_SESSION_ROUNDS);
 
   useEffect(() => {
+    reduceEffects.current = shouldReduceGameEffects();
     const onResize = () => setViewportH(window.innerHeight);
     window.addEventListener("resize", onResize);
     window.addEventListener("orientationchange", onResize);
@@ -68,14 +75,11 @@ export function TargetTapGame({
     ),
   );
 
-  const cleanup = () => {
-    if (tickRef.current) window.clearInterval(tickRef.current);
-    if (spawnRef.current) window.clearInterval(spawnRef.current);
-    if (cleanRef.current) window.clearInterval(cleanRef.current);
-  };
-
   useEffect(() => {
-    cleanup();
+    if (loopRef.current) {
+      window.clearInterval(loopRef.current);
+      loopRef.current = null;
+    }
     if (!pageVisible) return;
 
     overRef.current = false;
@@ -83,52 +87,80 @@ export function TargetTapGame({
     setWaveHits(0);
     setWaveTotal(0);
     setTimeLeft(Math.round(waveMs / 1000));
+    lastSpawnRef.current = 0;
+    lastSecondRef.current = -1;
 
     const cfg = sessionTargetTapWave(wave, GAME_SESSION_ROUNDS);
     const lifeMs = scaleDurationMs(cfg.lifeMs, timeScale);
     const spawnMs = scaleDurationMs(cfg.spawnMs, timeScale);
-    const startTime = Date.now();
+    const startTime = performance.now();
+    // One loop — was 3× setInterval (clock + spawn + prune) → main-thread React storms.
+    const tickMs = Math.min(100, Math.max(50, Math.floor(spawnMs / 4)));
 
-    // UI clock 250ms (was 200) — same wave length, fewer React commits.
-    tickRef.current = window.setInterval(() => {
-      const elapsed = Date.now() - startTime;
+    loopRef.current = window.setInterval(() => {
+      if (overRef.current) return;
+      const now = performance.now();
+      const elapsed = now - startTime;
       const left = Math.max(0, Math.round((waveMs - elapsed) / 1000));
-      setTimeLeft(left);
-      if (elapsed >= waveMs && !overRef.current) {
+
+      if (left !== lastSecondRef.current) {
+        lastSecondRef.current = left;
+        setTimeLeft(left);
+      }
+
+      if (elapsed >= waveMs) {
         overRef.current = true;
-        cleanup();
+        if (loopRef.current) {
+          window.clearInterval(loopRef.current);
+          loopRef.current = null;
+        }
         if (wave + 1 >= GAME_SESSION_ROUNDS) {
           onFinish(scoreRef.current, Math.max(totalTargetsRef.current, GAME_SESSION_ROUNDS));
         } else {
           setWave((w) => w + 1);
         }
+        return;
       }
-    }, 250);
 
-    spawnRef.current = window.setInterval(() => {
-      if (overRef.current) return;
-      const isDecoy = Boolean(cfg.distractors && Math.random() < 0.28);
-      const t: Target = {
-        id: ++idRef.current,
-        // Keep targets inset so they stay fully inside the arena
-        x: 12 + Math.random() * 76,
-        y: 12 + Math.random() * 76,
-        bornAt: Date.now(),
-        decoy: isDecoy,
-      };
-      setTargets((arr) => [...arr, t]);
-      if (!isDecoy) {
-        totalTargetsRef.current += 1;
-        setWaveTotal((n) => n + 1);
+      const shouldSpawn = now - lastSpawnRef.current >= spawnMs;
+      let spawnedReal = 0;
+      let spawned: Target | null = null;
+      if (shouldSpawn) {
+        lastSpawnRef.current = now;
+        const isDecoy = Boolean(cfg.distractors && Math.random() < 0.28);
+        spawned = {
+          id: ++idRef.current,
+          x: 12 + Math.random() * 76,
+          y: 12 + Math.random() * 76,
+          bornAt: now,
+          lifeMs,
+          decoy: isDecoy,
+        };
+        if (!isDecoy) {
+          totalTargetsRef.current += 1;
+          spawnedReal = 1;
+        }
       }
-    }, spawnMs);
 
-    cleanRef.current = window.setInterval(() => {
-      const now = Date.now();
-      setTargets((arr) => arr.filter((t) => now - t.bornAt < lifeMs));
-    }, 200);
+      setTargets((arr) => {
+        let next = arr.filter((t) => now - t.bornAt < t.lifeMs);
+        if (spawned && next.length < MAX_TARGETS) {
+          next = [...next, spawned];
+        }
+        if (next.length === arr.length && next.every((t, i) => t.id === arr[i]?.id)) {
+          return arr;
+        }
+        return next;
+      });
+      if (spawnedReal) setWaveTotal((n) => n + 1);
+    }, tickMs);
 
-    return cleanup;
+    return () => {
+      if (loopRef.current) {
+        window.clearInterval(loopRef.current);
+        loopRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wave, waveMs, timeScale, pageVisible]);
 
@@ -150,6 +182,8 @@ export function TargetTapGame({
     ((GAME_SESSION_ROUNDS - wave - 1) / GAME_SESSION_ROUNDS) * 100 +
     ((waveMs / 1000 - timeLeft) / (waveMs / 1000)) * (100 / GAME_SESSION_ROUNDS);
 
+  const useGlow = !reducedMotion && !reduceEffects.current;
+
   return (
     <GameShell
       round={wave + 1}
@@ -168,6 +202,7 @@ export function TargetTapGame({
     >
       <div
         ref={layoutRef}
+        data-testid="gh-cert-target-tap"
         style={{
           position: "relative",
           width: "100%",
@@ -188,49 +223,45 @@ export function TargetTapGame({
             ? "Waiting for targets"
             : `${targets.length} target${targets.length === 1 ? "" : "s"} on screen`}
         </div>
-        {targets.map((tg) => {
-          const age = Date.now() - tg.bornAt;
-          const lifeMs = scaleDurationMs(waveConfig.lifeMs, timeScale);
-          const scale = reducedMotion
-            ? 1
-            : 1 - Math.min(0.45, (age / lifeMs) * 0.45);
-          return (
-            <button
-              key={tg.id}
-              type="button"
-              onClick={() => onTap(tg.id)}
-              style={{
-                position: "absolute",
-                left: `${tg.x}%`,
-                top: `${tg.y}%`,
-                transform: `translate(-50%,-50%) scale(${scale})`,
-                width: targetSize,
-                height: targetSize,
-                minWidth: GAME_LAYOUT.touchComfort,
-                minHeight: GAME_LAYOUT.touchComfort,
-                borderRadius: "50%",
-                background: tg.decoy
-                  ? "radial-gradient(circle at 30% 30%, #e2e8f0 0, #94a3b8 70%, #64748b 100%)"
-                  : "radial-gradient(circle at 30% 30%, #fff 0, hsl(var(--brand-amber-300)) 30%, hsl(var(--brand-orange-500)) 70%, hsl(var(--brand-orange-600)) 100%)",
-                border: tg.decoy ? "3px solid rgba(255,255,255,0.45)" : "3px solid #fff",
-                cursor: "pointer",
-                boxShadow: tg.decoy
-                  ? "none"
-                  : reducedMotion
-                    ? "0 0 0 2px rgba(0,0,0,0.35)"
-                    : "0 0 14px rgba(251,191,36,0.6)",
-                transition: reducedMotion ? "none" : "transform 0.1s",
-                padding: 0,
-                opacity: tg.decoy ? 0.75 : 1,
-              }}
-              aria-label={tg.decoy ? "Skip pale circle" : "Tap glowing target"}
-            >
-              <span aria-hidden style={{ fontSize: Math.round(targetSize * 0.45), lineHeight: 1 }}>
-                {tg.decoy ? "○" : "●"}
-              </span>
-            </button>
-          );
-        })}
+        {targets.map((tg) => (
+          <button
+            key={tg.id}
+            type="button"
+            onClick={() => onTap(tg.id)}
+            className={reducedMotion ? undefined : "game-target-life"}
+            style={{
+              position: "absolute",
+              left: `${tg.x}%`,
+              top: `${tg.y}%`,
+              transform: "translate(-50%, -50%)",
+              width: targetSize,
+              height: targetSize,
+              minWidth: GAME_LAYOUT.touchComfort,
+              minHeight: GAME_LAYOUT.touchComfort,
+              borderRadius: "50%",
+              background: tg.decoy
+                ? "radial-gradient(circle at 30% 30%, #e2e8f0 0, #94a3b8 70%, #64748b 100%)"
+                : "radial-gradient(circle at 30% 30%, #fff 0, hsl(var(--brand-amber-300)) 30%, hsl(var(--brand-orange-500)) 70%, hsl(var(--brand-orange-600)) 100%)",
+              border: tg.decoy ? "3px solid rgba(255,255,255,0.45)" : "3px solid #fff",
+              cursor: "pointer",
+              // Flat ring on low-power — animated box-shadow freezes Android GPU.
+              boxShadow: tg.decoy
+                ? "none"
+                : useGlow
+                  ? "0 0 0 2px rgba(251,191,36,0.55)"
+                  : "0 0 0 2px rgba(0,0,0,0.35)",
+              animationDuration: reducedMotion ? undefined : `${tg.lifeMs}ms`,
+              padding: 0,
+              opacity: tg.decoy ? 0.75 : 1,
+              willChange: reducedMotion ? undefined : "transform",
+            }}
+            aria-label={tg.decoy ? "Skip pale circle" : "Tap glowing target"}
+          >
+            <span aria-hidden style={{ fontSize: Math.round(targetSize * 0.45), lineHeight: 1 }}>
+              {tg.decoy ? "○" : "●"}
+            </span>
+          </button>
+        ))}
         {targets.length === 0 && timeLeft > 0 && (
           <div
             aria-hidden

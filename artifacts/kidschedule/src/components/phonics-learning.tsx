@@ -185,6 +185,9 @@ interface PhonicsLearningProps {
   /** Query string suffix for navigation (e.g. `&foo=bar`). */
   childQuery?: string;
   onPrimaryCtaChange?: (cta: PhonicsPrimaryCta) => void;
+  /** Incremented by the sticky CTA to open today's unfinished lesson. */
+  lessonLaunchToken?: number;
+  onLessonSessionChange?: (open: boolean) => void;
 }
 export function PhonicsLearning(props: PhonicsLearningProps) {
   return (
@@ -202,6 +205,8 @@ function PhonicsLearningContent({
   initialTestType,
   childQuery = "",
   onPrimaryCtaChange,
+  lessonLaunchToken = 0,
+  onLessonSessionChange,
 }: PhonicsLearningProps) {
   const {
     t
@@ -429,7 +434,7 @@ function PhonicsLearningContent({
           progress={safeProgress}
           practiceItems={practiceItems}
           insights={safeInsights}
-          onPrimaryCtaChange={onPrimaryCtaChange}
+          renderMode="headless"
         />
       )}
 
@@ -449,6 +454,9 @@ function PhonicsLearningContent({
           curriculumLastTestAt={phonicsCurriculum.data?.progress?.lastTestAt ?? null}
           curriculumStreak={phonicsCurriculum.data?.progress?.streak ?? 0}
           onCompleteCurriculumActivity={phonicsCurriculum.completeActivity}
+          onPrimaryCtaChange={onPrimaryCtaChange}
+          lessonLaunchToken={lessonLaunchToken}
+          onLessonSessionChange={onLessonSessionChange}
         />
       )}
 

@@ -49,6 +49,8 @@ export default function PhonicsPage() {
   const { locked, isPremium, onEngage } = useHubModuleGate("hub_phonics");
   const phonicsShipped = isPhonicsModuleAvailable();
   const [primaryCta, setPrimaryCta] = useState<PhonicsPrimaryCta>(DEFAULT_CTA);
+  const [lessonLaunchToken, setLessonLaunchToken] = useState(0);
+  const [lessonSessionOpen, setLessonSessionOpen] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -58,6 +60,15 @@ export default function PhonicsPage() {
   const handlePrimaryCtaChange = useCallback((cta: PhonicsPrimaryCta) => {
     setPrimaryCta(cta);
   }, []);
+
+  const handlePrimaryCtaClick = useCallback(() => {
+    if (primaryCta.action === "open_lesson") {
+      setLessonLaunchToken((n) => n + 1);
+      requestAnimationFrame(() => scrollToSection("phonics-daily-session"));
+      return;
+    }
+    scrollToSection(primaryCta.scrollTarget);
+  }, [primaryCta]);
 
   const { data: children = [], isLoading } = useListChildren({
     query: {
@@ -162,17 +173,17 @@ export default function PhonicsPage() {
           </button>
           <div className="min-w-0">
             <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">
-              Reading Journey
+              Learning Hub
             </h1>
             <p className="truncate text-xs text-muted-foreground">
               {activeChild.name}
-              {currentLevel ? ` · ${currentLevel.shortLabel}` : " · personalised by age"}
+              {currentLevel ? ` · ${currentLevel.shortLabel}` : " · today's lesson"}
             </p>
           </div>
         </div>
       </header>
 
-      <main className="scroll-safe min-h-0 flex-1 px-4 pt-4 pb-24">
+      <main className={cn("scroll-safe min-h-0 flex-1 px-4 pt-4", lessonSessionOpen ? "pb-6" : "pb-24")}>
         <div className="mx-auto max-w-4xl space-y-4">
             {!isPremium ? <PremiumBenefitsPanel /> : null}
             {eligibleChildren.length > 1 && (
@@ -203,6 +214,8 @@ export default function PhonicsPage() {
               childName={activeChild.name}
               totalAgeMonths={totalAgeMonths}
               onPrimaryCtaChange={handlePrimaryCtaChange}
+              lessonLaunchToken={lessonLaunchToken}
+              onLessonSessionChange={setLessonSessionOpen}
               initialTestType={
                 (() => {
                   const t = new URLSearchParams(search).get("type");
@@ -214,30 +227,32 @@ export default function PhonicsPage() {
         </div>
       </main>
 
-      <div className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur">
-          <div className="mx-auto max-w-4xl">
-            <PremiumActionGate
-              gate={{
-                locked,
-                previewMode: !isPremium,
-                onEngage,
-                module: "hub_phonics",
-                entitlementState: isPremium ? "premium" : "free",
-              }}
-              label="Unlock phonics learning"
-            >
-              <Button
-                type="button"
-                onClick={() => scrollToSection(primaryCta.scrollTarget)}
-                className="h-12 w-full rounded-2xl gap-2 bg-primary font-semibold text-primary-foreground"
-                data-testid="phonics-primary-cta"
+      {!lessonSessionOpen ? (
+        <div className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur">
+            <div className="mx-auto max-w-4xl">
+              <PremiumActionGate
+                gate={{
+                  locked,
+                  previewMode: !isPremium,
+                  onEngage,
+                  module: "hub_phonics",
+                  entitlementState: isPremium ? "premium" : "free",
+                }}
+                label="Unlock phonics learning"
               >
-                <Play className="h-4 w-4" />
-                {primaryCta.label}
-              </Button>
-            </PremiumActionGate>
-          </div>
-      </div>
+                <Button
+                  type="button"
+                  onClick={handlePrimaryCtaClick}
+                  className="h-12 w-full rounded-2xl gap-2 bg-primary font-semibold text-primary-foreground"
+                  data-testid="phonics-primary-cta"
+                >
+                  <Play className="h-4 w-4" />
+                  {primaryCta.label}
+                </Button>
+              </PremiumActionGate>
+            </div>
+        </div>
+      ) : null}
     </div>
   );
 }

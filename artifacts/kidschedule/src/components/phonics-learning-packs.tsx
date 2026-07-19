@@ -137,7 +137,7 @@ export function PhonicsLearningPacks({
 
   if (packs.length === 0) {
     return (
-      <Card data-testid="phonics-practice-sounds" className="rounded-3xl border-border bg-card">
+      <Card id="phonics-practice-sounds" data-testid="phonics-practice-sounds" className="rounded-3xl border-border bg-card">
         <CardContent className="p-5 text-sm text-muted-foreground">
           Loading practice packs…
         </CardContent>
@@ -146,7 +146,7 @@ export function PhonicsLearningPacks({
   }
 
   return (
-    <div className="space-y-3" data-testid="phonics-practice-sounds">
+    <div id="phonics-practice-sounds" className="space-y-3" data-testid="phonics-practice-sounds">
       <div className="flex items-center gap-2 px-1">
         <Package className="h-4 w-4 text-primary" />
         <h3 className="font-quicksand text-sm font-bold text-foreground">Learning packs</h3>

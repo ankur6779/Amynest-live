@@ -19,6 +19,11 @@ interface GamesDialogSurfaceProps {
   onClose: () => void;
   /** When true, backdrop click does not close (e.g. confirm dialogs). */
   preventBackdropClose?: boolean;
+  /**
+   * Solid overlay skips backdrop-filter blur.
+   * Required during active gameplay — blur over a live hub freezes mid-range Android WebViews.
+   */
+  solidBackdrop?: boolean;
   className?: string;
   panelStyle?: CSSProperties;
   ariaLabel: string;
@@ -34,6 +39,7 @@ export function GamesDialogSurface({
   children,
   onClose,
   preventBackdropClose = false,
+  solidBackdrop = false,
   className,
   panelStyle,
   ariaLabel,
@@ -44,7 +50,7 @@ export function GamesDialogSurface({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const useBlur = !reducedTransparency && !lowPower;
+  const useBlur = !solidBackdrop && !reducedTransparency && !lowPower;
 
   useEffect(() => {
     const panel = panelRef.current;

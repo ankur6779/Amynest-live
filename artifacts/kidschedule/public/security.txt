@@ -1,0 +1,7 @@
+Contact: mailto:support@amynest.in
+Contact: https://www.amynest.in/support
+Expires: 2027-07-19T23:59:59.000Z
+Preferred-Languages: en, hi
+Canonical: https://www.amynest.in/.well-known/security.txt
+Policy: https://www.amynest.in/privacy
+Acknowledgments: https://www.amynest.in/support

@@ -95,6 +95,11 @@ export type PhonicsJourneyHubProps = {
   insights?: PhonicsInsight[] | null;
   dailyQuizComplete?: boolean;
   onPrimaryCtaChange?: (cta: PhonicsPrimaryCta) => void;
+  /**
+   * `headless` keeps habit/adaptive side-effects without rendering the old
+   * roadmap-heavy parent cards (Learning Hub is the default surface).
+   */
+  renderMode?: "full" | "headless";
 };
 
 const CARD_SURFACE =
@@ -110,6 +115,7 @@ export function PhonicsJourneyHub({
   insights = null,
   dailyQuizComplete = false,
   onPrimaryCtaChange,
+  renderMode = "full",
 }: PhonicsJourneyHubProps) {
   const safePracticeItems = useMemo(
     () => sanitizeDisplayPhonicsItems(practiceItems),
@@ -445,12 +451,17 @@ export function PhonicsJourneyHub({
   });
 
   useEffect(() => {
+    if (renderMode === "headless") return;
     onPrimaryCtaChange?.(primaryCta);
-  }, [primaryCta, onPrimaryCtaChange]);
+  }, [primaryCta, onPrimaryCtaChange, renderMode]);
 
   const pickCommitment = (type: DailyCommitmentType) => {
     setHabitState(setDailyCommitment(childId, type));
   };
+
+  if (renderMode === "headless") {
+    return null;
+  }
 
   return (
     <div className="space-y-5" data-testid="phonics-journey-hub">

@@ -16,6 +16,7 @@ import { getActiveSessionPlan, microFlashScale } from "@/lib/game-adaptive-progr
 import { scaleDurationMs } from "@/lib/game-a11y";
 import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useTimeoutRegistry } from "@/hooks/use-timeout-registry";
 import { GAME_LAYOUT } from "@/lib/game-layout-tokens";
 
 const COLORS = [
@@ -32,6 +33,7 @@ function buildSequence(len: number): string[] {
 export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
   const { timeScale, reducedMotion } = useA11yPrefs();
   const pageVisible = usePageVisible();
+  const { setTimeoutSafe, setIntervalSafe, clearIntervalSafe } = useTimeoutRegistry();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const reverseMode = sessionSequenceReverse();
   const lengths = useMemo(() => sessionSequenceLengths(GAME_SESSION_ROUNDS), []);
@@ -67,12 +69,13 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
     if (phase !== "showing" || sequence.length === 0 || !pageVisible) return;
     let i = 0;
     setShowingIdx(0);
-    timerRef.current = window.setInterval(() => {
+    timerRef.current = setIntervalSafe(() => {
       i += 1;
       if (i >= sequence.length) {
-        if (timerRef.current) window.clearInterval(timerRef.current);
+        clearIntervalSafe(timerRef.current);
+        timerRef.current = null;
         setShowingIdx(null);
-        setTimeout(() => {
+        setTimeoutSafe(() => {
           setPhase("input");
           setInputIdx(0);
         }, 250);
@@ -80,8 +83,11 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
         setShowingIdx(i);
       }
     }, flashMs);
-    return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [round, phase, sequence.length, flashMs, pageVisible]);
+    return () => {
+      clearIntervalSafe(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [round, phase, sequence.length, flashMs, pageVisible, setIntervalSafe, setTimeoutSafe, clearIntervalSafe]);
 
   if (round >= GAME_SESSION_ROUNDS) return null;
 
@@ -98,7 +104,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
         void feedbackCorrect();
         const newScore = score + 1;
         setScore(newScore);
-        setTimeout(() => {
+        setTimeoutSafe(() => {
           if (round + 1 >= GAME_SESSION_ROUNDS) onFinish(newScore, GAME_SESSION_ROUNDS);
           else {
             setRound((r) => r + 1);
@@ -114,7 +120,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
       setPhase("feedback");
       setFeedback("wrong");
       void feedbackWrong();
-      setTimeout(() => {
+      setTimeoutSafe(() => {
         if (round + 1 >= GAME_SESSION_ROUNDS) onFinish(score, GAME_SESSION_ROUNDS);
         else {
           setRound((r) => r + 1);

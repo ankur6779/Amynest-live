@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAppNavigate } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { X } from "lucide-react";
+import { GameHubPlaybackContext } from "@/lib/game-hub-playback";
 import {
   GAMES,
   unlockGame,
@@ -355,6 +356,8 @@ export default function GamesPage() {
   const dailyPct = limit > 0 ? Math.min(100, (playedToday / limit) * 100) : 0;
   const perfectStreak = getPerfectStreak();
   const showComboBadge = hasPerfectComboBadge();
+  const hubFrozen = active != null;
+  const hubPlayback = useMemo(() => ({ hubFrozen }), [hubFrozen]);
 
   if (showGamingPreview) {
     const previewItems = ["games", "rewards", "insights"] as const;
@@ -408,179 +411,189 @@ export default function GamesPage() {
   }
 
   return (
-    <div
-      className={cn(
-        PARENT_HUB_PAGE,
-        "game-a11y-root game-a11y-tablet-pad mx-auto max-w-[720px]",
-        lowPower && "game-perf-low",
-      )}
-      style={{
-        minHeight: "100dvh",
-        color: gameTheme.text,
-        paddingBottom: 80,
-      }}
-    >
-      <style>{`${GAME_MOTION_STYLES}\n${GAME_A11Y_STYLES}\n${GAME_PERF_STYLES}`}</style>
-      <a href="#games-main" className="game-a11y-skip">
-        {t("screens.games.skip_to_games", { defaultValue: "Skip to games" })}
-      </a>
-      <GamesPageHeader
-        points={points}
-        showComboBadge={showComboBadge}
-        perfectStreak={perfectStreak}
-        isPremium={isPremium}
-        onBack={() => back("games-exit")}
-        onUpgrade={onUpgrade}
-        onDevGrant={import.meta.env.DEV ? devGrantPoints : undefined}
-      />
+    <GameHubPlaybackContext.Provider value={hubPlayback}>
+      <div
+        className={cn(
+          PARENT_HUB_PAGE,
+          "game-a11y-root game-a11y-tablet-pad mx-auto max-w-[720px]",
+          lowPower && "game-perf-low",
+        )}
+        style={{
+          minHeight: "100dvh",
+          color: gameTheme.text,
+          paddingBottom: 80,
+        }}
+      >
+        <style>{`${GAME_MOTION_STYLES}\n${GAME_A11Y_STYLES}\n${GAME_PERF_STYLES}`}</style>
+        {/*
+          Unmount the entire hub catalog while a game/result modal is open.
+          Freezing via CSS was not enough — React trees + preview intervals still cost CPU.
+        */}
+        {!hubFrozen && (
+          <>
+            <a href="#games-main" className="game-a11y-skip">
+              {t("screens.games.skip_to_games", { defaultValue: "Skip to games" })}
+            </a>
+            <GamesPageHeader
+              points={points}
+              showComboBadge={showComboBadge}
+              perfectStreak={perfectStreak}
+              isPremium={isPremium}
+              onBack={() => back("games-exit")}
+              onUpgrade={onUpgrade}
+              onDevGrant={import.meta.env.DEV ? devGrantPoints : undefined}
+            />
 
-      <main id="games-main" className="hub-today-stack" tabIndex={-1}>
-        <div className="hub-page-enter mx-auto max-w-[720px] space-y-4 px-4 pb-1 pt-4">
-          <GamesHeroAdventure
-            game={adventureGame ?? suggestedGame}
-            canPlay={!!(adventureGame && canPlayGame(adventureGame, isPremium) && !limitHit)}
-            limitHit={limitHit}
-            playsRemaining={playsRemaining}
-            onPlay={() => adventureGame && onPlay(adventureGame)}
-          />
+            <main id="games-main" className="hub-today-stack" tabIndex={-1}>
+              <div className="hub-page-enter mx-auto max-w-[720px] space-y-4 px-4 pb-1 pt-4">
+                <GamesHeroAdventure
+                  game={adventureGame ?? suggestedGame}
+                  canPlay={!!(adventureGame && canPlayGame(adventureGame, isPremium) && !limitHit)}
+                  limitHit={limitHit}
+                  playsRemaining={playsRemaining}
+                  onPlay={() => adventureGame && onPlay(adventureGame)}
+                />
 
-          <GamesHorizontalStrip
-            title={t("screens.games.continue_title")}
-            subtitle={t("screens.games.continue_subtitle")}
-            games={continueGames}
-            isPremium={isPremium}
-            limitHit={limitHit}
-            onPlay={onPlay}
-            onUnlock={onUnlock}
-            onUpgrade={onUpgrade}
-            empty={
-              <GamesEmptyState
-                emoji="🛤️"
-                title={t("screens.games.continue_empty_title", {
-                  defaultValue: "Your trail starts here",
-                })}
-                body={continueEmptyBody}
-              />
-            }
-          />
+                <GamesHorizontalStrip
+                  title={t("screens.games.continue_title")}
+                  subtitle={t("screens.games.continue_subtitle")}
+                  games={continueGames}
+                  isPremium={isPremium}
+                  limitHit={limitHit}
+                  onPlay={onPlay}
+                  onUnlock={onUnlock}
+                  onUpgrade={onUpgrade}
+                  empty={
+                    <GamesEmptyState
+                      emoji="🛤️"
+                      title={t("screens.games.continue_empty_title", {
+                        defaultValue: "Your trail starts here",
+                      })}
+                      body={continueEmptyBody}
+                    />
+                  }
+                />
 
-          <GamesHorizontalStrip
-            title={t("screens.games.recommended_title")}
-            subtitle={t("screens.games.recommended_subtitle")}
-            games={recommendedGames}
-            isPremium={isPremium}
-            limitHit={limitHit}
-            onPlay={onPlay}
-            onUnlock={onUnlock}
-            onUpgrade={onUpgrade}
-            empty={
-              <GamesEmptyState
-                emoji="🌟"
-                title={t("screens.games.recommended_empty_title", {
-                  defaultValue: "Unlock a starter to begin",
-                })}
-                body={t("screens.games.recommended_empty_body", {
-                  defaultValue: "Play today’s adventure — Amy will suggest more games next.",
-                })}
-              />
-            }
-          />
-        </div>
+                <GamesHorizontalStrip
+                  title={t("screens.games.recommended_title")}
+                  subtitle={t("screens.games.recommended_subtitle")}
+                  games={recommendedGames}
+                  isPremium={isPremium}
+                  limitHit={limitHit}
+                  onPlay={onPlay}
+                  onUnlock={onUnlock}
+                  onUpgrade={onUpgrade}
+                  empty={
+                    <GamesEmptyState
+                      emoji="🌟"
+                      title={t("screens.games.recommended_empty_title", {
+                        defaultValue: "Unlock a starter to begin",
+                      })}
+                      body={t("screens.games.recommended_empty_body", {
+                        defaultValue: "Play today’s adventure — Amy will suggest more games next.",
+                      })}
+                    />
+                  }
+                />
+              </div>
 
-        {error && (
-          <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-3">
-            <div
-              className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3.5 py-2.5 text-sm text-amber-100"
-              role="alert"
-            >
-              <span>{error}</span>
-              <button
-                type="button"
-                onClick={() => setError(null)}
-                className="shrink-0 border-none bg-transparent text-amber-100"
-                aria-label={t("screens.games.close")}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
+              {error && (
+                <div className="hub-page-enter mx-auto max-w-[720px] px-4 pt-3">
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3.5 py-2.5 text-sm text-amber-100"
+                    role="alert"
+                  >
+                    <span>{error}</span>
+                    <button
+                      type="button"
+                      onClick={() => setError(null)}
+                      className="shrink-0 border-none bg-transparent text-amber-100"
+                      aria-label={t("screens.games.close")}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-0 pt-4">
+                <div className="mb-3">
+                  <h2 className="font-quicksand text-lg font-extrabold text-foreground">
+                    {t("screens.games.browse_title")}
+                  </h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{t("screens.games.browse_subtitle")}</p>
+                </div>
+                {gamesByCategory.map(([cat, list]) => (
+                  <GameCategorySection
+                    key={cat}
+                    category={cat}
+                    games={list}
+                    isPremium={isPremium}
+                    limitHit={limitHit}
+                    onPlay={onPlay}
+                    onUnlock={onUnlock}
+                    onUpgrade={onUpgrade}
+                  />
+                ))}
+              </div>
+
+              <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-2 pt-2">
+                <GamesInsightsPanel
+                  skills={skills}
+                  isPremium={isPremium}
+                  weekly={weekly}
+                  collapsible
+                  status={{
+                    playedToday,
+                    limit,
+                    limitHit,
+                    dailyPct,
+                    routineStreak,
+                    perfectStreak,
+                    showComboBadge,
+                    points,
+                    nextUnlockGame,
+                  }}
+                />
+              </div>
+            </main>
+          </>
         )}
 
-        <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-0 pt-4">
-          <div className="mb-3">
-            <h2 className="font-quicksand text-lg font-extrabold text-foreground">
-              {t("screens.games.browse_title")}
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{t("screens.games.browse_subtitle")}</p>
-          </div>
-          {gamesByCategory.map(([cat, list]) => (
-            <GameCategorySection
-              key={cat}
-              category={cat}
-              games={list}
-              isPremium={isPremium}
-              limitHit={limitHit}
-              onPlay={onPlay}
-              onUnlock={onUnlock}
-              onUpgrade={onUpgrade}
-            />
-          ))}
-        </div>
-
-        <div className="hub-page-enter mx-auto max-w-[720px] px-4 pb-2 pt-2">
-          <GamesInsightsPanel
-            skills={skills}
-            isPremium={isPremium}
-            weekly={weekly}
-            collapsible
-            status={{
-              playedToday,
-              limit,
-              limitHit,
-              dailyPct,
-              routineStreak,
-              perfectStreak,
-              showComboBadge,
-              points,
-              nextUnlockGame,
+        {active && (
+          <GameModal
+            state={active}
+            nextGame={nextAfterResult}
+            canPlayAgain={!limitHit && canPlayGame(active.game, isPremium)}
+            canPlayNext={
+              !!nextAfterResult && !limitHit && canPlayGame(nextAfterResult, isPremium)
+            }
+            onClose={requestCloseModal}
+            onStartPlay={onStartPlay}
+            onFinish={(score, total) => {
+              if (active.kind === "play") void finishGame(active.game, score, total);
+            }}
+            onPlayAgain={() => {
+              if (active.kind === "result") onPlay(active.game);
+            }}
+            onPlayNext={() => {
+              if (nextAfterResult) onPlay(nextAfterResult);
             }}
           />
-        </div>
-      </main>
+        )}
 
-      {active && (
-        <GameModal
-          state={active}
-          nextGame={nextAfterResult}
-          canPlayAgain={!limitHit && canPlayGame(active.game, isPremium)}
-          canPlayNext={
-            !!nextAfterResult && !limitHit && canPlayGame(nextAfterResult, isPremium)
-          }
-          onClose={requestCloseModal}
-          onStartPlay={onStartPlay}
-          onFinish={(score, total) => {
-            if (active.kind === "play") void finishGame(active.game, score, total);
-          }}
-          onPlayAgain={() => {
-            if (active.kind === "result") onPlay(active.game);
-          }}
-          onPlayNext={() => {
-            if (nextAfterResult) onPlay(nextAfterResult);
-          }}
-        />
-      )}
-
-      {exitConfirm && active?.kind === "play" && (
-        <GamesExitConfirm
-          gameTitle={active.game.title}
-          onKeepPlaying={() => setExitConfirm(false)}
-          onLeave={() => {
-            setExitConfirm(false);
-            setActive(null);
-          }}
-        />
-      )}
-    </div>
+        {exitConfirm && active?.kind === "play" && (
+          <GamesExitConfirm
+            gameTitle={active.game.title}
+            onKeepPlaying={() => setExitConfirm(false)}
+            onLeave={() => {
+              setExitConfirm(false);
+              setActive(null);
+            }}
+          />
+        )}
+      </div>
+    </GameHubPlaybackContext.Provider>
   );
 }
 
@@ -615,6 +628,7 @@ function GameModal({
     <GamesDialogSurface
       ariaLabel={game.title}
       onClose={onClose}
+      solidBackdrop
       title={showChrome ? game.title : undefined}
       subtitle={state.kind === "play" && state.stage === "play" ? game.blurb : undefined}
       leading={

@@ -19,6 +19,7 @@ import {
 import { scaleSeconds } from "@/lib/game-a11y";
 import { useA11yPrefs } from "@/hooks/use-a11y-prefs";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useTimeoutRegistry } from "@/hooks/use-timeout-registry";
 import { GAME_LAYOUT } from "@/lib/game-layout-tokens";
 import { gameTheme } from "@/lib/game-theme";
 
@@ -83,6 +84,7 @@ function buildRound(roundIndex: number, difficulty: GameDifficulty): Round {
 export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
   const { timeScale } = useA11yPrefs();
   const pageVisible = usePageVisible();
+  const { setTimeoutSafe, setIntervalSafe, clearIntervalSafe } = useTimeoutRegistry();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const rounds = useMemo(
     () =>
@@ -130,14 +132,15 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
   const onPick = (value: number, isCorrect: boolean) => {
     if (feedback || resolvedRef.current) return;
     if (isCorrect) {
-      if (tickRef.current) window.clearInterval(tickRef.current);
+      if (tickRef.current) clearIntervalSafe(tickRef.current);
+      tickRef.current = null;
       resolvedRef.current = true;
       setFeedback("correct");
       setFeedbackText("Nice!");
       void feedbackCorrect();
       const nextScore = score + 1;
       setScore(nextScore);
-      setTimeout(() => goNext(nextScore), 700);
+      setTimeoutSafe(() => goNext(nextScore), 700);
       return;
     }
 
@@ -151,13 +154,14 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
     setFeedbackText(hint ?? getSoftFailEncouragement(nextAttempt, idx));
 
     if (nextAttempt >= SOFT_FAIL_MAX_ATTEMPTS) {
-      if (tickRef.current) window.clearInterval(tickRef.current);
+      if (tickRef.current) clearIntervalSafe(tickRef.current);
+      tickRef.current = null;
       resolvedRef.current = true;
-      setTimeout(() => goNext(score), 900);
+      setTimeoutSafe(() => goNext(score), 900);
       return;
     }
 
-    setTimeout(() => {
+    setTimeoutSafe(() => {
       setFeedback(null);
       setFeedbackText(undefined);
       setPickedWrong(null);
@@ -165,31 +169,34 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
   };
 
   useEffect(() => {
-    if (tickRef.current) window.clearInterval(tickRef.current);
+    if (tickRef.current) clearIntervalSafe(tickRef.current);
+    tickRef.current = null;
     if (!pageVisible) return;
     const perQ = rounds[idx]?.perQSeconds ?? 10;
     setTimeLeft(perQ);
     resolvedRef.current = false;
     attemptsRef.current = 0;
     setAttempts(0);
-    tickRef.current = window.setInterval(() => {
+    tickRef.current = setIntervalSafe(() => {
       setTimeLeft((t) => {
         if (resolvedRef.current) return t;
         if (t <= 1) {
-          if (tickRef.current) window.clearInterval(tickRef.current);
+          if (tickRef.current) clearIntervalSafe(tickRef.current);
+          tickRef.current = null;
           // Time up — move on without revealing the answer.
           resolvedRef.current = true;
           setFeedback("wrong");
           setFeedbackText("Time for the next one — you've got this!");
           void feedbackWrong();
-          setTimeout(() => goNext(score), 700);
+          setTimeoutSafe(() => goNext(score), 700);
           return 0;
         }
         return t - 1;
       });
     }, 1000);
     return () => {
-      if (tickRef.current) window.clearInterval(tickRef.current);
+      if (tickRef.current) clearIntervalSafe(tickRef.current);
+      tickRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, rounds, pageVisible]);

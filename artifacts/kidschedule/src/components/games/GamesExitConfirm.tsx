@@ -22,6 +22,7 @@ export function GamesExitConfirm({ gameTitle, onKeepPlaying, onLeave }: GamesExi
       subtitle={gameTitle}
       onClose={onKeepPlaying}
       preventBackdropClose
+      solidBackdrop
     >
       <p
         style={{
