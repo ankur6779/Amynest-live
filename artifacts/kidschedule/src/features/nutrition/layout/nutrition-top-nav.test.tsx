@@ -56,6 +56,15 @@ vi.mock("@/features/nutrition/hooks/use-parent-nutrition-profile", () => ({
 }));
 
 vi.mock("@/lib/nutrition-region", () => ({
+  REGION_CONFIGS: {
+    IN: { guidelineBadge: "ICMR" },
+    US: { guidelineBadge: "USDA" },
+    GB: { guidelineBadge: "NHS" },
+    AU: { guidelineBadge: "NHMRC" },
+    CA: { guidelineBadge: "CFG" },
+    NZ: { guidelineBadge: "NZ" },
+    global: { guidelineBadge: "WHO" },
+  },
   useNutritionRegion: () => ({
     config: { guidelineBadge: "ICMR" },
     getRegional: () => null,

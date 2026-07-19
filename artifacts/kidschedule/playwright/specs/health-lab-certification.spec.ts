@@ -72,8 +72,13 @@ async function expandGoals(page: import("@playwright/test").Page) {
   }
 }
 
+async function adventureButton(page: import("@playwright/test").Page, title: string) {
+  // Prefer playable card aria-label (avoids sr-only "Next up: …" duplicate text).
+  return page.getByRole("button", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
+}
+
 async function launchAdventure(page: import("@playwright/test").Page, title: string) {
-  await page.getByText(title).click();
+  await adventureButton(page, title).click();
   const ready = page.getByRole("button", { name: /I'm Ready!/i });
   if (await ready.isVisible().catch(() => false)) {
     await ready.click();
@@ -87,11 +92,11 @@ test.describe("Health Lab home", () => {
   });
 
   test("shows playable adventures and health passport", async ({ page }) => {
-    await expect(page.getByText("Balloon Journey Adventure")).toBeVisible();
-    await expect(page.getByText("Sky Island Survival")).toBeVisible();
-    await expect(page.getByText("Rocket Launch Academy")).toBeVisible();
-    await expect(page.getByText("Crystal Garden Challenge")).toBeVisible();
-    await expect(page.getByText("Crystal Core Reactor")).toBeVisible();
+    await expect(adventureButton(page, "Balloon Journey Adventure")).toBeVisible();
+    await expect(adventureButton(page, "Sky Island Survival")).toBeVisible();
+    await expect(adventureButton(page, "Rocket Launch Academy")).toBeVisible();
+    await expect(adventureButton(page, "Crystal Garden Challenge")).toBeVisible();
+    await expect(adventureButton(page, "Crystal Core Reactor")).toBeVisible();
     await expandGrownUps(page);
     await expect(page.getByText("Health Passport")).toBeVisible();
     await expect(page.getByText("Amy Wellness Report")).toBeVisible();
@@ -178,13 +183,13 @@ test.describe("Onboarding and calibration flows", () => {
 test.describe("Navigation flows", () => {
   test("opens progress screen", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByRole("button", { name: "Progress" }).click();
+    await page.getByRole("button", { name: /^Progress$/ }).click();
     await expect(page.getByText("Your Progress")).toBeVisible();
   });
 
   test("opens parent dashboard", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByText("Parent Insights").click();
+    await page.getByRole("button", { name: /Parent Insights/i }).click();
     await expect(page.getByRole("heading", { name: "Wellness Trends" })).toBeVisible();
   });
 
@@ -405,7 +410,7 @@ test.describe("Sync & offline", () => {
 test.describe("Dashboard & parent value", () => {
   test("dashboard shows weekly summary", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByText("Parent Insights").click();
+    await page.getByRole("button", { name: /Parent Insights/i }).click();
     await expect(page.getByText("Weekly Summary")).toBeVisible();
     await expect(page.getByText("Quarterly Growth")).toBeVisible();
     await expect(page.getByText("Progress Milestones")).toBeVisible();
@@ -414,7 +419,7 @@ test.describe("Dashboard & parent value", () => {
 
   test("dashboard range filters", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByText("Parent Insights").click();
+    await page.getByRole("button", { name: /Parent Insights/i }).click();
     await page.getByRole("button", { name: "30d" }).click();
     await expect(page.getByText("Monthly Wellness Summary")).toBeVisible();
   });
@@ -426,24 +431,25 @@ test.describe("Retention UI", () => {
   });
 
   test("weekly challenge card visible", async ({ page }) => {
-    await expect(page.getByText("Weekly Challenge")).toBeVisible();
+    // Hub shows the active weekly theme title on the Daily Quests row.
+    await expect(page.getByText(/Focus Week|Balance Week|Speed Week/)).toBeVisible();
   });
 
   test("monthly mega quest card visible", async ({ page }) => {
-    await expect(page.getByText("Monthly Mega Quest")).toBeVisible();
+    await expect(page.getByText(/\d+\/20\s+sessions/i)).toBeVisible();
   });
 });
 
 test.describe("Accessibility", () => {
   test("live region component exists in breath game", async ({ page }) => {
-    await page.getByText("Balloon Journey Adventure").click();
+    await launchAdventure(page, "Balloon Journey Adventure");
     await page.getByRole("button", { name: /Start Journey/i }).click();
     const live = page.locator('[role="status"]');
     await expect(live.first()).toBeAttached();
   });
 
   test("reaction uses icon not color alone", async ({ page }) => {
-    await page.getByText("Rocket Launch Academy").click();
+    await launchAdventure(page, "Rocket Launch Academy");
     await page.getByRole("button", { name: /Launch Mission/i }).click();
     await expect(page.getByText("🚀").first()).toBeVisible();
   });

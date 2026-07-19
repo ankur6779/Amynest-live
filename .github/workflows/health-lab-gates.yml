@@ -32,7 +32,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @workspace/db exec tsc --build
       - name: Merge + metrics + two-device sync tests
-        run: pnpm --filter @workspace/api-server test -- src/lib/healthLabProgressService.test.ts src/lib/healthLabTwoDeviceSync.test.ts src/routes/health-lab-metrics.test.ts src/services/__tests__/health-lab-metrics-store.test.ts
+        working-directory: artifacts/api-server
+        env:
+          DATABASE_URL: postgresql://test:test@127.0.0.1:5432/test?connect_timeout=1
+        run: |
+          node --import tsx/esm --test \
+            src/lib/healthLabProgressService.test.ts \
+            src/lib/healthLabTwoDeviceSync.test.ts \
+            src/routes/health-lab-metrics.test.ts \
+            src/services/__tests__/health-lab-metrics-store.test.ts
 
   unit-tests:
     name: Health Lab unit tests
@@ -51,7 +59,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Vitest health-lab
-        run: pnpm --filter @workspace/kidschedule test -- health-lab.test.ts
+        run: pnpm --filter @workspace/kidschedule exec vitest run --config vitest.config.ts src/features/health-lab/health-lab.test.ts
 
   e2e:
     name: Health Lab Playwright certification

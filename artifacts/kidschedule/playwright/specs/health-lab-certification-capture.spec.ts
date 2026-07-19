@@ -105,7 +105,9 @@ test.describe("Certification capture", () => {
     await page.screenshot({ path: path.join(OUT, "01-health-lab-home.png"), fullPage: true });
 
     async function openAdventure(title: string) {
-      await page.getByText(title).click();
+      await page
+        .getByRole("button", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })
+        .click();
       const ready = page.getByRole("button", { name: /I'm Ready!/i });
       if (await ready.isVisible().catch(() => false)) await ready.click();
     }
