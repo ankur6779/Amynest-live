@@ -25,6 +25,14 @@ vi.mock("@/lib/meta-attribution", () => ({
   resolveMetaPlanPrice: vi.fn(() => ({ value: 1499, currency: "INR" })),
 }));
 
+vi.mock("@/lib/native-shell", () => ({
+  isNativeAmyNestShell: vi.fn(() => false),
+}));
+
+vi.mock("@/lib/device-lite", () => ({
+  isAndroidMobileShell: vi.fn(() => false),
+}));
+
 import {
   FIREBASE_SUBSCRIPTION_CONVERT_EVENT,
   trackFirebaseBeginCheckout,

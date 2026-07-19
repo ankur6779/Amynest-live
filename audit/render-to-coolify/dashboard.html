@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="60" />
+  <title>AmyNest Migration Dashboard</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; background: #0f1117; color: #e8eaed; }
+    body { margin: 0; padding: 24px; max-width: 1200px; }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; }
+    .meta { color: #9aa0a6; font-size: 0.85rem; margin-bottom: 20px; }
+    .score-ring { font-size: 2.5rem; font-weight: 700; color: #22c55e; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 8px; padding: 16px; }
+    .card h2 { margin: 0 0 12px; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2d3148; }
+    th { color: #9aa0a6; font-weight: 500; }
+    .ok { color: #22c55e; }
+    .warn { color: #eab308; }
+    .err { color: #ef4444; }
+    .muted { color: #6b7280; }
+    .stages { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .stage { padding: 4px 10px; border-radius: 4px; background: #2d3148; font-size: 0.8rem; }
+    .stage.active { background: #3b82f6; color: #fff; }
+    .stage.done { background: #14532d; color: #bbf7d0; }
+    .alert { background: #451a1a; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    .bar { height: 8px; background: #2d3148; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    .bar-fill { height: 100%; background: #3b82f6; }
+  </style>
+</head>
+<body>
+  <h1>AmyNest Render → Coolify Migration</h1>
+  <p class="meta">Updated 2026-07-12T17:03:19.362Z · auto-refresh 60s · Canary 1% to Coolify</p>
+
+  
+
+  <div class="card" style="margin-bottom:16px">
+    <h2>Overall migration health</h2>
+    <div class="score-ring">100/100</div>
+    <div class="stages"><span class="stage active ">1%</span><span class="stage  ">10%</span><span class="stage  ">25%</span><span class="stage  ">50%</span><span class="stage  ">100%</span></div>
+    <div class="bar"><div class="bar-fill" style="width:1%"></div></div>
+    <p class="meta">Stable since: — · Next: 10%</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Backend — Render (100/100)</h2>
+      <table>
+        <tr><th>Check</th><th>Result</th></tr>
+        <tr><td>/health</td><td class="ok">200 (462ms)</td></tr>
+        <tr><td>/ready</td><td class="warn">404 (129ms)</td></tr>
+        <tr><td>Firebase login</td><td class="muted">—</td></tr>
+        <tr><td>Parent profile</td><td class="muted">—</td></tr>
+        <tr><td>Children</td><td class="muted">—</td></tr>
+        <tr><td>Subscription</td><td class="muted">—</td></tr>
+        <tr><td>Speech Coach</td><td class="muted">—</td></tr>
+        <tr><td>Routine gen</td><td class="muted">—</td></tr>
+        <tr><td>AI enqueue</td><td class="muted">—</td></tr>
+        <tr><td>GCS</td><td class="ok">200 (1414ms)</td></tr>
+        <tr><td>RC webhook</td><td class="muted">—</td></tr>
+        <tr><td>5xx rate</td><td>0.0%</td></tr>
+        <tr><td>p95 latency</td><td>1414ms</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Backend — Coolify (100/100)</h2>
+      <table>
+        <tr><th>Check</th><th>Result</th></tr>
+        <tr><td>/health</td><td class="ok">200 (1368ms)</td></tr>
+        <tr><td>/ready</td><td class="warn">404 (284ms)</td></tr>
+        <tr><td>Firebase login</td><td class="muted">—</td></tr>
+        <tr><td>Parent profile</td><td class="muted">—</td></tr>
+        <tr><td>Children</td><td class="muted">—</td></tr>
+        <tr><td>Subscription</td><td class="muted">—</td></tr>
+        <tr><td>Speech Coach</td><td class="muted">—</td></tr>
+        <tr><td>Routine gen</td><td class="muted">—</td></tr>
+        <tr><td>AI enqueue</td><td class="muted">—</td></tr>
+        <tr><td>GCS</td><td class="ok">200 (1124ms)</td></tr>
+        <tr><td>RC webhook</td><td class="muted">—</td></tr>
+        <tr><td>5xx rate</td><td>0.0%</td></tr>
+        <tr><td>p95 latency</td><td>1368ms</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Database rows</h2>
+      <table>
+        <tr><th>Table</th><th>Render</th><th>Coolify</th><th>Δ</th></tr>
+        <tr><td>Total rows</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>parent_profiles</td><td>—</td><td>—</td><td>0</td></tr>
+        <tr><td>subscriptions</td><td>—</td><td>—</td><td>0</td></tr>
+        <tr><td>children</td><td>—</td><td>—</td><td>0</td></tr>
+        <tr><td>analytics_events</td><td>—</td><td>—</td><td>0</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Redis & Worker</h2>
+      <table>
+        <tr><th>Component</th><th>Status</th></tr>
+        <tr><td>Worker alive</td><td class="muted">http://167.233.39.146:8080/health</td></tr>
+        <tr><td>BullMQ active</td><td class="muted">—</td></tr>
+        <tr><td>Processing jobs</td><td class="muted">see worker /health + AI enqueue</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p class="meta">Serve: <code>pnpm run migrate:render-to-coolify:dashboard:serve</code> · Data: dashboard-latest.json</p>
+</body>
+</html>

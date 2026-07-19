@@ -3,6 +3,7 @@ import type { GameCategory } from "@/lib/games";
 import { GameEmojiBadge } from "@/components/games/GameEmojiBadge";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useGameHubPlayback } from "@/lib/game-hub-playback";
 
 const PREVIEW_FRAMES: Record<string, string[]> = {
   "pattern-match": ["🟥", "🟦", "🟩", "❓"],
@@ -40,6 +41,7 @@ export function GamePreviewTile({
 }: GamePreviewTileProps) {
   const reduced = useReducedMotion();
   const pageVisible = usePageVisible();
+  const { hubFrozen } = useGameHubPlayback();
   const wrapRef = useRef<HTMLSpanElement>(null);
   const [inView, setInView] = useState(false);
   const frames = PREVIEW_FRAMES[gameId] ?? [emoji, "✨", emoji, "🎮"];
@@ -59,7 +61,8 @@ export function GamePreviewTile({
     return () => io.disconnect();
   }, []);
 
-  const shouldAnimate = active && !reduced && inView && pageVisible;
+  // IntersectionObserver ignores z-index overlays — also gate on hubFrozen.
+  const shouldAnimate = active && !reduced && inView && pageVisible && !hubFrozen;
 
   useEffect(() => {
     if (!shouldAnimate) return;

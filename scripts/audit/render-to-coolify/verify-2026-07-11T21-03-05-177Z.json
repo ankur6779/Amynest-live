@@ -1,0 +1,1811 @@
+{
+  "generated_at": "2026-07-11T21:03:05.177Z",
+  "source_url": "postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen",
+  "target_url": "postgresql://postgres:***@127.0.0.1:15432/postgres",
+  "passed": false,
+  "summary": {
+    "tables_source": 137,
+    "tables_target": 137,
+    "tables_missing_on_target": 0,
+    "tables_missing_on_source": 0,
+    "row_mismatches": 1,
+    "index_missing_on_target": 0,
+    "index_missing_on_source": 0,
+    "constraint_missing_on_target": 0,
+    "constraint_missing_on_source": 0,
+    "sequence_mismatches": 3,
+    "extension_mismatches": 0,
+    "total_source_rows": 475972,
+    "total_target_rows": 475712
+  },
+  "extensions": {
+    "source": [
+      {
+        "extname": "plpgsql",
+        "extversion": "1.0"
+      }
+    ],
+    "target": [
+      {
+        "extname": "plpgsql",
+        "extversion": "1.0"
+      }
+    ],
+    "missing_on_target": [],
+    "missing_on_source": []
+  },
+  "tables": [
+    {
+      "table": "abacus_progress",
+      "source_rows": 5,
+      "target_rows": 5,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "admin_premium_grants",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "ai_cache",
+      "source_rows": 6,
+      "target_rows": 6,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "ai_content_cache",
+      "source_rows": 349,
+      "target_rows": 349,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "amy_daily_briefings",
+      "source_rows": 180,
+      "target_rows": 180,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "amy_decision_log",
+      "source_rows": 40,
+      "target_rows": 40,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "amy_knowledge_graph",
+      "source_rows": 23,
+      "target_rows": 23,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "amy_timeline_events",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "analytics_events",
+      "source_rows": 455870,
+      "target_rows": 455610,
+      "delta": -260,
+      "status": "mismatch"
+    },
+    {
+      "table": "babysitters",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "behaviors",
+      "source_rows": 5,
+      "target_rows": 5,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "billing_audit_events",
+      "source_rows": 329,
+      "target_rows": 329,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "child_caregivers",
+      "source_rows": 1,
+      "target_rows": 1,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "child_content_learning_profiles",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "child_daily_signals",
+      "source_rows": 17,
+      "target_rows": 17,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "child_learning_progress",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "child_personality_profiles",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "child_prediction_snapshots",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "children",
+      "source_rows": 99,
+      "target_rows": 99,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "coach_audio_cache",
+      "source_rows": 186,
+      "target_rows": 186,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "coach_journey",
+      "source_rows": 36,
+      "target_rows": 36,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "coach_win_generations",
+      "source_rows": 8,
+      "target_rows": 8,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "coloring_downloads",
+      "source_rows": 3,
+      "target_rows": 3,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "crash_deploy_baselines",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "crash_events",
+      "source_rows": 197,
+      "target_rows": 197,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "crash_fingerprint_status",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "crash_regressions",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "cry_sessions",
+      "source_rows": 3,
+      "target_rows": 3,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "custom_recipes",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "daily_puzzle_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "debug_logs",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_digital_twin",
+      "source_rows": 90,
+      "target_rows": 90,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_goals",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_intelligence_snapshots",
+      "source_rows": 962,
+      "target_rows": 962,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_learning_graphs",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_memory",
+      "source_rows": 9,
+      "target_rows": 9,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_moments",
+      "source_rows": 18,
+      "target_rows": 18,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "family_strategy_profile",
+      "source_rows": 1,
+      "target_rows": 1,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "feature_feedback",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "feature_notification_schedules",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "feature_usage",
+      "source_rows": 41,
+      "target_rows": 41,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "file_risk_history",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "funsheet_downloads",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "gaming_wallet",
+      "source_rows": 38,
+      "target_rows": 38,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "gift_tokens",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "global_learning_graph",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "growth_os_state",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "health_lab_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "infant_care_logs",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "infant_growth_measurements",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "infant_milestone_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "infant_notification_prefs",
+      "source_rows": 29,
+      "target_rows": 29,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "infant_product_analytics_events",
+      "source_rows": 389,
+      "target_rows": 389,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "infant_wellbeing_checkins",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "intervention_ledger",
+      "source_rows": 11,
+      "target_rows": 11,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "learning_progress",
+      "source_rows": 45,
+      "target_rows": 45,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "life_skills_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "nap_sessions",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "nba_decision_logs",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "notification_campaign_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "notification_fatigue_state",
+      "source_rows": 55,
+      "target_rows": 55,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "notification_log",
+      "source_rows": 4116,
+      "target_rows": 4116,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "notification_outcome_events",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "notification_preferences",
+      "source_rows": 97,
+      "target_rows": 97,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "nutrition_caregiver_share",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "nutrition_daily_log",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "nutrition_meal_memory",
+      "source_rows": 4,
+      "target_rows": 4,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "olympiad_child_stats",
+      "source_rows": 3,
+      "target_rows": 3,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "olympiad_scores",
+      "source_rows": 3,
+      "target_rows": 3,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "onboarding_profiles",
+      "source_rows": 92,
+      "target_rows": 92,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "parent_hub_journey",
+      "source_rows": 44,
+      "target_rows": 44,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "parent_profiles",
+      "source_rows": 93,
+      "target_rows": 93,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "parent_task_completions",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_audio_assets",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_content",
+      "source_rows": 131,
+      "target_rows": 131,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_content_cache",
+      "source_rows": 6,
+      "target_rows": 6,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_curriculum_progress",
+      "source_rows": 6,
+      "target_rows": 6,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_daily_plans",
+      "source_rows": 157,
+      "target_rows": 157,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_downloads",
+      "source_rows": 6,
+      "target_rows": 6,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_progress",
+      "source_rows": 25,
+      "target_rows": 25,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_test_results",
+      "source_rows": 5,
+      "target_rows": 5,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_v3_fluency",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_v3_mastery",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_v3_missions",
+      "source_rows": 5,
+      "target_rows": 5,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_v3_retention",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "phonics_v3_story_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "ptm_prep_data",
+      "source_rows": 1,
+      "target_rows": 1,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "push_tokens",
+      "source_rows": 39,
+      "target_rows": 39,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "razorpay_webhook_events",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "referrals",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "release_intelligence_runs",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "revenuecat_webhook_events",
+      "source_rows": 4,
+      "target_rows": 4,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "routine_activity_outcomes",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "routine_feedback",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "routine_journey",
+      "source_rows": 298,
+      "target_rows": 298,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "routine_personalization_snapshots",
+      "source_rows": 32,
+      "target_rows": 32,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "routines",
+      "source_rows": 48,
+      "target_rows": 48,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "skill_graph_progress",
+      "source_rows": 21,
+      "target_rows": 21,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_active_sessions",
+      "source_rows": 51,
+      "target_rows": 51,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_daily_usage",
+      "source_rows": 13,
+      "target_rows": 13,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_monthly_cost_usage",
+      "source_rows": 6,
+      "target_rows": 6,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_monthly_usage",
+      "source_rows": 7,
+      "target_rows": 7,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_session_token_usage",
+      "source_rows": 8,
+      "target_rows": 8,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_sessions",
+      "source_rows": 20,
+      "target_rows": 20,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_streaks",
+      "source_rows": 4,
+      "target_rows": 4,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_turn_log",
+      "source_rows": 63,
+      "target_rows": 63,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_conversation_memory",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_expert_waitlist",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_practice_log",
+      "source_rows": 24,
+      "target_rows": 24,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_progress",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "spelling_competition_scores",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "spelling_progress",
+      "source_rows": 3,
+      "target_rows": 3,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "spelling_sessions",
+      "source_rows": 40,
+      "target_rows": 40,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "spelling_tournaments",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "startup_funnel_events",
+      "source_rows": 3717,
+      "target_rows": 3717,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "static_audio_registry",
+      "source_rows": 278,
+      "target_rows": 278,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "story_content",
+      "source_rows": 224,
+      "target_rows": 224,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "story_watch_progress",
+      "source_rows": 9,
+      "target_rows": 9,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "subscriptions",
+      "source_rows": 307,
+      "target_rows": 307,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "system_meta_state",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "tts_cache",
+      "source_rows": 6056,
+      "target_rows": 6056,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "usage_daily",
+      "source_rows": 74,
+      "target_rows": 74,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_activation_journey",
+      "source_rows": 97,
+      "target_rows": 97,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_ai_messages",
+      "source_rows": 66,
+      "target_rows": 66,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_coach_intelligence",
+      "source_rows": 2,
+      "target_rows": 2,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_coach_sessions",
+      "source_rows": 41,
+      "target_rows": 41,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_custom_activities",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_devices",
+      "source_rows": 281,
+      "target_rows": 281,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_feedback",
+      "source_rows": 1,
+      "target_rows": 1,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_identity_aliases",
+      "source_rows": 183,
+      "target_rows": 183,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_intent_events",
+      "source_rows": 10,
+      "target_rows": 10,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_intents",
+      "source_rows": 10,
+      "target_rows": 10,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_progress",
+      "source_rows": 42,
+      "target_rows": 42,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_retention",
+      "source_rows": 35,
+      "target_rows": 35,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "vaccination_logs",
+      "source_rows": 1,
+      "target_rows": 1,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "validation_runs",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "worksheet_downloads",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    }
+  ],
+  "indexes": {
+    "missing_on_target": [],
+    "missing_on_source": []
+  },
+  "constraints": {
+    "missing_on_target": [],
+    "missing_on_source": []
+  },
+  "sequences": [
+    {
+      "sequence": "abacus_progress_id_seq",
+      "source_last": "5",
+      "target_last": "5",
+      "status": "ok"
+    },
+    {
+      "sequence": "admin_premium_grants_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "amy_daily_briefings_id_seq",
+      "source_last": "180",
+      "target_last": "180",
+      "status": "ok"
+    },
+    {
+      "sequence": "amy_decision_log_id_seq",
+      "source_last": "40",
+      "target_last": "40",
+      "status": "ok"
+    },
+    {
+      "sequence": "amy_knowledge_graph_id_seq",
+      "source_last": "180",
+      "target_last": "180",
+      "status": "ok"
+    },
+    {
+      "sequence": "amy_timeline_events_id_seq",
+      "source_last": "2",
+      "target_last": "2",
+      "status": "ok"
+    },
+    {
+      "sequence": "analytics_events_id_seq",
+      "source_last": "457197",
+      "target_last": "456867",
+      "status": "behind"
+    },
+    {
+      "sequence": "babysitters_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "behaviors_id_seq",
+      "source_last": "6",
+      "target_last": "6",
+      "status": "ok"
+    },
+    {
+      "sequence": "billing_audit_events_id_seq",
+      "source_last": "329",
+      "target_last": "329",
+      "status": "ok"
+    },
+    {
+      "sequence": "child_caregivers_id_seq",
+      "source_last": "1",
+      "target_last": "1",
+      "status": "ok"
+    },
+    {
+      "sequence": "child_content_learning_profiles_id_seq",
+      "source_last": "2",
+      "target_last": "2",
+      "status": "ok"
+    },
+    {
+      "sequence": "child_daily_signals_id_seq",
+      "source_last": "38",
+      "target_last": "38",
+      "status": "ok"
+    },
+    {
+      "sequence": "child_learning_progress_id_seq",
+      "source_last": "2",
+      "target_last": "2",
+      "status": "ok"
+    },
+    {
+      "sequence": "child_personality_profiles_id_seq",
+      "source_last": "2",
+      "target_last": "2",
+      "status": "ok"
+    },
+    {
+      "sequence": "child_prediction_snapshots_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "children_id_seq",
+      "source_last": "110",
+      "target_last": "110",
+      "status": "ok"
+    },
+    {
+      "sequence": "coach_journey_id_seq",
+      "source_last": "38",
+      "target_last": "38",
+      "status": "ok"
+    },
+    {
+      "sequence": "coloring_downloads_id_seq",
+      "source_last": "3",
+      "target_last": "3",
+      "status": "ok"
+    },
+    {
+      "sequence": "crash_deploy_baselines_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "crash_events_id_seq",
+      "source_last": "197",
+      "target_last": "197",
+      "status": "ok"
+    },
+    {
+      "sequence": "crash_fingerprint_status_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "crash_regressions_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "cry_sessions_id_seq",
+      "source_last": "3",
+      "target_last": "3",
+      "status": "ok"
+    },
+    {
+      "sequence": "custom_recipes_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "daily_puzzle_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "debug_logs_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "family_digital_twin_id_seq",
+      "source_last": "1218466",
+      "target_last": "1218390",
+      "status": "behind"
+    },
+    {
+      "sequence": "family_goals_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "family_intelligence_snapshots_id_seq",
+      "source_last": "1218466",
+      "target_last": "1218390",
+      "status": "behind"
+    },
+    {
+      "sequence": "family_learning_graphs_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "family_memory_id_seq",
+      "source_last": "9",
+      "target_last": "9",
+      "status": "ok"
+    },
+    {
+      "sequence": "family_moments_id_seq",
+      "source_last": "18",
+      "target_last": "18",
+      "status": "ok"
+    },
+    {
+      "sequence": "family_strategy_profile_id_seq",
+      "source_last": "3",
+      "target_last": "3",
+      "status": "ok"
+    },
+    {
+      "sequence": "feature_notification_schedules_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "file_risk_history_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "funsheet_downloads_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "gaming_wallet_id_seq",
+      "source_last": "39",
+      "target_last": "39",
+      "status": "ok"
+    },
+    {
+      "sequence": "gift_tokens_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "global_learning_graph_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "health_lab_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "infant_care_logs_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "infant_growth_measurements_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "infant_milestone_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "infant_notification_prefs_id_seq",
+      "source_last": "29",
+      "target_last": "29",
+      "status": "ok"
+    },
+    {
+      "sequence": "infant_product_analytics_events_id_seq",
+      "source_last": "389",
+      "target_last": "389",
+      "status": "ok"
+    },
+    {
+      "sequence": "infant_wellbeing_checkins_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "intervention_ledger_id_seq",
+      "source_last": "11",
+      "target_last": "11",
+      "status": "ok"
+    },
+    {
+      "sequence": "learning_progress_id_seq",
+      "source_last": "47",
+      "target_last": "47",
+      "status": "ok"
+    },
+    {
+      "sequence": "life_skills_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "nap_sessions_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "nba_decision_logs_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "notification_campaign_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "notification_log_id_seq",
+      "source_last": "4938",
+      "target_last": "4938",
+      "status": "ok"
+    },
+    {
+      "sequence": "notification_outcome_events_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "notification_preferences_id_seq",
+      "source_last": "108",
+      "target_last": "108",
+      "status": "ok"
+    },
+    {
+      "sequence": "nutrition_caregiver_share_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "nutrition_daily_log_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "nutrition_meal_memory_id_seq",
+      "source_last": "36",
+      "target_last": "36",
+      "status": "ok"
+    },
+    {
+      "sequence": "olympiad_child_stats_id_seq",
+      "source_last": "20",
+      "target_last": "20",
+      "status": "ok"
+    },
+    {
+      "sequence": "olympiad_scores_id_seq",
+      "source_last": "3",
+      "target_last": "3",
+      "status": "ok"
+    },
+    {
+      "sequence": "onboarding_profiles_id_seq",
+      "source_last": "101",
+      "target_last": "101",
+      "status": "ok"
+    },
+    {
+      "sequence": "parent_hub_journey_id_seq",
+      "source_last": "61",
+      "target_last": "61",
+      "status": "ok"
+    },
+    {
+      "sequence": "parent_profiles_id_seq",
+      "source_last": "102",
+      "target_last": "102",
+      "status": "ok"
+    },
+    {
+      "sequence": "parent_task_completions_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_content_cache_id_seq",
+      "source_last": "6",
+      "target_last": "6",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_content_id_seq",
+      "source_last": "131",
+      "target_last": "131",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_curriculum_progress_id_seq",
+      "source_last": "7",
+      "target_last": "7",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_daily_plans_id_seq",
+      "source_last": "521",
+      "target_last": "521",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_downloads_id_seq",
+      "source_last": "6",
+      "target_last": "6",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_progress_id_seq",
+      "source_last": "305",
+      "target_last": "305",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_test_results_id_seq",
+      "source_last": "5",
+      "target_last": "5",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_v3_fluency_id_seq",
+      "source_last": "36",
+      "target_last": "36",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_v3_mastery_id_seq",
+      "source_last": "167",
+      "target_last": "167",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_v3_missions_id_seq",
+      "source_last": "111",
+      "target_last": "111",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_v3_retention_id_seq",
+      "source_last": "194",
+      "target_last": "194",
+      "status": "ok"
+    },
+    {
+      "sequence": "phonics_v3_story_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "push_tokens_id_seq",
+      "source_last": "5489",
+      "target_last": "5489",
+      "status": "ok"
+    },
+    {
+      "sequence": "referrals_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "release_intelligence_runs_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "routine_feedback_id_seq",
+      "source_last": "2",
+      "target_last": "2",
+      "status": "ok"
+    },
+    {
+      "sequence": "routine_journey_id_seq",
+      "source_last": "302",
+      "target_last": "302",
+      "status": "ok"
+    },
+    {
+      "sequence": "routine_personalization_snapshots_id_seq",
+      "source_last": "2748",
+      "target_last": "2748",
+      "status": "ok"
+    },
+    {
+      "sequence": "routines_id_seq",
+      "source_last": "50",
+      "target_last": "50",
+      "status": "ok"
+    },
+    {
+      "sequence": "skill_graph_progress_id_seq",
+      "source_last": "21",
+      "target_last": "21",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_active_sessions_id_seq",
+      "source_last": "53",
+      "target_last": "53",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_daily_usage_id_seq",
+      "source_last": "13",
+      "target_last": "13",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_monthly_cost_usage_id_seq",
+      "source_last": "6",
+      "target_last": "6",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_monthly_usage_id_seq",
+      "source_last": "7",
+      "target_last": "7",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_session_token_usage_id_seq",
+      "source_last": "8",
+      "target_last": "8",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_sessions_id_seq",
+      "source_last": "20",
+      "target_last": "20",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_streaks_id_seq",
+      "source_last": "4",
+      "target_last": "4",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_coach_v2_turn_log_id_seq",
+      "source_last": "63",
+      "target_last": "63",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_conversation_memory_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_expert_waitlist_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_practice_log_id_seq",
+      "source_last": "24",
+      "target_last": "24",
+      "status": "ok"
+    },
+    {
+      "sequence": "speech_progress_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "spelling_competition_scores_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "spelling_progress_id_seq",
+      "source_last": "3",
+      "target_last": "3",
+      "status": "ok"
+    },
+    {
+      "sequence": "spelling_sessions_id_seq",
+      "source_last": "40",
+      "target_last": "40",
+      "status": "ok"
+    },
+    {
+      "sequence": "spelling_tournaments_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "startup_funnel_events_id_seq",
+      "source_last": "3717",
+      "target_last": "3717",
+      "status": "ok"
+    },
+    {
+      "sequence": "story_content_id_seq",
+      "source_last": "4898",
+      "target_last": "4898",
+      "status": "ok"
+    },
+    {
+      "sequence": "story_watch_progress_id_seq",
+      "source_last": "124",
+      "target_last": "124",
+      "status": "ok"
+    },
+    {
+      "sequence": "subscriptions_id_seq",
+      "source_last": "476",
+      "target_last": "476",
+      "status": "ok"
+    },
+    {
+      "sequence": "system_meta_state_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "usage_daily_id_seq",
+      "source_last": "1772",
+      "target_last": "1772",
+      "status": "ok"
+    },
+    {
+      "sequence": "user_activation_journey_id_seq",
+      "source_last": "101",
+      "target_last": "101",
+      "status": "ok"
+    },
+    {
+      "sequence": "user_custom_activities_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "user_devices_id_seq",
+      "source_last": "281",
+      "target_last": "281",
+      "status": "ok"
+    },
+    {
+      "sequence": "user_identity_aliases_id_seq",
+      "source_last": "483",
+      "target_last": "483",
+      "status": "ok"
+    },
+    {
+      "sequence": "user_intent_events_id_seq",
+      "source_last": "10",
+      "target_last": "10",
+      "status": "ok"
+    },
+    {
+      "sequence": "user_intents_id_seq",
+      "source_last": "10",
+      "target_last": "10",
+      "status": "ok"
+    },
+    {
+      "sequence": "vaccination_logs_id_seq",
+      "source_last": "1",
+      "target_last": "1",
+      "status": "ok"
+    },
+    {
+      "sequence": "validation_runs_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    },
+    {
+      "sequence": "worksheet_downloads_id_seq",
+      "source_last": null,
+      "target_last": null,
+      "status": "ok"
+    }
+  ],
+  "key_tables": [
+    {
+      "table": "analytics_events",
+      "source_rows": 455870,
+      "target_rows": 455610,
+      "delta": -260,
+      "status": "mismatch"
+    },
+    {
+      "table": "billing_audit_events",
+      "source_rows": 329,
+      "target_rows": 329,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "children",
+      "source_rows": 99,
+      "target_rows": 99,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "notification_log",
+      "source_rows": 4116,
+      "target_rows": 4116,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "onboarding_profiles",
+      "source_rows": 92,
+      "target_rows": 92,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "parent_profiles",
+      "source_rows": 93,
+      "target_rows": 93,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "push_tokens",
+      "source_rows": 39,
+      "target_rows": 39,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "routines",
+      "source_rows": 48,
+      "target_rows": 48,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_sessions",
+      "source_rows": 20,
+      "target_rows": 20,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "speech_coach_v2_turn_log",
+      "source_rows": 63,
+      "target_rows": 63,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "subscriptions",
+      "source_rows": 307,
+      "target_rows": 307,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "tts_cache",
+      "source_rows": 6056,
+      "target_rows": 6056,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_devices",
+      "source_rows": 281,
+      "target_rows": 281,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "user_identity_aliases",
+      "source_rows": 183,
+      "target_rows": 183,
+      "delta": 0,
+      "status": "ok"
+    },
+    {
+      "table": "worksheet_downloads",
+      "source_rows": 0,
+      "target_rows": 0,
+      "delta": 0,
+      "status": "ok"
+    }
+  ]
+}

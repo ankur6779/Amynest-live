@@ -1,0 +1,969 @@
+{
+  "generated_at": "2026-07-11T19:36:17.229Z",
+  "since": "2026-07-11T18:52:00.000Z",
+  "final_pass": false,
+  "dry_run": false,
+  "tables_processed": 137,
+  "rows_applied": 3628,
+  "plans": [
+    {
+      "table": "abacus_progress",
+      "strategy": "updated_at",
+      "source_rows": 5,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "admin_premium_grants",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "ai_cache",
+      "strategy": "created_at",
+      "source_rows": 6,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "ai_content_cache",
+      "strategy": "created_at",
+      "source_rows": 349,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "amy_daily_briefings",
+      "strategy": "created_at",
+      "source_rows": 180,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "amy_decision_log",
+      "strategy": "full_on_final",
+      "source_rows": 40,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "amy_knowledge_graph",
+      "strategy": "updated_at",
+      "source_rows": 23,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "amy_timeline_events",
+      "strategy": "created_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "analytics_events",
+      "strategy": "server_ts",
+      "source_rows": 437918,
+      "changed_rows": 3499,
+      "action": "upsert"
+    },
+    {
+      "table": "babysitters",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "behaviors",
+      "strategy": "created_at",
+      "source_rows": 5,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "billing_audit_events",
+      "strategy": "created_at",
+      "source_rows": 329,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "child_caregivers",
+      "strategy": "created_at",
+      "source_rows": 1,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "child_content_learning_profiles",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "child_daily_signals",
+      "strategy": "updated_at",
+      "source_rows": 17,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "child_learning_progress",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "child_personality_profiles",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "child_prediction_snapshots",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "children",
+      "strategy": "created_at",
+      "source_rows": 99,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "coach_audio_cache",
+      "strategy": "created_at",
+      "source_rows": 186,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "coach_journey",
+      "strategy": "updated_at",
+      "source_rows": 36,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "coach_win_generations",
+      "strategy": "updated_at",
+      "source_rows": 8,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "coloring_downloads",
+      "strategy": "full_on_final",
+      "source_rows": 3,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "crash_deploy_baselines",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "crash_events",
+      "strategy": "created_at",
+      "source_rows": 197,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "crash_fingerprint_status",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "crash_regressions",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "cry_sessions",
+      "strategy": "created_at",
+      "source_rows": 3,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "custom_recipes",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "daily_puzzle_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "debug_logs",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "family_digital_twin",
+      "strategy": "updated_at",
+      "source_rows": 90,
+      "changed_rows": 38,
+      "action": "upsert"
+    },
+    {
+      "table": "family_goals",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "family_intelligence_snapshots",
+      "strategy": "created_at",
+      "source_rows": 962,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "family_learning_graphs",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "family_memory",
+      "strategy": "full_on_final",
+      "source_rows": 9,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "family_moments",
+      "strategy": "full_on_final",
+      "source_rows": 18,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "family_strategy_profile",
+      "strategy": "updated_at",
+      "source_rows": 1,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "feature_feedback",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "feature_notification_schedules",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "feature_usage",
+      "strategy": "full_on_final",
+      "source_rows": 41,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "file_risk_history",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "funsheet_downloads",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "gaming_wallet",
+      "strategy": "updated_at",
+      "source_rows": 38,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "gift_tokens",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "global_learning_graph",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "growth_os_state",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "health_lab_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "infant_care_logs",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "infant_growth_measurements",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "infant_milestone_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "infant_notification_prefs",
+      "strategy": "updated_at",
+      "source_rows": 29,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "infant_product_analytics_events",
+      "strategy": "created_at",
+      "source_rows": 389,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "infant_wellbeing_checkins",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "intervention_ledger",
+      "strategy": "updated_at",
+      "source_rows": 11,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "learning_progress",
+      "strategy": "updated_at",
+      "source_rows": 45,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "life_skills_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "nap_sessions",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "nba_decision_logs",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "notification_campaign_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "notification_fatigue_state",
+      "strategy": "updated_at",
+      "source_rows": 55,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "notification_log",
+      "strategy": "full_on_final",
+      "source_rows": 4116,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "notification_outcome_events",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "notification_preferences",
+      "strategy": "updated_at",
+      "source_rows": 97,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "nutrition_caregiver_share",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "nutrition_daily_log",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "nutrition_meal_memory",
+      "strategy": "updated_at",
+      "source_rows": 4,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "olympiad_child_stats",
+      "strategy": "updated_at",
+      "source_rows": 3,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "olympiad_scores",
+      "strategy": "created_at",
+      "source_rows": 3,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "onboarding_profiles",
+      "strategy": "updated_at",
+      "source_rows": 92,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "parent_hub_journey",
+      "strategy": "updated_at",
+      "source_rows": 44,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "parent_profiles",
+      "strategy": "updated_at",
+      "source_rows": 93,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "parent_task_completions",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_audio_assets",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_content",
+      "strategy": "updated_at",
+      "source_rows": 131,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_content_cache",
+      "strategy": "created_at",
+      "source_rows": 6,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_curriculum_progress",
+      "strategy": "updated_at",
+      "source_rows": 6,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_daily_plans",
+      "strategy": "updated_at",
+      "source_rows": 157,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_downloads",
+      "strategy": "full_on_final",
+      "source_rows": 6,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_progress",
+      "strategy": "updated_at",
+      "source_rows": 25,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_test_results",
+      "strategy": "created_at",
+      "source_rows": 5,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_v3_fluency",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_v3_mastery",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_v3_missions",
+      "strategy": "updated_at",
+      "source_rows": 5,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_v3_retention",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "phonics_v3_story_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "ptm_prep_data",
+      "strategy": "updated_at",
+      "source_rows": 1,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "push_tokens",
+      "strategy": "created_at",
+      "source_rows": 39,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "razorpay_webhook_events",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "referrals",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "release_intelligence_runs",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "revenuecat_webhook_events",
+      "strategy": "full_on_final",
+      "source_rows": 4,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "routine_activity_outcomes",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "routine_feedback",
+      "strategy": "created_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "routine_journey",
+      "strategy": "updated_at",
+      "source_rows": 298,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "routine_personalization_snapshots",
+      "strategy": "full_on_final",
+      "source_rows": 32,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "routines",
+      "strategy": "created_at",
+      "source_rows": 48,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "skill_graph_progress",
+      "strategy": "updated_at",
+      "source_rows": 21,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_active_sessions",
+      "strategy": "updated_at",
+      "source_rows": 51,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_daily_usage",
+      "strategy": "updated_at",
+      "source_rows": 13,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_monthly_cost_usage",
+      "strategy": "updated_at",
+      "source_rows": 6,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_monthly_usage",
+      "strategy": "updated_at",
+      "source_rows": 7,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_session_token_usage",
+      "strategy": "updated_at",
+      "source_rows": 8,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_sessions",
+      "strategy": "full_on_final",
+      "source_rows": 20,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_streaks",
+      "strategy": "updated_at",
+      "source_rows": 4,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_coach_v2_turn_log",
+      "strategy": "created_at",
+      "source_rows": 63,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_conversation_memory",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_expert_waitlist",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_practice_log",
+      "strategy": "full_on_final",
+      "source_rows": 24,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "speech_progress",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "spelling_competition_scores",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "spelling_progress",
+      "strategy": "updated_at",
+      "source_rows": 3,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "spelling_sessions",
+      "strategy": "full_on_final",
+      "source_rows": 40,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "spelling_tournaments",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "startup_funnel_events",
+      "strategy": "server_ts",
+      "source_rows": 3350,
+      "changed_rows": 91,
+      "action": "upsert"
+    },
+    {
+      "table": "static_audio_registry",
+      "strategy": "updated_at",
+      "source_rows": 278,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "story_content",
+      "strategy": "updated_at",
+      "source_rows": 224,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "story_watch_progress",
+      "strategy": "updated_at",
+      "source_rows": 9,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "subscriptions",
+      "strategy": "updated_at",
+      "source_rows": 307,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "system_meta_state",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "tts_cache",
+      "strategy": "created_at",
+      "source_rows": 6056,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "usage_daily",
+      "strategy": "updated_at",
+      "source_rows": 74,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_activation_journey",
+      "strategy": "updated_at",
+      "source_rows": 97,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_ai_messages",
+      "strategy": "created_at",
+      "source_rows": 66,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_coach_intelligence",
+      "strategy": "updated_at",
+      "source_rows": 2,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_coach_sessions",
+      "strategy": "created_at",
+      "source_rows": 41,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_custom_activities",
+      "strategy": "updated_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_devices",
+      "strategy": "full_on_final",
+      "source_rows": 280,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_feedback",
+      "strategy": "created_at",
+      "source_rows": 1,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_identity_aliases",
+      "strategy": "updated_at",
+      "source_rows": 183,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_intent_events",
+      "strategy": "full_on_final",
+      "source_rows": 10,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_intents",
+      "strategy": "updated_at",
+      "source_rows": 10,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_progress",
+      "strategy": "created_at",
+      "source_rows": 42,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "user_retention",
+      "strategy": "updated_at",
+      "source_rows": 35,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "vaccination_logs",
+      "strategy": "updated_at",
+      "source_rows": 1,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "validation_runs",
+      "strategy": "created_at",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    },
+    {
+      "table": "worksheet_downloads",
+      "strategy": "full_on_final",
+      "source_rows": 0,
+      "changed_rows": 0,
+      "action": "skip"
+    }
+  ]
+}

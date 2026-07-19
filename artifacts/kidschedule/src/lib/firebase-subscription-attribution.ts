@@ -6,8 +6,10 @@
 import { getApps } from "firebase/app";
 import { getAnalytics, isSupported, logEvent, type Analytics } from "firebase/analytics";
 import type { Plan } from "@/hooks/use-subscription";
+import { isAndroidMobileShell } from "@/lib/device-lite";
 import { initializeFirebase } from "@/lib/firebase";
 import { resolveMetaPlanPrice } from "@/lib/meta-attribution";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 export const FIREBASE_SUBSCRIPTION_CONVERT_EVENT = "app_store_subscription_convert";
 export const FIREBASE_BEGIN_CHECKOUT_EVENT = "begin_checkout";
@@ -29,6 +31,66 @@ type FirebaseSubscriptionOpts = {
 };
 
 let analyticsInstance: Analytics | null | undefined;
+
+function shouldUseNativeAndroidFirebase(): boolean {
+  return isNativeAmyNestShell() && isAndroidMobileShell();
+}
+
+/** Route subscription events through native Firebase SDK (Google Ads app attribution). */
+async function logNativeAndroidSubscriptionEvent(
+  event: "purchase" | "begin_checkout",
+  productId: string,
+  currency: string,
+  value: number,
+  source?: string,
+): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  const bridge = window.AmyNestBillingNative;
+  if (!bridge?.postMessage) return false;
+
+  return new Promise((resolve) => {
+    const cbId = `fb_${Date.now().toString(36)}`;
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(ok);
+    };
+    const timer = setTimeout(() => finish(false), 3_000);
+    const prior = bridge.onmessage;
+    bridge.onmessage = (message) => {
+      try {
+        const payload = JSON.parse(message.data) as { cbId?: string; ok?: boolean };
+        if (payload.cbId === cbId) {
+          clearTimeout(timer);
+          bridge.onmessage = prior;
+          finish(payload.ok === true);
+          return;
+        }
+      } catch {
+        /* ignore malformed bridge replies */
+      }
+      prior?.(message);
+    };
+    try {
+      bridge.postMessage(
+        JSON.stringify({
+          action: "logSubscriptionAnalytics",
+          cbId,
+          event,
+          productId,
+          currency,
+          value,
+          ...(source ? { source } : {}),
+        }),
+      );
+    } catch {
+      clearTimeout(timer);
+      bridge.onmessage = prior;
+      finish(false);
+    }
+  });
+}
 
 async function getFirebaseAnalytics(): Promise<Analytics | null> {
   if (analyticsInstance !== undefined) return analyticsInstance;
@@ -78,10 +140,22 @@ export async function trackFirebaseSubscriptionPurchase(
   plan: Plan | string | undefined,
   opts?: FirebaseSubscriptionOpts,
 ): Promise<void> {
+  const { value, currency, itemId } = resolvePlanValue(plan, opts);
+
+  if (shouldUseNativeAndroidFirebase()) {
+    await logNativeAndroidSubscriptionEvent(
+      "purchase",
+      itemId,
+      currency,
+      value,
+      opts?.source,
+    );
+    return;
+  }
+
   const analytics = await getFirebaseAnalytics();
   if (!analytics) return;
 
-  const { value, currency, itemId } = resolvePlanValue(plan, opts);
   const params = {
     currency,
     value,
@@ -103,10 +177,22 @@ export async function trackFirebaseBeginCheckout(
   plan: Plan | string | undefined,
   opts?: FirebaseSubscriptionOpts,
 ): Promise<void> {
+  const { value, currency, itemId } = resolvePlanValue(plan, opts);
+
+  if (shouldUseNativeAndroidFirebase()) {
+    await logNativeAndroidSubscriptionEvent(
+      "begin_checkout",
+      itemId,
+      currency,
+      value,
+      opts?.source,
+    );
+    return;
+  }
+
   const analytics = await getFirebaseAnalytics();
   if (!analytics) return;
 
-  const { value, currency, itemId } = resolvePlanValue(plan, opts);
   try {
     logAnalyticsEvent(analytics, FIREBASE_BEGIN_CHECKOUT_EVENT, {
       currency,

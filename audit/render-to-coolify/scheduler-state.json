@@ -1,0 +1,15 @@
+{
+  "mode": "presync",
+  "active_plane": "render",
+  "updated_at": "2026-07-11T18:09:58.553253Z",
+  "render": {
+    "SCHEDULER_ACTIVE_PLANE": "render",
+    "BACKGROUND_TASKS_ENABLED": "true",
+    "NOTIFICATIONS_ENABLED": "true"
+  },
+  "coolify": {
+    "SCHEDULER_ACTIVE_PLANE": "render",
+    "BACKGROUND_TASKS_ENABLED": "false",
+    "NOTIFICATIONS_ENABLED": "false"
+  }
+}

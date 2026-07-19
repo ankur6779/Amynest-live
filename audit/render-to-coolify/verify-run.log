@@ -1,0 +1,138 @@
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:46318) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:46318) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Comparing 137 tables...
+==> Comparing extensions, indexes, constraints, sequences...
+(node:46318) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T18:53:13.518Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 454,154 | 453,491 | -663 |
+| Row mismatches | — | — | 3 |
+| Indexes missing on target | — | — | 2 |
+| Constraints missing on target | — | — | 2 |
+| Sequence issues | — | — | 45 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 434,511 | 434,043 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 307 | 307 | ok |
+| tts_cache | 6,056 | 6,056 | ok |
+| user_devices | 280 | 280 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (3)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| analytics_events | 434511 | 434043 | -468 |
+| phonics_content | 131 | 50 | -81 |
+| startup_funnel_events | 3259 | 3145 | -114 |
+
+## Indexes missing on Coolify
+
+- speech_coach_v2_monthly_cost_usage_user_id_child_id_month_key
+- speech_coach_v2_session_token_usage_session_id_key
+
+## Constraints missing on Coolify
+
+- speech_coach_v2_monthly_cost_usage_user_id_child_id_month_key
+- speech_coach_v2_session_token_usage_session_id_key
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| admin_premium_grants_id_seq | — | — | missing_source |
+| analytics_events_id_seq | 435787 | 435257 | behind |
+| babysitters_id_seq | — | — | missing_source |
+| child_prediction_snapshots_id_seq | — | — | missing_source |
+| crash_deploy_baselines_id_seq | — | — | missing_source |
+| crash_fingerprint_status_id_seq | — | — | missing_source |
+| crash_regressions_id_seq | — | — | missing_source |
+| custom_recipes_id_seq | — | — | missing_source |
+| daily_puzzle_progress_id_seq | — | — | missing_source |
+| debug_logs_id_seq | — | — | missing_source |
+| family_digital_twin_id_seq | 1213526 | 1213374 | behind |
+| family_goals_id_seq | — | — | missing_source |
+| family_intelligence_snapshots_id_seq | 1213526 | 1213374 | behind |
+| family_learning_graphs_id_seq | — | — | missing_source |
+| feature_notification_schedules_id_seq | — | — | missing_source |
+| file_risk_history_id_seq | — | — | missing_source |
+| funsheet_downloads_id_seq | — | — | missing_source |
+| gift_tokens_id_seq | — | — | missing_source |
+| global_learning_graph_id_seq | — | — | missing_source |
+| health_lab_progress_id_seq | — | — | missing_source |
+| infant_care_logs_id_seq | — | — | missing_source |
+| infant_growth_measurements_id_seq | — | — | missing_source |
+| infant_milestone_progress_id_seq | — | — | missing_source |
+| infant_wellbeing_checkins_id_seq | — | — | missing_source |
+| life_skills_progress_id_seq | — | — | missing_source |
+| nap_sessions_id_seq | — | — | missing_source |
+| nba_decision_logs_id_seq | — | — | missing_source |
+| notification_campaign_progress_id_seq | — | — | missing_source |
+| notification_outcome_events_id_seq | — | — | missing_source |
+| nutrition_caregiver_share_id_seq | — | — | missing_source |
+| nutrition_daily_log_id_seq | — | — | missing_source |
+| parent_task_completions_id_seq | — | — | missing_source |
+| phonics_v3_story_progress_id_seq | — | — | missing_source |
+| referrals_id_seq | — | — | missing_source |
+| release_intelligence_runs_id_seq | — | — | missing_source |
+| speech_conversation_memory_id_seq | — | — | missing_source |
+| speech_expert_waitlist_id_seq | — | — | missing_source |
+| speech_progress_id_seq | — | — | missing_source |
+| spelling_competition_scores_id_seq | — | — | missing_source |
+| spelling_tournaments_id_seq | — | — | missing_source |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T18-53-13-518Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.

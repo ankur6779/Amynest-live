@@ -1,0 +1,41 @@
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:smoke /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:smoke
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:smoke /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/coolify-smoke.ts
+
+(node:77677) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+# Coolify backend smoke test
+
+Generated: 2026-07-12T08:02:25.941Z
+API: http://127.0.0.1:15000
+
+## Result: PASS ✓
+
+| Pass | Fail | Skip | Warn |
+|-----:|-----:|-----:|-----:|
+| 2 | 0 | 9 | 2 |
+
+| Check | Status | Message |
+|-------|--------|---------|
+| health | pass | GET /health → 200 |
+| ready | warn | GET /ready → 404; /api/healthz OK but /api/healthz/env needs INTERNAL_HEALTH_SECRET |
+| firebase_login | skip | Set SMOKE_FIREBASE_ID_TOKEN or SMOKE_FIREBASE_UID + FIREBASE_SERVICE_ACCOUNT_JSON + FIREBASE_WEB_API_KEY |
+| parent_profile | skip | Requires auth token |
+| child_profile | skip | Requires auth token |
+| subscription_lookup | skip | Requires auth token |
+| revenuecat_webhook_validation | warn | REVENUECAT_WEBHOOK_SECRET unset — auth rejection only |
+| gcs_access | pass | GCS configured and probe OK |
+| push_registration | skip | Requires auth token |
+| routine_generation | skip | Requires auth token and childId |
+| bullmq_enqueue | skip | SMOKE_SKIP_AI=1 |
+| bullmq_processing | skip | SMOKE_SKIP_AI=1 |
+| ai_request | skip | SMOKE_SKIP_AI=1 |
+
+Report: audit/render-to-coolify/smoke-latest.json
+Result: PASS

@@ -15,6 +15,32 @@ import { feedbackStateMark } from "@/lib/game-a11y";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { getActiveTheme, getThemeTint } from "@/lib/game-mastery";
 
+const SHELL_STYLE_ID = "amynest-game-shell-styles";
+const SHELL_CSS = `
+  .game-shell-root button:not(:disabled) {
+    touch-action: manipulation;
+    transition: transform var(--game-motion-press, 100ms) var(--game-ease-out, ease-out);
+  }
+  .game-shell-root button:not(:disabled):active {
+    transform: scale(var(--game-press-scale, 0.97));
+  }
+  .game-shell-root.game-shell-reduced button:not(:disabled) {
+    transition: none;
+  }
+  .game-shell-root.game-shell-reduced button:not(:disabled):active {
+    transform: none;
+  }
+`;
+
+function ensureShellStyles(): void {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(SHELL_STYLE_ID)) return;
+  const el = document.createElement("style");
+  el.id = SHELL_STYLE_ID;
+  el.textContent = SHELL_CSS;
+  document.head.appendChild(el);
+}
+
 export type GameFeedback = "correct" | "wrong" | null;
 
 export interface GameShellProps {
@@ -80,6 +106,10 @@ export function GameShell({
         : undefined);
 
   useEffect(() => {
+    ensureShellStyles();
+  }, []);
+
+  useEffect(() => {
     if (feedback) {
       setIdleTip(null);
       return;
@@ -109,7 +139,11 @@ export function GameShell({
 
   return (
     <div
-      className={reducedMotion ? "game-shell-root" : "game-shell-root game-motion-enter"}
+      className={
+        reducedMotion
+          ? "game-shell-root game-shell-reduced"
+          : "game-shell-root game-motion-enter"
+      }
       onPointerDown={() => {
         lastInteract.current = Date.now();
         setIdleTip(null);
@@ -325,29 +359,6 @@ export function GameShell({
           {footer}
         </div>
       )}
-
-      <ShellStyles reduced={reducedMotion} />
     </div>
-  );
-}
-
-function ShellStyles({ reduced }: { reduced: boolean }) {
-  return (
-    <style>{`
-      .game-shell-root button:not(:disabled) {
-        touch-action: manipulation;
-      }
-      ${
-        reduced
-          ? ""
-          : `
-      .game-shell-root button:not(:disabled) {
-        transition: transform var(--game-motion-press, 100ms) var(--game-ease-out, ease-out);
-      }
-      .game-shell-root button:not(:disabled):active {
-        transform: scale(var(--game-press-scale, 0.97));
-      }`
-      }
-    `}</style>
   );
 }

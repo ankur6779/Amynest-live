@@ -16,6 +16,13 @@ import {
   READING_LESSON_STEPS,
   type ReadingLessonState,
 } from "@/lib/phonics-v3/reading-lesson-engine";
+import {
+  applyResumeToState,
+  clearLessonResume,
+  loadLessonResume,
+  saveLessonResume,
+  saveLessonResumeForce,
+} from "@/lib/phonics-v3/lesson-resume";
 import { getUnlockedGroupWords } from "@workspace/phonics-curriculum";
 import { MouthShapeCue } from "./MouthShapeCue";
 import { LetterTracePad } from "./LetterTracePad";
@@ -68,7 +75,12 @@ export function ReadingLessonRunner({
     () => buildLessonTarget(grapheme, letterGroupIndex),
     [grapheme, letterGroupIndex],
   );
-  const [state, setState] = useState(() => createLessonState(target));
+  const [state, setState] = useState(() => {
+    if (typeof childId === "number" && childId > 0) {
+      return applyResumeToState(target, loadLessonResume(childId));
+    }
+    return createLessonState(target);
+  });
   const [slow, setSlow] = useState(slowPlayback);
   const [attempts, setAttempts] = useState(0);
   const [showSegmentBonus, setShowSegmentBonus] = useState(false);
@@ -76,11 +88,24 @@ export function ReadingLessonRunner({
   const coachEnabled = typeof childId === "number" && childId > 0;
 
   useEffect(() => {
-    setState(createLessonState(target));
+    const resumed =
+      typeof childId === "number" && childId > 0
+        ? applyResumeToState(target, loadLessonResume(childId))
+        : createLessonState(target);
+    setState(resumed);
     setAttempts(0);
     setShowSegmentBonus(false);
     setCoachEvals([]);
-  }, [target]);
+  }, [target, childId]);
+
+  useEffect(() => {
+    if (!coachEnabled || typeof childId !== "number") return;
+    if (state.complete) {
+      clearLessonResume(childId);
+      return;
+    }
+    saveLessonResume(childId, state);
+  }, [state, childId, coachEnabled]);
 
   const step = currentStep(state);
   const unlockedWords = useMemo(
@@ -439,8 +464,13 @@ export function ReadingLessonRunner({
       {onCancel && (
         <button
           type="button"
-          className="mx-auto block text-[11px] text-muted-foreground underline"
-          onClick={onCancel}
+          className="mx-auto block min-h-12 px-4 text-[11px] text-muted-foreground underline"
+          onClick={() => {
+            if (typeof childId === "number" && childId > 0 && !state.complete) {
+              saveLessonResumeForce(childId, state);
+            }
+            onCancel();
+          }}
         >
           Exit lesson
         </button>

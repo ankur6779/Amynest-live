@@ -39,6 +39,28 @@ object FirebaseSubscriptionAnalytics {
         }
     }
 
+    fun logBeginCheckout(
+        context: Context,
+        productId: String,
+        currency: String,
+        value: Double,
+        source: String = "google_play",
+    ) {
+        try {
+            val analytics = FirebaseAnalytics.getInstance(context.applicationContext)
+            val bundle = Bundle().apply {
+                putString(FirebaseAnalytics.Param.CURRENCY, currency)
+                putDouble(FirebaseAnalytics.Param.VALUE, value)
+                putString(FirebaseAnalytics.Param.ITEM_ID, productId)
+                putString("source", source)
+            }
+            analytics.logEvent(EVENT_BEGIN_CHECKOUT, bundle)
+            Log.d(TAG, "Logged begin_checkout productId=$productId value=$value $currency")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to log begin_checkout", t)
+        }
+    }
+
     fun logSubscriptionConvert(context: Context, source: String = "google_play") {
         try {
             val analytics = FirebaseAnalytics.getInstance(context.applicationContext)

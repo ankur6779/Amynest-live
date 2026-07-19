@@ -139,6 +139,14 @@ export function isMealOptionCompliant(
   if (!trimmed) return false;
   if (mealOptionViolatesAllergies(trimmed, ctx.allergies ?? "")) return false;
   if (violatesDiet(trimmed, ctx)) return false;
+  // C-02: honey is unsafe under 12 months (age gate; vegan honey remains via violatesDiet).
+  if (
+    ctx.ageInMonths != null &&
+    ctx.ageInMonths < 12 &&
+    HONEY_RE.test(trimmed)
+  ) {
+    return false;
+  }
   if (isHighProteinMode(ctx)) {
     if (lacksPrimaryProtein(trimmed)) return false;
     if (isWeakProteinMeal(trimmed)) return false;

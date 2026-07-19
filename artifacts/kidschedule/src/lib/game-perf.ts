@@ -40,6 +40,22 @@ export function isLowPowerClient(): boolean {
   return false;
 }
 
+/**
+ * Soft effects gate for ≤4GB phones (common low/mid Android).
+ * Strips glow/blur polish without the full `game-perf-low` catalog strip.
+ */
+export function shouldReduceGameEffects(): boolean {
+  if (isLowPowerClient()) return true;
+  if (typeof navigator === "undefined") return false;
+  try {
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+    if (typeof mem === "number" && mem > 0 && mem <= 4) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
 type IdleHandle = number;
 
 /** Schedule non-critical work when the main thread is free. */
@@ -70,6 +86,18 @@ export const GAME_PERF_STYLES = `
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
+  /* While a game modal is open: stop catalog paint/compositor work under the overlay. */
+  .game-hub-frozen {
+    content-visibility: hidden;
+    visibility: hidden;
+    pointer-events: none;
+    contain: strict;
+  }
+  .game-hub-frozen .game-motion-float,
+  .game-hub-frozen .games-card-float,
+  .game-hub-frozen [style*="animation"] {
+    animation: none !important;
+  }
   .game-perf-contain {
     content-visibility: auto;
     contain: layout style paint;
@@ -84,5 +112,18 @@ export const GAME_PERF_STYLES = `
   }
   @media (prefers-reduced-motion: reduce) {
     .game-perf-gpu { transform: none; }
+  }
+  /* Target Tap — CSS lifetime shrink (no React scale commits). */
+  @keyframes gameTargetLife {
+    from { transform: translate(-50%, -50%) scale(1); }
+    to { transform: translate(-50%, -50%) scale(0.55); }
+  }
+  .game-target-life {
+    animation-name: gameTargetLife;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .game-target-life { animation: none !important; }
   }
 `;

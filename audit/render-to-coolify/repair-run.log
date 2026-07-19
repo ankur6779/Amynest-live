@@ -1,0 +1,45 @@
+==> STEP 2: Schema drift repair (indexes)
+  apply: CREATE UNIQUE INDEX speech_coach_v2_monthly_cost_usage_user_id_child_id_month_ke...
+CREATE INDEX
+  apply: CREATE UNIQUE INDEX speech_coach_v2_session_token_usage_session_id_key ON public...
+CREATE INDEX
+  drop coolify-only index growth_os_state_updated_idx
+DROP INDEX
+  drop coolify-only index speech_coach_v2_session_token_usage_session_id_unique
+ERROR:  cannot drop index speech_coach_v2_session_token_usage_session_id_unique because constraint speech_coach_v2_session_token_usage_session_id_unique on table speech_coach_v2_session_token_usage requires it
+HINT:  You can drop constraint speech_coach_v2_session_token_usage_session_id_unique on table speech_coach_v2_session_token_usage instead.
+==> STEP 3: Repair mismatched tables
+==> Copy table startup_funnel_events from Render
+TRUNCATE TABLE
+ set_config 
+------------
+ 
+(1 row)
+
+ setval 
+--------
+   3259
+(1 row)
+
+  startup_funnel_events render=3259 coolify=3259
+==> Copy table phonics_content from Render
+TRUNCATE TABLE
+ set_config 
+------------
+ 
+(1 row)
+
+ setval 
+--------
+    131
+(1 row)
+
+  phonics_content render=131 coolify=131
+==> STEP 4: Fix all sequences from MAX(id)
+==> Spot checks
+  analytics_events render=435444 coolify=434043
+  phonics_content render=131 coolify=131
+  startup_funnel_events render=3259 coolify=3259
+  parent_profiles render=93 coolify=93
+  subscriptions render=307 coolify=307
+REPAIR_PHASE1_OK

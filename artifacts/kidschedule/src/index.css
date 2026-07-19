@@ -4221,6 +4221,297 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   animation: healthLabDanceLights 1.5s ease-in-out infinite;
 }
 
+.health-lab-home-scroll {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.health-lab-pressable {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 180ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    filter 160ms ease,
+    box-shadow 180ms ease;
+}
+
+.health-lab-pressable:active {
+  transform: scale(0.965);
+  filter: brightness(1.06);
+}
+
+/* Ambient life — transforms/opacity only; gated by .health-lab-ambient-on */
+.health-lab-ambient-on .health-lab-drift-a {
+  animation: healthLabDrift 9s ease-in-out infinite;
+}
+.health-lab-ambient-on .health-lab-drift-b {
+  animation: healthLabDrift 11s ease-in-out infinite reverse;
+}
+.health-lab-ambient-on .health-lab-drift-slow {
+  animation: healthLabDrift 14s ease-in-out infinite;
+}
+.health-lab-ambient-on .health-lab-sway,
+.health-lab-ambient-on .health-lab-sway-slow {
+  animation: healthLabSway 5.5s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.health-lab-ambient-on .health-lab-sway-delay {
+  animation: healthLabSway 6.5s ease-in-out infinite;
+  animation-delay: 0.8s;
+  transform-origin: center bottom;
+}
+.health-lab-ambient-on .health-lab-twinkle {
+  animation: healthLabTwinkle 2.8s ease-in-out infinite;
+}
+.health-lab-ambient-on .health-lab-blink {
+  animation: healthLabBlink 1.6s ease-in-out infinite;
+}
+.health-lab-ambient-on .health-lab-shimmer {
+  animation: healthLabShimmer 3.2s ease-in-out infinite;
+}
+.health-lab-ambient-on .health-lab-shimmer-delay {
+  animation: healthLabShimmer 3.8s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+/* World friends — tiny reactions, no heavy particles */
+.health-lab-friend-idle {
+  display: inline-block;
+  animation: healthLabFriendIdle 3.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.health-lab-friend-wave {
+  display: inline-block;
+  animation: healthLabFriendWave 0.9s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.health-lab-ambient-on .health-lab-friend-idle {
+  animation: healthLabFriendIdle 3.2s ease-in-out infinite;
+}
+.health-lab-ambient-on .health-lab-friend-wave,
+.health-lab-world-celebrating .health-lab-friend-wave {
+  animation: healthLabFriendWave 0.9s ease-in-out infinite;
+}
+
+@keyframes healthLabFriendIdle {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -2px, 0) scale(1.04);
+  }
+}
+
+@keyframes healthLabFriendWave {
+  0%,
+  100% {
+    transform: rotate(0deg) translate3d(0, 0, 0);
+  }
+  25% {
+    transform: rotate(12deg) translate3d(0, -3px, 0);
+  }
+  50% {
+    transform: rotate(-8deg) translate3d(0, -1px, 0);
+  }
+  75% {
+    transform: rotate(10deg) translate3d(0, -3px, 0);
+  }
+}
+
+/* Hub gains life as worlds are restored */
+.health-lab-home-alive {
+  --health-lab-hub-glow: rgba(167, 243, 208, 0.08);
+}
+.health-lab-hub-vitality-3,
+.health-lab-hub-vitality-4 {
+  filter: saturate(1.08);
+}
+.health-lab-world-stage-0 {
+  filter: saturate(0.75);
+}
+.health-lab-world-stage-4 {
+  filter: saturate(1.12);
+}
+
+@keyframes healthLabDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(6px, -5px, 0);
+  }
+}
+
+@keyframes healthLabSway {
+  0%,
+  100% {
+    transform: rotate(-3deg) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: rotate(3.5deg) translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes healthLabTwinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes healthLabBlink {
+  0%,
+  70%,
+  100% {
+    opacity: 0.35;
+  }
+  80% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes healthLabShimmer {
+  0%,
+  100% {
+    opacity: 0.35;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.85;
+    filter: brightness(1.25);
+  }
+}
+
+.health-lab-emoji-bob {
+  display: inline-block;
+  animation: healthLabEmojiBob 3.4s ease-in-out infinite;
+}
+
+@keyframes healthLabEmojiBob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+.health-lab-world-arrive {
+  animation: healthLabWorldArrive 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes healthLabWorldArrive {
+  from {
+    opacity: 0;
+    transform: scale(1.03) translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+.health-lab-portal-flash {
+  animation: healthLabPortalFlash 0.42s ease-out both;
+}
+
+@keyframes healthLabPortalFlash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.health-lab-soft-star-bright {
+  width: 7px;
+  height: 7px;
+  background: rgba(253, 224, 71, 0.75);
+}
+
+.health-lab-soft-stars-magic .health-lab-soft-star {
+  box-shadow: 0 0 8px rgba(253, 224, 71, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-lab-pressable,
+  .health-lab-pressable:active {
+    transition: none;
+    transform: none;
+    filter: none;
+  }
+
+  .health-lab-ambient-on .health-lab-drift-a,
+  .health-lab-ambient-on .health-lab-drift-b,
+  .health-lab-ambient-on .health-lab-drift-slow,
+  .health-lab-ambient-on .health-lab-sway,
+  .health-lab-ambient-on .health-lab-sway-slow,
+  .health-lab-ambient-on .health-lab-sway-delay,
+  .health-lab-ambient-on .health-lab-twinkle,
+  .health-lab-ambient-on .health-lab-blink,
+  .health-lab-ambient-on .health-lab-shimmer,
+  .health-lab-ambient-on .health-lab-shimmer-delay,
+  .health-lab-friend-idle,
+  .health-lab-friend-wave,
+  .health-lab-ambient-on .health-lab-friend-idle,
+  .health-lab-ambient-on .health-lab-friend-wave,
+  .health-lab-world-celebrating .health-lab-friend-wave,
+  .health-lab-emoji-bob,
+  .health-lab-world-arrive,
+  .health-lab-portal-flash {
+    animation: none !important;
+  }
+}
+
+.health-lab-soft-stars {
+  overflow: hidden;
+}
+
+.health-lab-soft-star {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.55);
+  animation: healthLabSoftStar 2.8s ease-in-out infinite;
+}
+
+@keyframes healthLabSoftStar {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+.health-lab-celebrate-pop {
+  animation: healthLabCelebratePop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes healthLabCelebratePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .health-lab-reward-enter {
   animation: healthLabRewardEnter 0.35s ease-out;
 }
@@ -4255,6 +4546,8 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   .health-lab-score-reveal,
   .health-lab-island-rise,
   .health-lab-reward-enter,
+  .health-lab-soft-star,
+  .health-lab-celebrate-pop,
   .health-lab-balloon-victory-shake,
   .health-lab-island-meter-shake,
   .health-lab-dance-floor,

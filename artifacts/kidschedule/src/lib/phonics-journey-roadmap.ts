@@ -119,10 +119,14 @@ export type PhonicsPrimaryCtaState =
   | "take_daily_quiz"
   | "view_progress";
 
+export type PhonicsPrimaryCtaAction = "open_lesson" | "scroll";
+
 export type PhonicsPrimaryCta = {
   state: PhonicsPrimaryCtaState;
   label: string;
   scrollTarget: string;
+  /** Hub sticky CTA: open the lesson runner vs scroll-only targets. */
+  action?: PhonicsPrimaryCtaAction;
 };
 
 export type GuidedMissionGoal = {
@@ -396,8 +400,16 @@ export function resolvePrimaryCta(params: {
   missionComplete: boolean;
   dailyQuizComplete: boolean;
   hasReviewItems?: boolean;
+  /** True when a mid-lesson resume snapshot exists for today's grapheme. */
+  hasLessonResume?: boolean;
 }): PhonicsPrimaryCta {
-  const { missionStarted, missionComplete, dailyQuizComplete, hasReviewItems = false } = params;
+  const {
+    missionStarted,
+    missionComplete,
+    dailyQuizComplete,
+    hasReviewItems = false,
+    hasLessonResume = false,
+  } = params;
 
   if (dailyQuizComplete) {
     if (hasReviewItems) {
@@ -405,12 +417,14 @@ export function resolvePrimaryCta(params: {
         state: "view_progress",
         label: "Review Missed Words",
         scrollTarget: "phonics-practice-sounds",
+        action: "scroll",
       };
     }
     return {
       state: "view_progress",
       label: "View Today's Progress",
-      scrollTarget: "phonics-progress",
+      scrollTarget: "phonics-learning-hub",
+      action: "scroll",
     };
   }
   if (missionComplete) {
@@ -418,19 +432,22 @@ export function resolvePrimaryCta(params: {
       state: "take_daily_quiz",
       label: "Start Quick Check",
       scrollTarget: "phonics-daily-quiz",
+      action: "scroll",
     };
   }
-  if (missionStarted) {
+  if (hasLessonResume || missionStarted) {
     return {
       state: "continue_learning",
-      label: "Continue Lesson",
-      scrollTarget: "phonics-reading-lesson",
+      label: "Continue Today's Adventure",
+      scrollTarget: "phonics-daily-session",
+      action: "open_lesson",
     };
   }
   return {
     state: "start_mission",
-    label: "Start Today's Lesson",
-    scrollTarget: "phonics-start-here",
+    label: "Start Today",
+    scrollTarget: "phonics-daily-session",
+    action: "open_lesson",
   };
 }
 

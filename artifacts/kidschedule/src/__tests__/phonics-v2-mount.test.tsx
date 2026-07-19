@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { PhonicsV2 } from "@/components/phonics-v2";
 import { PHONICS_LEVELS } from "@/lib/phonics-content";
 
@@ -43,7 +43,7 @@ vi.mock("@/components/phonics-v2/voice/usePhonicsVoiceRound", () => ({
 }));
 
 describe("PhonicsV2 mount", () => {
-  it("renders journey map and daily mission", () => {
+  it("renders Daily Learning Session home with one Start Today CTA", () => {
     render(
       <PhonicsV2
         childId={1}
@@ -59,8 +59,13 @@ describe("PhonicsV2 mount", () => {
       />,
     );
     expect(screen.getByTestId("phonics-v2")).toBeTruthy();
-    expect(screen.getByTestId("phonics-v2-journey-map")).toBeTruthy();
-    expect(screen.getByTestId("phonics-v2-daily-mission")).toBeTruthy();
-    expect(screen.getByTestId("word-family-explorer")).toBeTruthy();
+    expect(screen.getByTestId("phonics-learning-hub")).toBeTruthy();
+    expect(screen.getByTestId("phonics-hub-primary-cta")).toHaveTextContent(/Start Today/i);
+    expect(screen.queryByTestId("daily-session-runner")).toBeNull();
+    expect(screen.queryByTestId("phonics-v2-journey-map")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("phonics-hub-primary-cta"));
+    expect(screen.getByTestId("daily-session-runner")).toBeTruthy();
+    expect(screen.getByTestId("daily-session-step-header")).toHaveTextContent(/Step 1 of 4/i);
   });
 });

@@ -1,0 +1,34 @@
+{
+  "interval_index": 18,
+  "at": "2026-07-12T10:38:52.469Z",
+  "degradation_reason": "Coolify /health failed",
+  "render_score": 100,
+  "coolify_score": 45,
+  "coolify_probes": {
+    "health": {
+      "ok": false,
+      "status": 0,
+      "latencyMs": 2,
+      "error": "fetch failed",
+      "url": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io/health"
+    },
+    "ready": {
+      "ok": false,
+      "status": 404,
+      "latencyMs": 2047,
+      "note": "expected 404 — no /ready handler"
+    },
+    "healthzEnv": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 1159,
+      "queue": { "redisPing": true, "bullmq": { "waiting": 0, "active": 0 } }
+    },
+    "gcsAudio": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 1574
+    }
+  },
+  "interpretation": "First probe failed client-side in 2ms; subsequent probes in same cycle reached Coolify successfully."
+}

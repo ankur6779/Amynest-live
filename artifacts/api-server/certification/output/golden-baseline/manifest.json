@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "createdAt": "2026-07-19T16:49:00.000Z",
+    "mode": "READ_ONLY_CAPTURE",
+    "engine": "rule + infant_adaptive + emergency (AI live not captured)",
+    "childName": "GoldenBaselineChild",
+    "seedPolicy": "dateSeed(date, childName) for rule; fixed seed 20260720 for emergency; infant adaptive deterministic from age+wake+sleep+constraints",
+    "country": "IN",
+    "region": "north_indian",
+    "foodType": "veg",
+    "caregiver": "mom",
+    "note": "AI Engine stage marked N/A — no live OpenAI. Persistence/UI not executed."
+  },
+  "counts": {
+    "scenarios": 186,
+    "uniqueFinalHashes": 48,
+    "ages": 14,
+    "dayTypes": 13,
+    "emergency": 4
+  },
+  "invariantsAlwaysTrue": [
+    {
+      "invariant": "timeline_times_parseable",
+      "holdsIn": 186
+    },
+    {
+      "invariant": "has_sleep_anchor",
+      "holdsIn": 186
+    },
+    {
+      "invariant": "has_status_pending",
+      "holdsIn": 186
+    },
+    {
+      "invariant": "required_fields",
+      "holdsIn": 186
+    },
+    {
+      "invariant": "no_empty_activity",
+      "holdsIn": 186
+    },
+    {
+      "invariant": "infant_has_feed_or_meal",
+      "holdsIn": 186
+    }
+  ],
+  "invariantsNotAlwaysTrue": [
+    {
+      "invariant": "timeline_nondecreasing_clock",
+      "true": 131,
+      "false": 55,
+      "holdRate": 0.704
+    },
+    {
+      "invariant": "dinner_before_sleep",
+      "true": 152,
+      "false": 34,
+      "holdRate": 0.817
+    },
+    {
+      "invariant": "dinner_sleep_gap_meets_min",
+      "true": 178,
+      "false": 8,
+      "holdRate": 0.957
+    },
+    {
+      "invariant": "travel_to_school_before_or_at_school_start",
+      "true": 114,
+      "false": 72,
+      "holdRate": 0.613
+    },
+    {
+      "invariant": "no_same_start_collision",
+      "true": 184,
+      "false": 2,
+      "holdRate": 0.989
+    },
+    {
+      "invariant": "hydration_block_exists",
+      "true": 181,
+      "false": 5,
+      "holdRate": 0.973
+    }
+  ],
+  "protectedModules": [
+    {
+      "module": "infant-adaptive-routine.ts",
+      "reason": "Infant day builder",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-age-feeding.ts",
+      "reason": "0–6 / 6–12 feeding",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "sleepPredict.ts",
+      "reason": "Wake windows / naps",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-meal-dinner-integrity.ts",
+      "reason": "Dinner–sleep geometry Tier-1",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-scheduler.ts",
+      "reason": "Timeline math / hard validate",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-emergency-fallback.ts",
+      "reason": "Last-resort safe routine",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-trust-validators.ts",
+      "reason": "Blocking trust",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-safety-gate.ts",
+      "reason": "AI/partial final choke",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-meal-options-safety.ts",
+      "reason": "Diet/allergy sanitize",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "meal-safety.ts",
+      "reason": "Age/choking/allergy core",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-templates.ts",
+      "reason": "Rule engine Tier-1 frozen",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-intelligence-pipeline.ts",
+      "reason": "Orchestrator Tier-1",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-input-validation.ts",
+      "reason": "Input normalization Tier-1",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-country-profile.ts",
+      "reason": "Country windows Tier-1",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-generation-cache.ts",
+      "reason": "AI cache identity",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routes/routines.ts",
+      "reason": "AI/rule/emergency entry",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "services/routines-ai.ts",
+      "reason": "AI JSON chat",
+      "recert": "MANDATORY"
+    },
+    {
+      "module": "routine-generation-client.ts",
+      "reason": "Client fallback ladder",
+      "recert": "MANDATORY"
+    }
+  ],
+  "regressionTestMatrix": [
+    {
+      "area": "School",
+      "scenarios": 8
+    },
+    {
+      "area": "Infant",
+      "scenarios": 54
+    },
+    {
+      "area": "Toddler",
+      "scenarios": 27
+    },
+    {
+      "area": "Meals",
+      "scenarios": 186
+    },
+    {
+      "area": "Nutrition_sanitize",
+      "scenarios": 186
+    },
+    {
+      "area": "Timeline",
+      "scenarios": 186
+    },
+    {
+      "area": "Weather",
+      "scenarios": 56
+    },
+    {
+      "area": "Cache_keys",
+      "scenarios": 186
+    },
+    {
+      "area": "Rule",
+      "scenarios": 130
+    },
+    {
+      "area": "Emergency",
+      "scenarios": 4
+    },
+    {
+      "area": "Country_IN",
+      "scenarios": 186
+    },
+    {
+      "area": "AI_live",
+      "scenarios": 0,
+      "note": "NOT CAPTURED"
+    },
+    {
+      "area": "Optimization_full_pipeline",
+      "scenarios": 0,
+      "note": "NOT CAPTURED — rule/adaptive only"
+    }
+  ],
+  "changeDetectorContract": {
+    "compare": [
+      "hashes.final",
+      "slices.*",
+      "hashes.trust",
+      "hashes.dinnerRepair",
+      "hashes.mealSanitize"
+    ],
+    "allowOnly": "intentional documented diffs with thaw + recert",
+    "failOn": "any unintentional hash drift in always-true invariants or protected module outputs"
+  },
+  "certificationStatus": "PARTIAL_BASELINE_CAPTURED",
+  "gaps": [
+    "AI engine live outputs not hashed",
+    "Full runRoutineIntelligencePipeline not executed per scenario (cost/complexity)",
+    "Persistence DB objects not captured",
+    "Final HTTP API envelope not captured",
+    "UI render not captured",
+    "Festival/doctor may not appear on rule path (known) — baseline records actual empty injection"
+  ]
+}

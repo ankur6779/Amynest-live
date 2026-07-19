@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { GAME_PERF_STYLES, isLowPowerClient, isPageVisible, scheduleIdle } from "./game-perf";
+import {
+  GAME_PERF_STYLES,
+  isLowPowerClient,
+  isPageVisible,
+  scheduleIdle,
+  shouldReduceGameEffects,
+} from "./game-perf";
 
 describe("game-perf", () => {
   it("exports containment and low-power CSS hooks", () => {
     expect(GAME_PERF_STYLES).toContain("content-visibility");
     expect(GAME_PERF_STYLES).toContain("game-perf-low");
+    expect(GAME_PERF_STYLES).toContain("game-hub-frozen");
+    expect(GAME_PERF_STYLES).toContain("gameTargetLife");
     expect(typeof isPageVisible()).toBe("boolean");
     expect(typeof isLowPowerClient()).toBe("boolean");
+    expect(typeof shouldReduceGameEffects()).toBe("boolean");
   });
 
   it("does not mark ordinary 4-core devices as low-power without Save-Data / low memory", () => {

@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { configureHealthLabSync, hydrateHealthLabProfile } from "../health-lab-sync";
 import { ArrowLeft } from "lucide-react";
-import { GAMES } from "../constants";
 import { trackSessionStart, trackSessionAbandon } from "../health-lab-analytics";
 import { useHealthLabState } from "../hooks/use-health-lab-state";
 import { useHealthLabAudio } from "../hooks/use-health-lab-audio";
+import { isMotionGame, pickNextPlayableGame } from "../play-path";
+import { getWorldIdentity } from "../world-identity";
+import { useReducedMotion } from "@/lib/reduced-motion";
 import type { HealthGameId, SessionCompleteOptions } from "../types";
 import { HealthLabShell } from "./health-lab-shell";
 import { HealthLabHome } from "./health-lab-home";
@@ -14,6 +16,7 @@ import { HealthLabDashboard } from "./health-lab-dashboard";
 import { HealthLabShop } from "./health-lab-shop";
 import { HealthLabSessionRewards } from "./health-lab-session-rewards";
 import { HealthLabCelebration } from "./health-lab-celebration";
+import { HealthLabMotionPrep } from "./health-lab-motion-prep";
 import { BreathControlGame } from "./games/breath-control-game";
 import { FlamingoBalanceGame } from "./games/flamingo-balance-game";
 import { ReactionTimeGame } from "./games/reaction-time-game";
@@ -29,14 +32,11 @@ import { GAMES_HEADER_SHELL, GAMES_ICON_BUTTON } from "@/lib/game-theme";
 interface Props {
   childId: number;
   childName: string;
+  /** Playwright / embedded hosts without HubModulePageShell. */
+  standalone?: boolean;
 }
 
-function pickNextUnplayed(state: ReturnType<typeof useHealthLabState>["state"]): HealthGameId | null {
-  const unplayed = GAMES.find((g) => g.id !== "calmness-meter" && !state.gamesCompletedToday.includes(g.id));
-  return unplayed?.id ?? GAMES[0].id;
-}
-
-export function HealthLabZone({ childId, childName }: Props) {
+export function HealthLabZone({ childId, childName, standalone = false }: Props) {
   const { back } = useAppNavigate();
   const {
     state,
@@ -56,6 +56,11 @@ export function HealthLabZone({ childId, childName }: Props) {
 
   const authFetch = useAuthFetch();
   const { t } = useHealthLabI18n();
+  const reduced = useReducedMotion();
+  const [motionPrepGameId, setMotionPrepGameId] = useState<HealthGameId | null>(null);
+  const [arrivalFlash, setArrivalFlash] = useState<{ gameId: HealthGameId; key: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     configureHealthLabSync(authFetch);
@@ -84,7 +89,31 @@ export function HealthLabZone({ childId, childName }: Props) {
     else audio.playCelebration();
   }, [view, audio]);
 
+  const enterGame = (gameId: HealthGameId) => {
+    audio.playTap();
+    audio.playMilestone();
+    if (!reduced) {
+      setArrivalFlash({ gameId, key: Date.now() });
+      window.setTimeout(() => setArrivalFlash(null), 420);
+    }
+    setView({ kind: "game", gameId });
+  };
+
+  const launchGame = (gameId: HealthGameId) => {
+    if (isMotionGame(gameId)) {
+      audio.playTap();
+      setMotionPrepGameId(gameId);
+      return;
+    }
+    setMotionPrepGameId(null);
+    enterGame(gameId);
+  };
+
   usePageBackHandler(() => {
+    if (motionPrepGameId) {
+      setMotionPrepGameId(null);
+      return true;
+    }
     if (pendingCelebrations.length > 0) {
       dismissCelebration();
       return true;
@@ -109,7 +138,7 @@ export function HealthLabZone({ childId, childName }: Props) {
       return true;
     }
     return false;
-  }, [view, pendingCelebrations, dismissCelebration, setView, back]);
+  }, [view, pendingCelebrations, dismissCelebration, setView, back, motionPrepGameId]);
 
   const handleComplete =
     (gameId: HealthGameId) =>
@@ -158,8 +187,9 @@ export function HealthLabZone({ childId, childName }: Props) {
     }
   };
 
+  /** Home chrome comes from HubModulePageShell in-app; standalone hosts need a local bar. */
   const showHeader =
-    view === "home" ||
+    (view === "home" && standalone) ||
     view === "progress" ||
     view === "dashboard" ||
     view === "shop" ||
@@ -168,7 +198,7 @@ export function HealthLabZone({ childId, childName }: Props) {
   const inGame = typeof view === "object" && view.kind === "game";
 
   return (
-    <HealthLabShell showParticles={!inGame}>
+    <HealthLabShell showParticles={!inGame && !motionPrepGameId}>
       {showHeader && (
         <header className={cn(GAMES_HEADER_SHELL, "border-violet-500/20")}>
           <div className="mx-auto flex max-w-lg items-center gap-3">
@@ -198,15 +228,15 @@ export function HealthLabZone({ childId, childName }: Props) {
           childName={childName}
           amyMessage={amyMessage}
           onStartQuest={() => {
-            const next = pickNextUnplayed(state);
-            if (next) setView({ kind: "game", gameId: next });
+            const next = pickNextPlayableGame(state);
+            launchGame(next);
           }}
           onViewProgress={() => setView("progress")}
           onOpenDashboard={() => setView("dashboard")}
           onOpenShop={() => setView("shop")}
           onClaimSurprise={() => claimDailySurprise()}
           onOpenTreasure={() => openTreasureChest()}
-          onSelectGame={(gameId) => setView({ kind: "game", gameId })}
+          onSelectGame={(gameId) => launchGame(gameId)}
         />
       )}
 
@@ -232,7 +262,11 @@ export function HealthLabZone({ childId, childName }: Props) {
         />
       )}
 
-      {typeof view === "object" && view.kind === "game" && renderGame(view.gameId)}
+      {typeof view === "object" && view.kind === "game" && (
+        <div key={view.gameId} className={reduced ? undefined : "health-lab-world-arrive"}>
+          {renderGame(view.gameId)}
+        </div>
+      )}
 
       {typeof view === "object" && view.kind === "session-rewards" && (
         <HealthLabSessionRewards
@@ -240,6 +274,29 @@ export function HealthLabZone({ childId, childName }: Props) {
           celebrations={view.celebrations}
           state={state}
           onContinue={() => setView("home")}
+        />
+      )}
+
+      {arrivalFlash && !reduced && (
+        <div
+          key={arrivalFlash.key}
+          className="pointer-events-none fixed inset-0 z-[60] health-lab-portal-flash"
+          style={{
+            background: `radial-gradient(circle at 50% 45%, ${getWorldIdentity(arrivalFlash.gameId).glow}, transparent 55%)`,
+          }}
+          aria-hidden
+        />
+      )}
+
+      {motionPrepGameId && (
+        <HealthLabMotionPrep
+          gameId={motionPrepGameId}
+          onCancel={() => setMotionPrepGameId(null)}
+          onReady={() => {
+            const id = motionPrepGameId;
+            setMotionPrepGameId(null);
+            enterGame(id);
+          }}
         />
       )}
 

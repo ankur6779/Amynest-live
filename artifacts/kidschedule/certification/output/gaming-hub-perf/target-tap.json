@@ -1,0 +1,18 @@
+{
+  "scenario": "target-tap-4xcpu",
+  "perf": {
+    "sampleMs": 3000,
+    "frameCount": 181,
+    "avgFrameMs": 16.666666666666668,
+    "p95FrameMs": 16.799999999999272,
+    "estimatedFps": 59.99999999999999,
+    "droppedFramesOver33ms": 0,
+    "longTaskCount": 0,
+    "longestTaskMs": 0,
+    "longTasksOver50": 0,
+    "heapStart": 29400000,
+    "heapEnd": 29400000,
+    "heapDelta": 0
+  },
+  "at": "2026-07-19T09:49:34.087Z"
+}

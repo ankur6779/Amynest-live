@@ -1,0 +1,23 @@
+{
+  "scenario": "maze-hard-4xcpu",
+  "anim": {
+    "infiniteInGrid": 2,
+    "mazeStyleHasBoxShadowKeyframes": false,
+    "mazeStyleHasFilterKeyframes": false
+  },
+  "perf": {
+    "sampleMs": 3000,
+    "frameCount": 181,
+    "avgFrameMs": 16.665555555555553,
+    "p95FrameMs": 16.799999999999272,
+    "estimatedFps": 60.00400026668446,
+    "droppedFramesOver33ms": 0,
+    "longTaskCount": 0,
+    "longestTaskMs": 0,
+    "longTasksOver50": 0,
+    "heapStart": 33100000,
+    "heapEnd": 33100000,
+    "heapDelta": 0
+  },
+  "at": "2026-07-19T09:49:25.822Z"
+}

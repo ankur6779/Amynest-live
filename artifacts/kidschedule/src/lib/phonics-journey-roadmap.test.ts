@@ -97,16 +97,28 @@ describe("phonics-journey-roadmap", () => {
       missionComplete: false,
       dailyQuizComplete: false,
     });
-    expect(start.label).toBe("Start Today's Lesson");
-    expect(start.scrollTarget).toBe("phonics-start-here");
+    expect(start.label).toBe("Start Today");
+    expect(start.scrollTarget).toBe("phonics-daily-session");
+    expect(start.action).toBe("open_lesson");
 
     const cont = resolvePrimaryCta({
       missionStarted: true,
       missionComplete: false,
       dailyQuizComplete: false,
     });
-    expect(cont.label).toBe("Continue Lesson");
-    expect(cont.scrollTarget).toBe("phonics-reading-lesson");
+    expect(cont.label).toBe("Continue Today's Adventure");
+    expect(cont.scrollTarget).toBe("phonics-daily-session");
+    expect(cont.action).toBe("open_lesson");
+
+    const resume = resolvePrimaryCta({
+      missionStarted: false,
+      missionComplete: false,
+      dailyQuizComplete: false,
+      hasLessonResume: true,
+    });
+    expect(resume.state).toBe("continue_learning");
+    expect(resume.label).toBe("Continue Today's Adventure");
+    expect(resume.action).toBe("open_lesson");
 
     expect(resolvePrimaryCta({ missionStarted: true, missionComplete: true, dailyQuizComplete: false }).label).toBe(
       "Start Quick Check",

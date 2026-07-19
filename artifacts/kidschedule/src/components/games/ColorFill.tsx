@@ -24,12 +24,12 @@ const COLOR_FILL_STYLES = `
   75% { transform: translateX(5px); }
 }
 @keyframes cfErrorGlow {
-  0%, 100% { box-shadow: inset 0 0 0 0 rgba(239,68,68,0); }
-  50% { box-shadow: inset 0 0 14px 2px rgba(239,68,68,0.55); }
+  0%, 100% { outline-color: transparent; }
+  50% { outline-color: rgba(239,68,68,0.85); }
 }
 @keyframes cfCorrectPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.92; }
 }
 @keyframes cfWave {
   0% { transform: scale(1); opacity: 1; }

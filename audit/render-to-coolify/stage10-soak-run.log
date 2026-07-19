@@ -1,0 +1,14 @@
+==> Syncing monitor scripts to 167.233.39.146
+==> Installing Node.js 22 + tsx if missing
+
+changed 5 packages in 2s
+
+2 packages are looking for funding
+  run `npm fund` for details
+v22.23.1
+tsx v4.19.4
+node v22.23.1
+Deployed monitor to 167.233.39.146
+==> Starting 60-minute certification soak on Hetzner
+Read from remote host 167.233.39.146: Connection reset by peer
+client_loop: send disconnect: Broken pipe

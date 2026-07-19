@@ -1,0 +1,103 @@
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:66423) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:66423) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Pre-repair hot tables (live-source drift)...
+==> Synced 116 sequences from Render
+==> Counting 130 cold + 7 hot tables...
+(node:66423) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+==> startup_funnel_events drift attempt 1: render=7730 coolify=7701 delta=-29
+==> startup_funnel_events matched after 2 repair→count cycles
+==> analytics_events drift attempt 1: render=496748 coolify=496744 delta=-4
+==> analytics_events drift attempt 2: render=496772 coolify=496771 delta=-1
+==> analytics_events drift attempt 3: render=496809 coolify=496806 delta=-3
+==> analytics_events drift attempt 4: render=496849 coolify=496845 delta=-4
+==> analytics_events drift attempt 5: render=496882 coolify=496879 delta=-3
+==> analytics_events drift attempt 6: render=496918 coolify=496915 delta=-3
+==> analytics_events drift attempt 7: render=496931 coolify=496929 delta=-2
+==> analytics_events drift attempt 8: render=496983 coolify=496980 delta=-3
+==> Post-count repair pass 1 (analytics_events)
+==> Post-count repair pass 2 (analytics_events)
+==> Post-count repair pass 3 (analytics_events)
+==> Final gate 1: row repair (analytics_events)
+==> Final gate 1: rows=1 sequences=0
+==> Final gate 2: row repair (analytics_events)
+==> Final gate 2: rows=1 sequences=0
+==> Final gate 3: row repair (analytics_events)
+==> Final gate 3: rows=1 sequences=0
+==> Final gate 4: row repair (analytics_events)
+==> Final gate 4: rows=1 sequences=0
+==> Final gate 5: row repair (analytics_events)
+==> Final gate 5: rows=1 sequences=0
+==> Final gate 6: row repair (analytics_events)
+==> Final gate 6: rows=1 sequences=0
+==> Final gate 7: row repair (analytics_events)
+==> Final gate 7: rows=1 sequences=0
+==> Final gate 8: row repair (analytics_events)
+==> Final gate passed on attempt 8
+==> Comparing extensions, indexes, constraints, sequences...
+==> Final sequence sync: 116 sequences
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-12T07:59:35.585Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: PASS ✓
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 522,568 | 522,568 | 0 |
+| Row mismatches | — | — | 0 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 0 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 497,834 | 497,834 | ok |
+| billing_audit_events | 337 | 337 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,253 | 4,253 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 38 | 38 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 310 | 310 | ok |
+| tts_cache | 6,468 | 6,468 | ok |
+| user_devices | 284 | 284 | ok |
+| user_identity_aliases | 185 | 185 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-12T07-59-35-585Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: PASS

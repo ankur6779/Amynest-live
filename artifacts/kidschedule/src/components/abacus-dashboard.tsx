@@ -3,13 +3,19 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   ABACUS_BADGES,
+  ABACUS_SKILLS,
   evaluateAbacusBadges,
   getLevel,
   LEVELS,
+  masterySummary,
+  SKILL_LABELS,
   type LevelId,
+  type MasteryState,
+  type ParentInsightsV4,
 } from "@workspace/abacus";
 import { abacusLevelLabelDefault, isAbacusLevelSlug } from "@workspace/abacus/i18n";
 import type { useAbacusTranslation } from "@/hooks/use-abacus-translation";
+import { AbacusParentInsightsV4Panel } from "@/components/abacus/abacus-parent-insights-v4";
 
 type Mode = "learn" | "practice" | "challenge" | "mental" | "tutor";
 type ViewMode = "child" | "parent";
@@ -229,12 +235,18 @@ export function AbacusParentPanel({
   streakDays,
   dailyCorrect,
   dailyGoal,
+  mastery,
+  previousWeekAccuracy,
+  insightsV4,
   t,
 }: {
   progress: ProgressShape;
   streakDays: number;
   dailyCorrect: number;
   dailyGoal: number;
+  mastery?: MasteryState | null;
+  previousWeekAccuracy?: number | null;
+  insightsV4?: ParentInsightsV4 | null;
   t: ReturnType<typeof useAbacusTranslation>["t"];
 }) {
   const completed = progress.completedLevels ?? [];
@@ -279,6 +291,104 @@ export function AbacusParentPanel({
           <p className="text-[10px] text-muted-foreground font-semibold">{t("abacus.levels_cleared")}</p>
         </div>
       </div>
+
+      {(() => {
+        const scores = LEVELS.map((l) => ({
+          id: l.id,
+          best: progress.bestScores[String(l.id)],
+        })).filter((s) => s.best);
+        const fastest = [...scores].sort(
+          (a, b) => (b.best?.points ?? 0) - (a.best?.points ?? 0),
+        )[0];
+        const weakest = [...scores].sort(
+          (a, b) => (a.best?.accuracyPct ?? 100) - (b.best?.accuracyPct ?? 100),
+        )[0];
+        const lastCleared = completed.length
+          ? (completed[completed.length - 1] as LevelId)
+          : (0 as 0);
+        const nextUnlock = Math.min(LEVELS.length, (lastCleared || 0) + 1) as LevelId;
+        const nextDef = getLevel(nextUnlock);
+        const allClear = completed.length >= LEVELS.length;
+        const mSummary = mastery ? masterySummary(mastery) : null;
+        const weekDelta =
+          previousWeekAccuracy != null ? accuracy - previousWeekAccuracy : null;
+        return (
+          <div
+            className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-3 space-y-1.5 text-xs"
+            data-testid="abacus-parent-insights"
+          >
+            <p className="font-bold text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("abacus.insights_title", "Insights")}
+            </p>
+            <p>
+              {t("abacus.insights_accuracy", "Overall accuracy")}: <strong>{accuracy}%</strong>
+              {weekDelta != null && (
+                <span className="ml-1 text-muted-foreground">
+                  ({weekDelta >= 0 ? "+" : ""}
+                  {weekDelta}% vs last week)
+                </span>
+              )}
+            </p>
+            {mSummary?.strongest && (
+              <p>
+                Strongest skill: {SKILL_LABELS[mSummary.strongest.skill]} (
+                {mSummary.strongest.tier})
+              </p>
+            )}
+            {mSummary?.weakest && (
+              <p>
+                Needs practice: {SKILL_LABELS[mSummary.weakest.skill]} (
+                {mSummary.weakest.tier})
+              </p>
+            )}
+            {fastest?.best && (
+              <p>
+                {t("abacus.insights_strongest", "Strongest level")}: L{fastest.id} (
+                {fastest.best.points} pts)
+              </p>
+            )}
+            {weakest?.best && (
+              <p>
+                {t("abacus.insights_weakest", "Needs practice")}: L{weakest.id} (
+                {weakest.best.accuracyPct}%)
+              </p>
+            )}
+            <p>
+              {t("abacus.insights_next", "Recommended next")}:{" "}
+              {allClear
+                ? t("abacus.insights_all_clear", "Keep polishing with Mental + Tutor")
+                : `Challenge L${Math.max(1, lastCleared || 1)} → unlock L${nextUnlock} (need ${nextDef.unlockAccuracyPct}%)`}
+            </p>
+            <p className="text-muted-foreground">
+              Predicted next level: L{Math.min(LEVELS.length, (progress.currentLevel || 1) + (accuracy >= 70 ? 1 : 0))}
+            </p>
+          </div>
+        );
+      })()}
+
+      {insightsV4 && <AbacusParentInsightsV4Panel report={insightsV4} />}
+
+      {mastery && (
+        <div className="space-y-2" data-testid="abacus-mastery-map">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            Skill mastery
+          </p>
+          {ABACUS_SKILLS.map((skill) => {
+            const row = mastery[skill];
+            return (
+              <div key={skill} className="space-y-0.5">
+                <div className="flex justify-between text-[10px] font-semibold">
+                  <span>{SKILL_LABELS[skill]}</span>
+                  <span className="capitalize text-muted-foreground">
+                    {row.tier} · {row.score}
+                  </span>
+                </div>
+                <Progress value={row.score} className="h-1.5" />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="space-y-2">
         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">

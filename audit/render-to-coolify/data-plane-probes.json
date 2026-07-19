@@ -1,0 +1,32 @@
+{
+  "collected_at": "2026-07-13T11:00:21.450122+00:00",
+  "worker": {
+    "AMYNEST_ENV": "OTHER",
+    "WORKER_ENABLED": "OTHER",
+    "REDIS_URL": "COOLIFY",
+    "DATABASE_URL": "COOLIFY",
+    "OPENAI_API_KEY": "OTHER",
+    "DEFAULT_OBJECT_STORAGE_BUCKET_ID": "SHARED",
+    "GCS_BUCKET_NAME": "MISSING"
+  },
+  "coolify_backend": {
+    "FIREBASE_PROJECT_ID": "SHARED",
+    "DATABASE_URL": "COOLIFY",
+    "REDIS_URL": "COOLIFY",
+    "API_PUBLIC_URL": "COOLIFY",
+    "NOTIFICATIONS_ENABLED": "OTHER",
+    "BACKGROUND_TASKS_ENABLED": "OTHER",
+    "DEFAULT_OBJECT_STORAGE_BUCKET_ID": "SHARED"
+  },
+  "render_redis": {
+    "completed": 18,
+    "failed": 0,
+    "active": 0,
+    "wait": 0
+  },
+  "coolify_redis": {
+    "bull_keys": 23
+  },
+  "coolify_db_total_rows": 588151,
+  "stateful_plane_certified": true
+}

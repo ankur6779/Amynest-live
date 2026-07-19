@@ -37,7 +37,7 @@ if (root) {
   createRoot(root).render(
     <StrictMode>
       <AuthContext.Provider value={stubAuth}>
-        <HealthLabZone childId={childId} childName={childName} />
+        <HealthLabZone childId={childId} childName={childName} standalone />
       </AuthContext.Provider>
     </StrictMode>,
   );

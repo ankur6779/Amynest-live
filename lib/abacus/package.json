@@ -10,7 +10,7 @@
     "./i18n": "./src/i18n.ts"
   },
   "scripts": {
-    "test": "node --import tsx/esm --test src/abacus.test.ts src/i18n.test.ts src/phase34.test.ts"
+    "test": "node --import tsx/esm --test src/abacus.test.ts src/i18n.test.ts src/phase34.test.ts src/v2.test.ts src/v3.test.ts src/v4.test.ts"
   },
   "devDependencies": {
     "tsx": "catalog:"

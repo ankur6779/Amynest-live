@@ -1,0 +1,93 @@
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:77570) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:77570) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Pre-repair hot tables (live-source drift)...
+==> Synced 116 sequences from Render
+==> Comparing 137 tables...
+(node:77570) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+==> Comparing extensions, indexes, constraints, sequences...
+
+# Render → Coolify PostgreSQL verification
+
+Generated: 2026-07-11T22:15:04.912Z
+Source: postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen
+Target: postgresql://postgres:***@127.0.0.1:15432/postgres
+
+## Result: FAIL ✗
+
+| Check | Source | Target | Delta |
+|-------|-------:|-------:|------:|
+| Tables | 137 | 137 | — |
+| Total rows | 487,726 | 487,333 | -393 |
+| Row mismatches | — | — | 3 |
+| Indexes missing on target | — | — | 0 |
+| Constraints missing on target | — | — | 0 |
+| Sequence issues | — | — | 3 |
+| Extension mismatches | — | — | 0 |
+
+## Key production tables
+
+| Table | Render | Coolify | Status |
+|-------|-------:|--------:|--------|
+| analytics_events | 467,175 | 467,080 | mismatch |
+| billing_audit_events | 329 | 329 | ok |
+| children | 99 | 99 | ok |
+| notification_log | 4,116 | 4,116 | ok |
+| onboarding_profiles | 92 | 92 | ok |
+| parent_profiles | 93 | 93 | ok |
+| push_tokens | 39 | 39 | ok |
+| routines | 48 | 48 | ok |
+| speech_coach_v2_sessions | 20 | 20 | ok |
+| speech_coach_v2_turn_log | 63 | 63 | ok |
+| subscriptions | 308 | 308 | ok |
+| tts_cache | 6,312 | 6,056 | mismatch |
+| user_devices | 282 | 282 | ok |
+| user_identity_aliases | 183 | 183 | ok |
+| worksheet_downloads | 0 | 0 | ok |
+
+## Row mismatches (3)
+
+| Table | Render | Coolify | Delta |
+|-------|-------:|--------:|------:|
+| ai_content_cache | 391 | 349 | -42 |
+| analytics_events | 467175 | 467080 | -95 |
+| tts_cache | 6312 | 6056 | -256 |
+
+## Sequence issues
+
+| Sequence | Render | Coolify | Status |
+|----------|-------:|--------:|--------|
+| analytics_events_id_seq | 468441 | 468262 | behind |
+| family_digital_twin_id_seq | 1221164 | 1221050 | behind |
+| family_intelligence_snapshots_id_seq | 1221164 | 1221050 | behind |
+
+---
+Re-run: `pnpm run migrate:render-to-coolify:verify`
+
+Report JSON: /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-2026-07-11T22-15-04-912Z.json
+Report MD:   /Users/macbook/AmyNestProject/AmyNest-AI/scripts/audit/render-to-coolify/verify-latest.md
+Result: FAIL
+/Users/macbook/AmyNestProject/AmyNest-AI/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 migrate:render-to-coolify:verify: `tsx ./src/render-to-coolify/verify-replica.ts`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.

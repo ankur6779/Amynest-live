@@ -1,0 +1,38 @@
+ WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> workspace@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI
+> pnpm --filter @workspace/scripts run migrate:render-to-coolify:verify
+
+.                                        |  WARN  Unsupported engine: wanted: {"node":">=20.0.0 <23.0.0"} (current: {"node":"v26.0.0","pnpm":"9.15.9"})
+
+> @workspace/scripts@0.0.0 migrate:render-to-coolify:verify /Users/macbook/AmyNestProject/AmyNest-AI/scripts
+> tsx ./src/render-to-coolify/verify-replica.ts
+
+==> Verifying database connections...
+(node:97662) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:97662) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+✓ Render (source) connected (postgresql://amynest_db_jnen_user:***@dpg-d85k80jtqb8s7382m7lg-a.singapore-postgres.render.com/amynest_db_jnen)
+✓ Coolify (target) connected (postgresql://postgres:***@127.0.0.1:15432/postgres)
+==> Pre-repair hot tables (live-source drift)...
+==> Synced 116 sequences from Render
+==> Comparing 137 tables...
+(node:97662) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+==> Hot-table convergence attempt 1 (analytics_events)
+==> Hot-table convergence attempt 2 (analytics_events)
+==> Hot-table convergence attempt 3 (analytics_events)
+==> Hot-table convergence attempt 4 (analytics_events)
+==> Hot-table convergence attempt 5 (analytics_events)
+==> Hot-table convergence attempt 6 (analytics_events)
+==> Hot-table convergence attempt 7 (analytics_events)
+==> Hot-table convergence attempt 8 (analytics_events)
+==> Hot-table convergence attempt 9 (analytics_events)
+==> Hot-table convergence attempt 10 (analytics_events)
+==> Hot-table convergence attempt 11 (analytics_events)

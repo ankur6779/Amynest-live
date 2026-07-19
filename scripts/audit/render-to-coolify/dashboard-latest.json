@@ -1,0 +1,421 @@
+{
+  "generated_at": "2026-07-12T10:40:58.097Z",
+  "canary_percent": 1,
+  "stage_index": 0,
+  "stable_since": "2026-07-12T10:39:55.809Z",
+  "degraded": false,
+  "degradation_reason": null,
+  "overall_score": 100,
+  "render": {
+    "label": "render",
+    "url": "https://amynest-backend-dykj.onrender.com",
+    "health": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 128,
+      "body": {
+        "ok": true,
+        "timestamp": 1783852855853
+      }
+    },
+    "ready": {
+      "ok": false,
+      "status": 404,
+      "latencyMs": 92,
+      "body": {
+        "success": false,
+        "data": {},
+        "fallback": false,
+        "error": "No handler for GET /ready on api-server."
+      }
+    },
+    "healthzEnv": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 601,
+      "body": {
+        "ok": true,
+        "amynestEnv": "production",
+        "profile": "PROD",
+        "nodeEnv": "production",
+        "render": true,
+        "renderServiceName": "amynest-backend-dykj",
+        "apiPublicUrl": "https://amynest-backend-dykj.onrender.com",
+        "queue": {
+          "mode": "bullmq",
+          "redis": true,
+          "redisPing": true,
+          "workerExpected": true,
+          "status": "ok",
+          "bullmq": {
+            "waiting": 0,
+            "active": 0,
+            "completed": 2,
+            "failed": 0,
+            "delayed": 0,
+            "paused": 0
+          }
+        },
+        "scheduler": {
+          "mode": "single_active",
+          "active_plane": "render",
+          "local_plane": "render",
+          "owner": true,
+          "background_tasks_enabled": true,
+          "notifications_enabled": true,
+          "expected_env": {
+            "BACKGROUND_TASKS_ENABLED": "true",
+            "NOTIFICATIONS_ENABLED": "true",
+            "SCHEDULER_ACTIVE_PLANE": "render"
+          },
+          "job_catalog_count": 23,
+          "schedulerOwner": true,
+          "jobs": [
+            "global_notification_tick",
+            "routine_item_sweep",
+            "infant_notification_tick",
+            "feature_notification_tick",
+            "stale_pending_sweep",
+            "token_sweep",
+            "notification_cron_ping",
+            "infant_notification_tick_http",
+            "phonics_curriculum_daily",
+            "phonics_content_drip",
+            "story_gcs_mirror",
+            "story_gcs_mirror_ping",
+            "tts_orphan_cleanup",
+            "learning_content_seed",
+            "learning_seed_weekly_ping",
+            "weekly_recap_push",
+            "retention_weekly_summary",
+            "billing_reconciliation",
+            "trial_expiry_sweep",
+            "razorpay_webhook_cleanup",
+            "admin_health_digest",
+            "render_keep_warm",
+            "bullmq_ai_jobs"
+          ]
+        },
+        "schedulerOwner": true,
+        "BACKGROUND_TASKS_ENABLED": true,
+        "NOTIFICATIONS_ENABLED": true,
+        "services": {
+          "googleDrive": {
+            "configured": true,
+            "activeVar": "GOOGLE_API_KEY",
+            "vars": [
+              {
+                "name": "GOOGLE_API_KEY",
+                "presence": "set",
+                "length": 39
+              },
+              {
+                "name": "GOOGLE_DRIVE_API_KEY",
+                "presence": "missing",
+                "length": null
+              },
+              {
+                "name": "GOOGLE_DRIVE_KEY",
+                "presence": "set",
+                "length": 39
+              }
+            ],
+            "misplacedFrontendKey": false
+          },
+          "tts": {
+            "provider": "openai",
+            "openAiTtsConfigured": true,
+            "cacheGcsEnabled": true
+          },
+          "openai": {
+            "configured": true,
+            "source": "OPENAI_API_KEY"
+          },
+          "ttsStorage": {
+            "backend": "gcs",
+            "bucketId": "set",
+            "bucketName": "amynest-…",
+            "credentials": {
+              "ok": true,
+              "projectId": "amynest-836ff",
+              "clientEmail": "amynest-storage@amynest-836ff.iam.gserviceaccount.com",
+              "source": "GCS_SERVICE_ACCOUNT_JSON"
+            },
+            "legacyGcsConfigured": true,
+            "ttsStorageForced": null
+          },
+          "phonicsTests": {
+            "sessionSecretReady": true,
+            "source": "session_secret",
+            "error": null
+          }
+        }
+      }
+    },
+    "gcsAudio": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 1301,
+      "body": {
+        "ok": true,
+        "status": "PASS",
+        "tts": {
+          "provider": "openai",
+          "openAiConfigured": true,
+          "elevenLabsConfigured": true,
+          "elevenLabsFallback": true,
+          "cacheGcsEnabled": true,
+          "storageBackend": "gcs",
+          "openAiTts": {
+            "model": "gpt-4o-mini-tts",
+            "voice": "coral",
+            "accent": "indian",
+            "instructionsPreview": "Speak in a warm, friendly female voice with a natural Indian English accent, like a caring Indian parent coach. Keep ton"
+          },
+          "streamProbe": {
+            "ok": true,
+            "bytes": 1660,
+            "latencyMs": 1200
+          }
+        },
+        "playback": {
+          "mseStreamingEnvEnabled": false,
+          "mseStreamingAdminDisabled": true,
+          "mseStreamingActive": false,
+          "phase1BlobFallback": true
+        },
+        "staticAudio": {
+          "gcsConfigured": true,
+          "gcsProbeOk": true,
+          "serverCircuitOpen": false,
+          "bucketHint": "amynest-…"
+        },
+        "env": {
+          "openAiApiKey": "set",
+          "elevenLabsApiKey": "set",
+          "gcsCredentials": "set",
+          "bucketId": "set",
+          "ttsUseGcs": true,
+          "enableMseStreaming": "false"
+        },
+        "missingEnv": [],
+        "hints": []
+      }
+    },
+    "error5xxRate": 0,
+    "latencyP95Ms": 1301,
+    "score": 100
+  },
+  "coolify": {
+    "label": "coolify",
+    "url": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+    "health": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 319,
+      "body": {
+        "ok": true,
+        "timestamp": 1783852855904
+      }
+    },
+    "ready": {
+      "ok": false,
+      "status": 404,
+      "latencyMs": 302,
+      "body": {
+        "success": false,
+        "data": {},
+        "fallback": false,
+        "error": "No handler for GET /ready on api-server."
+      }
+    },
+    "healthzEnv": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 306,
+      "body": {
+        "ok": true,
+        "amynestEnv": "production",
+        "profile": "PROD",
+        "nodeEnv": "production",
+        "render": false,
+        "renderServiceName": null,
+        "apiPublicUrl": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+        "queue": {
+          "mode": "bullmq",
+          "redis": true,
+          "redisPing": true,
+          "workerExpected": true,
+          "status": "ok",
+          "bullmq": {
+            "waiting": 0,
+            "active": 0,
+            "completed": 2,
+            "failed": 0,
+            "delayed": 0,
+            "paused": 0
+          }
+        },
+        "scheduler": {
+          "mode": "single_active",
+          "active_plane": "render",
+          "local_plane": "coolify",
+          "owner": false,
+          "background_tasks_enabled": false,
+          "notifications_enabled": false,
+          "expected_env": {
+            "BACKGROUND_TASKS_ENABLED": "false",
+            "NOTIFICATIONS_ENABLED": "false",
+            "SCHEDULER_ACTIVE_PLANE": "render"
+          },
+          "job_catalog_count": 23,
+          "schedulerOwner": false,
+          "jobs": [
+            "global_notification_tick",
+            "routine_item_sweep",
+            "infant_notification_tick",
+            "feature_notification_tick",
+            "stale_pending_sweep",
+            "token_sweep",
+            "notification_cron_ping",
+            "infant_notification_tick_http",
+            "phonics_curriculum_daily",
+            "phonics_content_drip",
+            "story_gcs_mirror",
+            "story_gcs_mirror_ping",
+            "tts_orphan_cleanup",
+            "learning_content_seed",
+            "learning_seed_weekly_ping",
+            "weekly_recap_push",
+            "retention_weekly_summary",
+            "billing_reconciliation",
+            "trial_expiry_sweep",
+            "razorpay_webhook_cleanup",
+            "admin_health_digest",
+            "render_keep_warm",
+            "bullmq_ai_jobs"
+          ]
+        },
+        "schedulerOwner": false,
+        "BACKGROUND_TASKS_ENABLED": false,
+        "NOTIFICATIONS_ENABLED": false,
+        "services": {
+          "googleDrive": {
+            "configured": true,
+            "activeVar": "GOOGLE_API_KEY",
+            "vars": [
+              {
+                "name": "GOOGLE_API_KEY",
+                "presence": "set",
+                "length": 39
+              },
+              {
+                "name": "GOOGLE_DRIVE_API_KEY",
+                "presence": "missing",
+                "length": null
+              },
+              {
+                "name": "GOOGLE_DRIVE_KEY",
+                "presence": "set",
+                "length": 39
+              }
+            ],
+            "misplacedFrontendKey": false
+          },
+          "tts": {
+            "provider": "openai",
+            "openAiTtsConfigured": true,
+            "cacheGcsEnabled": true
+          },
+          "openai": {
+            "configured": true,
+            "source": "OPENAI_API_KEY"
+          },
+          "ttsStorage": {
+            "backend": "gcs",
+            "bucketId": "set",
+            "bucketName": "amynest-…",
+            "credentials": {
+              "ok": true,
+              "projectId": "amynest-836ff",
+              "clientEmail": "amynest-storage@amynest-836ff.iam.gserviceaccount.com",
+              "source": "GCS_SERVICE_ACCOUNT_JSON"
+            },
+            "legacyGcsConfigured": true,
+            "ttsStorageForced": null
+          },
+          "phonicsTests": {
+            "sessionSecretReady": true,
+            "source": "session_secret",
+            "error": null
+          }
+        }
+      }
+    },
+    "gcsAudio": {
+      "ok": true,
+      "status": 200,
+      "latencyMs": 1355,
+      "body": {
+        "ok": true,
+        "status": "PASS",
+        "tts": {
+          "provider": "openai",
+          "openAiConfigured": true,
+          "elevenLabsConfigured": true,
+          "elevenLabsFallback": true,
+          "cacheGcsEnabled": true,
+          "storageBackend": "gcs",
+          "openAiTts": {
+            "model": "gpt-4o-mini-tts",
+            "voice": "coral",
+            "accent": "indian",
+            "instructionsPreview": "Speak in a warm, friendly female voice with a natural Indian English accent, like a caring Indian parent coach. Keep ton"
+          },
+          "streamProbe": {
+            "ok": true,
+            "bytes": 1661,
+            "latencyMs": 1025
+          }
+        },
+        "playback": {
+          "mseStreamingEnvEnabled": false,
+          "mseStreamingAdminDisabled": true,
+          "mseStreamingActive": false,
+          "phase1BlobFallback": true
+        },
+        "staticAudio": {
+          "gcsConfigured": true,
+          "gcsProbeOk": true,
+          "serverCircuitOpen": false,
+          "bucketHint": "amynest-…"
+        },
+        "env": {
+          "openAiApiKey": "set",
+          "elevenLabsApiKey": "set",
+          "gcsCredentials": "set",
+          "bucketId": "set",
+          "ttsUseGcs": true,
+          "enableMseStreaming": "false"
+        },
+        "missingEnv": [],
+        "hints": []
+      }
+    },
+    "error5xxRate": 0,
+    "latencyP95Ms": 1355,
+    "score": 100
+  },
+  "database": {
+    "row_delta": null
+  },
+  "redis": {},
+  "next_stage": 10,
+  "stages": [
+    1,
+    10,
+    25,
+    50,
+    100
+  ]
+}

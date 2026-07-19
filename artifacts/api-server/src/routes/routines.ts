@@ -2095,6 +2095,11 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     aqi: aiEnvContext?.AQI ?? null,
     fridgeItems: fridgeItems ?? null,
     fixedActivities: fixedActivities ?? [],
+    caregiver,
+    specialPlans: specialPlans ?? null,
+    allergies: effAllergies,
+    region,
+    foodType,
   });
   const cachedInQueue = getCachedRoutine(cacheKey);
   if (cachedInQueue) {

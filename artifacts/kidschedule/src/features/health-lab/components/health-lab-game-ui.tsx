@@ -1,19 +1,28 @@
 import type { CSSProperties, PointerEvent, ReactNode, RefObject } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ChevronRight, Gamepad2, Zap } from "lucide-react";
+import { ArrowLeft, Check, Play, Sparkles, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import type { GAMES } from "../constants";
-import { formatGamePersonalBest, formatTrainSkills } from "../game-card-utils";
+import { formatGamePersonalBest } from "../game-card-utils";
+import type { AdventureBadge } from "../play-path";
 import type { GameSessionResult } from "../types";
-import { HEALTH_LAB_GAME_BTN, HEALTH_LAB_SECTION_EYEBROW, HEALTH_LAB_SECTION_TITLE, HEALTH_LAB_THEME } from "../theme";
+import { getWorldIdentity } from "../world-identity";
+import type { WorldEvolutionSnapshot } from "../world-evolution";
+import { HealthLabWorldMotif } from "./health-lab-world-motif";
+import {
+  HEALTH_LAB_GAME_BTN,
+  HEALTH_LAB_SECTION_EYEBROW,
+  HEALTH_LAB_SECTION_TITLE,
+  HEALTH_LAB_THEME,
+} from "../theme";
 
 type GameDef = (typeof GAMES)[number];
 
-const SENSOR_LABELS: Record<GameDef["sensor"], string> = {
-  touch: "Touch",
-  motion: "Motion",
-  aggregate: "Report",
+const SENSOR_KID: Record<GameDef["sensor"], string> = {
+  touch: "👆 Tap",
+  motion: "📱 Move",
+  aggregate: "📖 Story",
 };
 
 const GAME_VISUALS: Record<
@@ -69,30 +78,25 @@ export function HealthLabChallengesSection({
   title,
   hint,
   children,
+  footer,
 }: {
   eyebrow: string;
   title: string;
   hint: string;
   children: ReactNode;
+  footer?: ReactNode;
 }) {
   return (
-    <section aria-labelledby="challenges-heading">
-      <div className={cn(HEALTH_LAB_THEME.cardGlass, "relative mb-4 overflow-hidden border-white/[0.14] p-4")}>
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" aria-hidden />
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-300/20 bg-gradient-to-br from-violet-500/30 to-cyan-500/20 shadow-[0_8px_24px_-8px_rgba(139,92,246,0.45)]">
-            <Gamepad2 className="h-5 w-5 text-violet-100" />
-          </div>
-          <div className="min-w-0">
-            <p className={HEALTH_LAB_SECTION_EYEBROW}>{eyebrow}</p>
-            <h2 id="challenges-heading" className={cn(HEALTH_LAB_SECTION_TITLE, "mt-1 text-lg sm:text-xl health-lab-title-shine")}>
-              {title}
-            </h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-violet-100/60">{hint}</p>
-          </div>
-        </div>
+    <section aria-labelledby="challenges-heading" className="space-y-3">
+      <div className="min-w-0 px-0.5">
+        {eyebrow ? <p className={HEALTH_LAB_SECTION_EYEBROW}>{eyebrow}</p> : null}
+        <h2 id="challenges-heading" className={cn(HEALTH_LAB_SECTION_TITLE, "mt-0.5 text-xl sm:text-2xl")}>
+          {title}
+        </h2>
+        {hint ? <p className="mt-1 text-sm leading-relaxed text-violet-100/65">{hint}</p> : null}
       </div>
-      <div className="grid gap-2">{children}</div>
+      <div className="grid gap-3">{children}</div>
+      {footer}
     </section>
   );
 }
@@ -103,124 +107,171 @@ export function HealthLabGameCard({
   gameHistory = [],
   onSelect,
   index = 0,
+  badge = null,
+  playLabel = "Play",
+  evolution = null,
 }: {
   game: GameDef;
   personalBest?: number;
   gameHistory?: GameSessionResult[];
   onSelect: () => void;
   index?: number;
+  badge?: AdventureBadge;
+  playLabel?: string;
+  /** Visual world stage from existing completion history (presentation only). */
+  evolution?: WorldEvolutionSnapshot | null;
 }) {
   const reduced = useReducedMotion();
   const visuals = GAME_VISUALS[game.id];
+  const world = getWorldIdentity(game.id);
   const best = formatGamePersonalBest(game.id, personalBest, gameHistory, game.bestScoreKind);
+  const isRecommended = badge === "recommended";
+  const isCompleted = badge === "completed";
+  const stage = evolution?.stage ?? 0;
+  const unrestored = stage === 0;
 
   return (
     <motion.button
       type="button"
       onClick={onSelect}
-      initial={reduced ? false : { opacity: 0, y: 12 }}
+      initial={reduced ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={reduced ? undefined : { y: -1 }}
-      whileTap={reduced ? undefined : { scale: 0.99 }}
-      transition={{ delay: index * 0.04, duration: 0.35, ease: "easeOut" }}
+      whileHover={reduced ? undefined : { y: -2 }}
+      whileTap={reduced ? undefined : { scale: 0.985 }}
+      transition={{ delay: Math.min(index, 4) * 0.05, duration: 0.32, ease: "easeOut" }}
+      aria-label={`${playLabel}: ${world.worldName}. ${evolution?.milestoneLabel ?? world.kidAction}. ${game.title}`}
       className={cn(
         HEALTH_LAB_GAME_BTN,
-        "health-lab-premium-card group w-full text-left",
-        "health-lab-game-card-shimmer",
+        "health-lab-pressable group relative w-full min-h-[128px] overflow-hidden border-white/18 text-left",
+        isRecommended && "ring-2 ring-amber-300/70 ring-offset-2 ring-offset-[#0a0f2e]",
+        stage >= 4 && "ring-1 ring-emerald-300/35",
       )}
       style={{
-        boxShadow: `0 12px 36px -18px rgba(0,0,0,0.75), 0 0 40px -24px ${visuals.glow}`,
+        boxShadow: `0 14px 40px -18px rgba(0,0,0,0.8), 0 0 40px -20px ${world.glow}`,
       }}
     >
-      <div className="health-lab-premium-card-inner relative overflow-hidden px-3 py-2.5">
-        <div
-          className={cn("pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r opacity-70", visuals.accent)}
-          aria-hidden
-        />
+      <div
+        className={cn(
+          "absolute inset-0 bg-gradient-to-br transition-opacity duration-500",
+          world.sky,
+          unrestored && "opacity-55 grayscale-[0.35]",
+          stage >= 3 && "opacity-100",
+        )}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          "absolute inset-0 bg-[#070b24]/35",
+          stage >= 4 && "bg-[#070b24]/20",
+          unrestored && "bg-[#070b24]/55",
+        )}
+        aria-hidden
+      />
+      <HealthLabWorldMotif
+        motif={world.motif}
+        alive={!reduced}
+        stage={stage}
+        friendEmoji={evolution?.friendEmoji}
+        celebrating={Boolean(evolution?.helpedToday)}
+      />
+
+      <div className="relative flex items-center gap-3.5 px-3.5 py-3.5">
         <div
           className={cn(
-            "pointer-events-none absolute inset-0 opacity-40 transition-opacity duration-300 group-hover:opacity-55",
-            `bg-gradient-to-br ${game.theme}`,
+            "relative flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[1.35rem]",
+            "border border-white/30 bg-gradient-to-br shadow-lg",
+            visuals.ring,
+            !reduced && "health-lab-icon-float",
+            unrestored && "opacity-80",
           )}
-          style={{ maskImage: "linear-gradient(135deg, black 0%, transparent 52%)" }}
-          aria-hidden
-        />
-
-        <span
-          className="absolute right-2 top-2 z-[1] flex h-4 min-w-4 items-center justify-center rounded-full border border-white/10 bg-black/40 px-1 text-[9px] font-bold text-white/50"
-          aria-hidden
+          style={{ boxShadow: `0 10px 24px -8px ${world.glow}, inset 0 1px 0 rgba(255,255,255,0.35)` }}
         >
-          {index + 1}
-        </span>
-
-        <div className="relative flex items-stretch gap-2.5">
-          <div className="relative shrink-0 self-start pt-0.5">
-            <div
-              className={cn(
-                "relative flex h-11 w-11 items-center justify-center rounded-xl",
-                "border border-white/18 bg-gradient-to-br shadow-md",
-                visuals.ring,
-                !reduced && "health-lab-icon-float",
-              )}
-              style={{ boxShadow: `0 6px 18px -8px ${visuals.glow}, inset 0 1px 0 rgba(255,255,255,0.28)` }}
-            >
-              <span className="text-[1.35rem] drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]" aria-hidden>
-                {game.emoji}
-              </span>
-            </div>
-          </div>
-
-          <div className="min-w-0 flex-1 pr-6">
-            <h3 className="text-[13px] font-semibold leading-snug tracking-tight text-white">{game.title}</h3>
-            <p className="mt-0.5 text-[11px] leading-snug text-white/70">{game.benefitLine}</p>
-
-            <div className="mt-1 flex flex-wrap gap-1">
-              {game.skillTags.map((tag) => (
-                <span
-                  key={tag}
-                  className={cn(
-                    "rounded-md border px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
-                    visuals.badge,
-                  )}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <p className="mt-1 text-[10px] leading-snug text-white/55">
-              <span className="font-semibold uppercase tracking-[0.12em] text-white/35">Trains</span>
-              {" · "}
-              {formatTrainSkills(game.trains)}
-            </p>
-
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-white/50">
-              <span className={cn("rounded-md border px-1.5 py-px font-medium", visuals.badge)}>
-                {game.durationHint}
-              </span>
-              <span className="text-white/45">{SENSOR_LABELS[game.sensor]}</span>
-              {best && (
-                <span className="font-medium text-amber-200/90">
-                  {best.icon} {best.label}: {best.value}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex shrink-0 flex-col items-center justify-center self-center gap-0.5 pl-0.5">
-            <div
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full",
-                "border border-white/12 bg-white/[0.08] text-white/75",
-                "transition-all duration-200 group-hover:border-white/25 group-hover:bg-violet-400/20 group-hover:text-white",
-              )}
-            >
-              <ChevronRight className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-violet-300/45 group-hover:text-violet-200/75">
-              Play
+          <span
+            className={cn(
+              "text-[2.35rem] drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)]",
+              !reduced && "health-lab-emoji-bob",
+            )}
+            aria-hidden
+          >
+            {game.emoji}
+          </span>
+          {isCompleted && (
+            <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-emerald-950 shadow-md">
+              <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden />
             </span>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {isRecommended && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-950">
+                <Sparkles className="h-3 w-3" aria-hidden />
+                Go
+              </span>
+            )}
+            {badge === "new" && (
+              <span className="rounded-full bg-cyan-300 px-2 py-0.5 text-[10px] font-black uppercase text-cyan-950">
+                New
+              </span>
+            )}
+            {badge === "daily" && !isRecommended && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-300 px-2 py-0.5 text-[10px] font-black uppercase text-violet-950">
+                <Star className="h-3 w-3" aria-hidden />
+                Daily
+              </span>
+            )}
+            {evolution && stage >= 1 && (
+              <span
+                className={cn(
+                  "rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide",
+                  stage >= 4
+                    ? "border-emerald-300/50 bg-emerald-400/25 text-emerald-50"
+                    : "border-white/20 bg-white/10 text-white/85",
+                )}
+              >
+                {evolution.milestoneLabel}
+              </span>
+            )}
           </div>
+          <h3 className="mt-1 text-lg font-black leading-tight tracking-tight text-white drop-shadow-sm">
+            {world.worldName}
+          </h3>
+          {/* Full catalog title kept for recognition + certification selectors */}
+          <p className="mt-0.5 text-[11px] font-medium text-white/55">{game.title}</p>
+          <p className="mt-1 text-sm font-bold text-white/90">
+            {unrestored ? `Help restore ${world.worldName}` : world.kidAction}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-white/70">
+            <span>{SENSOR_KID[game.sensor]}</span>
+            <span aria-hidden>·</span>
+            <span>{game.durationHint}</span>
+            {stage >= 1 ? (
+              <>
+                <span aria-hidden>·</span>
+                <span className="text-emerald-200/90">{evolution?.stageLabel}</span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden>·</span>
+                <span className={best.empty ? "text-white/50" : "text-amber-200"}>
+                  {best.empty ? "🏆 Beat your best!" : `🏆 ${best.value}`}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "flex h-[56px] w-[56px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-0 font-bold",
+            "min-h-[56px] min-w-[56px] touch-manipulation transition-transform duration-150",
+            "group-hover:scale-105 group-active:scale-95",
+            world.ctaClass,
+          )}
+        >
+          <Play className="h-5 w-5 fill-current" aria-hidden />
+          <span className="text-[9px] font-black uppercase leading-none tracking-wide">{playLabel}</span>
         </div>
       </div>
     </motion.button>
