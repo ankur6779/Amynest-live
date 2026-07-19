@@ -93,7 +93,7 @@ export function ReadingLessonRunner({
   );
 
   const finishStep = useCallback(
-    (correct: boolean, stepAttempts = 1, skipped = false) => {
+    (correct: boolean, stepAttempts = 1, skipped = false, passingEval?: CoachEvaluation) => {
       setState((prev) => {
         const next = advanceLessonStep(prev, {
           correct,
@@ -101,6 +101,8 @@ export function ReadingLessonRunner({
           skipped,
         });
         if (next.complete) {
+          const coachEvaluations =
+            passingEval != null ? [...coachEvals, passingEval].slice(-12) : coachEvals;
           queueMicrotask(() =>
             onComplete({
               grapheme: next.target.grapheme,
@@ -108,7 +110,7 @@ export function ReadingLessonRunner({
               starsEarned: next.starsEarned,
               results: next.results,
               state: next,
-              coachEvaluations: coachEvals,
+              coachEvaluations,
             }),
           );
         }
@@ -246,7 +248,7 @@ export function ReadingLessonRunner({
               targetKind="phoneme"
               showArticulation={false}
               onEvaluation={handleCoachEval}
-              onPassed={(ev) => finishStep(ev.correct, 1)}
+              onPassed={(ev) => finishStep(ev.correct, 1, false, ev)}
               onSkip={() => finishStep(true, 1, true)}
             />
           ) : (
@@ -393,7 +395,7 @@ export function ReadingLessonRunner({
                   targetKind="word"
                   showArticulation={false}
                   onEvaluation={handleCoachEval}
-                  onPassed={(ev) => finishStep(ev.correct, 1)}
+                  onPassed={(ev) => finishStep(ev.correct, 1, false, ev)}
                   onSkip={() => finishStep(true, 1, true)}
                 />
               ) : (
