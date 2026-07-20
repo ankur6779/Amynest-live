@@ -53,7 +53,8 @@ export const SUBSCRIPTION_HERO = {
 
 export const PLAN_BADGES: Record<PaidPlanId, string | null> = {
   monthly: null,
-  six_month: "Safest Choice",
+  /** CRO default highlight — first paywall visit preselects six_month. */
+  six_month: "Most Popular",
   yearly: "Smartest Choice",
 };
 
@@ -162,7 +163,7 @@ export const REVENUECAT_PAYWALL = {
   monthlyDisplayName: PLAN_MARKETING.monthly.title,
   monthlySubtitle: PLAN_MARKETING.monthly.tagline,
   sixMonthDisplayName: PLAN_MARKETING.six_month.title,
-  sixMonthBadge: "Safest Choice",
+  sixMonthBadge: "Most Popular",
   sixMonthSubtitle: PLAN_MARKETING.six_month.tagline,
   annualDisplayName: PLAN_MARKETING.yearly.title,
   annualBadge: "Smartest Choice",
@@ -357,7 +358,7 @@ export const AB_TEST_IDEAS = [
   "Default select: annual pre-selected vs six_month pre-selected on paywall",
   "Hero A: ecosystem headline vs outcome headline (stress reduction)",
   "Annual card: show $3.33/mo equivalent vs show $39.99/year only",
-  "Six_month badge: Safest Choice vs Most Popular",
+  "Six_month badge: Most Popular vs Smartest Choice annual",
   "Pricing order: annual-left vs six_month-center highlighted",
   "Paywall CTA: Unlock the full system vs Continue with AmyNest",
   "AI limit paywall: show today's free count vs hide count (outcome-only)",

@@ -30,7 +30,13 @@ export const FF_TRIAL_STATUS_UI = envFlag("VITE_FF_SUB_TRIAL_STATUS_UI", true);
 /** Contextual value → premium inline banners at accomplishment moments. */
 export const FF_VALUE_BRIDGE_INVITES = envFlag(
   "VITE_FF_VALUE_BRIDGE_INVITES",
-  false,
+  true,
+);
+
+/** Full-screen conversion page when internal trial expires. */
+export const FF_TRIAL_ENDED_FULLSCREEN = envFlag(
+  "VITE_FF_SUB_TRIAL_ENDED_FULLSCREEN",
+  true,
 );
 
 /** Win-back modal on app open for lapsed subscribers. */

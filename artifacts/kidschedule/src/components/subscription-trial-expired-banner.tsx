@@ -2,18 +2,21 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Crown } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
-import { isExpiredInternalTrial, pricingCheckoutHref } from "@/lib/internal-trial";
+import { isExpiredInternalTrial } from "@/lib/internal-trial";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { FF_TRIAL_STATUS_UI } from "@/lib/subscription-feature-flags";
 
-/** Shown on dashboard when an internal trial has ended — does not block app usage. */
+/**
+ * Fallback banner when fullscreen trial-ended was dismissed (cooldown).
+ * Primary conversion path is /subscription-trial-ended.
+ */
 export function SubscriptionTrialExpiredBanner() {
   const { t } = useTranslation();
   const { entitlements } = useSubscription();
 
   if (!FF_TRIAL_STATUS_UI || !isExpiredInternalTrial(entitlements)) return null;
 
-  const href = pricingCheckoutHref("trial_expired_banner");
+  const href = "/subscription-trial-ended";
 
   return (
     <div
@@ -25,25 +28,31 @@ export function SubscriptionTrialExpiredBanner() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-foreground">
             {t("subscription.trial.expired_title", {
-              defaultValue: "Your free trial has ended",
+              defaultValue: "Your Premium Trial Has Ended",
             })}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {t("subscription.trial.expired_body", {
               defaultValue:
-                "Continue Premium to keep your routines, parenting tools, and progress.",
+                "Continue building healthy routines with Amy.",
             })}
           </p>
           <Link
             href={href}
             className="mt-2 inline-flex text-xs font-bold text-primary underline"
-            onClick={() =>
+            data-testid="trial-expired-banner-cta"
+            onClick={() => {
               trackSubscriptionEvent({
-                event: "checkout_started",
+                event: "subscribe_clicked",
                 source: "trial_expired_banner",
                 plan: "yearly",
-              })
-            }
+              });
+              trackSubscriptionEvent({
+                event: "paywall_opened",
+                source: "trial_expired_banner",
+                plan: "yearly",
+              });
+            }}
           >
             {t("subscription.trial.continue_premium", {
               defaultValue: "Continue Premium",

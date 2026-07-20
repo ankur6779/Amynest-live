@@ -4,9 +4,11 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import type { PaywallReason } from "@/contexts/paywall-context";
 import type { Plan } from "@/hooks/use-subscription";
+import { logSubscriptionDebug } from "@/lib/subscription-debug";
 
 export type SubscriptionAnalyticsEvent =
   | "paywall_opened"
+  | "paywall_viewed"
   | "paywall_reason"
   | "plan_card_viewed"
   | "plan_selected"
@@ -15,9 +17,15 @@ export type SubscriptionAnalyticsEvent =
   | "trial_started"
   | "trial_converted"
   | "trial_expired"
+  | "subscribe_clicked"
   | "checkout_started"
   | "purchase_success"
   | "purchase_failed"
+  | "restore_purchase"
+  | "restore_purchase_failed"
+  | "premium_unlocked"
+  | "routine_started"
+  | "routine_completed"
   | "cancel_started"
   | "cancel_agent_opened"
   | "cancel_agent_reason_selected"
@@ -82,8 +90,16 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     ...payload.extra,
   });
 
-  // Map paywall_opened → taxonomy premium_paywall_viewed (single spine, no duplicate)
+  // Map paywall_opened → taxonomy premium_paywall_viewed + paywall_viewed alias
   if (payload.event === "paywall_opened") {
+    getAnalyticsService().trackFunnel("subscription", "paywall_viewed", {
+      reason: payload.reason,
+      plan: payload.plan,
+      source: payload.source,
+      country,
+      platform,
+      ...payload.extra,
+    });
     import("@/lib/analytics").then(({ track }) => {
       track("premium_paywall_viewed", { source: payload.source });
     });
@@ -98,6 +114,14 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
   }
 
   if (payload.event === "purchase_success") {
+    getAnalyticsService().trackFunnel("subscription", "premium_unlocked", {
+      reason: payload.reason,
+      plan: payload.plan,
+      source: payload.source,
+      country,
+      platform,
+      ...payload.extra,
+    });
     import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
       trackPremiumConversion(payload.source ?? "subscription");
     });
@@ -126,6 +150,14 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
       },
     );
   }
+
+  logSubscriptionDebug({
+    phase: `analytics:${payload.event}`,
+    source: payload.source,
+    reason: typeof payload.reason === "string" ? payload.reason : undefined,
+    plan: typeof payload.plan === "string" ? payload.plan : undefined,
+    extra: payload.extra,
+  });
 
   if (import.meta.env.DEV) {
     console.info("[subscription-analytics]", payload);

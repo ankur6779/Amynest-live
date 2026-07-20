@@ -2,6 +2,8 @@ import type { FirstValueEventName } from "@workspace/analytics-taxonomy";
 import { track } from "@/lib/analytics";
 import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
 import { trackGrowthEvent } from "@/lib/growth-analytics";
+import { markFirstRoutineActivated } from "@/lib/subscription-funnel-storage";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 
 const firedOnce = new Set<string>();
 
@@ -49,6 +51,14 @@ export function trackRoutineCtaClicked(input: {
     child_id: input.childId,
     user_state: input.userState,
   });
+  trackSubscriptionEvent({
+    event: "routine_started",
+    source: input.source,
+    extra: {
+      screen: input.screen ?? "/dashboard",
+      ...(input.childId != null ? { child_id: input.childId } : {}),
+    },
+  });
 }
 
 export function trackRoutineGenerationCompleted(input: {
@@ -79,7 +89,17 @@ export function trackRoutineGenerationCompleted(input: {
     is_first_routine: isFirst,
   });
 
+  trackSubscriptionEvent({
+    event: "routine_completed",
+    source: input.source ?? "routine_generate",
+    extra: {
+      is_first_routine: isFirst,
+      ...(input.routineId != null ? { routine_id: input.routineId } : {}),
+    },
+  });
+
   if (isFirst) {
+    markFirstRoutineActivated();
     trackFirstValueAchieved({
       routineId: input.routineId,
       childId: input.childId,

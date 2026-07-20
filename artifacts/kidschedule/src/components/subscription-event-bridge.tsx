@@ -35,6 +35,7 @@ export function SubscriptionEventBridge() {
         module?: string;
         action?: string;
         entitlementState?: "free" | "premium" | "trial" | "unknown";
+        routineCount?: number;
       } | undefined;
       const raw = detail?.reason ?? "feature";
       const reason: PaywallReason =
@@ -49,6 +50,8 @@ export function SubscriptionEventBridge() {
         module: detail?.module,
         action: detail?.action,
         entitlementState: detail?.entitlementState,
+        routineCount:
+          typeof detail?.routineCount === "number" ? detail.routineCount : undefined,
       });
     };
     const onRefresh = () => {

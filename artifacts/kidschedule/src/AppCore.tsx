@@ -139,6 +139,9 @@ const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-li
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
+const SubscriptionTrialEndedPage = lazyPage(
+  () => import("@/pages/subscription-trial-ended"),
+);
 const ReferralsPage = lazyPage(() => import("@/pages/referrals"));
 const ReferralDeepLinkPage = lazyPage(() => import("@/pages/referral-deep-link"));
 const InsightsPage = lazyPage(() => import("@/pages/insights"));
@@ -897,6 +900,10 @@ function AppRoutes() {
           )}
           <Route path="/onboarding" component={OnboardingRouteGuard} />
           <Route path="/subscription-trial" component={SubscriptionTrialPage} />
+          <Route
+            path="/subscription-trial-ended"
+            component={SubscriptionTrialEndedPage}
+          />
           <Route path="/dashboard" component={DashboardRoute} />
           <Route path="/children" component={ChildrenListRoute} />
           <Route path="/children/new" component={ChildFormRoute} />

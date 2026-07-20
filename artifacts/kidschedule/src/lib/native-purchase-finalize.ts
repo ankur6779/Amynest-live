@@ -51,13 +51,14 @@ function latestSubscriptionData(qc: QueryClient): SubscriptionResponse | undefin
 }
 
 /**
- * After a native store purchase, poll `/api/subscription` until the RevenueCat
- * webhook has updated the backend entitlement (or we time out).
+ * After a native store purchase, poll `/api/subscription` until RevenueCat
+ * has granted a *paid* subscriber entitlement — not an internal trial
+ * (`isPremium` alone is true during server-granted trials).
  */
 export async function finalizeNativePurchase(
   authFetch: AuthFetch,
   qc: QueryClient,
-): Promise<{ ok: boolean; isPremium: boolean }> {
+): Promise<{ ok: boolean; isPremium: boolean; isPremiumSubscriber: boolean }> {
   await refreshSubscriptionViews(qc);
 
   for (let i = 0; i < POLL_DELAYS_MS.length; i++) {
@@ -65,31 +66,45 @@ export async function finalizeNativePurchase(
 
     await qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
     const data = latestSubscriptionData(qc);
-    if (data?.entitlements.isPremium) {
+    if (data?.entitlements.isPremiumSubscriber) {
       await refreshSubscriptionViews(qc);
-      return { ok: true, isPremium: true };
+      return { ok: true, isPremium: true, isPremiumSubscriber: true };
     }
   }
 
   const data = latestSubscriptionData(qc);
-  const isPremium = !!data?.entitlements?.isPremium;
-  return { ok: isPremium, isPremium };
+  const isPremiumSubscriber = !!data?.entitlements?.isPremiumSubscriber;
+  return {
+    ok: isPremiumSubscriber,
+    isPremium: isPremiumSubscriber,
+    isPremiumSubscriber,
+  };
 }
 
 /**
  * Restore Purchase is allowed to rebuild local entitlements from RevenueCat V2
  * because no new payment event is expected.
+ * Paid unlock requires `isPremiumSubscriber` (internal trial must not count).
  */
 export async function finalizeNativeRestore(
   authFetch: AuthFetch,
   qc: QueryClient,
-): Promise<{ ok: boolean; isPremium: boolean }> {
+): Promise<{ ok: boolean; isPremium: boolean; isPremiumSubscriber: boolean }> {
   const restored = await postRestoreSync(authFetch);
   await refreshSubscriptionViews(qc);
   if (restored?.apiPremium || restored?.isPremium) {
-    return { ok: true, isPremium: true };
+    await qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });
+    const after = latestSubscriptionData(qc);
+    const isPremiumSubscriber = !!after?.entitlements?.isPremiumSubscriber;
+    if (isPremiumSubscriber) {
+      return { ok: true, isPremium: true, isPremiumSubscriber: true };
+    }
   }
   const data = latestSubscriptionData(qc);
-  const isPremium = !!data?.entitlements?.isPremium;
-  return { ok: isPremium, isPremium };
+  const isPremiumSubscriber = !!data?.entitlements?.isPremiumSubscriber;
+  return {
+    ok: isPremiumSubscriber,
+    isPremium: isPremiumSubscriber,
+    isPremiumSubscriber,
+  };
 }

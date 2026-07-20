@@ -38,6 +38,10 @@ import {
 } from "@/lib/subscription-plans";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import {
+  entitlementDebugSlice,
+  logSubscriptionDebug,
+} from "@/lib/subscription-debug";
+import {
   FF_POST_PURCHASE_ANNUAL_UPSELL,
   FF_PRICING_STICKY_CTA,
 } from "@/lib/subscription-feature-flags";
@@ -197,9 +201,33 @@ export default function PricingPage() {
     const key = method === "upi" ? "googlepay" : "razorpay";
     setSubmitting(key);
     setNotice(null);
+    trackSubscriptionEvent({
+      event: "subscribe_clicked",
+      plan: selected,
+      source: "pricing",
+    });
     trackSubscriptionEvent({ event: "checkout_started", plan: selected, source: "pricing" });
+    logSubscriptionDebug({
+      phase: "pricing_checkout_start",
+      source: "pricing",
+      plan: selected,
+      entitlement: entitlementDebugSlice(entitlements),
+      billing: {
+        platform: nativeBilling.platform,
+        wrapperPresent: nativeBilling.wrapperPresent,
+        available: nativeBilling.available,
+      },
+      extra: { method: key },
+    });
     const res = await checkoutRazorpay(selected, undefined, method);
     setSubmitting(null);
+    logSubscriptionDebug({
+      phase: "pricing_purchase_result",
+      source: "pricing",
+      plan: selected,
+      purchase: { ok: res.ok, userCancelled: res.userCancelled, error: res.reason },
+      extra: { method: key },
+    });
     if (res.ok) {
       setPaymentSuccess(true);
       onPurchaseSuccess(selected);
@@ -268,12 +296,41 @@ export default function PricingPage() {
     setPaymentSuccess(false);
     setVerifying(true);
     trackSubscriptionEvent({
+      event: "subscribe_clicked",
+      plan: selected,
+      source: "pricing",
+    });
+    trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,
       source: "pricing",
     });
+    logSubscriptionDebug({
+      phase: "pricing_checkout_start",
+      source: "pricing",
+      plan: selected,
+      entitlement: entitlementDebugSlice(entitlements),
+      billing: {
+        platform: nativeBilling.platform,
+        wrapperPresent: nativeBilling.wrapperPresent,
+        available: nativeBilling.available,
+        unavailableReason: nativeBilling.unavailableReason,
+      },
+      extra: { method: "native_store" },
+    });
     try {
       const res = await nativeBilling.purchase(selected);
+      logSubscriptionDebug({
+        phase: "pricing_purchase_result",
+        source: "pricing",
+        plan: selected,
+        purchase: {
+          ok: res.ok,
+          userCancelled: res.userCancelled,
+          error: res.reason,
+        },
+        extra: { method: "native_store" },
+      });
       if (!res.ok) {
         if (!res.userCancelled) {
           trackSubscriptionEvent({ event: "purchase_failed", plan: selected, source: "pricing" });
@@ -475,12 +532,19 @@ export default function PricingPage() {
           </div>
         )}
         {isInternalTrial && (
-          <div className="relative z-10 mt-4 inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-1.5 text-sm font-bold text-amber-200 ring-1 ring-amber-500/30">
-            <Clock className="h-4 w-4 text-amber-400" />
-            {t("subscription.trial.active", {
-              defaultValue: "{{count}} days left in your full-system trial",
-              count: entitlements?.trialDaysRemaining ?? 0,
-            })}
+          <div className="relative z-10 mt-4 flex flex-col items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-1.5 text-sm font-bold text-amber-200 ring-1 ring-amber-500/30">
+              <Clock className="h-4 w-4 text-amber-400" />
+              {t("subscription.trial.days_remaining", {
+                defaultValue: "You have {{count}} days remaining.",
+                count: entitlements?.trialDaysRemaining ?? 0,
+              })}
+            </div>
+            <p className="text-xs font-semibold text-amber-100/80">
+              {t("subscription.trial.upgrade_while_trialing", {
+                defaultValue: "Subscribe Now — keep Premium after your trial ends",
+              })}
+            </p>
           </div>
         )}
       </div>

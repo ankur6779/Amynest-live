@@ -38,11 +38,19 @@ import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import {
+  FEATURE_SHOWCASE,
   PAYWALL_REASON_COPY,
   PURCHASE_SCREEN,
+  TRUST_SECTION,
   UPGRADE_MODAL,
   planCta,
 } from "@workspace/subscription-marketing";
+import {
+  entitlementDebugSlice,
+  logSubscriptionDebug,
+} from "@/lib/subscription-debug";
+
+const PAYWALL_BENEFITS = FEATURE_SHOWCASE.items.slice(0, 7);
 
 const DEFAULT_PAYWALL = UPGRADE_MODAL;
 
@@ -73,7 +81,7 @@ const REASON_ICONS: Record<AppPaywallReason, LucideIcon> = {
 export function PaywallModal() {
   const { t } = useTranslation();
   const { state, closePaywall } = usePaywall();
-  const { plans, checkoutRazorpay } = useSubscription();
+  const { plans, checkoutRazorpay, entitlements } = useSubscription();
   const { childName } = usePrimaryChild();
   const { user } = useUser();
   const [, setLocation] = useLocation();
@@ -151,10 +159,29 @@ export function PaywallModal() {
       entitlement_state: state.entitlementState ?? "free",
     });
     trackSubscriptionEvent({
+      event: "subscribe_clicked",
+      plan: selected,
+      reason,
+      source: "paywall_modal",
+    });
+    trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,
       reason,
       source: "paywall_modal",
+    });
+    logSubscriptionDebug({
+      phase: "paywall_checkout_start",
+      source: "paywall_modal",
+      reason,
+      plan: selected,
+      entitlement: entitlementDebugSlice(entitlements),
+      billing: {
+        platform: nativeBilling.platform,
+        wrapperPresent: nativeBilling.wrapperPresent,
+        available: nativeBilling.available,
+      },
+      extra: { method: "razorpay" },
     });
     setSubmitting(true);
     setNotice(null);
@@ -165,6 +192,14 @@ export function PaywallModal() {
     };
     const res = await checkoutRazorpay(selected, prefill);
     setSubmitting(false);
+    logSubscriptionDebug({
+      phase: "paywall_purchase_result",
+      source: "paywall_modal",
+      plan: selected,
+      reason,
+      purchase: { ok: res.ok, userCancelled: res.userCancelled, error: res.reason },
+      extra: { method: "razorpay" },
+    });
     if (res.ok) {
       track("upgrade_completed", {
         module: state.module,
@@ -203,15 +238,43 @@ export function PaywallModal() {
       entitlement_state: state.entitlementState ?? "free",
     });
     trackSubscriptionEvent({
+      event: "subscribe_clicked",
+      plan: selected,
+      reason,
+      source: "paywall_modal",
+    });
+    trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,
       reason,
       source: "paywall_modal",
     });
+    logSubscriptionDebug({
+      phase: "paywall_checkout_start",
+      source: "paywall_modal",
+      reason,
+      plan: selected,
+      entitlement: entitlementDebugSlice(entitlements),
+      billing: {
+        platform: nativeBilling.platform,
+        wrapperPresent: nativeBilling.wrapperPresent,
+        available: nativeBilling.available,
+        unavailableReason: nativeBilling.unavailableReason,
+      },
+      extra: { method: "native_store" },
+    });
     setSubmitting(true);
     setNotice(null);
     const res = await nativeBilling.purchase(selected);
     setSubmitting(false);
+    logSubscriptionDebug({
+      phase: "paywall_purchase_result",
+      source: "paywall_modal",
+      plan: selected,
+      reason,
+      purchase: { ok: res.ok, userCancelled: res.userCancelled, error: res.reason },
+      extra: { method: "native_store" },
+    });
     if (res.ok) {
       track("upgrade_completed", {
         module: state.module,
@@ -281,7 +344,7 @@ export function PaywallModal() {
           </button>
         </div>
 
-        <div className="overflow-y-auto px-5 sm:px-8 pt-4 pb-8">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 sm:px-8 pt-4 pb-4">
           <div className="text-center mb-6">
             <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary mb-3 shadow-[0_8px_32px_rgba(255,78,205,0.5)]">
               <HeroIcon className="h-7 w-7 text-white" />
@@ -299,7 +362,7 @@ export function PaywallModal() {
             </div>
           )}
 
-          <div className="grid gap-3 mb-5 grid-cols-1 sm:grid-cols-3 sm:items-end">
+          <div className="grid gap-3 mb-4 grid-cols-1 sm:grid-cols-3 sm:items-end">
             {sortedPlans.map(p => {
               const isSelected = p.id === selected;
               const storeOpts = planStorePriceOptions(
@@ -314,6 +377,8 @@ export function PaywallModal() {
                 planBillingLabels,
               );
               const annualHighlight = isAnnualHighlightedPlan(p.id);
+              const badgeLabel =
+                p.id === "six_month" ? (p.badge ?? "Most Popular") : p.badge;
               return (
                 <button
                   key={p.id}
@@ -329,9 +394,9 @@ export function PaywallModal() {
                     annualHighlight && !isSelected ? "border-primary/40 bg-primary/5" : "",
                   ].join(" ")}
                 >
-                  {p.badge && (
+                  {badgeLabel && (
                     <span className="absolute -top-2.5 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-primary to-primary">
-                      {p.badge}
+                      {badgeLabel}
                     </span>
                   )}
                   <div className="font-bold text-sm mb-0.5">{p.title}</div>
@@ -365,13 +430,31 @@ export function PaywallModal() {
             })}
           </div>
 
+          <ul
+            className="mb-4 space-y-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-3"
+            data-testid="paywall-benefits-list"
+          >
+            {PAYWALL_BENEFITS.map((item) => (
+              <li key={item.name} className="flex items-start gap-2 text-xs text-white/80">
+                <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" aria-hidden />
+                <span>
+                  <span className="font-semibold text-white/95">{item.name}</span>
+                  {" — "}
+                  {item.outcome}
+                </span>
+              </li>
+            ))}
+          </ul>
+
           {notice && (
             <div className="flex items-start gap-2 rounded-lg border border-border bg-muted px-3 py-2 mb-4 text-muted-foreground text-xs font-semibold">
               <Smartphone className="h-3.5 w-3.5 mt-0.5 shrink-0" />
               <span className="leading-snug">{notice}</span>
             </div>
           )}
+        </div>
 
+        <div className="shrink-0 z-20 border-t border-white/10 bg-gradient-to-t from-[#0B0B1A] via-[#0B0B1A]/98 to-[#0B0B1A]/90 px-5 sm:px-8 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {isNativeShell && nativeBilling.available && (
             <>
               <Button
@@ -381,14 +464,22 @@ export function PaywallModal() {
                 analyticsFeature="premium"
                 analyticsLabel={nativeButtonLabel}
                 className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
+                data-testid="paywall-cta-native"
               >
                 <Zap className="h-4 w-4 mr-2" />
                 {nativeButtonLabel}
               </Button>
               <button
                 type="button"
-                onClick={() => void nativeBilling.restore()}
+                onClick={() => {
+                  trackSubscriptionEvent({
+                    event: "restore_purchase",
+                    source: "paywall_modal",
+                  });
+                  void nativeBilling.restore();
+                }}
                 className="w-full mt-2 text-white/60 text-xs font-semibold py-2 hover:text-white/85"
+                data-testid="paywall-restore"
               >
                 {PURCHASE_SCREEN.restorePurchases}
               </button>
@@ -422,6 +513,7 @@ export function PaywallModal() {
               analyticsFeature="premium"
               analyticsLabel={selectedCta}
               className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
+              data-testid="paywall-cta-razorpay"
             >
               <Zap className="h-4 w-4 mr-2" />
               {submitting ? t("pricing.processing_payment") : selectedCta}
@@ -446,7 +538,7 @@ export function PaywallModal() {
               closePaywall();
               setLocation("/referrals");
             }}
-            className="w-full mt-3 inline-flex items-center justify-center gap-2 text-muted-foreground hover:text-muted-foreground font-extrabold text-sm py-2"
+            className="w-full mt-2 inline-flex items-center justify-center gap-2 text-muted-foreground hover:text-muted-foreground font-extrabold text-sm py-1.5"
           >
             <Gift className="h-4 w-4" />
             {t("components.paywall_modal.or_invite_friends_to_earn_premium_free")}
@@ -455,16 +547,25 @@ export function PaywallModal() {
           <button
             type="button"
             onClick={closePaywall}
-            className="w-full text-center mt-1 text-white/55 text-sm py-2 hover:text-white/80"
+            className="w-full text-center text-white/55 text-sm py-1.5 hover:text-white/80"
           >
             {t("components.paywall_modal.maybe_later", { defaultValue: DEFAULT_PAYWALL.dismiss })}
           </button>
 
-          <p className="text-center text-[11px] text-white/35 mt-2">
-            {PURCHASE_SCREEN.trustLine}
+          <p className="text-center text-[11px] text-white/35 mt-1">
+            {isAndroid
+              ? t("components.paywall_modal.secure_play_family", {
+                  defaultValue:
+                    "Secure payment via Google Play · Family friendly · Cancel anytime",
+                })
+              : PURCHASE_SCREEN.trustLine}
+          </p>
+          <p className="text-center text-[10px] text-white/30 mt-0.5">
+            {TRUST_SECTION.items.find((i) => i.label === "Secure checkout")?.detail ??
+              "App Store · Google Play · Razorpay"}
           </p>
 
-          <div className="flex items-center justify-center gap-3 mt-3 text-[11px]">
+          <div className="flex items-center justify-center gap-3 mt-2 text-[11px]">
             <a
               href="https://amynest.in/privacy"
               target="_blank"

@@ -72,6 +72,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
+import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
 import {
   normalizeFixedActivities,
   type FixedActivityDraft,
@@ -1797,6 +1798,11 @@ export default function RoutineGenerate() {
   const isGeneratingFamily = !!familyProgress;
   const familySelectedCount = Object.values(familyChildSettings).filter(s => s.selected).length;
   const familyReadyCount = Object.entries(familyChildSettings).filter(([, s]) => s.selected && s.hasSchool !== null).length;
+  const showFirstRoutineProgress = !hasFirstRoutineActivationProgress(
+    priorRoutineCountRef.current,
+  );
+  const activationStep = selectedChild ? 2 : 1;
+
   return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto pb-28 sm:pb-12")}>
       <header className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild className="rounded-full">
@@ -1807,6 +1813,45 @@ export default function RoutineGenerate() {
           <p className="text-muted-foreground mt-1">{t("pages.routines.generate.amy_builds_a_smart_daily_plan_around_your_schedule")}</p>
         </div>
       </header>
+
+      {showFirstRoutineProgress ? (
+        <div
+          className="rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3"
+          data-testid="first-routine-activation-progress"
+        >
+          <p className="text-sm font-bold text-foreground">
+            {t("pages.routines.generate.first_routine_progress_title", {
+              defaultValue: "Almost there — create your first routine",
+            })}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {t("pages.routines.generate.first_routine_progress_body", {
+              defaultValue:
+                "Pick your child, confirm today’s plan, then tap Generate. Most parents finish in under 5 minutes.",
+            })}
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={cn(
+                  "h-1.5 flex-1 rounded-full",
+                  step <= activationStep ? "bg-primary" : "bg-muted",
+                )}
+              />
+            ))}
+          </div>
+          <p className="mt-1.5 text-[11px] font-semibold text-primary">
+            {activationStep === 1
+              ? t("pages.routines.generate.first_routine_step_child", {
+                  defaultValue: "Step 1 of 3 · Choose your child",
+                })
+              : t("pages.routines.generate.first_routine_step_generate", {
+                  defaultValue: "Step 2 of 3 · Review & generate",
+                })}
+          </p>
+        </div>
+      ) : null}
 
       {/* Handler Selector — applies to both modes */}
       <Card className="rounded-3xl border-none shadow-sm bg-card">

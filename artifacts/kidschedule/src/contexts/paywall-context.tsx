@@ -1,11 +1,16 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { incrementPaywallVisitCount } from "@/lib/subscription-funnel-storage";
+import {
+  ensureFirstOpenTimestamp,
+  incrementPaywallDeferCount,
+  incrementPaywallVisitCount,
+} from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { track } from "@/lib/analytics";
 import {
   ACTIVATION_ROUTINE_GENERATE_HREF,
   shouldDeferPaywallForActivation,
 } from "@/lib/activation-gate";
+import { logSubscriptionDebug } from "@/lib/subscription-debug";
 
 export type PaywallReason =
   | "ai_quota"
@@ -39,9 +44,14 @@ type PaywallState = {
   entitlementState?: "free" | "premium" | "trial" | "unknown";
 };
 
+export type OpenPaywallMeta = Omit<PaywallState, "open" | "reason"> & {
+  /** When known, ends activation defer without relying only on local milestones. */
+  routineCount?: number;
+};
+
 type PaywallContextValue = {
   state: PaywallState;
-  openPaywall: (reason?: PaywallReason, meta?: Omit<PaywallState, "open" | "reason">) => void;
+  openPaywall: (reason?: PaywallReason, meta?: OpenPaywallMeta) => void;
   closePaywall: () => void;
 };
 
@@ -50,15 +60,22 @@ const PaywallContext = createContext<PaywallContextValue | null>(null);
 export function PaywallProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PaywallState>({ open: false, reason: "feature" });
 
-  const openPaywall = useCallback((reason: PaywallReason = "feature", meta?: Omit<PaywallState, "open" | "reason">) => {
-    const routineCount = Number(
-      (meta as { routineCount?: number } | undefined)?.routineCount ?? 0,
-    );
+  const openPaywall = useCallback((reason: PaywallReason = "feature", meta?: OpenPaywallMeta) => {
+    ensureFirstOpenTimestamp();
+    const routineCount = Number(meta?.routineCount ?? 0);
     if (shouldDeferPaywallForActivation(reason, routineCount)) {
+      const deferCount = incrementPaywallDeferCount();
       trackSubscriptionEvent({
         event: "paywall_deferred_activation",
         reason,
         source: meta?.source ?? "open_paywall",
+        extra: { defer_count: deferCount },
+      });
+      logSubscriptionDebug({
+        phase: "paywall_deferred_activation",
+        reason,
+        source: meta?.source ?? "open_paywall",
+        extra: { defer_count: deferCount, routine_count: routineCount },
       });
       track("navigation", {
         from_route: "paywall_deferred",
@@ -80,7 +97,14 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
       source: meta?.source ?? "open_paywall",
     });
     track("premium_paywall_viewed", { source: reason });
-    setState({ open: true, reason, ...meta });
+    logSubscriptionDebug({
+      phase: "paywall_opened",
+      reason,
+      source: meta?.source ?? "open_paywall",
+      extra: { routine_count: routineCount },
+    });
+    const { routineCount: _routineCount, ...rest } = meta ?? {};
+    setState({ open: true, reason, ...rest });
   }, []);
   const closePaywall = useCallback(() => {
     setState((s) => ({ ...s, open: false }));

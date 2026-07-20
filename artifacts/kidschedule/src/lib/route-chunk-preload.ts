@@ -23,6 +23,7 @@ const EXACT_ROUTE_LOADERS: Record<string, ChunkLoader> = {
   "/parent-profile": () => import("@/pages/parent-profile"),
   "/pricing": () => import("@/pages/pricing"),
   "/subscription-trial": () => import("@/pages/subscription-trial"),
+  "/subscription-trial-ended": () => import("@/pages/subscription-trial-ended"),
   "/referrals": () => import("@/pages/referrals"),
   "/feedback": () => import("@/pages/feedback"),
   "/study": () => import("@/pages/study"),

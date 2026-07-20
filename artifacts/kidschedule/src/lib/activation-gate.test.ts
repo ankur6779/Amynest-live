@@ -38,4 +38,10 @@ describe("activation-gate", () => {
     expect(shouldBypassRoutineGeneratePaywall(0)).toBe(true);
     expect(shouldBypassRoutineGeneratePaywall(1)).toBe(false);
   });
+
+  it("does not defer after durable first-routine flag", () => {
+    localStorage.setItem("amynest:sub:first_routine_activated", "1");
+    expect(hasFirstRoutineActivationProgress(0)).toBe(true);
+    expect(shouldDeferPaywallForActivation("hub_locked", 0)).toBe(false);
+  });
 });
