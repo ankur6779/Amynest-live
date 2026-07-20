@@ -89,8 +89,9 @@ jobs:
       - name: Post-deploy smoke (production)
         run: bash scripts/post-deploy-smoke.sh
         env:
-          SMOKE_BASE_URL: https://www.amynest.in
-          SMOKE_API_URL: https://www.amynest.in
+          # www is WAF-blocked for GitHub Actions IPs; probe Pages + Coolify origin.
+          SMOKE_WEB_URL: https://amynest-web.pages.dev
+          SMOKE_API_URL: https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io
 
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker

@@ -2,10 +2,10 @@
 # Post-deploy smoke — verify production health endpoints respond OK.
 set -euo pipefail
 
-# Custom domain HTML is often WAF-blocked for GitHub Actions IPs (403).
-# Pages project hostname is the reliable SPA probe; API stays on www.
+# Custom domain (www) is often WAF-blocked for GitHub Actions IPs (403).
+# Pages project hostname = SPA probe; Coolify origin = API probe.
 WEB_URL="${SMOKE_WEB_URL:-https://amynest-web.pages.dev}"
-API_URL="${SMOKE_API_URL:-https://www.amynest.in}"
+API_URL="${SMOKE_API_URL:-https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io}"
 CURL_UA="${SMOKE_USER_AGENT:-AmyNest-PostDeploySmoke/1.0}"
 
 curl_code() {
