@@ -64,61 +64,52 @@
   },
   "suites": [
     {
-      "title": "health-lab-certification-capture.spec.ts",
-      "file": "health-lab-certification-capture.spec.ts",
+      "title": "health-lab-certification-responsive.spec.ts",
+      "file": "health-lab-certification-responsive.spec.ts",
       "column": 0,
       "line": 0,
-      "specs": [],
-      "suites": [
+      "specs": [
         {
-          "title": "Certification capture",
-          "file": "health-lab-certification-capture.spec.ts",
-          "line": 92,
-          "column": 6,
-          "specs": [
+          "title": "responsive certification matrix",
+          "ok": true,
+          "tags": [],
+          "tests": [
             {
-              "title": "capture all screens + metrics",
-              "ok": true,
-              "tags": [],
-              "tests": [
+              "timeout": 1200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
                 {
-                  "timeout": 180000,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 154074,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-20T03:57:25.806Z",
                   "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 51116,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-14T10:11:28.585Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "attachments": []
                 }
               ],
-              "id": "fd47da7b4593e61a0908-ba38cc22c2278e431199",
-              "file": "health-lab-certification-capture.spec.ts",
-              "line": 93,
-              "column": 3
+              "status": "expected"
             }
-          ]
+          ],
+          "id": "b222ac8582f05561fdcd-4c3605a8b74e763e9d42",
+          "file": "health-lab-certification-responsive.spec.ts",
+          "line": 395,
+          "column": 1
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-14T10:11:27.470Z",
-    "duration": 52731.629,
+    "startTime": "2026-07-20T03:57:18.861Z",
+    "duration": 162624.945,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,
