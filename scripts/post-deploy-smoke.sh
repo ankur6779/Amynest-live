@@ -3,19 +3,23 @@
 set -euo pipefail
 
 BASE_URL="${SMOKE_BASE_URL:-https://www.amynest.in}"
-API_URL="${SMOKE_API_URL:-https://amynest-backend-dykj.onrender.com}"
+# Production API is Coolify behind www (Render standby is retired).
+API_URL="${SMOKE_API_URL:-https://www.amynest.in}"
+CURL_UA="${SMOKE_USER_AGENT:-AmyNest-PostDeploySmoke/1.0}"
 
-echo "[smoke] Web health: ${BASE_URL}/health"
-web_status="$(curl -fsS -o /dev/null -w '%{http_code}' "${BASE_URL}/health" || echo "000")"
+# Prefer API JSON health for "web" reachability — CF WAF often 403s bare /health
+# from GitHub Actions IPs even when the SPA is healthy.
+echo "[smoke] Web reachability: ${BASE_URL}/"
+web_status="$(curl -fsS -A "${CURL_UA}" -o /dev/null -w '%{http_code}' "${BASE_URL}/" || echo "000")"
 if [[ "${web_status}" != "200" ]]; then
-  echo "[smoke] FAIL web /health status=${web_status}"
+  echo "[smoke] FAIL web / status=${web_status}"
   exit 1
 fi
 
-echo "[smoke] API health: ${API_URL}/health"
-api_status="$(curl -fsS -o /dev/null -w '%{http_code}' "${API_URL}/health" || echo "000")"
+echo "[smoke] API health: ${API_URL}/api/health"
+api_status="$(curl -fsS -A "${CURL_UA}" -o /dev/null -w '%{http_code}' "${API_URL}/api/health" || echo "000")"
 if [[ "${api_status}" != "200" ]]; then
-  echo "[smoke] FAIL api /health status=${api_status}"
+  echo "[smoke] FAIL api /api/health status=${api_status}"
   exit 1
 fi
 
