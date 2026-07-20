@@ -16,6 +16,7 @@ import { HealthLabDashboard } from "./health-lab-dashboard";
 import { HealthLabShop } from "./health-lab-shop";
 import { HealthLabSessionRewards } from "./health-lab-session-rewards";
 import { HealthLabCelebration } from "./health-lab-celebration";
+import { HealthLabImmersiveHost } from "./health-lab-immersive-host";
 import { HealthLabMotionPrep } from "./health-lab-motion-prep";
 import { BreathControlGame } from "./games/breath-control-game";
 import { FlamingoBalanceGame } from "./games/flamingo-balance-game";
@@ -196,6 +197,9 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
     view === "shop";
 
   const inGame = typeof view === "object" && view.kind === "game";
+  const inSessionRewards = typeof view === "object" && view.kind === "session-rewards";
+  const immersiveActive =
+    inGame || inSessionRewards || motionPrepGameId != null || pendingCelebrations.length > 0;
 
   return (
     <HealthLabShell showParticles={!inGame && !motionPrepGameId}>
@@ -262,59 +266,62 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
         />
       )}
 
-      {typeof view === "object" && view.kind === "game" && (
-        <div
-          className={cn("health-lab-game-viewport", !reduced && "health-lab-world-arrive")}
-          key={view.gameId}
-        >
-          {renderGame(view.gameId)}
-        </div>
-      )}
 
-      {typeof view === "object" && view.kind === "session-rewards" && (
-        <div className="health-lab-game-viewport" key="session-rewards">
-          <HealthLabSessionRewards
-            result={view.result}
-            celebrations={view.celebrations}
-            state={state}
-            onContinue={() => setView("home")}
+      <HealthLabImmersiveHost
+        active={immersiveActive}
+        className={!reduced && inGame ? "health-lab-world-arrive" : undefined}
+      >
+        {inGame && (
+          <div className="health-lab-immersive-layer" key={view.gameId}>
+            {renderGame(view.gameId)}
+          </div>
+        )}
+
+        {inSessionRewards && (
+          <div className="health-lab-immersive-layer" key="session-rewards">
+            <HealthLabSessionRewards
+              result={view.result}
+              celebrations={view.celebrations}
+              state={state}
+              onContinue={() => setView("home")}
+            />
+          </div>
+        )}
+
+        {motionPrepGameId && (
+          <HealthLabMotionPrep
+            gameId={motionPrepGameId}
+            onCancel={() => setMotionPrepGameId(null)}
+            onReady={() => {
+              const id = motionPrepGameId;
+              setMotionPrepGameId(null);
+              enterGame(id);
+            }}
           />
-        </div>
-      )}
+        )}
 
-      {arrivalFlash && !reduced && (
-        <div
-          key={arrivalFlash.key}
-          className="pointer-events-none fixed inset-0 z-[60] health-lab-portal-flash"
-          style={{
-            background: `radial-gradient(circle at 50% 45%, ${getWorldIdentity(arrivalFlash.gameId).glow}, transparent 55%)`,
-          }}
-          aria-hidden
-        />
-      )}
+        {pendingCelebrations[0] && (
+          <HealthLabCelebration
+            type={pendingCelebrations[0].type}
+            payload={pendingCelebrations[0].payload}
+            onDismiss={dismissCelebration}
+            avatarId={state.avatarId}
+            level={state.level}
+            equippedItems={state.equippedItems}
+          />
+        )}
 
-      {motionPrepGameId && (
-        <HealthLabMotionPrep
-          gameId={motionPrepGameId}
-          onCancel={() => setMotionPrepGameId(null)}
-          onReady={() => {
-            const id = motionPrepGameId;
-            setMotionPrepGameId(null);
-            enterGame(id);
-          }}
-        />
-      )}
-
-      {pendingCelebrations[0] && (
-        <HealthLabCelebration
-          type={pendingCelebrations[0].type}
-          payload={pendingCelebrations[0].payload}
-          onDismiss={dismissCelebration}
-          avatarId={state.avatarId}
-          level={state.level}
-          equippedItems={state.equippedItems}
-        />
-      )}
+        {arrivalFlash && !reduced && (
+          <div
+            key={arrivalFlash.key}
+            className="health-lab-immersive-flash health-lab-portal-flash"
+            style={{
+              background: `radial-gradient(circle at 50% 45%, ${getWorldIdentity(arrivalFlash.gameId).glow}, transparent 55%)`,
+            }}
+            aria-hidden
+          />
+        )}
+      </HealthLabImmersiveHost>
     </HealthLabShell>
   );
 }

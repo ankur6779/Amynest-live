@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T04:00:00.300Z",
+  "generatedAt": "2026-07-20T15:13:56.411Z",
   "verdict": "PASS",
   "devicesTested": [
     "Chromium (Playwright) — Android-class CSS viewports",
@@ -38,7 +38,7 @@
     "Crystal Garden",
     "Crystal Cave"
   ],
-  "fpsHome390": 57,
+  "fpsHome390": 60,
   "failCount": 0,
   "uniqueFailCodes": [],
   "fails": [],

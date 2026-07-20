@@ -276,8 +276,8 @@ export function HubModulePageShell({
   );
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-background">
-      <header className={cn(PAGE_STICKY_HEADER_BASE, "backdrop-blur")}>
+    <div className="flex min-h-dvh w-full flex-col bg-background" data-hub-module-shell>
+      <header className={cn(PAGE_STICKY_HEADER_BASE, "backdrop-blur")} data-hub-module-header>
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
             type="button"
@@ -298,7 +298,10 @@ export function HubModulePageShell({
       </header>
 
       {eligibleChildren.length > 1 && (
-        <div className="mx-auto flex w-full max-w-4xl gap-2 overflow-x-auto px-4 pt-3 pb-1">
+        <div
+          className="mx-auto flex w-full max-w-4xl gap-2 overflow-x-auto px-4 pt-3 pb-1"
+          data-hub-module-child-picker
+        >
           {eligibleChildren.map((child) => (
             <button
               key={child.id}

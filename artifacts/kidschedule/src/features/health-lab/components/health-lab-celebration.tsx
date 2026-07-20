@@ -75,7 +75,7 @@ export function HealthLabCelebration({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+        className="health-lab-immersive-overlay bg-black/70 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

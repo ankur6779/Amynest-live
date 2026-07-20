@@ -20,7 +20,7 @@ export function HealthLabMotionPrep({ gameId, onReady, onCancel }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0f2e]/92 p-4"
+      className="health-lab-immersive-overlay bg-[#0a0f2e]/92"
       role="dialog"
       aria-modal="true"
       aria-labelledby="motion-prep-title"

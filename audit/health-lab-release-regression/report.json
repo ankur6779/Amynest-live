@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-07-20T15:01:59.298Z",
+  "verdict": "PASS",
+  "passCount": 18,
+  "failCount": 0,
+  "checks": [
+    {
+      "id": "immersive-host-mounted",
+      "category": "immersive",
+      "name": "Immersive host portaled to body",
+      "pass": true,
+      "detail": "hostCount=1",
+      "screenshot": "01-immersive-entry-balloon.png"
+    },
+    {
+      "id": "immersive-root-class",
+      "category": "immersive",
+      "name": "html.health-lab-immersive class applied",
+      "pass": true
+    },
+    {
+      "id": "immersive-body-scroll-lock",
+      "category": "scroll",
+      "name": "Body overflow hidden during immersive",
+      "pass": true,
+      "detail": "overflow=hidden"
+    },
+    {
+      "id": "immersive-z-index",
+      "category": "immersive",
+      "name": "Host z-index above app chrome (≥100)",
+      "pass": true,
+      "detail": "zIndex=100"
+    },
+    {
+      "id": "immersive-no-top-clip",
+      "category": "immersive",
+      "name": "Game host and top bar not clipped at top",
+      "pass": true
+    },
+    {
+      "id": "immersive-host-removed",
+      "category": "immersive",
+      "name": "Immersive host removed after exit",
+      "pass": true,
+      "detail": "hostCount=0",
+      "screenshot": "02-immersive-exit-home.png"
+    },
+    {
+      "id": "immersive-class-removed",
+      "category": "immersive",
+      "name": "html.health-lab-immersive class removed",
+      "pass": true
+    },
+    {
+      "id": "scroll-restored",
+      "category": "scroll",
+      "name": "Body overflow restored after exit",
+      "pass": true,
+      "detail": "overflow=scroll"
+    },
+    {
+      "id": "nav-progress-roundtrip",
+      "category": "navigation",
+      "name": "Progress screen round-trip",
+      "pass": true,
+      "screenshot": "03-nav-progress-home.png"
+    },
+    {
+      "id": "back-from-onboarding",
+      "category": "back",
+      "name": "App back handler exits onboarding to home",
+      "pass": true
+    },
+    {
+      "id": "back-from-gameplay",
+      "category": "back",
+      "name": "App back handler exits gameplay to home (Android back proxy)",
+      "pass": true,
+      "screenshot": "04-back-from-game-home.png"
+    },
+    {
+      "id": "motion-prep-cancel-cleanup",
+      "category": "immersive",
+      "name": "Motion prep cancel removes immersive host",
+      "pass": true,
+      "detail": "hosts=0 class=false",
+      "screenshot": "05-motion-prep-cancel.png"
+    },
+    {
+      "id": "orientation-landscape-layout",
+      "category": "orientation",
+      "name": "Landscape gameplay passes layout probes",
+      "pass": true,
+      "screenshot": "07-orientation-landscape-balloon.png"
+    },
+    {
+      "id": "visibility-resume-host",
+      "category": "lifecycle",
+      "name": "visibilitychange keeps immersive host mounted",
+      "pass": true
+    },
+    {
+      "id": "visibility-resume-controls",
+      "category": "lifecycle",
+      "name": "Gameplay controls visible after resume",
+      "pass": true,
+      "screenshot": "08-background-resume.png"
+    },
+    {
+      "id": "memory-no-host-leak",
+      "category": "lifecycle",
+      "name": "No immersive host leak after 5 cycles",
+      "pass": true,
+      "detail": "hosts=0",
+      "screenshot": "09-memory-cleanup.png"
+    },
+    {
+      "id": "safe-area-top-padding",
+      "category": "safe_area",
+      "name": "Host respects safe-area-inset-top (notch proxy 47px)",
+      "pass": true,
+      "detail": "padTop=47 topBar=47 hudBottom=844",
+      "screenshot": "10-safe-area-notch.png"
+    },
+    {
+      "id": "responsive-breakpoints",
+      "category": "responsive",
+      "name": "Balloon gameplay layout valid at 320–768dp",
+      "pass": true
+    }
+  ],
+  "blockers": [],
+  "screenshotDir": "/Users/macbook/AmyNestProject/AmyNest-AI/audit/health-lab-release-regression/screenshots",
+  "suites": [
+    "health-lab-certification-regression (this file)",
+    "Run separately: health-lab-certification.spec.ts",
+    "Run separately: health-lab-certification-responsive.spec.ts",
+    "Run separately: vitest health-lab.test.ts"
+  ]
+}
