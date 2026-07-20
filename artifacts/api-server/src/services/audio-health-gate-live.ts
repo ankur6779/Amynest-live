@@ -12,7 +12,7 @@ function resolveGateApiUrl(): string {
     process.env.AUDIO_GATE_API_URL ??
     process.env.SMOKE_API_URL ??
     process.env.API_PUBLIC_URL ??
-    "https://amynest-backend-dykj.onrender.com"
+    "https://www.amynest.in"
   ).replace(/\/$/, "");
 }
 

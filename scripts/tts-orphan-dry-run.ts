@@ -5,7 +5,7 @@
  *   pnpm run tts-orphan:dry-run
  *
  * Remote (admin Firebase JWT):
- *   ADMIN_AUTH_TOKEN=... API_URL=https://amynest-backend-dykj.onrender.com pnpm run tts-orphan:dry-run -- --remote
+ *   ADMIN_AUTH_TOKEN=... API_URL=https://www.amynest.in pnpm run tts-orphan:dry-run -- --remote
  */
 import { config } from "dotenv";
 import { join } from "node:path";
@@ -19,7 +19,7 @@ const remote = process.argv.includes("--remote");
 const API_URL = (
   process.env.API_URL ??
   process.env.API_PUBLIC_URL ??
-  "https://amynest-backend-dykj.onrender.com"
+  "https://www.amynest.in"
 ).replace(/\/$/, "");
 
 type Result = {

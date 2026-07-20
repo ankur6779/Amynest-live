@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Canary monitor — live Render vs Coolify comparison + stage advancement.
 #
-#   export RENDER_API_URL='https://amynest-backend-dykj.onrender.com'
+#   export RENDER_API_URL='https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io'
 #   export COOLIFY_API_URL='https://...'
 #   export SMOKE_FIREBASE_ID_TOKEN='...'
 #   export RENDER_DATABASE_URL='...'    # optional row counts

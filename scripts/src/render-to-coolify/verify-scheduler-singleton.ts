@@ -110,7 +110,7 @@ async function loadSshProbes(): Promise<Record<string, string>> {
 
 async function main(): Promise<void> {
   const renderUrl =
-    process.env.RENDER_API_URL?.trim() || "https://amynest-backend-dykj.onrender.com";
+    process.env.RENDER_API_URL?.trim() || "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
   const coolifyUrl =
     process.env.COOLIFY_API_URL?.trim() ||
     "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";

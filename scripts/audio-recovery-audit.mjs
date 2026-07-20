@@ -14,7 +14,7 @@ const MAP_PATH = join(ROOT, "artifacts/kidschedule/src/data/static-audio-map.jso
 const CORPUS_PATH = join(ROOT, "artifacts/kidschedule/src/data/speakable-phrase-corpus.json");
 const API_BASE =
   process.env.AUDIO_AUDIT_API_BASE?.replace(/\/$/, "") ??
-  "https://amynest-backend-dykj.onrender.com";
+  "https://www.amynest.in";
 const SAMPLE_LIMIT = Number(process.env.AUDIO_AUDIT_SAMPLE || "0") || 0;
 const CONCURRENCY = 12;
 const FETCH_TIMEOUT_MS = 15_000;

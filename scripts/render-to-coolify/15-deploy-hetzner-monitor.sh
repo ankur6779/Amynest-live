@@ -35,7 +35,7 @@ tsx --version
 REMOTE
 
 COOLIFY_URL="${COOLIFY_API_URL:-https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io}"
-RENDER_URL="${RENDER_API_URL:-https://amynest-backend-dykj.onrender.com}"
+RENDER_URL="${RENDER_API_URL:-https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io}"
 
 ssh -i "$SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes "root@$WORKER_HOST" \
   "cat > /opt/amynest/monitor.env <<EOF

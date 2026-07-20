@@ -325,11 +325,20 @@
         //     Purge caches + unregister SW before the main bundle loads.
         var prevErr = prev && (prev.lastError || prev.lastReject);
         var prevErrMsg = prevErr ? String(prevErr.msg || "") : "";
+        var prevErrSrc = prevErr && prevErr.src ? String(prevErr.src) : "";
+        var bootFinished = !!(
+          prev &&
+          Array.isArray(prev.phases) &&
+          (prev.phases.indexOf("splash-hidden") !== -1 ||
+            prev.phases.indexOf("react-rendered") !== -1)
+        );
         var staleAssetCrash =
-          prevErrMsg.indexOf("ChunkLoadError") !== -1 ||
+          !bootFinished &&
+          (prevErrMsg.indexOf("ChunkLoadError") !== -1 ||
           prevErrMsg.indexOf("Failed to fetch dynamically imported module") !== -1 ||
           prevErrMsg.indexOf("Importing a module script failed") !== -1 ||
-          prevErrMsg.indexOf("Failed to load module script") !== -1;
+          prevErrMsg.indexOf("Failed to load module script") !== -1 ||
+          prevErrMsg.indexOf("MIME type") !== -1);
         var needsCacheRecovery = prevCrashed || staleAssetCrash;
         try {
           if (sessionStorage.getItem("amynest:cache-recovery-pending") === "1") {
@@ -352,11 +361,85 @@
             needsCacheRecovery = false;
             sessionStorage.removeItem("amynest:refresh-complete");
           }
+          // Asset HTTP-cache repair reload — allow normal bundle import next.
+          if (sessionStorage.getItem("amynest:asset-cache-repair") === "1") {
+            needsCacheRecovery = false;
+            sessionStorage.removeItem("amynest:asset-cache-repair");
+          }
         } catch (_eGuard) { /* ignore */ }
         window.__amynestNeedsCacheRecovery = needsCacheRecovery;
+        window.__amynestRecoveryMode = prevCrashed ? "full" : staleAssetCrash ? "asset" : "none";
+        window.__amynestPrevBootErrMsg =
+          prevErrMsg + (prevErrSrc ? " " + prevErrSrc : "");
 
-        window.__amynestForceClearCaches = function () {
+        // Overwrite browser HTTP cache for poisoned /assets/*.js URLs.
+        // Cache API + SW unregister do NOT clear disk HTTP cache; when SPA HTML
+        // was stored under a hashed .js URL, only cache:'reload' repairs it.
+        window.__amynestRepairPoisonedAssetCache = function (errMsg) {
+          var urls = [];
+          var seen = {};
+          function add(u) {
+            if (!u || seen[u]) return;
+            if (String(u).indexOf("/assets/") === -1) return;
+            seen[u] = 1;
+            urls.push(u);
+          }
+          function reload(u) {
+            return fetch(u, { cache: "reload", credentials: "same-origin" }).catch(
+              function () {},
+            );
+          }
+          try {
+            var found = String(errMsg || "").match(
+              /https?:\/\/[^\s'"\)]+\/assets\/[A-Za-z0-9._-]+\.js/g,
+            );
+            if (found) {
+              for (var i = 0; i < found.length; i++) add(found[i]);
+            }
+          } catch (_eMatch) { /* ignore */ }
+
+          // Fast path: only re-fetch URLs named in the error (e.g. vendor-icons).
+          if (urls.length > 0) {
+            return Promise.all(urls.slice(0, 8).map(reload));
+          }
+
+          // Fallback: entry shell + its direct import (main), not every vendor chunk.
+          var entry = document.querySelector(
+            'script[type="module"][src*="/assets/index-"]',
+          );
+          var entrySrc = entry && entry.src ? entry.src : "";
+          if (!entrySrc) return Promise.resolve();
+          add(entrySrc);
+          return fetch(entrySrc, { cache: "reload", credentials: "same-origin" })
+            .then(function (res) {
+              return res.text();
+            })
+            .then(function (text) {
+              var refs = text.match(/["']\.\/([A-Za-z0-9._-]+\.js)["']/g) || [];
+              for (var j = 0; j < refs.length; j++) {
+                var name = refs[j].replace(/['"]/g, "").replace(/^\.\//, "");
+                try {
+                  add(new URL(name, entrySrc).href);
+                } catch (_eUrl) { /* ignore */ }
+              }
+              return Promise.all(urls.map(reload));
+            })
+            .catch(function () {});
+        };
+
+        window.__amynestForceClearCaches = function (errMsg, opts) {
+          opts = opts || {};
+          var mode = opts.mode || "full";
           var tasks = [];
+          try {
+            sessionStorage.setItem("amynest:asset-cache-repair", "1");
+          } catch (_eMark) { /* ignore */ }
+          if (typeof window.__amynestRepairPoisonedAssetCache === "function") {
+            tasks.push(window.__amynestRepairPoisonedAssetCache(errMsg));
+          }
+          if (mode === "asset") {
+            return Promise.all(tasks).catch(function () {});
+          }
           if (window.caches && caches.keys) {
             tasks.push(
               caches.keys().then(function (keys) {
@@ -380,6 +463,25 @@
             );
           }
           return Promise.all(tasks).catch(function () {});
+        };
+
+        window.__amynestQuickReload = function () {
+          var ctx = window.__amynestPrevBootErrMsg || "";
+          try {
+            sessionStorage.setItem("amynest:cache-recovery-done", "1");
+            sessionStorage.setItem("amynest:refresh-complete", "1");
+          } catch (_eQuick) { /* ignore */ }
+          if (window.__amynestForceClearCaches) {
+            window.__amynestForceClearCaches(ctx, { mode: "asset" })
+              .then(function () {
+                location.reload();
+              })
+              .catch(function () {
+                location.reload();
+              });
+            return;
+          }
+          location.reload();
         };
 
         // 3. Start a new boot record.
@@ -429,7 +531,7 @@
               '<div style="max-width:420px"><p style="font-weight:700;margin:0 0 12px;font-size:22px">Something went wrong</p>' +
               '<p style="opacity:0.85;margin:0 0 20px;font-size:15px;line-height:1.55">We\'re having trouble loading this screen.<br>Please try again.</p>' +
               '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
-              '<button type="button" onclick="location.reload()" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>' +
+              '<button type="button" onclick="window.__amynestQuickReload && window.__amynestQuickReload()" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>' +
               '<button type="button" onclick="location.assign(\'/dashboard\')" style="padding:14px 28px;border-radius:999px;border:1px solid rgba(233,213,255,0.35);background:transparent;color:#e9d5ff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Go Home</button></div></div>';
           } catch (_e3) {}
         };
@@ -478,7 +580,7 @@
                 '<p style="margin:0 0 8px;font-size:22px;font-weight:700">Something went wrong</p>' +
                 '<p style="margin:0 0 20px;opacity:0.85;font-size:15px;line-height:1.55">We\'re having trouble loading this screen.<br>Please try again.</p>' +
                 '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
-                '<button type="button" onclick="location.reload()" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>' +
+                '<button type="button" onclick="window.__amynestQuickReload && window.__amynestQuickReload()" style="padding:14px 28px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Try Again</button>' +
                 '<button type="button" onclick="if(location.pathname.indexOf(\'/dashboard\')>=0){location.reload()}else{location.assign(\'/dashboard\')}" style="padding:14px 28px;border-radius:999px;border:1px solid rgba(233,213,255,0.35);background:transparent;color:#e9d5ff;font-weight:600;cursor:pointer;min-width:200px;font-size:16px">Go Home</button>' +
                 '</div></div>';
               if (window.__amynestTryAutoRecovery) {
@@ -648,9 +750,14 @@
         }
 
         /** Pre-React auto-recovery — cache purge + reload with rate limiting. */
-        window.__amynestTryAutoRecovery = function (kind, msg) {
+        window.__amynestTryAutoRecovery = function (kind, msg, failedSrc) {
           if (window.__amynestDiagOnly) return false;
           if (__amynestIsBenignMsg(msg || "")) return false;
+
+          var repairCtx = String(msg || "");
+          if (failedSrc) repairCtx += " " + String(failedSrc);
+          var recoveryMode = __amynestIsStaleAssetMsg(repairCtx) ? "asset" : "full";
+          var recoveryTimeoutMs = recoveryMode === "asset" ? 3500 : 10000;
 
           var TS_KEY = "amynest:auto-recovery:ts";
           var COUNT_KEY = "amynest:auto-recovery:count";
@@ -693,8 +800,8 @@
             var autoRecoveryTimeout = setTimeout(function () {
               try { console.error("[Refresh] Timeout"); } catch (_logTimeout) { /* ignore */ }
               try { sessionStorage.setItem("amynest:refresh-complete", "1"); } catch (_eTimeoutMark) { /* ignore */ }
-            }, 10000);
-            window.__amynestForceClearCaches()
+            }, recoveryTimeoutMs);
+            window.__amynestForceClearCaches(repairCtx, { mode: recoveryMode })
               .then(function () {
                 clearTimeout(autoRecoveryTimeout);
                 try { console.info("[Refresh] Reloading"); } catch (_logReload) { /* ignore */ }
@@ -729,7 +836,7 @@
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
           if (window.__amynestTryAutoRecovery &&
-              window.__amynestTryAutoRecovery("pre-react.error", errMsg)) {
+              window.__amynestTryAutoRecovery("pre-react.error", errMsg, e && e.filename)) {
             return;
           }
           try {
@@ -1581,6 +1688,8 @@
         try { console.info("[Refresh] Started", { kind: "pre_bundle_recovery" }); } catch (_logStart) { /* ignore */ }
         try { window.__amynestFunnelTrack && window.__amynestFunnelTrack("cache_recovery", { meta: { kind: "pre_bundle_recovery" } }); } catch (_f1) { /* ignore */ }
         try { console.info("[Refresh] Clearing cache"); } catch (_logClear) { /* ignore */ }
+        var recoveryTimeoutMs =
+          window.__amynestRecoveryMode === "asset" ? 3500 : 10000;
         var recoveryTimeout = setTimeout(function () {
           try { console.error("[Refresh] Timeout"); } catch (_logTimeout) { /* ignore */ }
           window.__amynestNeedsCacheRecovery = false;
@@ -1592,7 +1701,9 @@
             import("/src/main.tsx?v=1001").catch(function () { /* recovery overlay handles */ });
           }
         }, 10000);
-        window.__amynestForceClearCaches()
+        window.__amynestForceClearCaches(window.__amynestPrevBootErrMsg || "", {
+          mode: window.__amynestRecoveryMode || "full",
+        })
           .then(function () {
             clearTimeout(recoveryTimeout);
             try { console.info("[Refresh] Reloading"); } catch (_logReload) { /* ignore */ }
@@ -1622,18 +1733,27 @@
               localStorage.setItem("__amynest_boot_v1", JSON.stringify(r));
             }
           } catch (_e) {}
-          if (
-            window.__amynestTryAutoRecovery &&
-            window.__amynestTryAutoRecovery("boot-import", msg)
-          ) {
+
+          function showBootFailure() {
+            if (
+              window.__amynestTryAutoRecovery &&
+              window.__amynestTryAutoRecovery("boot-import", msg)
+            ) {
+              return;
+            }
+            if (window.__amynestShowCrashOverlay) {
+              window.__amynestShowCrashOverlay({
+                kind: "boot-import",
+                message: msg,
+              });
+            }
+          }
+
+          if (window.__amynestQuickReload) {
+            window.__amynestQuickReload();
             return;
           }
-          if (window.__amynestShowCrashOverlay) {
-            window.__amynestShowCrashOverlay({
-              kind: "boot-import",
-              message: msg,
-            });
-          }
+          showBootFailure();
         });
         }
       } else {

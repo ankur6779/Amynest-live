@@ -314,7 +314,7 @@ export async function runDataPlaneAudit(): Promise<DataPlaneAudit> {
   const statefulCertified = await loadStatefulPlaneCertified();
   const verifyReplicaPassed = await loadVerifyReplicaPassed();
   const renderApi =
-    process.env.RENDER_API_URL?.trim() || "https://amynest-backend-dykj.onrender.com";
+    process.env.RENDER_API_URL?.trim() || "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
   const coolifyApi =
     process.env.COOLIFY_API_URL?.trim() ||
     "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";

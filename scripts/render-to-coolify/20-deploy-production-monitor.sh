@@ -46,7 +46,7 @@ cat > /opt/amynest/monitor.env <<EOF
 AMYNEST_MONITOR_DIR=/opt/amynest/monitor
 PRODUCTION_URL=https://www.amynest.in
 COOLIFY_API_URL=https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io
-RENDER_API_URL=https://amynest-backend-dykj.onrender.com
+RENDER_API_URL=https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io
 MONITOR_INTERVAL_MS=60000
 INTERNAL_HEALTH_SECRET=${INTERNAL_HEALTH_SECRET}
 NODE_PATH=/opt/amynest/monitor/node_modules

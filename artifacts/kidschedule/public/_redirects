@@ -1,4 +1,11 @@
+# Debug / preview shortcuts
 /debug-parity           /dashboard   302
 /dev/phonics-audio-preview   /dashboard   302
 /dev/rhymes-audio-ab    /dashboard   302
+
+# SPA fallback for app routes (existing static files still win).
+# NOTE: Cloudflare Pages does NOT support non-200/3xx rewrites
+# (e.g. `/assets/* /404 404` is ignored). Missing `/assets/*` are
+# handled by `/assets/404.html` (closest 404) so they never become
+# immutable SPA HTML under a .js URL.
 /*    /index.html   200

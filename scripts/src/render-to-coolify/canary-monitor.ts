@@ -183,7 +183,7 @@ async function probeRedisViaWorker(workerUrl: string): Promise<RedisQueueSnapsho
 }
 
 async function runCheck(state: CanaryState, advance: boolean): Promise<CanaryState> {
-  const renderUrl = envOr("RENDER_API_URL", "https://amynest-backend-dykj.onrender.com");
+  const renderUrl = envOr("RENDER_API_URL", "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io");
   const coolifyUrl = envOr("COOLIFY_API_URL");
   if (!coolifyUrl) {
     console.error("Set COOLIFY_API_URL");

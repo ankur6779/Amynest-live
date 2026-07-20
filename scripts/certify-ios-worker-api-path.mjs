@@ -14,7 +14,8 @@ import { spawnSync } from "node:child_process";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PROBE = process.argv.includes("--probe");
 const WORKER_ORIGIN = "https://www.amynest.in";
-const RENDER_ORIGIN = "https://amynest-backend-dykj.onrender.com";
+const LEGACY_DIRECT_ORIGIN =
+  "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
 
 const checks = [];
 
@@ -86,10 +87,10 @@ if (
 
 // 5. OTA defaults
 const otaPatch = read("artifacts/amynest-capacitor/scripts/patch-capacitor-ota-config.mjs");
-if (otaPatch.includes(WORKER_ORIGIN) && !otaPatch.includes(`"${RENDER_ORIGIN}"`)) {
+if (otaPatch.includes(WORKER_ORIGIN) && !otaPatch.includes(LEGACY_DIRECT_ORIGIN)) {
   pass("OTA patch script defaults to Worker origin");
 } else {
-  fail("OTA patch script still defaults to Render");
+  fail("OTA patch script still defaults to direct Coolify origin");
 }
 
 const capConfig = read("artifacts/amynest-capacitor/capacitor.config.json");
@@ -103,7 +104,7 @@ const manifest = read("artifacts/api-server/ota/manifest.production.json");
 if (manifest.includes(`${WORKER_ORIGIN}/api/app/ota/bundle/`)) {
   pass("OTA manifest bundleUrl uses Worker");
 } else {
-  fail("OTA manifest bundleUrl still points to Render");
+  fail("OTA manifest bundleUrl not on Worker origin");
 }
 
 // 6. build-web.mjs bakes VITE_APP_API_ORIGIN

@@ -20,7 +20,8 @@ import {
 } from "./reels-gcs-origin.js";
 import { selectBackend } from "./canary.js";
 
-const DEFAULT_BACKEND = "https://amynest-backend-dykj.onrender.com";
+const DEFAULT_BACKEND =
+  "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
 const COACH_GENERATE_TRACE_HEADER = "x-amynest-coach-trace-id";
 const COACH_TRACE_PATHS = ["/api/coach/generate", "/api/coach/generate-fallback", "/api/result/"];
 

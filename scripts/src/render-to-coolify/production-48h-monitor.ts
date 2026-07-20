@@ -303,7 +303,7 @@ async function main(): Promise<void> {
     "COOLIFY_API_URL",
     "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
   );
-  const renderUrl = envOr("RENDER_API_URL", "https://amynest-backend-dykj.onrender.com");
+  const renderUrl = envOr("RENDER_API_URL", "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io");
   const coolifyHost = envOr("COOLIFY_SSH_HOST", "188.245.208.126");
   const healthSecret = envOr("INTERNAL_HEALTH_SECRET");
   const intervalMs = Number(envOr("MONITOR_INTERVAL_MS", String(DEFAULT_INTERVAL_MS)));

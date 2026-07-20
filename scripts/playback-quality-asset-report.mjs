@@ -3,7 +3,7 @@
  * Offline asset report for Hear & Tap / CVC phonics clips (static catalog).
  * Resolves letters via getPhonicsAudioText (e.g. c → "k", q → "kw"), not bare letter keys.
  *
- * Usage: node scripts/playback-quality-asset-report.mjs [--base https://amynest-backend-dykj.onrender.com]
+ * Usage: node scripts/playback-quality-asset-report.mjs [--base https://www.amynest.in]
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -22,7 +22,7 @@ const KEYS = [
   "sat", "cat", "bat",
 ];
 
-const DEFAULT_API_BASE = "https://amynest-backend-dykj.onrender.com";
+const DEFAULT_API_BASE = "https://www.amynest.in";
 
 const base =
   process.argv.includes("--base")

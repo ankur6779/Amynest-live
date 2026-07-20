@@ -5,10 +5,9 @@
  * Referral share links use `VITE_APP_WEB_ORIGIN` (see `lib/referral-links.ts`).
  */
 export const API_ORIGINS = {
-  // Production API is Coolify behind Cloudflare (www.amynest.in). The legacy
-  // Render service is suspended (HTTP 503) and must not remain a fallback.
+  // Production API is Coolify behind Cloudflare (www.amynest.in).
   production: "https://www.amynest.in",
-  development: "https://amynest-dev.onrender.com",
+  development: "http://localhost:5000",
   local: "http://localhost:5000",
 } as const;
 
@@ -48,7 +47,7 @@ export function resolveProductionWorkerApiOrigin(): string | null {
 
 /**
  * When the app runs on amynest.in / www.amynest.in, route `/api/*` through the
- * same origin (Cloudflare Worker → Render backend). Applies to browser and
+ * same origin (Cloudflare Worker → Coolify backend). Applies to browser and
  * Android WebView shells that load the production site.
  */
 export function resolveProductionSameOriginApi(): string | null {

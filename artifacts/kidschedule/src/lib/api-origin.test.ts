@@ -69,7 +69,7 @@ describe("getAppApiBaseOrigin", () => {
     expect(getAppApiBaseOrigin()).not.toContain("onrender.com");
   });
 
-  it("still uses Render direct for Capacitor in development", () => {
+  it("uses localhost API for Capacitor in development", () => {
     vi.stubEnv("PROD", true);
     vi.stubEnv("VITE_AMYNEST_ENV", "development");
     vi.stubEnv("VITE_APP_API_ORIGIN", "");
@@ -82,7 +82,7 @@ describe("getAppApiBaseOrigin", () => {
       Capacitor: { isNativePlatform: () => true, getPlatform: () => "ios" },
     });
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0" });
-    expect(getAppApiBaseOrigin()).toBe("https://amynest-dev.onrender.com");
+    expect(getAppApiBaseOrigin()).toBe("http://localhost:5000");
   });
 });
 
@@ -124,8 +124,11 @@ describe("mergeAmyNestApiClientHeaders", () => {
     expect(headers.get("x-amynest-platform")).toBe("ios");
   });
 
-  it("skips headers when API origin is Render direct", () => {
-    vi.stubEnv("VITE_APP_API_ORIGIN", "https://amynest-backend-dykj.onrender.com");
+  it("skips headers when API origin is not the Worker path", () => {
+    vi.stubEnv(
+      "VITE_APP_API_ORIGIN",
+      "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+    );
     const merged = mergeAmyNestApiClientHeaders({});
     const headers = new Headers(merged.headers);
     expect(headers.get("x-amynest-api-path")).toBeNull();
@@ -135,9 +138,11 @@ describe("mergeAmyNestApiClientHeaders", () => {
 describe("usesCloudflareWorkerApiPath", () => {
   it("detects worker origin", () => {
     expect(usesCloudflareWorkerApiPath("https://www.amynest.in")).toBe(true);
-    expect(usesCloudflareWorkerApiPath("https://amynest-backend-dykj.onrender.com")).toBe(
-      false,
-    );
+    expect(
+      usesCloudflareWorkerApiPath(
+        "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
+      ),
+    ).toBe(false);
   });
 });
 

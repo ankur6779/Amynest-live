@@ -15,5 +15,14 @@
 /firebase-messaging-sw.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+# Long-lived hashed assets. Avoid `immutable` so a soft reload can recover
+# if a deploy race ever caches the wrong body under an /assets/*.js URL.
 /assets/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=31536000
+  X-Content-Type-Options: nosniff
+
+# Closest-404 marker for missing hashed assets (must never be cached as JS).
+/assets/404.html
+  Cache-Control: no-store
+  Content-Type: text/html; charset=utf-8
+  X-Content-Type-Options: nosniff

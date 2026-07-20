@@ -21,7 +21,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? "/";
 
 /** PWA / service-worker cache bucket — bump on deploy to purge stale shells. */
-const CACHE_VERSION = "amynest-v17";
+const CACHE_VERSION = "amynest-v18";
 
 /**
  * Immutable audio cache version. BUMP THIS whenever phonics (or other static)

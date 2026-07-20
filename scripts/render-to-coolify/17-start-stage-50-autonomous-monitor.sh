@@ -10,7 +10,7 @@ REMOTE_DIR="/opt/amynest/monitor"
 REMOTE_AUDIT="/opt/amynest/monitor-audit"
 REMOTE_CF="/opt/amynest/cloudflare-proxy"
 COOLIFY_URL="${COOLIFY_API_URL:-https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io}"
-RENDER_URL="${RENDER_API_URL:-https://amynest-backend-dykj.onrender.com}"
+RENDER_URL="${RENDER_API_URL:-https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io}"
 COOLIFY_HOST="${COOLIFY_SSH_HOST:-188.245.208.126}"
 
 # Optional secrets from local shell (never printed)

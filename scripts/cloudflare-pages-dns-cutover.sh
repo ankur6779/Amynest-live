@@ -5,7 +5,7 @@
 # Usage:
 #   CLOUDFLARE_API_TOKEN=... bash scripts/cloudflare-pages-dns-cutover.sh
 #
-# Rollback: restore www CNAME/A record to Render origin (amynest-live-1-dykj.onrender.com).
+# Rollback: restore www CNAME to amynest-web.pages.dev (Cloudflare Pages).
 set -euo pipefail
 
 ZONE_NAME="${ZONE_NAME:-amynest.in}"

@@ -15,7 +15,7 @@ mkdirSync(OUT, { recursive: true });
 
 const PROD_ORIGINS = [
   "https://www.amynest.in",
-  "https://amynest-backend-dykj.onrender.com",
+  "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io",
 ];
 const LOCAL_ORIGIN = process.env.API_ORIGIN?.replace(/\/$/, "") ?? "http://127.0.0.1:5000";
 

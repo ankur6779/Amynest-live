@@ -34,7 +34,7 @@ const COOLIFY_URL =
   process.env.COOLIFY_API_URL?.trim() ||
   "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
 const RENDER_URL =
-  process.env.RENDER_API_URL?.trim() || "https://amynest-backend-dykj.onrender.com";
+  process.env.RENDER_API_URL?.trim() || "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
 const HEALTH_SECRET = process.env.INTERNAL_HEALTH_SECRET?.trim() || "";
 
 type AlertLevel = "ok" | "warn" | "critical";
@@ -82,7 +82,7 @@ type MonitorStatus = {
   cycle_index: number;
   host: string;
   production_plane: "coolify";
-  render_standby: "hot";
+  render_standby: "retired";
   engineering_freeze: true;
   healthy: boolean;
   alerts: Alert[];
@@ -639,7 +639,7 @@ async function runCycle(cp: Checkpoint): Promise<{ status: MonitorStatus; cp: Ch
     cycle_index: cp.cycle_index + 1,
     host: os.hostname(),
     production_plane: "coolify",
-    render_standby: "hot",
+    render_standby: "retired",
     engineering_freeze: true,
     healthy: true,
     alerts: [],

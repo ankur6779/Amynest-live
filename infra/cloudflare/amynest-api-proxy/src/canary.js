@@ -1,10 +1,10 @@
 /**
- * Canary routing — Render primary, Coolify receives a configurable share.
+ * Canary routing — sticky share between primary and canary origins.
  *
  * Env (wrangler [vars]):
- *   BACKEND_ORIGIN          — primary (Render)
- *   CANARY_BACKEND_ORIGIN   — canary target (Coolify); empty = disabled
- *   CANARY_PERCENT          — 0–100 integer; default 0 (all Render)
+ *   BACKEND_ORIGIN          — primary upstream (Coolify production)
+ *   CANARY_BACKEND_ORIGIN   — canary target; empty = disabled
+ *   CANARY_PERCENT          — 0–100 integer; 100 = all canary (Coolify)
  *
  * Sticky assignment via FNV-1a hash of cf-connecting-ip + device id so the
  * same client stays on one backend during a canary stage.
@@ -36,7 +36,7 @@ function fnv1aPercent(key) {
 /**
  * @param {Record<string, string>} env
  * @param {Request} request
- * @returns {{ url: string; lane: "render" | "coolify" }}
+ * @returns {{ url: string; lane: "primary" | "coolify" }}
  */
 export function selectBackend(env, request) {
   const cfg = parseCanaryConfig(
@@ -50,7 +50,7 @@ export function selectBackend(env, request) {
   }
 
   if (!cfg.enabled || !cfg.canary) {
-    return { url: cfg.primary, lane: "render" };
+    return { url: cfg.primary, lane: "primary" };
   }
 
   const stickyKey =
@@ -63,7 +63,7 @@ export function selectBackend(env, request) {
   if (bucket < cfg.percent) {
     return { url: cfg.canary, lane: "coolify" };
   }
-  return { url: cfg.primary, lane: "render" };
+  return { url: cfg.primary, lane: "primary" };
 }
 
 /** Rollout ladder (percent). */
