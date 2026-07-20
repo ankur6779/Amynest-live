@@ -278,7 +278,7 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
       gameId="freeze-statue"
       fullBleed
       className={cn(
-        "relative h-[100dvh] overflow-hidden",
+        "relative overflow-hidden",
         phase === "dance"
           ? "bg-gradient-to-b from-violet-900/95 via-fuchsia-950/85 to-emerald-900/80"
           : "bg-gradient-to-b from-indigo-950/90 via-violet-950/80 to-emerald-950/70",
@@ -306,21 +306,20 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
       )}
 
       {phase !== "calibrating" && (
-        <div className="absolute left-0 right-0 top-[3.75rem] z-[3] px-4">
+        <div className="relative z-[3] shrink-0 px-3 pt-1 sm:px-4">
           <HealthLabRoundRail
             current={Math.min(roundIndex, CRYSTAL_GARDEN_ROUNDS - 1)}
             total={CRYSTAL_GARDEN_ROUNDS}
             label="Crystal rounds"
           />
-          <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200/60">
+          <p className="mt-2 truncate text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200/60">
             {gardenStage.label}
           </p>
         </div>
       )}
 
-      {/* Amy + garden playfield */}
       {phase !== "calibrating" && (
-        <div className="absolute inset-x-0 bottom-[9.5rem] top-[6.5rem] z-[2] flex flex-col items-center justify-center gap-3 px-4">
+        <div className="health-lab-game-region-grow relative z-[2] gap-2 px-3 sm:gap-3 sm:px-4">
           <CrystalGardenAmy mode={amyMode} />
 
           {statueRating && statueRating !== "fail" && phase === "check" && (
@@ -333,7 +332,7 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
             </motion.p>
           )}
 
-          <div className="relative w-full max-w-md">
+          <div className="relative w-full max-w-md min-h-0">
             <CrystalGardenStatueAura
               active={phase === "check" && statueRating !== null && statueRating !== "fail"}
               rating={statueRating === "fail" ? null : statueRating}
@@ -355,36 +354,27 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
         </div>
       )}
 
-      {/* FIXED bottom HUD */}
       {phase !== "calibrating" && (
-        <>
-          <div
-            className="absolute left-4 z-30"
-            style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
-          >
+        <div className="health-lab-game-region-hud relative z-30 px-3 pt-1">
+          <div className="mx-auto flex w-full max-w-md items-end justify-between gap-3">
             <CrystalGardenMotionMeter
               tier={motionTier}
               stability={sensor.stabilityPercent}
               active={phase === "freeze" || phase === "check"}
             />
+            <div className="rounded-2xl border border-white/10 bg-black/25 px-3 py-2 text-center backdrop-blur-md sm:px-4 sm:py-2.5">
+              <p className="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">{crystals}</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Crystals</p>
+            </div>
           </div>
-
-          <div
-            className="absolute right-4 z-30 rounded-2xl border border-white/10 bg-black/25 px-4 py-2.5 text-center backdrop-blur-md"
-            style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
-          >
-            <p className="font-mono text-xl font-bold tabular-nums text-white">{crystals}</p>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Crystals</p>
-          </div>
-
-          <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 px-16 text-center text-[10px] text-white/50">
+          <p className="pointer-events-none mt-2 px-2 text-center text-[10px] text-white/50">
             {phase === "dance"
               ? GUIDANCE_MESSAGES.freeze[0]
               : phase === "freeze"
                 ? "Hold completely still!"
                 : GUIDANCE_MESSAGES.freeze[Math.min(roundIndex, GUIDANCE_MESSAGES.freeze.length - 1)]}
           </p>
-        </>
+        </div>
       )}
 
       <CrystalGardenVictory

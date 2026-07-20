@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-07-20T04:00:00.300Z",
+  "verdict": "PASS",
+  "devicesTested": [
+    "Chromium (Playwright) — Android-class CSS viewports",
+    "Font scaling via root rem"
+  ],
+  "screenWidthsTested": [
+    320,
+    360,
+    375,
+    390,
+    412,
+    480,
+    600,
+    768
+  ],
+  "fontScalingTested": [
+    "100%",
+    "115%",
+    "130%",
+    "150%"
+  ],
+  "landscapeTested": [
+    "landscape-iphone",
+    "landscape-android"
+  ],
+  "screensVerified": [
+    "Health Lab Home",
+    "Adventure Trail",
+    "Every World Card",
+    "Daily Quests",
+    "For Grown-ups",
+    "Passport / Wellness Report",
+    "Balloon Valley",
+    "Sky Island",
+    "Rocket Base",
+    "Crystal Garden",
+    "Crystal Cave"
+  ],
+  "fpsHome390": 57,
+  "failCount": 0,
+  "uniqueFailCodes": [],
+  "fails": [],
+  "probeCount": 58,
+  "screenshotDir": "/Users/macbook/AmyNestProject/AmyNest-AI/audit/health-lab-responsive-cert/screenshots"
+}

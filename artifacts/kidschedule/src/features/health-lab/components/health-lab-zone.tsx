@@ -187,13 +187,13 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
     }
   };
 
-  /** Home chrome comes from HubModulePageShell in-app; standalone hosts need a local bar. */
+  /** Home chrome comes from HubModulePageShell in-app; standalone hosts need a local bar.
+   * Games use their own top bar inside a fixed viewport — never stack a second header. */
   const showHeader =
     (view === "home" && standalone) ||
     view === "progress" ||
     view === "dashboard" ||
-    view === "shop" ||
-    (typeof view === "object" && view.kind === "game");
+    view === "shop";
 
   const inGame = typeof view === "object" && view.kind === "game";
 
@@ -263,18 +263,23 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
       )}
 
       {typeof view === "object" && view.kind === "game" && (
-        <div key={view.gameId} className={reduced ? undefined : "health-lab-world-arrive"}>
+        <div
+          className={cn("health-lab-game-viewport", !reduced && "health-lab-world-arrive")}
+          key={view.gameId}
+        >
           {renderGame(view.gameId)}
         </div>
       )}
 
       {typeof view === "object" && view.kind === "session-rewards" && (
-        <HealthLabSessionRewards
-          result={view.result}
-          celebrations={view.celebrations}
-          state={state}
-          onContinue={() => setView("home")}
-        />
+        <div className="health-lab-game-viewport" key="session-rewards">
+          <HealthLabSessionRewards
+            result={view.result}
+            celebrations={view.celebrations}
+            state={state}
+            onContinue={() => setView("home")}
+          />
+        </div>
       )}
 
       {arrivalFlash && !reduced && (

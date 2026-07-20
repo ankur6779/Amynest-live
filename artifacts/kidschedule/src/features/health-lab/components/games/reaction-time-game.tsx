@@ -163,9 +163,15 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
   }
 
   return (
-    <HealthLabGameStage className={cn("transition-colors duration-500", `bg-gradient-to-b ${phaseStyles}`)}>
+    <HealthLabGameStage
+      gameId="reaction-time"
+      fullBleed
+      className={cn("transition-colors duration-500", `bg-gradient-to-b ${phaseStyles}`)}
+    >
       <HealthLabLiveRegion message={liveMsg} />
-      <HealthLabGameTopBar onExit={onExit} title="Rocket Launch" />
+      <div className="relative z-20 shrink-0">
+        <HealthLabGameTopBar onExit={onExit} title="Rocket Launch" />
+      </div>
       <HealthLabStarfield count={16} />
       <HealthLabPhaseFlash active={phase === "go"} color="rgba(16,185,129,0.45)" />
       <HealthLabPhaseFlash active={phase === "too-early"} color="rgba(244,63,94,0.35)" />
@@ -175,13 +181,13 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
           current={Math.min(round - 1, ROUNDS - 1)}
           total={ROUNDS}
           label="Mission progress"
-          className="relative z-[3] pt-2"
+          className="relative z-[3] shrink-0 px-3 pt-2"
         />
       )}
 
       <button
         type="button"
-        className="relative z-[3] flex w-full flex-1 flex-col items-center justify-center touch-manipulation select-none px-6 pb-10"
+        className="health-lab-game-region-grow relative z-[3] touch-manipulation select-none px-4 pb-6 sm:px-6"
         onClick={handleTap}
         aria-label={phase === "go" ? "Tap now — rocket launch" : "Reaction tap zone"}
       >
@@ -203,7 +209,7 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
           </motion.p>
         )}
 
-        <h2 className="mt-8 text-2xl font-bold tracking-tight health-lab-title-shine sm:text-3xl">
+        <h2 className="mt-6 text-[clamp(1.25rem,5vw,1.875rem)] font-bold tracking-tight health-lab-title-shine">
           Rocket Launch Academy
         </h2>
 

@@ -46,11 +46,17 @@ export function HealthLabGameOnboarding({
   }, [reduced]);
 
   return (
-    <HealthLabGameStage gameId={gameId} className="items-center justify-center px-4 pb-10">
-      <HealthLabGameTopBar onExit={onExit} title={game.title.split(" ")[0]} />
+    <HealthLabGameStage
+      gameId={gameId}
+      fullBleed
+      className="health-lab-game-stage-scroll px-[clamp(0.75rem,4vw,1.25rem)]"
+    >
+      <div className="relative z-20 shrink-0">
+        <HealthLabGameTopBar onExit={onExit} title={game.title.split(" ")[0]} />
+      </div>
 
       <motion.div
-        className="relative z-[3] flex w-full max-w-md flex-col items-center"
+        className="relative z-[3] mx-auto flex w-full max-w-md flex-col items-center py-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
         initial={reduced ? false : { opacity: 0, y: 20 }}
         animate={ready ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.5, ease: "easeOut" }}

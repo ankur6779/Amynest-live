@@ -92,7 +92,7 @@ export const HealthLabSessionRewards = memo(function HealthLabSessionRewards({
         : t("celebration_world_done", "{{world}} complete!", { world: world.worldName });
 
   return (
-    <div className="relative flex min-h-[70dvh] flex-col items-center justify-center overflow-hidden px-4 py-8">
+    <div className="relative flex h-full min-h-0 w-full flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-[clamp(0.75rem,4vw,1.25rem)] py-6 sm:py-8">
       {!reduced && (
         <div
           className={cn(

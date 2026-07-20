@@ -252,7 +252,7 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
   }
 
   return (
-    <HealthLabGameStage gameId="finger-stability" fullBleed className="relative h-[100dvh] overflow-hidden">
+    <HealthLabGameStage gameId="finger-stability" fullBleed className="relative overflow-hidden">
       <HealthLabLiveRegion message={liveMsg} />
       <CrystalReactorCity stage={cityStage} reduced={reduced} />
       <HealthLabStarfield count={14} />
@@ -262,10 +262,10 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
         <HealthLabGameTopBar onExit={onExit} title="Crystal Core" />
       </div>
 
-      {/* Full-screen touch zone */}
+      {/* Touch zone fills remaining viewport between chrome and HUD */}
       <div
         ref={containerRef}
-        className="absolute inset-0 z-[10] touch-none"
+        className="relative z-[10] min-h-0 flex-1 touch-none"
         onPointerDown={(e) => {
           if (active || !e.isPrimary) return;
           startGame();
@@ -280,7 +280,7 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
         onPointerUp={() => active && finish(false)}
         onPointerCancel={() => active && finish(false)}
       >
-        <div className="pointer-events-none absolute inset-x-0 bottom-[9rem] top-[4rem] z-[2] flex flex-col items-center justify-center">
+        <div className="pointer-events-none absolute inset-0 z-[2] flex flex-col items-center justify-center px-3">
           <CrystalReactorToast message={toastMessage} />
           <CrystalReactorMilestoneBurst active={milestoneBurst} reduced={reduced} />
           <CrystalReactorParticles active={active} intensity={particleIntensity} reduced={reduced} />
@@ -298,55 +298,45 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
         </div>
       </div>
 
-      {/* FIXED bottom HUD */}
-      <div
-        className="absolute left-4 z-30"
-        style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
-      >
-        <CrystalReactorPowerMeter powerPct={active ? powerPct : 0} label={active ? powerLabel : "Standby"} />
-      </div>
-
-      <div
-        className="absolute right-4 z-30 flex flex-col items-end gap-2"
-        style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
-      >
-        {active && <CrystalReactorStateBadge state={reactorState} />}
-        <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-2 text-center backdrop-blur-md">
-          <p className="font-mono text-xl font-bold tabular-nums text-white">
-            {active ? Math.max(0, REACTOR_DURATION_SEC - elapsed).toFixed(0) : REACTOR_DURATION_SEC}s
-          </p>
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Remaining</p>
+      <div className="health-lab-game-region-hud relative z-30 px-3 pt-1">
+        <div className="mx-auto flex w-full max-w-md items-end justify-between gap-3">
+          <CrystalReactorPowerMeter powerPct={active ? powerPct : 0} label={active ? powerLabel : "Standby"} />
+          <div className="flex flex-col items-end gap-2">
+            {active && <CrystalReactorStateBadge state={reactorState} />}
+            <div className="rounded-2xl border border-white/10 bg-black/25 px-3 py-2 text-center backdrop-blur-md sm:px-4">
+              <p className="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">
+                {active ? Math.max(0, REACTOR_DURATION_SEC - elapsed).toFixed(0) : REACTOR_DURATION_SEC}s
+              </p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Remaining</p>
+            </div>
+          </div>
         </div>
+
+        {!active && (
+          <div className="mx-auto mt-3 w-full max-w-sm px-1">
+            <HealthLabGameChips
+              options={REACTOR_DIFFICULTIES}
+              selected={difficulty}
+              onSelect={(i) => {
+                setDifficulty(i as ReactorDriftMode);
+                playTap();
+              }}
+            />
+            <button
+              type="button"
+              className="health-lab-cta-premium mt-3 min-h-12 w-full rounded-2xl bg-gradient-to-r from-violet-500 via-purple-600 to-fuchsia-500 px-6 py-3.5 text-sm font-bold text-white"
+              onClick={startGame}
+            >
+              Touch to Start
+            </button>
+          </div>
+        )}
+        <p className="pointer-events-none mt-2 px-2 text-center text-[10px] text-white/50">
+          {active
+            ? GUIDANCE_MESSAGES.reactor[Math.min(Math.floor(elapsed / 5), GUIDANCE_MESSAGES.reactor.length - 1)]
+            : "Keep your finger on the crystal to stabilize the reactor"}
+        </p>
       </div>
-
-      {!active && (
-        <div
-          className="absolute left-1/2 z-30 -translate-x-1/2"
-          style={{ bottom: "max(5rem, calc(env(safe-area-inset-bottom, 0px) + 3rem))" }}
-        >
-          <HealthLabGameChips
-            options={REACTOR_DIFFICULTIES}
-            selected={difficulty}
-            onSelect={(i) => {
-              setDifficulty(i as ReactorDriftMode);
-              playTap();
-            }}
-          />
-          <button
-            type="button"
-            className="health-lab-cta-premium mt-4 min-h-[48px] w-full rounded-2xl bg-gradient-to-r from-violet-500 via-purple-600 to-fuchsia-500 px-8 py-3.5 text-sm font-bold text-white"
-            onClick={startGame}
-          >
-            Touch to Start
-          </button>
-        </div>
-      )}
-
-      <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 px-16 text-center text-[10px] text-white/50">
-        {active
-          ? GUIDANCE_MESSAGES.reactor[Math.min(Math.floor(elapsed / 5), GUIDANCE_MESSAGES.reactor.length - 1)]
-          : "Keep your finger on the crystal to stabilize the reactor"}
-      </p>
 
       <CrystalReactorVictory
         show={showVictory}

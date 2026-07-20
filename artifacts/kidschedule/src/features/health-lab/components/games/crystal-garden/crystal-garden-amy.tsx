@@ -51,7 +51,7 @@ export const CrystalGardenAmy = memo(function CrystalGardenAmy({
 
       <div
         className={cn(
-          "relative flex h-28 w-28 items-center justify-center rounded-[1.5rem] border-2 sm:h-32 sm:w-32",
+          "relative flex h-[clamp(4.5rem,18vw,7.5rem)] w-[clamp(4.5rem,18vw,7.5rem)] items-center justify-center rounded-[1.5rem] border-2",
           mode === "freeze"
             ? "border-cyan-300/50 bg-gradient-to-br from-cyan-400/35 via-indigo-500/30 to-violet-600/25 shadow-[0_0_50px_rgba(34,211,238,0.55)]"
             : mode === "dance"
@@ -62,7 +62,7 @@ export const CrystalGardenAmy = memo(function CrystalGardenAmy({
         aria-label="Amy, your crystal garden guide"
       >
         <motion.span
-          className="text-5xl sm:text-6xl"
+          className="text-[clamp(2rem,8vw,3.5rem)]"
           animate={mode === "dance" && !reduced ? { rotate: [-5, 5, -3, 3, 0] } : {}}
           transition={{ duration: 0.5, repeat: mode === "dance" ? Infinity : 0 }}
           aria-hidden

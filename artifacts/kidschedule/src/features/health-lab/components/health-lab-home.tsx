@@ -120,7 +120,7 @@ export function HealthLabHome({
   return (
     <div
       className={cn(
-        "health-lab-home-scroll mx-auto max-w-lg space-y-4 px-4 pb-28 pt-2 text-base",
+        "health-lab-home-scroll mx-auto w-full min-w-0 max-w-lg space-y-4 px-[clamp(0.75rem,4vw,1rem)] pb-28 pt-2 text-base",
         hubVitality >= 3 && "health-lab-home-alive",
       )}
     >
@@ -210,7 +210,7 @@ export function HealthLabHome({
           <span aria-hidden>
             {nextWorld.celebrateEmoji} {nextWorld.worldName}
             {nextEvolution.stage === 0
-              ? ` · Help restore it`
+              ? ` · Restore it`
               : ` · ${nextEvolution.milestoneLabel}`}
           </span>
           <span className="sr-only">
@@ -221,7 +221,11 @@ export function HealthLabHome({
       </section>
 
       {/* 2. Magic tray */}
-      <div className="flex gap-2" role="group" aria-label={t("rewards_section", "Rewards")}>
+      <div
+        className="flex min-w-0 flex-wrap gap-2 sm:flex-nowrap"
+        role="group"
+        aria-label={t("rewards_section", "Rewards")}
+      >
         {canSurprise && (
           <button
             type="button"

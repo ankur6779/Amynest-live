@@ -143,7 +143,11 @@ export function CalmnessMeterGame({ state, onComplete, onExit }: Props) {
   }
 
   return (
-    <HealthLabGameStage gameId="calmness-meter" fullBleed className="relative min-h-[100dvh] overflow-x-hidden pb-28">
+    <HealthLabGameStage
+      gameId="calmness-meter"
+      fullBleed
+      className="health-lab-game-stage-scroll relative"
+    >
       <HealthLabLiveRegion message={WELLNESS_JOURNEY_TITLE} />
       <HealthLabParticles className="opacity-40" />
       <HealthLabStarfield count={14} />

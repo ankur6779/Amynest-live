@@ -357,26 +357,20 @@ export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }:
   }
 
   return (
-    <HealthLabGameStage
-      gameId="breath-control"
-      fullBleed
-      className="relative h-[100dvh] overflow-hidden"
-    >
+    <HealthLabGameStage gameId="breath-control" fullBleed className="relative overflow-hidden">
       <HealthLabLiveRegion message={liveMsg} />
       <BalloonJourneySky elapsed={elapsed} altitude={altitude} reduced={reduced} />
       <HealthLabPhaseFlash active={milestoneBurst} color="rgba(251,191,36,0.4)" />
 
-      {/* Top bar — fixed height, no layout coupling to game area */}
       <div className="relative z-20 shrink-0">
         <HealthLabGameTopBar onExit={onExit} title="Balloon Journey" />
       </div>
 
-      {/* Journey progress rail — absolute, never pushes hold button */}
-      <div className="absolute left-0 right-0 top-[3.75rem] z-[3] px-3">
-        <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md">
+      <div className="relative z-[3] shrink-0 px-3 pt-1">
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md">
           <div className="flex justify-between gap-1">
             {BALLOON_JOURNEY_MILESTONES.map((m) => (
-              <div key={m.seconds} className="flex flex-col items-center gap-0.5">
+              <div key={m.seconds} className="flex min-w-0 flex-col items-center gap-0.5">
                 <span
                   className={cn(
                     "text-base transition-all duration-500",
@@ -402,23 +396,7 @@ export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }:
         </div>
       </div>
 
-      {/* Altitude + timer HUD — absolute above fixed hold button */}
-      <div className="absolute bottom-[10.5rem] left-0 right-0 z-[3] flex justify-center gap-3 px-4">
-        <div className="health-lab-timer-glass rounded-2xl px-5 py-3 text-center">
-          <p className="font-mono text-2xl font-bold tabular-nums text-white">{altitude}m</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-            Altitude
-          </p>
-        </div>
-        <HealthLabGameTimer
-          value={`${elapsed.toFixed(1)}s`}
-          label="Hold time"
-          className="!px-5 !py-3 [&_p:first-child]:!text-2xl"
-        />
-      </div>
-
-      {/* Balloon playfield — centered, independent of bottom controls */}
-      <div className="absolute inset-x-0 bottom-[11rem] top-[7.5rem] z-[2] flex items-center justify-center">
+      <div className="health-lab-game-region-grow relative z-[2]">
         <BalloonJourneyMilestoneBurst active={milestoneBurst} reduced={reduced} />
         <BalloonJourneyToast message={toastMessage} />
         <BalloonJourneyParticles holding={holding} intensity={particleIntensity} reduced={reduced} />
@@ -431,21 +409,32 @@ export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }:
           holding={holding}
           reduced={reduced}
         />
+        {goldenMode && (
+          <div className="pointer-events-none absolute left-1/2 top-[18%] z-[4] -translate-x-1/2 px-3">
+            <p className="rounded-full border border-amber-300/40 bg-amber-500/20 px-4 py-1 text-sm font-bold text-amber-100">
+              ✨ Golden Balloon Mode!
+            </p>
+          </div>
+        )}
       </div>
 
-      {goldenMode && (
-        <div className="pointer-events-none absolute left-1/2 top-[42%] z-[4] -translate-x-1/2">
-          <p className="rounded-full border border-amber-300/40 bg-amber-500/20 px-4 py-1 text-sm font-bold text-amber-100">
-            ✨ Golden Balloon Mode!
+      <div className="relative z-[3] flex shrink-0 justify-center gap-3 px-4 pb-2">
+        <div className="health-lab-timer-glass rounded-2xl px-4 py-2.5 text-center sm:px-5 sm:py-3">
+          <p className="font-mono text-[clamp(1.25rem,5vw,1.5rem)] font-bold tabular-nums text-white">
+            {altitude}m
+          </p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
+            Altitude
           </p>
         </div>
-      )}
+        <HealthLabGameTimer
+          value={`${elapsed.toFixed(1)}s`}
+          label="Hold time"
+          className="!px-4 !py-2.5 sm:!px-5 sm:!py-3 [&_p:first-child]:!text-[clamp(1.25rem,5vw,1.5rem)]"
+        />
+      </div>
 
-      {/* FIXED hold button — never moves */}
-      <div
-        className="absolute left-1/2 z-30 -translate-x-1/2"
-        style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
-      >
+      <div className="health-lab-game-region-hud relative z-30 flex flex-col items-center px-4 pt-1">
         <BalloonJourneyHoldButton
           holding={holding}
           disabled={finished}
@@ -486,18 +475,17 @@ export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }:
         >
           <Fingerprint
             className={cn(
-              "h-14 w-14 text-white/95 drop-shadow-md",
+              "h-[clamp(2.5rem,12vw,3.5rem)] w-[clamp(2.5rem,12vw,3.5rem)] text-white/95 drop-shadow-md",
               holding ? "opacity-100" : "opacity-85",
             )}
             strokeWidth={1.5}
             aria-hidden
           />
         </BalloonJourneyHoldButton>
+        <p className="pointer-events-none mt-2 max-w-sm px-2 text-center text-[10px] leading-relaxed text-white/45">
+          {GUIDANCE_MESSAGES.hold[Math.min(Math.floor(elapsed / 8), GUIDANCE_MESSAGES.hold.length - 1)]}
+        </p>
       </div>
-
-      <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 px-6 text-center text-[10px] leading-relaxed text-white/45">
-        {GUIDANCE_MESSAGES.hold[Math.min(Math.floor(elapsed / 8), GUIDANCE_MESSAGES.hold.length - 1)]}
-      </p>
 
       <BalloonJourneyVictory
         show={showVictory}

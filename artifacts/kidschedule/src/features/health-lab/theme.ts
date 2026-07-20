@@ -44,10 +44,10 @@ export const HEALTH_LAB_HERO = cn(
 );
 
 export const HEALTH_LAB_GAME_BTN = cn(
-  "relative overflow-hidden rounded-[1.25rem] p-4 text-left",
+  "relative overflow-hidden rounded-[1.25rem] text-left",
   "border transition-all duration-300 ease-out",
   "active:scale-[0.985]",
-  "min-h-[92px] touch-manipulation",
+  "touch-manipulation",
 );
 
 export const HEALTH_LAB_SECTION_TITLE = cn(

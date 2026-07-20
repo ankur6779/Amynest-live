@@ -39,7 +39,7 @@ export const CrystalGardenScene = memo(function CrystalGardenScene({
   const dancing = phase === "dance";
 
   return (
-    <div className="relative h-56 w-full max-w-md sm:h-60">
+    <div className="relative h-[clamp(10rem,36vh,15rem)] w-full max-w-md">
       {!reduced && (
         <>
           <div className="health-lab-aurora pointer-events-none absolute -inset-x-6 -top-8 h-40 opacity-70" aria-hidden />

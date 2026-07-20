@@ -17,6 +17,7 @@ interface Props {
 
 /**
  * Destination path — worlds feel like places on a journey, not equal list rows.
+ * Trail gutter uses fluid rem so cards keep usable text width on narrow phones.
  */
 export function HealthLabWorldMap({
   state,
@@ -27,36 +28,35 @@ export function HealthLabWorldMap({
   onSelectGame,
 }: Props) {
   return (
-    <section aria-labelledby="world-map-heading" className="relative">
-      <div className="mb-4 px-0.5">
+    <section aria-labelledby="world-map-heading" className="relative w-full min-w-0">
+      <div className="mb-4 min-w-0 px-0.5">
         <h2
           id="world-map-heading"
-          className="font-quicksand text-xl font-black tracking-tight text-white sm:text-2xl"
+          className="font-quicksand text-[clamp(1.15rem,5vw,1.5rem)] font-black tracking-tight text-white"
         >
           {title}
         </h2>
         <p className="mt-1 text-sm font-medium leading-relaxed text-violet-100/70">{hint}</p>
       </div>
 
-      <div className="relative">
+      <div className="relative w-full min-w-0">
         <div
-          className="pointer-events-none absolute bottom-10 left-[11px] top-10 w-[3px] rounded-full bg-gradient-to-b from-amber-300/55 via-violet-400/40 to-cyan-400/45"
+          className="pointer-events-none absolute bottom-10 left-[0.45rem] top-10 w-[0.2rem] rounded-full bg-gradient-to-b from-amber-300/55 via-violet-400/40 to-cyan-400/45"
           aria-hidden
         />
 
-        <ol className="relative space-y-3.5">
+        <ol className="relative w-full min-w-0 space-y-3.5">
           {PLAYABLE_GAMES.map((game, index) => {
             const world = getWorldIdentity(game.id);
             const badge = getAdventureBadge(game.id, state, recommendedId);
             const evolution = getWorldEvolution(state, game.id);
             const def = GAMES.find((g) => g.id === game.id)!;
-            const drift = index % 2 === 0 ? "translate-x-0" : "translate-x-1 sm:translate-x-2";
 
             return (
-              <li key={game.id} className={cn("relative pl-7", drift)}>
+              <li key={game.id} className="relative w-full min-w-0 pl-[1.35rem]">
                 <span
                   className={cn(
-                    "absolute left-[6px] top-[42%] z-[2] h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-[#070b24]",
+                    "absolute left-[0.3rem] top-[42%] z-[2] h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-[#070b24]",
                     world.pin,
                     badge === "recommended" && "h-4 w-4 ring-2 ring-amber-200/90",
                     badge === "completed" && "!bg-emerald-400",

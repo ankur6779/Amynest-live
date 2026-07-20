@@ -142,7 +142,7 @@ export function HealthLabGameCard({
       aria-label={`${playLabel}: ${world.worldName}. ${evolution?.milestoneLabel ?? world.kidAction}. ${game.title}`}
       className={cn(
         HEALTH_LAB_GAME_BTN,
-        "health-lab-pressable group relative w-full min-h-[128px] overflow-hidden border-white/18 text-left",
+        "health-lab-world-card health-lab-pressable group border-white/18",
         isRecommended && "ring-2 ring-amber-300/70 ring-offset-2 ring-offset-[#0a0f2e]",
         stage >= 4 && "ring-1 ring-emerald-300/35",
       )}
@@ -175,10 +175,10 @@ export function HealthLabGameCard({
         celebrating={Boolean(evolution?.helpedToday)}
       />
 
-      <div className="relative flex items-center gap-3.5 px-3.5 py-3.5">
+      <div className="health-lab-world-card__row">
         <div
           className={cn(
-            "relative flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[1.35rem]",
+            "health-lab-world-card__icon relative flex items-center justify-center rounded-[1.15rem]",
             "border border-white/30 bg-gradient-to-br shadow-lg",
             visuals.ring,
             !reduced && "health-lab-icon-float",
@@ -188,7 +188,7 @@ export function HealthLabGameCard({
         >
           <span
             className={cn(
-              "text-[2.35rem] drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)]",
+              "health-lab-world-card__icon-emoji drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)]",
               !reduced && "health-lab-emoji-bob",
             )}
             aria-hidden
@@ -202,29 +202,29 @@ export function HealthLabGameCard({
           )}
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="health-lab-world-card__body">
+          <div className="flex max-w-full flex-wrap items-center gap-1">
             {isRecommended && (
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-950">
-                <Sparkles className="h-3 w-3" aria-hidden />
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-950">
+                <Sparkles className="h-3 w-3 shrink-0" aria-hidden />
                 Go
               </span>
             )}
             {badge === "new" && (
-              <span className="rounded-full bg-cyan-300 px-2 py-0.5 text-[10px] font-black uppercase text-cyan-950">
+              <span className="shrink-0 rounded-full bg-cyan-300 px-2 py-0.5 text-[10px] font-black uppercase text-cyan-950">
                 New
               </span>
             )}
             {badge === "daily" && !isRecommended && (
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-300 px-2 py-0.5 text-[10px] font-black uppercase text-violet-950">
-                <Star className="h-3 w-3" aria-hidden />
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-violet-300 px-2 py-0.5 text-[10px] font-black uppercase text-violet-950">
+                <Star className="h-3 w-3 shrink-0" aria-hidden />
                 Daily
               </span>
             )}
             {evolution && stage >= 1 && (
               <span
                 className={cn(
-                  "rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide",
+                  "min-w-0 max-w-full truncate rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide",
                   stage >= 4
                     ? "border-emerald-300/50 bg-emerald-400/25 text-emerald-50"
                     : "border-white/20 bg-white/10 text-white/85",
@@ -234,15 +234,13 @@ export function HealthLabGameCard({
               </span>
             )}
           </div>
-          <h3 className="mt-1 text-lg font-black leading-tight tracking-tight text-white drop-shadow-sm">
-            {world.worldName}
-          </h3>
+          <h3 className="health-lab-world-card__title drop-shadow-sm">{world.worldName}</h3>
           {/* Full catalog title kept for recognition + certification selectors */}
-          <p className="mt-0.5 text-[11px] font-medium text-white/55">{game.title}</p>
-          <p className="mt-1 text-sm font-bold text-white/90">
-            {unrestored ? `Help restore ${world.worldName}` : world.kidAction}
+          <p className="mt-0.5 truncate text-[0.7rem] font-medium text-white/55">{game.title}</p>
+          <p className="health-lab-world-card__mission">
+            {unrestored ? `Restore ${world.worldName}` : world.kidAction}
           </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-white/70">
+          <div className="health-lab-world-card__meta">
             <span>{SENSOR_KID[game.sensor]}</span>
             <span aria-hidden>·</span>
             <span>{game.durationHint}</span>
@@ -264,14 +262,15 @@ export function HealthLabGameCard({
 
         <div
           className={cn(
-            "flex h-[56px] w-[56px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-0 font-bold",
-            "min-h-[56px] min-w-[56px] touch-manipulation transition-transform duration-150",
+            "health-lab-world-card__cta font-bold transition-transform duration-150",
             "group-hover:scale-105 group-active:scale-95",
             world.ctaClass,
           )}
         >
-          <Play className="h-5 w-5 fill-current" aria-hidden />
-          <span className="text-[9px] font-black uppercase leading-none tracking-wide">{playLabel}</span>
+          <Play className="h-[1.15rem] w-[1.15rem] shrink-0 fill-current" aria-hidden />
+          <span className="max-w-full truncate px-0.5 text-[0.55rem] font-black uppercase leading-none tracking-wide">
+            {playLabel}
+          </span>
         </div>
       </div>
     </motion.button>
@@ -297,10 +296,9 @@ export function HealthLabGameStage({
   return (
     <div
       className={cn(
-        "health-lab-stage-vignette relative overflow-hidden",
-        fullBleed ? "min-h-[100dvh]" : "min-h-[70dvh]",
+        "health-lab-stage-vignette health-lab-stage-mesh relative overflow-hidden",
+        fullBleed ? "health-lab-game-stage-shell" : "flex min-h-[70dvh] flex-col",
         !style && `bg-gradient-to-b ${stage}`,
-        "health-lab-stage-mesh",
         className,
       )}
       style={style}
@@ -324,7 +322,7 @@ export function HealthLabGameStage({
         className="pointer-events-none absolute -right-20 bottom-1/4 h-56 w-56 rounded-full bg-violet-500/[0.08] blur-3xl"
         aria-hidden
       />
-      <div className="relative z-10 flex min-h-[inherit] flex-col">{children}</div>
+      <div className="health-lab-game-stage-content">{children}</div>
     </div>
   );
 }

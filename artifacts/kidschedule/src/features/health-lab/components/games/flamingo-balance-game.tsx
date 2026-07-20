@@ -217,7 +217,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
     <HealthLabGameStage
       gameId="flamingo-balance"
       fullBleed
-      className="relative h-[100dvh] overflow-hidden bg-gradient-to-b from-sky-400/80 via-teal-300/40 to-emerald-200/30"
+      className="relative overflow-hidden bg-gradient-to-b from-sky-400/80 via-teal-300/40 to-emerald-200/30"
     >
       <HealthLabLiveRegion message={liveMsg} />
       <HealthLabStarfield count={14} />
@@ -234,11 +234,10 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
         </div>
       )}
 
-      {/* Evolution label + milestone rail — absolute, no layout shift */}
       {phase === "playing" && (
-        <div className="absolute left-0 right-0 top-[3.75rem] z-[3] px-3">
-          <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md">
-            <p className="mb-1.5 text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-200/70">
+        <div className="relative z-[3] shrink-0 px-3 pt-1">
+          <div className="mx-auto w-full max-w-sm rounded-2xl border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md">
+            <p className="mb-1.5 truncate text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-200/70">
               {evolution.label}
             </p>
             <div className="flex justify-between gap-0.5">
@@ -259,20 +258,16 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
               ))}
             </div>
           </div>
+          {weather === "wind" && (
+            <p className="mx-auto mt-2 w-fit rounded-full border border-slate-300/30 bg-slate-500/20 px-4 py-1.5 text-xs font-bold text-white/90 backdrop-blur-md">
+              💨 Wind gust — hold steady!
+            </p>
+          )}
         </div>
       )}
 
-      {weather === "wind" && phase === "playing" && (
-        <div className="pointer-events-none absolute left-1/2 top-[6.5rem] z-[4] -translate-x-1/2">
-          <p className="rounded-full border border-slate-300/30 bg-slate-500/20 px-4 py-1.5 text-xs font-bold text-white/90 backdrop-blur-md">
-            💨 Wind gust — hold steady!
-          </p>
-        </div>
-      )}
-
-      {/* Island playfield — fixed region */}
       {phase === "playing" && (
-        <div className="absolute inset-x-0 bottom-[10rem] top-[7rem] z-[2] flex items-center justify-center">
+        <div className="health-lab-game-region-grow relative z-[2] px-2">
           <SkyIslandMilestoneBurst active={milestoneBurst} reduced={reduced} />
           <SkyIslandToast message={toastMessage} />
           <SkyIslandEncouragement visible={showEncouragement} />
@@ -295,22 +290,12 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
         </div>
       )}
 
-      {/* FIXED bottom HUD — stability meter + progress never move */}
       {phase === "playing" && (
-        <>
-          <div
-            className="absolute left-4 z-30"
-            style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
-          >
+        <div className="health-lab-game-region-hud relative z-30 px-3 pt-1">
+          <div className="mx-auto flex w-full max-w-md items-end justify-between gap-3">
             <SkyIslandStabilityMeter tier={stabilityTier} stability={sensor.stabilityPercent} />
-          </div>
-
-          <div
-            className="absolute right-4 z-30"
-            style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
-          >
-            <HealthLabProgressRing progress={progress} tone="rose" size={90}>
-              <span className="font-mono text-xl font-bold tabular-nums text-white">
+            <HealthLabProgressRing progress={progress} tone="rose" size={72}>
+              <span className="font-mono text-lg font-bold tabular-nums text-white">
                 {Math.max(0, minDuration - elapsed).toFixed(0)}s
               </span>
               <span className="text-[9px] font-semibold uppercase tracking-wider text-white/50">
@@ -318,11 +303,10 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
               </span>
             </HealthLabProgressRing>
           </div>
-
-          <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 px-16 text-center text-[10px] leading-relaxed text-white/55">
+          <p className="pointer-events-none mt-2 px-2 text-center text-[10px] leading-relaxed text-white/55">
             {GUIDANCE_MESSAGES.balance[Math.min(Math.floor(elapsed / 10), GUIDANCE_MESSAGES.balance.length - 1)]}
           </p>
-        </>
+        </div>
       )}
 
       <SkyIslandVictory
