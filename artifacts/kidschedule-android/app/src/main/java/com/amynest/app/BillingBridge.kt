@@ -2,12 +2,14 @@ package com.amynest.app
 
 import android.app.Activity
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import android.webkit.WebView
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.Offerings
 import com.revenuecat.purchases.Package
@@ -72,6 +74,7 @@ class BillingBridge(
             "purchase" -> purchase(replyProxy, cbId, msg.optString("packageId"))
             "restore" -> restore(replyProxy, cbId)
             "getCustomerInfo" -> getCustomerInfo(replyProxy, cbId)
+            "logSubscriptionAnalytics" -> logSubscriptionAnalytics(replyProxy, cbId, msg)
             else -> resolveError(replyProxy, cbId, "unknown_action:$action")
         }
     }
@@ -163,6 +166,54 @@ class BillingBridge(
             onError = { err -> resolvePurchasesError(replyProxy, cbId, err) },
             onSuccess = { customerInfo -> resolve(replyProxy, cbId, customerInfoToJson(customerInfo)) },
         )
+    }
+
+    /**
+     * Forward subscription funnel events to native Firebase Analytics so Google Ads
+     * can optimize for checkout / purchase — not just Play Store installs.
+     */
+    private fun logSubscriptionAnalytics(
+        replyProxy: JavaScriptReplyProxy,
+        cbId: String,
+        msg: JSONObject,
+    ) {
+        val activity = activityRef.get()
+        if (activity == null) {
+            resolveError(replyProxy, cbId, "activity_unavailable")
+            return
+        }
+        val event = msg.optString("event")
+        val productId = msg.optString("productId", "subscription")
+        val currency = msg.optString("currency", "INR")
+        val value = msg.optDouble("value", 0.0)
+        try {
+            val analytics = FirebaseAnalytics.getInstance(activity)
+            val params = Bundle().apply {
+                putString(FirebaseAnalytics.Param.ITEM_ID, productId)
+                putString(FirebaseAnalytics.Param.CURRENCY, currency)
+                putDouble(FirebaseAnalytics.Param.VALUE, value)
+                msg.optString("source").takeIf { it.isNotBlank() }?.let {
+                    putString("source", it)
+                }
+            }
+            when (event) {
+                "purchase" -> {
+                    analytics.logEvent(FirebaseAnalytics.Event.PURCHASE, params)
+                    analytics.logEvent("app_store_subscription_convert", params)
+                }
+                "begin_checkout" -> {
+                    analytics.logEvent(FirebaseAnalytics.Event.BEGIN_CHECKOUT, params)
+                }
+                else -> {
+                    resolveError(replyProxy, cbId, "unknown_analytics_event:$event")
+                    return
+                }
+            }
+            resolve(replyProxy, cbId, JSONObject().put("logged", event))
+        } catch (t: Throwable) {
+            Log.w(TAG, "logSubscriptionAnalytics failed", t)
+            resolveError(replyProxy, cbId, "analytics_log_failed")
+        }
     }
 
     private fun ensureReady(replyProxy: JavaScriptReplyProxy, cbId: String): Boolean {

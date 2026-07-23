@@ -127,4 +127,7 @@ dependencies {
     // and FCM Admin SDK send pipeline is reused.
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-messaging-ktx")
+    // Native Firebase Analytics — required for Google Ads in-app conversion attribution
+    // (begin_checkout, purchase, app_store_subscription_convert).
+    implementation("com.google.firebase:firebase-analytics-ktx")
 }

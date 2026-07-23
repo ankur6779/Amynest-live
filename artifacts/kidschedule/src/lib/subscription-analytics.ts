@@ -105,6 +105,14 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     });
   }
 
+  if (payload.event === "subscribe_clicked") {
+    void import("@/lib/firebase-subscription-attribution").then(
+      ({ trackFirebaseBeginCheckout }) => {
+        trackFirebaseBeginCheckout(payload.plan, { source: payload.source });
+      },
+    );
+  }
+
   if (payload.event === "checkout_started") {
     void import("@/lib/firebase-subscription-attribution").then(
       ({ trackFirebaseBeginCheckout }) => {
