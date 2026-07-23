@@ -1,4 +1,4 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v18 / audio: amynest-audio-v6 */
+/* Auto-generated on build — do not edit. Cache: amynest-v19 / audio: amynest-audio-v6 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
@@ -12,7 +12,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v18";
+const CACHE_NAME = "amynest-v19";
 /**
  * Immutable hash-keyed audio cache. Bump AUDIO_CACHE_VERSION (build-injected)
  * whenever phonics audio is regenerated so stale/mixed-voice clips and 206

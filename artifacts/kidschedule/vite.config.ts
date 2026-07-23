@@ -21,7 +21,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? "/";
 
 /** PWA / service-worker cache bucket — bump on deploy to purge stale shells. */
-const CACHE_VERSION = "amynest-v18";
+const CACHE_VERSION = "amynest-v19";
 
 /**
  * Immutable audio cache version. BUMP THIS whenever phonics (or other static)
@@ -54,6 +54,37 @@ function injectDeployVersionPlugin(): import("vite").Plugin {
           /(<meta name="app-build-version" content=")[^"]*(")/,
           `$1${deployVersion}$2`,
         );
+    },
+  };
+}
+
+/** Keep the React entry module in <body> after cache-recovery — Vite hoists it to <head>. */
+function deferBootEntryPlugin(): import("vite").Plugin {
+  return {
+    name: "amynest-defer-boot-entry",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        const injected = html.match(
+          /<script type="module" crossorigin src="(\/assets\/index-[^"]+\.js)"><\/script>/,
+        );
+        if (!injected) return html;
+        const src = injected[1];
+        let next = html.replace(injected[0], "");
+        const bodyEntry =
+          `<script type="module" id="amynest-entry" crossorigin src="${src}"></script>`;
+        next = next.replace(
+          '<script src="/boot-watchdog.js"></script>',
+          `${bodyEntry}\n    <script src="/boot-watchdog.js"></script>`,
+        );
+        // Drop duplicate placeholder if Vite left the source tag in body.
+        next = next.replace(
+          /<script type="module" id="amynest-entry" src="\/src\/boot-entry\.ts"><\/script>\s*/g,
+          "",
+        );
+        return next;
+      },
     },
   };
 }
@@ -192,6 +223,7 @@ export default defineConfig(async ({ command }) => ({
   plugins: [
     clearStaleCachesPlugin(artifactDir),
     injectDeployVersionPlugin(),
+    deferBootEntryPlugin(),
     amynestServiceWorkerPlugin(),
     react(),
     tailwindcss(),
@@ -338,7 +370,8 @@ export default defineConfig(async ({ command }) => ({
           if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
           if (id.includes("@tanstack/react-query")) return "vendor-query";
           if (id.includes("i18next") || id.includes("react-i18next")) return "vendor-i18n";
-          if (id.includes("lucide-react")) return "vendor-icons";
+          // lucide-react stays in vendor-misc — a separate vendor-icons chunk was
+          // prone to poisoned HTTP cache (HTML stored under /assets/*.js) after deploys.
           // CRITICAL: match the REAL React packages only. A loose "/react/"
           // test also matches "@sentry/react" (path .../node_modules/@sentry/
           // react/...), which drags @sentry/react into vendor-react. That pulls

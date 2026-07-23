@@ -405,7 +405,7 @@
 
           // Fallback: entry shell + its direct import (main), not every vendor chunk.
           var entry = document.querySelector(
-            'script[type="module"][src*="/assets/index-"]',
+            'script[type="module"][src*="/assets/boot-entry-"],script[type="module"][src*="/assets/index-"]',
           );
           var entrySrc = entry && entry.src ? entry.src : "";
           if (!entrySrc) return Promise.resolve();
@@ -1695,10 +1695,10 @@
           window.__amynestNeedsCacheRecovery = false;
           try { sessionStorage.setItem("amynest:refresh-complete", "1"); } catch (_eTimeoutMark) { /* ignore */ }
           var entry = document.getElementById("amynest-entry");
-          if (entry && !window.__amynestBundleLoading) {
+          if (entry && entry.src && !window.__amynestBundleLoading) {
             window.__amynestBundleLoading = true;
             window.__amynestMark && window.__amynestMark("bundle-loading");
-            import("/src/main.tsx?v=1001").catch(function () { /* recovery overlay handles */ });
+            import(entry.src).catch(function () { /* recovery overlay handles */ });
           }
         }, 10000);
         window.__amynestForceClearCaches(window.__amynestPrevBootErrMsg || "", {
@@ -1717,50 +1717,8 @@
           });
       })();
     </script>
-    <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->
-    <script type="module" id="amynest-entry">
-      if (!/[?&]diag=1/.test(location.search || "")) {
-        if (window.__amynestNeedsCacheRecovery) {
-          /* cache-recovery script above is reloading — do not import the bundle */
-        } else {
-        window.__amynestMark && window.__amynestMark("bundle-loading");
-        import("/src/main.tsx?v=1001").catch(function (err) {
-          var msg = String((err && err.message) || err || "Main module failed to load");
-          try {
-            var r = JSON.parse(localStorage.getItem("__amynest_boot_v1") || "null");
-            if (r) {
-              r.lastReject = { msg: msg, t: Date.now() - (r.ts || Date.now()) };
-              localStorage.setItem("__amynest_boot_v1", JSON.stringify(r));
-            }
-          } catch (_e) {}
-
-          function showBootFailure() {
-            if (
-              window.__amynestTryAutoRecovery &&
-              window.__amynestTryAutoRecovery("boot-import", msg)
-            ) {
-              return;
-            }
-            if (window.__amynestShowCrashOverlay) {
-              window.__amynestShowCrashOverlay({
-                kind: "boot-import",
-                message: msg,
-              });
-            }
-          }
-
-          if (window.__amynestQuickReload) {
-            window.__amynestQuickReload();
-            return;
-          }
-          showBootFailure();
-        });
-        }
-      } else {
-        window.__amynestDiagOnly = true;
-        window.__amynestMark && window.__amynestMark("diag-only");
-      }
-    </script>
+    <!-- Entry stays in body (after cache-recovery) — never hoist to <head>. -->
+    <script type="module" id="amynest-entry" src="/src/boot-entry.ts"></script>
     <!-- Deploy version: single source amynest-deploy + sessionStorage (see deploy-version.ts). -->
     <script src="/boot-watchdog.js"></script>
   </body>
