@@ -86,6 +86,13 @@ artifacts/amynest-capacitor/ota-bundles/
 
 # Playwright reports
 artifacts/kidschedule/playwright-report-stress/
+artifacts/kidschedule/playwright-report/
+artifacts/kidschedule/blob-report/
+artifacts/kidschedule/playwright/.cache/
+
+# Health Lab RC soak/perf — regenerate via playwright (see audit/health-lab-rc2-certification.md)
+audit/health-lab-rc2-*.json
+audit/health-lab-rc2-*.log
 
 # Script run logs (phonics cleanup, library prewarm, etc.)
 scripts/logs/
