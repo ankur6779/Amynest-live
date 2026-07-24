@@ -1,7 +1,8 @@
-import { memo } from "react";
+import { memo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 import {
   CRYSTAL_GARDEN_ROUNDS,
   MOTION_TIER_LABELS,
@@ -317,6 +318,9 @@ export const CrystalGardenVictory = memo(function CrystalGardenVictory({
   reduced: boolean;
   onDismiss: () => void;
 }) {
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(show, onDismiss, dismissRef);
+
   return (
     <AnimatePresence>
       {show && (
@@ -328,6 +332,9 @@ export const CrystalGardenVictory = memo(function CrystalGardenVictory({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="crystal-garden-victory-title"
         >
           {!reduced && (
             <>
@@ -361,16 +368,17 @@ export const CrystalGardenVictory = memo(function CrystalGardenVictory({
             <p className="text-5xl" aria-hidden>
               🏆
             </p>
-            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">CRYSTAL GARDEN GUARDIAN</h2>
+            <h2 id="crystal-garden-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">CRYSTAL GARDEN GUARDIAN</h2>
             <p className="mt-3 text-sm text-cyan-200/75">You restored the kingdom!</p>
             <p className="mt-2 font-mono text-3xl font-bold tabular-nums text-amber-200">
               {successes}/{CRYSTAL_GARDEN_ROUNDS} Crystals
             </p>
             <p className="mt-3 text-sm text-emerald-100/70">Magical creatures have gathered! 🦄🐉</p>
             <button
+              ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-8 py-3 text-sm font-bold text-white"
+              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 px-8 py-3 text-sm font-bold text-white"
             >
               Amazing!
             </button>

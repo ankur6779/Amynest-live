@@ -1,8 +1,9 @@
-import { memo } from "react";
+import { memo, useRef } from "react";
 import { Star, Zap, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { HEALTH_LAB_THEME } from "../theme";
+import { useHealthLabDialogEscape } from "../hooks/use-health-lab-dialog-escape";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import {
   buildRewardSummary,
@@ -70,6 +71,8 @@ export const HealthLabSessionRewards = memo(function HealthLabSessionRewards({
 }: Props) {
   const reduced = useReducedMotion();
   const { t } = useHealthLabI18n();
+  const continueRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(true, onContinue, continueRef);
   const simulated = isSimulationResult(result);
   const summary = buildRewardSummary(result, celebrations, state);
   const world = getWorldIdentity(result.gameId);
@@ -237,6 +240,7 @@ export const HealthLabSessionRewards = memo(function HealthLabSessionRewards({
           )}
 
           <button
+            ref={continueRef}
             type="button"
             onClick={onContinue}
             className={cn(

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { filterHistoryByRange } from "../storage";
-import { HEALTH_LAB_THEME } from "../theme";
+import { HEALTH_LAB_THEME, HEALTH_LAB_TOUCH_TARGET } from "../theme";
 import { trackHealthLabEvent } from "../health-lab-analytics";
 import {
   avgMetric,
@@ -100,7 +100,7 @@ export function HealthLabDashboard({
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 pb-28 pt-4">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] rounded-full p-2 text-violet-200 hover:bg-white/10" aria-label="Back to home">
+        <button type="button" onClick={onBack} className={cn(HEALTH_LAB_TOUCH_TARGET, "rounded-full p-2 text-violet-200 hover:bg-white/10")} aria-label="Back to home">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
@@ -116,7 +116,7 @@ export function HealthLabDashboard({
             type="button"
             onClick={() => setRange(r.id)}
             className={cn(
-              "min-h-[40px] rounded-full px-3 py-1.5 text-xs font-medium",
+              "min-h-[48px] rounded-full px-3 py-1.5 text-xs font-medium",
               range === r.id ? "bg-violet-500 text-white" : "bg-white/10 text-violet-200",
             )}
           >

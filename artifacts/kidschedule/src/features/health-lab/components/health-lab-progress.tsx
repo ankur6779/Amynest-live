@@ -1,5 +1,5 @@
 import { BADGES, DAILY_QUESTS, GAMES, HEALTH_LEVELS, getLevelForXp, getPrestigeTier } from "../constants";
-import { HEALTH_LAB_THEME } from "../theme";
+import { HEALTH_LAB_THEME, HEALTH_LAB_TOUCH_TARGET } from "../theme";
 import type { HealthLabPersistedState } from "../types";
 import { HealthLabAvatar } from "./health-lab-avatar";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ export function HealthLabProgress({
         <button
           type="button"
           onClick={onBack}
-          className="rounded-full p-2 text-violet-200 hover:bg-white/10"
+          className={cn(HEALTH_LAB_TOUCH_TARGET, "rounded-full p-2 text-violet-200 hover:bg-white/10")}
           aria-label="Back to home"
         >
           <ArrowLeft className="h-5 w-5" />

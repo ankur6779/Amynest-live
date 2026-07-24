@@ -1,8 +1,10 @@
+import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { BADGES, HEALTH_LEVELS } from "../constants";
+import { useHealthLabDialogEscape } from "../hooks/use-health-lab-dialog-escape";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import { HealthLabAvatar } from "./health-lab-avatar";
 import type { EquipmentSlot, HealthLevelId } from "../types";
@@ -33,6 +35,8 @@ export function HealthLabCelebration({
 }: CelebrationProps) {
   const reduced = useReducedMotion();
   const { t } = useHealthLabI18n();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(true, onDismiss, closeRef);
 
   let title = t("celebration_amazing", "Amazing!");
   let subtitle = t("celebration_keep_going", "Keep exploring your superpowers");
@@ -94,9 +98,10 @@ export function HealthLabCelebration({
           transition={{ type: "spring", damping: 18, stiffness: 260 }}
         >
           <button
+            ref={closeRef}
             type="button"
             onClick={onDismiss}
-            className="absolute right-3 top-3 rounded-full p-2 text-violet-300 hover:bg-white/10"
+            className="absolute right-3 top-3 min-h-12 min-w-12 rounded-full p-2 text-violet-300 hover:bg-white/10"
             aria-label={t("close", "Close celebration")}
           >
             <X className="h-5 w-5" />

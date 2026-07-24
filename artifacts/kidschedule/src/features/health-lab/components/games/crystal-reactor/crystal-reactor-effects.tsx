@@ -1,7 +1,8 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 import { REACTOR_STATE_COLORS, type ReactorState } from "./crystal-reactor-constants";
 
 export const CrystalReactorToast = memo(function CrystalReactorToast({
@@ -137,6 +138,9 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
   reduced: boolean;
   onDismiss: () => void;
 }) {
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(show, onDismiss, dismissRef);
+
   return (
     <AnimatePresence>
       {show && (
@@ -148,6 +152,9 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="crystal-reactor-victory-title"
         >
           {!reduced && (
             <>
@@ -182,16 +189,17 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
             <p className="text-5xl" aria-hidden>
               🏆
             </p>
-            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">CRYSTAL REACTOR SAVIOR</h2>
+            <h2 id="crystal-reactor-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">CRYSTAL REACTOR SAVIOR</h2>
             <p className="mt-3 text-sm text-violet-200/75">The megacity is fully powered!</p>
             <p className="mt-2 font-mono text-4xl font-bold tabular-nums text-cyan-200">
               {Math.round(powerPct)}%
             </p>
             <p className="mt-3 text-sm text-emerald-100/70">Crystal towers online · vehicles in the sky 🚀</p>
             <button
+              ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
+              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
             >
               Amazing!
             </button>

@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHealthLabDialogEscape } from "../hooks/use-health-lab-dialog-escape";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import { getGameDef } from "../play-path";
 import { getWorldIdentity } from "../world-identity";
@@ -15,6 +17,8 @@ interface Props {
 /** Friendly pre-launch coach for motion games — UI only; games keep their own calibration. */
 export function HealthLabMotionPrep({ gameId, onReady, onCancel }: Props) {
   const { t } = useHealthLabI18n();
+  const readyRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(true, onCancel, readyRef);
   const game = getGameDef(gameId);
   const world = getWorldIdentity(gameId);
 
@@ -58,6 +62,7 @@ export function HealthLabMotionPrep({ gameId, onReady, onCancel }: Props) {
         </ul>
         <div className="mt-6 flex flex-col gap-2">
           <button
+            ref={readyRef}
             type="button"
             onClick={onReady}
             className={cn(

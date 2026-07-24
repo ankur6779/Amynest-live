@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 
 export const SkyIslandToast = memo(function SkyIslandToast({
   message,
@@ -146,6 +147,9 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
   reduced: boolean;
   onDismiss: () => void;
 }) {
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(show, onDismiss, dismissRef);
+
   return (
     <AnimatePresence>
       {show && (
@@ -157,6 +161,9 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sky-island-victory-title"
         >
           {!reduced && (
             <>
@@ -207,7 +214,7 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
             <p className="text-5xl" aria-hidden>
               {legendary ? "🏆" : "👑"}
             </p>
-            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">
+            <h2 id="sky-island-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">
               {legendary ? "Legendary Balance Master" : "Sky Kingdom Protector"}
             </h2>
             <p className="mt-3 text-sm text-emerald-200/75">You kept the island alive for</p>
@@ -216,9 +223,10 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
             </p>
             <p className="mt-3 text-sm text-emerald-100/70">The floating paradise is blooming! 🌈</p>
             <button
+              ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
+              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
             >
               Amazing!
             </button>

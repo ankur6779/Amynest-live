@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 
 export const BalloonJourneyToast = memo(function BalloonJourneyToast({
   message,
@@ -196,6 +197,9 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
   reduced: boolean;
   onDismiss: () => void;
 }) {
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  useHealthLabDialogEscape(show, onDismiss, dismissRef);
+
   return (
     <AnimatePresence>
       {show && (
@@ -207,6 +211,9 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="balloon-journey-victory-title"
         >
           {!reduced && (
             <>
@@ -250,7 +257,7 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
             <p className="text-5xl" aria-hidden>
               🚀
             </p>
-            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">SPACE EXPLORER</h2>
+            <h2 id="balloon-journey-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">SPACE EXPLORER</h2>
             <p className="mt-3 text-sm text-violet-200/75">You held for:</p>
             <p className="mt-1 font-mono text-4xl font-bold tabular-nums text-amber-200">
               {holdSeconds.toFixed(1)} Seconds
@@ -261,9 +268,10 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
               </p>
             )}
             <button
+              ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
+              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
             >
               Amazing!
             </button>

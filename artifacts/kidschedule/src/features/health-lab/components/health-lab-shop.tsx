@@ -1,5 +1,5 @@
 import { SHOP_ITEMS } from "../shop";
-import { HEALTH_LAB_THEME } from "../theme";
+import { HEALTH_LAB_THEME, HEALTH_LAB_TOUCH_TARGET } from "../theme";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import type { HealthLabPersistedState } from "../types";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function HealthLabShop({
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 pb-28 pt-4">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] rounded-full p-2 text-violet-200 hover:bg-white/10" aria-label={t("back", "Back")}>
+        <button type="button" onClick={onBack} className={cn(HEALTH_LAB_TOUCH_TARGET, "rounded-full p-2 text-violet-200 hover:bg-white/10")} aria-label={t("back", "Back")}>
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1">
@@ -53,7 +53,7 @@ export function HealthLabShop({
                         type="button"
                         onClick={() => onEquip(item.id)}
                         className={cn(
-                          "mt-2 w-full min-h-[36px] rounded-lg text-xs font-bold",
+                          "mt-2 w-full min-h-[48px] rounded-lg text-xs font-bold",
                           equipped ? "bg-emerald-500/30 text-emerald-300" : "bg-violet-500/40 text-white",
                         )}
                       >
@@ -65,7 +65,7 @@ export function HealthLabShop({
                         onClick={() => onPurchase(item.id)}
                         disabled={state.coins < item.price}
                         className={cn(
-                          "mt-2 w-full min-h-[40px] rounded-lg text-xs font-bold",
+                          "mt-2 w-full min-h-[48px] rounded-lg text-xs font-bold",
                           state.coins >= item.price
                             ? "bg-amber-500/80 text-white"
                             : "bg-white/10 text-violet-300/50",
