@@ -5,7 +5,7 @@
 # Build: docker build -f docker/worker/Dockerfile -t amynest-worker .
 # Run:   docker run --rm -e REDIS_URL=... -e DATABASE_URL=... amynest-worker
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-bookworm-slim AS base
 
 ENV PNPM_HOME="/pnpm"

@@ -77,26 +77,13 @@ export function scheduleIdle(fn: () => void, timeoutMs = 1200): () => void {
 
 /** CSS toggles applied on the games hub root under low-power / hidden conditions. */
 export const GAME_PERF_STYLES = `
-  .game-perf-low .game-motion-float,
-  .game-perf-low .games-card-float {
+  .game-perf-low .game-motion-float {
     animation: none !important;
   }
   .game-perf-low .game-a11y-solid-surface,
   .game-perf-low [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-  }
-  /* While a game modal is open: stop catalog paint/compositor work under the overlay. */
-  .game-hub-frozen {
-    content-visibility: hidden;
-    visibility: hidden;
-    pointer-events: none;
-    contain: strict;
-  }
-  .game-hub-frozen .game-motion-float,
-  .game-hub-frozen .games-card-float,
-  .game-hub-frozen [style*="animation"] {
-    animation: none !important;
   }
   .game-perf-contain {
     content-visibility: auto;
@@ -106,12 +93,6 @@ export const GAME_PERF_STYLES = `
     contain: layout style;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-  }
-  .game-perf-gpu {
-    transform: translateZ(0);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .game-perf-gpu { transform: none; }
   }
   /* Target Tap — CSS lifetime shrink (no React scale commits). */
   @keyframes gameTargetLife {

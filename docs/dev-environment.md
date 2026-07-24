@@ -18,6 +18,8 @@ Confirm which profile is running:
 
 ## 1. One-time setup
 
+**Node.js:** use **22 LTS** (`>=22.12.0`). The repo pins this via `.nvmrc`, `.node-version`, and `package.json` `engines`. CI, Docker, Render, and Coolify deploy scripts all target Node 22.
+
 ```bash
 cd /path/to/AmyNest-AI
 cp .env.development.example .env.development

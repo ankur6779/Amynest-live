@@ -6,7 +6,7 @@
 # Build:  docker build -f docker/backend/Dockerfile -t amynest-api .
 # Run:    docker run --rm -p 5000:5000 -e PORT=5000 -e DATABASE_URL=... amynest-api
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-bookworm-slim AS base
 
 ENV PNPM_HOME="/pnpm"

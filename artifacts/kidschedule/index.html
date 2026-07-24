@@ -42,21 +42,6 @@
         } catch (e) {}
       })();
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=2514850758945614&ev=PageView&noscript=1"
-    /></noscript>
-    <noscript id="meta-get-app-pixel-noscript"><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1237814008328308&ev=PageView&noscript=1"
-    /></noscript>
-    <script>
-      (function () {
-        try {
-          var path = (location.pathname || '/').replace(/\/$/, '') || '/';
-          var el = document.getElementById('meta-get-app-pixel-noscript');
-          if (path !== '/get-app' && el) el.remove();
-        } catch (e) {}
-      })();
-    </script>
     <!-- End Meta Pixel Code -->
 
     <!-- SEO: allow indexing, canonical URL -->
@@ -1622,6 +1607,22 @@
     </script>
   </head>
   <body>
+    <!-- Meta Pixel noscript fallbacks — HTML5 disallows <img> inside <head><noscript>. -->
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=2514850758945614&ev=PageView&noscript=1"
+    alt="" /></noscript>
+    <noscript id="meta-get-app-pixel-noscript"><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1237814008328308&ev=PageView&noscript=1"
+    alt="" /></noscript>
+    <script>
+      (function () {
+        try {
+          var path = (location.pathname || '/').replace(/\/$/, '') || '/';
+          var el = document.getElementById('meta-get-app-pixel-noscript');
+          if (path !== '/get-app' && el) el.remove();
+        } catch (e) {}
+      })();
+    </script>
     <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->
     <div id="splash" role="status" aria-label="Loading AmyNest AI…">
       <div class="splash-waves" aria-hidden="true"></div>

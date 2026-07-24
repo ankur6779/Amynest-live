@@ -11,7 +11,7 @@ describe("game-perf", () => {
   it("exports containment and low-power CSS hooks", () => {
     expect(GAME_PERF_STYLES).toContain("content-visibility");
     expect(GAME_PERF_STYLES).toContain("game-perf-low");
-    expect(GAME_PERF_STYLES).toContain("game-hub-frozen");
+    expect(GAME_PERF_STYLES).toContain("game-perf-contain");
     expect(GAME_PERF_STYLES).toContain("gameTargetLife");
     expect(typeof isPageVisible()).toBe("boolean");
     expect(typeof isLowPowerClient()).toBe("boolean");

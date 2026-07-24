@@ -51,6 +51,13 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
   const [inputIdx, setInputIdx] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const timerRef = useRef<number | null>(null);
+  const finishedRef = useRef(false);
+
+  const finishOnce = (finalScore: number, total: number) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    onFinish(finalScore, total);
+  };
 
   const resetDifficulty = (level: GameDifficulty) => {
     setGameDifficulty(level);
@@ -105,7 +112,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
         const newScore = score + 1;
         setScore(newScore);
         setTimeoutSafe(() => {
-          if (round + 1 >= GAME_SESSION_ROUNDS) onFinish(newScore, GAME_SESSION_ROUNDS);
+          if (round + 1 >= GAME_SESSION_ROUNDS) finishOnce(newScore, GAME_SESSION_ROUNDS);
           else {
             setRound((r) => r + 1);
             setPhase("showing");
@@ -121,7 +128,7 @@ export function SequenceMemoryGame({ onFinish }: { onFinish: (score: number, tot
       setFeedback("wrong");
       void feedbackWrong();
       setTimeoutSafe(() => {
-        if (round + 1 >= GAME_SESSION_ROUNDS) onFinish(score, GAME_SESSION_ROUNDS);
+        if (round + 1 >= GAME_SESSION_ROUNDS) finishOnce(score, GAME_SESSION_ROUNDS);
         else {
           setRound((r) => r + 1);
           setPhase("showing");

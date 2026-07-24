@@ -44,7 +44,11 @@ import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { unlockGamingGame } from "@/lib/gaming-wallet-api";
-import { durableFinishGame, flushPendingPlaySync } from "@/lib/game-finish";
+import {
+  createPlayIdempotencyKey,
+  durableFinishGame,
+  flushPendingPlaySync,
+} from "@/lib/game-finish";
 import { hapticGameSuccess } from "@/lib/game-haptics";
 import { getTotalPoints, addPoints } from "@/lib/rewards";
 import { getLazyGame, prefetchAdventureIdle, prefetchGame } from "@/components/games/game-loaders";
@@ -95,8 +99,21 @@ export default function GamesPage() {
   const [error, setError] = useState<string | null>(null);
   const lowPower = useLowPowerClient();
   const continueEmptyBody = useMemo(() => getAmyContinueEmpty(), []);
-  /** Prevents double onFinish (spam / Strict Mode / rapid remount) from double-awarding. */
+  /** Prevents concurrent finishGame calls while async work is in flight. */
   const finishingRef = useRef(false);
+  /** One finish per play stage — blocks duplicate mastery, wallet, and analytics. */
+  const playSessionRef = useRef<{
+    gameId: string;
+    idempotencyKey: string;
+    finished: boolean;
+  } | null>(null);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+
+  const resetPlaySession = useCallback(() => {
+    playSessionRef.current = null;
+    finishingRef.current = false;
+  }, []);
 
   const { data: childProfiles = [] } = useListChildren({
     query: {
@@ -155,8 +172,9 @@ export default function GamesPage() {
       return;
     }
     setExitConfirm(false);
+    resetPlaySession();
     setActive(null);
-  }, [active]);
+  }, [active, resetPlaySession]);
 
   usePageBackHandler(() => {
     if (exitConfirm) {
@@ -262,18 +280,25 @@ export default function GamesPage() {
         return;
       }
       setError(null);
+      resetPlaySession();
       prefetchGame(g.id);
       // Age-aware mastery plan + adaptive Easy/Normal/Hard (local only).
       prepareGameSession(g.id, previewAgeMonths);
       setActive({ kind: "play", game: g, stage: "intro" });
     },
-    [isPremium, limit, limitHit, previewAgeMonths, t],
+    [isPremium, limit, limitHit, previewAgeMonths, resetPlaySession, t],
   );
 
   const onStartPlay = useCallback(() => {
     setActive((prev) => {
       if (prev?.kind !== "play") return prev;
       prepareGameSession(prev.game.id, previewAgeMonths);
+      playSessionRef.current = {
+        gameId: prev.game.id,
+        idempotencyKey: createPlayIdempotencyKey(prev.game.id),
+        finished: false,
+      };
+      finishingRef.current = false;
       return { kind: "play", game: prev.game, stage: "play" };
     });
   }, [previewAgeMonths]);
@@ -285,52 +310,70 @@ export default function GamesPage() {
     return prefetchAdventureIdle(adventureId);
   }, [adventureGame?.id, suggestedGame?.id]);
 
-  const finishGame = async (g: GameDef, score: number, total: number) => {
-    if (finishingRef.current) return;
-    finishingRef.current = true;
-    try {
-      const ratio = total === 0 ? 0 : score / total;
-      const perfect = ratio >= 0.95;
-      recordPerfectStreak(perfect);
-      recordLeaderboardEntry(g.id, score, total);
-      const earnedEstimate = perfect
-        ? g.rewardMax
-        : Math.max(g.rewardMin, Math.round(g.rewardMin + (g.rewardMax - g.rewardMin) * ratio));
+  const finishGame = useCallback(
+    async (g: GameDef, score: number, total: number) => {
+      const session = playSessionRef.current;
+      if (!session || session.gameId !== g.id || session.finished) return;
+      if (finishingRef.current) return;
 
-      // Never fail-closed: result + mastery always; wallet sync best-effort + idempotent.
-      const out = await durableFinishGame({
-        gameId: g.id,
-        score,
-        total,
-        perfect,
-        pointsEarned: earnedEstimate,
-        isSignedIn,
-        authFetch: isSignedIn ? authFetch : undefined,
-      });
-      void hapticGameSuccess(out.perfect);
-      if (!out.syncPending && isSignedIn) {
-        void refreshWallet();
-      } else if (out.syncPending) {
-        setError(
-          t("screens.games.sync_pending_msg", {
-            defaultValue: "Saved on this device. We’ll sync when you’re back online.",
-          }),
-        );
+      finishingRef.current = true;
+      session.finished = true;
+
+      try {
+        const ratio = total === 0 ? 0 : score / total;
+        const perfect = ratio >= 0.95;
+        recordPerfectStreak(perfect);
+        recordLeaderboardEntry(g.id, score, total);
+        const earnedEstimate = perfect
+          ? g.rewardMax
+          : Math.max(g.rewardMin, Math.round(g.rewardMin + (g.rewardMax - g.rewardMin) * ratio));
+
+        // Never fail-closed: result + mastery always; wallet sync best-effort + idempotent.
+        const out = await durableFinishGame({
+          gameId: g.id,
+          score,
+          total,
+          perfect,
+          pointsEarned: earnedEstimate,
+          isSignedIn,
+          authFetch: isSignedIn ? authFetch : undefined,
+          idempotencyKey: session.idempotencyKey,
+        });
+        void hapticGameSuccess(out.perfect);
+        if (!out.syncPending && isSignedIn) {
+          void refreshWallet();
+        } else if (out.syncPending) {
+          setError(
+            t("screens.games.sync_pending_msg", {
+              defaultValue: "Saved on this device. We’ll sync when you’re back online.",
+            }),
+          );
+        }
+        setPoints(getTotalPoints());
+        setActive({
+          kind: "result",
+          game: g,
+          score,
+          total,
+          pointsEarned: out.pointsEarned,
+          perfect: out.perfect,
+        });
+        setUnlockedTick((tick) => tick + 1);
+      } finally {
+        finishingRef.current = false;
       }
-      setPoints(getTotalPoints());
-      setActive({
-        kind: "result",
-        game: g,
-        score,
-        total,
-        pointsEarned: out.pointsEarned,
-        perfect: out.perfect,
-      });
-      setUnlockedTick((tick) => tick + 1);
-    } finally {
-      finishingRef.current = false;
-    }
-  };
+    },
+    [authFetch, isSignedIn, refreshWallet, t],
+  );
+
+  const handleGameFinish = useCallback(
+    (score: number, total: number) => {
+      const current = activeRef.current;
+      if (current?.kind !== "play" || current.stage !== "play") return;
+      void finishGame(current.game, score, total);
+    },
+    [finishGame],
+  );
 
   const gamesByCategory = useMemo(() => {
     const order: GameCategory[] = [
@@ -570,9 +613,7 @@ export default function GamesPage() {
             }
             onClose={requestCloseModal}
             onStartPlay={onStartPlay}
-            onFinish={(score, total) => {
-              if (active.kind === "play") void finishGame(active.game, score, total);
-            }}
+            onFinish={handleGameFinish}
             onPlayAgain={() => {
               if (active.kind === "result") onPlay(active.game);
             }}
@@ -588,6 +629,7 @@ export default function GamesPage() {
             onKeepPlaying={() => setExitConfirm(false)}
             onLeave={() => {
               setExitConfirm(false);
+              resetPlaySession();
               setActive(null);
             }}
           />

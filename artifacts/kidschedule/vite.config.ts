@@ -344,6 +344,8 @@ export default defineConfig(async ({ command }) => ({
     emptyOutDir: true,
     modulePreload: false,
     assetsDir: "assets",
+    // Lazy route chunks + embedded JSON audio maps exceed 500 kB by design.
+    chunkSizeWarningLimit: 1700,
     rollupOptions: {
       output: {
         // Hashed filenames under /assets — bust CDN/browser cache on every deploy.
@@ -362,6 +364,11 @@ export default defineConfig(async ({ command }) => ({
           // vendor-react has to import vendor-misc back.
           if (id.includes("commonjsHelpers")) return "vendor-react";
           if (!id.includes("node_modules")) return undefined;
+          if (id.includes("pdfjs-dist") || id.includes("pdf-lib")) return "vendor-pdf";
+          if (id.includes("/fabric/") || id.endsWith("/fabric")) return "vendor-fabric";
+          if (id.includes("/docx/") || id.endsWith("/docx")) return "vendor-docx";
+          if (id.includes("/gsap/") || id.endsWith("/gsap")) return "vendor-gsap";
+          if (id.includes("smplr")) return "vendor-smplr";
           if (id.includes("three") || id.includes("@react-three")) return "vendor-three";
           if (id.includes("@sentry")) return "vendor-sentry";
           if (id.includes("firebase")) return "vendor-firebase";

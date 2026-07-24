@@ -1,5 +1,4 @@
 import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
-"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

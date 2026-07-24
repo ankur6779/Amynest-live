@@ -39,6 +39,11 @@ export interface DurableFinishResult {
   idempotencyKey: string;
 }
 
+/** One stable key per play session — reuse on retries, never across sessions. */
+export function createPlayIdempotencyKey(gameId: string): string {
+  return newIdempotencyKey(gameId);
+}
+
 function newIdempotencyKey(gameId: string): string {
   const rand =
     typeof crypto !== "undefined" && "randomUUID" in crypto

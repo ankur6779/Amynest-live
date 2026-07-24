@@ -77,10 +77,6 @@ export const GAME_MOTION_STYLES = `
     0% { background-position: 100% 0; }
     100% { background-position: -100% 0; }
   }
-  @keyframes gameMotionPulseSoft {
-    0%, 100% { opacity: 0.55; }
-    50% { opacity: 1; }
-  }
 
   .game-motion-enter {
     animation: gameMotionFadeUp var(--game-motion-enter) var(--game-ease-out) both;

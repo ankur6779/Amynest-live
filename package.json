@@ -4,9 +4,11 @@
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=20.0.0 <23.0.0"
+    "node": ">=22.12.0 <23.0.0"
   },
   "scripts": {
+    "lint": "eslint .",
+    "test": "pnpm run typecheck:libs && pnpm --filter @workspace/kidschedule exec vitest run --config vitest.config.ts src/lib/game-motion.test.ts src/lib/game-perf.test.ts src/lib/game-a11y.test.ts src/lib/games.test.ts src/lib/game-finish.test.ts src/lib/game-hub-meta.test.ts",
     "preinstall": "echo ok",
     "postinstall": "node scripts/clean-vite-cache.mjs",
     "prepare": "sh -c 'command -v simple-git-hooks >/dev/null 2>&1 && simple-git-hooks || true'",
@@ -145,14 +147,23 @@
     "pre-commit": "sh scripts/check-codegen.sh"
   },
   "private": true,
+  "browserslist": [
+    "defaults",
+    "Safari >= 14",
+    "iOS >= 14"
+  ],
   "devDependencies": {
     "@babel/generator": "^7.29.1",
     "@babel/parser": "^7.29.3",
     "@babel/traverse": "^7.29.0",
     "@babel/types": "^7.29.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.4.0",
     "prettier": "^3.8.1",
     "simple-git-hooks": "^2.13.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.46.2"
   },
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.0",

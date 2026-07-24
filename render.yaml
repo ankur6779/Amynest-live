@@ -64,7 +64,7 @@ services:
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "22"
       - key: NODE_ENV
         value: production
       - key: AMYNEST_ENV
@@ -167,7 +167,7 @@ services:
     dockerContext: .
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "22"
       - key: NODE_ENV
         value: production
       - key: AMYNEST_ENV
@@ -249,7 +249,7 @@ services:
         value: public, max-age=31536000, immutable
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "22"
       - key: VITE_AMYNEST_ENV
         value: production
       - key: VITE_APP_API_ORIGIN

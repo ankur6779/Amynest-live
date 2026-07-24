@@ -6,7 +6,7 @@
 # Build: docker build -f docker/frontend/Dockerfile -t amynest-web .
 # Run:   docker run --rm -p 3000:3000 -e PORT=3000 amynest-web
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-bookworm-slim AS base
 
 ENV PNPM_HOME="/pnpm"
