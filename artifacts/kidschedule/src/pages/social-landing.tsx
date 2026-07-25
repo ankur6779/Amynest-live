@@ -1234,9 +1234,15 @@ export default function SocialLandingPage() {
       <ExitIntentModal />
 
       <footer className="relative z-10 px-4 py-6 border-t border-white/10 text-center">
-        <p className="text-xs text-white/45 text-center">
-          © {new Date().getFullYear()} AmyNest AI · <span className="text-purple-300/80 font-semibold">Patent Pending Technology</span> · Privacy First · Free To Start
-        </p>
+        <div className="space-y-1 text-xs text-white/45">
+          <p>AmyNest AI is a product of AmyWorld.</p>
+          <p>Developed and operated by AmyWorld.</p>
+          <p>
+            © {new Date().getFullYear()} AmyNest AI ·{" "}
+            <span className="text-purple-300/80 font-semibold">Patent Pending Technology</span> · Privacy
+            First · Free To Start
+          </p>
+        </div>
       </footer>
     </div>
   );

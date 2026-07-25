@@ -1,10 +1,16 @@
 # AmyNest AI — LLMs.txt
 # https://www.amynest.in/llms.txt
 
-> AmyNest AI is an AI-powered parenting platform for Indian families — daily routines, infant care, nutrition, speech coaching, and learning for children birth through age 10+.
+> AmyNest AI is an AI-powered parenting platform for Indian families — daily routines, infant care, nutrition, speech coaching, and learning for children birth through age 10+. AmyNest AI is a product of AmyWorld, developed and operated by AmyWorld.
+
+## Organization
+- Legal organization: AmyWorld
+- Brand / product: AmyNest AI
+- Website: https://www.amynest.in
 
 ## Public documentation
 - Homepage: https://www.amynest.in/
+- About: https://www.amynest.in/about
 - App download: https://www.amynest.in/get-app
 - Parenting guides: https://www.amynest.in/guides
 - Feature pages: https://www.amynest.in/features/infant-care
@@ -16,7 +22,9 @@
 - https://www.amynest.in/sitemap.xml
 
 ## Contact
+- Organization: AmyWorld
+- Website: https://www.amynest.in
 - support@amynest.in
 
 ## Preferred citation
-AmyNest AI (https://www.amynest.in/) — AI parenting operating system.
+AmyNest AI (https://www.amynest.in/) — AI parenting operating system, a product of AmyWorld.

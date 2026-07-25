@@ -896,13 +896,18 @@ export default function LandingPage() {
             <Link href="/guides"><span className="hover:text-white/70 transition-colors cursor-pointer">Guides</span></Link>
             <Link href="/get-app"><span className="hover:text-white/70 transition-colors cursor-pointer">Get the app</span></Link>
             <Link href="/features/daily-routines"><span className="hover:text-white/70 transition-colors cursor-pointer">Daily routines</span></Link>
+            <Link href="/about"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-about">About</span></Link>
             <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_up")}</span></Link>
             <Link href="/sign-in"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_in")}</span></Link>
             <Link href="/privacy"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-privacy">{t("pages.landing.privacy_policy")}</span></Link>
             <Link href="/terms"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-terms">{t("pages.landing.terms_of_service")}</span></Link>
             <Link href="/support"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-support">{t("pages.landing.support")}</span></Link>
           </div>
-          <p className="text-xs text-white/30">{t("pages.landing.2026_amynest_ai_all_rights_reserved")}</p>
+          <div className="space-y-1 text-center text-xs text-white/30">
+            <p>AmyNest AI is a product of AmyWorld.</p>
+            <p>Developed and operated by AmyWorld.</p>
+            <p>{t("pages.landing.2026_amynest_ai_all_rights_reserved")}</p>
+          </div>
         </div>
       </footer>
     </div>

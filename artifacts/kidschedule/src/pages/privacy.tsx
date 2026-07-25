@@ -2,12 +2,21 @@ import { Link } from "wouter";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { applySeoMeta } from "@/lib/marketing/canonical-seo";
+import {
+  LEGAL_ORGANIZATION_NAME,
+  OWNERSHIP_OPERATED_LINE,
+  OWNERSHIP_PRODUCT_LINE,
+  PRIVACY_OPERATOR_STATEMENT,
+} from "@/lib/marketing/legal-entity";
 
 const PRIVACY_CONTENT = {
   title: "Privacy Policy — AmyNest AI",
   updated: "Last updated: April 21, 2026",
+  operatorLabel: "Operator:",
+  operatorName: LEGAL_ORGANIZATION_NAME,
+  ownership: PRIVACY_OPERATOR_STATEMENT,
   intro:
-    'AmyNest ("the App") is operated by AmyNest AI ("we", "us"). This policy explains what information we collect when you use the App and how we handle it.',
+    'AmyNest ("the App") is operated by AmyNest AI ("we", "us"), a product of AmyWorld. This policy explains what information we collect when you use the App and how we handle it.',
   sections: [
     {
       heading: "1. Information we collect",
@@ -108,8 +117,15 @@ export default function PrivacyPolicyPage() {
           <h1 className="text-3xl font-black text-foreground mb-2">
             {PRIVACY_CONTENT.title}
           </h1>
-          <p className="text-sm text-muted-foreground italic mb-8">
+          <p className="text-sm text-muted-foreground italic mb-6">
             {PRIVACY_CONTENT.updated}
+          </p>
+          <p className="mb-2 text-foreground leading-relaxed">
+            <span className="font-semibold">{PRIVACY_CONTENT.operatorLabel}</span>{" "}
+            {PRIVACY_CONTENT.operatorName}
+          </p>
+          <p className="mb-6 text-foreground leading-relaxed">
+            {PRIVACY_CONTENT.ownership}
           </p>
           <p className="text-foreground leading-relaxed mb-8">
             {PRIVACY_CONTENT.intro}
@@ -147,9 +163,11 @@ export default function PrivacyPolicyPage() {
 
       {/* Footer */}
       <footer className="border-t border-border bg-card py-6">
-        <p className="text-center text-xs text-muted-foreground">
-          {t("screens.common.copyright")}
-        </p>
+        <div className="space-y-1 text-center text-xs text-muted-foreground">
+          <p>{OWNERSHIP_PRODUCT_LINE}</p>
+          <p>{OWNERSHIP_OPERATED_LINE}</p>
+          <p>{t("screens.common.copyright")}</p>
+        </div>
       </footer>
     </div>
   );

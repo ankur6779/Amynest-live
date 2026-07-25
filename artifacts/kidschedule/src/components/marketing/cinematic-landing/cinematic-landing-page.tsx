@@ -62,6 +62,9 @@ function CinematicFooter() {
           <Link href="/pricing" className="hover:text-white">
             Pricing
           </Link>
+          <Link href="/about" className="hover:text-white">
+            About
+          </Link>
           <Link href="/privacy" className="hover:text-white">
             Privacy
           </Link>
@@ -72,9 +75,11 @@ function CinematicFooter() {
             Contact
           </Link>
         </div>
-        <p className="mt-8 text-center text-xs text-white/35 sm:text-left">
-          © {new Date().getFullYear()} AmyNest AI. All rights reserved.
-        </p>
+        <div className="mt-8 space-y-1 text-center text-xs text-white/35 sm:text-left">
+          <p>AmyNest AI is a product of AmyWorld.</p>
+          <p>Developed and operated by AmyWorld.</p>
+          <p>© {new Date().getFullYear()} AmyNest AI. All rights reserved.</p>
+        </div>
       </div>
     </footer>
   );
