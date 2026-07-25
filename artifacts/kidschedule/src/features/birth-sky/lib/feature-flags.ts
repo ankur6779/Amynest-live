@@ -59,6 +59,8 @@ export function isBirthSkyAllowlistedEmail(
 
 function resolveEnabled(email?: string | null): boolean {
   if (FF_BIRTH_SKY) return true;
+  // Prefer explicit email (React auth) so hub re-renders are not tied to a
+  // module singleton that can desync across chunks / early auth snapshots.
   return isBirthSkyAllowlistedEmail(email ?? viewerEmail);
 }
 

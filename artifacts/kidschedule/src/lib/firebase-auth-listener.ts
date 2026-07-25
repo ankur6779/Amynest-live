@@ -46,11 +46,11 @@ function resolveFirebaseUserEmail(
   return null;
 }
 
-function fbToShim(u: FirebaseUserLike): ShimUser {
+function fbToShim(u: FirebaseUserLike, resolvedEmail?: string | null): ShimUser {
   const display = u.displayName ?? "";
   const [first, ...rest] = display.split(" ");
   const last = rest.join(" ");
-  const email = u.email ?? null;
+  const email = resolvedEmail ?? u.email ?? null;
   return {
     id: u.uid,
     uid: u.uid,
@@ -81,7 +81,9 @@ function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
     !fbUser.emailVerified &&
     !bypassEmail &&
     isPasswordOnlyEmailUser(fbUser);
-  return fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
+  return fbUser && !isUnverifiedEmailUser
+    ? fbToShim(fbUser as FirebaseUserLike, resolvedEmail)
+    : null;
 }
 
 const verificationReloadInflight = new Set<string>();
@@ -118,7 +120,12 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
     raceTimeoutId = null;
   }
   const shim = buildShimFromFirebaseUser(fbUser);
-  setBirthSkyViewerEmail(shim?.primaryEmailAddress?.emailAddress ?? null);
+  const resolvedEmail =
+    shim?.primaryEmailAddress?.emailAddress ??
+    resolveFirebaseUserEmail(fbUser);
+  const prevEmail =
+    latestSnapshot.shim?.primaryEmailAddress?.emailAddress ?? null;
+  setBirthSkyViewerEmail(resolvedEmail);
   let authStatus: AuthResolutionStatus = shim
     ? "authenticated"
     : "unauthenticated";
@@ -127,9 +134,12 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
   }
   const uid = shim?.id ?? null;
   const prevUid = latestSnapshot.shim?.id ?? null;
+  const emailChanged =
+    (resolvedEmail ?? null)?.toLowerCase() !== (prevEmail ?? null)?.toLowerCase();
   if (
     latestSnapshot.authStatus === authStatus &&
-    prevUid === uid
+    prevUid === uid &&
+    !emailChanged
   ) {
     return;
   }

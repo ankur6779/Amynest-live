@@ -7,10 +7,12 @@ import { useLocation } from "wouter";
 import { useListChildren } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useUser } from "@/lib/firebase-auth-hooks";
 import { registerBirthSkyFoundation } from "../foundation/register-birth-sky";
 import {
   isBirthSkyDeepLinksEnabled,
   isBirthSkyEnabled,
+  setBirthSkyViewerEmail,
 } from "../lib/feature-flags";
 import { trackBirthSkyEvent } from "../lib/analytics";
 import {
@@ -98,7 +100,13 @@ function BirthSkyAppInner() {
   const [location, setLocation] = useLocation();
   const path = normalizeBirthSkyPath(location);
   const authFetch = useAuthFetch();
+  const { user: authUser } = useUser();
+  const viewerEmail = authUser?.primaryEmailAddress?.emailAddress ?? null;
   const { data: children = [] } = useListChildren();
+
+  useEffect(() => {
+    setBirthSkyViewerEmail(viewerEmail);
+  }, [viewerEmail]);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const [draft, setDraft] = useState<SetupDraft | null>(null);
   const [profile, setProfile] = useState<BirthProfile | null>(null);
@@ -302,8 +310,8 @@ function BirthSkyAppInner() {
     setLocation("/parenting-hub", { replace: true });
   };
 
-  const enabled = isBirthSkyEnabled();
-  const deepLinksEnabled = isBirthSkyDeepLinksEnabled();
+  const enabled = isBirthSkyEnabled(viewerEmail);
+  const deepLinksEnabled = isBirthSkyDeepLinksEnabled(viewerEmail);
   const isDeepLink = readReferrer() === "deep_link";
   const hasCommittedProfile = Boolean(profile);
   const hasSnapshot = Boolean(snapshot);

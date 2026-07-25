@@ -35,6 +35,8 @@ describe("birth-sky feature flags", () => {
     flags.setBirthSkyViewerEmail("demo@amynest.in");
     expect(flags.isBirthSkyEnabled()).toBe(true);
     expect(flags.isBirthSkyHubTileEnabled()).toBe(true);
+    // Explicit email argument wins for React re-render path
+    expect(flags.isBirthSkyHubTileEnabled("demo@amynest.in")).toBe(true);
     flags.setBirthSkyViewerEmail(null);
   });
 });

@@ -43,7 +43,7 @@ import {
   useHubSectionPoints,
   useInfantDiscoveryPreview,
 } from "@/lib/hub-render-context";
-import { useAuth } from "@/lib/firebase-auth-hooks";
+import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { earnGamingPoints } from "@/lib/gaming-wallet-api";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { SubItemGate } from "@/components/sub-item-gate";
@@ -868,6 +868,9 @@ function ParentingHubPage() {
   const hubUsage = useFeatureUsage();
   const authFetch = useAuthFetch();
   const { isSignedIn } = useAuth();
+  const { user: authUser } = useUser();
+  const birthSkyViewerEmail =
+    authUser?.primaryEmailAddress?.emailAddress ?? null;
 
   // Award gaming-reward points the first time per day a parent opens a hub
   // section. Deduped in-memory + server-side via a per-section/day idempotency
@@ -1287,8 +1290,10 @@ function ParentingHubPage() {
     id: "birth-sky",
     alwaysCurrent: true,
     render: () => {
-      // Pack 1: Parent Support tile; kill switch hides tile (IM-0).
-      if (!isBirthSkyHubTileEnabled()) return null;
+      // Pack 1: Parent Support tile; allowlist / master kill (IM-0).
+      // Pass auth email explicitly so the tile appears after login (module
+      // singleton alone does not force a React re-render).
+      if (!isBirthSkyHubTileEnabled(birthSkyViewerEmail)) return null;
       return (
         <HubLaunchCard
           href="/birth-sky"
