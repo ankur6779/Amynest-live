@@ -67,7 +67,10 @@ import {
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
 import { applyParentingHubDeepLink, dispatchInfantHubOpenSection } from "@/lib/hub-activity-cross-link";
-import { isBirthSkyHubTileEnabled } from "@/features/birth-sky/lib/feature-flags";
+import {
+  getBirthSkyViewerEmail,
+  isBirthSkyHubTileEnabled,
+} from "@/features/birth-sky/lib/feature-flags";
 import { buildAllHubSectionPreviews } from "@/lib/hub-section-discoverability";
 import { recordHubSectionVisit } from "@/lib/hub-section-visit-tracker";
 import { getHubSectionHeaderTheme, parseSectionTintRgb } from "@/lib/hub-section-header-theme";
@@ -870,7 +873,10 @@ function ParentingHubPage() {
   const { isSignedIn } = useAuth();
   const { user: authUser } = useUser();
   const birthSkyViewerEmail =
-    authUser?.primaryEmailAddress?.emailAddress ?? null;
+    authUser?.primaryEmailAddress?.emailAddress ??
+    authUser?.emailAddresses?.[0]?.emailAddress ??
+    getBirthSkyViewerEmail() ??
+    null;
 
   // Award gaming-reward points the first time per day a parent opens a hub
   // section. Deduped in-memory + server-side via a per-section/day idempotency

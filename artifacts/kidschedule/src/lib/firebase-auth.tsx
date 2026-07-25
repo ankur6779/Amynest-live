@@ -49,11 +49,18 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const publish = useCallback((shim: ShimUser | null, authStatus: AuthResolutionStatus) => {
     const uid = shim?.id ?? null;
     const isLoaded = authStatus !== "loading";
+    const nextEmail =
+      shim?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? null;
     setState((prev) => {
+      const prevEmail =
+        prev.user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? null;
+      // Email must be part of the equality check — Birth Sky allowlist (and
+      // other email gates) re-render only when React state picks up the email.
       if (
         prev.authStatus === authStatus &&
         (prev.user?.id ?? null) === uid &&
-        prev.isLoaded === isLoaded
+        prev.isLoaded === isLoaded &&
+        prevEmail === nextEmail
       ) {
         return prev;
       }

@@ -10,6 +10,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { registerBirthSkyFoundation } from "../foundation/register-birth-sky";
 import {
+  getBirthSkyViewerEmail,
   isBirthSkyDeepLinksEnabled,
   isBirthSkyEnabled,
   setBirthSkyViewerEmail,
@@ -101,7 +102,11 @@ function BirthSkyAppInner() {
   const path = normalizeBirthSkyPath(location);
   const authFetch = useAuthFetch();
   const { user: authUser } = useUser();
-  const viewerEmail = authUser?.primaryEmailAddress?.emailAddress ?? null;
+  const viewerEmail =
+    authUser?.primaryEmailAddress?.emailAddress ??
+    authUser?.emailAddresses?.[0]?.emailAddress ??
+    getBirthSkyViewerEmail() ??
+    null;
   const { data: children = [] } = useListChildren();
 
   useEffect(() => {

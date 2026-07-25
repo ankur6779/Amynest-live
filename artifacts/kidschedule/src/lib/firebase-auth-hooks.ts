@@ -50,6 +50,21 @@ export function useAuth(): {
   };
 }
 
+function preferUserWithEmail(
+  contextUser: ShimUser | null,
+  snapshotUser: ShimUser | null,
+): ShimUser | null {
+  if (!contextUser) return snapshotUser;
+  if (!snapshotUser) return contextUser;
+  if (contextUser.id !== snapshotUser.id) return contextUser;
+  const contextEmail = contextUser.primaryEmailAddress?.emailAddress;
+  const snapshotEmail = snapshotUser.primaryEmailAddress?.emailAddress;
+  // Context can lag when only the email field resolved after uid — prefer the
+  // snapshot that already carries the allowlist identity.
+  if (!contextEmail && snapshotEmail) return snapshotUser;
+  return contextUser;
+}
+
 export function useUser(): {
   isLoaded: boolean;
   isSignedIn: boolean;
@@ -61,7 +76,7 @@ export function useUser(): {
     () => getLatestAuthSnapshot().shim,
     () => null,
   );
-  const user = c.user ?? snapshotUser;
+  const user = preferUserWithEmail(c.user, snapshotUser);
   const isSignedIn =
     !!user ||
     (c.isLoaded &&
