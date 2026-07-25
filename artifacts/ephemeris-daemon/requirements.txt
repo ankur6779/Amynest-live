@@ -1,0 +1,4 @@
+skyfield>=1.49
+numpy>=1.26
+aiohttp>=3.9
+jplephem>=2.21

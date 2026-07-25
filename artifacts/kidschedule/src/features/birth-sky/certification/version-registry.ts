@@ -3,7 +3,7 @@
  * Opaque version strings only — no product behavior.
  */
 
-import { ENGINE_VERSION } from "../domain/calculators/astronomy-lite";
+import { BIRTH_SKY_ENGINE_VERSION_WRITES } from "../domain/models/birth-profile";
 import { TRADITIONAL_CONTENT_VERSION } from "../constants/traditional-content";
 import { BIRTH_SKY_CONTEXT_SCHEMA_VERSION } from "../constants/ai-context";
 import {
@@ -73,10 +73,10 @@ export function getVersionRegistrySnapshot(): VersionRegistrySnapshot {
   return {
     appBuild: BIRTH_SKY_CERT_APP_BUILD,
     engineVersion: {
-      computeWrites: ENGINE_VERSION,
+      computeWrites: BIRTH_SKY_ENGINE_VERSION_WRITES,
       readableMin: "amynest-astro-lite/1.0.0",
       notes:
-        "Older engineVersion snapshots remain readable without auto-regen (Pack 4 Addendum A).",
+        "New writes use skyfield-jpl/1.0.0. Legacy amynest-astro-lite snapshots remain readable without auto-regen.",
     },
     traditionalContentVersion: {
       current: TRADITIONAL_CONTENT_VERSION,

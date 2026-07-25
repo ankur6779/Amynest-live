@@ -69,6 +69,93 @@ const contextSchema = z.object({
   childFirstName: z.string().max(80).nullable().optional(),
   userQuestion: z.string().min(1).max(2000),
   entryPoint: z.enum(["reflect", "tradition", "sky", "astronomy", "resume"]),
+  mercury: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  venus: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  mars: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  jupiter: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  saturn: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  uranus: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  neptune: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  pluto: z
+    .object({
+      sign: z.string().max(40),
+      lonDeg: z.number(),
+      retrograde: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  retrograde: z.array(z.string().max(40)).max(12).optional(),
+  planetDegreesJson: z.string().max(2000).nullable().optional(),
+  kernel: z.string().max(40).nullable().optional(),
+  kernelFingerprint: z.string().max(80).nullable().optional(),
+  astronomyConfidence: z.number().min(0).max(1).nullable().optional(),
+  missingInputs: z.array(z.string().max(40)).max(8).optional(),
+  calculationMode: z.string().max(40).nullable().optional(),
+  houseSystem: z.string().max(40).nullable().optional(),
+  planetHouseMap: z
+    .object({
+      sun: z.number().int().min(1).max(12).optional(),
+      moon: z.number().int().min(1).max(12).optional(),
+      mercury: z.number().int().min(1).max(12).optional(),
+      venus: z.number().int().min(1).max(12).optional(),
+      mars: z.number().int().min(1).max(12).optional(),
+      jupiter: z.number().int().min(1).max(12).optional(),
+      saturn: z.number().int().min(1).max(12).optional(),
+      uranus: z.number().int().min(1).max(12).optional(),
+      neptune: z.number().int().min(1).max(12).optional(),
+      pluto: z.number().int().min(1).max(12).optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 async function loadOwnedProfile(userId: string, profileId: string) {

@@ -25,6 +25,7 @@ import { isStaticAudioCircuitOpen } from "../services/staticAudioMetrics.js";
 import { getTtsLatencyDashboard } from "../services/ttsLatencyMetrics.js";
 import { getConvoLatencyDashboard } from "../services/speechConverseMetrics.js";
 import { getBirthSkyRouterDashboard } from "../services/birth-sky/ai-router-telemetry.js";
+import { checkEphemerisReady } from "../services/birth-sky/python-ephemeris-adapter.js";
 import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 import { fetchOpenAiTtsStream } from "../services/openaiTtsService.js";
 import { getAdminOpsState } from "../services/admin-ops-store.js";
@@ -184,10 +185,11 @@ router.get("/healthz/tts-cache", async (_req, res) => {
 });
 
 /** Amy TTS + GCS storage probe. */
-router.get("/healthz/tts", (_req, res) => {
+router.get("/healthz/tts", async (_req, res) => {
   const openAiConfigured = !!getOpenAiApiKeyForFetch();
   const ttsProvider = getTtsProvider();
   const legacyGcsConfigured = getGcsDiagnostics().legacyGcsConfigured;
+  const ephemeris = await checkEphemerisReady();
 
   res.json({
     ttsProvider,
@@ -204,6 +206,7 @@ router.get("/healthz/tts", (_req, res) => {
       talk_with_amy: getConvoLatencyDashboard(),
     },
     birthSkyAiRouter: getBirthSkyRouterDashboard(),
+    birthSkyEphemeris: ephemeris,
   });
 });
 

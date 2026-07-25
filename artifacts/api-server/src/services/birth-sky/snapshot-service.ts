@@ -10,6 +10,7 @@ import {
   skySnapshotsTable,
   childrenTable,
 } from "@workspace/db";
+import { logger } from "../../lib/logger.js";
 import { getEphemerisPort } from "./resolve-ephemeris-port.js";
 import {
   profileNeedsAtRestMigration,
@@ -166,7 +167,9 @@ export async function computeAndPersistSnapshot(params: {
     lon,
     timezoneOffsetMinutes: offset,
   };
-  const { mode, astronomy, engineVersion } = ephemeris.compute(input);
+  const t0 = Date.now();
+  const { mode, astronomy, engineVersion } = await ephemeris.compute(input);
+  const durationMs = Date.now() - t0;
   const cacheKey = ephemeris.buildCacheKey(input);
 
   await db
@@ -191,6 +194,26 @@ export async function computeAndPersistSnapshot(params: {
       computedAt: new Date(),
     })
     .returning();
+
+  const meta = astronomy.metadata ?? {};
+  const engineName = engineVersion.includes("/")
+    ? engineVersion.split("/")[0]
+    : engineVersion;
+  logger.info(
+    {
+      event: "ephemeris_compute",
+      engine: engineName,
+      kernel: astronomy.kernel ?? meta.kernel ?? null,
+      kernelFingerprint: astronomy.kernelFingerprint ?? meta.kernelFingerprint ?? null,
+      latencyMs: meta.computeLatencyMs ?? durationMs,
+      cacheHit: Boolean(meta.cacheHit),
+      chartId: snapshotId,
+      durationMs,
+      mode,
+      engineVersion,
+    },
+    "ephemeris_compute",
+  );
 
   return mapSnapshotRow(row!);
 }

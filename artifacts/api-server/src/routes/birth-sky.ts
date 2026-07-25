@@ -140,7 +140,7 @@ async function computeAndPersistSnapshot(params: {
     lon,
     timezoneOffsetMinutes: offset,
   };
-  const { mode, astronomy, engineVersion } = ephemeris.compute(input);
+  const { mode, astronomy, engineVersion } = await ephemeris.compute(input);
   const cacheKey = ephemeris.buildCacheKey(input);
 
   await db
@@ -335,11 +335,18 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
       logger.error(
         `birth-sky compute failed: ${computeErr instanceof Error ? computeErr.message : String(computeErr)}`,
       );
+      const code =
+        computeErr &&
+        typeof computeErr === "object" &&
+        "code" in computeErr &&
+        (computeErr as { code?: string }).code === "ephemeris_unavailable"
+          ? "ephemeris_unavailable"
+          : "compute_failed";
       res.json({
         profile: mapProfile(profileRow),
         snapshot: null,
         computeStatus: "failed",
-        errorCode: "compute_failed",
+        errorCode: code,
       });
     }
   } catch (err) {
@@ -392,11 +399,18 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
     });
   } catch (err) {
     logger.error(`birth-sky recompute failed: ${err instanceof Error ? err.message : String(err)}`);
+    const code =
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code?: string }).code === "ephemeris_unavailable"
+        ? "ephemeris_unavailable"
+        : "compute_failed";
     res.status(500).json({
       profile: null,
       snapshot: null,
       computeStatus: "failed",
-      errorCode: "compute_failed",
+      errorCode: code,
     });
   }
 });

@@ -1,12 +1,11 @@
 import type { EphemerisPort } from "./ephemeris-port";
-import { createAstroLiteEphemerisAdapter } from "./astro-lite-adapter";
+import { createPythonEphemerisAdapter } from "./python-ephemeris-adapter.js";
 
 let bound: EphemerisPort | null = null;
 
 export function getEphemerisPort(): EphemerisPort {
   if (!bound) {
-    // TEMPORARY — Swiss Ephemeris adapter binds here later.
-    bound = createAstroLiteEphemerisAdapter();
+    bound = createPythonEphemerisAdapter();
   }
   return bound;
 }

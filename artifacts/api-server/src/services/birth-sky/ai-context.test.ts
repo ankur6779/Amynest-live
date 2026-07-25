@@ -41,6 +41,90 @@ describe("birth-sky ai context", () => {
     assert.match(blob, /ss_1/);
   });
 
+  it("enriches facts with optional planet degrees without inventing missing ones", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Pisces",
+      moonPhase: "waxing",
+      moonPhaseLabel: "Waxing Crescent",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "What about Mercury?",
+      entryPoint: "sky",
+      mercury: { sign: "Virgo", lonDeg: 155.12, retrograde: true },
+      retrograde: ["mercury"],
+      kernel: "DE440",
+      kernelFingerprint: "sha256:abcd",
+      astronomyConfidence: 1.0,
+      calculationMode: "topocentric",
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /mercury_sign=Virgo/);
+    assert.match(blob, /mercury_lon_deg=155\.1200/);
+    assert.match(blob, /retrograde=mercury/);
+    assert.match(blob, /kernel=DE440/);
+    assert.match(blob, /astronomy_confidence=1\.00/);
+    assert.equal(blob.includes("birth_time"), false);
+  });
+
+  it("appends house system and planet house facts only", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Pisces",
+      moonPhase: "waxing",
+      moonPhaseLabel: "Waxing Crescent",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "What about the houses?",
+      entryPoint: "sky",
+      houseSystem: "whole_sign",
+      planetHouseMap: { sun: 3, moon: 11, venus: 4 },
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /house_system=whole_sign/);
+    assert.match(blob, /sun_house=3/);
+    assert.match(blob, /moon_house=11/);
+    assert.match(blob, /venus_house=4/);
+  });
+
+  it("adds cautious language guidance when birth inputs are missing", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "day_sky",
+      timePrecision: "unknown",
+      placeProvided: false,
+      sunSign: "Cancer",
+      moonSign: "Libra",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: null,
+      childFirstName: "Ada",
+      userQuestion: "What should I notice?",
+      entryPoint: "sky",
+      astronomyConfidence: 0.72,
+      missingInputs: ["birthTime"],
+      calculationMode: "geocentric",
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /astronomy_confidence=0\.72/);
+    assert.match(blob, /missing_inputs=birthTime/);
+    assert.match(blob, /language_guidance=use_cautious_language/);
+  });
+
   it("includes recent conversation turns for continuity", () => {
     const assembled = assembleBirthSkyPrompt(
       {

@@ -58,6 +58,14 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm --filter @workspace/api-server deploy --prod /deploy
 
+# Birth Sky ephemeris daemon: Python deps + local JPL DE440 (no runtime download).
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 python3-venv python3-pip curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && python3 -m venv /app/artifacts/ephemeris-daemon/.venv \
+  && /app/artifacts/ephemeris-daemon/.venv/bin/pip install --no-cache-dir -r /app/artifacts/ephemeris-daemon/requirements.txt \
+  && bash /app/artifacts/ephemeris-daemon/scripts/fetch-jpl-ephemeris.sh
+
 # ── runner: minimal production image ──────────────────────────────────────────
 FROM node:${NODE_VERSION}-bookworm-slim AS runner
 
@@ -65,9 +73,16 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV AMYNEST_ENV=production
+ENV BIRTH_SKY_EPHEMERIS_URL=http://127.0.0.1:5099
+ENV BIRTH_SKY_EPHEMERIS_HOST=127.0.0.1
+ENV BIRTH_SKY_EPHEMERIS_PORT=5099
+ENV BIRTH_SKY_EPHEMERIS_DATA_DIR=/app/ephemeris-daemon/data
 
 RUN groupadd --system --gid 1001 nodejs \
-  && useradd --system --uid 1001 --gid nodejs nodejs
+  && useradd --system --uid 1001 --gid nodejs nodejs \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends python3 curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build --chown=nodejs:nodejs /deploy/dist ./dist
 COPY --from=build --chown=nodejs:nodejs /deploy/node_modules ./node_modules
@@ -82,6 +97,13 @@ COPY --from=build --chown=nodejs:nodejs /deploy/src/data/*.json ./data/
 COPY --from=build --chown=nodejs:nodejs \
   /app/artifacts/api-server/assets/phonics-mastery-15-sets.pdf \
   ./assets/phonics-mastery-15-sets.pdf
+# Skyfield + JPL BSP daemon (local only)
+COPY --from=build --chown=nodejs:nodejs /app/artifacts/ephemeris-daemon /app/ephemeris-daemon
+COPY --from=build --chown=nodejs:nodejs /app/scripts/start-api-with-ephemeris.sh /app/scripts/start-api-with-ephemeris.sh
+
+RUN chmod +x /app/scripts/start-api-with-ephemeris.sh \
+  /app/ephemeris-daemon/scripts/start.sh \
+  /app/ephemeris-daemon/scripts/fetch-jpl-ephemeris.sh
 
 USER nodejs
 
@@ -89,4 +111,5 @@ ARG PORT=5000
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
-CMD ["node", "--enable-source-maps", "dist/index.mjs"]
+# Supervises ephemeris daemon (auto-restart) + Node API
+CMD ["bash", "/app/scripts/start-api-with-ephemeris.sh"]

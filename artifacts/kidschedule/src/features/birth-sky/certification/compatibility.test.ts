@@ -15,7 +15,7 @@ import {
   BIRTH_SKY_PRIVACY_POLICY_VERSION,
 } from "../constants/lifecycle";
 import { BIRTH_SKY_CONTEXT_SCHEMA_VERSION } from "../constants/ai-context";
-import { ENGINE_VERSION } from "../domain/calculators/astronomy-lite";
+import { BIRTH_SKY_ENGINE_VERSION_WRITES } from "../domain/models/birth-profile";
 import { BIRTH_SKY_LENS_SDK_VERSION } from "../platform/constants";
 import { TRADITIONAL_CONTENT_VERSION } from "../constants/traditional-content";
 import { validateLensManifest } from "../platform/lens-validate";
@@ -27,7 +27,7 @@ describe("IM-7 Compatibility Matrix", () => {
   it("publishes all required axes for app build", () => {
     const reg = getVersionRegistrySnapshot();
     expect(reg.appBuild).toBe(BIRTH_SKY_CERT_APP_BUILD);
-    expect(reg.engineVersion.computeWrites).toBe(ENGINE_VERSION);
+    expect(reg.engineVersion.computeWrites).toBe(BIRTH_SKY_ENGINE_VERSION_WRITES);
     expect(reg.contextSchemaVersion.write).toBe(BIRTH_SKY_CONTEXT_SCHEMA_VERSION);
     expect(reg.exportManifestVersion.write).toBe(BIRTH_SKY_EXPORT_MANIFEST_VERSION);
     expect(reg.privacyPolicyVersion.required).toMatch(/^birth_sky_privacy\//);

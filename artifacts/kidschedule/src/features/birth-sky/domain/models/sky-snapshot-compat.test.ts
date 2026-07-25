@@ -34,6 +34,33 @@ describe("sky snapshot forward compatibility", () => {
     expect(r.ok).toBe(true);
   });
 
+  it("reads skyfield-jpl snapshots with additive planet fields", () => {
+    const skyfieldTagged = {
+      ...base,
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full" as const,
+      astronomy: {
+        ...base.astronomy,
+        risingSign: "Libra",
+        precision: { timePrecision: "exact" as const, placeProvided: true },
+        mercury: { sign: "Capricorn", eclipticLongitudeDeg: 271.5, retrograde: false },
+        planetDegrees: {
+          sun: { sign: "Capricorn", eclipticLongitudeDeg: 280 },
+          mercury: { sign: "Capricorn", eclipticLongitudeDeg: 271.5, retrograde: false },
+        },
+        retrograde: [] as string[],
+        metadata: { bspKernel: "de440.bsp", julianDay: 2451545.0 },
+      },
+    };
+    const r = hydrateSkySnapshot(skyfieldTagged);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.snapshot.engineVersion).toBe("skyfield-jpl/1.0.0");
+      expect(r.snapshot.astronomy.mercury?.sign).toBe("Capricorn");
+      expect(r.snapshot.astronomy.metadata?.bspKernel).toBe("de440.bsp");
+    }
+  });
+
   it("reads snapshots tagged with a future Swiss engine without recompute", () => {
     const swissTagged = {
       ...base,

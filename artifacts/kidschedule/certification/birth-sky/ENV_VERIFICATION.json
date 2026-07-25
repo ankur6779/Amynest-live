@@ -1,7 +1,7 @@
 {
   "build": "birth_sky_ops_verify/1.0.0",
   "appBuild": "birth_sky_rc3/1.0.0",
-  "generatedAt": "2026-07-25T15:41:08.577Z",
+  "generatedAt": "2026-07-25T19:44:48.649Z",
   "policy": "Presence only — secret values never recorded",
   "topology": {
     "backend": "Coolify (Hetzner VPS 188.245.208.126, app ik6ml2uhw6op765lo14wn5m3)",
@@ -13,7 +13,7 @@
     "coolifyApiUrl": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io"
   },
   "probe": {
-    "generatedAt": "2026-07-25T15:41:08.577Z",
+    "generatedAt": "2026-07-25T19:44:48.649Z",
     "topology": {
       "backend": "Coolify (Hetzner VPS 188.245.208.126, app ik6ml2uhw6op765lo14wn5m3)",
       "database": "Coolify Postgres (tcl9udyxcuq2zu598ebj0pfu) on Hetzner VPS",

@@ -7,7 +7,7 @@ import { BIRTH_SKY_CERT_APP_BUILD, getVersionRegistrySnapshot } from "./version-
 import type { ConformanceItem, ConformancePart, ConformanceReport } from "./conformance-types";
 import { FORMATION_HARD_TIMEOUT_MS, FORMATION_MIN_CEREMONY_MS, REVEAL_CTA_ENABLE_MS } from "../constants/formation";
 import { PERFORMANCE_BUDGETS } from "./performance-budgets";
-import { ENGINE_VERSION } from "../domain/calculators/astronomy-lite";
+import { BIRTH_SKY_ENGINE_VERSION_WRITES } from "../domain/models/birth-profile";
 import { BIRTH_SKY_LENS_SDK_VERSION } from "../platform/constants";
 import { BIRTH_SKY_EXPORT_MANIFEST_VERSION } from "../constants/lifecycle";
 import { BIRTH_SKY_CONTEXT_SCHEMA_VERSION } from "../constants/ai-context";
@@ -529,7 +529,7 @@ export function evaluateConformanceChecklist(): ConformanceReport {
       part: "release",
       check: "Version Registry updated",
       status: "PASS",
-      evidence: `getVersionRegistrySnapshot(); engine=${ENGINE_VERSION}`,
+      evidence: `getVersionRegistrySnapshot(); engine=${BIRTH_SKY_ENGINE_VERSION_WRITES}`,
       owner: "Platform",
     }),
     item({

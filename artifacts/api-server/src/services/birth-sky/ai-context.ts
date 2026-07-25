@@ -9,6 +9,12 @@ import {
   BIRTH_SKY_SYSTEM_PROMPT,
 } from "./ai-constants.js";
 
+export type BirthSkyPlanetFact = {
+  sign: string;
+  lonDeg: number;
+  retrograde?: boolean;
+};
+
 export type BirthSkyAiContextInput = {
   contextSchemaVersion: string;
   snapshotVersion: string;
@@ -30,6 +36,37 @@ export type BirthSkyAiContextInput = {
   childFirstName?: string | null;
   userQuestion: string;
   entryPoint: string;
+  mercury?: BirthSkyPlanetFact | null;
+  venus?: BirthSkyPlanetFact | null;
+  mars?: BirthSkyPlanetFact | null;
+  jupiter?: BirthSkyPlanetFact | null;
+  saturn?: BirthSkyPlanetFact | null;
+  uranus?: BirthSkyPlanetFact | null;
+  neptune?: BirthSkyPlanetFact | null;
+  pluto?: BirthSkyPlanetFact | null;
+  retrograde?: string[];
+  planetDegreesJson?: string | null;
+  kernel?: string | null;
+  kernelFingerprint?: string | null;
+  astronomyConfidence?: number | null;
+  missingInputs?: string[];
+  calculationMode?: string | null;
+  houseSystem?: string | null;
+  planetHouseMap?: Partial<
+    Record<
+      | "sun"
+      | "moon"
+      | "mercury"
+      | "venus"
+      | "mars"
+      | "jupiter"
+      | "saturn"
+      | "uranus"
+      | "neptune"
+      | "pluto",
+      number
+    >
+  > | null;
 };
 
 export type RecentConversationTurn = {
@@ -53,6 +90,19 @@ function dayPartLabel(d = new Date()): string {
   if (h < 17) return "afternoon";
   if (h < 21) return "evening";
   return "night";
+}
+
+function pushPlanet(
+  facts: string[],
+  key: string,
+  p: BirthSkyPlanetFact | null | undefined,
+): void {
+  if (!p?.sign) return;
+  facts.push(`${key}_sign=${p.sign}`);
+  if (typeof p.lonDeg === "number" && Number.isFinite(p.lonDeg)) {
+    facts.push(`${key}_lon_deg=${p.lonDeg.toFixed(4)}`);
+  }
+  if (p.retrograde) facts.push(`${key}_retrograde=true`);
 }
 
 export function assembleBirthSkyPrompt(
@@ -79,6 +129,61 @@ export function assembleBirthSkyPrompt(
     `visit_day_part=${dayPartLabel()}`,
     `active_ui_section=${input.entryPoint}`,
   ];
+
+  pushPlanet(facts, "mercury", input.mercury);
+  pushPlanet(facts, "venus", input.venus);
+  pushPlanet(facts, "mars", input.mars);
+  pushPlanet(facts, "jupiter", input.jupiter);
+  pushPlanet(facts, "saturn", input.saturn);
+  pushPlanet(facts, "uranus", input.uranus);
+  pushPlanet(facts, "neptune", input.neptune);
+  pushPlanet(facts, "pluto", input.pluto);
+
+  if (input.retrograde?.length) {
+    facts.push(`retrograde=${input.retrograde.slice(0, 12).join(",")}`);
+  }
+  if (input.planetDegreesJson) {
+    facts.push(`planet_degrees_json=${input.planetDegreesJson.slice(0, 2000)}`);
+  }
+  if (input.kernel) facts.push(`kernel=${input.kernel}`);
+  if (input.kernelFingerprint) {
+    facts.push(`kernel_fingerprint=${input.kernelFingerprint}`);
+  }
+  if (typeof input.astronomyConfidence === "number") {
+    facts.push(`astronomy_confidence=${input.astronomyConfidence.toFixed(2)}`);
+  }
+  if (input.missingInputs?.length) {
+    facts.push(`missing_inputs=${input.missingInputs.slice(0, 8).join(",")}`);
+    facts.push(
+      "language_guidance=use_cautious_language_for_missing_or_approximate_inputs",
+    );
+  }
+  if (input.calculationMode) {
+    facts.push(`calculation_mode=${input.calculationMode}`);
+  }
+  if (input.houseSystem) {
+    facts.push(`house_system=${input.houseSystem}`);
+  }
+  const houseMap = input.planetHouseMap;
+  if (houseMap) {
+    for (const key of [
+      "sun",
+      "moon",
+      "mercury",
+      "venus",
+      "mars",
+      "jupiter",
+      "saturn",
+      "uranus",
+      "neptune",
+      "pluto",
+    ] as const) {
+      const h = houseMap[key];
+      if (typeof h === "number" && h >= 1 && h <= 12) {
+        facts.push(`${key}_house=${h}`);
+      }
+    }
+  }
 
   if (input.traditionalContentVersion) {
     facts.push(`traditionalContentVersion=${input.traditionalContentVersion}`);

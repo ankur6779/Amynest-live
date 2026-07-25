@@ -3,7 +3,7 @@
 **GA2 Build:** birth_sky_ga2_readiness/1.0.0  
 **App Build:** birth_sky_rc3/1.0.0  
 **Production infra:** Coolify + Hetzner + Cloudflare + AI Worker  
-**Generated:** 2026-07-25T15:41:08.577Z
+**Generated:** 2026-07-25T19:44:48.649Z
 
 ## Decision
 

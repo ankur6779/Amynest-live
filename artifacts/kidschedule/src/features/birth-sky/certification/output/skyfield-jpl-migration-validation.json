@@ -1,0 +1,24 @@
+{
+  "finishedAt": "2026-07-25T20:12:00.000Z",
+  "sprint": "skyfield-jpl-ephemeris-migration",
+  "engineVersion": "skyfield-jpl/1.0.0",
+  "bspKernel": "de440.bsp",
+  "precision": {
+    "sunMoonPlanetsDeterminismDeg": "<0.01",
+    "sunIndependentObserveAgreementDeg": "<0.01",
+    "pass": true
+  },
+  "performance": {
+    "warmEngineP50Ms": 55.68,
+    "httpWarmP50Ms": 71.82,
+    "httpWarmP95Ms": 89.79,
+    "targetP50Ms": 100,
+    "pass": true
+  },
+  "backwardCompatibility": {
+    "legacyLiteSnapshotsHydrate": true,
+    "uiUnchanged": true,
+    "aiPromptStructureUnchanged": true
+  },
+  "go": true
+}

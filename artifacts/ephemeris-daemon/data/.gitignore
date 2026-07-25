@@ -1,0 +1,4 @@
+*.bsp
+*.tgz
+*.tmp
+!checksums.txt
