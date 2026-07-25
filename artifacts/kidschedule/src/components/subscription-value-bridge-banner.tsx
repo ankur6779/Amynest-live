@@ -30,7 +30,7 @@ const VISIBILITY_THRESHOLD = 0.25;
  */
 export function SubscriptionValueBridgeBanner({ moment, className }: Props) {
   const { t } = useTranslation();
-  const { entitlements } = useSubscription();
+  const { entitlements, entitlementsResolved } = useSubscription();
   const {
     active,
     dismissValueBridge,
@@ -44,7 +44,7 @@ export function SubscriptionValueBridgeBanner({ moment, className }: Props) {
   const dismissLoggedRef = useRef(false);
 
   const isActive = active?.moment === moment;
-  const isEligible = isValueBridgeEligible(entitlements);
+  const isEligible = isValueBridgeEligible(entitlements, { entitlementsResolved });
 
   useEffect(() => {
     if (!isActive || !isEligible || shownRef.current) return;

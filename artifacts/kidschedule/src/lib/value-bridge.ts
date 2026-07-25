@@ -1,6 +1,8 @@
 import { FF_VALUE_BRIDGE_INVITES } from "@/lib/subscription-feature-flags";
 import type { Entitlements } from "@/hooks/use-subscription";
-import { isInternalTrial } from "@/lib/internal-trial";
+import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
+import { isMonetizationSurfaceBlocked } from "@/lib/monetization-coordinator";
+import { shouldSuppressPremiumMonetization } from "@/lib/premium-entitlement-guard";
 
 /** Phase 1 value moments only. */
 export type ValueBridgeMoment = "routine_completion" | "weekly_summary";
@@ -120,9 +122,18 @@ export function markFirstRoutineItemEverCompleted(): void {
 
 export function isValueBridgeEligible(
   entitlements: Entitlements | null | undefined,
+  options?: { entitlementsResolved?: boolean },
 ): boolean {
   if (!FF_VALUE_BRIDGE_INVITES) return false;
-  return isInternalTrial(entitlements);
+  if (
+    shouldSuppressPremiumMonetization({
+      entitlements,
+      entitlementsResolved: options?.entitlementsResolved,
+    })
+  ) {
+    return false;
+  }
+  return hasFirstRoutineActivationProgress();
 }
 
 /**
@@ -132,11 +143,20 @@ export function isValueBridgeEligible(
 export function evaluateValueBridgeSuppression(
   moment: ValueBridgeMoment,
   entitlements: Entitlements | null | undefined,
+  options?: { entitlementsResolved?: boolean },
 ): ValueBridgeSuppressionReason | null {
   if (!FF_VALUE_BRIDGE_INVITES) return "feature_flag_off";
+  if (isMonetizationSurfaceBlocked("value_bridge")) return "priority_banner_active";
+  if (
+    shouldSuppressPremiumMonetization({
+      entitlements,
+      entitlementsResolved: options?.entitlementsResolved,
+    })
+  ) {
+    return "paid_user";
+  }
   if (!entitlements) return "not_eligible";
-  if (entitlements.isPremiumSubscriber) return "paid_user";
-  if (!isInternalTrial(entitlements)) return "not_trial";
+  if (!hasFirstRoutineActivationProgress()) return "not_eligible";
   if (wasValueBridgeShownToday(moment)) return "already_seen_today";
   if (wasValueBridgeVisibleThisSession()) return "cooldown";
 
@@ -153,8 +173,9 @@ export function evaluateValueBridgeSuppression(
 export function shouldTriggerValueBridge(
   moment: ValueBridgeMoment,
   entitlements: Entitlements | null | undefined,
+  options?: { entitlementsResolved?: boolean },
 ): boolean {
-  return evaluateValueBridgeSuppression(moment, entitlements) === null;
+  return evaluateValueBridgeSuppression(moment, entitlements, options) === null;
 }
 
 export function compareValueBridgePriority(

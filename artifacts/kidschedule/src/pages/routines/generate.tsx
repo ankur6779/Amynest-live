@@ -28,6 +28,7 @@ import { track } from "@/lib/analytics";
 import { trackRoutineGeneratedOnce } from "@/lib/routine-generation-analytics";
 import { FF_FIRST_VALUE_QUICK_ROUTINE } from "@/lib/first-value-activation-flags";
 import { trackRoutineGenerationCompleted } from "@/lib/first-value-telemetry";
+import { notifyRoutineLimitMoment } from "@/lib/routine-limit-moment";
 import {
   formatCategoryLabel,
   formatRoutineDurationShort,
@@ -1100,13 +1101,7 @@ export default function RoutineGenerate() {
           msg.toLowerCase().includes("limit") ||
           msg.includes("402");
         if (isLimit) {
-          // Hit the routinesMax cap → surface the universal premium paywall
-          // instead of a passive toast.
-          window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-            detail: {
-              reason: "routines_limit"
-            }
-          }));
+          notifyRoutineLimitMoment("routine_save_limit", priorRoutineCountRef.current);
           return;
         }
         toast({
@@ -1264,9 +1259,7 @@ export default function RoutineGenerate() {
       return;
     }
     if (err instanceof RoutineGenerationPaywallError) {
-      window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-        detail: { reason: "routines_limit" },
-      }));
+      notifyRoutineLimitMoment("routine_generate_paywall");
       return;
     }
     const status = (err as { status?: number })?.status;
@@ -1286,9 +1279,7 @@ export default function RoutineGenerate() {
     const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.error === "routine_locked" || data?.feature === "routine_generate");
     const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
     if (isFeatureLocked || isLegacyLimit) {
-      window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-        detail: { reason: "routines_limit" },
-      }));
+      notifyRoutineLimitMoment("routine_generate_locked");
       return;
     }
 
@@ -1425,11 +1416,7 @@ export default function RoutineGenerate() {
         return;
       }
       if (err instanceof RoutineGenerationPaywallError) {
-        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-          detail: {
-            reason: "routines_limit",
-          },
-        }));
+        notifyRoutineLimitMoment("routine_generate_paywall");
         return;
       }
       console.error("Routine generation error:", err);
@@ -1698,11 +1685,7 @@ export default function RoutineGenerate() {
         const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.error === "routine_locked" || data?.feature === "routine_generate");
         const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
         if (isFeatureLocked || isLegacyLimit) {
-          window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-            detail: {
-              reason: "routines_limit"
-            }
-          }));
+          notifyRoutineLimitMoment("routine_generate_locked");
           break;
         }
         toast({

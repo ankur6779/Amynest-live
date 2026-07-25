@@ -351,6 +351,9 @@ export function useSpeechCoachV2Session(input: {
         starsEarned: result.starsEarned,
         phaseReached: sessionState.phase,
       });
+      void import("@/lib/premium-moment-notify").then(({ notifyPremiumMoment }) => {
+        notifyPremiumMoment("speech_complete", { source: "speech_coach_v2" });
+      });
     } catch {
       setCelebration({
         stars: sessionState.starsEarned,

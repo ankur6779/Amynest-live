@@ -12,6 +12,11 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTrialState } from "@/hooks/use-trial-state";
 import {
+  isMonetizationSurfaceBlocked,
+  releaseMonetizationSurface,
+  tryClaimMonetizationSurface,
+} from "@/lib/monetization-coordinator";
+import {
   trackValueBridgeEligible,
   trackValueBridgeNotShown,
   trackValueBridgeSuppressed,
@@ -46,7 +51,7 @@ const ValueBridgeContext = createContext<ValueBridgeContextValue | null>(null);
 export function ValueBridgeProvider({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { userId } = useAuth();
-  const { entitlements } = useSubscription();
+  const { entitlements, entitlementsResolved } = useSubscription();
   const { isTrialing } = useTrialState();
   const [active, setActive] = useState<ValueBridgeInvite | null>(null);
 
@@ -63,9 +68,14 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
   const triggerValueBridge = useCallback(
     (moment: ValueBridgeMoment) => {
       const source = momentToSource(moment);
-      const suppression = evaluateValueBridgeSuppression(moment, entitlements);
+      const bridgeOptions = { entitlementsResolved };
+      const suppression = evaluateValueBridgeSuppression(
+        moment,
+        entitlements,
+        bridgeOptions,
+      );
 
-      if (!isValueBridgeEligible(entitlements)) {
+      if (!isValueBridgeEligible(entitlements, bridgeOptions)) {
         if (suppression) {
           trackValueBridgeNotShown(suppression, source, analyticsMeta, {
             moment,
@@ -83,6 +93,13 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (isMonetizationSurfaceBlocked("value_bridge")) {
+        trackValueBridgeSuppressed("priority_banner_active", source, analyticsMeta, {
+          moment,
+        });
+        return;
+      }
+
       setActive((current) => {
         if (
           current &&
@@ -90,11 +107,17 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
         ) {
           return current;
         }
+        if (!tryClaimMonetizationSurface("value_bridge")) {
+          trackValueBridgeSuppressed("priority_banner_active", source, analyticsMeta, {
+            moment,
+          });
+          return current;
+        }
         setSessionBridgeMoment(moment);
         return { moment };
       });
     },
-    [entitlements, analyticsMeta],
+    [entitlements, entitlementsResolved, analyticsMeta],
   );
 
   useEffect(() => {
@@ -107,10 +130,12 @@ export function ValueBridgeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dismissValueBridge = useCallback(() => {
+    releaseMonetizationSurface("value_bridge");
     setActive(null);
   }, []);
 
   const clearValueBridge = useCallback(() => {
+    releaseMonetizationSurface("value_bridge");
     setActive(null);
   }, []);
 

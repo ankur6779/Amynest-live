@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -8,6 +9,12 @@ import {
   isInternalTrial,
   pricingCheckoutHref,
 } from "@/lib/internal-trial";
+import {
+  isMonetizationSurfaceBlocked,
+  releaseMonetizationSurface,
+  tryClaimMonetizationSurface,
+} from "@/lib/monetization-coordinator";
+import { shouldSuppressPremiumMonetization } from "@/lib/premium-entitlement-guard";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 
 /**
@@ -18,12 +25,31 @@ import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
  */
 export function SubscriptionPostActivationBanner() {
   const { t } = useTranslation();
-  const { entitlements } = useSubscription();
+  const { entitlements, entitlementsResolved } = useSubscription();
 
-  if (!entitlements) return null;
-  if (entitlements.isPremiumSubscriber) return null;
-  if (isExpiredInternalTrial(entitlements)) return null;
-  if (!hasFirstRoutineActivationProgress()) return null;
+  const canShow = useMemo(() => {
+    if (!entitlements) return false;
+    if (
+      shouldSuppressPremiumMonetization({
+        entitlements,
+        entitlementsResolved,
+      })
+    ) {
+      return false;
+    }
+    if (isExpiredInternalTrial(entitlements)) return false;
+    if (!hasFirstRoutineActivationProgress()) return false;
+    if (isMonetizationSurfaceBlocked("premium_banner")) return false;
+    return true;
+  }, [entitlements, entitlementsResolved]);
+
+  useEffect(() => {
+    if (!canShow) return;
+    if (!tryClaimMonetizationSurface("premium_banner")) return;
+    return () => releaseMonetizationSurface("premium_banner");
+  }, [canShow]);
+
+  if (!canShow || !entitlements) return null;
 
   const midTrial = isInternalTrial(entitlements);
   const source = midTrial ? "post_activation_trial_upgrade" : "post_activation_banner";

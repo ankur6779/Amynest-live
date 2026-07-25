@@ -24,7 +24,7 @@ import {
  */
 export function SubscriptionFunnelOrchestrator() {
   const [location, setLocation] = useLocation();
-  const { isPremium, entitlements } = useSubscription();
+  const { isPremium, entitlements, entitlementsResolved } = useSubscription();
   const { checkTrialExpiry, isTrialing, isInternalTrial } = useTrialState();
   const convertedRef = useRef(false);
   const redirectedRef = useRef(false);
@@ -49,7 +49,13 @@ export function SubscriptionFunnelOrchestrator() {
 
   useEffect(() => {
     if (redirectedRef.current) return;
-    if (!shouldRedirectToTrialEndedFullscreen(entitlements, location)) return;
+    if (
+      !shouldRedirectToTrialEndedFullscreen(entitlements, location, {
+        entitlementsResolved,
+      })
+    ) {
+      return;
+    }
     redirectedRef.current = true;
     logSubscriptionDebug({
       phase: "trial_ended_redirect",
@@ -63,7 +69,7 @@ export function SubscriptionFunnelOrchestrator() {
       plan: "yearly",
     });
     setLocation("/subscription-trial-ended");
-  }, [entitlements, location, setLocation]);
+  }, [entitlements, entitlementsResolved, location, setLocation]);
 
   const showFunnelBanners =
     location === "/dashboard" || location.startsWith("/parenting-hub");

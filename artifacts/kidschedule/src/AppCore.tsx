@@ -199,6 +199,8 @@ import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
 import { SubscriptionFunnelOrchestrator } from "@/components/subscription-funnel-orchestrator";
 import { ValueBridgeProvider } from "@/contexts/value-bridge-context";
+import { PremiumMomentProvider } from "@/contexts/premium-moment-context";
+import { PremiumMomentEventBridge } from "@/lib/premium-moment-notify";
 // ReactInstanceRecovery is rendered by the parent App.tsx (the eager
 // shell), so it is NOT imported here — keeping it out of this lazy chunk
 // shrinks the initial bundle further and ensures the recovery boundary
@@ -826,6 +828,7 @@ function AppRoutes() {
         <TooltipProvider>
           <DebugProvider>
           <PaywallProvider>
+            <PremiumMomentProvider>
             <ValueBridgeProvider>
             <DeviceRegistrationProvider>
             <AnalyticsBootstrap />
@@ -1033,6 +1036,7 @@ function AppRoutes() {
             </Suspense>
             <PaywallModalLazy />
             <SubscriptionEventBridge />
+            <PremiumMomentEventBridge />
             <SubscriptionFunnelOrchestrator />
             <Toaster />
             <AudioVoiceStatusHint />
@@ -1040,6 +1044,7 @@ function AppRoutes() {
             <AudioHealthOverlay />
           </DeviceRegistrationProvider>
             </ValueBridgeProvider>
+            </PremiumMomentProvider>
           </PaywallProvider>
           </DebugProvider>
         </TooltipProvider>

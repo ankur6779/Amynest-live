@@ -88,6 +88,9 @@ export function AIMealPlanSection() {
         setPlan(data?.plan ?? []);
         setGeneratedAt(data?.generatedAt ?? "");
         setSelectedDay(0);
+        void import("@/lib/premium-moment-notify").then(({ notifyPremiumMoment }) => {
+          notifyPremiumMoment("meal_plan", { source: "nutrition_week_plan" });
+        });
         if (mealTryFree) {
           usage.markFeatureUsed(NUTRITION_WEEK_PLAN_FEATURE);
           usage.markFeatureUsed("hub_nutrition");

@@ -11,6 +11,11 @@ import {
   shouldDeferPaywallForActivation,
 } from "@/lib/activation-gate";
 import { logSubscriptionDebug } from "@/lib/subscription-debug";
+import {
+  isMonetizationSurfaceBlocked,
+  releaseMonetizationSurface,
+  tryClaimMonetizationSurface,
+} from "@/lib/monetization-coordinator";
 
 export type PaywallReason =
   | "ai_quota"
@@ -91,6 +96,8 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
       return;
     }
     incrementPaywallVisitCount();
+    if (isMonetizationSurfaceBlocked("paywall")) return;
+    if (!tryClaimMonetizationSurface("paywall")) return;
     trackSubscriptionEvent({
       event: "paywall_opened",
       reason,
@@ -107,6 +114,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
     setState({ open: true, reason, ...rest });
   }, []);
   const closePaywall = useCallback(() => {
+    releaseMonetizationSurface("paywall");
     setState((s) => ({ ...s, open: false }));
   }, []);
 

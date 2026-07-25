@@ -1569,6 +1569,9 @@ function PhonicsDownloadCard({
       }
 
       await deliverWorkbookPdf(blob, PHONICS_PDF.fileName);
+      void import("@/lib/premium-moment-notify").then(({ notifyPremiumMoment }) => {
+        notifyPremiumMoment("worksheet_download", { source: "phonics_workbook" });
+      });
 
       // Log every successful download to the DB (server also enforces premium).
       const logRes = await authFetch("/api/phonics/downloads", {

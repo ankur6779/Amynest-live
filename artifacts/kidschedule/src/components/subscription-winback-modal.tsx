@@ -22,6 +22,11 @@ import {
   winbackDiagnosticEvent,
   type WinbackEligibilityResult,
 } from "@/lib/winback-eligibility";
+import {
+  isMonetizationSurfaceBlocked,
+  releaseMonetizationSurface,
+  tryClaimMonetizationSurface,
+} from "@/lib/monetization-coordinator";
 
 /**
  * Winback modal — only after entitlements are fully resolved from the server.
@@ -64,11 +69,12 @@ export function SubscriptionWinbackModal() {
   }, [eligibility]);
 
   useEffect(() => {
-    if (!show) {
+    if (!show || isMonetizationSurfaceBlocked("winback")) {
       setOpen(false);
       return;
     }
     const t = window.setTimeout(() => {
+      if (!tryClaimMonetizationSurface("winback")) return;
       setOpen(true);
       trackSubscriptionEvent({
         event: "winback_shown",
@@ -86,6 +92,7 @@ export function SubscriptionWinbackModal() {
       open={open}
       onOpenChange={(v) => {
         if (!v) {
+          releaseMonetizationSurface("winback");
           markWinbackDismissed();
           trackSubscriptionEvent({
             event: "winback_dismissed",
@@ -119,6 +126,7 @@ export function SubscriptionWinbackModal() {
                 plan: "yearly",
                 reason: eligibility.reason,
               });
+              releaseMonetizationSurface("winback");
               setOpen(false);
               setLocation("/pricing?plan=yearly&source=winback");
             }}
@@ -129,6 +137,7 @@ export function SubscriptionWinbackModal() {
             variant="outline"
             className="w-full"
             onClick={() => {
+              releaseMonetizationSurface("winback");
               setOpen(false);
               markWinbackDismissed();
               trackSubscriptionEvent({
