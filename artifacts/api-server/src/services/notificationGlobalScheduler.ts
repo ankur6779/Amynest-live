@@ -37,6 +37,7 @@ import {
   type BuiltNotification,
 } from "./notificationContentBuilder.js";
 import { loadOutcomeSignals, loadCampaignProgress } from "./notificationOutcomeService.js";
+import { runSegmentJourneyForUser } from "./notificationSegmentService.js";
 import { refreshFamilyIntelligence } from "./unifiedFamilyIntelligenceService.js";
 import { getTopPriorityForNotifications } from "@workspace/family-intelligence";
 
@@ -282,6 +283,23 @@ export async function runGlobalScheduleTick(now = new Date()): Promise<{
     const campaignProgress = campaignCache.get(user.userId);
     const familyIntel = familyIntelCache.get(user.userId);
     const notifPriority = familyIntel ? getTopPriorityForNotifications(familyIntel) : null;
+
+    // ── CRM segment journey (feature-flagged; runs before scheduled jobs) ──
+    if (signals) {
+      try {
+        const crmResult = await runSegmentJourneyForUser(
+          user.userId,
+          user.prefs,
+          signals,
+          user.countryCode,
+          now,
+        );
+        if (crmResult === "sent") sent++;
+        else if (crmResult === "skipped" || crmResult === "delayed") throttled++;
+      } catch (err) {
+        logger.warn({ err, userId: user.userId }, "CRM segment journey tick failed");
+      }
+    }
 
     for (const job of SCHEDULED_NOTIFICATION_JOBS) {
       const gate = shouldDeliverScheduledJob(job, local, {

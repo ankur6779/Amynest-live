@@ -46,6 +46,7 @@ import {
   type PreSignupCampaignState,
 } from "./types";
 import { getOrCreateDeviceId } from "@/lib/device-id";
+import { registerAnonymousPushFromNative } from "@/lib/anonymous-push-register";
 import {
   getBrowserNotificationPermission,
   isAmyNestWrapper,
@@ -150,6 +151,8 @@ export async function syncPreSignupCampaign(
   }
 
   clearPermissionDeniedExit();
+
+  void registerAnonymousPushFromNative();
 
   const segment = evaluatePreSignupSegment(audience);
   if (!segment) {

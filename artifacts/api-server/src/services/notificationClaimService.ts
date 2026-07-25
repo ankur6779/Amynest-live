@@ -39,6 +39,8 @@ export type ClaimInput = {
     campaignStep?: number | null;
     experimentId?: string | null;
     experimentVariant?: string | null;
+    segment?: string | null;
+    journeyStepId?: string | null;
   };
   globalMeta?: {
     countryCode?: string | null;
@@ -266,6 +268,8 @@ export async function logNonDeliveryEvent(
     campaignStep: outcome?.campaignStep ?? null,
     experimentId: outcome?.experimentId ?? null,
     experimentVariant: outcome?.experimentVariant ?? null,
+    segment: outcome?.segment ?? null,
+    journeyStepId: outcome?.journeyStepId ?? null,
     countryCode: global?.countryCode ?? null,
     locale: global?.locale ?? null,
     timezoneAtSend: global?.timezoneAtSend ?? null,

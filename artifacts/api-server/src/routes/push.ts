@@ -4,8 +4,14 @@ import { getAuth } from "../lib/auth";
 import { z } from "zod";
 import { db, pushTokensTable } from "@workspace/db";
 import { count } from "drizzle-orm";
+import {
+  linkAnonymousDeviceToUser,
+  registerAnonymousDevice,
+} from "../services/anonymousDeviceService.js";
 
 const router: IRouter = Router();
+
+const DEVICE_ID_HEADER = "x-amynest-device-id";
 
 const PLATFORMS = ["ios", "ios-capacitor", "android", "web", "unknown"] as const;
 
@@ -17,6 +23,19 @@ const registerSchema = z.object({
 
 const unregisterSchema = z.object({
   token: z.string().trim().min(1).max(512),
+});
+
+const anonymousRegisterSchema = z.object({
+  deviceId: z.string().trim().min(8).max(128),
+  token: z.string().trim().min(1).max(512),
+  platform: z.enum(PLATFORMS).optional(),
+  deviceName: z.string().trim().max(200).nullish(),
+  locale: z.string().trim().max(16).nullish(),
+  timezone: z.string().trim().max(64).optional(),
+});
+
+const linkDeviceSchema = z.object({
+  deviceId: z.string().trim().min(8).max(128),
 });
 
 function looksLikeApnsDeviceTokenHex(t: string): boolean {
@@ -88,7 +107,64 @@ router.post("/push/register", async (req, res): Promise<void> => {
     );
   }
 
+  const deviceIdHeader = req.header(DEVICE_ID_HEADER)?.trim();
+  if (deviceIdHeader) {
+    await linkAnonymousDeviceToUser(deviceIdHeader, userId).catch(() => undefined);
+  }
+
   res.json({ ok: true });
+});
+
+/**
+ * POST /api/push/register-anonymous
+ * Pre-signup FCM registration — no auth required.
+ */
+router.post("/push/register-anonymous", async (req, res): Promise<void> => {
+  const parsed = anonymousRegisterSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid body" });
+    return;
+  }
+  const { deviceId, token } = parsed.data;
+  const platform = parsed.data.platform ?? "unknown";
+
+  if (platform === "ios-capacitor" && looksLikeApnsDeviceTokenHex(token)) {
+    res.status(400).json({
+      ok: false,
+      error: "apns_token_not_deliverable",
+    });
+    return;
+  }
+
+  await registerAnonymousDevice({
+    deviceId,
+    pushToken: token,
+    platform,
+    deviceName: parsed.data.deviceName ?? null,
+    locale: parsed.data.locale ?? null,
+    timezone: parsed.data.timezone,
+  });
+
+  res.json({ ok: true });
+});
+
+/**
+ * POST /api/push/link-device
+ * Links a previously anonymous device to the authenticated user.
+ */
+router.post("/push/link-device", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const parsed = linkDeviceSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid body" });
+    return;
+  }
+  const result = await linkAnonymousDeviceToUser(parsed.data.deviceId, userId);
+  res.json(result);
 });
 
 /**

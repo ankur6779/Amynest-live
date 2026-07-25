@@ -58,6 +58,9 @@ export const notificationLogTable = pgTable(
     engagementProb: integer("engagement_prob"),
     experimentId: text("experiment_id"),
     experimentVariant: text("experiment_variant"),
+    /** CRM segmentation metadata */
+    segment: text("segment"),
+    journeyStepId: text("journey_step_id"),
     countryCode: text("country_code"),
     locale: text("locale"),
     timezoneAtSend: text("timezone_at_send"),

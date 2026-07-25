@@ -50,6 +50,8 @@ export * from "./static_audio_registry";
 export * from "./gift_tokens";
 export * from "./notification_preferences";
 export * from "./notification_log";
+export * from "./anonymous_devices";
+export * from "./notification_journey_enrollments";
 export * from "./notification_fatigue_state";
 export * from "./notification_outcomes";
 export * from "./family_intelligence";

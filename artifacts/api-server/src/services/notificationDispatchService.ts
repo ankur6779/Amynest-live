@@ -122,6 +122,9 @@ export interface DispatchInput {
     campaignStep?: number | null;
     experimentId?: string | null;
     experimentVariant?: string | null;
+    /** CRM segment metadata */
+    segment?: string | null;
+    journeyStepId?: string | null;
   };
   /** Global delivery dimensions for regional analytics. */
   globalMeta?: {
@@ -412,6 +415,8 @@ async function logLegacyDelivery(
     campaignStep: outcome?.campaignStep ?? null,
     experimentId: outcome?.experimentId ?? null,
     experimentVariant: outcome?.experimentVariant ?? null,
+    segment: outcome?.segment ?? null,
+    journeyStepId: outcome?.journeyStepId ?? null,
     countryCode: global?.countryCode ?? null,
     locale: global?.locale ?? null,
     timezoneAtSend: global?.timezoneAtSend ?? null,

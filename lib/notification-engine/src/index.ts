@@ -22,6 +22,7 @@ export * from "./diversity/index.js";
 export * from "./quality/index.js";
 export * from "./timeline/index.js";
 export * from "./suppression/index.js";
+export * from "./segments/index.js";
 export * from "./analytics/notification-intelligence-dashboard.js";
 
 export { MIN_POOL_SIZES } from "./types.js";

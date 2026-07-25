@@ -352,6 +352,17 @@ export function startNotificationCron(): void {
     }
   });
 
+  // CRM pre-signup journey for anonymous devices (Segment 2).
+  schedule("anonymous_presignup_tick", "*/15 * * * *", async () => {
+    const { runPreSignupNotificationTick } = await import(
+      "../services/preSignupNotificationScheduler.js"
+    );
+    const r = await runPreSignupNotificationTick();
+    if (r.sent > 0) {
+      logger.info({ ...r, job: "anonymous_presignup_tick" }, "Pre-signup CRM summary");
+    }
+  });
+
   // Release abandoned pending claims (worker crash recovery).
   schedule("stale_pending_sweep", "*/5 * * * *", async () => {
     const { releaseStalePendingClaimsGlobally } = await import(
