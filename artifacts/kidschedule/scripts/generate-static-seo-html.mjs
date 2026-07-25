@@ -282,7 +282,11 @@ function buildJsonLd(page) {
       headline: page.h1 || page.title,
       description: page.description,
       author: { "@type": "Organization", name: "AmyWorld" },
-      publisher: { "@type": "Organization", name: "AmyWorld", brand: "AmyNest AI" },
+      publisher: {
+        "@type": "Organization",
+        name: "AmyWorld",
+        brand: { "@type": "Brand", name: "AmyNest AI" },
+      },
       mainEntityOfPage: { "@id": `${canonical}#webpage` },
       inLanguage: "en-IN",
     });
