@@ -11,6 +11,8 @@ import {
   trackRoutineShared,
 } from "@/lib/first-value-telemetry";
 import { FirstValuePostRoutineStrip } from "@/components/first-value-post-routine-strip";
+import { notifyPremiumMoment } from "@/lib/premium-moment-notify";
+import { notifyRoutineLimitMoment } from "@/lib/routine-limit-moment";
 import { hasOnboardingMilestone } from "@/lib/retention-engine";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getActivityImage } from "@/lib/activity-images";
@@ -1044,9 +1046,7 @@ export default function RoutineDetail() {
     } catch (err) {
       if (err instanceof RoutineGenerationPaywallError) {
         setNextDayDialogOpen(false);
-        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-          detail: { reason: "routines_limit" },
-        }));
+        notifyRoutineLimitMoment("routine_detail_regenerate");
         return;
       }
       toast({
@@ -1617,10 +1617,16 @@ export default function RoutineDetail() {
 
   const clearRevealParam = useCallback(() => {
     setRevealActive(false);
+    if (hasOnboardingMilestone("first_routine_generated")) {
+      notifyPremiumMoment("first_routine", {
+        source: "first_reveal",
+        routineCount: routine?.id,
+      });
+    }
     if (routineId) {
       setLocation(`/routines/${routineId}`);
     }
-  }, [routineId, setLocation]);
+  }, [routineId, setLocation, routine?.id]);
 
   useEffect(() => {
     setTimelineExpanded(false);
@@ -2610,7 +2616,7 @@ export default function RoutineDetail() {
               <div className="flex gap-2">
                 <Button className="flex-1 rounded-full bg-primary hover:bg-primary" onClick={() => {
                   setNextDayDialogOpen(false);
-                  window.dispatchEvent(new CustomEvent("amynest:open-paywall", { detail: { reason: "routines_limit" } }));
+                  notifyRoutineLimitMoment("routine_detail_next_day");
                 }}>
                   <Crown className="h-4 w-4 mr-2" />
                   {t("pages.routines.detail.next_day_upgrade_btn")}
