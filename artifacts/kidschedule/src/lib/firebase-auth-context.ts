@@ -27,6 +27,8 @@ export interface ShimUser {
   emailAddresses: ShimEmailAddress[];
   primaryEmailAddress: ShimEmailAddress | null;
   primaryPhoneNumber: { phoneNumber: string } | null;
+  /** Firebase anonymous guest — no email linked yet. */
+  isAnonymous?: boolean;
   /** Stub — Firebase Auth alone can't host avatars. */
   setProfileImage: (args: { file: File }) => Promise<void>;
 }

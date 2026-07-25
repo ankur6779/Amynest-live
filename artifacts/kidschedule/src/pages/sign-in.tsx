@@ -28,6 +28,8 @@ import { getApiUrl } from "@/lib/api";
 import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
+import { signInAsGuest, GuestAuthUnavailableError } from "@/lib/anonymous-auth";
+import { FF_GUEST_TRY_FIRST } from "@/lib/mrr-experiment-flags";
 import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
 import {
   AUTH_INPUT_CLASS,
@@ -440,6 +442,7 @@ export default function SignInPage() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
+  const [guestBusy, setGuestBusy] = useState(false);
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     let cancelled = false;
@@ -519,6 +522,21 @@ export default function SignInPage() {
     setResetEmail(email);
     setResetError(null);
     setMode("reset");
+  };
+  const onGuestTry = async () => {
+    setError(null);
+    setGuestBusy(true);
+    try {
+      await signInAsGuest();
+    } catch (err: unknown) {
+      if (err instanceof GuestAuthUnavailableError) {
+        setError(err.message);
+      } else {
+        setError(prettyAuthError(err));
+      }
+    } finally {
+      setGuestBusy(false);
+    }
   };
   const onSendReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -673,6 +691,36 @@ export default function SignInPage() {
     }}>
         {t("screens.sign_in.subtitle")}
       </p>
+
+      {FF_GUEST_TRY_FIRST && isNativeAmyNestShell() ? (
+        <button
+          type="button"
+          onClick={() => void onGuestTry()}
+          disabled={guestBusy || busy}
+          data-testid="sign-in-guest-try-first"
+          className="si-submit-btn"
+          style={{
+            ...AUTH_SUBMIT_BTN_STYLE,
+            width: "100%",
+            marginBottom: 12,
+            background: guestBusy
+              ? "rgba(75,65,110,0.7)"
+              : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
+            border: "none",
+            color: "#FFFFFF",
+            cursor: guestBusy ? "not-allowed" : "pointer",
+            boxShadow: guestBusy
+              ? "none"
+              : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
+          }}
+        >
+          {guestBusy
+            ? t("screens.sign_in.guest_loading", { defaultValue: "Starting…" })
+            : t("screens.sign_in.guest_try_first", {
+                defaultValue: "Try first — create a routine in 5 min",
+              })}
+        </button>
+      ) : null}
 
       {shouldShowAppleSignIn() ? (
         <div

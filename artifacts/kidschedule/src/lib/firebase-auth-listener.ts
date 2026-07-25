@@ -32,6 +32,7 @@ type FirebaseUserLike = {
   email: string | null;
   photoURL: string | null;
   phoneNumber: string | null;
+  isAnonymous?: boolean;
   getIdToken: (forceRefresh?: boolean) => Promise<string>;
 };
 
@@ -61,6 +62,7 @@ function fbToShim(u: FirebaseUserLike, resolvedEmail?: string | null): ShimUser 
     emailAddresses: email ? [{ emailAddress: email }] : [],
     primaryEmailAddress: email ? { emailAddress: email } : null,
     primaryPhoneNumber: u.phoneNumber ? { phoneNumber: u.phoneNumber } : null,
+    isAnonymous: u.isAnonymous === true,
     setProfileImage: async () => {
       throw new Error(
         "Profile image upload is not yet wired to Firebase Storage in this build.",
