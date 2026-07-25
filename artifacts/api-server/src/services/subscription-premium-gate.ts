@@ -38,13 +38,24 @@ export function isPremiumNow(s: Subscription): boolean {
     !!s.expiresAt ||
     !!s.gracePeriodExpiresAt;
   if (hasExplicitV2State) {
-    return isStatePremium(s.subscriptionState, {
+    const statePremium = isStatePremium(s.subscriptionState, {
       currentPeriodEnd: s.currentPeriodEnd,
       expiresAt: s.expiresAt,
       gracePeriodExpiresAt: s.gracePeriodExpiresAt,
       trialEndsAt: s.trialEndsAt,
       bonusExpiresAt: s.bonusExpiresAt,
     });
+    if (statePremium) return true;
+    // Unmigrated paid-store rows may still use legacy active + period end.
+    if (
+      (s.provider === "revenuecat" || s.provider === "razorpay") &&
+      s.subscriptionState === "FREE" &&
+      s.status === "active" &&
+      hasValidPaidPeriodEnd(s)
+    ) {
+      return true;
+    }
+    return false;
   }
   const now = Date.now();
   if (s.bonusExpiresAt && s.bonusExpiresAt.getTime() > now) return true;
