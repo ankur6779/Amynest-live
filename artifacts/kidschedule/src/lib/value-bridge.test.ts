@@ -16,6 +16,10 @@ vi.mock("@/lib/subscription-feature-flags", () => ({
   FF_VALUE_BRIDGE_INVITES: true,
 }));
 
+vi.mock("@/lib/activation-gate", () => ({
+  hasFirstRoutineActivationProgress: () => true,
+}));
+
 const internalTrial: Entitlements = {
   isPremium: true,
   isTrialing: true,

@@ -54,7 +54,13 @@ export type SubscriptionAnalyticsEvent =
   | "value_bridge_clicked"
   | "value_bridge_eligible"
   | "value_bridge_suppressed"
-  | "value_bridge_not_shown";
+  | "value_bridge_not_shown"
+  | "premium_prompt_shown"
+  | "premium_prompt_clicked"
+  | "premium_prompt_dismissed"
+  | "feature_locked"
+  | "routine_limit_reached"
+  | "first_routine_completed";
 
 export type SubscriptionAnalyticsPayload = {
   event: SubscriptionAnalyticsEvent;
