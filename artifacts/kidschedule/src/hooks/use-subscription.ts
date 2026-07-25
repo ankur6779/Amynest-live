@@ -1,9 +1,10 @@
 import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
-import { useAuth } from "@/lib/firebase-auth-hooks";
+import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
+import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
 import { openRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razorpay";
 import {
   fetchSubscriptionResilient,
@@ -114,6 +115,7 @@ export const subscriptionQueryKey = (userId: string | null | undefined) =>
 
 export function useSubscription() {
   const { isSignedIn, isLoaded, userId } = useAuth();
+  const { user } = useUser();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
   const qkey = subscriptionQueryKey(userId);
@@ -162,6 +164,10 @@ export function useSubscription() {
       prefill?: { name?: string; email?: string; contact?: string },
       method?: string,
     ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
+      const guestBlock = getGuestCheckoutBlock(user);
+      if (guestBlock.blocked) {
+        return { ok: false, reason: guestBlock.message };
+      }
       // 1) Ask the server to create a Razorpay subscription for this user/plan.
       const createRes = await authFetch(
         getApiUrl("/api/subscription/razorpay/create-subscription"),
@@ -267,7 +273,7 @@ export function useSubscription() {
       }
       return result;
     },
-    [authFetch, qc, qkey, refresh],
+    [authFetch, qc, qkey, refresh, user],
   );
 
   /**

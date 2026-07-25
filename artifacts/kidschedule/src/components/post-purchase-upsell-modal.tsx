@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Crown } from "lucide-react";
 import {
   Dialog,
@@ -16,6 +16,13 @@ import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { markPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { usePricingRegion } from "@/lib/pricing-region";
+import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
+import { useUser } from "@/lib/firebase-auth-hooks";
+import {
+  isMonetizationSurfaceBlocked,
+  releaseMonetizationSurface,
+  tryClaimMonetizationSurface,
+} from "@/lib/monetization-coordinator";
 
 type Props = {
   purchasedPlan: Exclude<Plan, "free">;
@@ -29,13 +36,30 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
   const nativeBilling = useNativeBilling();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const { user } = useUser();
   const { isIndia } = usePricingRegion({
     enabled: !nativeBilling.wrapperPresent,
   });
 
+  useEffect(() => {
+    if (!open) return;
+    if (isMonetizationSurfaceBlocked("subscription_modal")) {
+      setOpen(false);
+      onDone();
+      return;
+    }
+    if (!tryClaimMonetizationSurface("subscription_modal")) {
+      setOpen(false);
+      onDone();
+      return;
+    }
+    return () => releaseMonetizationSurface("subscription_modal");
+  }, [open, onDone]);
+
   if (purchasedPlan === "yearly") return null;
 
   const dismiss = () => {
+    releaseMonetizationSurface("subscription_modal");
     markPostPurchaseUpsellDismissed(purchasedPlan);
     trackSubscriptionEvent({
       event: "post_purchase_upsell_dismissed",
@@ -46,6 +70,11 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
   };
 
   const accept = async () => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      dismiss();
+      return;
+    }
     setBusy(true);
     trackSubscriptionEvent({
       event: "post_purchase_upsell_accepted",
@@ -60,6 +89,7 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
         if (res.ok) {
           await finalizeNativePurchase(authFetch, qc);
           trackSubscriptionEvent({ event: "purchase_success", plan: "yearly", source: "post_purchase_upsell" });
+          releaseMonetizationSurface("subscription_modal");
           setOpen(false);
           onDone();
           return;
@@ -68,11 +98,13 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
         const res = await checkoutRazorpay("yearly");
         if (res.ok) {
           trackSubscriptionEvent({ event: "purchase_success", plan: "yearly", source: "post_purchase_upsell" });
+          releaseMonetizationSurface("subscription_modal");
           setOpen(false);
           onDone();
           return;
         }
       } else {
+        releaseMonetizationSurface("subscription_modal");
         setOpen(false);
         onDone();
         window.location.assign("/pricing?plan=yearly&source=post_purchase_upsell");

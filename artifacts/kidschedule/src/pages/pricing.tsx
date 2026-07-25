@@ -59,6 +59,8 @@ import { usePlanCardViewAnalytics } from "@/hooks/use-plan-card-view-analytics";
 import type { PlanBillingLabels } from "@/lib/plan-price";
 import { monthlyEquivalentForPlan } from "@/lib/plan-price";
 import { wasPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
+import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
+import { shouldSuppressPremiumMonetization } from "@/lib/premium-entitlement-guard";
 import {
   SUBSCRIPTION_HERO,
   PURCHASE_SCREEN,
@@ -101,6 +103,7 @@ export default function PricingPage() {
   const {
     plans,
     entitlements,
+    entitlementsResolved,
     checkoutRazorpay,
     loading,
     cancelSubscription,
@@ -158,9 +161,13 @@ export default function PricingPage() {
   const provider = entitlements?.provider ?? "none";
   /** Paid via Razorpay / store — distinct from internal age-based trial (`provider=none`). */
   const isPremiumSubscriber = entitlements?.isPremiumSubscriber ?? false;
+  const suppressUpgradePrompts = shouldSuppressPremiumMonetization({
+    entitlements,
+    entitlementsResolved,
+  });
   const isInternalTrial =
     !!entitlements?.isTrialing && provider === "none" && !isPremiumSubscriber;
-  const canPurchasePlan = !isPremiumSubscriber;
+  const canPurchasePlan = !suppressUpgradePrompts;
 
   // Filter out sentinel "year 2100" dates — they mean "no real expiry"
   const rawEnd = entitlements?.currentPeriodEnd ?? null;
@@ -198,6 +205,11 @@ export default function PricingPage() {
   };
 
   const onUpgrade = async (method?: "upi") => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      setNotice(guestBlock.message);
+      return;
+    }
     const key = method === "upi" ? "googlepay" : "razorpay";
     setSubmitting(key);
     setNotice(null);
@@ -292,6 +304,11 @@ export default function PricingPage() {
   };
 
   const onUpgradeNativeStore = async () => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      setNotice(guestBlock.message);
+      return;
+    }
     setNotice(null);
     setPaymentSuccess(false);
     setVerifying(true);
@@ -352,6 +369,28 @@ export default function PricingPage() {
       }
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const onRestorePurchases = async () => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      setNotice(guestBlock.message);
+      return;
+    }
+    trackSubscriptionEvent({ event: "restore_purchase", source: "pricing" });
+    const ok = await nativeBilling.restore();
+    if (ok) {
+      toast({
+        title: t("pricing.payment_success_title", { defaultValue: PURCHASE_SCREEN.successTitle }),
+        description: t("pricing.payment_success_body", { defaultValue: PURCHASE_SCREEN.successBody }),
+      });
+    } else {
+      setNotice(
+        t("pricing.restore_failed", {
+          defaultValue: "No active subscription found for this account.",
+        }),
+      );
     }
   };
 
@@ -727,7 +766,7 @@ export default function PricingPage() {
             </p>
             <button
               type="button"
-              onClick={() => void nativeBilling.restore()}
+              onClick={() => void onRestorePurchases()}
               className="w-full text-white/55 text-xs font-semibold py-2 hover:text-white/85"
             >
               {t("pricing.restore_purchases")}
@@ -780,7 +819,7 @@ export default function PricingPage() {
             )}
             <button
               type="button"
-              onClick={() => void nativeBilling.restore()}
+              onClick={() => void onRestorePurchases()}
               className="w-full text-white/55 text-xs font-semibold py-2 hover:text-white/85"
             >
               {t("pricing.restore_purchases")}

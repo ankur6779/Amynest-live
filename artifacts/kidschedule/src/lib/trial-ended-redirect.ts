@@ -2,6 +2,7 @@ import type { Entitlements } from "@/hooks/use-subscription";
 import { isExpiredInternalTrial } from "@/lib/internal-trial";
 import { FF_TRIAL_ENDED_FULLSCREEN } from "@/lib/subscription-feature-flags";
 import { wasTrialEndedScreenDismissedRecently } from "@/lib/subscription-funnel-storage";
+import { shouldSuppressPremiumMonetization } from "@/lib/premium-entitlement-guard";
 
 const SKIP_PATH_PREFIXES = [
   "/subscription-trial-ended",
@@ -22,11 +23,18 @@ const SKIP_PATH_PREFIXES = [
 export function shouldRedirectToTrialEndedFullscreen(
   entitlements: Entitlements | null | undefined,
   location: string,
-  options?: { cooldownMs?: number },
+  options?: { cooldownMs?: number; entitlementsResolved?: boolean },
 ): boolean {
   if (!FF_TRIAL_ENDED_FULLSCREEN) return false;
   if (!isExpiredInternalTrial(entitlements)) return false;
-  if (entitlements?.isPremiumSubscriber) return false;
+  if (
+    shouldSuppressPremiumMonetization({
+      entitlements,
+      entitlementsResolved: options?.entitlementsResolved,
+    })
+  ) {
+    return false;
+  }
   if (wasTrialEndedScreenDismissedRecently(options?.cooldownMs)) return false;
 
   const path = location.split("?")[0] || location;

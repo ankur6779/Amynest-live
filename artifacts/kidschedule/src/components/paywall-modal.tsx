@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { usePricingRegion, applyIndiaPricing } from "@/lib/pricing-region";
 import { useUser } from "@/lib/firebase-auth-hooks";
+import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -151,6 +152,11 @@ export function PaywallModal() {
   };
 
   const onPayWithRazorpay = async () => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      setNotice(guestBlock.message);
+      return;
+    }
     track("premium_cta_clicked", { source: reason });
     track("upgrade_started", {
       module: state.module,
@@ -230,6 +236,11 @@ export function PaywallModal() {
   };
 
   const onPayWithNative = async () => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      setNotice(guestBlock.message);
+      return;
+    }
     track("premium_cta_clicked", { source: reason });
     track("upgrade_started", {
       module: state.module,

@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/lib/firebase-auth-hooks";
+import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
+import { shouldSuppressPremiumMonetization } from "@/lib/premium-entitlement-guard";
 import { isExpiredInternalTrial, pricingCheckoutHref } from "@/lib/internal-trial";
 import {
   markTrialEndedScreenDismissed,
@@ -30,13 +33,17 @@ const BENEFITS = FEATURE_SHOWCASE.items.slice(0, 7);
 export default function SubscriptionTrialEndedPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
-  const { entitlements, refresh } = useSubscription();
+  const { entitlements, entitlementsResolved, refresh } = useSubscription();
   const nativeBilling = useNativeBilling();
   const { toast } = useToast();
+  const { user } = useUser();
   const [submitting, setSubmitting] = useState(false);
 
   const expired = isExpiredInternalTrial(entitlements);
-  const alreadyPaid = !!entitlements?.isPremiumSubscriber;
+  const alreadyPaid = shouldSuppressPremiumMonetization({
+    entitlements,
+    entitlementsResolved,
+  });
 
   useEffect(() => {
     markTrialEndedScreenSeen();
@@ -79,6 +86,17 @@ export default function SubscriptionTrialEndedPage() {
   }, [setLocation]);
 
   const continuePremium = useCallback(async () => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) {
+      toast({
+        title: t("components.paywall_modal.guest_checkout_blocked_title", {
+          defaultValue: "Sign in required",
+        }),
+        description: guestBlock.message,
+        variant: "destructive",
+      });
+      return;
+    }
     trackSubscriptionEvent({
       event: "subscribe_clicked",
       source: "trial_ended_fullscreen",
@@ -162,6 +180,7 @@ export default function SubscriptionTrialEndedPage() {
     setLocation,
     t,
     toast,
+    user,
   ]);
 
   if (alreadyPaid || (entitlements && !expired)) {

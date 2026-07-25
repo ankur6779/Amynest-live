@@ -22,6 +22,7 @@ import {
 import type { Plan } from "@/hooks/use-subscription";
 import type { StorePlanPrice } from "@/lib/plan-price";
 import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purchase-finalize";
+import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
 
 type RcConfig = {
   provider: "revenuecat";
@@ -454,6 +455,10 @@ export function useNativeBilling(): NativeBillingState {
     async (
       plan: Exclude<Plan, "free">,
     ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
+      const guestBlock = getGuestCheckoutBlock(user);
+      if (guestBlock.blocked) {
+        return { ok: false, reason: guestBlock.message };
+      }
       if (!billingReady) {
         return { ok: false, reason: billingConfigUnavailableReason ?? "Billing is not available." };
       }
@@ -518,11 +523,13 @@ export function useNativeBilling(): NativeBillingState {
         setPurchasing(false);
       }
     },
-    [iosShell, androidBridge, billingReady, packageMap, qc, authFetch, billingConfigUnavailableReason, requireRevenueCatAppUserId],
+    [iosShell, androidBridge, billingReady, packageMap, qc, authFetch, billingConfigUnavailableReason, requireRevenueCatAppUserId, user],
   );
 
   // ── restore ───────────────────────────────────────────────────────────────
   const restore = useCallback(async (): Promise<boolean> => {
+    const guestBlock = getGuestCheckoutBlock(user);
+    if (guestBlock.blocked) return false;
     if (!billingReady) return false;
     const canonicalAppUserId = await requireRevenueCatAppUserId();
     if (!canonicalAppUserId) return false;
@@ -547,7 +554,7 @@ export function useNativeBilling(): NativeBillingState {
       return finalized.isPremium;
     }
     return false;
-  }, [iosShell, androidBridge, billingReady, qc, authFetch, requireRevenueCatAppUserId]);
+  }, [iosShell, androidBridge, billingReady, qc, authFetch, requireRevenueCatAppUserId, user]);
 
   return {
     platform,
