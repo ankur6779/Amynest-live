@@ -67,6 +67,7 @@ import {
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
 import { applyParentingHubDeepLink, dispatchInfantHubOpenSection } from "@/lib/hub-activity-cross-link";
+import { isBirthSkyHubTileEnabled } from "@/features/birth-sky/lib/feature-flags";
 import { buildAllHubSectionPreviews } from "@/lib/hub-section-discoverability";
 import { recordHubSectionVisit } from "@/lib/hub-section-visit-tracker";
 import { getHubSectionHeaderTheme, parseSectionTintRgb } from "@/lib/hub-section-header-theme";
@@ -179,7 +180,7 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   creativity: ["activities", "origami-studio", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
   stories:    ["story-hub", "talking-amy", "speech-coach", "discovery-worlds"],
   health:     ["nutrition", "health-lab"],
-  support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
+  support:    ["birth-sky", "articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
 /** Explicit render order inside the "Today For You" group. */
@@ -1280,6 +1281,34 @@ function ParentingHubPage() {
             />
           </HealthZonePremiumSection>
         </FeatureGate>
+      );
+    }
+  }, {
+    id: "birth-sky",
+    alwaysCurrent: true,
+    render: () => {
+      // Pack 1: Parent Support tile; kill switch hides tile (IM-0).
+      if (!isBirthSkyHubTileEnabled()) return null;
+      return (
+        <HubLaunchCard
+          href="/birth-sky"
+          title={t("parent_hub.web_tiles.birth-sky.title")}
+          description={t("parent_hub.web_tiles.birth-sky.description")}
+          icon={<Moon className="h-5 w-5" />}
+          accentClass="from-indigo-500/20 to-slate-900/40"
+          cardClass="border-indigo-400/20"
+          previewBadge="Premium Experience"
+          tryFree={false}
+          testId="birth-sky-launch-card"
+          sectionId="birth-sky"
+          onNavigate={() => {
+            try {
+              sessionStorage.setItem("amynest:birth-sky:entryReferrer", "parenting_hub");
+            } catch {
+              /* ignore */
+            }
+          }}
+        />
       );
     }
   }, {

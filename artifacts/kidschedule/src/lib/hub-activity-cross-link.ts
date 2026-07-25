@@ -25,6 +25,7 @@ const TILE_NAV: Record<string, HubDeepLinkTarget> = {
   "story-hub": { group: "stories", tileId: "story-hub" },
   nutrition: { group: "health", tileId: "nutrition" },
   "health-lab": { group: "health", tileId: "health-lab" },
+  "birth-sky": { group: "support", tileId: "birth-sky" },
 };
 
 const PLAY_CATEGORIES = new Set([

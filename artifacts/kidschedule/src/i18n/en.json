@@ -3380,6 +3380,10 @@
         "ages_all": "All ages",
         "age_hint": "Personalised for your child ({{months}} months)"
       },
+      "birth-sky": {
+        "title": "Birth Sky",
+        "description": "The sky when they arrived · Optional · Premium"
+      },
       "articles": {
         "title": "Parenting Articles",
         "description": "Research-based, age-matched reading"

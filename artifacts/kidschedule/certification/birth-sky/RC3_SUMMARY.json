@@ -1,0 +1,322 @@
+{
+  "appBuild": "birth_sky_rc3/1.0.0",
+  "generatedAt": "2026-07-25T12:10:19.400Z",
+  "conformance": {
+    "total": 64,
+    "pass": 52,
+    "fail": 0,
+    "waived": 8,
+    "notApplicable": 4,
+    "unknown": 0,
+    "byPart": {
+      "architecture": {
+        "pass": 10,
+        "fail": 0,
+        "waived": 0,
+        "notApplicable": 0
+      },
+      "ux": {
+        "pass": 11,
+        "fail": 0,
+        "waived": 2,
+        "notApplicable": 0
+      },
+      "ai": {
+        "pass": 12,
+        "fail": 0,
+        "waived": 1,
+        "notApplicable": 0
+      },
+      "privacy": {
+        "pass": 7,
+        "fail": 0,
+        "waived": 0,
+        "notApplicable": 0
+      },
+      "lens": {
+        "pass": 6,
+        "fail": 0,
+        "waived": 0,
+        "notApplicable": 1
+      },
+      "operations": {
+        "pass": 1,
+        "fail": 0,
+        "waived": 4,
+        "notApplicable": 3
+      },
+      "release": {
+        "pass": 5,
+        "fail": 0,
+        "waived": 1,
+        "notApplicable": 0
+      }
+    }
+  },
+  "gates": [
+    {
+      "id": "G-CONF",
+      "area": "Conformance",
+      "item": "CONFORMANCE_REPORT fail=0 unknown=0",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "fail=0 unknown=0",
+      "owner": "Eng"
+    },
+    {
+      "id": "G-REGRESS",
+      "area": "Regression",
+      "item": "Birth Sky vitest IM-0–IM-7 + RC1/RC2",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "vitest src/features/birth-sky",
+      "owner": "Eng/QA"
+    },
+    {
+      "id": "G-COMPAT",
+      "area": "Compatibility",
+      "item": "COMPATIBILITY_MATRIX published",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "COMPATIBILITY_MATRIX.md",
+      "owner": "Eng"
+    },
+    {
+      "id": "G-P1",
+      "area": "Privacy",
+      "item": "P1 offline + server field encryption",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "RC1 secure-offline-crypto + birth-field-crypto",
+      "owner": "Security"
+    },
+    {
+      "id": "G-MIG",
+      "area": "Migration",
+      "item": "Plaintext→encrypted migration idempotent",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "offline-migration + server lazy migrate",
+      "owner": "Eng"
+    },
+    {
+      "id": "G-KILL",
+      "area": "Canary",
+      "item": "Kill switch verified",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "feature-flags.test.ts + Playwright RC2 (when available)",
+      "owner": "Eng/SRE"
+    },
+    {
+      "id": "G-ROLL",
+      "area": "Canary",
+      "item": "Rollback procedure documented",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "ROLLBACK_RUNBOOK.md + ROLLBACK_CHECKLIST.md",
+      "owner": "Release Manager"
+    },
+    {
+      "id": "G-SMOKE-WEB",
+      "area": "Device",
+      "item": "Pack 8 §1.5 Web smoke",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "Playwright birth-sky-rc2 web-chromium",
+      "owner": "QA"
+    },
+    {
+      "id": "G-SMOKE-FF",
+      "area": "Device",
+      "item": "Android/iOS form-factor smoke",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "Playwright Pixel/iPhone/iPad Chromium proxies",
+      "owner": "QA"
+    },
+    {
+      "id": "G-A11Y-PHYS",
+      "area": "Accessibility",
+      "item": "Physical VoiceOver / TalkBack lab",
+      "status": "WAIVED",
+      "category": "waiver",
+      "evidence": "WAIVER_REGISTER W-A11Y-PHYS",
+      "owner": "Accessibility"
+    },
+    {
+      "id": "G-STAGING-E2E",
+      "area": "Staging",
+      "item": "Staging live auth + API E2E",
+      "status": "WAIVED",
+      "category": "operational_blocker",
+      "evidence": "Not executed on cert host",
+      "owner": "QA/SRE"
+    },
+    {
+      "id": "G-AND-SIGNED",
+      "area": "Mobile",
+      "item": "Android signed release build",
+      "status": "WAIVED",
+      "category": "operational_blocker",
+      "evidence": "No JRE on cert host",
+      "owner": "Platform"
+    },
+    {
+      "id": "G-IOS-ARCHIVE",
+      "area": "Mobile",
+      "item": "iOS Capacitor archive readiness",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "Xcode project present; archive not executed this train",
+      "owner": "Platform"
+    },
+    {
+      "id": "G-ENV-TARGET",
+      "area": "Environment",
+      "item": "Deploy-target env verified (DB/key/Firebase/RC/OpenAI)",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "DEPLOYMENT_PREREQUISITES.md / ENV_VERIFICATION.md — Coolify (Hetzner) + Cloudflare; not Render",
+      "owner": "SRE"
+    },
+    {
+      "id": "G-KEY",
+      "area": "Environment",
+      "item": "BIRTH_SKY_FIELD_ENCRYPTION_KEY on Coolify deploy target",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "Required on Coolify API before canary with sealed server fields",
+      "owner": "SRE/Security"
+    },
+    {
+      "id": "G-OPS-DASH",
+      "area": "Operations",
+      "item": "Pack 11 dashboards/alerts armed",
+      "status": "WAIVED",
+      "category": "waiver",
+      "evidence": "WAIVER_REGISTER W-OPS-DASH — core-only train",
+      "owner": "SRE/Release Manager"
+    },
+    {
+      "id": "G-PART9",
+      "area": "Governance",
+      "item": "Part 9 human sign-off complete",
+      "status": "PENDING",
+      "category": "governance_blocker",
+      "evidence": "Conformance Checklist Part 9 signature table",
+      "owner": "Release Manager"
+    }
+  ],
+  "decision": {
+    "engineering": "GO",
+    "internalAllowlistCanary": "CONDITIONAL_GO",
+    "publicCanary": "NO-GO",
+    "productionGa": "NO-GO",
+    "overall": "HOLD",
+    "rationale": [
+      "Engineering FAIL count is 0; P1 encryption and regression PASS.",
+      "Governance blockers open: G-PART9 (Part 9 unsigned).",
+      "Operational items open/pending: G-STAGING-E2E:WAIVED, G-AND-SIGNED:WAIVED.",
+      "Overall Pack 8 decision box: HOLD. Do not deploy from this package alone."
+    ]
+  },
+  "envContracts": [
+    {
+      "name": "DATABASE_URL",
+      "requiredFor": "canary",
+      "contractSource": ".env.development.example",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Coolify Postgres on Hetzner (Coolify Postgres (tcl9udyxcuq2zu598ebj0pfu) on Hetzner VPS)"
+    },
+    {
+      "name": "BIRTH_SKY_FIELD_ENCRYPTION_KEY",
+      "requiredFor": "canary",
+      "contractSource": ".env.development.example",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Preferred 64-hex on Coolify API; SESSION_SECRET derive is fallback — set explicitly"
+    },
+    {
+      "name": "SESSION_SECRET",
+      "requiredFor": "canary",
+      "contractSource": ".env.development.example",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "≥32 chars on Coolify API; phonics + Birth Sky key derive fallback"
+    },
+    {
+      "name": "FIREBASE_PRIVATE_KEY | FIREBASE_SERVICE_ACCOUNT_JSON",
+      "requiredFor": "canary",
+      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Coolify API auth"
+    },
+    {
+      "name": "VITE_FIREBASE_API_KEY",
+      "requiredFor": "ga",
+      "contractSource": ".env.development.example",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Optional override — firebase-web-defaults.ts ships public web config (not a Birth Sky canary blocker)"
+    },
+    {
+      "name": "VITE_FIREBASE_PROJECT_ID",
+      "requiredFor": "ga",
+      "contractSource": ".env.development.example",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Optional override — firebase-web-defaults.ts ships public web config (not a Birth Sky canary blocker)"
+    },
+    {
+      "name": "OPENAI_API_KEY | AI_INTEGRATIONS_OPENAI_API_KEY",
+      "requiredFor": "canary",
+      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Coolify API + Hetzner AI Worker"
+    },
+    {
+      "name": "RevenueCat (existing premium; no new Birth Sky SKU)",
+      "requiredFor": "canary",
+      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "REVENUECAT_* on Coolify — existing premium gate"
+    },
+    {
+      "name": "VITE_FF_BIRTH_SKY",
+      "requiredFor": "canary",
+      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Master kill; default off when unset (feature-flags.ts)"
+    },
+    {
+      "name": "VITE_FF_BIRTH_SKY_HUB_TILE",
+      "requiredFor": "ga",
+      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Follows master"
+    },
+    {
+      "name": "VITE_FF_BIRTH_SKY_DEEP_LINKS",
+      "requiredFor": "ga",
+      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "localPresence": "NOT_PROBED",
+      "productionPresence": "SET",
+      "notes": "Follows master"
+    }
+  ],
+  "waivers": [
+    "W-A11Y-PHYS",
+    "W-OPS-DASH",
+    "W-STAGING-LIVE",
+    "W-AND-SIGNED",
+    "W-PERF-DEVICE"
+  ],
+  "unknownCount": 0
+}

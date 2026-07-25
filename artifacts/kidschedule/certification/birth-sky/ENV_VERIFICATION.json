@@ -1,0 +1,218 @@
+{
+  "build": "birth_sky_ops_verify/1.0.0",
+  "appBuild": "birth_sky_rc3/1.0.0",
+  "generatedAt": "2026-07-25T12:10:00.353Z",
+  "policy": "Presence only — secret values never recorded",
+  "topology": {
+    "backend": "Coolify (Hetzner VPS 188.245.208.126, app ik6ml2uhw6op765lo14wn5m3)",
+    "database": "Coolify Postgres (tcl9udyxcuq2zu598ebj0pfu) on Hetzner VPS",
+    "redis": "Coolify Redis (g7jotufnm43n4au4e8n6x946) on Hetzner VPS",
+    "staticFrontend": "Cloudflare (www.amynest.in)",
+    "apiEdge": "Cloudflare Worker amynest-api-proxy → Coolify",
+    "aiWorker": "Dedicated Hetzner AI Worker (167.233.39.146, container amynest-worker)",
+    "coolifyApiUrl": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io"
+  },
+  "probe": {
+    "generatedAt": "2026-07-25T12:10:00.353Z",
+    "topology": {
+      "backend": "Coolify (Hetzner VPS 188.245.208.126, app ik6ml2uhw6op765lo14wn5m3)",
+      "database": "Coolify Postgres (tcl9udyxcuq2zu598ebj0pfu) on Hetzner VPS",
+      "redis": "Coolify Redis (g7jotufnm43n4au4e8n6x946) on Hetzner VPS",
+      "staticFrontend": "Cloudflare (www.amynest.in)",
+      "apiEdge": "Cloudflare Worker amynest-api-proxy → Coolify",
+      "aiWorker": "Dedicated Hetzner AI Worker (167.233.39.146, container amynest-worker)",
+      "coolifyApiUrl": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io"
+    },
+    "coolify": {
+      "hostOk": true,
+      "hostname": "Amynest-Backend-prod",
+      "appContainerRunning": true,
+      "appUuid": "ik6ml2uhw6op765lo14wn5m3",
+      "postgresSelect1": "PASS",
+      "publicTableCount": 143,
+      "birthSkyTablesPresent": true,
+      "birthProfilesTablePresent": true,
+      "databaseUrlHost": "tcl9udyxcuq2zu598ebj0pfu",
+      "databaseName": "postgres",
+      "sessionSecretLengthClass": "GE32",
+      "birthSkyKeyResolve": {
+        "envPresent": "SET",
+        "resolveOk": true,
+        "sourceClass": "base64",
+        "lenClass": "GE32"
+      },
+      "schemaMigration": {
+        "executedAt": "2026-07-25T12:00:00.000Z",
+        "method": "additive_sql_not_drizzle_push",
+        "backupPath": "/root/amynest-backups/coolify-pg-pre-birth-sky-20260725T115501Z.dump",
+        "backupSize": "311M",
+        "drizzlePushPreview": "REJECTED_UNSAFE",
+        "drizzlePushReason": "Filtered/unscoped drizzle-kit push proposed CREATE for existing tables + DROP SEQUENCE — not Birth-Sky-only",
+        "tablesCreated": [
+          "birth_profiles",
+          "sky_snapshots",
+          "birth_sky_preferences",
+          "birth_sky_conversations",
+          "birth_sky_messages",
+          "birth_sky_ai_deliveries"
+        ],
+        "verify": "all_six_PRESENT"
+      },
+      "healthzEnv": {
+        "http": 200,
+        "amynestEnv": "production",
+        "openaiConfigured": true,
+        "phonicsSessionReady": true,
+        "queueMode": "bullmq",
+        "queueRedis": true,
+        "ok": true
+      },
+      "env": {
+        "DATABASE_URL": "SET",
+        "BIRTH_SKY_FIELD_ENCRYPTION_KEY": "SET",
+        "SESSION_SECRET": "SET",
+        "FIREBASE_PRIVATE_KEY": "NOT SET",
+        "FIREBASE_SERVICE_ACCOUNT_JSON": "SET",
+        "OPENAI_API_KEY": "SET",
+        "AI_INTEGRATIONS_OPENAI_API_KEY": "NOT SET",
+        "REVENUECAT_V2_SECRET_KEY": "SET",
+        "REVENUECAT_WEBHOOK_SECRET": "SET",
+        "REVENUECAT_PROJECT_ID": "SET",
+        "INTERNAL_HEALTH_SECRET": "SET",
+        "REDIS_URL": "SET"
+      },
+      "schemaRootCause": "resolved_by_additive_sql"
+    },
+    "edge": {
+      "wwwHealthz": {
+        "http": 200,
+        "backend": "coolify"
+      },
+      "wwwHealthzAudio": {
+        "http": 200,
+        "backend": "coolify"
+      },
+      "coolifyDirectHealth": {
+        "http": 200
+      },
+      "cloudflareFrontendHttp": 200,
+      "cloudflarePrimaryAssetBytes": 959,
+      "webViteFirebaseInPrimaryAsset": "NOT SET",
+      "webFirebaseRequiredForBirthSky": false
+    },
+    "aiWorker": {
+      "hostOk": true,
+      "hostname": "ubuntu-8gb-nbg1-1",
+      "container": "amynest-worker",
+      "healthHttp": 200,
+      "healthOk": true,
+      "env": {
+        "DATABASE_URL": "SET",
+        "REDIS_URL": "SET",
+        "OPENAI_API_KEY": "SET",
+        "SESSION_SECRET": "SET",
+        "BIRTH_SKY_FIELD_ENCRYPTION_KEY": "NOT SET",
+        "FIREBASE_SERVICE_ACCOUNT_JSON": "NOT SET"
+      }
+    },
+    "stagingHosted": "NOT AVAILABLE",
+    "localSmoke": {
+      "featureFlagsKillSwitch": "PASS",
+      "privacySecurity": "PASS"
+    }
+  },
+  "env": [
+    {
+      "id": "E-DB",
+      "item": "DATABASE_URL",
+      "presence": "SET",
+      "evidence": "Coolify app container printenv; host=tcl9udyxcuq2zu598ebj0pfu; db=postgres; Postgres select 1 PASS"
+    },
+    {
+      "id": "E-KEY",
+      "item": "BIRTH_SKY_FIELD_ENCRYPTION_KEY",
+      "presence": "SET",
+      "evidence": "Coolify API printenv SET; resolveOk=true; source_class=base64; len_class=GE32 (value not recorded). App reads process.env.BIRTH_SKY_FIELD_ENCRYPTION_KEY in birth-field-crypto.ts."
+    },
+    {
+      "id": "E-SESSION",
+      "item": "SESSION_SECRET",
+      "presence": "SET",
+      "evidence": "Coolify app container printenv SET; length class GE32; healthz/env phonicsSessionReady=true"
+    },
+    {
+      "id": "E-FIREBASE",
+      "item": "Firebase configuration",
+      "presence": "SET",
+      "evidence": "API FIREBASE_SERVICE_ACCOUNT_JSON=SET. Web VITE_FIREBASE_* not required for Birth Sky (firebase-web-defaults.ts). Cloudflare VITE probe=NOT SET (informational only)."
+    },
+    {
+      "id": "E-FIREBASE-API",
+      "item": "Firebase (Coolify API)",
+      "presence": "SET",
+      "evidence": "FIREBASE_SERVICE_ACCOUNT_JSON on Coolify backend container"
+    },
+    {
+      "id": "E-FIREBASE-WEB",
+      "item": "Firebase (Cloudflare web VITE_*)",
+      "presence": "NOT SET",
+      "evidence": "NOT a canary blocker — client falls back to firebaseWebDefaults (public web config). VITE_* override optional."
+    },
+    {
+      "id": "E-RC",
+      "item": "RevenueCat configuration",
+      "presence": "SET",
+      "evidence": "Coolify: REVENUECAT_V2_SECRET_KEY + REVENUECAT_WEBHOOK_SECRET + REVENUECAT_PROJECT_ID all SET"
+    },
+    {
+      "id": "E-OPENAI",
+      "item": "OpenAI configuration",
+      "presence": "SET",
+      "evidence": "Coolify OPENAI_API_KEY SET; healthz/env openai.configured=true"
+    }
+  ],
+  "infra": [
+    {
+      "id": "H-COOLIFY-APP",
+      "item": "Coolify application health",
+      "status": "PASS",
+      "evidence": "Container running; direct /health + /api/healthz HTTP 200"
+    },
+    {
+      "id": "H-BACKEND",
+      "item": "Backend health (Cloudflare edge → Coolify)",
+      "status": "PASS",
+      "evidence": "www.amynest.in/api/healthz HTTP 200; x-amynest-backend=coolify"
+    },
+    {
+      "id": "H-AUDIO",
+      "item": "Backend audio health",
+      "status": "PASS",
+      "evidence": "www.amynest.in/api/healthz/audio HTTP 200"
+    },
+    {
+      "id": "H-WORKER",
+      "item": "AI Worker connectivity",
+      "status": "PASS",
+      "evidence": "ubuntu-8gb-nbg1-1 amynest-worker /health ok=true; DATABASE_URL+REDIS_URL+OPENAI SET"
+    },
+    {
+      "id": "H-CF",
+      "item": "Cloudflare deployment",
+      "status": "PASS",
+      "evidence": "www.amynest.in HTTP 200; API proxy to Coolify PASS; primary JS 959B (stub — web Firebase NOT SET)"
+    },
+    {
+      "id": "H-DB",
+      "item": "Database connectivity",
+      "status": "PASS",
+      "evidence": "Coolify Postgres select 1 PASS; 143 public tables; app DATABASE_URL → tcl9udyxcuq2zu598ebj0pfu"
+    },
+    {
+      "id": "H-SCHEMA",
+      "item": "Birth Sky schema present on Coolify Postgres",
+      "status": "PASS",
+      "evidence": "All 6 Birth Sky tables PRESENT; public_table_count=143; applied via additive SQL after unsafe drizzle push preview rejected"
+    }
+  ]
+}

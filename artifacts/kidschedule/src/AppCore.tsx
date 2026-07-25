@@ -116,6 +116,7 @@ const StudyPage = lazyPage(() => import("@/pages/study"));
 const SmartMathTricksPage = lazyPage(() => import("@/pages/smart-math-tricks"));
 const AbacusPage = lazyPage(() => import("@/pages/abacus"));
 const HealthLabPage = lazyPage(() => import("@/pages/health-lab"));
+const BirthSkyPage = lazyPage(() => import("@/pages/birth-sky"));
 const SpellingPage = lazyPage(() => import("@/pages/spelling"));
 const OlympiadPage = lazyPage(() => import("@/pages/olympiad"));
 const EventPrepPage = lazyPage(() => import("@/pages/event-prep"));
@@ -579,6 +580,7 @@ const StudyRoute = makeProtectedRoute(StudyPage);
 const SmartMathTricksRoute = makeProtectedRoute(SmartMathTricksPage);
 const AbacusRoute = makeProtectedRoute(AbacusPage);
 const HealthLabRoute = makeProtectedRoute(HealthLabPage);
+const BirthSkyRoute = makeProtectedRoute(BirthSkyPage, "BirthSky");
 const SpellingRoute = makeProtectedRoute(SpellingPage);
 const OlympiadRoute = makeProtectedRoute(OlympiadPage);
 const EventPrepRoute = makeProtectedRoute(EventPrepPage);
@@ -963,6 +965,18 @@ function AppRoutes() {
           <Route path="/smart-math-tricks" component={SmartMathTricksRoute} />
           <Route path="/abacus" component={AbacusRoute} />
           <Route path="/health-lab" component={HealthLabRoute} />
+          <Route path="/birth-sky/setup/:step" component={BirthSkyRoute} />
+          <Route path="/birth-sky/app/:segment" component={BirthSkyRoute} />
+          <Route path="/birth-sky/welcome" component={BirthSkyRoute} />
+          <Route path="/birth-sky/formation" component={BirthSkyRoute} />
+          <Route path="/birth-sky/reveal" component={BirthSkyRoute} />
+          <Route path="/birth-sky/settings" component={BirthSkyRoute} />
+          <Route path="/birth-sky/privacy" component={BirthSkyRoute} />
+          <Route path="/birth-sky/app" component={BirthSkyRoute} />
+          {/* Alias — product path is /app; docs sometimes say /dashboard */}
+          <Route path="/birth-sky/dashboard" component={BirthSkyRoute} />
+          <Route path="/birth-sky/setup" component={BirthSkyRoute} />
+          <Route path="/birth-sky" component={BirthSkyRoute} />
           <Route path="/spelling" component={SpellingRoute} />
           <Route path="/olympiad" component={OlympiadRoute} />
           <Route path="/event-prep" component={EventPrepRoute} />

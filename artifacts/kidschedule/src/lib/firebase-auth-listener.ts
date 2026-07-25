@@ -7,6 +7,7 @@ import { devLog } from "@/lib/dev-log";
 import { isFirebaseOAuthRedirectResolving } from "@/lib/firebase-oauth-redirect";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { trackStartupFunnel, trackStartupFunnelFailure } from "@/lib/startup-funnel";
+import { setBirthSkyViewerEmail } from "@/features/birth-sky/lib/feature-flags";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 const AUTH_RACE_TIMEOUT_MS = isNativeAmyNestShell() ? 25_000 : 10_000;
@@ -117,6 +118,7 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
     raceTimeoutId = null;
   }
   const shim = buildShimFromFirebaseUser(fbUser);
+  setBirthSkyViewerEmail(shim?.primaryEmailAddress?.emailAddress ?? null);
   let authStatus: AuthResolutionStatus = shim
     ? "authenticated"
     : "unauthenticated";

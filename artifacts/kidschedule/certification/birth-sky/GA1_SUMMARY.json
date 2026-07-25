@@ -1,0 +1,422 @@
+{
+  "ga1Build": "birth_sky_ga1_readiness/1.0.0",
+  "appBuild": "birth_sky_rc3/1.0.0",
+  "generatedAt": "2026-07-25T12:10:00.359Z",
+  "decision": {
+    "internalAllowlistCanary": "GO",
+    "rollbackReadiness": "READY",
+    "overall": "GO",
+    "rationale": [
+      "Production infra = Coolify + Hetzner + Cloudflare + AI Worker (not Render).",
+      "Technical: schema migrated (6 tables); encryption key SET; env contracts SET.",
+      "Governance: Part 9 SIGNED by Ankur Raman (2026-07-25); all ops roles assigned to Ankur Raman.",
+      "Internal allowlist canary: GO. Public canary / Production GA: NO-GO (waivers + staging).",
+      "Never run unscoped drizzle-kit push on Coolify prod."
+    ]
+  },
+  "prereqs": [
+    {
+      "id": "P-PKG",
+      "item": "RC3 certification package present",
+      "status": "READY",
+      "evidence": "All RC3 authority files present",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-ENG",
+      "item": "Engineering GO (RC3)",
+      "status": "READY",
+      "evidence": "GO_NO_GO.md",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-DB",
+      "item": "DATABASE_URL configured on deploy target",
+      "status": "READY",
+      "evidence": "Coolify app container printenv; host=tcl9udyxcuq2zu598ebj0pfu; db=postgres; Postgres select 1 PASS",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-KEY",
+      "item": "BIRTH_SKY_FIELD_ENCRYPTION_KEY configured on Coolify",
+      "status": "READY",
+      "evidence": "Coolify API printenv SET; resolveOk=true; source_class=base64; len_class=GE32 (value not recorded). App reads process.env.BIRTH_SKY_FIELD_ENCRYPTION_KEY in birth-field-crypto.ts.",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-SESSION",
+      "item": "SESSION_SECRET configured on Coolify",
+      "status": "READY",
+      "evidence": "Coolify app container printenv SET; length class GE32; healthz/env phonicsSessionReady=true",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-FIREBASE",
+      "item": "Firebase configuration (Coolify API + Cloudflare web)",
+      "status": "READY",
+      "evidence": "API FIREBASE_SERVICE_ACCOUNT_JSON=SET. Web VITE_FIREBASE_* not required for Birth Sky (firebase-web-defaults.ts). Cloudflare VITE probe=NOT SET (informational only).",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-RC",
+      "item": "RevenueCat configuration (existing premium; no new SKU)",
+      "status": "READY",
+      "evidence": "Coolify: REVENUECAT_V2_SECRET_KEY + REVENUECAT_WEBHOOK_SECRET + REVENUECAT_PROJECT_ID all SET",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-OPENAI",
+      "item": "OpenAI configuration",
+      "status": "READY",
+      "evidence": "Coolify OPENAI_API_KEY SET; healthz/env openai.configured=true",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-FLAGS",
+      "item": "Feature flag defaults (master off)",
+      "status": "READY",
+      "evidence": "RELEASE_CHECKLIST + CANARY_PLAN + feature-flags default off",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-MIG-ORDER",
+      "item": "Migration ordering documented",
+      "status": "READY",
+      "evidence": "DEPLOYMENT_PREREQUISITES.md Migration order §",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-PART9",
+      "item": "Part 9 human sign-off",
+      "status": "READY",
+      "evidence": "WAIVER_REGISTER.md — Release Manager final signature SIGNED (Ankur Raman, 2026-07-25)",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-KILL",
+      "item": "Kill switch procedure documented + engineering verified",
+      "status": "READY",
+      "evidence": "ROLLBACK_RUNBOOK + ROLLBACK_CHECKLIST + RC2 Playwright/unit",
+      "requiredForInternalAllowlist": true
+    },
+    {
+      "id": "P-SCHEMA",
+      "item": "Birth Sky schema on Coolify Postgres",
+      "status": "READY",
+      "evidence": "All 6 Birth Sky tables PRESENT; public_table_count=143; applied via additive SQL after unsafe drizzle push preview rejected",
+      "requiredForInternalAllowlist": true
+    }
+  ],
+  "migration": [
+    {
+      "id": "M-ORDER",
+      "check": "Database / deploy migration order (API seal → client envelope → flag on)",
+      "status": "READY",
+      "evidence": "DEPLOYMENT_PREREQUISITES.md — verification only, not executed"
+    },
+    {
+      "id": "M-ROLLBACK",
+      "check": "Rollback compatibility (flag off; no irreversible client disable)",
+      "status": "READY",
+      "evidence": "ROLLBACK_RUNBOOK.md data safety"
+    },
+    {
+      "id": "M-ENC",
+      "check": "Encrypted field compatibility (seal/unseal + plaintext legacy read)",
+      "status": "READY",
+      "evidence": "RC1 birth-field-crypto + offline envelope; suites PASS (not re-executed in GA1)"
+    },
+    {
+      "id": "M-SNAP",
+      "check": "Historical snapshot compatibility (engineVersion hydrate)",
+      "status": "READY",
+      "evidence": "COMPATIBILITY_MATRIX + hydrateSkySnapshot / RC1-04"
+    },
+    {
+      "id": "M-IDEM",
+      "check": "Migration idempotency (client + server lazy migrate)",
+      "status": "READY",
+      "evidence": "RC1 offline-migration idempotent + seal idempotent tests"
+    },
+    {
+      "id": "M-EXEC",
+      "check": "Migrations executed on deploy target",
+      "status": "READY",
+      "evidence": "Coolify Postgres: 6 Birth Sky tables PRESENT (additive SQL 2026-07-25; drizzle-kit push not used)"
+    }
+  ],
+  "ownership": [
+    {
+      "responsibility": "Release Manager",
+      "roleDocumented": "Release Manager (Part 9 + canary enablement)",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Engineering Owner",
+      "roleDocumented": "Engineering",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Rollback approval",
+      "roleDocumented": "Rollback Owner",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Feature flag management",
+      "roleDocumented": "Feature Flag Owner",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Incident response",
+      "roleDocumented": "Incident Commander",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Database rollback",
+      "roleDocumented": "Database Owner (Coolify Postgres on Hetzner)",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Encryption key rotation",
+      "roleDocumented": "Encryption Key Owner",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    },
+    {
+      "responsibility": "Kill switch execution",
+      "roleDocumented": "Release Manager / Feature Flag Owner",
+      "namedIndividual": "Ankur Raman",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — founder-operated (Ankur Raman)"
+    }
+  ],
+  "canaryValidation": [
+    {
+      "id": "C-SCOPE",
+      "item": "Rollout scope = internal allowlist (eng/QA accounts)",
+      "status": "READY",
+      "evidence": "CANARY_PLAN.md phase 1"
+    },
+    {
+      "id": "C-TRIGGER",
+      "item": "Rollback trigger (Sev-1/Sev-2 → checklist)",
+      "status": "READY",
+      "evidence": "CANARY_PLAN exit/abort + ROLLBACK_CHECKLIST"
+    },
+    {
+      "id": "C-KILL-OWN",
+      "item": "Kill switch ownership",
+      "status": "READY",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — Ankur Raman (Feature Flag / Kill switch)"
+    },
+    {
+      "id": "C-MONITOR",
+      "item": "Monitoring checkpoints",
+      "status": "NOT_READY",
+      "evidence": "W-OPS-DASH waived — Birth Sky-specific dashboards not armed; use platform defaults only"
+    },
+    {
+      "id": "C-SUCCESS",
+      "item": "Success criteria for internal allowlist",
+      "status": "READY",
+      "evidence": "Flag on for allowlist; kill-switch drill watch; no Sev-1/2"
+    },
+    {
+      "id": "C-ABORT",
+      "item": "Abort criteria",
+      "status": "READY",
+      "evidence": "CANARY_PLAN + ROLLBACK_CHECKLIST"
+    },
+    {
+      "id": "C-ENTRY",
+      "item": "RC3 entry conditions for internal allowlist GO",
+      "status": "READY",
+      "evidence": "GO_NO_GO internal allowlist GO; Part 9 SIGNED (Ankur Raman)"
+    }
+  ],
+  "opsVerifyBuild": "birth_sky_ops_verify/1.0.0",
+  "topology": {
+    "backend": "Coolify (Hetzner VPS 188.245.208.126, app ik6ml2uhw6op765lo14wn5m3)",
+    "database": "Coolify Postgres (tcl9udyxcuq2zu598ebj0pfu) on Hetzner VPS",
+    "redis": "Coolify Redis (g7jotufnm43n4au4e8n6x946) on Hetzner VPS",
+    "staticFrontend": "Cloudflare (www.amynest.in)",
+    "apiEdge": "Cloudflare Worker amynest-api-proxy → Coolify",
+    "aiWorker": "Dedicated Hetzner AI Worker (167.233.39.146, container amynest-worker)",
+    "coolifyApiUrl": "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io"
+  },
+  "ga1BlockerReeval": [
+    {
+      "id": "G-PART9",
+      "item": "Part 9 human sign-off",
+      "classification": "PASS",
+      "evidence": "WAIVER_REGISTER.md — Release Manager final signature SIGNED (Ankur Raman, 2026-07-25); founder-operated"
+    },
+    {
+      "id": "G-DB",
+      "item": "DATABASE_URL",
+      "classification": "PASS",
+      "evidence": "Coolify app container printenv; host=tcl9udyxcuq2zu598ebj0pfu; db=postgres; Postgres select 1 PASS"
+    },
+    {
+      "id": "G-KEY",
+      "item": "BIRTH_SKY_FIELD_ENCRYPTION_KEY",
+      "classification": "PASS",
+      "evidence": "Coolify API printenv SET; resolveOk=true; source_class=base64; len_class=GE32 (value not recorded). App reads process.env.BIRTH_SKY_FIELD_ENCRYPTION_KEY in birth-field-crypto.ts."
+    },
+    {
+      "id": "G-SESSION",
+      "item": "SESSION_SECRET",
+      "classification": "PASS",
+      "evidence": "Coolify app container printenv SET; length class GE32; healthz/env phonicsSessionReady=true"
+    },
+    {
+      "id": "G-FIREBASE",
+      "item": "Firebase configuration (Coolify API)",
+      "classification": "PASS",
+      "evidence": "API FIREBASE_SERVICE_ACCOUNT_JSON=SET. Web VITE_FIREBASE_* not required for Birth Sky (firebase-web-defaults.ts). Cloudflare VITE probe=NOT SET (informational only)."
+    },
+    {
+      "id": "G-FIREBASE-WEB",
+      "item": "Cloudflare VITE_FIREBASE_* (optional)",
+      "classification": "PASS",
+      "evidence": "Removed as deployment blocker — firebase-web-defaults.ts provides public web client config when VITE_* unset"
+    },
+    {
+      "id": "G-RC",
+      "item": "RevenueCat configuration",
+      "classification": "PASS",
+      "evidence": "Coolify: REVENUECAT_V2_SECRET_KEY + REVENUECAT_WEBHOOK_SECRET + REVENUECAT_PROJECT_ID all SET"
+    },
+    {
+      "id": "G-OPENAI",
+      "item": "OpenAI configuration",
+      "classification": "PASS",
+      "evidence": "Coolify OPENAI_API_KEY SET; healthz/env openai.configured=true"
+    },
+    {
+      "id": "G-OWNERS",
+      "item": "Named operational owners",
+      "classification": "PASS",
+      "evidence": "OPERATIONAL_OWNERSHIP.md — all roles assigned to Ankur Raman (founder-operated)"
+    },
+    {
+      "id": "G-SCHEMA",
+      "item": "Birth Sky DB schema on Coolify",
+      "classification": "PASS",
+      "evidence": "All 6 Birth Sky tables PRESENT; public_table_count=143; applied via additive SQL after unsafe drizzle push preview rejected"
+    },
+    {
+      "id": "G-STAGING",
+      "item": "Hosted staging for live E2E",
+      "classification": "UNKNOWN",
+      "evidence": "No dedicated staging stack — NOT AVAILABLE (W-STAGING-LIVE)"
+    }
+  ],
+  "envVerification": [
+    {
+      "id": "E-DB",
+      "item": "DATABASE_URL",
+      "presence": "SET",
+      "evidence": "Coolify app container printenv; host=tcl9udyxcuq2zu598ebj0pfu; db=postgres; Postgres select 1 PASS"
+    },
+    {
+      "id": "E-KEY",
+      "item": "BIRTH_SKY_FIELD_ENCRYPTION_KEY",
+      "presence": "SET",
+      "evidence": "Coolify API printenv SET; resolveOk=true; source_class=base64; len_class=GE32 (value not recorded). App reads process.env.BIRTH_SKY_FIELD_ENCRYPTION_KEY in birth-field-crypto.ts."
+    },
+    {
+      "id": "E-SESSION",
+      "item": "SESSION_SECRET",
+      "presence": "SET",
+      "evidence": "Coolify app container printenv SET; length class GE32; healthz/env phonicsSessionReady=true"
+    },
+    {
+      "id": "E-FIREBASE",
+      "item": "Firebase configuration",
+      "presence": "SET",
+      "evidence": "API FIREBASE_SERVICE_ACCOUNT_JSON=SET. Web VITE_FIREBASE_* not required for Birth Sky (firebase-web-defaults.ts). Cloudflare VITE probe=NOT SET (informational only)."
+    },
+    {
+      "id": "E-FIREBASE-API",
+      "item": "Firebase (Coolify API)",
+      "presence": "SET",
+      "evidence": "FIREBASE_SERVICE_ACCOUNT_JSON on Coolify backend container"
+    },
+    {
+      "id": "E-FIREBASE-WEB",
+      "item": "Firebase (Cloudflare web VITE_*)",
+      "presence": "NOT SET",
+      "evidence": "NOT a canary blocker — client falls back to firebaseWebDefaults (public web config). VITE_* override optional."
+    },
+    {
+      "id": "E-RC",
+      "item": "RevenueCat configuration",
+      "presence": "SET",
+      "evidence": "Coolify: REVENUECAT_V2_SECRET_KEY + REVENUECAT_WEBHOOK_SECRET + REVENUECAT_PROJECT_ID all SET"
+    },
+    {
+      "id": "E-OPENAI",
+      "item": "OpenAI configuration",
+      "presence": "SET",
+      "evidence": "Coolify OPENAI_API_KEY SET; healthz/env openai.configured=true"
+    }
+  ],
+  "infraHealth": [
+    {
+      "id": "H-COOLIFY-APP",
+      "item": "Coolify application health",
+      "status": "PASS",
+      "evidence": "Container running; direct /health + /api/healthz HTTP 200"
+    },
+    {
+      "id": "H-BACKEND",
+      "item": "Backend health (Cloudflare edge → Coolify)",
+      "status": "PASS",
+      "evidence": "www.amynest.in/api/healthz HTTP 200; x-amynest-backend=coolify"
+    },
+    {
+      "id": "H-AUDIO",
+      "item": "Backend audio health",
+      "status": "PASS",
+      "evidence": "www.amynest.in/api/healthz/audio HTTP 200"
+    },
+    {
+      "id": "H-WORKER",
+      "item": "AI Worker connectivity",
+      "status": "PASS",
+      "evidence": "ubuntu-8gb-nbg1-1 amynest-worker /health ok=true; DATABASE_URL+REDIS_URL+OPENAI SET"
+    },
+    {
+      "id": "H-CF",
+      "item": "Cloudflare deployment",
+      "status": "PASS",
+      "evidence": "www.amynest.in HTTP 200; API proxy to Coolify PASS; primary JS 959B (stub — web Firebase NOT SET)"
+    },
+    {
+      "id": "H-DB",
+      "item": "Database connectivity",
+      "status": "PASS",
+      "evidence": "Coolify Postgres select 1 PASS; 143 public tables; app DATABASE_URL → tcl9udyxcuq2zu598ebj0pfu"
+    },
+    {
+      "id": "H-SCHEMA",
+      "item": "Birth Sky schema present on Coolify Postgres",
+      "status": "PASS",
+      "evidence": "All 6 Birth Sky tables PRESENT; public_table_count=143; applied via additive SQL after unsafe drizzle push preview rejected"
+    }
+  ]
+}

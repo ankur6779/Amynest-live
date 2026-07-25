@@ -1,0 +1,1951 @@
+{
+  "config": {
+    "configFile": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright.config.birth-sky-rc2.ts",
+    "rootDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "web-chromium",
+        "name": "web-chromium",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "birth-sky-rc2*.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "android-webview-proxy",
+        "name": "android-webview-proxy",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "birth-sky-rc2*.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "ios-iphone-proxy",
+        "name": "ios-iphone-proxy",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "birth-sky-rc2*.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "ios-ipad-proxy",
+        "name": "ios-ipad-proxy",
+        "testDir": "/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "birth-sky-rc2*.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "certification/birth-sky/playwright-rc2-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 8,
+    "webServer": {
+      "command": "VITE_FF_BIRTH_SKY=0 PORT=5197 BASE_PATH=/ pnpm exec vite --config vite.config.ts --port 5197 --host 127.0.0.1 --strictPort",
+      "url": "http://127.0.0.1:5197/",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "stdout": "pipe",
+      "stderr": "pipe"
+    }
+  },
+  "suites": [
+    {
+      "title": "birth-sky-rc2.spec.ts",
+      "file": "birth-sky-rc2.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Birth Sky RC2 — kill switch & form-factor smoke",
+          "file": "birth-sky-rc2.spec.ts",
+          "line": 20,
+          "column": 6,
+          "specs": [
+            {
+              "title": "startup: module surfaces unavailable when flag off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "startup_ms",
+                      "description": "2878"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3435,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.662Z",
+                      "annotations": [
+                        {
+                          "type": "startup_ms",
+                          "description": "2878"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-429cfe229febff5ff158",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 21,
+              "column": 3
+            },
+            {
+              "title": "flag off: /birth-sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4272,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.716Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-238538e7187cccff9f86",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/welcome does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3920,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.716Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-0d78308057e153a86431",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6979,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.686Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-4e4064a7cad5a33b3827",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/astronomy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2571,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.754Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-07643650f507739d395d",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/tradition does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 6780,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.728Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-67418a23e9db97b4a7ff",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/reflect does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 7256,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.725Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-1285706ad43fe53fc620",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/settings does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2453,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:07.744Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-2ad02375897c0fc9f562",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/privacy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 6386,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:10.797Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-6a73771a21d107f65f17",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/formation does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 6374,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:10.929Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-611e325843abba326a2d",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/reveal does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5835,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:11.766Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-661487191bb735424b83",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "lens marketplace inactive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 5431,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:12.244Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-00303ba7c0f5f649d866",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "reduced motion media query does not crash shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web-chromium",
+                  "projectName": "web-chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4943,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:12.583Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-e3ce9056351b1014698e",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 50,
+              "column": 3
+            },
+            {
+              "title": "startup: module surfaces unavailable when flag off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "startup_ms",
+                      "description": "1000"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2125,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:18.432Z",
+                      "annotations": [
+                        {
+                          "type": "startup_ms",
+                          "description": "1000"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-ada165b7f2a51773a626",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 21,
+              "column": 3
+            },
+            {
+              "title": "flag off: /birth-sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2622,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:18.414Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-69b2cc84db613beb36ef",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/welcome does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2629,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:18.404Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-7978a76e69e61c5c6a2d",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2885,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:19.682Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-876ed4ad101f06b7281c",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/astronomy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2625,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:19.608Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-5aaa2a00cad4a3090733",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/tradition does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:19.613Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-26c96191c4c0d6b317f8",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/reflect does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2856,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:19.675Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-022d66bc7b2b345af871",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/settings does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2500,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:19.909Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-87edc096ef32b4ebd019",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/privacy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3332,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:21.040Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-0c75c4168eb9f5d1ea62",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/formation does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3409,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:21.530Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-ae72e1324d7868c29a31",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/reveal does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 3226,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:21.713Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-8041eaabe5c59d373e60",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "lens marketplace inactive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1981,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:23.003Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-3dd1a459809d6752cbaf",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "reduced motion media query does not crash shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "android-webview-proxy",
+                  "projectName": "android-webview-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1900,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:23.048Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-37c011df0ce8f236ba6c",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 50,
+              "column": 3
+            },
+            {
+              "title": "startup: module surfaces unavailable when flag off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "startup_ms",
+                      "description": "1378"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2494,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.926Z",
+                      "annotations": [
+                        {
+                          "type": "startup_ms",
+                          "description": "1378"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-d7b37372be3b8b7ae7ab",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 21,
+              "column": 3
+            },
+            {
+              "title": "flag off: /birth-sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 18,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2567,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.935Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-c3bdeb0b0698ceb8220b",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/welcome does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2452,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.914Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-ccab96527d364985519d",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 23,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3424,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.964Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-0a49629d05634d104c57",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/astronomy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 21,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2605,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.913Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-4f7081fa979c85478c41",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/tradition does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 19,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 3370,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.911Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-d760f0c8f700fc8c3d4d",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/reflect does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 22,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2920,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.944Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-eded663bf66bdfb2d051",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/settings does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 20,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2507,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:26.955Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-4a8f6a829d725aaaf65d",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/privacy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2198,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:29.957Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-b8dbc83145c8627c7a9f",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/formation does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2390,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:30.033Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-eb1a7aa9048dc1942f22",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/reveal does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 18,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2244,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:30.060Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-915dab121b5d17ee9801",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "lens marketplace inactive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 20,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2651,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:30.076Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-bfa50f44c93d6d94323a",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "reduced motion media query does not crash shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-iphone-proxy",
+                  "projectName": "ios-iphone-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 21,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1935,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:30.097Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-cd81eb8ef097d6bb9332",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 50,
+              "column": 3
+            },
+            {
+              "title": "startup: module surfaces unavailable when flag off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "startup_ms",
+                      "description": "1541"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 26,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2559,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.405Z",
+                      "annotations": [
+                        {
+                          "type": "startup_ms",
+                          "description": "1541"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-a34886d652f3ac13bbff",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 21,
+              "column": 3
+            },
+            {
+              "title": "flag off: /birth-sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 27,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2475,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.431Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-b07ae098c45535ead3d2",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/welcome does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 28,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2826,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.451Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-00ec8da9d706d5ea0ad5",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/sky does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 30,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2422,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.499Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-e6e21b35f5fb75ed3b06",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/astronomy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 31,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 3912,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:35.447Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-5694828babe9190786ad",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/tradition does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 24,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2839,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.395Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-3f9c8777186877840793",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/app/reflect does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 29,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3004,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.454Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-7dceda51a476f7410efd",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/settings does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 25,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2761,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:34.415Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-8489890626eae87c9c94",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/privacy does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 30,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2204,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:37.418Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-e0a6ebc815424441b3f3",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/formation does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 26,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1938,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:37.566Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-79a180adc9bcfd545e89",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "flag off: /birth-sky/reveal does not expose Birth Sky chrome",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 27,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 1979,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:37.610Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-00a78701df48c07a4cef",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 34,
+              "column": 5
+            },
+            {
+              "title": "lens marketplace inactive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 28,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 1608,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:37.806Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-6b944f4763bb1f656307",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "reduced motion media query does not crash shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "ios-ipad-proxy",
+                  "projectName": "ios-ipad-proxy",
+                  "results": [
+                    {
+                      "workerIndex": 24,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2564,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-25T10:29:37.847Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8514e7c6b908598f016f-4b471da9716c3df6b4bc",
+              "file": "birth-sky-rc2.spec.ts",
+              "line": 50,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-07-25T10:29:03.196Z",
+    "duration": 38136.81,
+    "expected": 52,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
