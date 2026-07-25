@@ -96,6 +96,7 @@ import { AmyAstroEmotionalCompletion } from "../../components/emotional-completi
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { softHaptic } from "../../lib/soft-haptic";
 import { DEEP_INSIGHTS_CONTENT_VERSION } from "../../constants/deep-insights-content";
+import { moonPhasePhrase, withIndefiniteArticle } from "../../lib/sky-copy";
 
 type Props = {
   profile: BirthProfile;
@@ -463,7 +464,7 @@ export function BirthSkyDashboardPage({
     return (
       <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-dashboard-error">
         <p className="text-sm text-[hsl(40_20%_96%/0.78)]" role="alert">
-          {loadError ?? `Loading ${AMY_ASTRO_PRODUCT_NAME}…`}
+          {loadError ?? "Reading the Stars…"}
         </p>
         <button
           type="button"
@@ -509,6 +510,7 @@ export function BirthSkyDashboardPage({
       <div className="space-y-4 pb-8">
         <BirthSkyDashboardHero
           vm={heroVm}
+          profileId={profile.profileId}
           collapsed={session.heroCollapsed}
           reducedMotion={reduced}
           parentFirstName={parentFirstName}
@@ -654,7 +656,7 @@ export function BirthSkyDashboardPage({
                     key: "moon",
                     label: "Moon",
                     sign: snapshot.astronomy.moonSign,
-                    story: `Your child's emotional world is illuminated by a ${snapshot.astronomy.moonPhaseLabel} Moon resting in ${snapshot.astronomy.moonSign}, suggesting comfort often grows through belonging.`,
+                    story: `Your child's emotional world is illuminated by ${withIndefiniteArticle(moonPhasePhrase(snapshot.astronomy.moonPhaseLabel))} resting in ${snapshot.astronomy.moonSign}, suggesting comfort often grows through belonging.`,
                   },
                   {
                     key: "rising",
@@ -736,6 +738,7 @@ export function BirthSkyDashboardPage({
         risingSign={snapshot.astronomy.risingSign ?? null}
         moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
         continuityHint={continuityLine}
+        profileId={profile.profileId}
         onComposerChange={ai.setComposer}
         onSend={() => {
           void ai.send();

@@ -12,6 +12,7 @@ import {
   type KundliBody,
 } from "../../components/north-indian-kundli";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "../../lib/focus-trap";
 
 type Props = {
   vm: TraditionSegmentVM;
@@ -46,6 +47,8 @@ export function BirthSkyTraditionSegment({
   const [openCard, setOpenCard] = useState<TraditionCardVM | null>(null);
   const viewed = useRef(false);
   const detailTitleId = useId();
+  const detailRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(detailRef, Boolean(openCard), () => setOpenCard(null));
 
   useEffect(() => {
     if (needsIntro || loading || vm.status !== "ready" || viewed.current) return;
@@ -65,7 +68,7 @@ export function BirthSkyTraditionSegment({
         role="status"
         aria-live="polite"
       >
-        <p className="text-sm text-[hsl(40_20%_96%/0.72)]">Loading traditional stories…</p>
+        <p className="text-sm text-[hsl(40_20%_96%/0.72)]">Gathering traditional stories…</p>
       </div>
     );
   }
@@ -184,9 +187,11 @@ export function BirthSkyTraditionSegment({
 
       {openCard ? (
         <div
+          ref={detailRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={detailTitleId}
+          tabIndex={-1}
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-4 sm:items-center"
           data-testid="birth-sky-tradition-detail"
         >

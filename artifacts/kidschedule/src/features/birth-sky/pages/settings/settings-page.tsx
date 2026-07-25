@@ -49,6 +49,8 @@ import { buildRevealViewModel } from "../../application/view-models/reveal-vm";
 import { buildCosmicPortrait } from "../../lib/signature-insight";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { BirthSkyRegenerateOverlay } from "./regenerate-overlay";
+import { AmyAstroEmblem } from "../../components/amy-astro-emblem";
+import "../../design/amy-astro.css";
 
 type Subpage =
   | "root"
@@ -558,7 +560,12 @@ export function BirthSkySettingsPage({
 
       {sub === "about" ? (
         <div className="space-y-3 text-sm" data-testid="birth-sky-about">
-          <p className="font-quicksand text-lg font-bold">Amy Astro Intelligence</p>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <AmyAstroEmblem size={88} interactive={false} />
+            <p className="amy-astro-display text-lg font-bold text-[hsl(42_70%_78%)]">
+              Amy Astro Intelligence
+            </p>
+          </div>
           <p className="text-[hsl(40_20%_96%/0.75)]">
             A gentle, reflective lens on the sky at birth — educational and optional, never a
             prediction of a child’s future.

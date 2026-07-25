@@ -13,6 +13,12 @@ import { AmyAstroCosmicAmbient } from "../../components/cosmic-ambient";
 import { AmyAstroEmblem } from "../../components/amy-astro-emblem";
 import { AMY_ASTRO_DISCLAIMER, AMY_ASTRO_PRODUCT_SHORT } from "../../lib/branding";
 import { useFocusTrap } from "../../lib/focus-trap";
+import { nextSuggestionBatch } from "../../lib/reply-memory";
+import {
+  buildSessionContinuity,
+  lookingAtCopy,
+  loadGuideMemory,
+} from "../../lib/conversation-intelligence";
 import { cn } from "@/lib/utils";
 import "../../design/amy-astro.css";
 
@@ -41,13 +47,18 @@ type Props = {
   moonPhaseLabel?: string;
   /** Continuity line from local cosmic memory. */
   continuityHint?: string | null;
+  profileId?: string;
 };
 
-const SUGGESTIONS = [
+const SUGGESTION_POOL = [
   "Where do you already sense their quiet strength?",
   "How does curiosity seem to wake up for them?",
   "What emotional weather should I notice this week?",
   "How can I meet them with softer parenting?",
+  "What helps them feel belonging after a big day?",
+  "Where does play teach them trust?",
+  "What small stage could celebrate effort tonight?",
+  "How do they enter a new room — watch first, or leap?",
 ] as const;
 
 export function BirthSkyConversationSheet({
@@ -74,6 +85,7 @@ export function BirthSkyConversationSheet({
   risingSign,
   moonPhaseLabel,
   continuityHint,
+  profileId,
 }: Props) {
   const titleId = useId();
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -82,6 +94,9 @@ export function BirthSkyConversationSheet({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [lookingAt, setLookingAt] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [suggestions, setSuggestions] = useState<string[]>(() =>
+    [...SUGGESTION_POOL].slice(0, 4),
+  );
 
   useFocusTrap(sheetRef, open, onClose);
 
@@ -91,9 +106,21 @@ export function BirthSkyConversationSheet({
       setKeyboardInset(0);
       return;
     }
+    if (profileId) {
+      const guide = loadGuideMemory(profileId);
+      const avoided = new Set(guide.lastThemes.map((t) => t.toLowerCase()));
+      const pool = SUGGESTION_POOL.filter((s) => {
+        const low = s.toLowerCase();
+        if (avoided.has("school") && low.includes("school")) return false;
+        if (avoided.has("sleep and rest") && low.includes("bed")) return false;
+        if (avoided.has("curiosity") && low.includes("curiosity")) return false;
+        return true;
+      });
+      setSuggestions(nextSuggestionBatch(profileId, pool.length >= 4 ? pool : SUGGESTION_POOL));
+    }
     const t = window.setTimeout(() => inputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
-  }, [open]);
+  }, [open, profileId]);
 
   useEffect(() => {
     if (!open) return;
@@ -121,9 +148,22 @@ export function BirthSkyConversationSheet({
   const writing = state === "creating" || state === "streaming";
   const showStream = state === "streaming" && streamingText.length > 0;
   const empty = messages.length === 0 && !writing && !errorMessage && !lookingAt;
+  const sessionContinuity =
+    profileId && childName ? buildSessionContinuity(profileId, childName) : null;
+  const continuity = sessionContinuity ?? continuityHint ?? null;
 
   const beginSend = () => {
     if (writing || offline || composer.trim().length === 0 || lookingAt) return;
+    // Local guide turns (follow-ups) skip the long “looking at” ritual.
+    const q = composer.trim();
+    const likelyLocal =
+      /^(hi|hello|hey|thanks|ok)\b/i.test(q) ||
+      q.length < 18 ||
+      /\b(worried|tell me more|what should i do)\b/i.test(q);
+    if (likelyLocal) {
+      onSend();
+      return;
+    }
     setLookingAt(true);
     window.setTimeout(() => {
       setLookingAt(false);
@@ -155,9 +195,9 @@ export function BirthSkyConversationSheet({
             id={titleId}
             className="amy-astro-display amy-astro-gold-text text-xl font-semibold"
           >
-            Chat with Amy
+            Ask Amy About Their Sky
           </h2>
-          <p className="text-[11px] text-[hsl(40_20%_96%/0.55)]">
+          <p className="truncate text-[11px] text-[hsl(40_20%_96%/0.55)]">
             {AMY_ASTRO_PRODUCT_SHORT}
             {childName ? ` · ${childName}` : ""} · parent-only
           </p>
@@ -165,7 +205,7 @@ export function BirthSkyConversationSheet({
         <Button
           type="button"
           variant="secondary"
-          className="min-h-11 min-w-11 rounded-xl border border-white/15 bg-white/5"
+          className="amy-astro-btn-premium min-h-11 min-w-11 rounded-xl border border-white/15 bg-white/5"
           onClick={onClose}
           data-testid="birth-sky-ai-close"
         >
@@ -181,11 +221,11 @@ export function BirthSkyConversationSheet({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-10 shrink-0 rounded-full border border-[hsl(42_50%_60%/0.25)] bg-white/5 text-xs"
+            className="amy-astro-btn-premium min-h-10 shrink-0 rounded-full border border-[hsl(42_50%_60%/0.25)] bg-white/5 text-xs"
             onClick={onNewConversation}
             data-testid="birth-sky-ai-new"
           >
-            New chat
+            Begin a New Reflection
           </Button>
           {conversations.length === 0 ? (
             <p
@@ -216,7 +256,7 @@ export function BirthSkyConversationSheet({
 
         <div
           ref={listRef}
-          className="amy-astro-glass min-h-0 flex-1 space-y-3 overflow-y-auto rounded-3xl p-4"
+          className="amy-astro-glass amy-astro-scroll-fade min-h-0 flex-1 space-y-3 overflow-y-auto rounded-3xl p-4"
           role="log"
           aria-relevant="additions"
           data-testid="birth-sky-ai-messages"
@@ -224,17 +264,22 @@ export function BirthSkyConversationSheet({
           {empty ? (
             <div data-testid="birth-sky-ai-empty" className="space-y-4">
               <div className="flex flex-col items-center text-center">
-                <AmyAstroEmblem size={88} reducedMotion={reducedMotion} showPhoto />
+                <AmyAstroEmblem size={88} reducedMotion={reducedMotion} />
                 <p className="amy-astro-display mt-4 text-lg text-[hsl(42_70%_78%)]">
-                  Amy already knows this sky
+                  {childName
+                    ? `${childName}'s sky is ready when you are`
+                    : "Their sky is ready when you are"}
                 </p>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-[hsl(40_20%_96%/0.65)]">
                   Ask about strengths, learning, emotions, or parenting — reflective counsel,
                   never fate. {AMY_ASTRO_DISCLAIMER}
                 </p>
-                {continuityHint ? (
-                  <p className="mt-3 max-w-sm text-xs leading-relaxed text-[hsl(42_55%_78%/0.85)]">
-                    {continuityHint}
+                {continuity ? (
+                  <p
+                    className="mt-3 max-w-sm text-xs leading-relaxed text-[hsl(42_55%_78%/0.85)]"
+                    data-testid="amy-astro-session-continuity"
+                  >
+                    {continuity}
                   </p>
                 ) : null}
               </div>
@@ -260,11 +305,11 @@ export function BirthSkyConversationSheet({
                   ))}
               </div>
               <div className="flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <button
                     key={s}
                     type="button"
-                    className="rounded-full border border-[hsl(42_50%_60%/0.3)] bg-black/25 px-3 py-2 text-left text-xs text-[hsl(40_20%_96%/0.85)]"
+                    className="min-h-11 rounded-full border border-[hsl(42_50%_60%/0.3)] bg-black/25 px-3 py-2 text-left text-xs text-[hsl(40_20%_96%/0.85)]"
                     onClick={() => onComposerChange(s)}
                   >
                     {s}
@@ -301,8 +346,8 @@ export function BirthSkyConversationSheet({
           {messages.map((m) => (
             <div
               key={m.messageId}
-              className={cn(
-                "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+                  className={cn(
+                "amy-astro-msg rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
                 m.role === "user"
                   ? "ml-8 bg-gradient-to-br from-[hsl(275_40%_28%/0.7)] to-[hsl(230_40%_18%/0.7)]"
                   : "mr-6 border border-[hsl(42_50%_60%/0.2)] bg-black/30",
@@ -330,7 +375,7 @@ export function BirthSkyConversationSheet({
               <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(42_60%_70%/0.65)]">
                 Amy
               </p>
-              <p className="mt-1 whitespace-pre-wrap text-[15px] leading-relaxed">
+              <p className="amy-astro-chat-cursor mt-1 whitespace-pre-wrap text-[15px] leading-relaxed">
                 {streamingText}
               </p>
             </div>
@@ -342,47 +387,58 @@ export function BirthSkyConversationSheet({
               data-testid="amy-astro-ai-looking-at"
               aria-live="polite"
             >
+              <div className="mb-3 flex justify-center">
+                <AmyAstroEmblem size={56} reducedMotion={reducedMotion} interactive={false} />
+              </div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[hsl(42_60%_70%/0.75)]">
-                ✨ Reading their birth chart…
+                Reading the Stars…
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {sunSign ? (
                   <span className="rounded-full border border-[hsl(42_50%_60%/0.35)] px-3 py-1.5 text-xs text-[hsl(42_85%_80%)]">
-                    ☀ Sun · {sunSign}
+                    Sun · {sunSign}
                   </span>
                 ) : null}
                 {moonSign ? (
                   <span className="rounded-full border border-[hsl(220_40%_60%/0.35)] px-3 py-1.5 text-xs text-[hsl(220_70%_82%)]">
-                    🌙 Moon · {moonSign}
+                    Moon · {moonSign}
                     {moonPhaseLabel ? ` · ${moonPhaseLabel}` : ""}
                   </span>
                 ) : null}
                 {risingSign ? (
                   <span className="rounded-full border border-[hsl(275_40%_60%/0.35)] px-3 py-1.5 text-xs text-[hsl(275_70%_82%)]">
-                    ⬆ Rising · {risingSign}
+                    Rising · {risingSign}
                   </span>
-                ) : (
-                  <span className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-[hsl(40_20%_96%/0.55)]">
-                    ⬆ Rising · Day Sky (unavailable)
-                  </span>
-                )}
+                ) : null}
               </div>
               <p className="mt-3 text-sm text-[hsl(42_60%_75%/0.85)]">
-                Amy is gathering their birth chart before she answers…
+                {lookingAtCopy({
+                  chart: {
+                    childName: childName ?? "your child",
+                    sunSign: sunSign ?? "",
+                    moonSign: moonSign ?? "",
+                    risingSign: risingSign ?? null,
+                    moonPhaseLabel: moonPhaseLabel ?? "",
+                    daySky: !risingSign,
+                  },
+                  question: composer,
+                })}
               </p>
             </div>
           ) : null}
 
           {writing && !showStream ? (
-            <p
-              className={cn(
-                "text-sm text-[hsl(42_60%_75%/0.8)]",
-                !reducedMotion && "animate-pulse",
-              )}
+            <div
+              className="amy-astro-typing flex items-center gap-2 text-sm text-[hsl(42_60%_75%/0.8)]"
               data-testid="birth-sky-ai-typing"
             >
+              <span className="amy-astro-typing-dots" aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
               Amy is reflecting…
-            </p>
+            </div>
           ) : null}
 
           {state === "failed" || errorMessage ? (
@@ -432,15 +488,15 @@ export function BirthSkyConversationSheet({
 
         <div className="space-y-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
           <label className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[hsl(42_50%_70%/0.65)]">
-            Ask anything…
+            Ask Amy…
             <textarea
               ref={inputRef}
-              className="amy-astro-glass mt-2 min-h-20 w-full rounded-2xl p-3 text-sm text-[hsl(40_20%_96%)] placeholder:text-[hsl(40_20%_96%/0.35)]"
+              className="amy-astro-glass amy-astro-composer mt-2 min-h-20 w-full rounded-2xl p-3 text-sm text-[hsl(40_20%_96%)] placeholder:text-[hsl(40_20%_96%/0.35)]"
               value={composer}
               onChange={(e) => onComposerChange(e.target.value)}
               disabled={writing || offline || lookingAt}
               maxLength={2000}
-              placeholder="Ask Amy about strengths, learning, emotions…"
+              placeholder="Strengths, learning, emotions, or how to meet them tonight…"
               data-testid="birth-sky-ai-composer"
             />
           </label>
@@ -449,7 +505,7 @@ export function BirthSkyConversationSheet({
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-11 flex-1 rounded-xl"
+                className="amy-astro-btn-premium min-h-11 flex-1 rounded-xl"
                 onClick={onCancel}
                 data-testid="birth-sky-ai-cancel"
               >
@@ -458,12 +514,12 @@ export function BirthSkyConversationSheet({
             ) : (
               <Button
                 type="button"
-                className="min-h-11 flex-1 rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] font-semibold"
+                className="amy-astro-btn-premium min-h-11 flex-1 rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] font-semibold"
                 disabled={offline || composer.trim().length === 0 || lookingAt}
                 onClick={beginSend}
                 data-testid="birth-sky-ai-send"
               >
-                {lookingAt ? "Gathering sky…" : "Send"}
+                {lookingAt ? "Reading the Stars…" : "Ask Amy"}
               </Button>
             )}
           </div>

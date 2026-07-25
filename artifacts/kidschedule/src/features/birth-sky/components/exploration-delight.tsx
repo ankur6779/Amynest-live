@@ -2,8 +2,10 @@
  * Delight completion — Amy congratulates after deep exploration.
  */
 
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import { AmyAstroEmblem } from "./amy-astro-emblem";
+import { useFocusTrap } from "../lib/focus-trap";
 import "../design/amy-astro.css";
 
 const STORAGE = "amynest:amy-astro:explored:v1:";
@@ -37,14 +39,18 @@ export function AmyAstroExplorationDelight({
   reducedMotion = false,
   onClose,
 }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(rootRef, open, onClose);
   if (!open) return null;
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-[55] flex items-end justify-center bg-black/55 p-4 sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-label="Exploration complete"
+      tabIndex={-1}
       data-testid="amy-astro-exploration-delight"
     >
       <div
@@ -61,8 +67,10 @@ export function AmyAstroExplorationDelight({
           Beautifully explored
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(40_20%_96%/0.75)]">
-          Amy is quietly proud of the care you brought to {childName}&apos;s sky. A memory of
-          this exploration is saved on this device — return anytime for wonder.
+          Amy is quietly proud of the care you brought to{" "}
+          <span className="inline-block max-w-[12rem] truncate align-bottom">{childName}</span>
+          &apos;s sky. A memory of this exploration is saved on this device — return anytime for
+          wonder.
         </p>
         <svg
           className="mx-auto mt-4 h-12 w-40 opacity-80"

@@ -13,6 +13,7 @@ import {
 import { reportCrash } from "@/lib/crash-report";
 import { getCrashRouteContext } from "@/lib/crash-route-context";
 import { isInfiniteRenderError } from "@/lib/runtime-crash-policy";
+import { isStaleChunkError } from "@/lib/vite-chunk-recovery";
 import { captureCrashIntelligence } from "@/lib/self-healing/crash-intelligence";
 import { recordFingerprintSpike } from "@/lib/self-healing/feature-mitigation";
 import { quarantineRoute } from "@/lib/self-healing/route-quarantine";
@@ -97,6 +98,29 @@ export async function planComponentCrashRecovery(
       stage: "manual",
       level: 5,
       outcome: navigated ? "quarantined" : "manual_required",
+      errorReferenceId: intelligence.errorId,
+      readableFingerprint: intelligence.readableFingerprint,
+      mitigationApplied,
+      skipAutoRecovery: true,
+    };
+  }
+
+  // Stale Vite chunks after deploy — never navigate-away loop (Astro/Birth Sky).
+  // Prefer a single hard refresh; if that already failed, show manual refresh UI.
+  if (isStaleChunkError(input.error)) {
+    reportWithOutcome("manual_required");
+    recordRecoveryEvent({
+      level: 6,
+      outcome: "manual_required",
+      component: input.component,
+      route: intelligence.route,
+      fingerprint: intelligence.readableFingerprint,
+      detail: "stale_chunk",
+    });
+    return {
+      stage: "manual",
+      level: 6,
+      outcome: "manual_required",
       errorReferenceId: intelligence.errorId,
       readableFingerprint: intelligence.readableFingerprint,
       mitigationApplied,

@@ -17,6 +17,7 @@ import {
   planComponentCrashRecovery,
   recordRecoveryStageComplete,
 } from "@/lib/self-healing/orchestrator";
+import { isStaleChunkError } from "@/lib/vite-chunk-recovery";
 
 type Props = {
   children: ReactNode;
@@ -31,6 +32,8 @@ type State = {
   recoveryMessage: string;
   remountKey: number;
   errorReferenceId?: string;
+  /** Prefer hard refresh over remount (stale Vite chunks after deploy). */
+  preferReload?: boolean;
 };
 
 const RECOVERY_DELAY_MS = 1000;
@@ -53,6 +56,7 @@ export class AppErrorBoundary extends Component<Props, State> {
       error,
       recovering: false,
       recoveryMessage: "Something went wrong. Recovering…",
+      preferReload: isStaleChunkError(error),
     };
   }
 
@@ -98,10 +102,13 @@ export class AppErrorBoundary extends Component<Props, State> {
       this.setState({ errorReferenceId: plan.errorReferenceId });
 
       if (debugCrash || plan.skipAutoRecovery) {
+        const stale = isStaleChunkError(error);
         this.showManualRecovery(
           plan.outcome === "quarantined"
             ? "This screen was paused to keep AmyNest stable.\nPlease try again or go home."
-            : undefined,
+            : stale
+              ? "A newer AmyNest build is ready.\nRefresh once to open this screen again."
+              : undefined,
         );
         return;
       }
@@ -235,31 +242,34 @@ export class AppErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
+      const runForceReload = () => {
+        this.setState({ recovering: true, recoveryMessage: "Refreshing AmyNest…" });
+        resetCrashRecoveryCounters();
+        clearRefreshCompleteFlag();
+        this.armRefreshFailsafe();
+        void executeHardReload({
+          force: true,
+          onTimeout: () => {
+            this.showManualRecovery(
+              "Refresh timed out.\nPlease try again or go home.",
+            );
+          },
+        }).then((ok) => {
+          this.clearRefreshFailsafe();
+          if (!ok) {
+            this.showManualRecovery();
+          }
+        });
+      };
       return (
         <AppFallbackUi
+          title={this.state.preferReload ? "Update ready" : undefined}
           message={this.state.recoveryMessage}
           errorReferenceId={this.state.errorReferenceId}
-          onTryAgain={this.handleTryAgain}
+          primaryLabel={this.state.preferReload ? "Refresh AmyNest" : undefined}
+          onTryAgain={this.state.preferReload ? undefined : this.handleTryAgain}
           onGoHome={this.handleGoHome}
-          onReload={() => {
-            this.setState({ recovering: true, recoveryMessage: "Refreshing AmyNest…" });
-            resetCrashRecoveryCounters();
-            clearRefreshCompleteFlag();
-            this.armRefreshFailsafe();
-            void executeHardReload({
-              force: true,
-              onTimeout: () => {
-                this.showManualRecovery(
-                  "Refresh timed out.\nPlease try again or go home.",
-                );
-              },
-            }).then((ok) => {
-              this.clearRefreshFailsafe();
-              if (!ok) {
-                this.showManualRecovery();
-              }
-            });
-          }}
+          onReload={runForceReload}
         />
       );
     }

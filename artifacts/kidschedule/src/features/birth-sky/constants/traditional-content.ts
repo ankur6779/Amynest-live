@@ -131,6 +131,6 @@ export const TRADITION_CARD_TEMPLATES: TraditionCardTemplate[] = [
     title: "A parent’s quiet looking",
     summary: "Historically, sky stories were often for parents, not fortune.",
     story:
-      "Across cultures, night-sky stories were often shared among caregivers as a way to mark arrival and belonging. Birth Sky keeps that spirit: reflective and optional — never a claim about who your child must become.",
+      "Across cultures, night-sky stories were often shared among caregivers as a way to mark arrival and belonging. Amy Astro keeps that spirit: reflective and optional — never a claim about who your child must become.",
   },
 ];

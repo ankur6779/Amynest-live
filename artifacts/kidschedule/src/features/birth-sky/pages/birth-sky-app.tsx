@@ -36,6 +36,7 @@ import { BirthSkyFormationPage } from "./formation-page";
 import { BirthSkyRevealPage } from "./reveal-page";
 import { BirthSkyDashboardPage } from "./dashboard/dashboard-page";
 import { BirthSkySettingsPage } from "./settings/settings-page";
+import { AmyAstroEmblem } from "../components/amy-astro-emblem";
 import "../design/amy-astro.css";
 import {
   clearSetupDraft,
@@ -425,12 +426,9 @@ function BirthSkyAppInner() {
           }}
           aria-hidden
         />
-        <div
-          className="relative h-16 w-16 rounded-full border border-[hsl(42_50%_60%/0.35)] bg-[hsl(275_40%_20%/0.4)] shadow-[0_0_28px_hsl(42_70%_50%/0.25)]"
-          aria-hidden
-        />
+        <AmyAstroEmblem size={88} interactive={false} />
         <p className="amy-astro-display relative mt-5 text-lg text-[hsl(42_70%_78%)]">
-          Opening their sky…
+          Reading the stars…
         </p>
         <p className="relative mt-2 text-center text-sm text-[hsl(40_20%_96%/0.55)]">
           Amy Astro Intelligence is preparing a quiet welcome.
@@ -574,14 +572,15 @@ function BirthSkyAppInner() {
     );
   }
 
-  if (resolved.land === "setup" && draft && selectedChild) {
+  if (resolved.land === "setup") {
     const step = resolved.step;
-    if (step === "child") {
+    // Zero-child / missing draft: always land on child confirmation (no welcome loop).
+    if (step === "child" || !selectedChild || !draft) {
       return (
         <BirthSkyChildConfirmationPage
           child={selectedChild}
           childrenList={childOptions}
-          continueEnabled
+          continueEnabled={Boolean(selectedChild)}
           onBack={() => setLocation("/birth-sky/welcome", { replace: true })}
           onSwitchChild={(id) => {
             setSelectedChildId(id);
@@ -593,6 +592,7 @@ function BirthSkyAppInner() {
           onContinue={(id) => {
             setSelectedChildId(id);
             const c = childOptions.find((x) => x.id === id) ?? selectedChild;
+            if (!c) return;
             const d = getOrCreateSetupDraft(c.id, c.name, c.dob);
             persistDraft({ ...d, currentStep: "date", dirty: true });
             goSetup("date");

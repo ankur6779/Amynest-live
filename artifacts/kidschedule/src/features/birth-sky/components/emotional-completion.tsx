@@ -81,11 +81,13 @@ export function AmyAstroEmotionalCompletion({
         </svg>
 
         <div className="mt-2 flex justify-center">
-          <AmyAstroEmblem size={64} reducedMotion={reducedMotion} showPhoto />
+          <AmyAstroEmblem size={64} reducedMotion={reducedMotion} />
         </div>
 
-        <p className="amy-astro-display amy-astro-gold-text mt-4 text-2xl leading-snug">
-          You now understand another beautiful part of {childName}&apos;s universe.
+        <p className="amy-astro-display amy-astro-gold-text mt-4 line-clamp-3 text-2xl leading-snug">
+          You now understand another beautiful part of{" "}
+          <span className="inline-block max-w-full truncate align-bottom">{childName}</span>
+          &apos;s universe.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(40_20%_96%/0.7)]">
           Nothing to collect. Nothing to finish. Only a softer knowing — held gently.

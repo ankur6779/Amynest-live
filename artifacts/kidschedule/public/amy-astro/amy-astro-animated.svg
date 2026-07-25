@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" role="img" aria-labelledby="amyAstroTitle">
+  <title id="amyAstroTitle">Amy Astro Intelligence</title>
+  <defs>
+    <radialGradient id="aaCore" cx="42%" cy="36%" r="62%">
+      <stop offset="0%" stop-color="#fff6d6" stop-opacity="0.95"/>
+      <stop offset="18%" stop-color="#f0c75e" stop-opacity="0.9"/>
+      <stop offset="42%" stop-color="#c084fc" stop-opacity="1"/>
+      <stop offset="72%" stop-color="#3b1d7a" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0a0e18" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="aaGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9b0"/>
+      <stop offset="40%" stop-color="#c9a24a"/>
+      <stop offset="100%" stop-color="#f0e6c8"/>
+    </linearGradient>
+    <clipPath id="aaChild">
+      <path d="M100 52c-14 0-26 12-26 30 0 10 4 18 11 23-10 4-17 14-17 26v12h64V131c0-12-7-22-17-26 7-5 11-13 11-23 0-18-12-30-26-30z"/>
+    </clipPath>
+    <style>
+      @media (prefers-reduced-motion: no-preference) {
+        .aa-orbit { animation: aaSpin 20s linear infinite; transform-origin: 100px 100px; }
+        .aa-orbit-rev { animation: aaSpin 28s linear infinite reverse; transform-origin: 100px 100px; }
+        .aa-pulse { animation: aaBreathe 3.6s ease-in-out infinite; transform-origin: 100px 100px; }
+        .aa-shimmer { stroke-dasharray: 40 220; animation: aaShimmer 5.5s ease-in-out infinite; }
+      }
+      @keyframes aaSpin { to { transform: rotate(360deg); } }
+      @keyframes aaBreathe { 0%,100% { opacity: .72; } 50% { opacity: 1; } }
+      @keyframes aaShimmer {
+        0%,100% { stroke-dashoffset: 0; opacity: .35; }
+        45%,55% { stroke-dashoffset: -180; opacity: .9; }
+      }
+    </style>
+  </defs>
+  <g class="aa-orbit">
+    <circle cx="100" cy="100" r="92" stroke="url(#aaGold)" stroke-width="1.5" opacity="0.88"/>
+    <circle class="aa-shimmer" cx="100" cy="100" r="92" stroke="url(#aaGold)" stroke-width="2.2" opacity="0.55"/>
+    <circle cx="100" cy="8" r="2.8" fill="url(#aaGold)"/>
+    <circle cx="186" cy="64" r="3.6" fill="#c9a24a" opacity="0.95"/>
+    <circle cx="168" cy="172" r="2.5" fill="#c9a0ff" opacity="0.92"/>
+    <circle cx="26" cy="142" r="2" fill="#9bb8e8" opacity="0.88"/>
+  </g>
+  <g class="aa-orbit-rev">
+    <circle cx="100" cy="100" r="74" stroke="url(#aaGold)" stroke-width="0.9" opacity="0.4" stroke-dasharray="1.2 6"/>
+    <polyline points="38,88 52,66 74,74 92,52 118,60" stroke="url(#aaGold)" stroke-width="0.65" opacity="0.65"/>
+    <circle cx="38" cy="88" r="1.35" fill="url(#aaGold)"/>
+    <circle cx="52" cy="66" r="1.05" fill="url(#aaGold)"/>
+    <circle cx="74" cy="74" r="1.35" fill="url(#aaGold)"/>
+    <circle cx="92" cy="52" r="1.05" fill="url(#aaGold)"/>
+    <circle cx="118" cy="60" r="1.35" fill="url(#aaGold)"/>
+  </g>
+  <circle cx="100" cy="100" r="56" stroke="url(#aaGold)" stroke-width="1.1" opacity="0.55"/>
+  <g class="aa-pulse">
+    <circle cx="100" cy="100" r="47" fill="url(#aaCore)"/>
+    <g clip-path="url(#aaChild)">
+      <rect x="54" y="48" width="92" height="110" fill="url(#aaCore)"/>
+      <circle cx="92" cy="78" r="1.1" fill="#fff6d6" opacity="0.85"/>
+      <circle cx="108" cy="92" r="0.9" fill="#fff6d6" opacity="0.7"/>
+    </g>
+    <path d="M100 52c-14 0-26 12-26 30 0 10 4 18 11 23-10 4-17 14-17 26v12h64V131c0-12-7-22-17-26 7-5 11-13 11-23 0-18-12-30-26-30z" stroke="url(#aaGold)" stroke-width="1.4" opacity="0.85"/>
+    <circle cx="100" cy="118" r="2.6" fill="#f0c75e" opacity="0.95"/>
+  </g>
+</svg>

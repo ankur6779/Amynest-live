@@ -5,6 +5,7 @@ type AppFallbackUiProps = {
   message?: string;
   reloading?: boolean;
   errorReferenceId?: string;
+  primaryLabel?: string;
   onReload?: () => void;
   onTryAgain?: () => void;
   onGoHome?: () => void;
@@ -25,6 +26,7 @@ export function AppFallbackUi({
   message = "We're having trouble loading this screen.\nPlease try again.",
   reloading = false,
   errorReferenceId,
+  primaryLabel,
   onReload,
   onTryAgain,
   onGoHome,
@@ -34,6 +36,8 @@ export function AppFallbackUi({
     : message.replace(/\\n/g, "\n");
 
   const primaryAction = onTryAgain ?? onReload;
+  const resolvedPrimaryLabel =
+    primaryLabel ?? (onTryAgain ? "Try Again" : onReload ? "Refresh AmyNest" : "Try Again");
   const showSecondary = Boolean(onGoHome);
 
   return (
@@ -89,7 +93,7 @@ export function AppFallbackUi({
                   minWidth: 200,
                 }}
               >
-                Try Again
+                {resolvedPrimaryLabel}
               </button>
             )}
             {showSecondary && onGoHome && (

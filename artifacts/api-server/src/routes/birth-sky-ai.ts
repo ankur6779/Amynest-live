@@ -32,6 +32,15 @@ import {
 } from "../services/birth-sky/ai-entitlement.js";
 import { streamBirthSkyChat } from "../services/birth-sky/ai-stream.js";
 import { validateBirthSkyAiOutput } from "../services/birth-sky/ai-safety.js";
+import {
+  resolveBirthSkyModelCatalog,
+  routeBirthSkyModel,
+  type BirthSkyModelTier,
+} from "../services/birth-sky/ai-model-router.js";
+import {
+  estimateBirthSkyCostUsd,
+  recordBirthSkyAiTelemetry,
+} from "../services/birth-sky/ai-router-telemetry.js";
 
 const router: IRouter = Router();
 router.use(requireBirthSkyAllowlist);
@@ -362,6 +371,7 @@ router.post(
           role: birthSkyMessagesTable.role,
           body: birthSkyMessagesTable.body,
           sequence: birthSkyMessagesTable.sequence,
+          modelVersion: birthSkyMessagesTable.modelVersion,
         })
         .from(birthSkyMessagesTable)
         .where(eq(birthSkyMessagesTable.conversationId, conversationId))
@@ -401,14 +411,6 @@ router.post(
         res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       };
 
-      send("job", {
-        jobId,
-        deliveryId,
-        conversationId,
-        modelVersion: null,
-        contextSchemaVersion: ctx.contextSchemaVersion,
-      });
-
       const recentTurns = [...priorTurns]
         .reverse()
         .filter((m) => m.role === "user" || m.role === "assistant")
@@ -418,12 +420,62 @@ router.post(
           body: m.body,
         }));
 
+      const lastAssistantWithModel = [...priorTurns].find(
+        (m) => m.role === "assistant" && m.modelVersion,
+      );
+      const catalog = resolveBirthSkyModelCatalog();
+      const priorTier: BirthSkyModelTier | null = lastAssistantWithModel?.modelVersion
+        ? lastAssistantWithModel.modelVersion === catalog.fast
+          ? "fast"
+          : lastAssistantWithModel.modelVersion === catalog.reasoning
+            ? "reasoning"
+            : /mini|nano|4o-mini/i.test(lastAssistantWithModel.modelVersion)
+              ? "fast"
+              : "reasoning"
+        : null;
+
+      const route = routeBirthSkyModel({
+        userText: ctx.userQuestion,
+        priorTurnCount: priorTurns.length,
+        entryPoint: ctx.entryPoint,
+        recentTurns,
+        priorTier,
+      });
+      logger.info(
+        {
+          conversationId,
+          tier: route.tier,
+          model: route.model,
+          reason: route.reason,
+          confidence: route.confidence,
+          escalated: route.escalated,
+          downgraded: route.downgraded,
+          entryPoint: ctx.entryPoint,
+          priorTurnCount: priorTurns.length,
+          scores: route.scores,
+        },
+        "birth-sky.ai.model_route",
+      );
+
+      send("job", {
+        jobId,
+        deliveryId,
+        conversationId,
+        modelVersion: route.model,
+        modelTier: route.tier,
+        modelRouteReason: route.reason,
+        modelRouteConfidence: route.confidence,
+        escalated: route.escalated,
+        contextSchemaVersion: ctx.contextSchemaVersion,
+      });
+
       const assembled = assembleBirthSkyPrompt(ctx as BirthSkyAiContextInput, {
         recentTurns,
       });
       // Buffer model tokens server-side — never emit chunks until safety approves.
       const streamResult = await streamBirthSkyChat({
         messages: assembled.messages,
+        model: route.model,
         signal: abort.signal,
         onChunk: () => {
           /* intentional no-op: moderate-first delivery */
@@ -432,6 +484,37 @@ router.post(
 
       activeAborts.delete(jobId);
 
+      const emitTelemetry = (
+        status: "ok" | "error" | "moderated" | "cancelled" | "timeout",
+      ) => {
+        const inputTokens = streamResult.usage.inputTokens;
+        const outputTokens = streamResult.usage.outputTokens;
+        const estimatedCostUsd =
+          inputTokens != null && outputTokens != null
+            ? estimateBirthSkyCostUsd({
+                tier: route.tier,
+                inputTokens,
+                outputTokens,
+              })
+            : null;
+        recordBirthSkyAiTelemetry({
+          conversationId,
+          selectedModel: route.model,
+          tier: route.tier,
+          routingReason: route.reason,
+          latencyMs: streamResult.latencyMs,
+          inputTokens,
+          outputTokens,
+          estimatedCostUsd,
+          conversationLength: priorTurns.length + 1,
+          escalated: route.escalated,
+          downgraded: route.downgraded,
+          confidence: route.confidence,
+          scores: route.scores,
+          status,
+        });
+      };
+
       if (!streamResult.ok) {
         const status =
           streamResult.error === "cancelled"
@@ -439,6 +522,13 @@ router.post(
             : streamResult.timedOut
               ? "timeout"
               : "failed";
+        emitTelemetry(
+          streamResult.error === "cancelled"
+            ? "cancelled"
+            : streamResult.timedOut
+              ? "timeout"
+              : "error",
+        );
         send("error", {
           jobId,
           deliveryId,
@@ -446,6 +536,8 @@ router.post(
           status,
           // Partial text may exist but is NOT delivered for free-consume purposes.
           hadPartial: Boolean(streamResult.text),
+          modelVersion: streamResult.modelVersion,
+          latencyMs: streamResult.latencyMs,
         });
         res.end();
         return;
@@ -472,6 +564,7 @@ router.post(
           engineVersion: conv.engineVersion,
           status: "moderated",
         });
+        emitTelemetry("moderated");
         send("moderated", {
           jobId,
           deliveryId,
@@ -480,6 +573,8 @@ router.post(
           body: safety.fallback,
           // Fallback is presentable but Pack 2: moderation does NOT consume free insight.
           consumeEligible: false,
+          modelVersion: streamResult.modelVersion,
+          latencyMs: streamResult.latencyMs,
         });
         res.end();
         return;
@@ -508,6 +603,8 @@ router.post(
         .set({ updatedAt: new Date() })
         .where(eq(birthSkyConversationsTable.id, conversationId));
 
+      emitTelemetry("ok");
+
       // Stream only approved text (never raw model output).
       const approved = safety.text;
       const CHUNK = 48;
@@ -527,6 +624,12 @@ router.post(
         deliveryId,
         messageId: assistantId,
         modelVersion: streamResult.modelVersion,
+        modelTier: route.tier,
+        modelRouteReason: route.reason,
+        escalated: route.escalated,
+        latencyMs: streamResult.latencyMs,
+        inputTokens: streamResult.usage.inputTokens,
+        outputTokens: streamResult.usage.outputTokens,
         contextSchemaVersion: assembled.contextSchemaVersion,
         snapshotVersion: conv.snapshotVersion,
         engineVersion: conv.engineVersion,

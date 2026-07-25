@@ -1,8 +1,10 @@
 /**
- * Animated Amy Astro cosmic emblem — orbits, planets, sacred geometry, nebula core.
- * Brand mark for welcome / formation / reduced-motion hero fallback.
+ * Flagship Amy Astro emblem — luxury galaxy core, golden orbits,
+ * constellation weave, child silhouette. OLED-safe gold/violet/indigo.
+ * Scales cleanly from 24px → 96px+.
  */
 
+import { useId, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
 import "../design/amy-astro.css";
@@ -11,147 +13,225 @@ type Props = {
   size?: number;
   className?: string;
   reducedMotion?: boolean;
-  /** Use photographic brand asset behind SVG rings */
+  /** @deprecated ignored — emblem is always the animated SVG brand */
   showPhoto?: boolean;
+  interactive?: boolean;
 };
 
 export function AmyAstroEmblem({
   size = 160,
   className,
   reducedMotion = false,
-  showPhoto = false,
+  interactive,
 }: Props) {
+  const uid = useId().replace(/:/g, "");
+  const [burst, setBurst] = useState(false);
+  const canInteract = interactive ?? size >= 44;
+  const fine = size >= 48;
+
+  const onActivate = () => {
+    if (!canInteract || reducedMotion) return;
+    setBurst(true);
+    window.setTimeout(() => setBurst(false), 480);
+  };
+
   return (
     <div
       className={cn(
-        "relative inline-flex items-center justify-center amy-astro-pulse-glow",
-        !reducedMotion && "amy-astro-float",
+        "amy-astro-emblem relative inline-flex items-center justify-center",
+        !reducedMotion && "amy-astro-emblem-live",
+        canInteract && !reducedMotion && "amy-astro-emblem-interactive",
+        burst && "amy-astro-emblem-burst",
         className,
       )}
       style={{ width: size, height: size }}
       role="img"
       aria-label={AMY_ASTRO_PRODUCT_NAME}
       data-testid="amy-astro-emblem"
+      tabIndex={canInteract ? 0 : undefined}
+      onClick={onActivate}
+      onKeyDown={(e) => {
+        if (!canInteract) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onActivate();
+        }
+      }}
     >
-      {showPhoto ? (
-        <img
-          src="/amy-astro/brand-emblem.png"
-          alt=""
-          className="absolute inset-[12%] h-[76%] w-[76%] rounded-full object-cover opacity-90"
-          draggable={false}
-        />
-      ) : null}
+      {/* Soft breathing aura — kept under reduced motion */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-[-10%] rounded-full bg-[radial-gradient(circle,hsl(42_90%_62%/0.28),hsl(275_70%_45%/0.12)_45%,transparent_70%)]",
+          !reducedMotion ? "amy-astro-emblem-aura" : "opacity-80",
+        )}
+        aria-hidden
+      />
 
       <svg
         width={size}
         height={size}
         viewBox="0 0 200 200"
-        className="relative z-[1]"
+        className="relative z-[1] overflow-visible"
         aria-hidden
       >
         <defs>
-          <radialGradient id="aa-nebula" cx="50%" cy="45%" r="50%">
-            <stop offset="0%" stopColor="hsl(275 70% 65%)" stopOpacity="0.95" />
-            <stop offset="45%" stopColor="hsl(248 65% 45%)" stopOpacity="0.85" />
-            <stop offset="100%" stopColor="hsl(230 50% 12%)" stopOpacity="0.2" />
+          <radialGradient id={`${uid}-core`} cx="42%" cy="36%" r="62%">
+            <stop offset="0%" stopColor="hsl(42 100% 92%)" stopOpacity="0.95" />
+            <stop offset="18%" stopColor="hsl(42 90% 68%)" stopOpacity="0.9" />
+            <stop offset="42%" stopColor="hsl(285 85% 62%)" stopOpacity="1" />
+            <stop offset="72%" stopColor="hsl(248 72% 32%)" stopOpacity="1" />
+            <stop offset="100%" stopColor="hsl(230 55% 6%)" stopOpacity="1" />
           </radialGradient>
-          <linearGradient id="aa-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(42 90% 78%)" />
-            <stop offset="50%" stopColor="hsl(42 70% 55%)" />
-            <stop offset="100%" stopColor="hsl(40 50% 78%)" />
+          <linearGradient id={`${uid}-gold`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(42 98% 88%)" />
+            <stop offset="40%" stopColor="hsl(42 82% 56%)" />
+            <stop offset="100%" stopColor="hsl(38 60% 78%)" />
           </linearGradient>
-          <filter id="aa-soft" x="-40%" y="-40%" width="180%" height="180%">
+          <linearGradient id={`${uid}-shimmer`} x1="0%" y1="50%" x2="100%" y2="50%">
+            <stop offset="0%" stopColor="hsl(42 90% 80%)" stopOpacity="0" />
+            <stop offset="50%" stopColor="hsl(42 100% 92%)" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="hsl(42 90% 80%)" stopOpacity="0" />
+          </linearGradient>
+          <filter id={`${uid}-glow`} x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="2.2" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <clipPath id={`${uid}-child`}>
+            <path d="M100 52c-14 0-26 12-26 30 0 10 4 18 11 23-10 4-17 14-17 26v12h64V131c0-12-7-22-17-26 7-5 11-13 11-23 0-18-12-30-26-30z" />
+          </clipPath>
         </defs>
 
-        {/* Outer orbits */}
+        {/* Outer golden orbit + planets */}
         <g
-          className={cn(!reducedMotion && "amy-astro-orbit")}
+          className={cn(!reducedMotion && "amy-astro-emblem-orbit")}
           style={{ transformOrigin: "100px 100px" }}
         >
           <circle
             cx="100"
             cy="100"
-            r="88"
+            r="92"
             fill="none"
-            stroke="url(#aa-gold)"
-            strokeWidth="0.8"
+            stroke={`url(#${uid}-gold)`}
+            strokeWidth={fine ? 1.5 : 1.8}
+            opacity="0.88"
+          />
+          <circle
+            cx="100"
+            cy="100"
+            r="92"
+            fill="none"
+            stroke={`url(#${uid}-shimmer)`}
+            strokeWidth="2.2"
             opacity="0.55"
+            className={cn(!reducedMotion && "amy-astro-emblem-shimmer-stroke")}
           />
-          <circle cx="100" cy="14" r="2.2" fill="url(#aa-gold)" />
-          <circle cx="178" cy="72" r="4" fill="hsl(42 60% 55%)" opacity="0.9" />
-          <circle cx="155" cy="155" r="3" fill="hsl(275 50% 60%)" opacity="0.85" />
+          <circle cx="100" cy="8" r="2.8" fill={`url(#${uid}-gold)`} />
+          <circle cx="186" cy="64" r="3.6" fill="hsl(42 70% 58%)" opacity="0.95" />
+          <circle cx="168" cy="172" r="2.5" fill="hsl(285 60% 72%)" opacity="0.92" />
+          <circle cx="26" cy="142" r="2" fill="hsl(210 65% 78%)" opacity="0.88" />
+          <circle cx="34" cy="48" r="1.5" fill="hsl(42 90% 80%)" opacity="0.8" />
         </g>
 
+        {/* Inner constellation counter-orbit */}
         <g
-          className={cn(!reducedMotion && "amy-astro-orbit-reverse")}
+          className={cn(!reducedMotion && "amy-astro-emblem-orbit-rev")}
           style={{ transformOrigin: "100px 100px" }}
         >
           <circle
             cx="100"
             cy="100"
-            r="68"
+            r="74"
             fill="none"
-            stroke="url(#aa-gold)"
-            strokeWidth="0.6"
+            stroke={`url(#${uid}-gold)`}
+            strokeWidth="0.9"
             opacity="0.4"
-            strokeDasharray="2 6"
+            strokeDasharray="1.2 6"
           />
-          <circle cx="168" cy="100" r="3.5" fill="hsl(230 40% 55%)" />
-          <ellipse
-            cx="42"
-            cy="120"
-            rx="5"
-            ry="3.2"
+          <polyline
+            points="38,88 52,66 74,74 92,52 118,60"
             fill="none"
-            stroke="hsl(42 70% 65%)"
-            strokeWidth="1"
-            opacity="0.8"
+            stroke={`url(#${uid}-gold)`}
+            strokeWidth="0.65"
+            opacity="0.65"
           />
+          {[
+            [38, 88],
+            [52, 66],
+            [74, 74],
+            [92, 52],
+            [118, 60],
+            [158, 96],
+            [148, 138],
+          ].map(([x, y], i) => (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={i % 2 === 0 ? 1.35 : 1.05}
+              fill={`url(#${uid}-gold)`}
+              opacity="0.9"
+            />
+          ))}
         </g>
 
+        {/* Mid ring */}
         <circle
           cx="100"
           cy="100"
-          r="48"
+          r="56"
           fill="none"
-          stroke="url(#aa-gold)"
+          stroke={`url(#${uid}-gold)`}
           strokeWidth="1.1"
-          opacity="0.7"
+          opacity="0.55"
         />
 
-        {/* Cosmic child silhouette core */}
-        {!showPhoto ? (
-          <g filter="url(#aa-soft)">
-            <path
-              d="M100 52c-14 0-26 12-26 32 0 10 4 18 10 24-8 4-14 12-14 22v8h60v-8c0-10-6-18-14-22 6-6 10-14 10-24 0-20-12-32-26-32z"
-              fill="url(#aa-nebula)"
-              opacity="0.95"
+        {/* Galaxy core + child silhouette (integrated) */}
+        <g
+          filter={`url(#${uid}-glow)`}
+          className={cn(!reducedMotion && "amy-astro-emblem-pulse")}
+        >
+          <circle cx="100" cy="100" r="47" fill={`url(#${uid}-core)`} />
+          <ellipse cx="88" cy="86" rx="22" ry="16" fill="hsl(42 95% 90% / 0.18)" />
+          <g clipPath={`url(#${uid}-child)`}>
+            <rect x="54" y="48" width="92" height="110" fill={`url(#${uid}-core)`} />
+            <circle cx="92" cy="78" r="1.1" fill="hsl(42 95% 92%)" opacity="0.85" />
+            <circle cx="108" cy="92" r="0.9" fill="hsl(42 95% 92%)" opacity="0.7" />
+            <circle cx="100" cy="108" r="1" fill="hsl(285 80% 88%)" opacity="0.75" />
+            <polyline
+              points="86,86 98,98 112,92"
+              fill="none"
+              stroke="hsl(42 90% 80%)"
+              strokeWidth="0.6"
+              opacity="0.55"
             />
-            <circle cx="100" cy="78" r="10" fill="hsl(40 90% 90% / 0.35)" />
-            <circle cx="100" cy="108" r="4" fill="hsl(42 90% 70% / 0.8)" />
           </g>
-        ) : null}
-
-        {/* Seed of Life mark */}
-        <g transform="translate(100 168)" opacity="0.85">
-          <circle r="7" fill="none" stroke="url(#aa-gold)" strokeWidth="0.7" />
-          <circle cx="0" cy="-4" r="3.5" fill="none" stroke="url(#aa-gold)" strokeWidth="0.5" />
-          <circle cx="3.5" cy="2" r="3.5" fill="none" stroke="url(#aa-gold)" strokeWidth="0.5" />
-          <circle cx="-3.5" cy="2" r="3.5" fill="none" stroke="url(#aa-gold)" strokeWidth="0.5" />
+          <path
+            d="M100 52c-14 0-26 12-26 30 0 10 4 18 11 23-10 4-17 14-17 26v12h64V131c0-12-7-22-17-26 7-5 11-13 11-23 0-18-12-30-26-30z"
+            fill="none"
+            stroke={`url(#${uid}-gold)`}
+            strokeWidth="1.4"
+            opacity="0.85"
+          />
+          {/* Heart-star spark at chest */}
+          <circle cx="100" cy="118" r="2.6" fill="hsl(42 95% 72%)" opacity="0.95" />
         </g>
 
-        {/* North star */}
-        <path
-          d="M100 8 L102 14 L108 14 L103.5 17.5 L105.5 23.5 L100 20 L94.5 23.5 L96.5 17.5 L92 14 L98 14 Z"
-          fill="url(#aa-gold)"
-          opacity="0.9"
-        />
+        {/* Tiny orbit particles */}
+        {!reducedMotion ? (
+          <g
+            className="amy-astro-emblem-orbit"
+            style={{ transformOrigin: "100px 100px" }}
+            opacity="0.95"
+          >
+            <circle cx="100" cy="22" r="1.3" fill="hsl(42 100% 92%)" />
+            <circle cx="154" cy="40" r="0.95" fill="hsl(42 85% 75%)" />
+            <circle cx="48" cy="44" r="0.8" fill="hsl(40 90% 90%)" />
+            <circle cx="178" cy="118" r="0.7" fill="hsl(285 70% 80%)" />
+          </g>
+        ) : null}
       </svg>
     </div>
   );

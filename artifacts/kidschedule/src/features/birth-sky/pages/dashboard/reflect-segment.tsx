@@ -10,6 +10,7 @@ import { trackBirthSkyEvent } from "../../lib/analytics";
 import { useReflectionSession } from "../../state/reflection-session";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "../../lib/focus-trap";
 
 type Props = {
   vm: ReflectionSegmentVM;
@@ -47,6 +48,10 @@ export function BirthSkyReflectSegment({
   const promptViewed = useRef<string | null>(null);
   const titleId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(composerRef, composerOpen, () => setComposerOpen(false));
+  useFocusTrap(detailRef, Boolean(detailId), () => setDetailId(null));
 
   useEffect(() => {
     if (vm.status === "loading" || viewed.current) return;
@@ -101,7 +106,7 @@ export function BirthSkyReflectSegment({
   if (vm.status === "loading") {
     return (
       <div data-testid="birth-sky-reflect-loading" role="status" aria-live="polite">
-        <p className="text-sm text-[hsl(40_20%_96%/0.72)]">Loading reflections…</p>
+        <p className="text-sm text-[hsl(40_20%_96%/0.72)]">Opening today’s reflections…</p>
       </div>
     );
   }
@@ -205,9 +210,11 @@ export function BirthSkyReflectSegment({
 
       {composerOpen ? (
         <div
+          ref={composerRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
+          tabIndex={-1}
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-4 sm:items-center"
           data-testid="birth-sky-reflect-composer"
         >
@@ -273,9 +280,11 @@ export function BirthSkyReflectSegment({
 
       {detail ? (
         <div
+          ref={detailRef}
           role="dialog"
           aria-modal="true"
           aria-label="Saved reflection"
+          tabIndex={-1}
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-4 sm:items-center"
           data-testid="birth-sky-reflect-detail"
         >

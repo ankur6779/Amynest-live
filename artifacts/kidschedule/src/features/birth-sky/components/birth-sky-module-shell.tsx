@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AmyAstroCosmicAmbient } from "./cosmic-ambient";
+import { AmyAstroEmblem } from "./amy-astro-emblem";
 import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
 import "../design/amy-astro.css";
 
@@ -70,6 +71,12 @@ export function BirthSkyModuleShell({
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
+          <AmyAstroEmblem
+            size={36}
+            reducedMotion={reduced}
+            interactive={false}
+            className="shrink-0"
+          />
           <h1 className="amy-astro-display amy-astro-gold-text min-w-0 flex-1 text-lg font-semibold tracking-wide">
             {title}
           </h1>
@@ -95,7 +102,7 @@ export function BirthSkyModuleShell({
   );
 }
 
-/** @deprecated Prefer AmyAstroEmblem — kept for seal-host continuity tests. */
+/** Persistent seal uses the same Amy Astro emblem — one visual identity. */
 export function BirthSkyHorizonSeal({
   className,
   size = 96,
@@ -104,33 +111,8 @@ export function BirthSkyHorizonSeal({
   size?: number;
 }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 96 96"
-      className={cn("text-[hsl(42_70%_70%)]", className)}
-      role="img"
-      aria-label={AMY_ASTRO_PRODUCT_NAME}
-      data-testid="birth-sky-horizon-seal"
-    >
-      <circle
-        cx="48"
-        cy="48"
-        r="36"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        opacity="0.85"
-      />
-      <path
-        d="M18 58c10-6 20-9 30-9s20 3 30 9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        opacity="0.9"
-      />
-      <circle cx="48" cy="40" r="4" fill="currentColor" opacity="0.75" />
-    </svg>
+    <div className={cn("inline-flex", className)} data-testid="birth-sky-horizon-seal">
+      <AmyAstroEmblem size={size} interactive={false} />
+    </div>
   );
 }

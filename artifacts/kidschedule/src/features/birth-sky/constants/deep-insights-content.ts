@@ -4,7 +4,10 @@
  * Bump DEEP_INSIGHTS_CONTENT_VERSION when copy structure changes.
  */
 
-export const DEEP_INSIGHTS_CONTENT_VERSION = "amy_astro_insights/3.0.0" as const;
+import { composeChapterClosing } from "../lib/chapter-endings";
+import { moonPhasePhraseLower } from "../lib/sky-copy";
+
+export const DEEP_INSIGHTS_CONTENT_VERSION = "amy_astro_insights/3.2.0" as const;
 
 export type InsightSectionId =
   | "personality"
@@ -217,19 +220,14 @@ function pack(sign: string): SignPack {
 
 function composeLong(
   childName: string,
+  sectionId: string,
   paragraphs: string[],
 ): string {
   const name = childName.trim() || "your child";
   const joined = paragraphs
     .map((p) => p.replace(/\{\{name\}\}/g, name))
     .join("\n\n");
-  const disclaimer =
-    "\n\nThis is for awareness and reflection, not prediction — never diagnosis, never destiny.";
-  const expansion =
-    `\n\nAs ${name} grows, keep a soft notebook of moments: the laugh that arrives without prompting, the silence that means safety, the task they return to when nobody is watching. ` +
-    `One quiet strength that often appears only after trust is the most reliable “chart” you will ever hold. ` +
-    `Use these chapters as lanterns. Keep what feels true in your home; release the rest with kindness.`;
-  return joined + expansion + disclaimer;
+  return joined + composeChapterClosing({ childName: name, sectionId });
 }
 
 export function buildDeepInsightSections(input: {
@@ -250,9 +248,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "personality",
       title: "The Gentle Heart",
-      eyebrow: "Chapter",
+      eyebrow: "Heart & Belonging",
       tags: [sunSign, moonSign, ...(risingSign ? [risingSign] : [])],
-      body: composeLong(name, [
+      body: composeLong(name, "personality", [
         `You may notice a climate around ${name} long before anyone names it. Daylight themes associated with ${sunSign} often feel like this: ${sun.essence}`,
         `The moments when ${name} feels safest often echo ${moonSign} weather. ${moon.warmth} Together, these skies describe a conversation — how they step forward, and how they come home to themselves.`,
         rise
@@ -264,9 +262,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "strengths",
       title: "Lights Already Softly On",
-      eyebrow: "Chapter",
+      eyebrow: "Natural Lights",
       tags: ["Strengths", sunSign],
-      body: composeLong(name, [
+      body: composeLong(name, "strengths", [
         `One quiet strength that often appears around ${sunSign} daylight themes: ${sun.essence}`,
         `You may notice another brilliance in private: ${moon.emotion}`,
         `In daily life, strengths look ordinary before they look legendary — how ${name} recovers, the questions they ask, the kindness nobody scores. Celebrate those. Strength grows in witnessed sunlight, not comparison.`,
@@ -276,9 +274,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "hidden_talents",
       title: "Gifts Waiting in Quiet Rooms",
-      eyebrow: "Chapter",
+      eyebrow: "Quiet Gifts",
       tags: ["Talents", moonSign],
-      body: composeLong(name, [
+      body: composeLong(name, "hidden_talents", [
         `Hidden talents rarely announce themselves with a trumpet. With Moon in ${moonSign}, ${name} may hold gifts that appear first in private: ${moon.learning}`,
         `Sun in ${sunSign} can later give those private gifts a public form — when safety allows. ${sun.warmth}`,
         `Watch for “sideways excellence”: the hobby they return to without prompting, the problem they solve for a sibling, the story they tell in the dark. Those are talent seeds.`,
@@ -288,9 +286,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "learning",
       title: "How Curiosity Begins",
-      eyebrow: "Chapter",
+      eyebrow: "Curiosity & Learning",
       tags: ["Learning", sunSign, moonSign],
-      body: composeLong(name, [
+      body: composeLong(name, "learning", [
         `As ${name} grows, learning will feel less like drills and more like weather. Daylight rhythms (${sunSign}) often prefer: ${sun.learning}`,
         `The moments when learning feels safest often need ${moonSign} conditions: ${moon.learning}`,
         `Design study like a kindness: short arcs, sensory anchors, repair after frustration. If a method produces shame, it is the wrong method for today — not proof they “can’t.”`,
@@ -300,9 +298,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "thinking",
       title: "The Mind's Quiet Path",
-      eyebrow: "Chapter",
+      eyebrow: "Inner Mind",
       tags: ["Thinking"],
-      body: composeLong(name, [
+      body: composeLong(name, "thinking", [
         `Thinking style is the choreography between curiosity and caution. ${sun.essence}`,
         `Internally, Moon in ${moonSign} influences which thoughts feel safe to keep: ${moon.emotion}`,
         `Invite metacognition without interrogation: “What made that click?” “What felt sticky?” Those questions build a thinker who trusts their own process.`,
@@ -311,9 +309,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "communication",
       title: "The Voice They Are Growing Into",
-      eyebrow: "Chapter",
+      eyebrow: "Voice & Expression",
       tags: ["Communication"],
-      body: composeLong(name, [
+      body: composeLong(name, "communication", [
         `${name} communicates in more channels than words — timing, silence, humor, proximity. Sun in ${sunSign} colors expression: ${sun.warmth}`,
         `Moon in ${moonSign} colors what they need to hear to feel received: ${moon.warmth}`,
         `Practice reflective listening: repeat the feeling before the fix. Children who feel accurately heard become adults who speak with less armor.`,
@@ -322,39 +320,48 @@ export function buildDeepInsightSections(input: {
     {
       id: "creativity",
       title: "Where Imagination Lands",
-      eyebrow: "Chapter",
+      eyebrow: "Imagination",
       tags: ["Creativity"],
-      body: composeLong(name, [
-        `Creativity is how ${name} metabolizes the world. With ${moonPhaseLabel.toLowerCase()} Moon themes in the sky story, imagination may ebb and swell like tide — honor both the bright making days and the quiet gathering days.`,
-        `${sun.essence} Give materials before instructions. Let mess be a draft, not a failure.`,
+      body: composeLong(name, "creativity", [
+        `Creativity is how ${name} metabolizes the world. With ${moonPhasePhraseLower(moonPhaseLabel)} themes in the sky story, imagination may ebb and swell like a tide — honor both bright making days and quiet gathering days.`,
+        `Daylight (${sunSign}) often colors what they want to make visible: ${sun.warmth}`,
+        `You may notice real-world sparks: a cardboard castle that becomes a week-long story, a song invented in the bath, a drawing they revise without being asked. Those are creative muscles, not mess metrics.`,
+        `What parents can try: offer materials before instructions — one open tray tonight. Let unfinished work stay available. Praise process (“You kept shaping it”) over polish.`,
+        `Ask yourself: what did ${name} create when nobody was scoring? Protect that greenhouse.`,
       ]),
     },
     {
       id: "leadership",
       title: "Influence Without Force",
-      eyebrow: "Chapter",
+      eyebrow: "Influence",
       tags: ["Leadership"],
-      body: composeLong(name, [
-        `Leadership in childhood is often microscopic: who they include, how they negotiate turns, whether they comfort a friend. Sun in ${sunSign} hints at style: ${sun.essence}`,
-        `Teach leadership as care, not dominance. The sky does not assign a throne — it invites stewardship.`,
+      body: composeLong(name, "leadership", [
+        `Leadership in childhood is usually microscopic: who ${name} includes, how they negotiate turns, whether they comfort a friend after friction. Sun in ${sunSign} may color the style of initiative you notice — not a throne assigned by the sky.`,
+        `You might see it when they invent a fair rule for a game, invite a quieter child in, or refuse a mean joke. Influence can look like care long before it looks like command.`,
+        `What parents can try: praise stewardship out loud (“You made room for them”) more than dominance. Offer tiny captain jobs — carrying the picnic, choosing the playlist, leading a goodbye ritual.`,
+        `Teach that leadership is repair as much as direction: a brave apology after they overstep is also leading.`,
+        `Reflect: where did ${name} lead with kindness this week — even for thirty seconds?`,
       ]),
     },
     {
       id: "relationships",
       title: "Bonds That Soften Them",
-      eyebrow: "Chapter",
+      eyebrow: "Friendships",
       tags: ["Relationships", moonSign],
-      body: composeLong(name, [
-        `Attachment is the first astrology children can feel. Moon in ${moonSign} suggests comfort dialects: ${moon.warmth}`,
-        `Friendships will teach repair. Coach apology as courage, not humiliation.`,
+      body: composeLong(name, "relationships", [
+        `Attachment is often the first sky children can feel. Moon in ${moonSign} suggests comfort dialects you may already recognize: ${moon.warmth}`,
+        `Friendships will teach repair. You may notice playground friction, a single trusted friend over a crowd, or a long quiet after a social day — all valid patterns to meet with patience.`,
+        `What parents can try: practice a two-line invite script for joining play; coach apology as courage, not humiliation; debrief with curiosity (“What felt hard?”) before advice.`,
+        `Keep adult conflict repair visible when safe — ${name}'s nervous system learns that love can bend without breaking.`,
+        `Reflect: which friendship moment felt safe for ${name} this week?`,
       ]),
     },
     {
       id: "emotional",
       title: "The Inner Weather",
-      eyebrow: "Chapter",
+      eyebrow: "Inner Weather",
       tags: ["Emotions", moonSign],
-      body: composeLong(name, [
+      body: composeLong(name, "emotional", [
         `The moments when ${name} feels safest often reveal their emotional sky. With ${moonSign} themes: ${moon.emotion}`,
         `You may notice your own calm becoming their scaffolding. When you stay soft and steady, their nervous system borrows your weather.`,
         `Name feelings early, allow tears without panic, and treat emotional honesty as intelligence — never as inconvenience.`,
@@ -363,32 +370,37 @@ export function buildDeepInsightSections(input: {
     {
       id: "confidence",
       title: "Standing in Their Own Light",
-      eyebrow: "Chapter",
+      eyebrow: "Growing Confidence",
       tags: ["Confidence", sunSign],
-      body: composeLong(name, [
-        `Confidence grows from evidence, not pep talks alone. Sun in ${sunSign} thrives when: ${sun.warmth}`,
-        `Collect proof jars: tiny wins written down. Shame shrinks in the presence of remembered competence.`,
+      body: composeLong(name, "confidence", [
+        `Confidence grows from evidence, not pep talks alone. With ${sunSign} daylight themes, ${name} often brightens when warmth looks like this: ${sun.warmth}`,
+        `You may notice freezes before new rooms — and a glow after a witnessed try. That sequence is normal; it is not stubbornness.`,
+        `What parents can try: preview the doorway (one photo, one sentence, one choice); keep a “proof jar” of tiny wins written down; celebrate effort before outcome every time you can.`,
+        `Shame shrinks in the presence of remembered competence. Revisit last week’s try before asking for a bigger one.`,
+        `Reflect: where did courage look small but real for ${name}?`,
       ]),
     },
     {
       id: "parenting",
       title: "How Love Can Meet Them",
-      eyebrow: "Chapter",
+      eyebrow: "How Love Meets Them",
       tags: ["Parenting"],
-      body: composeLong(name, [
-        `Parenting ${name} well is less about perfect technique and more about accurate attunement. From the Sun–Moon story: protect ${sun.growth.toLowerCase()} while honoring ${moon.growth.toLowerCase()}`,
-        `Practical rhythm: connect before correct; preview transitions; repair quickly after rupture. The sky story supports reflection — you remain the living guide.`,
+      body: composeLong(name, "parenting", [
+        `Parenting ${name} well is less about perfect technique and more about accurate attunement. Daylight (${sunSign}) growth edges sound like this: ${sun.growth}`,
+        `Inner weather (${moonSign}) asks for a different kindness: ${moon.growth}`,
+        `Practical rhythm that often reduces friction: connect before correct; offer two good options; preview transitions; repair quickly after rupture. You remain the living guide — the sky only offers a noticing lens.`,
         daySky
           ? `Day Sky reminder: without birth time, keep Rising interpretations offline. Precision can wait; love cannot.`
           : `With birth time present, Rising themes may inform first impressions — still optional, still non-deterministic.`,
+        `Reflect: which loving move worked with the least force this week?`,
       ]),
     },
     {
       id: "life_purpose",
       title: "Meaning, Not Mandate",
-      eyebrow: "Meaning, not mandate",
+      eyebrow: "Meaning",
       tags: ["Purpose"],
-      body: composeLong(name, [
+      body: composeLong(name, "life_purpose", [
         `Purpose themes are invitations, not assignments. For ${name}, daylight purpose tones echo ${sunSign}: ${sun.essence}`,
         `Inner purpose tones echo ${moonSign}: ${moon.essence}`,
         `Let ${name} collect many possible futures. Purpose clarifies through lived joy and service, not early branding.`,
@@ -397,20 +409,22 @@ export function buildDeepInsightSections(input: {
     {
       id: "career",
       title: "Interest Climates",
-      eyebrow: "Interest climates",
+      eyebrow: "Interest Climates",
       tags: ["Interests"],
-      body: composeLong(name, [
+      body: composeLong(name, "career", [
         `Career talk for children should stay playful. Inclinations are climates of interest — environments where ${name} might feel alive — never a fixed job title written in the stars.`,
-        `Sun in ${sunSign} may enjoy arenas that reward ${sun.learning.toLowerCase()} Moon in ${moonSign} needs workplaces (someday) that respect ${moon.warmth.toLowerCase()}`,
+        `With ${sunSign} daylight themes, learning often sticks when: ${sun.learning}`,
+        `Moon in ${moonSign} hints at the emotional climate that helps curiosity stay open: ${moon.warmth}`,
+        `What parents can try: follow one fascination for a week with zero outcome talk; visit a library shelf, workshop, or outdoor place tied to that interest; ask “What would you teach a younger child?” instead of “What will you become?”`,
         `Today’s job is exposure and curiosity, not specialization under pressure.`,
       ]),
     },
     {
       id: "health_awareness",
       title: "Care, Not Diagnosis",
-      eyebrow: "Care, not diagnosis",
+      eyebrow: "Care Rituals",
       tags: ["Wellbeing"],
-      body: composeLong(name, [
+      body: composeLong(name, "health_awareness", [
         `This section is wellness awareness only — never medical advice or diagnosis. Notice sleep, food rhythm, outdoor light, and nervous-system load.`,
         `Sun/Moon stories remind us that ${name} may need both activation (${sunSign} daylight) and restoration (${moonSign} moonlight). Balance effort with recovery.`,
         `If anything concerns you medically, ask a clinician — the sky is not a doctor.`,
@@ -419,9 +433,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "spiritual",
       title: "Wonder & Meaning",
-      eyebrow: "Wonder & meaning",
+      eyebrow: "Wonder",
       tags: ["Spirit"],
-      body: composeLong(name, [
+      body: composeLong(name, "spiritual", [
         `Spiritual tendency here means capacity for wonder, reverence, and quiet meaning — across any tradition your family holds, or none.`,
         `Moon-phase framing (${moonPhaseLabel}) can be a family ritual metaphor: gathering, fullness, release — never superstition as control.`,
       ]),
@@ -429,9 +443,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "growth",
       title: "Gentle Edges",
-      eyebrow: "Gentle edges",
+      eyebrow: "Gentle Edges",
       tags: ["Growth"],
-      body: composeLong(name, [
+      body: composeLong(name, "growth", [
         `Growth edges are places for compassion, not criticism. Sun growth: ${sun.growth}`,
         `Moon growth: ${moon.growth}`,
         rise ? `Rising growth doorway: ${rise.growth}` : `Rising growth awaits birth time if you choose to add it later.`,
@@ -440,9 +454,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "lucky_symbols",
       title: "Poetic Tokens",
-      eyebrow: "Poetic tokens",
+      eyebrow: "Poetic Tokens",
       tags: ["Symbols"],
-      body: composeLong(name, [
+      body: composeLong(name, "lucky_symbols", [
         `Symbols are poetry, not power objects that guarantee outcomes. Families sometimes enjoy motifs as bonding aesthetics.`,
         `From ${sunSign}: ${sun.symbols.join(", ")}. From ${moonSign}: ${moon.symbols.join(", ")}.`,
         `Use them in art, bedtime stories, or room accents if they delight you — never as fear-based rules.`,
@@ -451,9 +465,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "planet_strengths",
       title: "Where Light Feels Steady",
-      eyebrow: "Dignity language",
+      eyebrow: "Planet Strengths",
       tags: ["Graha", "Cultural"],
-      body: composeLong(name, [
+      body: composeLong(name, "planet_strengths", [
         `In cultural astrology language, “strength” describes symbolic emphasis — not scientific force and not fixed fate.`,
         `Sun in ${sunSign} can be read as a dignified daylight theme when parents notice vitality, pride, and creative heat showing up in healthy ways.`,
         `Moon in ${moonSign} can be read as emotional intelligence strength when care, memory, and bonding are honored.`,
@@ -463,9 +477,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "planet_soft_spots",
       title: "Where Softness Needs Care",
-      eyebrow: "Sensitivity, not weakness",
+      eyebrow: "Planet Soft Spots",
       tags: ["Graha", "Cultural"],
-      body: composeLong(name, [
+      body: composeLong(name, "planet_soft_spots", [
         `Soft spots are places needing more support, not proof of defect. Every chart — and every child — has tender zones.`,
         `For ${name}, soft spots may appear when Sun themes (${sunSign}) meet stress without rest, or when Moon themes (${moonSign}) meet abrupt change.`,
         `Parent move: reduce shame, increase scaffolding, celebrate repair.`,
@@ -474,9 +488,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "house_themes",
       title: "Rooms of a Life",
-      eyebrow: daySky ? "Waiting on birth time" : "Life areas (symbolic)",
+      eyebrow: "Rooms of a Life",
       tags: ["Bhava"],
-      body: composeLong(name, [
+      body: composeLong(name, "house_themes", [
         daySky
           ? `House (bhava) analysis needs a reliable birth time. Your Day Sky remains complete and beautiful without it. If you add time later, house themes can unlock as optional cultural structure — still never destiny.`
           : `With Rising in ${risingSign ?? "—"}, traditional house frameworks may be discussed as symbolic life-area lenses (self, family, learning, creativity, etc.). AmyNest presents this as cultural literacy, not engineered fate.`,
@@ -486,20 +500,20 @@ export function buildDeepInsightSections(input: {
     {
       id: "nakshatra",
       title: "A Lunar Mansion Story",
-      eyebrow: "Lunar mansion poetry",
+      eyebrow: "Moon Messages",
       tags: ["Nakshatra", "Cultural", moonSign],
-      body: composeLong(name, [
+      body: composeLong(name, "nakshatra", [
         `You may hear the word nakshatra — a traditional lunar mansion story keyed to where the Moon rested. AmyNest treats it as cultural poetry, never as scientific proof.`,
-        `With a ${moonPhaseLabel.toLowerCase()} Moon in ${moonSign}, families sometimes use mansion lore as a bedtime metaphor for belonging and rhythm.`,
+        `With a ${moonPhasePhraseLower(moonPhaseLabel)} in ${moonSign}, families sometimes use mansion lore as a bedtime metaphor for belonging and rhythm.`,
         `If a practitioner names a mansion, ask them to translate it into parenting language: What should I notice? What should I never fear? Keep agency in your hands.`,
       ]),
     },
     {
       id: "planet_combinations",
       title: "How the Lights Converse",
-      eyebrow: "How lights converse",
+      eyebrow: "How Lights Converse",
       tags: [sunSign, moonSign, "Combination"],
-      body: composeLong(name, [
+      body: composeLong(name, "planet_combinations", [
         `One quiet pattern worth watching is the conversation between daylight (${sunSign}) and inner weather (${moonSign}).`,
         `You may notice ${name} looks bold in public and tender in private — or the reverse. Combinations are invitations to curiosity, not equations that lock a personality.`,
         risingSign
@@ -510,9 +524,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "yogas_cultural",
       title: "Pattern Poems",
-      eyebrow: "Pattern poetry",
+      eyebrow: "Pattern Poems",
       tags: ["Yoga", "Cultural"],
-      body: composeLong(name, [
+      body: composeLong(name, "yogas_cultural", [
         `Yogas in classical literature are pattern poems — combinations storytellers used to talk about emphasis. They are not scientific proofs and must never be used to frighten families.`,
         `Amy Astro Intelligence does not invent rare yogas from incomplete data. Instead, we invite you to notice combination themes already present: Sun–Moon dialogue (${sunSign} / ${moonSign})${risingSign ? ` with Rising ${risingSign}` : ""}.`,
         `If a yoga name appears in conversation elsewhere, translate it back into parenting language: support, curiosity, and care.`,
@@ -521,9 +535,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "family_dynamics",
       title: "The Room Around Them",
-      eyebrow: "The room around the child",
+      eyebrow: "Family Connections",
       tags: ["Family", moonSign],
-      body: composeLong(name, [
+      body: composeLong(name, "family_dynamics", [
         `As ${name} grows, the family room becomes part of their sky. ${moon.warmth}`,
         `You may notice that when adults repair quickly after conflict, ${name}'s nervous system learns that love can bend without breaking.`,
         `Parenting suggestions here are gentle: narrate feelings, keep rituals small and reliable, protect sleep like treasure. The chart does not assign family roles — love does.`,
@@ -532,9 +546,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "reflection",
       title: "A Closing Lantern",
-      eyebrow: "A closing lantern",
+      eyebrow: "A Parent's Reflection",
       tags: ["Reflect"],
-      body: composeLong(name, [
+      body: composeLong(name, "reflection", [
         `Before you leave this sky, pause with one question: What did I notice about ${name} this week that no chart could have told me?`,
         `Write it down. That sentence is more precious than any yoga name.`,
         `Return when you need wonder. Leave when you need simplicity. Both are wise parenting.`,
@@ -543,9 +557,9 @@ export function buildDeepInsightSections(input: {
     {
       id: "life_themes",
       title: "The Longer Story",
-      eyebrow: "The longer story",
+      eyebrow: "Life Themes",
       tags: ["Themes"],
-      body: composeLong(name, [
+      body: composeLong(name, "life_themes", [
         `Zooming out, you may sense recurring themes around ${name}: vitality and identity (${sunSign}), belonging and feeling (${moonSign})${risingSign ? `, first contact with the world (${risingSign})` : ""}.`,
         `Your family’s culture, values, and daily love will write the actual chapters. The sky is a preface — luminous, optional, unfinished on purpose.`,
         `Return to this module when you need wonder. Leave it when you need simplicity. Both are wise.`,

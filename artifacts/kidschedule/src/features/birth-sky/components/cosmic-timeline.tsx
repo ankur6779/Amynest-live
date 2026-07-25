@@ -85,7 +85,7 @@ export function buildDefaultCosmicTimeline(input: {
   return [
     {
       id: "birth",
-      label: "Birth Sky",
+      label: "Amy Astro",
       caption: `The sky when ${childName} arrived — ${moonPhaseLabel} light, ${sunSign} daylight.`,
       active: true,
     },

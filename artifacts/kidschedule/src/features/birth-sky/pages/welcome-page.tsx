@@ -41,11 +41,11 @@ export function BirthSkyWelcomePage({
   return (
     <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-welcome">
       <div className="amy-astro-enter flex flex-col items-center pt-2 text-center">
-        <AmyAstroEmblem size={168} showPhoto />
+        <AmyAstroEmblem size={168} />
         <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.28em] text-[hsl(42_60%_70%/0.75)]">
           {AMY_ASTRO_PRODUCT_NAME}
         </p>
-        <h2 className="amy-astro-display amy-astro-gold-text mt-2 text-[1.85rem] font-semibold leading-tight">
+        <h2 className="amy-astro-display amy-astro-gold-text mt-2 max-w-full truncate px-2 text-[1.85rem] font-semibold leading-tight">
           {title}
         </h2>
         <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[hsl(40_20%_96%/0.45)]">
@@ -87,8 +87,8 @@ export function BirthSkyWelcomePage({
             d: "Animated chart literacy plus long-form intelligence — clearly labeled, never fate.",
           },
           {
-            t: "Chat with Amy",
-            d: "A premium overlay guide who already knows this sky — reflective counsel for parents.",
+            t: "Ask Amy About Their Sky",
+            d: "A trusted guide who already knows this sky — reflective counsel for parents, never fate.",
           },
         ].map((card, i) => (
           <div

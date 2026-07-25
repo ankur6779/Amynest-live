@@ -1,4 +1,10 @@
-import { type ComponentType, lazy, type LazyExoticComponent } from "react";
+import {
+  createElement,
+  type ComponentType,
+  lazy,
+  type LazyExoticComponent,
+} from "react";
+import { StaleChunkUpdatePage } from "@/components/stale-chunk-update-page";
 import {
   failedModuleUrl,
   isStaleChunkError,
@@ -79,6 +85,21 @@ export async function safeImportModule<T>(
 /** lazy() helper for route/page components. */
 export function lazyPage<T extends ComponentType>(
   importFn: () => Promise<{ default: T }>,
+  options?: { label?: string },
 ): LazyExoticComponent<T> {
-  return lazy(() => safeImport(importFn));
+  return lazy(async () => {
+    try {
+      return await safeImport(importFn);
+    } catch (err) {
+      // After cache-bust + reload budget, never throw into AppErrorBoundary —
+      // that caused Astro/Birth Sky "Taking you to a safe page…" loops.
+      if (isStaleChunkError(err)) {
+        const label = options?.label;
+        const Fallback = (() =>
+          createElement(StaleChunkUpdatePage, { label })) as unknown as T;
+        return { default: Fallback };
+      }
+      throw err;
+    }
+  });
 }

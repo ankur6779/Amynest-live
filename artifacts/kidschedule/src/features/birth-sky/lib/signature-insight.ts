@@ -3,6 +3,8 @@
  * Chart-informed noticing language only; never predictive.
  */
 
+import { moonPhasePhraseLower, withIndefiniteArticle } from "./sky-copy";
+
 export type SignatureInsightInput = {
   childName: string;
   sunSign: string;
@@ -90,7 +92,7 @@ export function buildCosmicPortrait(input: SignatureInsightInput): CosmicPortrai
       sentence: `Belonging (${input.moonSign}) may steady ${child} before bravery.`,
     },
     {
-      paragraph: `If you listen closely to ${child}'s sky…\n\n${input.sunSign} light meets a ${input.moonPhaseLabel.toLowerCase()} Moon — wonder often arrives before words.\nThey notice.\nThen they name what they love.`,
+      paragraph: `If you listen closely to ${child}'s sky…\n\n${input.sunSign} light meets ${withIndefiniteArticle(moonPhasePhraseLower(input.moonPhaseLabel))} — wonder often arrives before words.\nThey notice.\nThen they name what they love.`,
       sentence: `Wonder arrives before words for ${child} — notice first, then name what they love.`,
     },
     {
@@ -127,7 +129,7 @@ export function buildCosmicPortrait(input: SignatureInsightInput): CosmicPortrai
       ? "Rising waits softly — their Day Sky remains complete."
       : `Rising ${input.risingSign} may feel like a soft doorway into new rooms.`;
 
-  const currentSkyInfluence = `In their birth chart: a ${input.moonPhaseLabel.toLowerCase()} Moon in ${input.moonSign}, with ${input.sunSign} as daylight themes. ${risingBit} These are birth-sky facts for reflection — not today's live weather.`;
+  const currentSkyInfluence = `In their birth chart: ${withIndefiniteArticle(moonPhasePhraseLower(input.moonPhaseLabel))} in ${input.moonSign}, with ${input.sunSign} as daylight themes. ${risingBit} These are birth-sky facts for reflection — not today's live weather.`;
 
   const amyReflection = `I notice ${child}'s chart favors presence over pressure. When you meet them where curiosity begins — not where mastery ends — something tender opens. This is a lens for love, never a map of fate.`;
 

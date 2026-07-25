@@ -1,0 +1,390 @@
+{
+  "finishedAt": "2026-07-25T20:10:52.438Z",
+  "sprint": "ai-router-optimization-telemetry",
+  "prompts": 100,
+  "targetMix": {
+    "fast": "60-75%",
+    "reasoning": "25-40%"
+  },
+  "targetMet": true,
+  "before": {
+    "fastPct": 0.31,
+    "reasoningPct": 0.69,
+    "perMessageAvgUsd": 0.0056
+  },
+  "after": {
+    "fastPct": 0.72,
+    "reasoningPct": 0.28,
+    "fast": 72,
+    "reasoning": 28,
+    "byReason": {
+      "simple": 43,
+      "default_fast": 15,
+      "score:emotional": 4,
+      "score:reasoning": 6,
+      "score:parenting": 5,
+      "reflection": 7,
+      "keepsake": 5,
+      "quick_followup": 14,
+      "stickiness_deep_thread": 1
+    },
+    "perMessageAvgUsd": 0.00316,
+    "costReductionPct": 43.6
+  },
+  "analytics": {
+    "sampleSize": 100,
+    "modelUsagePct": {
+      "fast": 0.72,
+      "reasoning": 0.28
+    },
+    "modelUsageCount": {
+      "fast": 72,
+      "reasoning": 28
+    },
+    "averageLatencyMs": 1180,
+    "averageCostUsd": 0.003159,
+    "averageInputTokens": 3000,
+    "averageOutputTokens": 370,
+    "escalationFrequency": 0.27,
+    "escalationCount": 27,
+    "mostCommonEscalationReasons": [
+      {
+        "reason": "reflection",
+        "count": 7
+      },
+      {
+        "reason": "score:reasoning",
+        "count": 6
+      },
+      {
+        "reason": "score:parenting",
+        "count": 5
+      },
+      {
+        "reason": "keepsake",
+        "count": 5
+      },
+      {
+        "reason": "score:emotional",
+        "count": 4
+      }
+    ],
+    "mostExpensiveConversations": [
+      {
+        "conversationId": "sim-5",
+        "estimatedCostUsd": 0.0298,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-7",
+        "estimatedCostUsd": 0.0298,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-4",
+        "estimatedCostUsd": 0.02384,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-8",
+        "estimatedCostUsd": 0.02384,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-14",
+        "estimatedCostUsd": 0.02384,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-19",
+        "estimatedCostUsd": 0.02384,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-24",
+        "estimatedCostUsd": 0.02384,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-6",
+        "estimatedCostUsd": 0.01192,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-10",
+        "estimatedCostUsd": 0.01192,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-13",
+        "estimatedCostUsd": 0.01192,
+        "turns": 4
+      }
+    ],
+    "longestConversations": [
+      {
+        "conversationId": "sim-8",
+        "conversationLength": 3,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-10",
+        "conversationLength": 3,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-0",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-1",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-2",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-3",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-4",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-5",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-6",
+        "conversationLength": 1,
+        "turns": 4
+      },
+      {
+        "conversationId": "sim-7",
+        "conversationLength": 1,
+        "turns": 4
+      }
+    ],
+    "recommendations": [
+      "72% of requests stayed on GPT-5 Mini (fast tier).",
+      "28% required GPT-5 (reasoning tier).",
+      "Model mix is inside the 60–75% Mini / 25–40% GPT-5 target band.",
+      "1 turns held on GPT-5 via deep-thread stickiness (no quality downgrade mid-conversation).",
+      "14% were short follow-ups kept on Mini — good cost hygiene."
+    ]
+  },
+  "qualityProxy": {
+    "grammarGate": {
+      "pass": true,
+      "note": "pass"
+    },
+    "liveMetricsNote": "Hydration/grounding/practical from prior live-50 v3: hydrate 100%, grounding 100%, practical 92%. Re-run live-100 post-deploy for latency/token actuals + false promotion audit.",
+    "hydrationTarget": 1,
+    "groundingTarget": 0.98,
+    "practicalTarget": 0.9
+  },
+  "costEstimateUsd": {
+    "perMessageAvg": 0.00316,
+    "perUser20Msg": 0.0632,
+    "users100": 6.32,
+    "users1000": 63.18,
+    "users10000": 631.8,
+    "users100000": 6318,
+    "assumptions": {
+      "inputTokens": 3000,
+      "outputTokens": 370,
+      "msgsPerUserMonth": 20,
+      "note": "Projected from optimized router mix + list prices; live tokens refine estimate."
+    }
+  },
+  "sampleRoutes": [
+    {
+      "i": 0,
+      "prompt": "What does the Moon mean?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 1,
+      "prompt": "Explain their Sun sign briefly.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -10
+    },
+    {
+      "i": 2,
+      "prompt": "Summarize today's visit.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 3,
+      "prompt": "Tell me about the Full Moon phase.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 4,
+      "prompt": "What is Rising?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 5,
+      "prompt": "Short answer: Sun in Aries?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -10
+    },
+    {
+      "i": 6,
+      "prompt": "Planet explanation for Moon in Libra.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 7,
+      "prompt": "What does Day Sky mean?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 8,
+      "prompt": "Define Midheaven for parents.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 9,
+      "prompt": "Quickly — what should I notice tonight?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -10
+    },
+    {
+      "i": 10,
+      "prompt": "What is their Sun about?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 11,
+      "prompt": "Explain Moon phase.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 12,
+      "prompt": "Summarize strengths.",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 13,
+      "prompt": "What does this mean for learning?",
+      "tier": "fast",
+      "reason": "simple",
+      "confidence": 0.92,
+      "escalated": false,
+      "scoresTotal": -7
+    },
+    {
+      "i": 14,
+      "prompt": "Parenting tip for transitions?",
+      "tier": "fast",
+      "reason": "default_fast",
+      "confidence": 0.8,
+      "escalated": false,
+      "scoresTotal": 0
+    },
+    {
+      "i": 15,
+      "prompt": "Quick follow-up on curiosity.",
+      "tier": "fast",
+      "reason": "default_fast",
+      "confidence": 0.8,
+      "escalated": false,
+      "scoresTotal": 0
+    },
+    {
+      "i": 16,
+      "prompt": "How can I help with their anxiety at school?",
+      "tier": "reasoning",
+      "reason": "score:emotional",
+      "confidence": 0.95,
+      "escalated": true,
+      "scoresTotal": 17
+    },
+    {
+      "i": 17,
+      "prompt": "I'm worried about friendships and how rejected they feel.",
+      "tier": "fast",
+      "reason": "default_fast",
+      "confidence": 0.8,
+      "escalated": false,
+      "scoresTotal": 3.5
+    },
+    {
+      "i": 18,
+      "prompt": "Help me with parenting after meltdowns at bedtime.",
+      "tier": "reasoning",
+      "reason": "score:reasoning",
+      "confidence": 0.7250000000000001,
+      "escalated": true,
+      "scoresTotal": 10.5
+    },
+    {
+      "i": 19,
+      "prompt": "How do I support their confidence before a big school change?",
+      "tier": "reasoning",
+      "reason": "score:reasoning",
+      "confidence": 0.8500000000000001,
+      "escalated": true,
+      "scoresTotal": 13
+    }
+  ]
+}

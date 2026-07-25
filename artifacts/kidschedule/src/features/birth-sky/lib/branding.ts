@@ -10,4 +10,7 @@ export const AMY_ASTRO_SUBLINE =
   "Premium sky intelligence for parents — reflective, optional, never a prediction." as const;
 export const AMY_ASTRO_DISCLAIMER =
   "This is for awareness and reflection, not prediction." as const;
-export const AMY_ASTRO_BRAND_EMBLEM_SRC = "/amy-astro/brand-emblem.png" as const;
+/** Optional static SVG fallback — runtime UI uses inline AmyAstroEmblem. */
+export const AMY_ASTRO_ANIMATED_EMBLEM_SRC = "/amy-astro/amy-astro-animated.svg" as const;
+/** Optional static SVG fallback — runtime UI uses inline AmyAstroCosmicPortrait. */
+export const AMY_ASTRO_COSMIC_PORTRAIT_SRC = "/amy-astro/child-cosmic-portrait.svg" as const;

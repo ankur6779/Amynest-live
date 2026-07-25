@@ -3,7 +3,7 @@
  * Skippable after first view. Reduced motion: brief fade.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AmyAstroCosmicPortrait } from "./cosmic-portrait";
 import {
@@ -14,6 +14,7 @@ import {
   hasSeenRevealCeremony,
   markRevealCeremonySeen,
 } from "../lib/ceremony-storage";
+import { useFocusTrap } from "../lib/focus-trap";
 import "../design/amy-astro.css";
 
 export type CeremonyPhase =
@@ -70,8 +71,20 @@ export function AmyAstroCinematicRevealCeremony({
   const canSkip = useMemo(() => hasSeenRevealCeremony(profileId), [profileId]);
   const [elapsed, setElapsed] = useState(0);
   const [finished, setFinished] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const phase = finished ? "done" : phaseAt(elapsed);
+
+  const skip = () => {
+    if (!canSkip && !reducedMotion && elapsed < 2500) return;
+    setFinished(true);
+    markRevealCeremonySeen(profileId);
+    onComplete();
+  };
+
+  useFocusTrap(rootRef, !finished && phase !== "done", () => {
+    if (canSkip || reducedMotion || elapsed > 2500) skip();
+  });
 
   useEffect(() => {
     if (finished) return;
@@ -93,13 +106,6 @@ export function AmyAstroCinematicRevealCeremony({
     return () => cancelAnimationFrame(raf);
   }, [finished, onComplete, profileId, reducedMotion]);
 
-  const skip = () => {
-    if (!canSkip && !reducedMotion && elapsed < 2500) return;
-    setFinished(true);
-    markRevealCeremonySeen(profileId);
-    onComplete();
-  };
-
   if (finished || phase === "done") return null;
 
   const showStars = reducedMotion || elapsed >= 900;
@@ -113,18 +119,14 @@ export function AmyAstroCinematicRevealCeremony({
 
   return (
     <div
+      ref={rootRef}
       className="amy-astro-root fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden"
       data-testid="amy-astro-reveal-ceremony"
       data-phase={reducedMotion ? "tagline" : phase}
       role="dialog"
       aria-modal="true"
       aria-label="Cosmic blueprint forming"
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && (canSkip || reducedMotion || elapsed > 2500)) {
-          e.preventDefault();
-          skip();
-        }
-      }}
+      tabIndex={-1}
     >
       {/* Deep void */}
       <div className="absolute inset-0 bg-[hsl(228_55%_3%)]" />

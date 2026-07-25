@@ -14,6 +14,7 @@ import type { PlaceLookupResult } from "../../domain/ports/place-lookup-port";
 import { getPlaceLookupPort } from "../../infrastructure/geocoding/resolve-place-lookup";
 import { pushRecentPlace } from "../../infrastructure/geocoding/recent-places";
 import { trackBirthSkyEvent } from "../../lib/analytics";
+import { useFocusTrap } from "../../lib/focus-trap";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -45,6 +46,10 @@ export function BirthSkyEditBirthDetailsPage({
   const [searchLoading, setSearchLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const confirmRef = useRef<HTMLDivElement>(null);
+  const discardRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(confirmRef, confirmOpen, () => setConfirmOpen(false));
+  useFocusTrap(discardRef, discardOpen, () => setDiscardOpen(false));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -307,9 +312,11 @@ export function BirthSkyEditBirthDetailsPage({
 
       {confirmOpen ? (
         <div
+          ref={confirmRef}
           role="dialog"
           aria-modal="true"
           aria-label="Confirm sky update"
+          tabIndex={-1}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
           data-testid="birth-sky-edit-confirm"
         >
@@ -344,8 +351,11 @@ export function BirthSkyEditBirthDetailsPage({
 
       {discardOpen ? (
         <div
+          ref={discardRef}
           role="dialog"
           aria-modal="true"
+          aria-label="Discard changes"
+          tabIndex={-1}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
         >
           <div className="w-full max-w-md rounded-2xl border border-white/12 bg-[hsl(220_28%_12%)] p-5">

@@ -3,6 +3,7 @@
  */
 
 import type { BirthProfile, SkySnapshot } from "../../domain/models/birth-profile";
+import { moonPhasePhrase, withIndefiniteArticle } from "../../lib/sky-copy";
 import { buildRevealViewModel } from "./reveal-vm";
 
 export type CompletenessChip = {
@@ -190,13 +191,13 @@ export function buildSkySegmentVM(snapshot: SkySnapshot): SkySegmentVM {
     {
       key: "sun",
       title: "Sun",
-      body: `You may notice daylight themes glowing through a ${a.sunSign} Sun — vitality, creative heat, the quiet pride of being seen. A noticing lens, never a fixed label.`,
+      body: `You may notice daylight themes glowing through ${withIndefiniteArticle(a.sunSign)} Sun — vitality, creative heat, the quiet pride of being seen. A noticing lens, never a fixed label.`,
       locked: false,
     },
     {
       key: "moon",
       title: "Moon",
-      body: `Your child's emotional world is illuminated by a ${a.moonPhaseLabel} Moon resting in ${a.moonSign}, suggesting comfort often grows through belonging and gentle rhythm.`,
+      body: `Your child's emotional world is illuminated by ${withIndefiniteArticle(moonPhasePhrase(a.moonPhaseLabel))} resting in ${a.moonSign}, suggesting comfort often grows through belonging and gentle rhythm.`,
       locked: false,
     },
   ];
@@ -223,7 +224,7 @@ export function buildSkySegmentVM(snapshot: SkySnapshot): SkySegmentVM {
     cards: cards.slice(0, 3),
     mapAriaLabel: daySky
       ? "Day Sky map showing Sun and Moon. Rising locked without birth time."
-      : "Birth Sky map showing Sun, Moon, and Rising.",
+      : "Amy Astro birth-chart map showing Sun, Moon, and Rising.",
   };
 }
 
@@ -233,7 +234,7 @@ export function buildAstronomySegmentVM(
 ): AstronomySegmentVM {
   const a = snapshot.astronomy;
   const daySky = snapshot.mode === "day_sky";
-  const month = Number(profile.birthDate.slice(5, 7));
+  const month = Number(String(profile.birthDate ?? "").slice(5, 7));
 
   const cards: AstronomyExpandableCard[] = [
     {

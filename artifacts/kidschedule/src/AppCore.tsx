@@ -117,7 +117,9 @@ const StudyPage = lazyPage(() => import("@/pages/study"));
 const SmartMathTricksPage = lazyPage(() => import("@/pages/smart-math-tricks"));
 const AbacusPage = lazyPage(() => import("@/pages/abacus"));
 const HealthLabPage = lazyPage(() => import("@/pages/health-lab"));
-const BirthSkyPage = lazyPage(() => import("@/pages/birth-sky"));
+const BirthSkyPage = lazyPage(() => import("@/pages/birth-sky"), {
+  label: "Amy Astro Intelligence",
+});
 const SpellingPage = lazyPage(() => import("@/pages/spelling"));
 const OlympiadPage = lazyPage(() => import("@/pages/olympiad"));
 const EventPrepPage = lazyPage(() => import("@/pages/event-prep"));

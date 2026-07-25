@@ -3,9 +3,10 @@
  * Blocking first-entry experience — no premium gate.
  */
 
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "../../lib/focus-trap";
 
 type Props = {
   reducedMotion: boolean;
@@ -19,29 +20,18 @@ export function BirthSkyTraditionIntroSheet({
   onAstronomyOnly,
 }: Props) {
   const titleId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = panelRef.current?.querySelector<HTMLElement>("button, [href]");
-    el?.focus();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        // Esc does not silently accept; keep gate until explicit choice.
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  // Escape must not dismiss — parent must choose Accept or Astronomy only.
+  useFocusTrap(rootRef, true);
 
   return (
     <div
+      ref={rootRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      tabIndex={-1}
       className={cn(
         "fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-4 sm:items-center",
         !reducedMotion && "animate-in fade-in duration-300",

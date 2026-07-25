@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BirthSkyModuleShell } from "../../components/birth-sky-module-shell";
 import { trackBirthSkyEvent } from "../../lib/analytics";
@@ -8,6 +8,7 @@ import {
 } from "../../domain/validators/setup-validators";
 import type { SetupDraft } from "../../domain/models/setup-draft";
 import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
+import { useFocusTrap } from "../../lib/focus-trap";
 
 type Props = {
   draft: SetupDraft;
@@ -19,6 +20,8 @@ type Props = {
 export function BirthSkyDatePage({ draft, onChange, onBack, onContinue }: Props) {
   const [showAgeWarn, setShowAgeWarn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ageWarnRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(ageWarnRef, showAgeWarn, () => setShowAgeWarn(false));
 
   useEffect(() => {
     trackBirthSkyEvent("birth_sky.setup_step_viewed", { setup_step: "date" });
@@ -73,9 +76,12 @@ export function BirthSkyDatePage({ draft, onChange, onBack, onContinue }: Props)
 
       {showAgeWarn ? (
         <div
+          ref={ageWarnRef}
           className="mt-6 rounded-xl border border-white/15 bg-white/5 p-4"
           role="dialog"
+          aria-modal="true"
           aria-labelledby="birth-sky-age-warn-title"
+          tabIndex={-1}
           data-testid="birth-sky-age-sanity"
         >
           <p id="birth-sky-age-warn-title" className="font-semibold">

@@ -88,6 +88,26 @@ export function openPremiumKeepsakePrint(input: KeepsakeInput): KeepsakeOpenResu
   <div class="page">
     <div class="stars"></div>
     <div class="inner">
+      <div style="margin:0 auto 10px;width:72px;height:72px;">
+        <svg viewBox="0 0 200 200" width="72" height="72" role="img" aria-label="Amy Astro Intelligence">
+          <defs>
+            <radialGradient id="kNeb" cx="46%" cy="40%" r="58%">
+              <stop offset="0%" stop-color="#fff1c2" stop-opacity=".7"/>
+              <stop offset="30%" stop-color="#c084fc" stop-opacity=".95"/>
+              <stop offset="62%" stop-color="#4c1d95"/>
+              <stop offset="100%" stop-color="#0b1020"/>
+            </radialGradient>
+            <linearGradient id="kGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f0d78a"/><stop offset="50%" stop-color="#c9a24a"/><stop offset="100%" stop-color="#f5efe0"/>
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r="91" fill="none" stroke="url(#kGold)" stroke-width="1.35" opacity=".8"/>
+          <circle cx="100" cy="100" r="74" fill="none" stroke="url(#kGold)" stroke-width=".85" opacity=".4" stroke-dasharray="1.5 5.5"/>
+          <circle cx="100" cy="100" r="46" fill="url(#kNeb)"/>
+          <path d="M109 54c-17 0-32 15-32 36 0 12 5 21 13 27-11 5-18 15-18 28v11h74v-11c0-13-7-23-18-28 8-6 13-15 13-27 0-21-15-36-32-36z" fill="url(#kNeb)"/>
+          <circle cx="109" cy="118" r="3.8" fill="#f0d78a"/>
+        </svg>
+      </div>
       <p class="eyebrow">Amy Astro Intelligence · Signature Edition</p>
       <h1>${escapeHtml(input.childName)}'s Cosmic Keepsake</h1>
       <p class="tag">A luxury portrait of noticing · not prediction</p>

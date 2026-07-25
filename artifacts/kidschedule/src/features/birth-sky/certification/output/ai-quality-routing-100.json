@@ -1,0 +1,86 @@
+{
+  "finishedAt": "2026-07-25T20:05:37.289Z",
+  "prompts": 100,
+  "modelRouting": {
+    "fast": 31,
+    "reasoning": 69,
+    "fastPct": 0.31,
+    "reasoningPct": 0.69,
+    "byReason": {
+      "reflection": 16,
+      "simple": 17,
+      "multi_turn_depth": 23,
+      "quick_followup": 14,
+      "deep": 22,
+      "keepsake": 8
+    }
+  },
+  "grammarGate": {
+    "brokenPatternsFound": [],
+    "pass": true
+  },
+  "chapterReadingSample": [
+    {
+      "id": "personality",
+      "minutes": 1,
+      "words": 175
+    },
+    {
+      "id": "strengths",
+      "minutes": 1,
+      "words": 151
+    },
+    {
+      "id": "hidden_talents",
+      "minutes": 1,
+      "words": 143
+    },
+    {
+      "id": "learning",
+      "minutes": 1,
+      "words": 135
+    },
+    {
+      "id": "thinking",
+      "minutes": 1,
+      "words": 110
+    },
+    {
+      "id": "communication",
+      "minutes": 1,
+      "words": 113
+    },
+    {
+      "id": "creativity",
+      "minutes": 1,
+      "words": 160
+    },
+    {
+      "id": "leadership",
+      "minutes": 1,
+      "words": 161
+    }
+  ],
+  "costEstimateUsd": {
+    "perMessageAvg": 0.0056,
+    "perUser20Msg": 0.112,
+    "users100": 11.2,
+    "users1000": 112.05,
+    "users10000": 1120.48,
+    "assumptions": {
+      "inputTokens": 3000,
+      "outputTokens": 370,
+      "msgsPerUserMonth": 20,
+      "fastModelPricePer1M": {
+        "in": 0.25,
+        "out": 2
+      },
+      "reasoningModelPricePer1M": {
+        "in": 1.25,
+        "out": 10
+      },
+      "note": "Projected from router mix; live latency/hydrate require production stream run."
+    }
+  },
+  "liveMetricsNote": "Hydration/grounding/practical from prior live-50 v3 (deploy 28f19c6b8): hydrate 100%, grounding 100%, practical 92%, moderation 0%. Re-run live-100 after deploy for latency/token actuals."
+}

@@ -69,7 +69,7 @@ export function BirthSkyChildConfirmationPage({
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-[hsl(40_20%_96%/0.55)]">
           Selected
         </p>
-        <p className="mt-2 font-quicksand text-xl font-bold">{child.name}</p>
+        <p className="mt-2 truncate font-quicksand text-xl font-bold">{child.name}</p>
         {child.dob ? (
           <p className="mt-1 text-sm text-[hsl(40_20%_96%/0.65)]">Date on file: {child.dob}</p>
         ) : null}

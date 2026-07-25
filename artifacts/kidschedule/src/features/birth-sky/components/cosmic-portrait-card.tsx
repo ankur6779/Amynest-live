@@ -44,7 +44,7 @@ export function AmyAstroCosmicPortraitCard({
       <p className="relative text-[10px] font-bold uppercase tracking-[0.22em] text-[hsl(42_60%_70%/0.75)]">
         My Child&apos;s Cosmic Portrait
       </p>
-      <h2 className="amy-astro-display amy-astro-gold-text relative mt-1 text-2xl leading-tight">
+      <h2 className="amy-astro-display amy-astro-gold-text relative mt-1 truncate text-2xl leading-tight">
         {childName}
       </h2>
 

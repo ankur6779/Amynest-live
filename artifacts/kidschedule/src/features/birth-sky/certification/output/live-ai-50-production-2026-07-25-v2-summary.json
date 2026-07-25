@@ -1,0 +1,30 @@
+{
+  "previous": {
+    "hydrationConsistencyRate": 0.52,
+    "moderationRate": 0.3,
+    "uniqueModeratedFallbacks": 1,
+    "practicalUsefulnessRate": 0.16,
+    "groundingRate": 0.7,
+    "streamOk": 50
+  },
+  "current": {
+    "hydrationConsistencyRate": 1.0,
+    "moderationRate": 0.26,
+    "uniqueModeratedFallbacks": 1,
+    "practicalUsefulnessRate": 0.22,
+    "groundingRate": 0.74,
+    "streamOk": 50,
+    "conversationId": "15dd20f3-2252-4a1d-a1c6-279c74a83453",
+    "finishedAt": "2026-07-25T19:03:26.655Z",
+    "commitPushed": "580722e74",
+    "note": "Hydration by messageId+retry = 100%. Moderation/practical still on pre-deploy API (identical fallback)."
+  },
+  "delta": {
+    "hydrationConsistencyRate": 0.48,
+    "moderationRate": -0.03999999999999998,
+    "uniqueModeratedFallbacks": 0,
+    "practicalUsefulnessRate": 0.06,
+    "groundingRate": 0.040000000000000036,
+    "streamOk": 0
+  }
+}

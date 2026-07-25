@@ -12,11 +12,13 @@ import type { CompletenessChip, DashboardHeroVM } from "../../application/view-m
 import { trackBirthSkyEvent } from "../../lib/analytics";
 import { AMY_ASTRO_PRODUCT_SHORT } from "../../lib/branding";
 import { buildPersonalizedGreeting } from "../../lib/personalized-greetings";
+import { loadReplyMemory, rememberGreeting } from "../../lib/reply-memory";
 import { cn } from "@/lib/utils";
 import "../../design/amy-astro.css";
 
 type Props = {
   vm: DashboardHeroVM;
+  profileId: string;
   collapsed: boolean;
   onToggleCollapse: () => void;
   onChip: (chip: CompletenessChip) => void;
@@ -34,6 +36,7 @@ type Props = {
 
 export function BirthSkyDashboardHero({
   vm,
+  profileId,
   collapsed,
   onToggleCollapse,
   onChip,
@@ -49,27 +52,32 @@ export function BirthSkyDashboardHero({
   onContinueJourney,
 }: Props) {
   const painted = useRef(false);
-  const greeting = useMemo(
-    () =>
-      buildPersonalizedGreeting({
-        parentFirstName: parentFirstName ?? null,
-        childName: vm.childName,
-        moonPhaseLabel,
-        sunSign,
-        moonSign,
-        daySky: vm.daySky,
-        greetingIndex,
-      }),
-    [
-      parentFirstName,
-      vm.childName,
+  const greeting = useMemo(() => {
+    const mem = loadReplyMemory(profileId);
+    return buildPersonalizedGreeting({
+      parentFirstName: parentFirstName ?? null,
+      childName: vm.childName,
       moonPhaseLabel,
       sunSign,
       moonSign,
-      vm.daySky,
+      daySky: vm.daySky,
       greetingIndex,
-    ],
-  );
+      avoidHellos: mem.lastGreetings,
+    });
+  }, [
+    parentFirstName,
+    vm.childName,
+    profileId,
+    moonPhaseLabel,
+    sunSign,
+    moonSign,
+    vm.daySky,
+    greetingIndex,
+  ]);
+
+  useEffect(() => {
+    rememberGreeting(profileId, greeting.hello);
+  }, [profileId, greeting.hello]);
 
   useEffect(() => {
     if (painted.current) return;
@@ -112,14 +120,14 @@ export function BirthSkyDashboardHero({
             {AMY_ASTRO_PRODUCT_SHORT} · Signature Edition
           </p>
           <p
-            className="amy-astro-display amy-astro-gold-text mt-1.5 text-xl font-semibold leading-snug"
+            className="amy-astro-display amy-astro-gold-text mt-1.5 truncate text-xl font-semibold leading-snug"
             data-testid="amy-astro-personalized-hello"
           >
             {greeting.hello}
           </p>
           {!collapsed ? (
             <>
-              <p className="mt-1.5 text-sm leading-relaxed text-[hsl(40_20%_96%/0.82)]">
+              <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-[hsl(40_20%_96%/0.82)]">
                 {greeting.skyLine}
               </p>
               <p className="mt-1 text-sm leading-relaxed text-[hsl(42_60%_78%/0.9)]">
@@ -136,7 +144,7 @@ export function BirthSkyDashboardHero({
               </p>
             </>
           ) : (
-            <h2 className="amy-astro-display amy-astro-gold-text mt-1 text-lg font-semibold">
+            <h2 className="amy-astro-display amy-astro-gold-text mt-1 truncate text-lg font-semibold">
               {vm.childName}
             </h2>
           )}
@@ -186,7 +194,7 @@ export function BirthSkyDashboardHero({
                 onClick={onAskAmy}
                 data-testid="amy-astro-hero-ask-amy"
               >
-                Chat with Amy
+                Ask Amy About Their Sky
               </button>
             ) : null}
           </div>

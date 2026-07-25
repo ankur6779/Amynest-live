@@ -24,6 +24,7 @@ import { isLastGcsProbeOk } from "../services/staticAudioMonitor.js";
 import { isStaticAudioCircuitOpen } from "../services/staticAudioMetrics.js";
 import { getTtsLatencyDashboard } from "../services/ttsLatencyMetrics.js";
 import { getConvoLatencyDashboard } from "../services/speechConverseMetrics.js";
+import { getBirthSkyRouterDashboard } from "../services/birth-sky/ai-router-telemetry.js";
 import { getAmyTtsModelId, getAmyTtsVoiceId } from "../lib/amy-tts-config.js";
 import { fetchOpenAiTtsStream } from "../services/openaiTtsService.js";
 import { getAdminOpsState } from "../services/admin-ops-store.js";
@@ -202,6 +203,7 @@ router.get("/healthz/tts", (_req, res) => {
       ...getTtsLatencyDashboard(),
       talk_with_amy: getConvoLatencyDashboard(),
     },
+    birthSkyAiRouter: getBirthSkyRouterDashboard(),
   });
 });
 

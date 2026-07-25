@@ -3,10 +3,8 @@
  */
 
 import { getOpenAiClient } from "../ai-runtime.js";
-import {
-  BIRTH_SKY_AI_MODEL_VERSION,
-  BIRTH_SKY_AI_STREAM_TIMEOUT_MS,
-} from "./ai-constants.js";
+import { BIRTH_SKY_AI_STREAM_TIMEOUT_MS } from "./ai-constants.js";
+import { resolveBirthSkyModelCatalog } from "./ai-model-router.js";
 import type { ChatMessage } from "../openai-chat.js";
 
 export type StreamChunk = {
@@ -14,19 +12,41 @@ export type StreamChunk = {
   delta: string;
 };
 
+export type StreamUsage = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+};
+
 export type StreamResult =
-  | { ok: true; text: string; modelVersion: string; timedOut: false }
-  | { ok: false; error: string; timedOut: boolean; text: string; modelVersion: string };
+  | {
+      ok: true;
+      text: string;
+      modelVersion: string;
+      timedOut: false;
+      latencyMs: number;
+      usage: StreamUsage;
+    }
+  | {
+      ok: false;
+      error: string;
+      timedOut: boolean;
+      text: string;
+      modelVersion: string;
+      latencyMs: number;
+      usage: StreamUsage;
+    };
 
 /**
  * Streams OpenAI chat completions. Invokes onChunk for each delta with monotonic sequence.
  */
 export async function streamBirthSkyChat(params: {
   messages: ChatMessage[];
+  /** Routed model id from ai-model-router (required for intelligent routing). */
+  model?: string;
   signal?: AbortSignal;
   onChunk: (chunk: StreamChunk) => void;
 }): Promise<StreamResult> {
-  const modelVersion = BIRTH_SKY_AI_MODEL_VERSION;
+  const modelVersion = params.model?.trim() || resolveBirthSkyModelCatalog().fast;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), BIRTH_SKY_AI_STREAM_TIMEOUT_MS);
   const onAbort = () => controller.abort();
@@ -34,6 +54,21 @@ export async function streamBirthSkyChat(params: {
 
   let sequence = 0;
   let text = "";
+  let usage: StreamUsage = { inputTokens: null, outputTokens: null };
+  const started = Date.now();
+
+  const fail = (
+    error: string,
+    timedOut: boolean,
+  ): StreamResult => ({
+    ok: false,
+    error,
+    timedOut,
+    text,
+    modelVersion,
+    latencyMs: Date.now() - started,
+    usage,
+  });
 
   try {
     const openai = await getOpenAiClient();
@@ -44,6 +79,7 @@ export async function streamBirthSkyChat(params: {
         max_completion_tokens: 500,
         temperature: 0.7,
         stream: true,
+        stream_options: { include_usage: true },
       },
       { signal: controller.signal },
     );
@@ -52,7 +88,14 @@ export async function streamBirthSkyChat(params: {
       if (controller.signal.aborted || params.signal?.aborted) {
         clearTimeout(timer);
         params.signal?.removeEventListener("abort", onAbort);
-        return { ok: false, error: "cancelled", timedOut: false, text, modelVersion };
+        return fail("cancelled", false);
+      }
+      const u = part.usage;
+      if (u) {
+        usage = {
+          inputTokens: u.prompt_tokens ?? null,
+          outputTokens: u.completion_tokens ?? null,
+        };
       }
       const delta = part.choices[0]?.delta?.content ?? "";
       if (!delta) continue;
@@ -64,9 +107,16 @@ export async function streamBirthSkyChat(params: {
     clearTimeout(timer);
     params.signal?.removeEventListener("abort", onAbort);
     if (!text.trim()) {
-      return { ok: false, error: "empty", timedOut: false, text, modelVersion };
+      return fail("empty", false);
     }
-    return { ok: true, text, modelVersion, timedOut: false };
+    return {
+      ok: true,
+      text,
+      modelVersion,
+      timedOut: false,
+      latencyMs: Date.now() - started,
+      usage,
+    };
   } catch (err) {
     clearTimeout(timer);
     params.signal?.removeEventListener("abort", onAbort);
@@ -74,14 +124,11 @@ export async function streamBirthSkyChat(params: {
       err instanceof Error &&
       (err.name === "AbortError" || err.message.includes("aborted"));
     if (params.signal?.aborted && !timedOut) {
-      return { ok: false, error: "cancelled", timedOut: false, text, modelVersion };
+      return fail("cancelled", false);
     }
-    return {
-      ok: false,
-      error: timedOut ? "timeout" : err instanceof Error ? err.message : "stream_error",
+    return fail(
+      timedOut ? "timeout" : err instanceof Error ? err.message : "stream_error",
       timedOut,
-      text,
-      modelVersion,
-    };
+    );
   }
 }
