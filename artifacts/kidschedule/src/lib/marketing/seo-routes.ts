@@ -22,6 +22,7 @@ const STATIC_MARKETING_ROUTES: SeoRouteEntry[] = [
   { path: "/sign-in", changefreq: "monthly", priority: 0.5, prerender: true },
   { path: "/privacy", changefreq: "yearly", priority: 0.4, prerender: true },
   { path: "/terms", changefreq: "yearly", priority: 0.4, prerender: true },
+  { path: "/about", changefreq: "yearly", priority: 0.5, prerender: true },
   { path: "/support", changefreq: "monthly", priority: 0.5, prerender: true },
 ];
 

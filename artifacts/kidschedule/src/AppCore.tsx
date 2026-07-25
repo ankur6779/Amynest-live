@@ -85,6 +85,7 @@ import { openSubscriptionGate } from "@/lib/subscription-gate";
 // when its route is first matched. Suspense fallbacks use the premium splash.
 const PrivacyPolicyPage = lazyPage(() => import("@/pages/privacy"));
 const TermsOfServicePage = lazyPage(() => import("@/pages/terms"));
+const AboutPage = lazyPage(() => import("@/pages/about"));
 const DeleteAccountPage = lazyPage(() => import("@/pages/delete-account"));
 const BillingDisputePage = lazyPage(() => import("@/pages/billing-dispute"));
 const SupportPage = lazyPage(() => import("@/pages/support"));
@@ -865,6 +866,7 @@ function AppRoutes() {
           </Route>
           <Route path="/privacy" component={PrivacyPolicyPage} />
           <Route path="/terms" component={TermsOfServicePage} />
+          <Route path="/about" component={AboutPage} />
           <Route path="/delete-account" component={DeleteAccountPage} />
           <Route path="/billing-dispute" component={BillingDisputePage} />
           <Route path="/support" component={SupportPage} />

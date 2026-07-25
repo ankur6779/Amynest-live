@@ -3,6 +3,10 @@ import type { FeaturePageConfig } from "@/lib/marketing/feature-pages";
 import type { GuideArticle } from "@/lib/marketing/guides-content";
 import type { ProgrammaticPageConfig } from "@/lib/marketing/programmatic-pages";
 import { getEeatAuthor, getEeatReviewer } from "@/lib/marketing/eeat-authors";
+import {
+  LEGAL_ORGANIZATION_NAME,
+  PRODUCT_BRAND_NAME,
+} from "@/lib/marketing/legal-entity";
 
 const ORG_ID = `${SEO_ORIGIN}/#organization`;
 const BRAND_ID = `${SEO_ORIGIN}/#brand`;
@@ -12,9 +16,12 @@ export function buildOrganizationSchema() {
   return {
     "@type": "Organization",
     "@id": ORG_ID,
-    name: "AmyNest AI",
-    alternateName: "AmyNest",
+    name: LEGAL_ORGANIZATION_NAME,
+    legalName: LEGAL_ORGANIZATION_NAME,
+    alternateName: [PRODUCT_BRAND_NAME, "AmyNest"],
     url: SEO_ORIGIN,
+    description:
+      "AmyWorld is the organization behind AmyNest AI. AmyNest AI is a product of AmyWorld, developed and operated by AmyWorld.",
     logo: {
       "@type": "ImageObject",
       url: buildCanonicalUrl("/pwa-icon-512.png"),
@@ -24,7 +31,7 @@ export function buildOrganizationSchema() {
     brand: {
       "@type": "Brand",
       "@id": BRAND_ID,
-      name: "AmyNest AI",
+      name: PRODUCT_BRAND_NAME,
       logo: buildCanonicalUrl("/pwa-icon-512.png"),
     },
     sameAs: [

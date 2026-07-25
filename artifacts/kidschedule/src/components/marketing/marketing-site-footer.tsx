@@ -1,6 +1,10 @@
 import { Link } from "wouter";
 import { FEATURE_PAGES } from "@/lib/marketing/feature-pages";
 import { ALL_GUIDE_ARTICLES } from "@/lib/marketing/guides-content";
+import {
+  OWNERSHIP_OPERATED_LINE,
+  OWNERSHIP_PRODUCT_LINE,
+} from "@/lib/marketing/legal-entity";
 
 export function MarketingSiteFooter() {
   return (
@@ -41,6 +45,11 @@ export function MarketingSiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/about" className="hover:text-white">
+                About
+              </Link>
+            </li>
+            <li>
               <Link href="/privacy" className="hover:text-white">
                 Privacy
               </Link>
@@ -58,9 +67,13 @@ export function MarketingSiteFooter() {
           </ul>
         </div>
       </div>
-      <p className="mx-auto mt-8 max-w-6xl text-center text-xs text-white/40">
-        © {new Date().getFullYear()} AmyNest AI · {ALL_GUIDE_ARTICLES.length} guides for parents
-      </p>
+      <div className="mx-auto mt-8 max-w-6xl space-y-1 text-center text-xs text-white/40">
+        <p>{OWNERSHIP_PRODUCT_LINE}</p>
+        <p>{OWNERSHIP_OPERATED_LINE}</p>
+        <p>
+          © {new Date().getFullYear()} AmyNest AI · {ALL_GUIDE_ARTICLES.length} guides for parents
+        </p>
+      </div>
     </footer>
   );
 }

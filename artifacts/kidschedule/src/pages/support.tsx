@@ -3,6 +3,12 @@ import { useEffect } from "react";
 import { Mail, MessageCircle, CreditCard, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { applySeoMeta } from "@/lib/marketing/canonical-seo";
+import {
+  LEGAL_ORGANIZATION_NAME,
+  OWNERSHIP_OPERATED_LINE,
+  OWNERSHIP_PRODUCT_LINE,
+  PUBLIC_WEBSITE_URL,
+} from "@/lib/marketing/legal-entity";
 
 const SUPPORT_EMAIL = "support@amynest.in";
 
@@ -69,6 +75,32 @@ export default function SupportPage() {
         <h1 className="mb-2 text-3xl font-bold tracking-tight">{t("pages.support.title")}</h1>
         <p className="mb-8 text-muted-foreground">{t("pages.support.subtitle")}</p>
 
+        <section
+          className="mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm"
+          data-testid="contact-organization"
+        >
+          <h2 className="mb-3 text-lg font-semibold">Contact organization</h2>
+          <dl className="space-y-2 text-sm">
+            <div>
+              <dt className="font-medium text-muted-foreground">Organization:</dt>
+              <dd className="text-foreground">{LEGAL_ORGANIZATION_NAME}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-muted-foreground">Website:</dt>
+              <dd>
+                <a
+                  href={PUBLIC_WEBSITE_URL}
+                  className="text-primary underline hover:text-primary/80"
+                >
+                  {PUBLIC_WEBSITE_URL}
+                </a>
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-sm text-muted-foreground">{OWNERSHIP_PRODUCT_LINE}</p>
+          <p className="text-sm text-muted-foreground">{OWNERSHIP_OPERATED_LINE}</p>
+        </section>
+
         <section className="mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -107,6 +139,11 @@ export default function SupportPage() {
         <section className="mb-10 rounded-2xl border border-border bg-muted/40 p-6">
           <h2 className="mb-3 text-lg font-semibold">{t("pages.support.self_service_heading")}</h2>
           <ul className="space-y-2 text-sm">
+            <li>
+              <Link href="/about" className="text-primary hover:underline">
+                About AmyWorld
+              </Link>
+            </li>
             <li>
               <Link href="/feedback" className="text-primary hover:underline">
                 {t("pages.support.send_feedback")}

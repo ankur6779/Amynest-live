@@ -2,12 +2,17 @@ import { Link } from "wouter";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { applySeoMeta } from "@/lib/marketing/canonical-seo";
+import {
+  OWNERSHIP_OPERATED_LINE,
+  OWNERSHIP_PRODUCT_LINE,
+  TERMS_OWNERSHIP_STATEMENT,
+} from "@/lib/marketing/legal-entity";
 const sections = [{
   title: "1. Acceptance of Terms",
   body: `By accessing or using AmyNest AI ("the Service") available at amynest.in, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service. These Terms apply to all visitors, users, and others who access or use the Service.`
 }, {
   title: "2. Description of Service",
-  body: `AmyNest AI is an AI-powered parenting platform that provides personalized routine planning, meal suggestions, child development guidance, behavior tracking, and related tools for parents and guardians. The Service is operated by AmyNest AI, Inc.`
+  body: `AmyNest AI is an AI-powered parenting platform that provides personalized routine planning, meal suggestions, child development guidance, behavior tracking, and related tools for parents and guardians. ${TERMS_OWNERSHIP_STATEMENT} The Service is operated by AmyWorld.`
 }, {
   title: "3. Eligibility",
   body: `You must be at least 18 years old and a parent or legal guardian to use the Service. By using the Service you represent and warrant that you meet these requirements. The Service is not directed to children under 13, and children must not create accounts or use the Service directly.`
@@ -31,7 +36,7 @@ const sections = [{
   body: `You may enter information about your children (such as name, age, and interests) to personalise the Service. You represent that you are the parent or legal guardian of any child whose data you enter. We handle child data in accordance with our Privacy Policy. We do not knowingly allow children to create accounts or submit personal information directly.`
 }, {
   title: "10. Intellectual Property",
-  body: `All content, features, and functionality of the Service — including text, graphics, logos, icons, and software — are the exclusive property of AmyNest AI, Inc. and are protected by applicable intellectual property laws. You may not copy, reproduce, distribute, or create derivative works without our express written permission. Content you create using the Service (such as saved routines) remains yours; you grant us a limited licence to store and process it to deliver the Service.`
+  body: `All content, features, and functionality of the Service — including text, graphics, logos, icons, and software — are the exclusive property of AmyWorld and are protected by applicable intellectual property laws. You may not copy, reproduce, distribute, or create derivative works without our express written permission. Content you create using the Service (such as saved routines) remains yours; you grant us a limited licence to store and process it to deliver the Service.`
 }, {
   title: "11. Privacy",
   body: `Your use of the Service is also governed by our Privacy Policy, available at amynest.in/privacy. By using the Service you consent to the collection and use of your information as described in the Privacy Policy.`
@@ -43,7 +48,7 @@ const sections = [{
   body: `The Service is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, or non-infringement. We do not warrant that the Service will be uninterrupted, error-free, or free of viruses or other harmful components.`
 }, {
   title: "14. Limitation of Liability",
-  body: `To the fullest extent permitted by law, AmyNest AI, Inc. shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of or inability to use the Service, even if we have been advised of the possibility of such damages. Our total liability for any claim arising from the Service shall not exceed the amount you paid us in the 12 months preceding the claim.`
+  body: `To the fullest extent permitted by law, AmyWorld shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of or inability to use the Service, even if we have been advised of the possibility of such damages. Our total liability for any claim arising from the Service shall not exceed the amount you paid us in the 12 months preceding the claim.`
 }, {
   title: "15. Termination",
   body: `We may suspend or terminate your account at any time for violation of these Terms or for any other reason with or without notice. Upon termination, your right to use the Service ceases immediately. You may also delete your account at any time from within the app or by contacting support@amynest.in. Sections 10, 13, 14, and 16 survive termination.`
@@ -104,6 +109,7 @@ export default function TermsOfServicePage() {
           </a>
           {t("screens.terms.intro_after")}
         </p>
+        <p className="my-3 leading-relaxed text-foreground">{TERMS_OWNERSHIP_STATEMENT}</p>
 
         {sections.map(s => <section key={s.title} className="mt-8">
             <h2 className="mb-3 text-xl font-bold text-foreground">{s.title}</h2>
@@ -112,7 +118,11 @@ export default function TermsOfServicePage() {
       </main>
 
       <footer className="border-t border-border bg-card py-6">
-        <p className="text-center text-xs text-muted-foreground">{t("screens.common.copyright")}</p>
+        <div className="space-y-1 text-center text-xs text-muted-foreground">
+          <p>{OWNERSHIP_PRODUCT_LINE}</p>
+          <p>{OWNERSHIP_OPERATED_LINE}</p>
+          <p>{t("screens.common.copyright")}</p>
+        </div>
       </footer>
     </div>;
 }
