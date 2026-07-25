@@ -199,13 +199,24 @@ const STATIC_PAGES = [
     noindex: true,
   },
   {
+    path: "/about",
+    title: "About AmyWorld & AmyNest AI",
+    description:
+      "AmyWorld is the organization behind AmyNest AI — an AI-powered parenting platform for children's growth, learning, health, and development.",
+    keywords: "AmyNest AI, AmyWorld, parenting app, AI parenting platform",
+    h1: "About AmyWorld",
+    subheadline:
+      "AmyWorld is the organization behind AmyNest AI. AmyNest AI is our flagship AI-powered parenting platform designed to help parents support their children's growth, learning, health, and development using responsible artificial intelligence. AmyNest AI is a product of AmyWorld. Developed and operated by AmyWorld. Website: https://www.amynest.in",
+  },
+  {
     path: "/privacy",
     title: "Privacy Policy | AmyNest AI",
     description:
       "How AmyNest AI collects, uses, and protects your family data. Privacy-first parenting app with no ads shown to children.",
     keywords: "AmyNest privacy policy, parenting app privacy, child data protection",
     h1: "Privacy Policy",
-    subheadline: "How AmyNest AI protects your family's data.",
+    subheadline:
+      "Operator: AmyWorld. This website and the AmyNest AI platform are owned and operated by AmyWorld. How AmyNest AI protects your family's data.",
   },
   {
     path: "/terms",
@@ -213,7 +224,8 @@ const STATIC_PAGES = [
     description: "Terms of service for AmyNest AI — the AI-powered parenting app for Indian families.",
     keywords: "AmyNest terms of service, parenting app terms",
     h1: "Terms of Service",
-    subheadline: "Terms governing use of AmyNest AI.",
+    subheadline:
+      "AmyNest AI is a product owned and operated by AmyWorld. Terms governing use of AmyNest AI.",
   },
   {
     path: "/support",
@@ -221,7 +233,8 @@ const STATIC_PAGES = [
     description: "Get help with AmyNest AI — contact support, FAQs, and troubleshooting for the parenting app.",
     keywords: "AmyNest support, parenting app help, contact AmyNest",
     h1: "AmyNest Support",
-    subheadline: "We're here to help with your AmyNest account and app.",
+    subheadline:
+      "Organization: AmyWorld. Website: https://www.amynest.in. AmyNest AI is a product of AmyWorld. Developed and operated by AmyWorld. We're here to help with your AmyNest account and app.",
   },
 ];
 
@@ -231,8 +244,17 @@ function buildJsonLd(page) {
     {
       "@type": "Organization",
       "@id": `${ORIGIN}/#organization`,
-      name: "AmyNest AI",
+      name: "AmyWorld",
+      legalName: "AmyWorld",
+      alternateName: ["AmyNest AI", "AmyNest"],
       url: ORIGIN,
+      description:
+        "AmyWorld is the organization behind AmyNest AI. AmyNest AI is a product of AmyWorld, developed and operated by AmyWorld.",
+      brand: {
+        "@type": "Brand",
+        "@id": `${ORIGIN}/#brand`,
+        name: "AmyNest AI",
+      },
     },
     {
       "@type": "WebPage",
@@ -259,8 +281,12 @@ function buildJsonLd(page) {
       "@type": "Article",
       headline: page.h1 || page.title,
       description: page.description,
-      author: { "@type": "Organization", name: "AmyNest AI" },
-      publisher: { "@type": "Organization", name: "AmyNest AI" },
+      author: { "@type": "Organization", name: "AmyWorld" },
+      publisher: {
+        "@type": "Organization",
+        name: "AmyWorld",
+        brand: { "@type": "Brand", name: "AmyNest AI" },
+      },
       mainEntityOfPage: { "@id": `${canonical}#webpage` },
       inLanguage: "en-IN",
     });
@@ -308,9 +334,12 @@ function buildBreadcrumbs(page) {
 function buildFallbackBody(page) {
   const h1 = page.h1 || page.title;
   const sub = page.subheadline || page.description;
+  const ownership = `<p>AmyNest AI is a product of AmyWorld.</p>
+      <p>Developed and operated by AmyWorld.</p>`;
   return `<main id="seo-static-fallback" style="max-width:720px;margin:0 auto;padding:24px;font-family:system-ui,sans-serif;color:#f5f5f5;background:#0b0b0b">
       <h1>${escapeHtml(h1)}</h1>
       <p>${escapeHtml(sub)}</p>
+      ${ownership}
     </main>`;
 }
 
