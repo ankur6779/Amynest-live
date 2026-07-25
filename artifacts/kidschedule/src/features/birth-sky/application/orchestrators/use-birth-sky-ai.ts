@@ -31,6 +31,10 @@ import {
   stashPendingAiIntent,
 } from "../../infrastructure/repositories/pending-ai-intent-store";
 import { trackBirthSkyEvent } from "../../lib/analytics";
+import {
+  applyPolishedBodies,
+  savePolishedMessage,
+} from "../../lib/polished-message-store";
 
 type Options = {
   authFetch: AuthFetchFn;
@@ -76,6 +80,24 @@ export function useBirthSkyAi(options: Options) {
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestionRef = useRef(DEFAULT_ASK_AMY_QUESTION);
   const bufferRef = useRef(createChunkBuffer());
+  const planRef = useRef<{
+    rhythm: import("../../lib/conversation-intelligence").ResponseRhythm;
+    pattern: import("../../lib/conversation-intelligence").ResponsePattern;
+  } | null>(null);
+  const localMessagesRef = useRef<BirthSkyMessage[]>([]);
+
+  const chartGrounding = useCallback(
+    () => ({
+      childName,
+      sunSign: snapshot.astronomy.sunSign,
+      moonSign: snapshot.astronomy.moonSign,
+      risingSign: snapshot.astronomy.risingSign,
+      moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
+      daySky: snapshot.mode === "day_sky",
+      birthDate: profile.birthDate,
+    }),
+    [childName, profile.birthDate, snapshot],
+  );
 
   const refreshEntitlement = useCallback(async () => {
     const gate = await fetchBirthSkyAiEntitlement(authFetch, profile.profileId);
@@ -129,17 +151,39 @@ export function useBirthSkyAi(options: Options) {
   }, [isPremiumClient, profile.profileId, refreshEntitlement, snapshot.mode]);
 
   const hydrate = useCallback(
-    async (conversationId: string) => {
-      const data = await getBirthSkyConversation(authFetch, conversationId);
+    async (
+      conversationId: string,
+      opts?: { expectMessageId?: string },
+    ) => {
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      let data = await getBirthSkyConversation(authFetch, conversationId);
+      // Read-after-write: retry briefly if the just-streamed message is missing.
+      if (opts?.expectMessageId) {
+        for (let attempt = 0; attempt < 6; attempt++) {
+          if (data.messages.some((m) => m.messageId === opts.expectMessageId)) {
+            break;
+          }
+          await sleep(120 * (attempt + 1));
+          data = await getBirthSkyConversation(authFetch, conversationId);
+        }
+      }
       setActiveId(data.conversation.conversationId);
+      const server = data.messages.map((m) => ({
+        ...m,
+        role: m.role as BirthSkyMessage["role"],
+      }));
+      const locals = localMessagesRef.current.filter(
+        (m) =>
+          m.conversationId === conversationId &&
+          !server.some((s) => s.messageId === m.messageId),
+      );
+      // Re-apply client polish after server hydrate — never show raw server body
+      // when a polished version exists (fixes polish-wipe P0).
       setMessages(
-        data.messages.map((m) => ({
-          ...m,
-          role: m.role as BirthSkyMessage["role"],
-        })),
+        applyPolishedBodies(profile.profileId, [...server, ...locals]),
       );
     },
-    [authFetch],
+    [authFetch, profile.profileId],
   );
 
   const closeAiFlow = useCallback(
@@ -246,13 +290,68 @@ export function useBirthSkyAi(options: Options) {
                   status: "complete",
                   createdAt: new Date().toISOString(),
                 };
+                try {
+                  const intel = await import("../../lib/conversation-intelligence");
+                  const plan = planRef.current ?? {
+                    rhythm: "answer_direct" as const,
+                    pattern: "narrative" as const,
+                  };
+                  const polished = intel.runQualityPass({
+                    profileId: profile.profileId,
+                    body: assistant.body,
+                    question,
+                    chart: chartGrounding(),
+                    rhythm: plan.rhythm,
+                    pattern: plan.pattern,
+                  });
+                  assistant.body = polished.body;
+                  // Persist polish before hydrate so server reload cannot wipe it.
+                  savePolishedMessage(
+                    profile.profileId,
+                    assistant.messageId,
+                    assistant.body,
+                  );
+                  const planets = [
+                    snapshot.astronomy.sunSign ? "Sun" : null,
+                    snapshot.astronomy.moonSign ? "Moon" : null,
+                    snapshot.astronomy.risingSign && snapshot.mode !== "day_sky"
+                      ? "Rising"
+                      : null,
+                  ].filter(Boolean) as string[];
+                  intel.rememberConversationTurn({
+                    profileId: profile.profileId,
+                    question,
+                    reply: assistant.body,
+                    rhythm: plan.rhythm,
+                    pattern: plan.pattern,
+                    planets,
+                  });
+                } catch {
+                  /* ignore */
+                }
+                const userLocal: BirthSkyMessage = {
+                  ...tempUser,
+                  messageId: `user_${data.messageId}`,
+                };
+                // Keep streamed turns in localMessagesRef so a stale hydrate GET
+                // cannot drop the just-rendered assistant (hydration P0).
+                localMessagesRef.current = [
+                  ...localMessagesRef.current.filter(
+                    (m) =>
+                      m.messageId !== assistant.messageId &&
+                      m.messageId !== userLocal.messageId &&
+                      !m.messageId.startsWith("temp_"),
+                  ),
+                  userLocal,
+                  assistant,
+                ];
                 setMessages((prev) => {
                   const withoutTemp = prev.filter((m) => !m.messageId.startsWith("temp_"));
-                  return [
+                  return applyPolishedBodies(profile.profileId, [
                     ...withoutTemp,
-                    { ...tempUser, messageId: `user_${data.messageId}` },
+                    userLocal,
                     assistant,
-                  ];
+                  ]);
                 });
                 setStreamingText("");
                 setMachine("completed");
@@ -286,7 +385,7 @@ export function useBirthSkyAi(options: Options) {
                     });
                   }
                 }
-                await hydrate(conversationId);
+                await hydrate(conversationId, { expectMessageId: data.messageId });
                 await refreshList();
                 setMachine("idle");
               })();
@@ -308,16 +407,34 @@ export function useBirthSkyAi(options: Options) {
                   status: "moderated",
                   createdAt: new Date().toISOString(),
                 };
+                // Moderated fallbacks are already safety text — store as displayed body.
+                savePolishedMessage(profile.profileId, assistant.messageId, assistant.body);
+                const userLocal: BirthSkyMessage = {
+                  ...tempUser,
+                  messageId: `user_${data.messageId}`,
+                };
+                localMessagesRef.current = [
+                  ...localMessagesRef.current.filter(
+                    (m) =>
+                      m.messageId !== assistant.messageId &&
+                      m.messageId !== userLocal.messageId &&
+                      !m.messageId.startsWith("temp_"),
+                  ),
+                  userLocal,
+                  assistant,
+                ];
                 setMessages((prev) => {
                   const withoutTemp = prev.filter((m) => !m.messageId.startsWith("temp_"));
-                  return [
+                  return applyPolishedBodies(profile.profileId, [
                     ...withoutTemp,
-                    { ...tempUser, messageId: `user_${data.messageId}` },
+                    userLocal,
                     assistant,
-                  ];
+                  ]);
                 });
               }
-              void hydrate(conversationId).then(() => {
+              void hydrate(conversationId, {
+                expectMessageId: data.messageId,
+              }).then(() => {
                 setMachine("idle");
               });
             },
@@ -372,6 +489,7 @@ export function useBirthSkyAi(options: Options) {
     },
     [
       authFetch,
+      chartGrounding,
       childName,
       messages.length,
       offline,
@@ -422,6 +540,63 @@ export function useBirthSkyAi(options: Options) {
     const question = composer.trim();
     if (!question) return;
     lastQuestionRef.current = question;
+
+    const intel = await import("../../lib/conversation-intelligence");
+    let planned = intel.planConversationTurn({
+      profileId: profile.profileId,
+      question,
+      chart: chartGrounding(),
+    });
+
+    // Local follow-ups are client-only turns (no entitlement spend).
+    if (planned.kind === "local_guide") {
+      planRef.current = { rhythm: planned.rhythm, pattern: planned.pattern };
+      const conversationId = activeId ?? `local_${profile.profileId}`;
+      const ts = Date.now();
+      const userMsg: BirthSkyMessage = {
+        messageId: `user_local_${ts}`,
+        conversationId,
+        role: "user",
+        body: question,
+        sequence: messages.length + 1,
+        status: "complete",
+        createdAt: new Date().toISOString(),
+      };
+      const polishedLocal = intel.runQualityPass({
+        profileId: profile.profileId,
+        body: planned.body,
+        question,
+        chart: chartGrounding(),
+        rhythm: planned.rhythm,
+        pattern: planned.pattern,
+      });
+      const amyMsg: BirthSkyMessage = {
+        messageId: `local_amy_${ts}`,
+        conversationId,
+        role: "assistant",
+        body: polishedLocal.body,
+        sequence: messages.length + 2,
+        status: "complete",
+        createdAt: new Date().toISOString(),
+      };
+      savePolishedMessage(profile.profileId, amyMsg.messageId, amyMsg.body);
+      localMessagesRef.current = [...localMessagesRef.current, userMsg, amyMsg];
+      setMessages((prev) => [...prev, userMsg, amyMsg]);
+      setComposer("");
+      setMachine("completed");
+      intel.rememberConversationTurn({
+        profileId: profile.profileId,
+        question,
+        reply: polishedLocal.body,
+        rhythm: planned.rhythm,
+        pattern: planned.pattern,
+      });
+      setMachine("idle");
+      return;
+    }
+
+    planRef.current = { rhythm: planned.rhythm, pattern: planned.pattern };
+
     let conversationId = activeId;
     if (!conversationId) {
       setMachine("creating");
@@ -432,14 +607,22 @@ export function useBirthSkyAi(options: Options) {
       );
       conversationId = created.conversationId;
       setActiveId(conversationId);
+      // Re-bind any pre-conversation local turns to the real id.
+      localMessagesRef.current = localMessagesRef.current.map((m) =>
+        m.conversationId.startsWith("local_")
+          ? { ...m, conversationId: conversationId! }
+          : m,
+      );
       await refreshList();
     }
     await runStream(conversationId, question, entryPoint);
   }, [
     activeId,
     authFetch,
+    chartGrounding,
     composer,
     entryPoint,
+    messages.length,
     profile.profileId,
     refreshList,
     runStream,
@@ -484,10 +667,12 @@ export function useBirthSkyAi(options: Options) {
     selectConversation: hydrate,
     newConversation: () => {
       setActiveId(null);
+      localMessagesRef.current = [];
       setMessages([]);
       setStreamingText("");
       setErrorMessage(null);
       setMachine("idle");
+      planRef.current = null;
     },
     setActiveId,
   };

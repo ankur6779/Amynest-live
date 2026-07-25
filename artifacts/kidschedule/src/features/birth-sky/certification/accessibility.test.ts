@@ -45,6 +45,33 @@ describe("IM-7 accessibility static checks", () => {
     expect(read("pages/settings/settings-page.tsx")).toMatch(/useFocusTrap/);
   });
 
+  it("remaining overlays trap focus", () => {
+    expect(read("pages/dashboard/tradition-intro-sheet.tsx")).toMatch(/useFocusTrap/);
+    expect(read("pages/dashboard/tradition-segment.tsx")).toMatch(/useFocusTrap/);
+    expect(read("pages/dashboard/reflect-segment.tsx")).toMatch(/useFocusTrap/);
+    expect(read("components/exploration-delight.tsx")).toMatch(/useFocusTrap/);
+    expect(read("pages/settings/regenerate-overlay.tsx")).toMatch(/useFocusTrap/);
+    expect(read("components/cinematic-reveal-ceremony.tsx")).toMatch(/useFocusTrap/);
+    expect(read("pages/settings/edit-birth-details-page.tsx")).toMatch(/useFocusTrap/);
+    expect(read("pages/setup/date-page.tsx")).toMatch(/useFocusTrap/);
+  });
+
+  it("zero-child setup reaches confirmation empty state", () => {
+    const src = read("pages/birth-sky-app.tsx");
+    expect(src).toMatch(/resolved\.land === "setup"/);
+    expect(src).toMatch(/!selectedChild \|\| !draft/);
+    expect(read("pages/child-confirmation-page.tsx")).toMatch(/birth-sky-no-child/);
+  });
+
+  it("hydrate path re-applies polished assistant bodies", () => {
+    const orch = read("application/orchestrators/use-birth-sky-ai.ts");
+    expect(orch).toMatch(/applyPolishedBodies/);
+    expect(orch).toMatch(/savePolishedMessage/);
+    expect(orch).toMatch(/expectMessageId/);
+    expect(orch).toMatch(/localMessagesRef\.current/);
+    expect(read("lib/polished-message-store.ts")).toMatch(/applyPolishedBodies/);
+  });
+
   it("reduced motion is consulted on dashboard and settings", () => {
     expect(read("pages/dashboard/dashboard-page.tsx")).toMatch(/prefers-reduced-motion/);
     expect(read("pages/settings/settings-page.tsx")).toMatch(/prefers-reduced-motion|Using system Reduced Motion/);

@@ -357,13 +357,18 @@ router.post(
 
       lastStreamAt.set(userId, now);
 
-      const existingMsgs = await db
-        .select({ sequence: birthSkyMessagesTable.sequence })
+      const priorTurns = await db
+        .select({
+          role: birthSkyMessagesTable.role,
+          body: birthSkyMessagesTable.body,
+          sequence: birthSkyMessagesTable.sequence,
+        })
         .from(birthSkyMessagesTable)
         .where(eq(birthSkyMessagesTable.conversationId, conversationId))
         .orderBy(desc(birthSkyMessagesTable.sequence))
-        .limit(1);
-      let nextSeq = (existingMsgs[0]?.sequence ?? 0) + 1;
+        .limit(8);
+
+      let nextSeq = (priorTurns[0]?.sequence ?? 0) + 1;
 
       const userMsgId = randomUUID();
       await db.insert(birthSkyMessagesTable).values({
@@ -404,7 +409,18 @@ router.post(
         contextSchemaVersion: ctx.contextSchemaVersion,
       });
 
-      const assembled = assembleBirthSkyPrompt(ctx as BirthSkyAiContextInput);
+      const recentTurns = [...priorTurns]
+        .reverse()
+        .filter((m) => m.role === "user" || m.role === "assistant")
+        .slice(-5)
+        .map((m) => ({
+          role: m.role as "user" | "assistant",
+          body: m.body,
+        }));
+
+      const assembled = assembleBirthSkyPrompt(ctx as BirthSkyAiContextInput, {
+        recentTurns,
+      });
       // Buffer model tokens server-side — never emit chunks until safety approves.
       const streamResult = await streamBirthSkyChat({
         messages: assembled.messages,
@@ -435,7 +451,9 @@ router.post(
         return;
       }
 
-      const safety = validateBirthSkyAiOutput(streamResult.text);
+      const safety = validateBirthSkyAiOutput(streamResult.text, {
+        fallbackSeed: jobId,
+      });
       if (!safety.ok) {
         const assistantId = randomUUID();
         await db.insert(birthSkyMessagesTable).values({

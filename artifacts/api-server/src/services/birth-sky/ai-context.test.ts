@@ -40,6 +40,37 @@ describe("birth-sky ai context", () => {
     assert.match(blob, /Day Sky/);
     assert.match(blob, /ss_1/);
   });
+
+  it("includes recent conversation turns for continuity", () => {
+    const assembled = assembleBirthSkyPrompt(
+      {
+        contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+        snapshotVersion: "ss_1",
+        engineVersion: "eng_1",
+        mode: "full",
+        timePrecision: "exact",
+        placeProvided: true,
+        sunSign: "Leo",
+        moonSign: "Pisces",
+        moonPhase: "waxing",
+        moonPhaseLabel: "Waxing Crescent",
+        risingSign: "Virgo",
+        childFirstName: "Maya",
+        userQuestion: "Tell me more about belonging.",
+        entryPoint: "reflect",
+      },
+      {
+        recentTurns: [
+          { role: "user", body: "What should I notice?" },
+          { role: "assistant", body: "When I look at Maya's sky, Moon in Pisces softens belonging." },
+        ],
+      },
+    );
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /Recent conversation/);
+    assert.match(blob, /Moon in Pisces/);
+    assert.match(blob, /120–280/);
+  });
 });
 
 describe("birth-sky ai safety", () => {
@@ -62,6 +93,39 @@ describe("birth-sky ai safety", () => {
 
     const willBecome = validateBirthSkyAiOutput("Your child will become a doctor.");
     assert.equal(willBecome.ok, false);
+  });
+
+  it("does not false-positive on poor sleep / rich inner world / ADHD-like language", () => {
+    assert.equal(
+      validateBirthSkyAiOutput("Poor sleep often softens mornings — try a calmer wind-down.").ok,
+      true,
+    );
+    assert.equal(
+      validateBirthSkyAiOutput("A rich inner world shows up in quiet play.").ok,
+      true,
+    );
+    assert.equal(
+      validateBirthSkyAiOutput(
+        "ADHD-like focus swings are common — I am not diagnosing; try a shorter homework block.",
+      ).ok,
+      true,
+    );
+  });
+
+  it("varies safety fallbacks by seed while staying truthful", () => {
+    const a = validateBirthSkyAiOutput("Your child is destined to become a doctor.", {
+      fallbackSeed: "job-a",
+    });
+    const b = validateBirthSkyAiOutput("Your child is destined to become a doctor.", {
+      fallbackSeed: "job-b",
+    });
+    assert.equal(a.ok, false);
+    assert.equal(b.ok, false);
+    if (!a.ok && !b.ok) {
+      assert.notEqual(a.fallback, b.fallback);
+      assert.match(a.fallback, /predict|future|fate|destiny|reflective|sky/i);
+      assert.doesNotMatch(a.fallback, /\b(Sun in|Moon in|Rising in)\b/);
+    }
   });
 
   it("labels tradition when needed", () => {
