@@ -14,6 +14,7 @@ import {
 } from "../../constants/consent";
 import type { SetupDraft } from "../../domain/models/setup-draft";
 import { saveSetupDraft } from "../../infrastructure/repositories/setup-draft-store";
+import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 
 type Props = {
   draft: SetupDraft;
@@ -41,7 +42,7 @@ export function BirthSkyConsentPage({
   const checked = draft.consent.disclaimerAccepted;
 
   return (
-    <BirthSkyModuleShell title="Birth Sky" onBack={onBack} testId="birth-sky-setup-consent">
+    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-consent">
       <h2 className="font-quicksand text-2xl font-bold">Your privacy</h2>
       <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-[hsl(40_20%_96%/0.78)]">
         <li>Private</li>
@@ -55,7 +56,7 @@ export function BirthSkyConsentPage({
         <p>We compute the sky positions from your details.</p>
         <p>Optional cultural stories are labeled as tradition — not science.</p>
         <p>This is reflective and cultural — not a prediction, and not medical or career certainty.</p>
-        <p>You can remove Birth Sky data later in Settings.</p>
+        <p>You can remove Amy Astro Intelligence data later in Settings.</p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -70,7 +71,7 @@ export function BirthSkyConsentPage({
       {sheet ? (
         <div className="mt-4 rounded-xl border border-white/15 bg-white/5 p-4 text-sm" role="dialog">
           {sheet === "privacy" ? (
-            <p>Birth details stay on your account for Birth Sky only. Parent-only. Never for ads.</p>
+            <p>Birth details stay on your account for Amy Astro Intelligence only. Parent-only. Never for ads.</p>
           ) : (
             <p>
               Date, optional time, and place are used to place the sky. Coordinates are not shared with
@@ -138,7 +139,7 @@ export function BirthSkyConsentPage({
       >
         Save for later
       </Button>
-      <p className="sr-only">Creating {childName}&apos;s Birth Sky requires review next.</p>
+      <p className="sr-only">Creating {childName}&apos;s Amy Astro Intelligence requires review next.</p>
     </BirthSkyModuleShell>
   );
 }

@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { BirthSkyModuleShell } from "../components/birth-sky-module-shell";
 import {
   BirthSkyContinuousSeal,
@@ -24,6 +25,9 @@ import {
 import { formationDurationBucket } from "../domain/policies/formation-timing";
 import { trackBirthSkyEvent } from "../lib/analytics";
 import type { SkySnapshot } from "../domain/models/birth-profile";
+import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
+import { AmyAstroCosmicAmbient } from "../components/cosmic-ambient";
+import "../design/amy-astro.css";
 
 type Props = {
   snapshot: SkySnapshot | null;
@@ -57,7 +61,7 @@ export function BirthSkyFormationPage({
   const stageAnnounced = useRef<string | null>(null);
   const completedRef = useRef(false);
   const lastAnnounce = useRef(0);
-  const [liveMessage, setLiveMessage] = useState("Forming their Birth Sky…");
+  const [liveMessage, setLiveMessage] = useState("Forming Amy Astro Intelligence…");
   const [statusIdx, setStatusIdx] = useState(0);
   const reduced = prefersReducedMotion();
   const wallOrigin = useRef(0);
@@ -187,7 +191,7 @@ export function BirthSkyFormationPage({
 
   if (machine.state === "failed") {
     return (
-      <BirthSkyModuleShell title="Birth Sky" onBack={onExit} testId="birth-sky-formation-failed">
+      <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-formation-failed">
         <div className="flex flex-col items-center pt-10 text-center">
           <BirthSkyContinuousSeal
             size={SEAL_SLOT_SIZES.formationFailed}
@@ -233,18 +237,30 @@ export function BirthSkyFormationPage({
 
   return (
     <BirthSkyModuleShell
-      title="Birth Sky"
+      title={AMY_ASTRO_PRODUCT_NAME}
       backDisabled={backDisabled}
       testId="birth-sky-formation"
+      hideTopBar
+      reducedMotion={reduced}
     >
-      <div className="flex flex-col items-center pt-16 text-center">
-        <BirthSkyContinuousSeal
-          size={SEAL_SLOT_SIZES.formation}
-          slotId="seal-formation"
-          className={reduced ? "opacity-90" : undefined}
-        />
+      <div className="relative flex min-h-[70dvh] flex-col items-center justify-center pt-8 text-center">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+          <AmyAstroCosmicAmbient reducedMotion={reduced} living showMeteor={!reduced} />
+        </div>
+        <div
+          className={cn(
+            "relative z-10",
+            !reduced && "amy-astro-pulse-glow amy-astro-float",
+          )}
+        >
+          <BirthSkyContinuousSeal
+            size={SEAL_SLOT_SIZES.formation}
+            slotId="seal-formation"
+            className={reduced ? "opacity-90" : undefined}
+          />
+        </div>
         <p
-          className="mt-8 font-quicksand text-lg font-semibold"
+          className="amy-astro-display relative z-10 mt-8 text-xl text-[hsl(42_75%_82%)]"
           data-testid="birth-sky-formation-copy"
         >
           {copy}
@@ -252,11 +268,24 @@ export function BirthSkyFormationPage({
         <p className="sr-only" aria-live="polite">
           {liveMessage}
         </p>
-        <p className="mt-4 text-xs text-[hsl(40_20%_96%/0.45)]">
+        <p className="relative z-10 mt-4 text-xs uppercase tracking-[0.18em] text-[hsl(40_20%_96%/0.45)]">
           {machine.elapsedMs > 0 && machine.elapsedMs < FORMATION_HARD_TIMEOUT_MS
-            ? "Forming their sky…"
-            : "Beginning…"}
+            ? "Deep space is listening…"
+            : "Entering silence…"}
         </p>
+        {!reduced ? (
+          <div
+            className="relative z-10 mt-8 h-1 w-40 overflow-hidden rounded-full bg-white/10"
+            aria-hidden
+          >
+            <div
+              className="h-full bg-gradient-to-r from-[hsl(275_50%_50%)] to-[hsl(42_70%_55%)] transition-[width] duration-500"
+              style={{
+                width: `${Math.min(100, (machine.visualElapsedMs / 3200) * 100)}%`,
+              }}
+            />
+          </div>
+        ) : null}
       </div>
     </BirthSkyModuleShell>
   );

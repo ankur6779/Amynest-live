@@ -48,6 +48,22 @@ describe("birth-sky ai safety", () => {
     assert.equal(r.ok, false);
   });
 
+  it("allows zodiac Cancer and ordinary will-be parenting language", () => {
+    const zodiac = validateBirthSkyAiOutput(
+      "With Moon in Cancer themes in their sky story, belonging often softens their nervous system — curiosity will be a gift when you stay near.",
+    );
+    assert.equal(zodiac.ok, true);
+
+    const medical = validateBirthSkyAiOutput(
+      "Your child may develop cancer according to this chart.",
+    );
+    assert.equal(medical.ok, false);
+    if (!medical.ok) assert.equal(medical.code, "medical");
+
+    const willBecome = validateBirthSkyAiOutput("Your child will become a doctor.");
+    assert.equal(willBecome.ok, false);
+  });
+
   it("labels tradition when needed", () => {
     const r = validateBirthSkyAiOutput(
       "The nakshatra story speaks of gathering for families.",

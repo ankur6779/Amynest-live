@@ -10,6 +10,7 @@
 import { Button } from "@/components/ui/button";
 import { BirthSkyModuleShell } from "../components/birth-sky-module-shell";
 import type { BirthSkySetupStep } from "../lib/entry-resolver";
+import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
 
 /** @internal IM-0 seam — delete/replace in IM-1 */
 export const BIRTH_SKY_SETUP_BOUNDARY_SEAM = "im0_temporary_milestone_seam" as const;
@@ -57,7 +58,7 @@ export function BirthSkySetupBoundaryPage({ step, onBack }: SetupBoundaryPagePro
   const copy = STEP_COPY[step];
   return (
     <BirthSkyModuleShell
-      title="Birth Sky"
+      title={AMY_ASTRO_PRODUCT_NAME}
       onBack={onBack}
       testId={`birth-sky-setup-boundary-${step}`}
     >

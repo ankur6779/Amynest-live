@@ -190,13 +190,13 @@ export function buildSkySegmentVM(snapshot: SkySnapshot): SkySegmentVM {
     {
       key: "sun",
       title: "Sun",
-      body: `In ${a.sunSign} — the Sun’s place on the ecliptic that day.`,
+      body: `You may notice daylight themes glowing through a ${a.sunSign} Sun — vitality, creative heat, the quiet pride of being seen. A noticing lens, never a fixed label.`,
       locked: false,
     },
     {
       key: "moon",
       title: "Moon",
-      body: `${a.moonPhaseLabel} in ${a.moonSign}.`,
+      body: `Your child's emotional world is illuminated by a ${a.moonPhaseLabel} Moon resting in ${a.moonSign}, suggesting comfort often grows through belonging and gentle rhythm.`,
       locked: false,
     },
   ];
@@ -205,14 +205,14 @@ export function buildSkySegmentVM(snapshot: SkySnapshot): SkySegmentVM {
     cards.push({
       key: "rising",
       title: "Rising",
-      body: `${a.risingSign} on the eastern horizon at birth time.`,
+      body: `As they meet a room, Rising ${a.risingSign} can feel like a soft doorway — how others first greet them. Measured astronomy, offered for reflection.`,
       locked: false,
     });
   } else if (daySky) {
     cards.push({
       key: "rising",
       title: "Rising",
-      body: "Needs birth time — still optional.",
+      body: "Rising waits for birth time — optional anytime. Your Day Sky remains complete and beautiful without it.",
       locked: true,
     });
   }

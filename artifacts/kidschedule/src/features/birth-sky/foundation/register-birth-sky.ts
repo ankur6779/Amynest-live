@@ -5,6 +5,10 @@
  */
 
 import { isBirthSkyEnabled } from "../lib/feature-flags";
+import {
+  AMY_ASTRO_PRODUCT_NAME,
+  AMY_ASTRO_TAGLINE,
+} from "../lib/branding";
 import { BIRTH_SKY_LENS_SDK_VERSION } from "../platform/constants";
 import {
   hasBirthSkyFoundationBootstrappedOnce,
@@ -14,8 +18,8 @@ import { getLens, registerLens, setLensState } from "./lens-registry";
 
 const BIRTH_SKY_METADATA = {
   lensId: "birth_sky",
-  displayName: "Birth Sky",
-  description: "The sky when they arrived",
+  displayName: AMY_ASTRO_PRODUCT_NAME,
+  description: AMY_ASTRO_TAGLINE,
   lensVersion: "1.0.0",
   sdkVersion: BIRTH_SKY_LENS_SDK_VERSION,
   capabilities: [

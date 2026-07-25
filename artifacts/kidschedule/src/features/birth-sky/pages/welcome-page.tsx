@@ -1,14 +1,19 @@
 /**
- * Welcome Ceremony (Pack 1 Screen 1, Pack 2 Part 1) — IM-0 landing.
+ * Welcome — Amy Astro Intelligence cinematic landing (WOW in 5s).
  */
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  BirthSkyHorizonSeal,
-  BirthSkyModuleShell,
-} from "../components/birth-sky-module-shell";
+import { BirthSkyModuleShell } from "../components/birth-sky-module-shell";
+import { AmyAstroEmblem } from "../components/amy-astro-emblem";
 import { trackBirthSkyEvent } from "../lib/analytics";
+import {
+  AMY_ASTRO_DISCLAIMER,
+  AMY_ASTRO_PRODUCT_NAME,
+  AMY_ASTRO_SUBLINE,
+  AMY_ASTRO_TAGLINE,
+} from "../lib/branding";
+import "../design/amy-astro.css";
 
 type WelcomePageProps = {
   childFirstName?: string;
@@ -30,18 +35,24 @@ export function BirthSkyWelcomePage({
   }, []);
 
   const title = childFirstName
-    ? `The sky when ${childFirstName} arrived`
-    : "The sky when they arrived";
+    ? `${childFirstName}'s cosmic blueprint`
+    : "Your child's cosmic blueprint";
 
   return (
-    <BirthSkyModuleShell title="Birth Sky" onBack={onBack} testId="birth-sky-welcome">
-      <div className="flex flex-col items-center pt-4 text-center">
-        <BirthSkyHorizonSeal size={112} />
-        <h2 className="mt-6 font-quicksand text-[1.75rem] font-bold leading-tight tracking-tight">
+    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-welcome">
+      <div className="amy-astro-enter flex flex-col items-center pt-2 text-center">
+        <AmyAstroEmblem size={168} showPhoto />
+        <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.28em] text-[hsl(42_60%_70%/0.75)]">
+          {AMY_ASTRO_PRODUCT_NAME}
+        </p>
+        <h2 className="amy-astro-display amy-astro-gold-text mt-2 text-[1.85rem] font-semibold leading-tight">
           {title}
         </h2>
+        <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[hsl(40_20%_96%/0.45)]">
+          {AMY_ASTRO_TAGLINE}
+        </p>
         <p className="mt-3 max-w-sm text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">
-          Quiet astronomy for parents — optional, precise, never a prediction.
+          {AMY_ASTRO_SUBLINE}
         </p>
 
         <ul
@@ -51,7 +62,7 @@ export function BirthSkyWelcomePage({
           {TRUST_CHIPS.map((chip) => (
             <li
               key={chip}
-              className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-[hsl(40_20%_96%/0.85)]"
+              className="rounded-full border border-[hsl(42_50%_60%/0.28)] bg-white/5 px-3 py-1 text-xs font-semibold text-[hsl(40_20%_96%/0.85)]"
             >
               {chip}
             </li>
@@ -59,51 +70,66 @@ export function BirthSkyWelcomePage({
         </ul>
       </div>
 
-      <section className="mt-8 space-y-3" aria-labelledby="birth-sky-what-is">
-        <h3 id="birth-sky-what-is" className="text-xs font-bold uppercase tracking-[0.16em] text-[hsl(40_20%_96%/0.55)]">
-          What this is
+      <section className="mt-8 space-y-3" aria-labelledby="amy-astro-what-is">
+        <h3
+          id="amy-astro-what-is"
+          className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(42_60%_70%/0.65)]"
+        >
+          Inside the experience
         </h3>
         {[
-          { t: "Sky map", d: "A calm map of the sky from their birth details." },
-          { t: "Cultural stories", d: "Optional traditional lens — clearly labeled as tradition." },
-          { t: "Parenting reflections", d: "Gentle prompts for parents — not a forecast." },
-        ].map((card) => (
+          {
+            t: "Immersive sky",
+            d: "A living map of the sky from their birth details — motion, depth, calm wonder.",
+          },
+          {
+            t: "Kundli & deep insights",
+            d: "Animated chart literacy plus long-form intelligence — clearly labeled, never fate.",
+          },
+          {
+            t: "Chat with Amy",
+            d: "A premium overlay guide who already knows this sky — reflective counsel for parents.",
+          },
+        ].map((card, i) => (
           <div
             key={card.t}
-            className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left"
+            className={`amy-astro-glass amy-astro-enter rounded-2xl p-4 text-left ${i === 1 ? "amy-astro-enter-delay-1" : ""} ${i === 2 ? "amy-astro-enter-delay-2" : ""}`}
           >
-            <p className="text-sm font-bold">{card.t}</p>
+            <p className="text-sm font-bold text-[hsl(42_70%_78%)]">{card.t}</p>
             <p className="mt-1 text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">{card.d}</p>
           </div>
         ))}
       </section>
 
-      <section className="mt-6 space-y-2" aria-labelledby="birth-sky-what-isnt">
-        <h3 id="birth-sky-what-isnt" className="text-xs font-bold uppercase tracking-[0.16em] text-[hsl(40_20%_96%/0.55)]">
+      <section className="mt-6 space-y-2" aria-labelledby="amy-astro-what-isnt">
+        <h3
+          id="amy-astro-what-isnt"
+          className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(42_60%_70%/0.65)]"
+        >
           What this isn’t
         </h3>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left text-sm leading-relaxed text-[hsl(40_20%_96%/0.78)]">
-          Not fate, not medical advice, and not career or marriage prediction. Birth Sky is
-          reflective and optional.
+        <div className="amy-astro-glass rounded-2xl p-4 text-left text-sm leading-relaxed text-[hsl(40_20%_96%/0.78)]">
+          Not fate, not medical advice, and not career or marriage prediction.{" "}
+          {AMY_ASTRO_DISCLAIMER}
         </div>
       </section>
 
       <div className="mt-10 flex flex-col gap-3">
         <Button
           type="button"
-          className="min-h-12 w-full rounded-xl text-base font-semibold"
+          className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-base font-semibold shadow-[0_0_28px_hsl(275_70%_40%/0.35)]"
           onClick={() => {
             trackBirthSkyEvent("birth_sky.setup_started", { referrer: "parenting_hub" });
             onBegin();
           }}
           data-testid="birth-sky-begin"
         >
-          Begin
+          Begin the journey
         </Button>
         <Button
           type="button"
-          variant="ghost"
-          className="min-h-11 w-full rounded-xl text-[hsl(40_20%_96%/0.8)] hover:bg-white/10 hover:text-[hsl(40_20%_96%)]"
+          variant="secondary"
+          className="min-h-12 w-full rounded-xl border border-white/15 bg-white/5"
           onClick={onNotNow}
           data-testid="birth-sky-not-now"
         >

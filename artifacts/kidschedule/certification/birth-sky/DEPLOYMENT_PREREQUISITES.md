@@ -16,7 +16,7 @@
 | VITE_FIREBASE_PROJECT_ID | ga | .env.development.example | NOT_PROBED | SET | Optional override — firebase-web-defaults.ts ships public web config (not a Birth Sky canary blocker) |
 | OPENAI_API_KEY | AI_INTEGRATIONS_OPENAI_API_KEY | canary | Coolify / Cloudflare / Pack 8 Part 4 | NOT_PROBED | SET | Coolify API + Hetzner AI Worker |
 | RevenueCat (existing premium; no new Birth Sky SKU) | canary | Coolify / Cloudflare / Pack 8 Part 4 | NOT_PROBED | SET | REVENUECAT_* on Coolify — existing premium gate |
-| VITE_FF_BIRTH_SKY | canary | Coolify / Cloudflare / Pack 8 Part 4 | NOT_PROBED | SET | Master kill; default off when unset (feature-flags.ts) |
+| VITE_FF_BIRTH_SKY | canary | .env.development.example | NOT_PROBED | SET | Master kill; default off when unset (feature-flags.ts) |
 | VITE_FF_BIRTH_SKY_HUB_TILE | ga | Coolify / Cloudflare / Pack 8 Part 4 | NOT_PROBED | SET | Follows master |
 | VITE_FF_BIRTH_SKY_DEEP_LINKS | ga | Coolify / Cloudflare / Pack 8 Part 4 | NOT_PROBED | SET | Follows master |
 

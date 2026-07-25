@@ -2,8 +2,9 @@
  * Birth Sky Settings (Pack 7 §1) — Preferences · Birth Details · Privacy · Export · About.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BirthSkyModuleShell } from "../../components/birth-sky-module-shell";
+import { useFocusTrap } from "../../lib/focus-trap";
 import type { BirthProfile, SkySnapshot } from "../../domain/models/birth-profile";
 import type { AuthFetchFn } from "../../infrastructure/api/birth-sky-api";
 import {
@@ -43,6 +44,10 @@ import { trackBirthSkyEvent } from "../../lib/analytics";
 import { Button } from "@/components/ui/button";
 import { BirthSkyEditBirthDetailsPage } from "./edit-birth-details-page";
 import { editBirthDetailsAndRegenerate } from "../../application/orchestrators/edit-and-regenerate";
+import { openPremiumKeepsakePrint } from "../../lib/premium-keepsake";
+import { buildRevealViewModel } from "../../application/view-models/reveal-vm";
+import { buildCosmicPortrait } from "../../lib/signature-insight";
+import { useUser } from "@/lib/firebase-auth-hooks";
 import { BirthSkyRegenerateOverlay } from "./regenerate-overlay";
 
 type Subpage =
@@ -94,7 +99,10 @@ export function BirthSkySettingsPage({
   const [snapshots, setSnapshots] = useState<SnapshotHistoryItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
+  const { user: authUser } = useUser();
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(deleteDialogRef, deleteStep > 0, () => setDeleteStep(0));
   const [deleting, setDeleting] = useState(false);
   const [regenBusy, setRegenBusy] = useState(false);
   const [regenFailed, setRegenFailed] = useState(false);
@@ -205,7 +213,7 @@ export function BirthSkySettingsPage({
 
   const confirmDelete = async () => {
     if (!online) {
-      setToast("Deleting Birth Sky requires a connection.");
+      setToast("Deleting Amy Astro Intelligence requires a connection.");
       return;
     }
     setDeleting(true);
@@ -217,7 +225,7 @@ export function BirthSkySettingsPage({
       trackBirthSkyEvent("birth_sky.delete_completed", { delete_scope: "birth_sky" });
       onDeleted();
     } catch {
-      setToast("Couldn’t delete. Your Birth Sky is unchanged.");
+      setToast("Couldn’t delete. Amy Astro Intelligence is unchanged.");
       setDeleteStep(0);
     } finally {
       setDeleting(false);
@@ -292,7 +300,7 @@ export function BirthSkySettingsPage({
       : sub === "export"
         ? "Export"
         : sub === "about"
-          ? "About Birth Sky"
+          ? "About Amy Astro Intelligence"
           : sub === "snapshots"
             ? "Sky history"
             : sub === "preferences"
@@ -315,7 +323,7 @@ export function BirthSkySettingsPage({
       ) : null}
 
       {sub === "root" ? (
-        <nav aria-label="Birth Sky settings" className="space-y-2">
+        <nav aria-label="Amy Astro Intelligence settings" className="space-y-2">
           <SettingsRow
             label="Preferences"
             onClick={() => setSub("preferences")}
@@ -345,7 +353,7 @@ export function BirthSkySettingsPage({
             testId="birth-sky-settings-snapshots"
           />
           <SettingsRow
-            label="About Birth Sky"
+            label="About Amy Astro Intelligence"
             onClick={() => setSub("about")}
             testId="birth-sky-settings-about"
           />
@@ -391,7 +399,7 @@ export function BirthSkySettingsPage({
       {sub === "privacy" ? (
         <div className="space-y-4" data-testid="birth-sky-privacy">
           <p className="text-sm text-[hsl(40_20%_96%/0.75)]">
-            Birth Sky is parent-only. Birth details are never used for ads. Reflective and
+            Amy Astro Intelligence is parent-only. Birth details are never used for ads. Reflective and
             optional — not a scientific prediction.
           </p>
           <p className="text-xs text-[hsl(40_20%_96%/0.55)]">
@@ -452,7 +460,7 @@ export function BirthSkySettingsPage({
             onClick={() => setDeleteStep(1)}
             data-testid="birth-sky-delete-entry"
           >
-            Delete Birth Sky
+            Delete Amy Astro Intelligence
           </Button>
           <Button
             type="button"
@@ -471,12 +479,60 @@ export function BirthSkySettingsPage({
 
       {sub === "export" ? (
         <div className="space-y-3" data-testid="birth-sky-export">
-          <p className="text-sm text-[hsl(40_20%_96%/0.72)]">
-            Exports include a disclaimer and omit precise location by default.
+          <p className="text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">
+            Preserve their sky as a keepsake — or download structured data. Location stays
+            private by default; every file carries a gentle disclaimer.
           </p>
+          <Button
+            type="button"
+            className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] font-semibold"
+            onClick={() => {
+              const reveal = buildRevealViewModel(profile, snapshot, childName);
+              const portrait = buildCosmicPortrait({
+                childName,
+                sunSign: snapshot.astronomy.sunSign,
+                moonSign: snapshot.astronomy.moonSign,
+                moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
+                risingSign: snapshot.astronomy.risingSign ?? null,
+                daySky: snapshot.mode === "day_sky",
+              });
+              const parentName =
+                authUser?.firstName?.trim() ||
+                authUser?.fullName?.trim()?.split(/\s+/)[0] ||
+                "Parent";
+              const result = openPremiumKeepsakePrint({
+                parentName,
+                childName,
+                birthDate: profile.birthDate,
+                sunSign: snapshot.astronomy.sunSign,
+                moonSign: snapshot.astronomy.moonSign,
+                moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
+                risingSign: snapshot.astronomy.risingSign ?? null,
+                essenceLine: reveal.essenceLine,
+                daySky: snapshot.mode === "day_sky",
+                signatureParagraph: portrait.signatureParagraph,
+                signatureSentence: portrait.signatureSentence,
+                qualities: [...portrait.qualities],
+                parentingReminders: [...portrait.parentingReminders],
+                amyReflection: portrait.amyReflection,
+              });
+              if (result === "printed") {
+                setToast("Keepsake opened for printing.");
+              } else if (result === "downloaded") {
+                setToast(
+                  "Popup blocked — keepsake downloaded as HTML. Open the file to print.",
+                );
+              } else {
+                setToast("Couldn’t prepare the keepsake. Try again or allow popups.");
+              }
+            }}
+            data-testid="amy-astro-premium-keepsake"
+          >
+            Print Amy Astro Keepsake
+          </Button>
           {(
             [
-              ["summary", "Birth Sky summary"],
+              ["summary", "Amy Astro Intelligence summary"],
               ["astronomy", "Astronomy data"],
               ["reflections", "Reflections"],
               ["conversations", "Conversations"],
@@ -485,6 +541,7 @@ export function BirthSkySettingsPage({
             <Button
               key={type}
               type="button"
+              variant="secondary"
               className="min-h-12 w-full rounded-xl"
               disabled={exportBusy || !online}
               onClick={() => void runExport(type)}
@@ -501,7 +558,7 @@ export function BirthSkySettingsPage({
 
       {sub === "about" ? (
         <div className="space-y-3 text-sm" data-testid="birth-sky-about">
-          <p className="font-quicksand text-lg font-bold">Birth Sky</p>
+          <p className="font-quicksand text-lg font-bold">Amy Astro Intelligence</p>
           <p className="text-[hsl(40_20%_96%/0.75)]">
             A gentle, reflective lens on the sky at birth — educational and optional, never a
             prediction of a child’s future.
@@ -584,15 +641,17 @@ export function BirthSkySettingsPage({
 
       {deleteStep > 0 ? (
         <div
+          ref={deleteDialogRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Confirm delete Birth Sky"
+          aria-label="Confirm delete Amy Astro Intelligence"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
           data-testid="birth-sky-delete-dialog"
+          tabIndex={-1}
         >
           <div className="w-full max-w-md rounded-2xl border border-white/12 bg-[hsl(220_28%_12%)] p-5">
             <h3 className="text-lg font-semibold">
-              {deleteStep === 1 ? "Delete Birth Sky?" : "This cannot be undone"}
+              {deleteStep === 1 ? "Delete Amy Astro Intelligence?" : "This cannot be undone"}
             </h3>
             <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.75)]">
               {deleteStep === 1

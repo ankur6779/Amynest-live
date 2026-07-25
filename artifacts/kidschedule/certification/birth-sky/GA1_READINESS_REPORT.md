@@ -4,7 +4,7 @@
 **Ops verify:** birth_sky_ops_verify/1.0.0  
 **App Build:** birth_sky_rc3/1.0.0  
 **Production:** Coolify + Hetzner + Cloudflare + AI Worker  
-**Generated:** 2026-07-25T12:10:00.360Z
+**Generated:** 2026-07-25T15:41:08.583Z
 
 ## Decision
 

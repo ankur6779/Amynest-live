@@ -1,15 +1,19 @@
 /**
- * Dashboard Hero (Pack 4 Part 2). Snapshot-driven; Seal via continuous host.
+ * Signature Edition welcome strip — greeting, completeness, light CTAs.
+ * Cosmic Portrait card holds the emotional centerpiece separately.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   BirthSkyContinuousSeal,
   SEAL_SLOT_SIZES,
 } from "../../components/birth-sky-seal-host";
 import type { CompletenessChip, DashboardHeroVM } from "../../application/view-models/dashboard-vm";
 import { trackBirthSkyEvent } from "../../lib/analytics";
+import { AMY_ASTRO_PRODUCT_SHORT } from "../../lib/branding";
+import { buildPersonalizedGreeting } from "../../lib/personalized-greetings";
 import { cn } from "@/lib/utils";
+import "../../design/amy-astro.css";
 
 type Props = {
   vm: DashboardHeroVM;
@@ -19,6 +23,13 @@ type Props = {
   onRegenerateEntry: () => void;
   onHeroPainted: () => void;
   reducedMotion: boolean;
+  onAskAmy?: () => void;
+  parentFirstName?: string | null;
+  sunSign: string;
+  moonSign: string;
+  moonPhaseLabel: string;
+  greetingIndex: number;
+  onContinueJourney?: () => void;
 };
 
 export function BirthSkyDashboardHero({
@@ -29,8 +40,36 @@ export function BirthSkyDashboardHero({
   onRegenerateEntry,
   onHeroPainted,
   reducedMotion,
+  onAskAmy,
+  parentFirstName,
+  sunSign,
+  moonSign,
+  moonPhaseLabel,
+  greetingIndex,
+  onContinueJourney,
 }: Props) {
   const painted = useRef(false);
+  const greeting = useMemo(
+    () =>
+      buildPersonalizedGreeting({
+        parentFirstName: parentFirstName ?? null,
+        childName: vm.childName,
+        moonPhaseLabel,
+        sunSign,
+        moonSign,
+        daySky: vm.daySky,
+        greetingIndex,
+      }),
+    [
+      parentFirstName,
+      vm.childName,
+      moonPhaseLabel,
+      sunSign,
+      moonSign,
+      vm.daySky,
+      greetingIndex,
+    ],
+  );
 
   useEffect(() => {
     if (painted.current) return;
@@ -48,10 +87,11 @@ export function BirthSkyDashboardHero({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4",
-        collapsed ? "py-3" : "py-5",
+        "amy-astro-glass relative overflow-hidden rounded-3xl px-4",
+        collapsed ? "py-3" : "py-4",
+        !reducedMotion && "amy-astro-enter",
       )}
-      aria-label="Birth Sky hero"
+      aria-label={`Welcome to ${vm.childName}'s universe`}
       data-testid="birth-sky-dashboard-hero"
       data-collapsed={collapsed ? "true" : "false"}
     >
@@ -68,47 +108,57 @@ export function BirthSkyDashboardHero({
           className={reducedMotion ? "opacity-90" : undefined}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[hsl(40_20%_96%/0.55)]">
-            Birth Sky
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(42_60%_70%/0.7)]">
+            {AMY_ASTRO_PRODUCT_SHORT} · Signature Edition
           </p>
-          <h2 className="mt-1 font-quicksand text-xl font-bold tracking-tight">
-            {vm.childName}
-          </h2>
+          <p
+            className="amy-astro-display amy-astro-gold-text mt-1.5 text-xl font-semibold leading-snug"
+            data-testid="amy-astro-personalized-hello"
+          >
+            {greeting.hello}
+          </p>
           {!collapsed ? (
             <>
+              <p className="mt-1.5 text-sm leading-relaxed text-[hsl(40_20%_96%/0.82)]">
+                {greeting.skyLine}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-[hsl(42_60%_78%/0.9)]">
+                {greeting.moonLead}
+              </p>
               <p
-                className="mt-2 text-sm font-semibold leading-snug text-[hsl(40_20%_96%/0.9)]"
+                className="mt-2 text-xs text-[hsl(40_20%_96%/0.45)]"
                 data-testid="birth-sky-hero-essence"
               >
                 {vm.essenceLine}
               </p>
-              <p className="mt-2 truncate text-xs text-[hsl(40_20%_96%/0.6)]">
-                {vm.metaCaption}
-              </p>
-              <p className="mt-2 text-[11px] text-[hsl(40_20%_96%/0.45)]" data-testid="birth-sky-hero-versions">
+              <p className="sr-only" data-testid="birth-sky-hero-versions">
                 Formed {vm.computedAtLabel}
-                <span className="mx-1">·</span>
-                {vm.snapshotVersion}
-                <span className="mx-1">·</span>
-                {vm.engineVersion}
               </p>
             </>
-          ) : null}
+          ) : (
+            <h2 className="amy-astro-display amy-astro-gold-text mt-1 text-lg font-semibold">
+              {vm.childName}
+            </h2>
+          )}
         </div>
       </button>
 
       {!collapsed ? (
         <>
-          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Birth details completeness">
+          <div
+            className="mt-3 flex flex-wrap gap-2"
+            role="group"
+            aria-label="Birth details completeness"
+          >
             {vm.chips.map((chip) => (
               <button
                 key={chip.id}
                 type="button"
                 onClick={() => onChip(chip)}
                 className={cn(
-                  "min-h-10 rounded-full border px-3 text-xs font-semibold",
+                  "amy-astro-ripple min-h-10 rounded-full border px-3 text-xs font-semibold transition-colors",
                   chip.complete
-                    ? "border-white/20 bg-white/10 text-[hsl(40_20%_96%/0.9)]"
+                    ? "border-[hsl(42_50%_60%/0.35)] bg-[hsl(42_40%_30%/0.25)] text-[hsl(42_80%_82%)]"
                     : "border-white/12 bg-transparent text-[hsl(40_20%_96%/0.7)]",
                 )}
                 aria-label={`${chip.label}: ${chip.complete ? "complete" : "missing"}`}
@@ -119,9 +169,30 @@ export function BirthSkyDashboardHero({
               </button>
             ))}
           </div>
+
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              className="amy-astro-ripple min-h-11 flex-1 rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-sm font-semibold text-white shadow-[0_0_24px_hsl(275_70%_40%/0.35)]"
+              onClick={onContinueJourney ?? onAskAmy}
+              data-testid="amy-astro-hero-continue"
+            >
+              {greeting.cta}
+            </button>
+            {onAskAmy ? (
+              <button
+                type="button"
+                className="amy-astro-ripple min-h-11 flex-1 rounded-xl border border-white/15 bg-white/[0.04] text-xs font-semibold text-[hsl(40_30%_85%)]"
+                onClick={onAskAmy}
+                data-testid="amy-astro-hero-ask-amy"
+              >
+                Chat with Amy
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
-            className="mt-3 text-xs font-semibold text-[hsl(40_30%_80%)] underline-offset-2 hover:underline"
+            className="mt-2 text-xs font-semibold text-[hsl(40_30%_80%/0.7)] underline-offset-2 hover:underline"
             onClick={onRegenerateEntry}
             data-testid="birth-sky-regenerate-entry"
           >

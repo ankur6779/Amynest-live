@@ -1,5 +1,6 @@
 /**
  * Reveal view-model builder (Pack 3 Part 4–5). No LLM.
+ * Premium mentor tone; essence line still ≤14 words (contract).
  */
 
 import type { BirthProfile, SkySnapshot } from "../../domain/models/birth-profile";
@@ -33,26 +34,35 @@ export function buildRevealViewModel(
   const { astronomy, mode } = snapshot;
   const phase = astronomy.moonPhaseLabel;
   const sun = astronomy.sunSign;
+  const moon = astronomy.moonSign;
+  const name = childName.trim() || "your child";
 
   let essenceLine =
     mode === "day_sky"
-      ? `A ${phase} lit their Day Sky.`
-      : `Born under a ${sun} Sun, ${phase}.`;
+      ? `A quiet ${phase} held their day.`
+      : `${name}'s sky: ${sun} light, ${phase}.`;
 
   essenceLine = trimWords(essenceLine, 14);
   if (wordCount(essenceLine) > 14) {
-    essenceLine = mode === "day_sky" ? "Their Day Sky still holds meaning." : "Their Birth Sky has formed.";
+    essenceLine =
+      mode === "day_sky" ? "Their Day Sky still holds meaning." : "Their sky has gently formed.";
   }
 
   const essenceCard =
     mode === "day_sky"
       ? {
-          title: "Day Sky",
-          body: "Without an exact time, we map the sky of that day — still meaningful.",
+          title: "A day worth remembering",
+          body:
+            `You may notice how a ${phase.toLowerCase()} can feel like a soft beginning — even without an exact clock time. ` +
+            `This Day Sky keeps the poetry of that civil day intact. Rising waits patiently if you ever choose to add birth time. ` +
+            `Nothing here predicts who ${name} must become; it simply invites you to look with wonder.`,
         }
       : {
-          title: "One fact from their sky",
-          body: `The Moon was ${phase.toLowerCase()} when they arrived.`,
+          title: "One quiet truth from their sky",
+          body:
+            `As ${name} arrived, a ${phase.toLowerCase()} Moon rested in ${moon}, while the Sun offered ${sun} daylight. ` +
+            `You might later notice curiosity, comfort, or courage showing up in ordinary rooms — not as destiny, but as weather you can meet with love. ` +
+            `This is for awareness and reflection, not prediction.`,
         };
 
   const timeLabel =
@@ -73,7 +83,7 @@ export function buildRevealViewModel(
     daySkyBadge: mode === "day_sky" ? "Day Sky · Time unknown" : null,
     risingNote:
       mode === "day_sky"
-        ? "Rising isn’t shown without birth time. You can add it later."
+        ? "Rising stays gently closed without birth time — optional anytime."
         : null,
     childName,
     timePrecisionLabel: timeLabel,

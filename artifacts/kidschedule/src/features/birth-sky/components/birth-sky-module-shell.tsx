@@ -1,10 +1,14 @@
 /**
- * Birth Sky module shell chassis (Pack 1 Part 2) — IM-0 slot structure.
+ * Amy Astro Intelligence module shell — dark luxury chassis.
+ * Internal testids retain birth-sky-* for certification stability.
  */
 
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AmyAstroCosmicAmbient } from "./cosmic-ambient";
+import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
+import "../design/amy-astro.css";
 
 type BirthSkyModuleShellProps = {
   title?: string;
@@ -19,10 +23,18 @@ type BirthSkyModuleShellProps = {
   footer?: ReactNode;
   className?: string;
   testId?: string;
+  reducedMotion?: boolean;
 };
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export function BirthSkyModuleShell({
-  title = "Birth Sky",
+  title = AMY_ASTRO_PRODUCT_NAME,
   onBack,
   children,
   hideTopBar,
@@ -31,19 +43,16 @@ export function BirthSkyModuleShell({
   footer,
   className,
   testId = "birth-sky-module-shell",
+  reducedMotion,
 }: BirthSkyModuleShellProps) {
+  const reduced = reducedMotion ?? prefersReducedMotion();
+
   return (
     <div
-      className={cn(
-        "relative min-h-[100dvh] bg-[hsl(222_40%_8%)] text-[hsl(40_20%_96%)]",
-        className,
-      )}
+      className={cn("amy-astro-root relative min-h-[100dvh]", className)}
       data-testid={testId}
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_20%,hsl(220_40%_18%/0.9),transparent_55%)]"
-        aria-hidden
-      />
+      <AmyAstroCosmicAmbient reducedMotion={reduced} intensity="shell" showMeteor={false} />
 
       {!hideTopBar && (
         <header
@@ -61,7 +70,7 @@ export function BirthSkyModuleShell({
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="min-w-0 flex-1 font-quicksand text-lg font-bold tracking-tight">
+          <h1 className="amy-astro-display amy-astro-gold-text min-w-0 flex-1 text-lg font-semibold tracking-wide">
             {title}
           </h1>
           {topBarEnd ? <div className="shrink-0">{topBarEnd}</div> : null}
@@ -86,7 +95,7 @@ export function BirthSkyModuleShell({
   );
 }
 
-/** Horizon Seal mark (Phase 1 Design Freeze §3) — geometric, non-zodiac. */
+/** @deprecated Prefer AmyAstroEmblem — kept for seal-host continuity tests. */
 export function BirthSkyHorizonSeal({
   className,
   size = 96,
@@ -99,9 +108,9 @@ export function BirthSkyHorizonSeal({
       width={size}
       height={size}
       viewBox="0 0 96 96"
-      className={cn("text-[hsl(40_30%_88%)]", className)}
+      className={cn("text-[hsl(42_70%_70%)]", className)}
       role="img"
-      aria-label="Birth Sky"
+      aria-label={AMY_ASTRO_PRODUCT_NAME}
       data-testid="birth-sky-horizon-seal"
     >
       <circle
@@ -118,10 +127,10 @@ export function BirthSkyHorizonSeal({
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
-        opacity="0.75"
+        strokeLinecap="round"
+        opacity="0.9"
       />
-      <circle cx="48" cy="56" r="7" fill="currentColor" opacity="0.92" />
-      <circle cx="64" cy="38" r="1.5" fill="currentColor" opacity="0.55" />
+      <circle cx="48" cy="40" r="4" fill="currentColor" opacity="0.75" />
     </svg>
   );
 }

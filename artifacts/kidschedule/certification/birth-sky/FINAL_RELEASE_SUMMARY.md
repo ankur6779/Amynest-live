@@ -13,15 +13,33 @@
 
 ## Go / No-Go
 
-- Overall: **HOLD**
+- Engineering: **GO**
+- Internal allowlist canary: **GO**
 - Public canary: **NO-GO**
 - Production GA: **NO-GO**
+- Overall Pack 8 box: **HOLD**
+
+## Operational ownership (founder-operated)
+
+| Role | Assignee |
+| --- | --- |
+| Release Manager | Ankur Raman |
+| Engineering Owner | Ankur Raman |
+| Rollback Owner | Ankur Raman |
+| Incident Commander | Ankur Raman |
+| Feature Flag Owner | Ankur Raman |
+| Database Owner | Ankur Raman |
+| Encryption Key Owner | Ankur Raman |
+
+Part 9 Release Manager signature: **SIGNED** (Ankur Raman, 2026-07-25).
 
 ## Package index
 
 - GA_READINESS_REPORT.md
 - GO_NO_GO.md
 - WAIVER_REGISTER.md
+- OPERATIONAL_OWNERSHIP.md
+- GA2_READINESS_REPORT.md
 - CANARY_PLAN.md
 - ROLLBACK_CHECKLIST.md
 - ROLLBACK_RUNBOOK.md
@@ -31,4 +49,4 @@
 
 ## Stop line
 
-RC3 complete. **Do not deploy. Do not begin GA.**
+Internal allowlist canary is **GO**. Public canary and Production GA remain **NO-GO**. Flag enablement is an explicit Release Manager action (not performed by this package).

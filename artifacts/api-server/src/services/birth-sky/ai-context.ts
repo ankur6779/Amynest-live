@@ -82,10 +82,13 @@ export function assembleBirthSkyPrompt(input: BirthSkyAiContextInput): Assembled
     input.userQuestion.trim(),
     "",
     `Child first name: ${name}`,
-    "Structured sky context (keys only):",
+    "Module: Amy Astro Intelligence (internal id: birth-sky)",
+    "Structured sky context (keys only — do not invent missing fields):",
     facts.join("\n"),
     "",
-    "Respond helpfully within Birth Sky safety rules.",
+    "Respond as Amy: premium consultant depth (≈350–650 words), grounded in the sky context,",
+    "emotionally warm, practical for parents, and strictly within Amy Astro safety rules",
+    "(awareness & reflection — never prediction, diagnosis, or destiny).",
   ].join("\n");
 
   return {

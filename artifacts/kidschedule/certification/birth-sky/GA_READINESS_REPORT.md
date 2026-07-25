@@ -28,12 +28,14 @@
 | G-ENV-TARGET | Environment | Deploy-target env verified (DB/key/Firebase/RC/OpenAI) | PASS | accepted_risk | SRE | DEPLOYMENT_PREREQUISITES.md / ENV_VERIFICATION.md — Coolify (Hetzner) + Cloudflare; not Render |
 | G-KEY | Environment | BIRTH_SKY_FIELD_ENCRYPTION_KEY on Coolify deploy target | PASS | accepted_risk | SRE/Security | Required on Coolify API before canary with sealed server fields |
 | G-OPS-DASH | Operations | Pack 11 dashboards/alerts armed | WAIVED | waiver | SRE/Release Manager | WAIVER_REGISTER W-OPS-DASH — core-only train |
-| G-PART9 | Governance | Part 9 human sign-off complete | PENDING | governance_blocker | Release Manager | Conformance Checklist Part 9 signature table |
+| G-PART9 | Governance | Part 9 human sign-off complete | PASS | accepted_risk | Release Manager | WAIVER_REGISTER.md — Release Manager final signature SIGNED |
 
 ## GA blockers summary
 
-- Governance: Part 9 PENDING
-- Operational: staging live E2E, deploy-target env, encryption key, Android signed, physical a11y
+- Governance: Part 9 **SIGNED** by Ankur Raman (2026-07-25)
+- Internal allowlist: **GO**
+- Public canary / Production GA: **NO-GO** / **NO-GO**
+- Remaining for public/GA: staging live E2E (W-STAGING-LIVE), Android signed, physical a11y, Pack 11 dashboards
 - Waivers: see WAIVER_REGISTER.md
 
-**GA readiness:** NOT READY (overall HOLD)
+**GA readiness:** NOT READY for Production GA (overall HOLD; internal allowlist GO)

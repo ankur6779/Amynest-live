@@ -1,6 +1,6 @@
 {
   "appBuild": "birth_sky_rc3/1.0.0",
-  "generatedAt": "2026-07-25T12:10:19.400Z",
+  "generatedAt": "2026-07-25T15:41:11.201Z",
   "conformance": {
     "total": 64,
     "pass": 52,
@@ -202,21 +202,20 @@
       "id": "G-PART9",
       "area": "Governance",
       "item": "Part 9 human sign-off complete",
-      "status": "PENDING",
-      "category": "governance_blocker",
-      "evidence": "Conformance Checklist Part 9 signature table",
+      "status": "PASS",
+      "category": "accepted_risk",
+      "evidence": "WAIVER_REGISTER.md — Release Manager final signature SIGNED",
       "owner": "Release Manager"
     }
   ],
   "decision": {
     "engineering": "GO",
-    "internalAllowlistCanary": "CONDITIONAL_GO",
+    "internalAllowlistCanary": "GO",
     "publicCanary": "NO-GO",
     "productionGa": "NO-GO",
     "overall": "HOLD",
     "rationale": [
       "Engineering FAIL count is 0; P1 encryption and regression PASS.",
-      "Governance blockers open: G-PART9 (Part 9 unsigned).",
       "Operational items open/pending: G-STAGING-E2E:WAIVED, G-AND-SIGNED:WAIVED.",
       "Overall Pack 8 decision box: HOLD. Do not deploy from this package alone."
     ]
@@ -289,7 +288,7 @@
     {
       "name": "VITE_FF_BIRTH_SKY",
       "requiredFor": "canary",
-      "contractSource": "Coolify / Cloudflare / Pack 8 Part 4",
+      "contractSource": ".env.development.example",
       "localPresence": "NOT_PROBED",
       "productionPresence": "SET",
       "notes": "Master kill; default off when unset (feature-flags.ts)"

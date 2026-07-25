@@ -1,7 +1,7 @@
 # Birth Sky ROLLBACK_CHECKLIST
 
 **App Build:** birth_sky_rc3/1.0.0  
-**Owner:** Release Manager (primary) / Eng on-call (backup)
+**Owner:** Ankur Raman (Release Manager / Rollback Owner — founder-operated)
 
 | Step | Action | Status template |
 | --- | --- | --- |

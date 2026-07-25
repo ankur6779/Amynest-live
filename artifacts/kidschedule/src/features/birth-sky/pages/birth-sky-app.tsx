@@ -36,6 +36,7 @@ import { BirthSkyFormationPage } from "./formation-page";
 import { BirthSkyRevealPage } from "./reveal-page";
 import { BirthSkyDashboardPage } from "./dashboard/dashboard-page";
 import { BirthSkySettingsPage } from "./settings/settings-page";
+import "../design/amy-astro.css";
 import {
   clearSetupDraft,
   getOrCreateSetupDraft,
@@ -408,7 +409,34 @@ function BirthSkyAppInner() {
   }
 
   if (resolved.land === "redirect" || profileLoading) {
-    return null;
+    return (
+      <div
+        className="amy-astro-root relative flex min-h-[100dvh] flex-col items-center justify-center px-6"
+        data-testid="amy-astro-loading"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 40% at 50% 30%, hsl(275 50% 30% / 0.35), transparent 60%), hsl(228 48% 5%)",
+          }}
+          aria-hidden
+        />
+        <div
+          className="relative h-16 w-16 rounded-full border border-[hsl(42_50%_60%/0.35)] bg-[hsl(275_40%_20%/0.4)] shadow-[0_0_28px_hsl(42_70%_50%/0.25)]"
+          aria-hidden
+        />
+        <p className="amy-astro-display relative mt-5 text-lg text-[hsl(42_70%_78%)]">
+          Opening their sky…
+        </p>
+        <p className="relative mt-2 text-center text-sm text-[hsl(40_20%_96%/0.55)]">
+          Amy Astro Intelligence is preparing a quiet welcome.
+        </p>
+      </div>
+    );
   }
 
   if (

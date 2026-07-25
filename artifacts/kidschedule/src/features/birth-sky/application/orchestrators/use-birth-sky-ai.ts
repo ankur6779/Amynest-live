@@ -292,14 +292,34 @@ export function useBirthSkyAi(options: Options) {
               })();
             },
             onModerated: (data) => {
+              setStreamingText("");
               setMachine("moderated");
               trackBirthSkyEvent("birth_sky.moderation_blocked", {});
               trackBirthSkyEvent("birth_sky.safety_fallback_shown", {});
+              if (data.body) {
+                const assistant: BirthSkyMessage = {
+                  messageId: data.messageId,
+                  conversationId,
+                  role: "assistant",
+                  body: data.body,
+                  sequence: messages.length + 2,
+                  jobId: data.jobId,
+                  deliveryId: data.deliveryId,
+                  status: "moderated",
+                  createdAt: new Date().toISOString(),
+                };
+                setMessages((prev) => {
+                  const withoutTemp = prev.filter((m) => !m.messageId.startsWith("temp_"));
+                  return [
+                    ...withoutTemp,
+                    { ...tempUser, messageId: `user_${data.messageId}` },
+                    assistant,
+                  ];
+                });
+              }
               void hydrate(conversationId).then(() => {
-                setStreamingText("");
                 setMachine("idle");
               });
-              void data;
             },
             onError: (data) => {
               if (data.error === "cancelled" || data.status === "cancelled") {

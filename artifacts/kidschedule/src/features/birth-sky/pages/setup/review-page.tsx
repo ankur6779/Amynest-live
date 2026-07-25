@@ -11,6 +11,7 @@ import {
   validateReadyForCreate,
 } from "../../domain/validators/setup-validators";
 import type { SetupDraft } from "../../domain/models/setup-draft";
+import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 
 type Props = {
   draft: SetupDraft;
@@ -81,7 +82,7 @@ export function BirthSkyReviewPage({
       : `${draft.birthTime ?? "—"} (${draft.timePrecision})`;
 
   return (
-    <BirthSkyModuleShell title="Birth Sky" onBack={onBack} testId="birth-sky-setup-review">
+    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-review">
       <h2 className="font-quicksand text-2xl font-bold">Reveal their sky</h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
         Review birth details before the sky is formed. Create is free.
@@ -132,7 +133,7 @@ export function BirthSkyReviewPage({
 
       {offline ? (
         <p className="mt-4 text-sm text-amber-200" role="alert" data-testid="birth-sky-review-offline">
-          Creating a Birth Sky needs a connection. Your draft is saved.
+          Creating Amy Astro Intelligence needs a connection. Your draft is saved.
         </p>
       ) : null}
       {!gate.ok ? (
@@ -148,7 +149,7 @@ export function BirthSkyReviewPage({
         onClick={onCreate}
         data-testid="birth-sky-create"
       >
-        {creating ? "Creating…" : `Create ${childName}’s Birth Sky`}
+        {creating ? "Creating…" : `Create ${childName}’s Amy Astro Intelligence`}
       </Button>
     </BirthSkyModuleShell>
   );

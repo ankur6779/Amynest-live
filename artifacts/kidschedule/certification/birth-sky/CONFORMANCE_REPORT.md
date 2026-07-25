@@ -1,7 +1,7 @@
 # Birth Sky Conformance Report
 
 **App Build:** birth_sky_rc3/1.0.0  
-**Generated:** 2026-07-25T12:10:19.393Z  
+**Generated:** 2026-07-25T15:41:11.193Z  
 **Scope:** core_only  
 **Verdict:** ENGINEERING CERT PASS — awaiting human Part 9 sign-off and staging drills before canary.
 

@@ -13,7 +13,7 @@
 | Rollback validated (procedure) | PASS | ROLLBACK_CHECKLIST.md + kill switch PASS |
 | Deployment prerequisites documented | PASS | DEPLOYMENT_PREREQUISITES.md |
 | Go / No-Go produced | PASS | overall=HOLD |
-| Part 9 human sign-off | PENDING | WAIVER_REGISTER Part 9 table |
+| Part 9 human sign-off | PASS | WAIVER_REGISTER — SIGNED by Ankur Raman 2026-07-25 |
 | Public canary entry criteria | PENDING | NO-GO |
 | Production GA | PENDING | NO-GO |
 

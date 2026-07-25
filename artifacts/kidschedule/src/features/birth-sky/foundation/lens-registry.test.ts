@@ -27,7 +27,7 @@ describe("lens registry + birth_sky registration", () => {
     registerBirthSkyFoundation();
     const lens = getLens("birth_sky");
     expect(lens?.metadata.lensId).toBe("birth_sky");
-    expect(lens?.metadata.displayName).toBe("Birth Sky");
+    expect(lens?.metadata.displayName).toBe("Amy Astro Intelligence");
     expect(listLenses()).toHaveLength(1);
     expect(isBirthSkyFoundationBootstrapped()).toBe(true);
   });

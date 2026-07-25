@@ -7,6 +7,10 @@ import type { TraditionCardVM, TraditionSegmentVM } from "../../application/view
 import { trackBirthSkyEvent } from "../../lib/analytics";
 import { Button } from "@/components/ui/button";
 import { BirthSkyTraditionIntroSheet } from "./tradition-intro-sheet";
+import {
+  AmyAstroNorthIndianKundli,
+  type KundliBody,
+} from "../../components/north-indian-kundli";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -14,6 +18,9 @@ type Props = {
   loading: boolean;
   needsIntro: boolean;
   reducedMotion: boolean;
+  kundliBodies: KundliBody[];
+  childName?: string;
+  moonPhaseLabel?: string;
   onAcceptIntro: () => void;
   onAstronomyOnly: () => void;
   onAddTime: () => void;
@@ -26,6 +33,9 @@ export function BirthSkyTraditionSegment({
   loading,
   needsIntro,
   reducedMotion,
+  kundliBodies,
+  childName,
+  moonPhaseLabel,
   onAcceptIntro,
   onAstronomyOnly,
   onAddTime,
@@ -103,10 +113,17 @@ export function BirthSkyTraditionSegment({
 
   return (
     <div data-testid="birth-sky-tradition-segment" className="space-y-4">
+      <AmyAstroNorthIndianKundli
+        bodies={kundliBodies}
+        reducedMotion={reducedMotion}
+        childName={childName}
+        moonPhaseLabel={moonPhaseLabel}
+      />
+
       <p
         tabIndex={-1}
         data-testid="birth-sky-tradition-disclaimer"
-        className="rounded-xl border border-[hsl(12_40%_55%/0.35)] bg-[hsl(12_30%_18%/0.45)] px-3 py-2 text-sm leading-relaxed text-[hsl(40_20%_96%/0.88)]"
+        className="rounded-xl border border-[hsl(42_50%_55%/0.3)] bg-[hsl(275_30%_14%/0.55)] px-3 py-2 text-sm leading-relaxed text-[hsl(40_20%_96%/0.88)]"
       >
         {vm.disclaimer}
       </p>

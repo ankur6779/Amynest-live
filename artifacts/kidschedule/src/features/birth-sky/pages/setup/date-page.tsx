@@ -7,6 +7,7 @@ import {
   validateBirthDate,
 } from "../../domain/validators/setup-validators";
 import type { SetupDraft } from "../../domain/models/setup-draft";
+import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 
 type Props = {
   draft: SetupDraft;
@@ -39,7 +40,7 @@ export function BirthSkyDatePage({ draft, onChange, onBack, onContinue }: Props)
   };
 
   return (
-    <BirthSkyModuleShell title="Birth Sky" onBack={onBack} testId="birth-sky-setup-date">
+    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-date">
       <h2 className="font-quicksand text-2xl font-bold">When did they arrive?</h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
         Used for the Sun and the day-sky.

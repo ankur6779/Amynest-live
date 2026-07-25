@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { BirthSkyModuleShell } from "../components/birth-sky-module-shell";
 import { trackBirthSkyEvent } from "../lib/analytics";
+import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
 
 export type BirthSkyChildOption = {
   id: number;
@@ -38,9 +39,9 @@ export function BirthSkyChildConfirmationPage({
 
   if (!child) {
     return (
-      <BirthSkyModuleShell title="Birth Sky" onBack={onBack} testId="birth-sky-no-child">
+      <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-no-child">
         <div className="py-12 text-center">
-          <h2 className="font-quicksand text-xl font-bold">Choose a child to open Birth Sky</h2>
+          <h2 className="font-quicksand text-xl font-bold">Choose a child to open Amy Astro Intelligence</h2>
           <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
             Add or select a child in AmyNest, then return here.
           </p>
@@ -58,8 +59,8 @@ export function BirthSkyChildConfirmationPage({
   }
 
   return (
-    <BirthSkyModuleShell title="Birth Sky" onBack={onBack} testId="birth-sky-child-confirmation">
-      <h2 className="font-quicksand text-2xl font-bold">Whose Birth Sky?</h2>
+    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-child-confirmation">
+      <h2 className="font-quicksand text-2xl font-bold">Whose Amy Astro Intelligence?</h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
         We’ll use this child’s profile. You can switch before continuing.
       </p>

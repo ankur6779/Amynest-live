@@ -405,16 +405,12 @@ router.post(
       });
 
       const assembled = assembleBirthSkyPrompt(ctx as BirthSkyAiContextInput);
+      // Buffer model tokens server-side — never emit chunks until safety approves.
       const streamResult = await streamBirthSkyChat({
         messages: assembled.messages,
         signal: abort.signal,
-        onChunk: (chunk) => {
-          send("chunk", {
-            jobId,
-            deliveryId,
-            chunkSequence: chunk.chunkSequence,
-            delta: chunk.delta,
-          });
+        onChunk: () => {
+          /* intentional no-op: moderate-first delivery */
         },
       });
 
@@ -463,6 +459,7 @@ router.post(
           deliveryId,
           code: safety.code,
           messageId: assistantId,
+          body: safety.fallback,
           // Fallback is presentable but Pack 2: moderation does NOT consume free insight.
           consumeEligible: false,
         });
@@ -492,6 +489,20 @@ router.post(
         .update(birthSkyConversationsTable)
         .set({ updatedAt: new Date() })
         .where(eq(birthSkyConversationsTable.id, conversationId));
+
+      // Stream only approved text (never raw model output).
+      const approved = safety.text;
+      const CHUNK = 48;
+      let chunkSequence = 0;
+      for (let i = 0; i < approved.length; i += CHUNK) {
+        chunkSequence += 1;
+        send("chunk", {
+          jobId,
+          deliveryId,
+          chunkSequence,
+          delta: approved.slice(i, i + CHUNK),
+        });
+      }
 
       send("done", {
         jobId,

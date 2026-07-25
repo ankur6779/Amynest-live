@@ -85,6 +85,7 @@ export type StreamHandlers = {
     code: string;
     messageId: string;
     consumeEligible: boolean;
+    body?: string;
   }) => void;
   onError: (data: { error: string; status?: string; jobId?: string }) => void;
 };

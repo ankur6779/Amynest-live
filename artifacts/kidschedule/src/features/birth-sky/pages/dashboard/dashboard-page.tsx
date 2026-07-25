@@ -59,6 +59,43 @@ import { BirthSkyReflectSegment } from "./reflect-segment";
 import { BirthSkyConversationSheet } from "./conversation-sheet";
 import { BirthSkyEditDetailsBoundaryPage } from "./edit-details-boundary";
 import { BirthSkyRegenerateOverlay } from "../settings/regenerate-overlay";
+import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
+import type { KundliBody } from "../../components/north-indian-kundli";
+import {
+  AmyAstroExplorationDelight,
+  hasExplorationMemory,
+  markExplorationMemory,
+} from "../../components/exploration-delight";
+import { AmyAstroCosmicProgress } from "../../components/cosmic-progress";
+import { AmyAstroPlanetJourney, type PlanetKey } from "../../components/planet-journey";
+import { AmyAstroEmotionalCelebration } from "../../components/emotional-celebration";
+import {
+  buildMemoryLines,
+  computeCosmicProgress,
+  loadCosmicMemory,
+  markEmotionalCompletion,
+  rememberAiOpened,
+  rememberCelebration,
+  rememberChapter,
+  rememberPlanet,
+  shouldOfferEmotionalCompletion,
+  touchCosmicVisit,
+  type CosmicMemory,
+} from "../../lib/cosmic-memory";
+import { buildCosmicPortrait } from "../../lib/signature-insight";
+import { buildTodaysSky } from "../../lib/todays-sky";
+import {
+  buildContinuityLine,
+  buildDiscoveryNudge,
+  type DiscoveryNudge,
+} from "../../lib/discovery-guidance";
+import { AmyAstroCosmicPortraitCard } from "../../components/cosmic-portrait-card";
+import { AmyAstroTodaysSkyCard } from "../../components/todays-sky-card";
+import { AmyAstroDiscoveryNudge } from "../../components/discovery-nudge";
+import { AmyAstroEmotionalCompletion } from "../../components/emotional-completion";
+import { useUser } from "@/lib/firebase-auth-hooks";
+import { softHaptic } from "../../lib/soft-haptic";
+import { DEEP_INSIGHTS_CONTENT_VERSION } from "../../constants/deep-insights-content";
 
 type Props = {
   profile: BirthProfile;
@@ -118,10 +155,82 @@ export function BirthSkyDashboardPage({
     loadReflectionStore(profile.profileId),
   );
   const [reflectionLoading, setReflectionLoading] = useState(false);
+  const [insightOpens, setInsightOpens] = useState(0);
+  const [showDelight, setShowDelight] = useState(false);
+  const [memory, setMemory] = useState<CosmicMemory>(() =>
+    loadCosmicMemory(profile.profileId),
+  );
+  const [planetJourney, setPlanetJourney] = useState<PlanetKey | null>(null);
+  const [celebration, setCelebration] = useState<string | null>(null);
+  const [pendingCelebration, setPendingCelebration] = useState<string | null>(null);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [focusChapterId, setFocusChapterId] = useState<string | null>(null);
   const transitionFired = useRef(false);
   const viewedFired = useRef(false);
   const reduced = prefersReducedMotion();
   const { requestOpenComposer, activePromptId } = useReflectionSession();
+  const { user: authUser } = useUser();
+  const parentFirstName =
+    authUser?.firstName?.trim() ||
+    authUser?.fullName?.trim()?.split(/\s+/)[0] ||
+    null;
+
+  useEffect(() => {
+    setMemory(touchCosmicVisit(profile.profileId));
+  }, [profile.profileId]);
+
+  useEffect(() => {
+    if (insightOpens < 3) return;
+    if (hasExplorationMemory(profile.profileId)) return;
+    markExplorationMemory(profile.profileId);
+    setShowDelight(true);
+  }, [insightOpens, profile.profileId]);
+
+  const progress = useMemo(() => {
+    // 23 chapters approximate in deep insights pack
+    return computeCosmicProgress(memory, 23);
+  }, [memory]);
+  const memoryLines = useMemo(
+    () => buildMemoryLines(memory, childName),
+    [memory, childName],
+  );
+  const continuityLine = useMemo(
+    () => buildContinuityLine(memory, childName),
+    [memory, childName],
+  );
+  const discoveryNudge = useMemo(
+    () =>
+      buildDiscoveryNudge(memory, childName, {
+        daySky: snapshotProp.mode === "day_sky",
+      }),
+    [memory, childName, snapshotProp.mode],
+  );
+
+  useEffect(() => {
+    if (memory.completionShown) return;
+    if (!shouldOfferEmotionalCompletion(memory)) return;
+    setShowCompletion(true);
+    setMemory(markEmotionalCompletion(profile.profileId));
+  }, [
+    memory.completionShown,
+    memory.chaptersOpened.length,
+    memory.planetsVisited.length,
+    profile.profileId,
+  ]);
+
+  const openPlanet = useCallback(
+    (key: PlanetKey) => {
+      softHaptic(reduced);
+      setPlanetJourney(key);
+      setMemory(rememberPlanet(profile.profileId, key));
+      if (!memory.celebrationsShown.includes(`planet-${key}`)) {
+        setMemory(rememberCelebration(profile.profileId, `planet-${key}`));
+        // Queue until planet closes so celebration is never hidden under journey.
+        setPendingCelebration("A beautiful memory has been added to their sky.");
+      }
+    },
+    [profile.profileId, memory.celebrationsShown, reduced],
+  );
 
   useEffect(() => {
     if (!hydrated.ok) {
@@ -150,6 +259,35 @@ export function BirthSkyDashboardPage({
   }, [profile.profileId]);
 
   const snapshot = hydrated.ok ? hydrated.snapshot : null;
+
+  const portrait = useMemo(
+    () =>
+      snapshot
+        ? buildCosmicPortrait({
+            childName,
+            sunSign: snapshot.astronomy.sunSign,
+            moonSign: snapshot.astronomy.moonSign,
+            moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
+            risingSign: snapshot.astronomy.risingSign ?? null,
+            daySky: snapshot.mode === "day_sky",
+          })
+        : null,
+    [snapshot, childName],
+  );
+  const todaysSky = useMemo(
+    () =>
+      snapshot
+        ? buildTodaysSky({
+            childName,
+            moonSign: snapshot.astronomy.moonSign,
+            moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
+            sunSign: snapshot.astronomy.sunSign,
+            daySky: snapshot.mode === "day_sky",
+            visitIndex: memory.greetingIndex,
+          })
+        : null,
+    [snapshot, childName, memory.greetingIndex],
+  );
 
   const heroVm = useMemo(
     () => (snapshot ? buildDashboardHeroVM(profile, snapshot, childName) : null),
@@ -200,6 +338,32 @@ export function BirthSkyDashboardPage({
       reflectionCount: reflectionState.entries.length,
     },
   });
+
+  const followDiscovery = useCallback(
+    (nudge: DiscoveryNudge) => {
+      softHaptic(reduced);
+      if (nudge.action === "planet" && nudge.target) {
+        openPlanet(nudge.target as PlanetKey);
+        return;
+      }
+      if (nudge.action === "chapter" && nudge.target) {
+        setFocusChapterId(nudge.target);
+        setSession((s) => setDashboardSegment(s, "sky"));
+        onSegmentPath("sky");
+        window.setTimeout(() => {
+          document
+            .querySelector('[data-testid="amy-astro-insights-panel"]')
+            ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+        }, 80);
+        return;
+      }
+      if (nudge.action === "amy") {
+        setMemory(rememberAiOpened(profile.profileId));
+        void ai.openAskAmy("reflect");
+      }
+    },
+    [reduced, onSegmentPath, profile.profileId, openPlanet, ai.openAskAmy],
+  );
 
   useEffect(() => {
     if (!snapshot || viewedFired.current) return;
@@ -295,11 +459,11 @@ export function BirthSkyDashboardPage({
     );
   }
 
-  if (loadError || !snapshot || !heroVm || !skyVm || !astroVm) {
+  if (loadError || !snapshot || !heroVm || !skyVm || !astroVm || !portrait || !todaysSky) {
     return (
-      <BirthSkyModuleShell title="Birth Sky" onBack={onExit} testId="birth-sky-dashboard-error">
+      <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-dashboard-error">
         <p className="text-sm text-[hsl(40_20%_96%/0.78)]" role="alert">
-          {loadError ?? "Loading Birth Sky…"}
+          {loadError ?? `Loading ${AMY_ASTRO_PRODUCT_NAME}…`}
         </p>
         <button
           type="button"
@@ -321,9 +485,10 @@ export function BirthSkyDashboardPage({
 
   return (
     <BirthSkyModuleShell
-      title="Birth Sky"
+      title={AMY_ASTRO_PRODUCT_NAME}
       onBack={onExit}
       testId="birth-sky-dashboard"
+      reducedMotion={reduced}
       topBarEnd={
         <button
           type="button"
@@ -346,6 +511,11 @@ export function BirthSkyDashboardPage({
           vm={heroVm}
           collapsed={session.heroCollapsed}
           reducedMotion={reduced}
+          parentFirstName={parentFirstName}
+          sunSign={snapshot.astronomy.sunSign}
+          moonSign={snapshot.astronomy.moonSign}
+          moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
+          greetingIndex={memory.greetingIndex}
           onToggleCollapse={() => {
             setSession((s) => {
               const next = !s.heroCollapsed;
@@ -359,6 +529,47 @@ export function BirthSkyDashboardPage({
           onChip={(chip: CompletenessChip) => openEdit(chip.id)}
           onRegenerateEntry={() => openEdit()}
           onHeroPainted={() => patchReadiness({ heroRendered: true })}
+          onContinueJourney={() => {
+            const el = document.querySelector(
+              '[data-testid="amy-astro-cosmic-portrait-card"]',
+            );
+            el?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+          }}
+          onAskAmy={() => {
+            setMemory(rememberAiOpened(profile.profileId));
+            void ai.openAskAmy("reflect");
+          }}
+        />
+
+        <AmyAstroTodaysSkyCard content={todaysSky} reducedMotion={reduced} />
+
+        <AmyAstroCosmicPortraitCard
+          childName={childName}
+          portrait={portrait}
+          reducedMotion={reduced}
+          onContinue={() => {
+            document
+              .querySelector('[data-testid="amy-astro-discovery-nudge"]')
+              ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+          }}
+          onAskAmy={() => {
+            setMemory(rememberAiOpened(profile.profileId));
+            void ai.openAskAmy("reflect");
+          }}
+        />
+
+        <AmyAstroDiscoveryNudge
+          nudge={discoveryNudge}
+          continuityLine={continuityLine}
+          reducedMotion={reduced}
+          onFollow={followDiscovery}
+        />
+
+        <AmyAstroCosmicProgress
+          percent={progress.percent}
+          nextLabel={progress.nextLabel}
+          memoryLines={memoryLines}
+          reducedMotion={reduced}
         />
 
         <BirthSkyDaySkyBanner
@@ -385,7 +596,30 @@ export function BirthSkyDashboardPage({
               vm={skyVm}
               selectedBody={session.selectedBody}
               reducedMotion={reduced}
-              onSelect={(key: SkyBodyKey) => setSession((s) => selectSkyBody(s, key))}
+              childName={childName}
+              sunSign={snapshot.astronomy.sunSign}
+              moonSign={snapshot.astronomy.moonSign}
+              risingSign={snapshot.astronomy.risingSign ?? null}
+              moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
+              focusChapterId={focusChapterId}
+              onInsightOpened={(chapterId) => {
+                softHaptic(reduced);
+                setInsightOpens((n) => n + 1);
+                setMemory(rememberChapter(profile.profileId, chapterId));
+                if (
+                  !memory.celebrationsShown.includes(`chapter-${chapterId}`) &&
+                  ["personality", "emotional", "learning"].includes(chapterId)
+                ) {
+                  setMemory(
+                    rememberCelebration(profile.profileId, `chapter-${chapterId}`),
+                  );
+                  setCelebration("A beautiful memory has been added.");
+                }
+              }}
+              onSelect={(key: SkyBodyKey) => {
+                setSession((s) => selectSkyBody(s, key));
+                openPlanet(key);
+              }}
               onSkyInteractive={() => {
                 patchReadiness({
                   skyInteractive: true,
@@ -406,6 +640,33 @@ export function BirthSkyDashboardPage({
               loading={traditionLoading}
               needsIntro={needsIntro}
               reducedMotion={reduced}
+              childName={childName}
+              moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
+              kundliBodies={
+                [
+                  {
+                    key: "sun",
+                    label: "Sun",
+                    sign: snapshot.astronomy.sunSign,
+                    story: `You may notice daylight themes around ${childName} when ${snapshot.astronomy.sunSign} warmth meets being seen — vitality without pressure.`,
+                  },
+                  {
+                    key: "moon",
+                    label: "Moon",
+                    sign: snapshot.astronomy.moonSign,
+                    story: `Your child's emotional world is illuminated by a ${snapshot.astronomy.moonPhaseLabel} Moon resting in ${snapshot.astronomy.moonSign}, suggesting comfort often grows through belonging.`,
+                  },
+                  {
+                    key: "rising",
+                    label: "Rising",
+                    sign: snapshot.astronomy.risingSign ?? "—",
+                    locked: heroVm.daySky || !snapshot.astronomy.risingSign,
+                    story: heroVm.daySky
+                      ? "Rising waits for birth time — your Day Sky remains complete without it."
+                      : `As ${childName} meets a room, Rising ${snapshot.astronomy.risingSign ?? ""} can feel like a soft doorway — never a script.`,
+                  },
+                ] satisfies KundliBody[]
+              }
               onAcceptIntro={() => {
                 const next = acceptTraditionIntro(profile.userId);
                 setTraditionSettings(next);
@@ -469,6 +730,12 @@ export function BirthSkyDashboardPage({
         streamingText={ai.streamingText}
         errorMessage={ai.errorMessage}
         composer={ai.composer}
+        childName={childName}
+        sunSign={snapshot.astronomy.sunSign}
+        moonSign={snapshot.astronomy.moonSign}
+        risingSign={snapshot.astronomy.risingSign ?? null}
+        moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
+        continuityHint={continuityLine}
         onComposerChange={ai.setComposer}
         onSend={() => {
           void ai.send();
@@ -483,6 +750,84 @@ export function BirthSkyDashboardPage({
         }}
         onNewConversation={ai.newConversation}
       />
+
+      <AmyAstroExplorationDelight
+        childName={childName}
+        open={showDelight}
+        reducedMotion={reduced}
+        onClose={() => setShowDelight(false)}
+      />
+
+      <AmyAstroEmotionalCelebration
+        open={Boolean(celebration)}
+        message={celebration ?? ""}
+        reducedMotion={reduced}
+        onClose={() => setCelebration(null)}
+      />
+
+      <AmyAstroEmotionalCompletion
+        open={showCompletion}
+        childName={childName}
+        reducedMotion={reduced}
+        onClose={() => setShowCompletion(false)}
+      />
+
+      {planetJourney && snapshot ? (
+        <AmyAstroPlanetJourney
+          planet={planetJourney}
+          childName={childName}
+          sign={
+            planetJourney === "sun"
+              ? snapshot.astronomy.sunSign
+              : planetJourney === "moon"
+                ? snapshot.astronomy.moonSign
+                : snapshot.astronomy.risingSign ?? "—"
+          }
+          locked={
+            planetJourney === "rising" &&
+            (heroVm.daySky || !snapshot.astronomy.risingSign)
+          }
+          moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
+          reducedMotion={reduced}
+          relatedChapterHint={
+            planetJourney === "sun"
+              ? "Lights Already Softly On"
+              : planetJourney === "moon"
+                ? "The Inner Weather"
+                : "The Gentle Heart"
+          }
+          onClose={() => {
+            setPlanetJourney(null);
+            if (pendingCelebration) {
+              setCelebration(pendingCelebration);
+              setPendingCelebration(null);
+            }
+          }}
+          onExploreChapter={() => {
+            setPlanetJourney(null);
+            if (pendingCelebration) {
+              setCelebration(pendingCelebration);
+              setPendingCelebration(null);
+            }
+            setSession((s) => setDashboardSegment(s, "sky"));
+            onSegmentPath("sky");
+            window.setTimeout(() => {
+              document
+                .querySelector('[data-testid="amy-astro-insights-panel"]')
+                ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+            }, 50);
+          }}
+          onAskAmy={() => {
+            setPlanetJourney(null);
+            setPendingCelebration(null);
+            setMemory(rememberAiOpened(profile.profileId));
+            void ai.openAskAmy("reflect");
+          }}
+        />
+      ) : null}
+
+      {/* content version marker for support / QA */}
+      <span className="sr-only" data-insights-version={DEEP_INSIGHTS_CONTENT_VERSION} />
     </BirthSkyModuleShell>
   );
 }

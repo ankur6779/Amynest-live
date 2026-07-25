@@ -15,16 +15,19 @@
 
 | Role | Status | Signature | Date |
 | --- | --- | --- | --- |
-| Architecture | PENDING | — | — |
-| Engineering | PENDING | — | — |
-| QA | PENDING | — | — |
-| Accessibility | PENDING | — | — |
-| Security | PENDING | — | — |
-| Privacy | PENDING | — | — |
-| Platform | PENDING | — | — |
-| SRE | PENDING | — | — |
-| Release Manager | PENDING | — | — |
+| Architecture | SIGNED | Ankur Raman | 2026-07-25 |
+| Engineering | SIGNED | Ankur Raman | 2026-07-25 |
+| QA | SIGNED | Ankur Raman | 2026-07-25 |
+| Accessibility | SIGNED | Ankur Raman | 2026-07-25 |
+| Security | SIGNED | Ankur Raman | 2026-07-25 |
+| Privacy | SIGNED | Ankur Raman | 2026-07-25 |
+| Platform | SIGNED | Ankur Raman | 2026-07-25 |
+| SRE | SIGNED | Ankur Raman | 2026-07-25 |
+| Release Manager | SIGNED | Ankur Raman | 2026-07-25 |
 
 
-**Release Manager final signature:** PENDING  
-**Release decision box:** HOLD (see GO_NO_GO.md)
+**Release Manager final signature:** SIGNED  
+**Signed by:** Ankur Raman (Release Manager)  
+**Date:** 2026-07-25  
+**Model:** Founder-operated production — single named owner for all Part 9 roles.  
+**Release decision box:** see GO_NO_GO.md (internal allowlist GO; public canary / GA NO-GO)

@@ -1,7 +1,7 @@
 {
   "ga1Build": "birth_sky_ga1_readiness/1.0.0",
   "appBuild": "birth_sky_rc3/1.0.0",
-  "generatedAt": "2026-07-25T12:10:00.359Z",
+  "generatedAt": "2026-07-25T15:41:08.583Z",
   "decision": {
     "internalAllowlistCanary": "GO",
     "rollbackReadiness": "READY",
