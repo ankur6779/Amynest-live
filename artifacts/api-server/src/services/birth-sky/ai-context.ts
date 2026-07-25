@@ -32,6 +32,11 @@ export type BirthSkyAiContextInput = {
   entryPoint: string;
 };
 
+export type RecentConversationTurn = {
+  role: "user" | "assistant";
+  body: string;
+};
+
 export type AssembledPrompt = {
   contextSchemaVersion: string;
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
@@ -41,7 +46,19 @@ export function assertSupportedContextSchema(version: string): boolean {
   return BIRTH_SKY_SUPPORTED_CONTEXT_SCHEMAS.has(version);
 }
 
-export function assembleBirthSkyPrompt(input: BirthSkyAiContextInput): AssembledPrompt {
+function dayPartLabel(d = new Date()): string {
+  const h = d.getHours();
+  if (h < 5) return "night";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  if (h < 21) return "evening";
+  return "night";
+}
+
+export function assembleBirthSkyPrompt(
+  input: BirthSkyAiContextInput,
+  opts?: { recentTurns?: RecentConversationTurn[] },
+): AssembledPrompt {
   const schema = input.contextSchemaVersion || BIRTH_SKY_CONTEXT_SCHEMA_VERSION;
   const daySky =
     input.mode === "day_sky" || input.timePrecision === "unknown";
@@ -59,6 +76,8 @@ export function assembleBirthSkyPrompt(input: BirthSkyAiContextInput): Assembled
     daySky
       ? "rising_sign=unavailable (Day Sky / unknown birth time)"
       : `rising_sign=${input.risingSign ?? "unknown"}`,
+    `visit_day_part=${dayPartLabel()}`,
+    `active_ui_section=${input.entryPoint}`,
   ];
 
   if (input.traditionalContentVersion) {
@@ -77,6 +96,22 @@ export function assembleBirthSkyPrompt(input: BirthSkyAiContextInput): Assembled
   }
 
   const name = input.childFirstName?.trim() || "the child";
+  const recent = (opts?.recentTurns ?? [])
+    .filter((t) => t.body.trim().length > 0)
+    .slice(-5);
+
+  const historyBlock =
+    recent.length > 0
+      ? [
+          "",
+          "Recent conversation (continue this thread; do not restart or repeat openings):",
+          ...recent.map(
+            (t, i) =>
+              `${i + 1}. ${t.role === "user" ? "Parent" : "Amy"}: ${t.body.trim().slice(0, 600)}`,
+          ),
+        ]
+      : [];
+
   const userBlock = [
     `Parent question (entry=${input.entryPoint}):`,
     input.userQuestion.trim(),
@@ -85,9 +120,11 @@ export function assembleBirthSkyPrompt(input: BirthSkyAiContextInput): Assembled
     "Module: Amy Astro Intelligence (internal id: birth-sky)",
     "Structured sky context (keys only — do not invent missing fields):",
     facts.join("\n"),
+    ...historyBlock,
     "",
-    "Respond as Amy: premium consultant depth (≈350–650 words), grounded in the sky context,",
-    "emotionally warm, practical for parents, and strictly within Amy Astro safety rules",
+    "Respond as Amy: concise premium depth (≈120–280 words unless asked for more),",
+    "grounded in THIS child's sky (name the Sun/Moon/phase/Rising when available),",
+    "vary tone and structure from any recent Amy turns, and stay within Amy Astro safety rules",
     "(awareness & reflection — never prediction, diagnosis, or destiny).",
   ].join("\n");
 
