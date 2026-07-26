@@ -14,17 +14,18 @@ function envString(key: string, defaultValue: string): string {
   return String(raw);
 }
 
-/** Master switch for activation sprint (guest try-first, fast onboarding). */
+/** Master switch for activation sprint (fast onboarding helpers). */
 export const FF_ACTIVATION_FAST_PATH = envFlag(
   "VITE_FF_ACTIVATION_FAST_PATH",
   true,
 );
 
-/** Android native: "Try first" anonymous sign-in before OAuth. */
-export const FF_GUEST_TRY_FIRST = envFlag(
-  "VITE_FF_GUEST_TRY_FIRST",
-  FF_ACTIVATION_FAST_PATH,
-);
+/**
+ * Android native: "Try first" anonymous sign-in before OAuth.
+ * Opt-in only — requires Firebase Anonymous Auth enabled in the console.
+ * Default OFF so the auth screen never shows a CTA that dead-ends.
+ */
+export const FF_GUEST_TRY_FIRST = envFlag("VITE_FF_GUEST_TRY_FIRST", false);
 
 /** Routine free limit experiment: "3" (control) | "5" (variant). */
 export type RoutineLimitVariant = "3" | "5";
