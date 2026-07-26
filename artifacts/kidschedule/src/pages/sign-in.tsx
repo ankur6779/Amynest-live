@@ -28,8 +28,11 @@ import { getApiUrl } from "@/lib/api";
 import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
-import { signInAsGuest, GuestAuthUnavailableError } from "@/lib/anonymous-auth";
-import { FF_GUEST_TRY_FIRST } from "@/lib/mrr-experiment-flags";
+import {
+  signInAsGuest,
+  GuestAuthUnavailableError,
+  shouldShowGuestTryFirst,
+} from "@/lib/anonymous-auth";
 import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
 import {
   AUTH_INPUT_CLASS,
@@ -443,6 +446,11 @@ export default function SignInPage() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
   const [guestBusy, setGuestBusy] = useState(false);
+  /** Hide Try First after runtime discovery that anonymous auth is unavailable. */
+  const [guestTryHidden, setGuestTryHidden] = useState(
+    () => !shouldShowGuestTryFirst(),
+  );
+  const showGuestTryFirst = !guestTryHidden && shouldShowGuestTryFirst();
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     let cancelled = false;
@@ -530,7 +538,8 @@ export default function SignInPage() {
       await signInAsGuest();
     } catch (err: unknown) {
       if (err instanceof GuestAuthUnavailableError) {
-        setError(err.message);
+        // Never dead-end: remove the inactive CTA instead of showing an error.
+        setGuestTryHidden(true);
       } else {
         setError(prettyAuthError(err));
       }
@@ -692,7 +701,7 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
-      {FF_GUEST_TRY_FIRST && isNativeAmyNestShell() ? (
+      {showGuestTryFirst ? (
         <button
           type="button"
           onClick={() => void onGuestTry()}
