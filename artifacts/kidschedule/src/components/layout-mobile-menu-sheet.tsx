@@ -2,7 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { useLocation } from "wouter";
-import { ChevronRight, GraduationCap, LogOut, Settings2, Sparkles, X } from "lucide-react";
+import {
+  ChevronRight,
+  GraduationCap,
+  LogOut,
+  MoonStar,
+  Settings2,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useClerk, useUser, useAuth } from "@/lib/firebase-auth-hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AppLink } from "@/components/app-link";
@@ -32,6 +40,13 @@ const LEARNING_ZONE_ITEM: MobileNavItem = {
   href: "/study",
   labelKey: "nav.learning_zone",
   icon: GraduationCap,
+};
+
+/** Hero product — always surfaced in the burger drawer. */
+const AMY_ASTRO_ITEM: MobileNavItem = {
+  href: "/birth-sky",
+  labelKey: "nav.amy_astro_intelligence",
+  icon: MoonStar,
 };
 
 function FreeUserBadge({ className = "" }: { className?: string }) {
@@ -84,7 +99,12 @@ function DrawerRow({
     premiumDescription ??
     (item.href === "/study"
       ? t("nav.descriptions.learning_zone", "Skills, subjects & practice")
-      : undefined);
+      : item.href === "/birth-sky"
+        ? t(
+            "nav.descriptions.amy_astro_intelligence",
+            "Cosmic Portrait · Birth Sky · Amy",
+          )
+        : undefined);
   const isActive = safePathStartsWith(location, item.href);
 
   return (
@@ -230,9 +250,20 @@ export function LayoutMobileMenuSheet({
 
   const safeChildren = (childList ?? []) as Array<{ name?: string | null }>;
   const safeMenu = resolveSafeMenu(navItems ?? DEFAULT_MOBILE_MENU);
-  const drawerItems = safeMenu.some((item) => item.href === "/study")
+  let drawerItems = safeMenu.some((item) => item.href === "/study")
     ? safeMenu
     : [...safeMenu, LEARNING_ZONE_ITEM];
+  if (!drawerItems.some((item) => item.href === "/birth-sky")) {
+    const dashIdx = drawerItems.findIndex((item) => item.href === "/dashboard");
+    drawerItems =
+      dashIdx >= 0
+        ? [
+            ...drawerItems.slice(0, dashIdx + 1),
+            AMY_ASTRO_ITEM,
+            ...drawerItems.slice(dashIdx + 1),
+          ]
+        : [AMY_ASTRO_ITEM, ...drawerItems];
+  }
   const groups = groupDrawerItems(drawerItems);
 
   const displayName = getUserDisplayName(user);

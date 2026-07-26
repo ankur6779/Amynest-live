@@ -6,6 +6,7 @@ import {
   Gamepad2,
   GraduationCap,
   LayoutGrid,
+  MoonStar,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -25,6 +26,13 @@ type DiscoveryItem = {
 };
 
 const DISCOVERY_POOL: DiscoveryItem[] = [
+  {
+    id: "amy_astro_intelligence",
+    href: "/birth-sky",
+    label: "Amy Astro Intelligence",
+    sub: "Cosmic portrait & Birth Sky",
+    icon: MoonStar,
+  },
   {
     id: "hub_phonics",
     href: "/phonics",

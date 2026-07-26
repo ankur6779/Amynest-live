@@ -9,6 +9,7 @@ import {
   Gift,
   Home,
   MessageSquarePlus,
+  MoonStar,
   Salad,
   Sparkles,
   Star,
@@ -29,6 +30,7 @@ export type MobileNavItem = {
 /** Full mobile nav — always available synchronously. */
 export const NAV_ITEMS: MobileNavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
+  { href: "/birth-sky", labelKey: "nav.amy_astro_intelligence", icon: MoonStar },
   { href: "/parenting-hub", labelKey: "nav.parenting_hub", icon: BookOpen },
   { href: "/amy-coach", labelKey: "nav.amy_coach", icon: Brain },
   { href: "/nutrition", labelKey: "nav.nutrition_hub", icon: Salad },
@@ -56,6 +58,7 @@ export const NAV_ITEMS: MobileNavItem[] = [
 /** Minimal fallback when async menu load times out or fails. */
 export const DEFAULT_MOBILE_MENU: MobileNavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
+  { href: "/birth-sky", labelKey: "nav.amy_astro_intelligence", icon: MoonStar },
   { href: "/routines", labelKey: "nav.routines", icon: Calendar },
   { href: "/amy-coach", labelKey: "nav.amy_coach", icon: Brain },
   { href: "/parenting-hub", labelKey: "nav.parenting_hub", icon: BookOpen },

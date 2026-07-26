@@ -2,6 +2,7 @@ import type { MobileNavItem } from "@/lib/mobile-menu-config";
 
 export type NavPremiumRouteId =
   | "dashboard"
+  | "amy-astro"
   | "parenting-hub"
   | "amy-coach"
   | "nutrition"
@@ -34,6 +35,11 @@ export const NAV_PREMIUM_VISUALS: Record<NavPremiumRouteId, NavPremiumVisual> = 
     iconSrc: `${BASE}/dashboard-icon.png`,
     descriptionKey: "nav.descriptions.dashboard",
     defaultDescription: "Overview & summary",
+  },
+  "amy-astro": {
+    iconSrc: `${BASE}/amy-astro-icon.png`,
+    descriptionKey: "nav.descriptions.amy_astro_intelligence",
+    defaultDescription: "Cosmic Portrait · Birth Sky · Amy",
   },
   "parenting-hub": {
     iconSrc: `${BASE}/parenting-hub-icon.png`,
@@ -137,6 +143,7 @@ export const NAV_PREMIUM_HEADER = {
 /** Map route href → premium visual id. */
 export const NAV_HREF_TO_PREMIUM_ID: Record<string, NavPremiumRouteId> = {
   "/dashboard": "dashboard",
+  "/birth-sky": "amy-astro",
   "/parenting-hub": "parenting-hub",
   "/amy-coach": "amy-coach",
   "/nutrition": "nutrition",
@@ -158,6 +165,7 @@ export const NAV_HREF_TO_PREMIUM_ID: Record<string, NavPremiumRouteId> = {
 
 export const NAV_PRIMARY_HREFS = [
   "/dashboard",
+  "/birth-sky",
   "/parenting-hub",
   "/amy-coach",
   "/nutrition",
@@ -203,7 +211,15 @@ export const NAV_DRAWER_GROUPS: NavDrawerGroup[] = [
     id: "primary",
     labelKey: "nav.groups.primary",
     defaultLabel: "Primary",
-    hrefs: ["/dashboard", "/parenting-hub", "/amy-coach", "/nutrition", "/routines", "/assistant"],
+    hrefs: [
+      "/dashboard",
+      "/birth-sky",
+      "/parenting-hub",
+      "/amy-coach",
+      "/nutrition",
+      "/routines",
+      "/assistant",
+    ],
   },
   {
     id: "learning",

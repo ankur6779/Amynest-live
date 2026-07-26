@@ -152,6 +152,10 @@ function buildGroupSubtitle(
     return buildTodaySubtitle(t, tileIds, hasTodayRoutine, recommendationCount);
   }
 
+  if (groupKey === "amyAstro") {
+    return t("parent_hub.section_groups.collapsed_nav.amyAstro");
+  }
+
   if (groupKey === "health") {
     const labels = hubTilePreviewLabels(tileIds, 3);
     if (labels.length >= 2) return labels.join(" • ");

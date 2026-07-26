@@ -1,4 +1,11 @@
-import { ChevronRight, GraduationCap, LogOut, Settings2, Sparkles } from "lucide-react";
+import {
+  ChevronRight,
+  GraduationCap,
+  LogOut,
+  MoonStar,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +31,13 @@ const LEARNING_ZONE_ITEM: MobileNavItem = {
   href: "/study",
   labelKey: "nav.learning_zone",
   icon: GraduationCap,
+};
+
+/** Hero product — always surfaced in the desktop sidebar. */
+const AMY_ASTRO_ITEM: MobileNavItem = {
+  href: "/birth-sky",
+  labelKey: "nav.amy_astro_intelligence",
+  icon: MoonStar,
 };
 
 type PremiumDesktopSidebarProps = {
@@ -177,7 +191,12 @@ function DrawerRow({
     premiumDescription ??
     (item.href === "/study"
       ? t("nav.descriptions.learning_zone", "Skills, subjects & practice")
-      : undefined);
+      : item.href === "/birth-sky"
+        ? t(
+            "nav.descriptions.amy_astro_intelligence",
+            "Cosmic Portrait · Birth Sky · Amy",
+          )
+        : undefined);
   const isActive = safePathStartsWith(location, item.href);
 
   return (
@@ -212,9 +231,20 @@ export function PremiumDesktopSidebar({
 
   const safeChildList = (safeChildren ?? []) as Array<{ name?: string | null }>;
   const resolvedMenu = resolveSafeMenu(safeMenu ?? DEFAULT_MOBILE_MENU);
-  const drawerItems = resolvedMenu.some((item) => item.href === "/study")
+  let drawerItems = resolvedMenu.some((item) => item.href === "/study")
     ? resolvedMenu
     : [...resolvedMenu, LEARNING_ZONE_ITEM];
+  if (!drawerItems.some((item) => item.href === "/birth-sky")) {
+    const dashIdx = drawerItems.findIndex((item) => item.href === "/dashboard");
+    drawerItems =
+      dashIdx >= 0
+        ? [
+            ...drawerItems.slice(0, dashIdx + 1),
+            AMY_ASTRO_ITEM,
+            ...drawerItems.slice(dashIdx + 1),
+          ]
+        : [AMY_ASTRO_ITEM, ...drawerItems];
+  }
   const groups = groupDrawerItems(drawerItems);
 
   const firstChildName = safeChildList.find((c) => c?.name)?.name ?? undefined;

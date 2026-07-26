@@ -17,7 +17,7 @@ type AmyAstroLaunchCardProps = {
   onNavigate?: () => void;
 };
 
-/** Premium Amy Astro launch tile — Astro-pose AMY Girl hero; entire card navigates. */
+/** Premium Amy Astro Intelligence launch tile — astrology-style Amy hero; entire card navigates. */
 export function AmyAstroLaunchCard({
   href,
   title,

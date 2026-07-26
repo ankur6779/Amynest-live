@@ -165,6 +165,7 @@
     "amy_learning_tutor": "Learn with Amy",
     "amy_quick_tutor": "Quick Tutor",
     "learning_zone": "Learning Zone",
+    "amy_astro_intelligence": "Amy Astro Intelligence",
     "current_child": "Child",
     "games": "Gaming Hub",
     "my_recipes": "My Recipes",
@@ -186,6 +187,7 @@
     },
     "descriptions": {
       "learning_zone": "Skills, subjects & practice",
+      "amy_astro_intelligence": "Cosmic Portrait · Birth Sky · Amy",
       "dashboard": "Overview & summary",
       "parenting_hub": "Articles, tools & support",
       "amy_coach": "Learning goals & progress",
@@ -3381,8 +3383,8 @@
         "age_hint": "Personalised for your child ({{months}} months)"
       },
       "birth-sky": {
-        "title": "Amy Astro",
-        "description": "Your child's cosmic portrait · Birth sky · Soft parenting insights"
+        "title": "Amy Astro Intelligence",
+        "description": "Your child's cosmic portrait · Birth Sky · Soft parenting insights"
       },
       "articles": {
         "title": "Parenting Articles",
@@ -3699,7 +3701,7 @@
       "today": "Today For You",
       "parent": "Gaming Hub",
       "learning": "Learning Zone",
-      "amyAstro": "Amy Astro",
+      "amyAstro": "Amy Astro Intelligence",
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
       "health": "Health Zone",
@@ -3711,7 +3713,7 @@
       "collapsed_nav": {
         "today": "Routine • AI Coach • Daily Picks",
         "learning": "Math • Phonics • Speech",
-        "amyAstro": "Cosmic Portrait • Birth Sky • Amy",
+        "amyAstro": "Cosmic Portrait • Birth Sky • Soft insights",
         "creativity": "Crafts • Drawing • DIY",
         "stories": "Reading • Communication",
         "health": "Nutrition • Sleep • Wellness",

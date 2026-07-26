@@ -5,7 +5,8 @@
 
 export const AMY_ASTRO_PRODUCT_NAME = "Amy Astro Intelligence" as const;
 export const AMY_ASTRO_PRODUCT_SHORT = "Amy Astro" as const;
-export const AMY_ASTRO_TAGLINE = "Your child's cosmic blueprint" as const;
+export const AMY_ASTRO_TAGLINE =
+  "Your child's cosmic portrait · Birth Sky · Soft parenting insights" as const;
 export const AMY_ASTRO_SUBLINE =
   "Premium sky intelligence for parents — reflective, optional, never a prediction." as const;
 export const AMY_ASTRO_DISCLAIMER =
