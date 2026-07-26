@@ -1,0 +1,16 @@
+{
+  "samples": 20,
+  "averageTotalMs": 3.05,
+  "p95TotalMs": 34.12,
+  "maxTotalMs": 34.12,
+  "sloMs": 500,
+  "sloPassRate": 1,
+  "passed": true,
+  "perStageAvgMs": {
+    "meaning": 1.21,
+    "development": 0.29,
+    "adaptive": 0.31,
+    "conversation": 0.26,
+    "evidence": 0.93
+  }
+}

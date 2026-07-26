@@ -1,0 +1,73 @@
+# AmyNest intelligence pipeline — evaluation & quality gates (RC9).
+# Does not modify engine behavior; measures Meaning→Evidence quality only.
+name: AI Evaluation Gates
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/ai-evaluation/**"
+      - "lib/birth-sky-meaning/**"
+      - "lib/birth-sky-development/**"
+      - "lib/birth-sky-adaptive/**"
+      - "lib/birth-sky-conversation/**"
+      - "lib/birth-sky-evidence/**"
+      - "lib/birth-sky-runtime/**"
+      - "docs/ai-evaluation.md"
+      - "docs/birth-sky-production-handbook.md"
+      - ".github/workflows/ai-evaluation-gates.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "lib/ai-evaluation/**"
+      - "lib/birth-sky-meaning/**"
+      - "lib/birth-sky-development/**"
+      - "lib/birth-sky-adaptive/**"
+      - "lib/birth-sky-conversation/**"
+      - "lib/birth-sky-evidence/**"
+      - "lib/birth-sky-runtime/**"
+      - "docs/ai-evaluation.md"
+      - "docs/birth-sky-production-handbook.md"
+      - ".github/workflows/ai-evaluation-gates.yml"
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: ai-evaluation-gates-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  evaluate:
+    name: Pipeline evaluation (min 90/100)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AI_EVAL_MIN_SCORE: "90"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm --filter @workspace/ai-evaluation test
+
+      - name: Evaluation gate
+        run: pnpm --filter @workspace/ai-evaluation run eval
+
+      - name: Upload evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-evaluation-report
+          path: lib/ai-evaluation/golden/last-report.json
+          if-no-files-found: ignore

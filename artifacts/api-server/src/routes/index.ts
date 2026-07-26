@@ -131,6 +131,7 @@ import ptmPrepRouter from "./ptm-prep";
 import contentBankRouter from "./content-bank";
 import birthSkyRouter from "./birth-sky";
 import birthSkyAiRouter from "./birth-sky-ai";
+import birthSkyOpsAdminRouter from "./birth-sky-ops-admin";
 import birthSkyLifecycleRouter from "./birth-sky-lifecycle";
 import { audioSignedUrlPublicRouter } from "./audio-signed-url";
 import devicesRouter from "./devices";
@@ -299,6 +300,7 @@ router.use(ptmPrepRouter);
 router.use(contentBankRouter);
 router.use(birthSkyRouter);
 router.use(birthSkyAiRouter);
+router.use(birthSkyOpsAdminRouter);
 router.use(birthSkyLifecycleRouter);
 
 export default router;

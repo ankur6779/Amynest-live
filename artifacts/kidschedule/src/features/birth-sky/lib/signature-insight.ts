@@ -1,5 +1,5 @@
 /**
- * Signature insight — one unforgettable paragraph per child.
+ * Signature insight — one unforgettable story per child.
  * Chart-informed noticing language only; never predictive.
  */
 
@@ -21,6 +21,9 @@ export type CosmicPortraitContent = {
   parentingReminders: [string, string, string];
   currentSkyInfluence: string;
   amyReflection: string;
+  /** Display helpers — same chart facts already used to build the portrait. */
+  sunSign: string;
+  moonSign: string;
 };
 
 function hashSeed(s: string): number {
@@ -84,23 +87,23 @@ export function buildCosmicPortrait(input: SignatureInsightInput): CosmicPortrai
 
   const patterns = [
     {
-      paragraph: `One quiet pattern appears throughout ${child}'s sky…\n\nWith ${input.sunSign} daylight and a ${input.moonSign} Moon, they often gather confidence after curiosity.\nThey explore first.\nThen they believe.`,
-      sentence: `${child} (${input.sunSign} / ${input.moonSign}) often gathers confidence after curiosity.`,
+      paragraph: `Every child arrives with a unique sky.\n\n${child} shines with a gentle heart,\na curious spirit,\nand quiet courage.\n\nAmy discovered beautiful strengths waiting to bloom.`,
+      sentence: `${child}'s universe blends a gentle heart with an explorer spirit — your steady love is their safest launchpad.`,
     },
     {
-      paragraph: `A soft thread runs through ${child}'s sky…\n\n${input.moonSign} Moon themes suggest belonging may steady them before bravery.\nThey feel the room.\nThen they step forward.`,
-      sentence: `Belonging (${input.moonSign}) may steady ${child} before bravery.`,
+      paragraph: `Every child arrives with a unique sky.\n\n${child} carries ${input.sunSign} warmth\nand a ${input.moonSign} Moon's soft belonging.\n\nAmy noticed how curiosity gathers into confidence — explore first, then believe.`,
+      sentence: `${child} often gathers confidence after curiosity — explore gently, then believe together.`,
     },
     {
-      paragraph: `If you listen closely to ${child}'s sky…\n\n${input.sunSign} light meets ${withIndefiniteArticle(moonPhasePhraseLower(input.moonPhaseLabel))} — wonder often arrives before words.\nThey notice.\nThen they name what they love.`,
+      paragraph: `Every child arrives with a unique sky.\n\nWith ${input.moonSign} feeling and ${input.sunSign} light,\n${child} often senses the room before stepping forward.\n\nAmy found a soft thread of belonging that steadies bravery.`,
+      sentence: `Belonging may steady ${child} before bravery — stay near, then invite the next small step.`,
+    },
+    {
+      paragraph: `Every child arrives with a unique sky.\n\n${child} meets the world with wonder\nbefore words arrive.\n\nAmy saw how noticing becomes love — they see, then name what they treasure.`,
       sentence: `Wonder arrives before words for ${child} — notice first, then name what they love.`,
     },
     {
-      paragraph: `One luminous habit lives in ${child}'s chart…\n\nUnder ${input.sunSign} warmth, they may warm to effort when someone stays near.\nThey try.\nThen they glow.`,
-      sentence: `${child} may warm to effort when someone stays near — try, then glow.`,
-    },
-    {
-      paragraph: `Across ${child}'s charted lights (${input.sunSign} · ${input.moonSign})…\n\nPlay teaches trust.\nThey experiment gently.\nThen they invite you in.`,
+      paragraph: `Every child arrives with a unique sky.\n\nUnder ${input.sunSign} warmth, ${child} glows when someone stays near.\nThey try.\nThen they shine.\n\nAmy discovered play that teaches trust — experiment gently, then invite you in.`,
       sentence: `Play teaches trust for ${child} — experiment gently, then invite you in.`,
     },
   ];
@@ -131,7 +134,7 @@ export function buildCosmicPortrait(input: SignatureInsightInput): CosmicPortrai
 
   const currentSkyInfluence = `In their birth chart: ${withIndefiniteArticle(moonPhasePhraseLower(input.moonPhaseLabel))} in ${input.moonSign}, with ${input.sunSign} as daylight themes. ${risingBit} These are birth-sky facts for reflection — not today's live weather.`;
 
-  const amyReflection = `I notice ${child}'s chart favors presence over pressure. When you meet them where curiosity begins — not where mastery ends — something tender opens. This is a lens for love, never a map of fate.`;
+  const amyReflection = `I notice ${child}'s sky favors presence over pressure. When you meet them where curiosity begins — not where mastery ends — something tender opens. This is a lens for love, never a map of fate.`;
 
   return {
     signatureParagraph: pick.paragraph,
@@ -140,5 +143,7 @@ export function buildCosmicPortrait(input: SignatureInsightInput): CosmicPortrai
     parentingReminders,
     currentSkyInfluence,
     amyReflection,
+    sunSign: input.sunSign,
+    moonSign: input.moonSign,
   };
 }

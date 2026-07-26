@@ -41,6 +41,13 @@ import {
   estimateBirthSkyCostUsd,
   recordBirthSkyAiTelemetry,
 } from "../services/birth-sky/ai-router-telemetry.js";
+import {
+  applyServerFeatureFlagNulls,
+  newBirthSkyRequestId,
+  recordBirthSkyPipelineObs,
+  resolvePipelineFeatureFlags,
+  trackBirthSkyProductEvent,
+} from "../services/birth-sky/runtime-bridge.js";
 
 const router: IRouter = Router();
 router.use(requireBirthSkyAllowlist);
@@ -153,9 +160,263 @@ const contextSchema = z.object({
       uranus: z.number().int().min(1).max(12).optional(),
       neptune: z.number().int().min(1).max(12).optional(),
       pluto: z.number().int().min(1).max(12).optional(),
+      rahu: z.number().int().min(1).max(12).optional(),
+      ketu: z.number().int().min(1).max(12).optional(),
     })
     .nullable()
     .optional(),
+  zodiacMode: z.string().max(40).nullable().optional(),
+  ayanamsaName: z.string().max(40).nullable().optional(),
+  moonNakshatra: z.string().max(80).nullable().optional(),
+  moonPada: z.number().int().min(1).max(4).nullable().optional(),
+  moonLord: z.string().max(40).nullable().optional(),
+  currentMahadasha: z.string().max(40).nullable().optional(),
+  currentAntardasha: z.string().max(40).nullable().optional(),
+  astrologyMode: z.string().max(40).nullable().optional(),
+  ascendantSign: z.string().max(40).nullable().optional(),
+  mcSign: z.string().max(40).nullable().optional(),
+  dominantElement: z.string().max(40).nullable().optional(),
+  dominantModality: z.string().max(40).nullable().optional(),
+  majorAspects: z.array(z.string().max(80)).max(12).optional(),
+  meaningSnapshot: z
+    .object({
+      meaningEngineVersion: z.string().min(1).max(64),
+      generatedAt: z.string().max(64),
+      astrologyMode: z.string().max(40).nullable().optional(),
+      zodiacMode: z.string().max(40).nullable().optional(),
+      profile: z.object({
+        learningStyle: z.array(z.string().max(60)).max(12),
+        communicationStyle: z.array(z.string().max(60)).max(12),
+        creativeStrength: z.array(z.string().max(60)).max(12),
+        attentionPattern: z.array(z.string().max(60)).max(12),
+        emotionalProfile: z.array(z.string().max(60)).max(12),
+        socialProfile: z.array(z.string().max(60)).max(12),
+        strengths: z.array(z.string().max(60)).max(12),
+        comfortNeeds: z.array(z.string().max(60)).max(12),
+        motivationStyle: z.array(z.string().max(60)).max(12),
+        curiosityPattern: z.array(z.string().max(60)).max(12),
+      }),
+      parentingGuidance: z
+        .array(
+          z.object({
+            conceptId: z.string().max(60),
+            guidanceId: z.string().max(60),
+            label: z.string().max(160),
+            confidence: z.number().min(0).max(1),
+          }),
+        )
+        .max(12)
+        .optional(),
+      conflicts: z
+        .array(
+          z.object({
+            category: z.string().max(40),
+            a: z.string().max(60),
+            b: z.string().max(60),
+            resolution: z.string().max(40),
+            kept: z.array(z.string().max(60)).max(4),
+            note: z.string().max(200),
+          }),
+        )
+        .max(8)
+        .optional(),
+      categories: z.record(z.any()).optional(),
+    })
+    .nullable()
+    .optional(),
+  ageMonths: z.number().int().min(0).max(260).nullable().optional(),
+  birthDate: z.string().max(32).nullable().optional(),
+  parentGoals: z.array(z.string().max(40)).max(8).optional(),
+  milestones: z.array(z.string().max(80)).max(12).optional(),
+  routines: z
+    .array(
+      z.object({
+        kind: z.string().max(40),
+        label: z.string().max(80).optional(),
+        present: z.boolean().optional(),
+      }),
+    )
+    .max(12)
+    .optional(),
+  developmentSnapshot: z
+    .object({
+      developmentEngineVersion: z.string().min(1).max(64),
+      generatedAt: z.string().max(64),
+      ageMonths: z.number().int().min(0).max(260),
+      confidence: z.number().min(0).max(1),
+      stage: z.object({
+        id: z.string().max(40),
+        label: z.string().max(40),
+        ageMonthsMin: z.number(),
+        ageMonthsMax: z.number(),
+        capabilities: z.array(z.string().max(80)).max(12),
+      }),
+      profile: z.object({
+        developmentStage: z.string().max(40),
+        learningProfile: z.array(z.string().max(80)).max(12),
+        emotionalProfile: z.array(z.string().max(80)).max(12),
+        topPriorities: z.array(z.string().max(80)).max(12),
+        recommendedParentActions: z.array(z.string().max(160)).max(12),
+        avoidPatterns: z.array(z.string().max(160)).max(8),
+      }),
+      priorityAreas: z.array(z.any()).max(8).optional(),
+      recommendedActivities: z.array(z.any()).max(12).optional(),
+      recommendedParentActions: z.array(z.any()).max(12).optional(),
+      avoidPatterns: z.array(z.any()).max(8).optional(),
+      routineAlignment: z.any().optional(),
+      developmentProfile: z.record(z.any()).optional(),
+    })
+    .nullable()
+    .optional(),
+  adaptiveHistory: z
+    .object({
+      completedRoutines: z
+        .array(
+          z.object({
+            kind: z.string().max(40),
+            count: z.number().int().min(0).max(500).optional(),
+            dropOffStep: z.string().max(40).optional(),
+            lastDayPart: z.string().max(20).optional(),
+          }),
+        )
+        .max(20)
+        .optional(),
+      skippedRoutines: z
+        .array(
+          z.object({
+            kind: z.string().max(40),
+            count: z.number().int().min(0).max(500).optional(),
+            dropOffStep: z.string().max(40).optional(),
+            lastDayPart: z.string().max(20).optional(),
+          }),
+        )
+        .max(20)
+        .optional(),
+      sessionFrequency: z
+        .object({
+          sessionsPerWeek: z.number().min(0).max(40).optional(),
+          avgSessionMinutes: z.number().min(0).max(120).optional(),
+        })
+        .optional(),
+      achievements: z
+        .array(
+          z.object({
+            type: z.string().max(40),
+            count: z.number().int().min(0).max(100).optional(),
+          }),
+        )
+        .max(12)
+        .optional(),
+      activities: z
+        .array(
+          z.object({
+            type: z.string().max(40),
+            completed: z.number().int().min(0).max(500).optional(),
+            skipped: z.number().int().min(0).max(500).optional(),
+            repeated: z.number().int().min(0).max(500).optional(),
+          }),
+        )
+        .max(20)
+        .optional(),
+      parentFeedback: z
+        .array(
+          z.object({
+            signal: z.string().max(40),
+            targetType: z.string().max(40).optional(),
+            count: z.number().int().min(0).max(20).optional(),
+          }),
+        )
+        .max(12)
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+  adaptiveSnapshot: z
+    .object({
+      adaptiveEngineVersion: z.string().min(1).max(64),
+      generatedAt: z.string().max(64),
+      confidence: z.number().min(0).max(1),
+      profile: z.object({
+        engagementLevel: z.enum(["high", "medium", "low"]),
+        preferredActivityTypes: z.array(z.string().max(40)).max(8),
+        recommendedSessionLengthMinutes: z.number().int().min(1).max(60),
+        routineHealthLabel: z.string().max(40),
+        adaptationPriority: z.string().max(80),
+        consistencyScore: z.number().min(0).max(1),
+      }),
+      engagementProfile: z.any().optional(),
+      routineHealth: z.any().optional(),
+      learningPreferences: z.any().optional(),
+      adaptationRecommendations: z.array(z.any()).max(12).optional(),
+      historySummary: z.any().optional(),
+    })
+    .nullable()
+    .optional(),
+  conversationHistorySummary: z
+    .object({
+      recentIntents: z.array(z.string().max(40)).max(8).optional(),
+      coveredTopics: z.array(z.string().max(60)).max(12).optional(),
+      turnCount: z.number().int().min(0).max(100).optional(),
+    })
+    .nullable()
+    .optional(),
+  conversationPlan: z
+    .object({
+      conversationEngineVersion: z.string().min(1).max(64),
+      generatedAt: z.string().max(64),
+      intent: z.string().max(40),
+      confidence: z.number().min(0).max(1),
+      recommendedDepth: z.enum(["brief", "medium", "deep"]),
+      recommendedTone: z.string().max(40),
+      priorityTopics: z.array(z.string().max(60)).max(8),
+      secondaryTopics: z.array(z.string().max(60)).max(8).optional(),
+      avoidTopics: z.array(z.string().max(60)).max(12),
+      recommendedExamples: z.array(z.string().max(80)).max(8).optional(),
+      recommendedOrder: z.array(z.string().max(80)).max(12).optional(),
+      safetyFlags: z.array(z.string().max(60)).max(12),
+      strategy: z.any().optional(),
+      profile: z.object({
+        intent: z.string().max(40),
+        depth: z.enum(["brief", "medium", "deep"]),
+        tone: z.string().max(40),
+        priority: z.string().max(60),
+        avoid: z.string().max(60),
+        order: z.string().max(200),
+      }),
+    })
+    .nullable()
+    .optional(),
+  includeEvidence: z.boolean().nullable().optional(),
+  evidenceSnapshot: z
+    .object({
+      evidenceEngineVersion: z.string().min(1).max(64),
+      generatedAt: z.string().max(64),
+      level: z.enum(["developer", "debug", "compact"]),
+      confidenceBreakdown: z.object({
+        meaning: z.number().min(0).max(1).nullable(),
+        development: z.number().min(0).max(1).nullable(),
+        adaptive: z.number().min(0).max(1).nullable(),
+        conversation: z.number().min(0).max(1).nullable(),
+        overall: z.number().min(0).max(1),
+      }),
+      engineVersions: z.record(z.any()).optional(),
+      ruleTrace: z.array(z.any()).max(200).optional(),
+      dependencyGraph: z.any().optional(),
+      views: z
+        .object({
+          compact: z.array(z.string().max(200)).max(40),
+          debug: z.array(z.string().max(500)).max(80).optional(),
+          developer: z.array(z.string().max(2000)).max(120).optional(),
+        })
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+  /** Client runtime observability (no PII). */
+  runtimeRequestId: z.string().max(64).optional(),
+  runtimePipelineMs: z.number().nonnegative().max(60_000).optional(),
+  runtimeStatus: z.enum(["ok", "degraded"]).optional(),
+  runtimeExperimentArm: z.string().max(64).nullable().optional(),
 });
 
 async function loadOwnedProfile(userId: string, profileId: string) {
@@ -556,7 +817,16 @@ router.post(
         contextSchemaVersion: ctx.contextSchemaVersion,
       });
 
-      const assembled = assembleBirthSkyPrompt(ctx as BirthSkyAiContextInput, {
+      const requestId = ctx.runtimeRequestId ?? newBirthSkyRequestId();
+      trackBirthSkyProductEvent("conversation_start", {
+        entryPoint: String(ctx.entryPoint ?? "unknown"),
+      });
+
+      // Feature-flag safe rollout: null disabled layers; never crash conversation.
+      const gatedCtx = applyServerFeatureFlagNulls(
+        ctx as BirthSkyAiContextInput,
+      );
+      const assembled = assembleBirthSkyPrompt(gatedCtx, {
         recentTurns,
       });
       // Buffer model tokens server-side — never emit chunks until safety approves.
@@ -573,6 +843,7 @@ router.post(
 
       const emitTelemetry = (
         status: "ok" | "error" | "moderated" | "cancelled" | "timeout",
+        opts?: { safetyScore?: number | null },
       ) => {
         const inputTokens = streamResult.usage.inputTokens;
         const outputTokens = streamResult.usage.outputTokens;
@@ -600,6 +871,56 @@ router.post(
           scores: route.scores,
           status,
         });
+        const flags = resolvePipelineFeatureFlags();
+        recordBirthSkyPipelineObs({
+          requestId,
+          conversationId,
+          pipeline: {
+            stageTimings: [],
+            totalPipelineMs: ctx.runtimePipelineMs ?? 0,
+            failoverStages: [],
+            flags,
+            experiment: ctx.runtimeExperimentArm
+              ? {
+                  experimentId: "conversation_presentation",
+                  armId: ctx.runtimeExperimentArm,
+                  arm: { id: ctx.runtimeExperimentArm },
+                }
+              : null,
+            status: ctx.runtimeStatus === "degraded" ? "degraded" : "ok",
+            snapshotVersions: {
+              meaning: gatedCtx.meaningSnapshot?.meaningEngineVersion ?? null,
+              development:
+                gatedCtx.developmentSnapshot?.developmentEngineVersion ?? null,
+              adaptive: gatedCtx.adaptiveSnapshot?.adaptiveEngineVersion ?? null,
+              conversation:
+                gatedCtx.conversationPlan?.conversationEngineVersion ?? null,
+              evidence: gatedCtx.evidenceSnapshot?.evidenceEngineVersion ?? null,
+            },
+          },
+          llmLatencyMs: streamResult.latencyMs,
+          safetyScore:
+            opts?.safetyScore ??
+            (status === "ok" ? 1 : status === "moderated" ? 0 : null),
+          promptTokens: inputTokens,
+          completionTokens: outputTokens,
+          estimatedCostUsd,
+          status:
+            status === "ok"
+              ? ctx.runtimeStatus === "degraded"
+                ? "degraded"
+                : "ok"
+              : "error",
+        });
+        if (status === "ok") {
+          trackBirthSkyProductEvent("conversation_complete", {
+            entryPoint: String(ctx.entryPoint ?? "unknown"),
+          });
+        } else if (status === "moderated" || status === "error") {
+          trackBirthSkyProductEvent("conversation_dropoff", {
+            reason: status,
+          });
+        }
       };
 
       if (!streamResult.ok) {

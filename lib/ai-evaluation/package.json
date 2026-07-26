@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/ai-evaluation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/engine.test.ts",
+    "eval": "node --import tsx src/cli.ts",
+    "eval:update-baselines": "node --import tsx src/cli.ts --update-baselines"
+  },
+  "dependencies": {
+    "@workspace/birth-sky-adaptive": "workspace:^",
+    "@workspace/birth-sky-conversation": "workspace:^",
+    "@workspace/birth-sky-development": "workspace:^",
+    "@workspace/birth-sky-evidence": "workspace:^",
+    "@workspace/birth-sky-meaning": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

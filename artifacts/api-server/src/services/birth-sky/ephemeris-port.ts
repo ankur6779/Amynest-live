@@ -16,7 +16,9 @@ export type PlanetBodyId =
   | "saturn"
   | "uranus"
   | "neptune"
-  | "pluto";
+  | "pluto"
+  | "rahu"
+  | "ketu";
 
 export type AstronomyBody = {
   id: PlanetBodyId | string;
@@ -29,6 +31,7 @@ export type PlanetPlacement = {
   eclipticLongitudeDeg: number;
   sign: string;
   retrograde?: boolean;
+  degreeInSign?: number;
 };
 
 export type HouseCusp = {
@@ -44,6 +47,51 @@ export type HouseSystemData = {
 };
 
 export type PlanetHouseMap = Partial<Record<PlanetBodyId, number>>;
+
+export type NakshatraPlacement = {
+  name: string;
+  index: number;
+  pada: number;
+  lord: string;
+  longitudeInNakshatraDeg: number;
+  startLongitudeDeg?: number;
+  endLongitudeDeg?: number;
+};
+
+export type MoonProfile = {
+  sign: string;
+  house?: number | null;
+  nakshatra: string;
+  pada: number;
+  lord: string;
+  phase: string;
+  phaseLabel: string;
+  longitudeDeg?: number;
+  degreeInSign?: number;
+};
+
+export type VimshottariDasha = {
+  system: string;
+  mahadasha: {
+    lord: string;
+    startUtc: string;
+    endUtc: string;
+    fullYears?: number;
+    balanceYearsAtBirth?: number;
+  };
+  antardasha: {
+    lord: string;
+    startUtc: string;
+    endUtc: string;
+  };
+  remainingBalance: {
+    mahadashaYears: number;
+    antardashaYears: number;
+  };
+  birthNakshatra?: string;
+  birthNakshatraLord?: string;
+  birthPada?: number;
+};
 
 export type AstronomyData = {
   bodies: AstronomyBody[];
@@ -71,6 +119,12 @@ export type AstronomyData = {
   missingInputs?: string[];
   /** topocentric | geocentric */
   calculationMode?: string;
+  /** vedic | western — absent on legacy snapshots. */
+  astrologyMode?: string;
+  /** tropical | sidereal_lahiri — absent on legacy snapshots. */
+  zodiacMode?: string;
+  ayanamsa?: number | null;
+  ayanamsaName?: string | null;
   sun?: PlanetPlacement;
   moon?: PlanetPlacement;
   mercury?: PlanetPlacement;
@@ -81,9 +135,28 @@ export type AstronomyData = {
   uranus?: PlanetPlacement;
   neptune?: PlanetPlacement;
   pluto?: PlanetPlacement;
-  ascendant?: { sign: string; eclipticLongitudeDeg: number } | null;
+  rahu?: PlanetPlacement;
+  ketu?: PlanetPlacement;
+  ascendant?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
+  midheaven?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
+  imumCoeli?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
+  descendant?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
   planetDegrees?: Record<string, PlanetPlacement>;
   retrograde?: string[];
+  aspects?: Array<{
+    planetA: string;
+    planetB: string;
+    aspect: string;
+    angle: number;
+    orb: number;
+    exactness: number;
+  }> | null;
+  westernBirthProfile?: Record<string, unknown> | null;
+  nakshatra?: NakshatraPlacement | null;
+  planetNakshatra?: Partial<Record<string, NakshatraPlacement>> | null;
+  moonProfile?: MoonProfile | null;
+  dasha?: VimshottariDasha | null;
+  meaningSnapshot?: Record<string, unknown> | null;
   metadata?: {
     julianDay?: number;
     utcIso?: string;
@@ -102,6 +175,12 @@ export type AstronomyData = {
     cacheHit?: boolean;
     computeLatencyMs?: number;
     houseSystem?: string | null;
+    astrologyMode?: string;
+    zodiacMode?: string;
+    zodiac?: string;
+    ayanamsa?: number | null;
+    ayanamsaName?: string | null;
+    nodeType?: string;
   };
 };
 

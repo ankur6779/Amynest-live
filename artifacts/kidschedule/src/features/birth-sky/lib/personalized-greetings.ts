@@ -1,8 +1,10 @@
 /**
- * Rotating personalized greetings — every revisit feels different.
+ * Contextual Amy greetings — rotate with warmth; never robotic.
+ * Continuity lines only reference stored facts (never fabricated).
  */
 
 import { moonPhasePhrase, moonPhasePhraseLower } from "./sky-copy";
+import type { ContinuityFacts } from "./emotional-continuity";
 
 export type GreetingContext = {
   parentFirstName: string | null;
@@ -15,6 +17,8 @@ export type GreetingContext = {
   hour?: number;
   /** Skip recently shown hello lines (client reply-memory). */
   avoidHellos?: string[];
+  /** Optional real journey facts — only used when present. */
+  continuity?: ContinuityFacts | null;
 };
 
 function dayPart(hour: number): "morning" | "afternoon" | "evening" | "night" {
@@ -34,6 +38,69 @@ function pickAvoiding(pool: string[], index: number, avoid: string[] | undefined
   return pool[index % pool.length]!;
 }
 
+function continuityHellos(
+  child: string,
+  parentName: string,
+  facts: ContinuityFacts,
+): string[] {
+  const lines: string[] = [];
+  const withParent = (s: string) =>
+    parentName ? `${s.replace(/\.$/, "")}, ${parentName}.` : s;
+
+  if (facts.familiarity !== "new") {
+    lines.push(withParent("I'm glad you're back."));
+    lines.push(withParent(`I've been thinking about ${child} since our last journey.`));
+  }
+  if (facts.daysSinceLastVisit != null && facts.daysSinceLastVisit >= 1) {
+    lines.push(withParent("Our stars have changed a little today."));
+  }
+  if (facts.portraitSaved) {
+    lines.push(withParent(`I kept ${child}'s portrait close.`));
+  }
+  if (facts.pendingMilestone || facts.latestMilestone) {
+    lines.push(withParent("I found something beautiful waiting for us."));
+  }
+  if (facts.lastChapterLabel) {
+    lines.push(
+      withParent(`Welcome back — “${facts.lastChapterLabel}” still glows for ${child}.`),
+    );
+  }
+  if (facts.aiOpened > 0) {
+    lines.push(withParent(`I'm glad you're back into ${child}'s sky.`));
+  }
+  return lines;
+}
+
+function continuitySkyLines(child: string, facts: ContinuityFacts): string[] {
+  const lines: string[] = [];
+  if (facts.lastPlanet === "moon") {
+    lines.push(`Last time we lingered with the Moon in ${child}'s sky.`);
+  } else if (facts.lastPlanet === "sun") {
+    lines.push(`Last time we stood in ${child}'s daylight with the Sun.`);
+  } else if (facts.lastPlanet === "rising") {
+    lines.push(`Last time we explored the Rising doorway for ${child}.`);
+  }
+  if (facts.lastChapterLabel) {
+    lines.push(`We left a soft bookmark in “${facts.lastChapterLabel}.”`);
+  }
+  if (facts.chapterCount > 0) {
+    lines.push(
+      `You've already opened ${facts.chapterCount} chapter${facts.chapterCount === 1 ? "" : "s"} of ${child}'s story.`,
+    );
+  }
+  if (facts.portraitSaved) {
+    lines.push(`The portrait we saved for ${child} is still waiting warmly.`);
+  }
+  if (facts.pendingMilestone === "reflection_milestone_1") {
+    lines.push(`A first quiet note for ${child} made a new star appear.`);
+  } else if (facts.pendingMilestone === "reflection_milestone_5") {
+    lines.push(`Five quiet notes — ${child}'s constellation is growing.`);
+  } else if (facts.pendingMilestone === "reflection_milestone_12") {
+    lines.push(`Twelve quiet notes with ${child} — a little galaxy of noticing.`);
+  }
+  return lines;
+}
+
 export function buildPersonalizedGreeting(ctx: GreetingContext): {
   hello: string;
   skyLine: string;
@@ -47,8 +114,9 @@ export function buildPersonalizedGreeting(ctx: GreetingContext): {
   const i = Math.abs(ctx.greetingIndex);
   const phase = moonPhasePhrase(ctx.moonPhaseLabel);
   const phaseLower = moonPhasePhraseLower(ctx.moonPhaseLabel);
+  const facts = ctx.continuity ?? null;
 
-  const hellos = parentName
+  const baseHellos = parentName
     ? [
         `Good ${part}, ${parentName}.`,
         `${part === "night" ? "Quiet" : part === "morning" ? "Gentle" : "Warm"} ${part}, ${parentName}.`,
@@ -62,12 +130,21 @@ export function buildPersonalizedGreeting(ctx: GreetingContext): {
         `Welcome back to Amy Astro.`,
       ];
 
-  const skyLines = [
+  const hellos =
+    facts && facts.familiarity !== "new"
+      ? [...continuityHellos(child, parentName, facts), ...baseHellos]
+      : baseHellos;
+
+  const baseSky = [
     `Today ${child}'s sky feels ${ctx.daySky ? "soft and open" : "quietly complete"}.`,
     `${child}'s universe is listening again.`,
     `The day carries ${ctx.sunSign} light for ${child}.`,
     `${phase} light hangs over ${child}'s story.`,
   ];
+  const skyLines =
+    facts && facts.familiarity !== "new"
+      ? [...continuitySkyLines(child, facts), ...baseSky]
+      : baseSky;
 
   const moonLeads = [
     `In their birth chart, the Moon in ${ctx.moonSign} still offers a soft noticing lens.`,

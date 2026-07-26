@@ -1,0 +1,21 @@
+{
+  "name": "@workspace/birth-sky-adaptive",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/engine.test.ts"
+  },
+  "dependencies": {
+    "@workspace/birth-sky-development": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

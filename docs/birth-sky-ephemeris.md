@@ -121,6 +121,124 @@ If birth time (or place) is missing: `ascendant`, `houses`, and `planetHouseMap`
 
 Drop in a new `HouseEngine` class, register in `_ENGINES`, implement `compute_houses`. Planet interval placement for non–whole-sign systems can extend `houses_payload_and_map` without Node changes.
 
+## Vedic Intelligence Foundation
+
+Built on the same Skyfield tropical compute path — **no duplicated planet math**.
+
+| Concern | Module | Notes |
+|---------|--------|-------|
+| Zodiac mode | `zodiac.py` | `ZODIAC_MODE=tropical\|sidereal_lahiri` (default **sidereal_lahiri**) |
+| Lahiri ayanamsa | `zodiac.py` | Chart lon = tropical − ayanamsa |
+| Rahu / Ketu | `nodes.py` | Mean node default (`NODE_TYPE=mean`); true node stub |
+| Nakshatra | `nakshatra_engine.py` | 27 mansions × 4 padas + Vimshottari lords |
+| Moon profile | `chart_service` | sign, house, nakshatra, pada, lord, phase |
+| Vimshottari | `dasha_engine.py` | Mahadasha + antardasha + remaining balance at birth |
+
+### Sidereal (Lahiri)
+
+1. Compute tropical longitudes (Skyfield / DE440).
+2. Subtract Lahiri ayanamsa for chart longitudes, signs, houses, nakshatras.
+3. Moon phase still uses tropical elongation.
+
+### Nodes
+
+- Rahu = mean lunar ascending node; Ketu = Rahu + 180°.
+- Both marked retrograde by convention.
+- Never estimated when birth data missing for houses; nodes themselves are always computable from JD.
+
+### Dasha
+
+Requires birth **time**. If unavailable → `dasha: null` (never estimated).
+
+### Snapshot compatibility
+
+Legacy snapshots without `rahu` / `nakshatra` / `dasha` / `zodiacMode` hydrate unchanged. New writes include Vedic metadata.
+
+### Future roadmap (non-goals now)
+
+True Node · Yogas · Transits · Horoscope / prediction · Compatibility engines.
+
+## Western Astrology Foundation
+
+Western and Vedic share the same Skyfield + DE440 tropical compute path.
+
+| Concern | Module | Notes |
+|---------|--------|-------|
+| AstrologyMode | `astrology_mode.py` | `vedic` \| `western` \| `auto` (region) |
+| Zodiac defaults | `zodiac.py` | Western→tropical, Vedic→sidereal (unless `ZODIAC_MODE` set) |
+| Houses | `house_engine.py` | Whole Sign, Placidus, Equal, Porphyry via `HouseEngineFactory` |
+| Angles | `angles.py` | ASC, MC, IC, DC |
+| Aspects | `aspect_engine.py` | conj / opp / square / trine / sextile / quincunx |
+| Western profile | `western_profile.py` | sun/moon/ASC/MC, element, modality, aspect summary |
+
+### Mode selection
+
+| Env | Default | Behavior |
+|-----|---------|----------|
+| `ASTROLOGY_MODE` | `auto` | `auto` → region map |
+| `ASTROLOGY_REGION` | `IN` | `IN`→vedic, others→western |
+| `HOUSE_SYSTEM` | (derived) | Override: `whole_sign` \| `placidus` \| `equal` \| `porphyry` |
+| `ZODIAC_MODE` | (derived) | Explicit override of tropical / sidereal_lahiri |
+
+Defaults preserve AmyNest India / Vedic behavior when unset.
+
+### House defaults
+
+- Vedic → Whole Sign  
+- Western → Placidus (Porphyry fallback near poles)
+
+### Snapshot compatibility
+
+Legacy rows without `astrologyMode` / `aspects` / `midheaven` / `westernBirthProfile` hydrate unchanged. Vedic fields remain on western charts (coexistence); `westernBirthProfile` is null in Vedic mode.
+
+### Western non-goals (future)
+
+Synastry · Composite · Solar return · Progressions · Horary · Electional · Transit predictions.
+
+## Meaning Engine
+
+See [birth-sky-meaning.md](./birth-sky-meaning.md).
+
+New snapshots attach `astronomy.meaningSnapshot` (`meaning-engine/1.0.0`) after
+ephemeris compute — astronomy math unchanged.
+
+## Development Intelligence Engine
+
+See [birth-sky-development.md](./birth-sky-development.md).
+
+`DevelopmentSnapshot` (`development-engine/1.0.0`) is computed at AI assemble time
+from MeaningSnapshot + age / goals / routines — astronomy and Meaning Engine
+unchanged.
+
+## Adaptive Intelligence Engine
+
+See [birth-sky-adaptive.md](./birth-sky-adaptive.md).
+
+`AdaptiveSnapshot` (`adaptive-engine/1.0.0`) is computed after Development from
+anonymized child history — no identifiers, no cross-user learning.
+
+## Conversation Intelligence Engine
+
+See [birth-sky-conversation.md](./birth-sky-conversation.md).
+
+`ConversationPlan` (`conversation-engine/1.0.0`) is computed after Adaptive from
+snapshots + user intent — LLM receives structured flow, not free-form planning.
+
+## Explainability / Evidence Engine
+
+See [birth-sky-evidence.md](./birth-sky-evidence.md).
+
+`EvidenceSnapshot` (`evidence-engine/1.0.0`) reconstructs rule traces after
+Conversation — omitted from LLM context unless `DEBUG_EXPLAINABILITY=true`.
+
+## AI Evaluation Framework
+
+See [ai-evaluation.md](./ai-evaluation.md).
+Production ops: [birth-sky-production-handbook.md](./birth-sky-production-handbook.md).
+
+Quality gates for the intelligence pipeline (min score 90/100) — does not modify
+engine behavior. CI: `.github/workflows/ai-evaluation-gates.yml`.
+
 ## Swiss migration steps (future)
 
 1. Implement `SwissEphemerisEngine` conforming to `EnginePort`

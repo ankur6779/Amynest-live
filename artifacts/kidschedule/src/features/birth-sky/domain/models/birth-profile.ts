@@ -51,6 +51,7 @@ export type PlanetPlacement = {
   eclipticLongitudeDeg: number;
   sign: string;
   retrograde?: boolean;
+  degreeInSign?: number;
 };
 
 export type HouseCusp = {
@@ -76,10 +77,57 @@ export type PlanetHouseMap = Partial<
     | "saturn"
     | "uranus"
     | "neptune"
-    | "pluto",
+    | "pluto"
+    | "rahu"
+    | "ketu",
     number
   >
 >;
+
+export type NakshatraPlacement = {
+  name: string;
+  index: number;
+  pada: number;
+  lord: string;
+  longitudeInNakshatraDeg: number;
+  startLongitudeDeg?: number;
+  endLongitudeDeg?: number;
+};
+
+export type MoonProfile = {
+  sign: string;
+  house?: number | null;
+  nakshatra: string;
+  pada: number;
+  lord: string;
+  phase: string;
+  phaseLabel: string;
+  longitudeDeg?: number;
+  degreeInSign?: number;
+};
+
+export type VimshottariDasha = {
+  system: string;
+  mahadasha: {
+    lord: string;
+    startUtc: string;
+    endUtc: string;
+    fullYears?: number;
+    balanceYearsAtBirth?: number;
+  };
+  antardasha: {
+    lord: string;
+    startUtc: string;
+    endUtc: string;
+  };
+  remainingBalance: {
+    mahadashaYears: number;
+    antardashaYears: number;
+  };
+  birthNakshatra?: string;
+  birthNakshatraLord?: string;
+  birthPada?: number;
+};
 
 export type AstronomyData = {
   bodies: AstronomyBody[];
@@ -110,6 +158,12 @@ export type AstronomyData = {
   missingInputs?: string[];
   /** topocentric | geocentric */
   calculationMode?: string;
+  /** vedic | western — absent on legacy snapshots. */
+  astrologyMode?: string;
+  /** tropical | sidereal_lahiri — absent on legacy snapshots. */
+  zodiacMode?: string;
+  ayanamsa?: number | null;
+  ayanamsaName?: string | null;
   sun?: PlanetPlacement;
   moon?: PlanetPlacement;
   mercury?: PlanetPlacement;
@@ -120,9 +174,131 @@ export type AstronomyData = {
   uranus?: PlanetPlacement;
   neptune?: PlanetPlacement;
   pluto?: PlanetPlacement;
-  ascendant?: { sign: string; eclipticLongitudeDeg: number } | null;
+  rahu?: PlanetPlacement;
+  ketu?: PlanetPlacement;
+  ascendant?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
+  midheaven?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
+  imumCoeli?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
+  descendant?: { sign: string; eclipticLongitudeDeg: number; degreeInSign?: number } | null;
   planetDegrees?: Record<string, PlanetPlacement>;
   retrograde?: string[];
+  aspects?: Array<{
+    planetA: string;
+    planetB: string;
+    aspect: string;
+    angle: number;
+    orb: number;
+    exactness: number;
+  }> | null;
+  westernBirthProfile?: {
+    sun?: { sign?: string; longitudeDeg?: number; house?: number | null; retrograde?: boolean } | null;
+    moon?: { sign?: string; longitudeDeg?: number; house?: number | null; retrograde?: boolean } | null;
+    ascendant?: { sign?: string; longitudeDeg?: number } | null;
+    mc?: { sign?: string; longitudeDeg?: number } | null;
+    dominantElement?: string;
+    dominantModality?: string;
+    houseSystem?: string | null;
+    zodiacMode?: string;
+    aspectSummary?: string[];
+    aspectCount?: number;
+    planetDistribution?: Record<string, number>;
+    elementCounts?: Record<string, number>;
+    modalityCounts?: Record<string, number>;
+  } | null;
+  /** Moon nakshatra shortcut; absent on legacy snapshots. */
+  nakshatra?: NakshatraPlacement | null;
+  planetNakshatra?: Partial<Record<string, NakshatraPlacement>> | null;
+  moonProfile?: MoonProfile | null;
+  dasha?: VimshottariDasha | null;
+  /** Deterministic Meaning Engine output — absent on legacy snapshots. */
+  meaningSnapshot?: {
+    meaningEngineVersion: string;
+    generatedAt: string;
+    astrologyMode?: string | null;
+    zodiacMode?: string | null;
+    profile: {
+      learningStyle: string[];
+      communicationStyle: string[];
+      creativeStrength: string[];
+      attentionPattern: string[];
+      emotionalProfile: string[];
+      socialProfile: string[];
+      strengths: string[];
+      comfortNeeds: string[];
+      motivationStyle: string[];
+      curiosityPattern: string[];
+    };
+    parentingGuidance?: Array<{
+      conceptId: string;
+      guidanceId: string;
+      label: string;
+      confidence: number;
+    }>;
+    conflicts?: Array<{
+      category: string;
+      a: string;
+      b: string;
+      resolution: string;
+      kept: string[];
+      note: string;
+    }>;
+  } | null;
+  /** Deterministic Development Engine output — usually assembled at AI time. */
+  developmentSnapshot?: {
+    developmentEngineVersion: string;
+    generatedAt: string;
+    ageMonths: number;
+    confidence: number;
+    stage: {
+      id: string;
+      label: string;
+      ageMonthsMin: number;
+      ageMonthsMax: number;
+      capabilities: string[];
+    };
+    profile: {
+      developmentStage: string;
+      learningProfile: string[];
+      emotionalProfile: string[];
+      topPriorities: string[];
+      recommendedParentActions: string[];
+      avoidPatterns: string[];
+    };
+  } | null;
+  /** Deterministic Adaptive Engine output — usually assembled at AI time. */
+  adaptiveSnapshot?: {
+    adaptiveEngineVersion: string;
+    generatedAt: string;
+    confidence: number;
+    profile: {
+      engagementLevel: "high" | "medium" | "low";
+      preferredActivityTypes: string[];
+      recommendedSessionLengthMinutes: number;
+      routineHealthLabel: string;
+      adaptationPriority: string;
+      consistencyScore: number;
+    };
+  } | null;
+  /** Deterministic Conversation Engine plan — usually assembled at AI time. */
+  conversationPlan?: {
+    conversationEngineVersion: string;
+    generatedAt: string;
+    intent: string;
+    confidence: number;
+    recommendedDepth: "brief" | "medium" | "deep";
+    recommendedTone: string;
+    priorityTopics: string[];
+    avoidTopics: string[];
+    safetyFlags: string[];
+    profile: {
+      intent: string;
+      depth: "brief" | "medium" | "deep";
+      tone: string;
+      priority: string;
+      avoid: string;
+      order: string;
+    };
+  } | null;
   metadata?: {
     julianDay?: number;
     utcIso?: string;
@@ -141,6 +317,12 @@ export type AstronomyData = {
     cacheHit?: boolean;
     computeLatencyMs?: number;
     houseSystem?: string | null;
+    astrologyMode?: string;
+    zodiacMode?: string;
+    zodiac?: string;
+    ayanamsa?: number | null;
+    ayanamsaName?: string | null;
+    nodeType?: string;
   };
 };
 
