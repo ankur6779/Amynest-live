@@ -233,6 +233,29 @@
   pointer-events: none;
 }
 
+/* Amy Astro Intelligence — cutout hero merges into violet/gold tile glow */
+.amy-astro-launch-card .hub-feature-tile__media-glow {
+  background:
+    radial-gradient(
+      circle at 78% 88%,
+      rgba(251, 191, 36, 0.22) 0%,
+      rgba(167, 139, 250, 0.16) 34%,
+      transparent 64%
+    ),
+    radial-gradient(
+      circle at 92% 30%,
+      rgba(129, 140, 248, 0.18) 0%,
+      transparent 55%
+    );
+}
+
+.amy-astro-launch-card .hub-feature-tile__hero {
+  max-height: 148px;
+  height: 96%;
+  filter: drop-shadow(0 12px 22px rgba(67, 56, 202, 0.45))
+    drop-shadow(0 0 18px rgba(251, 191, 36, 0.22));
+}
+
 .hub-feature-tile__chips {
   display: flex;
   flex-wrap: wrap;

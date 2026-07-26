@@ -53,6 +53,7 @@ export function AmyAstroLaunchCard({
           previewBadge={discoveryPreview ? undefined : previewBadge}
           tryFree={tryFree}
           showTryFreeBadge={!discoveryPreview}
+          className="amy-astro-launch-card"
         />
       </AppLink>
     </div>
