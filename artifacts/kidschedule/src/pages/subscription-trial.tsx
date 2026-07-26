@@ -44,18 +44,31 @@ export default function SubscriptionTrialPage() {
   const goActivate = () => setLocation(POST_ONBOARDING_ACTIVATION_PATH);
 
   useEffect(() => {
-    // Only bounce away once entitlements are resolved and user is not free-trial eligible.
+    // Only bounce away once entitlements are resolved and free-trial paywall
+    // is not the selected variant (never bounce on bare EXPIRED / soft age trial).
     if (!entitlementsResolved) return;
-    if (!canStartTrial && !isTrialing && !showFreeTrial) {
+    if (!showFreeTrial && !canStartTrial && !isTrialing) {
       trackSubscriptionEvent({
         event: "trial_not_eligible",
         source: "post_onboarding_trial",
+        extra: {
+          subscriptionState: entitlements?.subscriptionState ?? "null",
+          internalTrialExpired: String(entitlements?.internalTrialExpired ?? false),
+        },
       });
       setLocation(POST_ONBOARDING_ACTIVATION_PATH);
     }
-  }, [canStartTrial, isTrialing, showFreeTrial, entitlementsResolved, setLocation]);
+  }, [
+    canStartTrial,
+    entitlements?.internalTrialExpired,
+    entitlements?.subscriptionState,
+    isTrialing,
+    showFreeTrial,
+    entitlementsResolved,
+    setLocation,
+  ]);
 
-  if (entitlementsResolved && !canStartTrial && !isTrialing && !showFreeTrial) {
+  if (entitlementsResolved && !showFreeTrial && !canStartTrial && !isTrialing) {
     return null;
   }
 

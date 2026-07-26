@@ -54,6 +54,19 @@ describe("shouldRedirectToTrialEndedFullscreen", () => {
     ).toBe(false);
   });
 
+  it("never redirects bare EXPIRED without internalTrialExpired (heal false-positive)", () => {
+    expect(
+      shouldRedirectToTrialEndedFullscreen(
+        expiredEntitlements({
+          internalTrialExpired: false,
+          subscriptionState: "EXPIRED",
+        }),
+        "/dashboard",
+        { entitlementsResolved: true },
+      ),
+    ).toBe(false);
+  });
+
   it("never redirects while entitlements are unresolved (failsafe)", () => {
     expect(
       shouldRedirectToTrialEndedFullscreen(expiredEntitlements(), "/dashboard", {

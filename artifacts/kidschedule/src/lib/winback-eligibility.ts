@@ -46,6 +46,10 @@ export type WinbackEligibilityResult =
 /**
  * Server-confirmed expired internal trial.
  * LocalStorage must NOT participate — avoids free-placeholder race on app_open.
+ *
+ * CRITICAL: bare subscriptionState=EXPIRED is NOT enough. Heal false-positives
+ * and store expiry both use EXPIRED; only internalTrialExpired (natural
+ * completed internal trial) may unlock Trial Ended / winback-from-trial.
  */
 export function isServerConfirmedExpiredTrial(
   entitlements: Entitlements | null | undefined,
@@ -54,9 +58,7 @@ export function isServerConfirmedExpiredTrial(
   if (entitlements.isPremium || entitlements.isPremiumSubscriber) return false;
   if (entitlements.isTrialing || entitlements.isTrialActive) return false;
   if (entitlements.status === "trialing") return false;
-  if (entitlements.internalTrialExpired === true) return true;
-  if (entitlements.subscriptionState === "EXPIRED") return true;
-  return false;
+  return entitlements.internalTrialExpired === true;
 }
 
 /** Entitlements are fully resolved from the server (not empty placeholder FREE). */

@@ -104,6 +104,21 @@ describe("internal-trial", () => {
     ).toBe(false);
   });
 
+  it("never treats bare EXPIRED heal artifact as trial ended", () => {
+    expect(
+      isExpiredInternalTrial({
+        ...base,
+        status: "free",
+        plan: "free",
+        isPremium: false,
+        isTrialing: false,
+        isTrialActive: false,
+        internalTrialExpired: false,
+        subscriptionState: "EXPIRED",
+      }),
+    ).toBe(false);
+  });
+
   it("builds pricing deep links", () => {
     expect(pricingCheckoutHref("trial_banner")).toBe(
       "/pricing?plan=yearly&source=trial_banner",

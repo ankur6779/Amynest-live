@@ -21,6 +21,13 @@ import {
   entitlementDebugSlice,
   logSubscriptionDebug,
 } from "@/lib/subscription-debug";
+import {
+  assertTrialEndedAllowed,
+  hasCompletedTrialEvidence,
+  logTrialPaywallDecision,
+  resolveTrialPaywallVariant,
+  shouldShowTrialEndedPaywall,
+} from "@/lib/trial-paywall-variant";
 import { FEATURE_SHOWCASE, PURCHASE_SCREEN } from "@workspace/subscription-marketing";
 import { useTranslation } from "react-i18next";
 
@@ -40,12 +47,61 @@ export default function SubscriptionTrialEndedPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const expired = isExpiredInternalTrial(entitlements);
+  const decision = resolveTrialPaywallVariant(entitlements, {
+    entitlementsResolved,
+    navigationSource: "trial_ended_fullscreen",
+  });
   const alreadyPaid = shouldSuppressPremiumMonetization({
     entitlements,
     entitlementsResolved,
   });
 
+  const mayShowTrialEnded = shouldShowTrialEndedPaywall(entitlements, {
+    entitlementsResolved,
+  });
+
   useEffect(() => {
+    if (alreadyPaid) {
+      setLocation("/dashboard");
+      return;
+    }
+    // Failsafe: never keep a brand-new / never-trialed user on Trial Ended.
+    if (entitlementsResolved && entitlements && !mayShowTrialEnded) {
+      trackSubscriptionEvent({
+        event: "trial_not_eligible",
+        source: "trial_ended_false_positive_redirect",
+        extra: {
+          action: "leave_trial_ended",
+          reason: decision.reason,
+          expiredLegacy: expired,
+        },
+      });
+      setLocation("/subscription-trial");
+    }
+  }, [
+    alreadyPaid,
+    decision.reason,
+    entitlements,
+    entitlementsResolved,
+    expired,
+    mayShowTrialEnded,
+    setLocation,
+  ]);
+
+  useEffect(() => {
+    if (!entitlementsResolved || !mayShowTrialEnded) return;
+
+    // DEV: crash if Trial Ended UI is about to paint without natural evidence.
+    assertTrialEndedAllowed(entitlements, {
+      entitlementsResolved,
+      navigationSource: "trial_ended_fullscreen",
+      surface: "SubscriptionTrialEndedPage",
+    });
+
+    logTrialPaywallDecision(decision, entitlements, {
+      entitlementsResolved,
+      navigationSource: "trial_ended_fullscreen",
+    });
     markTrialEndedScreenSeen();
     trackSubscriptionEvent({
       event: "paywall_opened",
@@ -61,7 +117,7 @@ export default function SubscriptionTrialEndedPage() {
       event: "trial_paywall_shown",
       source: "trial_ended_fullscreen",
       plan: "yearly",
-      extra: { variant: "trial_ended" },
+      extra: { variant: "trial_ended", reason: decision.reason },
     });
     logSubscriptionDebug({
       phase: "trial_ended_screen_shown",
@@ -73,25 +129,18 @@ export default function SubscriptionTrialEndedPage() {
         available: nativeBilling.available,
         unavailableReason: nativeBilling.unavailableReason,
       },
+      extra: {
+        reason: decision.reason,
+        hasCompletedTrialEvidence: hasCompletedTrialEvidence(entitlements),
+        internalTrialExpired: String(entitlements?.internalTrialExpired ?? false),
+      },
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once per mount
+  }, [entitlements, entitlementsResolved, mayShowTrialEnded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (alreadyPaid) {
-      setLocation("/dashboard");
-      return;
-    }
-    // Failsafe: if entitlements resolve and user is NOT actually expired, leave immediately.
-    // Never keep a brand-new / never-trialed user on Trial Ended.
-    if (entitlementsResolved && entitlements && !expired) {
-      trackSubscriptionEvent({
-        event: "trial_not_eligible",
-        source: "trial_ended_false_positive_redirect",
-        extra: { action: "leave_trial_ended" },
-      });
-      setLocation("/subscription-trial");
-    }
-  }, [alreadyPaid, entitlements, entitlementsResolved, expired, setLocation]);
+  // Never paint Trial Ended chrome without natural evidence (avoid flash).
+  if (entitlementsResolved && !mayShowTrialEnded) {
+    return null;
+  }
 
   const maybeLater = useCallback(() => {
     markTrialEndedScreenDismissed();

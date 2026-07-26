@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTrialState } from "@/hooks/use-trial-state";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useNativeBilling } from "@/hooks/use-native-billing";
+import { useToast } from "@/hooks/use-toast";
 import { markTrialOfferDismissed } from "@/lib/subscription-funnel-storage";
+import { shouldShowFreeTrialPaywall } from "@/lib/trial-paywall-variant";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { logSubscriptionDebug } from "@/lib/subscription-debug";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 type Props = {
   source: string;
@@ -12,6 +20,13 @@ type Props = {
   className?: string;
 };
 
+/**
+ * Free-trial CTA. Prefer Google Play / App Store purchase (intro trial) on
+ * native shells; fall back to server startTrial for web.
+ *
+ * Visibility is gated by the paywall state machine (free_trial), NOT bare
+ * canStartTrial — soft internal age trials must still show "Start Free Trial".
+ */
 export function SubscriptionTrialOffer({
   source,
   variant = "secondary",
@@ -20,14 +35,77 @@ export function SubscriptionTrialOffer({
   className = "",
 }: Props) {
   const { canStartTrial, activateTrial, entitlements } = useTrialState();
-  if (!canStartTrial) return null;
+  const { entitlementsResolved, refresh } = useSubscription();
+  const nativeBilling = useNativeBilling();
+  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
+
+  const showFreeTrial = shouldShowFreeTrialPaywall(entitlements, {
+    entitlementsResolved,
+  });
+  if (!showFreeTrial && !canStartTrial) return null;
 
   const days = entitlements?.limits.trialDays ?? 3;
   const primaryLabel = ctaLabel ?? `Try ${days} days free — full system`;
 
   const onClick = async () => {
-    const ok = await activateTrial(source);
-    if (ok) onActivated?.();
+    if (submitting || nativeBilling.purchasing) return;
+    setSubmitting(true);
+    trackSubscriptionEvent({
+      event: "subscribe_clicked",
+      source,
+      plan: "yearly",
+      extra: { intent: "start_free_trial" },
+    });
+    logSubscriptionDebug({
+      phase: "free_trial_cta_click",
+      source,
+      billing: {
+        platform: nativeBilling.platform,
+        wrapperPresent: nativeBilling.wrapperPresent,
+        available: nativeBilling.available,
+        unavailableReason: nativeBilling.unavailableReason,
+      },
+      extra: {
+        canStartTrial,
+        showFreeTrial,
+        provider: entitlements?.provider ?? "null",
+        subscriptionState: entitlements?.subscriptionState ?? "null",
+      },
+    });
+
+    try {
+      // Native: start Play / App Store free trial via yearly package.
+      if (isNativeAmyNestShell() && nativeBilling.wrapperPresent && nativeBilling.available) {
+        const res = await nativeBilling.purchase("yearly");
+        if (res.ok) {
+          await refresh();
+          onActivated?.();
+          return;
+        }
+        if (res.userCancelled) return;
+        toast({
+          title: "Couldn’t start trial",
+          description: res.reason ?? "Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Web / billing unavailable: server-side internal trial start.
+      const ok = await activateTrial(source);
+      if (ok) {
+        onActivated?.();
+        return;
+      }
+      toast({
+        title: "Couldn’t start trial",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (variant === "primary") {
@@ -36,10 +114,11 @@ export function SubscriptionTrialOffer({
         type="button"
         className={`w-full h-12 font-extrabold ${className}`}
         onClick={() => void onClick()}
+        disabled={submitting || nativeBilling.purchasing}
         data-testid="subscription-trial-cta"
       >
         <Sparkles className="h-4 w-4 mr-2" />
-        {primaryLabel}
+        {submitting || nativeBilling.purchasing ? "Starting…" : primaryLabel}
       </Button>
     );
   }
@@ -48,6 +127,7 @@ export function SubscriptionTrialOffer({
     <button
       type="button"
       onClick={() => void onClick()}
+      disabled={submitting || nativeBilling.purchasing}
       className={`w-full rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-bold text-primary hover:bg-primary/15 ${className}`}
       data-testid="subscription-trial-cta-secondary"
     >

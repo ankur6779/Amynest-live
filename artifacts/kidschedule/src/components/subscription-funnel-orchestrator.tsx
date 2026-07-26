@@ -12,7 +12,12 @@ import {
 } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { shouldRedirectToTrialEndedFullscreen } from "@/lib/trial-ended-redirect";
-import { shouldShowTrialEndedPaywall } from "@/lib/trial-paywall-variant";
+import {
+  assertTrialEndedAllowed,
+  logTrialPaywallDecision,
+  resolveTrialPaywallVariant,
+  shouldShowTrialEndedPaywall,
+} from "@/lib/trial-paywall-variant";
 import {
   entitlementDebugSlice,
   logSubscriptionDebug,
@@ -57,16 +62,40 @@ export function SubscriptionFunnelOrchestrator() {
       return;
     }
     redirectedRef.current = true;
+    const decision = resolveTrialPaywallVariant(entitlements, {
+      entitlementsResolved,
+      navigationSource: "funnel_orchestrator",
+    });
+    // Only assert when we are about to show Trial Ended (evidence required).
+    // shouldRedirect already gated on trial_ended; this catches regressions.
+    if (decision.variant === "trial_ended") {
+      assertTrialEndedAllowed(entitlements, {
+        entitlementsResolved,
+        navigationSource: "funnel_orchestrator",
+        surface: "SubscriptionFunnelOrchestrator",
+      });
+    }
+    logTrialPaywallDecision(decision, entitlements, {
+      entitlementsResolved,
+      navigationSource: "funnel_orchestrator",
+    });
     logSubscriptionDebug({
       phase: "trial_ended_redirect",
       source: "funnel_orchestrator",
       entitlement: entitlementDebugSlice(entitlements),
-      extra: { from_route: location },
+      extra: {
+        from_route: location,
+        reason: decision.reason,
+        variant: decision.variant,
+        internalTrialExpired: String(entitlements?.internalTrialExpired ?? false),
+        subscriptionState: entitlements?.subscriptionState ?? "null",
+      },
     });
     trackSubscriptionEvent({
       event: "paywall_opened",
       source: "trial_ended_redirect",
       plan: "yearly",
+      extra: { reason: decision.reason },
     });
     setLocation("/subscription-trial-ended");
   }, [entitlements, entitlementsResolved, location, setLocation]);

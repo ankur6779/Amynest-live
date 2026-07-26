@@ -16,6 +16,10 @@ import {
   isPremiumNow,
   shouldPreserveActiveTrial,
 } from "./subscription-premium-gate.js";
+import {
+  computeInternalTrialExpiredFlag,
+  isFalselyExpiredInternalTrial,
+} from "./subscription-trial-expiry.js";
 import { UNLIMITED_DEVICES_EMAILS } from "./deviceLimitLogic.js";
 import {
   recoverPremiumOwnerForAuth,
@@ -654,23 +658,14 @@ export async function healStaleSubscriptionRecord(
 }
 
 /**
- * Repair rows that healStaleSubscriptionRecord falsely marked EXPIRED while the
- * internal trial was still active (capped-trial / isPremiumNow=false bug).
- * Fingerprint: EXPIRED + provider none + trialEndsAt cleared + expired within 1h of create.
+ * Repair rows falsely marked EXPIRED (instant heal / never completed a real trial).
+ * Any EXPIRED+provider=none that did not live ≥1 day is reset to FREE.
  */
 export async function repairFalseExpiredInternalTrial(
   sub: Subscription,
   dbExec: DbExec = db,
 ): Promise<Subscription> {
-  if (sub.subscriptionState !== "EXPIRED") return sub;
-  if ((sub.provider ?? "none") !== "none") return sub;
-  if (sub.status !== "free") return sub;
-  if (sub.trialEndsAt) return sub;
-  if (!sub.expiredAt || !sub.createdAt) return sub;
-
-  const livedMs = sub.expiredAt.getTime() - sub.createdAt.getTime();
-  const FALSE_POSITIVE_MAX_MS = 60 * 60 * 1000;
-  if (livedMs < 0 || livedMs > FALSE_POSITIVE_MAX_MS) return sub;
+  if (!isFalselyExpiredInternalTrial(sub)) return sub;
 
   const now = new Date();
   const [updated] = await dbExec
@@ -802,12 +797,9 @@ export async function getEntitlements(
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
     provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
     subscriptionState: sub.subscriptionState ?? "FREE",
-    internalTrialExpired:
-      sub.subscriptionState === "EXPIRED" ||
-      (sub.status === "free" &&
-        sub.provider === "none" &&
-        !!sub.expiredAt &&
-        !isPremiumSubscriber),
+    // NEVER map instantaneous heal EXPIRED / mere expiredAt to Trial Ended.
+    // Only naturally completed trial windows (≥1 day lived) count.
+    internalTrialExpired: computeInternalTrialExpiredFlag(sub, isPremiumSubscriber),
     canAccessLearningHub: isPremium || !features.learning_load_more_smart_study.locked,
     canAccessActivitiesHub: isPremium,
     canAccessSpeechCoach: isPremium || !features.hub_speech_session.locked,
