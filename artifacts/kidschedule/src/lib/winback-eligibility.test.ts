@@ -91,11 +91,19 @@ describe("isServerConfirmedExpiredTrial", () => {
     expect(isServerConfirmedExpiredTrial(FREE_ENTITLEMENTS)).toBe(false);
   });
 
-  it("accepts subscriptionState EXPIRED", () => {
-    expect(isServerConfirmedExpiredTrial(expiredEntitlements())).toBe(true);
+  it("rejects bare subscriptionState EXPIRED without internalTrialExpired", () => {
+    // Heal false-positives use EXPIRED — must NOT unlock Trial Ended / winback.
+    expect(
+      isServerConfirmedExpiredTrial(
+        expiredEntitlements({
+          subscriptionState: "EXPIRED",
+          internalTrialExpired: false,
+        }),
+      ),
+    ).toBe(false);
   });
 
-  it("accepts internalTrialExpired flag", () => {
+  it("accepts internalTrialExpired flag only", () => {
     expect(
       isServerConfirmedExpiredTrial(
         expiredEntitlements({
@@ -104,6 +112,7 @@ describe("isServerConfirmedExpiredTrial", () => {
         }),
       ),
     ).toBe(true);
+    expect(isServerConfirmedExpiredTrial(expiredEntitlements())).toBe(true);
   });
 
   it("rejects active trial", () => {

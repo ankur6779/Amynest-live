@@ -14,7 +14,12 @@ import {
   hasValidPaidPeriodEnd,
   isPremiumSubscriberNow,
   isPremiumNow,
+  shouldPreserveActiveTrial,
 } from "./subscription-premium-gate.js";
+import {
+  computeInternalTrialExpiredFlag,
+  isFalselyExpiredInternalTrial,
+} from "./subscription-trial-expiry.js";
 import { UNLIMITED_DEVICES_EMAILS } from "./deviceLimitLogic.js";
 import {
   recoverPremiumOwnerForAuth,
@@ -42,6 +47,7 @@ export {
   hasValidPaidPeriodEnd,
   isPremiumSubscriberNow,
   isPremiumNow,
+  shouldPreserveActiveTrial,
 } from "./subscription-premium-gate.js";
 
 /** Env-configurable infant Baby Expert daily limit (A/B testing). Default 3. */
@@ -600,12 +606,18 @@ export async function incrementAiUsage(userId: string, by = 1): Promise<number> 
 /**
  * Downgrade DB rows that say active/trialing but fail isPremiumNow (e.g. missing
  * or expired currentPeriodEnd). Runs on every entitlement read so bad state self-heals.
+ *
+ * CRITICAL: Active capped internal trials intentionally return isPremiumNow=false
+ * (feature-gated). They must NEVER be healed to EXPIRED — that falsely shows
+ * "Your Premium Trial Has Ended" to brand-new users who just received a trial.
  */
 export async function healStaleSubscriptionRecord(
   sub: Subscription,
   dbExec: DbExec = db,
 ): Promise<Subscription> {
   if (isPremiumNow(sub)) return sub;
+  // Preserve live trials (including capped internal trials where isPremiumNow=false).
+  if (shouldPreserveActiveTrial(sub)) return sub;
   if (sub.status === "free") return sub;
 
   if (sub.provider === "manual" && sub.status === "active" && !hasValidPaidPeriodEnd(sub)) {
@@ -641,6 +653,40 @@ export async function healStaleSubscriptionRecord(
     .returning();
   if (wasTrial && updated) {
     void trackServerSubscriptionFunnel(sub.userId, "trial_expired", { trigger: "heal_stale" });
+  }
+  return updated ?? sub;
+}
+
+/**
+ * Repair rows falsely marked EXPIRED (instant heal / never completed a real trial).
+ * Any EXPIRED+provider=none that did not live ≥1 day is reset to FREE.
+ */
+export async function repairFalseExpiredInternalTrial(
+  sub: Subscription,
+  dbExec: DbExec = db,
+): Promise<Subscription> {
+  if (!isFalselyExpiredInternalTrial(sub)) return sub;
+
+  const now = new Date();
+  const [updated] = await dbExec
+    .update(subscriptionsTable)
+    .set({
+      status: "free",
+      plan: "free",
+      subscriptionState: "FREE",
+      provider: "none",
+      expiredAt: null,
+      trialEndsAt: null,
+      currentPeriodEnd: null,
+      updatedAt: now,
+    })
+    .where(eq(subscriptionsTable.userId, sub.userId))
+    .returning();
+  if (updated) {
+    void trackServerSubscriptionFunnel(sub.userId, "trial_false_expiry_repaired", {
+      trigger: "repair_false_expired",
+      action: "reset_to_free",
+    });
   }
   return updated ?? sub;
 }
@@ -684,6 +730,17 @@ export async function getEntitlements(
   });
   let sub = await getOrCreateSubscription(subscriptionOwnerUserId);
   sub = await healStaleSubscriptionRecord(sub);
+  // Undo false EXPIRED from the capped-internal-trial heal bug, then allow
+  // maybeApplyAutomaticAgeTrial to re-grant on the next getOrCreate pass.
+  sub = await repairFalseExpiredInternalTrial(sub);
+  if (
+    sub.subscriptionState === "FREE"
+    && sub.status === "free"
+    && (sub.provider ?? "none") === "none"
+    && !sub.expiredAt
+  ) {
+    sub = await maybeApplyAutomaticAgeTrial(subscriptionOwnerUserId, sub, db);
+  }
   const isPremium = isPremiumNow(sub);
   const isPremiumSubscriber = isPremiumSubscriberNow(sub);
   const isTrialing = sub.status === "trialing" && !!sub.trialEndsAt && sub.trialEndsAt.getTime() > Date.now();
@@ -740,12 +797,9 @@ export async function getEntitlements(
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
     provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
     subscriptionState: sub.subscriptionState ?? "FREE",
-    internalTrialExpired:
-      sub.subscriptionState === "EXPIRED" ||
-      (sub.status === "free" &&
-        sub.provider === "none" &&
-        !!sub.expiredAt &&
-        !isPremiumSubscriber),
+    // NEVER map instantaneous heal EXPIRED / mere expiredAt to Trial Ended.
+    // Only naturally completed trial windows (≥1 day lived) count.
+    internalTrialExpired: computeInternalTrialExpiredFlag(sub, isPremiumSubscriber),
     canAccessLearningHub: isPremium || !features.learning_load_more_smart_study.locked,
     canAccessActivitiesHub: isPremium,
     canAccessSpeechCoach: isPremium || !features.hub_speech_session.locked,

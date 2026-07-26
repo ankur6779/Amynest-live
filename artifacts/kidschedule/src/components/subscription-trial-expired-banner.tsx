@@ -2,9 +2,9 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Crown } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
-import { isExpiredInternalTrial } from "@/lib/internal-trial";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { FF_TRIAL_STATUS_UI } from "@/lib/subscription-feature-flags";
+import { shouldShowTrialEndedPaywall } from "@/lib/trial-paywall-variant";
 
 /**
  * Fallback banner when fullscreen trial-ended was dismissed (cooldown).
@@ -12,9 +12,14 @@ import { FF_TRIAL_STATUS_UI } from "@/lib/subscription-feature-flags";
  */
 export function SubscriptionTrialExpiredBanner() {
   const { t } = useTranslation();
-  const { entitlements } = useSubscription();
+  const { entitlements, entitlementsResolved } = useSubscription();
 
-  if (!FF_TRIAL_STATUS_UI || !isExpiredInternalTrial(entitlements)) return null;
+  if (
+    !FF_TRIAL_STATUS_UI
+    || !shouldShowTrialEndedPaywall(entitlements, { entitlementsResolved })
+  ) {
+    return null;
+  }
 
   const href = "/subscription-trial-ended";
 

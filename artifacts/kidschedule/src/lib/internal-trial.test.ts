@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Entitlements } from "@/hooks/use-subscription";
 import {
   isExpiredInternalTrial,
@@ -50,21 +50,73 @@ const base: Entitlements = {
 };
 
 describe("internal-trial", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it("detects internal trial", () => {
     expect(isInternalTrial(base)).toBe(true);
     expect(isInternalTrial({ ...base, provider: "revenuecat" })).toBe(false);
   });
 
-  it("detects expired internal trial from server flag", () => {
+  it("detects expired internal trial from server flag only", () => {
     expect(
       isExpiredInternalTrial({
         ...base,
         status: "free",
         isPremium: false,
         isTrialing: false,
+        isTrialActive: false,
         internalTrialExpired: true,
+        subscriptionState: "EXPIRED",
       }),
     ).toBe(true);
+  });
+
+  it("never treats localStorage trial marker as expired (shared-device safe)", () => {
+    localStorage.setItem("amynest:sub:trial_started_at", String(Date.now()));
+    expect(
+      isExpiredInternalTrial({
+        ...base,
+        status: "free",
+        isPremium: false,
+        isTrialing: false,
+        isTrialActive: false,
+        internalTrialExpired: false,
+        subscriptionState: "FREE",
+        provider: "none",
+      }),
+    ).toBe(false);
+  });
+
+  it("never marks brand-new free users as expired", () => {
+    expect(
+      isExpiredInternalTrial({
+        ...base,
+        status: "free",
+        plan: "free",
+        isPremium: false,
+        isTrialing: false,
+        isTrialActive: false,
+        internalTrialExpired: false,
+        subscriptionState: "FREE",
+      }),
+    ).toBe(false);
+  });
+
+  it("never treats bare EXPIRED heal artifact as trial ended", () => {
+    expect(
+      isExpiredInternalTrial({
+        ...base,
+        status: "free",
+        plan: "free",
+        isPremium: false,
+        isTrialing: false,
+        isTrialActive: false,
+        internalTrialExpired: false,
+        subscriptionState: "EXPIRED",
+      }),
+    ).toBe(false);
   });
 
   it("builds pricing deep links", () => {

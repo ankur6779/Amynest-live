@@ -37,13 +37,13 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useTrialState } from "@/hooks/use-trial-state";
 import {
   FF_POST_ONBOARDING_TRIAL,
 } from "@/lib/subscription-feature-flags";
 import {
   wasOnboardingTrialSeen,
 } from "@/lib/subscription-funnel-storage";
+import { shouldRouteToPostOnboardingFreeTrial } from "@/lib/trial-paywall-variant";
 import { logOnboardingState } from "@/lib/onboarding-debug";
 import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
 import {
@@ -556,7 +556,6 @@ export default function OnboardingPage() {
   const { user } = useUser();
   const { isLoaded: authLoaded, isSignedIn, getToken } = useAuth();
   const { entitlements } = useSubscription();
-  const { canStartTrial } = useTrialState();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
   const [navigatingToDashboard, setNavigatingToDashboard] = useState(false);
@@ -1200,16 +1199,25 @@ export default function OnboardingPage() {
       persistOnboardingCache(completeStatus);
       queryClient.setQueryData(["onboarding-status"], completeStatus);
       onboardingJustFinishedRef.current = false;
-      const trialPath =
-        FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
-          ? "/subscription-trial"
-          : POST_ONBOARDING_ACTIVATION_PATH;
+      const offerFreeTrial = shouldRouteToPostOnboardingFreeTrial({
+        featureEnabled: FF_POST_ONBOARDING_TRIAL,
+        alreadySeen: wasOnboardingTrialSeen(),
+        isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
+      });
+      const trialPath = offerFreeTrial
+        ? "/subscription-trial"
+        : POST_ONBOARDING_ACTIVATION_PATH;
       navigateAfterOnboardingComplete(trialPath);
       // Use Wouter setLocation as a direct fallback in case PopStateEvent is ignored.
       setLocation(trialPath);
       await logOnboardingPipelineSnapshot("go-dashboard-end", authFetch, {
         userId: user?.id ?? readFirebaseUserId(),
-        extra: { trialPath, fastPath: true },
+        extra: {
+          trialPath,
+          fastPath: true,
+          offerFreeTrial,
+          isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
+        },
       });
       setNavigatingToDashboard(false);
       return;
@@ -1249,16 +1257,25 @@ export default function OnboardingPage() {
       setStep("parent-allergies");
       return;
     }
-    const trialPath =
-      FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
-        ? "/subscription-trial"
-        : POST_ONBOARDING_ACTIVATION_PATH;
+    const offerFreeTrial = shouldRouteToPostOnboardingFreeTrial({
+      featureEnabled: FF_POST_ONBOARDING_TRIAL,
+      alreadySeen: wasOnboardingTrialSeen(),
+      isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
+    });
+    const trialPath = offerFreeTrial
+      ? "/subscription-trial"
+      : POST_ONBOARDING_ACTIVATION_PATH;
     navigateAfterOnboardingComplete(trialPath);
     // Direct Wouter navigation as a belt-and-suspenders fallback.
     setLocation(trialPath);
     await logOnboardingPipelineSnapshot("go-dashboard-end", authFetch, {
       userId: user?.id ?? readFirebaseUserId(),
-      extra: { trialPath, fastPath: false },
+      extra: {
+        trialPath,
+        fastPath: false,
+        offerFreeTrial,
+        isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
+      },
     });
     setNavigatingToDashboard(false);
   }

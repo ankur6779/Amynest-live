@@ -21,6 +21,13 @@ import {
   entitlementDebugSlice,
   logSubscriptionDebug,
 } from "@/lib/subscription-debug";
+import {
+  assertTrialEndedAllowed,
+  hasCompletedTrialEvidence,
+  logTrialPaywallDecision,
+  resolveTrialPaywallVariant,
+  shouldShowTrialEndedPaywall,
+} from "@/lib/trial-paywall-variant";
 import { FEATURE_SHOWCASE, PURCHASE_SCREEN } from "@workspace/subscription-marketing";
 import { useTranslation } from "react-i18next";
 
@@ -40,17 +47,77 @@ export default function SubscriptionTrialEndedPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const expired = isExpiredInternalTrial(entitlements);
+  const decision = resolveTrialPaywallVariant(entitlements, {
+    entitlementsResolved,
+    navigationSource: "trial_ended_fullscreen",
+  });
   const alreadyPaid = shouldSuppressPremiumMonetization({
     entitlements,
     entitlementsResolved,
   });
 
+  const mayShowTrialEnded = shouldShowTrialEndedPaywall(entitlements, {
+    entitlementsResolved,
+  });
+
   useEffect(() => {
+    if (alreadyPaid) {
+      setLocation("/dashboard");
+      return;
+    }
+    // Failsafe: never keep a brand-new / never-trialed user on Trial Ended.
+    if (entitlementsResolved && entitlements && !mayShowTrialEnded) {
+      trackSubscriptionEvent({
+        event: "trial_not_eligible",
+        source: "trial_ended_false_positive_redirect",
+        extra: {
+          action: "leave_trial_ended",
+          reason: decision.reason,
+          expiredLegacy: expired,
+        },
+      });
+      setLocation("/subscription-trial");
+    }
+  }, [
+    alreadyPaid,
+    decision.reason,
+    entitlements,
+    entitlementsResolved,
+    expired,
+    mayShowTrialEnded,
+    setLocation,
+  ]);
+
+  useEffect(() => {
+    if (!entitlementsResolved || !mayShowTrialEnded) return;
+
+    // DEV: crash if Trial Ended UI is about to paint without natural evidence.
+    assertTrialEndedAllowed(entitlements, {
+      entitlementsResolved,
+      navigationSource: "trial_ended_fullscreen",
+      surface: "SubscriptionTrialEndedPage",
+    });
+
+    logTrialPaywallDecision(decision, entitlements, {
+      entitlementsResolved,
+      navigationSource: "trial_ended_fullscreen",
+    });
     markTrialEndedScreenSeen();
     trackSubscriptionEvent({
       event: "paywall_opened",
       source: "trial_ended_fullscreen",
       plan: "yearly",
+    });
+    trackSubscriptionEvent({
+      event: "trial_expired",
+      source: "trial_ended_fullscreen",
+      plan: "yearly",
+    });
+    trackSubscriptionEvent({
+      event: "trial_paywall_shown",
+      source: "trial_ended_fullscreen",
+      plan: "yearly",
+      extra: { variant: "trial_ended", reason: decision.reason },
     });
     logSubscriptionDebug({
       phase: "trial_ended_screen_shown",
@@ -62,18 +129,18 @@ export default function SubscriptionTrialEndedPage() {
         available: nativeBilling.available,
         unavailableReason: nativeBilling.unavailableReason,
       },
+      extra: {
+        reason: decision.reason,
+        hasCompletedTrialEvidence: hasCompletedTrialEvidence(entitlements),
+        internalTrialExpired: String(entitlements?.internalTrialExpired ?? false),
+      },
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once per mount
+  }, [entitlements, entitlementsResolved, mayShowTrialEnded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (alreadyPaid) {
-      setLocation("/dashboard");
-      return;
-    }
-    if (entitlements && !expired) {
-      setLocation("/dashboard");
-    }
-  }, [alreadyPaid, entitlements, expired, setLocation]);
+  // Never paint Trial Ended chrome without natural evidence (avoid flash).
+  if (entitlementsResolved && !mayShowTrialEnded) {
+    return null;
+  }
 
   const maybeLater = useCallback(() => {
     markTrialEndedScreenDismissed();
@@ -107,6 +174,11 @@ export default function SubscriptionTrialEndedPage() {
       source: "trial_ended_fullscreen",
       plan: "yearly",
     });
+    trackSubscriptionEvent({
+      event: "subscription_checkout_opened",
+      source: "trial_ended_fullscreen",
+      plan: "yearly",
+    });
     logSubscriptionDebug({
       phase: "trial_ended_checkout_start",
       source: "trial_ended_fullscreen",
@@ -133,6 +205,13 @@ export default function SubscriptionTrialEndedPage() {
           error: res.reason,
         },
       });
+      if (res.userCancelled) {
+        trackSubscriptionEvent({
+          event: "purchase_cancelled",
+          source: "trial_ended_fullscreen",
+          plan: "yearly",
+        });
+      }
       if (res.ok) {
         trackSubscriptionEvent({
           event: "purchase_success",

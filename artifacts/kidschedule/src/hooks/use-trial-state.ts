@@ -19,9 +19,24 @@ export function useTrialState() {
   const trialEndsAt = entitlements?.trialEndsAt ?? null;
 
   const canStartTrial = useMemo(() => {
-    if (!entitlements) return false;
+    // Failsafe: unknown billing → assume eligible (never block free-trial CTA).
+    if (!entitlements) return true;
+    if (entitlements.isPremiumSubscriber) return false;
     if (isPremium && !isTrialing) return false;
-    return entitlements.status === "free";
+    // Only a naturally completed trial blocks the free-trial CTA.
+    // Bare EXPIRED must NOT block — heal false-positives use that state.
+    if (entitlements.internalTrialExpired === true) {
+      return false;
+    }
+    // Free users, or soft internal age-trial (provider=none): still offer Play free trial.
+    if (entitlements.status === "free") return true;
+    if (
+      isTrialing
+      && (entitlements.provider === "none" || entitlements.provider === "manual")
+    ) {
+      return true;
+    }
+    return false;
   }, [entitlements, isPremium, isTrialing]);
 
   const trialDaysRemaining = useMemo(() => {

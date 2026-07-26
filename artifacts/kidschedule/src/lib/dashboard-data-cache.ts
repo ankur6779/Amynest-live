@@ -166,11 +166,17 @@ function asUiOnlyCachedSubscription(cached: SubscriptionResponse): SubscriptionR
       plan: "free",
       status: "free",
       isPremium: false,
+      isPremiumSubscriber: false,
       isTrialing: false,
+      isTrialActive: false,
       trialEndsAt: null,
       currentPeriodEnd: null,
       cancelAtPeriodEnd: false,
       provider: "none",
+      // Never leak a cached EXPIRED flag into placeholder UI — that causes
+      // false "Trial Ended" paywalls before /api/subscription resolves.
+      internalTrialExpired: false,
+      subscriptionState: "FREE",
     },
   };
 }

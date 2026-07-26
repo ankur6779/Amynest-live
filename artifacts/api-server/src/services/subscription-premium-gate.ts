@@ -41,6 +41,23 @@ export function isInternalTrialNow(s: Subscription): boolean {
 }
 
 /**
+ * Whether healStaleSubscriptionRecord must leave this row alone.
+ * Active trials (including capped internal trials where isPremiumNow=false)
+ * must never be rewritten to EXPIRED — that causes false "Trial Ended" paywalls.
+ */
+export function shouldPreserveActiveTrial(s: Subscription): boolean {
+  if (isInternalTrialNow(s)) return true;
+  if (
+    s.status === "trialing"
+    && !!s.trialEndsAt
+    && s.trialEndsAt.getTime() > Date.now()
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Strict paid-subscriber check for assets that must not unlock via trials,
  * bonus grants, grace periods, journey access, or manual/promotional grants.
  */
