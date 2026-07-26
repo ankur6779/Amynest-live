@@ -10,9 +10,13 @@ import {
   skySnapshotsTable,
   childrenTable,
 } from "@workspace/db";
-import { withMeaningSnapshot } from "@workspace/birth-sky-meaning";
+import {
+  computeMeaningSnapshot,
+  type MeaningAstronomyInput,
+} from "@workspace/birth-sky-meaning";
 import { logger } from "../../lib/logger.js";
 import { getEphemerisPort } from "./resolve-ephemeris-port.js";
+import type { AstronomyData } from "./ephemeris-port.js";
 import {
   profileNeedsAtRestMigration,
   sealBirthPlace,
@@ -23,6 +27,51 @@ import {
 } from "./birth-field-crypto.js";
 
 export type PlaceInput = BirthPlacePlain | null;
+
+/** Narrow ephemeris payload for Meaning Engine without dropping AstronomyData fields. */
+function toMeaningAstronomyInput(a: AstronomyData): MeaningAstronomyInput {
+  const western = a.westernBirthProfile;
+  return {
+    sunSign: a.sunSign,
+    moonSign: a.moonSign,
+    risingSign: a.risingSign,
+    moonPhase: a.moonPhase,
+    astrologyMode: a.astrologyMode ?? a.metadata?.astrologyMode ?? null,
+    zodiacMode: a.zodiacMode ?? a.metadata?.zodiacMode ?? null,
+    sun: a.sun ?? null,
+    moon: a.moon ?? null,
+    mercury: a.mercury ?? a.planetDegrees?.mercury ?? null,
+    venus: a.venus ?? a.planetDegrees?.venus ?? null,
+    mars: a.mars ?? a.planetDegrees?.mars ?? null,
+    jupiter: a.jupiter ?? a.planetDegrees?.jupiter ?? null,
+    saturn: a.saturn ?? a.planetDegrees?.saturn ?? null,
+    planetHouseMap: a.planetHouseMap ?? null,
+    aspects: a.aspects ?? null,
+    moonProfile: a.moonProfile ?? null,
+    nakshatra: a.nakshatra ?? null,
+    dasha: a.dasha ?? null,
+    westernBirthProfile: western
+      ? {
+          dominantElement:
+            typeof western.dominantElement === "string"
+              ? western.dominantElement
+              : undefined,
+          dominantModality:
+            typeof western.dominantModality === "string"
+              ? western.dominantModality
+              : undefined,
+        }
+      : null,
+  };
+}
+
+function attachMeaningSnapshot(raw: AstronomyData): AstronomyData {
+  const meaningSnapshot = computeMeaningSnapshot(toMeaningAstronomyInput(raw));
+  return {
+    ...raw,
+    meaningSnapshot: meaningSnapshot as unknown as Record<string, unknown>,
+  };
+}
 
 function timezoneOffsetMinutes(iana: string | null | undefined, lon: number | null): number {
   if (iana) {
@@ -171,7 +220,7 @@ export async function computeAndPersistSnapshot(params: {
   const t0 = Date.now();
   const { mode, astronomy: rawAstronomy, engineVersion } = await ephemeris.compute(input);
   // Meaning layer — does not alter ephemeris math; additive semantic snapshot.
-  const astronomy = withMeaningSnapshot(rawAstronomy);
+  const astronomy = attachMeaningSnapshot(rawAstronomy);
   const durationMs = Date.now() - t0;
   const cacheKey = ephemeris.buildCacheKey(input);
 
