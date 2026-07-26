@@ -41,6 +41,33 @@ describe("personalized greetings", () => {
     expect(g.hello).toMatch(/Welcome back/i);
     expect(g.moonLead).not.toMatch(/Moon Moon/i);
   });
+
+  it("prefers continuity hellos from stored facts only", () => {
+    const g = buildPersonalizedGreeting({
+      parentFirstName: "Maya",
+      childName: "John",
+      moonPhaseLabel: "Full Moon",
+      sunSign: "Aries",
+      moonSign: "Libra",
+      daySky: true,
+      greetingIndex: 0,
+      continuity: {
+        visitCount: 5,
+        daysSinceLastVisit: 2,
+        lastPlanet: "moon",
+        lastChapterLabel: "The Inner Weather",
+        chapterCount: 1,
+        planetCount: 1,
+        aiOpened: 0,
+        portraitSaved: true,
+        pendingMilestone: null,
+        latestMilestone: null,
+        familiarity: "familiar",
+      },
+    });
+    expect(g.hello).toMatch(/glad you're back|thinking about John|stars have changed|portrait|Inner Weather/i);
+    expect(g.skyLine).toMatch(/Moon|Inner Weather|portrait|chapter/i);
+  });
 });
 
 describe("deep insight chapters", () => {

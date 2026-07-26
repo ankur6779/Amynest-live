@@ -1,5 +1,5 @@
 /**
- * Signature Edition welcome strip — greeting, completeness, light CTAs.
+ * Signature Edition welcome strip — greeting, cosmic status badges, illustrated CTAs.
  * Cosmic Portrait card holds the emotional centerpiece separately.
  */
 
@@ -8,10 +8,15 @@ import {
   BirthSkyContinuousSeal,
   SEAL_SLOT_SIZES,
 } from "../../components/birth-sky-seal-host";
+import {
+  AmyAstroIcon,
+  AmyAstroStatusBadge,
+} from "../../components/icons/amy-astro-icons";
 import type { CompletenessChip, DashboardHeroVM } from "../../application/view-models/dashboard-vm";
 import { trackBirthSkyEvent } from "../../lib/analytics";
 import { AMY_ASTRO_PRODUCT_SHORT } from "../../lib/branding";
 import { buildPersonalizedGreeting } from "../../lib/personalized-greetings";
+import type { ContinuityFacts } from "../../lib/emotional-continuity";
 import { loadReplyMemory, rememberGreeting } from "../../lib/reply-memory";
 import { cn } from "@/lib/utils";
 import "../../design/amy-astro.css";
@@ -32,6 +37,7 @@ type Props = {
   moonPhaseLabel: string;
   greetingIndex: number;
   onContinueJourney?: () => void;
+  continuity?: ContinuityFacts | null;
 };
 
 export function BirthSkyDashboardHero({
@@ -50,6 +56,7 @@ export function BirthSkyDashboardHero({
   moonPhaseLabel,
   greetingIndex,
   onContinueJourney,
+  continuity = null,
 }: Props) {
   const painted = useRef(false);
   const greeting = useMemo(() => {
@@ -63,6 +70,7 @@ export function BirthSkyDashboardHero({
       daySky: vm.daySky,
       greetingIndex,
       avoidHellos: mem.lastGreetings,
+      continuity,
     });
   }, [
     parentFirstName,
@@ -73,6 +81,7 @@ export function BirthSkyDashboardHero({
     moonSign,
     vm.daySky,
     greetingIndex,
+    continuity,
   ]);
 
   useEffect(() => {
@@ -159,51 +168,62 @@ export function BirthSkyDashboardHero({
             aria-label="Birth details completeness"
           >
             {vm.chips.map((chip) => (
-              <button
+              <AmyAstroStatusBadge
                 key={chip.id}
-                type="button"
+                kind={chip.id}
+                label={chip.label}
+                complete={chip.complete}
                 onClick={() => onChip(chip)}
-                className={cn(
-                  "amy-astro-ripple min-h-10 rounded-full border px-3 text-xs font-semibold transition-colors",
-                  chip.complete
-                    ? "border-[hsl(42_50%_60%/0.35)] bg-[hsl(42_40%_30%/0.25)] text-[hsl(42_80%_82%)]"
-                    : "border-white/12 bg-transparent text-[hsl(40_20%_96%/0.7)]",
-                )}
-                aria-label={`${chip.label}: ${chip.complete ? "complete" : "missing"}`}
-                data-testid={`birth-sky-chip-${chip.id}`}
-              >
-                {chip.label}
-                {chip.complete ? " · Done" : " · Add"}
-              </button>
+                testId={`birth-sky-chip-${chip.id}`}
+                reducedMotion={reducedMotion}
+              />
             ))}
           </div>
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
-              className="amy-astro-ripple min-h-11 flex-1 rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-sm font-semibold text-white shadow-[0_0_24px_hsl(275_70%_40%/0.35)]"
+              className="amy-astro-ripple amy-astro-cta-premium flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] px-3 text-sm font-semibold text-white shadow-[0_0_24px_hsl(275_70%_40%/0.35)]"
               onClick={onContinueJourney ?? onAskAmy}
               data-testid="amy-astro-hero-continue"
             >
-              {greeting.cta}
+              <AmyAstroIcon
+                name="chapter_book"
+                size={32}
+                reducedMotion={reducedMotion}
+                title="Open chapter"
+              />
+              <span>{greeting.cta}</span>
             </button>
             {onAskAmy ? (
               <button
                 type="button"
-                className="amy-astro-ripple min-h-11 flex-1 rounded-xl border border-white/15 bg-white/[0.04] text-xs font-semibold text-[hsl(40_30%_85%)]"
+                className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-2xl border border-white/15 bg-white/[0.04] px-3 text-xs font-semibold text-[hsl(40_30%_85%)]"
                 onClick={onAskAmy}
                 data-testid="amy-astro-hero-ask-amy"
               >
-                Ask Amy About Their Sky
+                <AmyAstroIcon
+                  name="ask_amy"
+                  size={32}
+                  reducedMotion={reducedMotion}
+                  title="Ask Amy"
+                />
+                <span>Ask Amy About Their Sky</span>
               </button>
             ) : null}
           </div>
           <button
             type="button"
-            className="mt-2 text-xs font-semibold text-[hsl(40_30%_80%/0.7)] underline-offset-2 hover:underline"
+            className="amy-astro-ripple mt-2 inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-[hsl(40_30%_80%/0.75)] underline-offset-2 hover:underline"
             onClick={onRegenerateEntry}
             data-testid="birth-sky-regenerate-entry"
           >
+            <AmyAstroIcon
+              name="update_telescope"
+              size={24}
+              reducedMotion={reducedMotion}
+              title="Update sky"
+            />
             Update sky details
           </button>
         </>

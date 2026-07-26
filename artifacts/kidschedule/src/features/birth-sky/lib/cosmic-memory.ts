@@ -13,6 +13,9 @@ export type CosmicMemory = {
   greetingIndex: number;
   /** Signature Edition — emotional completion shown once. */
   completionShown?: boolean;
+  /** Times parent saved the Cosmic Portrait (client-only). */
+  portraitSavedCount?: number;
+  lastPortraitSavedAt?: number;
 };
 
 const KEY = "amynest:amy-astro:cosmic-memory:v1:";
@@ -93,6 +96,35 @@ export function rememberCelebration(profileId: string, id: string): CosmicMemory
     ...prev,
     celebrationsShown: [...prev.celebrationsShown, id],
   });
+}
+
+/** Persist that the parent saved the Cosmic Portrait (share/clipboard). */
+export function rememberPortraitSaved(profileId: string): CosmicMemory {
+  const prev = read(profileId);
+  return write(profileId, {
+    ...prev,
+    portraitSavedCount: (prev.portraitSavedCount ?? 0) + 1,
+    lastPortraitSavedAt: Date.now(),
+  });
+}
+
+/**
+ * Touch a visit while returning the previous lastVisitAt for continuity math.
+ * Does not fabricate events — only increments stored visit counters.
+ */
+export function touchCosmicVisitWithPrior(profileId: string): {
+  memory: CosmicMemory;
+  previousLastVisitAt: number;
+} {
+  const prev = read(profileId);
+  const previousLastVisitAt = prev.lastVisitAt;
+  const memory = write(profileId, {
+    ...prev,
+    visitCount: prev.visitCount + 1,
+    lastVisitAt: Date.now(),
+    greetingIndex: prev.greetingIndex + 1,
+  });
+  return { memory, previousLastVisitAt };
 }
 
 /** Enough exploration to offer the quiet completion moment. */

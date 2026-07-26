@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Settings } from "lucide-react";
+import { AmyAstroIcon } from "../../components/icons/amy-astro-icons";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -78,8 +78,9 @@ import {
   rememberCelebration,
   rememberChapter,
   rememberPlanet,
+  rememberPortraitSaved,
   shouldOfferEmotionalCompletion,
-  touchCosmicVisit,
+  touchCosmicVisitWithPrior,
   type CosmicMemory,
 } from "../../lib/cosmic-memory";
 import { buildCosmicPortrait } from "../../lib/signature-insight";
@@ -89,6 +90,13 @@ import {
   buildDiscoveryNudge,
   type DiscoveryNudge,
 } from "../../lib/discovery-guidance";
+import {
+  buildReturnContinuityLine,
+  gatherContinuityFacts,
+  livingSkyFamiliarityClass,
+  milestoneCelebrationCopy,
+  type ContinuityFacts,
+} from "../../lib/emotional-continuity";
 import { AmyAstroCosmicPortraitCard } from "../../components/cosmic-portrait-card";
 import { AmyAstroTodaysSkyCard } from "../../components/todays-sky-card";
 import { AmyAstroDiscoveryNudge } from "../../components/discovery-nudge";
@@ -161,6 +169,7 @@ export function BirthSkyDashboardPage({
   const [memory, setMemory] = useState<CosmicMemory>(() =>
     loadCosmicMemory(profile.profileId),
   );
+  const [priorVisitAt, setPriorVisitAt] = useState(0);
   const [planetJourney, setPlanetJourney] = useState<PlanetKey | null>(null);
   const [celebration, setCelebration] = useState<string | null>(null);
   const [pendingCelebration, setPendingCelebration] = useState<string | null>(null);
@@ -177,7 +186,11 @@ export function BirthSkyDashboardPage({
     null;
 
   useEffect(() => {
-    setMemory(touchCosmicVisit(profile.profileId));
+    const { memory: next, previousLastVisitAt } = touchCosmicVisitWithPrior(
+      profile.profileId,
+    );
+    setPriorVisitAt(previousLastVisitAt);
+    setMemory(next);
   }, [profile.profileId]);
 
   useEffect(() => {
@@ -195,9 +208,20 @@ export function BirthSkyDashboardPage({
     () => buildMemoryLines(memory, childName),
     [memory, childName],
   );
+  const continuity: ContinuityFacts = useMemo(
+    () =>
+      gatherContinuityFacts({
+        memory,
+        previousLastVisitAt: priorVisitAt,
+        emittedMilestones: reflectionState.emittedMilestones,
+      }),
+    [memory, priorVisitAt, reflectionState.emittedMilestones],
+  );
   const continuityLine = useMemo(
-    () => buildContinuityLine(memory, childName),
-    [memory, childName],
+    () =>
+      buildReturnContinuityLine(continuity, childName) ??
+      buildContinuityLine(memory, childName),
+    [continuity, memory, childName],
   );
   const discoveryNudge = useMemo(
     () =>
@@ -260,6 +284,28 @@ export function BirthSkyDashboardPage({
   }, [profile.profileId]);
 
   const snapshot = hydrated.ok ? hydrated.snapshot : null;
+
+  // Celebrate real reflection milestones once (stars gather — existing celebration UI)
+  useEffect(() => {
+    const pending = continuity.pendingMilestone;
+    if (!pending) return;
+    const id = `milestone:${pending}`;
+    if (memory.celebrationsShown.includes(id)) return;
+    setMemory(rememberCelebration(profile.profileId, id));
+    // Show immediately unless a planet journey is covering the sky
+    const message = milestoneCelebrationCopy(pending, childName);
+    if (planetJourney) {
+      setPendingCelebration(message);
+    } else {
+      setCelebration(message);
+    }
+  }, [
+    continuity.pendingMilestone,
+    memory.celebrationsShown,
+    profile.profileId,
+    childName,
+    planetJourney,
+  ]);
 
   const portrait = useMemo(
     () =>
@@ -490,15 +536,21 @@ export function BirthSkyDashboardPage({
       onBack={onExit}
       testId="birth-sky-dashboard"
       reducedMotion={reduced}
+      childName={childName}
+      sunSign={snapshot.astronomy.sunSign}
+      moonSign={snapshot.astronomy.moonSign}
+      birthTime={profile.birthTime}
+      timePrecision={profile.timePrecision}
+      className={livingSkyFamiliarityClass(continuity)}
       topBarEnd={
         <button
           type="button"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-white/10"
+          className="amy-astro-ripple inline-flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-white/10"
           aria-label="Settings"
           onClick={onOpenSettings}
           data-testid="birth-sky-open-settings"
         >
-          <Settings className="h-5 w-5" />
+          <AmyAstroIcon name="settings" size={28} reducedMotion={reduced} title="Settings" />
         </button>
       }
     >
@@ -518,6 +570,7 @@ export function BirthSkyDashboardPage({
           moonSign={snapshot.astronomy.moonSign}
           moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
           greetingIndex={memory.greetingIndex}
+          continuity={continuity}
           onToggleCollapse={() => {
             setSession((s) => {
               const next = !s.heroCollapsed;
@@ -549,6 +602,12 @@ export function BirthSkyDashboardPage({
           childName={childName}
           portrait={portrait}
           reducedMotion={reduced}
+          profileId={profile.profileId}
+          continuity={continuity}
+          continuitySeed={memory.greetingIndex}
+          onPortraitSaved={() => {
+            setMemory(rememberPortraitSaved(profile.profileId));
+          }}
           onContinue={() => {
             document
               .querySelector('[data-testid="amy-astro-discovery-nudge"]')

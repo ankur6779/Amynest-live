@@ -6,7 +6,9 @@ import { createRoot } from "react-dom/client";
 import "../index.css";
 import { AmyAstroEmblem } from "@/features/birth-sky/components/amy-astro-emblem";
 import { AmyAstroCosmicPortrait } from "@/features/birth-sky/components/cosmic-portrait";
+import { AmyAstroCosmicPortraitCard } from "@/features/birth-sky/components/cosmic-portrait-card";
 import { AmyAstroInsightsPanel } from "@/features/birth-sky/pages/dashboard/insights-panel";
+import { buildCosmicPortrait } from "@/features/birth-sky/lib/signature-insight";
 import "@/features/birth-sky/design/amy-astro.css";
 
 const params = new URLSearchParams(window.location.search);
@@ -45,14 +47,18 @@ function Fixture() {
   }
 
   if (mode === "portrait") {
+    const portrait = buildCosmicPortrait({
+      childName,
+      sunSign: "Cancer",
+      moonSign: "Sagittarius",
+      moonPhaseLabel: "Waxing Crescent",
+      risingSign: null,
+      daySky: true,
+    });
     return (
       <Shell testId="amy-astro-visual-portrait">
-        <div className="mx-auto max-w-md space-y-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[hsl(42_60%_70%/0.75)]">
-            My Child&apos;s Cosmic Portrait
-          </p>
-          <h1 className="amy-astro-display text-3xl text-[hsl(42_70%_78%)]">{childName}</h1>
-          <AmyAstroCosmicPortrait childName={childName} />
+        <div className="mx-auto max-w-lg">
+          <AmyAstroCosmicPortraitCard childName={childName} portrait={portrait} />
         </div>
       </Shell>
     );

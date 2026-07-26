@@ -99,9 +99,6 @@ export function AmyAstroEmblem({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <clipPath id={`${uid}-child`}>
-            <path d="M100 52c-14 0-26 12-26 30 0 10 4 18 11 23-10 4-17 14-17 26v12h64V131c0-12-7-22-17-26 7-5 11-13 11-23 0-18-12-30-26-30z" />
-          </clipPath>
         </defs>
 
         {/* Outer golden orbit + planets */}
@@ -188,35 +185,53 @@ export function AmyAstroEmblem({
           opacity="0.55"
         />
 
-        {/* Galaxy core + child silhouette (integrated) */}
+        {/* Constellation orb core — golden North Star + aurora */}
         <g
           filter={`url(#${uid}-glow)`}
           className={cn(!reducedMotion && "amy-astro-emblem-pulse")}
         >
           <circle cx="100" cy="100" r="47" fill={`url(#${uid}-core)`} />
           <ellipse cx="88" cy="86" rx="22" ry="16" fill="hsl(42 95% 90% / 0.18)" />
-          <g clipPath={`url(#${uid}-child)`}>
-            <rect x="54" y="48" width="92" height="110" fill={`url(#${uid}-core)`} />
-            <circle cx="92" cy="78" r="1.1" fill="hsl(42 95% 92%)" opacity="0.85" />
-            <circle cx="108" cy="92" r="0.9" fill="hsl(42 95% 92%)" opacity="0.7" />
-            <circle cx="100" cy="108" r="1" fill="hsl(285 80% 88%)" opacity="0.75" />
-            <polyline
-              points="86,86 98,98 112,92"
-              fill="none"
-              stroke="hsl(42 90% 80%)"
-              strokeWidth="0.6"
-              opacity="0.55"
-            />
-          </g>
+          {/* Aurora veil */}
+          <ellipse cx="100" cy="108" rx="34" ry="18" fill="hsl(285 80% 70% / 0.18)" />
+          {/* North Star */}
           <path
-            d="M100 52c-14 0-26 12-26 30 0 10 4 18 11 23-10 4-17 14-17 26v12h64V131c0-12-7-22-17-26 7-5 11-13 11-23 0-18-12-30-26-30z"
-            fill="none"
-            stroke={`url(#${uid}-gold)`}
-            strokeWidth="1.4"
-            opacity="0.85"
+            d="M100 72l4.2 12.2 12.8 1.2-9.8 8.4 3.2 12.4L100 99.2l-10.4 7 3.2-12.4-9.8-8.4 12.8-1.2z"
+            fill={`url(#${uid}-gold)`}
+            opacity="0.98"
           />
-          {/* Heart-star spark at chest */}
-          <circle cx="100" cy="118" r="2.6" fill="hsl(42 95% 72%)" opacity="0.95" />
+          <circle cx="100" cy="100" r="5" fill="hsl(42 100% 92% / 0.55)" />
+          {/* Constellation dots around star */}
+          {[
+            [78, 88],
+            [122, 90],
+            [86, 118],
+            [116, 120],
+            [100, 128],
+          ].map(([x, y], i) => (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={i === 4 ? 1.6 : 1.15}
+              fill="hsl(42 95% 88%)"
+              opacity="0.85"
+            />
+          ))}
+          <polyline
+            points="78,88 100,100 122,90"
+            fill="none"
+            stroke="hsl(42 90% 80%)"
+            strokeWidth="0.7"
+            opacity="0.55"
+          />
+          <polyline
+            points="86,118 100,100 116,120"
+            fill="none"
+            stroke="hsl(42 90% 80%)"
+            strokeWidth="0.65"
+            opacity="0.45"
+          />
         </g>
 
         {/* Tiny orbit particles */}
