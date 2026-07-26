@@ -13,6 +13,7 @@ import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHe
 import { HubLaunchCard } from "@/components/hub-launch-card";
 import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { LearningZoneLaunchCard } from "@/components/learning-zone-launch-card";
+import { AmyAstroLaunchCard } from "@/components/amy-astro-launch-card";
 import { CreativityPremiumSection } from "@/components/creativity-premium-section";
 import { CreativityLaunchCard } from "@/components/creativity-launch-card";
 import { HubSectionGroupHeader } from "@/components/hub-section-group-header";
@@ -180,10 +181,11 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   parent:     ["gaming-rewards"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
+  amyAstro:   ["birth-sky"],
   creativity: ["activities", "origami-studio", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
   stories:    ["story-hub", "talking-amy", "speech-coach", "discovery-worlds"],
   health:     ["nutrition", "health-lab"],
-  support:    ["birth-sky", "articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
+  support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
 /** Explicit render order inside the "Today For You" group. */
@@ -201,6 +203,7 @@ const HUB_SECTION_REWARD_POINTS = 5;
 const WEB_HUB_GROUPS = [
   { key: "today",      emoji: "✨", i18n: "parent_hub.section_groups.today"      },
   { key: "learning",   emoji: "📚", i18n: "parent_hub.section_groups.learning"   },
+  { key: "amyAstro",   emoji: "✦",  i18n: "parent_hub.section_groups.amyAstro"   },
   { key: "creativity", emoji: "🎨", i18n: "parent_hub.section_groups.creativity" },
   { key: "stories",    emoji: "📖", i18n: "parent_hub.section_groups.stories"    },
   { key: "health",     emoji: "🌿", i18n: "parent_hub.section_groups.health"     },
@@ -1296,20 +1299,16 @@ function ParentingHubPage() {
     id: "birth-sky",
     alwaysCurrent: true,
     render: () => {
-      // Pack 1: Parent Support tile; allowlist / master kill (IM-0).
-      // Pass auth email explicitly so the tile appears after login (module
-      // singleton alone does not force a React re-render).
+      // Dedicated Amy Astro section (public GA). Pass auth email so the tile
+      // re-renders after login; kill switch remains VITE_FF_BIRTH_SKY=0.
       if (!isBirthSkyHubTileEnabled(birthSkyViewerEmail)) return null;
       return (
-        <HubLaunchCard
+        <AmyAstroLaunchCard
           href="/birth-sky"
           title={t("parent_hub.web_tiles.birth-sky.title")}
           description={t("parent_hub.web_tiles.birth-sky.description")}
-          icon={<Moon className="h-5 w-5" />}
-          accentClass="from-indigo-500/20 to-slate-900/40"
-          cardClass="border-indigo-400/20"
-          previewBadge="Premium Experience"
-          tryFree={false}
+          previewBadge="Explore Free"
+          tryFree
           testId="birth-sky-launch-card"
           sectionId="birth-sky"
           onNavigate={() => {
@@ -2049,6 +2048,17 @@ function ParentingHubPage() {
               }
 
               if (group.key === "learning") {
+                return groupShell(
+                  <div className={HUB_GROUP_CARD_GRID_DENSE}>
+                    {groupGrid.map(s => {
+                      const node = renderHubSection(s);
+                      return node ? <div key={s.id} className="min-w-0 w-full">{node}</div> : null;
+                    })}
+                  </div>,
+                );
+              }
+
+              if (group.key === "amyAstro") {
                 return groupShell(
                   <div className={HUB_GROUP_CARD_GRID_DENSE}>
                     {groupGrid.map(s => {

@@ -23,8 +23,11 @@ function parseAllowlist(): Set<string> {
 /** Founder/QA internal allowlist — canary cohort (not public GA). */
 export const BIRTH_SKY_INTERNAL_ALLOWLIST = ["demo@amynest.in"] as const;
 
-/** Master kill switch. Default off — enable globally with VITE_FF_BIRTH_SKY=1. */
-export const FF_BIRTH_SKY = envFlag("VITE_FF_BIRTH_SKY", false);
+/**
+ * Master kill switch — public GA default ON for all signed-in parents.
+ * Disable globally with VITE_FF_BIRTH_SKY=0 (rollback / maintenance).
+ */
+export const FF_BIRTH_SKY = envFlag("VITE_FF_BIRTH_SKY", true);
 
 /** Hub tile visibility (defaults to master). */
 export const FF_BIRTH_SKY_HUB_TILE = envFlag(

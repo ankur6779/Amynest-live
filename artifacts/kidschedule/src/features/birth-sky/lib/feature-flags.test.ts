@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
 describe("birth-sky feature flags", () => {
-  it("defaults master flag off when env unset", async () => {
+  it("defaults master flag on when env unset (public GA)", async () => {
     vi.unstubAllEnvs();
     vi.resetModules();
     const flags = await import("./feature-flags");
     flags.setBirthSkyViewerEmail(null);
-    expect(flags.isBirthSkyEnabled()).toBe(false);
-    expect(flags.isBirthSkyHubTileEnabled()).toBe(false);
+    expect(flags.isBirthSkyEnabled()).toBe(true);
+    expect(flags.isBirthSkyHubTileEnabled()).toBe(true);
   });
 
-  it("enables master and hub tile when VITE_FF_BIRTH_SKY=1", async () => {
+  it("keeps public access when VITE_FF_BIRTH_SKY=1", async () => {
     vi.stubEnv("VITE_FF_BIRTH_SKY", "1");
     vi.resetModules();
     const flags = await import("./feature-flags");
@@ -21,8 +21,8 @@ describe("birth-sky feature flags", () => {
     vi.resetModules();
   });
 
-  it("enables for demo@amynest.in on internal allowlist when master off", async () => {
-    vi.unstubAllEnvs();
+  it("kill switch VITE_FF_BIRTH_SKY=0 still allows internal allowlist", async () => {
+    vi.stubEnv("VITE_FF_BIRTH_SKY", "0");
     vi.resetModules();
     const flags = await import("./feature-flags");
     flags.setBirthSkyViewerEmail(null);
@@ -35,8 +35,9 @@ describe("birth-sky feature flags", () => {
     flags.setBirthSkyViewerEmail("demo@amynest.in");
     expect(flags.isBirthSkyEnabled()).toBe(true);
     expect(flags.isBirthSkyHubTileEnabled()).toBe(true);
-    // Explicit email argument wins for React re-render path
     expect(flags.isBirthSkyHubTileEnabled("demo@amynest.in")).toBe(true);
     flags.setBirthSkyViewerEmail(null);
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });

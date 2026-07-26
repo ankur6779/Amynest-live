@@ -33,6 +33,7 @@ export type HubSectionDiscoverabilityContext = {
 const GROUP_ORDER: readonly HubGroupKey[] = [
   "today",
   "learning",
+  "amyAstro",
   "creativity",
   "stories",
   "health",
@@ -103,6 +104,8 @@ function countLabel(
     case "learning":
     case "creativity":
       return t("parent_hub.section_preview.activities", { count: n });
+    case "amyAstro":
+      return t("parent_hub.section_preview.tools", { count: n });
     case "stories":
       return t("parent_hub.section_preview.stories", { count: n });
     case "parent":

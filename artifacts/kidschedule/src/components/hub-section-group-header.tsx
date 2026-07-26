@@ -6,6 +6,7 @@ import { scrollHubGroupIntoView } from "@/lib/hub-section-scroll";
 import { CREATIVITY_SECTION_HEADER_VISUAL } from "@/lib/creativity-card-config";
 import { GAMING_HUB_SECTION_HEADER_VISUAL } from "@/lib/gaming-hub-card-config";
 import { HEALTH_ZONE_SECTION_HEADER_VISUAL } from "@/lib/health-zone-card-config";
+import { AMY_ASTRO_SECTION_HEADER_VISUAL } from "@/lib/amy-astro-card-config";
 import { LEARNING_ZONE_SECTION_HEADER_VISUAL } from "@/lib/learning-zone-card-config";
 import { PARENT_SUPPORT_SECTION_HEADER_VISUAL } from "@/lib/parent-support-card-config";
 import type { HubGroupKey } from "@/lib/parent-hub-premium";
@@ -16,6 +17,7 @@ import { motion, useReducedMotion } from "framer-motion";
 const SECTION_VISUALS: Record<HubGroupKey, HubPremiumCardVisual> = {
   today: TODAY_FOR_YOU_SECTION_HEADER_VISUAL,
   learning: LEARNING_ZONE_SECTION_HEADER_VISUAL,
+  amyAstro: AMY_ASTRO_SECTION_HEADER_VISUAL,
   creativity: CREATIVITY_SECTION_HEADER_VISUAL,
   stories: STORIES_SECTION_HEADER_VISUAL,
   health: HEALTH_ZONE_SECTION_HEADER_VISUAL,

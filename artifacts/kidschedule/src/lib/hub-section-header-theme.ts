@@ -9,6 +9,7 @@ export type HubSectionHeaderTheme = {
 export const HUB_SECTION_HEADER_THEMES: Record<HubGroupKey, HubSectionHeaderTheme> = {
   today: { tintRgb: "255,184,0", watermark: "☀️" },
   learning: { tintRgb: "122,92,255", watermark: "📚" },
+  amyAstro: { tintRgb: "167,139,250", watermark: "✦" },
   creativity: { tintRgb: "255,72,212", watermark: "🎨" },
   stories: { tintRgb: "251,146,60", watermark: "💬" },
   health: { tintRgb: "52,211,153", watermark: "❤️" },

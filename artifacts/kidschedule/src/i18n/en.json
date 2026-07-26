@@ -3381,8 +3381,8 @@
         "age_hint": "Personalised for your child ({{months}} months)"
       },
       "birth-sky": {
-        "title": "Amy Astro Intelligence",
-        "description": "Your child's cosmic blueprint · Optional · Premium"
+        "title": "Amy Astro",
+        "description": "Your child's cosmic portrait · Birth sky · Soft parenting insights"
       },
       "articles": {
         "title": "Parenting Articles",
@@ -3699,6 +3699,7 @@
       "today": "Today For You",
       "parent": "Gaming Hub",
       "learning": "Learning Zone",
+      "amyAstro": "Amy Astro",
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
       "health": "Health Zone",
@@ -3710,11 +3711,22 @@
       "collapsed_nav": {
         "today": "Routine • AI Coach • Daily Picks",
         "learning": "Math • Phonics • Speech",
+        "amyAstro": "Cosmic Portrait • Birth Sky • Amy",
         "creativity": "Crafts • Drawing • DIY",
         "stories": "Reading • Communication",
         "health": "Nutrition • Sleep • Wellness",
         "parent": "Brain Games • Fun Learning",
         "support": "Support • Experts • Parents"
+      }
+    },
+    "amy_astro_cards": {
+      "section": {
+        "chip_1": "Birth Sky",
+        "chip_2": "Portrait"
+      },
+      "launch": {
+        "chip_1": "Cosmic Portrait",
+        "chip_2": "Ask Amy"
       }
     },
     "section_preview": {

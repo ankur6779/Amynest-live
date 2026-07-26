@@ -86,7 +86,15 @@ function makeTheme(
 }
 
 /** Section 1 category groups. */
-export type HubGroupKey = "today" | "parent" | "learning" | "creativity" | "stories" | "health" | "support";
+export type HubGroupKey =
+  | "today"
+  | "parent"
+  | "learning"
+  | "amyAstro"
+  | "creativity"
+  | "stories"
+  | "health"
+  | "support";
 
 export const HUB_GROUP_ACCENTS: Record<HubGroupKey, HubAccentTheme> = {
   today: makeTheme(
@@ -118,6 +126,16 @@ export const HUB_GROUP_ACCENTS: Record<HubGroupKey, HubAccentTheme> = {
     122,
     92,
     255,
+  ),
+  amyAstro: makeTheme(
+    "border-[1.5px] border-[rgba(167,139,250,0.55)]",
+    "bg-gradient-to-b from-indigo-400 via-violet-500 to-amber-400",
+    "shadow-[0_0_14px_rgba(167,139,250,0.50)]",
+    "border-[rgba(251,191,36,0.4)]",
+    "shadow-[0_0_16px_rgba(167,139,250,0.38)]",
+    167,
+    139,
+    250,
   ),
   creativity: makeTheme(
     "border-[1.5px] border-[rgba(255,72,212,0.55)]",
@@ -505,6 +523,7 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
   ),
   olympiad: HUB_GROUP_ACCENTS.today,
   "amy-ai": HUB_GROUP_ACCENTS.learning,
+  "birth-sky": HUB_GROUP_ACCENTS.amyAstro,
   "daily-tips": HUB_GROUP_ACCENTS.today,
   "tomorrow-forecast": HUB_GROUP_ACCENTS.stories,
   articles: HUB_GROUP_ACCENTS.learning,

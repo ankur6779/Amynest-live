@@ -26,6 +26,7 @@ export const HUB_TILE_PREVIEW_LABEL: Record<string, string> = {
   "nutrition": "Nutrition",
   "health-lab": "Wellness",
   "gaming-rewards": "Brain Games",
+  "birth-sky": "Amy Astro",
   "articles": "Articles",
   "emotional": "Emotional",
   "life-skills": "Life Skills",
