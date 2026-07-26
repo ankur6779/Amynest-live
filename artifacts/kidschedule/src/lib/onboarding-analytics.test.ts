@@ -6,19 +6,24 @@ import {
   trackOnboardingFunnel,
 } from "@/lib/onboarding-analytics";
 
-const queueClientLog = vi.fn();
-
-vi.mock("@/lib/client-logs", () => ({
-  queueClientLog: (...args: unknown[]) => queueClientLog(...args),
-}));
+const trackFunnel = vi.fn();
+const trackError = vi.fn();
 
 vi.mock("@/lib/onboarding-telemetry", () => ({
   getOnboardingRunId: () => "run-test-1",
 }));
 
+vi.mock("@/lib/analytics/analytics-service", () => ({
+  getAnalyticsService: () => ({
+    trackFunnel,
+    trackError,
+  }),
+}));
+
 describe("onboarding analytics", () => {
   beforeEach(() => {
-    queueClientLog.mockClear();
+    trackFunnel.mockClear();
+    trackError.mockClear();
   });
 
   it("includes selectedAgeBand in funnel payload", () => {
@@ -32,17 +37,15 @@ describe("onboarding analytics", () => {
       educationStage: "lkg",
     });
 
-    expect(queueClientLog).toHaveBeenCalledWith(
+    expect(trackFunnel).toHaveBeenCalledWith(
+      "onboarding",
+      "step_viewed",
       expect.objectContaining({
-        type: "onboarding_funnel",
-        meta: expect.objectContaining({
-          event: "step_viewed",
-          country: "IN",
-          selectedAgeBand: "y4",
-          childAgeBand: "y4",
-          educationStage: "lkg",
-          onboardingRunId: "run-test-1",
-        }),
+        onboarding_step: "child-dob",
+        country: "IN",
+        child_age_band: "y4",
+        education_stage: "lkg",
+        child_age_years: 4,
       }),
     );
   });
@@ -74,14 +77,41 @@ describe("onboarding analytics", () => {
   it("emits dedicated error observability events", () => {
     trackOnboardingError("onboarding_restore_failed", { reason: "version_mismatch" });
 
-    expect(queueClientLog).toHaveBeenCalledWith(
+    expect(trackError).toHaveBeenCalledWith(
+      "api",
+      "onboarding_restore_failed",
+      expect.objectContaining({ feature: "onboarding" }),
+    );
+    expect(trackFunnel).toHaveBeenCalledWith(
+      "onboarding",
+      "onboarding_restore_failed",
       expect.objectContaining({
-        context: "onboarding_error",
-        message: "onboarding_restore_failed",
-        meta: expect.objectContaining({
-          event: "onboarding_restore_failed",
-          reason: "version_mismatch",
-        }),
+        onboardingRunId: "run-test-1",
+        reason: "version_mismatch",
+      }),
+    );
+  });
+
+  it("accepts step-1 failsafe funnel events", () => {
+    for (const event of [
+      "onboarding_started",
+      "first_question_rendered",
+      "first_question_latency_ms",
+      "fallback_triggered",
+      "ai_timeout",
+      "onboarding_step_completed",
+      "onboarding_abandoned",
+      "step_1_duration",
+    ] as const) {
+      trackOnboardingFunnel({ event, step: "country-confirm", extra: { latency_ms: 12 } });
+    }
+
+    expect(trackFunnel).toHaveBeenCalledWith(
+      "onboarding",
+      "fallback_triggered",
+      expect.objectContaining({
+        onboarding_step: "country-confirm",
+        latency_ms: 12,
       }),
     );
   });

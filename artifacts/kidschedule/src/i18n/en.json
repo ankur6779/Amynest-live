@@ -2022,9 +2022,14 @@
       }
     },
     "onboarding": {
-      "intro_greeting": "Hi {{name}}! 👋 I'm Amy — your AI parenting concierge. I'll learn about your family and build routines that fit your day. This usually takes less than 2 minutes.",
+      "intro_greeting": "Hi! I'm Amy 👋\nLet's get to know your family.",
       "intro_default_name": "there",
+      "intro_first_question": "Who will you be using Amy for today?",
       "intro_start": "Who am I helping today? What's their name?",
+      "amy_thinking": "Amy is thinking…",
+      "preparing_first_question": "Preparing your first question…",
+      "lets_start_manually": "Let's start manually.",
+      "country_locate_timeout_hint": "Taking too long — you can continue manually.",
       "saving_message": "Perfect — I'm saving everything now so your routines are ready. 💾",
       "default_child_name": "your child",
       "default_baby_name": "your baby",

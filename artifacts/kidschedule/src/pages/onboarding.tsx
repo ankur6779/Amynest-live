@@ -59,6 +59,20 @@ import {
   trackOnboardingFunnel,
 } from "@/lib/onboarding-analytics";
 import {
+  ONBOARDING_LOCATION_TIMEOUT_MS,
+  ONBOARDING_MAX_LOADING_MS,
+  ONBOARDING_STEP_1_STEPS,
+  ONBOARDING_THINKING_STATUS_MS,
+  clampAmyDelay,
+  isLocationSpinnerStatus,
+  isStep1LoadingDeadEnd,
+  loadingStatusMessageKey,
+  messagesIncludeFirstQuestion,
+  resolveFreshOnboardingBoot,
+  resolveLoadingStatusPhase,
+  type LoadingStatusPhase,
+} from "@/lib/onboarding-first-question";
+import {
   isOnboardingShortChildBranchActive,
   resolveOnboardingShortBranchVariant,
 } from "@/lib/onboarding-conversion-flags";
@@ -583,8 +597,28 @@ export default function OnboardingPage() {
     return loadOnboardingChatSession();
   }, []);
   const restoredData = restoredSession?.data;
+  const restoredMessages = useMemo(
+    () =>
+      (restoredData?.messages ?? []).map((m, i) => ({
+        ...m,
+        id: m.id ?? `legacy-${i}-${m.role}`,
+      })),
+    [restoredData?.messages],
+  );
+  const freshBoot = useMemo(
+    () =>
+      resolveFreshOnboardingBoot({
+        restoredStep: restoredSession?.step,
+        restoredMessages,
+        t,
+        firstName: t("screens.onboarding.intro_default_name"),
+      }),
+    // Mount-only seed — later auth name changes must not re-seed / duplicate Step 1.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const [sessionRestored] = useState(
-    () => Boolean(restoredData?.messages?.length && restoredSession?.step !== "intro"),
+    () => Boolean(restoredMessages.length > 0 && restoredSession?.step !== "intro" && !freshBoot.seededFresh),
   );
   const [finishError, setFinishError] = useState<string | null>(null);
   const [isFinishing, setIsFinishing] = useState(false);
@@ -592,26 +626,26 @@ export default function OnboardingPage() {
   const completionOnceRef = useRef(false);
   const pendingSaveAllergiesRef = useRef<string | undefined>(undefined);
   const onboardingJustFinishedRef = useRef(false);
-  const prevStepRef = useRef<Step>(restoredSession?.step ?? "intro");
+  const prevStepRef = useRef<Step>(freshBoot.step);
   const [savingProgressIdx, setSavingProgressIdx] = useState(0);
   const [donePhase, setDonePhase] = useState<"summary" | "generating">("summary");
   const [generatingIdx, setGeneratingIdx] = useState(0);
   const onboardingStartedRef = useRef(false);
+  const firstQuestionTrackedRef = useRef(false);
+  const step1FallbackTrackedRef = useRef(false);
+  const step1CompletedRef = useRef(false);
+  const mountAtRef = useRef<number>(typeof performance !== "undefined" ? performance.now() : Date.now());
   const childNameGreetedRef = useRef(
     Boolean((restoredData?.curr as { name?: string } | undefined)?.name?.trim()),
   );
   const welcomeBackShownRef = useRef(false);
   const isOnline = useOnboardingOnline();
 
-  const [step, setStep] = useState<Step>(() => restoredSession?.step ?? "intro");
+  const [step, setStep] = useState<Step>(() => freshBoot.step);
   const [notifLoading, setNotifLoading] = useState(false);
   const [typing, setTyping] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    (restoredData?.messages ?? []).map((m, i) => ({
-      ...m,
-      id: m.id ?? `legacy-${i}-${m.role}`,
-    })),
-  );
+  const [loadingStatusPhase, setLoadingStatusPhase] = useState<LoadingStatusPhase>("ready");
+  const [messages, setMessages] = useState<ChatMessage[]>(() => freshBoot.messages);
   const [textInput, setTextInput] = useState(() => restoredData?.textInput ?? "");
   const [selected, setSelected] = useState("");
   const [dobInput, setDobInput] = useState("");
@@ -625,7 +659,12 @@ export default function OnboardingPage() {
   const [schoolScheduleCustom, setSchoolScheduleCustom] = useState(false);
   const [countryCode, setCountryCode] = useState(() => restoredData?.countryCode ?? "");
   const [countryName, setCountryName] = useState(() => restoredData?.countryName ?? "");
-  const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
+  // Usable country controls on first paint — never idle blank Step 1.
+  const [locationState, setLocationState] = useState<LocationDetectionState>(() =>
+    freshBoot.step === "country-confirm"
+      ? { status: "needs-permission" }
+      : { status: "idle" },
+  );
   const [detectedCoords, setDetectedCoords] = useState<GeoCoords | null>(null);
   const [locationSource, setLocationSource] = useState<LocationSource | null>(null);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -692,13 +731,63 @@ export default function OnboardingPage() {
     [],
   );
 
-  // Amy sends a message after a typing delay
+  // Amy sends a message after a typing delay (hard-capped — never infinite dots).
   function amySays(text: string, delay = 700) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
     setTyping(true);
+    setLoadingStatusPhase("thinking");
+    const safeDelay = clampAmyDelay(delay);
     scheduleOnboardingTimeout(() => {
       setTyping(false);
-      setMessages((m) => [...m, chatMessage("amy", text)]);
-    }, delay);
+      setLoadingStatusPhase("ready");
+      setMessages((m) => {
+        if (m.some((msg) => msg.role === "amy" && msg.text === trimmed)) return m;
+        return [...m, chatMessage("amy", trimmed)];
+      });
+    }, safeDelay);
+  }
+
+  function triggerStep1Fallback(reason: "ai_timeout" | "location_timeout" | "empty_boot") {
+    setTyping(false);
+    setLoadingStatusPhase("fallback");
+    if (step === "intro") {
+      setStep("country-confirm");
+    }
+    if (isLocationSpinnerStatus(locationState.status) || locationState.status === "idle") {
+      setLocationState({ status: "needs-permission" });
+      setLocationRequesting(false);
+    }
+    setMessages((m) => {
+      if (messagesIncludeFirstQuestion(m)) return m;
+      return resolveFreshOnboardingBoot({
+        restoredStep: "intro",
+        restoredMessages: m,
+        t,
+        firstName: user?.firstName || t("screens.onboarding.intro_default_name"),
+      }).messages;
+    });
+    if (!step1FallbackTrackedRef.current) {
+      step1FallbackTrackedRef.current = true;
+      const latency = Math.round(
+        (typeof performance !== "undefined" ? performance.now() : Date.now()) - mountAtRef.current,
+      );
+      trackOnboardingFunnel({
+        event: "fallback_triggered",
+        step,
+        ...funnelContext(),
+        extra: { reason, latency_ms: latency },
+      });
+      if (reason === "ai_timeout") {
+        trackOnboardingFunnel({
+          event: "ai_timeout",
+          step,
+          ...funnelContext(),
+          extra: { latency_ms: latency },
+        });
+      }
+    }
+    scheduleOnboardingTimeout(() => setLoadingStatusPhase("ready"), 600);
   }
 
   // User replies, adds to history, then advances
@@ -796,14 +885,56 @@ export default function OnboardingPage() {
     (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep = step;
   }, [step]);
 
+  // Fire once on mount — do not wait for a step transition (fresh boot lands on country-confirm).
+  useEffect(() => {
+    if (onboardingStartedRef.current) return;
+    onboardingStartedRef.current = true;
+    trackOnboardingFunnel({
+      event: "onboarding_started",
+      step,
+      ...funnelContext(),
+      extra: { seeded_fresh: freshBoot.seededFresh },
+    });
+    // Restored sessions log step_viewed in the resume effect below.
+    if (!sessionRestored) {
+      trackOnboardingFunnel({
+        event: "step_viewed",
+        step,
+        ...funnelContext(),
+        extra: {
+          previousStep: step,
+          experiment_variant: resolveOnboardingShortBranchVariant(),
+          initial: true,
+        },
+      });
+      trackChildJourneyView(step, childJourneyCtx({ restored: false }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only start telemetry
+  }, []);
+
   useEffect(() => {
     if (step === prevStepRef.current) return;
-    if (step === "intro" && !onboardingStartedRef.current) {
-      onboardingStartedRef.current = true;
+    const prev = prevStepRef.current;
+    if (
+      ONBOARDING_STEP_1_STEPS.has(prev)
+      && !ONBOARDING_STEP_1_STEPS.has(step)
+      && !step1CompletedRef.current
+    ) {
+      step1CompletedRef.current = true;
+      const duration = Math.round(
+        (typeof performance !== "undefined" ? performance.now() : Date.now()) - mountAtRef.current,
+      );
       trackOnboardingFunnel({
-        event: "onboarding_started",
-        step: "intro",
+        event: "onboarding_step_completed",
+        step: prev,
         ...funnelContext(),
+        extra: { milestone: "family", step_1_duration: duration },
+      });
+      trackOnboardingFunnel({
+        event: "step_1_duration",
+        step: prev,
+        ...funnelContext(),
+        extra: { duration_ms: duration },
       });
     }
     trackOnboardingFunnel({
@@ -811,13 +942,63 @@ export default function OnboardingPage() {
       step,
       ...funnelContext(),
       extra: {
-        previousStep: prevStepRef.current,
+        previousStep: prev,
         experiment_variant: resolveOnboardingShortBranchVariant(),
       },
     });
     trackChildJourneyView(step, childJourneyCtx({ restored: false }));
     prevStepRef.current = step;
   }, [step, countryCode, curr, children]);
+
+  // Instant first question analytics — fire once when static Step 1 content is on screen.
+  useEffect(() => {
+    if (firstQuestionTrackedRef.current) return;
+    if (!ONBOARDING_STEP_1_STEPS.has(step)) return;
+    if (messages.length === 0) return;
+    firstQuestionTrackedRef.current = true;
+    const latency = Math.round(
+      (typeof performance !== "undefined" ? performance.now() : Date.now()) - mountAtRef.current,
+    );
+    trackOnboardingFunnel({
+      event: "first_question_rendered",
+      step,
+      ...funnelContext(),
+      extra: { latency_ms: latency, seeded_fresh: freshBoot.seededFresh },
+    });
+    trackOnboardingFunnel({
+      event: "first_question_latency_ms",
+      step,
+      ...funnelContext(),
+      extra: { latency_ms: latency },
+    });
+  }, [messages, step]);
+
+  // Abandonment: user leaves while still on Step 1 without completing country.
+  useEffect(() => {
+    const reportAbandoned = () => {
+      if (step1CompletedRef.current) return;
+      if (!ONBOARDING_STEP_1_STEPS.has(prevStepRef.current) && !ONBOARDING_STEP_1_STEPS.has(step)) {
+        return;
+      }
+      const duration = Math.round(
+        (typeof performance !== "undefined" ? performance.now() : Date.now()) - mountAtRef.current,
+      );
+      trackOnboardingFunnel({
+        event: "onboarding_abandoned",
+        step,
+        ...funnelContext(),
+        extra: { step_1_duration: duration, reason: "pagehide" },
+      });
+      trackOnboardingFunnel({
+        event: "step_1_duration",
+        step,
+        ...funnelContext(),
+        extra: { duration_ms: duration, abandoned: true },
+      });
+    };
+    window.addEventListener("pagehide", reportAbandoned);
+    return () => window.removeEventListener("pagehide", reportAbandoned);
+  }, [step]);
 
   useEffect(() => {
     if (step !== "saving") {
@@ -912,22 +1093,41 @@ export default function OnboardingPage() {
     return () => window.clearTimeout(persistTimer);
   }, [messages, step, textInput, countryCode, countryName, curr, parent, children]);
 
-  // Boot: Amy intro (skip when restoring a saved session)
+  // Step-1 failsafe: progressive status + hard 3s ceiling — never infinite typing.
   useEffect(() => {
-    if (sessionRestored) return;
-    if (step !== "intro") return;
-    const firstName = user?.firstName || t("screens.onboarding.intro_default_name");
-    scheduleOnboardingTimeout(() => {
-      setMessages([
-        chatMessage("amy", t("screens.onboarding.intro_greeting", { name: firstName })),
-      ]);
-      scheduleOnboardingTimeout(
-        () => amySays(t("screens.onboarding.country_transition_msg"), 800),
-        900,
+    const deadEnd = isStep1LoadingDeadEnd({
+      step,
+      typing,
+      messages,
+      locationStatus: locationState.status,
+    });
+    if (!deadEnd) return;
+
+    const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+    setLoadingStatusPhase("thinking");
+
+    const preparingId = window.setTimeout(() => {
+      setLoadingStatusPhase("preparing");
+    }, ONBOARDING_THINKING_STATUS_MS);
+
+    const fallbackId = window.setTimeout(() => {
+      const elapsed = (typeof performance !== "undefined" ? performance.now() : Date.now()) - startedAt;
+      if (elapsed < ONBOARDING_MAX_LOADING_MS - 50) return;
+      triggerStep1Fallback(
+        isLocationSpinnerStatus(locationState.status)
+          ? "location_timeout"
+          : messages.length === 0
+            ? "empty_boot"
+            : "ai_timeout",
       );
-      scheduleOnboardingTimeout(() => setStep("country-confirm"), 2600);
-    }, 600);
-  }, [scheduleOnboardingTimeout, sessionRestored, step, t, user?.firstName]);
+    }, ONBOARDING_MAX_LOADING_MS);
+
+    return () => {
+      window.clearTimeout(preparingId);
+      window.clearTimeout(fallbackId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional dead-end watchdog
+  }, [step, typing, messages.length, locationState.status]);
 
   useEffect(() => {
     if (!sessionRestored || welcomeBackShownRef.current) return;
@@ -1307,6 +1507,15 @@ export default function OnboardingPage() {
     let cancelled = false;
     setLocationState({ status: "needs-permission" });
 
+    // Hard ceiling: locating spinner cannot block Step 1 forever.
+    const locateFailsafe = window.setTimeout(() => {
+      if (cancelled) return;
+      setLocationRequesting(false);
+      setLocationState((prev) =>
+        isLocationSpinnerStatus(prev.status) ? { status: "needs-permission" } : prev,
+      );
+    }, ONBOARDING_LOCATION_TIMEOUT_MS);
+
     (async () => {
       const permission = await checkGeoPermission();
       if (cancelled) return;
@@ -1318,12 +1527,22 @@ export default function OnboardingPage() {
         const resolved = await fetchGrantedLocation();
         if (!cancelled) applyResolvedLocation(resolved);
       } catch {
-        if (!cancelled) await handleLocationFallback();
+        // Retry IP fallback once, then surface manual controls.
+        if (cancelled) return;
+        try {
+          await handleLocationFallback();
+        } catch {
+          if (!cancelled) {
+            setLocationState({ status: "needs-permission" });
+            setLocationRequesting(false);
+          }
+        }
       }
     })();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(locateFailsafe);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
@@ -1359,12 +1578,18 @@ export default function OnboardingPage() {
     scheduleOnboardingTimeout(() => setStep("child-name"), 1300);
   }
 
+  const typingStatusKey = loadingStatusMessageKey(loadingStatusPhase);
+  const typingStatusLabel = typingStatusKey
+    ? t(`screens.onboarding.${typingStatusKey}`)
+    : null;
+
   const threadMessages = useMemo(
     () =>
       buildOnboardingThreadMessages({
         step,
         messages,
         typing,
+        typingStatusLabel,
         isFinishing,
         t,
         countryCode,
@@ -1403,6 +1628,7 @@ export default function OnboardingPage() {
       step,
       messages,
       typing,
+      typingStatusLabel,
       isFinishing,
       t,
       countryCode,

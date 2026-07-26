@@ -120,47 +120,67 @@ export function AmyMessageBubble({
   );
 }
 
-export function AmyTypingBubble({ theme = "app" }: { theme?: ThreadTheme }) {
+export function AmyTypingBubble({
+  theme = "app",
+  statusLabel,
+}: {
+  theme?: ThreadTheme;
+  /** Progressive status copy — replaces bare dots-only infinite loading. */
+  statusLabel?: string;
+}) {
   const dotClass =
     theme === "onboarding"
-      ? "inline-block h-2 w-2 rounded-full"
+      ? "inline-block h-1.5 w-1.5 rounded-full"
       : "inline-block h-2 w-2 rounded-full bg-primary/70";
+
+  const dots = [0, 1, 2].map((i) => (
+    <span
+      key={i}
+      className={dotClass}
+      style={
+        theme === "onboarding"
+          ? {
+              background: "hsl(var(--brand-indigo-500))",
+              animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
+            }
+          : { animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }
+      }
+    />
+  ));
 
   const bubble =
     theme === "onboarding" ? (
       <div
-        className="chat-typing-bubble flex items-center gap-1 rounded-2xl rounded-bl-sm px-4 py-3"
+        className="chat-typing-bubble flex max-w-[85%] flex-col gap-1.5 rounded-2xl rounded-bl-sm px-4 py-3"
         style={{
           background: ONBOARDING_GLASS_BG,
           backdropFilter: "blur(12px)",
           border: ONBOARDING_GLASS_BORDER,
         }}
       >
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className={dotClass}
-            style={{
-              background: "hsl(var(--brand-indigo-500))",
-              animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
-            }}
-          />
-        ))}
+        {statusLabel ? (
+          <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
+            {statusLabel}
+          </p>
+        ) : null}
+        <div className="flex items-center gap-1">{dots}</div>
       </div>
     ) : (
-      <div className="chat-typing-bubble flex items-center gap-1.5 rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className={dotClass}
-            style={{ animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }}
-          />
-        ))}
+      <div className="chat-typing-bubble flex max-w-[85%] flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
+        {statusLabel ? (
+          <p className="text-sm leading-relaxed text-muted-foreground">{statusLabel}</p>
+        ) : null}
+        <div className="flex items-center gap-1.5">{dots}</div>
       </div>
     );
 
   return (
-    <div className="flex items-end gap-2" role="status" aria-live="polite" aria-label="Amy is typing">
+    <div
+      className="flex items-end gap-2"
+      role="status"
+      aria-live="polite"
+      aria-label={statusLabel || "Amy is typing"}
+    >
       <AmyAvatar theme={theme} />
       {bubble}
     </div>

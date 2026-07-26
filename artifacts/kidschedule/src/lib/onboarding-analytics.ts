@@ -4,6 +4,13 @@ import type { OnboardingStep } from "@/lib/onboarding-chat-types";
 
 export type OnboardingFunnelEvent =
   | "onboarding_started"
+  | "first_question_rendered"
+  | "first_question_latency_ms"
+  | "fallback_triggered"
+  | "ai_timeout"
+  | "onboarding_step_completed"
+  | "onboarding_abandoned"
+  | "step_1_duration"
   | "step_viewed"
   | "step_completed"
   | "step_skipped"

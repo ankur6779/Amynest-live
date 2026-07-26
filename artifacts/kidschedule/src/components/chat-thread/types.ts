@@ -113,7 +113,7 @@ export type ThreadMessage =
       theme?: ThreadTheme;
     }
   | { kind: "system"; id: string; content: ReactNode }
-  | { kind: "typing"; id?: string }
+  | { kind: "typing"; id?: string; statusLabel?: string }
   | {
       kind: "amy-rich";
       id: string;

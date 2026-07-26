@@ -117,27 +117,41 @@ export async function fetchGrantedLocation(): Promise<ResolvedLocation> {
   return { coords, country, source: "gps" };
 }
 
+const GEOCODE_TIMEOUT_MS = 3_000;
+
 export async function reverseGeocodeCountry(
   latitude: number,
   longitude: number,
+  timeoutMs = GEOCODE_TIMEOUT_MS,
 ): Promise<ReverseGeocodeResult | null> {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en&zoom=3`,
-    { headers: { "User-Agent": "AmyNest/1.0 (parenting-app)" } },
-  );
-  if (!res.ok) return null;
+  const controller = new AbortController();
+  const tid = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en&zoom=3`,
+      {
+        headers: { "User-Agent": "AmyNest/1.0 (parenting-app)" },
+        signal: controller.signal,
+      },
+    );
+    if (!res.ok) return null;
 
-  const data = await parseApiJson<{
-    address?: { country?: string; country_code?: string };
-        }>(res);
-  const countryCode = data.address?.country_code?.toUpperCase();
-  const countryName = data.address?.country?.trim();
-  if (!countryCode || countryCode.length !== 2) return null;
+    const data = await parseApiJson<{
+      address?: { country?: string; country_code?: string };
+    }>(res);
+    const countryCode = data.address?.country_code?.toUpperCase();
+    const countryName = data.address?.country?.trim();
+    if (!countryCode || countryCode.length !== 2) return null;
 
-  return {
-    countryCode,
-    countryName: countryName || countryCode,
-  };
+    return {
+      countryCode,
+      countryName: countryName || countryCode,
+    };
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(tid);
+  }
 }
 
 export async function detectCountryFromIp(): Promise<ReverseGeocodeResult | null> {
