@@ -19,8 +19,16 @@ export function useTrialState() {
   const trialEndsAt = entitlements?.trialEndsAt ?? null;
 
   const canStartTrial = useMemo(() => {
-    if (!entitlements) return false;
+    // Failsafe: unknown billing → assume eligible (never block free-trial CTA).
+    if (!entitlements) return true;
     if (isPremium && !isTrialing) return false;
+    // Server-confirmed expired trial → not eligible for a new free trial CTA.
+    if (
+      entitlements.internalTrialExpired === true
+      || entitlements.subscriptionState === "EXPIRED"
+    ) {
+      return false;
+    }
     return entitlements.status === "free";
   }, [entitlements, isPremium, isTrialing]);
 

@@ -1,4 +1,4 @@
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTrialState } from "@/hooks/use-trial-state";
 import { markTrialOfferDismissed } from "@/lib/subscription-funnel-storage";
@@ -6,6 +6,8 @@ import { markTrialOfferDismissed } from "@/lib/subscription-funnel-storage";
 type Props = {
   source: string;
   variant?: "primary" | "secondary";
+  /** Override primary CTA label (default: Try N days free). */
+  ctaLabel?: string;
   onActivated?: () => void;
   className?: string;
 };
@@ -13,6 +15,7 @@ type Props = {
 export function SubscriptionTrialOffer({
   source,
   variant = "secondary",
+  ctaLabel,
   onActivated,
   className = "",
 }: Props) {
@@ -20,6 +23,7 @@ export function SubscriptionTrialOffer({
   if (!canStartTrial) return null;
 
   const days = entitlements?.limits.trialDays ?? 3;
+  const primaryLabel = ctaLabel ?? `Try ${days} days free — full system`;
 
   const onClick = async () => {
     const ok = await activateTrial(source);
@@ -35,7 +39,7 @@ export function SubscriptionTrialOffer({
         data-testid="subscription-trial-cta"
       >
         <Sparkles className="h-4 w-4 mr-2" />
-        Try {days} days free — full system
+        {primaryLabel}
       </Button>
     );
   }

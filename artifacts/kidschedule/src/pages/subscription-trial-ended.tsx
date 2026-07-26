@@ -52,6 +52,17 @@ export default function SubscriptionTrialEndedPage() {
       source: "trial_ended_fullscreen",
       plan: "yearly",
     });
+    trackSubscriptionEvent({
+      event: "trial_expired",
+      source: "trial_ended_fullscreen",
+      plan: "yearly",
+    });
+    trackSubscriptionEvent({
+      event: "trial_paywall_shown",
+      source: "trial_ended_fullscreen",
+      plan: "yearly",
+      extra: { variant: "trial_ended" },
+    });
     logSubscriptionDebug({
       phase: "trial_ended_screen_shown",
       source: "trial_ended_fullscreen",
@@ -70,10 +81,17 @@ export default function SubscriptionTrialEndedPage() {
       setLocation("/dashboard");
       return;
     }
-    if (entitlements && !expired) {
-      setLocation("/dashboard");
+    // Failsafe: if entitlements resolve and user is NOT actually expired, leave immediately.
+    // Never keep a brand-new / never-trialed user on Trial Ended.
+    if (entitlementsResolved && entitlements && !expired) {
+      trackSubscriptionEvent({
+        event: "trial_not_eligible",
+        source: "trial_ended_false_positive_redirect",
+        extra: { action: "leave_trial_ended" },
+      });
+      setLocation("/subscription-trial");
     }
-  }, [alreadyPaid, entitlements, expired, setLocation]);
+  }, [alreadyPaid, entitlements, entitlementsResolved, expired, setLocation]);
 
   const maybeLater = useCallback(() => {
     markTrialEndedScreenDismissed();
@@ -107,6 +125,11 @@ export default function SubscriptionTrialEndedPage() {
       source: "trial_ended_fullscreen",
       plan: "yearly",
     });
+    trackSubscriptionEvent({
+      event: "subscription_checkout_opened",
+      source: "trial_ended_fullscreen",
+      plan: "yearly",
+    });
     logSubscriptionDebug({
       phase: "trial_ended_checkout_start",
       source: "trial_ended_fullscreen",
@@ -133,6 +156,13 @@ export default function SubscriptionTrialEndedPage() {
           error: res.reason,
         },
       });
+      if (res.userCancelled) {
+        trackSubscriptionEvent({
+          event: "purchase_cancelled",
+          source: "trial_ended_fullscreen",
+          plan: "yearly",
+        });
+      }
       if (res.ok) {
         trackSubscriptionEvent({
           event: "purchase_success",

@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Subscription } from "@workspace/db";
 import {
+  isInternalTrialNow,
   isPremiumNow,
   isPremiumSubscriberNow,
+  shouldPreserveActiveTrial,
 } from "../subscription-premium-gate.js";
 
 type SubRow = {
@@ -205,6 +207,30 @@ test("isPremiumSubscriberNow accepts cancelled paid period before expiry", () =>
     ),
     true,
   );
+});
+
+test("capped internal trial is non-premium but must be preserved by heal", () => {
+  // trialEndsAt = now+3d ⇒ trial start ≈ now, which is after the 2026-07-26 cap → capped.
+  const capped = sub({
+    status: "trialing",
+    provider: "none",
+    subscriptionState: "TRIAL",
+    trialEndsAt: new Date(Date.now() + 3 * 86_400_000),
+  });
+  assert.equal(isInternalTrialNow(capped), true);
+  assert.equal(isPremiumNow(capped), false);
+  assert.equal(shouldPreserveActiveTrial(capped), true);
+});
+
+test("expired internal trial is not preserved", () => {
+  const expired = sub({
+    status: "trialing",
+    provider: "none",
+    subscriptionState: "TRIAL",
+    trialEndsAt: new Date(Date.now() - 60_000),
+  });
+  assert.equal(isInternalTrialNow(expired), false);
+  assert.equal(shouldPreserveActiveTrial(expired), false);
 });
 
 test("isPremiumSubscriberNow rejects trial, grace, bonus, and manual grants", () => {

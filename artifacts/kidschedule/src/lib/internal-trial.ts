@@ -1,5 +1,5 @@
 import type { Entitlements } from "@/hooks/use-subscription";
-import { getTrialStartedLocally } from "@/lib/subscription-funnel-storage";
+import { isServerConfirmedExpiredTrial } from "@/lib/winback-eligibility";
 
 /** Server-granted age trial (not Play / RevenueCat). */
 export function isInternalTrial(entitlements: Entitlements | null | undefined): boolean {
@@ -7,22 +7,15 @@ export function isInternalTrial(entitlements: Entitlements | null | undefined): 
   return entitlements.provider === "none" && !entitlements.isPremiumSubscriber;
 }
 
-/** Trial ended — prefer server flag, fall back to local marker after heal clears trialEndsAt. */
+/**
+ * Trial ended — server-confirmed flags only.
+ * LocalStorage must NOT participate (shared-device / account-switch false positives).
+ * Aligns with winback `isServerConfirmedExpiredTrial`.
+ */
 export function isExpiredInternalTrial(
   entitlements: Entitlements | null | undefined,
 ): boolean {
-  if (!entitlements || entitlements.isPremiumSubscriber) return false;
-  if (entitlements.isTrialing) return false;
-  if (entitlements.internalTrialExpired) return true;
-  if (entitlements.subscriptionState === "EXPIRED") return true;
-  if (
-    entitlements.provider === "none" &&
-    !entitlements.isPremium &&
-    !!getTrialStartedLocally()
-  ) {
-    return true;
-  }
-  return false;
+  return isServerConfirmedExpiredTrial(entitlements);
 }
 
 export function pricingCheckoutHref(source: string, plan: "yearly" | "monthly" = "yearly"): string {

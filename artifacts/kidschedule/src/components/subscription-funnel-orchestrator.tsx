@@ -6,13 +6,13 @@ import { SubscriptionTrialExpiredBanner } from "@/components/subscription-trial-
 import { SubscriptionPostActivationBanner } from "@/components/subscription-post-activation-banner";
 import { useTrialState } from "@/hooks/use-trial-state";
 import { useSubscription } from "@/hooks/use-subscription";
-import { isExpiredInternalTrial } from "@/lib/internal-trial";
 import {
   getTrialStartedLocally,
   markTrialStartedLocally,
 } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { shouldRedirectToTrialEndedFullscreen } from "@/lib/trial-ended-redirect";
+import { shouldShowTrialEndedPaywall } from "@/lib/trial-paywall-variant";
 import {
   entitlementDebugSlice,
   logSubscriptionDebug,
@@ -75,7 +75,8 @@ export function SubscriptionFunnelOrchestrator() {
     location === "/dashboard" || location.startsWith("/parenting-hub");
 
   const showExpiredBanner =
-    showFunnelBanners && isExpiredInternalTrial(entitlements);
+    showFunnelBanners
+    && shouldShowTrialEndedPaywall(entitlements, { entitlementsResolved });
 
   return (
     <>

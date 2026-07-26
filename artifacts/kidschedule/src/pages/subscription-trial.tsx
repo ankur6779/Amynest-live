@@ -1,28 +1,35 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { Sparkles, Check } from "lucide-react";
+import { Sparkles, Check, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTrialState } from "@/hooks/use-trial-state";
-import { usePrimaryChild } from "@/hooks/use-primary-child";
 import { useSubscription } from "@/hooks/use-subscription";
 import { SubscriptionTrialOffer } from "@/components/subscription-trial-offer";
 import { markOnboardingTrialSeen } from "@/lib/subscription-funnel-storage";
 import { POST_ONBOARDING_ACTIVATION_PATH } from "@/lib/onboarding-navigation";
 import { FF_POST_ONBOARDING_TRIAL } from "@/lib/subscription-feature-flags";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
-import { UPGRADE_MODAL } from "@workspace/subscription-marketing";
+import { shouldShowFreeTrialPaywall } from "@/lib/trial-paywall-variant";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 export default function SubscriptionTrialPage() {
   const [, setLocation] = useLocation();
   const { canStartTrial, isTrialing, entitlements } = useTrialState();
-  const { isPremium } = useSubscription();
-  const { childName } = usePrimaryChild();
+  const { isPremium, entitlementsResolved } = useSubscription();
   const days = entitlements?.limits.trialDays ?? 3;
+  const showFreeTrial = shouldShowFreeTrialPaywall(entitlements, {
+    entitlementsResolved,
+  });
 
   useEffect(() => {
     trackSubscriptionEvent({ event: "paywall_opened", source: "post_onboarding_trial" });
+    trackSubscriptionEvent({
+      event: "trial_paywall_shown",
+      source: "post_onboarding_trial",
+      extra: { variant: "free_trial", days },
+    });
     markOnboardingTrialSeen();
-  }, []);
+  }, [days]);
 
   useEffect(() => {
     if (!FF_POST_ONBOARDING_TRIAL) {
@@ -34,22 +41,25 @@ export default function SubscriptionTrialPage() {
     }
   }, [FF_POST_ONBOARDING_TRIAL, isPremium, isTrialing, setLocation]);
 
-  const name = childName ?? "your child";
-  const headline = childName
-    ? `Try the full AmyNest system for ${name}`
-    : UPGRADE_MODAL.title;
-
   const goActivate = () => setLocation(POST_ONBOARDING_ACTIVATION_PATH);
 
   useEffect(() => {
-    if (!canStartTrial && !isTrialing) {
+    // Only bounce away once entitlements are resolved and user is not free-trial eligible.
+    if (!entitlementsResolved) return;
+    if (!canStartTrial && !isTrialing && !showFreeTrial) {
+      trackSubscriptionEvent({
+        event: "trial_not_eligible",
+        source: "post_onboarding_trial",
+      });
       setLocation(POST_ONBOARDING_ACTIVATION_PATH);
     }
-  }, [canStartTrial, isTrialing, setLocation]);
+  }, [canStartTrial, isTrialing, showFreeTrial, entitlementsResolved, setLocation]);
 
-  if (!canStartTrial && !isTrialing) {
+  if (entitlementsResolved && !canStartTrial && !isTrialing && !showFreeTrial) {
     return null;
   }
+
+  const playSecure = isNativeAmyNestShell();
 
   return (
     <div
@@ -64,19 +74,21 @@ export default function SubscriptionTrialPage() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-violet-600 shadow-lg">
           <Sparkles className="h-8 w-8 text-white" />
         </div>
-        <h1 className="text-2xl font-extrabold text-white">{headline}</h1>
+        <h1 className="text-2xl font-extrabold text-white">
+          Start your FREE {days}-Day Premium Trial
+        </h1>
         <p className="text-sm text-white/70 leading-relaxed">
-          {days} days of Amy AI, Coach, routines, Hub, and Speech Coach—so you can
-          see what steady support feels like before you choose a plan.
+          Full Premium access for {days} days — cancel anytime. No charge today.
         </p>
         <ul className="text-left text-sm text-white/80 space-y-2">
           {[
-            "Full Amy AI and Coach access",
-            "Routines and Parent Hub journey",
-            "Speech Coach practice sessions",
+            "Full Premium Access",
+            "Cancel Anytime",
+            "No charge today",
+            playSecure ? "Secure payment via Google Play" : "Secure checkout",
           ].map((line) => (
             <li key={line} className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" aria-hidden />
               <span>{line}</span>
             </li>
           ))}
@@ -84,22 +96,35 @@ export default function SubscriptionTrialPage() {
         <SubscriptionTrialOffer
           source="post_onboarding"
           variant="primary"
+          ctaLabel="Start Free Trial"
           onActivated={goActivate}
         />
+        <Button
+          variant="outline"
+          className="w-full border-white/30 bg-transparent text-white hover:bg-white/10"
+          onClick={() => {
+            trackSubscriptionEvent({
+              event: "subscription_checkout_opened",
+              source: "post_onboarding_see_plans",
+            });
+            setLocation("/pricing?source=trial_see_plans");
+          }}
+        >
+          See Plans
+        </Button>
         <Button
           variant="ghost"
           className="w-full text-white/60 hover:text-white"
           onClick={goActivate}
         >
-          {UPGRADE_MODAL.dismiss}
+          Maybe Later
         </Button>
-        <button
-          type="button"
-          className="text-xs text-white/45 underline"
-          onClick={() => setLocation("/pricing?source=trial_skip")}
-        >
-          View plans instead
-        </button>
+        {playSecure ? (
+          <p className="flex items-center justify-center gap-1.5 text-[11px] text-white/45">
+            <Shield className="h-3.5 w-3.5" aria-hidden />
+            Secure payment via Google Play • Cancel anytime
+          </p>
+        ) : null}
       </div>
     </div>
   );
