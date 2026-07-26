@@ -1,4 +1,9 @@
 import type { GameDifficulty } from "@/lib/game-difficulty";
+import {
+  isMazeGenProfilingEnabled,
+  recordMazeGenProfile,
+  shouldYieldBetweenMazeAttempts,
+} from "@/lib/maze-gen-profile";
 
 export type MazeDir = "up" | "down" | "left" | "right";
 
@@ -313,21 +318,134 @@ export function generateValidatedMaze(
   difficulty: GameDifficulty,
   maxAttempts = MAX_GENERATION_ATTEMPTS,
 ): GeneratedMaze {
+  const profile = isMazeGenProfilingEnabled();
+  const genStart = profile ? performance.now() : 0;
+  let attempts = 0;
+  let failures = 0;
+  let pathValidations = 0;
   let best: GeneratedMaze | null = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (shouldYieldBetweenMazeAttempts()) {
+      // Experiment hook — sync path never yields; async wrapper uses this flag.
+    }
+    attempts += 1;
     const maze = generateWithAlgorithm(size, pickAlgorithm(size));
     const analysis = solveMaze(maze);
-    if (analysis.pathLength <= 0) continue;
+    pathValidations += 1;
+    if (analysis.pathLength <= 0) {
+      failures += 1;
+      continue;
+    }
     if (passesQualityGate(analysis, size, difficulty)) {
-      return { maze, analysis };
+      const result = { maze, analysis };
+      if (profile) {
+        recordMazeGenProfile({
+          start: genStart,
+          end: performance.now(),
+          durationMs: performance.now() - genStart,
+          attempts,
+          failures,
+          pathValidations,
+          size,
+          difficulty,
+        });
+      }
+      return result;
     }
     if (!best || analysis.complexityScore > best.analysis.complexityScore) {
       best = { maze, analysis };
     }
   }
-  if (best) return best;
-  const fallback = generateRecursiveBacktracking(size);
-  return { maze: fallback, analysis: solveMaze(fallback) };
+  let result: GeneratedMaze;
+  if (best) result = best;
+  else {
+    const fallback = generateRecursiveBacktracking(size);
+    result = { maze: fallback, analysis: solveMaze(fallback) };
+    pathValidations += 1;
+  }
+  if (profile) {
+    recordMazeGenProfile({
+      start: genStart,
+      end: performance.now(),
+      durationMs: performance.now() - genStart,
+      attempts,
+      failures,
+      pathValidations,
+      size,
+      difficulty,
+    });
+  }
+  return result;
+}
+
+function yieldToMain(): Promise<void> {
+  const sched = (globalThis as typeof globalThis & {
+    scheduler?: { yield?: () => Promise<void> };
+  }).scheduler;
+  if (sched?.yield) return sched.yield();
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** YIELD EXPERIMENT ONLY — not for production. */
+export async function generateValidatedMazeYieldExperiment(
+  size: number,
+  difficulty: GameDifficulty,
+  maxAttempts = MAX_GENERATION_ATTEMPTS,
+): Promise<GeneratedMaze> {
+  const genStart = performance.now();
+  let attempts = 0;
+  let failures = 0;
+  let pathValidations = 0;
+  let best: GeneratedMaze | null = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await yieldToMain();
+    attempts += 1;
+    const maze = generateWithAlgorithm(size, pickAlgorithm(size));
+    const analysis = solveMaze(maze);
+    pathValidations += 1;
+    if (analysis.pathLength <= 0) {
+      failures += 1;
+      continue;
+    }
+    if (passesQualityGate(analysis, size, difficulty)) {
+      const result = { maze, analysis };
+      recordMazeGenProfile({
+        start: genStart,
+        end: performance.now(),
+        durationMs: performance.now() - genStart,
+        attempts,
+        failures,
+        pathValidations,
+        size,
+        difficulty,
+        yielded: true,
+      });
+      return result;
+    }
+    if (!best || analysis.complexityScore > best.analysis.complexityScore) {
+      best = { maze, analysis };
+    }
+  }
+  let result: GeneratedMaze;
+  if (best) result = best;
+  else {
+    await yieldToMain();
+    const fallback = generateRecursiveBacktracking(size);
+    result = { maze: fallback, analysis: solveMaze(fallback) };
+    pathValidations += 1;
+  }
+  recordMazeGenProfile({
+    start: genStart,
+    end: performance.now(),
+    durationMs: performance.now() - genStart,
+    attempts,
+    failures,
+    pathValidations,
+    size,
+    difficulty,
+    yielded: true,
+  });
+  return result;
 }
 
 /** @deprecated Use generateValidatedMaze — kept for any legacy callers. */

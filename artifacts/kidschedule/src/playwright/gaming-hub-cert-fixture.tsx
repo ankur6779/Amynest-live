@@ -1,6 +1,7 @@
 /**
  * Production certification fixture — all Gaming Hub playables (no auth shell).
  */
+import { certStartupMark, isCertStartupTraceEnabled } from "@/lib/cert-startup-forensics";
 import { StrictMode, Suspense, useMemo, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import "../index.css";
@@ -14,8 +15,22 @@ import { GAME_PERF_STYLES } from "@/lib/game-perf";
 import { Toaster } from "@/components/ui/toaster";
 import { lazy } from "react";
 
+certStartupMark("moduleEval", "cert-fixture bundle evaluated");
+certStartupMark("cssImported");
+certStartupMark("i18nImported");
+
 const params = new URLSearchParams(window.location.search);
 const mode = params.get("mode") ?? "maze-hard";
+const mazeIsolate = params.get("mazeIsolate");
+/** Debug-only: disable React StrictMode double-invoke for freeze isolation. */
+const noStrictMode =
+  params.get("noStrictMode") === "1" ||
+  mazeIsolate === "strictMode" ||
+  mazeIsolate === "strictMode-off";
+
+if (typeof window !== "undefined") {
+  (window as Window & { __mazeCertIsolate?: string | null }).__mazeCertIsolate = mazeIsolate;
+}
 
 type CertMode =
   | "maze-easy"
@@ -64,6 +79,7 @@ function LazyGameHost({ gameId }: { gameId: string }) {
 }
 
 function CertApp() {
+  certStartupMark("certAppRender");
   const [activeMode] = useState<CertMode>(resolved);
   const [finishLog, setFinishLog] = useState<{ score: number; total: number } | null>(null);
   const mazeLevel = activeMode.startsWith("maze-")
@@ -88,12 +104,18 @@ function CertApp() {
   }
 
   if (activeMode.startsWith("maze-")) {
+    certStartupMark("mazeHostMounted", activeMode);
     return (
       <div data-testid="gh-cert-maze" data-difficulty={mazeLevel}>
         <MazeEscapeGame
           key={mazeLevel ?? "maze"}
           onFinish={(score, total) => setFinishLog({ score, total })}
         />
+        {finishLog && (
+          <div data-testid="gh-cert-finished">
+            {finishLog.score}/{finishLog.total}
+          </div>
+        )}
       </div>
     );
   }
@@ -105,10 +127,20 @@ function CertApp() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+const certShell = (
+  <>
     <style>{GAME_PERF_STYLES}</style>
     <CertApp />
     <Toaster />
-  </StrictMode>,
+  </>
 );
+
+const rootEl = document.getElementById("root")!;
+const reactRoot = createRoot(rootEl);
+certStartupMark("reactRootCreated");
+const shell = noStrictMode ? certShell : <StrictMode>{certShell}</StrictMode>;
+if (!noStrictMode) certStartupMark("strictModeWrapped");
+reactRoot.render(shell);
+if (isCertStartupTraceEnabled()) {
+  requestAnimationFrame(() => certStartupMark("firstPaintFrame"));
+}

@@ -31,8 +31,49 @@ import {
   GAME_SESSION_ROUNDS,
   sessionMazeMaxMoves,
 } from "@/lib/game-session-progression";
+import { useTimeoutRegistry } from "@/hooks/use-timeout-registry";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { shouldReduceGameEffects } from "@/lib/game-perf";
+import {
+  isMazeRuntimeDebugEnabled,
+  mazeDebugNoteFinishRound,
+  mazeDebugNoteFinishTimerScheduled,
+  mazeDebugNoteLoadRound,
+  mazeDebugNoteMazeGen,
+  mazeDebugNoteOnFinish,
+  mazeDebugNoteRender,
+  mazeLayoutNote,
+  mazeLayoutProfileReset,
+} from "@/lib/maze-runtime-debug";
+import {
+  isMazeDebugKillSwitchEnabled,
+  syncMazeDebugKillSwitchesFromUrl,
+} from "@/lib/maze-debug-flags";
+import { certStartupMark, isCertStartupTraceEnabled } from "@/lib/cert-startup-forensics";
+import {
+  mazeLifecycleCaptureRoundSnapshot,
+  mazeLifecycleCelebration,
+  mazeLifecycleEnd,
+  mazeLifecycleGoalReached,
+  mazeLifecycleMoveCheckpoint,
+  mazeLifecycleNewMazeReady,
+  mazeLifecycleRenderComplete,
+  mazeLifecycleReward,
+  mazeLifecycleSetRound,
+  mazeLifecycleStart,
+} from "@/lib/maze-lifecycle-forensics";
+import {
+  isMazeMoveTraceEnabled,
+  mazeMoveTraceApplied,
+  mazeMoveTraceBlocked,
+  mazeMoveTraceEnter,
+  mazeMoveTraceFinishEffect,
+  mazeMoveTraceGoal,
+  mazeMoveTraceInput,
+  mazeMoveTracePendingFinish,
+  mazeMoveTraceRender,
+  type MoveSource,
+} from "@/lib/maze-move-forensics";
 
 const WALL = 3;
 const SWIPE_THRESHOLD = 28;
@@ -117,7 +158,9 @@ interface RoundState {
 
 function buildRound(roundIdx: number, difficulty: GameDifficulty): RoundState {
   const size = adaptiveMazeSize(roundIdx, difficulty, GAME_SESSION_ROUNDS);
+  const genStart = isMazeRuntimeDebugEnabled() ? performance.now() : 0;
   const { maze, analysis } = generateValidatedMaze(size, difficulty);
+  if (genStart > 0) mazeDebugNoteMazeGen(performance.now() - genStart);
   return {
     size,
     maxMoves: sessionMazeMaxMoves(size, roundIdx, analysis.pathLength),
@@ -126,9 +169,27 @@ function buildRound(roundIdx: number, difficulty: GameDifficulty): RoundState {
   };
 }
 
-export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
+export function MazeEscapeGame({
+  onFinish: onFinishProp,
+}: {
+  onFinish: (score: number, total: number) => void;
+}) {
+  const onFinish = useCallback(
+    (score: number, total: number) => {
+      mazeDebugNoteOnFinish(score, total);
+      onFinishProp(score, total);
+    },
+    [onFinishProp],
+  );
+  mazeDebugNoteRender();
+  if (isCertStartupTraceEnabled()) certStartupMark("mazeGameMounted");
+  if (isMazeMoveTraceEnabled()) mazeMoveTraceRender();
   const reducedMotion = useReducedMotion();
   const reduceEffects = useMemo(() => shouldReduceGameEffects(), []);
+  const skipAnimations = isMazeDebugKillSwitchEnabled("mazeSkipAnimations");
+  const skipCelebration = isMazeDebugKillSwitchEnabled("mazeSkipCelebration");
+  const skipAudio = isMazeDebugKillSwitchEnabled("mazeSkipAudio");
+  const allowDecorativeMotion = !reducedMotion && !reduceEffects && !skipAnimations;
   const [layoutRef, { width: layoutWidth }] = useElementSize();
   const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
   const [roundIdx, setRoundIdx] = useState(0);
@@ -149,15 +210,22 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
   const [victoryPath, setVictoryPath] = useState<Set<string>>(new Set());
   const [confettiTrigger, setConfettiTrigger] = useState(0);
   const [revealKey, setRevealKey] = useState(0);
+  const { setTimeoutSafe, clearTimeoutSafe } = useTimeoutRegistry();
   const doneRef = useRef(false);
+  const sessionFinishedRef = useRef(false);
+  const sessionScoreRef = useRef(0);
+  const roundIdxRef = useRef(0);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const roundStartRef = useRef(Date.now());
   const wrongTurnsRef = useRef(0);
   const backtracksRef = useRef(0);
   const lastPosRef = useRef<[number, number]>([0, 0]);
+  const movesRef = useRef(0);
+  const visitedRef = useRef<Set<string>>(new Set(["0,0"]));
   const finishTimerRef = useRef<number | null>(null);
   const shakeTimerRef = useRef<number | null>(null);
   const bounceTimerRef = useRef<number | null>(null);
+  const pendingFinishRef = useRef<{ escaped: boolean; movesUsed: number } | null>(null);
   const last = mazeSize - 1;
   const cellSize = fitGridCellSize({
     containerWidth: layoutWidth || GAME_LAYOUT.breakpoints.md,
@@ -169,42 +237,63 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
     maxCell: mazeSize <= 6 ? 54 : mazeSize <= 8 ? 42 : 36,
   });
   const glyphSize = fitCellFontSize(cellSize, mazeSize <= 6 ? 0.5 : 0.42);
-  const allowDecorativeMotion = !reducedMotion && !reduceEffects;
 
   useEffect(() => {
     ensureMazeStyles();
+    syncMazeDebugKillSwitchesFromUrl();
+    if (isMazeRuntimeDebugEnabled()) {
+      mazeLayoutProfileReset();
+      (window as Window & { __mazeLifecycleCapture?: (n: number) => void }).__mazeLifecycleCapture =
+        mazeLifecycleCaptureRoundSnapshot;
+    }
+    if (isCertStartupTraceEnabled()) {
+      certStartupMark("roundInitialized", `initial size=${mazeSize}`);
+    }
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (finishTimerRef.current) window.clearTimeout(finishTimerRef.current);
-      if (shakeTimerRef.current) window.clearTimeout(shakeTimerRef.current);
-      if (bounceTimerRef.current) window.clearTimeout(bounceTimerRef.current);
-    };
-  }, []);
+  roundIdxRef.current = roundIdx;
+  sessionScoreRef.current = sessionScore;
+  movesRef.current = moves;
+  visitedRef.current = visited;
 
   const loadRound = useCallback((idx: number, level: GameDifficulty) => {
+    mazeLifecycleStart("loadRound");
+    mazeLifecycleSetRound(idx);
+    clearTimeoutSafe(finishTimerRef.current);
+    finishTimerRef.current = null;
+    mazeDebugNoteLoadRound(idx);
     const next = buildRound(idx, level);
     setMazeSize(next.size);
     setMaxMoves(next.maxMoves);
     setMaze(next.maze);
     setAnalysis(next.analysis);
     setPos([0, 0]);
-    setVisited(new Set(["0,0"]));
+    const startVisited = new Set(["0,0"]);
+    visitedRef.current = startVisited;
+    setVisited(startVisited);
     setMoves(0);
     setDone(false);
     setWon(false);
     setVictoryPath(new Set());
     setRevealKey((k) => k + 1);
     doneRef.current = false;
+    pendingFinishRef.current = null;
     roundStartRef.current = Date.now();
     wrongTurnsRef.current = 0;
     backtracksRef.current = 0;
     lastPosRef.current = [0, 0];
-  }, []);
+    mazeLifecycleNewMazeReady(next.size);
+    mazeLifecycleEnd("loadRound", true, `idx=${idx}`);
+    mazeLifecycleCaptureRoundSnapshot(idx + 1);
+    if (isCertStartupTraceEnabled() && idx === 0) {
+      certStartupMark("roundInitialized", `idx=${idx} size=${next.size}`);
+    }
+  }, [clearTimeoutSafe]);
 
   const finishRound = useCallback((escaped: boolean, movesUsed: number) => {
     if (doneRef.current) return;
+    mazeLifecycleStart("finishRound");
+    mazeDebugNoteFinishRound(escaped, false);
     doneRef.current = true;
     setDone(true);
     setWon(escaped);
@@ -221,93 +310,128 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
     });
 
     if (escaped) {
-      void feedbackCorrect();
-      setVictoryPath(new Set(analysis.solutionPath.map(([r, c]) => `${r},${c}`)));
-      if (!reduceEffects) setConfettiTrigger((t) => t + 1);
+      if (!skipAudio) void feedbackCorrect();
+      mazeLifecycleReward();
+      if (!skipCelebration) {
+        setVictoryPath(new Set(analysis.solutionPath.map(([r, c]) => `${r},${c}`)));
+        if (!reduceEffects) setConfettiTrigger((t) => t + 1);
+        mazeLifecycleCelebration();
+      }
     }
+    mazeLifecycleEnd("finishRound", true, escaped ? "escaped" : "lost");
 
-    setSessionScore((s) => {
-      const newScore = escaped ? s + 1 : s;
-      if (finishTimerRef.current) window.clearTimeout(finishTimerRef.current);
-      finishTimerRef.current = window.setTimeout(() => {
-        finishTimerRef.current = null;
-        if (roundIdx + 1 >= GAME_SESSION_ROUNDS) {
-          onFinish(newScore, GAME_SESSION_ROUNDS);
-        } else {
-          setRoundIdx((r) => r + 1);
-          loadRound(roundIdx + 1, difficulty);
-        }
-      }, escaped ? 1400 : 900);
-      return newScore;
-    });
+    const newScore = sessionScoreRef.current + (escaped ? 1 : 0);
+    sessionScoreRef.current = newScore;
+    setSessionScore(newScore);
+
+    clearTimeoutSafe(finishTimerRef.current);
+    const delayMs = escaped ? 1400 : 900;
+    mazeDebugNoteFinishTimerScheduled(false);
+    finishTimerRef.current = setTimeoutSafe(() => {
+      finishTimerRef.current = null;
+      if (sessionFinishedRef.current) return;
+      const currentRound = roundIdxRef.current;
+      if (currentRound + 1 >= GAME_SESSION_ROUNDS) {
+        sessionFinishedRef.current = true;
+        onFinish(newScore, GAME_SESSION_ROUNDS);
+      } else {
+        const nextRound = currentRound + 1;
+        roundIdxRef.current = nextRound;
+        setRoundIdx(nextRound);
+        loadRound(nextRound, difficulty);
+      }
+    }, delayMs);
   }, [
     analysis.pathLength,
     analysis.solutionPath,
+    clearTimeoutSafe,
     difficulty,
     loadRound,
     mazeSize,
     onFinish,
     reduceEffects,
-    roundIdx,
+    setTimeoutSafe,
   ]);
 
   const resetForDifficulty = useCallback((level: GameDifficulty) => {
+    clearTimeoutSafe(finishTimerRef.current);
+    finishTimerRef.current = null;
+    sessionFinishedRef.current = false;
+    sessionScoreRef.current = 0;
+    pendingFinishRef.current = null;
     setGameDifficulty(level);
     setDifficulty(level);
     setRoundIdx(0);
+    roundIdxRef.current = 0;
     setSessionScore(0);
     loadRound(0, level);
-  }, [loadRound]);
+  }, [clearTimeoutSafe, loadRound]);
 
-  const move = useCallback((dir: MazeDir) => {
+  const move = useCallback((dir: MazeDir, source: MoveSource = "unknown") => {
+    mazeMoveTraceEnter(source, doneRef.current);
     if (doneRef.current) return;
-    setPos(([r, c]) => {
-      if (!canMoveMaze(maze, r, c, dir)) {
-        wrongTurnsRef.current += 1;
-        void feedbackWrong();
-        setShakeGrid(true);
-        setWallHitCell(`${r},${c}`);
-        if (shakeTimerRef.current) window.clearTimeout(shakeTimerRef.current);
-        shakeTimerRef.current = window.setTimeout(() => {
-          shakeTimerRef.current = null;
-          setShakeGrid(false);
-          setWallHitCell(null);
-        }, 320);
-        return [r, c];
-      }
-      void feedbackMove();
-      const nr = dir === "up" ? r - 1 : dir === "down" ? r + 1 : r;
-      const nc = dir === "left" ? c - 1 : dir === "right" ? c + 1 : c;
-      const key = `${nr},${nc}`;
-      setVisited((v) => {
-        if (v.has(key)) backtracksRef.current += 1;
-        return new Set(v).add(key);
-      });
-      if (allowDecorativeMotion) {
-        setPlayerBounce(true);
-        if (bounceTimerRef.current) window.clearTimeout(bounceTimerRef.current);
-        bounceTimerRef.current = window.setTimeout(() => {
-          bounceTimerRef.current = null;
-          setPlayerBounce(false);
-        }, 280);
-      }
-      lastPosRef.current = [nr, nc];
-      setMoves((m) => {
-        const nm = m + 1;
-        if (nr === last && nc === last) finishRound(true, nm);
-        else if (nm >= maxMoves) finishRound(false, nm);
-        return nm;
-      });
-      return [nr, nc];
-    });
-  }, [allowDecorativeMotion, finishRound, last, maxMoves, maze]);
+    const [r, c] = lastPosRef.current;
+    if (!canMoveMaze(maze, r, c, dir)) {
+      mazeMoveTraceBlocked(source, `${r},${c}`);
+      wrongTurnsRef.current += 1;
+      if (!skipAudio) void feedbackWrong();
+      setShakeGrid(true);
+      setWallHitCell(`${r},${c}`);
+      clearTimeoutSafe(shakeTimerRef.current);
+      shakeTimerRef.current = setTimeoutSafe(() => {
+        shakeTimerRef.current = null;
+        setShakeGrid(false);
+        setWallHitCell(null);
+      }, 320);
+      return;
+    }
+    if (!skipAudio) void feedbackMove();
+    const nr = dir === "up" ? r - 1 : dir === "down" ? r + 1 : r;
+    const nc = dir === "left" ? c - 1 : dir === "right" ? c + 1 : c;
+    const key = `${nr},${nc}`;
+    const nm = movesRef.current + 1;
+    if (visitedRef.current.has(key)) backtracksRef.current += 1;
+    const nextVisited = new Set(visitedRef.current).add(key);
+    visitedRef.current = nextVisited;
+    setVisited(nextVisited);
+    if (allowDecorativeMotion) {
+      setPlayerBounce(true);
+      clearTimeoutSafe(bounceTimerRef.current);
+      bounceTimerRef.current = setTimeoutSafe(() => {
+        bounceTimerRef.current = null;
+        setPlayerBounce(false);
+      }, 280);
+    }
+    lastPosRef.current = [nr, nc];
+    setPos([nr, nc]);
+    setMoves(nm);
+    mazeMoveTraceApplied(source, `${nr},${nc}`, nm);
+    mazeLifecycleMoveCheckpoint(`${nr},${nc} m=${nm}`);
+    if (nr === last && nc === last) {
+      mazeMoveTraceGoal(source);
+      mazeLifecycleGoalReached(nm);
+      pendingFinishRef.current = { escaped: true, movesUsed: nm };
+      mazeMoveTracePendingFinish();
+    } else if (nm >= maxMoves) {
+      pendingFinishRef.current = { escaped: false, movesUsed: nm };
+      mazeMoveTracePendingFinish();
+    }
+  }, [allowDecorativeMotion, clearTimeoutSafe, last, maxMoves, maze, setTimeoutSafe]);
+
+  useEffect(() => {
+    const pending = pendingFinishRef.current;
+    if (!pending || doneRef.current) return;
+    pendingFinishRef.current = null;
+    mazeMoveTraceFinishEffect();
+    finishRound(pending.escaped, pending.movesUsed);
+  }, [moves, pos, finishRound]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") { e.preventDefault(); move("up"); }
-      if (e.key === "ArrowDown") { e.preventDefault(); move("down"); }
-      if (e.key === "ArrowLeft") { e.preventDefault(); move("left"); }
-      if (e.key === "ArrowRight") { e.preventDefault(); move("right"); }
+      if (e.key === "ArrowUp") { e.preventDefault(); mazeMoveTraceInput("keyboard"); move("up", "keyboard"); }
+      if (e.key === "ArrowDown") { e.preventDefault(); mazeMoveTraceInput("keyboard"); move("down", "keyboard"); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); mazeMoveTraceInput("keyboard"); move("left", "keyboard"); }
+      if (e.key === "ArrowRight") { e.preventDefault(); mazeMoveTraceInput("keyboard"); move("right", "keyboard"); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -326,8 +450,8 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
     if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
-    if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? "right" : "left");
-    else move(dy > 0 ? "down" : "up");
+    if (Math.abs(dx) > Math.abs(dy)) { mazeMoveTraceInput("touch"); move(dx > 0 ? "right" : "left", "touch"); }
+    else { mazeMoveTraceInput("touch"); move(dy > 0 ? "down" : "up", "touch"); }
   };
 
   const [pr, pc] = pos;
@@ -415,11 +539,18 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
 
   // Imperative tone updates — avoid React reconciling N×N cells on every move.
   useLayoutEffect(() => {
+    if (isMazeDebugKillSwitchEnabled("mazeSkipLayoutEffect")) return;
+    const skipToneSweep = isMazeDebugKillSwitchEnabled("mazeSkipToneSweep");
+    const t0 = isMazeRuntimeDebugEnabled() ? performance.now() : 0;
+    let domReads = 0;
+    let domWrites = 0;
     const grid = gridRef.current;
     if (!grid) return;
     const nodes = grid.querySelectorAll<HTMLElement>("[data-cell]");
+    domReads += 1;
     for (const el of nodes) {
       const key = el.dataset.cell!;
+      domReads += 1;
       const [r, c] = key.split(",").map(Number);
       const isStart = r === 0 && c === 0;
       const isExit = r === last && c === last;
@@ -430,16 +561,35 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
       else if (isExit) tone = "exit";
       else if (isStart) tone = "start";
       else if (onPath) tone = "path";
-      if (el.dataset.tone !== tone) el.dataset.tone = tone;
+      if (!skipToneSweep && el.dataset.tone !== tone) {
+        el.dataset.tone = tone;
+        domWrites += 1;
+      }
       const outline = onPath && solutionSet.has(key) && !showVictory ? "1" : "";
-      if (el.dataset.outline !== outline) el.dataset.outline = outline;
+      if (el.dataset.outline !== outline) {
+        el.dataset.outline = outline;
+        domWrites += 1;
+      }
       if (wallHitCell === key) {
         el.style.animation = "mazeWallHit 0.32s ease";
+        domWrites += 1;
       } else if (el.style.animation?.includes("mazeWallHit")) {
         el.style.animation = useReveal ? el.style.animation : "";
+        domWrites += 1;
       }
       // Clear start rocket once path begins.
-      if (isStart && onPath && el.textContent === "🚀") el.textContent = "";
+      if (isStart && onPath && el.textContent === "🚀") {
+        el.textContent = "";
+        domWrites += 1;
+      }
+    }
+    const layoutMs = t0 > 0 ? performance.now() - t0 : 0;
+    if (t0 > 0) mazeLayoutNote(layoutMs, nodes.length, domReads, domWrites);
+    if (isMazeRuntimeDebugEnabled()) {
+      mazeLifecycleRenderComplete(layoutMs, nodes.length);
+    }
+    if (isCertStartupTraceEnabled() && nodes.length > 0) {
+      certStartupMark("mazeGridFirstRender", `nodes=${nodes.length} ms=${Math.round(layoutMs)}`);
     }
   }, [last, solutionSet, useReveal, victoryPath, visited, wallHitCell]);
 
@@ -458,7 +608,7 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
       footer={footer}
     >
       <div ref={layoutRef} style={{ position: "relative", width: "100%", maxWidth: "100%" }}>
-        {!reduceEffects && <ConfettiBurst trigger={confettiTrigger} />}
+        {!reduceEffects && !skipCelebration && <ConfettiBurst trigger={confettiTrigger} />}
         <div
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
@@ -530,13 +680,13 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
         }}
       >
         <div />
-        <DPadBtn onClick={() => move("up")} label="▲" ariaLabel="Move up" />
+        <DPadBtn onClick={() => { mazeMoveTraceInput("dpad"); move("up", "dpad"); }} label="▲" ariaLabel="Move up" />
         <div />
-        <DPadBtn onClick={() => move("left")} label="◀" ariaLabel="Move left" />
+        <DPadBtn onClick={() => { mazeMoveTraceInput("dpad"); move("left", "dpad"); }} label="◀" ariaLabel="Move left" />
         <div />
-        <DPadBtn onClick={() => move("right")} label="▶" ariaLabel="Move right" />
+        <DPadBtn onClick={() => { mazeMoveTraceInput("dpad"); move("right", "dpad"); }} label="▶" ariaLabel="Move right" />
         <div />
-        <DPadBtn onClick={() => move("down")} label="▼" ariaLabel="Move down" />
+        <DPadBtn onClick={() => { mazeMoveTraceInput("dpad"); move("down", "dpad"); }} label="▼" ariaLabel="Move down" />
         <div />
       </div>
 

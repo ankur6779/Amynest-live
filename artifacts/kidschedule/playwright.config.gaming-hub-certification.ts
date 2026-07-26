@@ -4,7 +4,7 @@ const PORT = Number(process.env.PLAYWRIGHT_GH_CERT_PORT ?? "3000");
 
 export default defineConfig({
   testDir: "./playwright/specs",
-  testMatch: /gaming-hub-(certification|perf-freeze|full-certification)\.spec\.ts/,
+  testMatch: /(gaming-hub-(certification|perf-freeze|full-certification|freeze-repro)|maze-(freeze|purity|runtime|move-forensics|binary-isolation|progressive-isolation|layout-hypothesis)-validation|maze-(runtime-profile|move-forensics|binary-isolation|progressive-isolation|layout-hypothesis)|cert-startup-profile)\.spec\.ts/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
