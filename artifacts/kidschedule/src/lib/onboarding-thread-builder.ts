@@ -48,6 +48,8 @@ export interface OnboardingThreadContext {
   step: OnboardingStep;
   messages: ChatMessage[];
   typing: boolean;
+  /** Progressive loading copy while typing / recovering from a hang. */
+  typingStatusLabel?: string | null;
   isFinishing: boolean;
   t: TFunction;
   countryCode: string;
@@ -416,20 +418,35 @@ export function buildOnboardingThreadMessages(ctx: OnboardingThreadContext): Thr
       : { kind: "user" as const, id: m.id, text: m.text },
   );
 
+  // Never show a dots-only intro-boot dead-end. If Step 1 has no messages yet,
+  // surface progressive status copy instead of infinite bare typing dots.
   if (ctx.step === "intro" && ctx.messages.length === 0 && !ctx.typing) {
-    items.push({ kind: "typing", id: "intro-boot" });
+    items.push({
+      kind: "typing",
+      id: "intro-boot",
+      statusLabel:
+        ctx.typingStatusLabel
+        ?? ctx.t("screens.onboarding.preparing_first_question"),
+    });
   }
 
   if (ctx.typing) {
-    items.push({ kind: "typing", id: "typing" });
+    items.push({
+      kind: "typing",
+      id: "typing",
+      statusLabel: ctx.typingStatusLabel ?? undefined,
+    });
   }
 
-  if (
-    !ctx.typing &&
-    !ctx.isFinishing &&
-    ctx.step !== "intro" &&
-    ONBOARDING_INTERACTIVE_STEPS.has(ctx.step)
-  ) {
+  // Keep Step 1 interactive controls visible even while a short typing delay runs,
+  // so a hung amySays timer can never blank the conversation.
+  const showInteraction =
+    !ctx.isFinishing
+    && ctx.step !== "intro"
+    && ONBOARDING_INTERACTIVE_STEPS.has(ctx.step)
+    && !(ctx.typing && ctx.step !== "country-confirm");
+
+  if (showInteraction) {
     const interaction = buildOnboardingStepInteraction(ctx);
     if (interaction) {
       items.push({

@@ -688,9 +688,27 @@ function InteractionBody({
   if (interaction.type === "country-detect") {
     if (interaction.isLocating) {
       return (
-        <div className="flex flex-col items-center gap-3 py-2">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-center text-sm text-muted-foreground">Detecting your location…</p>
+        <div
+          className="flex flex-col items-center gap-3 py-2"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden="true" />
+          <p className="text-center text-sm text-muted-foreground">
+            {t("screens.onboarding.amy_thinking", {
+              defaultValue: "Amy is thinking…",
+            })}
+          </p>
+          <p className="text-center text-xs text-muted-foreground">
+            {t("screens.onboarding.country_locate_timeout_hint", {
+              defaultValue: "Taking too long — you can continue manually.",
+            })}
+          </p>
+          {/* Failsafe: locating must never be a dead end — manual pick always available. */}
+          <Button variant="ghost" className="w-full" onClick={() => interaction.onPickManually?.()}>
+            {t("screens.onboarding.country_select_manually")}
+          </Button>
         </div>
       );
     }
@@ -731,15 +749,39 @@ function InteractionBody({
             </div>
           </div>
           <Button className="w-full rounded-2xl py-6" onClick={() => interaction.onConfirmDetected?.()}>
-            Yes, that&apos;s correct
+            {t("screens.onboarding.country_confirm_yes_short", {
+              defaultValue: "Yes, that's correct",
+            })}
           </Button>
           <Button variant="ghost" className="w-full" onClick={() => interaction.onChangeCountry?.()}>
-            Choose a different country
+            {t("screens.onboarding.country_change_different", {
+              defaultValue: "Choose a different country",
+            })}
           </Button>
         </div>
       );
     }
-    return null;
+    // Failsafe: never render an empty country step (idle/denied without controls).
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-center text-sm leading-relaxed text-muted-foreground">
+          {t("screens.onboarding.lets_start_manually", {
+            defaultValue: "Let's start manually.",
+          })}
+        </p>
+        <Button className="w-full rounded-2xl py-6" onClick={() => interaction.onPickManually?.()}>
+          {t("screens.onboarding.country_select_manually")}
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full"
+          disabled={interaction.locationRequesting}
+          onClick={() => interaction.onAllowLocation?.()}
+        >
+          {t("screens.onboarding.country_allow_location")}
+        </Button>
+      </div>
+    );
   }
 
   if (interaction.type === "topic-grid") {

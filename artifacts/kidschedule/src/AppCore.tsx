@@ -226,6 +226,7 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function HomeRedirect() {
   const { isSignedIn, isLoaded, authStatus, userId } = useAuth();
+  const { signOut } = useClerk();
   const { data, isError, error, refetch } = useOnboardingStatus();
   const authFetch = useAuthFetch();
   const setupDone = isSetupComplete(effectiveSetupStatus(data));
@@ -305,7 +306,19 @@ function HomeRedirect() {
   }
 
   if (authBlocked) {
-    return <RouteLoadingShell />;
+    return (
+      <AppFallbackUi
+        title="Session expired"
+        message="Please sign in again to continue."
+        primaryLabel="Sign in"
+        onReload={() => {
+          void signOut().finally(() => {
+            const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+            window.location.assign(`${base}/sign-in`.replace(/\/{2,}/g, "/"));
+          });
+        }}
+      />
+    );
   }
 
   if (setupDone) {
@@ -318,7 +331,8 @@ function HomeRedirect() {
 /** If setup is already done, leave /onboarding (users often land here from an old redirect). */
 function OnboardingRouteGuard() {
   const { isSignedIn, isLoaded, authStatus } = useAuth();
-  const { data, isError, error, refetch } = useOnboardingStatus();
+  const { signOut } = useClerk();
+  const { data, isError, error, refetch, isPending } = useOnboardingStatus();
   const setupDone = isSetupComplete(effectiveSetupStatus(data));
   const { data: childrenList, isFetched: childrenFetched } = useListChildren({
     query: {
@@ -333,13 +347,33 @@ function OnboardingRouteGuard() {
   const authLoading = !isLoaded || authStatus === "loading";
   if (authLoading) return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (authBlocked) return <RouteLoadingShell />;
+  // Never infinite-spinner on auth failure — recoverable UI only.
+  if (authBlocked) {
+    return (
+      <AppFallbackUi
+        title="Session expired"
+        message="Please sign in again to continue setting up Amy for your family."
+        primaryLabel="Sign in"
+        onReload={() => {
+          void signOut().finally(() => {
+            const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+            window.location.assign(`${base}/sign-in`.replace(/\/{2,}/g, "/"));
+          });
+        }}
+      />
+    );
+  }
   if (isError) {
     return (
       <ApiRetryShell
         onRetry={() => void refetch()}
       />
     );
+  }
+  // Status still loading: paint onboarding immediately for incomplete users.
+  // Only redirect away once we know setup is done (avoids blocking Step 1).
+  if (setupDone && (isPending || !childrenFetched)) {
+    return <RouteLoadingShell />;
   }
   if (setupDone && childrenFetched && (childrenList?.length ?? 0) > 0) {
     return <Redirect to="/dashboard" />;

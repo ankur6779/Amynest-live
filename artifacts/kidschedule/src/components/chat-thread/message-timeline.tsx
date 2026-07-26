@@ -105,7 +105,13 @@ export function MessageTimeline({
           );
         }
         if (message.kind === "typing") {
-          return <AmyTypingBubble key={message.id ?? "typing"} theme={theme} />;
+          return (
+            <AmyTypingBubble
+              key={message.id ?? "typing"}
+              theme={theme}
+              statusLabel={message.statusLabel}
+            />
+          );
         }
         return null;
       })}
