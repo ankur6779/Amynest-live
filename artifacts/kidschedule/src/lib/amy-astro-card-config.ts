@@ -2,14 +2,16 @@ import type { HubPremiumCardVisual } from "@/lib/hub-premium-card-types";
 import { Compass, Moon, Sparkles, Star } from "lucide-react";
 
 const BASE = "/illustrations/amy-astro";
+/** Cache-bust when cutout assets change so clients pick up transparent heroes. */
+const ASSET_V = "20260726c";
 
 /**
  * Collapsed Amy Astro Intelligence section — symbolic moon/star icon only
  * (matches Learning Zone / other hub section tiles; no character photo).
  */
 export const AMY_ASTRO_SECTION_HEADER_VISUAL: HubPremiumCardVisual = {
-  iconSrc: `${BASE}/section-header-icon.png`,
-  heroSrc: `${BASE}/section-header-hero.png`,
+  iconSrc: `${BASE}/section-header-icon.png?v=${ASSET_V}`,
+  heroSrc: `${BASE}/section-header-hero.png?v=${ASSET_V}`,
   surfaceGradient:
     "linear-gradient(135deg, rgba(30,64,175,0.6) 0%, rgba(79,70,229,0.54) 46%, rgba(245,158,11,0.4) 100%)",
   ambientGlow:
@@ -37,8 +39,8 @@ export const AMY_ASTRO_SECTION_HEADER_VISUAL: HubPremiumCardVisual = {
 
 /** Expanded launch tile — transparent cutout Amy so glass/glow shows through. */
 export const AMY_ASTRO_LAUNCH_VISUAL: HubPremiumCardVisual = {
-  iconSrc: `${BASE}/amy-astro-icon.png`,
-  heroSrc: `${BASE}/amy-astro-hero.png`,
+  iconSrc: `${BASE}/amy-astro-icon.png?v=${ASSET_V}`,
+  heroSrc: `${BASE}/amy-astro-hero.png?v=${ASSET_V}`,
   surfaceGradient:
     "linear-gradient(135deg, rgba(30,64,175,0.62) 0%, rgba(79,70,229,0.56) 46%, rgba(245,158,11,0.42) 100%)",
   ambientGlow:
