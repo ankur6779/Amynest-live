@@ -103,3 +103,6 @@ lib/rhymes-audio/staging/
 # Discovery worlds — generated audio + expiring GCS signed URLs (regenerate via pnpm run generate:discovery-worlds-audio)
 artifacts/kidschedule/public/discovery-worlds-audio/
 lib/world-engine/src/discovery-worlds-signed-urls.json
+
+# AI evaluation — ephemeral report (baselines.json is committed)
+lib/ai-evaluation/golden/last-report.json

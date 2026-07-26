@@ -43,3 +43,17 @@ python -m src.server
 Requires birth time + place (else `houses` / `planetHouseMap` stay `null`).
 
 Roadmap stubs: Placidus, Equal, Porphyry — see `src/house_engine.py` and `docs/birth-sky-ephemeris.md`.
+
+## Vedic + Western
+
+| Env | Default | Values |
+|-----|---------|--------|
+| `ASTROLOGY_MODE` | `auto` | `vedic`, `western`, `auto` |
+| `ASTROLOGY_REGION` | `IN` | `IN`→vedic under auto; others→western |
+| `ZODIAC_MODE` | derived | `tropical`, `sidereal_lahiri` (explicit override) |
+| `HOUSE_SYSTEM` | derived | `whole_sign`, `placidus`, `equal`, `porphyry` |
+| `NODE_TYPE` | `mean` | `mean` (`true` reserved) |
+
+Vedic: Rahu/Ketu, nakshatra, moonProfile, Vimshottari dasha.  
+Western: Placidus/Equal/Porphyry, MC/IC/DC, aspects, `westernBirthProfile`.  
+Same Skyfield engine — no duplicated planet math.

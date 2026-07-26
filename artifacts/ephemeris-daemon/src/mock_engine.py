@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 from .engine_config import engine_name, engine_version, full_engine_version
@@ -12,7 +13,15 @@ from .engine_port import (
     EngineHealth,
     EphemerisLoadError,
 )
-from .house_engine import DEFAULT_HOUSE_SYSTEM, houses_payload_and_map
+from .house_engine import DEFAULT_HOUSE_SYSTEM, houses_payload_and_map, sign_from_longitude
+from .nodes import compute_mean_nodes
+from .vedic_enrich import enrich_vedic_fields
+from .zodiac import to_chart_longitude
+
+
+def _degree_in_sign(lon: float) -> float:
+    return round((lon % 360.0) % 30.0, 6)
+
 
 _MOCK_FINGERPRINT = "sha256:mock-kernel-not-for-production"
 
@@ -87,30 +96,102 @@ class MockEngine:
         confidence = max(0.0, min(1.0, round(confidence, 2)))
         calc_mode = "topocentric" if mode == "full" and place_provided else "geocentric"
         generated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        jd_tt = 2451545.0
+
+        tropical = {
+            "sun": 120.0,
+            "moon": 200.0,
+            "mercury": 120.0,
+            "venus": 120.0,
+            "mars": 120.0,
+            "jupiter": 120.0,
+            "saturn": 120.0,
+            "uranus": 120.0,
+            "neptune": 120.0,
+            "pluto": 120.0,
+        }
+        nodes = compute_mean_nodes(jd_tt)
+        tropical["rahu"] = nodes.rahu_tropical
+        tropical["ketu"] = nodes.ketu_tropical
 
         rising_sign = None
         houses = None
         planet_house_map = None
-        # Deterministic mock ascendant at 10° Aries when time+place exist
-        asc_lon = 10.0
+        ascendant = None
+        asc_tropical = 10.0
+        vedic_pre = enrich_vedic_fields(
+            tropical_lons=tropical,
+            jd_tt=jd_tt,
+            birth_utc=None,
+            has_birth_time=False,
+            planet_house_map=None,
+            phase_id="first_quarter",
+            phase_label="First Quarter",
+            signs_fn=sign_from_longitude,
+            degree_in_sign_fn=_degree_in_sign,
+        )
+        ayan = vedic_pre["ayanamsa"] or 0.0
+        chart_lons = vedic_pre["chartLongitudes"]
+
         if mode == "full" and place_provided:
-            rising_sign = "Aries"
+            asc_lon = to_chart_longitude(asc_tropical, ayan)
+            rising_sign = sign_from_longitude(asc_lon)
+            ascendant = {
+                "sign": rising_sign,
+                "eclipticLongitudeDeg": round(asc_lon, 6),
+                "degreeInSign": _degree_in_sign(asc_lon),
+            }
             houses, planet_house_map = houses_payload_and_map(
-                julian_day=2451545.0,
+                julian_day=jd_tt,
                 latitude=float(inp.lat),
                 longitude=float(inp.lon),
                 ascendant_longitude=asc_lon,
-                planet_longitudes={"sun": 120.0, "moon": 200.0},
+                planet_longitudes=chart_lons,
                 house_system=DEFAULT_HOUSE_SYSTEM,
             )
 
+        birth_utc = None
+        if mode == "full" and inp.birth_time:
+            birth_utc = datetime(2000, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+        vedic = enrich_vedic_fields(
+            tropical_lons=tropical,
+            jd_tt=jd_tt,
+            birth_utc=birth_utc,
+            has_birth_time=bool(mode == "full" and inp.birth_time),
+            planet_house_map=planet_house_map,
+            phase_id="first_quarter",
+            phase_label="First Quarter",
+            signs_fn=sign_from_longitude,
+            degree_in_sign_fn=_degree_in_sign,
+        )
+        chart_lons = vedic["chartLongitudes"]
+
+        def body(key: str) -> dict[str, Any]:
+            lon = chart_lons[key]
+            return {
+                "id": key,
+                "eclipticLongitudeDeg": round(lon, 6),
+                "degreeInSign": _degree_in_sign(lon),
+                "sign": sign_from_longitude(lon),
+                "retrograde": key in ("rahu", "ketu"),
+            }
+
+        planet_degrees = {k: body(k) for k in chart_lons}
+        bodies = [
+            {
+                "id": k,
+                "eclipticLongitudeDeg": planet_degrees[k]["eclipticLongitudeDeg"],
+                "sign": planet_degrees[k]["sign"],
+            }
+            for k in ("sun", "moon")
+        ]
+        retrograde = ["rahu", "ketu"]
+
         astronomy: dict[str, Any] = {
-            "bodies": [
-                {"id": "sun", "eclipticLongitudeDeg": 120.0, "sign": "Leo"},
-                {"id": "moon", "eclipticLongitudeDeg": 200.0, "sign": "Libra"},
-            ],
-            "sunSign": "Leo",
-            "moonSign": "Libra",
+            "bodies": bodies,
+            "sunSign": planet_degrees["sun"]["sign"],
+            "moonSign": planet_degrees["moon"]["sign"],
             "moonPhase": "first_quarter",
             "moonPhaseLabel": "First Quarter",
             "risingSign": rising_sign,
@@ -128,11 +209,20 @@ class MockEngine:
             "astronomyConfidence": confidence,
             "missingInputs": missing,
             "calculationMode": calc_mode,
-            "planetDegrees": {
-                "sun": {"eclipticLongitudeDeg": 120.0, "sign": "Leo", "retrograde": False},
-                "moon": {"eclipticLongitudeDeg": 200.0, "sign": "Libra", "retrograde": False},
-            },
-            "retrograde": [],
+            "zodiacMode": vedic["zodiacMode"],
+            "ayanamsa": vedic["ayanamsa"],
+            "ayanamsaName": vedic["ayanamsaName"],
+            "sun": planet_degrees["sun"],
+            "moon": planet_degrees["moon"],
+            "rahu": planet_degrees["rahu"],
+            "ketu": planet_degrees["ketu"],
+            "ascendant": ascendant,
+            "planetDegrees": planet_degrees,
+            "retrograde": retrograde,
+            "nakshatra": vedic["nakshatra"],
+            "planetNakshatra": vedic["planetNakshatra"],
+            "moonProfile": vedic["moonProfile"],
+            "dasha": vedic["dasha"],
             "metadata": {
                 "calculationSource": self.calculation_source(),
                 "kernel": self.kernel_name(),
@@ -147,6 +237,11 @@ class MockEngine:
                 "calculationMode": calc_mode,
                 "cacheHit": False,
                 "houseSystem": houses["system"] if houses else None,
+                "zodiacMode": vedic["zodiacMode"],
+                "zodiac": vedic["zodiac"],
+                "ayanamsa": vedic["ayanamsa"],
+                "ayanamsaName": vedic["ayanamsaName"],
+                "nodeType": "mean",
             },
         }
         ms = (time.perf_counter() - t0) * 1000

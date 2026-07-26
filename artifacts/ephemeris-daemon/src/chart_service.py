@@ -9,8 +9,32 @@ from typing import Any
 
 from skyfield.api import Time
 
+from .angles import (
+    angle_payload,
+    descendant_longitude,
+    imum_coeli_longitude,
+    mean_obliquity_deg,
+    midheaven_longitude,
+    ramc_deg,
+)
+from .aspect_engine import get_aspect_engine
+from .astrology_mode import (
+    ASTROLOGY_WESTERN,
+    resolve_astrology_mode,
+    resolve_house_system,
+)
+from .dasha_engine import compute_vimshottari_dasha
 from .engine_port import ComputeInput
-from .house_engine import DEFAULT_HOUSE_SYSTEM, houses_payload_and_map
+from .house_engine import houses_payload_and_map
+from .nakshatra_engine import get_nakshatra_engine
+from .nodes import get_node_engine
+from .western_profile import build_western_birth_profile
+from .zodiac import (
+    ayanamsa_for_mode,
+    to_chart_longitude,
+    zodiac_label,
+    zodiac_mode,
+)
 
 SIGNS = (
     "Aries",
@@ -82,6 +106,10 @@ def norm360(x: float) -> float:
 
 def sign_from_longitude(lon: float) -> str:
     return SIGNS[int(norm360(lon) / 30.0) % 12]
+
+
+def degree_in_sign(lon: float) -> float:
+    return round(norm360(lon) % 30.0, 6)
 
 
 def phase_from_elongation(elong: float) -> tuple[str, str]:
@@ -224,25 +252,55 @@ def build_astronomy(
 
     utc = parse_utc(inp)
     t = ts.from_datetime(utc)
+    jd_tt = float(t.tt)
     earth = _resolve_body(eph, ("earth", "399"))
+
+    # Optional per-request override via ComputeInput is not on the dataclass;
+    # daemon may set ASTROLOGY_MODE env. Region AUTO defaults preserve Vedic.
+    astro_mode = resolve_astrology_mode()
+    zmode = zodiac_mode(astrology_mode=astro_mode)
+    house_system = resolve_house_system(astro_mode)
+    ayanamsa_deg, ayanamsa_name = ayanamsa_for_mode(jd_tt, zmode)
+
+    tropical_lons: dict[str, float] = {}
+    retro_flags: dict[str, bool] = {}
+    for key, eph_names in BODY_SPECS:
+        body = _resolve_body(eph, eph_names)
+        tropical_lons[key] = _ecliptic_lon_deg(eph, earth, body, t)
+        retro = False
+        if key not in ("sun", "moon"):
+            retro = _is_retrograde(eph, earth, body, t, ts)
+        retro_flags[key] = retro
+
+    # Moon phase uses tropical elongation (astronomical, zodiac-independent)
+    elong = norm360(tropical_lons["moon"] - tropical_lons["sun"])
+    phase_id, phase_label = phase_from_elongation(elong)
+
+    # Nodes (tropical), then convert with the same ayanamsa path
+    nodes = get_node_engine().compute(jd_tt)
+    tropical_lons["rahu"] = nodes.rahu_tropical
+    tropical_lons["ketu"] = nodes.ketu_tropical
+    retro_flags["rahu"] = True  # mean node is always retrograde by convention
+    retro_flags["ketu"] = True
+
+    chart_lons = {
+        k: to_chart_longitude(v, ayanamsa_deg) for k, v in tropical_lons.items()
+    }
 
     planet_degrees: dict[str, dict[str, Any]] = {}
     bodies: list[dict[str, Any]] = []
     retrograde: list[str] = []
     planets: dict[str, dict[str, Any]] = {}
 
-    for key, eph_names in BODY_SPECS:
-        body = _resolve_body(eph, eph_names)
-        lon = _ecliptic_lon_deg(eph, earth, body, t)
+    for key, lon in chart_lons.items():
         sign = sign_from_longitude(lon)
-        retro = False
-        if key not in ("sun", "moon"):
-            retro = _is_retrograde(eph, earth, body, t, ts)
-            if retro:
-                retrograde.append(key)
+        retro = bool(retro_flags.get(key, False))
+        if retro and key not in retrograde:
+            retrograde.append(key)
         entry = {
             "id": key,
             "eclipticLongitudeDeg": round(lon, 6),
+            "degreeInSign": degree_in_sign(lon),
             "sign": sign,
             "retrograde": retro,
         }
@@ -255,42 +313,93 @@ def build_astronomy(
         )
         planet_degrees[key] = {
             "eclipticLongitudeDeg": round(lon, 6),
+            "degreeInSign": degree_in_sign(lon),
             "sign": sign,
             "retrograde": retro,
         }
         planets[key] = entry
 
-    sun_lon = planet_degrees["sun"]["eclipticLongitudeDeg"]
-    moon_lon = planet_degrees["moon"]["eclipticLongitudeDeg"]
-    elong = norm360(moon_lon - sun_lon)
-    phase_id, phase_label = phase_from_elongation(elong)
-
     # Earth (heliocentric ecliptic lon of Earth ≈ opposite Sun + small)
-    earth_lon = norm360(sun_lon + 180.0)
+    earth_lon = norm360(chart_lons["sun"] + 180.0)
 
     rising_sign = None
     ascendant = None
+    midheaven = None
+    imum_coeli = None
+    descendant = None
     houses = None
     planet_house_map = None
     topocentric = False
     if mode == "full" and place_provided:
         topocentric = True
-        asc_lon = _ascendant_lon(t, float(inp.lat), float(inp.lon), wgs84)
+        gast = float(t.gast)
+        obl = mean_obliquity_deg(jd_tt)
+        ramc = ramc_deg(gast_hours=gast, longitude_deg=float(inp.lon))
+        asc_tropical = _ascendant_lon(t, float(inp.lat), float(inp.lon), wgs84)
+        mc_tropical = midheaven_longitude(ramc, obl)
+        asc_lon = to_chart_longitude(asc_tropical, ayanamsa_deg)
+        mc_lon = to_chart_longitude(mc_tropical, ayanamsa_deg)
+        dc_lon = descendant_longitude(asc_lon)
+        ic_lon = imum_coeli_longitude(mc_lon)
         rising_sign = sign_from_longitude(asc_lon)
-        ascendant = {
-            "sign": rising_sign,
-            "eclipticLongitudeDeg": round(asc_lon, 6),
-        }
-        lon_map = {
-            k: float(v["eclipticLongitudeDeg"]) for k, v in planet_degrees.items()
-        }
+        ascendant = angle_payload(asc_lon)
+        midheaven = angle_payload(mc_lon)
+        descendant = angle_payload(dc_lon)
+        imum_coeli = angle_payload(ic_lon)
         houses, planet_house_map = houses_payload_and_map(
-            julian_day=float(t.tt),
+            julian_day=jd_tt,
             latitude=float(inp.lat),
             longitude=float(inp.lon),
             ascendant_longitude=asc_lon,
-            planet_longitudes=lon_map,
-            house_system=DEFAULT_HOUSE_SYSTEM,
+            planet_longitudes=chart_lons,
+            house_system=house_system,
+            midheaven_longitude=mc_lon,
+            ramc_deg=ramc,
+            obliquity_deg=obl,
+        )
+
+    # Aspects (shared chart longitudes + angles when present)
+    aspect_lons = dict(chart_lons)
+    if ascendant:
+        aspect_lons["ascendant"] = float(ascendant["eclipticLongitudeDeg"])
+    if midheaven:
+        aspect_lons["mc"] = float(midheaven["eclipticLongitudeDeg"])
+    aspects = get_aspect_engine().compute(aspect_lons)
+
+    nak_engine = get_nakshatra_engine()
+    planet_nakshatra = nak_engine.map_bodies(chart_lons)
+    moon_nak = nak_engine.lookup(chart_lons["moon"])
+    nakshatra = moon_nak.to_dict()
+
+    moon_profile = {
+        "sign": planet_degrees["moon"]["sign"],
+        "house": (planet_house_map or {}).get("moon"),
+        "nakshatra": moon_nak.name,
+        "pada": moon_nak.pada,
+        "lord": moon_nak.lord,
+        "phase": phase_id,
+        "phaseLabel": phase_label,
+        "longitudeDeg": round(chart_lons["moon"], 6),
+        "degreeInSign": degree_in_sign(chart_lons["moon"]),
+    }
+
+    dasha = None
+    if mode == "full" and inp.birth_time:
+        dasha = compute_vimshottari_dasha(
+            moon_chart_longitude=chart_lons["moon"],
+            birth_utc=utc if utc.tzinfo else utc.replace(tzinfo=timezone.utc),
+        )
+
+    western_profile = None
+    if astro_mode == ASTROLOGY_WESTERN:
+        western_profile = build_western_birth_profile(
+            planet_degrees=planet_degrees,
+            ascendant=ascendant,
+            midheaven=midheaven,
+            planet_house_map=planet_house_map,
+            house_system=houses["system"] if houses else house_system,
+            zodiac_mode=zmode,
+            aspects=aspects,
         )
 
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -316,6 +425,10 @@ def build_astronomy(
         "astronomyConfidence": astronomy_confidence,
         "missingInputs": missing_inputs,
         "calculationMode": calculation_mode,
+        "astrologyMode": astro_mode,
+        "zodiacMode": zmode,
+        "ayanamsa": round(ayanamsa_deg, 6) if ayanamsa_name else None,
+        "ayanamsaName": ayanamsa_name,
         "sun": planets["sun"],
         "moon": planets["moon"],
         "mercury": planets["mercury"],
@@ -326,11 +439,22 @@ def build_astronomy(
         "uranus": planets["uranus"],
         "neptune": planets["neptune"],
         "pluto": planets["pluto"],
+        "rahu": planets["rahu"],
+        "ketu": planets["ketu"],
         "ascendant": ascendant,
+        "midheaven": midheaven,
+        "imumCoeli": imum_coeli,
+        "descendant": descendant,
         "planetDegrees": planet_degrees,
         "retrograde": retrograde,
+        "aspects": aspects,
+        "nakshatra": nakshatra,
+        "planetNakshatra": planet_nakshatra,
+        "moonProfile": moon_profile,
+        "dasha": dasha,
+        "westernBirthProfile": western_profile,
         "metadata": {
-            "julianDay": float(t.tt),
+            "julianDay": jd_tt,
             "utcIso": utc.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
             "topocentric": topocentric,
             "bspKernel": bsp_kernel,
@@ -345,6 +469,12 @@ def build_astronomy(
             "missingInputs": missing_inputs,
             "calculationMode": calculation_mode,
             "houseSystem": houses["system"] if houses else None,
+            "astrologyMode": astro_mode,
+            "zodiacMode": zmode,
+            "zodiac": zodiac_label(zmode),
+            "ayanamsa": round(ayanamsa_deg, 6) if ayanamsa_name else None,
+            "ayanamsaName": ayanamsa_name,
+            "nodeType": nodes.node_type,
         },
     }
     return astronomy, mode

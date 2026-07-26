@@ -280,6 +280,24 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/birth-sky-adaptive':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-adaptive
+      '@workspace/birth-sky-conversation':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-conversation
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-development
+      '@workspace/birth-sky-evidence':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-evidence
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-meaning
+      '@workspace/birth-sky-runtime':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-runtime
       '@workspace/coach-journey':
         specifier: workspace:*
         version: link:../../lib/coach-journey
@@ -560,6 +578,24 @@ importers:
       '@workspace/behavior-tracker':
         specifier: workspace:*
         version: link:../../lib/behavior-tracker
+      '@workspace/birth-sky-adaptive':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-adaptive
+      '@workspace/birth-sky-conversation':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-conversation
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-development
+      '@workspace/birth-sky-evidence':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-evidence
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-meaning
+      '@workspace/birth-sky-runtime':
+        specifier: workspace:^
+        version: link:../../lib/birth-sky-runtime
       '@workspace/coach-journey':
         specifier: workspace:*
         version: link:../../lib/coach-journey
@@ -1373,6 +1409,31 @@ importers:
 
   lib/age-content: {}
 
+  lib/ai-evaluation:
+    dependencies:
+      '@workspace/birth-sky-adaptive':
+        specifier: workspace:^
+        version: link:../birth-sky-adaptive
+      '@workspace/birth-sky-conversation':
+        specifier: workspace:^
+        version: link:../birth-sky-conversation
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../birth-sky-development
+      '@workspace/birth-sky-evidence':
+        specifier: workspace:^
+        version: link:../birth-sky-evidence
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../birth-sky-meaning
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
   lib/amy-intelligence: {}
 
   lib/amy-operating-layer:
@@ -1424,6 +1485,107 @@ importers:
   lib/audio-lessons: {}
 
   lib/behavior-tracker: {}
+
+  lib/birth-sky-adaptive:
+    dependencies:
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../birth-sky-development
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/birth-sky-conversation:
+    dependencies:
+      '@workspace/birth-sky-adaptive':
+        specifier: workspace:^
+        version: link:../birth-sky-adaptive
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../birth-sky-development
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../birth-sky-meaning
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/birth-sky-development:
+    dependencies:
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../birth-sky-meaning
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/birth-sky-evidence:
+    dependencies:
+      '@workspace/birth-sky-adaptive':
+        specifier: workspace:^
+        version: link:../birth-sky-adaptive
+      '@workspace/birth-sky-conversation':
+        specifier: workspace:^
+        version: link:../birth-sky-conversation
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../birth-sky-development
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../birth-sky-meaning
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/birth-sky-meaning:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/birth-sky-runtime:
+    dependencies:
+      '@workspace/birth-sky-adaptive':
+        specifier: workspace:^
+        version: link:../birth-sky-adaptive
+      '@workspace/birth-sky-conversation':
+        specifier: workspace:^
+        version: link:../birth-sky-conversation
+      '@workspace/birth-sky-development':
+        specifier: workspace:^
+        version: link:../birth-sky-development
+      '@workspace/birth-sky-evidence':
+        specifier: workspace:^
+        version: link:../birth-sky-evidence
+      '@workspace/birth-sky-meaning':
+        specifier: workspace:^
+        version: link:../birth-sky-meaning
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
 
   lib/coach-journey:
     dependencies:

@@ -90,6 +90,9 @@ def test_planet_house_placement():
 
 
 def test_every_planet_exactly_one_house_via_skyfield():
+    import os
+
+    os.environ["ZODIAC_MODE"] = "tropical"
     eng = create_engine("skyfield")
     eng.load()
     r = eng.compute_chart(
@@ -111,12 +114,16 @@ def test_every_planet_exactly_one_house_via_skyfield():
     assert a["ascendant"]["sign"] == a["houses"]["cusps"][0]["sign"]
     for pid, house in a["planetHouseMap"].items():
         assert 1 <= house <= 12, (pid, house)
-    assert len(a["planetHouseMap"]) == 10
+    assert len(a["planetHouseMap"]) >= 10
+    assert "rahu" in a["planetHouseMap"] and "ketu" in a["planetHouseMap"]
     for c in a["houses"]["cusps"]:
         assert abs(c["endLongitudeDeg"] - c["startLongitudeDeg"] - 30.0) < 1e-6
 
 
 def test_missing_birth_time_null_houses():
+    import os
+
+    os.environ["ZODIAC_MODE"] = "tropical"
     eng = create_engine("skyfield")
     eng.load()
     r = eng.compute_chart(

@@ -29,3 +29,13 @@ def kernel_name() -> str:
 
 def full_engine_version(name: str | None = None, version: str | None = None) -> str:
     return f"{name or engine_name()}/{version or engine_version()}"
+
+
+def zodiac_mode_config() -> str:
+    """Explicit ZODIAC_MODE if set; otherwise derived in zodiac.zodiac_mode()."""
+    return env("ZODIAC_MODE", "").lower()
+
+
+def node_type_config() -> str:
+    """mean | true (default mean)."""
+    return env("NODE_TYPE", "mean").lower()

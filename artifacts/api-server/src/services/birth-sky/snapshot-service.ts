@@ -10,6 +10,7 @@ import {
   skySnapshotsTable,
   childrenTable,
 } from "@workspace/db";
+import { withMeaningSnapshot } from "@workspace/birth-sky-meaning";
 import { logger } from "../../lib/logger.js";
 import { getEphemerisPort } from "./resolve-ephemeris-port.js";
 import {
@@ -168,7 +169,9 @@ export async function computeAndPersistSnapshot(params: {
     timezoneOffsetMinutes: offset,
   };
   const t0 = Date.now();
-  const { mode, astronomy, engineVersion } = await ephemeris.compute(input);
+  const { mode, astronomy: rawAstronomy, engineVersion } = await ephemeris.compute(input);
+  // Meaning layer — does not alter ephemeris math; additive semantic snapshot.
+  const astronomy = withMeaningSnapshot(rawAstronomy);
   const durationMs = Date.now() - t0;
   const cacheKey = ephemeris.buildCacheKey(input);
 

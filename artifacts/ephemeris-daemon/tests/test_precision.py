@@ -27,6 +27,7 @@ def test_factory_skyfield_default():
 
 
 def test_factory_mock():
+    os.environ["ZODIAC_MODE"] = "tropical"
     eng = create_engine("mock")
     eng.load()
     r = eng.compute_chart(
@@ -48,10 +49,13 @@ def test_factory_mock():
     assert r.astronomy["houses"]["system"] == "whole_sign"
     assert len(r.astronomy["houses"]["cusps"]) == 12
     assert r.astronomy["planetHouseMap"]["sun"] == 5  # Leo vs Aries rising
+    assert r.astronomy["rahu"] is not None
+    assert r.astronomy["ketu"] is not None
 
 
 def test_sun_moon_known_epoch():
     os.environ["ENGINE_PROVIDER"] = "skyfield"
+    os.environ["ZODIAC_MODE"] = "tropical"
     eng = create_engine()
     eng.load()
     r = eng.compute_chart(
@@ -112,6 +116,7 @@ def test_sun_moon_known_epoch():
 
 
 def test_determinism_and_warm_latency():
+    os.environ["ZODIAC_MODE"] = "tropical"
     eng = create_engine("skyfield")
     eng.load()
     inp = ComputeInput(

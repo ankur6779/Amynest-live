@@ -63,14 +63,384 @@ describe("birth-sky ai context", () => {
       kernelFingerprint: "sha256:abcd",
       astronomyConfidence: 1.0,
       calculationMode: "topocentric",
+      meaningSnapshot: null, // legacy raw-fact path
     });
     const blob = JSON.stringify(assembled.messages);
     assert.match(blob, /mercury_sign=Virgo/);
     assert.match(blob, /mercury_lon_deg=155\.1200/);
     assert.match(blob, /retrograde=mercury/);
-    assert.match(blob, /kernel=DE440/);
     assert.match(blob, /astronomy_confidence=1\.00/);
     assert.equal(blob.includes("birth_time"), false);
+  });
+
+  it("omits EvidenceSnapshot from LLM context by default", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "How can I support learning?",
+      entryPoint: "sky",
+      ageMonths: 72,
+      includeEvidence: false,
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.equal(blob.includes("evidence_engine="), false);
+  });
+
+  it("includes EvidenceSnapshot when includeEvidence is true", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "How can I support learning?",
+      entryPoint: "sky",
+      ageMonths: 72,
+      includeEvidence: true,
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /evidence_engine=evidence-engine\/1\.0\.0/);
+    assert.match(blob, /evidence=/);
+  });
+
+  it("appends ConversationPlan facts for structured flow", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "How can I support learning and focus?",
+      entryPoint: "sky",
+      ageMonths: 72,
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /conversation_engine=conversation-engine\/1\.0\.0/);
+    assert.match(blob, /conversation_intent=learning_guidance/);
+    assert.match(blob, /conversation_depth=/);
+    assert.match(blob, /conversation_tone=/);
+    assert.match(blob, /conversation_priority=/);
+    assert.match(blob, /conversation_avoid=/);
+    assert.match(blob, /safety_flags=/);
+    assert.match(blob, /no_absolute_predictions/);
+  });
+
+  it("skips ConversationPlan when explicitly null (compat)", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "How can I support learning?",
+      entryPoint: "sky",
+      meaningSnapshot: null,
+      developmentSnapshot: null,
+      adaptiveSnapshot: null,
+      conversationPlan: null,
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.equal(blob.includes("conversation_engine="), false);
+  });
+
+  it("appends AdaptiveSnapshot facts after development", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "What should we try this week?",
+      entryPoint: "sky",
+      meaningSnapshot: {
+        meaningEngineVersion: "meaning-engine/1.0.0",
+        generatedAt: "2026-01-01T00:00:00.000Z",
+        profile: {
+          learningStyle: ["practical learning"],
+          communicationStyle: ["verbal"],
+          creativeStrength: ["self-expression"],
+          attentionPattern: ["fast-paced"],
+          emotionalProfile: ["emotional attunement"],
+          socialProfile: ["helpful"],
+          strengths: ["confidence"],
+          comfortNeeds: ["predictable routines"],
+          motivationStyle: ["visibility"],
+          curiosityPattern: ["curiosity"],
+        },
+        parentingGuidance: [],
+        conflicts: [],
+        categories: {
+          strengths: [],
+          learningStyle: [],
+          communicationStyle: [],
+          socialStyle: [],
+          comfortNeeds: [],
+          motivationStyle: [],
+          creativeStyle: [],
+          emotionalPattern: [],
+          attentionPattern: [],
+          curiosityPattern: [],
+        },
+      },
+      ageMonths: 72,
+      adaptiveHistory: {
+        sessionFrequency: { sessionsPerWeek: 5, avgSessionMinutes: 15 },
+        completedRoutines: [
+          { kind: "focus", count: 6, lastDayPart: "morning" },
+        ],
+        skippedRoutines: [{ kind: "focus", count: 1 }],
+        activities: [{ type: "focus", completed: 6, skipped: 1, repeated: 2 }],
+        parentFeedback: [{ signal: "child_enjoyed", targetType: "focus" }],
+      },
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /adaptive_engine=adaptive-engine\/1\.0\.0/);
+    assert.match(blob, /engagement_level=/);
+    assert.match(blob, /preferred_activity_types=/);
+    assert.match(blob, /recommended_session_length=/);
+    assert.match(blob, /routine_health=/);
+    assert.match(blob, /adaptation_priority=/);
+    assert.equal(blob.includes("userId"), false);
+    assert.equal(blob.includes("childId"), false);
+  });
+
+  it("appends DevelopmentSnapshot facts when age is provided", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "How can I support learning?",
+      entryPoint: "sky",
+      meaningSnapshot: {
+        meaningEngineVersion: "meaning-engine/1.0.0",
+        generatedAt: "2026-01-01T00:00:00.000Z",
+        profile: {
+          learningStyle: ["practical learning"],
+          communicationStyle: ["verbal"],
+          creativeStrength: ["self-expression"],
+          attentionPattern: ["fast-paced"],
+          emotionalProfile: ["emotional attunement"],
+          socialProfile: ["helpful"],
+          strengths: ["confidence", "leadership"],
+          comfortNeeds: ["predictable routines"],
+          motivationStyle: ["visibility"],
+          curiosityPattern: ["curiosity"],
+        },
+        parentingGuidance: [],
+        conflicts: [],
+        categories: {
+          strengths: [],
+          learningStyle: [],
+          communicationStyle: [],
+          socialStyle: [],
+          comfortNeeds: [],
+          motivationStyle: [],
+          creativeStyle: [],
+          emotionalPattern: [],
+          attentionPattern: [],
+          curiosityPattern: [],
+        },
+      },
+      ageMonths: 72,
+      parentGoals: ["better_focus", "learning_habits"],
+      routines: [{ kind: "sleep" }, { kind: "focus" }],
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /development_engine=development-engine\/1\.0\.0/);
+    assert.match(blob, /development_stage=/);
+    assert.match(blob, /top_priorities=/);
+    assert.match(blob, /recommended_parent_actions=/);
+    assert.match(blob, /learning_profile=/);
+    assert.equal(blob.includes("mercury_lon_deg"), false);
+  });
+
+  it("prefers MeaningSnapshot facts over raw planet dumps", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Cancer",
+      moonPhase: "full",
+      moonPhaseLabel: "Full Moon",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "How can I support learning?",
+      entryPoint: "sky",
+      mercury: { sign: "Virgo", lonDeg: 155.12, retrograde: true },
+      planetDegreesJson: '{"sun":{"eclipticLongitudeDeg":120}}',
+      meaningSnapshot: {
+        meaningEngineVersion: "meaning-engine/1.0.0",
+        generatedAt: "2026-01-01T00:00:00.000Z",
+        profile: {
+          learningStyle: ["practical learning"],
+          communicationStyle: ["verbal"],
+          creativeStrength: ["self-expression"],
+          attentionPattern: ["fast-paced"],
+          emotionalProfile: ["emotional attunement"],
+          socialProfile: ["helpful"],
+          strengths: ["confidence", "leadership"],
+          comfortNeeds: ["predictable routines"],
+          motivationStyle: ["visibility"],
+          curiosityPattern: ["curiosity"],
+        },
+        parentingGuidance: [
+          {
+            conceptId: "leadership",
+            guidanceId: "offer_choices",
+            label: "Give opportunities to make choices",
+            confidence: 0.9,
+          },
+        ],
+        conflicts: [],
+        categories: {
+          strengths: [],
+          learningStyle: [],
+          communicationStyle: [],
+          socialStyle: [],
+          comfortNeeds: [],
+          motivationStyle: [],
+          creativeStyle: [],
+          emotionalPattern: [],
+          attentionPattern: [],
+          curiosityPattern: [],
+        },
+      },
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /meaning_engine=meaning-engine\/1\.0\.0/);
+    assert.match(blob, /learning_style=/);
+    assert.match(blob, /strengths=confidence/);
+    assert.match(blob, /Give opportunities to make choices/);
+    assert.equal(blob.includes("mercury_lon_deg"), false);
+    assert.equal(blob.includes("planet_degrees_json"), false);
+  });
+
+  it("appends western facts without redesigning prompts", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Leo",
+      moonSign: "Taurus",
+      moonPhase: "waxing",
+      moonPhaseLabel: "Waxing Crescent",
+      risingSign: "Scorpio",
+      childFirstName: "Maya",
+      userQuestion: "What stands out?",
+      entryPoint: "sky",
+      astrologyMode: "western",
+      zodiacMode: "tropical",
+      houseSystem: "placidus",
+      planetHouseMap: { sun: 5, moon: 2 },
+      ascendantSign: "Scorpio",
+      mcSign: "Leo",
+      dominantElement: "fire",
+      dominantModality: "fixed",
+      majorAspects: ["Sun Trine Jupiter", "Moon Square Mars"],
+      meaningSnapshot: null,
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /astrology_mode=western/);
+    assert.match(blob, /zodiac=tropical/);
+    assert.match(blob, /house_system=placidus/);
+    assert.match(blob, /sun_house=5/);
+    assert.match(blob, /moon_house=2/);
+    assert.match(blob, /ascendant=scorpio/);
+    assert.match(blob, /mc=leo/);
+    assert.match(blob, /dominant_element=fire/);
+    assert.match(blob, /dominant_modality=fixed/);
+    assert.match(blob, /Sun Trine Jupiter/);
+  });
+
+  it("appends vedic facts without redesigning prompts", () => {
+    const assembled = assembleBirthSkyPrompt({
+      contextSchemaVersion: BIRTH_SKY_CONTEXT_SCHEMA_VERSION,
+      snapshotVersion: "ss_1",
+      engineVersion: "skyfield-jpl/1.0.0",
+      mode: "full",
+      timePrecision: "exact",
+      placeProvided: true,
+      sunSign: "Gemini",
+      moonSign: "Taurus",
+      moonPhase: "waxing",
+      moonPhaseLabel: "Waxing Crescent",
+      risingSign: "Virgo",
+      childFirstName: "Maya",
+      userQuestion: "What about the Moon?",
+      entryPoint: "sky",
+      zodiacMode: "sidereal_lahiri",
+      ayanamsaName: "lahiri",
+      moonNakshatra: "Rohini",
+      moonPada: 2,
+      moonLord: "Moon",
+      planetHouseMap: { rahu: 12, ketu: 6 },
+      currentMahadasha: "Jupiter",
+      currentAntardasha: "Saturn",
+      meaningSnapshot: null,
+    });
+    const blob = JSON.stringify(assembled.messages);
+    assert.match(blob, /zodiac=sidereal/);
+    assert.match(blob, /ayanamsa=lahiri/);
+    assert.match(blob, /moon_nakshatra=Rohini/);
+    assert.match(blob, /moon_pada=2/);
+    assert.match(blob, /moon_lord=Moon/);
+    assert.match(blob, /rahu_house=12/);
+    assert.match(blob, /ketu_house=6/);
+    assert.match(blob, /current_mahadasha=Jupiter/);
   });
 
   it("appends house system and planet house facts only", () => {
@@ -91,6 +461,7 @@ describe("birth-sky ai context", () => {
       entryPoint: "sky",
       houseSystem: "whole_sign",
       planetHouseMap: { sun: 3, moon: 11, venus: 4 },
+      meaningSnapshot: null,
     });
     const blob = JSON.stringify(assembled.messages);
     assert.match(blob, /house_system=whole_sign/);
@@ -118,6 +489,7 @@ describe("birth-sky ai context", () => {
       astronomyConfidence: 0.72,
       missingInputs: ["birthTime"],
       calculationMode: "geocentric",
+      meaningSnapshot: null,
     });
     const blob = JSON.stringify(assembled.messages);
     assert.match(blob, /astronomy_confidence=0\.72/);

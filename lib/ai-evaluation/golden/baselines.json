@@ -1,0 +1,16 @@
+{
+  "version": "ai-evaluation/1.0.0",
+  "updatedAt": "2026-07-26T07:09:29.952Z",
+  "overallScore": 99.9,
+  "fingerprints": {
+    "newborn_sleep": "aa0425afbd76e99a20e92d70c3785cb7",
+    "toddler_behaviour": "68a823b072a381b0af638e2e51e9be45",
+    "preschool_learning": "585612f263a6f2a4c6fb009c83f42c62",
+    "school_age_routine": "12da57b58e0e609ce8c56b1559cd690e",
+    "teen_emotional": "16fbd03d223fbf8a2353362730cae1ec",
+    "routine_question": "fb0145cd19a828203e942a95410a0f7e",
+    "sleep_question": "e83ed79693bf911af840e0bab6c5c503",
+    "behaviour_question": "a42499012f4b6e14005c6fc228eeb33b",
+    "astrology_question": "82b8d084749c1770cc286df4f2f0fb96"
+  }
+}
