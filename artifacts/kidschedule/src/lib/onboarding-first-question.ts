@@ -8,6 +8,9 @@ import { chatMessage, type ChatMessage, type OnboardingStep } from "@/lib/onboar
 /** Hard ceiling — no spinner / typing-only state may exceed this. */
 export const ONBOARDING_MAX_LOADING_MS = 3_000;
 
+/** Production SLO: first question must be visible within this budget after page mount. */
+export const ONBOARDING_FIRST_QUESTION_TARGET_MS = 1_000;
+
 /** Progressive status: "Amy is thinking…" for the first 2s. */
 export const ONBOARDING_THINKING_STATUS_MS = 2_000;
 

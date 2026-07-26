@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chatMessage } from "@/lib/onboarding-chat-types";
 import {
+  ONBOARDING_FIRST_QUESTION_TARGET_MS,
   ONBOARDING_MAX_LOADING_MS,
   ONBOARDING_THINKING_STATUS_MS,
   buildStaticFirstQuestionMessages,
@@ -37,11 +38,21 @@ describe("onboarding first-question failsafe", () => {
   });
 
   it("seeds country-confirm immediately for fresh launches", () => {
+    const started = performance.now();
     const boot = resolveFreshOnboardingBoot({ t, firstName: "Alex" });
+    const elapsed = performance.now() - started;
     expect(boot.seededFresh).toBe(true);
     expect(boot.step).toBe("country-confirm");
     expect(boot.messages.length).toBeGreaterThan(0);
     expect(messagesIncludeFirstQuestion(boot.messages)).toBe(true);
+    // Sync seed — must be far under the 1s production SLO for time-to-first-question.
+    expect(elapsed).toBeLessThan(ONBOARDING_FIRST_QUESTION_TARGET_MS);
+  });
+
+  it("keeps first question available offline (no network dependency)", () => {
+    const boot = resolveFreshOnboardingBoot({ t });
+    expect(boot.messages.some((m) => m.id === "onboarding-first-question")).toBe(true);
+    expect(boot.step).toBe("country-confirm");
   });
 
   it("preserves mid-flow restored sessions without reseeding", () => {

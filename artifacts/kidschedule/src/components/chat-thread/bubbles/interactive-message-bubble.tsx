@@ -688,8 +688,13 @@ function InteractionBody({
   if (interaction.type === "country-detect") {
     if (interaction.isLocating) {
       return (
-        <div className="flex flex-col items-center gap-3 py-2">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <div
+          className="flex flex-col items-center gap-3 py-2"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden="true" />
           <p className="text-center text-sm text-muted-foreground">
             {t("screens.onboarding.amy_thinking", {
               defaultValue: "Amy is thinking…",
@@ -744,10 +749,14 @@ function InteractionBody({
             </div>
           </div>
           <Button className="w-full rounded-2xl py-6" onClick={() => interaction.onConfirmDetected?.()}>
-            Yes, that&apos;s correct
+            {t("screens.onboarding.country_confirm_yes_short", {
+              defaultValue: "Yes, that's correct",
+            })}
           </Button>
           <Button variant="ghost" className="w-full" onClick={() => interaction.onChangeCountry?.()}>
-            Choose a different country
+            {t("screens.onboarding.country_change_different", {
+              defaultValue: "Choose a different country",
+            })}
           </Button>
         </div>
       );

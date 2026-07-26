@@ -13,12 +13,13 @@ import {
   forceSyncAuthFromCurrentUser,
   hasUsableAuthSession,
 } from "@/lib/firebase-auth-listener";
+import { isSetupComplete, readOnboardingCache } from "@/lib/setup-status";
 
 // Hard ceiling: even if the onboarding query is still retrying after this
 // many ms, we let the app render. The page-level guards (HomeRedirect,
 // ProtectedRoute, OnboardingRouteGuard) all handle `isError` / `isPending`
 // fallbacks themselves, so it is safe — and far better than a frozen splash.
-const BOOT_HARD_TIMEOUT_MS = 8000;
+const BOOT_HARD_TIMEOUT_MS = 4_000;
 
 /**
  * Single boot gate: Firebase auth + one onboarding-status fetch (signed-in only).
@@ -35,7 +36,14 @@ export function AppInitGate({ children }: { children: ReactNode }) {
 
   const authLoading = !isLoaded || authStatus === "loading";
   const signedIn = isSignedIn && authStatus === "authenticated";
-  const setupBootLoading = signedIn && isOnboardingStatusBootLoading(onboarding);
+  // Only block first paint on onboarding-status when local cache says setup is
+  // already complete (we may need to route to dashboard). Incomplete / cold
+  // installs must reach /onboarding immediately — Step 1 is fully local.
+  const mayNeedCompletedRedirect = isSetupComplete(readOnboardingCache());
+  const setupBootLoading =
+    signedIn
+    && isOnboardingStatusBootLoading(onboarding)
+    && mayNeedCompletedRedirect;
 
   const [isAppReady, setIsAppReady] = useState(false);
   // Hard timeout — drives `forcedReady`. Once true, never resets.

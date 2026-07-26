@@ -154,15 +154,19 @@ export async function reverseGeocodeCountry(
   }
 }
 
-export async function detectCountryFromIp(): Promise<ReverseGeocodeResult | null> {
+const IP_DETECT_TIMEOUT_MS = 3_000;
+
+export async function detectCountryFromIp(
+  timeoutMs = IP_DETECT_TIMEOUT_MS,
+): Promise<ReverseGeocodeResult | null> {
   try {
     const controller = new AbortController();
-    const tid = window.setTimeout(() => controller.abort(), 4000);
+    const tid = window.setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
     window.clearTimeout(tid);
     if (!res.ok) return null;
 
-    const data = await parseApiJson<{ country_code?: string;country_name?: string }>(res);
+    const data = await parseApiJson<{ country_code?: string; country_name?: string }>(res);
     if (!data.country_code || !data.country_name) return null;
 
     return {
