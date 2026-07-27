@@ -46,7 +46,6 @@ import {
 import type { SetupDraft } from "../domain/models/setup-draft";
 import type { BirthProfile, SkySnapshot } from "../domain/models/birth-profile";
 import {
-  createBirthSky,
   fetchBirthSkyForChild,
   recomputeBirthSkySnapshot,
 } from "../infrastructure/api/birth-sky-api";
@@ -60,6 +59,7 @@ import {
 } from "../infrastructure/repositories/offline-cache-store";
 import { loadPreferences } from "../infrastructure/repositories/settings-store";
 import { runBirthSkySyncCycle } from "../application/orchestrators/lifecycle-sync";
+import { runFirstSkyPipeline } from "../application/orchestrators/first-sky-pipeline";
 import { BIRTH_SKY_CONSENT_VERSION } from "../constants/consent";
 import type { DashboardSegmentId } from "../state/dashboard-session";
 
@@ -359,18 +359,28 @@ function BirthSkyAppInner() {
     setCreating(true);
     setComputeFailed(false);
     try {
-      const result = await createBirthSky(authFetch, {
+      const prepared: SetupDraft = {
         ...draft,
         consent: {
           ...draft.consent,
           consentVersion: draft.consent.consentVersion ?? BIRTH_SKY_CONSENT_VERSION,
           acceptedAt: draft.consent.acceptedAt ?? new Date().toISOString(),
         },
+      };
+      const result = await runFirstSkyPipeline({
+        authFetch,
+        draft: prepared,
+        userId: authUser?.id ?? null,
+        existingProfile: profile,
+        isGuest: !authUser,
       });
-      setProfile(result.profile);
+      if (result.profile) setProfile(result.profile);
       setSnapshot(result.snapshot);
-      setComputeFailed(result.computeStatus === "failed" || !result.snapshot);
-      clearSetupDraft(draft.childId);
+      // Only mark failed after pipeline exhausted retries / recovery.
+      setComputeFailed(!result.ok || !result.snapshot);
+      if (result.ok && result.snapshot) {
+        clearSetupDraft(draft.childId);
+      }
       trackBirthSkyEvent("birth_sky.consent_accepted", {
         time_precision: draft.timePrecision ?? "unknown",
         place_provided: Boolean(draft.birthPlace),
@@ -383,6 +393,7 @@ function BirthSkyAppInner() {
       setCeremonyAllow({ formation: true, reveal: false });
       setLocation("/birth-sky/formation", { replace: true });
     } catch {
+      // Pipeline should not throw; belt-and-suspenders for unexpected errors.
       setComputeFailed(true);
       setCeremonyAllow({ formation: true, reveal: false });
       setLocation("/birth-sky/formation", { replace: true });
@@ -390,6 +401,32 @@ function BirthSkyAppInner() {
       setCreating(false);
     }
   };
+
+  // Resume / interrupted first-run: profile without snapshot → auto-regenerate once.
+  useEffect(() => {
+    if (resolved.land !== "formation") return;
+    if (snapshot || computeFailed) return;
+    if (!profile) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await recomputeBirthSkySnapshot(authFetch, profile.profileId);
+        if (cancelled) return;
+        setSnapshot(result.snapshot);
+        setComputeFailed(result.computeStatus === "failed" || !result.snapshot);
+        if (result.snapshot) {
+          trackBirthSkyEvent("birth_sky.error_recovery", {
+            cause: "formation_auto_recompute",
+          });
+        }
+      } catch {
+        if (!cancelled) setComputeFailed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [resolved.land, profile?.profileId, snapshot, computeFailed, authFetch]);
 
   const handleRetryFormation = async () => {
     setComputeFailed(false);
@@ -399,9 +436,39 @@ function BirthSkyAppInner() {
         const result = await recomputeBirthSkySnapshot(authFetch, profile.profileId);
         setSnapshot(result.snapshot);
         setComputeFailed(result.computeStatus === "failed" || !result.snapshot);
+        return;
+      } catch {
+        // Fall through to full pipeline if recompute path fails.
+      }
+    }
+    // Brand-new / interrupted create: no profile in memory — re-run first-sky pipeline.
+    if (draft) {
+      try {
+        const result = await runFirstSkyPipeline({
+          authFetch,
+          draft: {
+            ...draft,
+            consent: {
+              ...draft.consent,
+              consentVersion: draft.consent.consentVersion ?? BIRTH_SKY_CONSENT_VERSION,
+              acceptedAt: draft.consent.acceptedAt ?? new Date().toISOString(),
+            },
+          },
+          userId: authUser?.id ?? null,
+          existingProfile: profile,
+          isGuest: !authUser,
+        });
+        if (result.profile) setProfile(result.profile);
+        setSnapshot(result.snapshot);
+        setComputeFailed(!result.ok || !result.snapshot);
+        if (result.ok && result.snapshot) {
+          clearSetupDraft(draft.childId);
+        }
       } catch {
         setComputeFailed(true);
       }
+    } else {
+      setComputeFailed(true);
     }
   };
 

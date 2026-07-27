@@ -9,6 +9,7 @@ import {
   birthProfilesTable,
   skySnapshotsTable,
   childrenTable,
+  birthSkyPreferencesTable,
 } from "@workspace/db";
 import {
   computeMeaningSnapshot,
@@ -25,6 +26,39 @@ import {
   unsealBirthTime,
   type BirthPlacePlain,
 } from "./birth-field-crypto.js";
+
+/** Structured first-sky / compute pipeline log (never logs raw birth secrets). */
+export function logBirthSkyPipeline(
+  step: string,
+  fields: Record<string, unknown>,
+  level: "info" | "warn" | "error" = "info",
+): void {
+  const payload = {
+    event: "birth_sky.pipeline",
+    step,
+    ...fields,
+  };
+  if (level === "error") logger.error(payload, `birth_sky.pipeline.${step}`);
+  else if (level === "warn") logger.warn(payload, `birth_sky.pipeline.${step}`);
+  else logger.info(payload, `birth_sky.pipeline.${step}`);
+}
+
+/** Ensure preference row exists for a user (idempotent). */
+export async function ensureBirthSkyPreferences(userId: string): Promise<void> {
+  const existing = await db
+    .select({ userId: birthSkyPreferencesTable.userId })
+    .from(birthSkyPreferencesTable)
+    .where(eq(birthSkyPreferencesTable.userId, userId))
+    .limit(1);
+  if (existing[0]) return;
+  await db.insert(birthSkyPreferencesTable).values({
+    userId,
+    showTradition: true,
+    skySounds: false,
+    monthlyNotesOptIn: true,
+    updatedAt: new Date(),
+  });
+}
 
 export type PlaceInput = BirthPlacePlain | null;
 
@@ -217,10 +251,71 @@ export async function computeAndPersistSnapshot(params: {
     lon,
     timezoneOffsetMinutes: offset,
   };
+
+  logBirthSkyPipeline("astro_generation_start", {
+    userId: params.userId,
+    profileId: params.profileId,
+    timePrecision: params.timePrecision,
+    placeProvided: lat != null && lon != null,
+    hasBirthTime: Boolean(params.birthTime),
+  });
+
   const t0 = Date.now();
-  const { mode, astronomy: rawAstronomy, engineVersion } = await ephemeris.compute(input);
+  let rawAstronomy: AstronomyData;
+  let mode: "full" | "day_sky";
+  let engineVersion: string;
+  try {
+    const computed = await ephemeris.compute(input);
+    mode = computed.mode;
+    rawAstronomy = computed.astronomy;
+    engineVersion = computed.engineVersion;
+  } catch (err) {
+    logBirthSkyPipeline(
+      "astro_generation_failed",
+      {
+        userId: params.userId,
+        profileId: params.profileId,
+        durationMs: Date.now() - t0,
+        error: err instanceof Error ? err.message : String(err),
+        code: err && typeof err === "object" && "code" in err ? (err as { code?: string }).code : undefined,
+      },
+      "error",
+    );
+    throw err;
+  }
+
+  if (!rawAstronomy?.sunSign || !rawAstronomy?.moonSign) {
+    logBirthSkyPipeline(
+      "astro_generation_empty",
+      { userId: params.userId, profileId: params.profileId },
+      "error",
+    );
+    throw new Error("empty_astro_response");
+  }
+
   // Meaning layer — does not alter ephemeris math; additive semantic snapshot.
-  const astronomy = attachMeaningSnapshot(rawAstronomy);
+  let astronomy: AstronomyData;
+  try {
+    astronomy = attachMeaningSnapshot(rawAstronomy);
+    logBirthSkyPipeline("ai_context_attached", {
+      userId: params.userId,
+      profileId: params.profileId,
+      hasMeaning: Boolean(astronomy.meaningSnapshot),
+    });
+  } catch (meaningErr) {
+    // Meaning is additive — never block first Sky on meaning failures.
+    logBirthSkyPipeline(
+      "ai_context_attach_failed",
+      {
+        userId: params.userId,
+        profileId: params.profileId,
+        error: meaningErr instanceof Error ? meaningErr.message : String(meaningErr),
+      },
+      "warn",
+    );
+    astronomy = rawAstronomy;
+  }
+
   const durationMs = Date.now() - t0;
   const cacheKey = ephemeris.buildCacheKey(input);
 
@@ -267,5 +362,43 @@ export async function computeAndPersistSnapshot(params: {
     "ephemeris_compute",
   );
 
+  logBirthSkyPipeline("snapshot_saved", {
+    userId: params.userId,
+    profileId: params.profileId,
+    snapshotId,
+    snapshotVersion,
+    engineVersion,
+    mode,
+    durationMs,
+  });
+
   return mapSnapshotRow(row!);
+}
+
+/**
+ * Compute with one outer retry for transient persist/compute failures.
+ * Used by first-run create so recoverable errors never surface as Sky paused.
+ */
+export async function computeAndPersistSnapshotWithRetry(params: {
+  userId: string;
+  profileId: string;
+  birthDate: string;
+  birthTime: string | null;
+  timePrecision: "exact" | "approximate" | "unknown";
+  birthPlace: PlaceInput;
+}): Promise<ReturnType<typeof mapSnapshotRow>> {
+  try {
+    return await computeAndPersistSnapshot(params);
+  } catch (firstErr) {
+    logBirthSkyPipeline(
+      "astro_generation_retry",
+      {
+        userId: params.userId,
+        profileId: params.profileId,
+        error: firstErr instanceof Error ? firstErr.message : String(firstErr),
+      },
+      "warn",
+    );
+    return computeAndPersistSnapshot(params);
+  }
 }
