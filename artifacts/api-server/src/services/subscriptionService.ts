@@ -15,6 +15,7 @@ import {
   isPremiumSubscriberNow,
   isPremiumNow,
   shouldPreserveActiveTrial,
+  shouldSkipHealStaleDowngrade,
 } from "./subscription-premium-gate.js";
 import {
   computeInternalTrialExpiredFlag,
@@ -628,6 +629,12 @@ export async function healStaleSubscriptionRecord(
       .where(eq(subscriptionsTable.userId, sub.userId))
       .returning();
     return fixed ?? sub;
+  }
+
+  // Store-billed rows are reconciled by RevenueCat/Razorpay webhooks — never heal-wipe
+  // unmigrated paid rows (subscriptionState=FREE, active, valid currentPeriodEnd).
+  if (shouldSkipHealStaleDowngrade(sub)) {
+    return sub;
   }
 
   if (!["revenuecat", "razorpay", "none"].includes(sub.provider ?? "none")) {
