@@ -3,7 +3,7 @@ import { Compass, Moon, Sparkles, Star } from "lucide-react";
 
 const BASE = "/illustrations/amy-astro";
 /** Cache-bust when cutout assets change so clients pick up transparent heroes. */
-const ASSET_V = "20260726c";
+const ASSET_V = "20260727a";
 
 /**
  * Collapsed Amy Astro Intelligence section — symbolic moon/star icon only
