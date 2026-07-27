@@ -68,7 +68,7 @@ export function AmyAstroExplorationDelight({
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(40_20%_96%/0.75)]">
           Amy is quietly proud of the care you brought to{" "}
-          <span className="inline-block max-w-[12rem] truncate align-bottom">{childName}</span>
+          <span className="inline-block max-w-full break-words align-bottom">{childName}</span>
           &apos;s sky. A memory of this exploration is saved on this device — return anytime for
           wonder.
         </p>

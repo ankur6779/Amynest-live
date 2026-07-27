@@ -227,7 +227,13 @@
   word-break: break-word;
 }
 
-/* Secondary / dismiss actions on dark chassis — never inherit light-theme navy text */
+/*
+ * Secondary actions on the dark Astro chassis.
+ * Theme `secondary` is gold + navy text (light-UI). On OLED void that reads as a
+ * black/ghost plate when bg is overridden, or low-contrast navy on glass.
+ * Force a readable glass secondary for every Button variant="secondary" in-module.
+ */
+.amy-astro-root button.bg-secondary,
 .amy-astro-root .amy-astro-btn-secondary,
 .amy-astro-root button.amy-astro-btn-secondary {
   color: hsl(40 20% 96% / 0.9);
@@ -236,6 +242,7 @@
 }
 
 /* Preserve destructive emphasis on secondary CTAs */
+.amy-astro-root button.bg-secondary.text-red-200,
 .amy-astro-root .amy-astro-btn-secondary.text-red-200,
 .amy-astro-root button.amy-astro-btn-secondary.text-red-200 {
   color: hsl(0 86% 78%);

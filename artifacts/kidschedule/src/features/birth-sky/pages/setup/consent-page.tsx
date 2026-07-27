@@ -129,7 +129,7 @@ export function BirthSkyConsentPage({
       <Button
         type="button"
         variant="secondary"
-        className="mt-3 min-h-12 w-full rounded-xl"
+        className="amy-astro-btn-secondary mt-3 min-h-12 w-full rounded-xl"
         onClick={() => {
           saveSetupDraft(draft);
           trackBirthSkyEvent("birth_sky.setup_saved_for_later", { referrer: "parenting_hub" });

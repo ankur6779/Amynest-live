@@ -86,7 +86,7 @@ export function AmyAstroEmotionalCompletion({
 
         <p className="amy-astro-display amy-astro-gold-text mt-4 line-clamp-3 text-2xl leading-snug">
           You now understand another beautiful part of{" "}
-          <span className="inline-block max-w-full truncate align-bottom">{childName}</span>
+          <span className="inline-block max-w-full break-words align-bottom">{childName}</span>
           &apos;s universe.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(40_20%_96%/0.7)]">

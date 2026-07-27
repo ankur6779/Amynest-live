@@ -94,7 +94,7 @@ export function BirthSkyDatePage({ draft, onChange, onBack, onContinue }: Props)
             <Button
               type="button"
               variant="secondary"
-              className="min-h-11 flex-1 rounded-xl"
+              className="amy-astro-btn-secondary min-h-11 flex-1 rounded-xl"
               onClick={() => setShowAgeWarn(false)}
             >
               Edit
