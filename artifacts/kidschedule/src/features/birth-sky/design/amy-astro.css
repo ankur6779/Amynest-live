@@ -198,9 +198,81 @@
     0 0 0 1px hsl(275 50% 40% / 0.08) inset,
     0 18px 40px hsl(228 60% 4% / 0.55),
     0 0 40px hsl(275 70% 40% / 0.12);
+  /* Keep outer shadows visible across Android/iOS WebViews */
+  overflow: visible;
   /* Blur only when motion is allowed — major GPU win on mid Android. */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* Hero titles — wrap up to 2 lines; ellipsis only beyond two lines */
+.amy-astro-hero-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: balance;
+  hyphens: auto;
+}
+
+.amy-astro-shell-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Secondary / dismiss actions on dark chassis — never inherit light-theme navy text */
+.amy-astro-root .amy-astro-btn-secondary,
+.amy-astro-root button.amy-astro-btn-secondary {
+  color: hsl(40 20% 96% / 0.9);
+  background-color: hsl(40 20% 96% / 0.08);
+  border-color: hsl(40 20% 96% / 0.18);
+}
+
+.amy-astro-root .amy-astro-btn-text {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.amy-astro-cta-stack {
+  isolation: isolate;
+}
+
+.amy-astro-cta-stack > * {
+  position: relative;
+}
+
+/* Consistent interactive card padding helper (opt-in via class) */
+.amy-astro-card {
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+/* Landscape / short viewports — keep CTAs reachable without redesign */
+@media (orientation: landscape) and (max-height: 480px) {
+  .amy-astro-root {
+    min-height: 100dvh;
+  }
+
+  .amy-astro-root main {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+  }
+
+  .amy-astro-hero-title {
+    font-size: clamp(1.15rem, 4.2vw, 1.5rem);
+  }
+}
+
+/* Settings — extra bottom inset so last CTAs clear home indicator */
+.amy-astro-root[data-testid="birth-sky-settings"] main {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3.25rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -45,7 +45,7 @@ export function BirthSkyWelcomePage({
         <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.28em] text-[hsl(42_60%_70%/0.75)]">
           {AMY_ASTRO_PRODUCT_NAME}
         </p>
-        <h2 className="amy-astro-display amy-astro-gold-text mt-2 max-w-full truncate px-2 text-[1.85rem] font-semibold leading-tight">
+        <h2 className="amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-2 max-w-full px-2 text-[clamp(1.35rem,5.6vw,1.85rem)] font-semibold leading-snug">
           {title}
         </h2>
         <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[hsl(40_20%_96%/0.45)]">
@@ -93,7 +93,7 @@ export function BirthSkyWelcomePage({
         ].map((card, i) => (
           <div
             key={card.t}
-            className={`amy-astro-glass amy-astro-enter rounded-2xl p-4 text-left ${i === 1 ? "amy-astro-enter-delay-1" : ""} ${i === 2 ? "amy-astro-enter-delay-2" : ""}`}
+            className={`amy-astro-glass amy-astro-card amy-astro-enter rounded-2xl text-left ${i === 1 ? "amy-astro-enter-delay-1" : ""} ${i === 2 ? "amy-astro-enter-delay-2" : ""}`}
           >
             <p className="text-sm font-bold text-[hsl(42_70%_78%)]">{card.t}</p>
             <p className="mt-1 text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">{card.d}</p>
@@ -108,16 +108,16 @@ export function BirthSkyWelcomePage({
         >
           What this isn’t
         </h3>
-        <div className="amy-astro-glass rounded-2xl p-4 text-left text-sm leading-relaxed text-[hsl(40_20%_96%/0.78)]">
+        <div className="amy-astro-glass amy-astro-card rounded-2xl text-left text-sm leading-relaxed text-[hsl(40_20%_96%/0.78)]">
           Not fate, not medical advice, and not career or marriage prediction.{" "}
           {AMY_ASTRO_DISCLAIMER}
         </div>
       </section>
 
-      <div className="mt-10 flex flex-col gap-3">
+      <div className="amy-astro-cta-stack mt-10 flex flex-col items-stretch gap-4">
         <Button
           type="button"
-          className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-base font-semibold shadow-[0_0_28px_hsl(275_70%_40%/0.35)]"
+          className="amy-astro-btn-premium relative z-[1] min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-base font-semibold text-white shadow-[0_0_28px_hsl(275_70%_40%/0.35)]"
           onClick={() => {
             trackBirthSkyEvent("birth_sky.setup_started", { referrer: "parenting_hub" });
             onBegin();
@@ -126,15 +126,14 @@ export function BirthSkyWelcomePage({
         >
           Begin the journey
         </Button>
-        <Button
+        <button
           type="button"
-          variant="secondary"
-          className="min-h-12 w-full rounded-xl border border-white/15 bg-white/5"
+          className="amy-astro-btn-text relative z-0 min-h-11 w-full rounded-xl px-3 text-sm font-medium text-[hsl(40_20%_96%/0.78)] transition-colors hover:bg-white/[0.06] hover:text-[hsl(40_20%_96%/0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(42_70%_65%/0.55)]"
           onClick={onNotNow}
           data-testid="birth-sky-not-now"
         >
           Not now
-        </Button>
+        </button>
       </div>
     </BirthSkyModuleShell>
   );

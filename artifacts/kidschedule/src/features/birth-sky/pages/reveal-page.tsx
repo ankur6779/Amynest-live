@@ -93,7 +93,7 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
             </p>
           ) : null}
           <h2
-            className="amy-astro-display amy-astro-gold-text mt-6 text-[1.65rem] font-semibold leading-tight"
+            className="amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-6 px-1 text-[clamp(1.25rem,5vw,1.65rem)] font-semibold leading-snug"
             data-testid="birth-sky-essence-line"
           >
             {vm.essenceLine}

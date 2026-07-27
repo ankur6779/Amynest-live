@@ -69,7 +69,10 @@ export function BirthSkyModuleShell({
       }}
     >
       <div
-        className={cn("amy-astro-root relative min-h-[100dvh]", className)}
+        className={cn(
+          "amy-astro-root relative flex min-h-[100dvh] flex-col overflow-x-clip",
+          className,
+        )}
         data-testid={testId}
       >
         <AmyAstroCosmicAmbient
@@ -81,14 +84,14 @@ export function BirthSkyModuleShell({
 
         {!hideTopBar && (
           <header
-            className="relative z-10 flex items-center gap-2.5 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"
+            className="relative z-10 flex shrink-0 items-start gap-2.5 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"
             data-testid="birth-sky-top-bar"
           >
             <button
               type="button"
               onClick={backDisabled ? undefined : onBack}
               disabled={backDisabled || !onBack}
-              className="amy-astro-ripple inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-[hsl(40_20%_96%/0.85)] hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+              className="amy-astro-ripple inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-[hsl(40_20%_96%/0.85)] hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={backDisabled ? "Back unavailable while forming" : "Back"}
               aria-disabled={backDisabled || !onBack}
               data-testid="birth-sky-back"
@@ -99,24 +102,24 @@ export function BirthSkyModuleShell({
               size={36}
               reducedMotion={reduced}
               interactive={false}
-              className="shrink-0"
+              className="mt-0.5 shrink-0"
             />
-            <h1 className="amy-astro-display amy-astro-gold-text min-w-0 flex-1 text-lg font-semibold tracking-wide">
+            <h1 className="amy-astro-display amy-astro-gold-text amy-astro-shell-title min-w-0 flex-1 pt-1.5 text-lg font-semibold leading-snug tracking-wide">
               {title}
             </h1>
             <AmyBrandAvatar
               childName={childName ?? "Amy"}
               size={36}
               reducedMotion={reduced}
-              className="shrink-0"
+              className="mt-0.5 shrink-0"
             />
-            {topBarEnd ? <div className="shrink-0">{topBarEnd}</div> : null}
+            {topBarEnd ? <div className="mt-0.5 shrink-0">{topBarEnd}</div> : null}
           </header>
         )}
 
         <main
           className={cn(
-            "relative z-10 mx-auto w-full max-w-lg px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]",
+            "relative z-10 mx-auto w-full max-w-lg flex-1 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2.75rem)]",
             hideTopBar && "pt-[calc(env(safe-area-inset-top,0px)+1.5rem)]",
           )}
         >
@@ -124,7 +127,7 @@ export function BirthSkyModuleShell({
         </main>
 
         {footer ? (
-          <div className="relative z-10 mx-auto w-full max-w-lg px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
+          <div className="relative z-10 mx-auto w-full max-w-lg shrink-0 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)]">
             {footer}
           </div>
         ) : null}
