@@ -43,6 +43,16 @@ export function toGenerationState(
   return "PENDING";
 }
 
+/** Mirror server shouldExposeCurrentSnapshot — hide stale rows on FAILED/COMPUTING. */
+export function shouldExposeCurrentSnapshot(
+  generationStatus: SnapshotGenerationState | undefined,
+  hasSnapshot: boolean,
+): boolean {
+  if (!hasSnapshot) return false;
+  if (generationStatus === "READY" || generationStatus === "PENDING") return true;
+  return false;
+}
+
 /** User-facing copy only — never expose pipeline / engine terminology. */
 export function userFacingGenerationMessage(
   reason?: string | null,
