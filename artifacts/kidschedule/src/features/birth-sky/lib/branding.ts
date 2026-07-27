@@ -15,9 +15,9 @@ export const AMY_ASTRO_DISCLAIMER =
 export const AMY_ASTRO_ANIMATED_EMBLEM_SRC = "/amy-astro/amy-astro-animated.svg" as const;
 /** Hub + in-module Amy art — transparent cutout (matches Parent Hub tile hero). */
 export const AMY_ASTRO_TILE_HERO_SRC =
-  "/illustrations/amy-astro/amy-astro-hero.png?v=20260726c" as const;
+  "/illustrations/amy-astro/amy-astro-hero.png?v=20260727a" as const;
 /** Soft circular portrait derived from the same tile Amy art. */
 export const AMY_ASTRO_TILE_PORTRAIT_SRC =
-  "/illustrations/amy-astro/amy-astro-portrait.png?v=20260726c" as const;
+  "/illustrations/amy-astro/amy-astro-portrait.png?v=20260727a" as const;
 /** @deprecated Prefer AMY_ASTRO_TILE_PORTRAIT_SRC — kept for older static fallbacks. */
 export const AMY_ASTRO_COSMIC_PORTRAIT_SRC = AMY_ASTRO_TILE_PORTRAIT_SRC;
