@@ -46,7 +46,7 @@ export function BirthSkyDaySkyBanner({
       <Button
         type="button"
         variant="secondary"
-        className="mt-3 min-h-11 rounded-xl"
+        className="amy-astro-btn-secondary mt-3 min-h-11 rounded-xl"
         onClick={onAddTime}
         data-testid="birth-sky-day-sky-add-time"
       >

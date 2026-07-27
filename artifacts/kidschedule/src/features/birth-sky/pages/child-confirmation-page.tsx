@@ -69,7 +69,9 @@ export function BirthSkyChildConfirmationPage({
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-[hsl(40_20%_96%/0.55)]">
           Selected
         </p>
-        <p className="mt-2 truncate font-quicksand text-xl font-bold">{child.name}</p>
+        <p className="amy-astro-hero-title mt-2 text-left font-quicksand text-xl font-bold">
+          {child.name}
+        </p>
         {child.dob ? (
           <p className="mt-1 text-sm text-[hsl(40_20%_96%/0.65)]">Date on file: {child.dob}</p>
         ) : null}
@@ -83,14 +85,14 @@ export function BirthSkyChildConfirmationPage({
               type="button"
               role="listitem"
               onClick={() => onSwitchChild(c.id)}
-              className={`flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-sm font-semibold ${
+              className={`flex min-h-12 w-full items-center rounded-xl border px-4 py-2 text-left text-sm font-semibold ${
                 c.id === child.id
                   ? "border-[hsl(40_30%_70%/0.5)] bg-white/10"
                   : "border-white/10 bg-white/[0.03]"
               }`}
               data-testid={`birth-sky-switch-child-${c.id}`}
             >
-              {c.name}
+              <span className="min-w-0 break-words">{c.name}</span>
             </button>
           ))}
         </div>

@@ -233,10 +233,23 @@
   pointer-events: none;
 }
 
-/* Amy Astro Intelligence — hero merges into tile (no black plate) */
+/* Amy Astro Intelligence — hero fully visible in dedicated media zone */
+.amy-astro-launch-card .hub-feature-tile__grid {
+  /* Portrait art needs a slightly wider media column than square heroes */
+  grid-template-columns: minmax(0, 1fr) minmax(7.25rem, 40%);
+  align-items: center;
+  min-height: clamp(8.25rem, 32vw, 10.5rem);
+}
+
 .amy-astro-launch-card .hub-feature-tile__media {
   isolation: auto;
   background: transparent;
+  /* Contain the illustration without side-cropping portrait assets */
+  overflow: hidden;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 0;
+  align-self: stretch;
 }
 
 .amy-astro-launch-card .hub-feature-tile__media-glow {
@@ -255,10 +268,38 @@
 }
 
 .amy-astro-launch-card .hub-feature-tile__hero {
-  max-height: 152px;
-  height: 98%;
+  /* Fit inside the media column — never overflow/clip sides */
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: min(9.5rem, 100%);
+  aspect-ratio: auto;
+  object-fit: contain;
+  object-position: center bottom;
   /* Soft violet shadow only — no rectangular plate shadow */
   filter: drop-shadow(0 10px 16px rgba(76, 29, 149, 0.32));
+}
+
+@container hub-feature-tile (max-width: 390px) {
+  .amy-astro-launch-card .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(6.5rem, 38%);
+    min-height: clamp(7.75rem, 30vw, 9.75rem);
+  }
+
+  .amy-astro-launch-card .hub-feature-tile__hero {
+    max-height: min(8.75rem, 100%);
+  }
+}
+
+@container hub-feature-tile (max-width: 320px) {
+  .amy-astro-launch-card .hub-feature-tile__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(5.75rem, 36%);
+    min-height: clamp(7.25rem, 28vw, 8.75rem);
+  }
+
+  .amy-astro-launch-card .hub-feature-tile__hero {
+    max-height: min(8rem, 100%);
+  }
 }
 
 .hub-feature-tile__chips {

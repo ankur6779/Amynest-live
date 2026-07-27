@@ -234,20 +234,19 @@ export function BirthSkyFormationPage({
           <Button
             type="button"
             variant="secondary"
-            className="mt-3 min-h-12 w-full rounded-xl"
+            className="amy-astro-btn-secondary mt-3 min-h-12 w-full rounded-xl"
             onClick={onBackToReview}
             data-testid="birth-sky-formation-back-review"
           >
             Back to review
           </Button>
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            className="mt-2 min-h-12 w-full rounded-xl"
+            className="amy-astro-btn-text mt-2 min-h-11 w-full rounded-xl text-sm font-medium text-[hsl(40_20%_96%/0.72)] hover:bg-white/[0.06]"
             onClick={onExit}
           >
             Exit
-          </Button>
+          </button>
         </div>
       </BirthSkyModuleShell>
     );

@@ -414,7 +414,7 @@ export function BirthSkySettingsPage({
           {privacyBehind ? (
             <Button
               type="button"
-              className="min-h-12 w-full rounded-xl"
+              className="amy-astro-btn-premium min-h-12 w-full rounded-xl"
               disabled={!online}
               onClick={() => {
                 void acceptPrivacyPolicy(authFetch, profile.profileId, requiredPrivacy).then(
@@ -432,7 +432,7 @@ export function BirthSkySettingsPage({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-12 w-full rounded-xl"
+            className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
             onClick={() => setSub("export")}
           >
             Export data
@@ -440,7 +440,7 @@ export function BirthSkySettingsPage({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-12 w-full rounded-xl text-red-200"
+            className="amy-astro-btn-secondary min-h-12 w-full rounded-xl text-red-200"
             onClick={() => {
               clearReflectionStore(profile.profileId);
               trackBirthSkyEvent("birth_sky.delete_started", {
@@ -458,7 +458,7 @@ export function BirthSkySettingsPage({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-12 w-full rounded-xl text-red-200"
+            className="amy-astro-btn-secondary min-h-12 w-full rounded-xl text-red-200"
             onClick={() => setDeleteStep(1)}
             data-testid="birth-sky-delete-entry"
           >
@@ -467,7 +467,7 @@ export function BirthSkySettingsPage({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-12 w-full rounded-xl"
+            className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
             onClick={() => {
               clearOfflineBundle(profile.profileId);
               setToast("Offline cache cleared. Next online visit will rehydrate.");
@@ -544,7 +544,7 @@ export function BirthSkySettingsPage({
               key={type}
               type="button"
               variant="secondary"
-              className="min-h-12 w-full rounded-xl"
+              className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
               disabled={exportBusy || !online}
               onClick={() => void runExport(type)}
               data-testid={`birth-sky-export-${type}`}
@@ -616,7 +616,7 @@ export function BirthSkySettingsPage({
                   <Button
                     type="button"
                     variant="secondary"
-                    className="mt-2 min-h-10 w-full rounded-lg text-xs"
+                    className="amy-astro-btn-secondary mt-2 min-h-10 w-full rounded-lg text-xs"
                     disabled={!online}
                     onClick={() => {
                       void activateSnapshot(authFetch, profile.profileId, s.snapshotId).then(
@@ -681,7 +681,7 @@ export function BirthSkySettingsPage({
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-11 rounded-xl"
+                className="amy-astro-btn-secondary min-h-11 rounded-xl"
                 onClick={() => setDeleteStep(0)}
               >
                 Cancel
@@ -766,7 +766,9 @@ function AboutRow({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex justify-between gap-3">
       <dt className="text-[hsl(40_20%_96%/0.5)]">{k}</dt>
-      <dd className="truncate text-right font-mono text-[hsl(40_20%_96%/0.85)]">{v}</dd>
+      <dd className="max-w-[60%] break-all text-right font-mono text-[hsl(40_20%_96%/0.85)]">
+        {v}
+      </dd>
     </div>
   );
 }

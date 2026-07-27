@@ -191,7 +191,7 @@ export function BirthSkyPlacePage({ draft, onChange, onBack, onContinue }: Props
       <Button
         type="button"
         variant="secondary"
-        className="mt-6 min-h-12 w-full rounded-xl"
+        className="amy-astro-btn-secondary mt-6 min-h-12 w-full rounded-xl"
         onClick={() => {
           onChange({
             ...draft,

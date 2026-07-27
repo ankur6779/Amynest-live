@@ -72,7 +72,7 @@ export function BirthSkySetupBoundaryPage({ step, onBack }: SetupBoundaryPagePro
       <Button
         type="button"
         variant="secondary"
-        className="mt-8 min-h-12 w-full rounded-xl"
+        className="amy-astro-btn-secondary mt-8 min-h-12 w-full rounded-xl"
         onClick={onBack}
         data-testid="birth-sky-setup-boundary-back"
       >

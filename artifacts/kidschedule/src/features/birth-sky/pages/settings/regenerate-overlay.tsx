@@ -56,7 +56,7 @@ export function BirthSkyRegenerateOverlay({
               </button>
               <button
                 type="button"
-                className="amy-astro-btn-premium min-h-11 rounded-xl bg-white/5 text-sm font-semibold"
+                className="amy-astro-btn-text min-h-11 rounded-xl text-sm font-semibold text-[hsl(40_20%_96%/0.78)] hover:bg-white/[0.06]"
                 onClick={onDismiss}
                 data-testid="birth-sky-regen-dismiss"
               >

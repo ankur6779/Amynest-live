@@ -302,7 +302,7 @@ export function BirthSkyEditBirthDetailsPage({
         <Button
           type="button"
           variant="secondary"
-          className="min-h-12 w-full rounded-xl"
+          className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
           onClick={tryBack}
           data-testid="birth-sky-edit-cancel"
         >
@@ -339,7 +339,7 @@ export function BirthSkyEditBirthDetailsPage({
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-11 rounded-xl"
+                className="amy-astro-btn-secondary min-h-11 rounded-xl"
                 onClick={() => setConfirmOpen(false)}
               >
                 Keep editing
@@ -375,7 +375,7 @@ export function BirthSkyEditBirthDetailsPage({
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-11 rounded-xl"
+                className="amy-astro-btn-secondary min-h-11 rounded-xl"
                 onClick={() => setDiscardOpen(false)}
               >
                 Keep editing

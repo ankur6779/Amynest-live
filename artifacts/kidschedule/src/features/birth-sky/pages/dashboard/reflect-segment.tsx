@@ -141,7 +141,7 @@ export function BirthSkyReflectSegment({
         <Button
           type="button"
           variant="secondary"
-          className="mt-2 min-h-11 w-full rounded-xl"
+          className="amy-astro-btn-secondary mt-2 min-h-11 w-full rounded-xl"
           onClick={onAskAmy}
           data-testid="birth-sky-ask-amy"
         >

@@ -197,7 +197,7 @@ export function BirthSkyConversationSheet({
           >
             Ask Amy About Their Sky
           </h2>
-          <p className="truncate text-[11px] text-[hsl(40_20%_96%/0.55)]">
+          <p className="line-clamp-2 text-[11px] leading-snug text-[hsl(40_20%_96%/0.55)]">
             {AMY_ASTRO_PRODUCT_SHORT}
             {childName ? ` · ${childName}` : ""} · parent-only
           </p>
@@ -205,7 +205,7 @@ export function BirthSkyConversationSheet({
         <Button
           type="button"
           variant="secondary"
-          className="amy-astro-btn-premium min-h-11 min-w-11 rounded-xl border border-white/15 bg-white/5"
+          className="amy-astro-btn-premium amy-astro-btn-secondary min-h-11 shrink-0 rounded-xl px-3"
           onClick={onClose}
           data-testid="birth-sky-ai-close"
         >
@@ -221,7 +221,7 @@ export function BirthSkyConversationSheet({
           <Button
             type="button"
             variant="secondary"
-            className="amy-astro-btn-premium min-h-10 shrink-0 rounded-full border border-[hsl(42_50%_60%/0.25)] bg-white/5 text-xs"
+            className="amy-astro-btn-premium amy-astro-btn-secondary min-h-10 shrink-0 rounded-full text-xs"
             onClick={onNewConversation}
             data-testid="birth-sky-ai-new"
           >
@@ -505,7 +505,7 @@ export function BirthSkyConversationSheet({
               <Button
                 type="button"
                 variant="secondary"
-                className="amy-astro-btn-premium min-h-11 flex-1 rounded-xl"
+                className="amy-astro-btn-premium amy-astro-btn-secondary min-h-11 flex-1 rounded-xl"
                 onClick={onCancel}
                 data-testid="birth-sky-ai-cancel"
               >

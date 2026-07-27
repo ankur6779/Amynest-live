@@ -77,7 +77,7 @@ export function BirthSkyTraditionIntroSheet({
           <Button
             type="button"
             variant="secondary"
-            className="min-h-12 w-full rounded-xl"
+            className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
             onClick={onAstronomyOnly}
             data-testid="birth-sky-tradition-intro-astronomy-only"
           >
