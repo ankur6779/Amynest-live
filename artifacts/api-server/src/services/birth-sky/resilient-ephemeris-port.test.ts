@@ -97,6 +97,7 @@ describe("createResilientEphemerisPort", () => {
     assert.equal(fallbackCalls, 1);
     assert.equal(result.engineVersion, "amynest-astro-lite/1.0.0");
     assert.equal(result.astronomy.sunSign, "Gemini");
+    assert.equal(result.astronomy.metadata?.fallbackUsed, true);
   });
 
   it("day-sky (guest-style unknown time) works via lite fallback", async () => {

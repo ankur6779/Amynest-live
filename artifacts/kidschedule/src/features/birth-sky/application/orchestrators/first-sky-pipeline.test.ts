@@ -7,8 +7,9 @@ vi.mock("@/lib/client-logs", () => ({
   queueClientLog: vi.fn(),
 }));
 
+const trackBirthSkyEvent = vi.fn();
 vi.mock("../../lib/analytics", () => ({
-  trackBirthSkyEvent: vi.fn(),
+  trackBirthSkyEvent: (...args: unknown[]) => trackBirthSkyEvent(...args),
 }));
 
 vi.mock("../../infrastructure/api/birth-sky-api", () => ({
@@ -73,6 +74,7 @@ function profile(partial?: Partial<BirthProfile>): BirthProfile {
       childId: 42,
     },
     aiInsightsUsedCount: 0,
+    generationStatus: "READY",
     createdAt: "2026-07-27T00:00:00.000Z",
     updatedAt: "2026-07-27T00:00:00.000Z",
     ...partial,
@@ -100,6 +102,7 @@ function snapshot(partial?: Partial<SkySnapshot>): SkySnapshot {
       risingSign: "Virgo",
       houses: null,
       precision: { timePrecision: "exact", placeProvided: true },
+      metadata: { fallbackUsed: true, calculationSource: "AmyLite" },
     },
     ...partial,
   };
@@ -111,31 +114,49 @@ describe("runFirstSkyPipeline", () => {
   beforeEach(() => {
     createBirthSkyMock.mockReset();
     recomputeMock.mockReset();
+    trackBirthSkyEvent.mockReset();
   });
 
-  it("brand-new logged-in user: create succeeds on first attempt", async () => {
+  it("new user: create succeeds and emits started + succeeded + duration", async () => {
     createBirthSkyMock.mockResolvedValue({
       profile: profile(),
-      snapshot: snapshot(),
+      snapshot: snapshot({
+        engineVersion: "skyfield-jpl/1.0.0",
+        astronomy: {
+          ...snapshot().astronomy,
+          metadata: { calculationSource: "Skyfield", fallbackUsed: false },
+        },
+      }),
       computeStatus: "ready",
+      generationStatus: "READY",
+      fallbackUsed: false,
     });
 
+    const statuses: string[] = [];
     const result = await runFirstSkyPipeline({
       authFetch,
       draft: baseDraft(),
       userId: "user-1",
       isGuest: false,
+      onStatus: (s) => statuses.push(s),
     });
 
     expect(result.ok).toBe(true);
+    expect(result.generationStatus).toBe("READY");
     expect(result.snapshot?.snapshotId).toBe("snap-1");
-    expect(result.retried).toBe(false);
-    expect(createBirthSkyMock).toHaveBeenCalledTimes(1);
-    expect(recomputeMock).not.toHaveBeenCalled();
-    expect(result.steps).toContain("done");
+    expect(statuses).toContain("COMPUTING");
+    expect(statuses).toContain("READY");
+    expect(trackBirthSkyEvent).toHaveBeenCalledWith(
+      "birth_sky.generation_started",
+      expect.objectContaining({ is_guest: false }),
+    );
+    expect(trackBirthSkyEvent).toHaveBeenCalledWith(
+      "birth_sky.generation_succeeded",
+      expect.objectContaining({ duration_ms: expect.any(Number) }),
+    );
   });
 
-  it("guest user (day sky / unknown time): succeeds without place", async () => {
+  it("guest user (day sky): succeeds without place", async () => {
     createBirthSkyMock.mockResolvedValue({
       profile: profile({ birthTime: null, timePrecision: "unknown", birthPlace: null }),
       snapshot: snapshot({
@@ -155,6 +176,7 @@ describe("runFirstSkyPipeline", () => {
         },
       }),
       computeStatus: "ready",
+      generationStatus: "READY",
     });
 
     const result = await runFirstSkyPipeline({
@@ -173,17 +195,43 @@ describe("runFirstSkyPipeline", () => {
     expect(result.snapshot?.mode).toBe("day_sky");
   });
 
-  it("partially created snapshot: auto-recomputes before showing failure", async () => {
+  it("logged-in user with daemon unavailable: fallback engine succeeds", async () => {
     createBirthSkyMock.mockResolvedValue({
       profile: profile(),
+      snapshot: snapshot(),
+      computeStatus: "ready",
+      generationStatus: "READY",
+      fallbackUsed: true,
+    });
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft(),
+      userId: "user-1",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.fallbackUsed).toBe(true);
+    expect(trackBirthSkyEvent).toHaveBeenCalledWith(
+      "birth_sky.generation_fallback_used",
+      expect.objectContaining({ engine_version: expect.any(String) }),
+    );
+  });
+
+  it("never treats null snapshot as READY (partial create → auto recompute)", async () => {
+    createBirthSkyMock.mockResolvedValue({
+      profile: profile({ generationStatus: "FAILED" }),
       snapshot: null,
       computeStatus: "failed",
+      generationStatus: "FAILED",
       errorCode: "compute_failed",
     });
     recomputeMock.mockResolvedValue({
       profile: profile(),
       snapshot: snapshot(),
       computeStatus: "ready",
+      generationStatus: "READY",
+      fallbackUsed: true,
     });
 
     const result = await runFirstSkyPipeline({
@@ -193,37 +241,21 @@ describe("runFirstSkyPipeline", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(recomputeMock).toHaveBeenCalledWith(authFetch, "prof-1");
-    expect(result.steps).toContain("auto_recompute");
+    expect(result.generationStatus).toBe("READY");
+    expect(result.snapshot).not.toBeNull();
+    expect(recomputeMock).toHaveBeenCalledWith(authFetch, "prof-1", {
+      forceFresh: true,
+    });
   });
 
-  it("interrupted generation (existing profile, no snapshot): regenerates", async () => {
-    recomputeMock.mockResolvedValue({
-      profile: profile(),
-      snapshot: snapshot(),
-      computeStatus: "ready",
-    });
-
-    const result = await runFirstSkyPipeline({
-      authFetch,
-      draft: baseDraft(),
-      userId: "user-1",
-      existingProfile: profile(),
-    });
-
-    expect(result.ok).toBe(true);
-    expect(createBirthSkyMock).not.toHaveBeenCalled();
-    expect(recomputeMock).toHaveBeenCalledTimes(1);
-    expect(result.steps).toContain("auto_recompute");
-  });
-
-  it("retry flow: network failure then success", async () => {
+  it("timeout then retry succeeds", async () => {
     createBirthSkyMock
-      .mockRejectedValueOnce(new Error("network timeout"))
+      .mockRejectedValueOnce(new Error("timeout:create"))
       .mockResolvedValueOnce({
         profile: profile(),
         snapshot: snapshot(),
         computeStatus: "ready",
+        generationStatus: "READY",
       });
 
     const result = await runFirstSkyPipeline({
@@ -234,11 +266,99 @@ describe("runFirstSkyPipeline", () => {
 
     expect(result.ok).toBe(true);
     expect(result.retried).toBe(true);
-    expect(createBirthSkyMock).toHaveBeenCalledTimes(2);
+    expect(trackBirthSkyEvent).toHaveBeenCalledWith(
+      "birth_sky.generation_retry",
+      expect.objectContaining({ error_code: "timeout" }),
+    );
+  });
+
+  it("network interruption then retry succeeds", async () => {
+    createBirthSkyMock
+      .mockRejectedValueOnce(new Error("network fetch failed"))
+      .mockResolvedValueOnce({
+        profile: profile(),
+        snapshot: snapshot(),
+        computeStatus: "ready",
+        generationStatus: "READY",
+      });
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft(),
+      userId: "user-1",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.retried).toBe(true);
     expect(result.steps).toContain("retry");
   });
 
-  it("missing birth data fails closed without calling API", async () => {
+  it("Generate again (forceFresh) always starts a fresh recompute", async () => {
+    recomputeMock.mockResolvedValue({
+      profile: profile(),
+      snapshot: snapshot({ snapshotId: "snap-fresh" }),
+      computeStatus: "ready",
+      generationStatus: "READY",
+    });
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft(),
+      userId: "user-1",
+      existingProfile: profile(),
+      forceFresh: true,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(createBirthSkyMock).not.toHaveBeenCalled();
+    expect(recomputeMock).toHaveBeenCalledWith(authFetch, "prof-1", {
+      forceFresh: true,
+    });
+    expect(result.snapshot?.snapshotId).toBe("snap-fresh");
+  });
+
+  it("formation resume / interrupted generation regenerates missing snapshot", async () => {
+    recomputeMock.mockResolvedValue({
+      profile: profile(),
+      snapshot: snapshot(),
+      computeStatus: "ready",
+      generationStatus: "READY",
+    });
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft(),
+      userId: "user-1",
+      existingProfile: profile({ generationStatus: "FAILED" }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(createBirthSkyMock).not.toHaveBeenCalled();
+    expect(result.steps).toContain("auto_recompute");
+  });
+
+  it("exhausted retries emit failure telemetry and FAILED status", async () => {
+    createBirthSkyMock.mockRejectedValue(new Error("network down"));
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft(),
+      userId: "user-1",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.generationStatus).toBe("FAILED");
+    expect(result.snapshot).toBeNull();
+    expect(trackBirthSkyEvent).toHaveBeenCalledWith(
+      "birth_sky.generation_failed",
+      expect.objectContaining({
+        duration_ms: expect.any(Number),
+        retried: true,
+      }),
+    );
+  });
+
+  it("missing birth data fails closed without API calls", async () => {
     const result = await runFirstSkyPipeline({
       authFetch,
       draft: baseDraft({ birthDate: null }),

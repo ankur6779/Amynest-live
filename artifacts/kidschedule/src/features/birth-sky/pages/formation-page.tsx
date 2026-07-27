@@ -1,5 +1,6 @@
 /**
  * Formation ceremony (Pack 3 Parts 1–3). Real timers; min 3200ms; soft wait 5000ms; fail 15000ms.
+ * While generation retries are in flight, keep the loading ceremony — never flash FAILED early.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +26,7 @@ import {
 import { formationDurationBucket } from "../domain/policies/formation-timing";
 import { trackBirthSkyEvent } from "../lib/analytics";
 import type { SkySnapshot } from "../domain/models/birth-profile";
+import { userFacingGenerationMessage } from "../domain/models/snapshot-generation";
 import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
 import { AmyAstroCosmicAmbient } from "../components/cosmic-ambient";
 import "../design/amy-astro.css";
@@ -32,6 +34,10 @@ import "../design/amy-astro.css";
 type Props = {
   snapshot: SkySnapshot | null;
   computeFailed?: boolean;
+  /** True while create/retry pipeline is still running — keep loading UI. */
+  isGenerating?: boolean;
+  /** Internal error code — mapped to friendly copy only. */
+  failureReason?: string | null;
   retryToken: number;
   onReady: () => void;
   onRetry: () => void;
@@ -47,6 +53,8 @@ function prefersReducedMotion(): boolean {
 export function BirthSkyFormationPage({
   snapshot,
   computeFailed,
+  isGenerating = false,
+  failureReason = null,
   retryToken,
   onReady,
   onRetry,
@@ -98,25 +106,37 @@ export function BirthSkyFormationPage({
         visualNow = hideStarted.current - wallOrigin.current - visualPausedMs.current;
       }
 
+      // While retries are in flight, never treat computeFailed / timeout as terminal.
       const fatal: FormationErrorCode | null =
-        computeFailed && !snapshot ? "compute_failed" : null;
+        !isGenerating && computeFailed && !snapshot ? "compute_failed" : null;
       const offline =
+        !isGenerating &&
         typeof navigator !== "undefined" &&
         !navigator.onLine &&
         !snapshot &&
         wallElapsed > 2000;
 
-      // Feed wall time for timeout; machine uses elapsed from enteredAt=0 origin.
       const next = tickFormationMachine(machineRef.current, {
         now: wallElapsed,
         snapshotReady: Boolean(snapshot),
         fatalError: fatal,
+        // Suppress hard timeout while generation/retry is still running.
         offlineInterrupted: offline,
         visualsPaused: hideStarted.current != null,
         reducedMotion: reduced,
       });
 
-      // Override visual stage from visual clock when paused handling is active.
+      // Soft-extend: if still generating past hard timeout, stay in soft_wait.
+      if (
+        isGenerating &&
+        !snapshot &&
+        next.state === "failed" &&
+        next.errorCode === "formation_timeout"
+      ) {
+        next.state = "soft_wait";
+        next.errorCode = null;
+      }
+
       if (!fatal && next.state !== "failed" && next.state !== "ready") {
         next.visualElapsedMs = Math.max(0, visualNow);
       }
@@ -152,7 +172,7 @@ export function BirthSkyFormationPage({
           error_code: next.errorCode ?? "unknown",
           formation_duration_bucket: formationDurationBucket(next.elapsedMs),
         });
-        setLiveMessage("We couldn’t finish forming the sky.");
+        setLiveMessage(userFacingGenerationMessage(next.errorCode));
       }
 
       setMachine(next);
@@ -181,15 +201,17 @@ export function BirthSkyFormationPage({
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(statusTimer);
     };
-  }, [snapshot, computeFailed, onReady, reduced, retryToken]);
+  }, [snapshot, computeFailed, isGenerating, onReady, reduced, retryToken]);
 
-  const backDisabled = isBackDisabled(machine.state);
+  const backDisabled = isBackDisabled(machine.state) || isGenerating;
   const copy =
-    machine.state === "soft_wait"
+    machine.state === "soft_wait" || isGenerating
       ? FORMATION_SOFT_WAIT_COPY
       : FORMATION_STATUS_LINES[statusIdx]!;
 
-  if (machine.state === "failed") {
+  const showFailed = machine.state === "failed" && !isGenerating && !snapshot;
+
+  if (showFailed) {
     return (
       <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-formation-failed">
         <div className="flex flex-col items-center pt-10 text-center">
@@ -199,11 +221,7 @@ export function BirthSkyFormationPage({
           />
           <h2 className="mt-6 font-quicksand text-2xl font-bold">Sky paused</h2>
           <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]" role="alert">
-            {machine.errorCode === "formation_timeout"
-              ? "This is taking longer than expected."
-              : machine.errorCode === "offline_interrupted"
-                ? "Connection was lost while forming."
-                : "We couldn’t finish forming the sky."}
+            {userFacingGenerationMessage(failureReason ?? machine.errorCode)}
           </p>
           <Button
             type="button"
@@ -211,7 +229,7 @@ export function BirthSkyFormationPage({
             onClick={onRetry}
             data-testid="birth-sky-formation-retry"
           >
-            Try again
+            Generate again
           </Button>
           <Button
             type="button"

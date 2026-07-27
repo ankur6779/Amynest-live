@@ -142,12 +142,23 @@ export function createResilientEphemerisPort(options?: {
       // Permanent path: never leave first-run users without a Sky for daemon blips.
       const result = await Promise.resolve(fallback.compute(input));
       lastEngineVersion = result.engineVersion;
+      const astronomy = {
+        ...result.astronomy,
+        metadata: {
+          ...(result.astronomy.metadata ?? {}),
+          calculationSource:
+            result.astronomy.metadata?.calculationSource ?? "AmyLite",
+          fallbackUsed: true,
+          cacheHit: Boolean(result.astronomy.metadata?.cacheHit),
+        },
+      };
       logger.warn(
         {
           event: "birth_sky.ephemeris_compute",
           engine: result.engineVersion,
           path: "lite_fallback",
           attempt: 3,
+          fallbackUsed: true,
           durationMs: Date.now() - t0,
           primaryError:
             primaryErr instanceof Error
@@ -160,7 +171,7 @@ export function createResilientEphemerisPort(options?: {
         },
         "birth_sky.ephemeris_lite_fallback",
       );
-      return result;
+      return { ...result, astronomy };
     },
   };
 }

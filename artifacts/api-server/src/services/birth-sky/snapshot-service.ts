@@ -145,6 +145,33 @@ export function mapSnapshotRow(row: typeof skySnapshotsTable.$inferSelect) {
   };
 }
 
+export type GenerationStatus = "PENDING" | "COMPUTING" | "READY" | "FAILED";
+
+export function normalizeGenerationStatus(
+  value: string | null | undefined,
+): GenerationStatus {
+  const s = String(value ?? "PENDING").toUpperCase();
+  if (s === "PENDING" || s === "COMPUTING" || s === "READY" || s === "FAILED") {
+    return s;
+  }
+  return "PENDING";
+}
+
+export function generationStatusToComputeStatus(
+  status: GenerationStatus,
+): "pending" | "computing" | "ready" | "failed" {
+  switch (status) {
+    case "PENDING":
+      return "pending";
+    case "COMPUTING":
+      return "computing";
+    case "READY":
+      return "ready";
+    case "FAILED":
+      return "failed";
+  }
+}
+
 /** Map DB row → API profile with plaintext birth fields (unsealed). */
 export function mapProfileRow(row: typeof birthProfilesTable.$inferSelect) {
   return {
@@ -157,11 +184,24 @@ export function mapProfileRow(row: typeof birthProfilesTable.$inferSelect) {
     birthPlace: unsealBirthPlace(row.birthPlace),
     consent: row.consent,
     aiInsightsUsedCount: row.aiInsightsUsedCount ?? 0,
+    generationStatus: normalizeGenerationStatus(
+      (row as { generationStatus?: string | null }).generationStatus,
+    ),
     privacyPolicyVersion: row.privacyPolicyVersion ?? null,
     privacyAcceptedAt: row.privacyAcceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+export async function setGenerationStatus(
+  profileId: string,
+  status: GenerationStatus,
+): Promise<void> {
+  await db
+    .update(birthProfilesTable)
+    .set({ generationStatus: status, updatedAt: new Date() })
+    .where(eq(birthProfilesTable.id, profileId));
 }
 
 /**
@@ -318,7 +358,9 @@ export async function computeAndPersistSnapshot(params: {
 
   const durationMs = Date.now() - t0;
   const cacheKey = ephemeris.buildCacheKey(input);
+  const fallbackUsed = Boolean(astronomy.metadata?.fallbackUsed);
 
+  // Never persist a null/empty snapshot — only insert when astronomy is complete.
   await db
     .update(skySnapshotsTable)
     .set({ isCurrent: false })
@@ -342,6 +384,12 @@ export async function computeAndPersistSnapshot(params: {
     })
     .returning();
 
+  if (!row) {
+    throw new Error("snapshot_persist_failed");
+  }
+
+  await setGenerationStatus(params.profileId, "READY");
+
   const meta = astronomy.metadata ?? {};
   const engineName = engineVersion.includes("/")
     ? engineVersion.split("/")[0]
@@ -354,6 +402,7 @@ export async function computeAndPersistSnapshot(params: {
       kernelFingerprint: astronomy.kernelFingerprint ?? meta.kernelFingerprint ?? null,
       latencyMs: meta.computeLatencyMs ?? durationMs,
       cacheHit: Boolean(meta.cacheHit),
+      fallbackUsed,
       chartId: snapshotId,
       durationMs,
       mode,
@@ -370,9 +419,11 @@ export async function computeAndPersistSnapshot(params: {
     engineVersion,
     mode,
     durationMs,
+    fallbackUsed,
+    generationStatus: "READY",
   });
 
-  return mapSnapshotRow(row!);
+  return mapSnapshotRow(row);
 }
 
 /**

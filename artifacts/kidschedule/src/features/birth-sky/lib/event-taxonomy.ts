@@ -28,6 +28,12 @@ export const BIRTH_SKY_EVENT_NAMES = [
   "birth_sky.formation_stage_changed",
   "birth_sky.formation_completed",
   "birth_sky.formation_failed",
+  // First-sky generation telemetry (additive)
+  "birth_sky.generation_started",
+  "birth_sky.generation_retry",
+  "birth_sky.generation_fallback_used",
+  "birth_sky.generation_succeeded",
+  "birth_sky.generation_failed",
   "birth_sky.reveal_viewed",
   "birth_sky.day_sky_revealed",
   "birth_sky.full_sky_revealed",
