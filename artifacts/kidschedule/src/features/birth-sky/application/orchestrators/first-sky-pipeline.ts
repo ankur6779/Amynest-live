@@ -78,6 +78,18 @@ function validateDraft(draft: SetupDraft): string | null {
   return null;
 }
 
+function isTimeoutError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === "FetchTimeoutError" || err.name === "AbortError") return true;
+  const msg = err.message.toLowerCase();
+  return (
+    msg.startsWith("timeout:") ||
+    msg.includes("timed out") ||
+    msg.includes("timeout") ||
+    msg.includes("aborted")
+  );
+}
+
 function isRecoverableCreateError(err: unknown): boolean {
   if (!(err instanceof Error)) return true;
   const msg = err.message.toLowerCase();
@@ -86,8 +98,8 @@ function isRecoverableCreateError(err: unknown): boolean {
   if (msg.includes("birth_sky_not_enabled")) return false;
   if (msg.includes("missing_birth_data") || msg.includes("missing_child")) return false;
   return (
+    isTimeoutError(err) ||
     msg.includes("network") ||
-    msg.includes("timeout") ||
     msg.includes("failed") ||
     msg.includes("fetch") ||
     msg.includes("500") ||
@@ -95,7 +107,8 @@ function isRecoverableCreateError(err: unknown): boolean {
     msg.includes("503") ||
     msg.includes("invalid_json") ||
     msg.includes("empty") ||
-    msg.includes("compute")
+    msg.includes("compute") ||
+    msg.includes("ephemeris")
   );
 }
 
@@ -280,14 +293,18 @@ export async function runFirstSkyPipeline(input: {
       timePrecision: draft.timePrecision,
       placeProvided: Boolean(draft.birthPlace) && !draft.placeSkipped,
     });
-    return withTimeout(createBirthSky(input.authFetch, draft), 45_000, "create");
+    return withTimeout(
+      createBirthSky(input.authFetch, draft),
+      BIRTH_SKY_GENERATION_TIMEOUT_MS + 5_000,
+      "create",
+    );
   };
 
   const attemptRecompute = async (profileId: string): Promise<CreateBirthSkyResponse> => {
     push("auto_recompute", { profileId, forceFresh: Boolean(input.forceFresh) });
     return withTimeout(
       recomputeBirthSkySnapshot(input.authFetch, profileId, { forceFresh: true }),
-      45_000,
+      BIRTH_SKY_GENERATION_TIMEOUT_MS + 5_000,
       "recompute",
     );
   };
@@ -352,30 +369,29 @@ export async function runFirstSkyPipeline(input: {
     return finishOk(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const isTimeout = message.startsWith("timeout:");
-    push(isTimeout ? "timeout" : "network_failure", { error: message });
+    const timedOut = isTimeoutError(err);
+    push(timedOut ? "timeout" : "network_failure", { error: message });
 
     if (!retried && isRecoverableCreateError(err)) {
       retried = true;
       push("retry", { error: message });
       emitTelemetry("birth_sky.generation_retry", {
-        error_code: isTimeout ? "timeout" : "network_failure",
+        error_code: timedOut ? "timeout" : "network_failure",
         duration_ms: Date.now() - startedAt,
       });
       trackBirthSkyEvent("birth_sky.error_recovery", {
-        cause: isTimeout ? "timeout_retry" : "network_retry",
-        error_code: isTimeout ? "timeout" : "network",
+        cause: timedOut ? "timeout_retry" : "network_retry",
+        error_code: timedOut ? "timeout" : "network",
       });
       try {
         if (profile) snapshot = null;
         const result = await runOnce();
         return finishOk(result);
       } catch (retryErr) {
-        const retryMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
-        return fail(retryMsg.startsWith("timeout:") ? "timeout" : "network_failure");
+        return fail(isTimeoutError(retryErr) ? "timeout" : "network_failure");
       }
     }
 
-    return fail(isTimeout ? "timeout" : "network_failure");
+    return fail(timedOut ? "timeout" : "network_failure");
   }
 }

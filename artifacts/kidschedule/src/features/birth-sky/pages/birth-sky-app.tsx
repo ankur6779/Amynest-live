@@ -403,9 +403,15 @@ function BirthSkyAppInner() {
         place_provided: Boolean(draft.birthPlace),
         mode: result.snapshot?.mode ?? (draft.timePrecision === "unknown" ? "day_sky" : "full"),
       });
-    } catch {
+    } catch (err) {
       setComputeFailed(true);
-      setFailureReason("network_failure");
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      setFailureReason(
+        err instanceof Error &&
+          (err.name === "FetchTimeoutError" || msg.includes("timed out") || msg.includes("timeout"))
+          ? "timeout"
+          : "network_failure",
+      );
     } finally {
       setCreating(false);
       setIsGenerating(false);
@@ -464,10 +470,18 @@ function BirthSkyAppInner() {
             cause: "formation_auto_recompute",
           });
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setComputeFailed(true);
-          setFailureReason("network_failure");
+          const msg = err instanceof Error ? err.message.toLowerCase() : "";
+          setFailureReason(
+            err instanceof Error &&
+              (err.name === "FetchTimeoutError" ||
+                msg.includes("timed out") ||
+                msg.includes("timeout"))
+              ? "timeout"
+              : "network_failure",
+          );
         }
       } finally {
         if (!cancelled) setIsGenerating(false);
@@ -546,9 +560,15 @@ function BirthSkyAppInner() {
         setComputeFailed(true);
         setFailureReason("missing_birth_data");
       }
-    } catch {
+    } catch (err) {
       setComputeFailed(true);
-      setFailureReason("network_failure");
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      setFailureReason(
+        err instanceof Error &&
+          (err.name === "FetchTimeoutError" || msg.includes("timed out") || msg.includes("timeout"))
+          ? "timeout"
+          : "network_failure",
+      );
     } finally {
       setIsGenerating(false);
       generationLockRef.current = false;

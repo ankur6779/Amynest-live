@@ -45,16 +45,18 @@ function snapshotFallbackUsed(snapshot: {
 }
 
 function createResponsePayload(input: {
-  profile: ReturnType<typeof mapProfileRow>;
+  profile: ReturnType<typeof mapProfileRow> | null;
   snapshot: ReturnType<typeof mapSnapshotRow> | null;
   generationStatus: GenerationStatus;
   errorCode?: string;
 }) {
   return {
-    profile: {
-      ...input.profile,
-      generationStatus: input.generationStatus,
-    },
+    profile: input.profile
+      ? {
+          ...input.profile,
+          generationStatus: input.generationStatus,
+        }
+      : null,
     // Never claim a persisted snapshot when status is not READY.
     snapshot: input.generationStatus === "READY" ? input.snapshot : null,
     computeStatus: generationStatusToComputeStatus(input.generationStatus),
@@ -361,6 +363,7 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
     return;
   }
   const profileId = String(req.params.profileId ?? "");
+  let mappedProfile: ReturnType<typeof mapProfileRow> | null = null;
   try {
     logBirthSkyPipeline("recompute_start", { userId, profileId });
     const profiles = await db
@@ -381,6 +384,7 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       return;
     }
     const profile = await migrateBirthProfileAtRestIfNeeded(raw);
+    mappedProfile = mapProfileRow(profile);
     await ensureBirthSkyPreferences(userId);
     await setGenerationStatus(profile.id, "COMPUTING");
     const plain = plaintextBirthFields(profile);
@@ -442,14 +446,18 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       { userId, profileId, errorCode: code, generationStatus: "FAILED" },
       "error",
     );
-    res.status(500).json({
-      profile: null,
-      snapshot: null,
-      computeStatus: "failed",
-      generationStatus: "FAILED",
-      fallbackUsed: false,
-      errorCode: code,
-    });
+    // Soft-fail parity with create: keep profile for Generate again / recovery.
+    // HTTP 500 caused the client to throw and surface "Connection was lost".
+    res.status(200).json(
+      createResponsePayload({
+        profile: mappedProfile
+          ? { ...mappedProfile, generationStatus: "FAILED" }
+          : null,
+        snapshot: null,
+        generationStatus: "FAILED",
+        errorCode: code,
+      }),
+    );
   }
 });
 

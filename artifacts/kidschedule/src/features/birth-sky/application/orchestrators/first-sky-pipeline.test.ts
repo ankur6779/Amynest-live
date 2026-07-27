@@ -272,6 +272,23 @@ describe("runFirstSkyPipeline", () => {
     );
   });
 
+  it("FetchTimeoutError (authFetch abort) maps to timeout, not network_failure", async () => {
+    const timeoutErr = new Error("Request timed out after 8000ms");
+    timeoutErr.name = "FetchTimeoutError";
+    createBirthSkyMock.mockRejectedValue(timeoutErr);
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft(),
+      userId: "user-1",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errorCode).toBe("timeout");
+    expect(result.errorCode).not.toBe("network_failure");
+    expect(result.retried).toBe(true);
+  });
+
   it("network interruption then retry succeeds", async () => {
     createBirthSkyMock
       .mockRejectedValueOnce(new Error("network fetch failed"))
