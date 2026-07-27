@@ -2,7 +2,7 @@
  * Snapshot compute + persist (append-only history; active pointer switch).
  */
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import {
   db,
@@ -145,32 +145,18 @@ export function mapSnapshotRow(row: typeof skySnapshotsTable.$inferSelect) {
   };
 }
 
-export type GenerationStatus = "PENDING" | "COMPUTING" | "READY" | "FAILED";
-
-export function normalizeGenerationStatus(
-  value: string | null | undefined,
-): GenerationStatus {
-  const s = String(value ?? "PENDING").toUpperCase();
-  if (s === "PENDING" || s === "COMPUTING" || s === "READY" || s === "FAILED") {
-    return s;
-  }
-  return "PENDING";
-}
-
-export function generationStatusToComputeStatus(
-  status: GenerationStatus,
-): "pending" | "computing" | "ready" | "failed" {
-  switch (status) {
-    case "PENDING":
-      return "pending";
-    case "COMPUTING":
-      return "computing";
-    case "READY":
-      return "ready";
-    case "FAILED":
-      return "failed";
-  }
-}
+import {
+  normalizeGenerationStatus,
+  generationStatusToComputeStatus,
+  shouldExposeCurrentSnapshot,
+  type GenerationStatus,
+} from "./snapshot-generation-status.js";
+export {
+  normalizeGenerationStatus,
+  generationStatusToComputeStatus,
+  shouldExposeCurrentSnapshot,
+  type GenerationStatus,
+} from "./snapshot-generation-status.js";
 
 /** Map DB row → API profile with plaintext birth fields (unsealed). */
 export function mapProfileRow(row: typeof birthProfilesTable.$inferSelect) {
@@ -401,32 +387,42 @@ export async function computeAndPersistSnapshot(params: {
   const fallbackUsed = Boolean(astronomy.metadata?.fallbackUsed);
 
   // Never persist a null/empty snapshot — only insert when astronomy is complete.
-  await db
-    .update(skySnapshotsTable)
-    .set({ isCurrent: false })
-    .where(eq(skySnapshotsTable.profileId, params.profileId));
-
+  // Insert before demoting siblings so a failed insert never orphans the active pointer.
   const snapshotId = randomUUID();
   const snapshotVersion = `ss_${snapshotId}`;
-  const [row] = await db
-    .insert(skySnapshotsTable)
-    .values({
-      id: snapshotId,
-      profileId: params.profileId,
-      userId: params.userId,
-      cacheKey,
-      snapshotVersion,
-      engineVersion,
-      mode,
-      astronomy,
-      isCurrent: true,
-      computedAt: new Date(),
-    })
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    const [inserted] = await tx
+      .insert(skySnapshotsTable)
+      .values({
+        id: snapshotId,
+        profileId: params.profileId,
+        userId: params.userId,
+        cacheKey,
+        snapshotVersion,
+        engineVersion,
+        mode,
+        astronomy,
+        isCurrent: true,
+        computedAt: new Date(),
+      })
+      .returning();
 
-  if (!row) {
-    throw new Error("snapshot_persist_failed");
-  }
+    if (!inserted) {
+      throw new Error("snapshot_persist_failed");
+    }
+
+    await tx
+      .update(skySnapshotsTable)
+      .set({ isCurrent: false })
+      .where(
+        and(
+          eq(skySnapshotsTable.profileId, params.profileId),
+          ne(skySnapshotsTable.id, inserted.id),
+        ),
+      );
+
+    return inserted;
+  });
 
   await setGenerationStatus(params.profileId, "READY");
 

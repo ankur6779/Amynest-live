@@ -27,6 +27,7 @@ import {
   migrateBirthProfileAtRestIfNeeded,
   plaintextBirthFields,
   setGenerationStatus,
+  shouldExposeCurrentSnapshot,
   type GenerationStatus,
 } from "../services/birth-sky/snapshot-service.js";
 import {
@@ -139,9 +140,16 @@ router.get("/birth-sky/children/:childId", async (req, res): Promise<void> => {
         ),
       )
       .limit(1);
+    const mappedProfile = mapProfileRow(profile);
+    const currentSnap = snaps[0] ? mapSnapshotRow(snaps[0]) : null;
     res.json({
-      profile: mapProfileRow(profile),
-      snapshot: snaps[0] ? mapSnapshotRow(snaps[0]) : null,
+      profile: mappedProfile,
+      snapshot: shouldExposeCurrentSnapshot(
+        mappedProfile.generationStatus,
+        Boolean(currentSnap),
+      )
+        ? currentSnap
+        : null,
     });
   } catch (err) {
     logger.error(`birth-sky GET failed: ${err instanceof Error ? err.message : String(err)}`);

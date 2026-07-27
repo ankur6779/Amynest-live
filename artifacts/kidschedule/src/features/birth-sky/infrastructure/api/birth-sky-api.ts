@@ -11,7 +11,7 @@ import type {
   SnapshotComputeStatus,
   SnapshotGenerationState,
 } from "../../domain/models/snapshot-generation";
-import { toGenerationState } from "../../domain/models/snapshot-generation";
+import { toGenerationState, shouldExposeCurrentSnapshot } from "../../domain/models/snapshot-generation";
 
 export type AuthFetchFn = (
   input: RequestInfo | URL,
@@ -81,9 +81,15 @@ export async function fetchBirthSkyForChild(
     profile: BirthProfile | null;
     snapshot: unknown;
   }>(res);
+  const snapshot = readSnapshotField(body.snapshot);
+  const generationStatus = body.profile
+    ? toGenerationState(body.profile.generationStatus)
+    : undefined;
   return {
     profile: body.profile,
-    snapshot: readSnapshotField(body.snapshot),
+    snapshot: shouldExposeCurrentSnapshot(generationStatus, Boolean(snapshot))
+      ? snapshot
+      : null,
   };
 }
 
