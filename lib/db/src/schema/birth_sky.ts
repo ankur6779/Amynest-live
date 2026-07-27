@@ -50,6 +50,11 @@ export const birthProfilesTable = pgTable(
       .notNull(),
     /** Pack 2 AI: successful free insights consumed (server authoritative). */
     aiInsightsUsedCount: integer("ai_insights_used_count").notNull().default(0),
+    /**
+     * First-sky / regenerate lifecycle (never implies a null snapshot row).
+     * PENDING → COMPUTING → READY | FAILED
+     */
+    generationStatus: text("generation_status").notNull().default("PENDING"),
     /** Pack 7 Addendum A — privacy/legal policy version last accepted. */
     privacyPolicyVersion: text("privacy_policy_version"),
     privacyAcceptedAt: timestamp("privacy_accepted_at", { withTimezone: true }),

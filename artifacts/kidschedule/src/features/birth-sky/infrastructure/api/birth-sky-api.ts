@@ -7,6 +7,11 @@ import { parseApiJson } from "@/lib/safe-json-response";
 import type { BirthProfile, SkySnapshot } from "../../domain/models/birth-profile";
 import { hydrateSkySnapshot } from "../../domain/models/sky-snapshot-compat";
 import type { SetupDraft } from "../../domain/models/setup-draft";
+import type {
+  SnapshotComputeStatus,
+  SnapshotGenerationState,
+} from "../../domain/models/snapshot-generation";
+import { toGenerationState } from "../../domain/models/snapshot-generation";
 
 export type AuthFetchFn = (
   input: RequestInfo | URL,
@@ -16,8 +21,11 @@ export type AuthFetchFn = (
 
 export type CreateBirthSkyResponse = {
   profile: BirthProfile;
+  /** Only present when generationStatus === READY. Never a persisted null row. */
   snapshot: SkySnapshot | null;
-  computeStatus: "ready" | "pending" | "failed";
+  computeStatus: SnapshotComputeStatus;
+  generationStatus?: SnapshotGenerationState;
+  fallbackUsed?: boolean;
   errorCode?: string;
 };
 
@@ -26,6 +34,40 @@ function readSnapshotField(raw: unknown): SkySnapshot | null {
   const hydrated = hydrateSkySnapshot(raw);
   // Persist engineVersion from any engine; fail closed only on corrupt payload.
   return hydrated.ok ? hydrated.snapshot : null;
+}
+
+function normalizeCreateResponse(
+  body: CreateBirthSkyResponse & { snapshot: unknown },
+): CreateBirthSkyResponse {
+  const snapshot = readSnapshotField(body.snapshot);
+  const generationStatus = toGenerationState(
+    body.generationStatus ?? body.computeStatus ?? (snapshot ? "READY" : "FAILED"),
+  );
+  // Harden: never surface a READY status without a hydrated snapshot.
+  const ready = Boolean(snapshot) && generationStatus === "READY";
+  const status: SnapshotGenerationState = ready
+    ? "READY"
+    : generationStatus === "COMPUTING"
+      ? "COMPUTING"
+      : generationStatus === "PENDING"
+        ? "PENDING"
+        : "FAILED";
+  return {
+    ...body,
+    snapshot: ready ? snapshot : null,
+    generationStatus: status,
+    computeStatus:
+      status === "READY"
+        ? "ready"
+        : status === "COMPUTING"
+          ? "computing"
+          : status === "PENDING"
+            ? "pending"
+            : "failed",
+    fallbackUsed:
+      Boolean(body.fallbackUsed) ||
+      Boolean(snapshot?.astronomy?.metadata?.fallbackUsed),
+  };
 }
 
 export async function fetchBirthSkyForChild(
@@ -74,25 +116,20 @@ export async function createBirthSky(
     );
   }
   const body = await parseApiJson<CreateBirthSkyResponse & { snapshot: unknown }>(res);
-  return {
-    ...body,
-    snapshot: readSnapshotField(body.snapshot),
-  };
+  return normalizeCreateResponse(body);
 }
 
 export async function recomputeBirthSkySnapshot(
   authFetch: AuthFetchFn,
   profileId: string,
+  options?: { forceFresh?: boolean },
 ): Promise<CreateBirthSkyResponse> {
   const res = await authFetch(getApiUrl(`/api/birth-sky/profiles/${profileId}/recompute`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "{}",
+    body: JSON.stringify({ forceFresh: options?.forceFresh ?? true }),
   });
   if (!res.ok) throw new Error(`recompute_failed:${res.status}`);
   const body = await parseApiJson<CreateBirthSkyResponse & { snapshot: unknown }>(res);
-  return {
-    ...body,
-    snapshot: readSnapshotField(body.snapshot),
-  };
+  return normalizeCreateResponse(body);
 }

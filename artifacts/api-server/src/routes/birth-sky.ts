@@ -1,6 +1,6 @@
 /**
  * Birth Sky API — Create + snapshot compute (IM-1 / Pack 2–3).
- * No premium gate. No AI.
+ * No premium gate. First-run create is resilient (retry + lite fallback).
  */
 
 import { Router, type IRouter } from "express";
@@ -11,22 +11,57 @@ import {
   db,
   birthProfilesTable,
   skySnapshotsTable,
-  childrenTable,
 } from "@workspace/db";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { requireBirthSkyAllowlist } from "../services/birth-sky/require-birth-sky-allowlist";
-import { getEphemerisPort } from "../services/birth-sky/resolve-ephemeris-port";
 import {
+  assertChildOwned,
+  computeAndPersistSnapshotWithRetry,
+  ensureBirthSkyPreferences,
+  generationStatusToComputeStatus,
+  logBirthSkyPipeline,
+  mapProfileRow,
+  mapSnapshotRow,
   migrateBirthProfileAtRestIfNeeded,
   plaintextBirthFields,
+  setGenerationStatus,
+  type GenerationStatus,
 } from "../services/birth-sky/snapshot-service.js";
 import {
   sealBirthPlace,
   sealBirthTime,
-  unsealBirthPlace,
-  unsealBirthTime,
 } from "../services/birth-sky/birth-field-crypto.js";
+
+function snapshotFallbackUsed(snapshot: {
+  astronomy?: unknown;
+}): boolean {
+  const astronomy = snapshot.astronomy as
+    | { metadata?: { fallbackUsed?: boolean } }
+    | null
+    | undefined;
+  return Boolean(astronomy?.metadata?.fallbackUsed);
+}
+
+function createResponsePayload(input: {
+  profile: ReturnType<typeof mapProfileRow>;
+  snapshot: ReturnType<typeof mapSnapshotRow> | null;
+  generationStatus: GenerationStatus;
+  errorCode?: string;
+}) {
+  return {
+    profile: {
+      ...input.profile,
+      generationStatus: input.generationStatus,
+    },
+    // Never claim a persisted snapshot when status is not READY.
+    snapshot: input.generationStatus === "READY" ? input.snapshot : null,
+    computeStatus: generationStatusToComputeStatus(input.generationStatus),
+    generationStatus: input.generationStatus,
+    fallbackUsed: input.snapshot ? snapshotFallbackUsed(input.snapshot) : false,
+    ...(input.errorCode ? { errorCode: input.errorCode } : {}),
+  };
+}
 
 const router: IRouter = Router();
 router.use(requireBirthSkyAllowlist);
@@ -56,118 +91,6 @@ const createSchema = z.object({
     disclaimerAccepted: z.literal(true),
   }),
 });
-
-function mapProfile(row: typeof birthProfilesTable.$inferSelect) {
-  return {
-    profileId: row.id,
-    childId: row.childId,
-    userId: row.userId,
-    birthDate: row.birthDate,
-    birthTime: unsealBirthTime(row.birthTime),
-    timePrecision: row.timePrecision,
-    birthPlace: unsealBirthPlace(row.birthPlace),
-    consent: row.consent,
-    aiInsightsUsedCount: row.aiInsightsUsedCount ?? 0,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
-
-function mapSnapshot(row: typeof skySnapshotsTable.$inferSelect) {
-  return {
-    snapshotId: row.id,
-    profileId: row.profileId,
-    cacheKey: row.cacheKey,
-    snapshotVersion: row.snapshotVersion,
-    engineVersion: row.engineVersion,
-    computedAt: row.computedAt.toISOString(),
-    mode: row.mode,
-    astronomy: row.astronomy,
-  };
-}
-
-async function assertChildOwned(userId: string, childId: number): Promise<boolean> {
-  const rows = await db
-    .select({ id: childrenTable.id })
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
-    .limit(1);
-  return Boolean(rows[0]);
-}
-
-function timezoneOffsetMinutes(iana: string | null | undefined, lon: number | null): number {
-  if (iana) {
-    try {
-      const fmt = new Intl.DateTimeFormat("en-US", {
-        timeZone: iana,
-        timeZoneName: "shortOffset",
-      });
-      const parts = fmt.formatToParts(new Date());
-      const tz = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
-      const m = tz.match(/GMT([+-])(\d+)(?::(\d+))?/);
-      if (m) {
-        const sign = m[1] === "-" ? -1 : 1;
-        const h = Number(m[2]);
-        const min = Number(m[3] ?? "0");
-        return sign * (h * 60 + min);
-      }
-    } catch {
-      /* fall through */
-    }
-  }
-  if (lon == null) return 0;
-  return Math.round(lon / 15) * 60;
-}
-
-async function computeAndPersistSnapshot(params: {
-  userId: string;
-  profileId: string;
-  birthDate: string;
-  birthTime: string | null;
-  timePrecision: "exact" | "approximate" | "unknown";
-  birthPlace: z.infer<typeof placeSchema>;
-}) {
-  const lat = params.birthPlace?.lat ?? null;
-  const lon = params.birthPlace?.lon ?? null;
-  const offset = timezoneOffsetMinutes(params.birthPlace?.timezoneIana, lon);
-
-  const ephemeris = getEphemerisPort();
-  const input = {
-    birthDate: params.birthDate,
-    birthTime: params.birthTime,
-    timePrecision: params.timePrecision,
-    lat,
-    lon,
-    timezoneOffsetMinutes: offset,
-  };
-  const { mode, astronomy, engineVersion } = await ephemeris.compute(input);
-  const cacheKey = ephemeris.buildCacheKey(input);
-
-  await db
-    .update(skySnapshotsTable)
-    .set({ isCurrent: false })
-    .where(eq(skySnapshotsTable.profileId, params.profileId));
-
-  const snapshotId = randomUUID();
-  const snapshotVersion = `ss_${snapshotId}`;
-  const [row] = await db
-    .insert(skySnapshotsTable)
-    .values({
-      id: snapshotId,
-      profileId: params.profileId,
-      userId: params.userId,
-      cacheKey,
-      snapshotVersion,
-      engineVersion,
-      mode,
-      astronomy,
-      isCurrent: true,
-      computedAt: new Date(),
-    })
-    .returning();
-
-  return mapSnapshot(row!);
-}
 
 /**
  * GET /api/birth-sky/children/:childId
@@ -216,8 +139,8 @@ router.get("/birth-sky/children/:childId", async (req, res): Promise<void> => {
       )
       .limit(1);
     res.json({
-      profile: mapProfile(profile),
-      snapshot: snaps[0] ? mapSnapshot(snaps[0]) : null,
+      profile: mapProfileRow(profile),
+      snapshot: snaps[0] ? mapSnapshotRow(snaps[0]) : null,
     });
   } catch (err) {
     logger.error(`birth-sky GET failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -227,6 +150,9 @@ router.get("/birth-sky/children/:childId", async (req, res): Promise<void> => {
 
 /**
  * POST /api/birth-sky/create — free CreateBirthSky (Pack 2 §8).
+ *
+ * Pipeline: validate → ensure prefs → upsert profile → astro generate (+retry/fallback)
+ * → attach meaning → save snapshot.
  */
 router.post("/birth-sky/create", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -236,6 +162,11 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
   }
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
+    logBirthSkyPipeline(
+      "birth_data_invalid",
+      { userId, issues: parsed.error.flatten() },
+      "warn",
+    );
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
   }
@@ -255,10 +186,23 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
   }
 
   try {
+    logBirthSkyPipeline("create_start", {
+      userId,
+      childId: body.childId,
+      timePrecision: body.timePrecision,
+      placeSkipped: Boolean(body.placeSkipped),
+      placeProvided: Boolean(body.birthPlace),
+    });
+
     if (!(await assertChildOwned(userId, body.childId))) {
+      logBirthSkyPipeline("child_not_found", { userId, childId: body.childId }, "warn");
       res.status(404).json({ error: "child_not_found" });
       return;
     }
+
+    // Profile init: preferences row before generation (idempotent).
+    await ensureBirthSkyPreferences(userId);
+    logBirthSkyPipeline("preferences_ensured", { userId });
 
     const existing = await db
       .select()
@@ -293,11 +237,19 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           timePrecision: body.timePrecision,
           birthPlace: sealedPlace,
           consent,
+          generationStatus: "COMPUTING",
           updatedAt: now,
         })
         .where(eq(birthProfilesTable.id, existing[0].id))
         .returning();
       profileRow = updated!;
+      logBirthSkyPipeline("profile_upserted", {
+        userId,
+        profileId: profileRow.id,
+        childId: body.childId,
+        created: false,
+        generationStatus: "COMPUTING",
+      });
     } else {
       const [inserted] = await db
         .insert(birthProfilesTable)
@@ -310,15 +262,23 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           timePrecision: body.timePrecision,
           birthPlace: sealedPlace,
           consent,
+          generationStatus: "COMPUTING",
           createdAt: now,
           updatedAt: now,
         })
         .returning();
       profileRow = inserted!;
+      logBirthSkyPipeline("profile_upserted", {
+        userId,
+        profileId: profileRow.id,
+        childId: body.childId,
+        created: true,
+        generationStatus: "COMPUTING",
+      });
     }
 
     try {
-      const snapshot = await computeAndPersistSnapshot({
+      const snapshot = await computeAndPersistSnapshotWithRetry({
         userId,
         profileId: profileRow.id,
         birthDate: profileRow.birthDate,
@@ -326,14 +286,40 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
         timePrecision: body.timePrecision as "exact" | "approximate" | "unknown",
         birthPlace: place,
       });
-      res.json({
-        profile: mapProfile(profileRow),
-        snapshot,
-        computeStatus: "ready",
+      // Refresh profile so generationStatus=READY is reflected.
+      const refreshed = await migrateBirthProfileAtRestIfNeeded(profileRow);
+      logBirthSkyPipeline("create_ready", {
+        userId,
+        profileId: profileRow.id,
+        snapshotId: snapshot.snapshotId,
+        engineVersion: snapshot.engineVersion,
+        fallbackUsed: snapshotFallbackUsed(snapshot),
+        generationStatus: "READY",
       });
+      res.json(
+        createResponsePayload({
+          profile: mapProfileRow(refreshed),
+          snapshot,
+          generationStatus: "READY",
+        }),
+      );
     } catch (computeErr) {
-      logger.error(
-        `birth-sky compute failed: ${computeErr instanceof Error ? computeErr.message : String(computeErr)}`,
+      await setGenerationStatus(profileRow.id, "FAILED");
+      logBirthSkyPipeline(
+        "create_compute_failed",
+        {
+          userId,
+          profileId: profileRow.id,
+          error: computeErr instanceof Error ? computeErr.message : String(computeErr),
+          code:
+            computeErr &&
+            typeof computeErr === "object" &&
+            "code" in computeErr
+              ? (computeErr as { code?: string }).code
+              : undefined,
+          generationStatus: "FAILED",
+        },
+        "error",
       );
       const code =
         computeErr &&
@@ -342,15 +328,23 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
         (computeErr as { code?: string }).code === "ephemeris_unavailable"
           ? "ephemeris_unavailable"
           : "compute_failed";
-      res.json({
-        profile: mapProfile(profileRow),
-        snapshot: null,
-        computeStatus: "failed",
-        errorCode: code,
-      });
+      // Profile may exist for recovery — but never persist a null snapshot row.
+      res.json(
+        createResponsePayload({
+          profile: mapProfileRow({ ...profileRow, generationStatus: "FAILED" }),
+          snapshot: null,
+          generationStatus: "FAILED",
+          errorCode: code,
+        }),
+      );
     }
   } catch (err) {
     logger.error(`birth-sky create failed: ${err instanceof Error ? err.message : String(err)}`);
+    logBirthSkyPipeline(
+      "create_server_error",
+      { userId, error: err instanceof Error ? err.message : String(err) },
+      "error",
+    );
     res.status(500).json({ error: "server_error" });
   }
 });
@@ -366,6 +360,7 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
   }
   const profileId = String(req.params.profileId ?? "");
   try {
+    logBirthSkyPipeline("recompute_start", { userId, profileId });
     const profiles = await db
       .select()
       .from(birthProfilesTable)
@@ -379,12 +374,28 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       .limit(1);
     const raw = profiles[0];
     if (!raw) {
+      logBirthSkyPipeline("profile_missing", { userId, profileId }, "warn");
       res.status(404).json({ error: "profile_missing" });
       return;
     }
     const profile = await migrateBirthProfileAtRestIfNeeded(raw);
+    await ensureBirthSkyPreferences(userId);
+    await setGenerationStatus(profile.id, "COMPUTING");
     const plain = plaintextBirthFields(profile);
-    const snapshot = await computeAndPersistSnapshot({
+    if (!profile.birthDate) {
+      await setGenerationStatus(profile.id, "FAILED");
+      logBirthSkyPipeline("missing_birth_data", { userId, profileId }, "warn");
+      res.status(400).json(
+        createResponsePayload({
+          profile: mapProfileRow({ ...profile, generationStatus: "FAILED" }),
+          snapshot: null,
+          generationStatus: "FAILED",
+          errorCode: "missing_birth_data",
+        }),
+      );
+      return;
+    }
+    const snapshot = await computeAndPersistSnapshotWithRetry({
       userId,
       profileId: profile.id,
       birthDate: profile.birthDate,
@@ -392,13 +403,31 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       timePrecision: profile.timePrecision as "exact" | "approximate" | "unknown",
       birthPlace: plain.birthPlace,
     });
-    res.json({
-      profile: mapProfile(profile),
-      snapshot,
-      computeStatus: "ready",
+    const refreshed = await migrateBirthProfileAtRestIfNeeded(profile);
+    logBirthSkyPipeline("recompute_ready", {
+      userId,
+      profileId,
+      snapshotId: snapshot.snapshotId,
+      engineVersion: snapshot.engineVersion,
+      fallbackUsed: snapshotFallbackUsed(snapshot),
+      generationStatus: "READY",
     });
+    res.json(
+      createResponsePayload({
+        profile: mapProfileRow(refreshed),
+        snapshot,
+        generationStatus: "READY",
+      }),
+    );
   } catch (err) {
     logger.error(`birth-sky recompute failed: ${err instanceof Error ? err.message : String(err)}`);
+    if (profileId) {
+      try {
+        await setGenerationStatus(profileId, "FAILED");
+      } catch {
+        /* ignore */
+      }
+    }
     const code =
       err &&
       typeof err === "object" &&
@@ -406,10 +435,17 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       (err as { code?: string }).code === "ephemeris_unavailable"
         ? "ephemeris_unavailable"
         : "compute_failed";
+    logBirthSkyPipeline(
+      "recompute_failed",
+      { userId, profileId, errorCode: code, generationStatus: "FAILED" },
+      "error",
+    );
     res.status(500).json({
       profile: null,
       snapshot: null,
       computeStatus: "failed",
+      generationStatus: "FAILED",
+      fallbackUsed: false,
       errorCode: code,
     });
   }

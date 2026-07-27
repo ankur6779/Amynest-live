@@ -174,6 +174,8 @@ export type AstronomyData = {
     calculationMode?: string;
     cacheHit?: boolean;
     computeLatencyMs?: number;
+    /** True when resilient port used amynest-astro-lite after daemon failure. */
+    fallbackUsed?: boolean;
     houseSystem?: string | null;
     astrologyMode?: string;
     zodiacMode?: string;

@@ -21,6 +21,8 @@ export type BirthProfile = {
   consent: BirthProfileConsent;
   /** Server mirror — Pack 2 free AI quota (do not increment locally). */
   aiInsightsUsedCount?: number;
+  /** Snapshot generation lifecycle: PENDING | COMPUTING | READY | FAILED */
+  generationStatus?: "PENDING" | "COMPUTING" | "READY" | "FAILED";
   /** Pack 7 Addendum A — legal/privacy policy version last accepted. */
   privacyPolicyVersion?: string | null;
   privacyAcceptedAt?: string | null;
@@ -316,6 +318,7 @@ export type AstronomyData = {
     calculationMode?: string;
     cacheHit?: boolean;
     computeLatencyMs?: number;
+    fallbackUsed?: boolean;
     houseSystem?: string | null;
     astrologyMode?: string;
     zodiacMode?: string;

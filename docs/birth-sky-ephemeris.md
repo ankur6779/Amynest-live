@@ -5,17 +5,18 @@
 ```
 Kidschedule UI
   → Node api-server (public API)
-    → EphemerisPort (PythonEphemerisAdapter)   ← engine-agnostic
-      → HTTP JSON http://127.0.0.1:5099
-        → Python ephemeris-daemon
-          → EngineFactory(ENGINE_PROVIDER)
-            → EnginePort
-              → SkyfieldEngine | SwissEphemerisEngine (future) | MockEngine
+    → EphemerisPort (ResilientEphemerisPort)
+      → primary: PythonEphemerisAdapter (retry once)
+          → HTTP JSON http://127.0.0.1:5099
+            → Python ephemeris-daemon
+              → EngineFactory(ENGINE_PROVIDER)
+                → SkyfieldEngine | SwissEphemerisEngine (future) | MockEngine
+      → fallback: amynest-astro-lite (deterministic Node) when daemon unavailable
   → append-only sky_snapshots (opaque engineVersion)
 UI / AI hydrate snapshots — never recompute on read
 ```
 
-**Rule:** Node never imports or names Skyfield / Swiss / JPL. Only the Python daemon selects an engine.
+**Rule:** Node never imports or names Skyfield / Swiss / JPL for the primary path. Only the Python daemon selects that engine. The lite adapter is a first-run safety net so Create never hard-fails on daemon blips; lite snapshots remain readable forever.
 
 ## EngineFactory
 
