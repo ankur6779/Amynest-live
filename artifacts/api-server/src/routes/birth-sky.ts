@@ -19,6 +19,7 @@ import {
   assertChildOwned,
   computeAndPersistSnapshotWithRetry,
   ensureBirthSkyPreferences,
+  ensureGenerationStatusColumn,
   generationStatusToComputeStatus,
   logBirthSkyPipeline,
   mapProfileRow,
@@ -200,8 +201,9 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
       return;
     }
 
-    // Profile init: preferences row before generation (idempotent).
+    // Profile init: preferences + generation_status column (idempotent).
     await ensureBirthSkyPreferences(userId);
+    await ensureGenerationStatusColumn();
     logBirthSkyPipeline("preferences_ensured", { userId });
 
     const existing = await db
@@ -237,12 +239,12 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           timePrecision: body.timePrecision,
           birthPlace: sealedPlace,
           consent,
-          generationStatus: "COMPUTING",
           updatedAt: now,
         })
         .where(eq(birthProfilesTable.id, existing[0].id))
         .returning();
       profileRow = updated!;
+      await setGenerationStatus(profileRow.id, "COMPUTING");
       logBirthSkyPipeline("profile_upserted", {
         userId,
         profileId: profileRow.id,
@@ -262,12 +264,12 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           timePrecision: body.timePrecision,
           birthPlace: sealedPlace,
           consent,
-          generationStatus: "COMPUTING",
           createdAt: now,
           updatedAt: now,
         })
         .returning();
       profileRow = inserted!;
+      await setGenerationStatus(profileRow.id, "COMPUTING");
       logBirthSkyPipeline("profile_upserted", {
         userId,
         profileId: profileRow.id,
