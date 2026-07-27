@@ -235,6 +235,12 @@
   border-color: hsl(40 20% 96% / 0.18);
 }
 
+/* Preserve destructive emphasis on secondary CTAs */
+.amy-astro-root .amy-astro-btn-secondary.text-red-200,
+.amy-astro-root button.amy-astro-btn-secondary.text-red-200 {
+  color: hsl(0 86% 78%);
+}
+
 .amy-astro-root .amy-astro-btn-text {
   background: transparent;
   border: none;
