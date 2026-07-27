@@ -129,7 +129,7 @@ export function BirthSkyDashboardHero({
             {AMY_ASTRO_PRODUCT_SHORT} · Signature Edition
           </p>
           <p
-            className="amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-1.5 !text-left text-xl font-semibold leading-snug"
+            className="amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-1.5 text-left text-xl font-semibold leading-snug"
             data-testid="amy-astro-personalized-hello"
           >
             {greeting.hello}
