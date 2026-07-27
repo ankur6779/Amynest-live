@@ -2,7 +2,7 @@
  * Snapshot compute + persist (append-only history; active pointer switch).
  */
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import {
   db,
@@ -194,14 +194,54 @@ export function mapProfileRow(row: typeof birthProfilesTable.$inferSelect) {
   };
 }
 
+let generationStatusColumnReady: boolean | null = null;
+
+/**
+ * Idempotent schema ensure for Coolify hosts that have not yet run db:push.
+ * Safe to call on every create/recompute — no-ops after first success.
+ */
+export async function ensureGenerationStatusColumn(): Promise<boolean> {
+  if (generationStatusColumnReady === true) return true;
+  try {
+    await db.execute(
+      sql`ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS generation_status text NOT NULL DEFAULT 'PENDING'`,
+    );
+    generationStatusColumnReady = true;
+    return true;
+  } catch (err) {
+    generationStatusColumnReady = false;
+    logBirthSkyPipeline(
+      "generation_status_column_ensure_failed",
+      { error: err instanceof Error ? err.message : String(err) },
+      "warn",
+    );
+    return false;
+  }
+}
+
 export async function setGenerationStatus(
   profileId: string,
   status: GenerationStatus,
 ): Promise<void> {
-  await db
-    .update(birthProfilesTable)
-    .set({ generationStatus: status, updatedAt: new Date() })
-    .where(eq(birthProfilesTable.id, profileId));
+  const ready = await ensureGenerationStatusColumn();
+  if (!ready) return;
+  try {
+    await db
+      .update(birthProfilesTable)
+      .set({ generationStatus: status, updatedAt: new Date() })
+      .where(eq(birthProfilesTable.id, profileId));
+  } catch (err) {
+    // Never block Sky generation on status bookkeeping.
+    logBirthSkyPipeline(
+      "generation_status_update_failed",
+      {
+        profileId,
+        status,
+        error: err instanceof Error ? err.message : String(err),
+      },
+      "warn",
+    );
+  }
 }
 
 /**
