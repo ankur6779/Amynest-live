@@ -25,6 +25,8 @@ type BirthSkyModuleShellProps = {
   testId?: string;
   reducedMotion?: boolean;
   childName?: string;
+  /** Living Sky ambient richness — cinematic screens use "full". */
+  ambientIntensity?: "shell" | "full" | "static";
   /** Living Sky inputs — presentation only */
   sunSign?: string | null;
   moonSign?: string | null;
@@ -51,6 +53,7 @@ export function BirthSkyModuleShell({
   testId = "birth-sky-module-shell",
   reducedMotion,
   childName,
+  ambientIntensity = "shell",
   sunSign,
   moonSign,
   birthTime,
@@ -77,7 +80,7 @@ export function BirthSkyModuleShell({
       >
         <AmyAstroCosmicAmbient
           reducedMotion={reduced}
-          intensity="shell"
+          intensity={ambientIntensity}
           showMeteor={!reduced}
           living
         />

@@ -34,6 +34,7 @@ import { useNavItemDescription } from "@/components/premium-nav-item";
 import { DrawerNavItem, type DrawerTone } from "@/components/drawer-nav-item";
 import { NAV_PREMIUM_HEADER, groupDrawerItems } from "@/lib/nav-premium-config";
 import { cn } from "@/lib/utils";
+import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 
 /** Learning Zone links to the existing study route (no new route added). */
 const LEARNING_ZONE_ITEM: MobileNavItem = {
@@ -42,7 +43,7 @@ const LEARNING_ZONE_ITEM: MobileNavItem = {
   icon: GraduationCap,
 };
 
-/** Hero product — always surfaced in the burger drawer. */
+/** Hero product — surfaced in the burger drawer when Amy Astro is enabled. */
 const AMY_ASTRO_ITEM: MobileNavItem = {
   href: "/birth-sky",
   labelKey: "nav.amy_astro_intelligence",
@@ -253,7 +254,10 @@ export function LayoutMobileMenuSheet({
   let drawerItems = safeMenu.some((item) => item.href === "/study")
     ? safeMenu
     : [...safeMenu, LEARNING_ZONE_ITEM];
-  if (!drawerItems.some((item) => item.href === "/birth-sky")) {
+  const displayName = getUserDisplayName(user);
+  const email = getUserEmail(user);
+  const amyAstroEnabled = isBirthSkyEnabled(email);
+  if (amyAstroEnabled && !drawerItems.some((item) => item.href === "/birth-sky")) {
     const dashIdx = drawerItems.findIndex((item) => item.href === "/dashboard");
     drawerItems =
       dashIdx >= 0
@@ -263,11 +267,10 @@ export function LayoutMobileMenuSheet({
             ...drawerItems.slice(dashIdx + 1),
           ]
         : [AMY_ASTRO_ITEM, ...drawerItems];
+  } else if (!amyAstroEnabled) {
+    drawerItems = drawerItems.filter((item) => item.href !== "/birth-sky");
   }
   const groups = groupDrawerItems(drawerItems);
-
-  const displayName = getUserDisplayName(user);
-  const email = getUserEmail(user);
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
 

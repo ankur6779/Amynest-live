@@ -103,6 +103,8 @@ import { AmyAstroDiscoveryNudge } from "../../components/discovery-nudge";
 import { AmyAstroEmotionalCompletion } from "../../components/emotional-completion";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { softHaptic } from "../../lib/soft-haptic";
+import { playSkySound } from "../../lib/sky-sounds";
+import { loadPreferences } from "../../infrastructure/repositories/settings-store";
 import { DEEP_INSIGHTS_CONTENT_VERSION } from "../../constants/deep-insights-content";
 import { moonPhasePhrase, withIndefiniteArticle } from "../../lib/sky-copy";
 
@@ -175,6 +177,9 @@ export function BirthSkyDashboardPage({
   const [pendingCelebration, setPendingCelebration] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [focusChapterId, setFocusChapterId] = useState<string | null>(null);
+  const [skySoundsEnabled, setSkySoundsEnabled] = useState(
+    () => loadPreferences(profile.userId).skySounds,
+  );
   const transitionFired = useRef(false);
   const viewedFired = useRef(false);
   const reduced = prefersReducedMotion();
@@ -184,6 +189,15 @@ export function BirthSkyDashboardPage({
     authUser?.firstName?.trim() ||
     authUser?.fullName?.trim()?.split(/\s+/)[0] ||
     null;
+
+  useEffect(() => {
+    setSkySoundsEnabled(loadPreferences(profile.userId).skySounds);
+  }, [profile.userId]);
+
+  const cueTap = useCallback(() => {
+    softHaptic(reduced);
+    playSkySound("soft_tap", { enabled: skySoundsEnabled, reducedMotion: reduced });
+  }, [reduced, skySoundsEnabled]);
 
   useEffect(() => {
     const { memory: next, previousLastVisitAt } = touchCosmicVisitWithPrior(
@@ -245,7 +259,7 @@ export function BirthSkyDashboardPage({
 
   const openPlanet = useCallback(
     (key: PlanetKey) => {
-      softHaptic(reduced);
+      cueTap();
       setPlanetJourney(key);
       setMemory(rememberPlanet(profile.profileId, key));
       if (!memory.celebrationsShown.includes(`planet-${key}`)) {
@@ -254,7 +268,7 @@ export function BirthSkyDashboardPage({
         setPendingCelebration("A beautiful memory has been added to their sky.");
       }
     },
-    [profile.profileId, memory.celebrationsShown, reduced],
+    [profile.profileId, memory.celebrationsShown, cueTap],
   );
 
   useEffect(() => {
@@ -388,7 +402,7 @@ export function BirthSkyDashboardPage({
 
   const followDiscovery = useCallback(
     (nudge: DiscoveryNudge) => {
-      softHaptic(reduced);
+      cueTap();
       if (nudge.action === "planet" && nudge.target) {
         openPlanet(nudge.target as PlanetKey);
         return;
@@ -409,7 +423,7 @@ export function BirthSkyDashboardPage({
         void ai.openAskAmy("reflect");
       }
     },
-    [reduced, onSegmentPath, profile.profileId, openPlanet, ai.openAskAmy],
+    [reduced, onSegmentPath, profile.profileId, openPlanet, ai.openAskAmy, cueTap],
   );
 
   useEffect(() => {
@@ -664,7 +678,7 @@ export function BirthSkyDashboardPage({
               moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
               focusChapterId={focusChapterId}
               onInsightOpened={(chapterId) => {
-                softHaptic(reduced);
+                cueTap();
                 setInsightOpens((n) => n + 1);
                 setMemory(rememberChapter(profile.profileId, chapterId));
                 if (
@@ -824,6 +838,7 @@ export function BirthSkyDashboardPage({
         open={Boolean(celebration)}
         message={celebration ?? ""}
         reducedMotion={reduced}
+        soundsEnabled={skySoundsEnabled}
         onClose={() => setCelebration(null)}
       />
 

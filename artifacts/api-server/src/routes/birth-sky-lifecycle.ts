@@ -77,7 +77,7 @@ router.get("/birth-sky/preferences", async (req, res): Promise<void> => {
     res.json({
       preferences: {
         showTradition: row?.showTradition ?? true,
-        skySounds: row?.skySounds ?? false,
+        skySounds: row?.skySounds ?? true,
         monthlyNotesOptIn: row?.monthlyNotesOptIn ?? true,
         updatedAt: row?.updatedAt?.toISOString() ?? new Date(0).toISOString(),
       },
@@ -125,7 +125,7 @@ router.put("/birth-sky/preferences", async (req, res): Promise<void> => {
     }
     const next = {
       showTradition: parsed.data.showTradition ?? existing[0]?.showTradition ?? true,
-      skySounds: parsed.data.skySounds ?? existing[0]?.skySounds ?? false,
+      skySounds: parsed.data.skySounds ?? existing[0]?.skySounds ?? true,
       monthlyNotesOptIn:
         parsed.data.monthlyNotesOptIn ?? existing[0]?.monthlyNotesOptIn ?? true,
       updatedAt: new Date(),
@@ -581,7 +581,7 @@ router.post("/birth-sky/profiles/:profileId/sync", async (req, res): Promise<voi
         const next = {
           showTradition:
             parsed.data.preferences.showTradition ?? existing[0]?.showTradition ?? true,
-          skySounds: parsed.data.preferences.skySounds ?? existing[0]?.skySounds ?? false,
+          skySounds: parsed.data.preferences.skySounds ?? existing[0]?.skySounds ?? true,
           monthlyNotesOptIn:
             parsed.data.preferences.monthlyNotesOptIn ??
             existing[0]?.monthlyNotesOptIn ??
@@ -616,7 +616,7 @@ router.post("/birth-sky/profiles/:profileId/sync", async (req, res): Promise<voi
       snapshot: snaps[0] ? mapSnapshotRow(snaps[0]) : null,
       preferences: {
         showTradition: prefs[0]?.showTradition ?? true,
-        skySounds: prefs[0]?.skySounds ?? false,
+        skySounds: prefs[0]?.skySounds ?? true,
         monthlyNotesOptIn: prefs[0]?.monthlyNotesOptIn ?? true,
         updatedAt: prefs[0]?.updatedAt?.toISOString() ?? new Date(0).toISOString(),
       },

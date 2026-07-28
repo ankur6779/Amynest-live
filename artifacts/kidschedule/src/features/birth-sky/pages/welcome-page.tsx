@@ -39,7 +39,12 @@ export function BirthSkyWelcomePage({
     : "Your child's cosmic blueprint";
 
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-welcome">
+    <BirthSkyModuleShell
+      title={AMY_ASTRO_PRODUCT_NAME}
+      onBack={onBack}
+      testId="birth-sky-welcome"
+      ambientIntensity="full"
+    >
       <div className="amy-astro-enter flex flex-col items-center pt-2 text-center">
         <AmyAstroEmblem size={168} />
         <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.28em] text-[hsl(42_60%_70%/0.75)]">

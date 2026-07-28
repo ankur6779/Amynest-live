@@ -18,7 +18,9 @@ function key(userId: string): string {
 
 const DEFAULT: BirthSkyPreferences = {
   showTradition: true,
-  skySounds: false,
+  /** Soft Web Audio sky cues — on for public launch (still respects reduced-motion). */
+  skySounds: true,
+  /** Reserved preference (delivery not yet live) — kept for sync compatibility. */
   monthlyNotesOptIn: true,
   updatedAt: new Date(0).toISOString(),
 };
@@ -30,7 +32,7 @@ export function loadPreferences(userId: string): BirthSkyPreferences {
     const parsed = JSON.parse(raw) as Partial<BirthSkyPreferences>;
     return {
       showTradition: parsed.showTradition !== false,
-      skySounds: Boolean(parsed.skySounds),
+      skySounds: parsed.skySounds !== false,
       monthlyNotesOptIn: parsed.monthlyNotesOptIn !== false,
       updatedAt:
         typeof parsed.updatedAt === "string" ? parsed.updatedAt : DEFAULT.updatedAt,

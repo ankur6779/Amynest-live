@@ -10,9 +10,9 @@ describe("settings-store Pack 7", () => {
     localStorage.clear();
   });
 
-  it("defaults skySounds off and showTradition on", () => {
+  it("defaults skySounds and showTradition on for public launch", () => {
     const p = loadPreferences("u1");
-    expect(p.skySounds).toBe(false);
+    expect(p.skySounds).toBe(true);
     expect(p.showTradition).toBe(true);
   });
 

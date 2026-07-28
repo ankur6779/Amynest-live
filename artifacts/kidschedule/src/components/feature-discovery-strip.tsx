@@ -14,6 +14,9 @@ import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { DashboardGlassCard } from "@/components/dashboard-glass-card";
 import { DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 import { getAnalyticsService } from "@/lib/analytics/analytics-service";
+import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
+import { useUser } from "@/lib/firebase-auth-hooks";
+import { getUserEmail } from "@/lib/safe-user-display";
 
 type DiscoveryItem = {
   id: string;
@@ -85,10 +88,13 @@ export function FeatureDiscoveryStrip({
 }: Props) {
   const { t } = useTranslation();
   const usage = useFeatureUsage();
+  const { user } = useUser();
+  const amyAstroEnabled = isBirthSkyEnabled(getUserEmail(user));
 
   const items = useMemo(() => {
     const age = childAgeYears ?? 5;
     return DISCOVERY_POOL.filter((item) => {
+      if (item.id === "amy_astro_intelligence" && !amyAstroEnabled) return false;
       if (item.minAgeYears != null && age < item.minAgeYears) return false;
       if (item.maxAgeYears != null && age > item.maxAgeYears) return false;
       const count = usage.getUseCount(item.id);
@@ -96,7 +102,7 @@ export function FeatureDiscoveryStrip({
       if (item.id === "hub_gaming_rewards" && !hasRoutines) return false;
       return true;
     }).slice(0, maxItems);
-  }, [childAgeYears, hasRoutines, maxItems, usage]);
+  }, [amyAstroEnabled, childAgeYears, hasRoutines, maxItems, usage]);
 
   if (items.length === 0) return null;
 

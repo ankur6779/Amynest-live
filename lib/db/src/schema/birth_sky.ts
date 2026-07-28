@@ -74,7 +74,7 @@ export const birthSkyPreferencesTable = pgTable(
   {
     userId: text("user_id").primaryKey(),
     showTradition: boolean("show_tradition").notNull().default(true),
-    skySounds: boolean("sky_sounds").notNull().default(false),
+    skySounds: boolean("sky_sounds").notNull().default(true),
     monthlyNotesOptIn: boolean("monthly_notes_opt_in").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

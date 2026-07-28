@@ -142,7 +142,7 @@ export function BirthSkySettingsPage({
     );
   }, [sub, profile.profileId, snapshot.snapshotVersion]);
 
-  const toggle = (key: "showTradition" | "skySounds" | "monthlyNotesOptIn") => {
+  const toggle = (key: "showTradition" | "skySounds") => {
     const next = patchPreferencesLocal(profile.userId, { [key]: !prefs[key] });
     setPrefs(next);
     if (!online) {
@@ -374,14 +374,8 @@ export function BirthSkySettingsPage({
             label="Sky sounds"
             checked={prefs.skySounds}
             onChange={() => toggle("skySounds")}
-            hint="Off by default"
+            hint="Soft chimes on reveal and celebrations"
             testId="birth-sky-pref-sounds"
-          />
-          <ToggleRow
-            label="Monthly notes (optional)"
-            checked={prefs.monthlyNotesOptIn}
-            onChange={() => toggle("monthlyNotesOptIn")}
-            testId="birth-sky-pref-monthly"
           />
           <div
             className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"

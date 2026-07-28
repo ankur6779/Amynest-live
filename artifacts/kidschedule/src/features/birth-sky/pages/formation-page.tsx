@@ -259,6 +259,7 @@ export function BirthSkyFormationPage({
       testId="birth-sky-formation"
       hideTopBar
       reducedMotion={reduced}
+      ambientIntensity="full"
     >
       <div className="relative flex min-h-[70dvh] flex-col items-center justify-center pt-8 text-center">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">

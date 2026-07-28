@@ -37,8 +37,6 @@ export {
   isBirthSkyEventName,
 } from "./lib/event-taxonomy";
 export type { BirthSkyAnalyticsEvent } from "./lib/event-taxonomy";
-/** @deprecated IM-1 seam — Dashboard is live in IM-2 */
-export { BIRTH_SKY_DASHBOARD_BOUNDARY_SEAM } from "./pages/dashboard-boundary-page";
 export { BIRTH_SKY_EDIT_DETAILS_SEAM } from "./pages/dashboard/edit-details-boundary";
 export type { EphemerisPort } from "./domain/ports/ephemeris-port";
 export type { PlaceLookupPort } from "./domain/ports/place-lookup-port";
