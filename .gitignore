@@ -7,6 +7,11 @@ out-tsc
 *.tsbuildinfo
 .expo
 .expo-shared
+.amynest-renders/
+.amynest-assets/
+content-engine/dist/
+content-engine/.amynest-renders/
+content-engine/.amynest-assets/
 
 # dependencies
 node_modules
@@ -67,6 +72,12 @@ hetzner-overrides.env
 
 # Service account / Firebase client JSON — never commit under attached_assets
 attached_assets/*.json
+
+# Google OAuth client secrets + promo automation runtime logs
+client_secret*.json
+**/client_secret_*.json
+.secrets/
+artifacts/promo-automation/
 
 # Replit
 .cache/

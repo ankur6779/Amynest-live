@@ -1,0 +1,16 @@
+[Unit]
+Description=AmyNest YouTube Content Automation Engine
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/amynest/content-engine
+EnvironmentFile=/etc/amynest/content-engine.env
+ExecStart=/usr/bin/node --import tsx/esm ./cli/amynest.ts daily-short --trigger docker
+Nice=10
+TimeoutStartSec=3600
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

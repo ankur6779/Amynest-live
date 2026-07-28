@@ -1,0 +1,47 @@
+services:
+  amynest-content-engine:
+    build:
+      context: ../..
+      dockerfile: content-engine/deployment/Dockerfile
+    container_name: amynest-content-engine
+    restart: unless-stopped
+    environment:
+      AMYNEST_ENV: production
+      AMYNEST_TIMEZONE: Asia/Kolkata
+      AMYNEST_DAILY_CRON: "0 9 * * *"
+      AMYNEST_SCHEDULER_BACKEND: docker
+      AMYNEST_DATA_DIR: /data
+      AMYNEST_BACKUP_DIR: /backups
+      AMYNEST_OUTPUT_DIR: /renders
+      AMYNEST_SECRET_VALIDATION_MODE: strict
+      AMYNEST_SCRIPT_PROVIDER: ${AMYNEST_SCRIPT_PROVIDER:-openai}
+      AMYNEST_RENDERER: ${AMYNEST_RENDERER:-ffmpeg}
+      AMYNEST_PUBLISHING_PROVIDER: ${AMYNEST_PUBLISHING_PROVIDER:-youtube}
+      AMYNEST_ANALYTICS_PROVIDER: ${AMYNEST_ANALYTICS_PROVIDER:-youtube}
+      AMYNEST_DEFAULT_VISIBILITY: ${AMYNEST_DEFAULT_VISIBILITY:-public}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AI_INTEGRATIONS_OPENAI_API_KEY: ${AI_INTEGRATIONS_OPENAI_API_KEY:-}
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET}
+      YOUTUBE_REFRESH_TOKEN: ${YOUTUBE_REFRESH_TOKEN}
+      YOUTUBE_ACCESS_TOKEN: ${YOUTUBE_ACCESS_TOKEN:-}
+      YOUTUBE_CHANNEL_ID: ${YOUTUBE_CHANNEL_ID:-}
+      ANALYTICS_ACCESS_TOKEN: ${ANALYTICS_ACCESS_TOKEN:-}
+      AMYNEST_PROVIDER_FALLBACK_MODE: none
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    volumes:
+      - amynest-data:/data
+      - amynest-backups:/backups
+      - amynest-renders:/renders
+    healthcheck:
+      test: ["CMD", "node", "--import", "tsx/esm", "./cli/amynest.ts", "health", "--data-dir", "/data", "--backup-dir", "/backups"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  amynest-data:
+  amynest-backups:
+  amynest-renders:

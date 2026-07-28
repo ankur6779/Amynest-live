@@ -3,6 +3,7 @@ packages:
   - lib/*
   - lib/integrations/*
   - scripts
+  - content-engine
 
 allowBuilds:
   '@firebase/util': true
