@@ -198,6 +198,7 @@ export * from "./studio/index.js";
 export * from "./golden-scripts/index.js";
 export * from "./scene-composer/index.js";
 export * from "./ai-director/index.js";
+export * from "./content-intelligence/index.js";
 export { exportStoryboard, toYaml } from "./export/index.js";
 export {
   AssetOrchestrator,

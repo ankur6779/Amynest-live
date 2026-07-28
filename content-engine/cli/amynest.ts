@@ -8,10 +8,12 @@ import { loadAmyNestEnvFiles } from "../operations/env/index.js";
 import { runProductionPipeline } from "../operations/production-run/index.js";
 import { runTestVeoPipeline } from "../asset-engine/veo-test/index.js";
 import { runTestGeminiPipeline } from "../asset-engine/gemini-test/index.js";
+import { ContentIntelligence } from "../content-intelligence/index.js";
 import { resolveYouTubeAccessToken } from "../publishing/youtube/oauth.js";
 import { exportWorkflowResult } from "../workflow/export/index.js";
 import { WorkflowOrchestrator } from "../workflow/orchestrator/index.js";
 import type { WorkflowJobRequest, WorkflowJobType } from "../types/workflow.js";
+import type { CampaignModeId } from "../content-intelligence/types.js";
 import { join } from "node:path";
 
 const WORKFLOW_COMMANDS: Record<string, WorkflowJobType> = {
@@ -113,6 +115,38 @@ async function main(argv: string[]): Promise<void> {
       ),
     );
     process.exitCode = result.ok ? 0 : 1;
+    return;
+  }
+
+  if (command === "intelligence") {
+    const campaignMode = (flags.campaign as CampaignModeId | undefined) ?? "none";
+    const intel = new ContentIntelligence({ campaignMode });
+    const plan = intel.plan({
+      campaignMode,
+      startDate: flags["start-date"],
+    });
+    console.log(
+      JSON.stringify(
+        {
+          version: plan.version,
+          campaignMode: plan.campaignMode,
+          calendar: {
+            id: plan.calendar.id,
+            startDate: plan.calendar.startDate,
+            endDate: plan.calendar.endDate,
+            daysPlanned: plan.calendar.days.filter((d) => d.topicId).length,
+            categoryBalance: plan.calendar.categoryBalance,
+            seriesBalance: plan.calendar.seriesBalance,
+            sampleWeek: plan.calendar.days.slice(0, 7),
+          },
+          dashboard: plan.dashboard,
+          seasonalFocus: plan.seasonalFocus.map((e) => e.name),
+          availableCampaigns: plan.availableCampaigns.map((c) => c.id),
+        },
+        null,
+        2,
+      ),
+    );
     return;
   }
 
@@ -271,6 +305,9 @@ Production:
   pnpm amynest:production-run [--count 3] [--visibility unlisted]
   pnpm amynest:test-veo [--output-dir <path>] [--report <path>] [--skip-render]
   pnpm amynest:test-gemini [--output-dir <path>] [--report <path>] [--skip-music]
+
+Content Intelligence (above pipeline — no new phase):
+  pnpm amynest:intelligence [--campaign <mode>] [--start-date YYYY-MM-DD]
 
 Operations commands:
   pnpm amynest:doctor

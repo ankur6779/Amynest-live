@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
 import { AssetOrchestrator } from "../../asset-engine/index.js";
+import {
+  evaluateTopic,
+  isContentIntelligenceEnabled,
+} from "../../content-intelligence/index.js";
 import type { ContentEngineConfig } from "../../types/index.js";
 import type { Topic } from "../../types/index.js";
 import { PublishingOrchestrator } from "../../publishing/index.js";
@@ -245,16 +249,37 @@ export function selectTopicsForJob(input: {
   const topics = getAllTopics();
   const selected: Topic[] = [];
   const exclude = new Set<string>();
-  for (let i = 0; i < input.count; i++) {
+  const intelligenceOn = isContentIntelligenceEnabled();
+  let attempts = 0;
+  const maxAttempts = Math.max(input.count * 12, 24);
+
+  while (selected.length < input.count && attempts < maxAttempts) {
+    attempts += 1;
     const pick = selectTopic(topics, input.history, input.date, {
       windowDays: 45,
       excludeTopicIds: exclude,
     });
     if (!pick) {
       throw new Error(
-        `Unable to select topic ${i + 1} of ${input.count}; rotation pool exhausted`,
+        `Unable to select topic ${selected.length + 1} of ${input.count}; rotation pool exhausted`,
       );
     }
+
+    // Content Intelligence gate — ABOVE script generation, still inside topic-selection.
+    if (intelligenceOn) {
+      const gate = evaluateTopic({
+        topic: pick.topic,
+        asOfDate: input.date,
+        memory: [],
+        publishedTopicIds: [...exclude, ...selected.map((t) => t.id)],
+        recentSeriesIds: [],
+      });
+      if (!gate.ok) {
+        exclude.add(pick.topic.id);
+        continue;
+      }
+    }
+
     selected.push(pick.topic);
     exclude.add(pick.topic.id);
     input.history.record({
@@ -263,6 +288,12 @@ export function selectTopicsForJob(input: {
       date: input.date,
       category: pick.topic.category,
     });
+  }
+
+  if (selected.length < input.count) {
+    throw new Error(
+      `Content intelligence rejected too many topics; only selected ${selected.length} of ${input.count}`,
+    );
   }
   return selected;
 }

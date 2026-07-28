@@ -42,7 +42,8 @@
     "./studio": "./studio/index.ts",
     "./golden-scripts": "./golden-scripts/index.ts",
     "./scene-composer": "./scene-composer/index.ts",
-    "./ai-director": "./ai-director/index.ts"
+    "./ai-director": "./ai-director/index.ts",
+    "./content-intelligence": "./content-intelligence/index.ts"
   },
   "scripts": {
     "test": "node --import tsx/esm --test \"./**/*.test.ts\"",
@@ -63,7 +64,8 @@
     "amynest:production-run": "node --import tsx/esm ./cli/amynest.ts production-run",
     "amynest:test-veo": "node --import tsx/esm ./cli/amynest.ts test-veo",
     "amynest:test-gemini": "node --import tsx/esm ./cli/amynest.ts test-gemini",
-    "amynest:golden-scripts": "node --import tsx/esm ./golden-scripts/generate.ts"
+    "amynest:golden-scripts": "node --import tsx/esm ./golden-scripts/generate.ts",
+    "amynest:intelligence": "node --import tsx/esm ./cli/amynest.ts intelligence"
   },
   "devDependencies": {
     "@types/node": "catalog:",
