@@ -1,9 +1,17 @@
 /**
  * SceneComposer — main entry.
  * Converts an approved ContentPackage into a provider-aware multi-scene production plan.
+ *
+ * Pipeline order (additive):
+ *   approved ContentPackage → plan intents → AI Director → scene prompts → validate
  */
 
 import { createHash } from "node:crypto";
+import {
+  directProductionScenes,
+  enrichPromptsWithDirector,
+  isAiDirectorEnabled,
+} from "../ai-director/director.js";
 import type { ContentPackage } from "../types/content-package.js";
 import type { SupportedDuration } from "../types/storyboard.js";
 import { resolveSupportedDuration } from "../timeline/engine.js";
@@ -46,7 +54,7 @@ export function composeProductionScenes(
       : input.provider;
 
   const beats = extractScriptBeats(pkg);
-  const intents = planComposerIntents({
+  let intents = planComposerIntents({
     beats,
     totalDuration,
     provider,
@@ -55,15 +63,30 @@ export function composeProductionScenes(
     keywords: pkg.topic.keywords,
   });
 
-  const prompts = buildScenePrompts(intents, {
+  // AI Director: after approved script intents, before scene prompt/generation.
+  const directed = isAiDirectorEnabled()
+    ? directProductionScenes({ contentPackage: pkg, intents })
+    : null;
+  if (directed) {
+    intents = directed.intents;
+  }
+
+  let prompts = buildScenePrompts(intents, {
     title: pkg.title,
     category: pkg.topic.category,
     keywords: pkg.topic.keywords,
   });
+  if (directed) {
+    prompts = enrichPromptsWithDirector(prompts, directed.director);
+  }
+
+  const directorRejects = new Map(
+    (directed?.director.quality.rejects ?? []).map((r) => [r.sceneId, r]),
+  );
 
   const scenes = intents.map((intent, index) => {
     const prompt = prompts[index]!;
-    const validation = validateComposerScene({
+    let validation = validateComposerScene({
       sceneId: prompt.sceneId,
       prompt,
       provider,
@@ -71,6 +94,18 @@ export function composeProductionScenes(
       measuredDurationSeconds: prompt.durationSeconds,
       resolution: "1080x1920",
     });
+    const directorReject = directorRejects.get(prompt.sceneId);
+    if (directorReject) {
+      validation = {
+        sceneId: prompt.sceneId,
+        ok: false,
+        code: "low-quality",
+        message: `AI Director rejected: ${directorReject.code} — ${directorReject.reason}`,
+        shouldRegenerate: true,
+        retryPromptHint:
+          "Re-direct with cinematic shot language, micro-actions, and continuity locks.",
+      };
+    }
     return {
       sceneId: prompt.sceneId,
       intent,
@@ -86,6 +121,9 @@ export function composeProductionScenes(
     scenes.find((s) => s.intent.role === "end-card")?.intent.durationSeconds ?? 2.5,
   );
   const validation = validateAllScenes(scenes);
+  if (directed && !directed.director.quality.ok) {
+    validation.messages.push(directed.director.quality.summary);
+  }
 
   return {
     id: buildComposerId(pkg, totalDuration, provider.providerId),
@@ -108,6 +146,7 @@ export function composeProductionScenes(
       method: scenes.length > 1 ? "xfade-concat" : "concat",
       outputHint: "platform-ready-vertical-short",
     },
+    director: directed?.director,
     validation,
   };
 }

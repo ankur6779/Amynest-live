@@ -1,6 +1,8 @@
 /**
  * AmyNest Production-Grade Scene Composer
  * Additive multi-clip planning + seamless stitch — does not redefine engine phases.
+ *
+ * Scene generation is preceded by the AI Director layer (ai-director/) when enabled.
  */
 
 export * from "./types.js";

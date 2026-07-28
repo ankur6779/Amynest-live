@@ -79,6 +79,17 @@ describe("Scene Composer", () => {
     }
   });
 
+  it("runs AI Director after intents and before scene prompts", () => {
+    const composed = composeProductionScenes({
+      contentPackage: makeContentPackage(),
+      duration: 20,
+      provider: "mock",
+    });
+    assert.ok(composed.director);
+    assert.ok(composed.director!.scenes.length === composed.scenes.length);
+    assert.match(composed.scenes[0]!.prompt.userPrompt, /AI DIRECTOR/);
+  });
+
   it("validates scenes independently and lists only failed ones for regen", () => {
     const composed = composeProductionScenes({
       contentPackage: makeContentPackage(),

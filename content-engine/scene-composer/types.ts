@@ -3,6 +3,7 @@
  * Additive layer — does not redefine workflow phases.
  */
 
+import type { DirectorPackage } from "../ai-director/types.js";
 import type { BrandCharacterId } from "../brand/types.js";
 import type {
   CameraMove,
@@ -186,6 +187,8 @@ export interface SceneComposerPackage {
     method: "xfade-concat" | "concat";
     outputHint: "platform-ready-vertical-short";
   };
+  /** AI Director package — present when AMYNEST_AI_DIRECTOR !== "0". */
+  director?: DirectorPackage;
   validation: {
     ok: boolean;
     failedSceneIds: string[];
@@ -193,4 +196,4 @@ export interface SceneComposerPackage {
   };
 }
 
-export const SCENE_COMPOSER_VERSION = "1.0.0";
+export const SCENE_COMPOSER_VERSION = "1.1.0";

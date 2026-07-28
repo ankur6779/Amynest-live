@@ -41,7 +41,8 @@
     "./brand": "./brand/index.ts",
     "./studio": "./studio/index.ts",
     "./golden-scripts": "./golden-scripts/index.ts",
-    "./scene-composer": "./scene-composer/index.ts"
+    "./scene-composer": "./scene-composer/index.ts",
+    "./ai-director": "./ai-director/index.ts"
   },
   "scripts": {
     "test": "node --import tsx/esm --test \"./**/*.test.ts\"",

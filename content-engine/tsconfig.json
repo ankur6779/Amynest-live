@@ -48,7 +48,8 @@
     "brand/**/*.ts",
     "studio/**/*.ts",
     "golden-scripts/**/*.ts",
-    "scene-composer/**/*.ts"
+    "scene-composer/**/*.ts",
+    "ai-director/**/*.ts"
   ],
   "exclude": ["**/*.test.ts", "dist"]
 }
