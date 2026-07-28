@@ -97,8 +97,25 @@ None of the above block enabling the polished public product surface in this cha
 - [x] Monthly notes UI not re-exposed without delivery  
 - [x] Subscription / paywall logic untouched  
 - [x] Branding: Amy Astro Intelligence + AmyNest assets  
-- [ ] Operator: confirm Coolify/Cloudflare leave kill switches **unset** (or `=1`)  
-- [ ] Operator: apply migration `0050_birth_sky_sounds_default_on.sql` / `pnpm db:push`  
-- [ ] Operator: smoke first-sky journey + Ask Amy + Settings sounds toggle after deploy  
+- [x] Operator: Coolify public GA confirmed — `/api/health.birthSkyPublicEnabled=true` (run 30327319055)  
+- [x] Operator: Cloudflare Pages leaves `VITE_FF_BIRTH_SKY` unset (deploy script + live bundle probe)  
+- [x] Operator: migration `0050` applied — `VERIFY_OK {"sky_sounds_default":"true"}` via `POST /api/healthz/ops/birth-sky-mig-0050`  
+- [ ] Operator: authenticated smoke first-sky → reveal → dashboard → Ask Amy → sounds toggle  
 
-**Verdict:** Code path is **production-ready for public launch** of Amy Astro Intelligence polish and enablement. Remaining items are ops smoke + known accepted limitations (ephemeris lite fallback, monthly notes delivery deferred).
+## 6. Ops execution log (2026-07-28)
+
+| Item | Result | Evidence |
+|---|---|---|
+| Migration 0050 | **PASS** | GH Actions `Birth Sky public launch ops` run `30327319055` → `VERIFY_OK` |
+| Coolify kill switch | **PASS** | `birthSkyPublicEnabled: true` on Coolify `/api/health` |
+| Cloudflare kill switch | **PASS** | Deploy unsets `VITE_FF_BIRTH_SKY*`; no kill pattern in Pages assets |
+| Post-deploy health smoke | **PASS** | `scripts/post-deploy-smoke.sh` all checks passed |
+| Authenticated journey smoke | **BLOCKED** | demo@amynest.in reached welcome once; setup Continue hung after birth time; hub tile not found in infant Parenting Hub scroll; Ask Amy / sounds not reached |
+
+## 7. Accepted limitations (unchanged)
+
+- Lite ephemeris fallback (daemon → lite) — monitor `fallbackUsed`
+- Abstract / temporary sky-map SVG renderer
+- Monthly notes delivery deferred (`monthlyNotesOptIn` sync-only)
+
+**Verdict:** Ops enablement (migration + kill switches + platform smoke) is **complete**. Authenticated first-sky / Ask Amy / sounds-toggle smoke is a **remaining launch blocker** on the demo account path (setup Continue hang) and needs a follow-up fix before calling the journey certified.
