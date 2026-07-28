@@ -8,6 +8,13 @@
 name: Birth Sky public launch ops
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/db/migrations/0050_birth_sky_sounds_default_on.sql"
+      - "scripts/birth-sky-apply-0050-migration.mjs"
+      - "scripts/birth-sky-verify-0050-migration.mjs"
+      - ".github/workflows/birth-sky-public-launch-ops.yml"
   workflow_dispatch:
     inputs:
       confirm:
@@ -20,7 +27,9 @@ jobs:
     name: Apply + verify migration 0050
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event.inputs.confirm == 'launch-ops'
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.confirm == 'launch-ops'
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +56,9 @@ jobs:
     name: Coolify BIRTH_SKY_PUBLIC_ENABLED presence
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.event.inputs.confirm == 'launch-ops'
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.confirm == 'launch-ops'
     steps:
       - name: Setup SSH
         env:
@@ -65,6 +76,7 @@ jobs:
           # Prefer dedicated Coolify host secret; fall back to known Coolify VPS.
           host="$(printf '%s' "${COOLIFY_HOST:-188.245.208.126}" | tr -d '[:space:]')"
           echo "COOLIFY_HOST=$host" >> "$GITHUB_ENV"
+          ssh-keyscan -H "$host" >> ~/.ssh/known_hosts 2>/dev/null || true
           ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
             -o ConnectTimeout=20 "root@${host}" echo "SSH preflight OK"
 
@@ -80,7 +92,7 @@ jobs:
             exit 1
           fi
           echo "container=$CID"
-          # Presence only — print UNSET / SET=1 / SET=0 / SET=other (never full secrets dump)
+          # Presence only — print UNSET / SET_ON / SET_OFF (never dump secrets)
           RAW="$(docker exec "$CID" printenv BIRTH_SKY_PUBLIC_ENABLED 2>/dev/null || true)"
           if [ -z "${RAW}" ]; then
             echo "BIRTH_SKY_PUBLIC_ENABLED=UNSET"
@@ -110,7 +122,9 @@ jobs:
     name: Cloudflare Pages VITE_FF_BIRTH_SKY probe
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.event.inputs.confirm == 'launch-ops'
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.confirm == 'launch-ops'
     steps:
       - name: Confirm deploy script does not force kill switch
         uses: actions/checkout@v4
@@ -118,17 +132,21 @@ jobs:
       - name: Assert deploy-cloudflare-pages.sh leaves flag unset
         run: |
           set -euo pipefail
-          if rg -n 'VITE_FF_BIRTH_SKY=' scripts/deploy-cloudflare-pages.sh; then
-            echo "FAIL: deploy script sets VITE_FF_BIRTH_SKY (must leave unset for public default ON)"
+          # Fail only on active assignment/export (comments + unset are OK).
+          if rg -n '^\s*(export\s+)?VITE_FF_BIRTH_SKY=' scripts/deploy-cloudflare-pages.sh; then
+            echo "FAIL: deploy script assigns VITE_FF_BIRTH_SKY (must leave unset for public default ON)"
             exit 1
           fi
-          echo "OK: deploy script does not set VITE_FF_BIRTH_SKY"
+          if ! rg -n 'unset VITE_FF_BIRTH_SKY' scripts/deploy-cloudflare-pages.sh; then
+            echo "FAIL: deploy script should explicitly unset VITE_FF_BIRTH_SKY for public GA"
+            exit 1
+          fi
+          echo "OK: deploy script unsets VITE_FF_BIRTH_SKY (public default ON)"
 
       - name: Probe live Pages bundle for explicit kill
         run: |
           set -euo pipefail
           HTML="$(curl -sS -A 'AmyNest-LaunchOps/1.0' --max-time 30 'https://amynest-web.pages.dev/')"
-          # Collect a few asset URLs
           mapfile -t ASSETS < <(printf '%s' "$HTML" | rg -o '/assets/[^" ]+\.js' | head -8)
           if [ "${#ASSETS[@]}" -eq 0 ]; then
             echo "WARN: no /assets/*.js found in Pages HTML — skip live bundle probe"
@@ -137,7 +155,6 @@ jobs:
           HIT=0
           for a in "${ASSETS[@]}"; do
             BODY="$(curl -sS -A 'AmyNest-LaunchOps/1.0' --max-time 30 "https://amynest-web.pages.dev${a}" || true)"
-            # Look for compile-time false/0 injection patterns that would kill the feature
             if printf '%s' "$BODY" | rg -q 'VITE_FF_BIRTH_SKY["'\'']?\s*[:=]\s*["'\'']?0|FF_BIRTH_SKY\s*=\s*!1|FF_BIRTH_SKY\s*=\s*false'; then
               echo "FAIL: kill pattern in $a"
               HIT=1

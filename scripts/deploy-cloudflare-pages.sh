@@ -32,6 +32,11 @@ export VITE_APP_API_ORIGIN="${VITE_APP_API_ORIGIN:-https://www.amynest.in}"
 export VITE_FF_ONBOARDING_STRICT_COMPLETE_GATE="${VITE_FF_ONBOARDING_STRICT_COMPLETE_GATE:-1}"
 export VITE_FF_ONBOARDING_SHORT_CHILD_BRANCH="${VITE_FF_ONBOARDING_SHORT_CHILD_BRANCH:-1}"
 export VITE_FF_FIRST_VALUE_ACTIVATION="${VITE_FF_FIRST_VALUE_ACTIVATION:-1}"
+# Amy Astro Intelligence public GA: leave VITE_FF_BIRTH_SKY unset (defaults ON).
+# Rollback only: VITE_FF_BIRTH_SKY=0 (and rebuild). Do not set here.
+unset VITE_FF_BIRTH_SKY || true
+unset VITE_FF_BIRTH_SKY_HUB_TILE || true
+unset VITE_FF_BIRTH_SKY_DEEP_LINKS || true
 
 echo "[pages-deploy] Building production SPA…"
 bash scripts/render-frontend-build.sh
