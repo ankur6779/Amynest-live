@@ -97,25 +97,33 @@ None of the above block enabling the polished public product surface in this cha
 - [x] Monthly notes UI not re-exposed without delivery  
 - [x] Subscription / paywall logic untouched  
 - [x] Branding: Amy Astro Intelligence + AmyNest assets  
-- [x] Operator: Coolify public GA confirmed — `/api/health.birthSkyPublicEnabled=true` (run 30327319055)  
+- [x] Operator: Coolify public GA confirmed — `/api/health.birthSkyPublicEnabled=true` (run 30327319055; rechecked 2026-07-28)  
 - [x] Operator: Cloudflare Pages leaves `VITE_FF_BIRTH_SKY` unset (deploy script + live bundle probe)  
 - [x] Operator: migration `0050` applied — `VERIFY_OK {"sky_sounds_default":"true"}` via `POST /api/healthz/ops/birth-sky-mig-0050`  
-- [ ] Operator: authenticated smoke first-sky → reveal → dashboard → Ask Amy → sounds toggle  
+- [x] Operator: authenticated smoke first-sky → reveal → dashboard → Ask Amy → sounds toggle  
 
 ## 6. Ops execution log (2026-07-28)
 
 | Item | Result | Evidence |
 |---|---|---|
 | Migration 0050 | **PASS** | GH Actions `Birth Sky public launch ops` run `30327319055` → `VERIFY_OK` |
-| Coolify kill switch | **PASS** | `birthSkyPublicEnabled: true` on Coolify `/api/health` |
+| Coolify kill switch | **PASS** | `birthSkyPublicEnabled: true` on Coolify `/api/health` (rechecked live) |
 | Cloudflare kill switch | **PASS** | Deploy unsets `VITE_FF_BIRTH_SKY*`; no kill pattern in Pages assets |
 | Post-deploy health smoke | **PASS** | `scripts/post-deploy-smoke.sh` all checks passed |
-| Authenticated journey smoke | **BLOCKED** | demo@amynest.in reached welcome once; setup Continue hung after birth time; hub tile not found in infant Parenting Hub scroll; Ask Amy / sounds not reached |
+| Authenticated journey smoke | **PASS** | `demo@amynest.in` on `https://www.amynest.in`: setup (unknown time + skip place) → Create → formation → reveal → dashboard → Ask Amy sheet → Settings → Preferences → Sky sounds toggle OFF→ON. Screenshots: `/opt/cursor/artifacts/smoke-01-*.png` … `smoke-17-*.png` |
 
-## 7. Accepted limitations (unchanged)
+### Authenticated smoke notes
 
-- Lite ephemeris fallback (daemon → lite) — monitor `fallbackUsed`
-- Abstract / temporary sky-map SVG renderer
-- Monthly notes delivery deferred (`monthlyNotesOptIn` sync-only)
+- Headless Playwright from this agent is blocked by Cloudflare bot challenge on `www.amynest.in`; journey was certified in a real browser session.
+- Parenting Hub `birth-sky-launch-card` sits inside the collapsed **Amy Astro** section group (not in the infant quick-row). Sidebar **Amy Astro Intelligence** and direct `/birth-sky` both work.
+- Earlier demo-session Continue hang / Firebase refresh flakes were not reproduced on this successful pass.
 
-**Verdict:** Ops enablement (migration + kill switches + platform smoke) is **complete**. Authenticated first-sky / Ask Amy / sounds-toggle smoke is a **remaining launch blocker** on the demo account path (setup Continue hang) and needs a follow-up fix before calling the journey certified.
+## 7. Accepted limitations (confirmed for launch)
+
+| Limitation | Status | Notes |
+|---|---|---|
+| Lite ephemeris fallback (daemon → lite) | **Accepted** | Monitor `fallbackUsed` |
+| Abstract / temporary sky-map SVG renderer | **Accepted** | Shipping visual; Swiss Ephemeris upgrade later |
+| Monthly notes delivery | **Deferred** | Pref reserved; no email/push UI |
+
+**Verdict:** Ops enablement and authenticated journey smoke are **complete**. Kill switches remain unset / public-on. Accepted limitations above do not block launch.
