@@ -33,6 +33,7 @@ import { getApiDomainMetrics } from "../lib/api-domain-metrics.js";
 import { getAnalyticsQuality } from "../services/analyticsIngestService.js";
 import { getSchedulerSnapshot, SCHEDULER_JOB_CATALOG } from "../lib/single-active-scheduler.js";
 import { isBirthSkyPublicEnabled } from "../services/birth-sky/allowlist.js";
+import { pool } from "@workspace/db";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -171,6 +172,49 @@ router.get("/healthz/env", async (req, res) => {
       },
     },
   });
+});
+
+function requireInternalHealthSecret(req: { headers: Record<string, unknown> }, res: {
+  status: (code: number) => { json: (body: unknown) => void };
+}): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  const expected = process.env.INTERNAL_HEALTH_SECRET?.trim();
+  const provided = String(req.headers["x-health-secret"] ?? "").trim();
+  if (!expected || provided !== expected) {
+    res.status(404).json({ error: "not_found" });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Additive ops: set birth_sky_preferences.sky_sounds default TRUE (migration 0050).
+ * Protected by x-health-secret in production. Idempotent.
+ */
+router.post("/healthz/ops/birth-sky-mig-0050", async (req, res) => {
+  if (!requireInternalHealthSecret(req, res)) return;
+  try {
+    await pool.query(
+      `ALTER TABLE "birth_sky_preferences" ALTER COLUMN "sky_sounds" SET DEFAULT true`,
+    );
+    const { rows } = await pool.query<{ column_default: string | null }>(
+      `SELECT column_default
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'birth_sky_preferences'
+         AND column_name = 'sky_sounds'`,
+    );
+    const def = rows[0]?.column_default ?? null;
+    const ok = typeof def === "string" && def.toLowerCase().includes("true");
+    if (!ok) {
+      res.status(500).json({ ok: false, sky_sounds_default: def });
+      return;
+    }
+    res.json({ ok: true, sky_sounds_default: def, migration: "0050" });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ ok: false, error: message.slice(0, 300) });
+  }
 });
 
 /** Postgres TTS cache stats (global, not per-user). */
