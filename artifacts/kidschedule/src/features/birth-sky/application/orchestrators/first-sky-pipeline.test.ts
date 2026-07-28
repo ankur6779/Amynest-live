@@ -13,6 +13,7 @@ vi.mock("../../lib/analytics", () => ({
 }));
 
 vi.mock("../../infrastructure/api/birth-sky-api", () => ({
+  BIRTH_SKY_GENERATION_TIMEOUT_MS: 60_000,
   createBirthSky: vi.fn(),
   recomputeBirthSkySnapshot: vi.fn(),
 }));
