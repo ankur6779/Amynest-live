@@ -14,6 +14,7 @@ import {
 } from "../../domain/models/snapshot-generation";
 import { BIRTH_SKY_CONSENT_VERSION } from "../../constants/consent";
 import {
+  BIRTH_SKY_GENERATION_TIMEOUT_MS,
   createBirthSky,
   recomputeBirthSkySnapshot,
   type AuthFetchFn,
