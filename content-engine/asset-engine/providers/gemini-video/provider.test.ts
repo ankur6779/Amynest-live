@@ -92,6 +92,11 @@ describe("GeminiVideoProvider", () => {
     const fetchImpl: typeof fetch = async (input, init) => {
       const url = String(input);
       if (url.includes(":predictLongRunning") && init?.method === "POST") {
+        const body = JSON.parse(String(init.body ?? "{}")) as {
+          parameters?: { durationSeconds?: unknown };
+        };
+        assert.equal(typeof body.parameters?.durationSeconds, "number");
+        assert.equal(body.parameters?.durationSeconds, 8);
         return new Response(JSON.stringify({ name: "operations/veo-op-1" }), {
           status: 200,
           headers: { "Content-Type": "application/json" },

@@ -96,6 +96,7 @@ export class GeminiVeoClient {
     request: StartVideoGenerationRequest,
   ): Promise<{ operationName: string }> {
     const url = `${this.baseUrl}/models/${encodeURIComponent(this.model)}:predictLongRunning`;
+    const durationSeconds = normalizeVeoDuration(request.durationSeconds);
     const body = {
       instances: [
         {
@@ -104,7 +105,8 @@ export class GeminiVeoClient {
       ],
       parameters: {
         aspectRatio: request.aspectRatio,
-        durationSeconds: String(request.durationSeconds),
+        // API requires a JSON number (not a string).
+        durationSeconds,
         personGeneration: request.personGeneration,
         resolution: request.resolution,
         ...(request.negativePrompt
@@ -360,4 +362,10 @@ function extractSample(response: unknown): VeoGeneratedSample | null {
       (typeof first.mimeType === "string" && first.mimeType) ||
       "video/mp4",
   };
+}
+
+export function normalizeVeoDuration(value: unknown): 4 | 6 | 8 {
+  const n = typeof value === "number" ? value : Number(value);
+  if (n === 4 || n === 6 || n === 8) return n;
+  return 8;
 }
