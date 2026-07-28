@@ -50,6 +50,13 @@ export function classifyGeminiFailure(
   if (/timeout|timed?\s*out|deadline|etimedout|abort/.test(haystack)) {
     return { classification: "Timeout", message, rawSnippet };
   }
+  if (/drawtext|no such filter|ffmpeg|ffprobe|libx264|filter not found/.test(haystack)) {
+    return {
+      classification: "Internal provider error",
+      message: `Local render tooling failure: ${message}`,
+      rawSnippet,
+    };
+  }
   if (
     /invalid.?argument|bad.?request|400|unsupported|unknown.?model|not.?found|404/.test(
       haystack,

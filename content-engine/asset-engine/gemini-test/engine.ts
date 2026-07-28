@@ -184,13 +184,17 @@ export async function runTestGeminiPipeline(
     const scriptStarted = Date.now();
     const scriptResult = await scriptProvider.generate({
       systemPrompt:
-        "You write concise AmyNest parenting Shorts scripts. Return plain text only.",
-      userPrompt: `Rewrite this AmyNest morning-routine narration under 10 seconds spoken length:\n\n${VALIDATION_SCRIPT}`,
+        "You write concise AmyNest parenting Shorts narration. Return only the full narration text, both sentences, nothing else.",
+      userPrompt: `Rewrite BOTH sentences below for a ~8–10 second spoken AmyNest Short. Keep meaning, keep brand name AmyNest, return exactly two short sentences:\n\n${VALIDATION_SCRIPT}`,
       responseFormat: "text",
       temperature: 0.4,
       maxTokens: 180,
     });
-    scriptText = scriptResult.text.trim() || VALIDATION_SCRIPT;
+    const rewritten = scriptResult.text.trim();
+    scriptText =
+      rewritten.length >= 40 && /amynest/i.test(rewritten)
+        ? rewritten
+        : VALIDATION_SCRIPT;
     latencies.scriptMs = Date.now() - scriptStarted;
 
     // 3) Image
@@ -343,14 +347,16 @@ export async function runTestGeminiPipeline(
     }
 
     // 8) Final ~10s MP4 with TTS bed
-    finalVideoPath = join(outputDirectory, "amynest-gemini-test-final-10s.mp4");
+    const composedPath = join(outputDirectory, "amynest-gemini-test-final-10s.mp4");
     await composeFinalShort({
       videoPath: video.videoPath,
       ttsPath: narration.audioPath,
-      outputPath: finalVideoPath,
+      outputPath: composedPath,
       targetSeconds: TEST_VEO_TARGET_DURATION_SECONDS,
       endCardText: TEST_VEO_END_CARD,
+      heroImagePath: imagePath,
     });
+    finalVideoPath = composedPath;
 
     const finalValidation = await validateGeneratedVideo(finalVideoPath, {
       targetDurationSeconds: TEST_VEO_TARGET_DURATION_SECONDS,
@@ -367,6 +373,16 @@ export async function runTestGeminiPipeline(
     };
     if (!finalValidation.ok) errors.push(...finalValidation.errors);
     warnings.push(...finalValidation.warnings);
+    if (
+      finalMp4.width !== 1080 ||
+      finalMp4.height !== 1920 ||
+      finalMp4.durationSeconds == null ||
+      Math.abs(finalMp4.durationSeconds - TEST_VEO_TARGET_DURATION_SECONDS) > 2
+    ) {
+      warnings.push(
+        `Final package metadata review: ${finalMp4.width}x${finalMp4.height} @ ${finalMp4.durationSeconds ?? "?"}s`,
+      );
+    }
 
     await writeFile(
       join(outputDirectory, "script.txt"),
@@ -502,6 +518,7 @@ async function composeFinalShort(options: {
   outputPath: string;
   targetSeconds: number;
   endCardText: string;
+  heroImagePath?: string;
 }): Promise<void> {
   const endSeconds = Math.max(1, options.targetSeconds - TEST_VEO_API_DURATION_SECONDS);
   const escapeDrawtext = (value: string): string =>
@@ -509,7 +526,8 @@ async function composeFinalShort(options: {
   const brand = escapeDrawtext("AmyNest");
   const cta = escapeDrawtext(options.endCardText || TEST_VEO_END_CARD);
   const store = escapeDrawtext("GET IT ON Google Play");
-  const filter = [
+
+  const withDrawtext = [
     `[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0]`,
     `[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,` +
       `drawtext=text='${brand}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=720:shadowcolor=black@0.45:shadowx=2:shadowy=2,` +
@@ -519,7 +537,7 @@ async function composeFinalShort(options: {
     `[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},asetpts=PTS-STARTPTS[aout]`,
   ].join(";");
 
-  await runFfmpeg([
+  const argsBase = (filter: string, extraInputs: string[] = []): string[] => [
     "-y",
     "-i",
     options.videoPath,
@@ -529,6 +547,7 @@ async function composeFinalShort(options: {
     `color=c=0x0F2740:s=1080x1920:d=${endSeconds}:r=30`,
     "-i",
     options.ttsPath,
+    ...extraInputs,
     "-filter_complex",
     filter,
     "-map",
@@ -545,7 +564,39 @@ async function composeFinalShort(options: {
     "aac",
     "-shortest",
     options.outputPath,
-  ]);
+  ];
+
+  try {
+    await runFfmpeg(argsBase(withDrawtext));
+    return;
+  } catch {
+    // Homebrew ffmpeg often lacks libfreetype drawtext — fall back to image overlay CTA.
+  }
+
+  if (options.heroImagePath) {
+    const withHeroOverlay = [
+      `[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0]`,
+      `[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p[bg]`,
+      `[3:v]scale=720:-1,format=rgba[card]`,
+      `[bg][card]overlay=(W-w)/2:(H-h)/2-80[v1]`,
+      `[v0][v1]concat=n=2:v=1:a=0[vout]`,
+      `[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},asetpts=PTS-STARTPTS[aout]`,
+    ].join(";");
+    try {
+      await runFfmpeg(argsBase(withHeroOverlay, ["-i", options.heroImagePath]));
+      return;
+    } catch {
+      // continue to plain end-card fallback
+    }
+  }
+
+  const plain = [
+    `[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0]`,
+    `[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p[v1]`,
+    `[v0][v1]concat=n=2:v=1:a=0[vout]`,
+    `[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},asetpts=PTS-STARTPTS[aout]`,
+  ].join(";");
+  await runFfmpeg(argsBase(plain));
 }
 
 function runFfmpeg(args: string[]): Promise<void> {
