@@ -87,28 +87,35 @@ export async function fetchBirthSkyForChild(
   };
 }
 
+/** Create/recompute can wait on daemon → retry → lite; must exceed server wait. */
+export const BIRTH_SKY_GENERATION_TIMEOUT_MS = 60_000;
+
 export async function createBirthSky(
   authFetch: AuthFetchFn,
   draft: SetupDraft,
 ): Promise<CreateBirthSkyResponse> {
-  const res = await authFetch(getApiUrl("/api/birth-sky/create"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      childId: draft.childId,
-      birthDate: draft.birthDate,
-      birthTime: draft.timePrecision === "unknown" ? null : draft.birthTime,
-      timePrecision: draft.timePrecision,
-      birthPlace: draft.placeSkipped ? null : draft.birthPlace,
-      placeSkipped: draft.placeSkipped,
-      consent: {
-        consentVersion: draft.consent.consentVersion,
-        acceptedAt: draft.consent.acceptedAt,
-        scopes: draft.consent.scopes,
-        disclaimerAccepted: draft.consent.disclaimerAccepted,
-      },
-    }),
-  });
+  const res = await authFetch(
+    getApiUrl("/api/birth-sky/create"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        childId: draft.childId,
+        birthDate: draft.birthDate,
+        birthTime: draft.timePrecision === "unknown" ? null : draft.birthTime,
+        timePrecision: draft.timePrecision,
+        birthPlace: draft.placeSkipped ? null : draft.birthPlace,
+        placeSkipped: draft.placeSkipped,
+        consent: {
+          consentVersion: draft.consent.consentVersion,
+          acceptedAt: draft.consent.acceptedAt,
+          scopes: draft.consent.scopes,
+          disclaimerAccepted: draft.consent.disclaimerAccepted,
+        },
+      }),
+    },
+    BIRTH_SKY_GENERATION_TIMEOUT_MS,
+  );
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(
@@ -124,12 +131,32 @@ export async function recomputeBirthSkySnapshot(
   profileId: string,
   options?: { forceFresh?: boolean },
 ): Promise<CreateBirthSkyResponse> {
-  const res = await authFetch(getApiUrl(`/api/birth-sky/profiles/${profileId}/recompute`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ forceFresh: options?.forceFresh ?? true }),
-  });
-  if (!res.ok) throw new Error(`recompute_failed:${res.status}`);
+  const res = await authFetch(
+    getApiUrl(`/api/birth-sky/profiles/${profileId}/recompute`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ forceFresh: options?.forceFresh ?? true }),
+    },
+    BIRTH_SKY_GENERATION_TIMEOUT_MS,
+  );
+  // Soft-fail body (200 + FAILED) is handled by normalizeCreateResponse.
+  // Hard HTTP errors remain recoverable in the pipeline.
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      errorCode?: string;
+      generationStatus?: string;
+      profile?: BirthProfile | null;
+    };
+    // Prefer structured errorCode when present (older 500 payloads).
+    if (typeof body.errorCode === "string") {
+      throw new Error(body.errorCode);
+    }
+    throw new Error(
+      typeof body.error === "string" ? body.error : `recompute_failed:${res.status}`,
+    );
+  }
   const body = await parseApiJson<CreateBirthSkyResponse & { snapshot: unknown }>(res);
   return normalizeCreateResponse(body);
 }
