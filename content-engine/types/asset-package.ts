@@ -14,6 +14,7 @@ export type AssetProviderId =
   | "stable-diffusion"
   | "runway"
   | "google-veo"
+  | "google-imagen"
   | "placeholder"
   | "future";
 

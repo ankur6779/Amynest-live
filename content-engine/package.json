@@ -56,7 +56,8 @@
     "amynest:logs": "node --import tsx/esm ./cli/amynest.ts logs --memory",
     "amynest:metrics": "node --import tsx/esm ./cli/amynest.ts metrics --memory",
     "amynest:production-run": "node --import tsx/esm ./cli/amynest.ts production-run",
-    "amynest:test-veo": "node --import tsx/esm ./cli/amynest.ts test-veo"
+    "amynest:test-veo": "node --import tsx/esm ./cli/amynest.ts test-veo",
+    "amynest:test-gemini": "node --import tsx/esm ./cli/amynest.ts test-gemini"
   },
   "devDependencies": {
     "@types/node": "catalog:",

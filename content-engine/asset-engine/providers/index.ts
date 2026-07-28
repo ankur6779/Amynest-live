@@ -23,3 +23,18 @@ export {
   type VeoPromptInput,
   type VeoPromptResult,
 } from "./gemini-video/index.js";
+export {
+  GeminiImageProvider,
+  type GeminiImageProviderOptions,
+  type GenerateImageOptions,
+} from "./gemini-image/index.js";
+export {
+  GeminiTtsProvider,
+  type GeminiTtsProviderOptions,
+  type GenerateNarrationOptions,
+} from "./gemini-tts/index.js";
+export {
+  GeminiMusicProvider,
+  type GeminiMusicProviderOptions,
+  type GenerateMusicOptions,
+} from "./gemini-music/index.js";

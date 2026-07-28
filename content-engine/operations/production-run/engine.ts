@@ -121,12 +121,28 @@ export async function runProductionPipeline(
     return `YouTube access token ready (len=${accessToken.length})`;
   });
 
+  const hasGeminiKey = Boolean(
+    env.GEMINI_API_KEY?.trim() || env.GOOGLE_AI_API_KEY?.trim(),
+  );
   const hasOpenAI = Boolean(
     env.OPENAI_API_KEY?.trim() || env.AI_INTEGRATIONS_OPENAI_API_KEY?.trim(),
   );
-  if (!hasOpenAI) {
+  /** Explicit opt-in only — do not auto-enable Gemini media stack until live validation passes. */
+  const geminiEnabled = env.AMYNEST_GEMINI_ENABLED === "true" && hasGeminiKey;
+  const scriptProvider = geminiEnabled ? "gemini" : hasOpenAI ? "openai" : "mock";
+  const fallbackProvider =
+    geminiEnabled && hasOpenAI ? "openai" : hasOpenAI ? "mock" : "mock";
+  if (!hasOpenAI && !geminiEnabled) {
     warnings.push(
-      "OPENAI_API_KEY unavailable — using mock script provider for content generation",
+      "OPENAI_API_KEY unavailable and Gemini not opted-in — using mock script provider",
+    );
+  } else if (!geminiEnabled && hasGeminiKey) {
+    warnings.push(
+      "GEMINI_API_KEY present but AMYNEST_GEMINI_ENABLED!=true — Gemini media stack stays off for production-run",
+    );
+  } else if (geminiEnabled && !hasOpenAI) {
+    warnings.push(
+      "OPENAI_API_KEY unavailable — Gemini scripts have no OpenAI fallback",
     );
   }
 
@@ -146,8 +162,8 @@ export async function runProductionPipeline(
       runtimeEnvironment: "production",
       secretValidationMode: "strict",
       providerFallbackMode: "none",
-      scriptProvider: hasOpenAI ? "openai" : "mock",
-      fallbackProvider: "mock",
+      scriptProvider,
+      fallbackProvider,
       renderer: "ffmpeg",
       preferredRenderer: "ffmpeg",
       publishingProvider: "youtube",
@@ -159,6 +175,18 @@ export async function runProductionPipeline(
       dataDirectory,
       backupDirectory,
       outputDirectory,
+      preferredProviders: geminiEnabled
+        ? [
+            "google-imagen",
+            "google-veo",
+            "local-library",
+            "screen-recording",
+            "illustration",
+            "openai-images",
+            "placeholder",
+          ]
+        : undefined,
+      maximumAIAssets: geminiEnabled ? 4 : undefined,
       opsNotificationChannels: env.WEBHOOK_URL ? ["webhook"] : [],
     },
   });

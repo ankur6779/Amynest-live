@@ -163,6 +163,10 @@ export interface ContentEngineConfig {
   minimumQualityScore?: number;
   minimumSEOScore?: number;
   openai?: import("./content-package.js").OpenAIProviderSettings;
+  /** Gemini script settings (optional; scriptProvider id = gemini). */
+  gemini?: Partial<import("./content-package.js").GeminiScriptProviderSettings>;
+  /** Full Gemini media stack (text/image/video/tts/music). */
+  geminiMedia?: Partial<import("./gemini-media.js").GeminiMediaStackSettings>;
   /** Gemini / Veo video generation settings (optional; provider id remains google-veo). */
   geminiVideo?: Partial<import("./generated-video.js").GeminiVideoProviderSettings>;
   /** Phase 3 storyboard planning settings (optional for backward compatibility). */
@@ -313,6 +317,7 @@ export type {
   ModerationResult,
   ModerationViolation,
   OpenAIProviderSettings,
+  GeminiScriptProviderSettings,
   QualityScoreBreakdown,
   ScriptProviderId,
   SeoScoreBreakdown,
@@ -405,6 +410,18 @@ export type {
 } from "./generated-video.js";
 
 export { DEFAULT_GEMINI_VIDEO_SETTINGS } from "./generated-video.js";
+
+export type {
+  GeneratedAudioAsset,
+  GeneratedImageAsset,
+  GeminiMediaStackSettings,
+  GeminiModelHealth,
+} from "./gemini-media.js";
+
+export {
+  DEFAULT_GEMINI_MEDIA_SETTINGS,
+  resolveVideoModelId,
+} from "./gemini-media.js";
 
 /** Resolved config with Phase 2 generation defaults applied. */
 export type ResolvedContentEngineConfig = Required<

@@ -7,6 +7,7 @@ import { loadLayeredConfiguration } from "../operations/configuration/index.js";
 import { loadAmyNestEnvFiles } from "../operations/env/index.js";
 import { runProductionPipeline } from "../operations/production-run/index.js";
 import { runTestVeoPipeline } from "../asset-engine/veo-test/index.js";
+import { runTestGeminiPipeline } from "../asset-engine/gemini-test/index.js";
 import { resolveYouTubeAccessToken } from "../publishing/youtube/oauth.js";
 import { exportWorkflowResult } from "../workflow/export/index.js";
 import { WorkflowOrchestrator } from "../workflow/orchestrator/index.js";
@@ -89,6 +90,32 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
+  if (command === "test-gemini") {
+    const result = await runTestGeminiPipeline({
+      cwd: repoRoot,
+      outputDirectory: flags["output-dir"],
+      reportPath:
+        flags.report ??
+        join(repoRoot, "content-engine", "docs", "operations", "TEST_GEMINI_REPORT.md"),
+      skipMusic: flags["skip-music"] === "true",
+    });
+    console.log(result.reportMarkdown);
+    console.log(
+      JSON.stringify(
+        {
+          ok: result.ok,
+          reportPath: result.reportPath,
+          finalVideoPath: result.finalVideoPath,
+          errors: result.errors,
+        },
+        null,
+        2,
+      ),
+    );
+    process.exitCode = result.ok ? 0 : 1;
+    return;
+  }
+
   if (OPS_COMMANDS.has(command as OpsCliCommand)) {
     const result = await runOpsCliCommand(command as OpsCliCommand, flags);
     if (result.stdout) console.log(result.stdout);
@@ -121,7 +148,22 @@ async function main(argv: string[]): Promise<void> {
           (process.env.AMYNEST_ANALYTICS_PROVIDER as "youtube" | "mock" | undefined) ??
           "youtube",
         scriptProvider:
-          (process.env.AMYNEST_SCRIPT_PROVIDER as "openai" | "mock" | undefined) ??
+          (process.env.AMYNEST_SCRIPT_PROVIDER as
+            | "gemini"
+            | "openai"
+            | "mock"
+            | undefined) ??
+          (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY
+            ? ("gemini" as const)
+            : process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+              ? ("openai" as const)
+              : ("mock" as const)),
+        fallbackProvider:
+          (process.env.AMYNEST_FALLBACK_PROVIDER as
+            | "openai"
+            | "gemini"
+            | "mock"
+            | undefined) ??
           (process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY
             ? ("openai" as const)
             : ("mock" as const)),
@@ -228,6 +270,7 @@ Workflow commands:
 Production:
   pnpm amynest:production-run [--count 3] [--visibility unlisted]
   pnpm amynest:test-veo [--output-dir <path>] [--report <path>] [--skip-render]
+  pnpm amynest:test-gemini [--output-dir <path>] [--report <path>] [--skip-music]
 
 Operations commands:
   pnpm amynest:doctor

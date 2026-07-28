@@ -1,6 +1,7 @@
 import type { AssetProviderId } from "../../types/asset-package.js";
 import {
   createDefaultAiProviders,
+  GeminiImageProvider,
   GeminiVideoProvider,
   IllustrationProvider,
   LocalLibraryProvider,
@@ -8,6 +9,9 @@ import {
   ScreenRecordingProvider,
   type AssetProvider,
 } from "../providers/index.js";
+import { resolveGeminiMediaSettings, readGeminiApiKey } from "../../config/gemini-media.js";
+import { resolveVideoModelId } from "../../types/gemini-media.js";
+import { resolveGeminiVideoSettings } from "../providers/gemini-video/index.js";
 
 export interface AssetProviderRegistryOptions {
   providers?: AssetProvider[];
@@ -18,13 +22,37 @@ export class AssetProviderRegistry {
   private readonly providers = new Map<AssetProviderId, AssetProvider>();
 
   constructor(options: AssetProviderRegistryOptions = {}) {
+    const media = resolveGeminiMediaSettings();
+    const apiKey = readGeminiApiKey(media);
+    const videoModel = resolveVideoModelId(media.video);
     const defaults: AssetProvider[] = [
       new LocalLibraryProvider(),
       new ScreenRecordingProvider(),
       new IllustrationProvider(),
       new PlaceholderProvider(),
       ...createDefaultAiProviders(),
-      new GeminiVideoProvider(),
+      new GeminiImageProvider({
+        apiKey: apiKey || undefined,
+        model: media.image.model,
+        premiumModel: media.image.premiumModel,
+        fallbackModel: media.image.fallbackModel,
+        baseUrl: media.baseUrl,
+        outputDirectory: `${media.outputDirectory}/images`,
+        enabled: media.enabled,
+      }),
+      new GeminiVideoProvider({
+        apiKey: apiKey || undefined,
+        settings: resolveGeminiVideoSettings({
+          model: videoModel,
+          durationSeconds: media.video.durationSeconds,
+          resolution: media.video.resolution,
+          pollingIntervalMs: media.pollingIntervalMs,
+          timeoutMs: media.timeoutMs,
+          retryCount: media.retryCount,
+          outputDirectory: `${media.outputDirectory}/video`,
+          enabled: media.enabled,
+        }),
+      }),
     ];
     for (const provider of defaults) this.register(provider);
     for (const provider of options.providers ?? []) this.register(provider);

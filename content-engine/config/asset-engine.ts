@@ -14,6 +14,8 @@ export const DEFAULT_ASSET_ENGINE_SETTINGS: AssetEngineSettings = {
     "fallback-placeholder",
   ],
   preferredProviders: [
+    "google-imagen",
+    "google-veo",
     "local-library",
     "screen-recording",
     "illustration",
@@ -27,7 +29,7 @@ export const DEFAULT_ASSET_ENGINE_SETTINGS: AssetEngineSettings = {
   },
   brandingProfile: "default",
   allowFallbacks: true,
-  maximumAIAssets: 2,
+  maximumAIAssets: 4,
   reuseThreshold: 0.85,
 };
 

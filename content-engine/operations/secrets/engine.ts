@@ -106,10 +106,21 @@ function resolveRequiredSecrets(
       required.add("OPENAI_API_KEY");
     }
   }
-  const prefersVeo = (config.preferredProviders ?? []).includes("google-veo");
+  if (config.scriptProvider === "gemini" || config.fallbackProvider === "gemini") {
+    if (!env.GEMINI_API_KEY?.trim() && !env.GOOGLE_AI_API_KEY?.trim()) {
+      required.add("GEMINI_API_KEY");
+    }
+  }
+  const prefersGeminiMedia =
+    (config.preferredProviders ?? []).includes("google-veo") ||
+    (config.preferredProviders ?? []).includes("google-imagen");
   const veoEnabled = config.geminiVideo?.enabled !== false;
-  if (prefersVeo && veoEnabled) {
-    const keyEnv = config.geminiVideo?.apiKeyEnv ?? "GEMINI_API_KEY";
+  const mediaEnabled = config.geminiMedia?.enabled !== false;
+  if (prefersGeminiMedia && veoEnabled && mediaEnabled) {
+    const keyEnv =
+      config.geminiMedia?.apiKeyEnv ??
+      config.geminiVideo?.apiKeyEnv ??
+      "GEMINI_API_KEY";
     if (!env[keyEnv]?.trim() && !env.GEMINI_API_KEY?.trim() && !env.GOOGLE_AI_API_KEY?.trim()) {
       required.add("GEMINI_API_KEY");
     }

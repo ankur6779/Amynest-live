@@ -26,14 +26,24 @@ Precedence: Defaults → JSON config → Environment variables → Runtime overr
 | `AMYNEST_HEALTHCHECK_ENABLED` | Enable health checks | `true` |
 | `AMYNEST_MONITORING_ENABLED` | Enable metrics | `true` |
 | `AMYNEST_BACKUP_ENABLED` | Enable backups | `true` |
-| `GEMINI_API_KEY` | Google AI Studio key for Veo video generation | `AIza...` |
+| `GEMINI_API_KEY` | Google AI Studio key for Gemini media stack (scripts, Imagen, Veo, TTS, Lyria) | `AIza...` |
+| `AMYNEST_GEMINI_ENABLED` | Enable Gemini media stack defaults | `true` |
+| `AMYNEST_GEMINI_SCRIPT_MODEL` | Default script model | `gemini-3.6-flash` |
+| `AMYNEST_GEMINI_IMAGE_MODEL` | Default Imagen model | `imagen-4.0-fast-generate-001` |
+| `AMYNEST_GEMINI_TTS_MODEL` | Default Gemini TTS model | `gemini-3.1-flash-tts-preview` |
+| `AMYNEST_GEMINI_MUSIC_ENABLED` | Enable optional Lyria music | `false` |
+| `AMYNEST_GEMINI_MAX_CONCURRENT` | Max concurrent Gemini media jobs | `2` |
 | `AMYNEST_VEO_ENABLED` | Prefer `google-veo` when key present | `true` |
-| `AMYNEST_VEO_MODEL` | Veo model id | `veo-3.1-generate-preview` |
+| `AMYNEST_VEO_TIER` | Veo tier (`daily\|premium\|budget`) | `daily` |
+| `AMYNEST_VEO_MODEL` | Explicit Veo model override | `veo-3.1-fast-generate-preview` |
 | `AMYNEST_VEO_OUTPUT_DIR` | Downloaded clip directory | `.amynest-assets/veo` |
 | `AMYNEST_VEO_DURATION` | Requested seconds (`4\|6\|8`) | `8` |
 | `AMYNEST_VEO_POLL_MS` | Poll interval | `5000` |
 | `AMYNEST_VEO_TIMEOUT_MS` | Generation timeout | `600000` |
+| `AMYNEST_VEO_RETRY_COUNT` | Veo retry count | `3` |
 
 Secret variables are listed in [secrets.md](./secrets.md).
 
-**Key separation:** `OPENAI_API_KEY` = GPT scripts. `GEMINI_API_KEY` = Gemini/Veo. Never overwrite one with the other.
+**Key separation:** `OPENAI_API_KEY` = GPT scripts (fallback). `GEMINI_API_KEY` = Gemini media stack. Never overwrite one with the other.
+
+**Validation CLI:** `pnpm amynest:test-gemini` runs script → Imagen → Veo → TTS → render → final MP4 and writes `content-engine/docs/operations/TEST_GEMINI_REPORT.md`.

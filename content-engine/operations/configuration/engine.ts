@@ -127,15 +127,30 @@ export function applyEnvironmentOverrides(
     changed = true;
   }
 
+  /** Opt-in only: key presence alone must not enable Gemini/Veo in daily production. */
+  const geminiOptIn =
+    env.AMYNEST_GEMINI_ENABLED === "true" || env.AMYNEST_VEO_ENABLED === "true";
   if (
-    env.AMYNEST_VEO_ENABLED === "true" ||
-    env.GEMINI_API_KEY?.trim() ||
-    env.GOOGLE_AI_API_KEY?.trim()
+    geminiOptIn &&
+    (env.GEMINI_API_KEY?.trim() || env.GOOGLE_AI_API_KEY?.trim())
   ) {
     const preferred = new Set(next.preferredProviders ?? []);
     preferred.add("google-veo");
-    next.preferredProviders = ["google-veo", ...[...preferred].filter((p) => p !== "google-veo")];
+    preferred.add("google-imagen");
+    next.preferredProviders = [
+      "google-imagen",
+      "google-veo",
+      ...[...preferred].filter((p) => p !== "google-veo" && p !== "google-imagen"),
+    ];
     next.maximumAIAssets = Math.max(next.maximumAIAssets ?? 2, 3);
+    if (env.AMYNEST_GEMINI_ENABLED === "true") {
+      next.scriptProvider = "gemini";
+      next.fallbackProvider = next.fallbackProvider === "gemini" ? "openai" : next.fallbackProvider ?? "openai";
+      next.geminiMedia = {
+        ...(next.geminiMedia ?? {}),
+        enabled: true,
+      };
+    }
     next.geminiVideo = {
       ...(next.geminiVideo ?? {}),
       enabled: env.AMYNEST_VEO_ENABLED === "false" ? false : true,

@@ -45,6 +45,7 @@
     "amynest:metrics": "pnpm --filter @workspace/content-engine run amynest:metrics",
     "amynest:production-run": "pnpm --filter @workspace/content-engine run amynest:production-run",
     "amynest:test-veo": "pnpm --filter @workspace/content-engine run amynest:test-veo",
+    "amynest:test-gemini": "pnpm --filter @workspace/content-engine run amynest:test-gemini",
     "dev:worker": "pnpm --filter @workspace/api-server dev:worker",
     "dev:local": "bash scripts/dev-local.sh",
     "dev:mobile": "node -e \"console.error('Expo app archived at archive/amynest-mobile-expo. Use: pnpm dev:web + artifacts/amynest-capacitor (iOS/Android).'); process.exit(1)\"",

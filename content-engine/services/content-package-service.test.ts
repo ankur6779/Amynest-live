@@ -24,7 +24,11 @@ describe("ContentPackageService", () => {
   it("generates a complete ContentPackage via MockProvider", async () => {
     const telemetry = new InMemoryTelemetrySink();
     const service = new ContentPackageService({
-      config: loadDefaultConfig(),
+      config: {
+        ...loadDefaultConfig(),
+        scriptProvider: "mock",
+        fallbackProvider: "mock",
+      },
       telemetry,
     });
 
@@ -54,7 +58,11 @@ describe("ContentPackageService", () => {
   it("returns cache hits for identical topics", async () => {
     const cache = new InMemoryContentCache();
     const service = new ContentPackageService({
-      config: loadDefaultConfig(),
+      config: {
+        ...loadDefaultConfig(),
+        scriptProvider: "mock",
+        fallbackProvider: "mock",
+      },
       cache,
     });
     const first = await service.generateFromTopic(topic);

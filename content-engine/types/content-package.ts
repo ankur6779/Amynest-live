@@ -112,11 +112,18 @@ export interface ModerationResult {
 
 export const CONTENT_PACKAGE_VERSION = "2.0.0";
 
-export type ScriptProviderId = "mock" | "openai" | "future";
+export type ScriptProviderId = "mock" | "openai" | "gemini" | "future";
 
 export interface OpenAIProviderSettings {
   apiKeyEnv: string;
   model: string;
+  baseUrl: string;
+}
+
+export interface GeminiScriptProviderSettings {
+  apiKeyEnv: string;
+  model: string;
+  fallbackModel: string;
   baseUrl: string;
 }
 

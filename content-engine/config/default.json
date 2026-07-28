@@ -48,7 +48,7 @@
     ]
   },
   "rotationWindowDays": 45,
-  "scriptProvider": "mock",
+  "scriptProvider": "openai",
   "fallbackProvider": "mock",
   "defaultLanguage": "en-IN",
   "fallbackLanguage": "en",
@@ -61,9 +61,52 @@
     "model": "gpt-4o-mini",
     "baseUrl": "https://api.openai.com/v1"
   },
+  "gemini": {
+    "apiKeyEnv": "GEMINI_API_KEY",
+    "model": "gemini-3.6-flash",
+    "fallbackModel": "gemini-3.1-flash-lite",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta"
+  },
+  "geminiMedia": {
+    "apiKeyEnv": "GEMINI_API_KEY",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "enabled": false,
+    "maxConcurrentJobs": 2,
+    "pollingIntervalMs": 5000,
+    "timeoutMs": 600000,
+    "retryCount": 3,
+    "outputDirectory": ".amynest-assets/gemini",
+    "script": {
+      "model": "gemini-3.6-flash",
+      "fallbackModel": "gemini-3.1-flash-lite",
+      "premiumModel": "gemini-3.1-pro-preview"
+    },
+    "image": {
+      "model": "imagen-4.0-fast-generate-001",
+      "premiumModel": "imagen-4.0-ultra-generate-001",
+      "fallbackModel": "gemini-3.1-flash-image"
+    },
+    "video": {
+      "tier": "daily",
+      "dailyModel": "veo-3.1-fast-generate-preview",
+      "premiumModel": "veo-3.1-generate-preview",
+      "budgetModel": "veo-3.1-lite-generate-preview",
+      "durationSeconds": 8,
+      "resolution": "720p"
+    },
+    "voice": {
+      "model": "gemini-3.1-flash-tts-preview",
+      "fallbackModel": "gemini-2.5-flash-preview-tts",
+      "voiceName": "Kore"
+    },
+    "music": {
+      "enabled": false,
+      "model": "lyria-3-clip-preview"
+    }
+  },
   "geminiVideo": {
     "apiKeyEnv": "GEMINI_API_KEY",
-    "model": "veo-3.1-generate-preview",
+    "model": "veo-3.1-fast-generate-preview",
     "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
     "resolution": "720p",
     "durationSeconds": 8,
@@ -73,7 +116,7 @@
     "timeoutMs": 600000,
     "outputDirectory": ".amynest-assets/veo",
     "personGeneration": "allow_all",
-    "enabled": true
+    "enabled": false
   },
   "aspectRatio": "9:16",
   "resolution": "1080x1920",
@@ -100,6 +143,8 @@
     "screen-recording",
     "illustration",
     "openai-images",
+    "google-imagen",
+    "google-veo",
     "placeholder"
   ],
   "cachePolicy": {
@@ -109,7 +154,7 @@
   },
   "brandingProfile": "default",
   "allowFallbacks": true,
-  "maximumAIAssets": 2,
+  "maximumAIAssets": 4,
   "reuseThreshold": 0.85,
   "renderer": "mock",
   "preferredRenderer": "ffmpeg",

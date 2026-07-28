@@ -8,6 +8,9 @@ export {
 export {
   BaseAssetProvider,
   FutureAiProvider,
+  GeminiImageProvider,
+  GeminiMusicProvider,
+  GeminiTtsProvider,
   GeminiVideoProvider,
   GeminiVeoClient,
   GeminiVideoError,
@@ -36,6 +39,12 @@ export {
   type RunTestVeoOptions,
   type TestVeoRunResult,
 } from "./veo-test/index.js";
+export {
+  runTestGeminiPipeline,
+  writeTestGeminiReport,
+  type RunTestGeminiOptions,
+  type TestGeminiRunResult,
+} from "./gemini-test/index.js";
 export { resolveAssetRequests, type ResolveAssetsOptions, type ResolveAssetsResult } from "./resolver/index.js";
 export { buildBrandingAssets } from "./branding/index.js";
 export { buildAssetManifest } from "./manifest/index.js";

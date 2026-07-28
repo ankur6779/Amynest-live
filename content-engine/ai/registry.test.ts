@@ -6,9 +6,10 @@ import { MockProvider } from "./mock-provider.js";
 import { ProviderRegistry } from "./registry.js";
 
 describe("AI provider registry", () => {
-  it("registers mock openai and future providers", () => {
+  it("registers mock gemini openai and future providers", () => {
     const registry = new ProviderRegistry({ config: loadDefaultConfig() });
     assert.equal(registry.get("mock").id, "mock");
+    assert.equal(registry.get("gemini").id, "gemini");
     assert.equal(registry.get("openai").id, "openai");
     assert.equal(registry.get("future").id, "future");
     assert.equal(registry.get("mock").supportsJSON(), true);
@@ -18,6 +19,17 @@ describe("AI provider registry", () => {
     const config = { ...loadDefaultConfig(), scriptProvider: "mock" as const };
     const registry = new ProviderRegistry({ config });
     assert.equal(registry.resolvePrimary(config).id, "mock");
+  });
+
+  it("resolves gemini when opted in via config", () => {
+    const config = {
+      ...loadDefaultConfig(),
+      scriptProvider: "gemini" as const,
+      fallbackProvider: "openai" as const,
+    };
+    const registry = new ProviderRegistry({ config });
+    assert.equal(registry.resolvePrimary(config).id, "gemini");
+    assert.equal(registry.resolveFallback(config)?.id, "openai");
   });
 
   it("MockProvider returns deterministic JSON and can fail for retry tests", async () => {

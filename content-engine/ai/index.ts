@@ -9,6 +9,7 @@ export type {
 } from "./provider.js";
 export { MockProvider, type MockProviderOptions } from "./mock-provider.js";
 export { OpenAIProvider, type OpenAIProviderOptions } from "./openai-provider.js";
+export { GeminiProvider, type GeminiProviderOptions } from "./gemini-provider.js";
 export { FutureProvider } from "./future-provider.js";
 export {
   ProviderRegistry,

@@ -59,7 +59,8 @@ export interface GeminiVideoProviderSettings {
 
 export const DEFAULT_GEMINI_VIDEO_SETTINGS: GeminiVideoProviderSettings = {
   apiKeyEnv: "GEMINI_API_KEY",
-  model: "veo-3.1-generate-preview",
+  /** Daily default — use premium/budget via AMYNEST_VEO_TIER or AMYNEST_VEO_MODEL. */
+  model: "veo-3.1-fast-generate-preview",
   baseUrl: "https://generativelanguage.googleapis.com/v1beta",
   resolution: "720p",
   durationSeconds: 8,
@@ -69,5 +70,6 @@ export const DEFAULT_GEMINI_VIDEO_SETTINGS: GeminiVideoProviderSettings = {
   timeoutMs: 600_000,
   outputDirectory: ".amynest-assets/veo",
   personGeneration: "allow_all",
-  enabled: true,
+  /** Opt-in via AMYNEST_VEO_ENABLED / AMYNEST_GEMINI_ENABLED after live validation. */
+  enabled: false,
 };

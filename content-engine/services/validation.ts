@@ -146,10 +146,22 @@ export function validateConfig(config: ContentEngineConfig): ValidationResult {
   }
 
   if (config.scriptProvider !== undefined) {
-    const allowed = ["mock", "openai", "future"];
+    const allowed = ["mock", "openai", "gemini", "future"];
     if (!allowed.includes(config.scriptProvider)) {
       issues.push(
         issue("scriptProvider", `scriptProvider must be one of ${allowed.join(", ")}`),
+      );
+    }
+  }
+
+  if (config.fallbackProvider !== undefined) {
+    const allowed = ["mock", "openai", "gemini", "future"];
+    if (!allowed.includes(config.fallbackProvider)) {
+      issues.push(
+        issue(
+          "fallbackProvider",
+          `fallbackProvider must be one of ${allowed.join(", ")}`,
+        ),
       );
     }
   }

@@ -40,6 +40,7 @@ const TIER_PROVIDERS: Record<AssetPriorityTier, AssetProviderId[]> = {
   cache: ["cache"],
   "screen-recording": ["screen-recording"],
   "ai-image": [
+    "google-imagen",
     "openai-images",
     "flux",
     "ideogram",

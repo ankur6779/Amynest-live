@@ -16,6 +16,7 @@ describe("asset provider registry", () => {
       "stable-diffusion",
       "runway",
       "google-veo",
+      "google-imagen",
       "future",
     ] as const) {
       assert.ok(registry.has(id), `missing ${id}`);

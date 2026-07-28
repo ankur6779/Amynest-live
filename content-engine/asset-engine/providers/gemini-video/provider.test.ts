@@ -142,6 +142,7 @@ describe("GeminiVideoProvider", () => {
         maxPollAttempts: 5,
         retryCount: 1,
         timeoutMs: 10_000,
+        enabled: true,
       },
     });
 

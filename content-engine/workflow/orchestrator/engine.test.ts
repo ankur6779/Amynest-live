@@ -45,6 +45,8 @@ describe("WorkflowOrchestrator", () => {
       maximumRetries: 0,
       renderer: "mock" as const,
       publishingProvider: "mock" as const,
+      scriptProvider: "mock" as const,
+      fallbackProvider: "mock" as const,
     };
     const { result } = await new WorkflowOrchestrator({
       config,
@@ -64,6 +66,8 @@ describe("WorkflowOrchestrator", () => {
       resumeOnFailure: true,
       renderer: "mock" as const,
       publishingProvider: "mock" as const,
+      scriptProvider: "mock" as const,
+      fallbackProvider: "mock" as const,
     };
     const store = new InMemoryWorkflowStore();
     const orchestrator = new WorkflowOrchestrator({
@@ -103,6 +107,8 @@ describe("WorkflowOrchestrator", () => {
       maximumRetries: 0,
       renderer: "mock" as const,
       publishingProvider: "mock" as const,
+      scriptProvider: "mock" as const,
+      fallbackProvider: "mock" as const,
     };
     const { result } = await new WorkflowOrchestrator({
       config,
