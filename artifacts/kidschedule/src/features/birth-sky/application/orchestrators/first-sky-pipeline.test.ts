@@ -334,7 +334,7 @@ describe("runFirstSkyPipeline", () => {
     expect(result.snapshot?.snapshotId).toBe("snap-fresh");
   });
 
-  it("formation resume / interrupted generation regenerates missing snapshot", async () => {
+  it("formation resume (forceFresh) regenerates missing snapshot via recompute", async () => {
     recomputeMock.mockResolvedValue({
       profile: profile(),
       snapshot: snapshot(),
@@ -347,11 +347,43 @@ describe("runFirstSkyPipeline", () => {
       draft: baseDraft(),
       userId: "user-1",
       existingProfile: profile({ generationStatus: "FAILED" }),
+      forceFresh: true,
     });
 
     expect(result.ok).toBe(true);
     expect(createBirthSkyMock).not.toHaveBeenCalled();
+    expect(recomputeMock).toHaveBeenCalledWith(authFetch, "prof-1", {
+      forceFresh: true,
+    });
     expect(result.steps).toContain("auto_recompute");
+  });
+
+  it("setup retry after Back to review upserts edited draft via create", async () => {
+    createBirthSkyMock.mockResolvedValue({
+      profile: profile({ birthDate: "2020-01-01" }),
+      snapshot: snapshot(),
+      computeStatus: "ready",
+      generationStatus: "READY",
+    });
+
+    const result = await runFirstSkyPipeline({
+      authFetch,
+      draft: baseDraft({ birthDate: "2020-01-01" }),
+      userId: "user-1",
+      // Prior failed create left profile in client state.
+      existingProfile: profile({
+        birthDate: "2019-08-12",
+        generationStatus: "FAILED",
+      }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(createBirthSkyMock).toHaveBeenCalledWith(
+      authFetch,
+      expect.objectContaining({ birthDate: "2020-01-01" }),
+    );
+    expect(recomputeMock).not.toHaveBeenCalled();
+    expect(result.steps).toContain("snapshot_create");
   });
 
   it("exhausted retries emit failure telemetry and FAILED status", async () => {
