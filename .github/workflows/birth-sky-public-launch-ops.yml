@@ -1,0 +1,149 @@
+# Amy Astro public launch ops:
+# 1) Apply additive migration 0050 (sky_sounds default ON)
+# 2) Probe Coolify kill switch + schema via SSH
+# 3) Confirm Cloudflare Pages build leaves VITE_FF_BIRTH_SKY unset (public default ON)
+#
+# Never runs unscoped drizzle-kit push against Coolify.
+
+name: Birth Sky public launch ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type launch-ops to apply 0050 + probe kill switches"
+        required: true
+        type: string
+
+jobs:
+  migrate-0050:
+    name: Apply + verify migration 0050
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.inputs.confirm == 'launch-ops'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply 0050_birth_sky_sounds_default_on.sql
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/birth-sky-apply-0050-migration.mjs
+
+      - name: Verify sky_sounds default is true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/birth-sky-verify-0050-migration.mjs
+
+  coolify-kill-switch-probe:
+    name: Coolify BIRTH_SKY_PUBLIC_ENABLED presence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event.inputs.confirm == 'launch-ops'
+    steps:
+      - name: Setup SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+          COOLIFY_HOST: ${{ secrets.COOLIFY_SSH_HOST }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HETZNER_SSH_KEY:-}" ]; then
+            echo "HETZNER_SSH_PRIVATE_KEY not configured."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          # Prefer dedicated Coolify host secret; fall back to known Coolify VPS.
+          host="$(printf '%s' "${COOLIFY_HOST:-188.245.208.126}" | tr -d '[:space:]')"
+          echo "COOLIFY_HOST=$host" >> "$GITHUB_ENV"
+          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=20 "root@${host}" echo "SSH preflight OK"
+
+      - name: Probe BIRTH_SKY_PUBLIC_ENABLED (presence only)
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            "root@${COOLIFY_HOST}" bash -s <<'REMOTE'
+          set -euo pipefail
+          CID="$(docker ps --format '{{.Names}}' | grep -m1 ik6ml2uh || true)"
+          if [ -z "$CID" ]; then
+            echo "FAIL: Coolify API container not found"
+            exit 1
+          fi
+          echo "container=$CID"
+          # Presence only — print UNSET / SET=1 / SET=0 / SET=other (never full secrets dump)
+          RAW="$(docker exec "$CID" printenv BIRTH_SKY_PUBLIC_ENABLED 2>/dev/null || true)"
+          if [ -z "${RAW}" ]; then
+            echo "BIRTH_SKY_PUBLIC_ENABLED=UNSET"
+            echo "KILL_SWITCH_OK=public_default_on"
+          else
+            NORM="$(printf '%s' "$RAW" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+            case "$NORM" in
+              1|true|on|yes)
+                echo "BIRTH_SKY_PUBLIC_ENABLED=SET_ON"
+                echo "KILL_SWITCH_OK=explicit_on"
+                ;;
+              0|false|off|no)
+                echo "BIRTH_SKY_PUBLIC_ENABLED=SET_OFF"
+                echo "KILL_SWITCH_BLOCKER=explicit_kill"
+                exit 1
+                ;;
+              *)
+                echo "BIRTH_SKY_PUBLIC_ENABLED=SET_OTHER"
+                echo "KILL_SWITCH_BLOCKER=unexpected_value"
+                exit 1
+                ;;
+            esac
+          fi
+          REMOTE
+
+  cloudflare-flag-probe:
+    name: Cloudflare Pages VITE_FF_BIRTH_SKY probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event.inputs.confirm == 'launch-ops'
+    steps:
+      - name: Confirm deploy script does not force kill switch
+        uses: actions/checkout@v4
+
+      - name: Assert deploy-cloudflare-pages.sh leaves flag unset
+        run: |
+          set -euo pipefail
+          if rg -n 'VITE_FF_BIRTH_SKY=' scripts/deploy-cloudflare-pages.sh; then
+            echo "FAIL: deploy script sets VITE_FF_BIRTH_SKY (must leave unset for public default ON)"
+            exit 1
+          fi
+          echo "OK: deploy script does not set VITE_FF_BIRTH_SKY"
+
+      - name: Probe live Pages bundle for explicit kill
+        run: |
+          set -euo pipefail
+          HTML="$(curl -sS -A 'AmyNest-LaunchOps/1.0' --max-time 30 'https://amynest-web.pages.dev/')"
+          # Collect a few asset URLs
+          mapfile -t ASSETS < <(printf '%s' "$HTML" | rg -o '/assets/[^" ]+\.js' | head -8)
+          if [ "${#ASSETS[@]}" -eq 0 ]; then
+            echo "WARN: no /assets/*.js found in Pages HTML — skip live bundle probe"
+            exit 0
+          fi
+          HIT=0
+          for a in "${ASSETS[@]}"; do
+            BODY="$(curl -sS -A 'AmyNest-LaunchOps/1.0' --max-time 30 "https://amynest-web.pages.dev${a}" || true)"
+            # Look for compile-time false/0 injection patterns that would kill the feature
+            if printf '%s' "$BODY" | rg -q 'VITE_FF_BIRTH_SKY["'\'']?\s*[:=]\s*["'\'']?0|FF_BIRTH_SKY\s*=\s*!1|FF_BIRTH_SKY\s*=\s*false'; then
+              echo "FAIL: kill pattern in $a"
+              HIT=1
+            fi
+          done
+          if [ "$HIT" -ne 0 ]; then
+            exit 1
+          fi
+          echo "OK: no explicit VITE_FF_BIRTH_SKY kill pattern in sampled Pages assets"
