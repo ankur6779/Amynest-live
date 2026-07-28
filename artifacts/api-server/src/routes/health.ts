@@ -241,11 +241,19 @@ router.get("/healthz/tts-cache", async (_req, res) => {
 });
 
 /** Amy TTS + GCS storage probe. */
-router.get("/healthz/tts", async (_req, res) => {
+router.get("/healthz/tts", async (req, res) => {
   const openAiConfigured = !!getOpenAiApiKeyForFetch();
   const ttsProvider = getTtsProvider();
   const legacyGcsConfigured = getGcsDiagnostics().legacyGcsConfigured;
   const ephemeris = await checkEphemerisReady();
+  // Conversation-level AI router telemetry is ops-only (requires x-health-secret in prod).
+  const includeAiRouter =
+    process.env.NODE_ENV !== "production" ||
+    (() => {
+      const expected = process.env.INTERNAL_HEALTH_SECRET?.trim();
+      const provided = String(req.headers["x-health-secret"] ?? "").trim();
+      return Boolean(expected && provided === expected);
+    })();
 
   res.json({
     ttsProvider,
@@ -261,7 +269,7 @@ router.get("/healthz/tts", async (_req, res) => {
       ...getTtsLatencyDashboard(),
       talk_with_amy: getConvoLatencyDashboard(),
     },
-    birthSkyAiRouter: getBirthSkyRouterDashboard(),
+    ...(includeAiRouter ? { birthSkyAiRouter: getBirthSkyRouterDashboard() } : {}),
     birthSkyEphemeris: ephemeris,
   });
 });

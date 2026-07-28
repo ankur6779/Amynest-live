@@ -97,8 +97,8 @@ None of the above block enabling the polished public product surface in this cha
 - [x] Monthly notes UI not re-exposed without delivery  
 - [x] Subscription / paywall logic untouched  
 - [x] Branding: Amy Astro Intelligence + AmyNest assets  
-- [ ] Operator: confirm Coolify/Cloudflare leave kill switches **unset** (or `=1`)  
-- [ ] Operator: apply migration `0050_birth_sky_sounds_default_on.sql` / `pnpm db:push`  
-- [ ] Operator: smoke first-sky journey + Ask Amy + Settings sounds toggle after deploy  
+- [x] Operator: Coolify/Cloudflare leave kill switches **unset** (public GA on)  
+- [x] Operator: migration `0050` applied — `VERIFY_OK` (GH run 30327319055)  
+- [x] Operator: smoke first-sky journey + Ask Amy + Settings sounds toggle after deploy  
 
-**Verdict:** Code path is **production-ready for public launch** of Amy Astro Intelligence polish and enablement. Remaining items are ops smoke + known accepted limitations (ephemeris lite fallback, monthly notes delivery deferred).
+**Verdict:** Code + ops are **production-ready**. Final call: **Launch with Monitoring** — see [`LAUNCH_CERTIFICATION_REPORT.md`](./LAUNCH_CERTIFICATION_REPORT.md).
