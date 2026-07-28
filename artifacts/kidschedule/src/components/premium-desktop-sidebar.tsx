@@ -25,6 +25,7 @@ import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import { safePathStartsWith } from "@/lib/safe-route";
 import { useMobileMenuData } from "@/hooks/use-mobile-menu-data";
 import { cn } from "@/lib/utils";
+import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 
 /** Learning Zone links to the existing study route (no new route added). */
 const LEARNING_ZONE_ITEM: MobileNavItem = {
@@ -33,7 +34,7 @@ const LEARNING_ZONE_ITEM: MobileNavItem = {
   icon: GraduationCap,
 };
 
-/** Hero product — always surfaced in the desktop sidebar. */
+/** Hero product — surfaced in the desktop sidebar when Amy Astro is enabled. */
 const AMY_ASTRO_ITEM: MobileNavItem = {
   href: "/birth-sky",
   labelKey: "nav.amy_astro_intelligence",
@@ -234,7 +235,8 @@ export function PremiumDesktopSidebar({
   let drawerItems = resolvedMenu.some((item) => item.href === "/study")
     ? resolvedMenu
     : [...resolvedMenu, LEARNING_ZONE_ITEM];
-  if (!drawerItems.some((item) => item.href === "/birth-sky")) {
+  const amyAstroEnabled = isBirthSkyEnabled(email);
+  if (amyAstroEnabled && !drawerItems.some((item) => item.href === "/birth-sky")) {
     const dashIdx = drawerItems.findIndex((item) => item.href === "/dashboard");
     drawerItems =
       dashIdx >= 0
@@ -244,6 +246,8 @@ export function PremiumDesktopSidebar({
             ...drawerItems.slice(dashIdx + 1),
           ]
         : [AMY_ASTRO_ITEM, ...drawerItems];
+  } else if (!amyAstroEnabled) {
+    drawerItems = drawerItems.filter((item) => item.href !== "/birth-sky");
   }
   const groups = groupDrawerItems(drawerItems);
 

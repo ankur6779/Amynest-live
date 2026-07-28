@@ -7,12 +7,15 @@ import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "../lib/focus-trap";
 import { useLivingSky } from "../state/living-sky-context";
+import { playSkySound } from "../lib/sky-sounds";
 import "../design/amy-astro.css";
 
 type Props = {
   open: boolean;
   message: string;
   reducedMotion?: boolean;
+  /** When false, skip soft sky chime (Settings → Sky sounds). */
+  soundsEnabled?: boolean;
   onClose: () => void;
 };
 
@@ -20,6 +23,7 @@ export function AmyAstroEmotionalCelebration({
   open,
   message,
   reducedMotion = false,
+  soundsEnabled = true,
   onClose,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -33,9 +37,10 @@ export function AmyAstroEmotionalCelebration({
     const sky = skyRef.current;
     sky?.pulseOrb();
     sky?.setAmyGazeUp(true);
+    playSkySound("success", { enabled: soundsEnabled, reducedMotion });
     const t = window.setTimeout(() => sky?.setAmyGazeUp(false), 1600);
     return () => window.clearTimeout(t);
-  }, [open, reducedMotion]);
+  }, [open, reducedMotion, soundsEnabled]);
 
   if (!open) return null;
 

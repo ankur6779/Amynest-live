@@ -2,7 +2,7 @@ import type { RequestHandler } from "express";
 import { getAuth } from "../../lib/auth";
 import { isBirthSkyApiAllowed } from "./allowlist";
 
-/** 401 if unauthenticated; 403 if authenticated but outside Birth Sky canary allowlist. */
+/** 401 if unauthenticated; 403 when public GA is killed and email is outside allowlist. */
 export const requireBirthSkyAllowlist: RequestHandler = (req, res, next) => {
   const { userId, email } = getAuth(req);
   if (!userId) {

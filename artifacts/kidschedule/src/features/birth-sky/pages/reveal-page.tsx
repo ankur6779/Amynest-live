@@ -15,6 +15,8 @@ import { buildRevealViewModel } from "../application/view-models/reveal-vm";
 import type { BirthProfile, SkySnapshot } from "../domain/models/birth-profile";
 import { trackBirthSkyEvent } from "../lib/analytics";
 import { AMY_ASTRO_PRODUCT_NAME, AMY_ASTRO_TAGLINE } from "../lib/branding";
+import { playSkySound } from "../lib/sky-sounds";
+import { loadPreferences } from "../infrastructure/repositories/settings-store";
 import "../design/amy-astro.css";
 
 type Props = {
@@ -37,7 +39,9 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
 
   const finishCeremony = useCallback(() => {
     setCeremonyDone(true);
-  }, []);
+    const prefs = loadPreferences(profile.userId);
+    playSkySound("reveal", { enabled: prefs.skySounds, reducedMotion: reduced });
+  }, [profile.userId, reduced]);
 
   useEffect(() => {
     trackBirthSkyEvent("birth_sky.reveal_viewed", {
@@ -80,6 +84,7 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
         title={AMY_ASTRO_PRODUCT_NAME}
         hideTopBar
         testId="birth-sky-reveal"
+        ambientIntensity="full"
         className={ceremonyDone ? "amy-astro-enter" : "opacity-0 pointer-events-none"}
       >
         <div className="flex flex-col items-center pt-10 text-center">

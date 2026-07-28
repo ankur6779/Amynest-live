@@ -54,7 +54,7 @@ export async function ensureBirthSkyPreferences(userId: string): Promise<void> {
   await db.insert(birthSkyPreferencesTable).values({
     userId,
     showTradition: true,
-    skySounds: false,
+    skySounds: true,
     monthlyNotesOptIn: true,
     updatedAt: new Date(),
   });
