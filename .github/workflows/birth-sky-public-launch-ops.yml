@@ -119,23 +119,29 @@ jobs:
               -H "x-health-secret: ${INTERNAL_HEALTH_SECRET}" \
               "${API_URL}/api/healthz/env" || echo 000)"
             if [ "$CODE" = "200" ]; then
-              STATUS="$(node -e '
+              set +e
+              node -e '
               const j=JSON.parse(require("fs").readFileSync("/tmp/bs-env.json","utf8"));
               const bs=j.birthSky||{};
-              console.log(JSON.stringify({publicEnabled:bs.publicEnabled,publicEnvSet:bs.publicEnvSet,hasField:!!j.birthSky}));
-              if (bs.publicEnabled===true) process.exit(0);
-              process.exit(2);
-              ' && echo OK || echo WAIT)"
-              echo "attempt $i http=$CODE status=$STATUS"
-              if [ "$STATUS" = "OK" ]; then
-                node -e '
-                const j=JSON.parse(require("fs").readFileSync("/tmp/bs-env.json","utf8"));
-                const bs=j.birthSky||{};
-                if (bs.publicEnvSet===true) console.log("KILL_SWITCH_OK=runtime_public_on_env_set");
+              console.log(JSON.stringify({
+                attempt: process.argv[1],
+                publicEnabled: bs.publicEnabled,
+                publicEnvSet: bs.publicEnvSet,
+                hasField: Boolean(j.birthSky),
+              }));
+              if (bs.publicEnabled === true) {
+                if (bs.publicEnvSet === true) console.log("KILL_SWITCH_OK=runtime_public_on_env_set");
                 else console.log("KILL_SWITCH_OK=unset_public_default_on");
-                '
+                process.exit(0);
+              }
+              process.exit(2);
+              ' "$i"
+              RC=$?
+              set -e
+              if [ "$RC" -eq 0 ]; then
                 exit 0
               fi
+              echo "attempt $i http=200 — birthSky not public yet, waiting…"
             else
               echo "attempt $i http=$CODE — waiting for Coolify…"
             fi
