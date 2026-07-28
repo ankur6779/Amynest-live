@@ -194,6 +194,9 @@ export {
 } from "./assets/index.js";
 export { validateStoryboard } from "./validation/index.js";
 export * from "./brand/index.js";
+export * from "./studio/index.js";
+export * from "./golden-scripts/index.js";
+export * from "./scene-composer/index.js";
 export { exportStoryboard, toYaml } from "./export/index.js";
 export {
   AssetOrchestrator,

@@ -45,7 +45,10 @@
     "brain/**/*.ts",
     "operations/**/*.ts",
     "cli/**/*.ts",
-    "brand/**/*.ts"
+    "brand/**/*.ts",
+    "studio/**/*.ts",
+    "golden-scripts/**/*.ts",
+    "scene-composer/**/*.ts"
   ],
   "exclude": ["**/*.test.ts", "dist"]
 }

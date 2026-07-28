@@ -133,9 +133,9 @@ function buildDeterministicPayload(input: {
   language: string;
   duration: number;
 }): GeneratedScriptPayload {
-  const hook = `Parents of ${input.ageGroup === "all" ? "kids" : input.ageGroup} — ${input.title.toLowerCase()} starts with one small change.`;
+  const hook = `Most parents don't know this: ${input.title.toLowerCase()} starts with one small change.`;
   const openingQuestion = `What if today felt a little calmer around ${input.category.toLowerCase()}?`;
-  const story = `Many families struggle with ${input.title.toLowerCase()}. The good news: tiny consistent steps beat perfect plans. AmyNest helps you practice gently, one moment at a time.`;
+  const story = `Many families want progress with ${input.title.toLowerCase()}, but busy days scatter focus. Tiny consistent steps beat perfect plans. AmyNest AI turns that into a calm daily practice parents and kids can enjoy together.`;
   const keyPoints = [
     "Start with one clear, kind cue.",
     "Keep the routine short and repeatable.",

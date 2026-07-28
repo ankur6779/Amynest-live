@@ -38,7 +38,10 @@
     "./analytics": "./analytics/index.ts",
     "./brain": "./brain/index.ts",
     "./operations": "./operations/index.ts",
-    "./brand": "./brand/index.ts"
+    "./brand": "./brand/index.ts",
+    "./studio": "./studio/index.ts",
+    "./golden-scripts": "./golden-scripts/index.ts",
+    "./scene-composer": "./scene-composer/index.ts"
   },
   "scripts": {
     "test": "node --import tsx/esm --test \"./**/*.test.ts\"",
@@ -58,7 +61,8 @@
     "amynest:metrics": "node --import tsx/esm ./cli/amynest.ts metrics --memory",
     "amynest:production-run": "node --import tsx/esm ./cli/amynest.ts production-run",
     "amynest:test-veo": "node --import tsx/esm ./cli/amynest.ts test-veo",
-    "amynest:test-gemini": "node --import tsx/esm ./cli/amynest.ts test-gemini"
+    "amynest:test-gemini": "node --import tsx/esm ./cli/amynest.ts test-gemini",
+    "amynest:golden-scripts": "node --import tsx/esm ./golden-scripts/generate.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",

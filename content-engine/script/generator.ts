@@ -12,6 +12,7 @@ import {
   resolvePromptFamily,
   type PromptTemplate,
 } from "../prompts/library/templates.js";
+import { enhanceGenerationInput } from "../studio/enhance.js";
 import type { ContentGenerationInput, GeneratedScriptPayload } from "../types/content-package.js";
 import { assembleDescription, normalizeDescriptionParts } from "./description-engine.js";
 import { refineHashtags } from "./hashtag-engine.js";
@@ -62,11 +63,19 @@ export async function generateScriptPayload(
     keywords: input.topic.keywords,
     feature,
   });
+  const studio = enhanceGenerationInput({
+    title: input.topic.title,
+    category: input.category,
+    keywords: input.topic.keywords,
+    language: input.language,
+    duration: input.duration,
+  });
   const systemPrompt = composeSystemPrompt(
     categoryPrompt,
     languagePrompt,
     options.rewriteHint,
     brandBlock,
+    studio.systemPromptBlock,
   );
   const variables = toVariables(input, feature?.title);
   const userPrompt = renderPromptTemplate(categoryPrompt.userPromptTemplate, variables);
@@ -129,10 +138,14 @@ function composeSystemPrompt(
   languagePrompt: PromptTemplate | undefined,
   rewriteHint?: string,
   brandBlock?: string,
+  studioBlock?: string,
 ): string {
   const parts = [categoryPrompt.systemPrompt];
   if (brandBlock) {
     parts.push(brandBlock);
+  }
+  if (studioBlock) {
+    parts.push(studioBlock);
   }
   if (languagePrompt) {
     parts.push(`Language directive: ${languagePrompt.systemPrompt}`);

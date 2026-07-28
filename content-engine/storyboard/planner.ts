@@ -4,6 +4,7 @@ import { buildAnimationPlan } from "../animation/index.js";
 import { buildCameraPlan } from "../camera/index.js";
 import { resolveStoryboardSettings } from "../config/storyboard.js";
 import { buildOverlayPlan } from "../overlays/index.js";
+import { composeScenesForStoryboard } from "../scene-composer/enhance-storyboard.js";
 import { buildScenes } from "../scenes/index.js";
 import {
   createTelemetryEvent,
@@ -70,7 +71,16 @@ export class StoryboardPlanner {
     const totalDuration =
       input.duration ?? resolveSupportedDuration(pkg.estimatedDuration);
 
-    let scenes = buildScenes(pkg, totalDuration);
+    // Scene Composer (additive): provider-aware multi-clip plan.
+    // Falls back to classic buildScenes if composer is explicitly disabled.
+    const composerEnabled = process.env.AMYNEST_SCENE_COMPOSER !== "0";
+    let scenes = composerEnabled
+      ? composeScenesForStoryboard({
+          contentPackage: pkg,
+          duration: totalDuration,
+          providerId: process.env.AMYNEST_VIDEO_PROVIDER,
+        }).scenes
+      : buildScenes(pkg, totalDuration);
     const timeline = buildTimeline(scenes, totalDuration);
     scenes = applyTimelineDurations(scenes, timeline);
 

@@ -19,6 +19,7 @@ import {
 import { generateScriptPayload, type ScriptGenerationResult } from "../script/index.js";
 import { calculateSeoScore } from "../seo/index.js";
 import { calculateQualityScore } from "../scoring/index.js";
+import { gateGeneratedPayload } from "../studio/quality/from-payload.js";
 import {
   createTelemetryEvent,
   InMemoryTelemetrySink,
@@ -173,6 +174,19 @@ export class ContentPackageService {
           rewriteHint =
             "Improve clarity, emotional warmth, curiosity hook, retention structure, and AmyNest brand consistency.";
           errors.push(`quality_threshold:${quality.overall}`);
+          continue;
+        }
+
+        const studioGate = gateGeneratedPayload({
+          payload,
+          topicTitle: input.topic.title,
+          category: input.category,
+        });
+        if (!studioGate.ok) {
+          rewriteHint =
+            studioGate.rewriteHint ??
+            "Studio quality below 90 — regenerate with stronger hook, clearer AmyNest feature demo, warm emotion, and premium CTA.";
+          errors.push(`studio_quality_threshold:${studioGate.scores.overall}`);
           continue;
         }
 

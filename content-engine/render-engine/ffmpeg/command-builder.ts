@@ -1,3 +1,8 @@
+import {
+  buildXfadeFilterComplex,
+  buildXfadeSteps,
+} from "../../scene-composer/stitch.js";
+import type { ComposerTransition } from "../../scene-composer/types.js";
 import type { CompositionPlan, HardwareAcceleration } from "../../types/render-package.js";
 import type { FfmpegFilterCapabilities } from "./capabilities.js";
 import { isRealMediaPath, resolveMediaFsPath } from "./media-path.js";
@@ -68,22 +73,54 @@ export function buildFfmpegCommand(
     filters.push(`[v0]null[vbase]`);
     videoLabel = "vbase";
   } else {
-    const concatInputs = plan.visuals.map((_, i) => `[v${i}]`).join("");
-    filters.push(
-      `${concatInputs}concat=n=${plan.visuals.length}:v=1:a=0[vconcat]`,
-    );
-    videoLabel = "vconcat";
+    const useSeamlessXfade =
+      process.env.AMYNEST_SEAMLESS_STITCH !== "0" &&
+      plan.transitions.some((t) => t.type !== "Cut" && t.durationSeconds > 0);
 
-    // Approximate non-cut transitions with edge fades on the master timeline.
-    const fadeTransitions = plan.transitions.filter(
-      (t) => t.type !== "Cut" && t.durationSeconds > 0,
-    );
-    if (fadeTransitions.length > 0) {
-      const first = fadeTransitions[0]!;
-      filters.push(
-        `[${videoLabel}]fade=t=in:st=0:d=${Math.min(0.4, first.durationSeconds).toFixed(3)}[vfade]`,
+    if (useSeamlessXfade) {
+      // Scene Composer seamless stitch — xfade between clips so joins feel directed.
+      const clipDurations = plan.visuals.map(
+        (layer) => Math.max(0.1, (layer.endFrame - layer.startFrame) / plan.fps),
       );
-      videoLabel = "vfade";
+      const composerTransitions: ComposerTransition[] = plan.transitions.map((t) => ({
+        fromSceneId: t.fromSceneId,
+        toSceneId: t.toSceneId,
+        type: t.type,
+        durationSeconds: t.durationSeconds,
+        brandPurpleWash: t.type === "Dissolve" || t.type === "Fade",
+      }));
+      const steps = buildXfadeSteps({
+        clipDurations,
+        transitions: composerTransitions,
+      });
+      if (steps.length > 0) {
+        filters.push(buildXfadeFilterComplex(steps));
+        videoLabel = steps[steps.length - 1]!.outLabel;
+      } else {
+        const concatInputs = plan.visuals.map((_, i) => `[v${i}]`).join("");
+        filters.push(
+          `${concatInputs}concat=n=${plan.visuals.length}:v=1:a=0[vconcat]`,
+        );
+        videoLabel = "vconcat";
+      }
+    } else {
+      const concatInputs = plan.visuals.map((_, i) => `[v${i}]`).join("");
+      filters.push(
+        `${concatInputs}concat=n=${plan.visuals.length}:v=1:a=0[vconcat]`,
+      );
+      videoLabel = "vconcat";
+
+      // Approximate non-cut transitions with edge fades on the master timeline.
+      const fadeTransitions = plan.transitions.filter(
+        (t) => t.type !== "Cut" && t.durationSeconds > 0,
+      );
+      if (fadeTransitions.length > 0) {
+        const first = fadeTransitions[0]!;
+        filters.push(
+          `[${videoLabel}]fade=t=in:st=0:d=${Math.min(0.4, first.durationSeconds).toFixed(3)}[vfade]`,
+        );
+        videoLabel = "vfade";
+      }
     }
   }
 
