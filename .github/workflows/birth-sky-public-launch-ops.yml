@@ -1,7 +1,7 @@
 # Amy Astro public launch ops:
-# 1) Apply additive migration 0050 (sky_sounds default ON)
-# 2) Probe Coolify kill switch + schema via SSH
-# 3) Confirm Cloudflare Pages build leaves VITE_FF_BIRTH_SKY unset (public default ON)
+# 1) Apply additive migration 0050 via Hetzner worker (Coolify Postgres)
+# 2) Probe Coolify kill switch via /api/healthz/env (INTERNAL_HEALTH_SECRET)
+# 3) Confirm Cloudflare Pages deploy leaves VITE_FF_BIRTH_SKY unset
 #
 # Never runs unscoped drizzle-kit push against Coolify.
 
@@ -15,6 +15,8 @@ on:
       - "scripts/birth-sky-apply-0050-migration.mjs"
       - "scripts/birth-sky-verify-0050-migration.mjs"
       - ".github/workflows/birth-sky-public-launch-ops.yml"
+      - "artifacts/api-server/src/routes/health.ts"
+      - "artifacts/api-server/src/services/birth-sky/allowlist.ts"
   workflow_dispatch:
     inputs:
       confirm:
@@ -23,8 +25,8 @@ on:
         type: string
 
 jobs:
-  migrate-0050:
-    name: Apply + verify migration 0050
+  migrate-0050-via-worker:
+    name: Apply + verify migration 0050 (via worker)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: |
@@ -33,90 +35,115 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Apply 0050_birth_sky_sounds_default_on.sql
+      - name: Setup SSH to Hetzner worker
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/birth-sky-apply-0050-migration.mjs
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HETZNER_SSH_KEY:-}" ] || [ -z "${HETZNER_HOST:-}" ]; then
+            echo "HETZNER_SSH_PRIVATE_KEY or HETZNER_HOST not configured."
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          host="$(printf '%s' "$HETZNER_HOST" | tr -d '[:space:]')"
+          echo "HETZNER_HOST=$host" >> "$GITHUB_ENV"
+          ssh-keyscan -H "$host" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=20 "root@${host}" echo "SSH preflight OK"
 
-      - name: Verify sky_sounds default is true
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/birth-sky-verify-0050-migration.mjs
+      - name: Apply 0050 on Coolify Postgres via amynest-worker
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            "root@${HETZNER_HOST}" bash -s <<'REMOTE'
+          set -euo pipefail
+          CID="$(docker ps --format '{{.Names}}' | grep -m1 amynest-worker || true)"
+          if [ -z "$CID" ]; then
+            echo "FAIL: amynest-worker container not found"
+            exit 1
+          fi
+          echo "worker=$CID"
+          docker exec "$CID" node -e '
+          const { Client } = require("pg");
+          const c = new Client({ connectionString: process.env.DATABASE_URL });
+          (async () => {
+            await c.connect();
+            await c.query(`ALTER TABLE "birth_sky_preferences" ALTER COLUMN "sky_sounds" SET DEFAULT true`);
+            const r = await c.query(`
+              SELECT column_default
+              FROM information_schema.columns
+              WHERE table_schema = '\''public'\''
+                AND table_name = '\''birth_sky_preferences'\''
+                AND column_name = '\''sky_sounds'\''
+            `);
+            const def = r.rows[0] && r.rows[0].column_default;
+            console.log(JSON.stringify({ sky_sounds_default: def }));
+            const ok = typeof def === "string" && def.toLowerCase().includes("true");
+            if (!ok) {
+              console.error("VERIFY_FAIL");
+              process.exit(1);
+            }
+            console.log("VERIFY_OK");
+            await c.end();
+          })().catch((e) => {
+            console.error(e && e.message ? e.message : e);
+            process.exit(1);
+          });
+          '
+          REMOTE
 
   coolify-kill-switch-probe:
-    name: Coolify BIRTH_SKY_PUBLIC_ENABLED presence
+    name: Coolify BIRTH_SKY_PUBLIC_ENABLED via healthz/env
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: |
       github.event_name == 'push' ||
       github.event.inputs.confirm == 'launch-ops'
     steps:
-      - name: Setup SSH
+      - name: Probe publicEnabled (presence only)
         env:
-          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
-          COOLIFY_HOST: ${{ secrets.COOLIFY_SSH_HOST }}
+          INTERNAL_HEALTH_SECRET: ${{ secrets.INTERNAL_HEALTH_SECRET }}
+          API_URL: https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io
         run: |
           set -euo pipefail
-          if [ -z "${HETZNER_SSH_KEY:-}" ]; then
-            echo "HETZNER_SSH_PRIVATE_KEY not configured."
+          if [ -z "${INTERNAL_HEALTH_SECRET:-}" ]; then
+            echo "INTERNAL_HEALTH_SECRET not configured."
             exit 1
           fi
-          mkdir -p ~/.ssh
-          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
-          chmod 600 ~/.ssh/hetzner_deploy
-          # Prefer dedicated Coolify host secret; fall back to known Coolify VPS.
-          host="$(printf '%s' "${COOLIFY_HOST:-188.245.208.126}" | tr -d '[:space:]')"
-          echo "COOLIFY_HOST=$host" >> "$GITHUB_ENV"
-          ssh-keyscan -H "$host" >> ~/.ssh/known_hosts 2>/dev/null || true
-          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
-            -o ConnectTimeout=20 "root@${host}" echo "SSH preflight OK"
-
-      - name: Probe BIRTH_SKY_PUBLIC_ENABLED (presence only)
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
-            "root@${COOLIFY_HOST}" bash -s <<'REMOTE'
-          set -euo pipefail
-          CID="$(docker ps --format '{{.Names}}' | grep -m1 ik6ml2uh || true)"
-          if [ -z "$CID" ]; then
-            echo "FAIL: Coolify API container not found"
-            exit 1
-          fi
-          echo "container=$CID"
-          # Presence only — print UNSET / SET_ON / SET_OFF (never dump secrets)
-          RAW="$(docker exec "$CID" printenv BIRTH_SKY_PUBLIC_ENABLED 2>/dev/null || true)"
-          if [ -z "${RAW}" ]; then
-            echo "BIRTH_SKY_PUBLIC_ENABLED=UNSET"
-            echo "KILL_SWITCH_OK=public_default_on"
-          else
-            NORM="$(printf '%s' "$RAW" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
-            case "$NORM" in
-              1|true|on|yes)
-                echo "BIRTH_SKY_PUBLIC_ENABLED=SET_ON"
-                echo "KILL_SWITCH_OK=explicit_on"
-                ;;
-              0|false|off|no)
-                echo "BIRTH_SKY_PUBLIC_ENABLED=SET_OFF"
-                echo "KILL_SWITCH_BLOCKER=explicit_kill"
-                exit 1
-                ;;
-              *)
-                echo "BIRTH_SKY_PUBLIC_ENABLED=SET_OTHER"
-                echo "KILL_SWITCH_BLOCKER=unexpected_value"
-                exit 1
-                ;;
-            esac
-          fi
-          REMOTE
+          # Coolify may still be redeploying public-on + birthSky health field — retry.
+          for i in $(seq 1 20); do
+            CODE="$(curl -sS -A 'AmyNest-LaunchOps/1.0' -o /tmp/bs-env.json -w '%{http_code}' --max-time 25 \
+              -H "x-health-secret: ${INTERNAL_HEALTH_SECRET}" \
+              "${API_URL}/api/healthz/env" || echo 000)"
+            if [ "$CODE" = "200" ]; then
+              STATUS="$(node -e '
+              const j=JSON.parse(require("fs").readFileSync("/tmp/bs-env.json","utf8"));
+              const bs=j.birthSky||{};
+              console.log(JSON.stringify({publicEnabled:bs.publicEnabled,publicEnvSet:bs.publicEnvSet,hasField:!!j.birthSky}));
+              if (bs.publicEnabled===true) process.exit(0);
+              process.exit(2);
+              ' && echo OK || echo WAIT)"
+              echo "attempt $i http=$CODE status=$STATUS"
+              if [ "$STATUS" = "OK" ]; then
+                node -e '
+                const j=JSON.parse(require("fs").readFileSync("/tmp/bs-env.json","utf8"));
+                const bs=j.birthSky||{};
+                if (bs.publicEnvSet===true) console.log("KILL_SWITCH_OK=runtime_public_on_env_set");
+                else console.log("KILL_SWITCH_OK=unset_public_default_on");
+                '
+                exit 0
+              fi
+            else
+              echo "attempt $i http=$CODE — waiting for Coolify…"
+            fi
+            sleep 20
+          done
+          echo "FAIL: birthSky.publicEnabled never became true"
+          head -c 500 /tmp/bs-env.json || true
+          exit 1
 
   cloudflare-flag-probe:
     name: Cloudflare Pages VITE_FF_BIRTH_SKY probe
@@ -126,19 +153,17 @@ jobs:
       github.event_name == 'push' ||
       github.event.inputs.confirm == 'launch-ops'
     steps:
-      - name: Confirm deploy script does not force kill switch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Assert deploy-cloudflare-pages.sh leaves flag unset
         run: |
           set -euo pipefail
-          # Fail only on active assignment/export (comments + unset are OK).
-          if rg -n '^\s*(export\s+)?VITE_FF_BIRTH_SKY=' scripts/deploy-cloudflare-pages.sh; then
-            echo "FAIL: deploy script assigns VITE_FF_BIRTH_SKY (must leave unset for public default ON)"
+          if grep -nE '^\s*(export\s+)?VITE_FF_BIRTH_SKY=' scripts/deploy-cloudflare-pages.sh; then
+            echo "FAIL: deploy script assigns VITE_FF_BIRTH_SKY"
             exit 1
           fi
-          if ! rg -n 'unset VITE_FF_BIRTH_SKY' scripts/deploy-cloudflare-pages.sh; then
-            echo "FAIL: deploy script should explicitly unset VITE_FF_BIRTH_SKY for public GA"
+          if ! grep -n 'unset VITE_FF_BIRTH_SKY' scripts/deploy-cloudflare-pages.sh; then
+            echo "FAIL: deploy script should explicitly unset VITE_FF_BIRTH_SKY"
             exit 1
           fi
           echo "OK: deploy script unsets VITE_FF_BIRTH_SKY (public default ON)"
@@ -147,15 +172,15 @@ jobs:
         run: |
           set -euo pipefail
           HTML="$(curl -sS -A 'AmyNest-LaunchOps/1.0' --max-time 30 'https://amynest-web.pages.dev/')"
-          mapfile -t ASSETS < <(printf '%s' "$HTML" | rg -o '/assets/[^" ]+\.js' | head -8)
-          if [ "${#ASSETS[@]}" -eq 0 ]; then
-            echo "WARN: no /assets/*.js found in Pages HTML — skip live bundle probe"
+          ASSETS="$(printf '%s' "$HTML" | grep -oE '/assets/[^" ]+\.js' | head -8 || true)"
+          if [ -z "$ASSETS" ]; then
+            echo "WARN: no /assets/*.js found — skip live bundle probe"
             exit 0
           fi
           HIT=0
-          for a in "${ASSETS[@]}"; do
+          for a in $ASSETS; do
             BODY="$(curl -sS -A 'AmyNest-LaunchOps/1.0' --max-time 30 "https://amynest-web.pages.dev${a}" || true)"
-            if printf '%s' "$BODY" | rg -q 'VITE_FF_BIRTH_SKY["'\'']?\s*[:=]\s*["'\'']?0|FF_BIRTH_SKY\s*=\s*!1|FF_BIRTH_SKY\s*=\s*false'; then
+            if printf '%s' "$BODY" | grep -Eq 'VITE_FF_BIRTH_SKY["'"'"']?\s*[:=]\s*["'"'"']?0|FF_BIRTH_SKY\s*=\s*!1|FF_BIRTH_SKY\s*=\s*false'; then
               echo "FAIL: kill pattern in $a"
               HIT=1
             fi

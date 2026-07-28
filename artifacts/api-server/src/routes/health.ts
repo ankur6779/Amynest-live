@@ -32,6 +32,7 @@ import { getAdminOpsState } from "../services/admin-ops-store.js";
 import { getApiDomainMetrics } from "../lib/api-domain-metrics.js";
 import { getAnalyticsQuality } from "../services/analyticsIngestService.js";
 import { getSchedulerSnapshot, SCHEDULER_JOB_CATALOG } from "../lib/single-active-scheduler.js";
+import { isBirthSkyPublicEnabled } from "../services/birth-sky/allowlist.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -102,6 +103,12 @@ router.get("/healthz/env", async (req, res) => {
     render: !!process.env.RENDER,
     renderServiceName: process.env.RENDER_SERVICE_NAME ?? null,
     apiPublicUrl: resolveApiPublicUrl(),
+    // Presence-only feature gate (no secrets). Public GA default ON when env unset.
+    birthSky: {
+      publicEnabled: isBirthSkyPublicEnabled(),
+      publicEnvSet: process.env.BIRTH_SKY_PUBLIC_ENABLED !== undefined &&
+        String(process.env.BIRTH_SKY_PUBLIC_ENABLED).trim() !== "",
+    },
     queue: {
       mode: queue.queueMode,
       redis: queue.redis,
