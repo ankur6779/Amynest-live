@@ -58,7 +58,12 @@ router.get("/healthz", (_req, res) => {
 
 /** Heartbeat for crash detection poller. */
 router.get("/health", (_req, res) => {
-  res.json({ ok: true, timestamp: Date.now() });
+  res.json({
+    ok: true,
+    timestamp: Date.now(),
+    // Non-secret public GA gate (defaults ON when BIRTH_SKY_PUBLIC_ENABLED unset).
+    birthSkyPublicEnabled: isBirthSkyPublicEnabled(),
+  });
 });
 
 /** Full env diagnostics (no secret values). Production requires x-health-secret. */
