@@ -44,7 +44,8 @@
     "analytics/**/*.ts",
     "brain/**/*.ts",
     "operations/**/*.ts",
-    "cli/**/*.ts"
+    "cli/**/*.ts",
+    "brand/**/*.ts"
   ],
   "exclude": ["**/*.test.ts", "dist"]
 }

@@ -1,3 +1,4 @@
+import { buildBrandVisualPromptBlock, getBrandIdentityKit } from "../../../brand/index.js";
 import type { ContentPackage } from "../../../types/content-package.js";
 import type { ScenePlan, StoryboardPackage } from "../../../types/storyboard.js";
 
@@ -66,15 +67,22 @@ export function buildVeoPrompt(input: VeoPromptInput): VeoPromptResult {
             ? "Gentle curiosity and connection"
             : "Warm, premium, emotionally safe parenting atmosphere";
 
+  const kit = getBrandIdentityKit();
   const colorPalette =
     storyboard?.branding.colors
-      ? `Primary ${storyboard.branding.colors.primary}, secondary ${storyboard.branding.colors.secondary}, accent ${storyboard.branding.colors.accent}, soft neutrals, sunrise amber highlights`
-      : "Warm sunrise amber, soft cream, deep teal accents, natural skin tones";
+      ? `Primary ${storyboard.branding.colors.primary}, secondary ${storyboard.branding.colors.secondary}, accent ${storyboard.branding.colors.accent}, AmyNest purple system, soft neutrals, warm highlights`
+      : `AmyNest purple ${kit.colors.primary} / ${kit.colors.deepPurple}, gold ${kit.colors.secondary}, soft lavender, natural skin tones`;
+
+  const brandVisual = buildBrandVisualPromptBlock({
+    category: content?.topic.category,
+    title: content?.topic.title,
+    keywords: content?.topic.keywords,
+  });
 
   const subject =
     content?.topic.title
-      ? `AmyNest parenting story around "${content.topic.title}"`
-      : "A caring parent and young child sharing a calm morning routine with the AmyNest app";
+      ? `Official AmyNest branded story around "${content.topic.title}" with locked AmyNest characters only`
+      : "Official AmyNest characters in a calm morning routine with the AmyNest app";
 
   const action =
     scene?.voice?.trim() ||
@@ -102,6 +110,9 @@ export function buildVeoPrompt(input: VeoPromptInput): VeoPromptResult {
     "No distorted faces or unnatural anatomy.",
     "No on-screen text except a clean end-card moment if naturally framed.",
     "Keep depictions wholesome, respectful, and age-appropriate.",
+    "Never redesign AmyNest characters or invent new mascots.",
+    "Never recreate the AmyNest app icon with generative AI.",
+    brandVisual,
   ].join(" ");
 
   const brandCta =

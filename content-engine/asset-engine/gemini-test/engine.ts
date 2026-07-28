@@ -28,6 +28,7 @@ import {
 } from "../veo-test/scene.js";
 import { validateGeneratedVideo } from "../veo-test/validate.js";
 import { classifyGeminiFailure, type ClassifiedGeminiFailure } from "./failure.js";
+import { getBrandIdentityKit, resolveBrandEndCard } from "../../brand/index.js";
 import { writeTestGeminiReport, type TestGeminiReportInput } from "./report.js";
 
 export interface RunTestGeminiOptions {
@@ -348,13 +349,17 @@ export async function runTestGeminiPipeline(
 
     // 8) Final ~10s MP4 with TTS bed
     const composedPath = join(outputDirectory, "amynest-gemini-test-final-10s.mp4");
+    const brandEnd = resolveBrandEndCard("gemini-test");
     await composeFinalShort({
       videoPath: video.videoPath,
       ttsPath: narration.audioPath,
       outputPath: composedPath,
       targetSeconds: TEST_VEO_TARGET_DURATION_SECONDS,
-      endCardText: TEST_VEO_END_CARD,
+      endCardText: brandEnd.ctaLine || TEST_VEO_END_CARD,
       heroImagePath: imagePath,
+      appIconPath: getBrandIdentityKit().appIconAsset,
+      googlePlayBadgePath: brandEnd.googlePlayBadgePath,
+      appleAppStoreBadgePath: brandEnd.appleAppStoreBadgePath,
     });
     finalVideoPath = composedPath;
 
@@ -519,20 +524,23 @@ async function composeFinalShort(options: {
   targetSeconds: number;
   endCardText: string;
   heroImagePath?: string;
+  appIconPath?: string;
+  googlePlayBadgePath?: string;
+  appleAppStoreBadgePath?: string;
 }): Promise<void> {
   const endSeconds = Math.max(1, options.targetSeconds - TEST_VEO_API_DURATION_SECONDS);
   const escapeDrawtext = (value: string): string =>
     value.replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\'");
   const brand = escapeDrawtext("AmyNest");
   const cta = escapeDrawtext(options.endCardText || TEST_VEO_END_CARD);
-  const store = escapeDrawtext("GET IT ON Google Play");
+  const store = escapeDrawtext("Google Play  ·  App Store");
 
   const withDrawtext = [
     `[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0]`,
     `[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,` +
       `drawtext=text='${brand}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=720:shadowcolor=black@0.45:shadowx=2:shadowy=2,` +
       `drawtext=text='${cta}':fontsize=42:fontcolor=0xF6E7C1:x=(w-text_w)/2:y=820:shadowcolor=black@0.35:shadowx=1:shadowy=1,` +
-      `drawtext=text='${store}':fontsize=34:fontcolor=white:x=(w-text_w)/2:y=980:box=1:boxcolor=0x1B5E20@0.85:boxborderw=16[v1]`,
+      `drawtext=text='${store}':fontsize=34:fontcolor=white:x=(w-text_w)/2:y=980:box=1:boxcolor=0x461EA8@0.85:boxborderw=16[v1]`,
     `[v0][v1]concat=n=2:v=1:a=0[vout]`,
     `[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},asetpts=PTS-STARTPTS[aout]`,
   ].join(";");
@@ -544,7 +552,7 @@ async function composeFinalShort(options: {
     "-f",
     "lavfi",
     "-i",
-    `color=c=0x0F2740:s=1080x1920:d=${endSeconds}:r=30`,
+    `color=c=0x120B2E:s=1080x1920:d=${endSeconds}:r=30`,
     "-i",
     options.ttsPath,
     ...extraInputs,
@@ -570,7 +578,24 @@ async function composeFinalShort(options: {
     await runFfmpeg(argsBase(withDrawtext));
     return;
   } catch {
-    // Homebrew ffmpeg often lacks libfreetype drawtext — fall back to image overlay CTA.
+    // Homebrew ffmpeg often lacks libfreetype drawtext — fall back to official icon overlay.
+  }
+
+  if (options.appIconPath) {
+    const withIcon = [
+      `[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0]`,
+      `[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p[bg]`,
+      `[3:v]scale=420:420:force_original_aspect_ratio=decrease[icon]`,
+      `[bg][icon]overlay=(W-w)/2:640[v1]`,
+      `[v0][v1]concat=n=2:v=1:a=0[vout]`,
+      `[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},asetpts=PTS-STARTPTS[aout]`,
+    ].join(";");
+    try {
+      await runFfmpeg(argsBase(withIcon, ["-i", options.appIconPath]));
+      return;
+    } catch {
+      // continue
+    }
   }
 
   if (options.heroImagePath) {
@@ -597,6 +622,8 @@ async function composeFinalShort(options: {
     `[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},asetpts=PTS-STARTPTS[aout]`,
   ].join(";");
   await runFfmpeg(argsBase(plain));
+  void options.googlePlayBadgePath;
+  void options.appleAppStoreBadgePath;
 }
 
 function runFfmpeg(args: string[]): Promise<void> {

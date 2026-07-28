@@ -91,11 +91,25 @@ function scoreCtr(payload: GeneratedScriptPayload): number {
 }
 
 function scoreBrand(payload: GeneratedScriptPayload, channelName: string): number {
-  const corpus = `${payload.cta} ${payload.voiceScript} ${payload.description.appPromotion} ${payload.titles.primary}`;
-  let score = 40;
-  if (new RegExp(channelName.replace(/\s+/g, "\\s*"), "i").test(corpus)) score += 30;
+  const corpus = `${payload.cta} ${payload.voiceScript} ${payload.description.appPromotion} ${payload.titles.primary} ${payload.story}`;
+  let score = 25;
+  if (new RegExp(channelName.replace(/\s+/g, "\\s*"), "i").test(corpus)) score += 20;
   if (/amynest/i.test(corpus)) score += 20;
   if (payload.hashtags.some((h) => /amynest/i.test(h))) score += 10;
+  if (
+    /\b(learning|astro|health|speech|game|coach|audio|routine|habit|premium)\b/i.test(
+      corpus,
+    )
+  ) {
+    score += 15;
+  }
+  if (
+    /download amynest|build better habits|start your child.s journey|google play|app store/i.test(
+      corpus,
+    )
+  ) {
+    score += 10;
+  }
   return clamp(score);
 }
 

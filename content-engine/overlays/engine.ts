@@ -109,15 +109,30 @@ export function buildOverlayPlan(
   }
 
   if (branding.mode === "full") {
-    const ctaScene = scenes.find((s) => s.purpose === "cta") ?? scenes[scenes.length - 1]!;
+    const ctaScene =
+      scenes.find((s) => s.purpose === "brand-end") ??
+      scenes.find((s) => s.purpose === "cta") ??
+      scenes[scenes.length - 1]!;
     const clip = clipById.get(ctaScene.sceneId);
     if (clip) {
       overlays.push({
         id: `overlay-${String(seq++).padStart(3, "0")}`,
         sceneId: ctaScene.sceneId,
-        kind: "Label",
-        text: "Play Store",
+        kind: "Badge",
+        text: "Google Play",
         position: { x: 28, y: 70, anchor: "center" },
+        fontSize: 16,
+        animation: "Fade",
+        start: round2(clip.sceneStart + 0.3),
+        end: clip.sceneEnd,
+        duration: round2(Math.max(0.4, clip.sceneEnd - (clip.sceneStart + 0.3))),
+      });
+      overlays.push({
+        id: `overlay-${String(seq++).padStart(3, "0")}`,
+        sceneId: ctaScene.sceneId,
+        kind: "Badge",
+        text: "App Store",
+        position: { x: 72, y: 70, anchor: "center" },
         fontSize: 16,
         animation: "Fade",
         start: round2(clip.sceneStart + 0.3),
@@ -129,8 +144,20 @@ export function buildOverlayPlan(
         sceneId: ctaScene.sceneId,
         kind: "Progress",
         text: "QR",
-        position: { x: 72, y: 70, anchor: "center" },
+        position: { x: 50, y: 58, anchor: "center" },
         fontSize: 14,
+        animation: "Fade",
+        start: round2(clip.sceneStart + 0.3),
+        end: clip.sceneEnd,
+        duration: round2(Math.max(0.4, clip.sceneEnd - (clip.sceneStart + 0.3))),
+      });
+      overlays.push({
+        id: `overlay-${String(seq++).padStart(3, "0")}`,
+        sceneId: ctaScene.sceneId,
+        kind: "Label",
+        text: "www.amynest.in",
+        position: { x: 50, y: 92, anchor: "bottom-center" },
+        fontSize: 16,
         animation: "Fade",
         start: round2(clip.sceneStart + 0.3),
         end: clip.sceneEnd,

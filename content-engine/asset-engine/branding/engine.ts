@@ -1,3 +1,7 @@
+import {
+  getBrandIdentityKit,
+  resolveBrandEndCard,
+} from "../../brand/index.js";
 import type {
   BrandingAssetSet,
   BrandingProfile,
@@ -7,57 +11,32 @@ import type { ResolutionPreset, StoryboardPackage } from "../../types/storyboard
 import { fingerprintAssetRequest } from "../fingerprint/index.js";
 import { parseResolution } from "../planner/geometry.js";
 
-const PROFILE_COLORS: Record<
-  BrandingProfile,
-  BrandingAssetSet["colors"]
-> = {
-  default: {
-    primary: "#1B4D6E",
-    secondary: "#F4C95F",
-    accent: "#E67E5A",
-    background: "#0F2740",
-    text: "#FFF8F0",
-    mode: "dark",
-  },
-  dark: {
-    primary: "#0B1F33",
-    secondary: "#F4C95F",
-    accent: "#E67E5A",
-    background: "#071421",
-    text: "#F7FBFF",
-    mode: "dark",
-  },
-  light: {
-    primary: "#1B4D6E",
-    secondary: "#C9952A",
-    accent: "#D4653F",
-    background: "#FFF8F0",
-    text: "#14233A",
-    mode: "light",
-  },
-  astro: {
-    primary: "#2B1E5E",
-    secondary: "#F6D57A",
-    accent: "#8EC5FF",
-    background: "#120B2E",
-    text: "#F8F4FF",
-    mode: "dark",
-  },
-};
-
-/** Inject AmyNest branding asset descriptors (no binary generation). */
+/**
+ * Inject AmyNest Brand Identity assets (official icon, characters, store badges).
+ * Paths point at the canonical brand kit — never AI-regenerated logos/mascots.
+ */
 export function buildBrandingAssets(
   storyboard: StoryboardPackage,
   profile: BrandingProfile,
 ): BrandingAssetSet {
-  const colors = PROFILE_COLORS[profile];
+  const kit = getBrandIdentityKit();
+  const end = resolveBrandEndCard(storyboard.topic.id);
+  const colors = {
+    primary: kit.colors.primary,
+    secondary: kit.colors.secondary,
+    accent: kit.colors.accent,
+    background:
+      profile === "light" ? "#FFF8F0" : kit.colors.background,
+    text: profile === "light" ? "#14233A" : kit.colors.text,
+    mode: (profile === "light" ? "light" : "dark") as "light" | "dark",
+  };
   const { width, height } = parseResolution(storyboard.resolution);
   const base = {
     sceneId: "branding",
     width,
     height,
     aspectRatio: storyboard.aspectRatio,
-    license: "AmyNest Brand Kit",
+    license: "AmyNest Brand Kit — Official Locked Assets",
     createdAt: new Date().toISOString(),
     costEstimateUsd: 0,
     fromCache: false,
@@ -67,14 +46,14 @@ export function buildBrandingAssets(
   const logo = brandingAsset({
     ...base,
     assetId: storyboard.branding.logoAssetId,
-    path: `brand://logo/${profile}.png`,
+    path: kit.appIconAsset,
     label: "logo",
     resolution: storyboard.resolution,
   });
   const watermark = brandingAsset({
     ...base,
     assetId: "brand.amynest.watermark",
-    path: `brand://watermark/${profile}.png`,
+    path: kit.appIconAsset,
     label: "watermark",
     resolution: storyboard.resolution,
   });
@@ -88,7 +67,7 @@ export function buildBrandingAssets(
   const playStorePlaceholder = brandingAsset({
     ...base,
     assetId: storyboard.branding.playStorePlaceholder,
-    path: "brand://placeholders/play-store-badge.png",
+    path: end.googlePlayBadgePath,
     label: "play-store",
     resolution: storyboard.resolution,
   });
@@ -101,10 +80,10 @@ export function buildBrandingAssets(
     playStorePlaceholder,
     colors,
     typography: {
-      display: storyboard.branding.typography.display,
-      body: storyboard.branding.typography.body,
+      display: kit.typography.display,
+      body: kit.typography.body,
     },
-    cta: storyboard.branding.cta,
+    cta: end.ctaLine || storyboard.branding.cta,
   };
 }
 
@@ -152,6 +131,7 @@ function brandingAsset(input: {
     metadata: {
       branding: true,
       label: input.label,
+      official: true,
     },
   };
 }

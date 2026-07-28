@@ -37,7 +37,8 @@
     "./workflow": "./workflow/index.ts",
     "./analytics": "./analytics/index.ts",
     "./brain": "./brain/index.ts",
-    "./operations": "./operations/index.ts"
+    "./operations": "./operations/index.ts",
+    "./brand": "./brand/index.ts"
   },
   "scripts": {
     "test": "node --import tsx/esm --test \"./**/*.test.ts\"",

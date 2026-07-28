@@ -1,3 +1,4 @@
+import { evaluateBrandQualityGate } from "../brand/index.js";
 import { assertTimelineIntegrity } from "../timeline/index.js";
 import type {
   StoryboardPackage,
@@ -80,6 +81,26 @@ export function validateStoryboard(pkg: StoryboardPackage): StoryboardValidation
   }
   if (!pkg.branding.qrPlaceholder || !pkg.branding.playStorePlaceholder) {
     push("warning", "branding.placeholders", "QR or Play Store placeholder missing");
+  }
+
+  const purposes = new Set(pkg.scenes.map((s) => s.purpose));
+  if (!purposes.has("brand-end")) {
+    push("error", "scenes.brand-end", "mandatory AmyNest branded end card missing");
+  }
+  if (!purposes.has("cta")) {
+    push("error", "scenes.cta", "mandatory official CTA scene missing");
+  }
+  if (!purposes.has("hook")) {
+    push("error", "scenes.hook", "mandatory hook scene missing");
+  }
+
+  const brandGate = evaluateBrandQualityGate({ storyboard: pkg });
+  for (const finding of brandGate.findings) {
+    push(
+      finding.severity,
+      `brand.${finding.code}`,
+      finding.message,
+    );
   }
 
   const assetIds = new Set<string>();

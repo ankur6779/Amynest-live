@@ -14,7 +14,14 @@ describe("scene engine", () => {
     assert.ok(medium.length <= long.length);
     assert.ok(short.some((s) => s.purpose === "hook"));
     assert.ok(short.some((s) => s.purpose === "cta"));
+    assert.ok(short.some((s) => s.purpose === "brand-end"));
     assert.ok(long.some((s) => s.purpose === "brand-end"));
+    // Mandatory AmyNest brand spine present at every duration.
+    for (const pack of [short, medium, long]) {
+      assert.ok(pack.some((s) => s.purpose === "opening-question"));
+      assert.ok(pack.some((s) => s.purpose === "story"));
+      assert.ok(pack.some((s) => s.purpose === "key-point"));
+    }
   });
 
   it("creates scenes with visual types and asset requirements", () => {

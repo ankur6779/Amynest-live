@@ -26,7 +26,11 @@ describe("AssetOrchestrator", () => {
     assert.equal(assets.storyboardId, storyboard.id);
     assert.ok(assets.resolvedAssets.length >= storyboard.scenes.length);
     assert.ok(assets.assetManifest.entries.length >= assets.resolvedAssets.length);
-    assert.equal(assets.brandingAssets.logo.path.includes("brand://"), true);
+    assert.ok(
+      assets.brandingAssets.logo.path.includes("brand://") ||
+        assets.brandingAssets.logo.path.includes("content-engine/brand/assets"),
+      `unexpected logo path: ${assets.brandingAssets.logo.path}`,
+    );
     assert.ok(assets.brandingAssets.qrPlaceholder.path);
     assert.ok(assets.brandingAssets.playStorePlaceholder.path);
     assert.equal(assets.validation.ok, true, assets.validation.errors.map((e) => e.message).join("; "));

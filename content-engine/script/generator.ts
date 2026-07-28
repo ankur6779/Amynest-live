@@ -1,5 +1,11 @@
 import type { AIProvider } from "../ai/provider.js";
 import { ContentEngineError } from "../ai/errors.js";
+import {
+  buildBrandSystemPromptBlock,
+  discoverAmyNestFeatures,
+  findRepoRootQuiet,
+  selectFeatureForTopic,
+} from "../brand/index.js";
 import { renderPromptTemplate } from "../prompts/index.js";
 import {
   getPromptTemplatesByFamily,
@@ -40,8 +46,29 @@ export async function generateScriptPayload(
     getPromptTemplatesByFamily("parenting")[0]!;
   const languagePrompt = getPromptTemplatesByFamily(languageFamily)[0];
 
-  const systemPrompt = composeSystemPrompt(categoryPrompt, languagePrompt, options.rewriteHint);
-  const variables = toVariables(input);
+  const features = discoverAmyNestFeatures({
+    repoRoot: findRepoRootQuiet(),
+    maxFeatures: 100,
+  });
+  const feature = selectFeatureForTopic(features, {
+    id: input.topic.id,
+    title: input.topic.title,
+    category: input.category,
+    keywords: input.topic.keywords,
+  });
+  const brandBlock = buildBrandSystemPromptBlock({
+    category: input.category,
+    title: input.topic.title,
+    keywords: input.topic.keywords,
+    feature,
+  });
+  const systemPrompt = composeSystemPrompt(
+    categoryPrompt,
+    languagePrompt,
+    options.rewriteHint,
+    brandBlock,
+  );
+  const variables = toVariables(input, feature?.title);
   const userPrompt = renderPromptTemplate(categoryPrompt.userPromptTemplate, variables);
 
   if (!provider.supportsJSON()) {
@@ -101,8 +128,12 @@ function composeSystemPrompt(
   categoryPrompt: PromptTemplate,
   languagePrompt: PromptTemplate | undefined,
   rewriteHint?: string,
+  brandBlock?: string,
 ): string {
   const parts = [categoryPrompt.systemPrompt];
+  if (brandBlock) {
+    parts.push(brandBlock);
+  }
   if (languagePrompt) {
     parts.push(`Language directive: ${languagePrompt.systemPrompt}`);
   }
@@ -112,7 +143,10 @@ function composeSystemPrompt(
   return parts.join("\n\n");
 }
 
-function toVariables(input: ContentGenerationInput): Record<string, string> {
+function toVariables(
+  input: ContentGenerationInput,
+  featureTitle?: string,
+): Record<string, string> {
   return {
     title: input.topic.title,
     category: input.category,
@@ -122,5 +156,6 @@ function toVariables(input: ContentGenerationInput): Record<string, string> {
     videoStyle: input.videoStyle,
     cta: input.topic.cta,
     keywords: input.topic.keywords.join(", "),
+    feature: featureTitle ?? input.category,
   };
 }

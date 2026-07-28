@@ -193,6 +193,7 @@ export {
   type AssetPlanInput,
 } from "./assets/index.js";
 export { validateStoryboard } from "./validation/index.js";
+export * from "./brand/index.js";
 export { exportStoryboard, toYaml } from "./export/index.js";
 export {
   AssetOrchestrator,

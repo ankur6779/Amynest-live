@@ -1,3 +1,7 @@
+import {
+  applyBrandEndCardToBrandingPlan,
+  getBrandIdentityKit,
+} from "../brand/index.js";
 import type { ContentEngineConfig } from "../types/index.js";
 import type { BrandingMode, BrandingPlan } from "../types/storyboard.js";
 
@@ -6,25 +10,27 @@ export function buildBrandingPlan(
   mode: BrandingMode,
   ctaFallback: string,
 ): BrandingPlan {
-  return {
-    channelName: config.branding.channelName,
-    logoAssetId: "brand.amynest.logo-primary",
+  const kit = getBrandIdentityKit();
+  const base: BrandingPlan = {
+    channelName: config.branding.channelName || kit.channelName,
+    logoAssetId: kit.logoAssetId,
     colors: {
-      primary: "#1B4D6E",
-      secondary: "#F4C95F",
-      accent: "#E67E5A",
-      background: "#0F2740",
-      text: "#FFF8F0",
+      primary: kit.colors.primary,
+      secondary: kit.colors.secondary,
+      accent: kit.colors.accent,
+      background: kit.colors.background,
+      text: kit.colors.text,
     },
     typography: {
-      display: "Fraunces",
-      body: "Source Sans 3",
+      display: kit.typography.display,
+      body: kit.typography.body,
     },
-    cta: config.branding.endScreenCta || ctaFallback,
+    cta: config.branding.endScreenCta || ctaFallback || kit.endCard.ctaLines[0]!,
     watermark: config.branding.watermark,
     watermarkPosition: "top-right",
     qrPlaceholder: "asset.placeholder.qr-amynest",
-    playStorePlaceholder: "asset.placeholder.play-store-badge",
+    playStorePlaceholder: "brand.amynest.google-play-badge",
     mode,
   };
+  return applyBrandEndCardToBrandingPlan(base, base.cta);
 }

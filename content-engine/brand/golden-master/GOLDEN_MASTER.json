@@ -1,0 +1,230 @@
+{
+  "version": "brand-v1.0.0",
+  "title": "AmyNest Golden Master Reference Package",
+  "createdFor": "AmyNest Content Automation Engine RC-1",
+  "storyFormat": [
+    "Hook",
+    "Problem",
+    "AmyNest Solution",
+    "Benefit",
+    "Download CTA"
+  ],
+  "cinematic": {
+    "qualityBar": "Pixar-inspired family animation quality",
+    "lighting": "Warm cinematic global illumination with soft bloom and gentle fill",
+    "composition": "Premium vertical 9:16 subject-centered framing with safe caption margins",
+    "depthOfField": "Soft shallow depth of field, premium bokeh, no harsh edge clipping",
+    "camera": {
+      "default": "Gentle cinematic dolly / subtle parallax",
+      "allowed": [
+        "Static",
+        "Zoom In",
+        "Push",
+        "Pan Left",
+        "Pan Right",
+        "Hold"
+      ],
+      "forbidden": [
+        "shaky cam",
+        "whip pan",
+        "dutch angle extreme",
+        "jump scare cuts"
+      ]
+    },
+    "palette": {
+      "primary": "#6A2CFF",
+      "secondary": "#F6D57A",
+      "accent": "#8A2CFF",
+      "deepPurple": "#461EA8",
+      "violet": "#6A2CFF",
+      "lavender": "#C9B6FF",
+      "softPink": "#FFB6A8",
+      "background": "#120B2E",
+      "text": "#F8F4FF",
+      "hoodiePurple": "#6A2CFF",
+      "joggerPurple": "#461EA8"
+    },
+    "motion": "Natural micro-expressions, soft body language, no morphing artifacts",
+    "transitions": [
+      "Fade",
+      "Crossfade",
+      "soft-glow",
+      "purple-light-sweep"
+    ],
+    "negativeVisual": [
+      "generic stock AI look",
+      "random unrelated mascots",
+      "harsh neon cyberpunk",
+      "horror lighting",
+      "low-res artifacts",
+      "textured furry redesign of Amy AI",
+      "logo recreation / warped brand marks"
+    ]
+  },
+  "delivery": {
+    "aspectRatio": "9:16",
+    "resolution": "1080x1920",
+    "fps": 30,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "audioSampleRate": 48000,
+    "minBitrateKbps": 4000,
+    "captionBurnIn": true,
+    "safeMarginsPct": {
+      "top": 12,
+      "bottom": 18,
+      "left": 6,
+      "right": 6
+    },
+    "platforms": [
+      "youtube-shorts",
+      "instagram-reels",
+      "facebook-reels",
+      "tiktok",
+      "future-vertical"
+    ]
+  },
+  "brandLock": {
+    "version": "brand-v1.0.0",
+    "immutable": true,
+    "lockedAt": "2026-07-28T19:00:00.000Z",
+    "colors": {
+      "primary": "#6A2CFF",
+      "secondary": "#F6D57A",
+      "accent": "#8A2CFF",
+      "deepPurple": "#461EA8",
+      "violet": "#6A2CFF",
+      "lavender": "#C9B6FF",
+      "softPink": "#FFB6A8",
+      "background": "#120B2E",
+      "text": "#F8F4FF",
+      "hoodiePurple": "#6A2CFF",
+      "joggerPurple": "#461EA8"
+    },
+    "typography": {
+      "display": "Fraunces",
+      "body": "Source Sans 3"
+    },
+    "ctaLines": [
+      "Download AmyNest AI Today",
+      "Build Better Habits Every Day",
+      "Start Your Child's Journey"
+    ],
+    "websiteUrl": "https://www.amynest.in",
+    "endCard": {
+      "required": true,
+      "durationSeconds": {
+        "min": 2,
+        "max": 3,
+        "default": 2.5
+      },
+      "downloadLine": "Download AmyNest AI"
+    },
+    "logoPlacement": {
+      "watermark": "top-right",
+      "endCardIcon": "center-upper",
+      "safeMarginPct": 8
+    },
+    "assetFingerprints": {
+      "appIcon": "5b8aebd04978f07d88c2ed04c5346232215a9446fae2e42003ed7feb03a67e40",
+      "amyAiBible": "6f65f19d2ac5b6b48056370c943cb4c6f0665c3e9c65ad8f4d171acb73f543fb",
+      "amyAiBase": "4739c817741dbe6a060ae016a7d3685d7e1354eeb65c52f96bdf854e68944b56",
+      "amyGirlBible": "dc09bf858293f02de97d51e0cee1344257304d301916c7bc4f33490482f09f2f",
+      "amyGirlBase": "ee5a70e450171323f1a7138539d39aff5a5369808ce6ec0093a304313892d3f5",
+      "amyBoyBible": "1cc38ca7b1f5acc171a4a75d1d667e938c97216d9fad1529d11739d59abbb8ee",
+      "amyBoyBase": "cc4006c82dbd8e724cf2d9d29b5cdbfa9fef17fe0e73b53200311044de8459fa",
+      "googlePlayBadge": "ae8bbd3a1bb6f094b9b2efef4bcd4603eafeb4be15a4f37f29a9d1c50a92837f",
+      "appStoreBadge": "4b3ad97ce08d4879c6ada726668b9ff8a61131f17736394a6db287ca4c1feb88"
+    },
+    "neverAllow": [
+      "Redesign official characters",
+      "Regenerate app icon with AI",
+      "Invent random mascots",
+      "Alter brand colors",
+      "Omit end card / store badges / CTA",
+      "Generic promotional copy without a real AmyNest feature"
+    ]
+  },
+  "canonical": {
+    "systemPrompt": "AMYNEST BRAND LOCK brand-v1.0.0 — IMMUTABLE\nBrand: AmyNest AI. Website: https://www.amynest.in.\nColors: primary #6A2CFF, deep #461EA8, accent #8A2CFF, gold #F6D57A.\nQuality: Pixar-inspired family animation quality.\nLighting: Warm cinematic global illumination with soft bloom and gentle fill.\nComposition: Premium vertical 9:16 subject-centered framing with safe caption margins.\nDOF: Soft shallow depth of field, premium bokeh, no harsh edge clipping.\nCamera: Gentle cinematic dolly / subtle parallax.\nMotion: Natural micro-expressions, soft body language, no morphing artifacts.\nPalette: primary #6A2CFF, deep #461EA8, gold #F6D57A.\nAvoid: generic stock AI look; random unrelated mascots; harsh neon cyberpunk; horror lighting; low-res artifacts; textured furry redesign of Amy AI; logo recreation / warped brand marks.\nFeature focus: map the topic to a real AmyNest capability (Learning, Astro, Health, Speech, Games, Coach, Audio, Routines, Premium).\nEducate parents — never create generic promotional filler.\nScript arc (never skip): Hook → Problem → AmyNest Solution → Benefit → Download CTA.\nTone: helpful parenting guide — not generic marketing.\nStorytelling priorities: Emotion, Curiosity, Hope, Parent confidence, Child happiness, Achievement, Family bonding.\nCharacters (official only — never redesign / never invent mascots):\n- Amy Girl: Use ONLY the official Amy Girl: brown side ponytail with yellow bow, plain purple hoodie (no logos), dark purple leggings, purple sneakers with white soles, large brown eyes, Pixar-quality 3D. Never redesign her.\n- Amy AI: Use ONLY the official Amy AI mascot: white rounded floating body, purple AmyAI baseball cap with headphones, large purple eyes, soft polymer finish, neon purple halo. Never invent a new robot or bird mascot.\nMaintain face, hair, eyes, expressions, clothing, proportions, material, lighting, palette — zero identity drift.\nVideo beats: 1) Hook 2) Problem (Amy AI) 3) Feature solution demo 4) Emotional benefit 5) Official CTA end card.\nCTA must be one of: Download AmyNest AI Today | Build Better Habits Every Day | Start Your Child's Journey. Prefer: Start Your Child's Journey.\nEnd card (2–3s): official app icon + Download AmyNest AI + Google Play + App Store + website + purple glow.\n- Never redesign official characters\n- Never invent random mascots\n- Never recreate the app icon with AI\n- Never omit the branded end card\n- Never omit Google Play or App Store badges\n- Never produce generic non-AmyNest AI videos\n- Never hardcode a static feature list — discover from the codebase",
+    "visualPrompt": "Official AmyNest studio look (brand-v1.0.0).\nQuality: Pixar-inspired family animation quality.\nLighting: Warm cinematic global illumination with soft bloom and gentle fill.\nComposition: Premium vertical 9:16 subject-centered framing with safe caption margins.\nDOF: Soft shallow depth of field, premium bokeh, no harsh edge clipping.\nCamera: Gentle cinematic dolly / subtle parallax.\nMotion: Natural micro-expressions, soft body language, no morphing artifacts.\nPalette: primary #6A2CFF, deep #461EA8, gold #F6D57A.\nAvoid: generic stock AI look; random unrelated mascots; harsh neon cyberpunk; horror lighting; low-res artifacts; textured furry redesign of Amy AI; logo recreation / warped brand marks.\nPurple brand palette (#6A2CFF / #461EA8).\n- Amy AI: Use ONLY the official Amy AI mascot: white rounded floating body, purple AmyAI baseball cap with headphones, large purple eyes, soft polymer finish, neon purple halo. Never invent a new robot or bird mascot.\n- Amy AI: Use ONLY the official Amy AI mascot: white rounded floating body, purple AmyAI baseball cap with headphones, large purple eyes, soft polymer finish, neon purple halo. Never invent a new robot or bird mascot.\nUse official AmyNest app icon only when a logo is required — never recreate the icon with AI.\nPremium parenting Shorts composition, vertical 9:16, soft cinematic lighting, natural motion.\nReject generic AI look — every frame must feel like the same AmyNest animation studio.",
+    "cinematicPrompt": "Quality: Pixar-inspired family animation quality.\nLighting: Warm cinematic global illumination with soft bloom and gentle fill.\nComposition: Premium vertical 9:16 subject-centered framing with safe caption margins.\nDOF: Soft shallow depth of field, premium bokeh, no harsh edge clipping.\nCamera: Gentle cinematic dolly / subtle parallax.\nMotion: Natural micro-expressions, soft body language, no morphing artifacts.\nPalette: primary #6A2CFF, deep #461EA8, gold #F6D57A.\nAvoid: generic stock AI look; random unrelated mascots; harsh neon cyberpunk; horror lighting; low-res artifacts; textured furry redesign of Amy AI; logo recreation / warped brand marks.",
+    "lighting": "Warm cinematic global illumination with soft bloom and gentle fill",
+    "camera": "Gentle cinematic dolly / subtle parallax",
+    "transitions": [
+      "Fade",
+      "Crossfade",
+      "soft-glow",
+      "purple-light-sweep"
+    ],
+    "typography": {
+      "display": "Fraunces",
+      "body": "Source Sans 3"
+    },
+    "ctaLines": [
+      "Download AmyNest AI Today",
+      "Build Better Habits Every Day",
+      "Start Your Child's Journey"
+    ],
+    "endCard": {
+      "durationSeconds": 2.5,
+      "downloadLine": "Download AmyNest AI",
+      "websiteUrl": "https://www.amynest.in",
+      "background": "#120B2E",
+      "motion": "Animated purple glow + soft logo reveal",
+      "requiredAssets": [
+        "official-app-icon",
+        "google-play-badge",
+        "apple-app-store-badge",
+        "official-website"
+      ]
+    },
+    "videoStructure": [
+      {
+        "index": 1,
+        "purpose": "hook",
+        "scenePurpose": "hook",
+        "durationHintSeconds": 2,
+        "captionHint": "Strong parenting hook"
+      },
+      {
+        "index": 2,
+        "purpose": "amy-ai-intro",
+        "scenePurpose": "opening-question",
+        "durationHintSeconds": 2,
+        "requiredCharacter": "amy-ai",
+        "captionHint": "Amy AI introduces the topic"
+      },
+      {
+        "index": 3,
+        "purpose": "feature-demo",
+        "scenePurpose": "story",
+        "durationHintSeconds": 3,
+        "captionHint": "Real AmyNest feature demonstration"
+      },
+      {
+        "index": 4,
+        "purpose": "emotional-benefit",
+        "scenePurpose": "key-point",
+        "durationHintSeconds": 2,
+        "captionHint": "Emotional parenting benefit"
+      },
+      {
+        "index": 5,
+        "purpose": "official-cta",
+        "scenePurpose": "cta",
+        "durationHintSeconds": 2.5,
+        "requiredCharacter": "amy-ai",
+        "captionHint": "Official branded CTA + end card"
+      }
+    ]
+  },
+  "compareRules": [
+    "Future videos must preserve locked character identity vs Golden Master references",
+    "Palette must remain AmyNest purple system",
+    "Story format Hook→Problem→Solution→Benefit→CTA is mandatory",
+    "End card assets and duration must match Golden Master",
+    "Delivery must remain 1080x1920 9:16 multi-platform safe",
+    "No generic AI look; reject identity drift before publish"
+  ]
+}
