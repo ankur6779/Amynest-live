@@ -281,8 +281,9 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
       });
     }
 
+    let snapshot: Awaited<ReturnType<typeof computeAndPersistSnapshotWithRetry>>;
     try {
-      const snapshot = await computeAndPersistSnapshotWithRetry({
+      snapshot = await computeAndPersistSnapshotWithRetry({
         userId,
         profileId: profileRow.id,
         birthDate: profileRow.birthDate,
@@ -290,24 +291,9 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
         timePrecision: body.timePrecision as "exact" | "approximate" | "unknown",
         birthPlace: place,
       });
-      // Refresh profile so generationStatus=READY is reflected.
-      const refreshed = await migrateBirthProfileAtRestIfNeeded(profileRow);
-      logBirthSkyPipeline("create_ready", {
-        userId,
-        profileId: profileRow.id,
-        snapshotId: snapshot.snapshotId,
-        engineVersion: snapshot.engineVersion,
-        fallbackUsed: snapshotFallbackUsed(snapshot),
-        generationStatus: "READY",
-      });
-      res.json(
-        createResponsePayload({
-          profile: mapProfileRow(refreshed),
-          snapshot,
-          generationStatus: "READY",
-        }),
-      );
     } catch (computeErr) {
+      // Only mark FAILED when compute itself failed — never after a successful persist
+      // if a later response write races with gateway timeout (headers already sent).
       await setGenerationStatus(profileRow.id, "FAILED");
       logBirthSkyPipeline(
         "create_compute_failed",
@@ -333,6 +319,7 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           ? "ephemeris_unavailable"
           : "compute_failed";
       // Profile may exist for recovery — but never persist a null snapshot row.
+      if (res.headersSent) return;
       res.json(
         createResponsePayload({
           profile: mapProfileRow({ ...profileRow, generationStatus: "FAILED" }),
@@ -341,7 +328,28 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           errorCode: code,
         }),
       );
+      return;
     }
+
+    // Refresh profile so generationStatus=READY is reflected.
+    const refreshed = await migrateBirthProfileAtRestIfNeeded(profileRow);
+    logBirthSkyPipeline("create_ready", {
+      userId,
+      profileId: profileRow.id,
+      snapshotId: snapshot.snapshotId,
+      engineVersion: snapshot.engineVersion,
+      fallbackUsed: snapshotFallbackUsed(snapshot),
+      generationStatus: "READY",
+    });
+    // Compute already persisted READY + snapshot; do not overwrite on response race.
+    if (res.headersSent) return;
+    res.json(
+      createResponsePayload({
+        profile: mapProfileRow(refreshed),
+        snapshot,
+        generationStatus: "READY",
+      }),
+    );
   } catch (err) {
     logger.error(`birth-sky create failed: ${err instanceof Error ? err.message : String(err)}`);
     logBirthSkyPipeline(
@@ -349,6 +357,7 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
       { userId, error: err instanceof Error ? err.message : String(err) },
       "error",
     );
+    if (res.headersSent) return;
     res.status(500).json({ error: "server_error" });
   }
 });
@@ -401,14 +410,51 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       );
       return;
     }
-    const snapshot = await computeAndPersistSnapshotWithRetry({
-      userId,
-      profileId: profile.id,
-      birthDate: profile.birthDate,
-      birthTime: plain.birthTime,
-      timePrecision: profile.timePrecision as "exact" | "approximate" | "unknown",
-      birthPlace: plain.birthPlace,
-    });
+    let snapshot: Awaited<ReturnType<typeof computeAndPersistSnapshotWithRetry>>;
+    try {
+      snapshot = await computeAndPersistSnapshotWithRetry({
+        userId,
+        profileId: profile.id,
+        birthDate: profile.birthDate,
+        birthTime: plain.birthTime,
+        timePrecision: profile.timePrecision as "exact" | "approximate" | "unknown",
+        birthPlace: plain.birthPlace,
+      });
+    } catch (err) {
+      logger.error(`birth-sky recompute failed: ${err instanceof Error ? err.message : String(err)}`);
+      try {
+        await setGenerationStatus(profileId, "FAILED");
+      } catch {
+        /* ignore */
+      }
+      const code =
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code?: string }).code === "ephemeris_unavailable"
+          ? "ephemeris_unavailable"
+          : "compute_failed";
+      logBirthSkyPipeline(
+        "recompute_failed",
+        { userId, profileId, errorCode: code, generationStatus: "FAILED" },
+        "error",
+      );
+      // Soft-fail parity with create: keep profile for Generate again / recovery.
+      // HTTP 500 caused the client to throw and surface "Connection was lost".
+      if (res.headersSent) return;
+      res.status(200).json(
+        createResponsePayload({
+          profile: mappedProfile
+            ? { ...mappedProfile, generationStatus: "FAILED" }
+            : null,
+          snapshot: null,
+          generationStatus: "FAILED",
+          errorCode: code,
+        }),
+      );
+      return;
+    }
+
     const refreshed = await migrateBirthProfileAtRestIfNeeded(profile);
     logBirthSkyPipeline("recompute_ready", {
       userId,
@@ -418,6 +464,8 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
       fallbackUsed: snapshotFallbackUsed(snapshot),
       generationStatus: "READY",
     });
+    // Compute already persisted READY + snapshot; do not overwrite on response race.
+    if (res.headersSent) return;
     res.json(
       createResponsePayload({
         profile: mapProfileRow(refreshed),
@@ -427,37 +475,9 @@ router.post("/birth-sky/profiles/:profileId/recompute", async (req, res): Promis
     );
   } catch (err) {
     logger.error(`birth-sky recompute failed: ${err instanceof Error ? err.message : String(err)}`);
-    if (profileId) {
-      try {
-        await setGenerationStatus(profileId, "FAILED");
-      } catch {
-        /* ignore */
-      }
-    }
-    const code =
-      err &&
-      typeof err === "object" &&
-      "code" in err &&
-      (err as { code?: string }).code === "ephemeris_unavailable"
-        ? "ephemeris_unavailable"
-        : "compute_failed";
-    logBirthSkyPipeline(
-      "recompute_failed",
-      { userId, profileId, errorCode: code, generationStatus: "FAILED" },
-      "error",
-    );
-    // Soft-fail parity with create: keep profile for Generate again / recovery.
-    // HTTP 500 caused the client to throw and surface "Connection was lost".
-    res.status(200).json(
-      createResponsePayload({
-        profile: mappedProfile
-          ? { ...mappedProfile, generationStatus: "FAILED" }
-          : null,
-        snapshot: null,
-        generationStatus: "FAILED",
-        errorCode: code,
-      }),
-    );
+    // Pre-compute failures (auth/profile lookup) — do not force FAILED over a READY sky.
+    if (res.headersSent) return;
+    res.status(500).json({ error: "server_error" });
   }
 });
 

@@ -230,6 +230,8 @@ router.post("/birth-sky/profiles/:profileId/regenerate", async (req, res): Promi
       timePrecision: profile.timePrecision as "exact" | "approximate" | "unknown",
       birthPlace: plain.birthPlace,
     });
+    // Snapshot already persisted; skip response if gateway timeout already answered.
+    if (res.headersSent) return;
     res.json({
       profile: mapProfileRow(profile),
       snapshot,
@@ -237,6 +239,7 @@ router.post("/birth-sky/profiles/:profileId/regenerate", async (req, res): Promi
     });
   } catch (err) {
     logger.error(`birth-sky regenerate: ${err instanceof Error ? err.message : String(err)}`);
+    if (res.headersSent) return;
     res.status(500).json({ error: "regeneration_failed", computeStatus: "failed" });
   }
 });
