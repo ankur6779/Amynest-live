@@ -128,6 +128,14 @@ export type NativeBilling = {
   >;
   restore: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
   getCustomerInfo: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
+  /** Forward subscription funnel events to native Firebase Analytics (Google Ads). */
+  logSubscriptionAnalytics: (payload: {
+    event: "begin_checkout" | "purchase";
+    productId: string;
+    currency: string;
+    value: number;
+    source?: string;
+  }) => Promise<{ ok: boolean; error?: string }>;
 };
 
 /**
@@ -223,5 +231,23 @@ export function getNativeBilling(): NativeBilling | null {
       }, 120_000),
     restore: () => callAsync(bridge, { action: "restore" }),
     getCustomerInfo: () => callAsync(bridge, { action: "getCustomerInfo" }),
+    logSubscriptionAnalytics: async (payload) => {
+      const result = await callAsync<{ ok?: boolean; error?: string }>(
+        bridge,
+        {
+          action: "logSubscriptionAnalytics",
+          event: payload.event,
+          productId: payload.productId,
+          currency: payload.currency,
+          value: payload.value,
+          ...(payload.source ? { source: payload.source } : {}),
+        },
+        4_000,
+      );
+      if (result && typeof result === "object" && "ok" in result) {
+        return { ok: result.ok === true, error: result.error };
+      }
+      return { ok: false, error: "bridge_no_response" };
+    },
   };
 }

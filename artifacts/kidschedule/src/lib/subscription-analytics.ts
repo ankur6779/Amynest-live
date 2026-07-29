@@ -113,17 +113,17 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     import("@/lib/analytics").then(({ track }) => {
       track("premium_paywall_viewed", { source: payload.source });
     });
-  }
-
-  if (payload.event === "subscribe_clicked") {
+    // Early Google Ads signal — most users never reach checkout_started.
     void import("@/lib/firebase-subscription-attribution").then(
       ({ trackFirebaseBeginCheckout }) => {
-        trackFirebaseBeginCheckout(payload.plan, { source: payload.source });
+        trackFirebaseBeginCheckout(payload.plan ?? "yearly", {
+          source: payload.source ? `paywall:${payload.source}` : "paywall_opened",
+        });
       },
     );
   }
 
-  if (payload.event === "checkout_started") {
+  if (payload.event === "subscribe_clicked" || payload.event === "checkout_started") {
     void import("@/lib/firebase-subscription-attribution").then(
       ({ trackFirebaseBeginCheckout }) => {
         trackFirebaseBeginCheckout(payload.plan, { source: payload.source });

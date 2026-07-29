@@ -7,6 +7,15 @@ const { logEvent, getAnalytics, isSupported } = vi.hoisted(() => ({
   isSupported: vi.fn(async () => true),
 }));
 
+const { isNativeAmyNestAndroidWrapper } = vi.hoisted(() => ({
+  isNativeAmyNestAndroidWrapper: vi.fn(() => false),
+}));
+
+const { getNativeBilling, waitForBillingBridge } = vi.hoisted(() => ({
+  getNativeBilling: vi.fn(() => null),
+  waitForBillingBridge: vi.fn(async () => null),
+}));
+
 vi.mock("firebase/analytics", () => ({
   getAnalytics,
   isSupported,
@@ -25,12 +34,13 @@ vi.mock("@/lib/meta-attribution", () => ({
   resolveMetaPlanPrice: vi.fn(() => ({ value: 1499, currency: "INR" })),
 }));
 
-vi.mock("@/lib/native-shell", () => ({
-  isNativeAmyNestShell: vi.fn(() => false),
+vi.mock("@/lib/device-lite", () => ({
+  isNativeAmyNestAndroidWrapper,
 }));
 
-vi.mock("@/lib/device-lite", () => ({
-  isAndroidMobileShell: vi.fn(() => false),
+vi.mock("@/lib/native-billing", () => ({
+  getNativeBilling,
+  waitForBillingBridge,
 }));
 
 import {
@@ -46,6 +56,9 @@ describe("firebase-subscription-attribution", () => {
     logEvent.mockClear();
     getAnalytics.mockClear();
     isSupported.mockClear();
+    isNativeAmyNestAndroidWrapper.mockReturnValue(false);
+    getNativeBilling.mockReturnValue(null);
+    waitForBillingBridge.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -62,6 +75,7 @@ describe("firebase-subscription-attribution", () => {
         currency: "INR",
         item_id: "yearly",
         source: "paywall_modal",
+        items: expect.any(Array),
       }),
     );
     expect(logEvent).toHaveBeenCalledWith(
@@ -79,7 +93,42 @@ describe("firebase-subscription-attribution", () => {
       expect.objectContaining({
         item_id: "monthly",
         source: "paywall_modal",
+        items: expect.any(Array),
       }),
+    );
+  });
+
+  it("uses native bridge on Android wrapper and skips web when native ok", async () => {
+    const logSubscriptionAnalytics = vi.fn(async () => ({ ok: true }));
+    isNativeAmyNestAndroidWrapper.mockReturnValue(true);
+    waitForBillingBridge.mockResolvedValue({ postMessage: vi.fn(), onmessage: null });
+    getNativeBilling.mockReturnValue({ logSubscriptionAnalytics });
+
+    await trackFirebaseBeginCheckout("yearly", { source: "pricing" });
+
+    expect(logSubscriptionAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "begin_checkout",
+        productId: "yearly",
+        source: "pricing",
+      }),
+    );
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("falls back to web Firebase when native bridge fails", async () => {
+    const logSubscriptionAnalytics = vi.fn(async () => ({ ok: false, error: "fail" }));
+    isNativeAmyNestAndroidWrapper.mockReturnValue(true);
+    waitForBillingBridge.mockResolvedValue({ postMessage: vi.fn(), onmessage: null });
+    getNativeBilling.mockReturnValue({ logSubscriptionAnalytics });
+
+    await trackFirebaseBeginCheckout("yearly", { source: "pricing" });
+
+    expect(logSubscriptionAnalytics).toHaveBeenCalled();
+    expect(logEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      "begin_checkout",
+      expect.objectContaining({ item_id: "yearly" }),
     );
   });
 });
