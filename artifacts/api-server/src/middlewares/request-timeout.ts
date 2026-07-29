@@ -35,9 +35,13 @@ const LONG_RUNNING_PATH_PREFIXES = [
   "/api/spelling/",
   "/api/explain/",
   "/api/ai/",
+  // Amy Astro: ephemeris primary can take up to 15s (+ retry) before lite fallback;
+  // client create/recompute waits BIRTH_SKY_GENERATION_TIMEOUT_MS (60s).
+  "/api/birth-sky/",
 ];
 
-function resolveTimeoutMs(req: Request): number {
+/** Exported for unit tests — keep gateway timeout aligned with slow compute paths. */
+export function resolveTimeoutMs(req: Pick<Request, "originalUrl">): number {
   const path = req.originalUrl?.split("?")[0] ?? "";
   if (HEALTH_PROBE_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return HEALTH_PROBE_TIMEOUT_MS;
