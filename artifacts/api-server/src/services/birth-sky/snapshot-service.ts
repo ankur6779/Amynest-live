@@ -421,8 +421,14 @@ export async function computeAndPersistSnapshot(params: {
   const cacheKey = ephemeris.buildCacheKey(input);
   const fallbackUsed = Boolean(astronomy.metadata?.fallbackUsed);
 
+<<<<<<< HEAD
   // Atomically retire prior isCurrent rows and insert the new pointer — never leave
   // the profile with zero active snapshots if INSERT fails after deactivate.
+=======
+  // Never persist a null/empty snapshot — only insert when astronomy is complete.
+  // Deactivate + insert must be atomic: if INSERT fails after clearing is_current,
+  // the profile would have no active snapshot until manual recompute.
+>>>>>>> e36033d0 (fix(api): prevent sky snapshot pointer loss and RC restore premium wipe)
   const snapshotId = randomUUID();
   const snapshotVersion = `ss_${snapshotId}`;
   const row = await db.transaction(async (tx) => {
