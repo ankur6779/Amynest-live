@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { applyCostFirstProviderSelection } from "../../config/cost-execution.js";
 import { loadConfigFromJson, loadDefaultConfig } from "../../config/index.js";
 import { resolveOperationsSettings } from "../../config/operations.js";
 import { validateConfig } from "../../services/validation.js";
@@ -51,6 +52,9 @@ export function loadLayeredConfiguration(
     config = { ...config, ...options.runtimeOverrides };
     sources.push("runtime");
   }
+
+  // Provider selection only: Offline → Cache → API Last (no pipeline changes).
+  config = applyCostFirstProviderSelection(config, env);
 
   const environment =
     options.environment ??
@@ -134,18 +138,30 @@ export function applyEnvironmentOverrides(
     geminiOptIn &&
     (env.GEMINI_API_KEY?.trim() || env.GOOGLE_AI_API_KEY?.trim())
   ) {
+    // Cost-first: local providers stay ahead of paid Imagen/Veo.
     const preferred = new Set(next.preferredProviders ?? []);
     preferred.add("google-veo");
     preferred.add("google-imagen");
+    preferred.add("local-library");
     next.preferredProviders = [
+      "local-library",
+      "screen-recording",
+      "illustration",
       "google-imagen",
       "google-veo",
-      ...[...preferred].filter((p) => p !== "google-veo" && p !== "google-imagen"),
+      ...[...preferred].filter(
+        (p) =>
+          p !== "google-veo" &&
+          p !== "google-imagen" &&
+          p !== "local-library" &&
+          p !== "screen-recording" &&
+          p !== "illustration",
+      ),
     ];
     next.maximumAIAssets = Math.max(next.maximumAIAssets ?? 2, 3);
     if (env.AMYNEST_GEMINI_ENABLED === "true") {
-      next.scriptProvider = "gemini";
-      next.fallbackProvider = next.fallbackProvider === "gemini" ? "openai" : next.fallbackProvider ?? "openai";
+      // Media stack only — do NOT force Gemini for text/scripts (cost-first).
+      // Explicit AMYNEST_SCRIPT_PROVIDER=gemini required for paid script LLM.
       next.geminiMedia = {
         ...(next.geminiMedia ?? {}),
         enabled: true,

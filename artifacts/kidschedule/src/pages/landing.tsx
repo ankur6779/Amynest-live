@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight,
@@ -19,22 +19,41 @@ import {
   BookOpen,
   Microscope,
   Star,
-  Puzzle,
   GraduationCap,
   Heart,
   Award,
-  BarChart3,
   FlaskConical,
-  Calculator,
   Mic,
+  Lock,
+  EyeOff,
+  Baby,
 } from "lucide-react";
 import { StoreQrCode } from "@/components/store-qr-code";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
 import { applySeoMeta } from "@/lib/marketing/canonical-seo";
+import { trackMarketingEvent, type MarketingFunnelEvent } from "@/lib/marketing/ga4-analytics";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
+
+const AGE_STORAGE_KEY = "amynest_home_age_band";
+
+type AgeBand = "newborn" | "0-2" | "2-5" | "5-8" | "8-10";
+
+type Spotlight = {
+  id: string;
+  title: string;
+  value: string;
+  image: string;
+  tags: string[];
+  ages: AgeBand[];
+  secondary?: boolean;
+};
+
+function trackHome(event: MarketingFunnelEvent | string, meta: Record<string, string | number | boolean | undefined> = {}) {
+  trackMarketingEvent(event as MarketingFunnelEvent, { page: "landing", ...meta });
+}
 
 const HERO_BADGES = [
   { icon: Microscope, key: "landing.hero_badge_science", color: "hsl(var(--brand-cyan-500))" },
@@ -76,60 +95,6 @@ const AMY_AI_MODES = [
   },
 ];
 
-const PLATFORM_CATEGORIES = [
-  {
-    icon: Calendar,
-    titleKey: "landing.cat_routines_title",
-    descKey: "landing.cat_routines_desc",
-    gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-    items: [
-      "landing.feature_routine_title",
-      "landing.feature_ai_title",
-      "landing.coach_title",
-      "landing.new_infant_title",
-    ],
-  },
-  {
-    icon: GraduationCap,
-    titleKey: "landing.cat_learning_title",
-    descKey: "landing.cat_learning_desc",
-    gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
-    items: [
-      "landing.spotlight_speech_title",
-      "landing.spotlight_phonics_title",
-      "landing.spotlight_audio_title",
-      "landing.new_smart_study_title",
-      "landing.new_abacus_title",
-    ],
-  },
-  {
-    icon: Heart,
-    titleKey: "landing.cat_parenting_title",
-    descKey: "landing.cat_parenting_desc",
-    gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
-    items: [
-      "landing.feature_hub_title",
-      "Behavior Tracking",
-      "Nutrition Hub",
-      "Parenting Reels",
-      "Parenting Articles",
-    ],
-  },
-  {
-    icon: Puzzle,
-    titleKey: "landing.cat_creative_title",
-    descKey: "landing.cat_creative_desc",
-    gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-red-500)))",
-    items: [
-      "Kids Story Hub",
-      "Daily Brain Puzzles",
-      "landing.new_coloring_title",
-      "landing.new_funsheets_title",
-      "Gaming Hub Zone",
-    ],
-  },
-];
-
 const PROBLEMS = [
   { icon: Flame, labelKey: "landing.problem_tantrums", color: "hsl(var(--brand-red-500))" },
   { icon: Smartphone, labelKey: "landing.problem_screen", color: "hsl(var(--brand-cyan-500))" },
@@ -145,13 +110,6 @@ const STEPS = [
   { icon: CheckCircle2, titleKey: "landing.step3_title", descKey: "landing.step3_desc" },
 ];
 
-const SCIENCE_STATS = [
-  { value: "87%", label: "calmer mornings in 2 weeks" },
-  { value: "12K+", label: "families parenting smarter" },
-  { value: "30+", label: "research studies referenced" },
-  { value: "4.9★", label: "average parent rating" },
-];
-
 const SCIENCE_CITATIONS = [
   "Habit Loop — Charles Duhigg (2012)",
   "Growth Mindset — Dr. Carol Dweck, Stanford",
@@ -165,6 +123,14 @@ const SCIENCE_CITATIONS = [
   "SEL Framework — CASEL",
 ];
 
+const OUTCOME_TRUST = [
+  { icon: ShieldCheck, label: "Child-safe by design" },
+  { icon: Lock, label: "Privacy-first" },
+  { icon: EyeOff, label: "No ads for kids" },
+  { icon: Heart, label: "Built for modern families" },
+  { icon: BookOpen, label: "Pediatric-inspired routines" },
+] as const;
+
 const TESTIMONIALS = [
   {
     name: "Priya M.",
@@ -172,7 +138,7 @@ const TESTIMONIALS = [
     text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
     avatar: "P",
     color: "hsl(var(--brand-purple-500))",
-    result: "Tantrums reduced 80% in 3 weeks",
+    result: "Clearer evenings with fewer meltdowns",
   },
   {
     name: "Rahul & Kavya",
@@ -180,7 +146,7 @@ const TESTIMONIALS = [
     text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
     avatar: "R",
     color: "hsl(var(--brand-cyan-500))",
-    result: "Identified sleep-trigger pattern in 5 days",
+    result: "Spotted a bedtime pattern early",
   },
   {
     name: "Sarah K.",
@@ -188,7 +154,128 @@ const TESTIMONIALS = [
     text: "Twin toddlers + infant sleep tracker + Amy's personalized CDC-aligned tips = sanity saved. The sleep schedule feature got our 6-month-old sleeping through the night in 11 days. Nothing else had worked.",
     avatar: "S",
     color: "hsl(var(--brand-pink-500))",
-    result: "Baby sleeping through the night in 11 days",
+    result: "Calmer infant nights with a clear plan",
+  },
+];
+
+const AGE_OPTIONS: { id: AgeBand; emoji: string; label: string }[] = [
+  { id: "newborn", emoji: "👶", label: "Newborn" },
+  { id: "0-2", emoji: "🍼", label: "0–2" },
+  { id: "2-5", emoji: "🎨", label: "2–5" },
+  { id: "5-8", emoji: "📚", label: "5–8" },
+  { id: "8-10", emoji: "🎓", label: "8–10+" },
+];
+
+const AGE_COPY: Record<
+  AgeBand,
+  { line: string; cta: string; journey: string; dashboardHint: string }
+> = {
+  newborn: {
+    line: "Decode cries, feeds, and naps — without guessing at 2 AM.",
+    cta: "Start Free with Infant Hub",
+    journey: "Newborn care → calm routines from day one",
+    dashboardHint: "Feeds, naps, and comfort cues for today",
+  },
+  "0-2": {
+    line: "Sleep, feeding, vaccines, and milestones — one calm plan.",
+    cta: "Get Today's Infant Plan",
+    journey: "Infant Hub grows with your baby through age 2",
+    dashboardHint: "Today's naps, meals, and milestone check-ins",
+  },
+  "2-5": {
+    line: "Speech, stories, and screen-smart play for preschool years.",
+    cta: "Get Today's Parenting Plan",
+    journey: "Discovery years: speech, sound worlds, and routines",
+    dashboardHint: "Play, speech practice, meals, and bedtime",
+  },
+  "5-8": {
+    line: "Homework wins, school routines, and focused learning blocks.",
+    cta: "Get Today's Parenting Plan",
+    journey: "School years: study, speech, and calmer mornings",
+    dashboardHint: "Study block, meals, outdoor play, wind-down",
+  },
+  "8-10": {
+    line: "Focus, confidence, and habits that stick — without nagging.",
+    cta: "Get Today's Parenting Plan",
+    journey: "Growing independence with guided plans",
+    dashboardHint: "Focus session, activities, and evening routine",
+  },
+};
+
+const SPOTLIGHTS: Spotlight[] = [
+  {
+    id: "infant",
+    title: "Infant Hub",
+    value: "Cry Insight, sleep windows, vaccines, and growth — free for infants.",
+    image: "/promo/get-app/screenshots/infant-hub.jpg",
+    tags: ["Cry Insight", "Sleep", "Vaccines", "Growth"],
+    ages: ["newborn", "0-2", "2-5", "5-8", "8-10"],
+  },
+  {
+    id: "health",
+    title: "Amy Health Lab™",
+    value: "Movement, wellness, and therapy-inspired activities for real days.",
+    image: "/landing/screenshots/health-zone-800.webp",
+    tags: ["Movement", "Wellness", "Activities"],
+    ages: ["0-2", "2-5", "5-8", "8-10", "newborn"],
+  },
+  {
+    id: "sound",
+    title: "Amy Sound World™",
+    value: "Interactive discovery and sensory audio learning kids enjoy.",
+    image: "/landing/screenshots/audio-lessons-800.webp",
+    tags: ["Discovery", "Audio", "Sensory"],
+    ages: ["2-5", "0-2", "5-8", "newborn", "8-10"],
+  },
+  {
+    id: "learning",
+    title: "Learning Hub",
+    value: "Speech Coach, Smart Study, nutrition, math, and school routines.",
+    image: "/landing/screenshots/learning-zone-800.webp",
+    tags: ["Speech", "Study", "Nutrition", "Math"],
+    ages: ["5-8", "8-10", "2-5", "0-2", "newborn"],
+  },
+  {
+    id: "astro",
+    title: "Amy Astro Intelligence",
+    value: "Personal milestone insights — a thoughtful secondary companion.",
+    image: "/landing/screenshots/parenting-hub-800.webp",
+    tags: ["Milestones", "Insights"],
+    ages: ["newborn", "0-2", "2-5", "5-8", "8-10"],
+    secondary: true,
+  },
+];
+
+const STAGES: { id: AgeBand; label: string; sentence: string; image: string }[] = [
+  {
+    id: "newborn",
+    label: "Newborn",
+    sentence: "Cry cues, feeds, and first sleep rhythms — guided gently.",
+    image: "/promo/infant-parenting/appstore-01-cry-insight.jpg",
+  },
+  {
+    id: "0-2",
+    label: "Infant",
+    sentence: "Vaccines, growth, and nap windows in one free hub.",
+    image: "/promo/get-app/screenshots/infant-hub.jpg",
+  },
+  {
+    id: "2-5",
+    label: "Toddler",
+    sentence: "Speech, stories, and calm routines for busy preschool days.",
+    image: "/promo/get-app/screenshots/speech-coach.png",
+  },
+  {
+    id: "5-8",
+    label: "Preschool+",
+    sentence: "Short study wins and mornings that actually finish.",
+    image: "/promo/get-app/screenshots/smart-study-zone.jpg",
+  },
+  {
+    id: "8-10",
+    label: "School",
+    sentence: "Focus plans and habits that grow with your child.",
+    image: "/landing/screenshots/learning-zone-800.webp",
   },
 ];
 
@@ -230,18 +317,131 @@ function SectionEyebrow({
   );
 }
 
+function StoreBadgeRow({
+  location,
+  compact = false,
+}: {
+  location: string;
+  compact?: boolean;
+}) {
+  const pad = compact ? "px-4 py-2.5" : "px-5 py-3";
+  const onStore = (store: "ios" | "android") => {
+    trackHome("store_redirect", { store, location });
+    trackHome("install_intent", { store, location, page: "landing" });
+    if (location.startsWith("hero")) trackHome("hero_cta", { store, location });
+    if (location.startsWith("mid")) trackHome("mid_cta", { store, location });
+    if (location.startsWith("footer") || location.startsWith("final")) trackHome("footer_cta", { store, location });
+  };
+  return (
+    <div className={`flex flex-col sm:flex-row items-stretch gap-2 ${compact ? "" : "w-full max-w-md"}`}>
+      <a
+        href={PLAY_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => onStore("android")}
+        className={`flex flex-1 items-center gap-2.5 ${pad} rounded-xl bg-white text-slate-900 min-h-[48px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}
+        style={{ textDecoration: "none" }}
+        aria-label="Get it on Google Play"
+      >
+        <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0" aria-hidden>
+          <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335" />
+          <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="#FBBC04" />
+          <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="#4285F4" />
+          <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853" />
+        </svg>
+        <span className="text-left leading-tight">
+          <span className="block text-[10px] font-semibold text-slate-500">Get it on</span>
+          <span className="block text-sm font-bold">Google Play</span>
+        </span>
+      </a>
+      <a
+        href={APP_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => onStore("ios")}
+        className={`flex flex-1 items-center gap-2.5 ${pad} rounded-xl min-h-[48px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}
+        style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", textDecoration: "none" }}
+        aria-label="Download on the App Store"
+      >
+        <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 fill-white" aria-hidden>
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+        </svg>
+        <span className="text-left leading-tight text-white">
+          <span className="block text-[10px] font-semibold text-white/55">Download on the</span>
+          <span className="block text-sm font-bold">App Store</span>
+        </span>
+      </a>
+    </div>
+  );
+}
+
+function DesktopQr({ location }: { location: string }) {
+  return (
+    <a
+      href={PLAY_STORE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => {
+        trackHome("qr_scan", { store: "android", location });
+        trackHome("store_redirect", { store: "android", location });
+      }}
+      className="hidden lg:flex items-center gap-3 rounded-2xl px-3 py-3 amy-glass focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      aria-label="Scan QR to install AmyNest"
+    >
+      <div className="rounded-xl bg-white p-2 shrink-0" aria-hidden>
+        <StoreQrCode value={PLAY_STORE_URL} size={72} bgColor="#FFFFFF" fgColor="#1a1a2e" />
+      </div>
+      <div className="text-left">
+        <p className="font-quicksand font-bold text-sm text-white">Scan to install</p>
+        <p className="text-xs text-white/55">Open camera → Google Play</p>
+      </div>
+    </a>
+  );
+}
+
+function useAgeBand(): [AgeBand, (id: AgeBand) => void] {
+  const [age, setAge] = useState<AgeBand>("2-5");
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(AGE_STORAGE_KEY) as AgeBand | null;
+      if (stored && AGE_OPTIONS.some((o) => o.id === stored)) setAge(stored);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const select = (id: AgeBand) => {
+    setAge(id);
+    try {
+      sessionStorage.setItem(AGE_STORAGE_KEY, id);
+    } catch {
+      /* ignore */
+    }
+    trackHome("age_selected", { age_band: id });
+  };
+  return [age, select];
+}
+
 export default function LandingPage() {
   const { t } = useTranslation();
+  const [age, selectAge] = useAgeBand();
+  const ageCopy = AGE_COPY[age];
+  const spotlights = useMemo(() => {
+    const ranked = [...SPOTLIGHTS].sort((a, b) => a.ages.indexOf(age) - b.ages.indexOf(age));
+    const primary = ranked.filter((s) => !s.secondary).slice(0, 4);
+    const secondary = ranked.find((s) => s.secondary);
+    return secondary ? [...primary, secondary] : primary;
+  }, [age]);
 
   useEffect(() => {
     applySeoMeta({
       path: "/",
-      title: "AmyNest AI — Where Smart Parenting Begins",
+      title: "AmyNest AI — The Parenting Companion That Grows With Your Child",
       description:
-        "AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child.",
+        "One AI parenting companion from newborn to age 10. Personalized daily plans, Infant Hub, learning, health, and routines — free to start on web and mobile.",
       keywords:
-        "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting India",
+        "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting India, AmyNest",
     });
+    trackHome("landing_page_view", {});
   }, []);
 
   return (
@@ -305,6 +505,9 @@ export default function LandingPage() {
           border-color: rgba(168,85,247,0.3);
           box-shadow: 0 12px 40px -8px rgba(168,85,247,0.25);
         }
+        @media (prefers-reduced-motion: reduce) {
+          .amy-float, .amy-fade-up, .amy-fade-up-1, .amy-fade-up-2, .amy-fade-up-3, .amy-gradient-text, .amy-avatar-ring, .marquee-track { animation: none !important; }
+        }
       `}</style>
 
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -330,30 +533,33 @@ export default function LandingPage() {
                 {t("pages.landing.amynest_ai")}
               </span>
               <span className="text-[10px] text-white/45 font-medium tracking-wide">
-                {t("pages.landing.where_smart_parenting_starts")}
+                Grows with your child
               </span>
             </div>
           </div>
         </Link>
         <div className="flex items-center gap-2">
           <Link href="/sign-in">
-            <button className="text-sm font-semibold text-white/70 hover:text-white transition-colors px-3 py-1.5">
+            <button className="text-sm font-semibold text-white/70 hover:text-white transition-colors px-3 py-1.5 min-h-[40px]">
               {t("landing.nav_sign_in")}
             </button>
           </Link>
-          <Link href="/sign-up">
-            <button className="amy-cta text-sm font-bold px-5 py-2 rounded-xl text-white hidden md:flex items-center gap-1.5">
-              {t("pages.landing.get_started_free")} <ArrowRight className="h-3.5 w-3.5" />
+          <Link href="/get-app">
+            <button
+              className="amy-cta text-sm font-bold px-4 py-2 rounded-xl text-white flex items-center gap-1.5 min-h-[40px]"
+              onClick={() => trackHome("hero_cta", { location: "nav_get_app" })}
+            >
+              Get the app <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </Link>
         </div>
       </header>
 
       {/* HERO */}
-      <section className="relative z-10 px-5 pt-6 pb-14 md:pb-20">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+      <section className="relative z-10 px-5 pt-4 pb-8 md:pb-12">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="text-center md:text-left">
-            <div className="amy-fade-up flex flex-wrap justify-center md:justify-start gap-2 mb-6">
+            <div className="amy-fade-up flex flex-wrap justify-center md:justify-start gap-2 mb-4">
               {HERO_BADGES.map(({ icon: Icon, key, color }) => (
                 <span
                   key={key}
@@ -366,38 +572,54 @@ export default function LandingPage() {
               ))}
             </div>
 
-            <h1 className="amy-fade-up-1 font-quicksand font-black text-4xl md:text-5xl lg:text-6xl leading-[1.08] tracking-tight mb-4">
-              <span className="amy-gradient-text">{t("landing.hero_headline")}</span>
+            <h1 className="amy-fade-up-1 font-quicksand font-black text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.08] tracking-tight mb-3">
+              <span className="amy-gradient-text">One parenting companion.</span>
+              <br />
+              <span className="text-white">Grows with your child.</span>
             </h1>
 
-            <p className="amy-fade-up-2 text-white/75 text-base md:text-lg max-w-xl leading-relaxed mb-8 mx-auto md:mx-0">
-              {t("landing.hero_sub")}
+            <p className="amy-fade-up-2 text-white/75 text-base md:text-lg max-w-xl leading-relaxed mb-2 mx-auto md:mx-0">
+              Personalized daily plans for sleep, meals, learning, and emotions — from newborn to age 10.
+            </p>
+            <p className="amy-fade-up-2 text-white/55 text-sm mb-5 mx-auto md:mx-0" key={age}>
+              {ageCopy.line}
             </p>
 
-            <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3">
-              <Link href="/sign-up">
+            <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3 mb-3">
+              <Link href="/get-app">
                 <button
-                  className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white"
+                  className="amy-cta inline-flex items-center justify-center gap-2 text-base font-bold px-7 py-3.5 rounded-2xl text-white min-h-[52px] w-full sm:w-auto"
                   data-testid="button-hero-cta"
+                  onClick={() => trackHome("hero_cta", { location: "hero_primary", age_band: age })}
                 >
-                  {t("landing.hero_cta")}
+                  {ageCopy.cta}
                   <ArrowRight className="h-5 w-5" />
                 </button>
               </Link>
-              <Link href="/sign-in">
-                <button className="amy-glass inline-flex items-center gap-2 text-sm font-semibold px-6 py-4 rounded-2xl text-white/80 hover:text-white transition-all">
-                  {t("landing.nav_sign_in")}
+              <Link href="/sign-up">
+                <button
+                  className="amy-glass inline-flex items-center justify-center gap-2 text-sm font-semibold px-6 py-3.5 rounded-2xl text-white/85 hover:text-white transition-all min-h-[52px] w-full sm:w-auto"
+                  onClick={() => trackHome("hero_cta", { location: "hero_web_signup", age_band: age })}
+                >
+                  Try on Web
                 </button>
               </Link>
             </div>
 
-            <p className="amy-fade-up-3 mt-4 text-[10px] font-bold uppercase tracking-widest text-white/30">
-              {t("landing.hero_free")}
-            </p>
+            <div className="amy-fade-up-3 mb-4">
+              <StoreBadgeRow location="hero_store" />
+            </div>
+
+            <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3">
+              <DesktopQr location="hero_qr" />
+              <p className="text-[11px] text-white/40 max-w-xs text-center md:text-left">
+                Free to start · No credit card · Child-safe · Privacy-first
+              </p>
+            </div>
           </div>
 
           <div className="amy-fade-up-2 flex flex-col items-center">
-            <div className="relative mb-5 flex items-center justify-center" style={{ width: 196, height: 196 }}>
+            <div className="relative mb-4 flex items-center justify-center" style={{ width: 180, height: 180 }}>
               <div
                 className="amy-avatar-ring pointer-events-none absolute rounded-full"
                 style={{
@@ -409,24 +631,57 @@ export default function LandingPage() {
               <div
                 className="amy-float relative flex items-center justify-center rounded-full p-4"
                 style={{
-                  width: 172,
-                  height: 172,
+                  width: 156,
+                  height: 156,
                   background: "linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.15))",
                   border: "1px solid rgba(168,85,247,0.35)",
                 }}
               >
-                <AmyLandingAvatar size={132} className="w-[132px] h-[132px] md:w-[148px] md:h-[148px] object-contain" />
+                <AmyLandingAvatar size={120} className="w-[120px] h-[120px] object-contain" />
               </div>
             </div>
-            <div className="amy-glass rounded-2xl px-5 py-4 max-w-xs text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/45 mb-1">
-                {t("landing.amy_ai_eyebrow")}
-              </p>
+            <div className="amy-glass rounded-2xl px-5 py-3.5 max-w-xs text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/45 mb-1">Meet AMY</p>
               <p className="text-white/85 text-sm font-semibold leading-snug">
-                {t("landing.amy_ai_sub")}
+                Your AI co-pilot for today&apos;s plan — not another tip dump.
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* AGE PERSONALIZATION */}
+      <section className="relative z-10 px-5 pb-8 md:pb-10" aria-labelledby="home-age-heading">
+        <div className="max-w-4xl mx-auto amy-glass rounded-3xl px-5 py-6 md:px-8 md:py-7">
+          <div className="text-center mb-4">
+            <h2 id="home-age-heading" className="font-quicksand font-black text-xl sm:text-2xl text-white">
+              What is your child&apos;s age?
+            </h2>
+            <p className="text-white/55 text-sm mt-1.5">We&apos;ll show the journey that fits your family.</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 mb-4" role="radiogroup" aria-label="Child age">
+            {AGE_OPTIONS.map((opt) => {
+              const active = opt.id === age;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => selectAge(opt.id)}
+                  className={`min-h-[48px] px-4 py-2.5 rounded-full text-sm font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                    active ? "bg-white text-slate-950" : "bg-white/8 text-white/85 border border-white/15 hover:bg-white/12"
+                  }`}
+                >
+                  <span aria-hidden className="mr-1.5">{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-center text-sm text-white/70" key={`journey-${age}`}>
+            {ageCopy.journey}
+          </p>
         </div>
       </section>
 
@@ -448,68 +703,137 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* PATENT-PENDING ROUTINE ENGINE */}
-      <section className="relative z-10 px-5 py-16 md:py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10 md:mb-12">
+      {/* COMMAND CENTER — Today's Parenting Plan */}
+      <section className="relative z-10 px-5 py-12 md:py-16" aria-labelledby="command-heading">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div>
             <SectionEyebrow
-              icon={Zap}
-              label={t("landing.tech_eyebrow")}
+              icon={Calendar}
+              label="Today's Parenting Plan"
               accent="linear-gradient(135deg,rgba(168,85,247,0.25),rgba(99,102,241,0.18))"
             />
-            <h2 className="font-quicksand font-bold text-3xl md:text-5xl text-white mb-3">
-              {t("landing.tech_heading")}
+            <h2 id="command-heading" className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
+              Not just advice. A plan for today.
             </h2>
-            <p className="text-white/65 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-              {t("landing.tech_sub")}
+            <p className="text-white/65 text-base leading-relaxed mb-4">
+              AmyNest&apos;s Command Center brings routines, meals, learning, sleep, and reminders into one calm view.
             </p>
-            <p className="mt-4 text-[11px] font-bold uppercase tracking-widest text-white/35">
-              {t("patent_pending.trust_line")}
+            <p className="text-white/55 text-sm mb-6" key={`dash-${age}`}>
+              {ageCopy.dashboardHint}
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {TECH_PILLARS.map(({ icon: Icon, titleKey, descKey }) => (
-              <div key={titleKey} className="amy-glass-card rounded-2xl p-5 md:p-6">
-                <div
-                  className="h-11 w-11 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.35)" }}
-                >
-                  <Icon className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
-                <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
-              </div>
-            ))}
-          </div>
-
-          <div
-            className="amy-glass-card rounded-3xl p-6 md:p-8"
-            style={{
-              background: "linear-gradient(135deg,rgba(99,102,241,0.14) 0%,rgba(168,85,247,0.10) 100%)",
-              borderColor: "rgba(168,85,247,0.3)",
-            }}
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {ROUTINE_ENGINE_KEYS.map((key) => (
-                <div
-                  key={key}
-                  className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <span className="text-white/85 text-sm">{t(key)}</span>
-                </div>
+            <ul className="space-y-2 mb-6">
+              {["Today's routine", "Meals & nutrition", "Learning & activities", "Sleep & reminders"].map((item) => (
+                <li key={item} className="flex items-center gap-2 text-sm text-white/80">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                  {item}
+                </li>
               ))}
-            </div>
+            </ul>
+            <Link href="/get-app">
+              <button
+                className="amy-cta inline-flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-xl text-white"
+                onClick={() => {
+                  trackHome("dashboard_preview", { age_band: age });
+                  trackHome("mid_cta", { location: "command_center" });
+                }}
+              >
+                See it in the app <ArrowRight className="h-4 w-4" />
+              </button>
+            </Link>
+          </div>
+          <div
+            className="relative rounded-3xl overflow-hidden amy-glass"
+            style={{ aspectRatio: "4/5", maxHeight: 480 }}
+          >
+            <img
+              src="/landing/screenshots/dashboard-800.webp"
+              alt="AmyNest Command Center — today's parenting plan"
+              width={800}
+              height={1000}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+              loading="lazy"
+              decoding="async"
+              onLoad={() => trackHome("dashboard_preview", { age_band: age, loaded: true })}
+            />
           </div>
         </div>
       </section>
 
-      {/* AMY AI MODES */}
-      <section className="relative z-10 px-5 pb-16 md:pb-20">
+      {/* PRODUCT SPOTLIGHTS — replaces feature chips */}
+      <section className="relative z-10 px-5 pb-12 md:pb-16" aria-labelledby="spotlights-heading">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+          <div className="text-center mb-8">
+            <SectionEyebrow icon={Sparkles} label="Product experience" />
+            <h2 id="spotlights-heading" className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
+              What parents actually open
+            </h2>
+            <p className="text-white/60 text-base max-w-xl mx-auto">
+              Real screens for {AGE_OPTIONS.find((o) => o.id === age)?.label} — not a feature dump.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5" key={age}>
+            {spotlights.map((spot) => (
+              <article
+                key={spot.id}
+                className={`amy-glass-card rounded-3xl overflow-hidden flex flex-col sm:flex-row ${
+                  spot.secondary ? "md:col-span-2 sm:max-w-2xl sm:mx-auto w-full" : ""
+                }`}
+              >
+                <div className="relative sm:w-[42%] aspect-[9/12] sm:aspect-auto sm:min-h-[220px] bg-black/30">
+                  <img
+                    src={spot.image}
+                    alt={spot.title}
+                    width={480}
+                    height={640}
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 flex flex-col flex-1">
+                  {spot.id === "infant" ? (
+                    <span className="inline-flex items-center gap-1 self-start mb-2 text-[10px] font-bold uppercase tracking-wide text-emerald-200 px-2 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(52,211,153,0.35)" }}>
+                      <Baby className="h-3 w-3" aria-hidden /> Free for infants
+                    </span>
+                  ) : null}
+                  {spot.secondary ? (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1">Optional</span>
+                  ) : null}
+                  <h3 className="font-quicksand font-bold text-xl text-white mb-2">{spot.title}</h3>
+                  <p className="text-white/65 text-sm leading-relaxed mb-3 flex-1">{spot.value}</p>
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {spot.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[11px] font-medium text-white/70 px-2.5 py-1 rounded-full"
+                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <Link href="/get-app">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 text-sm font-bold text-purple-200 hover:text-white transition-colors"
+                      onClick={() => trackHome("spotlight_opened", { spotlight: spot.id, age_band: age })}
+                    >
+                      Explore in app <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <InfantParentingSection page="landing" />
+
+      {/* AMY AI MODES — keep */}
+      <section className="relative z-10 px-5 py-12 md:py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
             <div>
               <SectionEyebrow
                 icon={Sparkles}
@@ -521,10 +845,9 @@ export default function LandingPage() {
               </h2>
               <p className="text-white/65 text-base max-w-xl leading-relaxed">{t("landing.amy_ai_sub")}</p>
             </div>
-            <AmyLandingAvatar size={96} className="hidden md:block w-24 h-24 object-contain opacity-90" />
+            <AmyLandingAvatar size={88} className="hidden md:block h-[88px] w-[88px] object-contain opacity-90" />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {AMY_AI_MODES.map(({ icon: Icon, titleKey, descKey, gradient }) => (
               <div key={titleKey} className="amy-glass-card rounded-3xl p-6 flex flex-col gap-4">
                 <div
@@ -543,97 +866,160 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <InfantParentingSection page="landing" />
-
-      {/* PLATFORM — single consolidated grid */}
-      <section className="relative z-10 px-5 pb-16 md:pb-20">
+      {/* ONE APP EVERY STAGE */}
+      <section className="relative z-10 px-5 pb-12 md:pb-16" aria-labelledby="stages-heading">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionEyebrow icon={LayoutGridIcon} label={t("landing.platform_eyebrow")} />
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("landing.platform_heading")}
+          <div className="text-center mb-8">
+            <SectionEyebrow icon={GraduationCap} label="One app. Every stage." />
+            <h2 id="stages-heading" className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
+              From newborn to school age
             </h2>
-            <p className="text-white/60 text-base max-w-xl mx-auto">{t("landing.platform_sub")}</p>
+            <p className="text-white/60 text-base max-w-xl mx-auto">
+              AmyNest grows with your child — so you don&apos;t need a new app every year.
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {PLATFORM_CATEGORIES.map(({ icon: Icon, titleKey, descKey, gradient, items }) => (
-              <div key={titleKey} className="amy-glass-card rounded-3xl p-6 md:p-7">
-                <div className="flex items-start gap-4 mb-5">
-                  <div
-                    className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0"
-                    style={{ background: gradient, boxShadow: "0 8px 24px rgba(168,85,247,0.25)" }}
-                  >
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-quicksand font-bold text-xl text-white mb-1">{t(titleKey)}</h3>
-                    <p className="text-white/60 text-sm leading-relaxed">{t(descKey)}</p>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {STAGES.map((stage, index) => (
+              <button
+                key={stage.id}
+                type="button"
+                onClick={() => {
+                  selectAge(stage.id);
+                  trackHome("stage_selected", { stage: stage.id, index });
+                }}
+                className={`amy-glass-card rounded-2xl overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                  age === stage.id ? "ring-2 ring-purple-400/70" : ""
+                }`}
+              >
+                <div className="relative aspect-[4/5] max-h-[160px]">
+                  <img
+                    src={stage.image}
+                    alt={stage.label}
+                    width={320}
+                    height={400}
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {items.map((item) => (
-                    <span
-                      key={item}
-                      className="text-xs font-medium text-white/75 px-3 py-1.5 rounded-full"
-                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
-                    >
-                      {item.startsWith("landing.") ? t(item) : item}
-                    </span>
-                  ))}
+                <div className="p-3.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80 mb-0.5">
+                    {index + 1}. {stage.label}
+                  </p>
+                  <p className="text-white/75 text-xs leading-relaxed mb-2">{stage.sentence}</p>
+                  <span className="text-[11px] font-bold text-purple-200">View plan →</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-
-          <div className="text-center mt-10">
-            <Link href="/sign-up">
-              <button className="amy-cta inline-flex items-center gap-2 text-sm md:text-base font-bold px-7 py-3.5 rounded-2xl text-white" data-testid="button-features-cta">
-                {t("pages.landing.unlock_all_features_free")}
-                <ArrowRight className="h-4 w-4" />
+          <div className="text-center mt-8">
+            <Link href="/get-app">
+              <button
+                className="amy-cta inline-flex items-center gap-2 text-sm font-bold px-7 py-3.5 rounded-2xl text-white"
+                onClick={() => trackHome("mid_cta", { location: "stages" })}
+              >
+                {ageCopy.cta} <ArrowRight className="h-4 w-4" />
               </button>
             </Link>
-            <p className="mt-3 text-xs text-white/40">{t("pages.landing.free_plan_included_upgrade_anytime")}</p>
           </div>
         </div>
       </section>
 
-      {/* PROBLEMS */}
-      <section className="relative z-10 px-5 pb-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <SectionEyebrow icon={Sparkles} label={t("landing.problems_eyebrow")} />
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">{t("landing.problems_heading")}</h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">{t("landing.problems_sub")}</p>
+      {/* MID STORE CTA */}
+      <section className="relative z-10 px-5 pb-12">
+        <div className="max-w-3xl mx-auto amy-glass rounded-3xl px-6 py-8 text-center">
+          <h2 className="font-quicksand font-bold text-2xl text-white mb-2">Install AmyNest for today&apos;s plan</h2>
+          <p className="text-white/60 text-sm mb-5">Free to start on Google Play and the App Store.</p>
+          <div className="flex flex-col items-center gap-4">
+            <StoreBadgeRow location="mid_store" />
+            <DesktopQr location="mid_qr" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-            {PROBLEMS.map(({ icon: Icon, labelKey, color }) => (
-              <div key={labelKey} className="amy-glass-card rounded-2xl p-4 flex items-center gap-3">
+        </div>
+      </section>
+
+      {/* ROUTINE ENGINE — keep, patent secondary */}
+      <section className="relative z-10 px-5 pb-12 md:pb-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <SectionEyebrow
+              icon={Zap}
+              label={t("landing.tech_eyebrow")}
+              accent="linear-gradient(135deg,rgba(168,85,247,0.25),rgba(99,102,241,0.18))"
+            />
+            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
+              {t("landing.tech_heading")}
+            </h2>
+            <p className="text-white/65 text-base max-w-2xl mx-auto leading-relaxed">
+              {t("landing.tech_sub")}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            {TECH_PILLARS.map(({ icon: Icon, titleKey, descKey }) => (
+              <div key={titleKey} className="amy-glass-card rounded-2xl p-5">
                 <div
-                  className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                  className="h-11 w-11 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.35)" }}
+                >
+                  <Icon className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
+                <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
+              </div>
+            ))}
+          </div>
+          <div
+            className="amy-glass-card rounded-3xl p-5 md:p-7"
+            style={{
+              background: "linear-gradient(135deg,rgba(99,102,241,0.14) 0%,rgba(168,85,247,0.10) 100%)",
+              borderColor: "rgba(168,85,247,0.3)",
+            }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {ROUTINE_ENGINE_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <span className="text-white/85 text-sm">{t(key)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-center text-[11px] font-bold uppercase tracking-widest text-white/35">
+              {t("patent_pending.trust_line")}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* PROBLEMS + HOW IT WORKS — compacted */}
+      <section className="relative z-10 px-5 pb-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-6">
+            <SectionEyebrow icon={Sparkles} label={t("landing.problems_eyebrow")} />
+            <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">{t("landing.problems_heading")}</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mb-10">
+            {PROBLEMS.map(({ icon: Icon, labelKey, color }) => (
+              <div key={labelKey} className="amy-glass-card rounded-2xl p-3.5 flex items-center gap-3">
+                <div
+                  className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
                   style={{ background: `${color}20`, border: `1px solid ${color}40` }}
                 >
-                  <Icon className="h-5 w-5" style={{ color }} />
+                  <Icon className="h-4 w-4" style={{ color }} />
                 </div>
                 <span className="text-white/90 text-sm font-semibold">{t(labelKey)}</span>
               </div>
             ))}
           </div>
-          <p className="text-center text-white/70 text-base italic">{t("landing.not_alone")}</p>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="relative z-10 px-5 pb-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionEyebrow icon={Zap} label={t("landing.how_eyebrow")} />
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">{t("landing.how_heading")}</h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">{t("landing.how_sub")}</p>
+          <div className="text-center mb-8">
+            <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">{t("landing.how_heading")}</h2>
+            <p className="text-white/60 text-sm max-w-lg mx-auto">{t("landing.how_sub")}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {STEPS.map(({ icon: Icon, titleKey, descKey }, idx) => (
-              <div key={titleKey} className="amy-glass-card rounded-3xl p-6 relative">
+              <div key={titleKey} className="amy-glass-card rounded-3xl p-5 relative">
                 <div
                   className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand"
                   style={{
@@ -644,15 +1030,14 @@ export default function LandingPage() {
                   {idx + 1}
                 </div>
                 <div
-                  className="h-11 w-11 rounded-2xl flex items-center justify-center mb-4"
+                  className="h-10 w-10 rounded-2xl flex items-center justify-center mb-3"
                   style={{
                     background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-                    boxShadow: "0 8px 24px rgba(168,85,247,0.3)",
                   }}
                 >
                   <Icon className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
+                <h3 className="font-quicksand font-bold text-base text-white mb-1.5">{t(titleKey)}</h3>
                 <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
               </div>
             ))}
@@ -660,81 +1045,71 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SCIENCE STATS */}
-      <section className="relative z-10 px-5 pb-16">
-        <div className="max-w-5xl mx-auto">
-          <div
-            className="amy-glass rounded-3xl p-7 md:p-10"
-            style={{
-              background: "linear-gradient(135deg,rgba(99,102,241,0.12) 0%,rgba(168,85,247,0.10) 100%)",
-              borderColor: "rgba(168,85,247,0.25)",
-            }}
-          >
-            <div className="text-center mb-8">
-              <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">{t("landing.trust_heading")}</h2>
-              <p className="text-white/65 text-sm md:text-base max-w-xl mx-auto">{t("landing.trust_sub")}</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {SCIENCE_STATS.map(({ value, label }) => (
-                <div
-                  key={label}
-                  className="rounded-2xl p-4 text-center"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <p className="font-quicksand font-black text-2xl md:text-3xl text-white mb-1">{value}</p>
-                  <p className="text-white/50 text-[11px] md:text-xs leading-snug">{label}</p>
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { titleKey: "landing.trust1_title", descKey: "landing.trust1_desc", icon: BookOpen },
-                { titleKey: "landing.trust2_title", descKey: "landing.trust2_desc", icon: FlaskConical },
-                { titleKey: "landing.trust3_title", descKey: "landing.trust3_desc", icon: ShieldCheck },
-              ].map(({ titleKey, descKey, icon: Icon }) => (
-                <div
-                  key={titleKey}
-                  className="rounded-2xl p-5"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <Icon className="h-5 w-5 text-muted-foreground mb-3" />
-                  <h3 className="font-quicksand font-bold text-base text-white mb-1.5">{t(titleKey)}</h3>
-                  <p className="text-white/60 text-xs leading-relaxed">{t(descKey)}</p>
-                </div>
-              ))}
-            </div>
+      {/* TRUST — outcome-based, no fake ratings */}
+      <section className="relative z-10 px-5 pb-12">
+        <div className="max-w-5xl mx-auto amy-glass rounded-3xl p-6 md:p-9">
+          <div className="text-center mb-6">
+            <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">Built for trust</h2>
+            <p className="text-white/60 text-sm max-w-xl mx-auto">
+              Designed for modern families with privacy-first, child-safe guidance.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            {OUTCOME_TRUST.map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white/75 px-3 py-2 rounded-full"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <Icon className="h-3.5 w-3.5 text-emerald-300" aria-hidden />
+                {label}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { titleKey: "landing.trust1_title", descKey: "landing.trust1_desc", icon: BookOpen },
+              { titleKey: "landing.trust2_title", descKey: "landing.trust2_desc", icon: FlaskConical },
+              { titleKey: "landing.trust3_title", descKey: "landing.trust3_desc", icon: ShieldCheck },
+            ].map(({ titleKey, descKey, icon: Icon }) => (
+              <div
+                key={titleKey}
+                className="rounded-2xl p-5"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <Icon className="h-5 w-5 text-muted-foreground mb-3" />
+                <h3 className="font-quicksand font-bold text-base text-white mb-1.5">{t(titleKey)}</h3>
+                <p className="text-white/60 text-xs leading-relaxed">{t(descKey)}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="relative z-10 px-5 pb-16">
+      {/* TESTIMONIALS — keep stories, no fake aggregate rating */}
+      <section className="relative z-10 px-5 pb-12">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <SectionEyebrow icon={Heart} label={t("pages.landing.parent_stories")} />
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">{t("pages.landing.real_parents_real_results")}</h2>
-            <p className="text-white/60 text-base max-w-lg mx-auto">{t("pages.landing.thousands_of_families_use_amynest_every_day_to_raise_happier")}</p>
+            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
+              {t("pages.landing.real_parents_real_results")}
+            </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {TESTIMONIALS.map(({ name, location, text, avatar, color, result }) => (
               <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className="h-4 w-4 text-primary fill-primary" />
-                  ))}
-                </div>
                 <div
                   className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
                   style={{ background: `linear-gradient(135deg,${color}CC,${color}88)`, border: `1px solid ${color}44` }}
                 >
-                  <BarChart3 className="h-3 w-3" />
+                  <Star className="h-3 w-3" />
                   {result}
                 </div>
                 <p className="text-white/80 text-sm leading-relaxed flex-1">&ldquo;{text}&rdquo;</p>
                 <div className="flex items-center gap-3">
                   <div
                     className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style={{ background: `linear-gradient(135deg,${color},${color}99)`, boxShadow: `0 4px 14px ${color}40` }}
+                    style={{ background: `linear-gradient(135deg,${color},${color}99)` }}
                   >
                     {avatar}
                   </div>
@@ -749,22 +1124,40 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="relative z-10 px-5 pb-12">
-        <div className="max-w-3xl mx-auto text-center amy-glass rounded-3xl p-8 md:p-12">
-          <h2 className="font-quicksand font-black text-2xl md:text-4xl text-white mb-3">{t("landing.final_cta_heading")}</h2>
-          <p className="text-white/65 text-base mb-6">{t("landing.final_cta_sub")}</p>
-          <Link href="/sign-up">
-            <button className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white">
-              {t("landing.final_cta_btn")}
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </Link>
+      {/* FINAL CTA → get-app primary */}
+      <section className="relative z-10 px-5 pb-10">
+        <div className="max-w-3xl mx-auto text-center amy-glass rounded-3xl p-8 md:p-10">
+          <h2 className="font-quicksand font-black text-2xl md:text-3xl text-white mb-2">
+            Start today&apos;s parenting plan
+          </h2>
+          <p className="text-white/65 text-sm md:text-base mb-5">
+            One companion from birth to age 10. Free to start.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-5">
+            <Link href="/get-app">
+              <button
+                className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white min-h-[52px]"
+                onClick={() => trackHome("footer_cta", { location: "final_get_app" })}
+              >
+                {ageCopy.cta}
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </Link>
+            <Link href="/sign-up">
+              <button
+                className="amy-glass inline-flex items-center gap-2 text-sm font-semibold px-6 py-4 rounded-2xl text-white/85 min-h-[52px]"
+                onClick={() => trackHome("footer_cta", { location: "final_web" })}
+              >
+                Try on Web
+              </button>
+            </Link>
+          </div>
+          <StoreBadgeRow location="final_store" compact />
         </div>
       </section>
 
-      {/* DOWNLOAD */}
-      <section className="relative z-10 px-5 pb-24">
+      {/* DOWNLOAD + QR */}
+      <section className="relative z-10 px-5 pb-20">
         <div className="max-w-5xl mx-auto">
           <div
             className="amy-glass rounded-3xl overflow-hidden relative"
@@ -773,100 +1166,56 @@ export default function LandingPage() {
               borderColor: "rgba(168,85,247,0.35)",
             }}
           >
-            <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-0 px-8 py-12 md:py-14">
+            <div className="relative flex flex-col md:flex-row items-center gap-8 px-8 py-10 md:py-12">
               <div className="flex-1 text-center md:text-left z-10">
                 <SectionEyebrow icon={Smartphone} label={t("pages.landing.available_on_ios_android")} />
-                <h2 className="font-quicksand font-black text-3xl md:text-4xl text-white leading-tight mb-4">
-                  {t("pages.landing.take_amy_with_you")}{" "}
-                  <span className="amy-gradient-text">{t("pages.landing.everywhere")}</span>
+                <h2 className="font-quicksand font-black text-2xl md:text-3xl text-white leading-tight mb-3">
+                  Take Amy with you{" "}
+                  <span className="amy-gradient-text">everywhere</span>
                 </h2>
-                <p className="text-white/65 text-base md:text-lg max-w-md leading-relaxed mb-8">
-                  {t("pages.landing.get_personalised_parenting_guidance_ai_built_routines_and_be")}
+                <p className="text-white/65 text-base max-w-md leading-relaxed mb-6">
+                  Personalized guidance and AI-built routines — on the phone you already use.
                 </p>
-                <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
+                <StoreBadgeRow location="footer_store" />
+                <div className="mt-6 flex flex-wrap items-start justify-center md:justify-start gap-6">
                   <a
                     href={APP_STORE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t("pages.landing.app_store_download")}
-                    className="flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-colors hover:bg-white/10"
-                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", textDecoration: "none" }}
+                    className="flex flex-col items-center gap-2 group"
+                    aria-label={t("pages.landing.scan_for_app_store")}
+                    onClick={() => trackHome("qr_scan", { store: "ios", location: "footer_qr" })}
                   >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 fill-white" aria-hidden>
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                    </svg>
-                    <div className="text-left leading-tight">
-                      <p className="text-white/50 text-[10px] font-medium">{t("pages.landing.download_on_the")}</p>
-                      <p className="text-white font-bold text-base">{t("pages.landing.app_store")}</p>
+                    <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
+                      <StoreQrCode value={APP_STORE_URL} size={88} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
+                    <p className="text-white/60 text-xs font-medium text-center">{t("pages.landing.scan_for_app_store")}</p>
                   </a>
                   <a
                     href={PLAY_STORE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t("pages.landing.google_play_download")}
-                    className="flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-colors hover:bg-white/10"
-                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", textDecoration: "none" }}
+                    className="flex flex-col items-center gap-2 group"
+                    aria-label={t("pages.landing.scan_for_google_play")}
+                    onClick={() => trackHome("qr_scan", { store: "android", location: "footer_qr" })}
                   >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" aria-hidden>
-                      <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335" />
-                      <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="hsl(var(--brand-yellow-400))" />
-                      <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="hsl(var(--brand-blue-500))" />
-                      <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853" />
-                    </svg>
-                    <div className="text-left leading-tight">
-                      <p className="text-white/50 text-[10px] font-medium">{t("pages.landing.get_it_on")}</p>
-                      <p className="text-white font-bold text-base">{t("pages.landing.google_play")}</p>
-                    </div>
-                  </a>
-                </div>
-                <div className="mt-8 flex flex-wrap items-start justify-center md:justify-start gap-6">
-                  <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2.5 group" aria-label={t("pages.landing.scan_for_app_store")}>
                     <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
-                      <StoreQrCode value={APP_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
+                      <StoreQrCode value={PLAY_STORE_URL} size={88} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
-                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">{t("pages.landing.scan_for_app_store")}</p>
-                  </a>
-                  <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2.5 group" aria-label={t("pages.landing.scan_for_google_play")}>
-                    <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
-                      <StoreQrCode value={PLAY_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
-                    </div>
-                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">{t("pages.landing.scan_for_google_play")}</p>
+                    <p className="text-white/60 text-xs font-medium text-center">{t("pages.landing.scan_for_google_play")}</p>
                   </a>
                 </div>
               </div>
-
-              <div className="relative flex-shrink-0 flex items-end justify-center h-72 md:h-80 w-44 md:w-52">
-                <div
-                  className="relative w-40 md:w-48 rounded-[2.5rem] overflow-hidden"
-                  style={{
-                    height: "92%",
-                    background: "linear-gradient(160deg,#1a1a2e,#16213e)",
-                    border: "2px solid rgba(255,255,255,0.12)",
-                    boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 40px rgba(168,85,247,0.25)",
-                  }}
-                >
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 rounded-b-2xl z-20" style={{ background: "#0f0c29" }} />
-                  <div className="absolute inset-0 pt-5 px-3 pb-3 flex flex-col gap-2 overflow-hidden">
-                    <div className="flex items-center gap-1.5 px-1 mt-2">
-                      <AmyLandingAvatar size={28} className="w-7 h-7 object-contain" />
-                      <span className="text-white text-[9px] font-bold">{t("pages.landing.amynest_ai_3")}</span>
-                    </div>
-                    <div className="rounded-xl px-2.5 py-2" style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.3)" }}>
-                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">{t("pages.landing.today_s_routine")}</p>
-                      {["Wake up", "Breakfast", "Reading"].map((label, i) => (
-                        <div key={label} className="flex items-center gap-1.5">
-                          <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: ["hsl(var(--brand-purple-500))", "hsl(var(--brand-orange-500))", "hsl(var(--brand-cyan-500))"][i] }} />
-                          <span className="text-white/80 text-[7px] flex-1">{label}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="rounded-xl px-2.5 py-2 mt-auto" style={{ background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.25)" }}>
-                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">{t("pages.landing.amy_says")}</p>
-                      <p className="text-white/75 text-[7px] leading-snug">{t("pages.landing.great_morning_liam_completed_3_tasks_try_adding_a_calm_down_")}</p>
-                    </div>
-                  </div>
-                </div>
+              <div className="relative w-40 md:w-48 rounded-[2.2rem] overflow-hidden shrink-0" style={{ aspectRatio: "9/19", border: "2px solid rgba(255,255,255,0.12)", boxShadow: "0 30px 80px rgba(0,0,0,0.55)" }}>
+                <img
+                  src="/landing/screenshots/meet-amy-800.webp"
+                  alt="AmyNest app"
+                  width={400}
+                  height={800}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             </div>
           </div>
@@ -892,9 +1241,9 @@ export default function LandingPage() {
               <span className="text-[10px] text-white/40 font-medium tracking-wide">{t("patent_pending.footer_label")}</span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/40">
+          <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-white/40">
+            <Link href="/get-app"><span className="hover:text-white/70 transition-colors cursor-pointer" onClick={() => trackHome("footer_cta", { location: "footer_link" })}>Get the app</span></Link>
             <Link href="/guides"><span className="hover:text-white/70 transition-colors cursor-pointer">Guides</span></Link>
-            <Link href="/get-app"><span className="hover:text-white/70 transition-colors cursor-pointer">Get the app</span></Link>
             <Link href="/features/daily-routines"><span className="hover:text-white/70 transition-colors cursor-pointer">Daily routines</span></Link>
             <Link href="/about"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-about">About</span></Link>
             <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_up")}</span></Link>
@@ -911,16 +1260,5 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function LayoutGridIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
   );
 }

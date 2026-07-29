@@ -9,11 +9,13 @@ import { runProductionPipeline } from "../operations/production-run/index.js";
 import { runTestVeoPipeline } from "../asset-engine/veo-test/index.js";
 import { runTestGeminiPipeline } from "../asset-engine/gemini-test/index.js";
 import { ContentIntelligence } from "../content-intelligence/index.js";
+import { ContinuousLearningEngine } from "../continuous-learning/index.js";
 import { resolveYouTubeAccessToken } from "../publishing/youtube/oauth.js";
 import { exportWorkflowResult } from "../workflow/export/index.js";
 import { WorkflowOrchestrator } from "../workflow/orchestrator/index.js";
 import type { WorkflowJobRequest, WorkflowJobType } from "../types/workflow.js";
 import type { CampaignModeId } from "../content-intelligence/types.js";
+import { makePublishedVideo } from "../analytics/test-fixtures.js";
 import { join } from "node:path";
 
 const WORKFLOW_COMMANDS: Record<string, WorkflowJobType> = {
@@ -142,6 +144,62 @@ async function main(argv: string[]): Promise<void> {
           dashboard: plan.dashboard,
           seasonalFocus: plan.seasonalFocus.map((e) => e.name),
           availableCampaigns: plan.availableCampaigns.map((c) => c.id),
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  if (command === "learn") {
+    // Additive demo ingest — does not touch publishing / workflow / analytics modules.
+    const engine = new ContinuousLearningEngine();
+    const videos = [
+      makePublishedVideo({ videoId: "learn_demo_a" }),
+      makePublishedVideo({
+        videoId: "learn_demo_b",
+        metadata: {
+          ...makePublishedVideo().metadata,
+          title: "Learn one focus tip | AmyNest AI",
+        },
+      }),
+    ];
+    const result = engine.ingest({
+      videos,
+      month: flags.month ?? new Date().toISOString().slice(0, 7),
+    });
+    console.log(
+      JSON.stringify(
+        {
+          version: result.version,
+          dnaCount: result.dnaProfiles.length,
+          knowledgeCount: result.knowledge.length,
+          correlations: result.correlations.slice(0, 8),
+          promptHints: {
+            preferHookStyles: result.promptHints.preferHookStyles,
+            preferEmotions: result.promptHints.preferEmotions,
+            preferDurations: result.promptHints.preferDurations,
+            preferCtaVariants: result.promptHints.preferCtaVariants,
+            systemPromptAddendum: result.promptHints.systemPromptAddendum,
+          },
+          experiments: result.experiments.map((e) => ({
+            id: e.id,
+            kind: e.kind,
+            label: e.label,
+            status: e.status,
+            winner: e.winner,
+          })),
+          failures: result.failures.length,
+          monthlyReport: result.monthlyReport
+            ? {
+                month: result.monthlyReport.month,
+                top10: result.monthlyReport.top10,
+                bottom10: result.monthlyReport.bottom10,
+                optimizationRecommendations:
+                  result.monthlyReport.optimizationRecommendations,
+              }
+            : null,
         },
         null,
         2,
@@ -308,6 +366,9 @@ Production:
 
 Content Intelligence (above pipeline — no new phase):
   pnpm amynest:intelligence [--campaign <mode>] [--start-date YYYY-MM-DD]
+
+Continuous Learning (feedback layer — no production edits):
+  pnpm amynest:learn [--month YYYY-MM]
 
 Operations commands:
   pnpm amynest:doctor

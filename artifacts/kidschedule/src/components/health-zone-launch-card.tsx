@@ -11,7 +11,7 @@ type HealthZoneLaunchCardProps = {
   title: string;
   description: string;
   tryFree?: boolean;
-  previewBadge?: "Preview Available" | "Explore Free" | "Premium Experience";
+  previewBadge?: "Preview Available" | "Explore Free" | "Premium Experience" | "Premium";
   testId: string;
   sectionId?: string;
   onNavigate?: () => void;
@@ -50,9 +50,9 @@ export function HealthZoneLaunchCard({
           visual={HEALTH_ZONE_CARD_VISUALS["health-lab"]}
           title={title}
           description={description}
-          previewBadge={discoveryPreview ? undefined : previewBadge}
-          tryFree={tryFree}
-          showTryFreeBadge={!discoveryPreview}
+          previewBadge={previewBadge}
+          tryFree={!!tryFree && previewBadge !== "Premium"}
+          showTryFreeBadge={!discoveryPreview && previewBadge !== "Premium" && !!tryFree}
         />
       </AppLink>
     </div>

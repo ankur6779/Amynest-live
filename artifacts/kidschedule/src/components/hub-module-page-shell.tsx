@@ -41,7 +41,7 @@ export function PremiumBenefitsPanel({ className }: { className?: string }) {
           <Sparkles className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="font-quicksand text-base font-black text-foreground">Unlock Premium</p>
+          <p className="font-quicksand text-base font-black text-foreground">Unlock All Learning</p>
           <div className="mt-2 grid gap-1 text-sm font-semibold text-muted-foreground sm:grid-cols-2">
             <span>✓ Unlimited Lessons</span>
             <span>✓ Progress Tracking</span>
@@ -124,7 +124,7 @@ export function PremiumActionGate({
       >
         <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-foreground shadow-md">
           <Lock className="h-3 w-3" />
-          Premium Experience
+          Unlock with Premium
         </span>
       </button>
     </div>

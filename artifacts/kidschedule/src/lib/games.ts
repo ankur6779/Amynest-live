@@ -5,8 +5,6 @@ import {
   sanitizeSkillRecord,
   sanitizeUnlockedGames,
 } from "./game-storage-sanitize";
-import { getTotalPoints } from "./rewards";
-import { canUnlockGameWithStreak, getCachedRoutineStreak, STREAK_UNLOCK_DAYS } from "./routine-streak-cache";
 
 export type GameCategory =
   | "brain" | "memory" | "math" | "focus" | "creativity" | "behavior" | "action" | "puzzle";
@@ -105,21 +103,24 @@ export function isUnlocked(id: string): boolean {
   return getUnlocked().includes(id);
 }
 
-/** Free starters are treated as unlocked for play. Premium unlocks the full catalog. */
+/**
+ * Free users may only play the 2 starter games.
+ * Premium unlocks the full catalog (point/streak unlocks no longer bypass Premium).
+ */
 export function isGameUnlockedForPlay(id: string, isPremium = false): boolean {
   if (isPremium) return true;
-  if (isFreeStarter(id)) return true;
-  return isUnlocked(id);
+  return isFreeStarter(id);
 }
 
+/** Non-starter games require Premium for free users. */
 export function requiresPremiumToPlay(game: GameDef): boolean {
-  return !!game.premiumOnly;
+  return !isFreeStarter(game.id);
 }
 
 export function canPlayGame(game: GameDef, isPremium = false): boolean {
   if (game.status !== "ready") return false;
-  if (game.premiumOnly && !isPremium) return false;
-  return isGameUnlockedForPlay(game.id, isPremium);
+  if (isPremium) return true;
+  return isFreeStarter(game.id);
 }
 
 function persistUnlocked(list: string[]): void {
@@ -146,7 +147,7 @@ export function unlockGame(
   const isPremium = opts?.isPremium ?? false;
   const game = GAMES.find((g) => g.id === id);
   if (!game) return { ok: false, reason: "Game not found." };
-  if (game.premiumOnly && !isPremium) {
+  if (!isPremium && !isFreeStarter(id)) {
     return { ok: false, reason: "This game is included with Premium." };
   }
   if (isGameUnlockedForPlay(id, isPremium)) {
@@ -167,44 +168,7 @@ export function unlockGame(
     return { ok: true, via: "starter" };
   }
 
-  const points = getTotalPoints();
-  if (points >= game.unlockCost) {
-    const remaining = points - game.unlockCost;
-    localStorage.setItem("amynest_points", String(remaining));
-    const ledger = JSON.parse(localStorage.getItem("amynest_ledger") ?? "[]");
-    ledger.unshift({
-      date: new Date().toISOString(),
-      childName: "Game Unlock",
-      activity: `Unlocked: ${game.title}`,
-      points: -game.unlockCost,
-    });
-    localStorage.setItem("amynest_ledger", JSON.stringify(ledger.slice(0, 50)));
-    const list = getUnlocked();
-    list.push(id);
-    persistUnlocked(list);
-    return { ok: true, via: "points" };
-  }
-
-  if (canUnlockGameWithStreak()) {
-    const list = getUnlocked();
-    list.push(id);
-    persistUnlocked(list);
-    const ledger = JSON.parse(localStorage.getItem("amynest_ledger") ?? "[]");
-    ledger.unshift({
-      date: new Date().toISOString(),
-      childName: "Game Unlock",
-      activity: `Streak unlock (${STREAK_UNLOCK_DAYS} days): ${game.title}`,
-      points: 0,
-    });
-    localStorage.setItem("amynest_ledger", JSON.stringify(ledger.slice(0, 50)));
-    return { ok: true, via: "streak" };
-  }
-
-  const streak = getCachedRoutineStreak();
-  return {
-    ok: false,
-    reason: `Need ${game.unlockCost} points (you have ${points}), or a ${STREAK_UNLOCK_DAYS}-day routine streak (current: ${streak} days).`,
-  };
+  return { ok: false, reason: "This game is included with Premium." };
 }
 
 interface PlayEntry { id: string; date: string; pointsEarned: number; perfect: boolean; score?: number; total?: number }
@@ -469,4 +433,8 @@ export function getSkillGaps(limit = 4): SkillGapRow[] {
     .slice(0, limit);
 }
 
-export { STREAK_UNLOCK_DAYS, getCachedRoutineStreak, canUnlockGameWithStreak };
+export {
+  STREAK_UNLOCK_DAYS,
+  getCachedRoutineStreak,
+  canUnlockGameWithStreak,
+} from "./routine-streak-cache";

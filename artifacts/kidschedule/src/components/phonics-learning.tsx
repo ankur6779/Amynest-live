@@ -1693,7 +1693,9 @@ function PhonicsDownloadCard({
           ) : (
             <>
               {!canDownloadWorkbook ? <Lock className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-              {canDownloadWorkbook ? t("components.phonics_learning.download_pdf") : "Upgrade to unlock workbook"}
+              {canDownloadWorkbook
+                ? t("components.phonics_learning.download_pdf")
+                : "Unlock Phonics Workbooks"}
             </>
           )}
         </button>

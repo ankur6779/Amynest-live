@@ -13,6 +13,7 @@ import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purc
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { track } from "@/lib/analytics";
 import { PURCHASE_SCREEN } from "@workspace/subscription-marketing";
+import { requestPremiumWelcome } from "@/lib/premium-welcome-controller";
 
 const PaywallModal = lazyPage(() =>
   import("@/components/paywall-modal").then((m) => ({
@@ -80,10 +81,7 @@ export function PaywallModalLazy() {
             source: "native_rc_paywall",
           });
           if (finalized.isPremium) {
-            toast({
-              title: PURCHASE_SCREEN.successTitle,
-              description: PURCHASE_SCREEN.successBody,
-            });
+            requestPremiumWelcome();
           } else {
             toast({
               title: PURCHASE_SCREEN.verifyTitle,
@@ -91,6 +89,16 @@ export function PaywallModalLazy() {
             });
           }
         } else {
+          trackSubscriptionEvent({
+            event: "paywall_close",
+            reason: paywallReason,
+            source: "native_rc_paywall",
+          });
+          trackSubscriptionEvent({
+            event: "checkout_cancelled",
+            reason: paywallReason,
+            source: "native_rc_paywall",
+          });
           closePaywall();
         }
         return;

@@ -5,10 +5,27 @@ import { AddChildLink } from "@/components/add-child-link";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useSubscription } from "@/hooks/use-subscription";
 import { getApiUrl } from "@/lib/api";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, Calendar, Smile, Heart, Trophy, Flame, Sun, Moon, Sparkles, Calculator, RefreshCw } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Calendar,
+  Smile,
+  Heart,
+  Trophy,
+  Flame,
+  Sun,
+  Moon,
+  Sparkles,
+  Calculator,
+  RefreshCw,
+  Lock,
+} from "lucide-react";
 
 type Range = "week" | "month";
 
@@ -110,10 +127,54 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?:
   "color-palette": Sparkles,
 };
 
+function PremiumInsightCard({
+  title,
+  body,
+  source,
+  cta,
+}: {
+  title: string;
+  body: string;
+  source: string;
+  cta: string;
+}) {
+  return (
+    <Card className="rounded-2xl border-violet-500/25 bg-violet-500/5 relative overflow-hidden">
+      <CardContent className="p-4 space-y-3">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-violet-500/10 to-transparent" />
+        <div className="flex items-center gap-2 relative">
+          <Lock className="h-4 w-4 text-violet-300" aria-hidden />
+          <p className="text-xs font-bold uppercase tracking-wide text-violet-300">
+            What you unlock
+          </p>
+        </div>
+        <div className="relative space-y-1 opacity-90 blur-[0.6px] select-none" aria-hidden>
+          <p className="text-xs font-semibold text-foreground">★★★★★ Sleep quality</p>
+          <p className="text-xs font-semibold text-foreground">★★★★☆ Language growth</p>
+          <p className="text-xs font-semibold text-foreground">★★★★★ Emotional trends</p>
+        </div>
+        <h3 className="font-bold text-foreground relative">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed relative">{body}</p>
+        <Button
+          type="button"
+          size="sm"
+          className="rounded-full relative"
+          onClick={() =>
+            openSubscriptionGate({ reason: "premium_insight", source })
+          }
+        >
+          {cta}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function InsightsPage() {
   const { t } = useTranslation();
   const [range, setRange] = useState<Range>("week");
   const authFetch = useAuthFetch();
+  const { isPremium } = useSubscription();
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery<InsightsResponse>({
     queryKey: ["insights", range],
@@ -127,9 +188,6 @@ export default function InsightsPage() {
 
   const loadFailed = isError || data?.fallback === true;
 
-  // Abacus weekly summary is independent of the week/month toggle — the
-  // underlying schema only stores per-level best scores, so we can only
-  // meaningfully aggregate over a fixed trailing 7-day window.
   const { data: abacus } = useQuery<AbacusWeeklySummary>({
     queryKey: ["abacus-weekly-summary"],
     queryFn: async () => {
@@ -138,31 +196,44 @@ export default function InsightsPage() {
       return parseApiJson(res);
     },
     staleTime: 5 * 60_000,
+    enabled: isPremium,
   });
+
+  const primaryChild = data?.perChild?.[0];
+  const topWin = data?.siblingHighlights?.[0];
+  const todayTip =
+    primaryChild?.topCategory
+      ? `Keep leaning into ${primaryChild.topCategory.toLowerCase()} — it's ${primaryChild.childName}'s strongest rhythm right now.`
+      : "Complete today's routine and log one win — small consistency compounds fast.";
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-quicksand font-extrabold text-foreground">{t("screens.insights.title")}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{t("screens.insights.subtitle")}</p>
           </div>
-          <div className="flex bg-muted rounded-xl p-1 gap-1">
-            {(["week", "month"] as Range[]).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                  range === r
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {r === "week" ? t("screens.insights.range_week") : t("screens.insights.range_month")}
-              </button>
-            ))}
-          </div>
+          {isPremium ? (
+            <div className="flex bg-muted rounded-xl p-1 gap-1">
+              {(["week", "month"] as Range[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                    range === r
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {r === "week" ? t("screens.insights.range_week") : t("screens.insights.range_month")}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
+              Today
+            </span>
+          )}
         </div>
 
         {isLoading && (
@@ -216,9 +287,100 @@ export default function InsightsPage() {
           </Card>
         )}
 
-        {!isLoading && !loadFailed && data?.hasActivity && (
+        {!isLoading && !loadFailed && data?.hasActivity && !isPremium && (
           <>
-            {/* Summary Cards */}
+            <Card className="rounded-2xl border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-amber-500/5">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Today&apos;s Tip</p>
+                <p className="text-sm font-semibold text-foreground leading-relaxed">{todayTip}</p>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="rounded-2xl border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-500/5">
+                <CardContent className="p-4">
+                  <p className="text-xs text-orange-300/90 font-semibold uppercase tracking-wide">Today&apos;s Progress</p>
+                  <p className="text-3xl font-extrabold text-orange-300 mt-1">{data.summary.routinesThisPeriod}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Routines this period</p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5">
+                <CardContent className="p-4">
+                  <p className="text-xs text-emerald-300/90 font-semibold uppercase tracking-wide">Current Streak</p>
+                  <p className="text-3xl font-extrabold text-emerald-300 mt-1">{primaryChild?.activeDays ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Active days</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="rounded-2xl">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recent Wins</p>
+                {topWin ? (
+                  <>
+                    <p className="font-bold text-sm text-foreground">{topWin.headline}</p>
+                    <p className="text-xs text-muted-foreground">{topWin.detail}</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Keep logging routines — your next win will show up here.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-3">
+              <h2 className="font-quicksand font-bold text-base text-foreground">
+                Unlock deeper insights
+              </h2>
+              <PremiumInsightCard
+                title="Weekly Report"
+                body="See patterns across the week — what improved, what needs attention, and one clear next step for your child."
+                source="insights_weekly_report"
+                cta="Unlock Weekly Reports"
+              />
+              <PremiumInsightCard
+                title="Monthly Trends"
+                body="Track long-term growth in routines, mood, and learning so you can celebrate progress that compounds."
+                source="insights_monthly_trends"
+                cta="Unlock Monthly Trends"
+              />
+              <PremiumInsightCard
+                title="Development Summary"
+                body="A parent-ready summary of milestones, strengths, and focus areas — perfect for check-ins and PTMs."
+                source="insights_development_summary"
+                cta="Unlock Development Summary"
+              />
+              <PremiumInsightCard
+                title="Family Intelligence"
+                body="Multi-child insights and family rhythm recommendations that help the whole household stay calmer."
+                source="insights_family_intelligence"
+                cta="Unlock Family Intelligence"
+              />
+              <PremiumInsightCard
+                title="Growth Forecast"
+                body="Forward-looking guidance based on recent activity so you know what to prioritize next."
+                source="insights_growth_forecast"
+                cta="Unlock Growth Forecast"
+              />
+            </div>
+
+            <Link href="/assistant">
+              <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-pink-500/15 border border-violet-500/30 cursor-pointer transition-all hover:border-violet-500/50">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white shrink-0">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-foreground">{t("screens.insights.ask_amy_title")}</p>
+                  <p className="text-xs text-muted-foreground">{t("screens.insights.ask_amy_sub")}</p>
+                </div>
+              </div>
+            </Link>
+          </>
+        )}
+
+        {!isLoading && !loadFailed && data?.hasActivity && isPremium && (
+          <>
             <div className="grid grid-cols-2 gap-3">
               <Card className="rounded-2xl border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-500/5">
                 <CardContent className="p-4">
@@ -242,7 +404,6 @@ export default function InsightsPage() {
               </Card>
             </div>
 
-            {/* Per Child */}
             {data.perChild.length > 0 && (
               <div className="space-y-3">
                 <h2 className="font-quicksand font-bold text-base text-foreground">{t("screens.insights.section_per_child")}</h2>
@@ -271,7 +432,6 @@ export default function InsightsPage() {
                       {child.topCategory && (
                         <p className="text-xs text-muted-foreground">{t("screens.insights.top_category")} <span className="font-semibold text-foreground">{child.topCategory}</span></p>
                       )}
-                      {/* Completion bar */}
                       <div>
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-muted-foreground">{t("screens.insights.completion_rate")}</span>
@@ -290,7 +450,6 @@ export default function InsightsPage() {
               </div>
             )}
 
-            {/* Sibling Highlights */}
             {data.siblingHighlights.length > 0 && (
               <div className="space-y-3">
                 <h2 className="font-quicksand font-bold text-base text-foreground">{t("screens.insights.section_highlights")}</h2>
@@ -314,7 +473,6 @@ export default function InsightsPage() {
               </div>
             )}
 
-            {/* Ask Amy CTA */}
             <Link href="/assistant">
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-pink-500/15 border border-violet-500/30 cursor-pointer transition-all hover:border-violet-500/50 hover:shadow-[0_4px_20px_rgba(168,85,247,0.25)]">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white shrink-0 shadow-[0_2px_10px_rgba(168,85,247,0.45)]">
@@ -329,10 +487,7 @@ export default function InsightsPage() {
           </>
         )}
 
-        {/* Abacus weekly progress (per-child) — rendered independently of
-            the routines/behaviour activity gate above, so parents whose
-            child is only active in the Abacus PRO Zone still see it. */}
-        {!isLoading && !loadFailed && data?.hasChildren && abacus && (abacus.children ?? []).length > 0 && (
+        {!isLoading && !loadFailed && data?.hasChildren && isPremium && abacus && (abacus.children ?? []).length > 0 && (
           <div className="space-y-3">
             <h2 className="font-quicksand font-bold text-base text-foreground flex items-center gap-2">
               <Calculator className="h-4 w-4 text-primary" />

@@ -25,7 +25,7 @@ type Props = {
  * native shells; fall back to server startTrial for web.
  *
  * Visibility is gated by the paywall state machine (free_trial), NOT bare
- * canStartTrial — soft internal age trials must still show "Start Free Trial".
+ * canStartTrial — soft internal age trials must still show the explore CTA.
  */
 export function SubscriptionTrialOffer({
   source,
@@ -46,7 +46,7 @@ export function SubscriptionTrialOffer({
   if (!showFreeTrial && !canStartTrial) return null;
 
   const days = entitlements?.limits.trialDays ?? 3;
-  const primaryLabel = ctaLabel ?? `Try ${days} days free — full system`;
+  const primaryLabel = ctaLabel ?? `Explore AmyNest Free for ${days} Days`;
 
   const onClick = async () => {
     if (submitting || nativeBilling.purchasing) return;
@@ -133,7 +133,7 @@ export function SubscriptionTrialOffer({
     >
       <span className="inline-flex items-center justify-center gap-2">
         <Sparkles className="h-4 w-4" />
-        Try {days} days free before you subscribe
+        Explore before you subscribe — {days} free days
       </span>
     </button>
   );

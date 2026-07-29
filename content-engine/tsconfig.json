@@ -50,7 +50,10 @@
     "golden-scripts/**/*.ts",
     "scene-composer/**/*.ts",
     "ai-director/**/*.ts",
-    "content-intelligence/**/*.ts"
+    "content-intelligence/**/*.ts",
+    "launch-validator/**/*.ts",
+    "continuous-learning/**/*.ts",
+    "creative-composition/**/*.ts"
   ],
   "exclude": ["**/*.test.ts", "dist"]
 }

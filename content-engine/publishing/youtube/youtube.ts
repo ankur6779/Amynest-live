@@ -99,6 +99,7 @@ export class YouTubePublishingProvider implements PublishingProvider {
     this.assertAuth();
     const started = Date.now();
     const privacyStatus = toYoutubePrivacy(request.metadata.visibility, request.schedule.mode);
+    const localizations = buildYoutubeLocalizations(request.metadata);
     const body = {
       snippet: {
         title: request.metadata.title,
@@ -110,10 +111,12 @@ export class YouTubePublishingProvider implements PublishingProvider {
       status: {
         privacyStatus,
         selfDeclaredMadeForKids: request.metadata.selfDeclaredMadeForKids,
+        containsSyntheticMedia: request.metadata.containsSyntheticMedia,
         publishAt:
           request.schedule.mode === "scheduled" ? request.schedule.publishAt : undefined,
         license: request.metadata.license === "creativeCommon" ? "creativeCommon" : "youtube",
       },
+      ...(localizations ? { localizations } : {}),
     };
 
     const videoBytes = await readFile(request.videoPath);
@@ -124,8 +127,11 @@ export class YouTubePublishingProvider implements PublishingProvider {
           "https://www.googleapis.com/youtube/v3",
           "https://www.googleapis.com/upload/youtube/v3",
         );
+    const uploadParts = localizations
+      ? "snippet,status,localizations"
+      : "snippet,status";
     const initResponse = await this.fetchImpl(
-      `${uploadApiBase}/videos?uploadType=resumable&part=snippet,status`,
+      `${uploadApiBase}/videos?uploadType=resumable&part=${uploadParts}`,
       {
         method: "POST",
         headers: {
@@ -180,11 +186,31 @@ export class YouTubePublishingProvider implements PublishingProvider {
 
     let thumbnailApplied = false;
     if (request.thumbnailPath) {
-      thumbnailApplied = await this.uploadThumbnail(payload.id, request.thumbnailPath);
+      // Shorts may reject custom thumbnails; never fail the upload after media succeeds.
+      try {
+        thumbnailApplied = await this.uploadThumbnail(
+          payload.id,
+          request.thumbnailPath,
+        );
+      } catch {
+        thumbnailApplied = false;
+      }
     }
 
     if (request.metadata.playlistId && looksLikePlaylistId(request.metadata.playlistId)) {
       await this.addToPlaylist(payload.id, request.metadata.playlistId);
+    }
+
+    // Post engagement comment (Studio pin if API pin unavailable).
+    if (request.metadata.polish?.pinnedComment?.trim()) {
+      try {
+        await this.postTopLevelComment(
+          payload.id,
+          request.metadata.polish.pinnedComment,
+        );
+      } catch {
+        // Comment scope may be missing — never fail the upload.
+      }
     }
 
     return {
@@ -223,6 +249,9 @@ export class YouTubePublishingProvider implements PublishingProvider {
             ? toYoutubePrivacy(request.metadata.visibility, "immediate")
             : undefined,
           selfDeclaredMadeForKids: request.metadata.madeForKids,
+          ...(request.metadata.containsSyntheticMedia !== undefined
+            ? { containsSyntheticMedia: request.metadata.containsSyntheticMedia }
+            : {}),
         },
       }),
     });
@@ -411,6 +440,29 @@ export class YouTubePublishingProvider implements PublishingProvider {
     if (!response.ok) throw await this.mapHttpError(response, "playlist insert failed");
   }
 
+  /** Post a top-level comment intended to be pinned in YouTube Studio. */
+  private async postTopLevelComment(videoId: string, text: string): Promise<void> {
+    const response = await this.fetchImpl(
+      `${this.apiBaseUrl}/commentThreads?part=snippet`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          snippet: {
+            videoId,
+            topLevelComment: {
+              snippet: { textOriginal: text.slice(0, 9000) },
+            },
+          },
+        }),
+      },
+    );
+    if (!response.ok) throw await this.mapHttpError(response, "comment insert failed");
+  }
+
   private async mapHttpError(response: Response, label: string): Promise<PublishingError> {
     const text = await response.text();
     if (response.status === 403 && /quota/i.test(text)) {
@@ -449,9 +501,11 @@ function sanitizeUploadBody(body: {
   status: {
     privacyStatus: "private" | "unlisted" | "public";
     selfDeclaredMadeForKids: boolean;
+    containsSyntheticMedia?: boolean;
     publishAt?: string;
     license: string;
   };
+  localizations?: Record<string, { title: string; description: string }>;
 }) {
   const language = normalizeLanguage(body.snippet.defaultLanguage);
   return {
@@ -466,9 +520,34 @@ function sanitizeUploadBody(body: {
       privacyStatus: body.status.privacyStatus,
       selfDeclaredMadeForKids: Boolean(body.status.selfDeclaredMadeForKids),
       license: body.status.license === "creativeCommon" ? "creativeCommon" : "youtube",
+      ...(body.status.containsSyntheticMedia !== undefined
+        ? { containsSyntheticMedia: Boolean(body.status.containsSyntheticMedia) }
+        : {}),
       ...(body.status.publishAt ? { publishAt: body.status.publishAt } : {}),
     },
+    ...(body.localizations ? { localizations: body.localizations } : {}),
   };
+}
+
+function buildYoutubeLocalizations(
+  metadata: UploadRequest["metadata"],
+): Record<string, { title: string; description: string }> | undefined {
+  const polish = metadata.polish;
+  if (!polish?.localizations) return undefined;
+  const loc: Record<string, { title: string; description: string }> = {};
+  if (polish.localizations.en?.title) {
+    loc.en = {
+      title: polish.localizations.en.title.slice(0, 100),
+      description: polish.localizations.en.description.slice(0, 5000),
+    };
+  }
+  if (polish.localizations.hi?.title) {
+    loc.hi = {
+      title: polish.localizations.hi.title.slice(0, 100),
+      description: polish.localizations.hi.description.slice(0, 5000),
+    };
+  }
+  return Object.keys(loc).length ? loc : undefined;
 }
 
 function normalizeLanguage(language: string): string {

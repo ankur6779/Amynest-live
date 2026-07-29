@@ -199,6 +199,8 @@ export * from "./golden-scripts/index.js";
 export * from "./scene-composer/index.js";
 export * from "./ai-director/index.js";
 export * from "./content-intelligence/index.js";
+export * from "./launch-validator/index.js";
+export * from "./continuous-learning/index.js";
 export { exportStoryboard, toYaml } from "./export/index.js";
 export {
   AssetOrchestrator,
@@ -285,6 +287,11 @@ export {
   PublishingProviderRegistry,
   YouTubePublishingProvider,
   buildPublishMetadata,
+  buildOptimizedDescription,
+  buildPublishingPolish,
+  writeYouTubeMetadataReport,
+  writeYouTubePublishingScorecard,
+  resolveStoreLinks,
   buildPublishingTelemetry,
   buildSchedulePlan,
   computeBackoff,

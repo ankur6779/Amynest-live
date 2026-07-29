@@ -49,6 +49,7 @@ import { earnGamingPoints } from "@/lib/gaming-wallet-api";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
+import { useSubscription } from "@/hooks/use-subscription";
 import type { AgeGroup } from "@/lib/age-groups";
 import type { AgeBand } from "@/lib/age-bands";
 import { getAgeBand, getNextAgeBand, getPreviousAgeBand, bandLabel } from "@/lib/age-bands";
@@ -211,9 +212,20 @@ const WEB_HUB_GROUPS = [
   { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
 ] as const;
 
-function FeatureGate(props: React.ComponentProps<typeof LockedBlock>) {
+function FeatureGate({
+  syncWithRouteAccess,
+  ...props
+}: React.ComponentProps<typeof LockedBlock> & {
+  /** When true, do not bypass locks via infant discovery preview (destination is Premium). */
+  syncWithRouteAccess?: boolean;
+}) {
   const discoveryPreview = useInfantDiscoveryPreview();
-  return <LockedBlock {...props} discoveryPreview={discoveryPreview} />;
+  return (
+    <LockedBlock
+      {...props}
+      discoveryPreview={syncWithRouteAccess ? false : discoveryPreview}
+    />
+  );
 }
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
@@ -872,6 +884,13 @@ function ParentingHubPage() {
     }
   };
   const hubUsage = useFeatureUsage();
+  const { entitlements } = useSubscription();
+  const nutritionRouteOpen =
+    hubUsage.isPremium || !!entitlements?.canAccessNutritionHub;
+  const speechRouteOpen =
+    hubUsage.isPremium || !!entitlements?.canAccessSpeechCoach;
+  const healthLabRouteOpen =
+    hubUsage.isPremium || !!entitlements?.canAccessHealthLab;
   const authFetch = useAuthFetch();
   const { isSignedIn } = useAuth();
   const { user: authUser } = useUser();
@@ -1178,15 +1197,25 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <LearningZoneLaunchCard
-          cardId="smart-math-tricks"
-          href="/smart-math-tricks"
-          title={t("parent_hub.web_tiles.smart-math-tricks.title")}
-          description={t("parent_hub.web_tiles.smart-math-tricks.description")}
-          previewBadge="Explore Free"
-          testId="smart-math-tricks-launch-card"
-          sectionId="smart-math-tricks"
-        />
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_smart_math") || hubJourney.isJourneyLocked}
+          journeySoft={journeySoftLock}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={hubJourney.isJourneyLocked}
+        >
+          <LearningZoneLaunchCard
+            cardId="smart-math-tricks"
+            href="/smart-math-tricks"
+            title={t("parent_hub.web_tiles.smart-math-tricks.title")}
+            description={t("parent_hub.web_tiles.smart-math-tricks.description")}
+            tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_smart_math")}
+            previewBadge={hubJourney.isJourneyLocked ? "Premium" : "Explore Free"}
+            testId="smart-math-tricks-launch-card"
+            sectionId="smart-math-tricks"
+          />
+        </FeatureGate>
       );
     }
   },
@@ -1197,15 +1226,27 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
-        <LearningZoneLaunchCard
-          cardId="abacus"
-          href="/abacus"
-          title={t("pages.parenting_hub.abacus_pro_zone")}
-          description="Learn the soroban — beads, brain & speed math"
-          previewBadge="Preview Available"
-          testId="abacus-launch-card"
-          sectionId="abacus"
-        />
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_abacus") || hubJourney.isJourneyLocked}
+          journeySoft={journeySoftLock}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={hubJourney.isJourneyLocked}
+        >
+          <LearningZoneLaunchCard
+            cardId="abacus"
+            href="/abacus"
+            title={t("pages.parenting_hub.abacus_pro_zone")}
+            description="Learn the soroban — beads, brain & speed math"
+            tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_abacus")}
+            previewBadge={
+              hubJourney.isJourneyLocked ? "Premium" : "Preview Available"
+            }
+            testId="abacus-launch-card"
+            sectionId="abacus"
+          />
+        </FeatureGate>
       );
     }
   },
@@ -1215,13 +1256,23 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       const healthLabPreview = isHealthLabPreviewAge(totalAgeMonths);
+      const healthLabLocked =
+        isHubLocked("hub_health_lab") || !healthLabRouteOpen;
       const card = (
-        <FeatureGate reason="hub_journey" locked={isHubLocked("hub_health_lab")} journeySoft={healthZoneJourneySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate
+          reason="hub_journey"
+          locked={healthLabLocked}
+          journeySoft={healthZoneJourneySoftLock && healthLabRouteOpen}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={!healthLabRouteOpen}
+        >
           <HealthZoneLaunchCard
             href="/health-lab"
             title={t("parent_hub.web_tiles.health-lab.title")}
             description={t("parent_hub.web_tiles.health-lab.description")}
-            tryFree={tryFreeFor("hub_health_lab")}
+            tryFree={healthLabRouteOpen && tryFreeFor("hub_health_lab")}
+            previewBadge={!healthLabRouteOpen ? "Premium" : undefined}
             testId="health-lab-launch-card"
             sectionId="health-lab"
           />
@@ -1272,17 +1323,22 @@ function ParentingHubPage() {
       return (
         <FeatureGate
           reason="hub_journey"
-          locked={isHubLocked("hub_nutrition")}
-          journeySoft={healthZoneJourneySoftLock}
+          locked={isHubLocked("hub_nutrition") || !nutritionRouteOpen}
+          journeySoft={healthZoneJourneySoftLock && nutritionRouteOpen}
           childName={effectiveChild.name}
           isInfant={isInfant}
+          syncWithRouteAccess={!nutritionRouteOpen}
         >
           <HealthZonePremiumSection
             id="nutrition"
             title={t("parent_hub.web_tiles.nutrition.title")}
             description={t("parent_hub.web_tiles.nutrition.description")}
-            tryFree={tryFreeFor("hub_nutrition")}
-            preview={t("parent_hub.web_tiles.nutrition.preview")}
+            tryFree={nutritionRouteOpen && tryFreeFor("hub_nutrition")}
+            preview={
+              nutritionRouteOpen
+                ? t("parent_hub.web_tiles.nutrition.preview")
+                : "Premium — unlock AI meal plans and nutrition tools"
+            }
             onOpen={() => markHubUsed("hub_nutrition")}
           >
             <NutritionHubParentContent
@@ -1401,12 +1457,26 @@ function ParentingHubPage() {
     render: () => {
       const gamingHubPreview = isGamingHubPreviewAge(totalAgeMonths);
       const card = (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_gaming_rewards") || gamingHubPreview}
+          journeySoft={journeySoftLock && !gamingHubPreview}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={gamingHubPreview}
+        >
           <GamingHubLaunchCard
             href="/games"
             title={t("parent_hub.web_tiles.gaming-rewards.title")}
             description={t("parent_hub.web_tiles.gaming-rewards.description")}
-            tryFree={tryFreeFor("hub_gaming_rewards")}
+            tryFree={!gamingHubPreview && tryFreeFor("hub_gaming_rewards")}
+            previewBadge={
+              gamingHubPreview
+                ? "Coming at age 2+"
+                : hubJourney.isJourneyLocked
+                  ? "Premium"
+                  : undefined
+            }
             testId="gaming-rewards-launch-card"
             sectionId="gaming-rewards"
             onNavigate={() => markHubUsed("hub_gaming_rewards")}
@@ -1469,15 +1539,27 @@ function ParentingHubPage() {
       return (
         <>
           {isPhonicsModuleAvailable() ? (
-          <LearningZoneLaunchCard
-            cardId="phonics"
-            href="/phonics"
-            title={t("parent_hub.web_tiles.phonics.title")}
-            description={t("parent_hub.web_tiles.phonics.description")}
-            previewBadge="Preview Available"
-            testId="phonics-launch-card"
-            sectionId="phonics"
-          />
+          <FeatureGate
+            reason="hub_locked"
+            locked={isHubLocked("hub_phonics") || hubJourney.isJourneyLocked}
+            journeySoft={journeySoftLock}
+            childName={effectiveChild.name}
+            isInfant={isInfant}
+            syncWithRouteAccess={hubJourney.isJourneyLocked}
+          >
+            <LearningZoneLaunchCard
+              cardId="phonics"
+              href="/phonics"
+              title={t("parent_hub.web_tiles.phonics.title")}
+              description={t("parent_hub.web_tiles.phonics.description")}
+              tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_phonics")}
+              previewBadge={
+                hubJourney.isJourneyLocked ? "Premium" : "Preview Available"
+              }
+              testId="phonics-launch-card"
+              sectionId="phonics"
+            />
+          </FeatureGate>
           ) : (
             <PhonicsUnavailableFallback compact />
           )}
@@ -1505,15 +1587,27 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <LearningZoneLaunchCard
-          cardId="smart-study"
-          href="/study"
-          title={t("parent_hub.web_tiles.smart-study.title")}
-          description={t("parent_hub.web_tiles.smart-study.description")}
-          previewBadge="Premium Experience"
-          testId="smart-study-launch-card"
-          sectionId="smart-study"
-        />
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_smart_study") || hubJourney.isJourneyLocked}
+          journeySoft={journeySoftLock}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={hubJourney.isJourneyLocked}
+        >
+          <LearningZoneLaunchCard
+            cardId="smart-study"
+            href="/study"
+            title={t("parent_hub.web_tiles.smart-study.title")}
+            description={t("parent_hub.web_tiles.smart-study.description")}
+            tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_smart_study")}
+            previewBadge={
+              hubJourney.isJourneyLocked ? "Premium" : "Premium Experience"
+            }
+            testId="smart-study-launch-card"
+            sectionId="smart-study"
+          />
+        </FeatureGate>
       );
     }
   }, {
@@ -1523,13 +1617,21 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("spelling-mastery", totalAgeMonths, isTwoPlus)) return null;
       return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_spelling_mastery")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_spelling_mastery")}
+          journeySoft={journeySoftLock}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={hubJourney.isJourneyLocked}
+        >
           <LearningZoneLaunchCard
             cardId="spelling-mastery"
             href="/spelling"
             title={t("parent_hub.web_tiles.spelling-mastery.title")}
             description={t("parent_hub.web_tiles.spelling-mastery.description")}
-            tryFree={tryFreeFor("hub_spelling_mastery")}
+            tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_spelling_mastery")}
+            previewBadge={hubJourney.isJourneyLocked ? "Premium" : undefined}
             testId="spelling-mastery-launch-card"
             sectionId="spelling-mastery"
           />
@@ -1542,13 +1644,21 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("olympiad", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_olympiad")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_olympiad")}
+          journeySoft={journeySoftLock}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={hubJourney.isJourneyLocked}
+        >
           <LearningZoneLaunchCard
             cardId="olympiad"
             href="/olympiad"
             title={t("parent_hub.web_tiles.olympiad.title")}
             description={t("parent_hub.web_tiles.olympiad.description")}
-            tryFree={tryFreeFor("hub_olympiad")}
+            tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_olympiad")}
+            previewBadge={hubJourney.isJourneyLocked ? "Premium" : undefined}
             testId="olympiad-launch-card"
             sectionId="olympiad"
           />
@@ -1659,8 +1769,21 @@ function ParentingHubPage() {
       if (!shouldRenderHubTileContent("speech-coach", totalAgeMonths, isTwoPlus)) return null;
       const speechCoachPreview = totalAgeMonths < 24;
       const content = (
-        <FeatureGate reason="hub_locked" locked={isHubLocked("hub_speech")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <StoriesPremiumSection id="speech-coach" title={t("screens.speech_coach.hub_tile.title")} description={t("screens.speech_coach.hub_tile.description")} tryFree={tryFreeFor("hub_speech")} onOpen={() => markHubUsed("hub_speech")}>
+        <FeatureGate
+          reason="hub_locked"
+          locked={isHubLocked("hub_speech") || !speechRouteOpen}
+          journeySoft={journeySoftLock && speechRouteOpen}
+          childName={effectiveChild.name}
+          isInfant={isInfant}
+          syncWithRouteAccess={!speechRouteOpen}
+        >
+          <StoriesPremiumSection
+            id="speech-coach"
+            title={t("screens.speech_coach.hub_tile.title")}
+            description={t("screens.speech_coach.hub_tile.description")}
+            tryFree={speechRouteOpen && tryFreeFor("hub_speech")}
+            onOpen={() => markHubUsed("hub_speech")}
+          >
             {speechCoachPreview ? (
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">

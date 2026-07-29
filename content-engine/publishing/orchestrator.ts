@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
 import { resolvePublishingSettings } from "../config/publishing.js";
+import {
+  isLaunchValidatorEnabled,
+  validateLaunch,
+  writeLaunchValidationReport,
+} from "../launch-validator/index.js";
 import type { ContentEngineConfig } from "../types/index.js";
 import type {
   NotificationDelivery,
@@ -17,7 +22,12 @@ import {
   type TelemetrySink,
 } from "../telemetry/index.js";
 import { AuditLog } from "./audit/index.js";
-import { buildPublishMetadata, resolveThumbnail } from "./metadata/index.js";
+import {
+  buildPublishMetadata,
+  resolveThumbnail,
+  writeYouTubeMetadataReport,
+} from "./metadata/index.js";
+import { writeYouTubePublishingScorecard } from "./polish/index.js";
 import { InMemoryNotificationBus } from "./notifications/index.js";
 import {
   InMemoryPublishStore,
@@ -122,9 +132,27 @@ export class PublishingOrchestrator {
     }
 
     const metadata = buildPublishMetadata(input.content, settings, input.overrides);
+    if (input.render.renderMetadata.outputDirectory) {
+      try {
+        writeYouTubeMetadataReport({
+          metadata,
+          outputDirectory: input.render.renderMetadata.outputDirectory,
+        });
+        if (metadata.polish) {
+          writeYouTubePublishingScorecard({
+            metadata,
+            polish: metadata.polish,
+            outputDirectory: input.render.renderMetadata.outputDirectory,
+          });
+        }
+      } catch {
+        // Reports are best-effort; never block publish.
+      }
+    }
     let thumbnail: ThumbnailResolution = resolveThumbnail({
       generatedPath: input.thumbnailPath,
       brandingDefaultPath: "brand://amynest-default-thumb.jpg",
+      searchDirectory: input.render.renderMetadata.outputDirectory,
     });
     const schedule = buildSchedulePlan({
       policy: settings.schedulePolicy,
@@ -136,6 +164,45 @@ export class PublishingOrchestrator {
     metadata.visibility = schedule.visibility;
 
     const provider = await this.registry.resolveProvider(settings.publishingProvider);
+
+    // Final production launch gate — evidence from final MP4 only. No bypass.
+    if (isLaunchValidatorEnabled()) {
+      const launchReport = validateLaunch({
+        content: input.content,
+        render: input.render,
+        metadata,
+        thumbnail,
+        schedule,
+        evidenceWorkDir: input.render.renderMetadata.outputDirectory
+          ? `${input.render.renderMetadata.outputDirectory}/evidence`
+          : undefined,
+      });
+      const written = writeLaunchValidationReport({
+        report: launchReport,
+        outputDirectory: input.render.renderMetadata.outputDirectory,
+      });
+      launchReport.reportPath = written.path;
+      audit.record("verify", provider.id, {
+        launchValidator: true,
+        recommendation: launchReport.recommendation,
+        overall: launchReport.scores.overall,
+        certification: launchReport.certification?.certification ?? "MISSING",
+        qualityReportPath: launchReport.qualityReportPath ?? null,
+        reportPath: written.path,
+      });
+      const evidenceOk =
+        launchReport.ok &&
+        launchReport.certification?.certification === "PASS" &&
+        launchReport.certification?.ok === true;
+      if (!evidenceOk) {
+        throw new PublishingError(
+          "validation",
+          `Launch evidence certification blocked publish (${launchReport.certification?.certification ?? "MISSING"}, score ${launchReport.scores.overall}): ${launchReport.reasons.slice(0, 6).join(" | ")}`,
+          { retryable: false },
+        );
+      }
+    }
+
     audit.record("upload", provider.id, {
       renderPackageId: input.render.id,
       idempotencyKey,

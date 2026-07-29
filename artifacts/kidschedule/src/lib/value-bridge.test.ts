@@ -74,12 +74,12 @@ describe("value-bridge phase 1", () => {
   it("builds phase-1 copy and analytics sources", () => {
     const routine = valueBridgeCopy("routine_completion");
     expect(routine.source).toBe("routine_completion");
-    expect(routine.cta).toBe("Continue Premium");
+    expect(routine.cta).toBe("Continue My Child's Journey");
     expect(routine.message).toMatch(/first routine step/i);
 
     const weekly = valueBridgeCopy("weekly_summary");
     expect(weekly.source).toBe("weekly_summary");
-    expect(weekly.cta).toBe("Continue Premium");
+    expect(weekly.cta).toBe("Continue My Child's Journey");
   });
 
   it("tracks first routine item completion separately from bridge shown", () => {

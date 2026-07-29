@@ -116,7 +116,9 @@ function headlineForVariant(
 }
 
 function ctaForVariant(variant: ValueSheetCtaVariant): string {
-  return variant === "unlock_unlimited" ? "Unlock unlimited" : "Continue Premium";
+  return variant === "unlock_unlimited"
+    ? "Unlock Unlimited Guidance"
+    : "Continue My Child's Journey";
 }
 
 export function resolvePremiumMomentCopy(
@@ -131,10 +133,10 @@ export function resolvePremiumMomentCopy(
 }
 
 export const FREE_VS_PREMIUM_ROWS = [
-  { label: "Routines", free: "3", premium: "Unlimited" },
-  { label: "AI chats", free: "5/day", premium: "Unlimited" },
+  { label: "Routines", free: "3 total", premium: "Unlimited" },
+  { label: "AI chats", free: "Daily limit", premium: "Unlimited" },
   { label: "Speech Coach", free: "3 sessions", premium: "Unlimited" },
-  { label: "Children", free: "1", premium: "Up to 2" },
+  { label: "Games", free: "2 starters", premium: "Full library" },
   { label: "Health Lab", free: "Preview", premium: "Full access" },
-  { label: "PDF export", free: "—", premium: "✓" },
+  { label: "Weekly reports", free: "Today's tip", premium: "Full reports" },
 ] as const;

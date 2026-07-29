@@ -191,20 +191,20 @@ export function valueBridgeCopy(moment: ValueBridgeMoment): ValueBridgeCopy {
       return {
         message:
           "Great progress — you completed your first routine step. Keep the momentum going with Premium.",
-        cta: "Continue Premium",
+        cta: "Continue My Child's Journey",
         source: "routine_completion",
       };
     case "weekly_summary":
       return {
         message:
           "Your week with Amy is growing — continue building on this progress with Premium.",
-        cta: "Continue Premium",
+        cta: "Continue My Child's Journey",
         source: "weekly_summary",
       };
     default:
       return {
         message: "Continue your progress with Premium.",
-        cta: "Continue Premium",
+        cta: "Continue My Child's Journey",
         source: "weekly_summary",
       };
   }

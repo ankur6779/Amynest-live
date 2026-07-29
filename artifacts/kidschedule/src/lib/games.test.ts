@@ -55,12 +55,11 @@ describe("games unlock policy", () => {
     expect(canPlayGame(hidden, true)).toBe(true);
   });
 
-  it("streak unlocks a game without points", () => {
+  it("free users cannot unlock non-starter games with streak or points", () => {
     cacheRoutineStreak(STREAK_UNLOCK_DAYS);
     const r = unlockGame("odd-one-out", { isPremium: false });
-    expect(r.ok).toBe(true);
-    expect(r.via).toBe("streak");
-    expect(isGameUnlockedForPlay("odd-one-out", false)).toBe(true);
+    expect(r.ok).toBe(false);
+    expect(canPlayGame(GAMES.find((g) => g.id === "odd-one-out")!, false)).toBe(false);
   });
 
   it("premium users skip point cost", () => {

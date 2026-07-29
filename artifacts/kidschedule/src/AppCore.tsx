@@ -48,6 +48,7 @@ import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { SafeRoutePage } from "@/components/safe-route-page";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { withLearningJourneyGate } from "@/components/learning-journey-gate";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
@@ -199,6 +200,7 @@ import { PaywallProvider } from "@/contexts/paywall-context";
 import { DeviceRegistrationProvider } from "@/contexts/device-registration-context";
 import { DeviceLimitGate } from "@/components/device-limit-dialog";
 import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
+import { PremiumWelcomeHost } from "@/components/premium-welcome-host";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
 import { SubscriptionFunnelOrchestrator } from "@/components/subscription-funnel-orchestrator";
 import { ValueBridgeProvider } from "@/contexts/value-bridge-context";
@@ -436,32 +438,55 @@ type PremiumRouteMeta = {
   preview: string;
   benefits: string[];
   source: string;
+  cta: string;
+  reason: "hub_nutrition" | "speech_coach" | "feature";
 };
 
 const PREMIUM_ROUTE_METADATA: PremiumRouteMeta[] = [
   {
     route: "/nutrition",
-    title: "Nutrition Premium",
+    title: "Create meal plans for every stage of growth",
     accessKey: "canAccessNutritionHub",
-    preview: "Try basic nutrition tools, then unlock meal planning, family portions, and nutrition library PDFs.",
-    benefits: ["Weekly AI meal plans", "Family portion intelligence", "Premium nutrition library"],
+    preview:
+      "You've explored nutrition basics. Premium unlocks AI meal plans, family portions, and the nutrition library.",
+    benefits: [
+      "Unlimited AI meal plans",
+      "Family portion intelligence",
+      "Full nutrition library downloads",
+    ],
     source: "route_nutrition",
+    cta: "Unlock Meal Plans",
+    reason: "hub_nutrition",
   },
   {
     route: "/speech-coach",
-    title: "Speech Premium",
+    title: "Continue building confidence with unlimited practice",
     accessKey: "canAccessSpeechCoach",
-    preview: "Use the free speech samples, then unlock the full coaching path and practice library.",
-    benefits: ["More practice sessions", "Conversation coaching", "Speech progress guidance"],
+    preview:
+      "Your free speech sessions are complete. Premium unlocks unlimited conversations and progress tracking.",
+    benefits: [
+      "Unlimited practice sessions",
+      "Conversation coaching",
+      "Speech progress guidance",
+    ],
     source: "route_speech_coach",
+    cta: "Continue Building Confidence",
+    reason: "speech_coach",
   },
   {
     route: "/health-lab",
-    title: "Health Lab Premium",
+    title: "Track long-term wellness with personalized insights",
     accessKey: "canAccessHealthLab",
-    preview: "Preview the child wellness insights available in Health Lab.",
-    benefits: ["Health insights", "Progress reports", "Premium wellness guidance"],
+    preview:
+      "Preview Health Lab today. Premium unlocks full wellness trends, quests, and personalized guidance.",
+    benefits: [
+      "Full Health Lab access",
+      "Long-term wellness trends",
+      "Personalized health guidance",
+    ],
     source: "route_health_lab",
+    cta: "Unlock Health Lab",
+    reason: "feature",
   },
 ];
 
@@ -474,24 +499,34 @@ function getPremiumRouteMeta(path: string): PremiumRouteMeta | null {
 function PremiumRoutePreview({ meta }: { meta: PremiumRouteMeta }) {
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-6 py-10 text-center">
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_-40px_rgba(124,58,237,0.75)]">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-300">Premium preview</p>
+      <div className="rounded-[28px] border border-violet-500/20 bg-white/[0.04] p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-300">
+          What you unlock
+        </p>
         <h1 className="mt-3 text-2xl font-black text-foreground">{meta.title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{meta.preview}</p>
         <ul className="mt-5 space-y-2 text-left text-sm text-muted-foreground">
           {meta.benefits.map((benefit) => (
-            <li key={benefit} className="rounded-2xl bg-white/[0.04] px-4 py-3">
+            <li
+              key={benefit}
+              className="rounded-2xl border border-white/5 bg-white/[0.04] px-4 py-3"
+            >
               {benefit}
             </li>
           ))}
         </ul>
         <button
           type="button"
-          className="mt-6 min-h-11 w-full rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/25"
-          onClick={() => openSubscriptionGate({ reason: "feature", source: meta.source })}
+          className="mt-6 min-h-11 w-full rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white"
+          onClick={() =>
+            openSubscriptionGate({ reason: meta.reason, source: meta.source })
+          }
         >
-          Upgrade to unlock
+          {meta.cta}
         </button>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Cancel anytime · Secure purchase · Restore purchases anytime
+        </p>
       </div>
     </main>
   );
@@ -605,8 +640,8 @@ const ProgressRoute = makeProtectedRoute(ProgressPage);
 const ParentingHubRoute = makeProtectedRoute(ParentingHub);
 const ParentGrowthRoute = makeProtectedRoute(ParentGrowthPage);
 const DebugLearningRoute = makeProtectedRoute(DebugLearningPage);
-const PhonicsRoute = makeProtectedRoute(PhonicsPage, "Phonics");
-const PhonicsTestPlayRoute = makeProtectedRoute(PhonicsTestPlayPage);
+const PhonicsRoute = makeProtectedRoute(withLearningJourneyGate(PhonicsPage), "Phonics");
+const PhonicsTestPlayRoute = makeProtectedRoute(withLearningJourneyGate(PhonicsTestPlayPage));
 const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
 const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
 const SpeechCoachLiveSessionRoute = makeProtectedRoute(SpeechCoachLiveSessionPage);
@@ -615,13 +650,13 @@ const SpeechCoachV2HubRoute = makeProtectedRoute(SpeechCoachV2HubPage);
 const SpeechCoachV2SessionRoute = makeProtectedRoute(SpeechCoachV2SessionPage);
 const TalkingAmyRoute = makeProtectedRoute(TalkingAmyPage);
 const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
-const StudyRoute = makeProtectedRoute(StudyPage);
-const SmartMathTricksRoute = makeProtectedRoute(SmartMathTricksPage);
-const AbacusRoute = makeProtectedRoute(AbacusPage);
+const StudyRoute = makeProtectedRoute(withLearningJourneyGate(StudyPage));
+const SmartMathTricksRoute = makeProtectedRoute(withLearningJourneyGate(SmartMathTricksPage));
+const AbacusRoute = makeProtectedRoute(withLearningJourneyGate(AbacusPage));
 const HealthLabRoute = makeProtectedRoute(HealthLabPage);
 const BirthSkyRoute = makeProtectedRoute(BirthSkyPage, "BirthSky");
-const SpellingRoute = makeProtectedRoute(SpellingPage);
-const OlympiadRoute = makeProtectedRoute(OlympiadPage);
+const SpellingRoute = makeProtectedRoute(withLearningJourneyGate(SpellingPage));
+const OlympiadRoute = makeProtectedRoute(withLearningJourneyGate(OlympiadPage));
 const EventPrepRoute = makeProtectedRoute(EventPrepPage);
 const WorksheetRoute = makeProtectedRoute(WorksheetPage, "Worksheet");
 const TeacherOsRoute = makeProtectedRoute(TeacherOsPage, "TeacherOS");
@@ -1073,6 +1108,7 @@ function AppRoutes() {
             </RouteTransitionRoot>
             </Suspense>
             <PaywallModalLazy />
+            <PremiumWelcomeHost />
             <SubscriptionEventBridge />
             <PremiumMomentEventBridge />
             <SubscriptionFunnelOrchestrator />

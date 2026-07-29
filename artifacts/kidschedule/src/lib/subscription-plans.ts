@@ -83,7 +83,8 @@ export function annualSavingsLabel(plan: PlanCard): string | null {
   if (typeof plan.savingsPercent === "number" && plan.savingsPercent > 0) {
     return `Save ${plan.savingsPercent}%`;
   }
-  return "Save 33%";
+  // Never invent a discount percentage — use honest annual framing only.
+  return "Save annually";
 }
 
 export function sixMonthSavingsLabel(plan: PlanCard): string | null {
@@ -91,7 +92,7 @@ export function sixMonthSavingsLabel(plan: PlanCard): string | null {
   if (typeof plan.savingsPercent === "number" && plan.savingsPercent > 0) {
     return `Save ${plan.savingsPercent}%`;
   }
-  return "Save 17%";
+  return null;
 }
 
 export function planSavingsLabel(plan: PlanCard): string | null {

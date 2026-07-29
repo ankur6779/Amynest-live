@@ -50,7 +50,10 @@ export interface PublishingEngineSettings {
   schedulePolicy: SchedulePolicy;
   categoryId: string;
   license: "youtube" | "creativeCommon";
+  /** COPPA "Made for Kids" — default false (parent/caregiver audience). */
   madeForKids: boolean;
+  /** Disclose AI / synthetic media via status.containsSyntheticMedia. */
+  aiDisclosure: boolean;
   retryBaseDelayMs: number;
   retryMaxDelayMs: number;
   deadLetterEnabled: boolean;
@@ -71,10 +74,16 @@ export interface PublishMetadata {
   categoryId: string;
   language: string;
   playlistId: string;
+  /** Human playlist label (Study Zone, Speech, …). */
+  playlistName?: string;
   visibility: VideoVisibility;
   license: "youtube" | "creativeCommon";
   madeForKids: boolean;
   selfDeclaredMadeForKids: boolean;
+  /** YouTube status.containsSyntheticMedia (AI / altered content disclosure). */
+  containsSyntheticMedia: boolean;
+  /** Publishing polish (pinned comment, i18n, variants, SEO scorecard). */
+  polish?: import("./publishing-polish.js").PublishingPolish;
 }
 
 export interface PublishMetadataOverrides {
@@ -84,9 +93,11 @@ export interface PublishMetadataOverrides {
   categoryId?: string;
   language?: string;
   playlistId?: string;
+  playlistName?: string;
   visibility?: VideoVisibility;
   license?: "youtube" | "creativeCommon";
   madeForKids?: boolean;
+  containsSyntheticMedia?: boolean;
 }
 
 export interface ThumbnailResolution {

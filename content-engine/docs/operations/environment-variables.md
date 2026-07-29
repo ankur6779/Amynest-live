@@ -17,7 +17,8 @@ Precedence: Defaults → JSON config → Environment variables → Runtime overr
 | `AMYNEST_SECRET_VALIDATION_MODE` | `strict\|permissive` | `strict` |
 | `AMYNEST_DAILY_VIDEO_COUNT` | Videos per daily job | `3` |
 | `AMYNEST_WORKFLOW_CONCURRENCY` | Parallel units | `2` |
-| `AMYNEST_SCRIPT_PROVIDER` | Script provider id | `openai` |
+| `AMYNEST_COST_FIRST` | Offline → Cache → API Last provider selection (default on) | `true` |
+| `AMYNEST_SCRIPT_PROVIDER` | Script provider id (`mock` default; paid LLM only if set) | `mock` |
 | `AMYNEST_RENDERER` | Renderer id | `ffmpeg` |
 | `AMYNEST_PUBLISHING_PROVIDER` | Publishing provider | `youtube` |
 | `AMYNEST_ANALYTICS_PROVIDER` | Analytics provider | `youtube` |
@@ -26,8 +27,8 @@ Precedence: Defaults → JSON config → Environment variables → Runtime overr
 | `AMYNEST_HEALTHCHECK_ENABLED` | Enable health checks | `true` |
 | `AMYNEST_MONITORING_ENABLED` | Enable metrics | `true` |
 | `AMYNEST_BACKUP_ENABLED` | Enable backups | `true` |
-| `GEMINI_API_KEY` | Google AI Studio key for Gemini media stack (scripts, Imagen, Veo, TTS, Lyria) | `AIza...` |
-| `AMYNEST_GEMINI_ENABLED` | Enable Gemini media stack defaults | `true` |
+| `GEMINI_API_KEY` | Google AI Studio key for media stack (Imagen, Veo, TTS, Lyria) — not text by default | `AIza...` |
+| `AMYNEST_GEMINI_ENABLED` | Enable Gemini **media** stack (does not force Gemini scripts) | `false` |
 | `AMYNEST_GEMINI_SCRIPT_MODEL` | Default script model | `gemini-3.6-flash` |
 | `AMYNEST_GEMINI_IMAGE_MODEL` | Default Imagen model | `imagen-4.0-fast-generate-001` |
 | `AMYNEST_GEMINI_TTS_MODEL` | Default Gemini TTS model | `gemini-3.1-flash-tts-preview` |
@@ -44,6 +45,8 @@ Precedence: Defaults → JSON config → Environment variables → Runtime overr
 
 Secret variables are listed in [secrets.md](./secrets.md).
 
-**Key separation:** `OPENAI_API_KEY` = GPT scripts (fallback). `GEMINI_API_KEY` = Gemini media stack. Never overwrite one with the other.
+**Cost-first policy:** See [COST_EXECUTION_POLICY.md](./COST_EXECUTION_POLICY.md). Scripts default to `mock` (Golden Scripts / local templates). `AMYNEST_GEMINI_ENABLED` enables media only — set `AMYNEST_SCRIPT_PROVIDER=gemini` explicitly for paid script LLMs.
+
+**Key separation:** `OPENAI_API_KEY` = optional GPT scripts (off under cost-first). `GEMINI_API_KEY` = media stack. Never overwrite one with the other.
 
 **Validation CLI:** `pnpm amynest:test-gemini` runs script → Imagen → Veo → TTS → render → final MP4 and writes `content-engine/docs/operations/TEST_GEMINI_REPORT.md`.

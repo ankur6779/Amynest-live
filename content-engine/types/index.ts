@@ -208,6 +208,7 @@ export interface ContentEngineConfig {
   categoryId?: string;
   license?: "youtube" | "creativeCommon";
   madeForKids?: boolean;
+  aiDisclosure?: boolean;
   retryBaseDelayMs?: number;
   retryMaxDelayMs?: number;
   deadLetterEnabled?: boolean;
@@ -504,6 +505,7 @@ export type ResolvedPublishingConfig = Required<
     | "categoryId"
     | "license"
     | "madeForKids"
+    | "aiDisclosure"
     | "retryBaseDelayMs"
     | "retryMaxDelayMs"
     | "deadLetterEnabled"

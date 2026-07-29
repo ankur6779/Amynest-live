@@ -8,7 +8,7 @@ type LearningZonePremiumCardProps = {
   cardId: LearningZoneCardId;
   title: string;
   description: string;
-  previewBadge?: "Preview Available" | "Explore Free" | "Premium Experience";
+  previewBadge?: "Preview Available" | "Explore Free" | "Premium Experience" | "Premium";
   tryFree?: boolean;
   showTryFreeBadge?: boolean;
 };

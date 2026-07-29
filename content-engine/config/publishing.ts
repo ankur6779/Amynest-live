@@ -4,6 +4,14 @@ import type {
 } from "../types/index.js";
 import type { PublishingEngineSettings } from "../types/published-video.js";
 
+function envBool(name: string, fallback: boolean): boolean {
+  const raw = process.env[name]?.trim().toLowerCase();
+  if (raw === undefined || raw === "") return fallback;
+  if (raw === "true" || raw === "1" || raw === "yes") return true;
+  if (raw === "false" || raw === "0" || raw === "no") return false;
+  return fallback;
+}
+
 export const DEFAULT_PUBLISHING_SETTINGS: PublishingEngineSettings = {
   publishingProvider: "mock",
   defaultVisibility: "private",
@@ -17,7 +25,10 @@ export const DEFAULT_PUBLISHING_SETTINGS: PublishingEngineSettings = {
   },
   categoryId: "22",
   license: "youtube",
+  // Parent/caregiver audience — never force Made for Kids.
   madeForKids: false,
+  // AmyNest Shorts use AI visuals/narration; disclose unless explicitly disabled.
+  aiDisclosure: true,
   retryBaseDelayMs: 250,
   retryMaxDelayMs: 8_000,
   deadLetterEnabled: true,
@@ -52,7 +63,12 @@ export function resolvePublishingSettings(
     schedulePolicy,
     categoryId: config.categoryId ?? DEFAULT_PUBLISHING_SETTINGS.categoryId,
     license: config.license ?? DEFAULT_PUBLISHING_SETTINGS.license,
-    madeForKids: config.madeForKids ?? DEFAULT_PUBLISHING_SETTINGS.madeForKids,
+    madeForKids:
+      config.madeForKids ??
+      envBool("YOUTUBE_MADE_FOR_KIDS", DEFAULT_PUBLISHING_SETTINGS.madeForKids),
+    aiDisclosure:
+      config.aiDisclosure ??
+      envBool("YOUTUBE_AI_DISCLOSURE", DEFAULT_PUBLISHING_SETTINGS.aiDisclosure),
     retryBaseDelayMs:
       config.retryBaseDelayMs ?? DEFAULT_PUBLISHING_SETTINGS.retryBaseDelayMs,
     retryMaxDelayMs:

@@ -19,6 +19,29 @@ export type MarketingFunnelEvent =
   | "scroll_cta_shown"
   | "exit_intent_shown"
   | "demo_question_click"
+  | "age_selected"
+  | "hero_video_start"
+  | "hero_video_complete"
+  | "demo_started"
+  | "demo_completed"
+  | "feature_view"
+  | "testimonial_view"
+  | "timeline_view"
+  | "trust_view"
+  | "faq_opened"
+  | "sticky_cta_click"
+  | "hero_cta_click"
+  | "footer_cta_click"
+  | "qr_scan"
+  | "store_redirect"
+  | "install_click"
+  | "section_view"
+  | "spotlight_opened"
+  | "dashboard_preview"
+  | "stage_selected"
+  | "hero_cta"
+  | "mid_cta"
+  | "footer_cta"
   | "install_source"
   | "review_prompt_shown"
   | "review_completed"
@@ -86,21 +109,19 @@ export function trackMarketingEvent(
   window.gtag?.("event", event, payload);
 }
 
-/** Map legacy social-landing event names to GA4 conversion events. */
+const GET_APP_EVENT_ALIASES: Record<string, MarketingFunnelEvent> = {
+  landing_page_view: "get_app_page_view",
+  page_view: "get_app_page_view",
+  store_button_click: "store_button_click",
+  install_intent: "install_intent",
+  scroll_depth: "scroll_depth",
+};
+
+/** Map social-landing event names to GA4 conversion events. */
 export function trackGetAppFunnelEvent(
   event: string,
   params: MarketingEventParams = {},
 ): void {
-  const mapped: MarketingFunnelEvent =
-    event === "landing_page_view"
-      ? "get_app_page_view"
-      : event === "store_button_click"
-        ? "store_button_click"
-        : event === "install_intent"
-          ? "install_intent"
-          : event === "scroll_depth"
-            ? "scroll_depth"
-            : (event as MarketingFunnelEvent);
-
+  const mapped = GET_APP_EVENT_ALIASES[event] ?? (event as MarketingFunnelEvent);
   trackMarketingEvent(mapped, { page: "get-app", ...params });
 }

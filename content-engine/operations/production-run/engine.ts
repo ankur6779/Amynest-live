@@ -129,20 +129,26 @@ export async function runProductionPipeline(
   );
   /** Explicit opt-in only — do not auto-enable Gemini media stack until live validation passes. */
   const geminiEnabled = env.AMYNEST_GEMINI_ENABLED === "true" && hasGeminiKey;
-  const scriptProvider = geminiEnabled ? "gemini" : hasOpenAI ? "openai" : "mock";
-  const fallbackProvider =
-    geminiEnabled && hasOpenAI ? "openai" : hasOpenAI ? "mock" : "mock";
-  if (!hasOpenAI && !geminiEnabled) {
+  // Cost-first: scripts default to local/mock (Golden Scripts). Paid LLMs only if explicitly set.
+  const explicitScript = env.AMYNEST_SCRIPT_PROVIDER?.trim();
+  const scriptProvider = (explicitScript || "mock") as
+    | "mock"
+    | "openai"
+    | "gemini";
+  const fallbackProvider = "mock";
+  if (!explicitScript) {
     warnings.push(
-      "OPENAI_API_KEY unavailable and Gemini not opted-in — using mock script provider",
+      "Cost-first: scriptProvider=mock (Golden Scripts / local templates). Set AMYNEST_SCRIPT_PROVIDER to use a paid LLM.",
     );
-  } else if (!geminiEnabled && hasGeminiKey) {
+  }
+  if (!geminiEnabled && hasGeminiKey) {
     warnings.push(
       "GEMINI_API_KEY present but AMYNEST_GEMINI_ENABLED!=true — Gemini media stack stays off for production-run",
     );
-  } else if (geminiEnabled && !hasOpenAI) {
+  }
+  if (hasOpenAI && scriptProvider === "mock") {
     warnings.push(
-      "OPENAI_API_KEY unavailable — Gemini scripts have no OpenAI fallback",
+      "OPENAI_API_KEY present but unused for scripts under cost-first mode (AMYNEST_COST_FIRST)",
     );
   }
 
@@ -177,16 +183,16 @@ export async function runProductionPipeline(
       outputDirectory,
       preferredProviders: geminiEnabled
         ? [
-            "google-imagen",
-            "google-veo",
             "local-library",
             "screen-recording",
             "illustration",
+            "google-imagen",
+            "google-veo",
             "openai-images",
             "placeholder",
           ]
         : undefined,
-      maximumAIAssets: geminiEnabled ? 4 : undefined,
+      maximumAIAssets: geminiEnabled ? 4 : 2,
       opsNotificationChannels: env.WEBHOOK_URL ? ["webhook"] : [],
     },
   });

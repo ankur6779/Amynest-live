@@ -282,12 +282,13 @@ export default function SubscriptionTrialEndedPage() {
         <div className="space-y-2">
           <h1 className="text-2xl font-extrabold text-white leading-tight">
             {t("subscription.trial.ended_fullscreen_title", {
-              defaultValue: "Your Premium Trial Has Ended",
+              defaultValue: "Your free exploration has ended",
             })}
           </h1>
           <p className="text-sm text-white/70 leading-relaxed">
             {t("subscription.trial.ended_fullscreen_subtitle", {
-              defaultValue: "Continue building healthy routines with Amy.",
+              defaultValue:
+                "Keep the free tools you already use — upgrade for unlimited guidance, learning, and family insights.",
             })}
           </p>
         </div>
@@ -319,7 +320,7 @@ export default function SubscriptionTrialEndedPage() {
                   defaultValue: "Opening Google Play…",
                 })
               : t("subscription.trial.continue_premium", {
-                  defaultValue: "Continue Premium",
+                  defaultValue: "Continue My Child's Journey",
                 })}
           </Button>
           <Button

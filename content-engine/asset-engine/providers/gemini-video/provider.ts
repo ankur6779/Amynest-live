@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
+import { extname } from "node:path";
 import type {
   AssetCostEstimate,
   AssetProviderHealth,
@@ -42,6 +44,8 @@ export interface GenerateVideoOptions {
   durationSeconds?: 4 | 6 | 8;
   resolution?: "720p" | "1080p";
   outputPath?: string;
+  /** First-frame / identity lock for image-to-video (official character base). */
+  imagePath?: string;
   signal?: AbortSignal;
 }
 
@@ -187,6 +191,31 @@ export class GeminiVideoProvider extends BaseAssetProvider {
       options.outputPath ??
       client.buildOutputPath(this.settings.outputDirectory, assetId);
 
+    let imagePayload:
+      | { mimeType: string; bytesBase64: string }
+      | undefined;
+    if (options.imagePath) {
+      if (!existsSync(options.imagePath)) {
+        throw new GeminiVideoError(
+          "CONFIG_ERROR",
+          `Veo imagePath missing: ${options.imagePath}`,
+          { recoverable: false },
+        );
+      }
+      const bytes = await readFile(options.imagePath);
+      const ext = extname(options.imagePath).toLowerCase();
+      const mimeType =
+        ext === ".png"
+          ? "image/png"
+          : ext === ".webp"
+            ? "image/webp"
+            : "image/jpeg";
+      imagePayload = {
+        mimeType,
+        bytesBase64: bytes.toString("base64"),
+      };
+    }
+
     try {
       const { operationName } = await client.withRetries(
         () =>
@@ -195,11 +224,12 @@ export class GeminiVideoProvider extends BaseAssetProvider {
             negativePrompt:
               "negativePrompt" in promptBundle
                 ? promptBundle.negativePrompt
-                : undefined,
+                : options.negativePrompt,
             aspectRatio,
             durationSeconds,
             resolution,
             personGeneration: this.settings.personGeneration,
+            image: imagePayload,
             signal: controller.signal,
           }),
         this.settings.retryCount,
@@ -263,6 +293,8 @@ export class GeminiVideoProvider extends BaseAssetProvider {
           pollAttempts: polled.pollAttempts,
           downloadedAt: new Date().toISOString(),
           rawUri: polled.sample.uri,
+          imageToVideo: Boolean(imagePayload),
+          identityImagePath: options.imagePath,
         },
       };
     } finally {

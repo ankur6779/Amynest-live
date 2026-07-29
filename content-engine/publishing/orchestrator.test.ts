@@ -124,8 +124,10 @@ describe("PublishingOrchestrator", () => {
       overrides: { visibility: "unlisted", title: "Custom Title" },
     });
 
-    assert.equal(video.metadata.title, "Custom Title");
+    assert.equal(video.metadata.title, "Custom Title | AmyNest AI");
     assert.equal(video.visibility, "unlisted");
+    assert.equal(video.metadata.madeForKids, false);
+    assert.equal(video.metadata.containsSyntheticMedia, true);
     const json = exportPublishedVideo(video, "json");
     const yaml = exportPublishedVideo(video, "yaml");
     const manifest = exportPublishedVideo(video, "publish-manifest-v1");

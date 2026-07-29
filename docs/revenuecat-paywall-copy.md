@@ -59,7 +59,7 @@ Most savings—tap Growth Year
 
 ## Primary CTA
 
-Unlock the full system
+Continue with AmyNest Premium
 
 ## Restore
 

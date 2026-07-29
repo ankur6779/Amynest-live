@@ -13,14 +13,15 @@ export const DEFAULT_ASSET_ENGINE_SETTINGS: AssetEngineSettings = {
     "ai-image",
     "fallback-placeholder",
   ],
+  // Cost-first: local/offline before paid Imagen/Veo.
   preferredProviders: [
-    "google-imagen",
-    "google-veo",
     "local-library",
     "screen-recording",
     "illustration",
-    "openai-images",
     "placeholder",
+    "openai-images",
+    "google-imagen",
+    "google-veo",
   ],
   cachePolicy: {
     ttlSeconds: 86_400,
@@ -29,7 +30,7 @@ export const DEFAULT_ASSET_ENGINE_SETTINGS: AssetEngineSettings = {
   },
   brandingProfile: "default",
   allowFallbacks: true,
-  maximumAIAssets: 4,
+  maximumAIAssets: 2,
   reuseThreshold: 0.85,
 };
 

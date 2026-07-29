@@ -15,6 +15,29 @@ object FirebaseSubscriptionAnalytics {
     const val EVENT_SUBSCRIPTION_CONVERT = "app_store_subscription_convert"
     const val EVENT_BEGIN_CHECKOUT = "begin_checkout"
 
+    private fun ecommerceBundle(
+        productId: String,
+        currency: String,
+        value: Double,
+        source: String,
+    ): Bundle {
+        val item = Bundle().apply {
+            putString(FirebaseAnalytics.Param.ITEM_ID, productId)
+            putString(FirebaseAnalytics.Param.ITEM_NAME, productId)
+            putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "subscription")
+            putDouble(FirebaseAnalytics.Param.PRICE, value)
+            putLong(FirebaseAnalytics.Param.QUANTITY, 1)
+        }
+        return Bundle().apply {
+            putString(FirebaseAnalytics.Param.CURRENCY, currency)
+            putDouble(FirebaseAnalytics.Param.VALUE, value)
+            putString(FirebaseAnalytics.Param.ITEM_ID, productId)
+            putString(FirebaseAnalytics.Param.ITEM_NAME, productId)
+            putParcelableArray(FirebaseAnalytics.Param.ITEMS, arrayOf(item))
+            putString("source", source)
+        }
+    }
+
     fun logSubscriptionPurchase(
         context: Context,
         productId: String,
@@ -24,13 +47,7 @@ object FirebaseSubscriptionAnalytics {
     ) {
         try {
             val analytics = FirebaseAnalytics.getInstance(context.applicationContext)
-            val bundle = Bundle().apply {
-                putString(FirebaseAnalytics.Param.CURRENCY, currency)
-                putDouble(FirebaseAnalytics.Param.VALUE, value)
-                putString(FirebaseAnalytics.Param.ITEM_ID, productId)
-                putString(FirebaseAnalytics.Param.ITEM_NAME, productId)
-                putString("source", source)
-            }
+            val bundle = ecommerceBundle(productId, currency, value, source)
             analytics.logEvent(FirebaseAnalytics.Event.PURCHASE, bundle)
             analytics.logEvent(EVENT_SUBSCRIPTION_CONVERT, bundle)
             Log.d(TAG, "Logged subscription purchase productId=$productId value=$value $currency")
@@ -48,13 +65,8 @@ object FirebaseSubscriptionAnalytics {
     ) {
         try {
             val analytics = FirebaseAnalytics.getInstance(context.applicationContext)
-            val bundle = Bundle().apply {
-                putString(FirebaseAnalytics.Param.CURRENCY, currency)
-                putDouble(FirebaseAnalytics.Param.VALUE, value)
-                putString(FirebaseAnalytics.Param.ITEM_ID, productId)
-                putString("source", source)
-            }
-            analytics.logEvent(EVENT_BEGIN_CHECKOUT, bundle)
+            val bundle = ecommerceBundle(productId, currency, value, source)
+            analytics.logEvent(FirebaseAnalytics.Event.BEGIN_CHECKOUT, bundle)
             Log.d(TAG, "Logged begin_checkout productId=$productId value=$value $currency")
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to log begin_checkout", t)

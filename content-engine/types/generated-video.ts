@@ -28,6 +28,9 @@ export interface GeneratedVideoMetadata {
   pollAttempts: number;
   downloadedAt: string;
   rawUri?: string;
+  /** True when generation used a first-frame identity image. */
+  imageToVideo?: boolean;
+  identityImagePath?: string;
 }
 
 export interface GeminiVideoProviderSettings {

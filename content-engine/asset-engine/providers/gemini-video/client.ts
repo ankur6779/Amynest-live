@@ -24,6 +24,11 @@ export interface StartVideoGenerationRequest {
   durationSeconds: 4 | 6 | 8;
   resolution: "720p" | "1080p";
   personGeneration: "allow_all" | "allow_adult" | "dont_allow";
+  /** Optional first-frame image for image-to-video (identity lock). */
+  image?: {
+    mimeType: string;
+    bytesBase64: string;
+  };
   signal?: AbortSignal;
 }
 
@@ -97,17 +102,26 @@ export class GeminiVeoClient {
   ): Promise<{ operationName: string }> {
     const url = `${this.baseUrl}/models/${encodeURIComponent(this.model)}:predictLongRunning`;
     const durationSeconds = normalizeVeoDuration(request.durationSeconds);
+    // Image-to-video requires allow_adult per Veo 3.1 API constraints.
+    const personGeneration = request.image
+      ? "allow_adult"
+      : request.personGeneration;
+    const instance: Record<string, unknown> = {
+      prompt: request.prompt,
+    };
+    if (request.image) {
+      instance.image = {
+        mimeType: request.image.mimeType,
+        bytesBase64Encoded: request.image.bytesBase64,
+      };
+    }
     const body = {
-      instances: [
-        {
-          prompt: request.prompt,
-        },
-      ],
+      instances: [instance],
       parameters: {
         aspectRatio: request.aspectRatio,
         // API requires a JSON number (not a string).
         durationSeconds,
-        personGeneration: request.personGeneration,
+        personGeneration,
         resolution: request.resolution,
         ...(request.negativePrompt
           ? { negativePrompt: request.negativePrompt }

@@ -170,20 +170,15 @@ export function runBrandReleaseCertification(): BrandReleaseCertificate {
     15,
   );
 
+  // Storyboard golden check only — never claim final-MP4 media evidence.
   const gate = evaluateBrandQualityGate({
     storyboard,
     featureId: selected?.id,
     charactersUsed: ["amy-ai", "amy-girl"],
-    storeBadgesPresent: true,
-    appleStoreBadgePresent: true,
-    appIconBurned: true,
     width: 1080,
     height: 1920,
     durationSeconds: 15,
-    hasBlackFrames: false,
-    captionOverflow: false,
-    narrationSyncOk: true,
-    lowResolution: false,
+    requireMediaEvidence: false,
   });
   checks.push({
     id: "quality-gate",

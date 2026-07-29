@@ -44,6 +44,12 @@ export function SubscriptionTrialBanner() {
 
   const trackCta = (source: string) => {
     trackSubscriptionEvent({
+      event: "trial_banner_clicked",
+      source,
+      plan: "yearly",
+      extra: { trial_days_remaining: trialDaysRemaining },
+    });
+    trackSubscriptionEvent({
       event: "subscribe_clicked",
       source,
       plan: "yearly",

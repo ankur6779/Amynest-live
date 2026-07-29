@@ -24,6 +24,11 @@ export interface BrandQualityGateInput {
   captionOverflow?: boolean;
   narrationSyncOk?: boolean;
   lowResolution?: boolean;
+  /**
+   * When true, missing media evidence fields are FAIL (never assumed present).
+   * Use for launch/final-MP4 certification. Storyboard-only planning may omit.
+   */
+  requireMediaEvidence?: boolean;
 }
 
 /**
@@ -142,25 +147,51 @@ export function evaluateBrandQualityGate(
     }
   }
 
-  if (input.storeBadgesPresent === false) {
+  const requireMedia = input.requireMediaEvidence === true;
+  if (input.storeBadgesPresent === false || (requireMedia && input.storeBadgesPresent !== true)) {
     findings.push({
       code: "STORE_BADGES_ABSENT",
       severity: "error",
-      message: "Google Play badge missing from final package",
+      message:
+        input.storeBadgesPresent === false
+          ? "Google Play badge missing from final package"
+          : "Google Play badge presence UNKNOWN — provide probed evidence (never assume)",
     });
   }
-  if (input.appleStoreBadgePresent === false) {
+  if (
+    input.appleStoreBadgePresent === false ||
+    (requireMedia && input.appleStoreBadgePresent !== true)
+  ) {
     findings.push({
       code: "APP_STORE_BADGE_ABSENT",
       severity: "error",
-      message: "Apple App Store badge missing from final package",
+      message:
+        input.appleStoreBadgePresent === false
+          ? "Apple App Store badge missing from final package"
+          : "App Store badge presence UNKNOWN — provide probed evidence (never assume)",
     });
   }
-  if (input.appIconBurned === false) {
+  if (input.appIconBurned === false || (requireMedia && input.appIconBurned !== true)) {
     findings.push({
       code: "APP_ICON_NOT_BURNED",
       severity: "error",
-      message: "Official app icon missing from end card",
+      message:
+        input.appIconBurned === false
+          ? "Official app icon missing from end card"
+          : "App icon burn-in UNKNOWN — provide probed evidence (never assume)",
+    });
+  }
+  if (
+    input.finalVideoHasEndCard === false ||
+    (requireMedia && input.finalVideoHasEndCard !== true)
+  ) {
+    findings.push({
+      code: "END_CARD_EVIDENCE_MISSING",
+      severity: "error",
+      message:
+        input.finalVideoHasEndCard === false
+          ? "Official end card missing from final video"
+          : "End card presence UNKNOWN — provide probed evidence (never assume)",
     });
   }
   if (input.hasBlackFrames) {
@@ -177,11 +208,14 @@ export function evaluateBrandQualityGate(
       message: "Caption overflow outside safe margins",
     });
   }
-  if (input.narrationSyncOk === false) {
+  if (input.narrationSyncOk === false || (requireMedia && input.narrationSyncOk !== true)) {
     findings.push({
       code: "POOR_NARRATION_SYNC",
       severity: "error",
-      message: "Narration sync failed quality check",
+      message:
+        input.narrationSyncOk === false
+          ? "Narration sync failed quality check"
+          : "Narration sync UNKNOWN — provide probed audio evidence (never assume)",
     });
   }
   if (input.lowResolution) {

@@ -11,7 +11,12 @@ type GamingHubLaunchCardProps = {
   title: string;
   description: string;
   tryFree?: boolean;
-  previewBadge?: "Preview Available" | "Explore Free" | "Premium Experience";
+  previewBadge?:
+    | "Preview Available"
+    | "Explore Free"
+    | "Premium Experience"
+    | "Premium"
+    | "Coming at age 2+";
   testId: string;
   sectionId?: string;
   onNavigate?: () => void;
@@ -50,9 +55,9 @@ export function GamingHubLaunchCard({
           visual={GAMING_HUB_CARD_VISUALS["gaming-hub"]}
           title={title}
           description={description}
-          previewBadge={discoveryPreview ? undefined : previewBadge}
-          tryFree={tryFree}
-          showTryFreeBadge={!discoveryPreview}
+          previewBadge={previewBadge}
+          tryFree={!!tryFree && !previewBadge}
+          showTryFreeBadge={!discoveryPreview && !previewBadge && !!tryFree}
         />
       </AppLink>
     </div>

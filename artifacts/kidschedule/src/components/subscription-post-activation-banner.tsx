@@ -20,7 +20,7 @@ import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 /**
  * Premium CTA after first-routine value.
  * Mid-trial: upgrade nudge (Subscribe Now) — never cancel-only.
- * Free (non-trial): Go Premium after activation.
+ * Free (non-trial): contextual upgrade CTA after activation.
  * Expired trial: handled by trial-ended fullscreen / expired banner.
  */
 export function SubscriptionPostActivationBanner() {
@@ -69,7 +69,7 @@ export function SubscriptionPostActivationBanner() {
                   defaultValue: "Loving your routines? Upgrade today",
                 })
               : t("subscription.post_activation.title", {
-                  defaultValue: "Unlock the full AmyNest experience",
+                  defaultValue: "Continue exploring with AmyNest Premium",
                 })}
           </span>
         </div>
@@ -95,7 +95,7 @@ export function SubscriptionPostActivationBanner() {
                 defaultValue: "Subscribe Now",
               })
             : t("subscription.post_activation.cta", {
-                defaultValue: "Go Premium",
+                defaultValue: "Start Growing Together",
               })}
         </Link>
       </div>

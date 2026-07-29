@@ -63,7 +63,12 @@ export function LockedBlock({
     return <>{children}</>;
   }
 
-  const ariaLabel = t("parent_hub.badges.premium_feature_aria");
+  const ariaLabel = t("parent_hub.badges.premium_unlock_aria", {
+    defaultValue: "Unlock what this unlocks with Premium",
+  });
+  const badgeLabel = t("parent_hub.badges.premium_unlock", {
+    defaultValue: "Unlock with Premium",
+  });
 
   return (
     <div
@@ -93,10 +98,10 @@ export function LockedBlock({
             onClick={openGate}
             data-testid="premium-feature-lock"
             aria-label={ariaLabel}
-            className="inline-flex items-center gap-1 rounded-full bg-card text-primary-foreground shadow-md shadow px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:brightness-110 transition"
+            className="inline-flex items-center gap-1 rounded-full bg-violet-600 text-white shadow-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:brightness-110 transition"
           >
             <Lock className="h-2.5 w-2.5" />
-            {t("parent_hub.badges.premium_feature")}
+            {badgeLabel}
           </button>
         </div>
       </div>

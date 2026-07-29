@@ -198,6 +198,10 @@ export async function resolveAssetRequests(
   };
 }
 
+/**
+ * Cost-first chain: walk assetPriority tiers (local → cache → … → AI).
+ * Preferred / request providers may reorder *within* a tier, never jump ahead of local.
+ */
 function buildProviderChain(
   request: AssetRequest,
   tiers: AssetPriorityTier[],
@@ -208,11 +212,16 @@ function buildProviderChain(
     if (!chain.includes(id)) chain.push(id);
   };
 
-  for (const id of request.providerPreference) push(id);
-  for (const id of preferred) push(id);
-
   for (const tier of tiers) {
-    for (const id of TIER_PROVIDERS[tier]) push(id);
+    if (tier === "cache") continue; // Fingerprint cache is consulted before the chain.
+    const tierProviders = TIER_PROVIDERS[tier];
+    for (const id of request.providerPreference) {
+      if (tierProviders.includes(id)) push(id);
+    }
+    for (const id of preferred) {
+      if (tierProviders.includes(id)) push(id);
+    }
+    for (const id of tierProviders) push(id);
   }
 
   push("placeholder");

@@ -58,15 +58,15 @@ const FEATURES = [
 
 /** Hardcoded English for /get-app — marketing page stays English regardless of i18n locale. */
 const GET_APP_INFANT_COPY = {
-  freeBadge: "Full app · 100% free for infants",
+  freeBadge: "Free baby tracking for every family",
   eyebrow: "0–24 months",
   heading: "Infant Parenting, Simplified",
   subheading:
-    "From crying clues to sleep predictions, vaccines, growth charts, and shareable weekly reports — AmyNest supports you through the hardest months.",
-  freeHeadline: "Full AmyNest app — 100% free for infants (0–24 months)",
+    "From crying clues to sleep predictions, vaccines, growth charts, and milestones — AmyNest supports you through the hardest months.",
+  freeHeadline: "Free baby tracking for every family",
   freeDetail:
-    "Cry insight, sleep, vaccines, growth tracking — all included free. No premium required.",
-  cta: "Start your infant journey — 100% free",
+    "Daily AI guidance included. Cry insight, sleep, vaccines, growth, and milestones stay free — upgrade anytime for unlimited expert support.",
+  cta: "Start free baby tracking",
   features: {
     cry_insight: {
       title: "Cry Insight",
@@ -331,7 +331,7 @@ export function InfantParentingSection({
             <Sparkles className="h-3 w-3 text-emerald-300" />
             {isGetApp
               ? GET_APP_INFANT_COPY.freeBadge
-              : t("landing.infant_parenting.free_badge", "Full app · 100% free for infants")}
+              : t("landing.infant_parenting.free_badge", "Free baby tracking for every family")}
           </div>
           <div
             className="inline-flex items-center gap-1.5 mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white"
@@ -372,7 +372,7 @@ export function InfantParentingSection({
                 {freePromo ??
                   t(
                     "landing.infant_parenting.free_note",
-                    "The entire AmyNest app is free for infants — cry insight, sleep predictions, vaccines, growth tracking and more. No premium required.",
+                    "Free baby tracking for every family. Daily AI guidance included. Upgrade anytime for unlimited expert support.",
                   )}
               </p>
             )}
@@ -439,7 +439,7 @@ export function InfantParentingSection({
               <Sparkles className="h-4 w-4" />
               {isGetApp
                 ? GET_APP_INFANT_COPY.cta
-                : t("landing.infant_parenting.cta", "Start your infant journey — 100% free")}
+                : t("landing.infant_parenting.cta", "Start free baby tracking")}
               <ArrowRight className="h-4 w-4" />
             </button>
           </Link>

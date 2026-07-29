@@ -17,7 +17,17 @@ export {
   type PublishingProviderRegistryOptions,
   type YouTubePublishingProviderOptions,
 } from "./youtube/index.js";
-export { buildPublishMetadata, resolveThumbnail } from "./metadata/index.js";
+export {
+  buildOptimizedDescription,
+  buildPublishMetadata,
+  resolveStoreLinks,
+  resolveThumbnail,
+  writeYouTubeMetadataReport,
+} from "./metadata/index.js";
+export {
+  buildPublishingPolish,
+  writeYouTubePublishingScorecard,
+} from "./polish/index.js";
 export {
   buildSchedulePlan,
   resolveScheduledPublishAt,

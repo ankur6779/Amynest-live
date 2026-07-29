@@ -25,6 +25,8 @@ export function makePublishedVideo(
       license: "youtube",
       madeForKids: false,
       selfDeclaredMadeForKids: false,
+      containsSyntheticMedia: true,
+      playlistName: "Parent Tips",
     },
     provider: "mock",
     thumbnail: {

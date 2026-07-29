@@ -53,8 +53,8 @@ function highPurchaseIntent(s: OutcomeSignals, name: string): ConversionLifecycl
 
   // Answer the hesitation, not just repeat the pitch.
   const body = proof
-    ? `${proof} Premium keeps it all going for ${name}. Start with a 7-day free trial — cancel anytime.`
-    : `Not sure yet? Try Premium free for 7 days and see the difference for ${name}. Cancel anytime.`;
+    ? `${proof} Explore AmyNest free before you subscribe — cancel anytime.`
+    : `Not sure yet? Explore parenting tools free for ${name}, then upgrade when you're ready. Cancel anytime.`;
 
   if (plan) used.push("lastPlanViewed");
   return {

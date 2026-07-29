@@ -165,6 +165,19 @@ class BillingBridge(
                     resolveError(replyProxy, cbId, "package_not_found:$packageIdentifier")
                     return@getOfferingsWith
                 }
+                // Native Firebase begin_checkout before Play Billing sheet — Google Ads
+                // app attribution requires the native SDK, not WebView JS Firebase.
+                val price = pkg.product.price
+                val productId = pkg.product.id.ifBlank { packageIdentifier }
+                val currency = price.currencyCode.ifBlank { "INR" }
+                val value = price.amountMicros / 1_000_000.0
+                FirebaseSubscriptionAnalytics.logBeginCheckout(
+                    activity,
+                    productId,
+                    currency,
+                    value,
+                    "native_purchase",
+                )
                 Purchases.sharedInstance.purchaseWith(
                     com.revenuecat.purchases.PurchaseParams.Builder(activity, pkg).build(),
                     onError = { err, userCancelled ->
@@ -178,6 +191,13 @@ class BillingBridge(
                         )
                     },
                     onSuccess = { _, customerInfo ->
+                        FirebaseSubscriptionAnalytics.logSubscriptionPurchase(
+                            activity,
+                            productId,
+                            currency,
+                            value,
+                            "native_purchase_success",
+                        )
                         sendRaw(
                             replyProxy, cbId,
                             JSONObject()
@@ -393,7 +413,7 @@ class BillingBridge(
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
         const val JS_INJECT_NAME = "AmyNestBillingInject"
-        const val BRIDGE_VERSION = "2.5.0"
+        const val BRIDGE_VERSION = "2.5.1"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"

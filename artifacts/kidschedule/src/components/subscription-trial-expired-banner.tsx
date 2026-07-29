@@ -33,13 +33,13 @@ export function SubscriptionTrialExpiredBanner() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-foreground">
             {t("subscription.trial.expired_title", {
-              defaultValue: "Your Premium Trial Has Ended",
+              defaultValue: "Your free exploration has ended",
             })}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {t("subscription.trial.expired_body", {
               defaultValue:
-                "Continue building healthy routines with Amy.",
+                "Upgrade for unlimited guidance, learning, and family insights.",
             })}
           </p>
           <Link
@@ -60,7 +60,7 @@ export function SubscriptionTrialExpiredBanner() {
             }}
           >
             {t("subscription.trial.continue_premium", {
-              defaultValue: "Continue Premium",
+              defaultValue: "Continue My Child's Journey",
             })}
           </Link>
         </div>

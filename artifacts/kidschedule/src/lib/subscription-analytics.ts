@@ -9,6 +9,9 @@ import { logSubscriptionDebug } from "@/lib/subscription-debug";
 export type SubscriptionAnalyticsEvent =
   | "paywall_opened"
   | "paywall_viewed"
+  | "paywall_view"
+  | "paywall_close"
+  | "paywall_continue"
   | "paywall_reason"
   | "plan_card_viewed"
   | "plan_selected"
@@ -19,15 +22,19 @@ export type SubscriptionAnalyticsEvent =
   | "trial_not_eligible"
   | "trial_converted"
   | "trial_expired"
+  | "trial_banner_clicked"
   | "subscribe_clicked"
   | "checkout_started"
+  | "checkout_cancelled"
   | "subscription_checkout_opened"
   | "purchase_success"
+  | "purchase_completed"
   | "purchase_cancelled"
   | "purchase_failed"
   | "restore_purchase"
   | "restore_purchase_failed"
   | "premium_unlocked"
+  | "feature_unlocked"
   | "routine_started"
   | "routine_completed"
   | "cancel_started"
@@ -64,7 +71,13 @@ export type SubscriptionAnalyticsEvent =
   | "premium_prompt_dismissed"
   | "feature_locked"
   | "routine_limit_reached"
-  | "first_routine_completed";
+  | "first_routine_completed"
+  | "progress_card_viewed"
+  | "exit_intercept_shown"
+  | "exit_intercept_continue"
+  | "exit_intercept_dismiss"
+  | "premium_welcome_viewed"
+  | "premium_welcome_continue";
 
 export type SubscriptionAnalyticsPayload = {
   event: SubscriptionAnalyticsEvent;
@@ -100,9 +113,17 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     ...payload.extra,
   });
 
-  // Map paywall_opened → taxonomy premium_paywall_viewed + paywall_viewed alias
+  // Map paywall_opened → taxonomy aliases (paywall_view / paywall_viewed)
   if (payload.event === "paywall_opened") {
     getAnalyticsService().trackFunnel("subscription", "paywall_viewed", {
+      reason: payload.reason,
+      plan: payload.plan,
+      source: payload.source,
+      country,
+      platform,
+      ...payload.extra,
+    });
+    getAnalyticsService().trackFunnel("subscription", "paywall_view", {
       reason: payload.reason,
       plan: payload.plan,
       source: payload.source,
@@ -132,7 +153,23 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
   }
 
   if (payload.event === "purchase_success") {
+    getAnalyticsService().trackFunnel("subscription", "purchase_completed", {
+      reason: payload.reason,
+      plan: payload.plan,
+      source: payload.source,
+      country,
+      platform,
+      ...payload.extra,
+    });
     getAnalyticsService().trackFunnel("subscription", "premium_unlocked", {
+      reason: payload.reason,
+      plan: payload.plan,
+      source: payload.source,
+      country,
+      platform,
+      ...payload.extra,
+    });
+    getAnalyticsService().trackFunnel("subscription", "feature_unlocked", {
       reason: payload.reason,
       plan: payload.plan,
       source: payload.source,
