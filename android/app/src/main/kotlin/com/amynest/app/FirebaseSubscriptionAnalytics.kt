@@ -14,6 +14,7 @@ object FirebaseSubscriptionAnalytics {
     private const val TAG = "FirebaseSubAnalytics"
     const val EVENT_SUBSCRIPTION_CONVERT = "app_store_subscription_convert"
     const val EVENT_BEGIN_CHECKOUT = "begin_checkout"
+    const val EVENT_SIGN_UP = "sign_up"
 
     private fun ecommerceBundle(
         productId: String,
@@ -83,6 +84,26 @@ object FirebaseSubscriptionAnalytics {
             Log.d(TAG, "Logged subscription convert source=$source")
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to log subscription convert", t)
+        }
+    }
+
+    fun logSignUp(
+        context: Context,
+        method: String = "app",
+        source: String = "growth",
+    ) {
+        try {
+            val analytics = FirebaseAnalytics.getInstance(context.applicationContext)
+            analytics.logEvent(
+                FirebaseAnalytics.Event.SIGN_UP,
+                Bundle().apply {
+                    putString(FirebaseAnalytics.Param.METHOD, method)
+                    putString("source", source)
+                },
+            )
+            Log.d(TAG, "Logged sign_up method=$method source=$source")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to log sign_up", t)
         }
     }
 }

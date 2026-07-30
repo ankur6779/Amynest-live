@@ -259,6 +259,12 @@ class BillingBridge(
                 FirebaseSubscriptionAnalytics.logBeginCheckout(ctx, productId, currency, value, source)
             "purchase", FirebaseSubscriptionAnalytics.EVENT_SUBSCRIPTION_CONVERT ->
                 FirebaseSubscriptionAnalytics.logSubscriptionPurchase(ctx, productId, currency, value, source)
+            FirebaseSubscriptionAnalytics.EVENT_SIGN_UP, "signup", "signup_completed" ->
+                FirebaseSubscriptionAnalytics.logSignUp(
+                    ctx,
+                    method = productId.ifBlank { "app" },
+                    source = source,
+                )
             else ->
                 FirebaseSubscriptionAnalytics.logSubscriptionConvert(ctx, source)
         }
@@ -413,7 +419,7 @@ class BillingBridge(
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
         const val JS_INJECT_NAME = "AmyNestBillingInject"
-        const val BRIDGE_VERSION = "2.5.1"
+        const val BRIDGE_VERSION = "2.5.2"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"

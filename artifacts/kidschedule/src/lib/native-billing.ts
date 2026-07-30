@@ -130,7 +130,7 @@ export type NativeBilling = {
   getCustomerInfo: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
   /** Forward subscription funnel events to native Firebase Analytics (Google Ads). */
   logSubscriptionAnalytics: (payload: {
-    event: "begin_checkout" | "purchase";
+    event: "begin_checkout" | "purchase" | "sign_up";
     productId: string;
     currency: string;
     value: number;

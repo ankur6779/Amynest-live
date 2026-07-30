@@ -44,8 +44,10 @@ vi.mock("@/lib/native-billing", () => ({
 }));
 
 import {
+  FIREBASE_SIGN_UP_EVENT,
   FIREBASE_SUBSCRIPTION_CONVERT_EVENT,
   trackFirebaseBeginCheckout,
+  trackFirebaseSignUp,
   trackFirebaseSubscriptionPurchase,
   resetFirebaseSubscriptionAnalyticsForTests,
 } from "./firebase-subscription-attribution";
@@ -129,6 +131,15 @@ describe("firebase-subscription-attribution", () => {
       expect.anything(),
       "begin_checkout",
       expect.objectContaining({ item_id: "yearly" }),
+    );
+  });
+
+  it("fires sign_up for Google Ads conversion optimization", async () => {
+    await trackFirebaseSignUp({ method: "google", source: "onboarding" });
+    expect(logEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      FIREBASE_SIGN_UP_EVENT,
+      expect.objectContaining({ method: "google", source: "onboarding" }),
     );
   });
 });

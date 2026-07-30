@@ -14,6 +14,7 @@ import { getNativeBilling, waitForBillingBridge } from "@/lib/native-billing";
 
 export const FIREBASE_SUBSCRIPTION_CONVERT_EVENT = "app_store_subscription_convert";
 export const FIREBASE_BEGIN_CHECKOUT_EVENT = "begin_checkout";
+export const FIREBASE_SIGN_UP_EVENT = "sign_up";
 
 type AnalyticsEventParams = Record<
   string,
@@ -66,7 +67,7 @@ function buildEcommerceParams(
 }
 
 async function logNativeAndroidSubscriptionEvent(
-  event: "purchase" | "begin_checkout",
+  event: "purchase" | "begin_checkout" | "sign_up",
   productId: string,
   currency: string,
   value: number,
@@ -193,6 +194,42 @@ export async function trackFirebaseBeginCheckout(
   }
 
   await logWebFirebaseEvents([{ name: FIREBASE_BEGIN_CHECKOUT_EVENT, params }]);
+}
+
+/** Billing bridge versions that understand `sign_up` (avoid 1.4.55 else→subscription_convert). */
+function nativeBridgeSupportsSignUp(): boolean {
+  if (typeof window === "undefined") return false;
+  const raw = window.__AMYNEST_BILLING;
+  if (typeof raw !== "string" || !raw.trim()) return false;
+  const parts = raw.split(".").map((p) => Number(p));
+  if (parts.some((n) => Number.isNaN(n))) return false;
+  const [maj = 0, min = 0, patch = 0] = parts;
+  return maj > 2 || (maj === 2 && (min > 5 || (min === 5 && patch >= 2)));
+}
+
+/** Log signup — Firebase `sign_up` for Google Ads app conversion optimization. */
+export async function trackFirebaseSignUp(opts?: {
+  method?: string;
+  source?: string;
+}): Promise<void> {
+  const method = opts?.method ?? "app";
+  const params: AnalyticsEventParams = {
+    method,
+    ...(opts?.source ? { source: opts.source } : {}),
+  };
+
+  if (shouldUseNativeAndroidFirebase() && nativeBridgeSupportsSignUp()) {
+    const nativeOk = await logNativeAndroidSubscriptionEvent(
+      "sign_up",
+      method,
+      "INR",
+      0,
+      opts?.source,
+    );
+    if (nativeOk) return;
+  }
+
+  await logWebFirebaseEvents([{ name: FIREBASE_SIGN_UP_EVENT, params }]);
 }
 
 /** Reset cached analytics instance (tests). */

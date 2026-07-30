@@ -101,6 +101,16 @@ export function trackGrowthEvent(
     trackMarketingEvent(event as Parameters<typeof trackMarketingEvent>[0], payload);
   }
 
+  // Google Ads in-app conversion signal (Firebase sign_up).
+  if (event === "signup_completed") {
+    void import("@/lib/firebase-subscription-attribution").then(({ trackFirebaseSignUp }) => {
+      trackFirebaseSignUp({
+        method: typeof params.method === "string" ? params.method : "app",
+        source: typeof params.source === "string" ? params.source : "growth",
+      });
+    });
+  }
+
   if (import.meta.env.DEV) {
     console.info("[growth]", event, payload);
   }
