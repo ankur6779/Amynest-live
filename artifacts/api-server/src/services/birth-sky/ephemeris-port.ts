@@ -157,6 +157,24 @@ export type AstronomyData = {
   moonProfile?: MoonProfile | null;
   dasha?: VimshottariDasha | null;
   meaningSnapshot?: Record<string, unknown> | null;
+  /** Additive Vedic house/planet detail layer (chart-details.ts). */
+  houseDetails?: unknown[] | null;
+  planetDetails?: unknown[] | null;
+  chartCompleteness?: {
+    status: string;
+    canRenderKundli: boolean;
+    canExportPdf: boolean;
+    reasons: string[];
+    fallbackUsed: boolean;
+    houseCount: number;
+    grahaHouseCount: number;
+  } | null;
+  chartDetailsVersion?: string | null;
+  lagna?: {
+    sign: string | null;
+    eclipticLongitudeDeg: number | null;
+    degreeInSign: number | null;
+  } | null;
   metadata?: {
     julianDay?: number;
     utcIso?: string;

@@ -18,6 +18,7 @@ import {
 import { logger } from "../../lib/logger.js";
 import { getEphemerisPort } from "./resolve-ephemeris-port.js";
 import type { AstronomyData } from "./ephemeris-port.js";
+import { attachChartDetails } from "./chart-details.js";
 import {
   profileNeedsAtRestMigration,
   sealBirthPlace,
@@ -373,7 +374,7 @@ export async function computeAndPersistSnapshot(params: {
     throw new Error("empty_astro_response");
   }
 
-  // Meaning layer — does not alter ephemeris math; additive semantic snapshot.
+  // Meaning + Vedic chart-detail layers — additive; never alter ephemeris math.
   let astronomy: AstronomyData;
   try {
     astronomy = attachMeaningSnapshot(rawAstronomy);
@@ -394,6 +395,26 @@ export async function computeAndPersistSnapshot(params: {
       "warn",
     );
     astronomy = rawAstronomy;
+  }
+  try {
+    astronomy = attachChartDetails(astronomy);
+    logBirthSkyPipeline("chart_details_attached", {
+      userId: params.userId,
+      profileId: params.profileId,
+      completeness: astronomy.chartCompleteness?.status,
+      houseCount: Array.isArray(astronomy.houseDetails) ? astronomy.houseDetails.length : 0,
+      planetCount: Array.isArray(astronomy.planetDetails) ? astronomy.planetDetails.length : 0,
+    });
+  } catch (chartErr) {
+    logBirthSkyPipeline(
+      "chart_details_attach_failed",
+      {
+        userId: params.userId,
+        profileId: params.profileId,
+        error: chartErr instanceof Error ? chartErr.message : String(chartErr),
+      },
+      "warn",
+    );
   }
 
   const durationMs = Date.now() - t0;

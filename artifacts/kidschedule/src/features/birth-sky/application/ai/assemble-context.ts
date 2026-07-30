@@ -124,6 +124,10 @@ export type BirthSkyStreamContextPayload = {
       number
     >
   > | null;
+  houseDetails?: AstronomyData["houseDetails"];
+  planetDetails?: AstronomyData["planetDetails"];
+  chartCompleteness?: AstronomyData["chartCompleteness"];
+  lagnaSignDetail?: string | null;
   zodiacMode?: string | null;
   ayanamsaName?: string | null;
   moonNakshatra?: string | null;
@@ -257,6 +261,10 @@ export function assembleBirthSkyStreamContext(input: {
     calculationMode: a.calculationMode ?? a.metadata?.calculationMode ?? null,
     houseSystem: a.houses?.system ?? a.metadata?.houseSystem ?? null,
     planetHouseMap: a.planetHouseMap ?? null,
+    houseDetails: a.houseDetails?.slice(0, 12) ?? null,
+    planetDetails: a.planetDetails?.slice(0, 12) ?? null,
+    chartCompleteness: a.chartCompleteness ?? null,
+    lagnaSignDetail: a.lagna?.sign ?? a.risingSign ?? null,
     zodiacMode: a.zodiacMode ?? a.metadata?.zodiacMode ?? null,
     ayanamsaName: a.ayanamsaName ?? a.metadata?.ayanamsaName ?? null,
     moonNakshatra: a.moonProfile?.nakshatra ?? a.nakshatra?.name ?? null,

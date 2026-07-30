@@ -44,11 +44,8 @@ import { trackBirthSkyEvent } from "../../lib/analytics";
 import { Button } from "@/components/ui/button";
 import { BirthSkyEditBirthDetailsPage } from "./edit-birth-details-page";
 import { editBirthDetailsAndRegenerate } from "../../application/orchestrators/edit-and-regenerate";
-import { openPremiumKeepsakePrint } from "../../lib/premium-keepsake";
-import { buildRevealViewModel } from "../../application/view-models/reveal-vm";
-import { buildCosmicPortrait } from "../../lib/signature-insight";
-import { useUser } from "@/lib/firebase-auth-hooks";
 import { BirthSkyRegenerateOverlay } from "./regenerate-overlay";
+import { BirthSkyExportPage } from "./export-page";
 import { AmyAstroEmblem } from "../../components/amy-astro-emblem";
 import "../../design/amy-astro.css";
 
@@ -101,7 +98,6 @@ export function BirthSkySettingsPage({
   const [snapshots, setSnapshots] = useState<SnapshotHistoryItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
-  const { user: authUser } = useUser();
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const deleteDialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(deleteDialogRef, deleteStep > 0, () => setDeleteStep(0));
@@ -474,81 +470,42 @@ export function BirthSkySettingsPage({
       ) : null}
 
       {sub === "export" ? (
-        <div className="space-y-3" data-testid="birth-sky-export">
-          <p className="text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">
-            Preserve their sky as a keepsake — or download structured data. Location stays
-            private by default; every file carries a gentle disclaimer.
-          </p>
-          <Button
-            type="button"
-            className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] font-semibold"
-            onClick={() => {
-              const reveal = buildRevealViewModel(profile, snapshot, childName);
-              const portrait = buildCosmicPortrait({
-                childName,
-                sunSign: snapshot.astronomy.sunSign,
-                moonSign: snapshot.astronomy.moonSign,
-                moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
-                risingSign: snapshot.astronomy.risingSign ?? null,
-                daySky: snapshot.mode === "day_sky",
-              });
-              const parentName =
-                authUser?.firstName?.trim() ||
-                authUser?.fullName?.trim()?.split(/\s+/)[0] ||
-                "Parent";
-              const result = openPremiumKeepsakePrint({
-                parentName,
-                childName,
-                birthDate: profile.birthDate,
-                sunSign: snapshot.astronomy.sunSign,
-                moonSign: snapshot.astronomy.moonSign,
-                moonPhaseLabel: snapshot.astronomy.moonPhaseLabel,
-                risingSign: snapshot.astronomy.risingSign ?? null,
-                essenceLine: reveal.essenceLine,
-                daySky: snapshot.mode === "day_sky",
-                signatureParagraph: portrait.signatureParagraph,
-                signatureSentence: portrait.signatureSentence,
-                qualities: [...portrait.qualities],
-                parentingReminders: [...portrait.parentingReminders],
-                amyReflection: portrait.amyReflection,
-              });
-              if (result === "printed") {
-                setToast("Keepsake opened for printing.");
-              } else if (result === "downloaded") {
-                setToast(
-                  "Popup blocked — keepsake downloaded as HTML. Open the file to print.",
-                );
-              } else {
-                setToast("Couldn’t prepare the keepsake. Try again or allow popups.");
-              }
-            }}
-            data-testid="amy-astro-premium-keepsake"
-          >
-            Print Amy Astro Keepsake
-          </Button>
-          {(
-            [
-              ["summary", "Amy Astro Intelligence summary"],
-              ["astronomy", "Astronomy data"],
-              ["reflections", "Reflections"],
-              ["conversations", "Conversations"],
-            ] as const
-          ).map(([type, label]) => (
-            <Button
-              key={type}
-              type="button"
-              variant="secondary"
-              className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
-              disabled={exportBusy || !online}
-              onClick={() => void runExport(type)}
-              data-testid={`birth-sky-export-${type}`}
-            >
-              {label}
-            </Button>
-          ))}
-          <p className="text-xs text-[hsl(40_20%_96%/0.5)]">
-            Format {BIRTH_SKY_EXPORT_MANIFEST_VERSION}
-          </p>
+        <div className="space-y-4" data-testid="birth-sky-export">
+          <BirthSkyExportPage
+            profile={profile}
+            snapshot={snapshot}
+            childName={childName}
+            onToast={setToast}
+            onSnapshotRefreshed={(next) => onProfileSnapshotChange(profile, next)}
+          />
+          <div className="space-y-2 border-t border-white/10 pt-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-[hsl(40_20%_96%/0.45)]">
+              Structured JSON (optional)
+            </p>
+            {(
+              [
+                ["summary", "Amy Astro Intelligence summary"],
+                ["astronomy", "Astronomy data"],
+                ["reflections", "Reflections"],
+                ["conversations", "Conversations"],
+              ] as const
+            ).map(([type, label]) => (
+              <Button
+                key={type}
+                type="button"
+                variant="secondary"
+                className="amy-astro-btn-secondary min-h-12 w-full rounded-xl"
+                disabled={exportBusy || !online}
+                onClick={() => void runExport(type)}
+                data-testid={`birth-sky-export-${type}`}
+              >
+                {label}
+              </Button>
+            ))}
+            <p className="text-xs text-[hsl(40_20%_96%/0.5)]">
+              Format {BIRTH_SKY_EXPORT_MANIFEST_VERSION}
+            </p>
+          </div>
         </div>
       ) : null}
 
