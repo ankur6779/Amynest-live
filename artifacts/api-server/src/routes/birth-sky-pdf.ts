@@ -226,11 +226,11 @@ router.post(
     }
 
     const children = await db
-      .select({ firstName: childrenTable.firstName })
+      .select({ name: childrenTable.name })
       .from(childrenTable)
       .where(and(eq(childrenTable.id, profile.childId), eq(childrenTable.userId, userId)))
       .limit(1);
-    const childName = children[0]?.firstName?.trim() || "Child";
+    const childName = children[0]?.name?.trim() || "Child";
     const fields = plaintextBirthFields(profile);
     const astronomy = attachChartDetails(snap.astronomy as AstronomyData);
     const completeness = evaluateChartCompleteness(astronomy);
