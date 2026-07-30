@@ -3,23 +3,30 @@ import type { Subscription } from "@workspace/db";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Minimum lived duration before an EXPIRED internal trial counts as a real
- * completed trial. Instant heal-false-positives expire within seconds/minutes
- * of row creation; natural 3-day trials live much longer.
+ * Minimum scheduled trial window before EXPIRED counts as a real completed trial.
+ * Instant heal-false-positives never retain a trialEndsAt that lived a full day.
  */
 export const MIN_NATURAL_INTERNAL_TRIAL_MS = DAY_MS;
 
 /**
- * True when EXPIRED (or expiredAt) reflects a trial that actually ran for a
- * meaningful window — NOT an instantaneous heal false-positive.
+ * True when EXPIRED reflects a trial that actually ran to its scheduled end —
+ * NOT an instantaneous heal false-positive that wiped trialEndsAt.
  *
- * Failsafe: missing timestamps → false (never claim Trial Ended).
+ * Failsafe: missing trialEndsAt / expiredAt → false (never claim Trial Ended).
+ * Row age alone is NOT enough: age-trial backdating + poisoned EXPIRED on
+ * accounts ≥1d old previously produced false Trial Ended paywalls.
  */
 export function isNaturallyCompletedTrialExpiry(sub: Subscription): boolean {
-  if (!sub.expiredAt || !sub.createdAt) return false;
-  const livedMs = sub.expiredAt.getTime() - sub.createdAt.getTime();
-  if (!Number.isFinite(livedMs) || livedMs < 0) return false;
-  return livedMs >= MIN_NATURAL_INTERNAL_TRIAL_MS;
+  if (!sub.expiredAt || !sub.trialEndsAt || !sub.createdAt) return false;
+  const trialEndMs = sub.trialEndsAt.getTime();
+  const expiredMs = sub.expiredAt.getTime();
+  const createdMs = sub.createdAt.getTime();
+  if (![trialEndMs, expiredMs, createdMs].every(Number.isFinite)) return false;
+  if (expiredMs < trialEndMs) return false;
+  // Scheduled trial window itself must have been ≥1 day (rejects instant poison).
+  const scheduledMs = trialEndMs - createdMs;
+  if (scheduledMs < MIN_NATURAL_INTERNAL_TRIAL_MS) return false;
+  return true;
 }
 
 /**

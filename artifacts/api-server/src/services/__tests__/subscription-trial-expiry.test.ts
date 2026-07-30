@@ -28,25 +28,43 @@ function sub(partial: Partial<Subscription> = {}): Subscription {
 }
 
 describe("subscription-trial-expiry", () => {
-  it("instant heal EXPIRED is NOT a natural trial completion", () => {
+  it("instant heal EXPIRED without trialEndsAt is NOT natural", () => {
     const createdAt = new Date();
     const expiredAt = new Date(createdAt.getTime() + 5_000);
     const row = sub({
       subscriptionState: "EXPIRED",
       createdAt,
       expiredAt,
+      trialEndsAt: null,
     });
     assert.equal(isNaturallyCompletedTrialExpiry(row), false);
     assert.equal(isFalselyExpiredInternalTrial(row), true);
     assert.equal(computeInternalTrialExpiredFlag(row, false), false);
   });
 
-  it("natural ≥1-day internal trial sets internalTrialExpired", () => {
-    const createdAt = new Date(Date.now() - MIN_NATURAL_INTERNAL_TRIAL_MS - 60_000);
+  it("aged poison EXPIRED (row age ≥1d, trialEndsAt wiped) is NOT natural", () => {
+    // Pre-fix heal wiped trialEndsAt; row age alone must not claim Trial Ended.
+    const createdAt = new Date(Date.now() - MIN_NATURAL_INTERNAL_TRIAL_MS * 2);
     const expiredAt = new Date();
     const row = sub({
       subscriptionState: "EXPIRED",
       createdAt,
+      expiredAt,
+      trialEndsAt: null,
+    });
+    assert.equal(isNaturallyCompletedTrialExpiry(row), false);
+    assert.equal(isFalselyExpiredInternalTrial(row), true);
+    assert.equal(computeInternalTrialExpiredFlag(row, false), false);
+  });
+
+  it("natural internal trial with preserved trialEndsAt sets internalTrialExpired", () => {
+    const createdAt = new Date(Date.now() - MIN_NATURAL_INTERNAL_TRIAL_MS * 3);
+    const trialEndsAt = new Date(createdAt.getTime() + MIN_NATURAL_INTERNAL_TRIAL_MS * 3);
+    const expiredAt = new Date(trialEndsAt.getTime() + 60_000);
+    const row = sub({
+      subscriptionState: "EXPIRED",
+      createdAt,
+      trialEndsAt,
       expiredAt,
     });
     assert.equal(isNaturallyCompletedTrialExpiry(row), true);
@@ -56,11 +74,13 @@ describe("subscription-trial-expiry", () => {
 
   it("RevenueCat EXPIRED never sets internalTrialExpired", () => {
     const createdAt = new Date(Date.now() - MIN_NATURAL_INTERNAL_TRIAL_MS * 2);
+    const trialEndsAt = new Date(createdAt.getTime() + MIN_NATURAL_INTERNAL_TRIAL_MS);
     const expiredAt = new Date();
     const row = sub({
       provider: "revenuecat",
       subscriptionState: "EXPIRED",
       createdAt,
+      trialEndsAt,
       expiredAt,
     });
     assert.equal(computeInternalTrialExpiredFlag(row, false), false);
@@ -69,10 +89,12 @@ describe("subscription-trial-expiry", () => {
 
   it("paid subscriber never gets internalTrialExpired", () => {
     const createdAt = new Date(Date.now() - MIN_NATURAL_INTERNAL_TRIAL_MS * 2);
+    const trialEndsAt = new Date(createdAt.getTime() + MIN_NATURAL_INTERNAL_TRIAL_MS);
     const expiredAt = new Date();
     const row = sub({
       subscriptionState: "EXPIRED",
       createdAt,
+      trialEndsAt,
       expiredAt,
     });
     assert.equal(computeInternalTrialExpiredFlag(row, true), false);

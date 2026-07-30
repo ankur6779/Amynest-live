@@ -26,7 +26,9 @@ import {
   mapProfileRow,
   mapSnapshotRow,
   plaintextBirthFields,
+  setGenerationStatus,
 } from "../services/birth-sky/snapshot-service.js";
+import { shouldExposeCurrentSnapshot } from "../services/birth-sky/snapshot-generation-status.js";
 import {
   sealBirthPlace,
   sealBirthTime,
@@ -198,7 +200,12 @@ router.patch("/birth-sky/profiles/:profileId", async (req, res): Promise<void> =
       })
       .where(eq(birthProfilesTable.id, profileId))
       .returning();
-    res.json({ profile: mapProfileRow(updated!), regenerateRequired: true });
+    // Birth fields changed — hide prior isCurrent sky until regenerate succeeds.
+    await setGenerationStatus(profileId, "COMPUTING");
+    res.json({
+      profile: mapProfileRow({ ...updated!, generationStatus: "COMPUTING" }),
+      regenerateRequired: true,
+    });
   } catch (err) {
     logger.error(`birth-sky patch profile: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
@@ -221,6 +228,7 @@ router.post("/birth-sky/profiles/:profileId/regenerate", async (req, res): Promi
       res.status(404).json({ error: "not_found" });
       return;
     }
+    await setGenerationStatus(profileId, "COMPUTING");
     const plain = plaintextBirthFields(profile);
     const snapshot = await computeAndPersistSnapshot({
       userId,
@@ -231,13 +239,19 @@ router.post("/birth-sky/profiles/:profileId/regenerate", async (req, res): Promi
       birthPlace: plain.birthPlace,
     });
     res.json({
-      profile: mapProfileRow(profile),
+      profile: mapProfileRow({ ...profile, generationStatus: "READY" }),
       snapshot,
       computeStatus: "ready",
+      generationStatus: "READY",
     });
   } catch (err) {
     logger.error(`birth-sky regenerate: ${err instanceof Error ? err.message : String(err)}`);
-    res.status(500).json({ error: "regeneration_failed", computeStatus: "failed" });
+    await setGenerationStatus(profileId, "FAILED");
+    res.status(500).json({
+      error: "regeneration_failed",
+      computeStatus: "failed",
+      generationStatus: "FAILED",
+    });
   }
 });
 
@@ -610,10 +624,14 @@ router.post("/birth-sky/profiles/:profileId/sync", async (req, res): Promise<voi
         and(eq(skySnapshotsTable.profileId, profileId), eq(skySnapshotsTable.isCurrent, true)),
       )
       .limit(1);
+    const mappedProfile = mapProfileRow(profile);
+    const snap = snaps[0] ? mapSnapshotRow(snaps[0]) : null;
     res.json({
       syncTransactionId: parsed.data.syncTransactionId,
-      profile: mapProfileRow(profile),
-      snapshot: snaps[0] ? mapSnapshotRow(snaps[0]) : null,
+      profile: mappedProfile,
+      snapshot: shouldExposeCurrentSnapshot(mappedProfile.generationStatus, Boolean(snap))
+        ? snap
+        : null,
       preferences: {
         showTradition: prefs[0]?.showTradition ?? true,
         skySounds: prefs[0]?.skySounds ?? true,
