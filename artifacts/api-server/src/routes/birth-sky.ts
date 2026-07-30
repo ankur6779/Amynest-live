@@ -29,6 +29,7 @@ import {
   setGenerationStatus,
   type GenerationStatus,
 } from "../services/birth-sky/snapshot-service.js";
+import { shouldExposeCurrentSnapshot } from "../services/birth-sky/snapshot-generation-status.js";
 import {
   sealBirthPlace,
   sealBirthTime,
@@ -131,6 +132,7 @@ router.get("/birth-sky/children/:childId", async (req, res): Promise<void> => {
       return;
     }
     const profile = await migrateBirthProfileAtRestIfNeeded(raw);
+    const mapped = mapProfileRow(profile);
     const snaps = await db
       .select()
       .from(skySnapshotsTable)
@@ -141,9 +143,13 @@ router.get("/birth-sky/children/:childId", async (req, res): Promise<void> => {
         ),
       )
       .limit(1);
+    const snap = snaps[0] ? mapSnapshotRow(snaps[0]) : null;
     res.json({
-      profile: mapProfileRow(profile),
-      snapshot: snaps[0] ? mapSnapshotRow(snaps[0]) : null,
+      profile: mapped,
+      // Hide stale isCurrent rows after edit/regen failures (status FAILED/COMPUTING).
+      snapshot: shouldExposeCurrentSnapshot(mapped.generationStatus, Boolean(snap))
+        ? snap
+        : null,
     });
   } catch (err) {
     logger.error(`birth-sky GET failed: ${err instanceof Error ? err.message : String(err)}`);

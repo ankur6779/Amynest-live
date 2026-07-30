@@ -643,7 +643,9 @@ export async function healStaleSubscriptionRecord(
       plan: "free",
       subscriptionState: wasTrial ? "EXPIRED" : "FREE",
       provider: "none",
-      trialEndsAt: null,
+      // Preserve trialEndsAt on natural expiry so Trial Ended evidence survives.
+      // Wiping it made aged heal false-positives indistinguishable from real trials.
+      trialEndsAt: wasTrial ? sub.trialEndsAt : null,
       currentPeriodEnd: null,
       cancelAtPeriodEnd: 0,
       expiredAt: wasTrial ? now : sub.expiredAt,
@@ -797,8 +799,8 @@ export async function getEntitlements(
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
     provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
     subscriptionState: sub.subscriptionState ?? "FREE",
-    // NEVER map instantaneous heal EXPIRED / mere expiredAt to Trial Ended.
-    // Only naturally completed trial windows (≥1 day lived) count.
+    // NEVER map instantaneous heal EXPIRED / mere expiredAt / row age to Trial Ended.
+    // Requires preserved trialEndsAt that the row actually reached.
     internalTrialExpired: computeInternalTrialExpiredFlag(sub, isPremiumSubscriber),
     canAccessLearningHub: isPremium || !features.learning_load_more_smart_study.locked,
     canAccessActivitiesHub: isPremium,

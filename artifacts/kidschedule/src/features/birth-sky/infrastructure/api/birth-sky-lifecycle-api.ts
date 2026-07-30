@@ -5,6 +5,7 @@
 import { getApiUrl } from "@/lib/api";
 import { parseApiJson } from "@/lib/safe-json-response";
 import type { AuthFetchFn } from "./birth-sky-api";
+import { BIRTH_SKY_GENERATION_TIMEOUT_MS } from "./birth-sky-api";
 import type { BirthProfile, SkySnapshot } from "../../domain/models/birth-profile";
 import type { BirthSkyPreferences } from "../repositories/settings-store";
 import type { BirthSkyExportType } from "../../constants/lifecycle";
@@ -56,9 +57,11 @@ export async function regenerateBirthSky(
   authFetch: AuthFetchFn,
   profileId: string,
 ): Promise<{ profile: BirthProfile; snapshot: SkySnapshot | null; computeStatus: string }> {
+  // Same budget as create/recompute — ephemeris can exceed the 8s default.
   const res = await authFetch(
     getApiUrl(`/api/birth-sky/profiles/${profileId}/regenerate`),
     { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+    BIRTH_SKY_GENERATION_TIMEOUT_MS,
   );
   if (!res.ok) throw new Error(`regenerate_failed:${res.status}`);
   return parseApiJson(res);
