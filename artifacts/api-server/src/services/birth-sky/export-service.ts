@@ -95,6 +95,10 @@ export function buildBirthSkyExportBundle(input: {
     };
   } else if (input.exportType === "astronomy") {
     const facts = astronomyFacts(input.snapshot?.astronomy);
+    const a =
+      input.snapshot?.astronomy && typeof input.snapshot.astronomy === "object"
+        ? (input.snapshot.astronomy as Record<string, unknown>)
+        : {};
     payload = {
       snapshotVersion: input.snapshot?.snapshotVersion ?? null,
       engineVersion: input.snapshot?.engineVersion ?? null,
@@ -106,6 +110,12 @@ export function buildBirthSkyExportBundle(input: {
         moonPhaseLabel: facts.moonPhaseLabel,
         risingSign: input.snapshot?.mode === "day_sky" ? null : facts.risingSign,
       },
+      houses: a.houses ?? null,
+      planetHouseMap: a.planetHouseMap ?? null,
+      houseDetails: a.houseDetails ?? null,
+      planetDetails: a.planetDetails ?? null,
+      chartCompleteness: a.chartCompleteness ?? null,
+      lagna: a.lagna ?? null,
       // Precise geo intentionally omitted (Pack 7 §6.1 default).
       disclaimer: disclaimerText,
     };

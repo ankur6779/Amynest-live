@@ -97,6 +97,7 @@
     "http-proxy-middleware": "^3.0.5",
     "ioredis": "^5.6.0",
     "node-cron": "^4.2.1",
+    "pdf-lib": "^1.17.1",
     "pino": "^9",
     "pino-http": "^10",
     "razorpay": "^2.9.6",

@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import type { AstronomySegmentVM } from "../../application/view-models/dashboard-vm";
+import type { AstronomyData } from "../../domain/models/birth-profile";
 import { trackBirthSkyEvent } from "../../lib/analytics";
 import { Button } from "@/components/ui/button";
+import { BirthSkyChartDetailsPanel } from "../../components/chart-details-panel";
 
 type Props = {
   vm: AstronomySegmentVM;
+  astronomy?: AstronomyData;
   onAddTime: () => void;
 };
 
-export function BirthSkyAstronomySegment({ vm, onAddTime }: Props) {
+export function BirthSkyAstronomySegment({ vm, astronomy, onAddTime }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,6 +71,8 @@ export function BirthSkyAstronomySegment({ vm, onAddTime }: Props) {
           );
         })}
       </div>
+
+      {astronomy ? <BirthSkyChartDetailsPanel astronomy={astronomy} /> : null}
 
       <section aria-labelledby="birth-sky-seasonal">
         <h3 id="birth-sky-seasonal" className="text-xs font-bold uppercase tracking-[0.14em] text-[hsl(40_20%_96%/0.55)]">

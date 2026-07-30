@@ -60,7 +60,10 @@ import { BirthSkyConversationSheet } from "./conversation-sheet";
 import { BirthSkyEditDetailsBoundaryPage } from "./edit-details-boundary";
 import { BirthSkyRegenerateOverlay } from "../settings/regenerate-overlay";
 import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
-import type { KundliBody } from "../../components/north-indian-kundli";
+import {
+  buildKundliBodies,
+  canRenderKundliFromAstronomy,
+} from "../../lib/build-kundli-bodies";
 import {
   AmyAstroExplorationDelight,
   hasExplorationMemory,
@@ -106,7 +109,6 @@ import { softHaptic } from "../../lib/soft-haptic";
 import { playSkySound } from "../../lib/sky-sounds";
 import { loadPreferences } from "../../infrastructure/repositories/settings-store";
 import { DEEP_INSIGHTS_CONTENT_VERSION } from "../../constants/deep-insights-content";
-import { moonPhasePhrase, withIndefiniteArticle } from "../../lib/sky-copy";
 
 type Props = {
   profile: BirthProfile;
@@ -706,6 +708,7 @@ export function BirthSkyDashboardPage({
           {active === "astronomy" ? (
             <BirthSkyAstronomySegment
               vm={astroVm}
+              astronomy={snapshot.astronomy}
               onAddTime={() => openEdit("time")}
             />
           ) : null}
@@ -717,30 +720,15 @@ export function BirthSkyDashboardPage({
               reducedMotion={reduced}
               childName={childName}
               moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
-              kundliBodies={
-                [
-                  {
-                    key: "sun",
-                    label: "Sun",
-                    sign: snapshot.astronomy.sunSign,
-                    story: `You may notice daylight themes around ${childName} when ${snapshot.astronomy.sunSign} warmth meets being seen — vitality without pressure.`,
-                  },
-                  {
-                    key: "moon",
-                    label: "Moon",
-                    sign: snapshot.astronomy.moonSign,
-                    story: `Your child's emotional world is illuminated by ${withIndefiniteArticle(moonPhasePhrase(snapshot.astronomy.moonPhaseLabel))} resting in ${snapshot.astronomy.moonSign}, suggesting comfort often grows through belonging.`,
-                  },
-                  {
-                    key: "rising",
-                    label: "Rising",
-                    sign: snapshot.astronomy.risingSign ?? "—",
-                    locked: heroVm.daySky || !snapshot.astronomy.risingSign,
-                    story: heroVm.daySky
-                      ? "Rising waits for birth time — your Day Sky remains complete without it."
-                      : `As ${childName} meets a room, Rising ${snapshot.astronomy.risingSign ?? ""} can feel like a soft doorway — never a script.`,
-                  },
-                ] satisfies KundliBody[]
+              kundliBodies={buildKundliBodies(snapshot.astronomy, { childName })}
+              canRenderKundli={
+                canRenderKundliFromAstronomy(snapshot.astronomy).canRender
+              }
+              kundliDisabledReason={
+                canRenderKundliFromAstronomy(snapshot.astronomy).reason
+              }
+              lagnaSign={
+                snapshot.astronomy.lagna?.sign ?? snapshot.astronomy.risingSign
               }
               onAcceptIntro={() => {
                 const next = acceptTraditionIntro(profile.userId);

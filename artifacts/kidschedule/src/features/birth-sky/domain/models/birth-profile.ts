@@ -212,6 +212,52 @@ export type AstronomyData = {
   planetNakshatra?: Partial<Record<string, NakshatraPlacement>> | null;
   moonProfile?: MoonProfile | null;
   dasha?: VimshottariDasha | null;
+  /** Additive Vedic house/planet detail layer from server chart-details. */
+  houseDetails?: Array<{
+    house: number;
+    name: string;
+    sanskrit: string;
+    sign: string;
+    lord: string;
+    planets: string[];
+    meaning: string;
+    strengths: string;
+    challenges: string;
+    aiInterpretation: string;
+    startLongitudeDeg: number;
+    endLongitudeDeg: number;
+  }> | null;
+  planetDetails?: Array<{
+    id: string;
+    label: string;
+    sign: string;
+    house: number | null;
+    eclipticLongitudeDeg: number;
+    degreeInSign: number | null;
+    nakshatra: string | null;
+    pada: number | null;
+    nakshatraLord: string | null;
+    retrograde: boolean;
+    combust: boolean;
+    combustOrbDeg: number | null;
+    meaning: string;
+    parentingInterpretation: string;
+  }> | null;
+  chartCompleteness?: {
+    status: string;
+    canRenderKundli: boolean;
+    canExportPdf: boolean;
+    reasons: string[];
+    fallbackUsed: boolean;
+    houseCount: number;
+    grahaHouseCount: number;
+  } | null;
+  chartDetailsVersion?: string | null;
+  lagna?: {
+    sign: string | null;
+    eclipticLongitudeDeg: number | null;
+    degreeInSign: number | null;
+  } | null;
   /** Deterministic Meaning Engine output — absent on legacy snapshots. */
   meaningSnapshot?: {
     meaningEngineVersion: string;

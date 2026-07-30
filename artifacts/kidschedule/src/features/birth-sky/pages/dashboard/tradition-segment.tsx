@@ -20,6 +20,9 @@ type Props = {
   needsIntro: boolean;
   reducedMotion: boolean;
   kundliBodies: KundliBody[];
+  canRenderKundli?: boolean;
+  kundliDisabledReason?: string | null;
+  lagnaSign?: string | null;
   childName?: string;
   moonPhaseLabel?: string;
   onAcceptIntro: () => void;
@@ -35,6 +38,9 @@ export function BirthSkyTraditionSegment({
   needsIntro,
   reducedMotion,
   kundliBodies,
+  canRenderKundli = true,
+  kundliDisabledReason = null,
+  lagnaSign = null,
   childName,
   moonPhaseLabel,
   onAcceptIntro,
@@ -118,6 +124,9 @@ export function BirthSkyTraditionSegment({
     <div data-testid="birth-sky-tradition-segment" className="space-y-4">
       <AmyAstroNorthIndianKundli
         bodies={kundliBodies}
+        canRenderKundli={canRenderKundli}
+        disabledReason={kundliDisabledReason}
+        lagnaSign={lagnaSign}
         reducedMotion={reducedMotion}
         childName={childName}
         moonPhaseLabel={moonPhaseLabel}
