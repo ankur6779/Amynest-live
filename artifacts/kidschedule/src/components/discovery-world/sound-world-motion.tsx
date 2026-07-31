@@ -531,7 +531,8 @@ export function XpFlyLayer() {
       const toX = walletRect ? walletRect.left + walletRect.width * 0.75 : window.innerWidth - 48;
       const toY = walletRect ? walletRect.top + walletRect.height / 2 : 64;
       const fromX = detail.clientX ?? window.innerWidth / 2;
-      const fromY = detail.clientY ?? window.innerHeight * 0.55;
+      // Mid-viewport fallback — avoid guessed keyboard-height ratios (ChatPlatform gate).
+      const fromY = detail.clientY ?? Math.round(window.innerHeight / 2);
       const id = ++idRef.current;
       setFlights((prev) => [
         ...prev.slice(-4),
