@@ -482,7 +482,18 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       reason: synced.reason,
     };
 
-    if (!synced.dbUpdated) {
+    const grantEvents = new Set([
+      "INITIAL_PURCHASE",
+      "RENEWAL",
+      "UNCANCELLATION",
+      "PRODUCT_CHANGE",
+      "NON_RENEWING_PURCHASE",
+    ]);
+    const shouldApplyWebhookFallback =
+      !synced.dbUpdated ||
+      (synced.reason === "no_active_entitlement" && grantEvents.has(event.type));
+
+    if (shouldApplyWebhookFallback) {
       const plan = productIdToPlan(event.product_id);
       const expirationAt = event.expiration_at_ms ? new Date(event.expiration_at_ms) : null;
       const gracePeriodExpirationAt = event.grace_period_expiration_at_ms
@@ -555,16 +566,26 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
  * Returns updated entitlements.
  */
 router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const auth = getAuth(req);
+  const userId = auth.userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
 
   const requestId = requestIdFrom(req);
+  const subscriptionOwnerUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email: auth.email,
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
 
   // Heal stale rows before deciding whether a real provider cancellation is needed.
-  await getEntitlements(userId);
+  await getEntitlements(userId, auth.email, {
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
 
   type CancelOutcome =
     | { kind: "missing" }
@@ -580,12 +601,12 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     outcome = await db.transaction(async (tx): Promise<CancelOutcome> => {
       // Serialize cancellation per user across app instances. This makes double
       // clicks and retry storms deterministic without relying on in-memory locks.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${subscriptionOwnerUserId}))`);
 
       const rows = await tx
         .select()
         .from(subscriptionsTable)
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .limit(1);
       const sub = rows[0];
 
@@ -723,11 +744,14 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
         const [updated] = await tx
           .update(subscriptionsTable)
           .set({
+            subscriptionState: "CANCELLED",
+            status: "active",
             cancelAtPeriodEnd: 1,
+            autoRenewStatus: false,
             cancelledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(subscriptionsTable.userId, userId))
+          .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
           .returning();
         await recordBillingAuditEvent({
           userId,
@@ -763,7 +787,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           expiredAt: now,
           updatedAt: now,
         })
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .returning();
       await recordBillingAuditEvent({
         userId,

@@ -39,6 +39,7 @@ const past = () => new Date(Date.now() - 86_400_000);
 
 const state: {
   authUserId: string | null;
+  subscriptionOwnerUserId: string | null;
   sub: SubRow | null;
   audits: AuditRow[];
   razorpayCalls: string[];
@@ -47,6 +48,7 @@ const state: {
   txCount: number;
 } = {
   authUserId: "user_1",
+  subscriptionOwnerUserId: null,
   sub: null,
   audits: [],
   razorpayCalls: [],
@@ -138,7 +140,8 @@ function makeDbMock() {
       from: () => ({
         where: () => ({
           limit: async () => {
-            if (!state.sub || state.sub.userId !== state.authUserId) return [];
+            const ownerId = state.subscriptionOwnerUserId ?? state.authUserId;
+            if (!state.sub || !ownerId || state.sub.userId !== ownerId) return [];
             return [state.sub];
           },
         }),
@@ -231,6 +234,13 @@ mock.module(new URL("../services/subscriptionService.ts", import.meta.url).href,
   namedExports: subscriptionServiceMock,
 });
 
+mock.module(new URL("../services/userIdentityService.ts", import.meta.url).href, {
+  namedExports: {
+    recoverPremiumOwnerForAuth: async () => state.subscriptionOwnerUserId ?? state.authUserId ?? "user_1",
+    resolveSubscriptionOwnerUserId: async (userId: string) => userId,
+  },
+});
+
 mock.module(new URL("../services/rcPricingService.ts", import.meta.url).href, {
   namedExports: {
     getLivePlanPrices: async () => ({}),
@@ -287,6 +297,7 @@ after(async () => {
 
 beforeEach(() => {
   state.authUserId = "user_1";
+  state.subscriptionOwnerUserId = null;
   state.sub = subscription();
   state.audits = [];
   state.razorpayCalls = [];
@@ -330,9 +341,22 @@ describe("POST /api/subscription/cancel", () => {
     assert.equal(body.ok, true);
     assert.equal(state.razorpayCalls.length, 1);
     assert.equal(state.sub?.cancelAtPeriodEnd, 1);
+    assert.equal(state.sub?.subscriptionState, "CANCELLED");
+    assert.equal(state.sub?.autoRenewStatus, false);
     assert.equal(body.entitlements.isPremium, true);
     assert.equal(body.entitlements.cancelAtPeriodEnd, true);
     assertCancelAuditShape(audit("subscription_cancel_scheduled"));
+  });
+
+  it("cancels the recovered subscription owner row for alias auth users", async () => {
+    state.sub = subscription({ userId: "owner_paid" });
+    state.authUserId = "alias_uid";
+    state.subscriptionOwnerUserId = "owner_paid";
+    const res = await postCancel();
+    assert.equal(res.status, 200);
+    assert.equal(state.razorpayCalls.length, 1);
+    assert.equal(state.sub?.userId, "owner_paid");
+    assert.equal(state.sub?.subscriptionState, "CANCELLED");
   });
 
   it("immediately downgrades manual subscription", async () => {
