@@ -438,6 +438,9 @@ router.post("/worksheets/download", infantExploreMutationGate(), async (req, res
     } catch (insertErr) {
       const pgCode = (insertErr as { code?: string }).code;
       if (pgCode === "23505") {
+        if (premiumReservation?.ok && premiumReservation.source === "bank") {
+          await refundPremiumDownloadBankDebit(userId);
+        }
         setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
         const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
         if (!streamed && !res.headersSent) {
