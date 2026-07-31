@@ -97,12 +97,32 @@ async function putDailyScore(
   const fetcher = globalFetch;
   if (!fetcher) return false;
 
+  const clientUpdatedAt = getDayUpdatedAt(childId, dateKey) || Date.now();
   const res = await fetcher(getApiUrl("/api/nutrition/daily-score"), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ childId, dateKey, checklist }),
+    body: JSON.stringify({ childId, dateKey, checklist, clientUpdatedAt }),
   });
-  return res.ok;
+  if (!res.ok) return false;
+
+  try {
+    const json = (await res.json()) as {
+      merged?: boolean;
+      log?: {
+        dateKey: string;
+        checklist: Record<string, boolean>;
+        updatedAt?: string;
+      };
+    };
+    if (json.merged === false && json.log?.checklist) {
+      const serverTs = json.log.updatedAt ? Date.parse(json.log.updatedAt) : Date.now();
+      mergeServerDay(childId, json.log.dateKey, json.log.checklist, serverTs);
+    }
+  } catch {
+    /* response parsed elsewhere or empty */
+  }
+
+  return true;
 }
 
 async function migrateLocalHistoryToServer(childId: number): Promise<boolean> {

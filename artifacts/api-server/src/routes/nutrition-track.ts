@@ -46,6 +46,7 @@ const upsertSchema = z.object({
   childId: z.number().int().positive(),
   dateKey: dateKeySchema,
   checklist: checklistSchema,
+  clientUpdatedAt: z.number().int().nonnegative().optional(),
 });
 
 router.put("/nutrition/daily-score", async (req, res): Promise<void> => {
@@ -66,13 +67,14 @@ router.put("/nutrition/daily-score", async (req, res): Promise<void> => {
     userId,
     parsed.data.dateKey,
     parsed.data.checklist,
+    parsed.data.clientUpdatedAt,
   );
   if (!result.ok) {
     res.status(403).json({ error: result.error });
     return;
   }
 
-  res.json({ ok: true, log: result.log });
+  res.json({ ok: true, log: result.log, merged: result.merged });
 });
 
 // GET /api/nutrition/weekly-trend?childId=&date=
