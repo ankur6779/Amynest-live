@@ -239,12 +239,13 @@ export async function registerActiveSession(input: {
           .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
         return input.sessionState;
       }
-      if (!stale) {
-        await tx
-          .update(speechCoachV2ActiveSessionsTable)
-          .set({ status: "terminated", updatedAt: new Date() })
-          .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
-      }
+      await tx
+        .update(speechCoachV2ActiveSessionsTable)
+        .set({
+          status: stale ? "expired" : "terminated",
+          updatedAt: new Date(),
+        })
+        .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
     }
 
     const dailyUsed = await getDailyUsageLocked(tx, input.userId, input.childId);
