@@ -50,17 +50,29 @@ async function attachSavedFixedActivities<T extends Child>(
   rows: T[],
 ): Promise<T[]> {
   if (rows.length === 0) return rows;
-  const savedByChild = await listActiveCustomActivitiesForChildren(
-    userId,
-    rows.map((r) => r.id),
-  );
-  return rows.map((row) => ({
-    ...row,
-    fixedActivities: mergeFixedActivities(
-      getFixedActivitiesFromChild(row),
-      savedByChild.get(row.id) ?? [],
-    ),
-  }));
+  try {
+    const savedByChild = await listActiveCustomActivitiesForChildren(
+      userId,
+      rows.map((r) => r.id),
+    );
+    return rows.map((row) => ({
+      ...row,
+      fixedActivities: mergeFixedActivities(
+        getFixedActivitiesFromChild(row),
+        savedByChild.get(row.id) ?? [],
+      ),
+    }));
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "db.children.custom_activities_attach_failed",
+        userId,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "Failed to attach saved custom activities; using legacy fixedActivities only",
+    );
+    return rows;
+  }
 }
 
 export function normalizeChildRow<T extends Record<string, unknown>>(
