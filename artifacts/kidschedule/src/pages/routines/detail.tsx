@@ -35,6 +35,7 @@ import { saveActivationResume, clearActivationResume } from "@/lib/activation-re
 import {
   enrichRoutinePayload,
   fetchRoutineWithResilience,
+  persistGeneratedRoutine,
   RoutineGenerationPaywallError,
 } from "@/lib/routine-generation-client";
 import { sanitizeRoutineItems } from "@/lib/routine-item-safety";
@@ -1032,13 +1033,20 @@ export default function RoutineDetail() {
         }),
         { childName, source: "routine_detail_next_day" },
       );
+      await persistGeneratedRoutine(authFetch, {
+        childId: pendingNextDayChildId,
+        date: dateStr,
+        title: generated.title,
+        items: generated.items,
+        adaptations: generated.adaptations ?? undefined,
+      });
       toast({
         title: generated.fallback
           ? t("toasts.routines_detail.tomorrow_backup_title", {
               defaultValue: "Tomorrow's backup routine ready",
             })
           : `🌅 Tomorrow's routine ready!`,
-        description: `${isWeekend ? "Weekend" : "School day"} routine generated for ${childName ?? "your child"}.`,
+        description: `${isWeekend ? "Weekend" : "School day"} routine saved for ${childName ?? "your child"}.`,
       });
       queryClient.invalidateQueries({
         queryKey: getListRoutinesQueryKey(),
