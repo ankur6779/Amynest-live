@@ -143,3 +143,11 @@ describe("P0-2 routine uniqueness", () => {
     assert.match(featureGateSrc, /evt: "routine\.generate_gate_failed_open"/);
   });
 });
+
+describe("P0-3 custom activities attach resilience", () => {
+  it("listChildrenForUser degrades when saved custom activities cannot load", () => {
+    const src = readSource("./children-db.ts");
+    assert.match(src, /custom_activities_attach_failed/);
+    assert.match(src, /returning profile fixedActivities only/);
+  });
+});
