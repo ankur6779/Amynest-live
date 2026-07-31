@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import type { PhonicsLevel } from "@/lib/phonics-content";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import {
+  beginReadingSession,
+  endReadingSession,
+  getLastReadingRuntimeDecision,
+  guidanceFromReadingDecision,
+  recordReadingPageCompleted,
+  recordReadingPageStarted,
+  recordReadingPhonemePracticed,
+  recordReadingWordCompleted,
+} from "@/lib/reading-world-learning-adapter";
 import { JourneyMapV2 } from "./JourneyMapV2";
 import { DailyMissionPanel } from "./DailyMissionPanel";
 import { WordFamilyExplorer } from "./WordFamilyExplorer";
@@ -187,6 +198,8 @@ export function PhonicsV2({
   onLessonSessionChange,
 }: PhonicsV2Props) {
   const authFetch = useAuthFetch();
+  const { recordActivity } = useRecordLearningActivity(childId);
+  const readingSessionIdRef = useRef<string | null>(null);
   const [familyProgress, setFamilyProgress] = useState(() =>
     loadFamilyProgress(childId),
   );
@@ -411,8 +424,22 @@ export function PhonicsV2({
         return item?.symbol?.toLowerCase() ?? "";
       })
       .filter(Boolean);
-    return pickNextLessonGrapheme(groupIndex, masteredLetters);
-  }, [groupIndex, progress.mastered, safeItems]);
+    const base = pickNextLessonGrapheme(groupIndex, masteredLetters);
+    // Runtime preferred graphemes only if still unlocked in current letter group.
+    const guidance = guidanceFromReadingDecision(
+      childId,
+      getLastReadingRuntimeDecision(childId),
+    );
+    const unlocked = new Set(
+      getLetterGroup(groupIndex).graphemes.map((g) => g.toLowerCase()),
+    );
+    for (const pref of guidance.preferredGraphemes) {
+      const key = pref.toLowerCase();
+      if (unlocked.has(key)) return key;
+      if (key.length === 1 && unlocked.has(key)) return key;
+    }
+    return base;
+  }, [childId, groupIndex, progress.mastered, safeItems]);
 
   const hubFocusGrapheme = lessonGraphemeOverride ?? nextLessonGrapheme;
 
@@ -458,6 +485,15 @@ export function PhonicsV2({
         setDailySession(started);
         saveDailySession(childId, started);
         setSessionActive(true);
+        if (!readingSessionIdRef.current) {
+          const began = beginReadingSession({
+            childId,
+            grapheme: started.grapheme,
+            focusWord: started.focusWord,
+            practiceWords: started.practiceWords,
+          });
+          readingSessionIdRef.current = began.sessionId;
+        }
         requestAnimationFrame(() => {
           document
             .getElementById("phonics-daily-session")
@@ -506,6 +542,20 @@ export function PhonicsV2({
       setDailySession(started);
       saveDailySession(childId, started);
       setSessionActive(true);
+      const began = beginReadingSession({
+        childId,
+        grapheme: g,
+        focusWord: target.focusWord,
+        practiceWords: unique,
+      });
+      readingSessionIdRef.current = began.sessionId;
+      recordReadingPageStarted({
+        childId,
+        sessionId: began.sessionId,
+        pageId: `lesson:${g}`,
+        grapheme: g,
+        focusWord: target.focusWord,
+      });
       requestAnimationFrame(() => {
         document
           .getElementById("phonics-daily-session")
@@ -662,8 +712,21 @@ export function PhonicsV2({
       setCoachConfusions(next);
       saveCoachConfusions(childId, next);
       setPronunciation(loadPronunciationScores(childId));
+      if (evaluation.targetKind === "phoneme" || evaluation.targetKind === "word") {
+        const target = String(evaluation.expected ?? dailySession?.grapheme ?? "").toLowerCase();
+        if (target) {
+          recordReadingPhonemePracticed({
+            childId,
+            sessionId: readingSessionIdRef.current ?? undefined,
+            phoneme: target[0] ?? target,
+            word: evaluation.targetKind === "word" ? target : dailySession?.focusWord,
+            correct: evaluation.correct,
+            confidence: evaluation.confidencePct,
+          });
+        }
+      }
     },
-    [coachConfusions, childId],
+    [coachConfusions, childId, dailySession?.focusWord, dailySession?.grapheme],
   );
 
   const handleLessonComplete = useCallback(
@@ -763,6 +826,39 @@ export function PhonicsV2({
       });
       saveReadingPetState(childId, fed);
       setReadingPet(fed);
+
+      const g = recordReadingPageCompleted({
+        childId,
+        sessionId: readingSessionIdRef.current ?? undefined,
+        pageId: `lesson:${payload.grapheme}`,
+        grapheme: payload.grapheme,
+        focusWord: payload.focusWord,
+        words: [payload.focusWord],
+        phonemes: [payload.grapheme],
+        confidence: readOk ? 88 : 55,
+      });
+      recordReadingWordCompleted({
+        childId,
+        sessionId: readingSessionIdRef.current ?? undefined,
+        word: payload.focusWord,
+        grapheme: payload.grapheme,
+        correct: readOk || blendOk,
+        isNew: true,
+      });
+      void recordActivity({
+        activityId: `reading_${payload.grapheme}_${payload.focusWord}`,
+        section: "reading",
+        correct: readOk || blendOk,
+        analyticsEvent: "fresh_lesson_completed",
+        metadata: {
+          grapheme: payload.grapheme,
+          focusWord: payload.focusWord,
+          runtimeRuleId: g.ruleId,
+          surface: "reading_world",
+          // Dual-credits phonics in progress engine for legacy unlocks (BC).
+          learningSection: "reading",
+        },
+      });
     },
     [
       readingSkills,
@@ -772,6 +868,7 @@ export function PhonicsV2({
       trackSkillIntroduction,
       handleRetentionReview,
       journeyProgress,
+      recordActivity,
     ],
   );
 
@@ -811,6 +908,25 @@ export function PhonicsV2({
           onSessionChange={persistSession}
           onLessonComplete={handleLessonComplete}
           onCoachEvaluation={handleCoachEvaluation}
+          onWordCompleted={(word) => {
+            recordReadingWordCompleted({
+              childId,
+              sessionId: readingSessionIdRef.current ?? undefined,
+              word,
+              grapheme: dailySession.grapheme,
+              correct: true,
+              isNew: !dailySession.wordsCompleted.includes(word),
+            });
+          }}
+          onPhaseStarted={(phase) => {
+            recordReadingPageStarted({
+              childId,
+              sessionId: readingSessionIdRef.current ?? undefined,
+              pageId: `${phase}:${dailySession.grapheme}`,
+              grapheme: dailySession.grapheme,
+              focusWord: dailySession.focusWord,
+            });
+          }}
           onExit={(paused) => {
             persistSession(paused);
             setSessionActive(false);
@@ -827,6 +943,28 @@ export function PhonicsV2({
             setReadingPet(fed);
             persistSession(completed);
             setSessionActive(false);
+            const g = endReadingSession({
+              childId,
+              sessionId: readingSessionIdRef.current ?? undefined,
+              wordsCompleted: completed.wordsCompleted.length,
+              grapheme: completed.grapheme,
+            });
+            readingSessionIdRef.current = null;
+            void recordActivity({
+              activityId: `reading_session_${completed.grapheme}_${Date.now()}`,
+              section: "reading",
+              correct: true,
+              analyticsEvent: "session_completed",
+              metadata: {
+                grapheme: completed.grapheme,
+                wordsCompleted: completed.wordsCompleted.length,
+                runtimeRuleId: g.ruleId,
+                celebrationLevel: g.celebrationLevel,
+                hintLevel: g.hintLevel,
+                surface: "reading_world",
+                learningSection: "reading",
+              },
+            });
             requestAnimationFrame(() => {
               document
                 .getElementById("phonics-learning-hub")
@@ -1027,7 +1165,41 @@ export function PhonicsV2({
 
       <PhonicsGamesHub
         practiceWords={practiceWords}
-        onGameComplete={() => recordPlay(`v2-game-${karaokeWord || practiceWords[0]}`)}
+        onGameComplete={(gameId) => {
+          recordPlay(`v2-game-${karaokeWord || practiceWords[0]}`);
+          // Mini-games still credit phonics progress; also emit Games LP challenge evidence.
+          void import("@/lib/games-world-learning-adapter").then(
+            ({
+              beginGameSession,
+              endGameSession,
+              recordGameLevelCompleted,
+            }) => {
+              const began = beginGameSession({
+                childId,
+                gameId: `phonics-${gameId}`,
+                title: `Phonics ${gameId}`,
+                category: "brain",
+              });
+              recordGameLevelCompleted({
+                childId,
+                sessionId: began.sessionId,
+                gameId: `phonics-${gameId}`,
+                title: `Phonics ${gameId}`,
+                category: "brain",
+                score: 1,
+                total: 1,
+                perfect: true,
+                isChallenge: true,
+              });
+              endGameSession({
+                childId,
+                sessionId: began.sessionId,
+                gameId: `phonics-${gameId}`,
+                levelsCompleted: 1,
+              });
+            },
+          );
+        }}
       />
 
       <div className="scroll-mt-24">

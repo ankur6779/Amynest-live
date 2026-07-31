@@ -1,6 +1,7 @@
-import type { AnimalWorldProgressV2 } from "@workspace/animal-world";
+import type { AnimalWorldProgressV2, AnimalWorldSessionStats } from "@workspace/animal-world";
 import {
   addPlatformXp,
+  applyPlayStreak,
   defaultWorldProgressV2,
   mergePlatformAchievements,
   platformProgressStorageKey,
@@ -10,20 +11,14 @@ import {
   type WorldItemMastery,
 } from "@workspace/world-engine";
 import { openedItemIds } from "@/lib/discovery-worlds-stats";
-
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { notifyWorldProgressSaved } from "@/lib/discovery-worlds-progress-sync";
+import {
+  baselineWorldMasterySnapshot,
+  ingestWorldMasteryProgress,
+} from "@/lib/knowledge-graph-client";
 
 export function touchDiscoveryWorldStreak(progress: WorldProgressV2): WorldProgressV2 {
-  const today = todayKey();
-  if (progress.lastPlayedDate === today) return progress;
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = yesterday.toISOString().slice(0, 10);
-  const streakDays =
-    progress.lastPlayedDate === yesterdayKey ? progress.streakDays + 1 : 1;
-  return { ...progress, streakDays, lastPlayedDate: today };
+  return applyPlayStreak(progress);
 }
 
 export function loadDiscoveryWorldProgress(
@@ -33,8 +28,11 @@ export function loadDiscoveryWorldProgress(
   if (typeof window === "undefined") return defaultWorldProgressV2(worldId);
   try {
     const raw = localStorage.getItem(platformProgressStorageKey(worldId, childId));
-    if (!raw) return defaultWorldProgressV2(worldId);
-    return { ...defaultWorldProgressV2(worldId), ...JSON.parse(raw) };
+    const progress = !raw
+      ? defaultWorldProgressV2(worldId)
+      : { ...defaultWorldProgressV2(worldId), ...JSON.parse(raw) };
+    baselineWorldMasterySnapshot(childId, worldId, progress.itemMastery);
+    return progress;
   } catch {
     return defaultWorldProgressV2(worldId);
   }
@@ -50,6 +48,8 @@ export function saveDiscoveryWorldProgress(
       platformProgressStorageKey(worldId, childId),
       JSON.stringify(progress),
     );
+    ingestWorldMasteryProgress(childId, worldId, progress.itemMastery);
+    notifyWorldProgressSaved(worldId, childId, progress);
   } catch {
     /* quota */
   }
@@ -94,6 +94,27 @@ export function grantDiscoveryWorldXp(
   return progress;
 }
 
+/** Toggle favorite item id on platform world progress (localStorage-compatible). */
+export function toggleDiscoveryWorldFavorite(
+  worldId: WorldId,
+  childId: number,
+  itemId: string,
+): { progress: WorldProgressV2; added: boolean } {
+  let progress = loadDiscoveryWorldProgress(worldId, childId);
+  const set = new Set(progress.favorites);
+  let added = false;
+  if (set.has(itemId)) {
+    set.delete(itemId);
+  } else {
+    set.add(itemId);
+    added = true;
+    progress = addPlatformXp(progress, "favoriteAdded");
+  }
+  progress = { ...progress, favorites: [...set] };
+  saveDiscoveryWorldProgress(worldId, childId, progress);
+  return { progress, added };
+}
+
 export function recordHearFindAttempt(
   worldId: WorldId,
   childId: number,
@@ -123,8 +144,19 @@ export function recordHearFindAttempt(
   return progress;
 }
 
-/** Read-only mirror for cross-world parent hub (Animal World keys untouched). */
-export function animalProgressToPlatform(progress: AnimalWorldProgressV2): WorldProgressV2 {
+export type AnimalAdapterStats = Pick<
+  AnimalWorldSessionStats,
+  "favorites" | "totalSessionMs" | "streakDays" | "lastPlayedDate"
+>;
+
+/**
+ * Read-only mirror for cross-world parent hub (Animal World keys untouched).
+ * Pass session stats so favorites / streak / session minutes are not zeroed.
+ */
+export function animalProgressToPlatform(
+  progress: AnimalWorldProgressV2,
+  stats?: AnimalAdapterStats | null,
+): WorldProgressV2 {
   return {
     worldId: "animal_world",
     xp: progress.xp,
@@ -141,9 +173,9 @@ export function animalProgressToPlatform(progress: AnimalWorldProgressV2): World
     discoverySessionsCompleted: progress.discoverySessionsCompleted,
     weeklyMinutes: { ...progress.weeklyMinutes },
     monthlyItemsOpened: { ...progress.monthlyAnimalsOpened },
-    favorites: [],
-    totalSessionMs: 0,
-    streakDays: 0,
-    lastPlayedDate: null,
+    favorites: stats?.favorites ? [...stats.favorites] : [],
+    totalSessionMs: stats?.totalSessionMs ?? 0,
+    streakDays: stats?.streakDays ?? 0,
+    lastPlayedDate: stats?.lastPlayedDate ?? null,
   };
 }

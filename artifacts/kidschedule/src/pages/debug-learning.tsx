@@ -35,6 +35,10 @@ import {
   scorePlatformHealth,
   optimizeBehavior,
 } from "@workspace/learning-progress-engine";
+import {
+  getCanonicalLearningDecision,
+  hubRecommendationsFromRuntime,
+} from "@/lib/adaptive-authority";
 
 export default function DebugLearningPage() {
   const allowed = useDebugAllowed();
@@ -49,6 +53,14 @@ export default function DebugLearningPage() {
   }, [childList, selectedId]);
 
   const { profile, phase3, unlocks, isPremium } = useLearningProgress(selectedId);
+  const runtimeRecs = useMemo(
+    () => (selectedId != null ? hubRecommendationsFromRuntime(selectedId) : []),
+    [selectedId, phase3?.dailySession?.completedCount],
+  );
+  const runtimeDecision = useMemo(
+    () => (selectedId != null ? getCanonicalLearningDecision(selectedId) : null),
+    [selectedId, phase3?.dailySession?.completedCount],
+  );
   const diag = useLearningSyncDiagnostics();
   const resilience = useLearningResilienceReport();
   const tierProfile = useMemo(() => detectPerformanceTier(), []);
@@ -150,7 +162,9 @@ export default function DebugLearningPage() {
                   wallet: phase3.wallet,
                   memory: phase3.memory,
                   comeback: phase3.comeback,
-                  difficulty: phase3.difficulty,
+                  lpeDifficultyPlaceholder: phase3.difficulty,
+                  runtimeDifficulty: runtimeDecision?.difficulty ?? null,
+                  runtimeRuleId: runtimeDecision?.ruleId ?? null,
                   trend: phase3.parentDashboard.learningTrend,
                 }
               : null
@@ -158,10 +172,10 @@ export default function DebugLearningPage() {
         />
       </Section>
 
-      <Section title="Recommendations (with reasoning)">
-        {phase3?.recommendations.length ? (
+      <Section title="Runtime recommendations (canonical)">
+        {runtimeRecs.length ? (
           <ul className="space-y-2">
-            {phase3.recommendations.map((r) => (
+            {runtimeRecs.map((r) => (
               <li
                 key={r.id}
                 className="text-xs rounded-lg border border-border/60 px-3 py-2"

@@ -1,8 +1,7 @@
 import { DISCOVERY_WORLDS_REGISTRY } from "@workspace/discovery-worlds";
 import type { WorldId, WorldProgressV2 } from "@workspace/world-engine";
 import { loadDiscoveryWorldProgress } from "@/lib/discovery-worlds-progress";
-import { loadAnimalWorldProgress } from "@/lib/animal-world-progress";
-import { animalProgressToPlatform } from "@/lib/discovery-worlds-progress";
+import { loadAnimalProgressAsPlatform } from "@/lib/discovery-worlds-animal-bridge";
 
 export type WorldMapDestinationState = "locked" | "unlocked" | "mastered";
 
@@ -15,6 +14,11 @@ export type WorldMapDestination = {
   masteryPct: number;
   xp: number;
 };
+
+function loadWorldProgress(worldId: WorldId, childId: number): WorldProgressV2 {
+  if (worldId === "animal_world") return loadAnimalProgressAsPlatform(childId);
+  return loadDiscoveryWorldProgress(worldId, childId);
+}
 
 function masteryPct(progress: WorldProgressV2, catalogSize: number): number {
   if (catalogSize <= 0) return 0;
@@ -29,10 +33,7 @@ export function loadWorldMapDestinations(
 ): WorldMapDestination[] {
   return DISCOVERY_WORLDS_REGISTRY.map((world) => {
     const size = catalogSizes[world.worldId] ?? 10;
-    const progress =
-      world.worldId === "animal_world"
-        ? animalProgressToPlatform(loadAnimalWorldProgress(childId))
-        : loadDiscoveryWorldProgress(world.worldId, childId);
+    const progress = loadWorldProgress(world.worldId, childId);
     const pct = masteryPct(progress, size);
     const locked = gateLocked(world.hubModuleGate);
     let state: WorldMapDestinationState = "unlocked";
@@ -53,11 +54,26 @@ export function loadWorldMapDestinations(
 export function aggregateDiscoveryStreak(childId: number): number {
   let max = 0;
   for (const world of DISCOVERY_WORLDS_REGISTRY) {
-    const progress =
-      world.worldId === "animal_world"
-        ? animalProgressToPlatform(loadAnimalWorldProgress(childId))
-        : loadDiscoveryWorldProgress(world.worldId, childId);
+    const progress = loadWorldProgress(world.worldId, childId);
     max = Math.max(max, progress.streakDays);
   }
   return max;
+}
+
+/** Sum XP / stickers across all worlds for hub tiles (single aggregation path). */
+export function aggregateDiscoveryRewardTotals(childId: number): {
+  totalXp: number;
+  totalStickers: number;
+  totalFavorites: number;
+} {
+  let totalXp = 0;
+  let totalStickers = 0;
+  let totalFavorites = 0;
+  for (const world of DISCOVERY_WORLDS_REGISTRY) {
+    const progress = loadWorldProgress(world.worldId, childId);
+    totalXp += progress.xp;
+    totalStickers += progress.stickersEarned.length;
+    totalFavorites += progress.favorites.length;
+  }
+  return { totalXp, totalStickers, totalFavorites };
 }

@@ -17,5 +17,7 @@ describe("isLearningJourneyRoute", () => {
     expect(isLearningJourneyRoute("/dashboard")).toBe(false);
     expect(isLearningJourneyRoute("/parenting-hub")).toBe(false);
     expect(isLearningJourneyRoute("/health-lab")).toBe(false);
+    // Legacy marketing path is redirected in AppCore; not a journey prefix itself.
+    expect(isLearningJourneyRoute("/learning-zone/smart-math-tricks")).toBe(false);
   });
 });

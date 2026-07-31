@@ -15,6 +15,7 @@ import { TRANSITION } from "@/lib/experience-system";
 import { animalAudioManager } from "@/lib/animal-world-audio-manager";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
 import { loadAnimalWorldProgress, recordHearFindAttempt } from "@/lib/animal-world-progress";
+import { recordAnimalWorldHubDaily } from "@/lib/animal-world-hub-daily";
 import { CelebrationBurst, ConfettiDots } from "./world-motion";
 
 type HearFindModeProps = {
@@ -84,6 +85,7 @@ export function HearFindMode({ childId }: HearFindModeProps) {
     if (result.correct) {
       setFeedback("correct");
       setStars((s) => s + 1);
+      recordAnimalWorldHubDaily(childId, "hear_find_correct");
       trackAnimalWorldEvent("hear_find_completed", { childId, correct: true });
       window.setTimeout(nextQuestion, 1600);
     } else {

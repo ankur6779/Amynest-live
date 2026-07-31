@@ -6,9 +6,9 @@ import { getHomeSoundsManifest } from "@workspace/home-sounds-world";
 import { getInstrumentWorldManifest } from "@workspace/instrument-world";
 import type { WorldId, WorldProgressV2 } from "@workspace/world-engine";
 import { defaultWorldItemMastery } from "@workspace/world-engine";
-import { loadAnimalWorldProgress } from "@/lib/animal-world-progress";
 import { loadAnimalWorldStats } from "@/lib/animal-world-storage";
-import { animalProgressToPlatform, loadDiscoveryWorldProgress } from "@/lib/discovery-worlds-progress";
+import { loadAnimalProgressAsPlatform } from "@/lib/discovery-worlds-animal-bridge";
+import { loadDiscoveryWorldProgress } from "@/lib/discovery-worlds-progress";
 import { loadDiscoveryWorldStats } from "@/lib/discovery-worlds-stats";
 
 export const DISCOVERY_CATALOG_SIZES: Record<WorldId, number> = {
@@ -58,7 +58,7 @@ export type UnifiedParentInsights = {
 
 function loadProgress(worldId: WorldId, childId: number): WorldProgressV2 {
   if (worldId === "animal_world") {
-    return animalProgressToPlatform(loadAnimalWorldProgress(childId));
+    return loadAnimalProgressAsPlatform(childId);
   }
   return loadDiscoveryWorldProgress(worldId, childId);
 }

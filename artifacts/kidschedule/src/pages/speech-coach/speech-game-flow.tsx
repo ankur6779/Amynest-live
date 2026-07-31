@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAuth } from "firebase/auth";
-import {
-  useGetSpeechProgress,
-  useLogSpeechPracticeAttempt,
-} from "@workspace/api-client-react";
+import { useLogSpeechPracticeAttempt } from "@workspace/api-client-react";
 import {
   SPEECH_GAMES,
   buildGamePromptSession,
@@ -32,9 +29,13 @@ import {
   clampClarityScore,
   playSpeechCue,
   speechCoachSttOptions,
-  weakSoundsToHistory,
   type SpeechViewMode,
 } from "./speech-coach-utils";
+import {
+  beginSpeechCoachSession,
+  endSpeechCoachSession,
+  recordSpeechCoachAttempt,
+} from "@/lib/speech-coach-learning-adapter";
 import {
   applyGameSessionRewards,
   coinsForFeedback,
@@ -170,11 +171,11 @@ export function SpeechGameFlow({
 }) {
   const { t } = useTranslation();
   const ageMonths = totalMonths(child);
-  const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
   const log = useLogSpeechPracticeAttempt();
   const voice = useAmyVoice();
   const theme = SPEECH_GAME_THEMES[gameId];
   const gameMeta = SPEECH_GAMES.find((g) => g.id === gameId)!;
+  const sessionIdRef = useRef(`speech_game_${child.id}_pending`);
 
   const getAuthToken = useCallback(async () => {
     try {
@@ -292,13 +293,16 @@ export function SpeechGameFlow({
 
   const startSession = () => {
     onAction();
-    const history = weakSoundsToHistory(progress.data?.weakSounds ?? []);
-    const items = buildGamePromptSession(
-      gameId,
+    // Platform adaptivity comes from Runtime/KG — do not feed local weak-sound mastery into games.
+    const began = beginSpeechCoachSession({
+      childId: child.id,
       ageMonths,
-      Date.now(),
-      history,
-    );
+      kind: "word",
+      sessionSize: 6,
+      baseDifficulty: "medium",
+    });
+    sessionIdRef.current = began.sessionId;
+    const items = buildGamePromptSession(gameId, ageMonths, Date.now(), []);
     setSessionItems(items);
     setSessionIdx(0);
     setSessionResults([]);
@@ -391,6 +395,13 @@ export function SpeechGameFlow({
       },
       { onError: (err) => handleSubscriptionMutationGateError(err, "speech_coach_game_log") },
     );
+    recordSpeechCoachAttempt({
+      childId: child.id,
+      promptText: currentItem.text,
+      score: currentResult.score,
+      sessionId: sessionIdRef.current,
+      correct: currentResult.score >= 70,
+    });
     const updated = [
       ...sessionResults,
       {
@@ -401,6 +412,10 @@ export function SpeechGameFlow({
     ];
     setSessionResults(updated);
     if (isLastItem) {
+      endSpeechCoachSession({
+        childId: child.id,
+        sessionId: sessionIdRef.current,
+      });
       finishSession(updated);
     } else {
       setSessionIdx((i) => i + 1);

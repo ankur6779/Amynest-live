@@ -43,7 +43,7 @@ const FEATURE_COPY: Record<string, { title: string; body: string; href: string }
   smart_math: {
     title: "Smart Math",
     body: "Try a quick math trick activity.",
-    href: "/learning-zone/smart-math-tricks",
+    href: "/smart-math-tricks",
   },
   bedtime_stories: {
     title: "Bedtime Stories",

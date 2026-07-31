@@ -36,6 +36,9 @@ const SCREEN_NAMES: Record<string, string> = {
   "/notification-settings": "Notification Settings",
   "/notification-diagnostics": "Notification Diagnostics",
   "/debug/pre-signup": "Pre-Signup Debug",
+  "/debug/runtime": "Runtime Inspector",
+  "/debug/telemetry": "Learning Telemetry",
+  "/debug/learning": "Learning Inspector",
   "/insights": "Insights",
   "/rewards": "Rewards",
   "/referrals": "Referrals",
@@ -318,6 +321,15 @@ function DebugPanelDev() {
                 <Section title="Quick Links">
                   <a href="/debug-parity" className="block text-[11px] text-violet-400 hover:text-violet-300 underline py-0.5">
                     → Parity Report (/debug-parity)
+                  </a>
+                  <a href="/debug/runtime" className="block text-[11px] text-violet-400 hover:text-violet-300 underline py-0.5">
+                    → Amy Runtime Inspector (/debug/runtime)
+                  </a>
+                  <a href="/debug/telemetry" className="block text-[11px] text-violet-400 hover:text-violet-300 underline py-0.5">
+                    → Learning Telemetry (/debug/telemetry)
+                  </a>
+                  <a href="/debug/learning" className="block text-[11px] text-violet-400 hover:text-violet-300 underline py-0.5">
+                    → Learning Inspector (/debug/learning)
                   </a>
                   <button
                     onClick={() => { apiLogger.clear(); }}

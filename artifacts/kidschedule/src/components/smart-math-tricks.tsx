@@ -44,6 +44,28 @@ import {
   scheduleLearningZoneAudioPrewarm,
   buildLearningZoneAudioStateKey,
 } from "@/lib/learning-zone-audio-prewarm";
+import {
+  LivingMathWorld,
+  CinematicEntry,
+  HeroLessonStage,
+  TrickHeroVisual,
+  AmyMathCompanion,
+  MagicCelebration,
+  worldForTrick,
+  MATH_WORLDS,
+  buildAtmosphere,
+  loadWorldMemory,
+  recordWorldGrowth,
+  personalityForTheme,
+  type PathNode,
+  type WorldMemory,
+  type Atmosphere,
+  type CompanionEmotion,
+  type PresenceMode,
+  type AmbienceIntensity,
+} from "@/components/smart-math-visual";
+import { motion, AnimatePresence } from "framer-motion";
+import { TRANSITION, PRESS_FEEDBACK } from "@/lib/experience-system";
 
 import { useTranslation } from "react-i18next";
 
@@ -188,24 +210,13 @@ const MATH_STYLES = `
 // ─── Floating stars ───────────────────────────────────────────────────────────
 
 function FloatStars({
-  k
+  k,
+  color,
 }: {
   k: number;
+  color?: string;
 }) {
-  return <div style={{
-    position: "absolute",
-    inset: 0,
-    pointerEvents: "none",
-    overflow: "visible"
-  }} aria-hidden>
-      {["⭐", "✨", "🌟", "💫", "⭐", "✨"].map((s, i) => <span key={`${k}-${i}`} style={{
-      position: "absolute",
-      left: `${10 + i * 15}%`,
-      bottom: "20%",
-      fontSize: 18 + i % 3 * 6,
-      animation: `mt-float ${0.7 + i * 0.1}s ${i * 0.07}s ease-out forwards`
-    }}>{s}</span>)}
-    </div>;
+  return <MagicCelebration active={k > 0} burstKey={k} color={color} />;
 }
 
 // ─── Trick card ───────────────────────────────────────────────────────────────
@@ -356,16 +367,39 @@ function TrickCard({
   };
   const isCorrect = submitted && selected === trick.practiceQ.answer;
   const isWrong = submitted && selected !== trick.practiceQ.answer;
-  return <div className="rounded-2xl overflow-hidden transition-all" style={{
-    background: "rgba(255,255,255,0.05)",
-    border: `1.5px solid rgba(255,255,255,0.1)`,
-    animation: "mt-appear 300ms ease both"
-  }}>
+  const world = worldForTrick(trick);
+  return <motion.div
+    layout
+    className="overflow-hidden rounded-[1.35rem]"
+    style={{
+      // Organic world platform — blends into environment, not a dashboard card
+      background: expanded
+        ? `linear-gradient(165deg, ${world.sky[0]}cc, rgba(255,255,255,0.04) 70%)`
+        : "linear-gradient(165deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))",
+      border: `1px solid ${expanded ? `${world.accent}40` : "rgba(255,255,255,0.08)"}`,
+      boxShadow: expanded
+        ? `0 16px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 24px ${world.glow}`
+        : "inset 0 1px 0 rgba(255,255,255,0.06)",
+    }}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={TRANSITION.springGentle}
+    whileHover={{ y: -1 }}
+  >
       {/* Card header */}
-      <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
-        <span style={{
-        fontSize: 28
-      }}>{trick.emoji}</span>
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center gap-3 px-4 py-3.5 text-left ${PRESS_FEEDBACK}`}
+      >
+        <span
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-xl"
+          style={{
+            background: `linear-gradient(145deg, ${world.accent}55, ${trick.color}33)`,
+            boxShadow: `0 4px 14px ${world.glow}`,
+          }}
+        >
+          {trick.emoji}
+        </span>
         <div className="flex-1 min-w-0">
           <p className="font-black text-white text-sm leading-tight">{trick.title}</p>
           <p className="text-[11px] mt-0.5 truncate" style={{
@@ -373,20 +407,36 @@ function TrickCard({
         }}>{trick.trick}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {starred && <span style={{
-          fontSize: 16
-        }}>⭐</span>}
-          <span style={{
-          color: "rgba(255,255,255,0.35)",
-          fontSize: 18
-        }}>{expanded ? "▲" : "▼"}</span>
+          {starred && (
+            <span
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black"
+              style={{ background: "rgba(251,191,36,0.25)", color: "hsl(var(--brand-amber-300))" }}
+            >
+              ★
+            </span>
+          )}
+          <motion.span
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={TRANSITION.micro}
+            style={{ color: "rgba(255,255,255,0.35)", fontSize: 14 }}
+          >
+            ▾
+          </motion.span>
         </div>
       </button>
 
       {/* Expanded content */}
-      {expanded && <div className="px-4 pb-4 space-y-3" style={{
-      animation: "mt-appear 200ms ease both"
-    }}>
+      <AnimatePresence initial={false}>
+      {expanded && <motion.div
+        className="space-y-3 px-4 pb-4"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 6 }}
+        transition={TRANSITION.warm}
+      >
+          {/* Ambient living hero — every trick */}
+          {!interactiveMode && <TrickHeroVisual trick={trick} size="card" />}
+
           {/* Example box */}
           {childName.trim() && (
             <p className="text-center text-xs font-bold" style={{ color: "hsl(var(--brand-amber-300))" }}>
@@ -524,7 +574,7 @@ function TrickCard({
           {practiceMode && <div className="space-y-2.5 relative" style={{
         animation: "mt-appear 200ms ease both"
       }}>
-              {floatKey > 0 && <FloatStars k={floatKey} />}
+              {floatKey > 0 && <FloatStars k={floatKey} color={trick.color} />}
               <p className="text-white font-black text-sm text-center py-1">{trick.practiceQ.question}</p>
               <div className="grid grid-cols-2 gap-2">
                 {trick.practiceQ.options.map(opt => {
@@ -575,8 +625,9 @@ function TrickCard({
                   </button>
                 </div>}
             </div>}
-        </div>}
-    </div>;
+        </motion.div>}
+      </AnimatePresence>
+    </motion.div>;
 }
 
 // ─── Tab: Today's Tricks ──────────────────────────────────────────────────────
@@ -598,6 +649,9 @@ function TodayTab({
   onSceneComplete,
   onBonusLoaded,
   gate,
+  onImmerse,
+  onWorldGrowth,
+  onLessonFocus,
 }: {
   pool: MathTrick[];
   bonusTricks: MathTrick[];
@@ -615,74 +669,145 @@ function TodayTab({
   onSceneComplete(trickId: string, summary: SceneCompletionSummary): void;
   onBonusLoaded(tricks: MathTrick[]): void;
   gate: HubModuleActionGateState;
+  onImmerse?: () => void;
+  onWorldGrowth?: (kind: "star" | "correct" | "lesson_open") => void;
+  onLessonFocus?: (focused: boolean) => void;
 }) {
   const {
     t
   } = useTranslation();
   const [state] = useState(() => loadMathState(childName));
   const todayTricks = pickTodayTricks(pool, childName, state.seenIds, mastery, starIds);
-  const [expanded, setExpanded] = useState<string | null>(todayTricks[0]?.id ?? null);
-  return <div className="space-y-3">
-      <p className="text-xs text-white/40 text-center">{t("components.smart_math_tricks.2_new_tricks_every_day")}</p>
-      {parentInsights.length > 0 && (
-        <ParentInsightCard
-          insights={parentInsights}
-          title={t("components.smart_math_tricks.parent_insights_title", "What your child is learning")}
-          subtitle={t("components.smart_math_tricks.parent_insights_subtitle", "Based on how they think, not screen time.")}
+  const heroTrick = todayTricks[0];
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [heroReady, setHeroReady] = useState(true);
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  const progressNodes: PathNode[] = useMemo(
+    () =>
+      todayTricks.map((tr, i) => ({
+        id: tr.id,
+        label: tr.title,
+        state: starIds.includes(tr.id)
+          ? ("completed" as const)
+          : i === 0
+            ? ("today" as const)
+            : ("future" as const),
+      })),
+    [todayTricks, starIds],
+  );
+
+  const scrollRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current != null) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+    };
+  }, []);
+
+  const openHeroTrick = useCallback(() => {
+    if (!heroTrick) return;
+    onWorldGrowth?.("lesson_open");
+    setExpanded(heroTrick.id);
+    if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [heroTrick, onWorldGrowth]);
+
+  // Soft reveal after cinematic (parent may flip heroReady)
+  useEffect(() => {
+    setHeroReady(true);
+  }, []);
+
+  // Protect learning focus — hush world while a trick is open
+  useEffect(() => {
+    onLessonFocus?.(expanded != null);
+    return () => onLessonFocus?.(false);
+  }, [expanded, onLessonFocus]);
+
+  return <div className="space-y-5">
+      {heroTrick && (
+        <HeroLessonStage
+          trick={heroTrick}
+          childName={childName}
+          progressNodes={progressNodes}
+          ctaLabel={t("components.smart_math_tricks.try_it", "Try it")}
+          onCta={openHeroTrick}
+          onImmerse={onImmerse}
+          ready={heroReady}
         />
       )}
-      {todayTricks.map((tr) => (
-        <TrickCard
-          key={tr.id}
-          trick={tr}
-          childName={childName}
-          ageYears={ageYears}
-          adaptationProfile={adaptationProfile}
-          starred={starIds.includes(tr.id)}
-          onStar={() => onStar(tr.id)}
-          onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
-          onSignal={onSignal}
-          onSceneComplete={onSceneComplete}
-          expanded={expanded === tr.id}
-          onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
-          gate={gate}
-          showPractice
-        />
-      ))}
-      {bonusTricks.map((tr) => (
-        <TrickCard
-          key={tr.id}
-          trick={tr}
-          childName={childName}
-          ageYears={ageYears}
-          adaptationProfile={adaptationProfile}
-          starred={starIds.includes(tr.id)}
-          onStar={() => onStar(tr.id)}
-          onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
-          onSignal={onSignal}
-          onSceneComplete={onSceneComplete}
-          expanded={expanded === tr.id}
-          onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
-          gate={gate}
-          showPractice
-        />
-      ))}
-      <PremiumActionGate gate={gate} label="Unlock more smart math tricks">
-        <LearningLoadMoreButton
-          section="smart_math_tricks"
-          childId={childId}
-          count={2}
-          excludeIds={[...pool, ...bonusTricks].map((t) => t.id)}
-          params={{ age: trickAge }}
-          onLoaded={(items) => {
-            const tricks = (items.tricks ?? []) as MathTrick[];
-            if (tricks.length > 0) onBonusLoaded(tricks);
-          }}
-          className="pt-1"
-        />
-      </PremiumActionGate>
-      <div className="text-center pt-1">
-        <p className="text-[11px] text-white/30">{t("components.smart_math_tricks.new_tricks_unlock_tomorrow")}</p>
+
+      {/* Below the fold — full lesson tools preserved */}
+      <div ref={detailRef} className="space-y-3 pt-1">
+        <p className="text-center text-[11px] font-bold tracking-wide text-white/30">
+          {t("components.smart_math_tricks.2_new_tricks_every_day")}
+        </p>
+        {parentInsights.length > 0 && (
+          <ParentInsightCard
+            insights={parentInsights}
+            title={t("components.smart_math_tricks.parent_insights_title", "What your child is learning")}
+            subtitle={t("components.smart_math_tricks.parent_insights_subtitle", "Based on how they think, not screen time.")}
+          />
+        )}
+        {todayTricks.map((tr) => (
+          <TrickCard
+            key={tr.id}
+            trick={tr}
+            childName={childName}
+            ageYears={ageYears}
+            adaptationProfile={adaptationProfile}
+            starred={starIds.includes(tr.id)}
+            onStar={() => onStar(tr.id)}
+            onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
+            onSignal={onSignal}
+            onSceneComplete={onSceneComplete}
+            expanded={expanded === tr.id}
+            onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
+            gate={gate}
+            showPractice
+          />
+        ))}
+        {bonusTricks.map((tr) => (
+          <TrickCard
+            key={tr.id}
+            trick={tr}
+            childName={childName}
+            ageYears={ageYears}
+            adaptationProfile={adaptationProfile}
+            starred={starIds.includes(tr.id)}
+            onStar={() => onStar(tr.id)}
+            onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
+            onSignal={onSignal}
+            onSceneComplete={onSceneComplete}
+            expanded={expanded === tr.id}
+            onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
+            gate={gate}
+            showPractice
+          />
+        ))}
+        <PremiumActionGate gate={gate} label="Unlock more smart math tricks">
+          <LearningLoadMoreButton
+            section="smart_math_tricks"
+            childId={childId}
+            count={2}
+            excludeIds={[...pool, ...bonusTricks].map((t) => t.id)}
+            params={{ age: trickAge }}
+            onLoaded={(items) => {
+              const tricks = (items.tricks ?? []) as MathTrick[];
+              if (tricks.length > 0) onBonusLoaded(tricks);
+            }}
+            className="pt-1"
+          />
+        </PremiumActionGate>
+        <div className="text-center pt-1">
+          <p className="text-[11px] text-white/30">{t("components.smart_math_tricks.new_tricks_unlock_tomorrow")}</p>
+        </div>
       </div>
     </div>;
 }
@@ -704,6 +829,7 @@ function LearnAllTab({
   onSceneComplete,
   onBonusLoaded,
   gate,
+  onLessonFocus,
 }: {
   pool: MathTrick[];
   bonusTricks: MathTrick[];
@@ -719,6 +845,7 @@ function LearnAllTab({
   onSceneComplete(trickId: string, summary: SceneCompletionSummary): void;
   onBonusLoaded(tricks: MathTrick[]): void;
   gate: HubModuleActionGateState;
+  onLessonFocus?: (focused: boolean) => void;
 }) {
   const {
     t
@@ -726,6 +853,12 @@ function LearnAllTab({
   const [expanded, setExpanded] = useState<string | null>(null);
   const mastered = [...pool, ...bonusTricks].filter((t) => starIds.includes(t.id)).length;
   const allTricks = [...pool, ...bonusTricks];
+
+  useEffect(() => {
+    onLessonFocus?.(expanded != null);
+    return () => onLessonFocus?.(false);
+  }, [expanded, onLessonFocus]);
+
   return <div className="space-y-2.5">
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-white/40">{allTricks.length} {t("components.smart_math_tricks.tricks_in_your_level")}</p>
@@ -848,25 +981,36 @@ function PracticeTab({
   if (done) {
     const correct = results.filter(Boolean).length;
     const pct = Math.round(correct / SESSION_SIZE * 100);
-    return <div className="text-center py-6 space-y-4" style={{
+    return <div className="relative space-y-4 overflow-hidden py-6 text-center" style={{
       animation: "mt-appear 300ms ease both"
     }}>
-        <div style={{
-        fontSize: 64,
-        animation: "mt-pop 500ms cubic-bezier(0.34,1.56,0.64,1) both"
-      }}>🏆</div>
+        <MagicCelebration active burstKey={1} color="hsl(var(--brand-amber-300))" />
+        <motion.div
+          className="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-2xl font-black"
+          style={{
+            background: "linear-gradient(145deg, hsl(var(--brand-amber-300)), #f59e0b)",
+            color: "#1c0a00",
+            boxShadow: "0 0 32px rgba(251,191,36,0.45)",
+          }}
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={TRANSITION.spring}
+        >
+          ★
+        </motion.div>
         <p className="text-white font-black text-lg">{t("components.smart_math_tricks.practice_complete")}</p>
         <div className="flex justify-center gap-1.5">
           {results.map((r, i) => <span key={i} style={{
-          fontSize: 24,
-          animation: `mt-pop 400ms ${i * 80}ms ease both`
-        }}>{r ? "⭐" : "💔"}</span>)}
+          fontSize: 22,
+          animation: `mt-pop 400ms ${i * 80}ms ease both`,
+          color: r ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.25)",
+        }}>{r ? "★" : "○"}</span>)}
         </div>
         <div className="rounded-2xl px-6 py-3 inline-block font-black text-2xl" style={{
         background: "rgba(255,255,255,0.1)",
         color: pct === 100 ? "hsl(var(--brand-amber-300))" : "#94a3b8"
       }}>
-          {correct}/{SESSION_SIZE} ⭐
+          {correct}/{SESSION_SIZE}
         </div>
         <p className="text-white/40 text-xs">
           {pct === 100
@@ -885,14 +1029,14 @@ function PracticeTab({
   const isCorrect = submitted && selected === cur.practiceQ.answer;
   const isWrong = submitted && selected !== cur.practiceQ.answer;
   return <div className="space-y-3 relative">
-      {floatKey > 0 && <FloatStars k={floatKey} />}
+      {floatKey > 0 && <FloatStars k={floatKey} color={cur.color} />}
 
       {/* Progress */}
       <div className="flex items-center justify-center gap-1.5">
         {results.map((r, i) => <span key={i} style={{
         fontSize: 16
       }}>
-            {r === true ? "⭐" : r === false ? "💔" : i === idx ? "👉" : "○"}
+            {r === true ? "★" : r === false ? "✕" : i === idx ? "●" : "○"}
           </span>)}
       </div>
 
@@ -1138,23 +1282,218 @@ export function SmartMathTricks({
     });
   }, [authFetch, trickAge]);
 
-  const tabs: { key: Tab; labelKey: string; icon: string }[] = [
-    { key: "today", labelKey: "tab_today", icon: "📅" },
-    { key: "learn", labelKey: "tab_learn", icon: "📚" },
-    { key: "practice", labelKey: "tab_practice", icon: "✏️" },
-    { key: "playground", labelKey: "tab_playground", icon: "🎮" },
+  const tabs: { key: Tab; labelKey: string; mark: string }[] = [
+    { key: "today", labelKey: "tab_today", mark: "●" },
+    { key: "learn", labelKey: "tab_learn", mark: "◆" },
+    { key: "practice", labelKey: "tab_practice", mark: "▲" },
+    { key: "playground", labelKey: "tab_playground", mark: "✦" },
   ];
-  return <div className="rounded-3xl overflow-hidden" style={{
-    background: "linear-gradient(160deg,#451a03 0%,#1c0a00 100%)"
-  }}>
+
+  const introKey = "amynest_smt_cinematic_v1";
+  const [showIntro, setShowIntro] = useState(() => {
+    try {
+      if (typeof sessionStorage === "undefined") return true;
+      return sessionStorage.getItem(introKey) !== "1";
+    } catch {
+      return true;
+    }
+  });
+  const [worldReady, setWorldReady] = useState(!showIntro);
+  const [amyMood, setAmyMood] = useState<"idle" | "wave" | "celebrate">("idle");
+  const [worldMemory, setWorldMemory] = useState<WorldMemory>(() => loadWorldMemory(childName));
+  const [atmosphere] = useState<Atmosphere>(() => buildAtmosphere(childName));
+  const [immersed, setImmersed] = useState(false);
+  const [worldCelebrate, setWorldCelebrate] = useState(false);
+  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  const [presenceMode, setPresenceMode] = useState<PresenceMode>("settling");
+  const [visualWinStreak, setVisualWinStreak] = useState(0);
+  const [returningWelcome, setReturningWelcome] = useState(false);
+  const [lessonFocus, setLessonFocus] = useState(false);
+  const moodTimerRef = useRef<number | null>(null);
+  const welcomeTimerRef = useRef<number | null>(null);
+  const immerseTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (moodTimerRef.current != null) {
+        window.clearTimeout(moodTimerRef.current);
+        moodTimerRef.current = null;
+      }
+      if (welcomeTimerRef.current != null) {
+        window.clearTimeout(welcomeTimerRef.current);
+        welcomeTimerRef.current = null;
+      }
+      if (immerseTimerRef.current != null) {
+        window.clearTimeout(immerseTimerRef.current);
+        immerseTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const ambience: AmbienceIntensity =
+    tab === "practice" || immersed || lessonFocus
+      ? "focus"
+      : tab === "learn"
+        ? "soft"
+        : "rest";
+
+  // Visual visit memory — does not touch learning progression
+  useEffect(() => {
+    const prev = loadWorldMemory(childName);
+    const next = recordWorldGrowth(childName, "visit");
+    setWorldMemory(next);
+    // Happy to see them again — body language only
+    if (prev.visitCount >= 1 || prev.starsIgnited > 0 || prev.blooms > 0) {
+      setReturningWelcome(true);
+      if (welcomeTimerRef.current != null) window.clearTimeout(welcomeTimerRef.current);
+      welcomeTimerRef.current = window.setTimeout(() => {
+        setReturningWelcome(false);
+        welcomeTimerRef.current = null;
+      }, 8000);
+    }
+  }, [childName]);
+
+  const todayPreview = useMemo(
+    () => pickTodayTricks(pool, childName, mathSt.seenIds, mathSt.mastery, mathSt.starIds)[0],
+    [pool, childName, mathSt.seenIds, mathSt.mastery, mathSt.starIds],
+  );
+  const worldTheme = todayPreview ? worldForTrick(todayPreview) : MATH_WORLDS.sunny_meadow;
+  const worldPersonality = useMemo(() => personalityForTheme(worldTheme), [worldTheme]);
+
+  const amyEmotion: CompanionEmotion = useMemo(() => {
+    if (visualWinStreak >= 2) return "excited";
+    if (returningWelcome) return "welcome";
+    if (presenceMode === "idle" || presenceMode === "settling") return "patient";
+    return "calm";
+  }, [visualWinStreak, returningWelcome, presenceMode]);
+
+  const handlePresenceChange = useCallback((mode: PresenceMode) => {
+    setPresenceMode(mode);
+  }, []);
+
+  const pulseWorldCelebrate = useCallback(() => {
+    setWorldCelebrate(true);
+    setAmyMood("celebrate");
+    if (moodTimerRef.current != null) window.clearTimeout(moodTimerRef.current);
+    moodTimerRef.current = window.setTimeout(() => {
+      setWorldCelebrate(false);
+      setAmyMood("idle");
+      moodTimerRef.current = null;
+    }, 2200);
+  }, []);
+
+  const handleWorldGrowth = useCallback(
+    (kind: "star" | "correct" | "lesson_open") => {
+      setWorldMemory(recordWorldGrowth(childName, kind));
+      if (kind === "correct") pulseWorldCelebrate();
+    },
+    [childName, pulseWorldCelebrate],
+  );
+
+  const handleStarVisual = useCallback(
+    (id: string) => {
+      const adding = !mathSt.starIds.includes(id);
+      handleStar(id);
+      if (adding) handleWorldGrowth("star");
+    },
+    [handleStar, handleWorldGrowth, mathSt.starIds],
+  );
+
+  const handlePracticeResultVisual = useCallback(
+    (id: string, correct: boolean) => {
+      handlePracticeResult(id, correct);
+      if (correct) {
+        setVisualWinStreak((n) => n + 1);
+        handleWorldGrowth("correct");
+      } else {
+        setVisualWinStreak(0);
+      }
+    },
+    [handlePracticeResult, handleWorldGrowth],
+  );
+
+  const handleSessionCompleteVisual = useCallback(() => {
+    handleSessionComplete();
+    pulseWorldCelebrate();
+  }, [handleSessionComplete, pulseWorldCelebrate]);
+
+  const handleImmerse = useCallback(() => {
+    setImmersed(true);
+    if (immerseTimerRef.current != null) window.clearTimeout(immerseTimerRef.current);
+    immerseTimerRef.current = window.setTimeout(() => {
+      setImmersed(false);
+      immerseTimerRef.current = null;
+    }, 1400);
+  }, []);
+
+  const finishIntro = useCallback(() => {
+    try {
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem(introKey, "1");
+      }
+    } catch {
+      /* ignore */
+    }
+    setShowIntro(false);
+    setWorldReady(true);
+    setAmyMood("wave");
+    if (moodTimerRef.current != null) window.clearTimeout(moodTimerRef.current);
+    moodTimerRef.current = window.setTimeout(() => {
+      setAmyMood("idle");
+      moodTimerRef.current = null;
+    }, 1600);
+  }, []);
+
+  return (
+    <LivingMathWorld
+      theme={worldTheme}
+      className="relative min-h-[420px]"
+      atmosphere={atmosphere}
+      memory={worldMemory}
+      celebrate={worldCelebrate}
+      immersed={immersed}
+      ambience={ambience}
+      onPointerChange={setPointer}
+      onPresenceChange={handlePresenceChange}
+    >
       <style>{MATH_STYLES}</style>
 
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between mb-3">
+      <AnimatePresence>
+        {showIntro && (
+          <CinematicEntry
+            theme={worldTheme}
+            equationHint={todayPreview?.example}
+            onComplete={finishIntro}
+          />
+        )}
+      </AnimatePresence>
+
+      {worldReady && (
+        <AmyMathCompanion
+          mood={amyMood}
+          greetOnMount
+          lookAt={pointer}
+          pointHint={tab === "today"}
+          emotion={amyEmotion}
+          tempo={worldPersonality.amyTempo}
+        />
+      )}
+
+      {/* Header — soft glass, secondary to hero */}
+      <div
+        className="relative z-10 px-4 pb-3 pt-4"
+        style={{
+          opacity: worldReady ? 1 : 0,
+          pointerEvents: worldReady ? "auto" : "none",
+          transition: "opacity 400ms ease",
+        }}
+      >
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-white font-black text-base leading-tight">{t("components.smart_math_tricks.smart_math_tricks")}</p>
-            <p className="text-white/40 text-[11px] mt-0.5">
+            <p className="text-base font-black leading-tight text-white">
+              {t("components.smart_math_tricks.smart_math_tricks")}
+            </p>
+            <p className="mt-0.5 text-[11px] text-white/40">
               {trickAge === "4-6"
                 ? t("components.smart_math_tricks.subtitle_young")
                 : t("components.smart_math_tricks.subtitle_older")}{" "}
@@ -1163,42 +1502,70 @@ export function SmartMathTricks({
           </div>
           <div className="text-right">
             {mathSt.streakDays > 0 && (
-              <p className="text-[10px] font-bold mb-0.5" style={{ color: "hsl(var(--brand-amber-300))" }}>
-                🔥 {mathSt.streakDays} {t("components.smart_math_tricks.day_streak")}
+              <p
+                className="mb-0.5 text-[10px] font-bold"
+                style={{ color: "hsl(var(--brand-amber-300))" }}
+              >
+                {mathSt.streakDays} {t("components.smart_math_tricks.day_streak")}
               </p>
             )}
-            <p className="text-[11px] font-bold" style={{
-            color: "hsl(var(--brand-amber-300))"
-          }}>⭐ {mathSt.starIds.length}</p>
-            <p className="text-[10px] text-white/30">{t("components.smart_math_tricks.mastered_2")}</p>
+            <p
+              className="text-[11px] font-bold"
+              style={{ color: "hsl(var(--brand-amber-300))" }}
+            >
+              ★ {mathSt.starIds.length}
+            </p>
+            <p className="text-[10px] text-white/30">
+              {t("components.smart_math_tricks.mastered_2")}
+            </p>
           </div>
         </div>
 
-        {/* Tab bar */}
-        <div className="flex gap-1 p-1 rounded-2xl" style={{
-        background: "rgba(255,255,255,0.07)"
-      }}>
-          {tabs.map((tabItem) => (
-            <button
-              key={tabItem.key}
-              data-testid={`smt-tab-${tabItem.key}`}
-              onClick={() => setTab(tabItem.key)}
-              className="flex-1 py-2 rounded-xl font-bold text-[10px] sm:text-xs transition-all active:scale-95"
-              style={{
-                background: tab === tabItem.key ? "rgba(245,158,11,0.3)" : "transparent",
-                color: tab === tabItem.key ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.4)",
-                border:
-                  tab === tabItem.key ? "1px solid rgba(245,158,11,0.4)" : "1px solid transparent",
-              }}
-            >
-              {tabItem.icon} {t(`components.smart_math_tricks.${tabItem.labelKey}`)}
-            </button>
-          ))}
+        {/* Tab bar — soft world shelf, not a settings control */}
+        <div
+          className="flex gap-1 rounded-full p-1"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+            backdropFilter: "blur(14px)",
+          }}
+        >
+          {tabs.map((tabItem) => {
+            const active = tab === tabItem.key;
+            return (
+              <motion.button
+                key={tabItem.key}
+                type="button"
+                data-testid={`smt-tab-${tabItem.key}`}
+                onClick={() => setTab(tabItem.key)}
+                className={`flex-1 rounded-full py-2 text-[10px] font-bold sm:text-xs ${PRESS_FEEDBACK}`}
+                style={{
+                  background: active
+                    ? `linear-gradient(145deg, ${worldTheme.accent}44, ${worldTheme.accent}22)`
+                    : "transparent",
+                  color: active ? worldTheme.accent : "rgba(255,255,255,0.4)",
+                  border: active
+                    ? `1px solid ${worldTheme.accent}55`
+                    : "1px solid transparent",
+                  boxShadow: active ? `0 0 16px ${worldTheme.glow}` : undefined,
+                }}
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ y: -1 }}
+              >
+                <span className="mr-1 opacity-70">{tabItem.mark}</span>
+                {t(`components.smart_math_tricks.${tabItem.labelKey}`)}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
       {/* Tab content */}
-      <div className="px-4 pb-4">
+      <div
+        className="relative z-10 px-4 pb-14"
+        style={{ opacity: worldReady ? 1 : 0, transition: "opacity 400ms ease" }}
+      >
         {tab === "today" && (
           <TodayTab
             pool={pool}
@@ -1211,12 +1578,15 @@ export function SmartMathTricks({
             mastery={mathSt.mastery}
             adaptationProfile={adaptationProfile}
             parentInsights={parentInsights}
-            onStar={handleStar}
-            onPracticeResult={handlePracticeResult}
+            onStar={handleStarVisual}
+            onPracticeResult={handlePracticeResultVisual}
             onSignal={recordSignal}
             onSceneComplete={handleSceneComplete}
             onBonusLoaded={handleBonusLoaded}
             gate={actionGate}
+            onImmerse={handleImmerse}
+            onWorldGrowth={handleWorldGrowth}
+            onLessonFocus={setLessonFocus}
           />
         )}
         {tab === "learn" && (
@@ -1229,12 +1599,13 @@ export function SmartMathTricks({
             trickAge={trickAge}
             starIds={mathSt.starIds}
             adaptationProfile={adaptationProfile}
-            onStar={handleStar}
-            onPracticeResult={handlePracticeResult}
+            onStar={handleStarVisual}
+            onPracticeResult={handlePracticeResultVisual}
             onSignal={recordSignal}
             onSceneComplete={handleSceneComplete}
             onBonusLoaded={handleBonusLoaded}
             gate={actionGate}
+            onLessonFocus={setLessonFocus}
           />
         )}
         {tab === "practice" && (
@@ -1244,9 +1615,9 @@ export function SmartMathTricks({
               childName={childName}
               starIds={mathSt.starIds}
               mastery={mathSt.mastery}
-              onStar={handleStar}
-              onPracticeResult={handlePracticeResult}
-              onSessionComplete={handleSessionComplete}
+              onStar={handleStarVisual}
+              onPracticeResult={handlePracticeResultVisual}
+              onSessionComplete={handleSessionCompleteVisual}
             />
           </PremiumActionGate>
         )}
@@ -1256,5 +1627,6 @@ export function SmartMathTricks({
           </PremiumActionGate>
         )}
       </div>
-    </div>;
+    </LivingMathWorld>
+  );
 }

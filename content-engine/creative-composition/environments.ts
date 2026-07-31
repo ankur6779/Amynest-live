@@ -1,25 +1,26 @@
 /**
  * Environment + character plate prompts for Imagen.
  * Characters are generated inside designed worlds — never pasted as fullscreen PNGs.
+ * Cinematic Realism: believable home spaces over fantasy overload.
  */
 
 import type { EnvironmentId, ShotRole } from "./types.js";
 
 const ENV_LOOK: Record<EnvironmentId, string> = {
   "kitchen-table":
-    "warm Indian family kitchen table at golden hour, unfinished kids worksheets scattered, soft window light, shallow depth of field, cinematic bokeh",
+    "simple warm Indian family kitchen table, a few worksheets, soft window light, shallow depth of field — real home, uncluttered",
   "child-bedroom":
-    "cozy child's bedroom with soft fairy lights, tidy study nook, lavender and cream palette, gentle morning light, cinematic depth",
+    "quiet child's bedroom reading corner, tidy bed, soft morning light, calm lavender accents — real home, no busy props",
   "study-desk":
-    "child study desk with books and pastel stationery, soft daylight from left, warm wood tones, purple accent glow, premium Pixar lighting",
+    "simple child study desk with notebook and pencil, soft daylight from a real window, warm wood tones — classroom-at-home calm",
   "living-room":
-    "modern cozy living room with sofa and plants, soft purple ambient rim light, clean premium family space, cinematic wide depth",
+    "simple cozy living room with sofa, soft practical lamp light, clean family space — lived-in, not busy",
   playroom:
-    "bright playful kids playroom with soft toys blurred in background, cheerful daylight, safe family atmosphere",
+    "bright park-adjacent play corner or simple playroom, soft toys blurred far back, cheerful daylight — calm discovery, no clutter chaos",
   "magic-learning-world":
-    "soft magical learning world with floating gentle stars and purple nebula bokeh, premium storybook lighting, never dark horror",
+    "simple classroom reading nook with soft daylight and one quiet book accent — grounded real space, never busy magical overload",
   "cta-stage":
-    "premium purple gradient stage with soft volumetric light rays, deep #461EA8 to #6A2CFF, clean negative space for CTA, cinematic",
+    "clean premium purple gradient hold with soft light, deep #461EA8 to #6A2CFF, empty negative space for CTA — no busy stage dressing",
 };
 
 export function environmentPrompt(env: EnvironmentId): string {
@@ -27,7 +28,7 @@ export function environmentPrompt(env: EnvironmentId): string {
     "Vertical 9:16 cinematic still, 1080x1920 framing.",
     ENV_LOOK[env],
     "Foreground, midground, and background layers clearly separated.",
-    "Photoreal-meets-Pixar premium family advertisement look.",
+    "Pixar / DreamWorks-TV family short look — filmed depth, not flat AI plate.",
     "No text, no logos, no watermarks, no UI screenshots, no stickers.",
   ].join(" ");
 }
@@ -42,26 +43,26 @@ export function cinematicPlatePrompt(input: {
   if (input.character === "none") {
     return [
       env,
-      "Emotional parenting moment suitable for a cold-open advertisement.",
-      "A parent looking at unfinished worksheets while a child looks bored nearby.",
+      "Emotional parenting moment suitable for a cold-open animated short.",
+      "A parent looking at unfinished worksheets while a child looks stuck nearby.",
       "Faces warm and natural, no horror, no distress exaggeration.",
     ].join(" ");
   }
 
   const amyAi =
-    "Official Amy AI character ONLY: floating rounded white soft-polymer body, deep purple AmyAI baseball cap with headphones, large glossy purple eyes, gentle neon purple halo, friendly premium mascot — never a new robot design.";
+    "Official Amy AI character ONLY: floating rounded white soft-polymer body, deep purple AmyAI baseball cap with headphones, large glossy purple eyes, gentle neon purple halo, friendly premium mentor mascot at child height — never a new robot design, never announcer sticker.";
   const amyGirl =
-    "Official Amy Girl character ONLY: brown side ponytail with bright yellow bow, plain purple hoodie without logos, dark purple leggings, purple sneakers with white soles, large warm brown eyes, Pixar-quality 3D child — never redesigned.";
+    "Official Amy Girl character ONLY: brown side ponytail with bright yellow bow, plain purple hoodie without logos, dark purple leggings, purple sneakers with white soles, large warm brown eyes, Pixar-quality 3D child with real-child micro-expression — never redesigned, never generic AI cartoon.";
 
   const characterLine = input.character === "amy-ai" ? amyAi : amyGirl;
   const performance =
     input.performance === "wave" || input.performance === "invite-download"
-      ? "Character mid-performance waving one hand toward camera, welcoming smile, body slightly turned, presenting."
+      ? "Character mid-performance waving one hand toward camera, welcoming mentor smile, body slightly turned, inviting — not hard-sell."
       : input.performance === "point"
-        ? "Character pointing gently toward a soft glowing learning cue in midground, guiding attention."
+        ? "Character pointing gently toward a soft learning cue in midground, guiding attention like a supportive tutor."
         : input.performance === "welcome"
-          ? "Character welcoming parents with open friendly pose, looking at camera, presenter energy."
-          : "Character alive in the scene with natural micro-pose, never stiff cutout.";
+          ? "Character welcoming parents with open friendly mentor pose, looking at camera, guide energy inside the story."
+          : "Character alive in the scene with natural micro-pose, breathing, blinks — never stiff cutout.";
 
   return [
     env,
@@ -69,6 +70,6 @@ export function cinematicPlatePrompt(input: {
     performance,
     "Character stands in the midground of the designed environment — integrated with contact shadow and matching light direction.",
     "Never a floating sticker, never a transparent PNG overlay look, never a slideshow plate.",
-    "Camera-ready vertical advertisement frame with premium depth and cinematic lighting.",
+    "Camera-ready vertical short-film frame with premium depth and cinematic lighting.",
   ].join(" ");
 }

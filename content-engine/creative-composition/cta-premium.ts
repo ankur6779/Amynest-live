@@ -4,15 +4,15 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveBrandAssetPath } from "../brand/assets-resolver.js";
-import { resolveBrandEndCard } from "../brand/end-card.js";
 import { getBrandIdentityKit } from "../brand/identity.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, "..", "..");
+const OFFICIAL_BADGES = join(HERE, "..", "brand", "assets", "official");
 
 export const CTA_HOME_SCREEN = join(
   REPO_ROOT,
@@ -31,31 +31,6 @@ function ffmpeg(args: string[]): void {
   });
 }
 
-function rasterizeSvg(svgPath: string, outPng: string, size = 900): void {
-  const tmpDir = dirname(outPng);
-  mkdirSync(tmpDir, { recursive: true });
-  const staged = join(tmpDir, `badge-${size}-${Date.now()}.svg`);
-  copyFileSync(svgPath, staged);
-  execFileSync("qlmanage", ["-t", "-s", String(size), "-o", tmpDir, staged], {
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  const produced = `${staged}.png`;
-  if (!existsSync(produced)) throw new Error(`Badge raster failed: ${svgPath}`);
-  const script = `
-from PIL import Image
-import numpy as np
-im=Image.open(${JSON.stringify(produced)}).convert("RGBA")
-a=np.array(im)
-mask=((a[:,:,0]<245)|(a[:,:,1]<245)|(a[:,:,2]<245)) & (a[:,:,3]>8)
-ys,xs=np.where(mask)
-if len(xs)==0: raise SystemExit("empty badge")
-pad=4
-crop=im.crop((max(0,xs.min()-pad), max(0,ys.min()-pad), min(im.width,xs.max()+1+pad), min(im.height,ys.max()+1+pad)))
-crop.save(${JSON.stringify(outPng)})
-`;
-  execFileSync("python3", ["-c", script], { stdio: ["ignore", "pipe", "pipe"] });
-}
-
 /**
  * Build the premium CTA still (1080×1920).
  * Amy AI is keyed off the official base (checkerboard removed) and grounded on the stage floor.
@@ -67,13 +42,16 @@ export function writePremiumAdCtaPlate(options: {
   logoPath?: string;
 }): string {
   mkdirSync(dirname(options.path), { recursive: true });
-  const brandEnd = resolveBrandEndCard("cta-premium");
   const kit = getBrandIdentityKit();
-  const work = dirname(options.path);
-  const playBadge = join(work, "cta-play-badge.png");
-  const appBadge = join(work, "cta-app-badge.png");
-  rasterizeSvg(brandEnd.googlePlayBadgePath, playBadge, 900);
-  rasterizeSvg(brandEnd.appleAppStoreBadgePath, appBadge, 900);
+  const playBadgePath = join(OFFICIAL_BADGES, "cta-google-play.png");
+  const appBadgePath = join(OFFICIAL_BADGES, "cta-app-store.png");
+  const playBadgeFallback = join(OFFICIAL_BADGES, "google-play-badge-clean.png");
+  const appBadgeFallback = join(OFFICIAL_BADGES, "app-store-badge-clean.png");
+  const playBadge = existsSync(playBadgePath) ? playBadgePath : playBadgeFallback;
+  const appBadge = existsSync(appBadgePath) ? appBadgePath : appBadgeFallback;
+  if (!existsSync(playBadge) || !existsSync(appBadge)) {
+    throw new Error("Official store badges missing under brand/assets/official/");
+  }
 
   const home =
     options.homeScreenPath && existsSync(options.homeScreenPath)
@@ -267,58 +245,33 @@ canvas.paste(amy, (amy_x, amy_y), amy)
 center_stroke(draw, 1235, "Download AmyNest AI", head, "#FFFFFF", "#1A0A40", 5)
 center_stroke(draw, 1318, "Start Your Child's Learning Journey", sub, "#F6D57A", "#1A0A40", 3)
 
-# --- Bottom row: equal high-contrast store badges (readable, same size) ---
-def make_store_badge(eyebrow, title, tw=420, th=110):
-    badge=Image.new("RGBA",(tw,th),(0,0,0,0))
-    bd=ImageDraw.Draw(badge)
-    bd.rounded_rectangle((0,0,tw-1,th-1), radius=14, fill=(12,12,16,255), outline=(245,245,250,255), width=2)
-    try:
-        f_eye=ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 22)
-        f_title=ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 36)
-    except Exception:
-        f_eye=f_title=ImageFont.load_default()
-    bd.text((28, 18), eyebrow, fill=(230,230,235,255), font=f_eye)
-    bd.text((28, 48), title, fill=(255,255,255,255), font=f_title)
-    return badge
+# --- Bottom row: official Google Play + App Store badges (pre-cleaned PNGs) ---
+def load_official_badge(path, target_h=124):
+    im=Image.open(path).convert("RGBA")
+    # Assets are already matte-cleaned; only scale — do not re-key white glyphs
+    if im.height != target_h:
+        tw=max(1, int(im.width * (target_h / im.height)))
+        im=im.resize((tw, target_h), Image.Resampling.LANCZOS)
+    return im
 
-# Prefer raster badges when crisp; fall back to drawn badges for contrast/OCR
-play_src=Image.open(${JSON.stringify(playBadge)}).convert("RGBA")
-app_src=Image.open(${JSON.stringify(appBadge)}).convert("RGBA")
-def strip_white_frame(im):
-    a=np.array(im)
-    near=((a[:,:,0]>240)&(a[:,:,1]>240)&(a[:,:,2]>240))
-    a[:,:,3]=np.where(near, 0, a[:,:,3])
-    out=Image.fromarray(a, "RGBA")
-    bb=out.getbbox()
-    return out.crop(bb) if bb else out
-play_src=strip_white_frame(play_src); app_src=strip_white_frame(app_src)
-target_h=104
-# Brighten official badges so they aren't purple-muddy
-def brighten_badge(im, th):
-    im=im.resize((max(1,int(im.width*th/im.height)), th), Image.Resampling.LANCZOS)
-    a=np.array(im).astype(np.float32)
-    # lift dark tones toward true black badge on white glyphs
-    rgb=a[:,:,:3]
-    alpha=a[:,:,3:4]/255.0
-    rgb=np.clip(rgb*1.25+18, 0, 255)
-    a[:,:,:3]=rgb
-    return Image.fromarray(a.astype(np.uint8), "RGBA")
-play=brighten_badge(play_src, target_h)
-astore=brighten_badge(app_src, target_h)
-# Equal width
-badge_w=max(play.width, astore.width, 400)
-def pad_badge(im, tw):
-    layer=Image.new("RGBA",(tw, im.height),(0,0,0,0))
-    layer.paste(im, ((tw-im.width)//2, 0), im)
+play=load_official_badge(${JSON.stringify(playBadge)}, 124)
+astore=load_official_badge(${JSON.stringify(appBadge)}, 124)
+# Match heights exactly
+target_h=max(play.height, astore.height)
+def pad_h(im, th):
+    if im.height==th: return im
+    layer=Image.new("RGBA",(im.width, th),(0,0,0,0))
+    layer.paste(im, (0, (th-im.height)//2), im)
     return layer
-play=pad_badge(play, badge_w); astore=pad_badge(astore, badge_w)
-# If badges still too muddy, overlay crisp drawn labels underneath glyphs area — keep both OCR strings
-drawn_play=make_store_badge("GET IT ON", "Google Play", badge_w, target_h)
-drawn_app=make_store_badge("Download on the", "App Store", badge_w, target_h)
-# Use drawn badges for guaranteed contrast; official art optional accent
-play=drawn_play; astore=drawn_app
-gap=36
+play=pad_h(play, target_h); astore=pad_h(astore, target_h)
+gap=28
 total=play.width+astore.width+gap
+# If too wide for 1080, scale both down together
+if total > 1000:
+    scale=1000/total
+    play=play.resize((max(1,int(play.width*scale)), max(1,int(play.height*scale))), Image.Resampling.LANCZOS)
+    astore=astore.resize((max(1,int(astore.width*scale)), max(1,int(astore.height*scale))), Image.Resampling.LANCZOS)
+    total=play.width+astore.width+gap
 bx=(W-total)//2
 by=1385
 for ox,im in ((bx,play),(bx+play.width+gap,astore)):
@@ -351,8 +304,8 @@ export function animatePremiumCta(options: {
     "-i",
     options.platePath,
     "-filter_complex",
-    // Gentle center push-in — prefer x drift; keep y small so headline/badges stay OCR-visible.
-    `[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1080:1920:x='min(70,12*t)':y='min(40,6*t)',eq=brightness='0.01*sin(2*PI*t/2.4)':saturation=1.03,fps=30,format=yuv420p[v]`,
+    // Gentle push-in on X only — y stays 0 so store badges are never cropped off the bottom.
+    `[0:v]scale=1120:1991:force_original_aspect_ratio=increase,crop=1080:1920:x='min(40,8*t)':y=0,eq=brightness='0.01*sin(2*PI*t/2.4)':saturation=1.03,fps=30,format=yuv420p[v]`,
     "-map",
     "[v]",
     "-an",

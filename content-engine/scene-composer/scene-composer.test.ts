@@ -12,7 +12,7 @@ import { buildXfadeSteps } from "./stitch.js";
 import { validateComposerScene } from "./validate.js";
 
 describe("Scene Composer", () => {
-  it("adapts scene count to provider max clip duration (never hardcodes 6)", () => {
+  it("adapts scene count to provider capabilities (never hardcodes 6)", () => {
     const pkg = makeContentPackage();
     const veo = composeProductionScenes({
       contentPackage: pkg,
@@ -21,13 +21,13 @@ describe("Scene Composer", () => {
     });
     const mock = composeProductionScenes({
       contentPackage: pkg,
-      duration: 20,
+      duration: 30,
       provider: "mock",
     });
 
     assert.ok(veo.scenes.length >= 6);
-    // Short-clip providers must split more (or equal) vs long-clip mock.
-    assert.ok(veo.scenes.length >= mock.scenes.length);
+    // Shorter min-clip providers can take denser short spines (up to 8 living).
+    assert.ok(mock.scenes.length >= veo.scenes.length);
     assert.ok(
       veo.scenes
         .filter((s) => s.intent.role !== "end-card")

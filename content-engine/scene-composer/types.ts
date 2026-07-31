@@ -4,6 +4,10 @@
  */
 
 import type { DirectorPackage } from "../ai-director/types.js";
+import type { CharacterMemoryPackage } from "../character-memory-engine/types.js";
+import type { CharacterPerformanceStudioPackage } from "../character-performance-studio/types.js";
+import type { PerformanceDirectorPackage } from "../performance-director/types.js";
+import type { StoryMemoryPackage } from "../story-memory-engine/types.js";
 import type { BrandCharacterId } from "../brand/types.js";
 import type {
   CameraMove,
@@ -189,6 +193,14 @@ export interface SceneComposerPackage {
   };
   /** AI Director package — present when AMYNEST_AI_DIRECTOR !== "0". */
   director?: DirectorPackage;
+  /** Performance Director v2 — additive acting layer (AMYNEST_PERFORMANCE_DIRECTOR !== "0"). */
+  performanceDirector?: PerformanceDirectorPackage;
+  /** Character Performance Studio — intention/face/eye/body craft (AMYNEST_CHARACTER_STUDIO !== "0"). */
+  characterStudio?: CharacterPerformanceStudioPackage;
+  /** Character Memory Engine — cross-scene continuity (AMYNEST_CHARACTER_MEMORY !== "0"). */
+  characterMemory?: CharacterMemoryPackage;
+  /** Story Memory Engine — narrative/emotional thread (AMYNEST_STORY_MEMORY !== "0"). */
+  storyMemory?: StoryMemoryPackage;
   validation: {
     ok: boolean;
     failedSceneIds: string[];

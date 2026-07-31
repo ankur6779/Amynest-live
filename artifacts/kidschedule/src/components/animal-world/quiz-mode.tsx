@@ -14,6 +14,7 @@ import { TRANSITION } from "@/lib/experience-system";
 import { animalAudioManager } from "@/lib/animal-world-audio-manager";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
 import { grantXp, loadAnimalWorldProgress } from "@/lib/animal-world-progress";
+import { recordAnimalWorldHubDaily } from "@/lib/animal-world-hub-daily";
 
 type QuizModeProps = {
   childId: number;
@@ -68,6 +69,7 @@ export function QuizMode({ childId }: QuizModeProps) {
           quizzesCorrect: (progress.animalMastery[question.correctAnimalId]?.quizzesCorrect ?? 0) + 1,
         },
       });
+      recordAnimalWorldHubDaily(childId, "quiz_correct");
       trackAnimalWorldEvent("quiz_completed", { childId, correct: true, animalId: question.correctAnimalId });
       window.setTimeout(nextQuestion, 1400);
     } else {

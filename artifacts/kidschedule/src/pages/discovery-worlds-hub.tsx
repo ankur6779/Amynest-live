@@ -20,8 +20,12 @@ import {
   buildUnifiedParentInsights,
   DISCOVERY_CATALOG_SIZES,
 } from "@/lib/discovery-worlds-unified-insights";
-import { Progress } from "@/components/ui/progress";
 import { warmDiscoveryWorldsHubOnOpen } from "@/lib/discovery-worlds-hub-audio-warmup";
+import {
+  AnimatedScore,
+  SoundWorldPage,
+  SpringProgressBar,
+} from "@/components/discovery-world/sound-world-motion";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -74,7 +78,7 @@ export default function DiscoveryWorldsHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <SoundWorldPage className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur md:px-6">
         <button
           type="button"
@@ -89,7 +93,7 @@ export default function DiscoveryWorldsHubPage() {
 
       <main
         id="discovery-worlds-main"
-        className="mx-auto max-w-2xl px-4 py-8 md:max-w-3xl md:px-6"
+        className="relative mx-auto max-w-2xl px-4 py-8 md:max-w-3xl md:px-6"
       >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Amy Sound World
@@ -101,7 +105,7 @@ export default function DiscoveryWorldsHubPage() {
 
         {streak > 0 && (
           <p className="mt-3 inline-flex rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-200">
-            🔥 {streak} day explorer streak
+            🔥 <AnimatedScore value={streak} /> day explorer streak
           </p>
         )}
 
@@ -115,20 +119,23 @@ export default function DiscoveryWorldsHubPage() {
               <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <p className="text-3xl font-bold tabular-nums text-foreground">
-                    {insights.overallProgressPct}%
+                    <AnimatedScore value={insights.overallProgressPct} suffix="%" />
                   </p>
                   <p className="text-sm text-muted-foreground">overall progress across all worlds</p>
                 </div>
                 <div className="text-right text-sm">
                   <p className="font-bold text-foreground">
-                    {insights.totalStickers} stickers · {insights.totalAchievements} stars
+                    <AnimatedScore value={insights.totalStickers} /> stickers ·{" "}
+                    <AnimatedScore value={insights.totalAchievements} /> stars
                   </p>
                   {streak > 0 && (
-                    <p className="text-amber-200">🔥 {streak} day streak</p>
+                    <p className="text-amber-200">
+                      🔥 <AnimatedScore value={streak} /> day streak
+                    </p>
                   )}
                 </div>
               </div>
-              <Progress value={insights.overallProgressPct} className="mt-3 h-2" />
+              <SpringProgressBar value={insights.overallProgressPct} className="mt-3" />
             </div>
 
             <div className="mt-6">
@@ -174,6 +181,6 @@ export default function DiscoveryWorldsHubPage() {
         )}
 
       </main>
-    </div>
+    </SoundWorldPage>
   );
 }

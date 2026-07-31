@@ -268,13 +268,35 @@ export function getProgressionTable(stage: MasteryStageId): GameProgressionTable
   return STAGE_TABLES[stage] ?? STAGE_TABLES[1];
 }
 
+export type RuntimeDifficultyHint = "easier" | "same" | "harder";
+
+function applyRuntimeDifficultyHint(
+  hint: RuntimeDifficultyHint,
+  current: GameDifficulty,
+): GameDifficulty {
+  if (hint === "easier") return current === "hard" ? "normal" : "easy";
+  if (hint === "harder") return current === "easy" ? "normal" : "hard";
+  return current;
+}
+
 export function prepareGameSession(
   gameId: string,
   ageMonths: number | null | undefined,
-  opts?: { respectParentDifficulty?: boolean },
+  opts?: {
+    respectParentDifficulty?: boolean;
+    /** Canonical Learning Runtime difficulty — overrides mastery micro-adapt. */
+    runtimeDifficulty?: RuntimeDifficultyHint;
+  },
 ): GameSessionPlan {
   const ageBand = ageBandFromMonths(ageMonths);
-  const parentUi = opts?.respectParentDifficulty === false ? undefined : getGameDifficulty();
+  let parentUi =
+    opts?.respectParentDifficulty === false ? undefined : getGameDifficulty();
+  if (opts?.runtimeDifficulty != null) {
+    parentUi = applyRuntimeDifficultyHint(
+      opts.runtimeDifficulty,
+      parentUi ?? "normal",
+    );
+  }
   const micro = resolveMicroDifficulty(gameId, ageBand, parentUi);
   const uiDifficulty = microToUi(micro);
   const contentStage = resolveContentStage(gameId, ageBand);

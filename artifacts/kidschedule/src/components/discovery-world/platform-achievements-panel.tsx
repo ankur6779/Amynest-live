@@ -1,13 +1,18 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { computePlatformAchievements } from "@workspace/world-engine";
-import { Progress } from "@/components/ui/progress";
-import { TRANSITION } from "@/lib/experience-system";
 import { loadDiscoveryWorldProgress } from "@/lib/discovery-worlds-progress";
 import { openedItemIds } from "@/lib/discovery-worlds-stats";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
 import { cn } from "@/lib/utils";
 import { ExperienceProgressStrip } from "./experience-progress-strip";
+import {
+  AnimatedScore,
+  ConfettiReward,
+  ObjectBounce,
+  ProgressiveStarFill,
+  useSoundWorldMotion,
+} from "./sound-world-motion";
 
 function achievementRarity(target: number): { label: string; className: string } {
   if (target >= 90) return { label: "Legendary", className: "text-amber-300" };
@@ -21,6 +26,7 @@ type PlatformAchievementsPanelProps = {
 };
 
 export function PlatformAchievementsPanel({ config, childId }: PlatformAchievementsPanelProps) {
+  const { springGentle, reduced } = useSoundWorldMotion();
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
   const progress = loadDiscoveryWorldProgress(config.worldId, childId);
   const opened = useMemo(
@@ -39,12 +45,14 @@ export function PlatformAchievementsPanel({ config, childId }: PlatformAchieveme
     [config, progress, opened],
   );
 
+  const celebrating = rows.find((r) => r.definition.id === celebrateId);
+
   return (
     <div className="mx-auto max-w-lg space-y-4 px-4 py-4">
       <ExperienceProgressStrip config={config} childId={childId} />
       <h2 className="text-lg font-bold text-foreground">Achievement gallery</h2>
       <p className="text-sm text-muted-foreground">
-        {progress.achievementsUnlocked.length} stars earned
+        <AnimatedScore value={progress.achievementsUnlocked.length} /> stars earned
       </p>
 
       <div className="space-y-3">
@@ -55,12 +63,16 @@ export function PlatformAchievementsPanel({ config, childId }: PlatformAchieveme
             <motion.button
               key={definition.id}
               type="button"
-              layout
+              layout={!reduced}
+              whileTap={unlocked && !reduced ? { scale: 0.98, y: 2 } : undefined}
+              transition={springGentle}
               onClick={() => unlocked && setCelebrateId(definition.id)}
-              className="w-full rounded-[20px] border border-white/10 bg-white/[0.04] p-4 text-left"
+              className="w-full rounded-[20px] border border-white/10 bg-white/[0.04] p-4 text-left will-change-transform"
             >
               <div className="flex items-start gap-3">
-                <span className="text-3xl">{definition.emoji}</span>
+                <ObjectBounce active={celebrateId === definition.id}>
+                  <span className="text-3xl">{definition.emoji}</span>
+                </ObjectBounce>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-foreground">{definition.title}</p>
@@ -69,7 +81,7 @@ export function PlatformAchievementsPanel({ config, childId }: PlatformAchieveme
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">{definition.description}</p>
-                  <Progress value={pct} className="mt-2 h-2" />
+                  <ProgressiveStarFill pct={pct} className="mt-2" />
                   <p className="mt-1 text-xs text-muted-foreground">
                     {unlocked ? "Unlocked!" : `${current} / ${definition.target}`}
                   </p>
@@ -80,6 +92,7 @@ export function PlatformAchievementsPanel({ config, childId }: PlatformAchieveme
         })}
       </div>
 
+      <ConfettiReward active={Boolean(celebrateId)} intensity="card" />
       <AnimatePresence>
         {celebrateId && (
           <motion.div
@@ -90,14 +103,20 @@ export function PlatformAchievementsPanel({ config, childId }: PlatformAchieveme
             onClick={() => setCelebrateId(null)}
           >
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={TRANSITION.springGentle}
+              initial={{ scale: 0.9, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={springGentle}
               className="max-w-sm rounded-[28px] border border-white/10 bg-background p-8 text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-5xl">🎉</p>
+              <ObjectBounce active>
+                <p className="text-5xl">{celebrating?.definition.emoji ?? "🎉"}</p>
+              </ObjectBounce>
               <p className="mt-3 text-xl font-bold">Star earned!</p>
+              {celebrating && (
+                <p className="mt-1 text-sm text-muted-foreground">{celebrating.definition.title}</p>
+              )}
             </motion.div>
           </motion.div>
         )}

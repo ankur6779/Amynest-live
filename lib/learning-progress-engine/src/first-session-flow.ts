@@ -42,6 +42,7 @@ const FIRST_SESSION_DIFFICULTY: Record<SectionKey, number> = {
   stories: 0,
   speech: 1,
   phonics: 1,
+  reading: 1,
   creativity: 1,
   puzzles: 2,
   math: 2,

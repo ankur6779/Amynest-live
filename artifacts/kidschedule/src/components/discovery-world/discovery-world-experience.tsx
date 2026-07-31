@@ -13,6 +13,7 @@ import {
 import type { WorldManifestItem } from "@workspace/world-engine";
 import { buildPlatformHearFindQuestion, gradePlatformHearFind } from "@workspace/world-engine";
 import { worldItemVisualPaths } from "@/lib/world-visual-assets";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SCREEN_SPACING } from "@/lib/experience-system";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
@@ -40,6 +41,22 @@ import { WorldHeroImage } from "./world-hero-image";
 import { DelightBurst } from "./delight-burst";
 import { DiscoveryEmptyState } from "./discovery-world-polish";
 import { PlayableInstrument } from "./playable-instrument";
+import {
+  AudioWaveBars,
+  ModePanel,
+  PressDepth,
+  SoundWorldPage,
+  XpFlyLayer,
+  emitXpFly,
+  useSoundWorldMotion,
+} from "./sound-world-motion";
+import { LivingEnvironmentLayer } from "./living-environment-layer";
+import {
+  AttentionCoachBanner,
+  SoundWorldAttentionProvider,
+  useSoundWorldAttention,
+} from "./sound-world-attention";
+import { worldAmbientAudio } from "@/lib/sound-world-ambient-audio";
 import {
   primeWorldLibrarySoundUrl,
   resolveWorldLibraryPlaybackUrl,
@@ -79,6 +96,18 @@ export function DiscoveryWorldExperience({
   childId,
   onEngage,
 }: DiscoveryWorldExperienceProps) {
+  return (
+    <SoundWorldAttentionProvider childId={childId} worldId={config.worldId}>
+      <DiscoveryWorldExperienceInner config={config} childId={childId} onEngage={onEngage} />
+    </SoundWorldAttentionProvider>
+  );
+}
+
+function DiscoveryWorldExperienceInner({
+  config,
+  childId,
+  onEngage,
+}: DiscoveryWorldExperienceProps) {
   const [mode, setMode] = useState<ModeId>("explore");
   const [category, setCategory] = useState<string | "all">("all");
   const [selected, setSelected] = useState<WorldManifestItem | null>(null);
@@ -86,6 +115,8 @@ export function DiscoveryWorldExperience({
   const [delight, setDelight] = useState(false);
   const sessionStart = useRef(Date.now());
   const daily = useDiscoveryDailyAdventure(config, childId);
+  const { springGentle, reduced } = useSoundWorldMotion();
+  const { track, adaptive } = useSoundWorldAttention();
 
   const items = useMemo(() => {
     if (category === "all") return config.manifest.items;
@@ -139,11 +170,26 @@ export function DiscoveryWorldExperience({
 
   useEffect(() => {
     discoveryWorldAudioManager.setMuted(muted);
+    worldAmbientAudio.setMuted(muted);
   }, [muted]);
 
+  useEffect(() => {
+    void worldAmbientAudio.unlock();
+    return () => {
+      worldAmbientAudio.release();
+    };
+  }, [config.worldId]);
+
+  const panelKey = selected && mode === "explore" ? `detail-${selected.id}` : mode;
+
   return (
-    <div className={cn("min-h-screen bg-background pb-10", SCREEN_SPACING.pageX)}>
-      <header className="sticky top-0 z-40 -mx-4 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+    <SoundWorldPage
+      particles={false}
+      className={cn("min-h-screen overflow-hidden bg-background pb-10", SCREEN_SPACING.pageX)}
+    >
+      <LivingEnvironmentLayer worldId={config.worldId} muted={muted} />
+      <XpFlyLayer />
+      <header className="relative z-10 sticky top-0 -mx-4 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -156,17 +202,20 @@ export function DiscoveryWorldExperience({
             aria-label={`${config.title} learning modes`}
           >
             {modes.map(({ id, label, icon: Icon }) => (
-              <button
+              <motion.button
                 key={id}
                 type="button"
                 aria-current={mode === id ? "page" : undefined}
+                whileTap={reduced ? undefined : { scale: 0.95, y: 2 }}
+                transition={springGentle}
                 onClick={() => {
                   setMode(id);
                   setSelected(null);
+                  track("navigate", { worldId: config.worldId });
                   trackDiscoveryWorldsEvent(config.worldId, "world_mode_changed", { childId, mode: id });
                 }}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition min-h-11",
+                  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold will-change-transform",
                   mode === id
                     ? "bg-primary text-primary-foreground"
                     : "bg-white/[0.05] text-muted-foreground",
@@ -174,116 +223,144 @@ export function DiscoveryWorldExperience({
               >
                 <Icon className="h-4 w-4" aria-hidden />
                 {label}
-              </button>
+              </motion.button>
             ))}
           </nav>
         </div>
       </header>
 
-      <main id="discovery-world-experience" className="mx-auto max-w-4xl space-y-4 pt-5">
+      <main id="discovery-world-experience" className="relative z-10 mx-auto max-w-4xl space-y-4 pt-5">
         <DelightBurst active={delight} onDone={() => setDelight(false)} />
         <ExperienceProgressStrip config={config} childId={childId} />
-        {mode === "explore" && (
+        {mode === "explore" && !selected && (
           <>
             <DiscoveryDailyAdventureCard config={config} childId={childId} compact />
+            <AttentionCoachBanner visible />
             <PersonalizationBanner
               config={config}
               childId={childId}
               onCategoryHint={(id) => setCategory(id)}
+              offerExploration={adaptive.offerExploration}
+              offerBonus={adaptive.offerBonusTask}
             />
           </>
         )}
-        {selected && mode === "explore" ? (
-          <WorldItemDetail
-            config={config}
-            item={selected}
-            childId={childId}
-            muted={muted}
-            onSoundPlayed={() => daily.record("listen_sounds")}
-            onBack={() => setSelected(null)}
-            onToggleMute={() => setMuted((m) => !m)}
-          />
-        ) : (
-          <>
-            {mode === "explore" && (
-              <div className="space-y-5">
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  <CategoryChip active={category === "all"} label="All" emoji="🌍" onClick={() => setCategory("all")} />
-                  {config.manifest.categories.map((cat) => (
-                    <CategoryChip
-                      key={cat.id}
-                      active={category === cat.id}
-                      label={cat.label}
-                      emoji={cat.emoji}
-                      onClick={() => setCategory(cat.id)}
-                    />
-                  ))}
-                </div>
-                {items.length === 0 ? (
-                  <DiscoveryEmptyState
-                    variant={category === "all" ? "emptyExplore" : "emptyCategory"}
-                    testId="discovery-explore-empty"
-                  />
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {items.map((item) => (
-                      <WorldItemCard
-                        key={item.id}
-                        item={item}
-                        resolveAssetUrl={config.resolveAssetUrl}
-                        onSelect={setSelected}
+        <ModePanel modeKey={panelKey}>
+          {selected && mode === "explore" ? (
+            <WorldItemDetail
+              config={config}
+              item={selected}
+              childId={childId}
+              muted={muted}
+              onSoundPlayed={() => daily.record("listen_sounds")}
+              onBack={() => setSelected(null)}
+              onToggleMute={() => setMuted((m) => !m)}
+            />
+          ) : (
+            <>
+              {mode === "explore" && (
+                <div className="space-y-5">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    <CategoryChip active={category === "all"} label="All" emoji="🌍" onClick={() => setCategory("all")} />
+                    {config.manifest.categories.map((cat) => (
+                      <CategoryChip
+                        key={cat.id}
+                        active={category === cat.id}
+                        label={cat.label}
+                        emoji={cat.emoji}
+                        onClick={() => setCategory(cat.id)}
                       />
                     ))}
                   </div>
-                )}
-              </div>
-            )}
-            {mode === "play" && (
-              <PlayMode
-                config={config}
-                childId={childId}
-                onPlay={() => daily.record("listen_sounds")}
-              />
-            )}
-            {mode === "toddler" && (
-              <ToddlerGrid
-                items={config.manifest.items.slice(0, 8)}
-                config={config}
-                childId={childId}
-                onSoundPlayed={() => daily.record("listen_sounds")}
-              />
-            )}
-            {mode === "quiz" && (
-              <WorldQuiz
-                config={config}
-                childId={childId}
-                onCorrect={() => daily.record("quiz_correct")}
-                onDelight={() => setDelight(true)}
-              />
-            )}
-            {mode === "hear_find" && (
-              <WorldHearFind
-                config={config}
-                childId={childId}
-                onCorrect={() => daily.record("hear_find_correct")}
-              />
-            )}
-            {mode === "discovery" && (
-              <PlatformDiscoveryMode config={config} childId={childId} />
-            )}
-            {mode === "achievements" && (
-              <PlatformAchievementsPanel config={config} childId={childId} />
-            )}
-            {mode === "stickers" && (
-              <PlatformStickerAlbum config={config} childId={childId} />
-            )}
-            {mode === "parent" && (
-              <PlatformParentDashboard config={config} childId={childId} />
-            )}
-          </>
-        )}
+                  {items.length === 0 ? (
+                    <DiscoveryEmptyState
+                      variant={category === "all" ? "emptyExplore" : "emptyCategory"}
+                      testId="discovery-explore-empty"
+                    />
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                      {items.map((item, index) => (
+                        <WorldItemCard
+                          key={item.id}
+                          item={item}
+                          idleIndex={index}
+                          resolveAssetUrl={config.resolveAssetUrl}
+                          onSelect={(next) => {
+                            setSelected(next);
+                            track("object_open", { itemId: next.id });
+                            daily.record("open_items");
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {mode === "play" && (
+                <PlayMode
+                  config={config}
+                  childId={childId}
+                  onPlay={() => daily.record("listen_sounds")}
+                />
+              )}
+              {mode === "toddler" && (
+                <ToddlerGrid
+                  items={config.manifest.items.slice(0, 8)}
+                  config={config}
+                  childId={childId}
+                  onSoundPlayed={() => daily.record("listen_sounds")}
+                />
+              )}
+              {mode === "quiz" && (
+                <WorldQuiz
+                  config={config}
+                  childId={childId}
+                  optionCount={
+                    adaptive.quizOptionCount === 4 ? 3 : (adaptive.quizOptionCount as 2 | 3)
+                  }
+                  onCorrect={() => {
+                    track("answer_correct");
+                    daily.record("quiz_correct");
+                    emitXpFly({ amount: 8 });
+                  }}
+                  onIncorrect={() => track("answer_incorrect")}
+                  onDelight={() => setDelight(true)}
+                />
+              )}
+              {mode === "hear_find" && (
+                <WorldHearFind
+                  config={config}
+                  childId={childId}
+                  optionCount={adaptive.quizOptionCount}
+                  onCorrect={() => {
+                    track("answer_correct");
+                    daily.record("hear_find_correct");
+                    emitXpFly({ amount: 10 });
+                  }}
+                  onIncorrect={() => track("answer_incorrect")}
+                />
+              )}
+              {mode === "discovery" && (
+                <PlatformDiscoveryMode
+                  config={config}
+                  childId={childId}
+                  onSlide={() => daily.record("discovery_slides")}
+                />
+              )}
+              {mode === "achievements" && (
+                <PlatformAchievementsPanel config={config} childId={childId} />
+              )}
+              {mode === "stickers" && (
+                <PlatformStickerAlbum config={config} childId={childId} />
+              )}
+              {mode === "parent" && (
+                <PlatformParentDashboard config={config} childId={childId} />
+              )}
+            </>
+          )}
+        </ModePanel>
       </main>
-    </div>
+    </SoundWorldPage>
   );
 }
 
@@ -332,6 +409,9 @@ function WorldItemDetail({
 }) {
   const primary = config.getPrimarySound(item);
   const [playError, setPlayError] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const { track } = useSoundWorldAttention();
+  const playedOnce = useRef(false);
 
   const heroSrc = worldItemVisualPaths(item, config.resolveAssetUrl).hero;
 
@@ -339,6 +419,9 @@ function WorldItemDetail({
     discoveryWorldAudioManager.unlockFromGesture();
     primeWorldLibrarySoundUrl(url);
     setPlayError(false);
+    setPlayingId(soundId);
+    if (playedOnce.current) track("replay", { itemId: item.id });
+    else playedOnce.current = true;
     const ok = await discoveryWorldAudioManager.play(url, {
       worldId: config.worldId,
       itemId: item.id,
@@ -354,21 +437,23 @@ function WorldItemDetail({
       items: config.manifest.items,
     });
     trackDiscoveryWorldsEvent(config.worldId, "world_sound_played", { childId, itemId: item.id, soundId });
+    emitXpFly({ amount: 2 });
     onSoundPlayed?.();
+    setPlayingId(null);
   };
 
   return (
     <article className="space-y-4 px-2" aria-labelledby="discovery-item-title">
       <div className="flex justify-between gap-2">
-        <button
+        <PressDepth
           type="button"
           onClick={onBack}
           aria-label="Back to explore grid"
           className="min-h-11 rounded-full bg-white/5 px-3 py-2 text-sm font-semibold"
         >
           Back
-        </button>
-        <button
+        </PressDepth>
+        <PressDepth
           type="button"
           onClick={onToggleMute}
           aria-pressed={muted}
@@ -376,7 +461,7 @@ function WorldItemDetail({
           className="min-h-11 rounded-full bg-white/5 px-3 py-2 text-sm"
         >
           {muted ? "Unmute" : "Mute"}
-        </button>
+        </PressDepth>
       </div>
       {playError && (
         <p role="alert" className="text-center text-sm text-amber-200">
@@ -391,25 +476,35 @@ function WorldItemDetail({
         {item.funFact && <p className="mt-2 text-sm text-muted-foreground">{item.funFact}</p>}
       </div>
       {primary && (
-        <button
+        <PressDepth
           type="button"
+          depth={4}
           className="w-full rounded-2xl bg-primary py-4 font-bold text-primary-foreground"
           onPointerDown={() => primary && primeWorldLibrarySoundUrl(config.resolveAssetUrl(primary.gcsPath))}
           onClick={() => void play(primary.id, config.resolveAssetUrl(primary.gcsPath), primary.label)}
         >
-          Tap to hear {primary.label}
-        </button>
+          <span className="inline-flex items-center justify-center gap-3">
+            Tap to hear {primary.label}
+            <AudioWaveBars active={playingId === primary.id} bars={6} className="h-5" />
+          </span>
+        </PressDepth>
       )}
       {item.sounds.map((sound) => (
-        <button
+        <PressDepth
           key={sound.id}
           type="button"
-          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left font-semibold"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left font-semibold"
           onPointerDown={() => primeWorldLibrarySoundUrl(config.resolveAssetUrl(sound.gcsPath))}
           onClick={() => void play(sound.id, config.resolveAssetUrl(sound.gcsPath), sound.label)}
         >
-          🔊 {sound.label}
-        </button>
+          <span>🔊 {sound.label}</span>
+          <AudioWaveBars
+            active={playingId === sound.id}
+            amplitudes={sound.waveform}
+            bars={8}
+            className="h-6"
+          />
+        </PressDepth>
       ))}
     </article>
   );
@@ -553,19 +648,27 @@ function PlayMode({
 function WorldQuiz({
   config,
   childId,
+  optionCount = 3,
   onCorrect,
+  onIncorrect,
   onDelight,
 }: {
   config: DiscoveryWorldRuntimeConfig;
   childId: number;
+  optionCount?: 2 | 3;
   onCorrect?: () => void;
+  onIncorrect?: () => void;
   onDelight?: () => void;
 }) {
-  const [q, setQ] = useState(() => buildPlatformHearFindQuestion(config.manifest.items, { optionCount: 3 }));
+  const { notePrompt } = useSoundWorldAttention();
+  const [q, setQ] = useState(() =>
+    buildPlatformHearFindQuestion(config.manifest.items, { optionCount }),
+  );
   const correctId = q?.correctItemId;
 
   useEffect(() => {
     if (!q || !correctId) return;
+    notePrompt();
     const item = config.manifest.items.find((i) => i.id === correctId);
     const sound = item ? config.getPrimarySound(item) : undefined;
     if (!sound || !item) return;
@@ -574,16 +677,18 @@ function WorldQuiz({
       itemId: item.id,
       soundId: sound.id,
     });
-  }, [q, correctId, config]);
+  }, [q, correctId, config, notePrompt]);
 
   if (!q) {
     return <DiscoveryEmptyState variant="emptyQuiz" className="mx-4" />;
   }
 
+  const cols = optionCount <= 2 ? "grid-cols-2" : "grid-cols-3";
+
   return (
     <div className="space-y-4 px-4" role="region" aria-label="Listening quiz">
       <p className="text-center text-lg font-semibold">Which one makes this sound?</p>
-      <div className="grid grid-cols-3 gap-3">
+      <div className={cn("grid gap-3", cols)}>
         {q.options.map((opt) => {
           const item = config.manifest.items.find((i) => i.id === opt.itemId);
           return (
@@ -598,9 +703,11 @@ function WorldQuiz({
                   applyQuizEngagement(config.worldId, childId, q.correctItemId, config.manifest.items, true);
                   onCorrect?.();
                   onDelight?.();
+                } else {
+                  onIncorrect?.();
                 }
                 trackDiscoveryWorldsEvent(config.worldId, "world_quiz_completed", { childId, correct: ok });
-                setQ(buildPlatformHearFindQuestion(config.manifest.items));
+                setQ(buildPlatformHearFindQuestion(config.manifest.items, { optionCount }));
               }}
             >
               {item ? (
@@ -619,16 +726,24 @@ function WorldQuiz({
 function WorldHearFind({
   config,
   childId,
+  optionCount = 4,
   onCorrect,
+  onIncorrect,
 }: {
   config: DiscoveryWorldRuntimeConfig;
   childId: number;
+  optionCount?: 2 | 3 | 4;
   onCorrect?: () => void;
+  onIncorrect?: () => void;
 }) {
-  const [q, setQ] = useState(() => buildPlatformHearFindQuestion(config.manifest.items, { optionCount: 4 }));
+  const { notePrompt, track } = useSoundWorldAttention();
+  const [q, setQ] = useState(() =>
+    buildPlatformHearFindQuestion(config.manifest.items, { optionCount }),
+  );
 
   useEffect(() => {
     if (!q) return;
+    notePrompt();
     trackDiscoveryWorldsEvent(config.worldId, "world_hear_find_started", { childId });
     const item = config.manifest.items.find((i) => i.id === q.correctItemId);
     const sound = item ? config.getPrimarySound(item) : undefined;
@@ -639,7 +754,7 @@ function WorldHearFind({
         soundId: sound.id,
       });
     }
-  }, [q, config, childId]);
+  }, [q, config, childId, notePrompt]);
 
   if (!q) {
     return <DiscoveryEmptyState variant="emptyHearFind" className="mx-4" />;
@@ -648,6 +763,24 @@ function WorldHearFind({
   return (
     <div className="space-y-4 px-4 text-center" role="region" aria-label="Hear and find">
       <p className="text-3xl font-bold">{q.prompt}</p>
+      <button
+        type="button"
+        className="text-sm font-semibold text-primary"
+        onClick={() => {
+          track("replay");
+          const item = config.manifest.items.find((i) => i.id === q.correctItemId);
+          const sound = item ? config.getPrimarySound(item) : undefined;
+          if (sound && item) {
+            void discoveryWorldAudioManager.play(config.resolveAssetUrl(sound.gcsPath), {
+              worldId: config.worldId,
+              itemId: item.id,
+              soundId: sound.id,
+            });
+          }
+        }}
+      >
+        Replay sound
+      </button>
       <div className="grid grid-cols-2 gap-4">
         {q.options.map((opt) => {
           const item = config.manifest.items.find((i) => i.id === opt.itemId);
@@ -661,8 +794,9 @@ function WorldHearFind({
                 const ok = gradePlatformHearFind(q, opt.itemId).correct;
                 recordHearFindAttempt(config.worldId, childId, q.correctItemId, ok, config.manifest.items);
                 if (ok) onCorrect?.();
+                else onIncorrect?.();
                 trackDiscoveryWorldsEvent(config.worldId, "world_hear_find_completed", { childId, correct: ok });
-                setQ(buildPlatformHearFindQuestion(config.manifest.items, { optionCount: 4 }));
+                setQ(buildPlatformHearFindQuestion(config.manifest.items, { optionCount }));
               }}
             >
               {item ? (

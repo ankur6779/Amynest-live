@@ -32,7 +32,13 @@ export function pregenerateTtsTexts(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ texts: normalized, mode }),
   }).catch((err) => {
-    console.warn("[AmyVoice] pregenerate failed", err);
+    // Soft degrade — one warn per page lifetime, never retry-loop here.
+    if (!(globalThis as { __amynestPregenWarned?: boolean }).__amynestPregenWarned) {
+      (globalThis as { __amynestPregenWarned?: boolean }).__amynestPregenWarned = true;
+      if (import.meta.env.DEV) {
+        console.warn("[AmyVoice] pregenerate failed", err);
+      }
+    }
   });
 }
 

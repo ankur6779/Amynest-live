@@ -632,9 +632,24 @@ importers:
       '@workspace/infant-problems':
         specifier: workspace:*
         version: link:../../lib/infant-problems
+      '@workspace/knowledge-graph':
+        specifier: workspace:*
+        version: link:../../lib/knowledge-graph
+      '@workspace/learning-events':
+        specifier: workspace:*
+        version: link:../../lib/learning-events
       '@workspace/learning-progress-engine':
         specifier: workspace:*
         version: link:../../lib/learning-progress-engine
+      '@workspace/learning-reliability':
+        specifier: workspace:*
+        version: link:../../lib/learning-reliability
+      '@workspace/learning-runtime':
+        specifier: workspace:*
+        version: link:../../lib/learning-runtime
+      '@workspace/learning-telemetry':
+        specifier: workspace:*
+        version: link:../../lib/learning-telemetry
       '@workspace/learning-zone-english':
         specifier: workspace:*
         version: link:../../lib/learning-zone-english
@@ -1763,6 +1778,18 @@ importers:
         specifier: workspace:*
         version: link:../notification-engine
 
+  lib/knowledge-graph:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/learning-events:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
   lib/learning-progress-engine:
     dependencies:
       '@workspace/parent-hub-journey':
@@ -1771,6 +1798,38 @@ importers:
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../study-zone
+
+  lib/learning-reliability:
+    dependencies:
+      '@workspace/knowledge-graph':
+        specifier: workspace:*
+        version: link:../knowledge-graph
+      '@workspace/learning-events':
+        specifier: workspace:*
+        version: link:../learning-events
+      '@workspace/learning-runtime':
+        specifier: workspace:*
+        version: link:../learning-runtime
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/learning-runtime:
+    dependencies:
+      '@workspace/learning-events':
+        specifier: workspace:*
+        version: link:../learning-events
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
+  lib/learning-telemetry:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
 
   lib/learning-zone-english: {}
 
@@ -2823,11 +2882,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.hirok.io'
+    deprecated: 'Merged into tsx: https://tsx.is'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.hirok.io'
+    deprecated: 'Merged into tsx: https://tsx.is'
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}

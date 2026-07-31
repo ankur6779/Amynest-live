@@ -9,34 +9,40 @@ const ROLE_ACTIONS: Record<DirectorBeatRole, string[]> = {
     "Parent sighs softly",
     "Child taps pencil once",
     "Shoulders drop a millimeter",
+    "Natural child blink, then a tiny head tilt",
     "Curtain moves with soft window air",
   ],
   problem: [
     "Child hesitates before writing",
     "Parent's hand pauses mid-air",
+    "They glance at each other seeking safety",
     "Notebook page flutters",
     "Eyes flick to the clock then away",
   ],
   emotion: [
     "Eyes soften and brighten",
-    "Amy AI smiles gently",
+    "Amy AI smiles gently at child height",
+    "Child listens with a small nod — mouth mostly closed",
     "Sunlight shifts across the table",
     "A small breath of relief",
   ],
   feature: [
+    "Amy AI kneels or leans beside the child like a mentor",
+    "Child looks at Amy, then taps the lesson with curious fingers",
     "Progress ring animates a gentle tick",
-    "Amy AI orb glows softly once",
+    "Shared eye contact before the UI prop appears",
     "Lesson card slides into place with weight",
-    "Child leans in a few centimeters",
   ],
   transformation: [
     "Parent and child share a small smile",
+    "Amy Boy / Amy Girl look at each other to celebrate",
     "Hair moves slightly as they lean together",
-    "Checklist checkmark blooms quietly",
+    "Soft laugh reaches the eyes",
     "Room feels brighter without a hard cut",
   ],
   cta: [
-    "Amy AI nods once, warmly",
+    "Amy AI mouths the invite line with clear lip motion",
+    "Amy AI nods once, warmly — mentor, not announcer",
     "Soft purple glow breathes on the badge edge",
     "Family moment holds in the background",
   ],
@@ -48,6 +54,7 @@ const ROLE_ACTIONS: Record<DirectorBeatRole, string[]> = {
   bridge: [
     "Camera eases to the next beat",
     "A prop shifts naturally in hand",
+    "Character walks a step with the track",
   ],
 };
 

@@ -1,7 +1,7 @@
 # Birth Sky Conformance Report
 
 **App Build:** birth_sky_rc3/1.0.0  
-**Generated:** 2026-07-25T19:45:06.352Z  
+**Generated:** 2026-07-31T17:10:00.599Z  
 **Scope:** core_only  
 **Verdict:** ENGINEERING CERT PASS — awaiting human Part 9 sign-off and staging drills before canary.
 
@@ -78,7 +78,7 @@
 | O7 | operations | NOT_APPLICABLE | ORS per shipping lens | No extension lens; ORS N/A core-only (Pack Conformance L note) |
 | O8 | operations | WAIVED | MTTD/MTTR measurement path | KPI targets documented in Pack 8 Addendum A; measurement path not wired in-repo |
 | R1 | release | PASS | Compatibility Matrix published | COMPATIBILITY_MATRIX.md + version-registry.ts |
-| R2 | release | PASS | Version Registry updated | getVersionRegistrySnapshot(); engine=amynest-astro-lite/1.0.0 |
+| R2 | release | PASS | Version Registry updated | getVersionRegistrySnapshot(); engine=skyfield-jpl/1.0.0 |
 | R3 | release | PASS | ADRs cited | RELEASE_NOTES_DRAFT.md — ADRs: none (implementation within freezes) |
 | R4 | release | WAIVED | Pack 8 gates / smoke 1.5 | Unit/Playwright smoke present; full Pack 8 §1.5 device matrix pending |
 | R5 | release | PASS | Flag rollout plan documented | RELEASE_CHECKLIST.md canary→% plan (Pack 8 §6 / Roadmap Part 7) |

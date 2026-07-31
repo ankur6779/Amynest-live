@@ -13,6 +13,10 @@ export interface AdaptiveRecommendation {
   skillId?: string;
 }
 
+/**
+ * @deprecated Product recommendations are owned by Learning Runtime
+ * (kidschedule `adaptive-authority.ts`). Kept for tests / analytics only.
+ */
 export function buildAdaptiveRecommendations(input: {
   profile: LearningProgressProfile;
   memory: LearningMemory;

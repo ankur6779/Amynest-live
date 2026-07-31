@@ -4,16 +4,23 @@
 
 import { execFileSync } from "node:child_process";
 import {
-  copyFileSync,
   existsSync,
   mkdirSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { GeminiVideoProvider } from "../asset-engine/providers/gemini-video/index.js";
 import { resolveBrandAssetPath } from "../brand/assets-resolver.js";
-import { resolveBrandEndCard } from "../brand/end-card.js";
 import { getBrandIdentityKit } from "../brand/identity.js";
+import { isCharacterMemoryEnabled } from "../character-memory-engine/engine.js";
+import {
+  attachLastFrameMemory,
+  seedForShot,
+} from "../character-memory-engine/runtime.js";
+import type { GenerationSeed } from "../character-memory-engine/seed.js";
+import type { SceneCharacterMemory } from "../character-memory-engine/types.js";
+import type { SceneStoryMemory } from "../story-memory-engine/types.js";
 import type { ContentPackage } from "../types/content-package.js";
 import { writeIdentityKeyframe } from "./keyframes.js";
 import { performancePrompt } from "./performances.js";
@@ -28,32 +35,6 @@ function ffmpeg(args: string[]): void {
     stdio: ["ignore", "pipe", "pipe"],
     maxBuffer: 32 * 1024 * 1024,
   });
-}
-
-function rasterizeSvg(svgPath: string, outPng: string, size = 900): void {
-  const tmpDir = dirname(outPng);
-  mkdirSync(tmpDir, { recursive: true });
-  const staged = join(tmpDir, `badge-${size}-${Date.now()}.svg`);
-  copyFileSync(svgPath, staged);
-  execFileSync("qlmanage", ["-t", "-s", String(size), "-o", tmpDir, staged], {
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  const produced = `${staged}.png`;
-  if (!existsSync(produced)) throw new Error(`Badge raster failed: ${svgPath}`);
-  const script = `
-from PIL import Image
-import numpy as np
-im=Image.open(${JSON.stringify(produced)}).convert("RGBA")
-a=np.array(im)
-mask=((a[:,:,0]<245)|(a[:,:,1]<245)|(a[:,:,2]<245)) & (a[:,:,3]>8)
-ys,xs=np.where(mask)
-if len(xs)==0:
-    raise SystemExit("Badge raster empty after qlmanage")
-pad=8
-crop=im.crop((max(0,xs.min()-pad), max(0,ys.min()-pad), min(im.width,xs.max()+1+pad), min(im.height,ys.max()+1+pad)))
-crop.save(${JSON.stringify(outPng)})
-`;
-  execFileSync("python3", ["-c", script], { stdio: ["ignore", "pipe", "pipe"] });
 }
 
 function writeCaptionPng(path: string, text: string): void {
@@ -100,7 +81,8 @@ function writePremiumCtaPlatePng(options: {
   subhead: string;
 }): void {
   const script = `
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
+import numpy as np
 W,H=1080,1920
 base=Image.new("RGB",(W,H),(70,30,168))
 px=base.load()
@@ -136,18 +118,31 @@ center(320, ${JSON.stringify(options.headline)}, head, "#FFFFFF")
 center(400, ${JSON.stringify(options.subhead)}, sub, "#F6D57A")
 
 amy=Image.open(${JSON.stringify(options.amyAiPath)}).convert("RGBA")
+# Drop baked checkerboard matte before circular crop
+aa=np.array(amy)
+chk=((aa[:,:,0]>90)&(aa[:,:,0]<190)&(aa[:,:,1]>90)&(aa[:,:,1]<190)&(aa[:,:,2]>90)&(aa[:,:,2]<190)
+     & (np.abs(aa[:,:,0].astype(int)-aa[:,:,1].astype(int))<18)
+     & (np.abs(aa[:,:,1].astype(int)-aa[:,:,2].astype(int))<18))
+aa[:,:,3]=np.where(chk, 0, aa[:,:,3])
+amy=Image.fromarray(aa, "RGBA")
 amy=amy.resize((520,520), Image.Resampling.LANCZOS)
+keyed=amy.split()[3]
 mask=Image.new("L", amy.size, 0); md=ImageDraw.Draw(mask)
 md.ellipse((20,20,amy.width-20,amy.height-20), fill=255)
-mask=mask.filter(ImageFilter.GaussianBlur(12)); amy.putalpha(mask)
+mask=mask.filter(ImageFilter.GaussianBlur(12))
+amy.putalpha(ImageChops.multiply(keyed, mask))
 canvas.paste(amy, (W-amy.width-30, 460), amy)
 
-play=Image.open(${JSON.stringify(options.playBadge)}).convert("RGBA")
-astore=Image.open(${JSON.stringify(options.appBadge)}).convert("RGBA")
-play.thumbnail((760, 260)); astore.thumbnail((760, 260))
-by=1080
+def load_badge(path, tw=720):
+    im=Image.open(path).convert("RGBA")
+    im.thumbnail((tw, 200), Image.Resampling.LANCZOS)
+    return im
+
+play=load_badge(${JSON.stringify(options.playBadge)}, 760)
+astore=load_badge(${JSON.stringify(options.appBadge)}, 760)
+by=1120
 canvas.paste(play, ((W-play.width)//2, by), play)
-canvas.paste(astore, ((W-astore.width)//2, by+play.height+20), astore)
+canvas.paste(astore, ((W-astore.width)//2, by+play.height+24), astore)
 # Explicit OCR-readable store names (validators scan end-card frames)
 center(by+play.height+astore.height+36, "Google Play", store, "#FFFFFF")
 center(by+play.height+astore.height+90, "App Store", store, "#FFFFFF")
@@ -289,8 +284,14 @@ export interface ComposeCinematicResult {
     model: string;
     imageToVideo: boolean;
     keyframePath?: string;
+    memoryFramePath?: string;
+    usedPreviousFrame?: boolean;
     videoPath: string;
   }>;
+  /** Chained character memory after last-frame freeze (when enabled). */
+  characterMemory?: SceneCharacterMemory[];
+  /** Chained story memory across shots (when enabled). */
+  storyMemory?: SceneStoryMemory[];
 }
 
 /**
@@ -302,8 +303,11 @@ export async function composeCinematicVisuals(
   mkdirSync(input.workDir, { recursive: true });
   const keyDir = join(input.workDir, "keyframes");
   const veoDir = join(input.workDir, "veo");
+  const memoryDir = join(input.workDir, "character-memory");
   mkdirSync(keyDir, { recursive: true });
   mkdirSync(veoDir, { recursive: true });
+  mkdirSync(memoryDir, { recursive: true });
+  const memoryEnabled = isCharacterMemoryEnabled();
 
   const plan = planCinematicShort(
     input.content,
@@ -323,16 +327,27 @@ export async function composeCinematicVisuals(
     },
   });
 
-  const brandEnd = resolveBrandEndCard("creative-composition");
   const kit = getBrandIdentityKit();
-  const playBadge = join(input.workDir, "google-play-large.png");
-  const appBadge = join(input.workDir, "app-store-large.png");
-  rasterizeSvg(brandEnd.googlePlayBadgePath, playBadge, 1000);
-  rasterizeSvg(brandEnd.appleAppStoreBadgePath, appBadge, 1000);
+  const officialDir = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "brand",
+    "assets",
+    "official",
+  );
+  const playBadge = join(officialDir, "cta-google-play.png");
+  const appBadge = join(officialDir, "cta-app-store.png");
+  if (!existsSync(playBadge) || !existsSync(appBadge)) {
+    throw new Error("Official CTA store badges missing under brand/assets/official/");
+  }
 
   const shots: ComposedShotArtifact[] = [];
   const clipPaths: string[] = [];
   const continuity: ComposeCinematicResult["continuity"] = [];
+  const characterMemoryChain: SceneCharacterMemory[] = [];
+  const storyMemoryChain: SceneStoryMemory[] = [];
+  let previousMemory: SceneCharacterMemory | null = null;
+  let previousStory: SceneStoryMemory | null = null;
   let ctaPlatePath = "";
 
   for (const shot of plan.shots) {
@@ -345,7 +360,39 @@ export async function composeCinematicVisuals(
       environment: shot.environment,
     });
 
-    const { prompt, negativePrompt } = performancePrompt(shot);
+    const prompted = performancePrompt(shot, previousMemory, previousStory);
+    const { prompt, negativePrompt } = prompted;
+    let sceneMemory = prompted.memory ?? null;
+    if (prompted.story) {
+      previousStory = prompted.story;
+      storyMemoryChain.push(prompted.story);
+    }
+
+    const seed: GenerationSeed = memoryEnabled
+      ? seedForShot({
+          character: shot.character,
+          identityKeyframePath: keyframePath,
+          previousMemory,
+          cast: sceneMemory?.characters ?? [shot.character],
+        })
+      : {
+          imagePath: keyframePath,
+          referenceImagePaths: [keyframePath],
+          usedPreviousFrame: false,
+          bibleAssetPaths: [],
+          note: "Character Memory disabled",
+        };
+
+    if (sceneMemory) {
+      sceneMemory = {
+        ...sceneMemory,
+        referenceImagePaths: seed.referenceImagePaths,
+        bibleAssetPaths: seed.bibleAssetPaths.length
+          ? seed.bibleAssetPaths
+          : sceneMemory.bibleAssetPaths,
+      };
+    }
+
     const rawVeo = join(veoDir, `${shot.id}-raw.mp4`);
     const outClip = join(input.workDir, `${shot.id}.mp4`);
 
@@ -357,7 +404,9 @@ export async function composeCinematicVisuals(
       );
     } else {
       console.log(
-        `[creative-composition] Veo performance ${shot.id} (${shot.character}, ${shot.durationSeconds}s, ${veoModel})`,
+        `[creative-composition] Veo performance ${shot.id} (${shot.character}, ${shot.durationSeconds}s, ${veoModel})${
+          seed.usedPreviousFrame ? " [memory→video]" : " [identity→video]"
+        }`,
       );
       const generated = await veo.generateVideo({
         prompt,
@@ -368,7 +417,8 @@ export async function composeCinematicVisuals(
         durationSeconds: shot.durationSeconds,
         resolution: input.resolution ?? "720p",
         outputPath: rawVeo,
-        imagePath: keyframePath,
+        imagePath: seed.imagePath,
+        referenceImagePaths: seed.referenceImagePaths,
       });
       modelUsed = generated.metadata.model;
       imageToVideo = Boolean(generated.metadata.imageToVideo);
@@ -421,6 +471,22 @@ export async function composeCinematicVisuals(
       });
     }
 
+    // Freeze last frame → canonical memory for the next shot (no extra API cost).
+    if (memoryEnabled && sceneMemory) {
+      try {
+        previousMemory = attachLastFrameMemory(sceneMemory, rawVeo, memoryDir);
+        characterMemoryChain.push(previousMemory);
+      } catch (err) {
+        console.warn(
+          `[character-memory] freeze failed for ${shot.id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+        previousMemory = sceneMemory;
+        characterMemoryChain.push(sceneMemory);
+      }
+    }
+
     continuity.push({
       shotId: shot.id,
       character: shot.character,
@@ -428,6 +494,8 @@ export async function composeCinematicVisuals(
       model: modelUsed,
       imageToVideo,
       keyframePath,
+      memoryFramePath: previousMemory?.lastFramePath,
+      usedPreviousFrame: seed.usedPreviousFrame,
       videoPath: outClip,
     });
     clipPaths.push(outClip);
@@ -446,13 +514,31 @@ export async function composeCinematicVisuals(
     join(input.workDir, "continuity.json"),
     JSON.stringify(continuity, null, 2),
   );
+  if (characterMemoryChain.length) {
+    writeFileSync(
+      join(input.workDir, "character-memory.json"),
+      JSON.stringify(characterMemoryChain, null, 2),
+    );
+  }
+  if (storyMemoryChain.length) {
+    writeFileSync(
+      join(input.workDir, "story-memory.json"),
+      JSON.stringify(storyMemoryChain, null, 2),
+    );
+  }
 
   return {
     plan,
     shots,
     clipPaths,
     ctaPlatePath,
-    detail: `Composed ${shots.length} Veo character performances (${veoModel}); rules=${plan.rulesApplied.join(",")}`,
+    detail: `Composed ${shots.length} Veo character performances (${veoModel}); rules=${plan.rulesApplied.join(",")}${
+      memoryEnabled ? "; character-memory=on" : ""
+    }${storyMemoryChain.length ? "; story-memory=on" : ""}`,
     continuity,
+    characterMemory: characterMemoryChain.length
+      ? characterMemoryChain
+      : undefined,
+    storyMemory: storyMemoryChain.length ? storyMemoryChain : undefined,
   };
 }

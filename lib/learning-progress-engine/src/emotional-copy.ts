@@ -78,7 +78,14 @@ export function teaserForUnlock(title: string, section?: string): string {
   const lower = title.toLowerCase();
   if (lower.includes("story") || section === "stories") return "A new story adventure awaits";
   if (lower.includes("math") || section === "math") return "A fresh math adventure";
-  if (lower.includes("phonics") || section === "phonics") return "New sounds to discover";
+  if (
+    lower.includes("phonics") ||
+    lower.includes("reading") ||
+    section === "phonics" ||
+    section === "reading"
+  ) {
+    return "New sounds to discover";
+  }
   if (lower.includes("puzzle") || section === "puzzles") return "A surprise puzzle challenge";
   if (lower.includes("speech") || section === "speech") return "A confidence-building moment";
   return "A gentle surprise is on the way";

@@ -77,6 +77,7 @@ export function getLiveDiscoveryWorlds(): DiscoveryWorldDefinition[] {
   return DISCOVERY_WORLDS_REGISTRY.filter((w) => w.status === "live");
 }
 
+/** @deprecated All Discovery Worlds are live; kept for API compatibility (always empty). */
 export function getPreviewDiscoveryWorlds(): DiscoveryWorldDefinition[] {
   return DISCOVERY_WORLDS_REGISTRY.filter((w) => w.status === "preview");
 }

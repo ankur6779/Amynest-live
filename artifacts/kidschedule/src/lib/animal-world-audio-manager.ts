@@ -119,24 +119,32 @@ export class AnimalAudioManager {
     const audio = audioManager.getCached(resolved, { forceReload: false });
     primeWorldLibrarySoundUrl(resolved);
 
-    const ok = await audioManager.play(
-      audio,
-      {
-        proxyUrl: resolved,
-        source: "animal_world",
-        phrase: meta.label ?? `${meta.animalId}:${meta.soundId}`,
-        interrupt: true,
-        srcType: "static",
-        channel: "speech",
-      },
-      { channel: "speech", interrupt: true, maxRetries: 1 },
+    const { emitPrimarySoundEnd, emitPrimarySoundStart } = await import(
+      "@/lib/sound-world-living-environment"
     );
+    emitPrimarySoundStart();
+    try {
+      const ok = await audioManager.play(
+        audio,
+        {
+          proxyUrl: resolved,
+          source: "animal_world",
+          phrase: meta.label ?? `${meta.animalId}:${meta.soundId}`,
+          interrupt: true,
+          srcType: "static",
+          channel: "speech",
+        },
+        { channel: "speech", interrupt: true, maxRetries: 1 },
+      );
 
-    if (token !== ownershipToken) return false;
-    if (!ok) {
-      console.warn("[AnimalAudioManager] play failed", meta);
+      if (token !== ownershipToken) return false;
+      if (!ok) {
+        console.warn("[AnimalAudioManager] play failed", meta);
+      }
+      return ok;
+    } finally {
+      emitPrimarySoundEnd();
     }
-    return ok;
   }
 
   pause(): void {

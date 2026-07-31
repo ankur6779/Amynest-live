@@ -27,8 +27,8 @@ export function buildPlatformHearFindQuestion(
   items: WorldManifestItem[],
   opts: { optionCount?: number; recentQuestionIds?: string[] } = {},
 ): HearFindQuestion | null {
-  if (items.length < 3) return null;
-  const optionCount = Math.min(Math.max(opts.optionCount ?? 4, 3), 4);
+  const optionCount = Math.min(Math.max(opts.optionCount ?? 4, 2), 4);
+  if (items.length < optionCount) return null;
   const eligible = items.filter((item) => getPrimarySound(item));
   if (eligible.length < optionCount) return null;
 

@@ -11,7 +11,75 @@ import type {
   TransitionType,
 } from "../types/storyboard.js";
 
-export const AI_DIRECTOR_VERSION = "1.0.0";
+export const AI_DIRECTOR_VERSION = "1.2.0";
+
+/** Progressive story feeling — never random-jump backward. */
+export type EmotionArcStage =
+  | "Curious"
+  | "Thinking"
+  | "Understanding"
+  | "Success"
+  | "Celebration";
+
+export type SpeechState =
+  | "speaking"
+  | "listening"
+  | "reacting"
+  | "silent";
+
+export type CameraMomentum =
+  | "hold"
+  | "pushing-in"
+  | "pulling-out"
+  | "tracking-right"
+  | "tracking-left"
+  | "orbiting";
+
+export type MovementSpeed = "still" | "slow" | "measured" | "lively";
+
+export type CutTransitionKind =
+  | "match-cut"
+  | "motivated-cut"
+  | "action-cut"
+  | "eyeline-cut"
+  | "l-cut"
+  | "j-cut";
+
+export type TargetEmotionLabel =
+  | "Parent frustration"
+  | "Child hesitation"
+  | "Hope"
+  | "Curiosity"
+  | "Confidence"
+  | "Joy"
+  | "Calm reassurance"
+  | "Pride"
+  | "Bonding"
+  | "Relief";
+
+/** Per-scene locked continuity state carried across cuts. */
+export interface SceneContinuityState {
+  characterPosition: string;
+  eyeDirection: string;
+  bodyOrientation: string;
+  handPosition: string;
+  objectPlacement: string;
+  lightingDirection: string;
+  emotionArc: EmotionArcStage;
+  emotionLabel: TargetEmotionLabel;
+  speechState: SpeechState;
+  cameraMomentum: CameraMomentum;
+  movementSpeed: MovementSpeed;
+  amyPose: string;
+  screenDirection: "L→R" | "R→L";
+}
+
+export interface SceneCutBridge {
+  kind: CutTransitionKind;
+  editorTransition: TransitionType;
+  note: string;
+  matchOn: string[];
+}
 
 /** Mirrors ComposerBeatRole — kept local to avoid circular imports. */
 export type DirectorBeatRole =
@@ -61,6 +129,7 @@ export type CameraAngle =
 export type DirectorCameraMovement =
   | "static-hold"
   | "slow-push-in"
+  | "slow-dolly"
   | "gentle-pull-out"
   | "tracking"
   | "orbit"
@@ -84,22 +153,12 @@ export type ColorTemperature =
 
 export type ScenePacing = "urgent" | "measured" | "lingering" | "celebratory" | "settle";
 
-export type TargetEmotionLabel =
-  | "Parent frustration"
-  | "Child hesitation"
-  | "Hope"
-  | "Curiosity"
-  | "Confidence"
-  | "Joy"
-  | "Calm reassurance"
-  | "Pride"
-  | "Bonding"
-  | "Relief";
-
 export interface SceneEmotionBeat {
   sceneIndex: number;
   role: DirectorBeatRole;
   targetEmotion: TargetEmotionLabel;
+  /** Progressive arc stage for the continuous short. */
+  emotionArc: EmotionArcStage;
   /** Emotional intensity 1–10. */
   intensity: number;
   facialExpression: string;
@@ -149,6 +208,12 @@ export interface DirectedScenePlan {
   motionPlan: string;
   timingSeconds: number;
   continuityNotes: string[];
+  /** Locked continuity state for this beat (carries across cuts). */
+  continuityState: SceneContinuityState;
+  /** How this shot should be entered from the previous cut. */
+  cutIn?: SceneCutBridge;
+  /** How this shot should leave into the next cut. */
+  cutOut: SceneCutBridge;
   transitionOut: {
     type: TransitionType;
     note: string;
@@ -165,6 +230,9 @@ export interface VisualContinuityBible {
   cameraDirection: string;
   objectPlacement: string;
   characterPositions: string;
+  /** Curious → Thinking → Understanding → Success → Celebration */
+  emotionArc?: string;
+  speechContinuity?: string;
 }
 
 export interface DirectorQualityResult {

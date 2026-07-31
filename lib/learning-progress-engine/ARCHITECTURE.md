@@ -1,5 +1,9 @@
 # LearningProgressEngine — Architecture Rules
 
+> **Learning Platform Architecture v1.0 FROZEN.**  
+> See `docs/learning-platform/v1/FREEZE.md` and ADR-0004 (LPE dual track).  
+> No new progression engines. Stewardship only.
+
 These rules apply to **every contributor** (humans and AI assistants) touching
 the AmyNest learning surfaces. They are intentionally short.
 

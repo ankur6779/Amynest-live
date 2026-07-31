@@ -1,8 +1,15 @@
-import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { reportRetentionGoal } from "@/lib/retention/retention-goal-bridge";
+import {
+  beginStorySession,
+  endStorySession,
+  recordStoryChapterCompleted,
+  recordStoryChapterStarted,
+} from "@/lib/story-world-learning-adapter";
 import { ConfettiBurst, XpPopup } from "@/components/study-engagement";
 import { cn } from "@/lib/utils";
 import {
@@ -448,12 +455,16 @@ function consecutiveDayCount(dates: string[]): number {
 interface DailyStorySectionProps {
   ageMonths: number;
   childName: string;
+  childId?: number;
 }
 export function DailyStorySection({
   ageMonths,
-  childName
+  childName,
+  childId,
 }: DailyStorySectionProps) {
   const authFetch = useAuthFetch();
+  const { recordActivity } = useRecordLearningActivity(childId ?? 0);
+  const storySessionRef = useRef<string | null>(null);
   const pool = useMemo(() => getDailyPool(ageMonths), [ageMonths]);
   const PAGE = 5;
 
@@ -494,6 +505,28 @@ export function DailyStorySection({
     }
     pause();
     setPlayingId(story.id);
+    if (childId) {
+      if (!storySessionRef.current) {
+        const began = beginStorySession({
+          childId,
+          catalog: pool.map((s) => ({
+            id: s.id,
+            title: s.title,
+            category: s.category,
+          })),
+        });
+        storySessionRef.current = began.sessionId;
+      }
+      recordStoryChapterStarted({
+        childId,
+        sessionId: storySessionRef.current ?? undefined,
+        chapter: {
+          storyId: story.id,
+          title: story.title,
+          category: story.category,
+        },
+      });
+    }
     const text = storySpeech(story);
     const identity = createParentHubAudioIdentity({
       sectionId: PARENT_HUB_SECTIONS.DAILY_STORIES,
@@ -509,7 +542,7 @@ export function DailyStorySection({
       if (!res?.success) console.warn("TTS failed, skipping audio flow:", res?.error);
       setPlayingId(null);
     });
-  }, [playingId, speak, pause, storySpeech]);
+  }, [childId, pause, playingId, pool, speak, storySpeech]);
   const hasMore = visible.length < pool.length;
   if (pool.length === 0) return null;
   const featured = visible.find((story) => story.id === activeStoryId) ?? visible[0]!;
@@ -545,6 +578,40 @@ export function DailyStorySection({
       setStreak(nextStreak);
       setCelebration((prev) => ({ trigger: prev.trigger + 1, amount: STORY_XP }));
       void reportRetentionGoal(authFetch, "story");
+      if (childId) {
+        if (!storySessionRef.current) {
+          const began = beginStorySession({ childId });
+          storySessionRef.current = began.sessionId;
+        }
+        const g = recordStoryChapterCompleted({
+          childId,
+          sessionId: storySessionRef.current ?? undefined,
+          chapter: {
+            storyId: story.id,
+            title: story.title,
+            category: story.category,
+            concepts: story.moral ? [story.moral] : undefined,
+          },
+        });
+        endStorySession({
+          childId,
+          sessionId: storySessionRef.current ?? undefined,
+          storiesCompleted: 1,
+        });
+        storySessionRef.current = null;
+        void recordActivity({
+          activityId: `daily_story_${story.id}`,
+          section: "stories",
+          correct: true,
+          analyticsEvent: "story_completion",
+          metadata: {
+            title: story.title,
+            category: story.category,
+            runtimeRuleId: g.ruleId,
+            surface: "daily_story_studio",
+          },
+        });
+      }
     }
   };
 

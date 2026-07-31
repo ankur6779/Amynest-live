@@ -24,10 +24,10 @@ import {
   type RewardEvent,
   type RewardWallet,
 } from "./rewards";
-import { difficultyAdjustmentEngine, type DifficultyAdjustment } from "./difficulty-engine";
+import type { DifficultyAdjustment } from "./difficulty-engine";
 import { buildComebackMission, daysSinceActive, type ComebackMission } from "./re-engagement";
 import { buildSkillTrees } from "./skill-trees";
-import { buildAdaptiveRecommendations, type AdaptiveRecommendation } from "./adaptive-routing";
+import type { AdaptiveRecommendation } from "./adaptive-routing";
 import { buildProactiveTutorLines, type ProactiveTutorLine } from "./ai-tutor-insights";
 import { buildParentGrowthDashboard, type ParentGrowthDashboard } from "./parent-insights";
 
@@ -113,19 +113,20 @@ export function composePhase3Status(input: {
 
   const skillMap = entriesMap(input.skillEntries);
   const skillTrees = buildSkillTrees(skillMap);
-  const difficulty = difficultyAdjustmentEngine({
-    profile: input.profile,
-    unlocks: input.unlocks,
-    memory,
-    streakDays: input.profile.streakDays,
-  });
-  const recommendations = buildAdaptiveRecommendations({
-    profile: input.profile,
-    memory,
-    unlocks: input.unlocks,
-    difficulty,
-    isPremium: input.isPremium,
-  });
+  // Adaptive difficulty / recommendations are owned by Learning Runtime.
+  // Phase3 keeps stewardship only (session, wallet, memory, tutor, parent dashboard).
+  const difficulty: DifficultyAdjustment = {
+    overall: "medium",
+    phonics: "medium",
+    math: "medium",
+    speech: "medium",
+    puzzle: "medium",
+    worksheet: "medium",
+    story: "medium",
+    engagementMode: "balanced",
+    reason: "Adaptive difficulty owned by Learning Runtime",
+  };
+  const recommendations: AdaptiveRecommendation[] = [];
   const comeback = buildComebackMission(daysInactive, session, input.isPremium);
   const tutorLines = buildProactiveTutorLines({
     profile: input.profile,

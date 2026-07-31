@@ -13,6 +13,10 @@ export interface DifficultyAdjustment {
   reason: string;
 }
 
+/**
+ * @deprecated Product adaptivity is owned by Learning Runtime.
+ * Kept for offline analytics / tests — do not wire into hub or world UI.
+ */
 export function difficultyAdjustmentEngine(input: {
   profile: LearningProgressProfile;
   unlocks: UnlockResult;

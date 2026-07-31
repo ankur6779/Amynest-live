@@ -61,6 +61,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { getSpeechCoachParentInsights } from "@/lib/speech-coach-learning-adapter";
+import { getStoryWorldParentInsights } from "@/lib/story-world-learning-adapter";
+import { getReadingWorldParentInsights } from "@/lib/reading-world-learning-adapter";
+import { getGamesWorldParentInsights } from "@/lib/games-world-learning-adapter";
 
 const GLASS_PANEL = cn(
   "rounded-2xl border border-white/10",
@@ -178,16 +182,24 @@ export function StudyCurriculumVisibility({
     () => buildUniverseMap(mode, childAge, childClass),
     [mode, childAge, childClass],
   );
-  const timeline = useMemo(
-    () => buildLearningTimeline(
-      childAge,
-      childClass,
+  const timeline = useMemo(() => {
+    const speechLabels = getSpeechCoachParentInsights(childId).timelineLabels;
+    const storyLabels = getStoryWorldParentInsights(childId).timelineLabels;
+    const readingLabels = getReadingWorldParentInsights(childId).timelineLabels;
+    const gamesLabels = getGamesWorldParentInsights(childId).timelineLabels;
+    const baseToday =
       todayUnlockTitles.length > 0
         ? todayUnlockTitles
-        : nextSessionUnlocks.map((u) => u.title),
-    ),
-    [childAge, childClass, todayUnlockTitles, nextSessionUnlocks],
-  );
+        : nextSessionUnlocks.map((u) => u.title);
+    const todayItems = [
+      ...speechLabels,
+      ...storyLabels,
+      ...readingLabels,
+      ...gamesLabels,
+      ...baseToday,
+    ].slice(0, 4);
+    return buildLearningTimeline(childAge, childClass, todayItems);
+  }, [childAge, childClass, childId, todayUnlockTitles, nextSessionUnlocks]);
   const stagePreviews = useMemo(
     () => futureStagePreviewsForChild(childAge, childClass),
     [childAge, childClass],

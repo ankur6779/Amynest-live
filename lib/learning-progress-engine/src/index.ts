@@ -220,7 +220,7 @@ export function recordActivityCompletion(
   const nextMastery = Math.min(100, sec.masteryPct + masteryBump);
   const levelUp = nextMastery >= 80 && sec.level < 10 ? sec.level + 1 : sec.level;
 
-  const sectionProgress = {
+  const sectionProgress: Record<SectionKey, SectionProgress> = {
     ...profile.sectionProgress,
     [section]: {
       level: levelUp,
@@ -229,6 +229,22 @@ export function recordActivityCompletion(
       lastActivityId: activityId,
     } satisfies SectionProgress,
   };
+
+  // Reading World → dual-credit phonics so legacy unlocks/reports stay warm (BC).
+  if (section === "reading") {
+    const phonics = sectionProgress.phonics ?? {
+      level: 1,
+      masteryPct: 0,
+      activitiesCompleted: 0,
+      lastActivityId: null,
+    };
+    sectionProgress.phonics = {
+      level: Math.max(phonics.level, levelUp),
+      masteryPct: Math.min(100, Math.max(phonics.masteryPct, nextMastery)),
+      activitiesCompleted: phonics.activitiesCompleted + 1,
+      lastActivityId: activityId,
+    };
+  }
 
   const xpGain = Math.round(xpForActivity(activityId, correct) * streakMultiplier(profile.streakDays));
   const totalXP = profile.totalXP + xpGain;

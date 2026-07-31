@@ -37,7 +37,18 @@ import {
   getRecommendedGames,
 } from "@/lib/game-hub-meta";
 import { prepareGameSession } from "@/lib/game-adaptive-progression";
+import { setGameDifficulty } from "@/lib/game-difficulty";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import {
+  beginGameSession,
+  endGameSession,
+  getLastGameRuntimeDecision,
+  guidanceFromGameDecision,
+  recordGameLevelCompleted,
+  recordGameLevelStarted,
+  sectionKeyForGameCategory,
+} from "@/lib/games-world-learning-adapter";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useGamingWallet } from "@/hooks/use-gaming-wallet";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
@@ -122,6 +133,15 @@ export default function GamesPage() {
     },
   });
 
+  const activeChildId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
+    const child =
+      (childProfiles as Array<{ id: number }>).find((c) => c.id === saved) ??
+      (childProfiles[0] as { id: number } | undefined);
+    return child?.id ?? null;
+  }, [childProfiles]);
+
   const previewAgeMonths = useMemo(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -133,6 +153,9 @@ export default function GamesPage() {
     if (!child) return null;
     return child.age * 12 + (child.ageMonths ?? 0);
   }, [childProfiles]);
+
+  const { recordActivity } = useRecordLearningActivity(activeChildId);
+  const learningSessionIdRef = useRef<string | null>(null);
 
   const showGamingPreview = previewAgeMonths != null && isGamingHubPreviewAge(previewAgeMonths);
 
@@ -197,23 +220,54 @@ export default function GamesPage() {
   const limit = serverWallet?.dailyLimit ?? dailyLimit(isPremium);
   const limitHit = playedToday >= limit;
   const playsRemaining = Math.max(0, limit - playedToday);
-  const suggestion = useMemo(() => amySuggestion(isPremium), [unlockedTick, active, isPremium]);
+  const runtimeGameGuidance = useMemo(() => {
+    if (activeChildId == null) return null;
+    return guidanceFromGameDecision(
+      activeChildId,
+      getLastGameRuntimeDecision(activeChildId),
+    );
+  }, [activeChildId, unlockedTick, active]);
+  const suggestion = useMemo(() => {
+    const preferredId = runtimeGameGuidance?.preferredGameIds[0];
+    if (preferredId) {
+      const g = GAMES.find((x) => x.id === preferredId);
+      if (g && canPlayGame(g, isPremium)) {
+        const reason =
+          runtimeGameGuidance.recommendation?.reason ??
+          runtimeGameGuidance.reason;
+        return {
+          gameId: preferredId,
+          line: reason.startsWith("Amy")
+            ? reason
+            : `Amy suggests: ${g.title} — ${reason}`,
+        };
+      }
+    }
+    return amySuggestion(isPremium);
+  }, [runtimeGameGuidance, isPremium, unlockedTick, active]);
   const weekly = useMemo(() => getWeeklyGameSummary(), [unlockedTick, active]);
   const routineStreak = serverWallet?.routineStreakDays ?? getCachedRoutineStreak();
-  const adventureGame = useMemo(() => getAdventureGame(isPremium), [unlockedTick, active, isPremium]);
+  const adventureGame = useMemo(() => {
+    const preferredId = runtimeGameGuidance?.preferredGameIds[0];
+    if (preferredId) {
+      const g = GAMES.find((x) => x.id === preferredId);
+      if (g && canPlayGame(g, isPremium)) return g;
+    }
+    return getAdventureGame(isPremium);
+  }, [runtimeGameGuidance, isPremium, unlockedTick, active]);
   const continueGames = useMemo(
     () => getContinuePlayingGames(isPremium, 6),
     [unlockedTick, active, isPremium],
   );
-  const recommendedGames = useMemo(
-    () =>
-      getRecommendedGames(
-        isPremium,
-        continueGames.map((g) => g.id),
-        6,
-      ),
-    [unlockedTick, active, isPremium, continueGames],
-  );
+  const recommendedGames = useMemo(() => {
+    const preferredIds = runtimeGameGuidance?.preferredGameIds ?? [];
+    return getRecommendedGames(
+      isPremium,
+      continueGames.map((g) => g.id),
+      6,
+      preferredIds,
+    );
+  }, [unlockedTick, active, isPremium, continueGames, runtimeGameGuidance]);
   const nextUnlockGame = useMemo(
     () =>
       GAMES.filter(
@@ -230,11 +284,22 @@ export default function GamesPage() {
 
   const nextAfterResult = useMemo(() => {
     if (!active || active.kind !== "result") return undefined;
+    if (activeChildId != null) {
+      const guidance = guidanceFromGameDecision(
+        activeChildId,
+        getLastGameRuntimeDecision(activeChildId),
+      );
+      for (const id of guidance.preferredGameIds) {
+        if (id === active.game.id) continue;
+        const g = GAMES.find((x) => x.id === id);
+        if (g && canPlayGame(g, isPremium)) return g;
+      }
+    }
     return (
       getNextBestSkillGame(isPremium, [active.game.id]) ??
       GAMES.find((g) => g.id !== active.game.id && canPlayGame(g, isPremium))
     );
-  }, [active, isPremium, unlockedTick]);
+  }, [active, activeChildId, isPremium, unlockedTick]);
 
   const devGrantPoints = () => {
     addPoints("DEV", "DEV: test grant", 1000);
@@ -282,26 +347,46 @@ export default function GamesPage() {
       setError(null);
       resetPlaySession();
       prefetchGame(g.id);
-      // Age-aware mastery plan + adaptive Easy/Normal/Hard (local only).
-      prepareGameSession(g.id, previewAgeMonths);
+      prepareGameSession(g.id, previewAgeMonths, {
+        runtimeDifficulty: runtimeGameGuidance?.difficulty,
+      });
       setActive({ kind: "play", game: g, stage: "intro" });
     },
-    [isPremium, limit, limitHit, previewAgeMonths, resetPlaySession, t],
+    [isPremium, limit, limitHit, previewAgeMonths, resetPlaySession, runtimeGameGuidance, t],
   );
 
   const onStartPlay = useCallback(() => {
     setActive((prev) => {
       if (prev?.kind !== "play") return prev;
-      prepareGameSession(prev.game.id, previewAgeMonths);
+      prepareGameSession(prev.game.id, previewAgeMonths, {
+        runtimeDifficulty: runtimeGameGuidance?.difficulty,
+      });
       playSessionRef.current = {
         gameId: prev.game.id,
         idempotencyKey: createPlayIdempotencyKey(prev.game.id),
         finished: false,
       };
       finishingRef.current = false;
+      if (activeChildId != null) {
+        const began = beginGameSession({
+          childId: activeChildId,
+          gameId: prev.game.id,
+          title: prev.game.title,
+          category: prev.game.category,
+        });
+        learningSessionIdRef.current = began.sessionId;
+        // Runtime difficulty overlays local presentation band (no mastery engine here).
+        setGameDifficulty(began.uiDifficulty);
+        recordGameLevelStarted({
+          childId: activeChildId,
+          sessionId: began.sessionId,
+          gameId: prev.game.id,
+          category: prev.game.category,
+        });
+      }
       return { kind: "play", game: prev.game, stage: "play" };
     });
-  }, [previewAgeMonths]);
+  }, [activeChildId, previewAgeMonths, runtimeGameGuidance]);
 
   const onUpgrade = useCallback(() => goTo("/pricing"), [goTo]);
 
@@ -359,11 +444,58 @@ export default function GamesPage() {
           perfect: out.perfect,
         });
         setUnlockedTick((tick) => tick + 1);
+
+        if (activeChildId != null) {
+          const guidance = recordGameLevelCompleted({
+            childId: activeChildId,
+            sessionId: learningSessionIdRef.current ?? undefined,
+            gameId: g.id,
+            title: g.title,
+            category: g.category,
+            score,
+            total,
+            perfect: out.perfect,
+            isChallenge: out.perfect,
+          });
+          endGameSession({
+            childId: activeChildId,
+            sessionId: learningSessionIdRef.current ?? undefined,
+            gameId: g.id,
+            levelsCompleted: 1,
+          });
+          learningSessionIdRef.current = null;
+          void recordActivity({
+            activityId: `game_${g.id}_${Date.now()}`,
+            section: sectionKeyForGameCategory(g.category),
+            correct: ratio >= 0.5,
+            analyticsEvent: "session_completed",
+            metadata: {
+              gameId: g.id,
+              category: g.category,
+              score,
+              total,
+              runtimeRuleId: guidance.ruleId,
+              celebrationLevel: guidance.celebrationLevel,
+              rewardPriority: guidance.rewardPriority,
+              surface: "games_hub",
+              learningSection: "games",
+            },
+          });
+          if (guidance.difficulty !== "same") {
+            setGameDifficulty(
+              guidance.difficulty === "easier"
+                ? "easy"
+                : guidance.difficulty === "harder"
+                  ? "hard"
+                  : "normal",
+            );
+          }
+        }
       } finally {
         finishingRef.current = false;
       }
     },
-    [authFetch, isSignedIn, refreshWallet, t],
+    [activeChildId, authFetch, isSignedIn, recordActivity, refreshWallet, t],
   );
 
   const handleGameFinish = useCallback(

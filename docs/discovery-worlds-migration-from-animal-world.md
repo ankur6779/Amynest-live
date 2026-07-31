@@ -12,7 +12,8 @@
 - [x] `@workspace/discovery-worlds` — Animal World read-only adapter
 - [x] World packages with `manifest.json` stubs (vehicle, nature, home, instrument)
 - [x] `/api/worlds-library` for `worlds/*` assets (Animal proxy unchanged)
-- [x] `/discovery-worlds` hub + `/worlds/:slug` preview routes (new; Animal route untouched)
+- [x] `/discovery-worlds` hub + `/worlds/:slug` live routes (new; Animal route untouched)
+- [x] Orphan `/discovery-world-preview` page removed (all worlds live)
 - [x] Platform storage/telemetry helpers (`discovery-worlds-progress`, `discovery-worlds-telemetry`)
 
 ## Phase 1 — Content upload (ops)
@@ -59,7 +60,7 @@ Nature registry already includes `relax` and `sleep` in `modesForWorld("nature_w
 - [ ] Animal analytics events still `animal_world:*`
 - [ ] New worlds return 400 on `animal-world/` path via worlds-library (correct separation)
 - [ ] Hub lists 5 worlds; Animal opens `/animal-world`
-- [ ] Preview worlds log `discovery_worlds:{id}:world_opened`
+- [ ] Live worlds log `discovery_worlds:{id}:world_opened`
 
 ## Achievement mapping
 

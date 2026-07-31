@@ -1,11 +1,11 @@
 /**
  * AI Director — converts approved script intents into a directed short-film plan.
  * Additive orchestration: AFTER golden/script approval, BEFORE scene generation.
+ * Pixar continuity spine: one continuous scene across cuts (direction-only).
  */
 
 import { createHash } from "node:crypto";
 import type { ContentPackage } from "../types/content-package.js";
-import type { TransitionType } from "../types/storyboard.js";
 import { sceneIdFor } from "../scene-composer/prompts.js";
 import type { ComposerSceneIntent } from "../scene-composer/types.js";
 import {
@@ -17,12 +17,21 @@ import { enrichPromptsWithDirector } from "./format.js";
 import { pacingForRole, planLightingForScene } from "./lighting.js";
 import { selectMicroActions } from "./micro-actions.js";
 import { gateDirectorPackage } from "./quality.js";
+import {
+  buildCutBridge,
+  buildSceneContinuityState,
+  continuityPromptBlock,
+  enrichBibleWithSpine,
+  toEditorTransition,
+} from "./scene-continuity.js";
 import { selectShotForIntent } from "./shot-language.js";
 import {
   AI_DIRECTOR_VERSION,
   type DirectedScenePlan,
   type DirectorBeatRole,
   type DirectorPackage,
+  type SceneContinuityState,
+  type SceneCutBridge,
 } from "./types.js";
 
 export interface DirectProductionInput {
@@ -52,13 +61,24 @@ export function directProductionScenes(
 ): DirectProductionResult {
   const pkg = input.contentPackage;
   const emotionMap = buildEmotionMap(input.intents);
-  const continuity = buildVisualContinuityBible({
-    category: pkg.topic.category,
-    intents: input.intents,
-  });
+  const continuity = enrichBibleWithSpine(
+    buildVisualContinuityBible({
+      category: pkg.topic.category,
+      intents: input.intents,
+    }),
+  );
 
   const roleCounts = new Map<DirectorBeatRole, number>();
-  const scenes: DirectedScenePlan[] = input.intents.map((intent, index) => {
+  let previousState: SceneContinuityState | undefined;
+  const draftScenes: Array<{
+    scene: Omit<DirectedScenePlan, "cutIn" | "cutOut" | "transitionOut" | "continuityNotes"> & {
+      continuityNotes: string[];
+    };
+    state: SceneContinuityState;
+  }> = [];
+
+  for (let index = 0; index < input.intents.length; index++) {
+    const intent = input.intents[index]!;
     const role = intent.role as DirectorBeatRole;
     const occurrence = roleCounts.get(role) ?? 0;
     roleCounts.set(role, occurrence + 1);
@@ -82,36 +102,83 @@ export function directProductionScenes(
       count: role === "end-card" ? 2 : 3,
     });
 
+    const state = buildSceneContinuityState({
+      role,
+      index,
+      lightingKey: lighting.keyLight,
+      cameraMovement: camera.movement,
+      emotionLabel: emotion.targetEmotion,
+      previous: previousState,
+    });
+    previousState = state;
+
     const wardrobeLock = continuity.wardrobe;
     const blocking = {
       characters: intent.characters,
-      positions: blockingForRole(role, occurrence),
+      positions: state.characterPosition,
       wardrobeLock,
-      objectPlacement: continuity.objectPlacement,
+      objectPlacement: state.objectPlacement,
     };
 
-    return {
-      sceneId,
-      index,
-      role,
-      objective: sceneObjective(intent, emotion.targetEmotion),
-      camera,
-      lighting,
-      blocking,
-      emotion,
-      pacing,
-      microActions,
-      motionPlan: motionLine(camera.movement, microActions[0]!),
-      timingSeconds: intent.durationSeconds,
-      continuityNotes: continuityNotesForScene(
-        continuity,
+    draftScenes.push({
+      state,
+      scene: {
+        sceneId,
         index,
-        input.intents.length,
-      ),
-      transitionOut: transitionFor(
         role,
-        input.intents[index + 1]?.role as DirectorBeatRole | undefined,
-      ),
+        objective: sceneObjective(intent, emotion.emotionArc, emotion.targetEmotion),
+        camera,
+        lighting,
+        blocking,
+        emotion,
+        pacing,
+        microActions,
+        motionPlan: motionLine(
+          camera.movement,
+          state.movementSpeed,
+          state.cameraMomentum,
+          microActions[0]!,
+        ),
+        timingSeconds: intent.durationSeconds,
+        continuityNotes: [],
+        continuityState: state,
+      },
+    });
+  }
+
+  // Second pass: cut bridges + continuity prompt notes (needs neighbor states).
+  const scenes: DirectedScenePlan[] = draftScenes.map((entry, index) => {
+    const next = draftScenes[index + 1];
+    const prev = draftScenes[index - 1];
+    const cutOut = buildCutBridge({
+      fromRole: entry.scene.role,
+      toRole: next?.scene.role,
+      fromState: entry.state,
+      toState: next?.state,
+    });
+    const cutIn: SceneCutBridge | undefined = prev
+      ? buildCutBridge({
+          fromRole: prev.scene.role,
+          toRole: entry.scene.role,
+          fromState: prev.state,
+          toState: entry.state,
+        })
+      : undefined;
+
+    const continuityNotes = [
+      ...continuityNotesForScene(continuity, index, draftScenes.length),
+      ...continuityPromptBlock(entry.state, cutIn, cutOut),
+    ];
+
+    return {
+      ...entry.scene,
+      continuityNotes,
+      cutIn,
+      cutOut,
+      transitionOut: {
+        type: toEditorTransition(cutOut.kind),
+        note: cutOut.note,
+      },
     };
   });
 
@@ -129,7 +196,6 @@ export function directProductionScenes(
 
   const quality = gateDirectorPackage({ scenes, continuity });
 
-  // If gate fails on slideshow/static only, heal by ensuring micro-actions + shot variety.
   if (!quality.ok) {
     healNonCinematic(scenes);
   }
@@ -146,11 +212,11 @@ export function directProductionScenes(
     scenes,
     cameraPlanSummary: scenes.map(
       (s) =>
-        `${s.sceneId}: ${s.camera.shotType} / ${s.camera.movement} / ${s.camera.shotSize}`,
+        `${s.sceneId}: ${s.camera.shotType} / ${s.camera.movement} / ${s.continuityState.cameraMomentum}`,
     ),
     lightingPlanSummary: scenes.map(
       (s) =>
-        `${s.sceneId}: ${s.lighting.mood} (${s.lighting.colorTemperature}) — ${s.lighting.notes}`,
+        `${s.sceneId}: ${s.lighting.mood} — ${s.continuityState.lightingDirection}`,
     ),
     motionPlanSummary: scenes.map((s) => `${s.sceneId}: ${s.motionPlan}`),
     transitionPlan: scenes.slice(0, -1).map((s, i) => ({
@@ -191,66 +257,24 @@ export function applyDirectorToIntents(
 export { enrichPromptsWithDirector };
 
 function buildFilmObjective(pkg: ContentPackage): string {
-  return `Direct a premium Pixar-inspired AmyNest short about "${pkg.title}" — emotion and visual story first, product only after hope is earned, cinematic not slideshow.`;
+  return `Direct "${pkg.title}" as ONE continuous Pixar-style family short — match cuts, eyeline/action/motivated cuts, locked geography/props/lighting, emotion arc Curious→Thinking→Understanding→Success→Celebration, Amy mentors inside the story; never disconnected AI shots.`;
 }
 
 function sceneObjective(
   intent: ComposerSceneIntent,
+  arc: string,
   emotion: string,
 ): string {
-  return `${intent.goal} — land "${emotion}" with cinematic clarity (muted-readable).`;
+  return `${intent.goal} — arc "${arc}" / "${emotion}" with match-cut continuity (muted-readable).`;
 }
 
-function blockingForRole(role: DirectorBeatRole, occurrence: number): string {
-  switch (role) {
-    case "hook":
-      return occurrence === 0
-        ? "Parent mid-frame; child slightly camera-right; window camera-left"
-        : "Hold established blocking; tighten on reaction";
-    case "problem":
-      return "Parent left, child right at the table; struggle props between them";
-    case "emotion":
-      return "Close framing; faces share the vertical; props soft in background";
-    case "feature":
-      return "Amy AI guide enters established space; UI appears as held/nearby prop";
-    case "transformation":
-      return "Open the frame: parent-child closer; same room, more breath";
-    case "cta":
-      return "Amy AI centered-warm; family soft in depth";
-    case "end-card":
-      return "Centered end card; no character wardrobe redesign";
-    case "bridge":
-      return "Preserve previous blocking; ease toward next beat";
-  }
-}
-
-function motionLine(movement: string, firstAction: string): string {
-  return `${movement.replace(/-/g, " ")} while ${firstAction.toLowerCase()}`;
-}
-
-function transitionFor(
-  from: DirectorBeatRole,
-  to: DirectorBeatRole | undefined,
-): { type: TransitionType; note: string } {
-  if (!to) {
-    return { type: "Fade", note: "Settle into final hold" };
-  }
-  if (from === "cta" && to === "end-card") {
-    return { type: "Fade", note: "Soft brand wash into official end card" };
-  }
-  if (from === "emotion" && to === "feature") {
-    return {
-      type: "Dissolve",
-      note: "Hope dissolves into the guide reveal — never a hard product slam",
-    };
-  }
-  if (from === "hook" || from === "problem") {
-    return { type: "Crossfade", note: "Emotional continuity across the struggle" };
-  }
-  if (from === "transformation") {
-    return { type: "Dissolve", note: "Celebration eases into soft CTA" };
-  }
-  return { type: "Crossfade", note: "Seamless cinematic handoff" };
+function motionLine(
+  movement: string,
+  speed: string,
+  momentum: string,
+  firstAction: string,
+): string {
+  return `${movement.replace(/-/g, " ")} at ${speed} speed (momentum: ${momentum}) while ${firstAction.toLowerCase()} — continue prior motion vector; never reset camera`;
 }
 
 function healNonCinematic(scenes: DirectedScenePlan[]): void {

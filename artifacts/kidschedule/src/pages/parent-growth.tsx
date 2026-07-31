@@ -6,6 +6,10 @@ import {
 } from "@/components/learning-progress";
 import { ScreenShell } from "@/components/screen-shell";
 import { PremiumSkeletonStack } from "@/components/learning-progress/premium-polish";
+import { SpeechKnowledgeInsightsCard } from "@/components/learning-progress/speech-knowledge-insights";
+import { StoryKnowledgeInsightsCard } from "@/components/learning-progress/story-knowledge-insights";
+import { ReadingKnowledgeInsightsCard } from "@/components/learning-progress/reading-knowledge-insights";
+import { GamesKnowledgeInsightsCard } from "@/components/learning-progress/games-knowledge-insights";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
@@ -53,7 +57,13 @@ export default function ParentGrowthPage() {
       amySurface="growth"
       childId={child.id}
     >
-      <ParentGrowthDashboardView dashboard={phase3.parentDashboard} childName={child.name} />
+      <div className="space-y-6">
+        <ParentGrowthDashboardView dashboard={phase3.parentDashboard} childName={child.name} />
+        <SpeechKnowledgeInsightsCard childId={child.id} childName={child.name} />
+        <StoryKnowledgeInsightsCard childId={child.id} childName={child.name} />
+        <ReadingKnowledgeInsightsCard childId={child.id} childName={child.name} />
+        <GamesKnowledgeInsightsCard childId={child.id} childName={child.name} />
+      </div>
     </ScreenShell>
   );
 }

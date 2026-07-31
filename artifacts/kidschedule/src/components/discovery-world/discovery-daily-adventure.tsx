@@ -1,20 +1,28 @@
 import { useMemo, useState } from "react";
 import {
-  buildDailyAdventure,
   dailyAdventureCompletionPct,
   loadDailyAdventureProgress,
   recordDailyAdventureEvent,
   type DailyAdventureProgress,
   type DailyAdventureTaskKind,
 } from "@workspace/world-engine";
-import { Progress } from "@/components/ui/progress";
 import { PremiumCard } from "@/components/learning-progress/premium-polish";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
 import { dailyAdventureStorageKey } from "@/lib/discovery-worlds-stats";
 import type { WorldId } from "@workspace/world-engine";
 import { grantDiscoveryWorldXp } from "@/lib/discovery-worlds-progress";
 import { trackDiscoveryWorldsEvent } from "@/lib/discovery-worlds-telemetry";
-import { DelightBurst } from "./delight-burst";
+import {
+  getHubDailyAdventureView,
+  recordHubDailyAdventure,
+} from "@/lib/discovery-worlds-hub-daily";
+import { recordAttentionEvent } from "@/lib/sound-world-attention-store";
+import {
+  AnimatedScore,
+  MissionCompleteBanner,
+  SpringProgressBar,
+  emitXpFly,
+} from "./sound-world-motion";
 
 function readDaily(worldId: WorldId, childId: number): DailyAdventureProgress | null {
   try {
@@ -48,10 +56,21 @@ export function useDiscoveryDailyAdventure(config: DiscoveryWorldRuntimeConfig, 
     const result = recordDailyAdventureEvent(progress, kind, amount);
     setProgress(result.progress);
     writeDaily(config.worldId, childId, result.progress);
+    recordHubDailyAdventure(childId, config.worldId, kind, amount);
     if (result.allComplete) {
       grantDiscoveryWorldXp(config.worldId, childId, "discoverySession");
+      emitXpFly({ amount: 15 });
       setCelebrate(true);
+      recordAttentionEvent(childId, "task_complete", { worldId: config.worldId });
       trackDiscoveryWorldsEvent(config.worldId, "world_daily_adventure_complete", { childId });
+      void import("@/lib/learning-events-bridge").then(({ publishDailyMissionCompleted }) => {
+        publishDailyMissionCompleted({
+          childId,
+          module: "discovery_worlds",
+          entityId: config.worldId,
+          metadata: { worldId: config.worldId },
+        });
+      });
     }
   };
 
@@ -83,10 +102,16 @@ export function DiscoveryDailyAdventureCard({
 
   return (
     <PremiumCard tier="premium" className={compact ? "p-3" : "p-4"}>
-      <DelightBurst active={celebrate} variant="confetti" onDone={clearCelebrate} />
+      <MissionCompleteBanner
+        active={celebrate}
+        label="Daily adventure complete!"
+        onDone={clearCelebrate}
+      />
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">Daily adventure</p>
-      <p className="mt-1 font-semibold text-foreground">{pct}% complete today</p>
-      <Progress value={pct} className="mt-2 h-2" />
+      <p className="mt-1 font-semibold text-foreground">
+        <AnimatedScore value={pct} suffix="% complete today" />
+      </p>
+      <SpringProgressBar value={pct} className="mt-2" />
       {!compact && (
         <ul className="mt-3 space-y-2">
           {rows.map(({ task, done }) => (
@@ -105,17 +130,27 @@ export function DiscoveryDailyAdventureCard({
   );
 }
 
-/** Hub-level daily adventure (first live world template). */
+/** Hub-level daily adventure — progress from real cross-world completion. */
 export function HubDailyAdventureTeaser({ childId }: { childId: number }) {
-  const progress = buildDailyAdventure("vehicle_world", childId, [], new Date().toISOString().slice(0, 10));
-  const pct = dailyAdventureCompletionPct(progress);
+  const view = useMemo(() => getHubDailyAdventureView(childId), [childId]);
+  const complete = view.total > 0 && view.done >= view.total;
+  const subtitle =
+    view.total === 0
+      ? "Open any sound world to earn stars, stickers, and XP."
+      : complete
+        ? "Today's adventure complete — great exploring!"
+        : `${view.done}/${view.total} tasks · Open any sound world to earn stars, stickers, and XP.`;
+
   return (
-    <PremiumCard tier="glow" className="p-4">
+    <PremiumCard tier="glow" className="relative overflow-hidden p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">Today&apos;s adventure</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Open any sound world to earn stars, stickers, and XP.
-      </p>
-      <Progress value={pct} className="mt-2 h-2" />
+      <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      <SpringProgressBar value={view.pct} className="mt-2" />
+      {complete && (
+        <p className="mt-2 text-xs font-semibold text-amber-200" aria-live="polite">
+          ✨ Adventure complete
+        </p>
+      )}
     </PremiumCard>
   );
 }

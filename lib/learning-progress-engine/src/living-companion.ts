@@ -29,6 +29,7 @@ export interface LivingCompanionLine {
 
 const SECTION_LABEL: Record<SectionKey, string> = {
   phonics: "phonics",
+  reading: "reading",
   math: "math",
   speech: "speech",
   stories: "stories",

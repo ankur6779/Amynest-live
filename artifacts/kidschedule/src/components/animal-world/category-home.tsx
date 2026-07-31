@@ -70,8 +70,8 @@ export function CategoryHome({
         columns={columns}
         rowHeight={columns >= 4 ? 220 : columns >= 3 ? 210 : 200}
         className="h-[min(68vh,720px)] pr-1"
-        renderItem={(animal) => (
-          <AnimalCard animal={animal} onSelect={onSelectAnimal} />
+        renderItem={(animal, index) => (
+          <AnimalCard animal={animal} onSelect={onSelectAnimal} idleIndex={index} />
         )}
       />
     </div>

@@ -22,6 +22,7 @@ export const DISCOVERY_WORLDS_ANALYTICS_EVENTS = [
   "world_collection_xp",
   "world_daily_adventure_complete",
   "world_achievement_viewed",
+  "world_attention_state",
 ] as const;
 
 export type DiscoveryWorldsAnalyticsEvent =

@@ -1,19 +1,19 @@
 # AmyNest Production Launch Validation Report
 
-Generated: 2026-07-29T18:18:37.696Z
+Generated: 2026-07-31T17:14:57.963Z
 Validator: v2.0.0
 
 ## Result
 
-- **Pass/Fail:** FAIL
-- **Evidence certification:** FAIL
-- **Recommendation:** reject
-- **Overall Launch Score:** 56
-- **Title:** Gentle Discipline That Actually Works | AmyNest AI
-- **Topic:** parenting-001
-- **Render package:** rp_phase6_fixture
-- **Final MP4:** /var/folders/hh/kw1ccv157fdgfqxbfn575n1m0000gn/T/amynest-lv-report-TwLeK7/silent.mp4
-- **QUALITY_REPORT.json:** /var/folders/hh/kw1ccv157fdgfqxbfn575n1m0000gn/T/amynest-lv-report-TwLeK7/QUALITY_REPORT.json
+- **Pass/Fail:** PASS
+- **Evidence certification:** PASS
+- **Recommendation:** auto_approve
+- **Overall Launch Score:** 100
+- **Title:** Teach, Practice, Quiz, Doubt — One Tutor That Follows the Child | AmyNest AI
+- **Topic:** cta-rerender-golden-002
+- **Render package:** rp_cta_g002_2040d95b53633c7d29fed306
+- **Final MP4:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-002/amynest-google-golden-002.mp4
+- **QUALITY_REPORT.json:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-002/QUALITY_REPORT.json
 
 ## Evidence rule
 
@@ -26,17 +26,17 @@ Validator: v2.0.0
 
 | Dimension | Score |
 |---|---:|
-| Story | 0 |
+| Story | 100 |
 | Visual | 100 |
-| Audio | 0 |
-| Brand | 33 |
+| Audio | 100 |
+| Brand | 100 |
 | Feature Accuracy | 100 |
-| Accessibility | 0 |
-| Technical | 58 |
-| Campaign | 79 |
-| Publishing Readiness | 91 |
+| Accessibility | 100 |
+| Technical | 100 |
+| Campaign | 100 |
+| Publishing Readiness | 100 |
 | Evidence | 100 |
-| **Overall Launch Score** | **56** |
+| **Overall Launch Score** | **100** |
 
 ## Launch Rules
 
@@ -47,94 +47,57 @@ Validator: v2.0.0
 
 ## Blocked reasons
 
-- audio:FAIL — Final MP4 has no usable audio (silent or missing track)
-- subtitles:FAIL — OCR found no burned-in subtitle text on sampled frames
-- end_card:FAIL — Google Play badge/text not detected on end card
-- cta_detection:FAIL — Install/Download CTA not visible on rendered frames
-- text_readability:FAIL — Insufficient readable on-screen text detected
-- story_quality:FAIL — Missing story beats on video: beginning, conflict, resolution, cta, amynestNatural
-- muted_story:FAIL — Muted playback is not understandable (captions/progression/CTA missing)
-- brand_mention:FAIL — AmyNest not visible on rendered frames
-- compliance:FAIL — Compliance hits: missing-or-tiny-media
-- performance:FAIL — Output file too small / missing assets
-- metadata:FAIL — Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
-- AUDIO: Audio (narration + music + loudness) — FAIL: Final MP4 has no usable audio (silent or missing track) (audio/critical/FAIL)
-- SUBTITLES: Burned-in subtitles (OCR) — FAIL: OCR found no burned-in subtitle text on sampled frames (accessibility/critical/FAIL)
-- END_CARD: End card (icon + badges + CTA) — FAIL: Google Play badge/text not detected on end card (brand/critical/FAIL)
-- CTA_DETECTION: CTA detection (on video) — FAIL: Install/Download CTA not visible on rendered frames (brand/critical/FAIL)
-- TEXT_READABILITY: Text readability (OCR) — FAIL: Insufficient readable on-screen text detected (accessibility/critical/FAIL)
-- STORY_QUALITY: Story quality (final MP4) — FAIL: Missing story beats on video: beginning, conflict, resolution, cta, amynestNatural (story/critical/FAIL)
-- MUTED_STORY: Muted story test — FAIL: Muted playback is not understandable (captions/progression/CTA missing) (story/critical/FAIL)
-- BRAND_MENTION: AmyNest natural brand mention — FAIL: AmyNest not visible on rendered frames (story/critical/FAIL)
-- COMPLIANCE: Compliance (no placeholders/debug/stock) — FAIL: Compliance hits: missing-or-tiny-media (policy/critical/FAIL)
-- PERFORMANCE: Performance / output integrity — FAIL: Output file too small / missing assets (technical/critical/FAIL)
-- METADATA: Metadata (after media pass) — FAIL: Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth (business/critical/FAIL)
-- FPS: FPS should be 30 (probed 25) (technical/major/FAIL)
-- AUDIO_STREAM: Final MP4 must contain a non-silent audio stream (technical/critical/FAIL)
+- All critical launch checks passed.
 
 ## Evidence gates
 
-- [PASS] `evidence_integrity` conf=1 (probeComplete=true, fileSizeBytes=47906, workDir=/var/folders/hh/kw1ccv157fdgfqxbfn575n1m0000gn/T/amynest-lv-report-TwLeK7/evidence)
-- [FAIL] `audio` conf=0.99 (hasAudioStream=true, meanVolumeDb=-91, maxVolumeDb=-91, silenceRatio=1) — Final MP4 has no usable audio (silent or missing track)
-- [FAIL] `subtitles` conf=0.9 (subtitleCoverage=0, transcriptOverlap=0, ocrCaptionChars=0) — OCR found no burned-in subtitle text on sampled frames
-- [FAIL] `end_card` conf=0.85 (appIconSimilarity=0.5435367159574275, endCardPurpleRatio=1, googlePlayTextDetected=false, appStoreTextDetected=false) — Google Play badge/text not detected on end card
-- [PASS] `brand_detection` conf=0.8 (logoTextDetected=false, appIconSimilarity=0.5435367159574275, brandVisibleSeconds=2)
-- [FAIL] `cta_detection` conf=0.85 (ctaTextDetected=false, ctaVisibleSeconds=0) — Install/Download CTA not visible on rendered frames
-- [PASS] `character_consistency` conf=0.75 (bestSimilarity=0.7875556919121159, bestCharacterId=amy-ai, samplesCompared=10, similarity.amy-ai=0.7875556919121159)
-- [PASS] `visual_quality` conf=0.9 (width=1080, height=1920, blackSeconds=0, meanLuma=45.0625)
-- [PASS] `motion_quality` conf=0.75 (sceneChangeCount=2, fps=25, freezeSeconds=0)
-- [FAIL] `text_readability` conf=0.7 (ocrReadableChars=0, ocrFrames=29) — Insufficient readable on-screen text detected
-- [FAIL] `story_quality` conf=0.7 (beginning=false, conflict=false, resolution=false, cta=false) — Missing story beats on video: beginning, conflict, resolution, cta, amynestNatural
-- [FAIL] `muted_story` conf=0.75 (captionsReadableMuted=false, visualProgression=true, ctaVisibleMuted=false, visualContinuity=true) — Muted playback is not understandable (captions/progression/CTA missing)
-- [FAIL] `brand_mention` conf=0.8 (visualMention=false, narrationPresent=false, naturalInVoiceScript=true) — AmyNest not visible on rendered frames
-- [FAIL] `compliance` conf=0.9 (placeholderDetected=false, todoDetected=false, debugOverlayDetected=false, stockWatermarkDetected=false) — Compliance hits: missing-or-tiny-media
-- [FAIL] `performance` conf=0.95 (fileSizeBytes=47906, durationSec=16, hasAudioStream=true, corrupt=false) — Output file too small / missing assets
-- [FAIL] `metadata` conf=1 (titlePresent=true, descriptionPresent=true, mediaGatesBlocking=10, renderSubtitleModeClaim=burned-in) — Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
+- [PASS] `evidence_integrity` conf=1 (probeComplete=true, fileSizeBytes=6874201, workDir=/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-002/evidence/evidence)
+- [PASS] `audio` conf=0.85 (hasAudioStream=true, meanVolumeDb=-21.4, maxVolumeDb=-5.3, silenceRatio=0)
+- [PASS] `subtitles` conf=0.8 (subtitleCoverage=1, transcriptOverlap=0.358974358974359, ocrCaptionChars=1127)
+- [PASS] `end_card` conf=0.85 (appIconSimilarity=0.7770987741018972, endCardPurpleRatio=0.6455078125, googlePlayTextDetected=true, appStoreTextDetected=true)
+- [PASS] `brand_detection` conf=0.8 (logoTextDetected=true, appIconSimilarity=0.7770987741018972, brandVisibleSeconds=2)
+- [PASS] `cta_detection` conf=0.85 (ctaTextDetected=true, ctaVisibleSeconds=2.5)
+- [PASS] `character_consistency` conf=0.75 (bestSimilarity=0.9022869635338278, bestCharacterId=amy-boy, samplesCompared=10, similarity.amy-ai=0.8270197012947552)
+- [PASS] `visual_quality` conf=0.9 (width=1080, height=1920, blackSeconds=0, meanLuma=143.94425455729166)
+- [PASS] `motion_quality` conf=0.75 (sceneChangeCount=14, fps=30, freezeSeconds=0)
+- [PASS] `text_readability` conf=0.7 (ocrReadableChars=2935, ocrFrames=32)
+- [PASS] `story_quality` conf=0.7 (beginning=true, conflict=true, resolution=true, cta=true)
+- [PASS] `muted_story` conf=0.75 (captionsReadableMuted=true, visualProgression=true, ctaVisibleMuted=true, visualContinuity=true)
+- [PASS] `brand_mention` conf=0.8 (visualMention=true, narrationPresent=true, naturalInVoiceScript=true)
+- [PASS] `compliance` conf=0.9 (placeholderDetected=false, todoDetected=false, debugOverlayDetected=false, stockWatermarkDetected=false)
+- [PASS] `performance` conf=0.95 (fileSizeBytes=6874201, durationSec=21, hasAudioStream=true, corrupt=false)
+- [PASS] `metadata` conf=1 (titlePresent=true, descriptionPresent=true, mediaGatesBlocking=0, renderSubtitleModeClaim=burned-in)
 
 ## Improvement Suggestions
 
-- Fix the final MP4 (not metadata) and re-run evidence certification.
-- Export 30fps H.264 for platform consistency.
-- Mux real narration + music — never anullsrc silence.
+- None — ready for upload.
 
 ## Failed Checks
 
-- **AUDIO** (audio/critical/FAIL): Audio (narration + music + loudness) — FAIL: Final MP4 has no usable audio (silent or missing track)
-- **SUBTITLES** (accessibility/critical/FAIL): Burned-in subtitles (OCR) — FAIL: OCR found no burned-in subtitle text on sampled frames
-- **END_CARD** (brand/critical/FAIL): End card (icon + badges + CTA) — FAIL: Google Play badge/text not detected on end card
-- **CTA_DETECTION** (brand/critical/FAIL): CTA detection (on video) — FAIL: Install/Download CTA not visible on rendered frames
-- **TEXT_READABILITY** (accessibility/critical/FAIL): Text readability (OCR) — FAIL: Insufficient readable on-screen text detected
-- **STORY_QUALITY** (story/critical/FAIL): Story quality (final MP4) — FAIL: Missing story beats on video: beginning, conflict, resolution, cta, amynestNatural
-- **MUTED_STORY** (story/critical/FAIL): Muted story test — FAIL: Muted playback is not understandable (captions/progression/CTA missing)
-- **BRAND_MENTION** (story/critical/FAIL): AmyNest natural brand mention — FAIL: AmyNest not visible on rendered frames
-- **COMPLIANCE** (policy/critical/FAIL): Compliance (no placeholders/debug/stock) — FAIL: Compliance hits: missing-or-tiny-media
-- **PERFORMANCE** (technical/critical/FAIL): Performance / output integrity — FAIL: Output file too small / missing assets
-- **METADATA** (business/critical/FAIL): Metadata (after media pass) — FAIL: Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
-- **FPS** (technical/major/FAIL): FPS should be 30 (probed 25)
-- **AUDIO_STREAM** (technical/critical/FAIL): Final MP4 must contain a non-silent audio stream
+_No failed checks._
 
 ## All Checks
 
 - [PASS] `evidence.evidence_integrity` GATE_EVIDENCE_INTEGRITY: Evidence integrity — evidence PASS
-- [FAIL] `evidence.audio` AUDIO: Audio (narration + music + loudness) — FAIL: Final MP4 has no usable audio (silent or missing track)
-- [FAIL] `evidence.subtitles` SUBTITLES: Burned-in subtitles (OCR) — FAIL: OCR found no burned-in subtitle text on sampled frames
-- [FAIL] `evidence.end_card` END_CARD: End card (icon + badges + CTA) — FAIL: Google Play badge/text not detected on end card
+- [PASS] `evidence.audio` GATE_AUDIO: Audio (narration + music + loudness) — evidence PASS
+- [PASS] `evidence.subtitles` GATE_SUBTITLES: Burned-in subtitles (OCR) — evidence PASS
+- [PASS] `evidence.end_card` GATE_END_CARD: End card (icon + badges + CTA) — evidence PASS
 - [PASS] `evidence.brand_detection` GATE_BRAND_DETECTION: Brand / logo detection — evidence PASS
-- [FAIL] `evidence.cta_detection` CTA_DETECTION: CTA detection (on video) — FAIL: Install/Download CTA not visible on rendered frames
+- [PASS] `evidence.cta_detection` GATE_CTA_DETECTION: CTA detection (on video) — evidence PASS
 - [PASS] `evidence.character_consistency` GATE_CHARACTER_CONSISTENCY: Character consistency (bible match) — evidence PASS
 - [PASS] `evidence.visual_quality` GATE_VISUAL_QUALITY: Visual quality — evidence PASS
 - [PASS] `evidence.motion_quality` GATE_MOTION_QUALITY: Motion quality — evidence PASS
-- [FAIL] `evidence.text_readability` TEXT_READABILITY: Text readability (OCR) — FAIL: Insufficient readable on-screen text detected
-- [FAIL] `evidence.story_quality` STORY_QUALITY: Story quality (final MP4) — FAIL: Missing story beats on video: beginning, conflict, resolution, cta, amynestNatural
-- [FAIL] `evidence.muted_story` MUTED_STORY: Muted story test — FAIL: Muted playback is not understandable (captions/progression/CTA missing)
-- [FAIL] `evidence.brand_mention` BRAND_MENTION: AmyNest natural brand mention — FAIL: AmyNest not visible on rendered frames
-- [FAIL] `evidence.compliance` COMPLIANCE: Compliance (no placeholders/debug/stock) — FAIL: Compliance hits: missing-or-tiny-media
-- [FAIL] `evidence.performance` PERFORMANCE: Performance / output integrity — FAIL: Output file too small / missing assets
-- [FAIL] `evidence.metadata` METADATA: Metadata (after media pass) — FAIL: Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
+- [PASS] `evidence.text_readability` GATE_TEXT_READABILITY: Text readability (OCR) — evidence PASS
+- [PASS] `evidence.story_quality` GATE_STORY_QUALITY: Story quality (final MP4) — evidence PASS
+- [PASS] `evidence.muted_story` GATE_MUTED_STORY: Muted story test — evidence PASS
+- [PASS] `evidence.brand_mention` GATE_BRAND_MENTION: AmyNest natural brand mention — evidence PASS
+- [PASS] `evidence.compliance` GATE_COMPLIANCE: Compliance (no placeholders/debug/stock) — evidence PASS
+- [PASS] `evidence.performance` GATE_PERFORMANCE: Performance / output integrity — evidence PASS
+- [PASS] `evidence.metadata` GATE_METADATA: Metadata (after media pass) — evidence PASS
 - [PASS] `tech.resolution` RESOLUTION: Resolution must be 1080x1920 (probed 1080x1920)
-- [PASS] `tech.duration` DURATION: Duration must match target (~16s); probed=16s
-- [FAIL] `tech.fps` FPS: FPS should be 30 (probed 25)
-- [FAIL] `tech.audio-stream` AUDIO_STREAM: Final MP4 must contain a non-silent audio stream
+- [PASS] `tech.duration` DURATION: Duration must match target (~21s); probed=21s
+- [PASS] `tech.fps` FPS: FPS should be 30 (probed 30)
+- [PASS] `tech.audio-stream` AUDIO_STREAM: Final MP4 must contain a non-silent audio stream
 - [PASS] `tech.bitrate` BITRATE: Export should meet target quality bitrate / file size
 - [PASS] `tech.playable-mp4` NOT_PLAYABLE_MP4: Final file must be a playable H.264 MP4 (probe must succeed)
 - [PASS] `tech.package-claims-untrusted` CLAIMS_UNTRUSTED: Render package subtitleMode/watermark claims are ignored — OCR/probe decide
@@ -161,5 +124,5 @@ Validator: v2.0.0
 
 ## Publishing Recommendation
 
-REJECT — do not upload. Fix final MP4 evidence failures and re-validate.
+AUTO APPROVE — upload may proceed.
 

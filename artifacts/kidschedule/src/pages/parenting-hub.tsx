@@ -105,6 +105,7 @@ import {
   ComebackMissionCard,
   AdaptiveRecommendationsChips,
 } from "@/components/learning-progress";
+import { hubRecommendationsFromRuntime } from "@/lib/adaptive-authority";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
 import { HubExploreAgesSection } from "@/components/hub-light-layout";
 import {
@@ -654,7 +655,7 @@ function ActivitiesSection({
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time.title")} description={t("parent_hub.subsections.story-time.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">
-            <HubLazyContent><DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} /></HubLazyContent>
+            <HubLazyContent><DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} childId={effectiveChild.id} /></HubLazyContent>
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<Gamepad2 className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.fun-and-play.title")} description={t("parent_hub.subsections.fun-and-play.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(52,211,153,0.26)0%,rgba(34,197,94,0.12)100%)">
@@ -681,7 +682,7 @@ function ActivitiesSection({
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time-older.title")} description={t("parent_hub.subsections.story-time-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">
-            <HubLazyContent><DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} /></HubLazyContent>
+            <HubLazyContent><DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} childId={effectiveChild.id} /></HubLazyContent>
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">
@@ -854,6 +855,10 @@ function ParentingHubPage() {
   // Hub Journey: 3 guided free days → paywall (replaces per-tile quota for hub features).
   const hubJourney = useHubJourney(effectiveChild?.id);
   const learningProgress = useLearningProgress(effectiveChild?.id);
+  /** Runtime-owned Amy recommends — not LPE adaptive-routing. */
+  const runtimeHubRecommendations = effectiveChild
+    ? hubRecommendationsFromRuntime(effectiveChild.id)
+    : [];
   const rewardCelebrations = useRewardCelebrations();
   const { trackNextSessionOpened } = useRecordLearningActivity(effectiveChild?.id, {
     onRewards: rewardCelebrations.celebrate,
@@ -1020,6 +1025,22 @@ function ParentingHubPage() {
       }
     });
   };
+
+  // Deep-link / restore: open Learning and scroll to Smart Maths when requested.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = (window.location.hash || "").replace(/^#/, "");
+    const params = new URLSearchParams(window.location.search);
+    const tile = params.get("tile") || params.get("open") || hash;
+    if (tile === "smart-math-tricks" || tile === "hub-group-learning" || tile === "learning") {
+      navigateHub(
+        "learning",
+        tile === "smart-math-tricks" || tile === "learning" ? "smart-math-tricks" : undefined,
+      );
+    }
+    // navigateHub is stable enough for mount-only deep links
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount/hash restore
+  }, [effectiveChild?.id]);
 
   const learningTabOpen = expandedGroups.has("learning");
   useEffect(() => {
@@ -2010,15 +2031,13 @@ function ParentingHubPage() {
                 activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
                 activitiesTotal={learningProgress.phase3.dailySession.totalCount}
                 streakDays={learningProgress.phase3.wallet.streakDays}
-                skillHighlight={
-                  learningProgress.phase3.recommendations[0]?.title ?? null
-                }
+                skillHighlight={runtimeHubRecommendations[0]?.title ?? null}
                 onClose={() => setShowSessionComplete(false)}
               />
             ) : null}
-            {learningProgress.phase3 && (learningProgress.phase3.recommendations?.length ?? 0) > 0 ? (
+            {runtimeHubRecommendations.length > 0 ? (
               <AdaptiveRecommendationsChips
-                items={learningProgress.phase3.recommendations}
+                items={runtimeHubRecommendations}
                 parentHub
               />
             ) : null}

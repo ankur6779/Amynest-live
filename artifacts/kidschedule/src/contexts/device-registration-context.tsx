@@ -54,6 +54,11 @@ export function DeviceRegistrationProvider({ children }: { children: ReactNode }
   const runRegistration = useCallback(async () => {
     setStatus("loading");
     setMessage(null);
+    // Hard ceiling — never leave ProtectedRoute on an infinite loader if
+    // token resolution or /devices/register stalls without rejecting.
+    const failOpenTimer = window.setTimeout(() => {
+      setStatus((prev) => (prev === "loading" || prev === "idle" ? "ready" : prev));
+    }, 10_000);
     try {
       const result = await registerCurrentDevice(authFetchRef.current);
       if (!result.ok) {
@@ -69,6 +74,8 @@ export function DeviceRegistrationProvider({ children }: { children: ReactNode }
     } catch {
       // Non-fatal during rollout — allow app use; backend may soft-enforce.
       setStatus("ready");
+    } finally {
+      window.clearTimeout(failOpenTimer);
     }
   }, []);
 

@@ -51,7 +51,7 @@ export function buildWeeklyParentReport(input: WeeklyReportInput): WeeklyParentR
   }
 
   const sectionGains: WeeklyParentReport["sectionGains"] = {};
-  const keys: SectionKey[] = ["phonics", "math", "speech", "stories"];
+  const keys: SectionKey[] = ["phonics", "reading", "math", "speech", "stories"];
   for (const k of keys) {
     const from = previousWeek?.sectionProgress?.[k]?.masteryPct ?? 0;
     const to = profile.sectionProgress[k]?.masteryPct ?? 0;

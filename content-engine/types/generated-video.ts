@@ -31,6 +31,8 @@ export interface GeneratedVideoMetadata {
   /** True when generation used a first-frame identity image. */
   imageToVideo?: boolean;
   identityImagePath?: string;
+  /** Extra identity / continuity reference frames (Character Bible, prior last-frame). */
+  referenceImagePaths?: string[];
 }
 
 export interface GeminiVideoProviderSettings {

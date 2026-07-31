@@ -1,7 +1,7 @@
 {
   "schemaVersion": "birth_sky_conformance_report/1.0.0",
   "appBuild": "birth_sky_rc3/1.0.0",
-  "generatedAt": "2026-07-25T19:45:06.352Z",
+  "generatedAt": "2026-07-31T17:10:00.599Z",
   "scope": "core_only",
   "items": [
     {
@@ -487,7 +487,7 @@
       "part": "release",
       "check": "Version Registry updated",
       "status": "PASS",
-      "evidence": "getVersionRegistrySnapshot(); engine=amynest-astro-lite/1.0.0",
+      "evidence": "getVersionRegistrySnapshot(); engine=skyfield-jpl/1.0.0",
       "owner": "Platform"
     },
     {

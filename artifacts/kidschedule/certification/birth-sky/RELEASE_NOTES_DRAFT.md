@@ -12,7 +12,7 @@
 
 ## Compatibility
 
-- Engine compute: `amynest-astro-lite/1.0.0`
+- Engine compute: `skyfield-jpl/1.0.0`
 - Context schema: `birth_sky_context/1.0.0`
 - Export manifest: `birth_sky_export/1.0.0`
 - Privacy policy: `birth_sky_privacy/1.0.0`

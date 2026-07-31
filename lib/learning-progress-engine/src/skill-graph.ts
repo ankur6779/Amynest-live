@@ -86,7 +86,12 @@ export function activityToSkillIds(
   section: SectionKey,
 ): string[] {
   const ids: string[] = [];
-  if (activityId.startsWith("phonics_") || section === "phonics") {
+  if (
+    activityId.startsWith("phonics_") ||
+    activityId.startsWith("reading_") ||
+    section === "phonics" ||
+    section === "reading"
+  ) {
     if (activityId.includes("blend")) ids.push("phonics_blending");
     else ids.push("phonics_letter_sounds", "language_letters");
   }
@@ -122,6 +127,7 @@ export function activityToSkillIds(
   if (ids.length === 0) {
     const fallback: Record<SectionKey, string> = {
       phonics: "phonics_letter_sounds",
+      reading: "phonics_letter_sounds",
       math: "math_counting",
       speech: "speech_clear_sounds",
       stories: "stories_listen",

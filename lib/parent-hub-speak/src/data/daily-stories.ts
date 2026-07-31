@@ -203,6 +203,46 @@ export const ALL_DAILY_STORIES: DailyStory[] = [
   preview: "Three clouds argued about whose rain was the best. A wise sun showed each one exactly where they were needed!",
   story: "Three clouds argued: 'My storm is best!' 'No — my drizzle!' 'My snow!' A wise sun heard them. 'The desert needs your drizzle. The mountains need your snow. The crops need your thunder.' Each cloud found the right place to shine — and the world was happy.",
   moral: "We all have different gifts, and the world needs all of them."
+}, {
+  id: "p09",
+  emoji: "🪁",
+  category: "fun",
+  ageMin: 36,
+  ageMax: 72,
+  title: "The Tiny Kite",
+  preview: "A little kite felt too small for the big sky — until a gentle breeze taught it how to dance!",
+  story: "Mina's tiny kite shook in her hands. 'The sky is too big for me,' it whispered. Mina ran with soft steps. The breeze lifted the kite higher, then higher still. 'I am small,' said the kite, 'but I can still fly!' Mina laughed as it danced above the park.",
+  moral: "Being small does not mean you cannot try something brave."
+}, {
+  id: "p10",
+  emoji: "🧩",
+  category: "learning",
+  ageMin: 36,
+  ageMax: 72,
+  title: "The Missing Puzzle Piece",
+  preview: "Arjun almost gave up on his puzzle — until he looked under the sofa one more time!",
+  story: "Arjun's puzzle had one empty space. He searched the table, the floor, and his pockets. 'It's gone,' he sighed. Mum said, 'Try once more, slowly.' Under the sofa, a bright blue piece waited. Click! The picture was complete. Arjun beamed: 'Looking carefully helped.'",
+  moral: "Slow, careful looking often finds what rushing misses."
+}, {
+  id: "p11",
+  emoji: "🌧️",
+  category: "moral",
+  ageMin: 36,
+  ageMax: 72,
+  title: "The Shared Umbrella",
+  preview: "Rain poured down. Two friends had one umbrella — and discovered sharing kept them both smiling!",
+  story: "Rain drummed on the street. Priya had an umbrella; Kabir had none. She lifted it high between them. Their shoulders got a little wet, but their smiles stayed dry. 'Thank you,' said Kabir. Priya grinned: 'Friends share the sky, too.'",
+  moral: "Sharing a little comfort can brighten someone else's whole day."
+}, {
+  id: "p12",
+  emoji: "🥁",
+  category: "fun",
+  ageMin: 36,
+  ageMax: 72,
+  title: "The Quiet Drum",
+  preview: "A loud drum learned a softer beat — and suddenly the whole class could sing along!",
+  story: "Dev loved his drum. Boom! Boom! Boom! The class covered their ears. Teacher smiled: 'Can your drum whisper?' Dev tried soft taps — tip, tip, tip. The class clapped the rhythm. Dev discovered music is listening as much as making noise.",
+  moral: "Listening helps your voice fit beautifully with others."
 },
 // ── Early School (60–108 months) ──────────────────────────────────────────
 {
@@ -337,4 +377,44 @@ export const ALL_DAILY_STORIES: DailyStory[] = [
   preview: "Robert Bruce failed six times in battle and hid in a cave — until he saw a small spider try on its seventh attempt!",
   story: "Robert Bruce had failed six times in battle and was hiding in a cave, ready to give up. He watched a spider try to build a web. The spider failed again and again — on the seventh try, the web held. Robert walked out of that cave a changed man. He fought his seventh battle — and won. He united Scotland. The spider's lesson changed history.",
   moral: "When everything says quit, try one more time. The seventh attempt might change everything."
+}, {
+  id: "e09",
+  emoji: "🔭",
+  category: "learning",
+  ageMin: 60,
+  ageMax: 108,
+  title: "The Night Sky Notebook",
+  preview: "Leela drew the same three stars every evening — until she noticed a fourth light moving!",
+  story: "Each night Leela sketched Orion from her balcony. One evening a bright speck slid across her page. 'A plane? A satellite?' she wondered. She wrote the time, the path, and how it glowed. Next day her teacher beamed: 'Scientists notice, then record.' Leela's notebook became her first map of curiosity.",
+  moral: "Careful noticing turns wonder into real discovery."
+}, {
+  id: "e10",
+  emoji: "🛠️",
+  category: "moral",
+  ageMin: 60,
+  ageMax: 108,
+  title: "The Broken Bridge",
+  preview: "Two villages blamed each other for a broken bridge — until the children rebuilt it together!",
+  story: "A storm snapped the wooden bridge between two villages. Adults argued about whose wood, whose fault. The children gathered planks, rope, and laughter. Side by side they rebuilt a narrow crossing. When the first cart rolled over, both villages cheered as one.",
+  moral: "Blame builds walls; teamwork builds bridges."
+}, {
+  id: "pt06",
+  emoji: "📖",
+  category: "learning",
+  ageMin: 84,
+  ageMax: 144,
+  title: "The Library Key",
+  preview: "A locked library door hid thousands of adventures — and one curious question opened them all!",
+  story: "Maya found a brass key labeled 'Ask.' She tried every door until the librarian smiled: 'That key is a question.' Maya asked, 'How do stars form?' Books opened like windows. Hours later she whispered, 'One good question can unlock a lifetime.'",
+  moral: "Curiosity is the key that opens every library — and every mind."
+}, {
+  id: "pt07",
+  emoji: "🧭",
+  category: "moral",
+  ageMin: 84,
+  ageMax: 144,
+  title: "The Compass of Kindness",
+  preview: "A trekker's compass spun wildly in a storm — until kindness pointed the true way home!",
+  story: "Lost in fog, Arun's compass trembled. An elderly shepherd offered tea and a lantern. 'Follow warmth, not fear,' he said. Arun helped carry firewood in return, and the path home appeared between the trees. His true north that night was generosity.",
+  moral: "When plans fail, kindness is still a reliable direction."
 }];

@@ -20,8 +20,12 @@ let sessionFailureCount = 0;
 let sessionAlertShown = false;
 let clientCircuitOpen = false;
 let clientCircuitUntil = 0;
+let clientCircuitLogged = false;
 const CLIENT_CIRCUIT_MS = 60_000;
 const CLIENT_CIRCUIT_THRESHOLD = 8;
+/** Dedupe noisy client logs / circuit pressure for the same catalog gap. */
+const reportedMissingKeys = new Set<string>();
+const reportedEventKeys = new Set<string>();
 
 const TRANSIENT_DEPLOY_ERROR_RE =
   /502|503|504|fetch failed|failed to fetch|network|econnrefused|timeout|unreachable/i;
@@ -58,6 +62,7 @@ export function isClientStaticAudioCircuitOpen(): boolean {
 export function resetClientStaticAudioCircuit(): void {
   clientCircuitOpen = false;
   clientCircuitUntil = 0;
+  clientCircuitLogged = false;
   sessionFailureCount = 0;
   sessionAlertShown = false;
 }
@@ -152,7 +157,13 @@ function recordSessionFailure(): void {
   if (sessionFailureCount >= CLIENT_CIRCUIT_THRESHOLD) {
     clientCircuitOpen = true;
     clientCircuitUntil = Date.now() + CLIENT_CIRCUIT_MS;
-    console.error("[STATIC AUDIO] Client circuit open — pausing playback attempts");
+    if (!clientCircuitLogged) {
+      clientCircuitLogged = true;
+      // One log only — further attempts are silently degraded.
+      if (import.meta.env.DEV || isStaticAudioDebug()) {
+        console.warn("[STATIC AUDIO] Client circuit open — pausing playback attempts");
+      }
+    }
   }
   maybeShowSessionAlert();
 }
@@ -209,12 +220,20 @@ export function reportStaticAudioEvent(
   type: StaticAudioClientEventType,
   message: string,
   meta?: Record<string, unknown>,
-  opts?: { countTowardCircuit?: boolean },
+  opts?: { countTowardCircuit?: boolean; dedupeKey?: string },
 ): void {
+  const dedupeKey = opts?.dedupeKey ?? `${type}:${message}:${String(meta?.text ?? "")}`;
+  const isDuplicate = reportedEventKeys.has(dedupeKey);
+  if (!isDuplicate) reportedEventKeys.add(dedupeKey);
+
   staticAudioVerbose(type, message, meta);
-  console.error(`[STATIC AUDIO EVENT] ${type}`, message, meta ?? {});
+  // Avoid production console floods — one warn per unique event key.
+  if (!isDuplicate && (import.meta.env.DEV || isStaticAudioDebug())) {
+    console.warn(`[STATIC AUDIO EVENT] ${type}`, message, meta ?? {});
+  }
 
   const countTowardCircuit =
+    !isDuplicate &&
     opts?.countTowardCircuit !== false &&
     !isAudioStartupGraceActive() &&
     !isTransientDeployFailure(message, meta);
@@ -224,6 +243,8 @@ export function reportStaticAudioEvent(
   }
 
   if (typeof window === "undefined") return;
+  // Skip duplicate network telemetry spam for the same gap.
+  if (isDuplicate) return;
 
   if (isStaticAudioDebug()) {
     void showStaticAudioToast("Static audio issue", message);
@@ -258,10 +279,19 @@ export function reportStaticAudioEvent(
 }
 
 export function reportStaticAudioMissingUrl(text: string, mode: StaticAudioMode): void {
-  reportStaticAudioEvent("static_audio_missing_url", "Catalog phrase has no proxy URL", {
-    text: text.slice(0, 200),
-    mode,
-  });
+  const key = `${mode}:${text.trim().slice(0, 200)}`;
+  const first = !reportedMissingKeys.has(key);
+  if (first) reportedMissingKeys.add(key);
+
+  // Missing catalog URL is a soft degrade — report once, never retry-flood.
+  if (first) {
+    reportStaticAudioEvent(
+      "static_audio_missing_url",
+      "Catalog phrase has no proxy URL",
+      { text: text.slice(0, 200), mode },
+      { countTowardCircuit: true, dedupeKey: `missing:${key}` },
+    );
+  }
   emitStaticAudioVisualFallback({ phrase: text, mode });
 }
 

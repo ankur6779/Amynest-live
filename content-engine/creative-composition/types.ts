@@ -3,7 +3,7 @@
  * Additive. Does not change WorkflowPhase architecture or validators.
  */
 
-export const CREATIVE_COMPOSITION_VERSION = "2.0.0";
+export const CREATIVE_COMPOSITION_VERSION = "2.1.0";
 
 export type EnvironmentId =
   | "kitchen-table"
@@ -23,6 +23,23 @@ export type ShotRole =
 
 export type BrandCharacterId = "amy-ai" | "amy-girl" | "amy-boy";
 
+/** Who owns the audible line for this beat (direction-only; TTS pipeline unchanged). */
+export type SpeechMode = "speaking" | "listening" | "reacting";
+
+export type CompositionCamera =
+  | "push-in"
+  | "pan-right"
+  | "pan-left"
+  | "slow-zoom"
+  | "orbit-soft"
+  | "tracking"
+  | "over-shoulder"
+  | "close-up"
+  | "reaction"
+  | "medium"
+  | "wide"
+  | "dolly";
+
 export interface CompositionShotPlan {
   id: string;
   role: ShotRole;
@@ -31,10 +48,20 @@ export interface CompositionShotPlan {
   environment: EnvironmentId;
   kind: "veo-performance" | "cta-overlay";
   caption: string;
-  camera: "push-in" | "pan-right" | "pan-left" | "slow-zoom" | "orbit-soft";
+  camera: CompositionCamera;
   character: BrandCharacterId;
   performance: string;
   notes: string;
+  /** Direction-only: lip ownership for this beat. */
+  speechMode?: SpeechMode;
+  /** Exact line the on-screen speaker should mouth (from caption/VO beat). */
+  spokenLine?: string;
+  /** Emotional acting target for the beat. */
+  emotionBeat?: string;
+  /** How characters relate / interact in-frame or to off-screen partners. */
+  interaction?: string;
+  /** Primary eye-line instruction. */
+  eyeLine?: string;
 }
 
 export interface CreativeCompositionPlan {

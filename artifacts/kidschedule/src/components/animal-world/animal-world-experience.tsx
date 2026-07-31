@@ -27,6 +27,14 @@ import { HearFindMode } from "./hear-find-mode";
 import { AchievementsPanel } from "./achievements-panel";
 import { StickerAlbum } from "./sticker-album";
 import { warmAnimalWorldOfflineCache, needsOfflineCacheRefresh } from "@/lib/animal-world-offline-cache";
+import { LivingEnvironmentLayer } from "@/components/discovery-world/living-environment-layer";
+import {
+  AttentionCoachBanner,
+  SoundWorldAttentionProvider,
+  useSoundWorldAttention,
+} from "@/components/discovery-world/sound-world-attention";
+import { worldAmbientAudio } from "@/lib/sound-world-ambient-audio";
+import { SoundWorldPage } from "@/components/discovery-world/sound-world-motion";
 
 type AnimalWorldExperienceProps = {
   childId: number;
@@ -45,11 +53,20 @@ const MODES: Array<{ id: AnimalWorldMode; label: string; icon: typeof Sparkles }
 ];
 
 export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperienceProps) {
+  return (
+    <SoundWorldAttentionProvider childId={childId} worldId="animal_world">
+      <AnimalWorldExperienceInner childId={childId} onEngage={onEngage} />
+    </SoundWorldAttentionProvider>
+  );
+}
+
+function AnimalWorldExperienceInner({ childId, onEngage }: AnimalWorldExperienceProps) {
   const [mode, setMode] = useState<AnimalWorldMode>("explore");
   const [category, setCategory] = useState<AnimalCategory | "all">("all");
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [muted, setMuted] = useState(false);
   const sessionStart = useState(() => Date.now())[0];
+  const { track } = useSoundWorldAttention();
 
   useEffect(() => {
     onEngage?.();
@@ -72,17 +89,30 @@ export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperien
 
   useEffect(() => {
     animalAudioManager.setMuted(muted);
+    worldAmbientAudio.setMuted(muted);
   }, [muted]);
+
+  useEffect(() => {
+    void worldAmbientAudio.unlock();
+    return () => {
+      worldAmbientAudio.release();
+    };
+  }, []);
 
   const onModeChange = (next: AnimalWorldMode) => {
     setMode(next);
     setSelectedAnimal(null);
+    track("navigate");
     trackAnimalWorldEvent("mode_changed", { childId, mode: next });
   };
 
   return (
-    <div className={cn("min-h-screen bg-background pb-10", SCREEN_SPACING.pageX)}>
-      <header className="sticky top-0 z-40 -mx-4 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+    <SoundWorldPage
+      particles={false}
+      className={cn("min-h-screen overflow-hidden bg-background pb-10", SCREEN_SPACING.pageX)}
+    >
+      <LivingEnvironmentLayer worldId="animal_world" muted={muted} />
+      <header className="relative z-10 sticky top-0 -mx-4 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Animal World</p>
@@ -109,7 +139,8 @@ export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperien
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl pt-5">
+      <main className="relative z-10 mx-auto max-w-4xl pt-5">
+        {mode === "explore" && !selectedAnimal && <AttentionCoachBanner className="mb-4" />}
         {selectedAnimal && mode === "explore" ? (
           <AnimalDetail
             animal={selectedAnimal}
@@ -124,7 +155,10 @@ export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperien
               <CategoryHome
                 activeCategory={category}
                 onCategoryChange={setCategory}
-                onSelectAnimal={setSelectedAnimal}
+                onSelectAnimal={(animal) => {
+                  track("object_open", { itemId: animal.id });
+                  setSelectedAnimal(animal);
+                }}
               />
             )}
             {mode === "toddler" && (
@@ -145,6 +179,6 @@ export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperien
           </>
         )}
       </main>
-    </div>
+    </SoundWorldPage>
   );
 }

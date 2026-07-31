@@ -30,15 +30,21 @@ describe("AI Director Layer", () => {
     });
     const map = buildEmotionMap(intents);
     assert.ok(map.length >= 6);
-    assert.equal(map[0]!.targetEmotion, "Parent frustration");
+    assert.equal(map[0]!.targetEmotion, "Curiosity");
+    assert.equal(map[0]!.emotionArc, "Curious");
     assert.ok(map.some((m) => m.targetEmotion === "Hope"));
     assert.ok(map.some((m) => m.targetEmotion === "Curiosity"));
     assert.ok(map.some((m) => m.targetEmotion === "Confidence"));
     assert.ok(map.some((m) => m.targetEmotion === "Joy"));
+    assert.ok(map.some((m) => m.emotionArc === "Thinking"));
+    assert.ok(map.some((m) => m.emotionArc === "Understanding"));
+    assert.ok(map.some((m) => m.emotionArc === "Success"));
+    assert.ok(map.some((m) => m.emotionArc === "Celebration"));
     for (const beat of map) {
       assert.ok(beat.intensity >= 1 && beat.intensity <= 10);
       assert.ok(beat.facialExpression.length > 0);
       assert.ok(beat.audienceFeeling.length > 0);
+      assert.ok(beat.emotionArc.length > 0);
     }
   });
 
@@ -81,7 +87,7 @@ describe("AI Director Layer", () => {
       intents,
     });
 
-    assert.equal(director.version, "1.0.0");
+    assert.equal(director.version, "1.2.0");
     assert.ok(director.scenes.length === intents.length);
     assert.ok(director.emotionMap.length === intents.length);
     assert.ok(director.cameraPlanSummary.length > 0);
@@ -90,6 +96,10 @@ describe("AI Director Layer", () => {
     assert.ok(director.transitionPlan.length === director.scenes.length - 1);
     assert.ok(director.visualContinuity.roomLayout.length > 0);
     assert.ok(director.visualContinuity.wardrobe.includes("Official locked wardrobe"));
+    assert.match(
+      director.visualContinuity.emotionArc ?? "",
+      /Curious/,
+    );
 
     for (const scene of director.scenes) {
       assert.ok(scene.camera.shotType.length > 0);
@@ -98,7 +108,22 @@ describe("AI Director Layer", () => {
       assert.ok(scene.emotion.intensity >= 1);
       assert.ok(scene.continuityNotes.length >= 3);
       assert.ok(scene.blocking.positions.length > 0);
+      assert.ok(scene.continuityState.eyeDirection.length > 0);
+      assert.ok(scene.continuityState.handPosition.length > 0);
+      assert.ok(scene.cutOut.kind.length > 0);
+      assert.match(
+        scene.continuityNotes.join("\n"),
+        /SCENE CONTINUITY LOCK|Character position/,
+      );
     }
+
+    // Prefer cinematic cut language (not only fades)
+    const kinds = director.scenes.map((s) => s.cutOut.kind);
+    assert.ok(
+      kinds.some((k) =>
+        /eyeline-cut|action-cut|motivated-cut|match-cut|l-cut|j-cut/.test(k),
+      ),
+    );
 
     // Directed intents receive director camera/emotion choices
     assert.equal(directed[0]!.camera, director.scenes[0]!.camera.composerCamera);
@@ -144,14 +169,19 @@ describe("AI Director Layer", () => {
 
     assert.ok(composed.director, "director package attached");
     assert.equal(composed.director!.quality.ok, true);
-    assert.match(composed.director!.emotionMap[0]!.targetEmotion, /Parent frustration/);
+    assert.match(composed.director!.emotionMap[0]!.targetEmotion, /Curiosity/);
+    assert.match(composed.director!.emotionMap[0]!.emotionArc, /Curious/);
 
     for (const scene of composed.scenes) {
       assert.match(scene.prompt.userPrompt, /AI DIRECTOR — MANDATORY/);
       assert.match(scene.prompt.userPrompt, /Micro actions/);
-      assert.match(scene.prompt.userPrompt, /Target emotion:/);
+      assert.match(scene.prompt.userPrompt, /Emotion arc:/);
+      assert.match(scene.prompt.userPrompt, /CONTINUITY STATE/);
+      assert.match(scene.prompt.userPrompt, /CUT IN|CUT OUT/);
       assert.match(scene.prompt.systemBrandBlock, /EMOTION MAP:/);
+      assert.match(scene.prompt.systemBrandBlock, /EMOTION ARC/);
       assert.match(scene.prompt.negativePrompt, /powerpoint style/);
+      assert.match(scene.prompt.negativePrompt, /character teleport/);
     }
 
     // Emotion-before-feature spine preserved

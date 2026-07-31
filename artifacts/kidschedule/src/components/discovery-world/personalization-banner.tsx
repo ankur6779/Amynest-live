@@ -7,12 +7,16 @@ type PersonalizationBannerProps = {
   config: DiscoveryWorldRuntimeConfig;
   childId: number;
   onCategoryHint?: (categoryId: string) => void;
+  offerExploration?: boolean;
+  offerBonus?: boolean;
 };
 
 export function PersonalizationBanner({
   config,
   childId,
   onCategoryHint,
+  offerExploration,
+  offerBonus,
 }: PersonalizationBannerProps) {
   const stats = loadDiscoveryWorldStats(config.worldId, childId);
   const rec = buildPersonalizedRecommendation({
@@ -25,6 +29,13 @@ export function PersonalizationBanner({
 
   if (!rec) return null;
 
+  const detail =
+    offerBonus
+      ? "Bonus path: try Hear & Find for a deeper listening challenge."
+      : offerExploration
+        ? "You're ready to explore a new category — pick one that looks fun."
+        : rec.detail;
+
   return (
     <PremiumCard tier="glow" interactive className="p-4">
       <button
@@ -36,7 +47,7 @@ export function PersonalizationBanner({
           {rec.emoji} For you
         </p>
         <p className="mt-1 font-semibold text-foreground">{rec.headline}</p>
-        <p className="text-sm text-muted-foreground">{rec.detail}</p>
+        <p className="text-sm text-muted-foreground">{detail}</p>
       </button>
     </PremiumCard>
   );

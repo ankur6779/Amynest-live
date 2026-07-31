@@ -46,6 +46,12 @@ export interface GenerateVideoOptions {
   outputPath?: string;
   /** First-frame / identity lock for image-to-video (official character base). */
   imagePath?: string;
+  /**
+   * Optional reference stack (Character Bible + previous scene memory).
+   * Primary continuity still uses `imagePath` (existing Veo image-to-video).
+   * Extra paths are recorded in metadata for providers that accept multi-ref later.
+   */
+  referenceImagePaths?: string[];
   signal?: AbortSignal;
 }
 
@@ -295,6 +301,7 @@ export class GeminiVideoProvider extends BaseAssetProvider {
           rawUri: polled.sample.uri,
           imageToVideo: Boolean(imagePayload),
           identityImagePath: options.imagePath,
+          referenceImagePaths: options.referenceImagePaths ?? [],
         },
       };
     } finally {

@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TRANSITION } from "@/lib/experience-system";
+import { useReducedMotion } from "@/lib/reduced-motion";
 import { cn } from "@/lib/utils";
 
 export function CelebrationBurst({ show }: { show: boolean }) {
+  const reduced = useReducedMotion();
+  if (reduced) return null;
   return (
     <AnimatePresence>
       {show && (
@@ -23,7 +26,8 @@ export function CelebrationBurst({ show }: { show: boolean }) {
 }
 
 export function ConfettiDots({ active }: { active: boolean }) {
-  if (!active) return null;
+  const reduced = useReducedMotion();
+  if (!active || reduced) return null;
   const dots = Array.from({ length: 12 }, (_, i) => i);
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>

@@ -59,9 +59,16 @@ export function planComposerIntents(input: {
 
   const endCardSeconds = 2.5;
   const bodyBudget = Math.max(12, input.totalDuration - endCardSeconds);
+  const minClip = Math.max(2, input.provider.minClipSeconds || 4);
+  // Prefer denser short spines (up to 8) when clip budget allows — without
+  // forcing extra splits that multiply API cost on long max-clip providers.
+  const maxLivingScenes = Math.min(
+    8,
+    Math.max(6, Math.floor(bodyBudget / minClip)),
+  );
 
-  // Typical emotional Short spine — weights auto-scale; count is not fixed.
-  const spine: Array<{
+  // Dense emotional spine — simpler casts; prefer more short scenes over few overloaded ones.
+  const denseSpine: Array<{
     role: ComposerBeatRole;
     weight: number;
     goal: string;
@@ -71,78 +78,109 @@ export function planComposerIntents(input: {
     camera: ComposerSceneIntent["camera"];
     visualType: ComposerSceneIntent["visualType"];
     purpose: ComposerSceneIntent["storyboardPurpose"];
+    castHint: BrandCharacterId[];
   }> = [
     {
       role: "hook",
-      weight: 2.2,
-      goal: "Stop the scroll with a real parenting moment",
+      weight: 1.6,
+      goal: "Solo emotional cold open — one child, one feeling",
       narration: input.beats.hook,
       caption: truncate(input.beats.hook, 56),
       emotion: "curious",
       camera: "Push",
       visualType: "Future AI Video",
       purpose: "hook",
+      castHint: ["amy-girl"],
     },
     {
       role: "problem",
-      weight: 3.2,
-      goal: "Establish the emotional problem parents recognize",
+      weight: 2.0,
+      goal: "Amy + Girl struggle beat — one mentor, one listener",
       narration: input.beats.problem,
       caption: truncate(input.beats.problem, 56),
       emotion: "warm",
       camera: "Hold",
       visualType: "Future AI Video",
       purpose: "opening-question",
+      castHint: ["amy-ai", "amy-girl"],
     },
     {
       role: "emotion",
-      weight: 3.0,
-      goal: "Deepen feeling before any product appears",
+      weight: 1.8,
+      goal: "Amy + Girl hope beat — one emotion, one visual objective",
       narration: truncate(input.beats.emotion, 160),
       caption: "You're not alone in this.",
       emotion: "hopeful",
       camera: "Zoom In",
       visualType: "Future AI Video",
       purpose: "story",
+      castHint: ["amy-ai", "amy-girl"],
     },
     {
       role: "feature",
-      weight: 4.2,
-      goal: "Introduce the real AmyNest feature as a warm guide",
+      weight: 2.4,
+      goal: "Amy teaches Girl — one speaker, one listener",
       narration: input.beats.feature,
       caption: truncate(input.beats.feature, 56),
       emotion: "confident",
       camera: "Push",
       visualType: "App Screen",
       purpose: "key-point",
+      castHint: ["amy-ai", "amy-girl"],
+    },
+    {
+      role: "bridge",
+      weight: 1.4,
+      goal: "Solo boy discovery — simple cinematic beat",
+      narration: "A small discovery lands with curiosity.",
+      caption: "Curiosity sparks.",
+      emotion: "curious",
+      camera: "Pan Right",
+      visualType: "Future AI Video",
+      purpose: "story",
+      castHint: ["amy-boy"],
     },
     {
       role: "transformation",
-      weight: 3.6,
-      goal: "Show the parent/child transformation and hope",
+      weight: 2.0,
+      goal: "Celebration family moment — only trio-allowed beat",
       narration: input.beats.transformation,
       caption: truncate(input.beats.transformation, 56),
       emotion: "hopeful",
       camera: "Pull",
       visualType: "Future AI Video",
       purpose: "key-point",
+      castHint: ["amy-ai", "amy-girl", "amy-boy"],
+    },
+    {
+      role: "bridge",
+      weight: 1.2,
+      goal: "Amy soft smile beat — single mentor emotion",
+      narration: "Amy smiles with quiet encouragement.",
+      caption: "Encouragement.",
+      emotion: "warm",
+      camera: "Zoom In",
+      visualType: "Future AI Video",
+      purpose: "story",
+      castHint: ["amy-ai"],
     },
     {
       role: "cta",
-      weight: 2.0,
-      goal: "Soft CTA after hope — never fear",
+      weight: 1.6,
+      goal: "Soft CTA — Amy + Girl only",
       narration: input.beats.cta,
       caption: "Download AmyNest AI",
       emotion: "confident",
       camera: "Static",
       visualType: "Icon Animation",
       purpose: "cta",
+      castHint: ["amy-ai", "amy-girl"],
     },
   ];
 
-  // Keep one logical beat per role (brand Golden Master requires distinct purposes).
-  // Provider max only controls whether a beat splits into multiple generation clips —
-  // never drop CTA / story / opening-question by merging roles away.
+  // Fit denser short beats when duration/min-clip budget allows (prefer up to 8).
+  const spine = selectSpineForBudget(denseSpine, maxLivingScenes);
+
   const weightSum = spine.reduce((s, b) => s + b.weight, 0);
   const intents: ComposerSceneIntent[] = [];
   let index = 0;
@@ -163,7 +201,7 @@ export function planComposerIntents(input: {
         narration: beat.narration,
         caption: beat.caption,
         emotion: beat.emotion,
-        characters,
+        characters: beat.castHint.length ? beat.castHint : characters.slice(0, 2),
         camera: beat.camera,
         visualType: beat.visualType,
         // Preserve brand purpose on every chunk of a split beat
@@ -267,6 +305,35 @@ function normalizeToTotalDuration(
   const last = scaled[scaled.length - 1]!;
   last.durationSeconds = round1(Math.max(2, total - used));
   return scaled.map((intent, index) => ({ ...intent, index }));
+}
+
+/**
+ * Prefer denser short spines; never drop the core emotional arc
+ * (hook → problem → emotion → feature → transformation → cta).
+ * Extra bridge solos fill only when the living-scene budget allows.
+ */
+function selectSpineForBudget<T extends { role: ComposerBeatRole; weight: number }>(
+  dense: T[],
+  maxLiving: number,
+): T[] {
+  if (dense.length <= maxLiving) return dense;
+  const priority: ComposerBeatRole[] = [
+    "hook",
+    "problem",
+    "emotion",
+    "feature",
+    "transformation",
+    "cta",
+  ];
+  const core: T[] = [];
+  for (const role of priority) {
+    const beat = dense.find((b) => b.role === role && !core.includes(b));
+    if (beat) core.push(beat);
+  }
+  // Never truncate the must-have arc (cost/quality tradeoff stays on cast density).
+  if (maxLiving <= core.length) return core;
+  const extras = dense.filter((b) => !core.includes(b));
+  return [...core, ...extras].slice(0, maxLiving);
 }
 
 function truncate(text: string, max: number): string {

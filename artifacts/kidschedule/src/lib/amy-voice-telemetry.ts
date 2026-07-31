@@ -151,17 +151,25 @@ export function recordAmyVoiceFallbackUsed(
   reportAmyVoiceTelemetry("fallback_used", { from: fromLayer, to: toLayer, ...detail });
 }
 
+const failureChainLogged = new Set<string>();
+
 export function recordAmyVoiceFailureChain(
   text: string,
   chain: readonly FailureChainEntry[],
   detail?: Record<string, unknown>,
 ): void {
   lastFailureChain = [...chain];
-  console.error(LOG, "failure_chain", {
-    text: text.slice(0, 120),
-    chain,
-    ...detail,
-  });
+  const key = text.trim().slice(0, 120);
+  if (!failureChainLogged.has(key)) {
+    failureChainLogged.add(key);
+    if (import.meta.env.DEV) {
+      console.warn(LOG, "failure_chain", {
+        text: key,
+        chain,
+        ...detail,
+      });
+    }
+  }
   reportAmyVoiceTelemetry("failure_chain", {
     text: text.slice(0, 200),
     chain,

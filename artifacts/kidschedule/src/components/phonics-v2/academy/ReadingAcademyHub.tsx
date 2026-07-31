@@ -42,6 +42,10 @@ import {
   READING_ACHIEVEMENTS,
 } from "@/lib/phonics-v3/reading-achievements";
 import { buildAdaptiveReadingPlan } from "@/lib/phonics-v3/reading-adaptive-path";
+import {
+  getLastReadingRuntimeDecision,
+  guidanceFromReadingDecision,
+} from "@/lib/reading-world-learning-adapter";
 import { buildParentWeeklyReport } from "@/lib/phonics-v3/parent-weekly-report";
 import { teacherModeStatus } from "@/lib/phonics-v3/teacher-mode";
 import {
@@ -108,25 +112,34 @@ export function ReadingAcademyHub({
     [letterGroupIndex],
   );
 
-  const plan = useMemo(
-    () =>
-      buildAdaptiveReadingPlan({
-        letterGroupIndex,
-        completedBookIds: progress.completedBookIds,
-        recentComprehensionScores: progress.comprehensionScores,
-        avgAccuracy: fluencyTrend.avgAccuracy,
-        avgWpm: fluencyTrend.avgWpm,
-        weakVocabCount: getVocabularyDueForReview(vocab).length,
-      }),
-    [
+  const plan = useMemo(() => {
+    const guidance = guidanceFromReadingDecision(
+      childId,
+      getLastReadingRuntimeDecision(childId),
+    );
+    // Catalog filters (SATPIN unlocks) stay local; order + difficulty from Runtime.
+    return buildAdaptiveReadingPlan({
       letterGroupIndex,
-      progress.completedBookIds,
-      progress.comprehensionScores,
-      fluencyTrend.avgAccuracy,
-      fluencyTrend.avgWpm,
-      vocab,
-    ],
-  );
+      completedBookIds: progress.completedBookIds,
+      recentComprehensionScores: progress.comprehensionScores,
+      avgAccuracy: fluencyTrend.avgAccuracy,
+      avgWpm: fluencyTrend.avgWpm,
+      weakVocabCount: getVocabularyDueForReview(vocab).length,
+      preferredBookIds: guidance.preferredBookIds,
+      runtimeDifficulty: guidance.decisionId != null ? guidance.difficulty : undefined,
+      runtimePreferShorter: guidance.narrationLength === "short",
+      runtimeReviewFirst: guidance.reviewQueue.length > 0,
+      runtimeReason: guidance.decisionId != null ? guidance.reason : undefined,
+    });
+  }, [
+    childId,
+    letterGroupIndex,
+    progress.completedBookIds,
+    progress.comprehensionScores,
+    fluencyTrend.avgAccuracy,
+    fluencyTrend.avgWpm,
+    vocab,
+  ]);
 
   const weeklyReport = useMemo(
     () =>

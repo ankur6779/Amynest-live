@@ -23,9 +23,13 @@ export function buildVisualContinuityBible(input: {
     eyeLine: "Consistent eye-line height across cuts; match previous scene looking direction",
     cameraDirection: "Prefer continuing screen direction L→R unless intentionally reversing for reveal",
     objectPlacement:
-      "Props (notebook, pencil, device, progress ring) stay in the same relative place unless a micro-action moves them",
+      "Book, cup, toy, desk, pencil, device: same hand, same side, same orientation unless a visible micro-action moves them",
     characterPositions:
-      "Preserve relative blocking: parent left/child right (or established reverse) until transformation opens the frame",
+      "Preserve seat/side geography across cuts; if Amy kneels, remain kneeling until motivated rise; no character teleport",
+    emotionArc:
+      "Curious → Thinking → Understanding → Success → Celebration — never random reverse jumps",
+    speechContinuity:
+      "Carry speech state across cuts; listening stays listening until a true speaker beat",
   };
 }
 
@@ -132,6 +136,18 @@ export function findContinuityBreaks(
       breaks.push({
         sceneId: cur.sceneId,
         reason: "Static settle with no micro-action reads as a slideshow slide",
+      });
+    }
+    // Screen-direction flip without intentional reverse = teleport feel
+    if (
+      cur.role !== "end-card" &&
+      prev.continuityState &&
+      cur.continuityState &&
+      prev.continuityState.screenDirection !== cur.continuityState.screenDirection
+    ) {
+      breaks.push({
+        sceneId: cur.sceneId,
+        reason: "Screen direction flipped between cuts — feels like character/camera teleport",
       });
     }
   }

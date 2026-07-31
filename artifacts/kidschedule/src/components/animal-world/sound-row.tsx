@@ -1,6 +1,7 @@
 import { Volume2 } from "lucide-react";
 import type { AnimalSound } from "@workspace/animal-world";
 import { cn } from "@/lib/utils";
+import { AudioWaveBars, PressDepth } from "@/components/discovery-world/sound-world-motion";
 
 type SoundWaveformProps = {
   waveform: number[];
@@ -8,20 +9,7 @@ type SoundWaveformProps = {
 };
 
 export function SoundWaveform({ waveform, active }: SoundWaveformProps) {
-  return (
-    <div className="flex h-8 items-end gap-[3px]" aria-hidden>
-      {waveform.map((amp, i) => (
-        <span
-          key={i}
-          className={cn(
-            "w-[3px] rounded-full bg-primary/70 transition-all duration-200",
-            active && "animate-pulse bg-primary",
-          )}
-          style={{ height: `${Math.max(18, amp * 100)}%` }}
-        />
-      ))}
-    </div>
-  );
+  return <AudioWaveBars amplitudes={waveform} active={active} bars={Math.min(12, waveform.length || 8)} />;
 }
 
 type SoundRowProps = {
@@ -32,11 +20,11 @@ type SoundRowProps = {
 
 export function SoundRow({ sound, playing, onPlay }: SoundRowProps) {
   return (
-    <button
+    <PressDepth
       type="button"
       onClick={onPlay}
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.07] active:scale-[0.99]",
+        "flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.07]",
         playing && "border-primary/40 bg-primary/10",
       )}
     >
@@ -48,6 +36,6 @@ export function SoundRow({ sound, playing, onPlay }: SoundRowProps) {
         <p className="text-xs text-muted-foreground">{sound.durationSec.toFixed(1)}s</p>
       </div>
       <SoundWaveform waveform={sound.waveform} active={playing} />
-    </button>
+    </PressDepth>
   );
 }

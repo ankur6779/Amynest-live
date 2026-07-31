@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { StarBurst } from "@/components/learning-progress/premium-polish";
 import { clampForTier, TRANSITION } from "@/lib/experience-system";
+import { useReducedMotion } from "@/lib/reduced-motion";
+import { ConfettiReward } from "./sound-world-motion";
 
 type DelightBurstProps = {
   active: boolean;
@@ -9,11 +11,24 @@ type DelightBurstProps = {
 };
 
 export function DelightBurst({ active, variant = "star", onDone }: DelightBurstProps) {
+  const reduced = useReducedMotion();
   const intensity = clampForTier("card");
+
+  if (reduced || intensity === "subtle") {
+    return (
+      <AnimatePresence onExitComplete={onDone}>
+        {active ? <span className="sr-only">Celebration</span> : null}
+      </AnimatePresence>
+    );
+  }
+
+  if (variant === "confetti") {
+    return <ConfettiReward active={active} onDone={onDone} intensity="full" />;
+  }
 
   return (
     <AnimatePresence onExitComplete={onDone}>
-      {active && intensity !== "subtle" && (
+      {active && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -32,20 +47,6 @@ export function DelightBurst({ active, variant = "star", onDone }: DelightBurstP
             >
               ✨
             </motion.span>
-          )}
-          {variant === "confetti" && intensity === "card" && (
-            <div className="flex gap-2 text-3xl">
-              {["🎉", "⭐", "🌟"].map((e, i) => (
-                <motion.span
-                  key={e}
-                  initial={{ y: 0, opacity: 1 }}
-                  animate={{ y: -24, opacity: 0 }}
-                  transition={{ delay: i * 0.08, duration: 0.9 }}
-                >
-                  {e}
-                </motion.span>
-              ))}
-            </div>
           )}
         </motion.div>
       )}

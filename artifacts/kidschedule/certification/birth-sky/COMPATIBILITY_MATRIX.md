@@ -9,7 +9,7 @@
 | Axis | Value | Notes |
 | --- | --- | --- |
 | App Build | birth_sky_rc3/1.0.0 | Certification train label |
-| engineVersion (compute writes) | amynest-astro-lite/1.0.0 | Older engineVersion snapshots remain readable without auto-regen (Pack 4 Addendum A). |
+| engineVersion (compute writes) | skyfield-jpl/1.0.0 | New writes use skyfield-jpl/1.0.0. Legacy amynest-astro-lite snapshots remain readable without auto-regen. |
 | engineVersion (readable min) | amynest-astro-lite/1.0.0 | Older snapshots hydrate without auto-regen |
 | traditionalContentVersion | tradition_pack/1.0.0 | Content bump does not require sky snapshot regeneration (Pack 5 Addendum A). |
 | contextSchemaVersion (write) | birth_sky_context/1.0.0 | Supported: birth_sky_context/1.0.0 |

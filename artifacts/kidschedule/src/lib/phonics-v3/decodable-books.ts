@@ -348,6 +348,185 @@ export const DECODABLE_BOOK_LIBRARY: readonly DecodableBook[] = [
       },
     ],
   },
+  {
+    id: "book-tip-tap",
+    title: "Tip Tap",
+    minLetterGroup: 1,
+    academyLevel: 4,
+    pages: [
+      { text: "Tip tap.", emoji: "👆" },
+      { text: "Pat can tip.", emoji: "🧒" },
+      { text: "Nan can tap.", emoji: "👵" },
+      { text: "Tip tap in!", emoji: "🚪" },
+    ],
+    vocabulary: [
+      {
+        word: "tip",
+        emoji: "👆",
+        definition: "A light touch with a finger.",
+        example: "Pat can tip.",
+      },
+      {
+        word: "tap",
+        emoji: "🥁",
+        definition: "A soft knock or touch.",
+        example: "Nan can tap.",
+      },
+    ],
+    comprehensionPrompts: [
+      {
+        question: "Who can tip?",
+        options: ["Pat", "A dog", "The sun"],
+        correctIndex: 0,
+        kind: "who",
+      },
+      {
+        question: "What can Nan do?",
+        options: ["Nap", "Tap", "Hop"],
+        correctIndex: 1,
+        kind: "what",
+      },
+    ],
+  },
+  {
+    id: "book-mad-dog",
+    title: "Mad Dog?",
+    minLetterGroup: 2,
+    academyLevel: 5,
+    pages: [
+      { text: "A dog sat.", emoji: "🐶" },
+      { text: "Is the dog mad?", emoji: "😮" },
+      { text: "No — the dog is sad.", emoji: "😢" },
+      { text: "Pat pats the dog.", emoji: "💛" },
+      { text: "The dog can sit!", emoji: "😊" },
+    ],
+    vocabulary: [
+      {
+        word: "mad",
+        emoji: "😠",
+        definition: "Feeling angry or cross.",
+        example: "Is the dog mad?",
+      },
+      {
+        word: "sad",
+        emoji: "😢",
+        definition: "Feeling unhappy.",
+        example: "No — the dog is sad.",
+      },
+      {
+        word: "sit",
+        emoji: "🧘",
+        definition: "Rest on your bottom.",
+        example: "The dog can sit!",
+      },
+    ],
+    comprehensionPrompts: [
+      {
+        question: "Was the dog mad?",
+        options: ["Yes", "No", "Maybe a cat"],
+        correctIndex: 1,
+        kind: "what",
+      },
+      {
+        question: "What can the dog do at the end?",
+        options: ["Sit", "Fly", "Hop"],
+        correctIndex: 0,
+        kind: "what",
+      },
+    ],
+  },
+  {
+    id: "book-sam-run",
+    title: "Sam Can Run",
+    minLetterGroup: 3,
+    academyLevel: 5,
+    pages: [
+      { text: "Sam can run.", emoji: "🏃" },
+      { text: "Sam ran.", emoji: "💨" },
+      { text: "Run up!", emoji: "⬆️" },
+      { text: "Sam can rest.", emoji: "😌" },
+    ],
+    vocabulary: [
+      {
+        word: "run",
+        emoji: "🏃",
+        definition: "Move fast on your feet.",
+        example: "Sam can run.",
+      },
+      {
+        word: "ran",
+        emoji: "💨",
+        definition: "Moved fast in the past.",
+        example: "Sam ran.",
+      },
+      {
+        word: "rest",
+        emoji: "😌",
+        definition: "Stop and get calm energy back.",
+        example: "Sam can rest.",
+      },
+    ],
+    comprehensionPrompts: [
+      {
+        question: "Who can run?",
+        options: ["Sam", "A cup", "Fog"],
+        correctIndex: 0,
+        kind: "who",
+      },
+      {
+        question: "What can Sam do at the end?",
+        options: ["Rest", "Dig", "Hop"],
+        correctIndex: 0,
+        kind: "sequence",
+      },
+    ],
+  },
+  {
+    id: "book-bell-hill",
+    title: "Bell on the Hill",
+    minLetterGroup: 5,
+    academyLevel: 6,
+    pages: [
+      { text: "A bell is on the hill.", emoji: "🔔" },
+      { text: "Jill can pull.", emoji: "👧" },
+      { text: "The bell is loud!", emoji: "📢" },
+      { text: "Jill is glad.", emoji: "😊" },
+    ],
+    vocabulary: [
+      {
+        word: "bell",
+        emoji: "🔔",
+        definition: "A metal cup that rings when moved.",
+        example: "A bell is on the hill.",
+      },
+      {
+        word: "hill",
+        emoji: "⛰️",
+        definition: "A high place of land.",
+        example: "A bell is on the hill.",
+      },
+      {
+        word: "pull",
+        emoji: "🪢",
+        definition: "To tug something toward you.",
+        example: "Jill can pull.",
+      },
+    ],
+    comprehensionPrompts: [
+      {
+        question: "Where is the bell?",
+        options: ["On the hill", "In a bus", "In fog"],
+        correctIndex: 0,
+        kind: "what",
+      },
+      {
+        question: "How does Jill feel?",
+        options: ["Glad", "Sad", "Mad"],
+        correctIndex: 0,
+        kind: "feeling",
+      },
+    ],
+  },
 ] as const;
 
 export function getBookById(id: string): DecodableBook | undefined {

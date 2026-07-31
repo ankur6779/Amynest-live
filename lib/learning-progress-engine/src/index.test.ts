@@ -58,6 +58,14 @@ describe("mastery", () => {
     assert.ok((next.totalXP ?? 0) > profile.totalXP);
     assert.ok((next.masteryScore ?? 0) >= profile.masteryScore);
   });
+
+  it("reading section dual-credits phonics for backward compatibility", () => {
+    const profile = buildLearningProfile(2, { journeyDay: 2 }, 6);
+    const next = recordActivityCompletion(profile, "reading_s_sat", "reading", true);
+    assert.equal(next.sectionProgress?.reading?.activitiesCompleted, 1);
+    assert.equal(next.sectionProgress?.phonics?.activitiesCompleted, 1);
+    assert.equal(next.sectionProgress?.phonics?.lastActivityId, "reading_s_sat");
+  });
 });
 
 describe("computeMasteryScore", () => {

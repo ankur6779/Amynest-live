@@ -20,14 +20,12 @@ import {
   buildActivityIntro,
   buildCoachSessionMemory,
   buildItemPromptLines,
-  buildPracticeSession,
   buildProgressNote,
   buildSessionClosing,
   buildSessionGreeting,
   countMemoryReferences,
   createCoachDialogueContext,
   evaluateCoachResponse,
-  getPromptsPool,
   isSpeechCoachEligibleAgeMonths,
   type CoachEvaluationResult,
   type PronouncePrompt,
@@ -60,7 +58,6 @@ import {
   loadCoachLocalSnapshot,
   playSpeechCue,
   saveCoachJourneySnapshot,
-  weakSoundsToHistory,
   type SessionAttemptInput,
   parseSpeechSessionPreset,
   getSessionPresetPatch,
@@ -74,6 +71,16 @@ import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SPEECH_COACH_SESSION_FEATURE } from "@/lib/feature-usage-limits";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
+import {
+  adaptSpeechTasksFromRuntime,
+  beginSpeechCoachSession,
+  buildSpeechSessionFromRuntime,
+  endSpeechCoachSession,
+  getLastSpeechRuntimeDecision,
+  guidanceFromDecision,
+  recordSpeechCoachAttempt,
+  type SpeechCoachRuntimeGuidance,
+} from "@/lib/speech-coach-learning-adapter";
 
 type AnyChild = {
   id: number;
@@ -184,20 +191,30 @@ function getAgeMode(months: number, preset: SpeechSessionPreset | null): AgeMode
   };
 }
 
-function buildTasks(
+/** Catalog tasks from Runtime guidance — no SC-local mastery/adaptive scoring. */
+function buildTasksFromRuntime(
+  childId: number,
   months: number,
-  history: ReturnType<typeof weakSoundsToHistory>,
   mode: AgeMode,
+  seed: number,
+  guidance?: SpeechCoachRuntimeGuidance | null,
 ): PronouncePrompt[] {
-  const primary = buildPracticeSession(months, mode.kind, mode.difficulty, mode.sessionSize + 4, Date.now(), history);
-  if (primary.length >= mode.sessionSize) return [...primary].slice(0, mode.sessionSize);
-  const secondary =
-    mode.kind === "sentence"
-      ? [...getPromptsPool(months, "word", "advanced")]
-      : [...getPromptsPool(months, "sentence", mode.difficulty)];
-  const pool = [...primary, ...secondary, ...DEFAULT_TASKS];
-  const unique = Array.from(new Map(pool.map((p) => [p.id, p])).values());
-  return seededShuffle(unique, Date.now()).slice(0, Math.min(mode.sessionSize, unique.length));
+  const g =
+    guidance ??
+    guidanceFromDecision(childId, getLastSpeechRuntimeDecision(childId), mode.difficulty);
+  const primary = buildSpeechSessionFromRuntime({
+    ageMonths: months,
+    kind: mode.kind,
+    sessionSize: mode.sessionSize,
+    seed,
+    guidance: g,
+    baseDifficulty: mode.difficulty,
+  });
+  if (primary.length >= mode.sessionSize) return primary;
+  const unique = Array.from(
+    new Map([...primary, ...DEFAULT_TASKS].map((p) => [p.id, p])).values(),
+  );
+  return unique.slice(0, Math.min(mode.sessionSize, unique.length));
 }
 
 function StarsBurst({ show }: { show: boolean }) {
@@ -291,8 +308,13 @@ export function LiveSpeechCoach({
   const featureUsage = useFeatureUsage();
   const speechLocked = featureUsage.isFeatureLocked(SPEECH_COACH_SESSION_FEATURE);
   const { recordActivity } = useRecordLearningActivity(child.id);
-  const practiceHistory = useMemo(() => weakSoundsToHistory(progress.data?.weakSounds ?? []), [progress.data?.weakSounds]);
-  const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths, practiceHistory, mode));
+  const sessionIdRef = useRef(`speech_${child.id}_pending`);
+  const [guidance, setGuidance] = useState<SpeechCoachRuntimeGuidance>(() =>
+    guidanceFromDecision(child.id, getLastSpeechRuntimeDecision(child.id), mode.difficulty),
+  );
+  const [tasks, setTasks] = useState<PronouncePrompt[]>(() =>
+    buildTasksFromRuntime(child.id, ageMonths, mode, Date.now()),
+  );
   const [idx, setIdx] = useState(0);
   const [state, setState] = useState<CoachState>("idle");
   const [lastResult, setLastResult] = useState<Result | null>(null);
@@ -407,7 +429,14 @@ export function LiveSpeechCoach({
   }, [dialogueContext, tasks]);
 
   useEffect(() => {
-    setTasks(buildTasks(ageMonths, practiceHistory, mode));
+    const seed = Date.now();
+    const g = guidanceFromDecision(
+      child.id,
+      getLastSpeechRuntimeDecision(child.id),
+      mode.difficulty,
+    );
+    setGuidance(g);
+    setTasks(buildTasksFromRuntime(child.id, ageMonths, mode, seed, g));
     setIdx(0);
     setState("idle");
     setLastResult(null);
@@ -417,13 +446,13 @@ export function LiveSpeechCoach({
     setMemoryRefsUsed(0);
     sessionAttemptsRef.current = [];
     setTurnIndex(0);
-    setSessionSeed(Date.now());
+    setSessionSeed(seed);
     setStatus("Tap Start and Amy will greet you.");
     setHasStarted(false);
     stt.reset();
     voice.pause();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [child.id, ageMonths, practiceHistory, mode]);
+  }, [child.id, ageMonths, mode]);
 
   useEffect(() => {
     if (state !== "listening") return;
@@ -542,6 +571,18 @@ export function LiveSpeechCoach({
     }
     recordTtsUserGesture();
     const seed = Date.now();
+    const began = beginSpeechCoachSession({
+      childId: child.id,
+      ageMonths,
+      kind: mode.kind,
+      sessionSize: mode.sessionSize,
+      baseDifficulty: mode.difficulty,
+      seed,
+    });
+    sessionIdRef.current = began.sessionId;
+    setGuidance(began.guidance);
+    setTasks(began.tasks);
+    setIdx(0);
     setSessionSeed(seed);
     setTurnIndex(0);
     setMemoryRefsUsed(0);
@@ -549,13 +590,14 @@ export function LiveSpeechCoach({
     setLastResult(null);
     sessionAttemptsRef.current = [];
     void stt.warm();
-    if (!current) return;
+    const first = began.tasks[0];
+    if (!first) return;
     const ctx = createCoachDialogueContext({
       childName: child.name,
       ageMonths,
       promptKind: mode.kind,
       sessionIndex: 0,
-      sessionTotal: tasks.length,
+      sessionTotal: began.tasks.length,
       streak: 0,
       sessionSeed: seed,
       turnIndex: 0,
@@ -569,21 +611,23 @@ export function LiveSpeechCoach({
     const opening = [
       ...greeting,
       ...buildActivityIntro(ctx),
-      ...buildItemPromptLines(ctx, current),
+      ...buildItemPromptLines(ctx, first),
     ];
     setMemoryRefsUsed(countMemoryReferences(greeting));
     void speakSequence(opening, "prompt");
   }, [
     ageMonths,
+    child.id,
     child.name,
     coachMemory,
-    current,
     featureUsage,
+    mode.difficulty,
     mode.kind,
+    mode.sessionSize,
     mode.toddler,
     speakSequence,
     speechLocked,
-    tasks.length,
+    stt,
   ]);
 
   const processResponse = useCallback(async () => {
@@ -621,14 +665,55 @@ export function LiveSpeechCoach({
       },
       { onError: (err) => handleSubscriptionMutationGateError(err, "speech_coach_live_log") },
     );
+    const clarity = Math.round(result.confidence * 100);
     sessionAttemptsRef.current.push({
       promptId: current.id,
       promptText: current.text,
       kind: current.kind,
-      score: Math.round(result.confidence * 100),
+      score: clarity,
     });
+    const nextGuidance = recordSpeechCoachAttempt({
+      childId: child.id,
+      promptText: current.text,
+      score: clarity,
+      sessionId: sessionIdRef.current,
+      correct: result.correct,
+    });
+    setGuidance(nextGuidance);
+    // Runtime-adapted remaining prompts (difficulty / review targets).
+    const remainingCount = Math.max(0, tasks.length - idx - 1);
+    if (remainingCount > 0) {
+      const doneIds = new Set(tasks.slice(0, idx + 1).map((t) => t.id));
+      const adapted = adaptSpeechTasksFromRuntime({
+        ageMonths,
+        kind: mode.kind,
+        remainingSize: remainingCount,
+        seed: sessionSeed + idx + 1,
+        guidance: nextGuidance,
+        excludeIds: doneIds,
+        baseDifficulty: mode.difficulty,
+      });
+      if (adapted.length > 0) {
+        setTasks([...tasks.slice(0, idx + 1), ...adapted]);
+      }
+    }
     await speakSequence(result.spokenLines, "feedback");
-  }, [bestStreak, child.id, current, dialogueContext, idx, logAttempt, speakSequence, streak, stt.transcript]);
+  }, [
+    ageMonths,
+    bestStreak,
+    child.id,
+    current,
+    dialogueContext,
+    idx,
+    logAttempt,
+    mode.difficulty,
+    mode.kind,
+    sessionSeed,
+    speakSequence,
+    streak,
+    stt.transcript,
+    tasks,
+  ]);
 
   const stopListeningAndProcess = useCallback(() => {
     if (stateRef.current !== "listening") return;
@@ -700,13 +785,23 @@ export function LiveSpeechCoach({
         },
         localSnapshot,
       );
+      endSpeechCoachSession({
+        childId: child.id,
+        sessionId: sessionIdRef.current,
+      });
       void speakSequence(closing, "complete");
       void recordActivity({
         activityId: `speech_session_${Date.now()}`,
         section: "speech",
         correct: score > 0,
         analyticsEvent: "speech_improved",
-        metadata: { score, streak: bestStreak, tasks: tasks.length },
+        metadata: {
+          score,
+          streak: bestStreak,
+          tasks: tasks.length,
+          runtimeRuleId: guidance.ruleId,
+          celebrationLevel: guidance.celebrationLevel,
+        },
       });
       import("@/lib/retention/retention-goal-bridge").then(({ reportRetentionGoalBestEffort }) => {
         reportRetentionGoalBestEffort("speech");
@@ -728,6 +823,8 @@ export function LiveSpeechCoach({
     bestStreak,
     child.id,
     dialogueContext,
+    guidance.celebrationLevel,
+    guidance.ruleId,
     idx,
     localSnapshot,
     recordActivity,
@@ -748,8 +845,14 @@ export function LiveSpeechCoach({
   }, [current, dialogueContext, idx, speakSequence, streak, stt]);
 
   const restart = useCallback(() => {
-    const fresh = buildTasks(ageMonths, practiceHistory, mode);
-    setTasks(fresh);
+    const seed = Date.now();
+    const g = guidanceFromDecision(
+      child.id,
+      getLastSpeechRuntimeDecision(child.id),
+      mode.difficulty,
+    );
+    setGuidance(g);
+    setTasks(buildTasksFromRuntime(child.id, ageMonths, mode, seed, g));
     setIdx(0);
     setScore(0);
     setStreak(0);
@@ -757,14 +860,14 @@ export function LiveSpeechCoach({
     setMemoryRefsUsed(0);
     sessionAttemptsRef.current = [];
     setTurnIndex(0);
-    setSessionSeed(Date.now());
+    setSessionSeed(seed);
     setLastResult(null);
     setState("idle");
     setStatus("Tap Start and Amy will greet you.");
     setHasStarted(false);
     stt.reset();
     voice.pause();
-  }, [ageMonths, mode, practiceHistory, stt, voice]);
+  }, [ageMonths, child.id, mode, stt, voice]);
 
   if (!current && state !== "complete") {
     return (

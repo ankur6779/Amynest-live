@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   buildPlatformStickerCatalog,
@@ -6,10 +6,15 @@ import {
 } from "@workspace/world-engine";
 import { loadDiscoveryWorldProgress } from "@/lib/discovery-worlds-progress";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
-import { TRANSITION } from "@/lib/experience-system";
 import { cn } from "@/lib/utils";
-import { DelightBurst } from "./delight-burst";
 import { DiscoveryEmptyState } from "./discovery-world-polish";
+import {
+  AnimatedScore,
+  ObjectBounce,
+  ProgressiveStarFill,
+  StickerUnlockCelebration,
+  useSoundWorldMotion,
+} from "./sound-world-motion";
 
 type PlatformStickerAlbumProps = {
   config: DiscoveryWorldRuntimeConfig;
@@ -42,8 +47,10 @@ function StickerThumb({
 }
 
 export function PlatformStickerAlbum({ config, childId }: PlatformStickerAlbumProps) {
-  const [celebrate, setCelebrate] = useState(false);
+  const { springGentle, reduced } = useSoundWorldMotion();
+  const [celebrateEmoji, setCelebrateEmoji] = useState<string | null>(null);
   const progress = loadDiscoveryWorldProgress(config.worldId, childId);
+  const prevCollected = useRef(progress.stickersEarned.length);
   const catalog = useMemo(
     () => buildPlatformStickerCatalog(config.manifest.items),
     [config.manifest.items],
@@ -72,16 +79,31 @@ export function PlatformStickerAlbum({ config, childId }: PlatformStickerAlbumPr
   const collected = progress.stickersEarned.length;
   const pct = catalog.length ? Math.round((collected / catalog.length) * 100) : 0;
 
+  useEffect(() => {
+    if (collected > prevCollected.current) {
+      const newestId = progress.stickersEarned[progress.stickersEarned.length - 1];
+      const newest = catalog.find((s) => s.id === newestId);
+      if (newest) setCelebrateEmoji(newest.emoji);
+    }
+    prevCollected.current = collected;
+  }, [catalog, collected, progress.stickersEarned]);
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-4" aria-labelledby="sticker-book-heading">
-      <DelightBurst active={celebrate} onDone={() => setCelebrate(false)} />
+      <StickerUnlockCelebration
+        active={Boolean(celebrateEmoji)}
+        emoji={celebrateEmoji ?? "⭐"}
+        onDone={() => setCelebrateEmoji(null)}
+      />
       <div>
         <h2 id="sticker-book-heading" className="text-lg font-bold text-foreground">
           Sticker book
         </h2>
         <p className="text-sm text-muted-foreground">
-          {collected} of {catalog.length} collected · {pct}% complete
+          <AnimatedScore value={collected} /> of {catalog.length} collected ·{" "}
+          <AnimatedScore value={pct} suffix="% complete" />
         </p>
+        <ProgressiveStarFill pct={pct} className="mt-2" />
       </div>
 
       {collected === 0 && (
@@ -101,24 +123,32 @@ export function PlatformStickerAlbum({ config, childId }: PlatformStickerAlbumPr
                 <motion.button
                   key={sticker.id}
                   type="button"
-                  whileHover={unlocked ? { scale: 1.05, y: -2 } : undefined}
-                  transition={TRANSITION.springGentle}
-                  onClick={() => unlocked && setCelebrate(true)}
+                  whileHover={unlocked && !reduced ? { scale: 1.05, y: -2 } : undefined}
+                  whileTap={unlocked && !reduced ? { scale: 0.96, y: 2 } : undefined}
+                  transition={springGentle}
+                  onClick={() => unlocked && setCelebrateEmoji(sticker.emoji)}
                   className={cn(
-                    "flex aspect-square flex-col items-center justify-center rounded-[20px] border border-white/10 p-2 text-center",
+                    "flex aspect-square flex-col items-center justify-center rounded-[20px] border border-white/10 p-2 text-center will-change-transform",
                     unlocked
                       ? "bg-primary/10 shadow-[0_8px_24px_rgba(99,102,241,0.15)]"
                       : "bg-white/[0.03] opacity-50",
                     rare && unlocked && "ring-1 ring-amber-400/40",
                   )}
                 >
-                  <div className={cn(!unlocked && "grayscale opacity-60")}>
-                <StickerThumb
-                  emoji={sticker.emoji}
-                  item={config.manifest.items.find((i) => i.id === sticker.itemId)}
-                  resolveAssetUrl={config.resolveAssetUrl}
-                />
-              </div>
+                  <ObjectBounce active={celebrateEmoji === sticker.emoji}>
+                    <div
+                      className={cn(
+                        "transition-[filter] duration-500",
+                        !unlocked && "grayscale opacity-60",
+                      )}
+                    >
+                      <StickerThumb
+                        emoji={sticker.emoji}
+                        item={config.manifest.items.find((i) => i.id === sticker.itemId)}
+                        resolveAssetUrl={config.resolveAssetUrl}
+                      />
+                    </div>
+                  </ObjectBounce>
                   <p className="mt-1 line-clamp-2 text-[10px] font-semibold">
                     {unlocked ? sticker.title : "???"}
                   </p>

@@ -23,9 +23,10 @@ import {
 type PlatformDiscoveryModeProps = {
   config: DiscoveryWorldRuntimeConfig;
   childId: number;
+  onSlide?: () => void;
 };
 
-export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryModeProps) {
+export function PlatformDiscoveryMode({ config, childId, onSlide }: PlatformDiscoveryModeProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
   const [speed, setSpeed] = useState(1);
   const [autoRepeat, setAutoRepeat] = useState(false);
@@ -55,6 +56,10 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
     if (!item) return;
     const phaseIndex = DISCOVERY_PHASE_ORDER.indexOf(phase);
     const ms = discoveryPhaseDurationMs(phase, speed);
+
+    if (phase === "image") {
+      onSlide?.();
+    }
 
     if (phase === "narration") {
       discoveryWorldAudioManager.unlockFromGesture();
@@ -93,7 +98,7 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
     }, ms);
 
     return () => window.clearTimeout(timer);
-  }, [item, childId, index, phase, speed, advanceSlide, config]);
+  }, [item, childId, index, phase, speed, advanceSlide, config, onSlide]);
 
   const heroSrc = item
     ? worldItemVisualPaths(item, config.resolveAssetUrl).hero

@@ -5,6 +5,7 @@
 
 export type SectionKey =
   | "phonics"
+  | "reading"
   | "math"
   | "speech"
   | "stories"
@@ -46,6 +47,7 @@ export const EMPTY_SECTION_PROGRESS: SectionProgress = {
 
 export const DEFAULT_SECTION_KEYS: SectionKey[] = [
   "phonics",
+  "reading",
   "math",
   "speech",
   "stories",

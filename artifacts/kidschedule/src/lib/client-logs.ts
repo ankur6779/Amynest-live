@@ -12,7 +12,8 @@ export type ClientLogType =
   | "infant_parenting"
   | "growth_analytics"
   | `amy_voice_${string}`
-  | `learning_progress_${string}`;
+  | `learning_progress_${string}`
+  | `learning_events_${string}`;
 
 type LogPayload = {
   type: ClientLogType;

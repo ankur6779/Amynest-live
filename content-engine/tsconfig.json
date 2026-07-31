@@ -53,7 +53,12 @@
     "content-intelligence/**/*.ts",
     "launch-validator/**/*.ts",
     "continuous-learning/**/*.ts",
-    "creative-composition/**/*.ts"
+    "creative-composition/**/*.ts",
+    "character-memory-engine/**/*.ts",
+    "character-performance-studio/**/*.ts",
+    "performance-director/**/*.ts",
+    "story-memory-engine/**/*.ts",
+    "thumbnail-engine/**/*.ts"
   ],
   "exclude": ["**/*.test.ts", "dist"]
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ReadingLessonRunner } from "../lesson/ReadingLessonRunner";
 import { KaraokeBlendRound } from "../KaraokeBlendRound";
@@ -28,6 +28,10 @@ export type DailySessionRunnerProps = {
   onSessionChange: (next: DailySessionState) => void;
   onLessonComplete: (payload: ReadingLessonCompletePayload) => void;
   onCoachEvaluation?: (evaluation: CoachEvaluation) => void;
+  /** Learning Platform — word practice completed (no local mastery). */
+  onWordCompleted?: (word: string) => void;
+  /** Learning Platform — session phase / page started. */
+  onPhaseStarted?: (phase: DailySessionState["phase"]) => void;
   onExit: (paused: DailySessionState) => void;
   onFinished: (completed: DailySessionState) => void;
 };
@@ -44,6 +48,8 @@ export function DailySessionRunner({
   onSessionChange,
   onLessonComplete,
   onCoachEvaluation,
+  onWordCompleted,
+  onPhaseStarted,
   onExit,
   onFinished,
 }: DailySessionRunnerProps) {
@@ -51,9 +57,18 @@ export function DailySessionRunner({
     Math.min(session.wordsCompleted.length, Math.max(0, session.practiceWords.length - 1)),
   );
   const [storyLine, setStoryLine] = useState(0);
+  const lastPhaseRef = useRef<DailySessionState["phase"] | null>(null);
 
   const practiceWord = session.practiceWords[wordIdx] ?? session.focusWord;
   const summary = useMemo(() => buildSessionSummary(session), [session]);
+
+  useEffect(() => {
+    if (lastPhaseRef.current === session.phase) return;
+    lastPhaseRef.current = session.phase;
+    if (session.phase !== "idle" && session.phase !== "complete") {
+      onPhaseStarted?.(session.phase);
+    }
+  }, [onPhaseStarted, session.phase]);
 
   const goNext = useCallback(
     (patch?: Parameters<typeof advanceDailySession>[1]) => {
@@ -61,6 +76,25 @@ export function DailySessionRunner({
       onSessionChange(next);
     },
     [session, onSessionChange],
+  );
+
+  const completeWord = useCallback(
+    (word: string) => {
+      onWordCompleted?.(word);
+      const nextWords = session.wordsCompleted.includes(word)
+        ? session.wordsCompleted
+        : [...session.wordsCompleted, word];
+      if (wordIdx >= 2 || nextWords.length >= 3) {
+        goNext({ wordsCompleted: nextWords.slice(0, 3) });
+        return;
+      }
+      onSessionChange({
+        ...session,
+        wordsCompleted: nextWords,
+      });
+      setWordIdx((i) => i + 1);
+    },
+    [goNext, onSessionChange, onWordCompleted, session, wordIdx],
   );
 
   if (session.phase === "complete") {
@@ -124,36 +158,13 @@ export function DailySessionRunner({
           <KaraokeBlendRound
             key={practiceWord}
             word={practiceWord}
-            onComplete={() => {
-              const nextWords = session.wordsCompleted.includes(practiceWord)
-                ? session.wordsCompleted
-                : [...session.wordsCompleted, practiceWord];
-              if (wordIdx >= 2 || nextWords.length >= 3) {
-                goNext({ wordsCompleted: nextWords.slice(0, 3) });
-                return;
-              }
-              onSessionChange({
-                ...session,
-                wordsCompleted: nextWords,
-              });
-              setWordIdx((i) => i + 1);
-            }}
+            onComplete={() => completeWord(practiceWord)}
           />
           <Button
             type="button"
             variant="outline"
             className="min-h-12 w-full rounded-2xl"
-            onClick={() => {
-              const nextWords = session.wordsCompleted.includes(practiceWord)
-                ? session.wordsCompleted
-                : [...session.wordsCompleted, practiceWord];
-              if (wordIdx >= 2 || nextWords.length >= 3) {
-                goNext({ wordsCompleted: nextWords.slice(0, 3) });
-                return;
-              }
-              onSessionChange({ ...session, wordsCompleted: nextWords });
-              setWordIdx((i) => i + 1);
-            }}
+            onClick={() => completeWord(practiceWord)}
           >
             Next word
           </Button>

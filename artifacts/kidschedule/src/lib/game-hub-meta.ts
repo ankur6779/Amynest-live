@@ -10,7 +10,6 @@ import {
   amySuggestion,
   canPlayGame,
   getPlayLog,
-  getSkills,
   type GameCategory,
   type GameDef,
 } from "@/lib/games";
@@ -18,7 +17,6 @@ import { getGameLearning } from "@/lib/game-learning";
 import {
   formatParentMastery,
   getPracticeSkillFamily,
-  getWeakestPracticeFamilies,
   nextSkillCue,
 } from "@/lib/game-mastery";
 
@@ -108,11 +106,15 @@ export function getNextBestSkillCue(game: GameDef | undefined): string {
   return nextSkillCue(getPracticeSkillFamily(game.id));
 }
 
-/** Amy pick + weakest mastery families — Recommended strip. */
+/**
+ * Recommended strip. When `preferredIds` is provided (from Learning Runtime),
+ * those ids are authoritative order — local mastery ranking only fills gaps.
+ */
 export function getRecommendedGames(
   isPremium: boolean,
   excludeIds: readonly string[] = [],
   limit = 6,
+  preferredIds: readonly string[] = [],
 ): GameDef[] {
   const exclude = new Set(excludeIds);
   const out: GameDef[] = [];
@@ -122,32 +124,20 @@ export function getRecommendedGames(
     exclude.add(game.id);
   };
 
-  const weakFamilies = getWeakestPracticeFamilies(4);
-  for (const family of weakFamilies) {
-    const match = GAMES.find(
-      (g) => getPracticeSkillFamily(g.id) === family && canPlayGame(g, isPremium) && !exclude.has(g.id),
-    );
-    push(match);
+  for (const id of preferredIds) {
+    push(GAMES.find((g) => g.id === id));
     if (out.length >= limit) return out;
   }
 
+  // Catalog fill only — not adaptive authority.
   const suggestion = amySuggestion(isPremium);
   if (suggestion.gameId) {
     push(GAMES.find((g) => g.id === suggestion.gameId));
+    if (out.length >= limit) return out;
   }
 
-  const skills = getSkills();
-  const ranked = GAMES.filter((g) => canPlayGame(g, isPremium) && !exclude.has(g.id)).sort((a, b) => {
-    const sa = skills[a.category]?.attempts
-      ? skills[a.category].correct / skills[a.category].attempts
-      : 0;
-    const sb = skills[b.category]?.attempts
-      ? skills[b.category].correct / skills[b.category].attempts
-      : 0;
-    return sa - sb;
-  });
-
-  for (const game of ranked) {
+  for (const game of GAMES) {
+    if (!canPlayGame(game, isPremium) || exclude.has(game.id)) continue;
     push(game);
     if (out.length >= limit) break;
   }

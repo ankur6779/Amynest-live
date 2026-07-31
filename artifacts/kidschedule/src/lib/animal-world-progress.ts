@@ -8,6 +8,10 @@ import {
 } from "@workspace/animal-world";
 import { getAllAnimals } from "@workspace/animal-world";
 import { loadAnimalWorldStats } from "@/lib/animal-world-storage";
+import {
+  baselineWorldMasterySnapshot,
+  ingestWorldMasteryProgress,
+} from "@/lib/knowledge-graph-client";
 
 const PROGRESS_KEY = "amynest:animal-world:progress:v2";
 
@@ -35,7 +39,9 @@ function childKey(childId: number): string {
 
 export function loadAnimalWorldProgress(childId: number): AnimalWorldProgressV2 {
   const store = readStore();
-  return store[childKey(childId)] ?? defaultProgressV2();
+  const progress = store[childKey(childId)] ?? defaultProgressV2();
+  baselineWorldMasterySnapshot(childId, "animal_world", progress.animalMastery);
+  return progress;
 }
 
 export function saveAnimalWorldProgress(
@@ -45,6 +51,11 @@ export function saveAnimalWorldProgress(
   const store = readStore();
   store[childKey(childId)] = progress;
   writeStore(store);
+  try {
+    ingestWorldMasteryProgress(childId, "animal_world", progress.animalMastery);
+  } catch {
+    /* KG optional */
+  }
 }
 
 function openedIds(childId: number): Set<string> {

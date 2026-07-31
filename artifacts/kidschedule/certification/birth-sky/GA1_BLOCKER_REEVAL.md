@@ -2,7 +2,7 @@
 
 **Ops verify:** birth_sky_ops_verify/1.0.0  
 **Infra:** Coolify + Hetzner + Cloudflare  
-**Generated:** 2026-07-25T19:44:48.649Z
+**Generated:** 2026-07-31T17:06:34.474Z
 
 | ID | Item | Classification | Evidence |
 | --- | --- | --- | --- |

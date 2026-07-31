@@ -11,6 +11,7 @@ const ROUTE_ALIASES: Record<string, string> = {
   "/parenting-hub/speech-coach": "/speech-coach",
   "/parenting-hub/talking-amy": "/talking-amy",
   "/speech-coach/live": "/speech-coach",
+  "/learning-zone/smart-math-tricks": "/smart-math-tricks",
 };
 
 /** Bottom-tab roots — entering via tab should replace, not stack. */

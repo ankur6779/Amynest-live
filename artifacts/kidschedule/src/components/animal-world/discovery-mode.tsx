@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { animalAudioManager } from "@/lib/animal-world-audio-manager";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
 import { grantXp } from "@/lib/animal-world-progress";
+import { recordAnimalWorldHubDaily } from "@/lib/animal-world-hub-daily";
 import { AnimalHeroImage } from "./animal-hero-image";
 
 type DiscoveryModeProps = {
@@ -73,6 +74,7 @@ export function DiscoveryMode({ childId }: DiscoveryModeProps) {
     }
     if (phase === "image" && phaseIndex === 0) {
       trackAnimalWorldEvent("discovery_slide", { childId, animalId: animal.id, index, phase });
+      recordAnimalWorldHubDaily(childId, "discovery_slides");
     }
 
     const timer = window.setTimeout(() => {

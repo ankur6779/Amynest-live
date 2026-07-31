@@ -169,10 +169,11 @@ function logStaticAudioLookupMiss(
   // Map still loading — not a catalog gap. Reporting /missing here causes
   // HTTP 401 spam for signed-out users and confuses playback diagnostics.
   if (map === null) {
-    console.warn("[static-audio] lookup deferred — map not ready", {
-      mode,
-      textPreview: rawText.slice(0, 80),
-    });
+    warnOnce(
+      `map-not-ready:${mode}`,
+      "[static-audio] lookup deferred — map not ready",
+      { mode, textPreview: rawText.slice(0, 80) },
+    );
     return;
   }
   const bucket = map?.[mode] ?? {};
@@ -240,9 +241,7 @@ function recordMissingStaticAudio(
   if (import.meta.env.PROD && enqueueServer) {
     reportMissingToServer(key, priority);
   }
-  if (import.meta.env.PROD || isStaticAudioStrictMode()) {
-    console.error("CRITICAL: Missing static audio in production", { text, mode, normalized });
-  }
+  // warnOnce above already covers diagnostics — avoid CRITICAL console floods.
 }
 
 /**
@@ -456,7 +455,8 @@ export function lookupStaticAudioUrl(
   }
 
   const normalized = normalizeSpeakTextForLookup(text);
-  if (normalized && isCatalogPhrase(text, mode)) {
+  // Map still loading or circuit already open — degrade quietly (no retry flood).
+  if (normalized && isCatalogPhrase(text, mode) && map !== null && !isClientStaticAudioCircuitOpen()) {
     recordMissingStaticAudio(normalized, mode, text);
     reportStaticAudioMissingUrl(text, mode);
   }
@@ -773,6 +773,14 @@ export async function prepareStaticPlaybackAudio(
     if (!options?.quiet) emitStaticAudioVisualFallback({ phrase: rawText, mode });
     return null;
   }
+  // Wait for catalog chunk — looking up while map===null caused false misses,
+  // timeout loops, and console floods during Smart Maths / practice boot.
+  try {
+    await ensureStaticAudioMapLoaded();
+  } catch {
+    if (!options?.quiet) emitStaticAudioVisualFallback({ phrase: rawText, mode });
+    return null;
+  }
   const proxyUrl = lookupStaticAudioUrl(rawText, mode);
   if (!proxyUrl) {
     if (!options?.quiet) emitStaticAudioVisualFallback({ phrase: rawText, mode });
@@ -800,11 +808,24 @@ export async function playStaticAudio(
     return false;
   }
 
+  try {
+    await ensureStaticAudioMapLoaded();
+  } catch {
+    emitStaticAudioVisualFallback({ phrase: text, mode });
+    return false;
+  }
+
+  if (isClientStaticAudioCircuitOpen()) {
+    emitStaticAudioVisualFallback({ phrase: text, mode });
+    return false;
+  }
+
   const proxyUrl = lookupStaticAudioUrl(text, mode);
   audioDebugLog("[AUDIO URL]", proxyUrl);
 
   if (!proxyUrl) {
-    console.error("URL RESOLUTION FAILED", text);
+    // Soft degrade — avoid console.error spam on catalog gaps.
+    emitStaticAudioVisualFallback({ phrase: text, mode });
     return false;
   }
 

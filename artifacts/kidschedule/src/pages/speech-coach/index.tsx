@@ -47,7 +47,6 @@ import {
   monthsToBand,
   isSpeechCoachEligibleAgeMonths,
   compareTranscript,
-  buildPracticeSession,
   buildActivityIntro,
   buildCoachSessionMemory,
   buildItemPromptLines,
@@ -64,6 +63,13 @@ import {
   type TranscriptFeedback,
   type PronouncePrompt,
 } from "@workspace/speech-coach";
+import {
+  adaptSpeechTasksFromRuntime,
+  beginSpeechCoachSession,
+  endSpeechCoachSession,
+  recordSpeechCoachAttempt,
+} from "@/lib/speech-coach-learning-adapter";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import {
   type SessionPhase,
   type PromptPhase,
@@ -90,7 +96,6 @@ import {
   loadCoachLocalSnapshot,
   saveCoachJourneySnapshot,
   setSpeechViewMode,
-  weakSoundsToHistory,
   speechCoachSttOptions,
   type SpeechViewMode,
 } from "./speech-coach-utils";
@@ -539,6 +544,8 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
   const { t } = useTranslation();
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
   const log = useLogSpeechPracticeAttempt();
+  const { recordActivity } = useRecordLearningActivity(child.id);
+  const sessionIdRef = useRef(`speech_hub_${child.id}_pending`);
   const voice = useAmyVoice();
   const getAuthToken = useCallback(async () => {
     try {
@@ -652,15 +659,63 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     });
     setTurnIndex((n) => n + 1);
     setPromptPhase("result");
+    const nextGuidance = recordSpeechCoachAttempt({
+      childId: child.id,
+      promptText: item.text,
+      score: evaluated.score,
+      sessionId: sessionIdRef.current,
+      correct: evaluated.correct,
+    });
+    const remainingCount = Math.max(0, sessionItems.length - sessionIdx - 1);
+    if (remainingCount > 0) {
+      const doneIds = new Set(sessionItems.slice(0, sessionIdx + 1).map((p) => p.id));
+      const adapted = adaptSpeechTasksFromRuntime({
+        ageMonths,
+        kind,
+        remainingSize: remainingCount,
+        seed: sessionSeed + sessionIdx + 1,
+        guidance: nextGuidance,
+        excludeIds: doneIds,
+        baseDifficulty: difficulty,
+      });
+      if (adapted.length > 0) {
+        setSessionItems([...sessionItems.slice(0, sessionIdx + 1), ...adapted]);
+      }
+    }
     void speakCoachFeedbackLines(voice, evaluated.spokenLines, item);
-  }, [bestStreak, makeDialogueCtx, sessionIdx, stt.error, stt.listening, stt.transcribing, stt.transcript, streak, turnIndex, voice]);
+  }, [
+    ageMonths,
+    bestStreak,
+    child.id,
+    difficulty,
+    kind,
+    makeDialogueCtx,
+    sessionIdx,
+    sessionItems,
+    sessionSeed,
+    stt.error,
+    stt.listening,
+    stt.transcribing,
+    stt.transcript,
+    streak,
+    turnIndex,
+    voice,
+  ]);
 
   const startSession = useCallback(() => {
     speechCoachPerf.startSession();
     speechCoachPerf.mark("session_start");
-    const history = weakSoundsToHistory(progress.data?.weakSounds ?? []);
-    const items = buildPracticeSession(ageMonths, kind, difficulty, SESSION_SIZE, Date.now(), history);
     const seed = Date.now();
+    const began = beginSpeechCoachSession({
+      childId: child.id,
+      ageMonths,
+      kind,
+      sessionSize: SESSION_SIZE,
+      baseDifficulty: difficulty,
+      seed,
+    });
+    sessionIdRef.current = began.sessionId;
+    const items = began.tasks;
     setSessionSeed(seed);
     setStreak(0);
     setBestStreak(0);
@@ -713,7 +768,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
       })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ageMonths, coachMemory, kind, difficulty, progress.data?.weakSounds, child.name]);
+  }, [ageMonths, coachMemory, kind, difficulty, child.id, child.name]);
 
   const handleHear = () => {
     if (!currentItem) return;
@@ -788,6 +843,17 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
         },
         localSnapshot,
       );
+      endSpeechCoachSession({
+        childId: child.id,
+        sessionId: sessionIdRef.current,
+      });
+      void recordActivity({
+        activityId: `speech_session_${Date.now()}`,
+        section: "speech",
+        correct: sessionScore > 0,
+        analyticsEvent: "speech_improved",
+        metadata: { score: sessionScore, streak: bestStreak, tasks: sessionItems.length },
+      });
       const ctx = makeDialogueCtx(sessionIdx, streak, currentItem.kind);
       void (async () => {
         for (const line of buildSessionClosing(ctx, sessionScore, bestStreak)) {
@@ -818,7 +884,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
         })();
       }
     }
-  }, [bestStreak, child.id, currentItem, currentResult, isLastItem, localSnapshot, log, makeDialogueCtx, sessionIdx, sessionItems, sessionResults, sessionScore, streak, stt, voice]);
+  }, [bestStreak, child.id, currentItem, currentResult, isLastItem, localSnapshot, log, makeDialogueCtx, recordActivity, sessionIdx, sessionItems, sessionResults, sessionScore, streak, stt, voice]);
 
   const handleTryAgain = () => {
     setCurrentResult(null);

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import { lazyPage } from "@/lib/safe-import";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -52,6 +52,7 @@ import { withLearningJourneyGate } from "@/components/learning-journey-gate";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
+import { useFailOpenAfter } from "@/lib/loading-fail-open";
 import {
   effectiveSetupStatus,
   isSetupComplete,
@@ -104,6 +105,8 @@ const ProgressPage = lazyPage(() => import("@/pages/progress"));
 const ParentingHub = lazyPage(() => import("@/pages/parenting-hub"));
 const ParentGrowthPage = lazyPage(() => import("@/pages/parent-growth"));
 const DebugLearningPage = lazyPage(() => import("@/pages/debug-learning"));
+const DebugRuntimePage = lazyPage(() => import("@/pages/debug-runtime"));
+const DebugTelemetryPage = lazyPage(() => import("@/pages/debug-telemetry"));
 const PhonicsPage = lazyPage(() => import("@/pages/phonics"));
 const PhonicsTestPlayPage = lazyPage(() => import("@/pages/phonics-test-play"));
 const LifeSkillsPage = lazyPage(() => import("@/pages/life-skills"));
@@ -139,7 +142,6 @@ const AnimalWorldPage = lazyPage(() => import("@/pages/animal-world"));
 const DiscoveryWorldsHubPage = lazyPage(() => import("@/pages/discovery-worlds-hub"));
 const AnswerToKidsHowPage = lazyPage(() => import("@/pages/answer-to-kids-how"));
 const AnswerToKidsHowReaderPage = lazyPage(() => import("@/pages/answer-to-kids-how-reader"));
-const DiscoveryWorldPreviewPage = lazyPage(() => import("@/pages/discovery-world-preview"));
 const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-live"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
@@ -182,6 +184,7 @@ import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissi
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { CampaignAttributionBridge } from "@/components/campaign-attribution-bridge";
 import { GrowthBootstrap } from "@/components/growth-bootstrap";
+import { LearningPlatformSnapshotHost } from "@/components/learning-platform-snapshot-host";
 import { StartupFunnelScreenTracker } from "@/components/startup-funnel-screen-tracker";
 import { trackStartupFunnel } from "@/lib/startup-funnel";
 import { PreSignupReengagementOrchestrator } from "@/components/pre-signup-reengagement-orchestrator";
@@ -191,6 +194,14 @@ import { getAppApiBaseOrigin } from "@/lib/api";
 import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
+
+const AmyRuntimeInspectorHostLazy = import.meta.env.DEV
+  ? lazy(() =>
+      import("@/components/amy-runtime-inspector/runtime-inspector-host").then((m) => ({
+        default: m.AmyRuntimeInspectorHost,
+      })),
+    )
+  : () => null;
 import { AudioHealthOverlay } from "@/components/audio-health-overlay";
 import { AudioVoiceStatusHint } from "@/components/audio-voice-status-hint";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
@@ -232,7 +243,11 @@ function HomeRedirect() {
   const { data, isError, error, refetch } = useOnboardingStatus();
   const authFetch = useAuthFetch();
   const setupDone = isSetupComplete(effectiveSetupStatus(data));
-  const { data: childrenList, isFetched: childrenFetched } = useListChildren({
+  const {
+    data: childrenList,
+    isFetched: childrenFetched,
+    isError: childrenError,
+  } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
       enabled: isSignedIn && isLoaded && setupDone,
@@ -262,6 +277,9 @@ function HomeRedirect() {
   const authLoading = !isLoaded || authStatus === "loading";
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
+  const childrenBootLoading = isSignedIn && setupDone && !childrenFetched && !childrenError;
+  const authLoadingTimedOut = useFailOpenAfter(authLoading);
+  const childrenLoadingTimedOut = useFailOpenAfter(childrenBootLoading);
 
   useEffect(() => {
     if (!isSignedIn || !isLoaded || authLoading) return;
@@ -284,7 +302,13 @@ function HomeRedirect() {
     childrenList?.length,
   ]);
 
-  if (authLoading) return <RouteLoadingShell />;
+  if (authLoading && !authLoadingTimedOut) return <RouteLoadingShell />;
+  if (authLoading && authLoadingTimedOut && !isSignedIn) {
+    if (isCapacitorIosShell() || isNativeAmyNestShell()) {
+      return <Redirect to="/sign-in" />;
+    }
+    return <LandingPage />;
+  }
 
   if (!isSignedIn) {
     if (isCapacitorIosShell() || isNativeAmyNestShell()) {
@@ -324,7 +348,7 @@ function HomeRedirect() {
   }
 
   if (setupDone) {
-    if (!childrenFetched) return <RouteLoadingShell />;
+    if (childrenBootLoading && !childrenLoadingTimedOut) return <RouteLoadingShell />;
     if ((childrenList?.length ?? 0) > 0) return <Redirect to="/dashboard" />;
   }
   return <Redirect to="/onboarding" />;
@@ -564,18 +588,44 @@ function ProtectedRoute({
   const deviceBlocked =
     deviceStatus === "blocked" && !location.startsWith("/manage-devices");
   const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
-  const { entitlements, loading: subscriptionLoading } = useSubscription();
+  const { entitlements, loading: subscriptionLoading, isFetched: subscriptionFetched } =
+    useSubscription();
   const premiumRoute = getPremiumRouteMeta(location);
+  const { signOut } = useClerk();
 
   // Hard guard: never decide signed-in / signed-out until Firebase has
   // resolved. Without this gate, a signed-in user with a slow auth resolve
   // would briefly hit the /sign-in redirect and bounce back, triggering an
   // unnecessary route remount + duplicate API calls.
   const authLoading = !isLoaded || authStatus === "loading";
-  if (authLoading) return <RouteLoadingShell />;
+  const authLoadingTimedOut = useFailOpenAfter(authLoading);
+  const deviceLoadingTimedOut = useFailOpenAfter(isSignedIn && deviceGateLoading);
+  const premiumLoading =
+    !!premiumRoute && (subscriptionLoading || (!entitlements && !subscriptionFetched));
+  const premiumLoadingTimedOut = useFailOpenAfter(premiumLoading);
+
+  if (authLoading && !authLoadingTimedOut) return <RouteLoadingShell />;
+  if (authLoading && authLoadingTimedOut && !isSignedIn) {
+    return <Redirect to="/sign-in" />;
+  }
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (authBlocked) return <RouteLoadingShell />;
-  if (deviceGateLoading) return <RouteLoadingShell />;
+  if (authBlocked) {
+    return (
+      <AppFallbackUi
+        title="Session expired"
+        message="Please sign in again to continue."
+        primaryLabel="Sign in"
+        onReload={() => {
+          void signOut().finally(() => {
+            const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+            window.location.assign(`${base}/sign-in`.replace(/\/{2,}/g, "/"));
+          });
+        }}
+      />
+    );
+  }
+  // Device registration is best-effort — never block the app forever.
+  if (deviceGateLoading && !deviceLoadingTimedOut) return <RouteLoadingShell />;
   if (deviceBlocked) return <RouteLoadingShell />;
   if (isError) {
     return <ApiRetryShell onRetry={() => void refetch()} />;
@@ -594,8 +644,8 @@ function ProtectedRoute({
     return <Redirect to="/onboarding" />;
   }
   if (premiumRoute) {
-    if (subscriptionLoading || !entitlements) return <RouteLoadingShell />;
-    if (!entitlements[premiumRoute.accessKey]) {
+    if (premiumLoading && !premiumLoadingTimedOut) return <RouteLoadingShell />;
+    if (entitlements && !entitlements[premiumRoute.accessKey]) {
       return (
         <AppErrorBoundary label="Layout">
           <Layout>
@@ -640,6 +690,8 @@ const ProgressRoute = makeProtectedRoute(ProgressPage);
 const ParentingHubRoute = makeProtectedRoute(ParentingHub);
 const ParentGrowthRoute = makeProtectedRoute(ParentGrowthPage);
 const DebugLearningRoute = makeProtectedRoute(DebugLearningPage);
+const DebugRuntimeRoute = makeProtectedRoute(DebugRuntimePage);
+const DebugTelemetryRoute = makeProtectedRoute(DebugTelemetryPage);
 const PhonicsRoute = makeProtectedRoute(withLearningJourneyGate(PhonicsPage), "Phonics");
 const PhonicsTestPlayRoute = makeProtectedRoute(withLearningJourneyGate(PhonicsTestPlayPage));
 const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
@@ -672,7 +724,6 @@ const AnimalWorldRoute = makeProtectedRoute(AnimalWorldPage);
 const DiscoveryWorldsHubRoute = makeProtectedRoute(DiscoveryWorldsHubPage);
 const AnswerToKidsHowRoute = makeProtectedRoute(AnswerToKidsHowPage);
 const AnswerToKidsHowReaderRoute = makeProtectedRoute(AnswerToKidsHowReaderPage, "StoryReader");
-const DiscoveryWorldPreviewRoute = makeProtectedRoute(DiscoveryWorldPreviewPage, "StoryPreview");
 const DiscoveryWorldLiveRoute = makeProtectedRoute(DiscoveryWorldLivePage, "StoryLive");
 const PricingRoute = makeProtectedRoute(PricingPage, "Pricing");
 const ReferralsRoute = makeProtectedRoute(ReferralsPage);
@@ -920,6 +971,7 @@ function AppRoutes() {
             <ReferralAttributionBridge />
             <CampaignAttributionBridge />
             <GrowthBootstrap />
+            <LearningPlatformSnapshotHost />
             <StartupFunnelScreenTracker />
             <PreSignupReengagementOrchestrator />
             <GiftAttributionBridge />
@@ -1010,9 +1062,17 @@ function AppRoutes() {
           <Route path="/parenting-hub" component={ParentingHubRoute} />
           <Route path="/parent-growth" component={ParentGrowthRoute} />
           {import.meta.env.PROD ? (
-            <Route path="/debug/learning" component={DevRouteRedirect} />
+            <>
+              <Route path="/debug/learning" component={DevRouteRedirect} />
+              <Route path="/debug/runtime" component={DevRouteRedirect} />
+              <Route path="/debug/telemetry" component={DevRouteRedirect} />
+            </>
           ) : (
-            <Route path="/debug/learning" component={DebugLearningRoute} />
+            <>
+              <Route path="/debug/learning" component={DebugLearningRoute} />
+              <Route path="/debug/runtime" component={DebugRuntimeRoute} />
+              <Route path="/debug/telemetry" component={DebugTelemetryRoute} />
+            </>
           )}
           <Route path="/phonics/test/play" component={PhonicsTestPlayRoute} />
           <Route path="/phonics/test" component={PhonicsRoute} />
@@ -1039,6 +1099,10 @@ function AppRoutes() {
           <Route path="/kids-control-center" component={KidsControlCenterRoute} />
           <Route path="/study" component={StudyRoute} />
           <Route path="/smart-math-tricks" component={SmartMathTricksRoute} />
+          {/* Legacy deep link — keep old URLs working without a hard break. */}
+          <Route path="/learning-zone/smart-math-tricks">
+            <Redirect to="/smart-math-tricks" replace />
+          </Route>
           <Route path="/abacus" component={AbacusRoute} />
           <Route path="/health-lab" component={HealthLabRoute} />
           <Route path="/birth-sky/setup/:step" component={BirthSkyRoute} />
@@ -1115,6 +1179,11 @@ function AppRoutes() {
             <Toaster />
             <AudioVoiceStatusHint />
             <DebugPanel />
+            {import.meta.env.DEV ? (
+              <Suspense fallback={null}>
+                <AmyRuntimeInspectorHostLazy />
+              </Suspense>
+            ) : null}
             <AudioHealthOverlay />
           </DeviceRegistrationProvider>
             </ValueBridgeProvider>

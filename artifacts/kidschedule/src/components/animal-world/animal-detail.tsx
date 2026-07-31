@@ -22,6 +22,7 @@ import {
 import { primeWorldLibrarySoundUrl } from "@/lib/world-library-audio-prewarm";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
 import { grantXp, loadAnimalWorldProgress, recordMonthlyOpen } from "@/lib/animal-world-progress";
+import { recordAnimalWorldHubDaily } from "@/lib/animal-world-hub-daily";
 import { resolveCollectionStatus } from "@workspace/animal-world";
 import { loadAnimalWorldStats } from "@/lib/animal-world-storage";
 import { AnimalHeroImage } from "./animal-hero-image";
@@ -59,6 +60,7 @@ export function AnimalDetail({
       animalId: animal.id,
       patch: {},
     });
+    recordAnimalWorldHubDaily(childId, "open_items");
     trackAnimalWorldEvent("animal_opened", { childId, animalId: animal.id, category: animal.category });
   }, [animal, childId]);
 
@@ -74,6 +76,7 @@ export function AnimalDetail({
         soundsPlayed: (progress.animalMastery[animal.id]?.soundsPlayed ?? 0) + 1,
       },
     });
+    recordAnimalWorldHubDaily(childId, "listen_sounds");
     trackAnimalWorldEvent("sound_played", { childId, animalId: animal.id, soundId });
     setPlayingId(null);
   };

@@ -13,6 +13,10 @@ import {
   resolveWorldLibraryPlaybackUrl,
   scheduleWorldLibraryDeepPreload,
 } from "@/lib/world-library-audio-prewarm";
+import {
+  emitPrimarySoundEnd,
+  emitPrimarySoundStart,
+} from "@/lib/sound-world-living-environment";
 
 export type DiscoveryWorldPlayMeta = {
   worldId: string;
@@ -115,28 +119,33 @@ export class DiscoveryWorldAudioManager {
 
     const run = (async () => {
       audioManager.stopAll();
-      for (const resolved of candidates) {
-        if (!resolved) continue;
-        preloadPool.set(resolved, { url: resolved, warmedAt: now });
-        const audio = audioManager.getCached(resolved, { forceReload: false });
-        primeWorldLibrarySoundUrl(resolved);
-        const ok = await audioManager.play(
-          audio,
-          {
-            proxyUrl: resolved,
-            source: "discovery_world",
-            phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
-            interrupt: true,
-            srcType: "static",
-            channel: "speech",
-          },
-          { channel: "speech", interrupt: true, maxRetries: 1 },
-        );
-        if (token !== ownershipToken) return false;
-        if (ok) return true;
+      emitPrimarySoundStart();
+      try {
+        for (const resolved of candidates) {
+          if (!resolved) continue;
+          preloadPool.set(resolved, { url: resolved, warmedAt: now });
+          const audio = audioManager.getCached(resolved, { forceReload: false });
+          primeWorldLibrarySoundUrl(resolved);
+          const ok = await audioManager.play(
+            audio,
+            {
+              proxyUrl: resolved,
+              source: "discovery_world",
+              phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
+              interrupt: true,
+              srcType: "static",
+              channel: "speech",
+            },
+            { channel: "speech", interrupt: true, maxRetries: 1 },
+          );
+          if (token !== ownershipToken) return false;
+          if (ok) return true;
+        }
+        console.warn("[DiscoveryWorldAudioManager] play failed", meta, { tried: candidates.length });
+        return false;
+      } finally {
+        emitPrimarySoundEnd();
       }
-      console.warn("[DiscoveryWorldAudioManager] play failed", meta, { tried: candidates.length });
-      return false;
     })();
 
     inFlightPlay.set(playKey, run);

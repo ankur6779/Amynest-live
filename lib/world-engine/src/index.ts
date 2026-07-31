@@ -116,11 +116,28 @@ export {
   loadDailyAdventureProgress,
   recordDailyAdventureEvent,
   dailyAdventureCompletionPct,
+  buildHubDailyAdventure,
+  loadHubDailyAdventureProgress,
+  recordHubDailyAdventureEvent,
+  hubDailyAdventureCompletedCount,
   type DailyAdventureTask,
   type DailyAdventureProgress,
   type DailyAdventureTaskKind,
   type DailyAdventureCompletion,
+  type HubWorldCatalog,
+  type HubDailyAdventureTask,
+  type HubDailyAdventureProgress,
+  type HubDailyAdventureCompletion,
 } from "./daily-adventures.js";
+
+export {
+  todayDateKey,
+  yesterdayDateKey,
+  computePlayStreak,
+  applyPlayStreak,
+  type PlayStreakState,
+  type PlayStreakUpdate,
+} from "./streak.js";
 
 export {
   EXPLORER_LEVEL_LADDER,

@@ -1,13 +1,10 @@
 import type { AnimalWorldSessionStats } from "@workspace/animal-world";
+import { applyPlayStreak, todayDateKey } from "@workspace/world-engine";
 
 const STATS_KEY = "amynest:animal-world:stats:v1";
 const FAVORITES_KEY = "amynest:animal-world:favorites:v1";
 
 type StoredStats = Record<string, Omit<AnimalWorldSessionStats, "childId">>;
-
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function readStore(): StoredStats {
   try {
@@ -57,15 +54,15 @@ export function saveAnimalWorldStats(stats: AnimalWorldSessionStats): void {
 export function recordAnimalOpened(childId: number, animalId: string): AnimalWorldSessionStats {
   const stats = loadAnimalWorldStats(childId);
   stats.playCounts[animalId] = (stats.playCounts[animalId] ?? 0) + 1;
-  const today = todayKey();
-  if (stats.lastPlayedDate !== today) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = yesterday.toISOString().slice(0, 10);
-    stats.streakDays =
-      stats.lastPlayedDate === yesterdayKey ? stats.streakDays + 1 : 1;
-    stats.lastPlayedDate = today;
-  }
+  const streaked = applyPlayStreak(
+    {
+      streakDays: stats.streakDays,
+      lastPlayedDate: stats.lastPlayedDate,
+    },
+    todayDateKey(),
+  );
+  stats.streakDays = streaked.streakDays;
+  stats.lastPlayedDate = streaked.lastPlayedDate;
   saveAnimalWorldStats(stats);
   return stats;
 }

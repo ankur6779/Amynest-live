@@ -119,6 +119,42 @@ export function gateDirectorPackage(input: {
     });
   }
 
+  // Emotion arc must not randomly reverse (except end-card settle).
+  const arcOrder = [
+    "Curious",
+    "Thinking",
+    "Understanding",
+    "Success",
+    "Celebration",
+  ] as const;
+  for (let i = 1; i < input.scenes.length; i++) {
+    const prev = input.scenes[i - 1]!;
+    const cur = input.scenes[i]!;
+    if (cur.role === "end-card" || !cur.continuityState || !prev.continuityState) {
+      continue;
+    }
+    const prevIdx = arcOrder.indexOf(
+      prev.continuityState.emotionArc as (typeof arcOrder)[number],
+    );
+    const curIdx = arcOrder.indexOf(
+      cur.continuityState.emotionArc as (typeof arcOrder)[number],
+    );
+    if (prevIdx >= 0 && curIdx >= 0 && curIdx < prevIdx) {
+      rejects.push({
+        sceneId: cur.sceneId,
+        reason: `Emotion arc regression ${prev.continuityState.emotionArc} → ${cur.continuityState.emotionArc}`,
+        code: "continuity-break",
+      });
+    }
+    if (!cur.cutOut?.kind) {
+      rejects.push({
+        sceneId: cur.sceneId,
+        reason: "Missing motivated cut language (cutOut)",
+        code: "continuity-break",
+      });
+    }
+  }
+
   // Diversity: too many identical shot types in a row feels like a slideshow.
   for (let i = 1; i < input.scenes.length; i++) {
     const prev = input.scenes[i - 1]!;

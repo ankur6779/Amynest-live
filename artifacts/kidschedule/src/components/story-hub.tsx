@@ -7,6 +7,17 @@ import { resolveApiMediaUrl } from "@/lib/api";
 import { StoryFlowPlayer } from "@/components/story-player";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import {
+  adaptStoryQueueFromRuntime,
+  beginStorySession,
+  endStorySession,
+  guidanceFromStoryDecision,
+  getLastStoryRuntimeDecision,
+  recordStoryChapterCompleted,
+  recordStoryChapterStarted,
+  type StoryRuntimeGuidance,
+} from "@/lib/story-world-learning-adapter";
 
 // ─── Per-child index persistence ─────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -25,6 +36,18 @@ function writeStoredIndex(childId: number, index: number): void {
   try {
     localStorage.setItem(FLOW_KEY(childId), String(index));
   } catch (e) { console.error("REAL ERROR:", e); }
+}
+
+function indexOfPreferred(
+  stories: StoryDto[],
+  preferredIds: string[],
+  fallback: number,
+): number {
+  for (const id of preferredIds) {
+    const idx = stories.findIndex((s) => String(s.id) === String(id));
+    if (idx >= 0) return idx;
+  }
+  return fallback;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -60,12 +83,27 @@ export function StoryHub({
     refresh,
     recordProgress
   } = useStoriesData(childId);
+  const { recordActivity } = useRecordLearningActivity(childId ?? 0);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionStartedRef = useRef(false);
+  const chaptersCompletedRef = useRef(0);
+  /** Freeze catalog order for the active session so Runtime updates don't reshuffle mid-play. */
+  const sessionCatalogRef = useRef<StoryDto[] | null>(null);
+  const [guidance, setGuidance] = useState<StoryRuntimeGuidance | null>(null);
 
-  // Ordered catalog: all stories sorted consistently by title.
+  // Catalog ordered by Runtime preference when idle (no local mastery sort).
   const stories: StoryDto[] = useMemo(() => {
+    if (sessionCatalogRef.current?.length) return sessionCatalogRef.current;
     if (!data?.rows.allStories?.length) return [];
-    return [...data.rows.allStories].sort((a, b) => a.title.localeCompare(b.title));
-  }, [data]);
+    const base = [...data.rows.allStories].sort((a, b) =>
+      a.title.localeCompare(b.title),
+    );
+    if (!childId) return base;
+    const g =
+      guidance ??
+      guidanceFromStoryDecision(childId, getLastStoryRuntimeDecision(childId));
+    return adaptStoryQueueFromRuntime(base, g);
+  }, [childId, data, guidance]);
 
   // ── Flow state ──
   const [flowIndex, setFlowIndex_] = useState(0);
@@ -177,10 +215,122 @@ export function StoryHub({
   }, [clearCountdown]);
   const handleClose = useCallback(() => {
     clearCountdown();
+    if (childId != null && sessionStartedRef.current) {
+      const g = endStorySession({
+        childId,
+        sessionId: sessionIdRef.current ?? undefined,
+        storiesCompleted: chaptersCompletedRef.current,
+      });
+      setGuidance(g);
+      if (chaptersCompletedRef.current > 0) {
+        void recordActivity({
+          activityId: `story_session_${Date.now()}`,
+          section: "stories",
+          correct: true,
+          analyticsEvent: "story_completion",
+          metadata: {
+            storiesCompleted: chaptersCompletedRef.current,
+            runtimeRuleId: g.ruleId,
+            celebrationLevel: g.celebrationLevel,
+          },
+        });
+      }
+      sessionStartedRef.current = false;
+      chaptersCompletedRef.current = 0;
+      sessionIdRef.current = null;
+      sessionCatalogRef.current = null;
+    }
     setIsPlaying(false);
     setShowLoopBanner(false);
     refresh();
-  }, [clearCountdown, refresh]);
+  }, [childId, clearCountdown, recordActivity, refresh]);
+
+  const startLearningSession = useCallback(() => {
+    if (childId == null) return;
+    const began = beginStorySession({
+      childId,
+      catalog: stories.map((s) => ({
+        id: s.id,
+        title: s.title,
+        category: s.category,
+      })),
+    });
+    sessionIdRef.current = began.sessionId;
+    sessionStartedRef.current = true;
+    chaptersCompletedRef.current = 0;
+    const ordered = adaptStoryQueueFromRuntime(stories, began.guidance);
+    sessionCatalogRef.current = ordered;
+    setGuidance(began.guidance);
+    const preferredIdx = indexOfPreferred(
+      ordered,
+      began.guidance.preferredStoryIds,
+      flowIndex,
+    );
+    if (preferredIdx !== flowIndex) setFlowIndex(preferredIdx);
+    setIsPlaying(true);
+  }, [childId, flowIndex, setFlowIndex, stories]);
+
+  const handleLearningProgress = useCallback(
+    (
+      storyId: number,
+      positionSec: number,
+      options?: {
+        durationSec?: number;
+        completed?: boolean;
+        startedSession?: boolean;
+      },
+    ) => {
+      recordProgress(storyId, positionSec, options);
+      if (childId == null) return;
+      const story = stories.find((s) => s.id === storyId);
+      if (!story) return;
+
+      if (options?.startedSession) {
+        if (!sessionStartedRef.current) {
+          startLearningSession();
+        }
+        recordStoryChapterStarted({
+          childId,
+          sessionId: sessionIdRef.current ?? undefined,
+          chapter: {
+            storyId: String(story.id),
+            title: story.title,
+            category: story.category,
+          },
+        });
+      }
+
+      if (options?.completed) {
+        const g = recordStoryChapterCompleted({
+          childId,
+          sessionId: sessionIdRef.current ?? undefined,
+          chapter: {
+            storyId: String(story.id),
+            title: story.title,
+            category: story.category,
+          },
+        });
+        setGuidance(g);
+        chaptersCompletedRef.current += 1;
+        void recordActivity({
+          activityId: `story_${story.id}`,
+          section: "stories",
+          correct: true,
+          analyticsEvent: "story_completion",
+          metadata: {
+            title: story.title,
+            category: story.category,
+            runtimeRuleId: g.ruleId,
+            narrationLength: g.narrationLength,
+            ...(g.speechOpportunityHref
+              ? { speechOpportunity: g.speechOpportunityHref }
+              : {}),
+          },
+        });
+      }
+    },
+    [childId, recordActivity, recordProgress, startLearningSession, stories],
+  );
 
   usePageBackHandler(() => {
     if (isPlaying) {
@@ -252,7 +402,7 @@ export function StoryHub({
               onClose={handleClose}
               onEnded={startCountdown}
               onError={handleError}
-              onProgress={recordProgress}
+              onProgress={handleLearningProgress}
             />
           </div>,
           document.body
@@ -283,7 +433,7 @@ export function StoryHub({
               </div>}
 
             {/* Play button overlay */}
-            <button type="button" onClick={() => setIsPlaying(true)} className="absolute inset-0 flex items-center justify-center bg-black/40 transition hover:bg-black/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/30" aria-label={`Watch ${currentStory.title}`}>
+            <button type="button" onClick={startLearningSession} className="absolute inset-0 flex items-center justify-center bg-black/40 transition hover:bg-black/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/30" aria-label={`Watch ${currentStory.title}`}>
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-2xl transition hover:scale-105 hover:bg-white">
                 <Play className="ml-1 h-7 w-7 fill-primary text-primary" />
               </div>
@@ -303,7 +453,7 @@ export function StoryHub({
                 {currentStory.category}
               </p>
             </div>
-            <Button data-on-dark onClick={() => setIsPlaying(true)} className="shrink-0 gap-2 bg-primary text-white hover:bg-primary">
+            <Button data-on-dark onClick={startLearningSession} className="shrink-0 gap-2 bg-primary text-white hover:bg-primary">
               <Play className="h-4 w-4 fill-current" />
               {t("components.story_hub.watch")}
             </Button>
