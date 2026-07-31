@@ -29,6 +29,7 @@ import {
   type SpeechTimingMetadata,
 } from "@workspace/speech-coach-v2";
 import {
+  assertActiveSessionForToken,
   terminateActiveSession,
   updateSessionState,
   validateAndTouchSession,
@@ -113,7 +114,8 @@ export async function recordTurnEvaluation(input: {
   const safety = sanitizeChildTranscript(input.rawTranscript ?? input.transcript);
   if (safety.blocked) throw new Error("unsafe_transcript");
 
-  await validateAndTouchSession({
+  // Session billing is heartbeat-only; evaluate must not call validateAndTouchSession.
+  await assertActiveSessionForToken({
     userId: input.userId,
     childId: input.childId,
     sessionId: input.sessionId,
