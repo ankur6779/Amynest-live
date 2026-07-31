@@ -149,6 +149,13 @@ export function resolveCanonicalRevenueCatUserId(customerBody: RcV2Response | nu
   return identifiers.find((id) => !isRevenueCatAnonymousId(id)) ?? requestedUserId;
 }
 
+/** Webhook payloads often arrive before V2 active_entitlements reflects the purchase. */
+export function shouldWriteFreeSnapshotOnMissingEntitlement(
+  source: "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery",
+): boolean {
+  return source !== "webhook";
+}
+
 async function fetchRevenueCatV2<T extends RcV2Response>(path: string): Promise<{ ok: true; data: T } | { ok: false; status: number; reason: string }> {
   const res = await fetchWithTimeout(`${RC_API_BASE_URL}${path}`, {
     headers: {
@@ -327,9 +334,22 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      const source = opts.source ?? "purchase_finalize";
+      if (!shouldWriteFreeSnapshotOnMissingEntitlement(source)) {
+        return {
+          synced: false,
+          isPremium: false,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: false,
+          appliedUserId: canonicalUserId,
+          reason: "no_active_entitlement",
+        };
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
-        source: opts.source ?? "purchase_finalize",
+        source,
         providerEventId: opts.providerEventId,
       });
       return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, appliedUserId: canonicalUserId, reason: "no_active_entitlement" };
