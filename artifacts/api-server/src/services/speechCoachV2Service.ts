@@ -243,6 +243,39 @@ export async function completeSessionServerAuthoritative(input: {
   starsEarned: number;
   pointsEarned: number;
 }> {
+  const existingCompleted = await db
+    .select()
+    .from(speechCoachV2SessionsTable)
+    .where(
+      and(
+        eq(speechCoachV2SessionsTable.sessionId, input.sessionId),
+        eq(speechCoachV2SessionsTable.userId, input.userId),
+      ),
+    )
+    .limit(1);
+
+  if (existingCompleted[0]) {
+    const row = existingCompleted[0];
+    const streakRows = await db
+      .select()
+      .from(speechCoachV2StreaksTable)
+      .where(
+        and(
+          eq(speechCoachV2StreaksTable.userId, input.userId),
+          eq(speechCoachV2StreaksTable.childId, input.childId),
+        ),
+      )
+      .limit(1);
+    return {
+      dailyStreak: streakRows[0]?.dailyStreak ?? 0,
+      weeklyStreak: streakRows[0]?.weeklyStreak ?? 0,
+      badgesEarned: row.badgesEarned ?? [],
+      durationSeconds: row.durationSeconds,
+      starsEarned: row.starsEarned,
+      pointsEarned: row.pointsEarned,
+    };
+  }
+
   await validateAndTouchSession({
     userId: input.userId,
     childId: input.childId,
