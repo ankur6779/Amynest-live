@@ -427,8 +427,22 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     .returning({ eventId: revenuecatWebhookEventsTable.eventId });
 
   if (inserted.length === 0) {
-    res.json({ ok: true, duplicate: true, eventId });
-    return;
+    const [existing] = await db
+      .select({ processingStatus: revenuecatWebhookEventsTable.processingStatus })
+      .from(revenuecatWebhookEventsTable)
+      .where(eq(revenuecatWebhookEventsTable.eventId, eventId))
+      .limit(1);
+    if (existing?.processingStatus !== "failed") {
+      res.json({ ok: true, duplicate: true, eventId });
+      return;
+    }
+    await recordBillingAuditEvent({
+      userId,
+      source: "webhook",
+      eventName: "webhook_retry",
+      providerEventId: eventId,
+      metadata: { eventType: event.type ?? null },
+    });
   }
 
   const supportedEvents = new Set([
@@ -468,7 +482,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
   });
 
   try {
-    const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
+    const { syncRevenueCatSubscription, shouldWriteFreeSnapshotOnMissingEntitlement } = await import("../services/rcCustomerService.js");
     const synced = await syncRevenueCatSubscription(userId, {
       source: "webhook",
       providerEventId: eventId,
@@ -482,13 +496,23 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       reason: synced.reason,
     };
 
-    if (!synced.dbUpdated) {
+    const deferredFreeWrite =
+      synced.reason === "no_active_entitlement" &&
+      !shouldWriteFreeSnapshotOnMissingEntitlement("webhook", event.type);
+
+    if (!synced.dbUpdated || deferredFreeWrite) {
       const plan = productIdToPlan(event.product_id);
       const expirationAt = event.expiration_at_ms ? new Date(event.expiration_at_ms) : null;
       const gracePeriodExpirationAt = event.grace_period_expiration_at_ms
         ? new Date(event.grace_period_expiration_at_ms)
         : null;
-      if (plan || event.type === "EXPIRATION" || event.type === "BILLING_ISSUE" || event.type === "SUBSCRIPTION_PAUSED") {
+      if (
+        plan ||
+        event.type === "EXPIRATION" ||
+        event.type === "BILLING_ISSUE" ||
+        event.type === "SUBSCRIPTION_PAUSED" ||
+        deferredFreeWrite
+      ) {
         const fallback = await applyRevenueCatSnapshot(userId, {
           appUserId: userId,
           originalAppUserId: event.original_app_user_id ?? null,
@@ -555,16 +579,26 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
  * Returns updated entitlements.
  */
 router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const auth = getAuth(req);
+  const userId = auth.userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
 
   const requestId = requestIdFrom(req);
+  const subscriptionOwnerUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email: auth.email,
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
 
   // Heal stale rows before deciding whether a real provider cancellation is needed.
-  await getEntitlements(userId);
+  await getEntitlements(userId, auth.email, {
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
 
   type CancelOutcome =
     | { kind: "missing" }
@@ -580,12 +614,12 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     outcome = await db.transaction(async (tx): Promise<CancelOutcome> => {
       // Serialize cancellation per user across app instances. This makes double
       // clicks and retry storms deterministic without relying on in-memory locks.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${subscriptionOwnerUserId}))`);
 
       const rows = await tx
         .select()
         .from(subscriptionsTable)
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .limit(1);
       const sub = rows[0];
 
@@ -723,11 +757,13 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
         const [updated] = await tx
           .update(subscriptionsTable)
           .set({
+            subscriptionState: "CANCELLED",
+            autoRenewStatus: false,
             cancelAtPeriodEnd: 1,
             cancelledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(subscriptionsTable.userId, userId))
+          .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
           .returning();
         await recordBillingAuditEvent({
           userId,
@@ -763,10 +799,10 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           expiredAt: now,
           updatedAt: now,
         })
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .returning();
       await recordBillingAuditEvent({
-        userId,
+        userId: subscriptionOwnerUserId,
         source: "api",
         eventName: "subscription_cancel_completed",
         metadata: cancelAuditMetadata({
@@ -781,11 +817,11 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     });
   } catch (err: any) {
     const current = await db.query.subscriptionsTable.findFirst({
-      where: eq(subscriptionsTable.userId, userId),
+      where: eq(subscriptionsTable.userId, subscriptionOwnerUserId),
     });
     const snapshot = current ? subscriptionStatusSnapshot(current) : null;
     await recordBillingAuditEvent({
-      userId,
+      userId: subscriptionOwnerUserId,
       source: "api",
       eventName: "subscription_cancel_failed",
       status: "error",
@@ -802,7 +838,10 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     return;
   }
 
-  const ent = await getEntitlements(userId);
+  const ent = await getEntitlements(userId, auth.email, {
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
   if (outcome.kind === "missing") {
     res.status(404).json({ error: "missing_subscription", entitlements: ent });
     return;

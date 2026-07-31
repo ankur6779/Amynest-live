@@ -37,6 +37,12 @@ describe("premium identity certification guardrails", () => {
     assert.doesNotMatch(route, /applyRevenueCatSnapshot\(rawRevenueCatUserId/);
   });
 
+  it("C/H: RevenueCat webhook retries failed events instead of dead-lettering on duplicate delivery", () => {
+    const route = readRepoFile("artifacts/api-server/src/routes/subscription.ts");
+    assert.match(route, /processingStatus !== "failed"/);
+    assert.match(route, /eventName: "webhook_retry"/);
+  });
+
   it("D/E/I: native billing never configures, purchases, or restores with raw Firebase uid fallback", () => {
     const hook = readRepoFile("artifacts/kidschedule/src/hooks/use-native-billing.ts");
 
