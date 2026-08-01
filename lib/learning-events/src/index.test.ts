@@ -171,6 +171,44 @@ test("setOnline(true) auto-flushes offline queue", () => {
   assert.deepEqual(seen, ["learning.item_mastered"]);
 });
 
+test("online publish drains a stuck offline queue without setOnline", () => {
+  // Simulates reload while already online: persisted queue loaded, no online event.
+  const storage = createMemoryOfflineQueue();
+  let online = false;
+  const bus = createLearningEventBus({
+    isOnline: () => online,
+    offlineStorage: storage,
+  });
+  bus.publish(
+    learningItemEvent("learning.item_heard", {
+      childId: 7,
+      module: "discovery_worlds",
+      entityId: "tiger",
+    }),
+  );
+  assert.equal(bus.getOfflineQueue().length, 1);
+
+  // New bus instance loads the stuck queue (reload); already online.
+  online = true;
+  const bus2 = createLearningEventBus({
+    isOnline: () => online,
+    offlineStorage: storage,
+  });
+  const seen: string[] = [];
+  bus2.subscribe((e) => seen.push(e.type));
+  assert.equal(bus2.getOfflineQueue().length, 1);
+
+  bus2.publish(
+    learningItemEvent("learning.item_seen", {
+      childId: 7,
+      module: "discovery_worlds",
+      entityId: "tiger",
+    }),
+  );
+  assert.deepEqual(seen, ["learning.item_heard", "learning.item_seen"]);
+  assert.equal(bus2.getOfflineQueue().length, 0);
+});
+
 test("flushOffline defers nested publishes so history seq stays monotonic", () => {
   let online = false;
   const bus = createLearningEventBus({ isOnline: () => online });
