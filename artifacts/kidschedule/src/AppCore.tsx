@@ -77,6 +77,7 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
 import { markAppCoreReady } from "@/lib/startup-orchestrator";
 import { shouldEnterFrontDoor } from "@/v2/entry/should-enter-front-door";
+import { shouldLandOnTodayHome } from "@/v2/entry/v2-shell-flags";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
 import { AnalyticsProvider } from "@/lib/analytics/analytics-provider";
 import { AnalyticsScreenTracker } from "@/lib/analytics/screen-tracker";
@@ -147,6 +148,10 @@ const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-li
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 /** V2 Front Door — mounted always; page self-redirects when flags are off. */
 const FrontDoorPage = lazyPage(() => import("@/v2/front-door/FrontDoorPage"));
+/** V2 shells — Sprint 2; self-redirect when their flags are off. */
+const TodayPage = lazyPage(() => import("@/v2/today/TodayPage"));
+const AskAmyPage = lazyPage(() => import("@/v2/ask-amy/AskAmyPage"));
+const ForChildPage = lazyPage(() => import("@/v2/for-child/ForChildPage"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
 const SubscriptionTrialEndedPage = lazyPage(
@@ -359,7 +364,11 @@ function HomeRedirect() {
 
   if (setupDone) {
     if (childrenBootLoading && !childrenLoadingTimedOut) return <RouteLoadingShell />;
-    if ((childrenList?.length ?? 0) > 0) return <Redirect to="/dashboard" />;
+    if ((childrenList?.length ?? 0) > 0) {
+      // V2 home only when today_v2 + new_navigation; else production Dashboard.
+      if (shouldLandOnTodayHome()) return <Redirect to="/today" />;
+      return <Redirect to="/dashboard" />;
+    }
   }
   return <Redirect to="/onboarding" />;
 }
@@ -412,6 +421,7 @@ function OnboardingRouteGuard() {
     return <RouteLoadingShell />;
   }
   if (setupDone && childrenFetched && (childrenList?.length ?? 0) > 0) {
+    if (shouldLandOnTodayHome()) return <Redirect to="/today" />;
     return <Redirect to="/dashboard" />;
   }
   return (
@@ -684,6 +694,9 @@ function makeProtectedRoute(Component: ComponentType, routeLabel?: string) {
 }
 
 const DashboardRoute = makeProtectedRoute(Dashboard, "Dashboard");
+const TodayRoute = makeProtectedRoute(TodayPage, "Today");
+const AskAmyRoute = makeProtectedRoute(AskAmyPage, "AskAmy");
+const ForChildRoute = makeProtectedRoute(ForChildPage, "ForChild");
 const ChildrenListRoute = makeProtectedRoute(ChildrenList, "ChildrenList");
 const ChildFormRoute = makeProtectedRoute(ChildForm, "ChildForm");
 const RoutinesListRoute = makeProtectedRoute(RoutinesList, "RoutinesList");
@@ -1047,6 +1060,10 @@ function AppRoutes() {
             component={SubscriptionTrialEndedPage}
           />
           <Route path="/dashboard" component={DashboardRoute} />
+          {/* V2 shells — flag-gated inside pages; production nav unchanged when flags OFF */}
+          <Route path="/today" component={TodayRoute} />
+          <Route path="/ask-amy" component={AskAmyRoute} />
+          <Route path="/for-child" component={ForChildRoute} />
           <Route path="/children" component={ChildrenListRoute} />
           <Route path="/children/new" component={ChildFormRoute} />
           <Route path="/children/:id" component={ChildFormRoute} />

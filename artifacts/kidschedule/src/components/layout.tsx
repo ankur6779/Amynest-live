@@ -28,6 +28,11 @@ import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
+import {
+  isV2ShellTabRoute,
+  shouldUseV2Navigation,
+} from "@/v2/entry/v2-shell-flags";
+import { V2MobileTabBar } from "@/v2/navigation";
 
 export function Layout({
   children
@@ -63,10 +68,15 @@ export function Layout({
     safePathStartsWithSegment(location, "/assistant") ||
     safePathStartsWithSegment(location, "/amy-ai-tutor");
   const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
-  const isDashboard = location === "/" || location === "/dashboard";
-  const showDashboardChrome = location === "/dashboard";
+  const showLegacyDashboardChrome = location === "/dashboard";
+  /** V2 tabs only when new_navigation is on and route is a V2 shell tab. */
+  const showV2NavChrome =
+    shouldUseV2Navigation() && isV2ShellTabRoute(location);
+  const showTabBarChrome = showLegacyDashboardChrome || showV2NavChrome;
+  const isV2TodayHome = location === "/today";
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
-  const canShowBack = !showDashboardChrome && location !== "/";
+  const canShowBack =
+    !showLegacyDashboardChrome && !isV2TodayHome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
   const headerRef = useAppHeaderHeight(showMobileHeader);
 
@@ -75,12 +85,12 @@ export function Layout({
   }, [location]);
 
   useEffect(() => {
-    document.body.classList.toggle("has-tabbar", showDashboardChrome);
-    document.body.classList.toggle("no-tabbar", !showDashboardChrome);
+    document.body.classList.toggle("has-tabbar", showTabBarChrome);
+    document.body.classList.toggle("no-tabbar", !showTabBarChrome);
     return () => {
       document.body.classList.remove("has-tabbar", "no-tabbar");
     };
-  }, [showDashboardChrome]);
+  }, [showTabBarChrome]);
 
   const handleSignOut = () => {
     try {
@@ -148,7 +158,9 @@ export function Layout({
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 lg:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
                 : isAmyCoachRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 lg:p-8"
-                : showDashboardChrome || isParentHubRoute
+                : showLegacyDashboardChrome ||
+                    showV2NavChrome ||
+                    isParentHubRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 lg:max-w-5xl lg:p-8"
                   : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 lg:p-8"
             }
@@ -158,7 +170,11 @@ export function Layout({
               !["/sign-in", "/onboarding", "/notify-prompt"].some((p) =>
                 safePathStartsWith(location, p),
               ) && (
-                <div className={showDashboardChrome ? "mb-4 dashboard-inline-inset" : "mb-4"}>
+                <div
+                  className={
+                    showLegacyDashboardChrome ? "mb-4 dashboard-inline-inset" : "mb-4"
+                  }
+                >
                   <NotificationNudgeBanner />
                 </div>
               )}
@@ -168,7 +184,9 @@ export function Layout({
         </div>
       </main>
 
-      <MobileTabBar visible={showDashboardChrome} />
+      {/* Production nav unchanged when new_navigation is OFF */}
+      <MobileTabBar visible={showLegacyDashboardChrome && !shouldUseV2Navigation()} />
+      <V2MobileTabBar visible={showV2NavChrome} />
 
       {!isImmersiveRoute &&
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (
