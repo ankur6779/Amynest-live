@@ -76,6 +76,7 @@ import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
 import { markAppCoreReady } from "@/lib/startup-orchestrator";
+import { shouldEnterFrontDoor } from "@/v2/entry/should-enter-front-door";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
 import { AnalyticsProvider } from "@/lib/analytics/analytics-provider";
 import { AnalyticsScreenTracker } from "@/lib/analytics/screen-tracker";
@@ -144,6 +145,8 @@ const AnswerToKidsHowPage = lazyPage(() => import("@/pages/answer-to-kids-how"))
 const AnswerToKidsHowReaderPage = lazyPage(() => import("@/pages/answer-to-kids-how-reader"));
 const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-live"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
+/** V2 Front Door — mounted always; page self-redirects when flags are off. */
+const FrontDoorPage = lazyPage(() => import("@/v2/front-door/FrontDoorPage"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
 const SubscriptionTrialEndedPage = lazyPage(
@@ -304,6 +307,10 @@ function HomeRedirect() {
 
   if (authLoading && !authLoadingTimedOut) return <RouteLoadingShell />;
   if (authLoading && authLoadingTimedOut && !isSignedIn) {
+    // V2 Front Door (flags OFF by default) — reversible; production path unchanged.
+    if (shouldEnterFrontDoor()) {
+      return <Redirect to="/front-door" />;
+    }
     if (isCapacitorIosShell() || isNativeAmyNestShell()) {
       return <Redirect to="/sign-in" />;
     }
@@ -311,6 +318,9 @@ function HomeRedirect() {
   }
 
   if (!isSignedIn) {
+    if (shouldEnterFrontDoor()) {
+      return <Redirect to="/front-door" />;
+    }
     if (isCapacitorIosShell() || isNativeAmyNestShell()) {
       return <Redirect to="/sign-in" />;
     }
@@ -987,6 +997,8 @@ function AppRoutes() {
           <Route path="/index.html">
             <Redirect to="/" />
           </Route>
+          {/* V2 Front Door — flag-gated inside page; no effect when flags OFF */}
+          <Route path="/front-door" component={FrontDoorPage} />
           <Route path="/privacy" component={PrivacyPolicyPage} />
           <Route path="/terms" component={TermsOfServicePage} />
           <Route path="/about" component={AboutPage} />
