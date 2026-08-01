@@ -1,8 +1,12 @@
 export {
+  advanceFrontDoorFromBreath,
+  applyFrontDoorEvent,
   clearGuestSession,
   createEmptyGuestSession,
   ensureGuestSession,
+  getFrontDoorState,
   getGuestSession,
+  goBackFrontDoor,
   isGuestModeV2Enabled,
   setGuestAgeBand,
   setGuestChildName,
@@ -14,4 +18,8 @@ export {
   readGuestSessionRaw,
   writeGuestSessionRaw,
 } from "./storage";
-export { V2_GUEST_STORAGE_KEY, type V2GuestSession } from "./types";
+export {
+  V2_GUEST_SESSION_VERSION,
+  V2_GUEST_STORAGE_KEY,
+  type V2GuestSession,
+} from "./types";

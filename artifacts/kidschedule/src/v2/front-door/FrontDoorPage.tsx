@@ -1,6 +1,6 @@
 /**
  * Front Door V2 — Sprint 1 foundation only.
- * Breath → Age → Name? → Worry → foundation complete.
+ * State machine: BREATH → AGE → NAME → WORRY → COMPLETE
  * No Speech try, Today, soft-save, or premium (later sprints).
  */
 
@@ -8,8 +8,8 @@ import { useEffect, useId, useState } from "react";
 import { Redirect } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
+  advanceFrontDoorFromBreath,
   ensureGuestSession,
-  getGuestSession,
   setGuestAgeBand,
   setGuestChildName,
   setGuestWorry,
@@ -17,18 +17,15 @@ import {
 } from "@/v2/guest";
 import { shouldEnterFrontDoor } from "@/v2/entry/should-enter-front-door";
 import { FRONT_DOOR_AGE_OPTIONS } from "./age-options";
-import type { FrontDoorAgeBand, FrontDoorStepId, FrontDoorWorryId } from "./types";
-import { FRONT_DOOR_STEP_ORDER } from "./types";
+import {
+  FRONT_DOOR_STATE_ORDER,
+  FrontDoorState,
+  frontDoorStateIndex,
+  resumeFrontDoorState,
+  type FrontDoorStateId,
+} from "./state-machine";
+import type { FrontDoorAgeBand, FrontDoorWorryId } from "./types";
 import { FRONT_DOOR_WORRY_OPTIONS } from "./worry-options";
-
-function resumeStep(session: V2GuestSession | null): FrontDoorStepId {
-  if (!session) return "breath";
-  if (session.foundationComplete || session.worryId) return "foundation_complete";
-  if (session.ageBand && session.frontDoorStep === "name") return "name";
-  if (session.ageBand) return "name";
-  if (session.frontDoorStep === "breath") return "age";
-  return "breath";
-}
 
 export default function FrontDoorPage() {
   if (!shouldEnterFrontDoor()) {
@@ -40,23 +37,30 @@ export default function FrontDoorPage() {
 
 function FrontDoorFlow() {
   const [session, setSession] = useState<V2GuestSession | null>(null);
-  const [step, setStep] = useState<FrontDoorStepId>("breath");
+  const [state, setState] = useState<FrontDoorStateId>(FrontDoorState.BREATH);
   const [nameDraft, setNameDraft] = useState("");
   const titleId = useId();
 
   useEffect(() => {
     const ensured = ensureGuestSession();
     setSession(ensured);
-    setStep(resumeStep(ensured));
-    setNameDraft(ensured?.childName ?? "");
+    setState(
+      resumeFrontDoorState({
+        state: ensured?.state,
+        ageBand: ensured?.ageBand,
+        worry: ensured?.worry,
+      }),
+    );
+    setNameDraft(ensured?.name ?? "");
   }, []);
 
-  const stepIndex = FRONT_DOOR_STEP_ORDER.indexOf(step);
+  const stepIndex = frontDoorStateIndex(state);
 
   return (
     <main
       className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-amber-50 via-stone-50 to-sky-50 text-stone-900"
       aria-labelledby={titleId}
+      data-front-door-state={state}
     >
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <p className="text-sm font-medium tracking-wide text-stone-500">AmyNest</p>
@@ -64,41 +68,41 @@ function FrontDoorFlow() {
           className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-200"
           role="progressbar"
           aria-valuemin={0}
-          aria-valuemax={FRONT_DOOR_STEP_ORDER.length - 1}
+          aria-valuemax={FRONT_DOOR_STATE_ORDER.length - 1}
           aria-valuenow={Math.max(0, stepIndex)}
           aria-label="Front Door progress"
         >
           <div
             className="h-full rounded-full bg-teal-700 transition-[width] duration-300"
             style={{
-              width: `${((Math.max(0, stepIndex) + 1) / FRONT_DOOR_STEP_ORDER.length) * 100}%`,
+              width: `${((Math.max(0, stepIndex) + 1) / FRONT_DOOR_STATE_ORDER.length) * 100}%`,
             }}
           />
         </div>
 
         <div className="mt-8 flex flex-1 flex-col">
-          {step === "breath" && (
+          {state === FrontDoorState.BREATH && (
             <BreathStep
               titleId={titleId}
               onContinue={() => {
-                const next = getGuestSession() ?? ensureGuestSession();
+                const next = advanceFrontDoorFromBreath();
                 setSession(next);
-                setStep("age");
+                setState(next?.state ?? FrontDoorState.AGE);
               }}
             />
           )}
-          {step === "age" && (
+          {state === FrontDoorState.AGE && (
             <AgeStep
               titleId={titleId}
               selected={session?.ageBand ?? null}
               onSelect={(ageBand) => {
                 const next = setGuestAgeBand(ageBand);
                 setSession(next);
-                setStep("name");
+                setState(next?.state ?? FrontDoorState.NAME);
               }}
             />
           )}
-          {step === "name" && (
+          {state === FrontDoorState.NAME && (
             <NameStep
               titleId={titleId}
               value={nameDraft}
@@ -106,31 +110,28 @@ function FrontDoorFlow() {
               onSkip={() => {
                 const next = setGuestChildName(null);
                 setSession(next);
-                setStep("worry");
+                setState(next?.state ?? FrontDoorState.WORRY);
               }}
               onContinue={() => {
                 const next = setGuestChildName(nameDraft);
                 setSession(next);
-                setStep("worry");
+                setState(next?.state ?? FrontDoorState.WORRY);
               }}
             />
           )}
-          {step === "worry" && (
+          {state === FrontDoorState.WORRY && (
             <WorryStep
               titleId={titleId}
-              childName={session?.childName}
+              childName={session?.name}
               onSelect={(worryId) => {
                 const next = setGuestWorry(worryId);
                 setSession(next);
-                setStep("foundation_complete");
+                setState(next?.state ?? FrontDoorState.COMPLETE);
               }}
             />
           )}
-          {step === "foundation_complete" && (
-            <FoundationCompleteStep
-              titleId={titleId}
-              session={session}
-            />
+          {state === FrontDoorState.COMPLETE && (
+            <FoundationCompleteStep titleId={titleId} session={session} />
           )}
         </div>
       </div>
@@ -309,7 +310,7 @@ function FoundationCompleteStep({
   titleId: string;
   session: V2GuestSession | null;
 }) {
-  const who = session?.childName?.trim() || "your child";
+  const who = session?.name?.trim() || "your child";
   return (
     <section className="flex flex-1 flex-col justify-between gap-8">
       <div className="space-y-4">

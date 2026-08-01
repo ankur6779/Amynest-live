@@ -1,6 +1,7 @@
 /**
  * Front Door V2 types (Sprint 1).
  * Emotional Blueprint age bands — not Parent Hub treasury bands.
+ * State machine: see state-machine.ts
  */
 
 export type FrontDoorAgeBand =
@@ -19,18 +20,3 @@ export type FrontDoorWorryId =
   | "mornings"
   | "feeding"
   | "something_else";
-
-export type FrontDoorStepId =
-  | "breath"
-  | "age"
-  | "name"
-  | "worry"
-  | "foundation_complete";
-
-export const FRONT_DOOR_STEP_ORDER: readonly FrontDoorStepId[] = [
-  "breath",
-  "age",
-  "name",
-  "worry",
-  "foundation_complete",
-] as const;

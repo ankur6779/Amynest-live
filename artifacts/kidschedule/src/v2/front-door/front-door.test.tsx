@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { v2BooleanFlagEnvKey } from "@/lib/feature-flags";
 import { clearGuestSession } from "@/v2/guest";
 import FrontDoorPage from "./FrontDoorPage";
+import { FrontDoorState } from "./state-machine";
 
 vi.mock("wouter", async () => {
   const actual = await vi.importActual<typeof import("wouter")>("wouter");
@@ -26,38 +27,54 @@ describe("Front Door V2 (S1-T02–T05)", () => {
     clearGuestSession();
   });
 
-  it("redirects away when flags are off", () => {
+  /**
+   * Golden: Flags OFF → manual /front-door → redirect /
+   * (deep-link protection — review P1)
+   */
+  it("golden: flags OFF and /front-door redirects to /", () => {
+    // Simulate visiting /front-door with production defaults (all flags off).
     render(<FrontDoorPage />);
-    expect(screen.getByTestId("redirect")).toHaveAttribute("data-to", "/");
+    const redirect = screen.getByTestId("redirect");
+    expect(redirect).toHaveAttribute("data-to", "/");
+    expect(screen.queryByRole("heading", { name: /take a breath/i })).toBeNull();
   });
 
-  it("walks breath → age → name skip → worry → foundation complete", async () => {
+  it("walks BREATH → AGE → NAME → WORRY → COMPLETE via state machine", async () => {
     enableFrontDoorFlags();
     const user = userEvent.setup();
-    render(<FrontDoorPage />);
+    const { container } = render(<FrontDoorPage />);
 
     expect(
       await screen.findByRole("heading", { name: /take a breath/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(container.querySelector("[data-front-door-state]")).toHaveAttribute(
+      "data-front-door-state",
+      FrontDoorState.BREATH,
+    );
 
     await user.click(screen.getByRole("button", { name: /i'm ready/i }));
-    expect(
-      screen.getByRole("heading", { name: /how old is your child/i }),
-    ).toBeInTheDocument();
+    expect(container.querySelector("[data-front-door-state]")).toHaveAttribute(
+      "data-front-door-state",
+      FrontDoorState.AGE,
+    );
 
     await user.click(screen.getByRole("button", { name: /3–5 years/i }));
-    expect(
-      screen.getByRole("heading", { name: /what do you call them/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText(/child's name/i)).toBeInTheDocument();
+    expect(container.querySelector("[data-front-door-state]")).toHaveAttribute(
+      "data-front-door-state",
+      FrontDoorState.NAME,
+    );
 
     await user.click(screen.getByRole("button", { name: /skip for now/i }));
-    expect(
-      screen.getByRole("heading", { name: /what's on your mind/i }),
-    ).toBeInTheDocument();
+    expect(container.querySelector("[data-front-door-state]")).toHaveAttribute(
+      "data-front-door-state",
+      FrontDoorState.WORRY,
+    );
 
     await user.click(screen.getByRole("button", { name: /speech & talking/i }));
+    expect(container.querySelector("[data-front-door-state]")).toHaveAttribute(
+      "data-front-door-state",
+      FrontDoorState.COMPLETE,
+    );
     expect(
       screen.getByRole("heading", { name: /amy heard you/i }),
     ).toBeInTheDocument();
