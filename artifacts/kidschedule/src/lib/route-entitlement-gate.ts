@@ -7,10 +7,10 @@
 
 /** True only when entitlements explicitly grant the premium access key. */
 export function isPremiumRouteAccessGranted(
-  entitlements: Record<string, boolean> | null | undefined,
+  entitlements: Record<string, unknown> | null | undefined,
   accessKey: string,
 ): boolean {
-  return Boolean(entitlements?.[accessKey]);
+  return entitlements?.[accessKey] === true;
 }
 
 /**
