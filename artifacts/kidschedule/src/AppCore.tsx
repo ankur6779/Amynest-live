@@ -53,6 +53,7 @@ import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import { useFailOpenAfter } from "@/lib/loading-fail-open";
+import { isPremiumRouteAccessGranted } from "@/lib/route-entitlement-gate";
 import {
   effectiveSetupStatus,
   isSetupComplete,
@@ -645,7 +646,8 @@ function ProtectedRoute({
   }
   if (premiumRoute) {
     if (premiumLoading && !premiumLoadingTimedOut) return <RouteLoadingShell />;
-    if (entitlements && !entitlements[premiumRoute.accessKey]) {
+    // Fail closed: missing entitlements after timeout must not unlock premium routes.
+    if (!isPremiumRouteAccessGranted(entitlements, premiumRoute.accessKey)) {
       return (
         <AppErrorBoundary label="Layout">
           <Layout>

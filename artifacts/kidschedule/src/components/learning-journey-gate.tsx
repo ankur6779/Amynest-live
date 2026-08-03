@@ -6,6 +6,7 @@ import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ROUTE_LOADING_FAIL_OPEN_MS, useFailOpenAfter } from "@/lib/loading-fail-open";
+import { shouldFailClosedLearningJourneyOnTimeout } from "@/lib/route-entitlement-gate";
 
 type Props = {
   children: ReactNode;
@@ -36,8 +37,15 @@ export function LearningJourneyGate({ children }: Props) {
 
   if (isPremium) return <>{children}</>;
   if (gateLoading && !gateTimedOut) return <RouteLoadingShell />;
-  // Timed out without journey access — fail-open so Practice/Quiz stay reachable.
-  if (gateTimedOut && !hubJourney.access) return <>{children}</>;
+  // Timed out without journey access — fail closed so locked free users cannot bypass.
+  if (
+    shouldFailClosedLearningJourneyOnTimeout({
+      gateTimedOut,
+      hasAccess: !!hubJourney.access,
+    })
+  ) {
+    return <LearningPremiumPreview />;
+  }
   if (hubJourney.isJourneyLocked) return <LearningPremiumPreview />;
   return <>{children}</>;
 }
