@@ -3,7 +3,7 @@
  * Does NOT touch AI insight quotas or subscription plan definitions.
  */
 
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Response } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import {
@@ -17,9 +17,11 @@ import { logger } from "../lib/logger";
 import { requireBirthSkyAllowlist } from "../services/birth-sky/require-birth-sky-allowlist";
 import {
   loadOwnedProfile,
+  mapProfileRow,
   mapSnapshotRow,
   plaintextBirthFields,
 } from "../services/birth-sky/snapshot-service.js";
+import { shouldExposeCurrentSnapshot } from "../services/birth-sky/snapshot-generation-status.js";
 import { attachChartDetails, evaluateChartCompleteness } from "../services/birth-sky/chart-details.js";
 import {
   base64ToBytes,
@@ -75,6 +77,15 @@ async function requirePremium(userId: string): Promise<boolean> {
   return isPremiumNow(sub);
 }
 
+/** Reject stale isCurrent rows after profile edits (COMPUTING/FAILED generationStatus). */
+function snapshotNotReadyResponse(res: Response, generationStatus: string): void {
+  res.status(409).json({
+    error: "snapshot_not_ready",
+    generationStatus,
+    detail: "Birth details changed — regenerate the sky before exporting PDF.",
+  });
+}
+
 function mapExportMeta(row: typeof birthSkyPdfExportsTable.$inferSelect) {
   return {
     exportId: row.id,
@@ -105,6 +116,7 @@ router.get(
       res.status(404).json({ error: "not_found" });
       return;
     }
+    const mappedProfile = mapProfileRow(profile);
     const snaps = await db
       .select()
       .from(skySnapshotsTable)
@@ -113,6 +125,10 @@ router.get(
       )
       .limit(1);
     const snap = snaps[0];
+    if (!shouldExposeCurrentSnapshot(mappedProfile.generationStatus, Boolean(snap))) {
+      snapshotNotReadyResponse(res, mappedProfile.generationStatus);
+      return;
+    }
     if (!snap) {
       res.status(404).json({ error: "snapshot_not_found" });
       return;
@@ -190,6 +206,7 @@ router.post(
       res.status(404).json({ error: "not_found" });
       return;
     }
+    const mappedProfile = mapProfileRow(profile);
 
     const snaps = await db
       .select()
@@ -199,6 +216,10 @@ router.post(
       )
       .limit(1);
     const snap = snaps[0];
+    if (!shouldExposeCurrentSnapshot(mappedProfile.generationStatus, Boolean(snap))) {
+      snapshotNotReadyResponse(res, mappedProfile.generationStatus);
+      return;
+    }
     if (!snap) {
       res.status(404).json({ error: "snapshot_not_found" });
       return;
@@ -367,6 +388,7 @@ router.get(
       res.status(404).json({ error: "not_found" });
       return;
     }
+    const mappedProfile = mapProfileRow(profile);
     const snaps = await db
       .select()
       .from(skySnapshotsTable)
@@ -375,6 +397,10 @@ router.get(
       )
       .limit(1);
     const snap = snaps[0];
+    if (!shouldExposeCurrentSnapshot(mappedProfile.generationStatus, Boolean(snap))) {
+      snapshotNotReadyResponse(res, mappedProfile.generationStatus);
+      return;
+    }
     if (!snap) {
       res.status(404).json({ error: "snapshot_not_found" });
       return;
