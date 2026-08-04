@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, lt, or, sql } from "drizzle-orm";
 import { db, revenuecatWebhookEventsTable, subscriptionsTable } from "@workspace/db";
 import { getAuth } from "../lib/auth";
 import {
@@ -38,6 +38,10 @@ import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
 } from "../services/userIdentityService.js";
+import {
+  decideRevenueCatWebhookClaim,
+  REVENUECAT_WEBHOOK_STALE_PENDING_MS,
+} from "../services/revenuecat-webhook-claim.js";
 
 function isRevenueCatAnonymousId(id: string | null | undefined): boolean {
   return typeof id === "string" && id.startsWith("$RCAnonymousID:");
@@ -361,6 +365,11 @@ router.post("/subscription/checkout", requireAuth, asyncRoute(async (req, res): 
  * the source of truth for activating/expiring the local subscription record.
  *
  * Authenticated via shared bearer token (REVENUECAT_WEBHOOK_SECRET).
+ *
+ * Idempotency: event id is inserted first (unlike Razorpay's claim+mutate
+ * transaction). Retries must NOT be ACK'd as duplicates unless processing
+ * already reached `processed`/`ignored`. Failed or stale-pending rows are
+ * reclaimed so a prior crash/DB error cannot permanently drop a purchase.
  */
 router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> => {
   const expected = process.env.REVENUECAT_WEBHOOK_SECRET;
@@ -407,17 +416,19 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
   const eventId = event.id ?? event.transaction_id ?? `${event.type}:${rawRevenueCatUserId}:${event.expiration_at_ms ?? "na"}`;
   const eventAt = event.event_timestamp_ms ? new Date(event.event_timestamp_ms) : new Date();
 
+  const webhookPayload = {
+    ...(req.body ?? {}),
+    amynestCanonicalUserId: userId,
+    amynestRawRevenueCatAppUserId: rawRevenueCatUserId,
+  };
+
   const inserted = await db
     .insert(revenuecatWebhookEventsTable)
     .values({
       eventId,
       eventType: event.type ?? null,
       appUserId: userId,
-      payload: {
-        ...(req.body ?? {}),
-        amynestCanonicalUserId: userId,
-        amynestRawRevenueCatAppUserId: rawRevenueCatUserId,
-      },
+      payload: webhookPayload,
       eventTimestamp: eventAt,
       transactionId: event.transaction_id ?? null,
       originalTransactionId: event.original_transaction_id ?? null,
@@ -427,8 +438,67 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     .returning({ eventId: revenuecatWebhookEventsTable.eventId });
 
   if (inserted.length === 0) {
-    res.json({ ok: true, duplicate: true, eventId });
-    return;
+    const [existing] = await db
+      .select({
+        processingStatus: revenuecatWebhookEventsTable.processingStatus,
+        receivedAt: revenuecatWebhookEventsTable.receivedAt,
+      })
+      .from(revenuecatWebhookEventsTable)
+      .where(eq(revenuecatWebhookEventsTable.eventId, eventId))
+      .limit(1);
+
+    const claim = decideRevenueCatWebhookClaim({
+      inserted: false,
+      processingStatus: existing?.processingStatus,
+      receivedAt: existing?.receivedAt ?? null,
+    });
+
+    if (claim.action === "duplicate") {
+      res.json({ ok: true, duplicate: true, eventId });
+      return;
+    }
+
+    if (claim.action === "in_progress") {
+      // Still owned by an in-flight attempt — do not ACK or RevenueCat stops retrying.
+      res.status(503).json({ error: "webhook_in_progress", eventId, reason: claim.reason });
+      return;
+    }
+
+    // Reclaim failed / stale-pending rows so the retry can apply entitlements.
+    const staleBefore = new Date(Date.now() - REVENUECAT_WEBHOOK_STALE_PENDING_MS);
+    const claimed = await db
+      .update(revenuecatWebhookEventsTable)
+      .set({
+        processingStatus: "pending",
+        processingError: null,
+        processedAt: null,
+        receivedAt: new Date(),
+        eventType: event.type ?? null,
+        appUserId: userId,
+        payload: webhookPayload,
+        eventTimestamp: eventAt,
+        transactionId: event.transaction_id ?? null,
+        originalTransactionId: event.original_transaction_id ?? null,
+        environment: event.environment ?? null,
+      })
+      .where(
+        and(
+          eq(revenuecatWebhookEventsTable.eventId, eventId),
+          or(
+            eq(revenuecatWebhookEventsTable.processingStatus, "failed"),
+            and(
+              eq(revenuecatWebhookEventsTable.processingStatus, "pending"),
+              lt(revenuecatWebhookEventsTable.receivedAt, staleBefore),
+            ),
+          ),
+        ),
+      )
+      .returning({ eventId: revenuecatWebhookEventsTable.eventId });
+
+    if (claimed.length === 0) {
+      res.status(503).json({ error: "webhook_in_progress", eventId, reason: "reclaim_lost" });
+      return;
+    }
   }
 
   const supportedEvents = new Set([
