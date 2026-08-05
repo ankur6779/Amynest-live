@@ -79,7 +79,7 @@ export default function DiscoveryWorldsHubPage() {
 
   return (
     <SoundWorldPage className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur md:px-6">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background px-4 py-3 md:px-6">
         <button
           type="button"
           onClick={() => back("discovery-worlds-hub-back")}

@@ -189,7 +189,7 @@ function DiscoveryWorldExperienceInner({
     >
       <LivingEnvironmentLayer worldId={config.worldId} muted={muted} />
       <XpFlyLayer />
-      <header className="relative z-10 sticky top-0 -mx-4 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+      <header className="relative z-10 sticky top-0 -mx-4 border-b border-border/60 bg-background px-4 py-3 md:-mx-6 md:px-6">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -215,7 +215,7 @@ function DiscoveryWorldExperienceInner({
                   trackDiscoveryWorldsEvent(config.worldId, "world_mode_changed", { childId, mode: id });
                 }}
                 className={cn(
-                  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold will-change-transform",
+                  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold",
                   mode === id
                     ? "bg-primary text-primary-foreground"
                     : "bg-white/[0.05] text-muted-foreground",
@@ -422,24 +422,31 @@ function WorldItemDetail({
     setPlayingId(soundId);
     if (playedOnce.current) track("replay", { itemId: item.id });
     else playedOnce.current = true;
-    const ok = await discoveryWorldAudioManager.play(url, {
-      worldId: config.worldId,
-      itemId: item.id,
-      soundId,
-      label,
-    });
-    if (!ok) setPlayError(true);
-    applyDiscoveryWorldEngagement({
-      worldId: config.worldId,
-      childId,
-      itemId: item.id,
-      soundId,
-      items: config.manifest.items,
-    });
-    trackDiscoveryWorldsEvent(config.worldId, "world_sound_played", { childId, itemId: item.id, soundId });
-    emitXpFly({ amount: 2 });
-    onSoundPlayed?.();
-    setPlayingId(null);
+    try {
+      const ok = await discoveryWorldAudioManager.play(url, {
+        worldId: config.worldId,
+        itemId: item.id,
+        soundId,
+        label,
+      });
+      if (!ok) setPlayError(true);
+      applyDiscoveryWorldEngagement({
+        worldId: config.worldId,
+        childId,
+        itemId: item.id,
+        soundId,
+        items: config.manifest.items,
+      });
+      trackDiscoveryWorldsEvent(config.worldId, "world_sound_played", {
+        childId,
+        itemId: item.id,
+        soundId,
+      });
+      emitXpFly({ amount: 2 });
+      onSoundPlayed?.();
+    } finally {
+      setPlayingId(null);
+    }
   };
 
   return (

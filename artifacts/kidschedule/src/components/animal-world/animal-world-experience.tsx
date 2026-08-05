@@ -112,7 +112,7 @@ function AnimalWorldExperienceInner({ childId, onEngage }: AnimalWorldExperience
       className={cn("min-h-screen overflow-hidden bg-background pb-10", SCREEN_SPACING.pageX)}
     >
       <LivingEnvironmentLayer worldId="animal_world" muted={muted} />
-      <header className="relative z-10 sticky top-0 -mx-4 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+      <header className="relative z-10 sticky top-0 -mx-4 border-b border-border/60 bg-background px-4 py-3 md:-mx-6 md:px-6">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Animal World</p>

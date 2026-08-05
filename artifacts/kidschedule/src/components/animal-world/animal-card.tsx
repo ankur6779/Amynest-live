@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Volume2 } from "lucide-react";
 import type { Animal } from "@workspace/animal-world";
 import { cn } from "@/lib/utils";
-import { CARD_VARIANTS } from "@/lib/experience-system";
+import { soundWorldCardSurfaceClass } from "@/lib/sound-world-gpu-safe";
 import {
   ObjectBounce,
   SoundWorldTiltCard,
@@ -30,8 +30,9 @@ export function AnimalCard({ animal, onSelect, large, idleIndex = 0 }: AnimalCar
         onSelect(animal);
       }}
       className={cn(
-        CARD_VARIANTS.premium,
-        "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[rgba(18,28,60,0.78)] text-left shadow-[0_12px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl",
+        soundWorldCardSurfaceClass(
+          "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
+        ),
         large && "min-h-[220px]",
       )}
     >

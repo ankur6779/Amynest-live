@@ -30,13 +30,13 @@ import {
   EASE_SOFT,
   EASE_WARM,
   TRANSITION,
-  fadeUp,
   pageEnter,
   softScale,
   staggerDelay,
   tierParticleCount,
 } from "@/lib/experience-system";
 import { performanceTier } from "@/lib/performance-tier";
+import { soundWorldGpuProfile } from "@/lib/sound-world-gpu-safe";
 import { cn } from "@/lib/utils";
 
 // ─── Capability hook ─────────────────────────────────────────────────────────
@@ -46,6 +46,8 @@ export type SoundWorldMotionCaps = {
   allowIdle: boolean;
   allowTilt: boolean;
   allowParticles: boolean;
+  allowExitWait: boolean;
+  preferOpaqueSurfaces: boolean;
   particleCount: number;
   spring: Transition;
   springGentle: Transition;
@@ -54,22 +56,27 @@ export type SoundWorldMotionCaps = {
 export function useSoundWorldMotion(): SoundWorldMotionCaps {
   const reduced = useReducedMotion();
   const tier = performanceTier();
+  const gpu = soundWorldGpuProfile();
   return useMemo(() => {
-    const allowIdle = !reduced && tier !== "low";
-    const allowTilt = !reduced && tier === "high";
-    const allowParticles = !reduced && tier !== "low";
+    // Idle/tilt + backdrop-filter is the Android dark-overlay freeze vector.
+    // GPU profile already disables those on mobile / low-mid tiers.
+    const allowIdle = !reduced && gpu.allowIdleMotion;
+    const allowTilt = !reduced && gpu.allowTilt;
+    const allowParticles = !reduced && tier !== "low" && !gpu.preferOpaqueSurfaces;
     return {
       reduced,
       allowIdle,
       allowTilt,
       allowParticles,
+      allowExitWait: !reduced && gpu.allowExitWait,
+      preferOpaqueSurfaces: gpu.preferOpaqueSurfaces,
       particleCount: allowParticles ? Math.min(tierParticleCount(tier), 14) : 0,
       spring: reduced ? { duration: DURATION.micro, ease: EASE_SOFT } : TRANSITION.spring,
       springGentle: reduced
         ? { duration: DURATION.short, ease: EASE_WARM }
         : TRANSITION.springGentle,
     };
-  }, [reduced, tier]);
+  }, [reduced, tier, gpu]);
 }
 
 // ─── Press depth ─────────────────────────────────────────────────────────────
@@ -93,13 +100,15 @@ export const PressDepth = memo(function PressDepth({
   type = "button",
   ...rest
 }: PressDepthProps) {
-  const { reduced, spring } = useSoundWorldMotion();
+  const { reduced, spring, preferOpaqueSurfaces } = useSoundWorldMotion();
   return (
     <motion.button
       type={type}
-      whileTap={reduced ? undefined : { scale: 0.96, y: depth }}
+      // Avoid permanent will-change — it keeps GPU layers alive after tap and
+      // worsens Android backdrop-filter blackout when any ancestor uses blur.
+      whileTap={reduced || preferOpaqueSurfaces ? undefined : { scale: 0.96, y: depth }}
       transition={spring}
-      className={cn("touch-manipulation will-change-transform", className)}
+      className={cn("touch-manipulation", className)}
       {...rest}
     >
       {children}
@@ -161,8 +170,8 @@ export const SoundWorldTiltCard = memo(function SoundWorldTiltCard({
       onPointerMove={onMove}
       onPointerLeave={onLeave}
       onPointerCancel={onLeave}
-      whileTap={reduced ? undefined : { scale: 0.97, y: 2 }}
-      whileHover={reduced ? undefined : { scale: 1.02 }}
+      whileTap={reduced || !allowTilt ? (reduced ? undefined : { scale: 0.98 }) : { scale: 0.97, y: 2 }}
+      whileHover={reduced || !allowTilt ? undefined : { scale: 1.02 }}
       animate={allowIdle ? { y: idleY } : undefined}
       transition={
         allowIdle
@@ -180,9 +189,11 @@ export const SoundWorldTiltCard = memo(function SoundWorldTiltCard({
           : undefined
       }
       className={cn(
-        "touch-manipulation will-change-transform [backface-visibility:hidden]",
+        "touch-manipulation [backface-visibility:hidden]",
+        allowTilt && "[transform-style:preserve-3d]",
         className,
       )}
+      data-sound-world-surface="card"
     >
       {children}
     </motion.button>
@@ -301,15 +312,18 @@ export function ConfettiReward({
     [count],
   );
 
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
   useEffect(() => {
     if (!active) return;
     if (reduced || !allowParticles) {
-      onDone?.();
+      onDoneRef.current?.();
       return;
     }
-    const t = window.setTimeout(() => onDone?.(), 1100);
+    const t = window.setTimeout(() => onDoneRef.current?.(), 1100);
     return () => window.clearTimeout(t);
-  }, [active, allowParticles, onDone, reduced]);
+  }, [active, allowParticles, reduced]);
 
   return (
     <AnimatePresence>
@@ -580,13 +594,17 @@ export function StickerUnlockCelebration({
   emoji: string;
   onDone?: () => void;
 }) {
-  const { reduced, spring } = useSoundWorldMotion();
+  const { reduced, spring, preferOpaqueSurfaces } = useSoundWorldMotion();
+  // Keep onDone out of effect deps — inline lambdas from parents were resetting
+  // the dismiss timer every render and leaving the dark scrim stuck forever.
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     if (!active) return;
-    const t = window.setTimeout(() => onDone?.(), reduced ? 200 : 1200);
+    const t = window.setTimeout(() => onDoneRef.current?.(), reduced ? 200 : 1200);
     return () => window.clearTimeout(t);
-  }, [active, onDone, reduced]);
+  }, [active, reduced]);
 
   return (
     <AnimatePresence>
@@ -595,8 +613,13 @@ export function StickerUnlockCelebration({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="pointer-events-none fixed inset-0 z-[68] flex items-center justify-center bg-black/35"
+          // No backdrop-blur — Android paints blur scrims as near-black overlays.
+          className={cn(
+            "pointer-events-none fixed inset-0 z-[68] flex items-center justify-center",
+            preferOpaqueSurfaces ? "bg-black/40" : "bg-black/30",
+          )}
           aria-hidden
+          data-sound-world-celebration="sticker"
         >
           <ConfettiReward active={!reduced} intensity="card" />
           <motion.div
@@ -629,12 +652,14 @@ export function MissionCompleteBanner({
   onDone?: () => void;
 }) {
   const { reduced, springGentle } = useSoundWorldMotion();
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     if (!active) return;
-    const t = window.setTimeout(() => onDone?.(), reduced ? 250 : 1600);
+    const t = window.setTimeout(() => onDoneRef.current?.(), reduced ? 250 : 1600);
     return () => window.clearTimeout(t);
-  }, [active, onDone, reduced]);
+  }, [active, reduced]);
 
   return (
     <>
@@ -648,8 +673,9 @@ export function MissionCompleteBanner({
             transition={springGentle}
             className="pointer-events-none fixed inset-x-0 bottom-24 z-[66] flex justify-center px-4"
             role="status"
+            data-sound-world-celebration="mission"
           >
-            <div className="rounded-full border border-amber-300/40 bg-amber-500/20 px-5 py-3 text-sm font-bold text-amber-50 shadow-lg backdrop-blur-md">
+            <div className="rounded-full border border-amber-300/40 bg-amber-500/25 px-5 py-3 text-sm font-bold text-amber-50 shadow-lg">
               ✨ {label}
             </div>
           </motion.div>
@@ -661,6 +687,12 @@ export function MissionCompleteBanner({
 
 // ─── Page / mode transitions ─────────────────────────────────────────────────
 
+const fadeInSafe = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
 export function SoundWorldPage({
   children,
   className,
@@ -670,15 +702,16 @@ export function SoundWorldPage({
   className?: string;
   particles?: boolean;
 }) {
-  const { reduced, springGentle } = useSoundWorldMotion();
+  const { reduced, springGentle, preferOpaqueSurfaces } = useSoundWorldMotion();
   return (
     <motion.div
-      variants={reduced ? fadeUp : pageEnter}
+      variants={reduced || preferOpaqueSurfaces ? fadeInSafe : pageEnter}
       initial="initial"
       animate="animate"
       exit="exit"
       transition={springGentle}
       className={cn("relative", className)}
+      data-sound-world-root
     >
       {particles ? <FloatingParticles /> : null}
       {children}
@@ -695,16 +728,25 @@ export function ModePanel({
   children: ReactNode;
   className?: string;
 }) {
-  const { reduced, springGentle } = useSoundWorldMotion();
+  const { reduced, springGentle, allowExitWait } = useSoundWorldMotion();
+  // mode="wait" + infinite child animations can deadlock the exit phase, leaving
+  // content at partial opacity over a dark page background ("stuck overlay").
+  if (!allowExitWait || reduced) {
+    return (
+      <div key={modeKey} className={className}>
+        {children}
+      </div>
+    );
+  }
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="sync">
       <motion.div
         key={modeKey}
-        variants={reduced ? fadeInSafe : softScale}
+        variants={softScale}
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={springGentle}
+        transition={{ ...springGentle, duration: DURATION.short }}
         className={className}
       >
         {children}
@@ -712,12 +754,6 @@ export function ModePanel({
     </AnimatePresence>
   );
 }
-
-const fadeInSafe = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-};
 
 // ─── Smooth loading placeholders ─────────────────────────────────────────────
 

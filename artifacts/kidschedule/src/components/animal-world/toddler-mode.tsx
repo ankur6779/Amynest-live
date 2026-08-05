@@ -66,8 +66,9 @@ export function ToddlerMode({ onOpenAnimal }: ToddlerModeProps) {
           }}
           className={cn(
             "flex w-full flex-col items-center gap-5 rounded-[32px] border border-white/10",
-            "bg-[rgba(18,28,60,0.82)] px-6 py-10 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl",
+            "bg-[rgb(18,28,60)] px-6 py-10 shadow-[0_20px_60px_rgba(0,0,0,0.35)]",
           )}
+          data-sound-world-surface="toddler"
         >
           <AnimalHeroImage animal={animal} eager className="max-h-[200px]" />
           <p className="text-4xl font-bold tracking-tight text-foreground">{animal.name}</p>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   dailyAdventureCompletionPct,
   loadDailyAdventureProgress,
@@ -75,7 +75,8 @@ export function useDiscoveryDailyAdventure(config: DiscoveryWorldRuntimeConfig, 
   };
 
   const pct = dailyAdventureCompletionPct(progress);
-  return { progress, pct, record, celebrate, clearCelebrate: () => setCelebrate(false) };
+  const clearCelebrate = useCallback(() => setCelebrate(false), []);
+  return { progress, pct, record, celebrate, clearCelebrate };
 }
 
 type DiscoveryDailyAdventureCardProps = {

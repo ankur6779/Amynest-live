@@ -17,6 +17,7 @@ import {
   type WeatherKind,
 } from "@/lib/sound-world-living-environment";
 import { worldAmbientAudio } from "@/lib/sound-world-ambient-audio";
+import { soundWorldGpuProfile } from "@/lib/sound-world-gpu-safe";
 import { cn } from "@/lib/utils";
 import {
   attentionAnimationScale,
@@ -72,7 +73,7 @@ const DriftSprite = memo(function DriftSprite({
 
   return (
     <motion.span
-      className="absolute will-change-transform"
+      className="absolute"
       style={{ top, left: "-8vw", fontSize: size, opacity: 0.55 }}
       initial={{ x: 0, y: 0, opacity: 0 }}
       animate={{ x: xTo, y: yAnim, opacity: [0, 0.65, 0.65, 0] }}
@@ -390,6 +391,8 @@ function WorldAtmosphere({
 
 function SkyTint({ period, worldId }: { period: DayPeriod; worldId: WorldId }) {
   const palette = skyPalette(period, worldId);
+  // Single gradient only — never stack a solid overlay color as a second
+  // background layer (that painted a full-bleed dark wash on the page).
   return (
     <motion.div
       key={period}
@@ -398,7 +401,7 @@ function SkyTint({ period, worldId }: { period: DayPeriod; worldId: WorldId }) {
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2 }}
       style={{
-        background: `linear-gradient(180deg, ${palette.from}, ${palette.via} 42%, ${palette.to}), ${palette.overlay}`,
+        background: `linear-gradient(180deg, ${palette.from}, ${palette.via} 42%, ${palette.to})`,
       }}
       aria-hidden
     />
@@ -414,13 +417,17 @@ export const LivingEnvironmentLayer = memo(function LivingEnvironmentLayer({
   const reduced = useReducedMotion();
   const { adaptive: ctxAdaptive } = useSoundWorldAttention();
   const adaptive = adaptiveOverride ?? ctxAdaptive;
+  const gpu = soundWorldGpuProfile();
   const caps = useMemo(() => livingEnvironmentCaps(reduced), [reduced]);
   const { period, weather, intensity } = useLivingClock(worldId);
   const ambience = ambienceKindForWorld(worldId);
   const animScale = attentionAnimationScale(adaptive);
   const spriteBudget = attentionMaxSprites(caps.maxSprites, adaptive);
   const allowAtmosphere =
-    caps.allowAtmosphere && adaptive.visualComplexity !== "minimal" && animScale > 0.3;
+    caps.allowAtmosphere &&
+    gpu.allowAtmosphere &&
+    adaptive.visualComplexity !== "minimal" &&
+    animScale > 0.3;
 
   useEffect(() => {
     if (!caps.allowAmbientAudio) {

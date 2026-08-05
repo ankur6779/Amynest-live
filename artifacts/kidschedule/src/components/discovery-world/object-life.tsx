@@ -7,7 +7,6 @@ import { memo, useEffect, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { livingEnvironmentCaps } from "@/lib/sound-world-living-environment";
-import { cn } from "@/lib/utils";
 import { useSoundWorldAttention } from "./sound-world-attention";
 
 type LifeKind = "breathe" | "wiggle" | "blink" | "bounce" | "wave";
@@ -99,7 +98,7 @@ export const ObjectLife = memo(function ObjectLife({
 
   return (
     <motion.div
-      className={cn("will-change-transform", className)}
+      className={className}
       animate={motionProps}
       transition={pulse === 0 ? undefined : lifeMotion(kind).transition}
     >
