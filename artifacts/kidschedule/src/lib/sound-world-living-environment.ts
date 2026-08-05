@@ -153,16 +153,18 @@ export function skyPalette(period: DayPeriod, worldId: WorldId): SkyPalette {
       overlay: "rgba(255,255,255,0.04)",
     },
     evening: {
-      from: "rgba(251,146,60,0.20)",
-      via: "rgba(167,139,250,0.14)",
+      from: "rgba(251,146,60,0.14)",
+      via: "rgba(167,139,250,0.08)",
       to: "transparent",
-      overlay: "rgba(88,28,135,0.10)",
+      overlay: "transparent",
     },
+    // Night tint must stay light — stacked under translucent cards it previously
+    // read as a near-black full-screen overlay on Android WebView.
     night: {
-      from: "rgba(30,41,89,0.38)",
-      via: "rgba(15,23,42,0.22)",
+      from: "rgba(30,41,89,0.16)",
+      via: "rgba(15,23,42,0.08)",
       to: "transparent",
-      overlay: "rgba(2,6,23,0.18)",
+      overlay: "transparent",
     },
   };
 
@@ -171,13 +173,13 @@ export function skyPalette(period: DayPeriod, worldId: WorldId): SkyPalette {
     return {
       ...base,
       via: "rgba(167,139,250,0.12)",
-      overlay: period === "night" ? "rgba(49,46,129,0.16)" : base.overlay,
+      overlay: "transparent",
     };
   }
   if (worldId === "vehicle_world") {
     return {
       ...base,
-      from: period === "night" ? "rgba(15,23,42,0.42)" : "rgba(148,163,184,0.14)",
+      from: period === "night" ? "rgba(15,23,42,0.18)" : "rgba(148,163,184,0.14)",
     };
   }
   return base;

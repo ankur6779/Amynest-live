@@ -32,6 +32,23 @@ export function resolveWorldLibraryPlaybackUrl(url: string): string {
   return resolveApiMediaUrl(u);
 }
 
+/** Shared mobile gesture-prime element — never allocate a new Audio() per tap. */
+let sharedPrimeAudio: HTMLAudioElement | null = null;
+
+function getSharedPrimeAudio(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (sharedPrimeAudio) return sharedPrimeAudio;
+  try {
+    sharedPrimeAudio = new Audio();
+    configureMobileAudioElement(sharedPrimeAudio);
+    sharedPrimeAudio.preload = "auto";
+    sharedPrimeAudio.volume = 0.02;
+    return sharedPrimeAudio;
+  } catch {
+    return null;
+  }
+}
+
 /** iOS WKWebView + Android WebView: prime decoder inside user gesture. */
 export function primeWorldLibrarySoundUrl(url: string): void {
   const resolved = resolveWorldLibraryPlaybackUrl(url);
@@ -42,20 +59,30 @@ export function primeWorldLibrarySoundUrl(url: string): void {
 
   if (!isCapacitorIosNative() && !isAndroidAmyNestAudioClient()) return;
 
+  // Reuse one element — allocating `new Audio()` on every tap leaked media
+  // pipelines and contributed to Android WebView hangs under rapid taps.
   try {
-    const prime = new Audio(resolved);
-    configureMobileAudioElement(prime);
-    prime.preload = "auto";
-    prime.volume = 0.02;
-    prime.muted = false;
+    const prime = getSharedPrimeAudio();
+    if (!prime) return;
+    if (prime.src !== resolved) {
+      prime.src = resolved;
+    }
     prime.pause();
-    prime.currentTime = 0;
+    try {
+      prime.currentTime = 0;
+    } catch {
+      /* ignore seek before metadata */
+    }
     const p = prime.play();
     if (p) {
       void p
         .then(() => {
           prime.pause();
-          prime.currentTime = 0;
+          try {
+            prime.currentTime = 0;
+          } catch {
+            /* ignore */
+          }
         })
         .catch(() => undefined);
     }

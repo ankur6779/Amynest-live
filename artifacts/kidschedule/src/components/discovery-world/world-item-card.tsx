@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { WorldManifestItem } from "@workspace/world-engine";
 import { Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CARD_VARIANTS } from "@/lib/experience-system";
+import { soundWorldCardSurfaceClass } from "@/lib/sound-world-gpu-safe";
 import { worldItemVisualPaths, WORLD_CARD_IMAGE_SIZE } from "@/lib/world-visual-assets";
 import { ObjectBounce, SoundWorldTiltCard } from "./sound-world-motion";
 import { ObjectLife } from "./object-life";
@@ -72,9 +72,8 @@ export function WorldItemCard({
         window.setTimeout(() => setBounce(false), 400);
         onSelect(item);
       }}
-      className={cn(
-        CARD_VARIANTS.premium,
-        "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[rgba(18,28,60,0.78)] text-left shadow-[0_12px_40px_rgba(0,0,0,0.28)]",
+      className={soundWorldCardSurfaceClass(
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
       )}
     >
       <div

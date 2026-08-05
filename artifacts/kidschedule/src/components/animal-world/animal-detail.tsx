@@ -68,17 +68,21 @@ export function AnimalDetail({
     animalAudioManager.unlockFromGesture();
     primeWorldLibrarySoundUrl(url);
     setPlayingId(soundId);
-    await animalAudioManager.play(url, { animalId: animal.id, soundId, label });
-    recordSoundPlayed(childId, animal.id, soundId);
-    grantXp(childId, "soundPlayed", {
-      animalId: animal.id,
-      patch: {
-        soundsPlayed: (progress.animalMastery[animal.id]?.soundsPlayed ?? 0) + 1,
-      },
-    });
-    recordAnimalWorldHubDaily(childId, "listen_sounds");
-    trackAnimalWorldEvent("sound_played", { childId, animalId: animal.id, soundId });
-    setPlayingId(null);
+    try {
+      await animalAudioManager.play(url, { animalId: animal.id, soundId, label });
+      recordSoundPlayed(childId, animal.id, soundId);
+      grantXp(childId, "soundPlayed", {
+        animalId: animal.id,
+        patch: {
+          soundsPlayed: (progress.animalMastery[animal.id]?.soundsPlayed ?? 0) + 1,
+        },
+      });
+      recordAnimalWorldHubDaily(childId, "listen_sounds");
+      trackAnimalWorldEvent("sound_played", { childId, animalId: animal.id, soundId });
+    } finally {
+      // Always clear playing UI — never leave wave/highlight state stuck after errors.
+      setPlayingId(null);
+    }
   };
 
   const onFavorite = () => {
@@ -126,7 +130,10 @@ export function AnimalDetail({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(18,28,60,0.78)] shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+      <div
+        className="overflow-hidden rounded-[28px] border border-white/10 bg-[rgb(18,28,60)] shadow-[0_16px_48px_rgba(0,0,0,0.32)]"
+        data-sound-world-surface="detail"
+      >
         <Tabs defaultValue="cartoon" className="w-full">
           <TabsList className="mx-5 mt-4 grid w-[calc(100%-2.5rem)] grid-cols-2">
             <TabsTrigger value="cartoon">Cartoon</TabsTrigger>

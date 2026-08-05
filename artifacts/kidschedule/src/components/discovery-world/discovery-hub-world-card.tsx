@@ -22,9 +22,8 @@ export function DiscoveryHubWorldCard({ row }: DiscoveryHubWorldCardProps) {
   return (
     <motion.div
       whileHover={reduced ? undefined : { y: -2, scale: 1.01 }}
-      whileTap={reduced ? undefined : { scale: 0.98, y: 1 }}
+      whileTap={reduced ? undefined : { scale: 0.98 }}
       transition={springGentle}
-      className="will-change-transform"
     >
       <AppLink
         href={world.routePath}

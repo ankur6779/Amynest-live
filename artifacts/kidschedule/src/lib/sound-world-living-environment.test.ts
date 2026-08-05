@@ -40,6 +40,14 @@ describe("sound-world-living-environment", () => {
     }
   });
 
+  it("night/evening overlays stay transparent so they cannot paint a black wash", () => {
+    expect(skyPalette("night", "animal_world").overlay).toBe("transparent");
+    expect(skyPalette("evening", "animal_world").overlay).toBe("transparent");
+    const night = skyPalette("night", "animal_world");
+    // Keep night tint light — high alpha under translucent cards looked like a freeze overlay.
+    expect(night.from).toMatch(/0\.1[0-9]\)/);
+  });
+
   it("reduced motion disables atmosphere and audio", () => {
     const caps = livingEnvironmentCaps(true);
     expect(caps.allowAtmosphere).toBe(false);
