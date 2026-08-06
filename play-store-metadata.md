@@ -33,7 +33,7 @@ AI parenting coach: routines, speech practice, nutrition & infant care for kids.
 
 **AmyNest AI — Your Smart Parenting Coach**
 
-Turn parenting chaos into calm daily wins with AMY, your AI parenting coach built for Indian families. From newborn feeds to school mornings, AmyNest combines personalized routines, speech practice, nutrition planning, and learning — in one app parents actually use every day.
+Turn parenting chaos into calm daily wins with AMY, your AI parenting coach built for families worldwide. From newborn feeds to school mornings, AmyNest combines personalized routines, speech practice, nutrition planning, and learning — in one app parents actually use every day.
 
 **Meet AMY — Your 24/7 Parenting Coach**  
 Ask anything about sleep, picky eating, tantrums, speech development, or school prep. AMY learns your child's age and routines to give practical advice — not generic blog posts.
@@ -45,7 +45,7 @@ AI-generated schedules that adapt when you mark what worked. Wake windows, meals
 Guided pronunciation practice, word drills, and conversation coaching with streak tracking and parent progress summaries.
 
 **Nutrition Hub**  
-Weekly meal plans, grocery lists, tiffin ideas, and daily nutrition scoring — built for Indian kitchens and picky eaters.
+Weekly meal plans, grocery lists, lunchbox ideas, and daily nutrition scoring — built for real kitchens and picky eaters worldwide.
 
 **Infant Parenting Hub**  
 Track feeds, sleep, growth, and vaccines. Cry insights and pediatrician-ready summaries for newborns through 12 months.
@@ -59,7 +59,7 @@ Manage multiple children, share plans with caregivers, and see progress across r
 **Why Parents Choose AmyNest**
 - Privacy-first — no ads shown to children  
 - Free to start — upgrade when you want premium AI features  
-- Built for India — meal ideas, school timings, cultural context  
+- Built for families worldwide — multi-cuisine meal ideas, flexible school timings, local context  
 - Works on Android & iOS — one account, whole family  
 
 **Premium unlocks:** Unlimited AI routines, advanced speech coaching, family sharing, and priority support.
@@ -93,6 +93,6 @@ Update Hindi/French/Spanish store listings in Play Console — legacy copies in 
 |-------|--------|-------|
 | Short description | Generic feature list | Keyword-optimized, 79 chars |
 | Title | AmyNest AI (no keywords) | Adds "Parenting Coach" |
-| Long description | Feature bullets only | Structured keyword sections + India positioning |
+| Long description | Feature bullets only | Structured keyword sections + global positioning |
 
 **Estimated ASO impact:** +15–25% store listing relevance score for target keywords; +5–10% conversion from clearer value prop in first 3 lines.

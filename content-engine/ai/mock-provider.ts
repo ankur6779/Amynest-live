@@ -68,7 +68,7 @@ export class MockProvider implements AIProvider {
     const cta =
       request.metadata?.cta ??
       "Try AmyNest AI free — calmer routines start today";
-    const language = request.metadata?.language ?? "en-IN";
+    const language = request.metadata?.language ?? "en";
     const duration = Number(request.metadata?.duration ?? "30");
 
     let payload = buildDeterministicPayload({
@@ -188,7 +188,7 @@ function buildDeterministicPayload(input: {
     description: {
       seo: `${input.title}. Practical ${input.category.toLowerCase()} guidance for ${input.ageGroup} families. Warm, actionable tips from AmyNest AI.`,
       appPromotion:
-        "AmyNest AI helps Indian families with routines, speech practice, sleep support, and Amy Astro guidance — all in one calm parenting app.",
+        "AmyNest AI helps families worldwide with routines, speech practice, sleep support, and Amy Astro guidance — all in one calm parenting app.",
       playStoreCta: "Download AmyNest AI on Google Play: https://play.google.com/store/apps/details?id=com.amynest.app",
       website: "Website: https://www.amynest.in",
       socialLinks: "Follow AmyNest: Instagram @amynest | YouTube @AmyNestAI",
@@ -202,7 +202,7 @@ function buildDeterministicPayload(input: {
       "Kids",
       "MomLife",
       "DadLife",
-      "IndianParents",
+      "GlobalParenting",
       "ToddlerLife",
       "PositiveParenting",
       "FamilyRoutine",
@@ -213,7 +213,7 @@ function buildDeterministicPayload(input: {
       "Shorts",
       slugTag(input.category),
       slugTag(input.title),
-      "ParentingIndia",
+      "SmartParenting",
       "KidsLearning",
       "CalmParenting",
     ],

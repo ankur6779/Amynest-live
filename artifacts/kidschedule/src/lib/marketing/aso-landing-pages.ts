@@ -27,7 +27,7 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
     metaDescription:
       "Meet AMY, your 24/7 AI parenting coach. Get personalized advice on routines, sleep, nutrition, speech, and learning — free on Google Play.",
     keywords:
-      "AI parenting coach, AMY parenting assistant, smart parenting app, AI child development, parenting chatbot India",
+      "AI parenting coach, AMY parenting assistant, smart parenting app, AI child development, parenting chatbot, global parenting app",
     headline: "Meet AMY — Your",
     headlineAccent: "AI Parenting Coach",
     subheadline:
@@ -46,7 +46,7 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
       },
       {
         title: "Safe for families",
-        body: "No ads shown to children. Privacy-first design built for Indian parents.",
+        body: "No ads shown to children. Privacy-first design built for modern families worldwide.",
       },
       {
         title: "Free to start",
@@ -75,11 +75,11 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
   {
     slug: "parenting-app",
     path: "/parenting-app",
-    title: "Best Parenting App for Indian Families | AmyNest AI",
+    title: "Best Parenting App for Modern Families | AmyNest AI",
     metaDescription:
-      "AmyNest AI — the all-in-one parenting app with AI coach AMY, daily routines, infant care, speech coach, nutrition, and study zone. Free on Google Play.",
+      "AmyNest AI — the global all-in-one parenting app with AI coach AMY, daily routines, infant care, speech coach, nutrition, and study zone. Free on Google Play.",
     keywords:
-      "parenting app, best parenting app India, family organizer app, smart parenting, child development app",
+      "parenting app, best parenting app, family organizer app, smart parenting, child development app, global parenting app",
     headline: "The Parenting App That",
     headlineAccent: "Grows With Your Child",
     subheadline:
@@ -97,8 +97,8 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
         body: "Infant Hub, Speech Coach, Nutrition Hub, Study Zone, and rewards — all connected in one family dashboard.",
       },
       {
-        title: "Built for Indian households",
-        body: "Meal ideas, school timings, and cultural context that generic Western apps miss.",
+        title: "Built for families worldwide",
+        body: "Multi-cuisine meal ideas, flexible school timings, and local context that adapts to your household — not a one-size-fits-all template.",
       },
       {
         title: "Trusted by growing families",
@@ -229,22 +229,22 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
     metaDescription:
       "Plan balanced meals for picky eaters with AmyNest Nutrition Hub. Weekly meal plans, grocery lists, tiffin ideas, and daily nutrition tracking. Google Play.",
     keywords:
-      "kids nutrition planner, meal plan for kids, picky eater app, child nutrition tracker, family meal planning India",
+      "kids nutrition planner, meal plan for kids, picky eater app, child nutrition tracker, family meal planning, multi cuisine kids meals",
     headline: "Kids Nutrition Planner for",
     headlineAccent: "Real Families",
     subheadline:
-      "Weekly meal plans, grocery lists, tiffin ideas, and daily nutrition scoring — built for Indian kitchens and picky eaters.",
+      "Weekly meal plans, grocery lists, lunchbox ideas, and daily nutrition scoring — built for real kitchens and picky eaters worldwide.",
     heroImage: "/promo/get-app/screenshots/nutrition-hub.png",
     heroImageAlt: "AmyNest Nutrition Hub meal planning for kids",
     screenshotHeadline: "Meal plans that fit your kitchen",
     benefits: [
       {
         title: "Weekly meal plans",
-        body: "Age-appropriate meal ideas with iron-rich foods, textures, and portions guidance for Indian families.",
+        body: "Age-appropriate meal ideas with iron-rich foods, textures, and portions guidance matched to your family's cuisine.",
       },
       {
-        title: "Grocery & tiffin lists",
-        body: "One-tap grocery lists and school tiffin suggestions — stop reinventing lunch every morning.",
+        title: "Grocery & lunchbox lists",
+        body: "One-tap grocery lists and school lunch suggestions — stop reinventing lunch every morning.",
       },
       {
         title: "Daily nutrition score",
@@ -259,7 +259,7 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
       {
         question: "Does it handle picky eaters?",
         answer:
-          "Yes. Meal suggestions include texture transitions and familiar Indian foods that picky eaters are more likely to accept.",
+          "Yes. Meal suggestions include texture transitions and familiar foods from your family's cuisine that picky eaters are more likely to accept.",
       },
       {
         question: "Is this medical nutrition advice?",

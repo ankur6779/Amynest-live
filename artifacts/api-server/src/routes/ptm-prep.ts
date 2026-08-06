@@ -135,7 +135,7 @@ Rules:
 - 3–8 bite-sized, actionable steps for parents (not the child directly).
 - Start with a verb. Each under 140 characters.
 - No markdown. No extra keys.
-- Practical for Indian families.`;
+- Practical for families worldwide.`;
 }
 
 router.post(

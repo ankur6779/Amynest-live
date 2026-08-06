@@ -878,7 +878,7 @@
     "tech_research_title": "Research-Grounded",
     "tech_research_desc": "30+ peer-reviewed frameworks from Dweck, Greene, Siegel, Piaget, CASEL, and more — not opinions from the internet.",
     "tech_patent_title": "Patent-Pending",
-    "tech_patent_desc": "Indian provisional patent filed for adaptive environmental orchestration, caregiver-aware scheduling, and hybrid AI + rule-based generation.",
+    "tech_patent_desc": "Provisional patent filed for adaptive environmental orchestration, caregiver-aware scheduling, and hybrid AI + rule-based generation.",
     "tech_engine_1": "Environmental Intelligence — weather, AQI, UV & circadian rhythm shape outdoor play and wind-down",
     "tech_engine_2": "Hybrid AI + deterministic correction — reliable schedules from probabilistic models",
     "tech_engine_3": "Anti-repetition & mood-aware adaptation — fresh meals, rotated activities, weekend modes",
@@ -3293,7 +3293,7 @@
     "nutrition_tags": [
       "WHO",
       "ICMR",
-      "Indian meals",
+      "Multi-cuisine meals",
       "Family mode"
     ],
     "locked": {
@@ -7025,7 +7025,7 @@
   "patent_pending": {
     "footer_label": "Patent Pending Technology",
     "about_tech": "AmyNest AI operates on a proprietary patent-pending computational orchestration architecture integrating adaptive environmental processing, caregiver-aware personalization, and AI-assisted developmental scheduling.",
-    "settings_note": "Patent Pending Technology — Indian Provisional Patent Filed.",
+    "settings_note": "Patent Pending Technology — Provisional Patent Filed.",
     "powered_by": "Powered by Patent-Pending Adaptive AI",
     "microcopy_routine": "Powered by AmyNest's Patent-Pending Adaptive AI Engine",
     "microcopy_planning": "Using proprietary patent-pending orchestration technology",

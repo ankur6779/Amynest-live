@@ -91,7 +91,7 @@ export default function LandingPage() {
       title: "AmyNest — Know what your child needs most today",
       description:
         "AmyNest helps parents know what their child needs most today — calm daily guidance for modern families. Free to start.",
-      keywords: "parenting app, child daily plan, parenting companion, AmyNest",
+      keywords: "parenting app, child daily plan, parenting companion, global parenting app, AmyNest",
     });
     trackHome("landing_page_view", {});
   }, []);

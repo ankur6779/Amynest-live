@@ -90,8 +90,8 @@ personalised daily routines for your child — from newborn to teenager.
 • Ask AMY Coach — Get warm, practical parenting advice in Parenting, 
   Nutrition, Behavior, and Learning modes.
 
-• Meal & Nutrition Hub — Age-appropriate Indian meal suggestions with weekly 
-  plans, nutrient tracking, and a smart tiffin planner.
+• Meal & Nutrition Hub — Age-appropriate multi-cuisine meal suggestions with weekly 
+  plans, nutrient tracking, and a smart lunchbox planner.
 
 • Behavior Tracker — Log daily behaviors and receive rule-based insights to 
   understand your child's patterns.
@@ -109,7 +109,7 @@ personalised daily routines for your child — from newborn to teenager.
   insights to stay motivated.
 
 AmyNest works offline for core features and syncs across devices. 
-Designed for Indian families, with regional meal datasets and bilingual support.
+Designed for families worldwide, with multi-cuisine meal datasets and multilingual support.
 
 Free to use. Premium subscription unlocks unlimited AI routines, the Amy 
 Coach, and advanced insights.

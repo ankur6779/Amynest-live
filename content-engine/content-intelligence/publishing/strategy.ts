@@ -76,5 +76,5 @@ function craftThumbnail(topic: Topic, seriesLabel: string): string {
 }
 
 function craftAudience(topic: Topic, pillar: string): string {
-  return `Parents (${topic.ageGroup}) seeking ${pillar.toLowerCase()} support; warm, practical, India-first family audience`;
+  return `Parents (${topic.ageGroup}) seeking ${pillar.toLowerCase()} support; warm, practical, global-first family audience`;
 }

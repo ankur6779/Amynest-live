@@ -66,7 +66,7 @@ export function applySeoMeta(input: SeoMetaInput): void {
   upsertHeadTag('meta[property="og:type"]', "content", input.ogType ?? "website");
   upsertHeadTag('meta[property="og:url"]', "content", canonical);
   upsertHeadTag('meta[property="og:site_name"]', "content", "AmyNest AI");
-  upsertHeadTag('meta[property="og:locale"]', "content", "en_IN");
+  upsertHeadTag('meta[property="og:locale"]', "content", "en_US");
   upsertHeadTag('meta[name="twitter:card"]', "content", "summary_large_image");
   upsertHeadTag('meta[name="twitter:site"]', "content", "@AmyNestAI");
   upsertHeadTag('meta[name="twitter:creator"]', "content", "@AmyNestAI");
@@ -96,8 +96,8 @@ export function serializeSeoHead(input: SeoMetaInput): string {
     input.keywords ? `<meta name="keywords" content="${escapeAttr(input.keywords)}" />` : "",
     `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />`,
     `<link rel="canonical" href="${canonical}" />`,
-    `<link rel="alternate" hreflang="en-IN" href="${canonical}" />`,
-    `<link rel="alternate" hreflang="hi-IN" href="${buildCanonicalUrl(input.path === "/" ? "/hi" : `/hi${input.path}`)}" />`,
+    `<link rel="alternate" hreflang="en" href="${canonical}" />`,
+    `<link rel="alternate" hreflang="hi" href="${buildCanonicalUrl(input.path === "/" ? "/hi" : `/hi${input.path}`)}" />`,
     `<link rel="alternate" hreflang="x-default" href="${canonical}" />`,
     `<meta property="og:title" content="${escapeAttr(input.title)}" />`,
     `<meta property="og:description" content="${escapeAttr(input.description)}" />`,
@@ -105,7 +105,7 @@ export function serializeSeoHead(input: SeoMetaInput): string {
     `<meta property="og:type" content="${input.ogType ?? "website"}" />`,
     `<meta property="og:url" content="${canonical}" />`,
     `<meta property="og:site_name" content="AmyNest AI" />`,
-    `<meta property="og:locale" content="en_IN" />`,
+    `<meta property="og:locale" content="en_US" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:site" content="@AmyNestAI" />`,
     `<meta name="twitter:title" content="${escapeAttr(input.title)}" />`,

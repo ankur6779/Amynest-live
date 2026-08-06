@@ -27,7 +27,7 @@ export const EEAT_AUTHORS: EeatAuthor[] = [
     role: "Parenting Content Editor",
     credentials: "Child development research synthesis",
     profileUrl: "https://www.amynest.in/guides",
-    bio: "AmyNest editorial team translates pediatric and developmental research into practical guides for Indian parents.",
+    bio: "AmyNest editorial team translates pediatric and developmental research into practical guides for parents worldwide.",
   },
   {
     id: "dr-priya-sharma",

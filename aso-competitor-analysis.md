@@ -1,7 +1,7 @@
 # AmyNest ASO — Competitor Analysis
 
 **Date:** June 2026  
-**Market:** India-first, English primary  
+**Market:** Global-first, English primary  
 **AmyNest positioning:** All-in-one AI parenting platform (coach + routines + speech + nutrition + learning)
 
 ---
@@ -12,7 +12,7 @@
 |----------|-----------------|-------------------------|
 | Parenting apps | BabyCenter, ParentZone, Kinedu | AMY AI coach + actionable tools (not just articles) |
 | Child routine apps | Routinely, Kids Routine, Brili | AI-adaptive routines with feedback loop |
-| Speech development | Speech Blubs, Otsimo Speech | Integrated with full parenting stack + Indian context |
+| Speech development | Speech Blubs, Otsimo Speech | Integrated with full parenting stack + local context |
 | Family organizer | Cozi, FamilyWall, OurHome | Child-development focus vs generic calendar |
 
 ---
@@ -34,7 +34,7 @@
 - **Weaknesses:** School-dependent; weak on infant/toddler; no AI
 - **AmyNest edge:** Birth-to-10+ coverage with AI personalization
 
-**Keyword gap AmyNest can own:** "AI parenting coach India", "smart parenting app"
+**Keyword gap AmyNest can own:** "AI parenting coach", "smart parenting app", "global parenting app"
 
 ---
 
@@ -61,7 +61,7 @@
 - **Weaknesses:** Niche positioning; complex UX for general parents
 - **AmyNest edge:** Mainstream parent audience with gentle speech practice (not clinical positioning)
 
-**Keyword gap:** "speech coach app for kids India", "pronunciation practice toddler"
+**Keyword gap:** "speech coach app for kids", "pronunciation practice toddler"
 
 ---
 
@@ -99,7 +99,7 @@ AmyNest occupies the **child-specific + action/tools** quadrant — the highest-
 | Keyword | Competition | AmyNest Fit | Priority |
 |---------|-------------|-------------|----------|
 | AI parenting coach | Low–Medium | ★★★★★ | P0 |
-| parenting app India | Medium | ★★★★☆ | P0 |
+| global parenting app | Medium | ★★★★☆ | P0 |
 | child routine planner | Medium | ★★★★★ | P0 |
 | speech coach for kids | Medium–High | ★★★★☆ | P1 |
 | kids nutrition planner | Low–Medium | ★★★★☆ | P1 |

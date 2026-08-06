@@ -17,4 +17,4 @@ export function PatentPendingPill({ className = "" }: { className?: string }) {
 }
 
 export const PATENT_TRUST_LINE =
-  "Powered by patent-pending context-aware AI — Indian provisional patent filed.";
+  "Powered by patent-pending context-aware AI — provisional patent filed.";

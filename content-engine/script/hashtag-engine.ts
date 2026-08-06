@@ -20,11 +20,11 @@ const MEDIUM_VOLUME = [
   "PositiveParenting",
   "ChildDevelopment",
   "GentleParenting",
-  "IndianParents",
+  "GlobalParenting",
   "KidsLearning",
   "SpeechTherapyAtHome",
   "ToddlerActivities",
-  "ParentingIndia",
+  "SmartParenting",
 ];
 
 /** Normalize, classify, and trim to 10–20 mixed-tier hashtags. */

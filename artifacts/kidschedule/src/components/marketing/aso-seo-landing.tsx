@@ -178,7 +178,7 @@ export function AsOSeoLanding({ page }: AsOSeoLandingProps) {
           }}
         >
           <h2 className="mb-3 font-quicksand text-2xl font-bold">Download free on Google Play</h2>
-          <p className="mb-6 text-white/70">Join thousands of Indian parents using AmyNest AI daily.</p>
+          <p className="mb-6 text-white/70">Join thousands of parents worldwide using AmyNest AI daily.</p>
           <StoreDownloadRow location="footer_cta" page={`aso_${page.slug}`} />
         </section>
       </main>

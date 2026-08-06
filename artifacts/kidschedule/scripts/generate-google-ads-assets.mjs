@@ -226,7 +226,7 @@ const copySuggestions = {
   ],
   descriptions: [
     "Routines, speech, nutrition & infant care. Free on Google Play.",
-    "Turn parenting chaos into calm. AI coach built for Indian families.",
+    "Turn parenting chaos into calm. AI coach built for families worldwide.",
     "Personalized plans for sleep, meals, tantrums & learning.",
     "Download free — privacy first, no ads shown to children.",
     "From newborn to school age. One app, whole family.",

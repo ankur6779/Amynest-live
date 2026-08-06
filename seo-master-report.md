@@ -132,7 +132,7 @@ Prerender log excerpt:
 - Reusable `ProgrammaticPageConfig` architecture in `programmatic-pages.ts`
 
 ### Phase 9 — Hindi SEO ✓
-- hreflang tags (`en-IN`, `hi-IN`, `x-default`) in `index.html` and `applySeoMeta`
+- hreflang tags (`en`, `hi`, `x-default`) in `index.html` and `applySeoMeta` — global-first positioning
 - `hindi-seo.ts` framework with Hindi metadata for `/`, `/get-app`, `/guides`
 - Architecture ready for `/hi/*` routes when content ships
 

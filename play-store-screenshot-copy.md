@@ -40,7 +40,7 @@
 
 **Headline:** Nutrition Hub  
 **Subheadline:** Meal Plans for Real Families  
-**Feature explanation:** Weekly meal plans, grocery lists, tiffin ideas, and daily nutrition scoring — built for Indian kitchens and picky eaters.
+**Feature explanation:** Weekly meal plans, grocery lists, lunchbox ideas, and daily nutrition scoring — built for real kitchens and picky eaters worldwide.
 
 **Screenshot source:** `/promo/get-app/screenshots/nutrition-hub.png`
 

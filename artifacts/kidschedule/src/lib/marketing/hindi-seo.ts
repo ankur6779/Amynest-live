@@ -12,7 +12,7 @@ export const HINDI_SEO_BY_PATH: Record<string, HindiSeoMeta> = {
     title: "AmyNest AI — स्मार्ट पेरेंटिंग की शुरुआत",
     description:
       "AI से चलने वाला पेरेंटिंग ऐप — बच्चों के लिए दिनचर्या, भोजन योजना, स्पीच कोच और सीखने की गतिविधियाँ।",
-    keywords: "पेरेंटिंग ऐप, AI parenting, बच्चों की दिनचर्या, भारत parenting app",
+    keywords: "पेरेंटिंग ऐप, AI parenting, बच्चों की दिनचर्या, global parenting app",
   },
   "/get-app": {
     title: "AmyNest ऐप डाउनलोड करें — Android और iOS",
@@ -33,8 +33,8 @@ export function applyHreflangTags(path: string): void {
   const canonical = buildCanonicalUrl(path);
   const hindiPath = path.startsWith("/hi") ? path : `/hi${path === "/" ? "" : path}`;
 
-  upsertLink("link[rel='alternate'][hreflang='en-IN']", canonical);
-  upsertLink("link[rel='alternate'][hreflang='hi-IN']", buildCanonicalUrl(hindiPath));
+  upsertLink("link[rel='alternate'][hreflang='en']", canonical);
+  upsertLink("link[rel='alternate'][hreflang='hi']", buildCanonicalUrl(hindiPath));
   upsertLink("link[rel='alternate'][hreflang='x-default']", canonical);
 }
 
