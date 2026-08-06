@@ -1,0 +1,119 @@
+/**
+ * AmyNest Visual Identity System — manufacturing tokens
+ * Authority: docs/v2/VISUAL_IDENTITY_SYSTEM.md
+ * Do not invent values outside this file.
+ */
+
+:root {
+  /* Atmospheres — Night (default cinematic shell) */
+  --atmosphere-night-bg: #05040c;
+  --atmosphere-night-bg-mid: #0c0818;
+  --atmosphere-night-violet: #2a1f33;
+  --atmosphere-night-key: #b8a6d4;
+  --atmosphere-night-warm: #e8d4b8;
+  --atmosphere-night-ink: #f4eee6;
+  --atmosphere-night-ink-soft: #9a90a8;
+
+  /* Morning */
+  --atmosphere-morning-bg: #f3e8d8;
+  --atmosphere-morning-key: #e8d4b8;
+  --atmosphere-morning-cool: #6b8494;
+  --atmosphere-morning-ink: #1a1714;
+  --atmosphere-morning-glow: #f0e6d6;
+
+  /* Afternoon */
+  --atmosphere-afternoon-bg: #f5efe6;
+  --atmosphere-afternoon-key: #d8c3a8;
+  --atmosphere-afternoon-cool: #7a8b94;
+  --atmosphere-afternoon-ink: #18151f;
+  --atmosphere-afternoon-focus: #c4b5d8;
+
+  /* Evening */
+  --atmosphere-evening-bg: #1a1714;
+  --atmosphere-evening-key: #c48a5a;
+  --atmosphere-evening-rose: #d4a090;
+  --atmosphere-evening-ink: #f3e8d8;
+  --atmosphere-evening-ink-soft: #b8a99a;
+  --atmosphere-evening-shadow: #0e0c0a;
+
+  /* Day */
+  --atmosphere-day-bg: #f7f1e8;
+  --atmosphere-day-bg-elevated: #fffaf3;
+  --atmosphere-day-ink: #1a1714;
+  --atmosphere-day-ink-soft: #5c564f;
+  --atmosphere-day-mist: #e8dfd2;
+  --atmosphere-day-air: #d9e0e4;
+
+  /* Core roles */
+  --color-primary: #f4eee6;
+  --color-primary-ink: #12081f;
+  --color-primary-soft: #e8d4b8;
+  --color-secondary: #b8a6d4;
+  --color-secondary-deep: #6e5b8a;
+  --color-secondary-mute: #8a7a9e;
+  --color-success: #8fa88b;
+  --color-success-soft: rgba(143, 168, 139, 0.16);
+  --color-warning: #c49a5a;
+  --color-warning-soft: rgba(196, 154, 90, 0.16);
+  --color-danger: #b56868;
+
+  /* Glass */
+  --glass-fill-top: rgba(255, 255, 255, 0.045);
+  --glass-fill-bottom: rgba(255, 255, 255, 0.02);
+  --glass-fill-strong: rgba(255, 255, 255, 0.08);
+  --glass-stroke: rgba(255, 255, 255, 0.1);
+  --glass-stroke-strong: rgba(255, 255, 255, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.55);
+  --elevation-scrim: rgba(5, 4, 12, 0.55);
+
+  /* Hairline */
+  --hairline-default: rgba(255, 255, 255, 0.1);
+  --hairline-soft: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.22);
+
+  /* Type scale */
+  --type-display: 40px;
+  --type-hero: 32px;
+  --type-section: 24px;
+  --type-title: 20px;
+  --type-body: 16px;
+  --type-body-sm: 14px;
+  --type-caption: 13px;
+  --type-micro: 11px;
+  --type-button: 16px;
+
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* Radius */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-pill: 999px;
+
+  /* Motion (cinematography — breath, not bounce) */
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-title: 420ms;
+  --dur-body: 420ms;
+  --dur-reveal: 720ms;
+  --dur-room: 1100ms;
+}
