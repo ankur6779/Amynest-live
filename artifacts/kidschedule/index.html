@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <title>AmyNest AI — Where Smart Parenting Begins</title>
-    <meta name="description" content="AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child." />
+    <title>AmyNest — Know what your child needs most today</title>
+    <meta name="description" content="AmyNest helps parents know what their child needs most today — calm daily guidance for modern families. Free to start." />
 
     <!-- Meta Pixel Code -->
     <script>
@@ -98,8 +98,8 @@
     <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="AmyNest AI — Where Smart Parenting Begins" />
-    <meta property="og:description" content="Powered by patent-pending adaptive AI — science-backed parenting plans personalized for your child." />
+    <meta property="og:title" content="AmyNest — Know what your child needs most today" />
+    <meta property="og:description" content="AmyNest helps parents know what their child needs most today — clear, calm, and personal." />
     <meta property="og:image" content="https://www.amynest.in/opengraph.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -111,7 +111,7 @@
     <meta property="og:locale" content="en_IN" />
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="AmyNest AI — Where Smart Parenting Begins" />
+    <meta name="twitter:title" content="AmyNest — Know what your child needs most today" />
     <meta name="twitter:description" content="AI-powered daily routines, meal plans, and parenting intelligence — personalized for your child's age and needs." />
     <meta name="twitter:image" content="https://www.amynest.in/opengraph.jpg" />
     <meta name="twitter:image:alt" content="AmyNest AI — AI-powered parenting app dashboard" />
@@ -1270,34 +1270,35 @@
         font-weight: 500;
       }
 
-      /* ── CTA button ─────────────────────────────────────────────────── */
+      /* ── CTA button — late, quiet continue ──────────────────────────── */
       .splash-cta {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 13px 28px;
-        background: linear-gradient(90deg, #a855f7, #ec4899);
-        border: none;
+        padding: 12px 26px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
         border-radius: 999px;
-        color: #fff;
+        color: rgba(255,255,255,0.92);
         font-family: 'Inter', system-ui, sans-serif;
         font-size: 15px;
         font-weight: 500;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
         cursor: pointer;
-        box-shadow: 0 0 24px rgba(236,72,153,0.45), 0 4px 16px rgba(0,0,0,0.30);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.25);
         opacity: 0;
-        animation: ctaIn 0.8s 1.55s cubic-bezier(0.22,1,0.36,1) forwards;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        animation: ctaIn 0.8s 2.4s cubic-bezier(0.22,1,0.36,1) forwards;
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
         -webkit-tap-highlight-color: transparent;
         user-select: none;
       }
       .splash-cta:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 40px rgba(236,72,153,0.65), 0 6px 22px rgba(0,0,0,0.35);
+        transform: translateY(-1px);
+        background: rgba(255,255,255,0.12);
+        border-color: rgba(255,255,255,0.28);
       }
       @keyframes ctaIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(8px); }
         to   { opacity: 1; transform: translateY(0); }
       }
 
@@ -1657,18 +1658,14 @@
         </div>
 
         <p class="splash-tagline">
-          Where <span class="hl">Smart Parenting</span> Starts
+          Know what your child <span class="hl">needs most today</span>
         </p>
-
-        <div class="splash-patent">
-          <span class="splash-patent-badge">Powered by Patent-Pending Adaptive AI Technology</span>
-        </div>
 
         <button
           class="splash-cta"
           type="button"
           onclick="(function(){if(!window.__amynestAppCoreReady){console.info('[splash] App still loading — wait for AmyNest to finish starting');return;}var s=document.getElementById('splash');if(s){s.classList.add('splash-hide');s.addEventListener('transitionend',function(){s.remove();},{once:true});}})();"
-        >Start Parenting Smart &#8594;</button>
+        >Continue</button>
       </div>
     </div>
 

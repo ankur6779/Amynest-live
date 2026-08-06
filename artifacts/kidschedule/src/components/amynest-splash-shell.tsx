@@ -35,7 +35,7 @@ export function AmyNestSplashShell({
   const isTransition = variant === "transition";
   const tagline =
     message ??
-    (isTransition ? "Loading your page…" : "Where Smart Parenting Starts");
+    (isTransition ? "Just a moment…" : "What your child needs most today");
 
   return (
     <div
@@ -90,18 +90,10 @@ export function AmyNestSplashShell({
             tagline
           ) : (
             <>
-              Where <span className="hl">Smart Parenting</span> Starts
+              Know what your child <span className="hl">needs most today</span>
             </>
           )}
         </p>
-
-        {!isTransition ? (
-          <div className="splash-patent">
-            <span className="splash-patent-badge">
-              Powered by Patent-Pending Adaptive AI Technology
-            </span>
-          </div>
-        ) : null}
 
         {children}
       </div>
