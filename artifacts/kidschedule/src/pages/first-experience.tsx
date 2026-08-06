@@ -45,42 +45,75 @@ type FeRoom =
   | "memory"
   | "keep";
 
-type FeShot = "establish" | "observe" | "approach" | "environment" | "observation";
+type FeShot = "arrival" | "relationship" | "detail" | "transition" | "reflection";
 
-/** Continuous home sequence — each shot answers why it follows the last. */
+/**
+ * Continuous home sequence.
+ * Rules: never repeat focal length; never repeat eye level;
+ * inherit light; change one axis; answer why this is next.
+ */
 const SHOTS: Record<
   "welcome" | "discovery-name" | "discovery-age" | "discovery-today" | "working",
-  { src: string; alt: string; shot: FeShot; whyNext: string }
+  {
+    src: string;
+    alt: string;
+    shot: FeShot;
+    focalLength: string;
+    eyeLevel: string;
+    light: string;
+    changes: string;
+    whyNext: string;
+  }
 > = {
   welcome: {
-    shot: "establish",
-    src: "/experience/r1/shot-01-establish.png",
-    alt: "Wide quiet hallway — the home before anything is asked",
-    whyNext: "Establish the house. Distance. Air. Arrival.",
+    shot: "arrival",
+    src: "/experience/r1/shot-01-arrival.png",
+    alt: "Wide hallway — arrival into the home",
+    focalLength: "wide-24",
+    eyeLevel: "standing",
+    light: "warm ivory from the far room",
+    changes: "distance",
+    whyNext: "We arrive. Wide. Empty. The house before anything is asked.",
   },
   "discovery-name": {
-    shot: "observe",
-    src: "/experience/r1/shot-02-observe.png",
-    alt: "Intimate close-up of adult and child hands",
-    whyNext: "Cut closer. We are no longer in the hallway — we are with this child.",
+    shot: "relationship",
+    src: "/experience/r1/shot-02-relationship.png",
+    alt: "Shoulders and backs — adult and child together, never faces",
+    focalLength: "tight-85",
+    eyeLevel: "shoulder",
+    light: "same warm ivory, now side-lit on bodies",
+    changes: "distance",
+    whyNext: "Cut closer. Same light. We are with them — not looking at faces.",
   },
   "discovery-age": {
-    shot: "approach",
-    src: "/experience/r1/shot-03-approach.png",
-    alt: "Symbolic detail — child shoe beside adult shoe",
-    whyNext: "Approach a detail that holds age without asking the face.",
+    shot: "detail",
+    src: "/experience/r1/shot-03-detail.png",
+    alt: "Child shoe beside adult shoe — objects carrying memory",
+    focalLength: "close-50",
+    eyeLevel: "floor",
+    light: "same morning warmth, longer floor shadows",
+    changes: "height",
+    whyNext: "Drop to the floor. Age lives in objects, not portraits.",
   },
   "discovery-today": {
-    shot: "environment",
-    src: "/experience/r1/shot-04-environment.png",
-    alt: "Daylight through a doorway — the kind of day ahead",
-    whyNext: "Pull back to environment. The day itself enters the frame.",
+    shot: "transition",
+    src: "/experience/r1/shot-04-transition.png",
+    alt: "Doorway light — transition into the day",
+    focalLength: "mid-35",
+    eyeLevel: "doorway",
+    light: "inherited warmth brightening as we approach the source",
+    changes: "direction",
+    whyNext: "Turn toward the light. The day enters through the threshold.",
   },
   working: {
-    shot: "observation",
-    src: "/experience/r1/shot-05-observation.png",
-    alt: "Quiet room details noticed before the next right thing",
-    whyNext: "Hold still and notice. Observation, not loading.",
+    shot: "reflection",
+    src: "/experience/r1/shot-05-reflection.png",
+    alt: "Lamp, water, book, empty chair — noticing the room",
+    focalLength: "medium-50",
+    eyeLevel: "seated",
+    light: "same ivory-amber family, softened into lamp and water",
+    changes: "emotion",
+    whyNext: "Sit. Soften. Notice the room before the next right thing appears.",
   },
 };
 
@@ -94,7 +127,14 @@ function Shell({
   children: ReactNode;
   room: FeRoom;
   answered?: boolean;
-  memory?: { src: string; alt: string; shot: FeShot };
+  memory?: {
+    src: string;
+    alt: string;
+    shot: FeShot;
+    focalLength?: string;
+    eyeLevel?: string;
+    light?: string;
+  };
   openingBeat?: boolean;
 }) {
   return (
@@ -102,6 +142,8 @@ function Shell({
       data-testid="first-experience-root"
       data-fe-room={room}
       data-fe-shot={memory?.shot ?? "none"}
+      data-fe-focal={memory?.focalLength ?? ""}
+      data-fe-eye={memory?.eyeLevel ?? ""}
       data-fe-answered={answered ? "true" : "false"}
       data-fe-opening={openingBeat ? "true" : "false"}
       className="fe-shell min-h-[100dvh] flex flex-col relative overflow-hidden"

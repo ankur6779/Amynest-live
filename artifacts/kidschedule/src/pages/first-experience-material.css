@@ -171,65 +171,90 @@
   margin-top: var(--space-4);
 }
 
-/* Shot grammar — never the same framing twice */
-.fe-shell[data-fe-shot="establish"] .fe-memory {
+/*
+ * Shot types — never repeat focal length or eye level.
+ * 01 Arrival · 02 Relationship · 03 Detail · 04 Transition · 05 Reflection
+ */
+.fe-shell[data-fe-shot="arrival"] .fe-memory {
   aspect-ratio: 3 / 4;
   max-height: min(52dvh, 440px);
 }
-.fe-shell[data-fe-shot="establish"] .fe-memory img {
-  object-position: center 46%;
+.fe-shell[data-fe-shot="arrival"] .fe-memory img {
+  object-position: center 48%;
   transform: scale(1.01);
 }
-.fe-shell[data-fe-shot="observe"] .fe-memory {
+.fe-shell[data-fe-shot="relationship"] .fe-memory {
   aspect-ratio: 5 / 4;
   max-height: min(36dvh, 300px);
 }
-.fe-shell[data-fe-shot="observe"] .fe-memory img {
-  object-position: center 38%;
-  transform: scale(1.08);
+.fe-shell[data-fe-shot="relationship"] .fe-memory img {
+  object-position: center 42%;
+  transform: scale(1.07);
 }
-.fe-shell[data-fe-shot="approach"] .fe-memory {
+.fe-shell[data-fe-shot="detail"] .fe-memory {
   aspect-ratio: 16 / 11;
   max-height: min(34dvh, 280px);
 }
-.fe-shell[data-fe-shot="approach"] .fe-memory img {
-  object-position: center 62%;
-  transform: scale(1.06);
+.fe-shell[data-fe-shot="detail"] .fe-memory img {
+  object-position: center 68%;
+  transform: scale(1.08);
 }
-.fe-shell[data-fe-shot="environment"] .fe-memory {
+.fe-shell[data-fe-shot="transition"] .fe-memory {
   aspect-ratio: 16 / 10;
   max-height: min(32dvh, 260px);
 }
-.fe-shell[data-fe-shot="environment"] .fe-memory img {
+.fe-shell[data-fe-shot="transition"] .fe-memory img {
   object-position: center 40%;
   transform: scale(1.02);
 }
-.fe-shell[data-fe-shot="observation"] .fe-memory {
+.fe-shell[data-fe-shot="reflection"] .fe-memory {
   aspect-ratio: 16 / 10;
   max-height: min(30dvh, 240px);
 }
-.fe-shell[data-fe-shot="observation"] .fe-memory img {
-  object-position: center 48%;
+.fe-shell[data-fe-shot="reflection"] .fe-memory img {
+  object-position: center 50%;
   transform: scale(1.04);
 }
 
-/* Edit cuts — soft dissolve into the next shot, not page navigation */
-.fe-shell[data-fe-shot="establish"] .fe-memory-mount {
-  animation-name: feCutEstablish;
+/* Light inheritance — each room spill continues the previous warmth */
+.fe-shell[data-fe-shot="arrival"] {
+  --fe-spill: rgba(232, 212, 184, 0.26);
+  --fe-spill-deep: rgba(196, 138, 90, 0.14);
 }
-.fe-shell[data-fe-shot="observe"] .fe-memory-mount {
-  animation-name: feCutObserve;
+.fe-shell[data-fe-shot="relationship"] {
+  --fe-spill: rgba(232, 212, 184, 0.24);
+  --fe-spill-deep: rgba(212, 160, 144, 0.14);
 }
-.fe-shell[data-fe-shot="approach"] .fe-memory-mount {
-  animation-name: feCutApproach;
+.fe-shell[data-fe-shot="detail"] {
+  --fe-spill: rgba(214, 176, 132, 0.22);
+  --fe-spill-deep: rgba(140, 96, 64, 0.16);
 }
-.fe-shell[data-fe-shot="environment"] .fe-memory-mount {
-  animation-name: feCutEnvironment;
+.fe-shell[data-fe-shot="transition"] {
+  --fe-spill: rgba(220, 200, 170, 0.22);
+  --fe-spill-deep: rgba(150, 170, 188, 0.12);
 }
-.fe-shell[data-fe-shot="observation"] .fe-memory-mount {
-  animation-name: feCutObservation;
+.fe-shell[data-fe-shot="reflection"] {
+  --fe-spill: rgba(232, 196, 150, 0.2);
+  --fe-spill-deep: rgba(184, 150, 110, 0.14);
 }
-@keyframes feCutEstablish {
+
+/* Edit cuts — cinema, not navigation */
+.fe-shell[data-fe-shot="arrival"] .fe-memory-mount {
+  animation-name: feCutArrival;
+}
+.fe-shell[data-fe-shot="relationship"] .fe-memory-mount {
+  animation-name: feCutRelationship;
+}
+.fe-shell[data-fe-shot="detail"] .fe-memory-mount {
+  animation-name: feCutDetail;
+}
+.fe-shell[data-fe-shot="transition"] .fe-memory-mount {
+  animation-name: feCutTransition;
+}
+.fe-shell[data-fe-shot="reflection"] .fe-memory-mount {
+  animation-name: feCutReflection;
+}
+@keyframes feCutArrival {
   from {
     opacity: 0;
     filter: blur(10px);
@@ -241,7 +266,7 @@
     transform: scale(1);
   }
 }
-@keyframes feCutObserve {
+@keyframes feCutRelationship {
   from {
     opacity: 0;
     filter: blur(8px);
@@ -253,11 +278,11 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
 }
-@keyframes feCutApproach {
+@keyframes feCutDetail {
   from {
     opacity: 0;
     filter: blur(6px);
-    transform: translate3d(0, 14px, 0) scale(0.98);
+    transform: translate3d(0, 16px, 0) scale(0.98);
   }
   to {
     opacity: 1;
@@ -265,7 +290,7 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
 }
-@keyframes feCutEnvironment {
+@keyframes feCutTransition {
   from {
     opacity: 0;
     filter: blur(8px);
@@ -277,7 +302,7 @@
     transform: scale(1);
   }
 }
-@keyframes feCutObservation {
+@keyframes feCutReflection {
   from {
     opacity: 0;
     filter: blur(7px);
