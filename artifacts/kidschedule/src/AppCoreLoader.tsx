@@ -10,11 +10,13 @@ import {
 
 /** Brief pause after lite splash so iOS can reclaim splash GPU layers before AppCore parse. */
 const IOS_LOW_MEMORY_BOOT_DELAY_MS = 350;
+/** Production bound only — Vite cold transform often exceeds 20s in local/dev. */
 const APPCORE_IMPORT_TIMEOUT_MS = 20_000;
 
 function loadAppCore() {
   const load = () => safeImportModule(() => import("./AppCore"), "./AppCore");
-  if (!isLowMemoryIosClient()) return load();
+  // Local/dev: never delay AppCore — cold Vite transforms already take time.
+  if (import.meta.env.DEV || !isLowMemoryIosClient()) return load();
   return new Promise<Awaited<ReturnType<typeof load>>>((resolve, reject) => {
     window.setTimeout(() => {
       void load().then(resolve, reject);
@@ -23,6 +25,20 @@ function loadAppCore() {
 }
 
 function loadAppCoreWithTimeout() {
+  // Dev/local: no crash timeout. Wait for Vite to finish transforming AppCore.
+  if (import.meta.env.DEV) {
+    const slowWarn = window.setTimeout(() => {
+      const diag = logStartupDiagnostics("appcore_import_slow_dev");
+      console.warn(
+        "[amynest:dev] AppCore still loading — Vite cold transform in progress (no crash).",
+        diag,
+      );
+    }, 20_000);
+    return loadAppCore().finally(() => {
+      window.clearTimeout(slowWarn);
+    });
+  }
+
   type AppCoreModule = Awaited<ReturnType<typeof loadAppCore>>;
   return new Promise<AppCoreModule>((resolve, reject) => {
     let settled = false;

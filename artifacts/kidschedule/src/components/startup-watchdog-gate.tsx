@@ -31,7 +31,13 @@ import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
  * impossible: the user always gets a way forward within 10 seconds.
  */
 
-const WATCHDOG_DEADLINE_MS = isNativeAmyNestAndroidWrapper() ? 18_000 : 10_000;
+// Production mobile needs a short recovery path. Local Vite cold transforms
+// often take >10–20s on first AppCore import — never trip the watchdog in DEV.
+const WATCHDOG_DEADLINE_MS = import.meta.env.DEV
+  ? 180_000
+  : isNativeAmyNestAndroidWrapper()
+    ? 18_000
+    : 10_000;
 const READY_POLL_MS = 250;
 
 function appCoreReady(): boolean {

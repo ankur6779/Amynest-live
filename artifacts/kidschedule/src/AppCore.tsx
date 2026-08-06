@@ -23,7 +23,6 @@ import { Layout } from "@/components/layout";
 // iOS Jetsam mid-mount on iPhones opened from in-app browsers.
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
-import FirstExperiencePage from "@/pages/first-experience";
 import SocialLandingPage from "@/pages/social-landing";
 import StoreTapPage from "@/pages/store-tap";
 import { Ga4Bootstrap } from "@/components/marketing/ga4-bootstrap";
@@ -34,6 +33,7 @@ const SignInPage =
     ? SignInPageEager
     : SignInPageLazy;
 const SignUpPage = lazyPage(() => import("@/pages/sign-up"));
+const FirstExperiencePage = lazyPage(() => import("@/pages/first-experience"));
 const AppleAuthCallbackPage = lazyPage(() => import("@/pages/apple-auth-callback"));
 const VerifyEmailPage = lazyPage(() => import("@/pages/verify-email"));
 const AuthCallbackPage = lazyPage(() => import("@/pages/auth-callback"));
