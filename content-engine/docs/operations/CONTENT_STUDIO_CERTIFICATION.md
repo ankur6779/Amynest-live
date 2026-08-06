@@ -1,6 +1,7 @@
 # CONTENT_STUDIO_CERTIFICATION
 
-**Status:** CERTIFIED FOR PRODUCTION
+**Status:** CERTIFIED FOR PRODUCTION  
+**Engineering freeze:** [CONTENT_STUDIO_ENGINEERING_FREEZE.md](./CONTENT_STUDIO_ENGINEERING_FREEZE.md) — no new Director / Engine / Memory / Validator / Intelligence layers  
 **Generated:** 2026-07-29T15:29:50.325Z
 **Golden Script:** `golden-001` — A Fresh Lesson Every Day — Without the Worksheet Panic
 **Published (dry-run) videoId:** `mock_c157da85274`

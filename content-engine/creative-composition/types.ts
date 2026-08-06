@@ -12,7 +12,44 @@ export type EnvironmentId =
   | "living-room"
   | "playroom"
   | "magic-learning-world"
-  | "cta-stage";
+  | "cta-stage"
+  // Content diversity scene library (script-selected)
+  | "dining-table"
+  | "homework-corner"
+  | "reading-corner"
+  | "library"
+  | "school"
+  | "school-bus"
+  | "science-room"
+  | "art-room"
+  | "garden"
+  | "park"
+  | "park-bench"
+  | "indoor-tent"
+  | "bedroom-night"
+  | "bedroom-morning"
+  | "morning-breakfast"
+  | "rainy-window"
+  | "weekend-picnic"
+  | "doctor-visit"
+  | "birthday"
+  | "festival"
+  | "travel"
+  | "grandparents"
+  | "outdoor-learning"
+  | "nature-walk"
+  | "space-world"
+  | "fantasy-learning-world"
+  | "healthy-kitchen"
+  | "music-room"
+  | "story-castle"
+  | "math-laboratory"
+  | "astro-observatory"
+  | "ocean-learning-world"
+  | "fridge-magnet-wall"
+  | "mirror-practice-nook"
+  | "calendar-wall"
+  | "balcony-night";
 
 export type ShotRole =
   | "hook"
@@ -38,7 +75,15 @@ export type CompositionCamera =
   | "reaction"
   | "medium"
   | "wide"
-  | "dolly";
+  | "dolly"
+  | "top-down"
+  | "hand-close-up"
+  | "child-pov"
+  | "amy-pov"
+  | "pull-out"
+  | "low-angle"
+  | "eye-level"
+  | "walking-follow";
 
 export interface CompositionShotPlan {
   id: string;

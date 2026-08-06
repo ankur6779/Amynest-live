@@ -58,7 +58,9 @@
     "character-performance-studio/**/*.ts",
     "performance-director/**/*.ts",
     "story-memory-engine/**/*.ts",
-    "thumbnail-engine/**/*.ts"
+    "thumbnail-engine/**/*.ts",
+    "thumbnail-learning-engine/**/*.ts",
+    "content-diversity/**/*.ts"
   ],
   "exclude": ["**/*.test.ts", "dist"]
 }

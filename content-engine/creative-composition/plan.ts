@@ -3,6 +3,7 @@
  * Cinematic Realism Program: mentor Amy, lip ownership, child acting, filmed cameras.
  */
 
+import { diversifyCompositionPlan } from "../content-diversity/diversify-plan.js";
 import type { ContentPackage } from "../types/content-package.js";
 import type { CreativeCompositionPlan, CompositionShotPlan } from "./types.js";
 import { CREATIVE_COMPOSITION_VERSION } from "./types.js";
@@ -146,7 +147,7 @@ export function planCinematicShort(
   void totalDurationSeconds;
   void sum;
 
-  return {
+  const base: CreativeCompositionPlan = {
     version: CREATIVE_COMPOSITION_VERSION,
     totalDurationSeconds,
     shots,
@@ -167,4 +168,7 @@ export function planCinematicShort(
       "720p-cost-neutral-direction",
     ],
   };
+
+  // Script-driven locations / cameras / poses — never default study-desk loop.
+  return diversifyCompositionPlan(content, base).plan;
 }

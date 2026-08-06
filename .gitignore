@@ -117,3 +117,9 @@ lib/world-engine/src/discovery-worlds-signed-urls.json
 
 # AI evaluation — ephemeral report (baselines.json is committed)
 lib/ai-evaluation/golden/last-report.json
+
+# Thumbnail Learning Engine — permanent local store (may contain analytics)
+content-engine/thumbnail-learning-engine/data/thumbnail-learning-store.json
+
+# Content Diversity — recent Short fingerprints
+content-engine/content-diversity/data/content-diversity-store.json

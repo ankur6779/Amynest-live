@@ -1,6 +1,6 @@
 # AmyNest Production Launch Validation Report
 
-Generated: 2026-07-31T17:14:57.963Z
+Generated: 2026-08-04T14:26:53.378Z
 Validator: v2.0.0
 
 ## Result
@@ -9,11 +9,11 @@ Validator: v2.0.0
 - **Evidence certification:** PASS
 - **Recommendation:** auto_approve
 - **Overall Launch Score:** 100
-- **Title:** Teach, Practice, Quiz, Doubt — One Tutor That Follows the Child | AmyNest AI
-- **Topic:** cta-rerender-golden-002
-- **Render package:** rp_cta_g002_2040d95b53633c7d29fed306
-- **Final MP4:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-002/amynest-google-golden-002.mp4
-- **QUALITY_REPORT.json:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-002/QUALITY_REPORT.json
+- **Title:** AI Worksheets Matched to Class, Subject, and Difficulty | AmyNest AI
+- **Topic:** prod5-golden-005
+- **Render package:** rp_g005_prod_836a00714bdc5b8568be8730
+- **Final MP4:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-005/amynest-google-golden-005.mp4
+- **QUALITY_REPORT.json:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-005/QUALITY_REPORT.json
 
 ## Evidence rule
 
@@ -51,21 +51,21 @@ Validator: v2.0.0
 
 ## Evidence gates
 
-- [PASS] `evidence_integrity` conf=1 (probeComplete=true, fileSizeBytes=6874201, workDir=/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-002/evidence/evidence)
-- [PASS] `audio` conf=0.85 (hasAudioStream=true, meanVolumeDb=-21.4, maxVolumeDb=-5.3, silenceRatio=0)
-- [PASS] `subtitles` conf=0.8 (subtitleCoverage=1, transcriptOverlap=0.358974358974359, ocrCaptionChars=1127)
-- [PASS] `end_card` conf=0.85 (appIconSimilarity=0.7770987741018972, endCardPurpleRatio=0.6455078125, googlePlayTextDetected=true, appStoreTextDetected=true)
-- [PASS] `brand_detection` conf=0.8 (logoTextDetected=true, appIconSimilarity=0.7770987741018972, brandVisibleSeconds=2)
+- [PASS] `evidence_integrity` conf=1 (probeComplete=true, fileSizeBytes=7648113, workDir=/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-005/evidence/evidence)
+- [PASS] `audio` conf=0.85 (hasAudioStream=true, meanVolumeDb=-20, maxVolumeDb=-5.4, silenceRatio=0)
+- [PASS] `subtitles` conf=0.8 (subtitleCoverage=1, transcriptOverlap=0.3146067415730337, ocrCaptionChars=820)
+- [PASS] `end_card` conf=0.85 (appIconSimilarity=0.7968721302140511, endCardPurpleRatio=0.634765625, googlePlayTextDetected=true, appStoreTextDetected=true)
+- [PASS] `brand_detection` conf=0.8 (logoTextDetected=true, appIconSimilarity=0.7968721302140511, brandVisibleSeconds=2)
 - [PASS] `cta_detection` conf=0.85 (ctaTextDetected=true, ctaVisibleSeconds=2.5)
-- [PASS] `character_consistency` conf=0.75 (bestSimilarity=0.9022869635338278, bestCharacterId=amy-boy, samplesCompared=10, similarity.amy-ai=0.8270197012947552)
-- [PASS] `visual_quality` conf=0.9 (width=1080, height=1920, blackSeconds=0, meanLuma=143.94425455729166)
-- [PASS] `motion_quality` conf=0.75 (sceneChangeCount=14, fps=30, freezeSeconds=0)
-- [PASS] `text_readability` conf=0.7 (ocrReadableChars=2935, ocrFrames=32)
+- [PASS] `character_consistency` conf=0.75 (bestSimilarity=0.9381459617848674, bestCharacterId=amy-boy, samplesCompared=10, similarity.amy-ai=0.7376120792124491)
+- [PASS] `visual_quality` conf=0.9 (width=1080, height=1920, blackSeconds=0, meanLuma=123.15535481770833)
+- [PASS] `motion_quality` conf=0.75 (sceneChangeCount=10, fps=30, freezeSeconds=0)
+- [PASS] `text_readability` conf=0.7 (ocrReadableChars=2467, ocrFrames=32)
 - [PASS] `story_quality` conf=0.7 (beginning=true, conflict=true, resolution=true, cta=true)
 - [PASS] `muted_story` conf=0.75 (captionsReadableMuted=true, visualProgression=true, ctaVisibleMuted=true, visualContinuity=true)
 - [PASS] `brand_mention` conf=0.8 (visualMention=true, narrationPresent=true, naturalInVoiceScript=true)
 - [PASS] `compliance` conf=0.9 (placeholderDetected=false, todoDetected=false, debugOverlayDetected=false, stockWatermarkDetected=false)
-- [PASS] `performance` conf=0.95 (fileSizeBytes=6874201, durationSec=21, hasAudioStream=true, corrupt=false)
+- [PASS] `performance` conf=0.95 (fileSizeBytes=7648113, durationSec=21, hasAudioStream=true, corrupt=false)
 - [PASS] `metadata` conf=1 (titlePresent=true, descriptionPresent=true, mediaGatesBlocking=0, renderSubtitleModeClaim=burned-in)
 
 ## Improvement Suggestions

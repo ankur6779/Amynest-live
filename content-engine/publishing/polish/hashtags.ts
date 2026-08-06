@@ -20,6 +20,18 @@ const TRENDING = [
 
 /** Generate primary / trending / topic hashtags (combined max 15). */
 export function buildHashtagPack(content: ContentPackage): HashtagPack {
+  // Prefer script-diversity hashtags already on the package when present.
+  const diversified = uniqueHashes(
+    content.hashtags.map((s) => toHash(s)).filter(Boolean),
+  );
+  if (diversified.length >= 6) {
+    const primary = diversified.slice(0, 5);
+    const topic = diversified.slice(5, 11);
+    const trending = TRENDING.filter((t) => !primary.includes(t)).slice(0, 3);
+    const all = uniqueHashes([...primary, ...topic, ...trending]).slice(0, 15);
+    return { primary, trending, topic, all };
+  }
+
   const topicSeeds = [
     content.topic.category,
     ...content.topic.keywords.slice(0, 4),

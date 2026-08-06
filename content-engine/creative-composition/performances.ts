@@ -102,8 +102,22 @@ function environmentLine(shot: CompositionShotPlan): string {
       return "bright safe playroom, soft toys blurred, cheerful daylight";
     case "magic-learning-world":
       return "gentle storybook learning nook with soft purple bokeh — keep grounded, avoid fantasy overload";
+    case "fridge-magnet-wall":
+      return "kitchen fridge letter-magnet wall, warm home light, phonics cold-open energy";
+    case "reading-corner":
+      return "cozy reading corner with cushion and bookshelf, warm lamp, story calm";
+    case "homework-corner":
+      return "compact homework corner with calendar and pencil cup, soft desk lamp";
+    case "bedroom-night":
+      return "child bedroom at night with soft fairy lights and window star glow";
+    case "astro-observatory":
+      return "night balcony observatory vibe with star chart and soft telescope silhouette";
+    case "garden":
+      return "small family garden with soft daylight and green bokeh";
+    case "mirror-practice-nook":
+      return "bedroom mirror practice nook for gentle speech practice, soft lamp";
     default:
-      return "premium Pixar family home environment";
+      return `${shot.environment.replace(/-/g, " ")} — premium Pixar family environment, soft cinematic light, uncluttered`;
   }
 }
 

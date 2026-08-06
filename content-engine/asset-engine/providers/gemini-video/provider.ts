@@ -72,10 +72,8 @@ export class GeminiVideoProvider extends BaseAssetProvider {
 
   constructor(options: GeminiVideoProviderOptions = {}) {
     super();
-    this.settings = {
-      ...DEFAULT_GEMINI_VIDEO_SETTINGS,
-      ...(options.settings ?? {}),
-    };
+    // Merge env (AMYNEST_VEO_TIMEOUT_MS / MAX_POLLS / etc.) — do not ignore ops knobs.
+    this.settings = resolveGeminiVideoSettings(options.settings);
     const envName = this.settings.apiKeyEnv || "GEMINI_API_KEY";
     this.apiKey =
       options.apiKey !== undefined

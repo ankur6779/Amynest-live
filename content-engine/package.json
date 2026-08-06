@@ -46,6 +46,8 @@
     "./content-intelligence": "./content-intelligence/index.ts",
     "./launch-validator": "./launch-validator/index.ts",
     "./continuous-learning": "./continuous-learning/index.ts",
+    "./thumbnail-learning-engine": "./thumbnail-learning-engine/index.ts",
+    "./content-diversity": "./content-diversity/index.ts",
     "./creative-composition": "./creative-composition/index.ts"
   },
   "scripts": {
@@ -69,7 +71,8 @@
     "amynest:test-gemini": "node --import tsx/esm ./cli/amynest.ts test-gemini",
     "amynest:golden-scripts": "node --import tsx/esm ./golden-scripts/generate.ts",
     "amynest:intelligence": "node --import tsx/esm ./cli/amynest.ts intelligence",
-    "amynest:learn": "node --import tsx/esm ./cli/amynest.ts learn"
+    "amynest:learn": "node --import tsx/esm ./cli/amynest.ts learn",
+    "amynest:learn-thumbnails": "node --import tsx/esm ./thumbnail-learning-engine/cli.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",

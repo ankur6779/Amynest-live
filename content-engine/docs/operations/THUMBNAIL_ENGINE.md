@@ -54,4 +54,7 @@ node --import tsx/esm content-engine/thumbnail-engine/cli.ts \
 
 `pnpm run youtube:upload` remains additive and picks up generated `thumbnail.jpg` + live cover.
 
-See also: [THUMBNAIL_INTELLIGENCE_REPORT.md](./THUMBNAIL_INTELLIGENCE_REPORT.md)
+See also:
+
+- [THUMBNAIL_INTELLIGENCE_REPORT.md](./THUMBNAIL_INTELLIGENCE_REPORT.md)
+- [THUMBNAIL_LEARNING_ENGINE.md](./THUMBNAIL_LEARNING_ENGINE.md) — CTR feedback loop (additive; does not modify this engine)

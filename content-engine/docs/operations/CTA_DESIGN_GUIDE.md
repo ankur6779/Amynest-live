@@ -93,8 +93,15 @@ The end card should feel like a **premium mobile app advertisement** (Duolingo /
 
 | File | Role |
 |---|---|
-| `creative-composition/cta-premium.ts` | Plate builder + CTA animation |
-| `operations/rerender-cta-only.ts` | Rebuild CTA clip only → remux → certify → UNLISTED upload |
+| `creative-composition/cta-premium.ts` | **Only** plate builder + CTA animation (keyed Amy, Shorts-safe) |
+| `creative-composition/compose.ts` | Must call `writePremiumAdCtaPlate` — never circular-medallion plates |
+| `operations/rerender-cta-only.ts` / `rerender-cta-g003.ts` | Rebuild CTA clip only → remux → certify → UNLISTED upload |
+
+### Permanent bugs fixed (2026-08-01)
+
+1. **Checkerboard Amy** — old compose path used a circular crop with broken gray keying (dark 48–72 checkers never removed). Now flood-keys `amy-ai-base.png` onto the purple stage.
+2. **Shorts chrome collision** — no caption-pill overlay on the end card; no aggressive Y-crop; badges sit above the bottom chrome band.
+3. **Stacked badges** — store badges are side-by-side, not vertical stacks under YT metadata.
 
 ### Rebuild command
 

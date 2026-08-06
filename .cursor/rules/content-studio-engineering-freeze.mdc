@@ -1,0 +1,42 @@
+---
+description: Content Studio engineering freeze — no new Directors/Engines/Memory/Validators/Intelligence; execution only
+globs: content-engine/**,scripts/youtube-*.mjs,scripts/daily-promo-pipeline.mjs,scripts/promo-video-calendar.json
+alwaysApply: true
+---
+
+# Content Studio — ENGINEERING FREEZE (effective immediately)
+
+**Status:** Feature complete · architecture frozen · default decision is **REJECT**.
+
+Full protocol: `content-engine/docs/operations/CONTENT_STUDIO_ENGINEERING_FREEZE.md`
+
+## Forbidden (reject by default)
+
+Do **not** add:
+
+- New Director
+- New Engine
+- New Memory Layer
+- New Validator
+- New Intelligence Layer
+
+Do **not** redesign Content Studio architecture, “stack” new creative layers, or invent parallel pipelines.
+
+## Allowed only if at least one is true
+
+1. Fixes a **production bug**
+2. Improves a **measurable KPI**: CTR · Retention · Watch Time · Installs · Subscriptions
+3. Reduces **infrastructure cost**
+4. Improves **generation speed**
+
+Otherwise: **REJECT**.
+
+## Focus (execution loop)
+
+**Publish → Measure → Learn → Optimize → Repeat**
+
+Prefer: running production, ingesting real Analytics, tuning existing knobs, fixing failures, cutting cost/latency.
+
+## PR / change gate
+
+If a change touches `content-engine/` architecture-shaped surfaces, the PR must state which allow-list item (1–4) it satisfies and the metric/bug/cost/speed evidence. No evidence → do not implement.

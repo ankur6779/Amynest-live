@@ -12,7 +12,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GeminiVideoProvider } from "../asset-engine/providers/gemini-video/index.js";
 import { resolveBrandAssetPath } from "../brand/assets-resolver.js";
-import { getBrandIdentityKit } from "../brand/identity.js";
 import { isCharacterMemoryEnabled } from "../character-memory-engine/engine.js";
 import {
   attachLastFrameMemory,
@@ -22,6 +21,10 @@ import type { GenerationSeed } from "../character-memory-engine/seed.js";
 import type { SceneCharacterMemory } from "../character-memory-engine/types.js";
 import type { SceneStoryMemory } from "../story-memory-engine/types.js";
 import type { ContentPackage } from "../types/content-package.js";
+import {
+  animatePremiumCta,
+  writePremiumAdCtaPlate,
+} from "./cta-premium.js";
 import { writeIdentityKeyframe } from "./keyframes.js";
 import { performancePrompt } from "./performances.js";
 import { planCinematicShort } from "./plan.js";
@@ -71,87 +74,6 @@ img.save(${JSON.stringify(path)})
   execFileSync("python3", ["-c", script], { stdio: ["ignore", "pipe", "pipe"] });
 }
 
-function writePremiumCtaPlatePng(options: {
-  path: string;
-  playBadge: string;
-  appBadge: string;
-  logoPath: string;
-  amyAiPath: string;
-  headline: string;
-  subhead: string;
-}): void {
-  const script = `
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
-import numpy as np
-W,H=1080,1920
-base=Image.new("RGB",(W,H),(70,30,168))
-px=base.load()
-for y in range(H):
-    t=y/H
-    r=int(28+(90-28)*(1-t*0.85)); g=int(12+(40-12)*(1-t)); b=int(90+(210-90)*(0.55+0.35*(1-abs(t-0.4))))
-    for x in range(W):
-        dx=abs(x-W/2)/(W/2); f=1-0.18*dx*dx
-        px[x,y]=(max(20,min(120,int(r*f))), max(8,min(55,int(g*f))), max(90,min(230,int(b*f))))
-canvas=base.convert("RGBA")
-orb=Image.new("RGBA",(W,H),(0,0,0,0)); od=ImageDraw.Draw(orb)
-od.ellipse((80,40,1000,620), fill=(201,182,255,48))
-canvas=Image.alpha_composite(canvas, orb)
-draw=ImageDraw.Draw(canvas)
-try:
-    head=ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 58)
-    sub=ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 34)
-    store=ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 44)
-    tiny=ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 30)
-except Exception:
-    head=sub=store=tiny=ImageFont.load_default()
-
-def center(y, text, font, fill):
-    bbox=draw.textbbox((0,0), text, font=font)
-    tw=bbox[2]-bbox[0]
-    draw.text(((W-tw)//2, y), text, fill=fill, font=font)
-
-logo=Image.open(${JSON.stringify(options.logoPath)}).convert("RGBA")
-logo.thumbnail((200,200))
-lx=(W-logo.width)//2
-canvas.paste(logo, (lx, 90), logo)
-center(320, ${JSON.stringify(options.headline)}, head, "#FFFFFF")
-center(400, ${JSON.stringify(options.subhead)}, sub, "#F6D57A")
-
-amy=Image.open(${JSON.stringify(options.amyAiPath)}).convert("RGBA")
-# Drop baked checkerboard matte before circular crop
-aa=np.array(amy)
-chk=((aa[:,:,0]>90)&(aa[:,:,0]<190)&(aa[:,:,1]>90)&(aa[:,:,1]<190)&(aa[:,:,2]>90)&(aa[:,:,2]<190)
-     & (np.abs(aa[:,:,0].astype(int)-aa[:,:,1].astype(int))<18)
-     & (np.abs(aa[:,:,1].astype(int)-aa[:,:,2].astype(int))<18))
-aa[:,:,3]=np.where(chk, 0, aa[:,:,3])
-amy=Image.fromarray(aa, "RGBA")
-amy=amy.resize((520,520), Image.Resampling.LANCZOS)
-keyed=amy.split()[3]
-mask=Image.new("L", amy.size, 0); md=ImageDraw.Draw(mask)
-md.ellipse((20,20,amy.width-20,amy.height-20), fill=255)
-mask=mask.filter(ImageFilter.GaussianBlur(12))
-amy.putalpha(ImageChops.multiply(keyed, mask))
-canvas.paste(amy, (W-amy.width-30, 460), amy)
-
-def load_badge(path, tw=720):
-    im=Image.open(path).convert("RGBA")
-    im.thumbnail((tw, 200), Image.Resampling.LANCZOS)
-    return im
-
-play=load_badge(${JSON.stringify(options.playBadge)}, 760)
-astore=load_badge(${JSON.stringify(options.appBadge)}, 760)
-by=1120
-canvas.paste(play, ((W-play.width)//2, by), play)
-canvas.paste(astore, ((W-astore.width)//2, by+play.height+24), astore)
-# Explicit OCR-readable store names (validators scan end-card frames)
-center(by+play.height+astore.height+36, "Google Play", store, "#FFFFFF")
-center(by+play.height+astore.height+90, "App Store", store, "#FFFFFF")
-center(by+play.height+astore.height+150, "www.amynest.in", tiny, "#C9B6FF")
-canvas.convert("RGB").save(${JSON.stringify(options.path)})
-`;
-  execFileSync("python3", ["-c", script], { stdio: ["ignore", "pipe", "pipe"] });
-}
-
 function burnCaption(options: {
   videoPath: string;
   captionPng: string;
@@ -185,15 +107,16 @@ function burnCaption(options: {
 function burnCtaPerformance(options: {
   veoPath: string;
   ctaPlatePath: string;
-  captionPng: string;
   outputPath: string;
   workDir: string;
   seconds: number;
 }): void {
-  // 1.5s live Amy AI wave + 2.5s solid premium end card (OCR-readable badges/text).
+  // 1.5s live Amy AI wave + solid premium end card.
+  // Plate is self-contained (logo, Amy keyed, phone, badges) — never overlay
+  // caption pills or aggressive Y-crop (those caused Shorts chrome collisions).
   const wave = join(options.workDir, "cta-wave.mp4");
   const card = join(options.workDir, "cta-card.mp4");
-  const waveSec = Math.min(1.5, options.seconds - 2.5);
+  const waveSec = Math.min(1.5, Math.max(0.8, options.seconds - 2.5));
   const cardSec = options.seconds - waveSec;
   ffmpeg([
     "-i",
@@ -211,32 +134,11 @@ function burnCtaPerformance(options: {
     "yuv420p",
     wave,
   ]);
-  ffmpeg([
-    "-loop",
-    "1",
-    "-t",
-    String(cardSec),
-    "-i",
-    options.ctaPlatePath,
-    "-loop",
-    "1",
-    "-t",
-    String(cardSec),
-    "-i",
-    options.captionPng,
-    "-filter_complex",
-    `[0:v]scale=1300:2310:force_original_aspect_ratio=increase,crop=1080:1920:x='min(180,22*t)':y='min(120,18*t)',fps=30,format=yuv420p[base];[1:v]format=rgba[cap];[base][cap]overlay=(W-w)/2:H-h-120:format=auto,format=yuv420p[v]`,
-    "-map",
-    "[v]",
-    "-an",
-    "-t",
-    String(cardSec),
-    "-c:v",
-    "libx264",
-    "-pix_fmt",
-    "yuv420p",
-    card,
-  ]);
+  animatePremiumCta({
+    platePath: options.ctaPlatePath,
+    outputPath: card,
+    seconds: cardSec,
+  });
   const list = join(options.workDir, "cta-concat.txt");
   writeFileSync(
     list,
@@ -269,6 +171,8 @@ export interface ComposeCinematicInput {
   veoModel?: string;
   totalDurationSeconds?: number;
   resolution?: "720p" | "1080p";
+  /** Optional pre-gated diversity plan (skips re-planning). */
+  plan?: CreativeCompositionPlan;
 }
 
 export interface ComposeCinematicResult {
@@ -309,10 +213,9 @@ export async function composeCinematicVisuals(
   mkdirSync(memoryDir, { recursive: true });
   const memoryEnabled = isCharacterMemoryEnabled();
 
-  const plan = planCinematicShort(
-    input.content,
-    input.totalDurationSeconds ?? 21,
-  );
+  const plan =
+    input.plan ??
+    planCinematicShort(input.content, input.totalDurationSeconds ?? 21);
 
   const veoModel = input.veoModel ?? "veo-3.1-fast-generate-preview";
   const veo = new GeminiVideoProvider({
@@ -324,10 +227,16 @@ export async function composeCinematicVisuals(
       durationSeconds: 6,
       resolution: input.resolution ?? "720p",
       personGeneration: "allow_all",
+      // Flaky Google ops: allow longer poll window (env can override).
+      timeoutMs: process.env.AMYNEST_VEO_TIMEOUT_MS
+        ? Number(process.env.AMYNEST_VEO_TIMEOUT_MS)
+        : 1_200_000,
+      maxPollAttempts: process.env.AMYNEST_VEO_MAX_POLLS
+        ? Number(process.env.AMYNEST_VEO_MAX_POLLS)
+        : 300,
     },
   });
 
-  const kit = getBrandIdentityKit();
   const officialDir = join(
     dirname(fileURLToPath(import.meta.url)),
     "..",
@@ -340,6 +249,8 @@ export async function composeCinematicVisuals(
   if (!existsSync(playBadge) || !existsSync(appBadge)) {
     throw new Error("Official CTA store badges missing under brand/assets/official/");
   }
+  void playBadge;
+  void appBadge;
 
   const shots: ComposedShotArtifact[] = [];
   const clipPaths: string[] = [];
@@ -426,20 +337,13 @@ export async function composeCinematicVisuals(
 
     if (shot.kind === "cta-overlay") {
       const plate = join(input.workDir, "cta-premium-plate.png");
-      writePremiumCtaPlatePng({
-        path: plate,
-        playBadge,
-        appBadge,
-        logoPath: kit.appIconAsset,
-        amyAiPath: keyframePath,
-        headline: "Download AmyNest AI",
-        subhead: "Start Your Child's Learning Journey",
-      });
+      // Official premium plate (flood-key Amy, side-by-side badges, Shorts-safe).
+      // Never use the old circular-medallion path (baked checkerboard leaked).
+      writePremiumAdCtaPlate({ path: plate });
       ctaPlatePath = plate;
       burnCtaPerformance({
         veoPath: rawVeo,
         ctaPlatePath: plate,
-        captionPng,
         outputPath: outClip,
         workDir: input.workDir,
         seconds: shot.durationSeconds,
@@ -450,7 +354,7 @@ export async function composeCinematicVisuals(
         keyframePath,
         provider: "cta-overlay",
         model: modelUsed,
-        detail: "Veo Amy AI wave + solid OCR-readable premium end card",
+        detail: "Veo Amy AI wave + premium keyed end card (no caption overlay)",
         imageToVideo: true,
       });
     } else {

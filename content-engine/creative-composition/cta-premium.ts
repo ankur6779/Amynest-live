@@ -78,7 +78,7 @@ from collections import deque
 W,H=1080,1920
 
 def key_checkerboard(im):
-    """Remove dark-gray baked checkerboard via border-color flood; keep Amy AI."""
+    """Remove dark-gray baked checkerboard via border flood + neutral matte; keep Amy AI."""
     from collections import Counter
     rgb=np.array(im.convert("RGB"), dtype=np.float32)
     h,w,_=rgb.shape
@@ -88,10 +88,23 @@ def key_checkerboard(im):
     ], axis=0)
     rounded=(border/12.0).round()*12.0
     keys=[tuple(map(int,x)) for x in rounded]
-    common=[np.array(c, dtype=np.float32) for c,_ in Counter(keys).most_common(4)]
+    common=[np.array(c, dtype=np.float32) for c,_ in Counter(keys).most_common(6)]
+    # Official base uses ~48/60/72 gray checkers — match those neutrals too.
+    common.extend([
+        np.array([48,48,48], dtype=np.float32),
+        np.array([60,60,60], dtype=np.float32),
+        np.array([72,72,72], dtype=np.float32),
+        np.array([96,96,96], dtype=np.float32),
+        np.array([128,128,128], dtype=np.float32),
+    ])
     def near_bg(y,x):
         pix=rgb[y,x]
-        return min(float(np.linalg.norm(pix-c)) for c in common) < 28.0
+        # Neutral mid/dark gray matte only (checker tiles). Never key Amy's white body.
+        mean=float(pix.mean())
+        chroma=float(pix.max()-pix.min())
+        if chroma < 18.0 and 40.0 <= mean <= 140.0:
+            return True
+        return min(float(np.linalg.norm(pix-c)) for c in common) < 36.0
     vis=np.zeros((h,w),dtype=bool)
     q=deque()
     for x in range(w):
@@ -240,13 +253,13 @@ sh=sh.filter(ImageFilter.GaussianBlur(8))
 canvas.paste(sh, (amy_x+amy.width//8, amy_y+amy.height-18), sh)
 canvas.paste(amy, (amy_x, amy_y), amy)
 
-# --- Bottom copy (OCR-critical: large, stroked, high contrast) ---
-# Keep copy ABOVE the push-in crop danger zone; large enough for tesseract.
-center_stroke(draw, 1235, "Download AmyNest AI", head, "#FFFFFF", "#1A0A40", 5)
-center_stroke(draw, 1318, "Start Your Child's Learning Journey", sub, "#F6D57A", "#1A0A40", 3)
+# --- Bottom copy (OCR-critical) — Shorts-safe: keep above YT chrome (~bottom 280px) ---
+# Do NOT stack redundant store labels under badges (they collide with Shorts UI).
+center_stroke(draw, 1188, "Download AmyNest AI", head, "#FFFFFF", "#1A0A40", 5)
+center_stroke(draw, 1270, "Start Your Child's Learning Journey", sub, "#F6D57A", "#1A0A40", 3)
 
-# --- Bottom row: official Google Play + App Store badges (pre-cleaned PNGs) ---
-def load_official_badge(path, target_h=124):
+# --- Bottom row: official Google Play + App Store badges side-by-side ---
+def load_official_badge(path, target_h=118):
     im=Image.open(path).convert("RGBA")
     # Assets are already matte-cleaned; only scale — do not re-key white glyphs
     if im.height != target_h:
@@ -254,8 +267,8 @@ def load_official_badge(path, target_h=124):
         im=im.resize((tw, target_h), Image.Resampling.LANCZOS)
     return im
 
-play=load_official_badge(${JSON.stringify(playBadge)}, 124)
-astore=load_official_badge(${JSON.stringify(appBadge)}, 124)
+play=load_official_badge(${JSON.stringify(playBadge)}, 118)
+astore=load_official_badge(${JSON.stringify(appBadge)}, 118)
 # Match heights exactly
 target_h=max(play.height, astore.height)
 def pad_h(im, th):
@@ -273,12 +286,14 @@ if total > 1000:
     astore=astore.resize((max(1,int(astore.width*scale)), max(1,int(astore.height*scale))), Image.Resampling.LANCZOS)
     total=play.width+astore.width+gap
 bx=(W-total)//2
-by=1385
+# Badges end ~1455 — leaves ~465px clear for YouTube Shorts chrome + handle
+by=1335
 for ox,im in ((bx,play),(bx+play.width+gap,astore)):
     canvas.paste(im, (ox, by), im)
 
-center_stroke(draw, by+target_h+20, "Google Play   ·   App Store", store, "#F0E8FF", "#1A0A40", 2)
-center_stroke(draw, by+target_h+58, "amynest.in", tiny, "#E0D2FF", "#1A0A40", 2)
+# OCR-safe store words (compact, above chrome) — not stacked under YT metadata
+center_stroke(draw, by+target_h+14, "Google Play  ·  App Store", store, "#F0E8FF", "#1A0A40", 2)
+center_stroke(draw, by+target_h+48, "amynest.in", tiny, "#E0D2FF", "#1A0A40", 2)
 
 canvas.convert("RGB").save(${JSON.stringify(options.path)}, quality=95)
 print("ok", ${JSON.stringify(options.path)})

@@ -10,7 +10,7 @@ import { dirname } from "node:path";
 import { resolveBrandAssetPath } from "../brand/assets-resolver.js";
 import type { BrandCharacterId, EnvironmentId } from "./types.js";
 
-const ENV_RGB: Record<EnvironmentId, [number, number, number]> = {
+const ENV_RGB: Partial<Record<EnvironmentId, [number, number, number]>> = {
   "kitchen-table": [240, 220, 200],
   "child-bedroom": [230, 220, 245],
   "study-desk": [235, 228, 245],
@@ -18,7 +18,27 @@ const ENV_RGB: Record<EnvironmentId, [number, number, number]> = {
   playroom: [245, 230, 220],
   "magic-learning-world": [60, 35, 120],
   "cta-stage": [70, 30, 168],
+  "dining-table": [235, 215, 195],
+  "homework-corner": [232, 225, 245],
+  "reading-corner": [225, 218, 240],
+  library: [210, 220, 235],
+  school: [230, 235, 245],
+  garden: [210, 235, 210],
+  park: [200, 230, 200],
+  "bedroom-night": [40, 30, 70],
+  "bedroom-morning": [245, 230, 220],
+  "morning-breakfast": [245, 225, 200],
+  "rainy-window": [180, 190, 210],
+  "space-world": [30, 25, 70],
+  "astro-observatory": [35, 30, 75],
+  "healthy-kitchen": [235, 240, 220],
+  "fridge-magnet-wall": [240, 225, 210],
+  "mirror-practice-nook": [230, 220, 235],
 };
+
+function envRgb(env: EnvironmentId): [number, number, number] {
+  return ENV_RGB[env] ?? [235, 228, 245];
+}
 
 export function resolveCharacterBase(character: BrandCharacterId): string {
   if (character === "amy-ai") return resolveBrandAssetPath("amyAiBase");
@@ -40,7 +60,7 @@ export function writeIdentityKeyframe(options: {
   if (!existsSync(basePath)) {
     throw new Error(`Official character base missing: ${basePath}`);
   }
-  const [r, g, b] = ENV_RGB[options.environment];
+  const [r, g, b] = envRgb(options.environment);
   const script = `
 from PIL import Image, ImageDraw, ImageFilter
 W,H=1080,1920

@@ -10,17 +10,23 @@ export type AmyNestPlaylistName =
   | "Study Zone"
   | "Speech"
   | "Health"
+  | "Health Lab"
   | "Games"
   | "Parent Tips"
-  | "Routine";
+  | "Routine"
+  | "Reading"
+  | "Astro";
 
 const PLAYLIST_ENV: Record<AmyNestPlaylistName, string> = {
   "Study Zone": "YOUTUBE_PLAYLIST_STUDY_ZONE",
   Speech: "YOUTUBE_PLAYLIST_SPEECH",
   Health: "YOUTUBE_PLAYLIST_HEALTH",
+  "Health Lab": "YOUTUBE_PLAYLIST_HEALTH_LAB",
   Games: "YOUTUBE_PLAYLIST_GAMES",
   "Parent Tips": "YOUTUBE_PLAYLIST_PARENT_TIPS",
   Routine: "YOUTUBE_PLAYLIST_ROUTINE",
+  Reading: "YOUTUBE_PLAYLIST_READING",
+  Astro: "YOUTUBE_PLAYLIST_ASTRO",
 };
 
 const CATEGORY_MAP: Partial<Record<TopicCategory, AmyNestPlaylistName>> = {
@@ -60,15 +66,19 @@ export function resolvePlaylistName(content: ContentPackage): AmyNestPlaylistNam
     .join(" ")
     .toLowerCase();
 
-  if (/\bstudy\s*zone\b|\blesson\b|\bworksheet\b|\blearning\b|\bphonics\b|\breading\b/.test(hay)) {
+  if (/\bphonic|letter sound|cvc\b/.test(hay)) return "Study Zone";
+  if (/\bread(ing)?\b|storybook|kids books\b/.test(hay)) return "Reading";
+  if (/\bstudy\s*zone\b|\blesson\b|\bworksheet\b|\blearning\b/.test(hay)) {
     return "Study Zone";
   }
-  if (/\bspeech\b|\blanguage\b|\bpronunciation\b|\bstutter\b|\bwords?\b/.test(hay)) {
+  if (/\bspeech\b|\blanguage\b|\bpronunciation\b|\bstutter\b/.test(hay)) {
     return "Speech";
   }
-  if (/\bhealth\b|\bnutrition\b|\bsleep\b|\bvaccine\b|\bfever\b|\bgrowth\b/.test(hay)) {
-    return "Health";
+  if (/\bastro|star|constellation|space for kids\b/.test(hay)) return "Astro";
+  if (/\bhealth lab\b|\bnutrition\b|\bsleep\b|\bvaccine\b|\bfever\b|\bgrowth\b|\bhealthy kids\b/.test(hay)) {
+    return "Health Lab";
   }
+  if (/\bhealth\b/.test(hay)) return "Health";
   if (/\bgames?\b|\bplay\b|\bpuzzle\b|\bactivity\b/.test(hay)) {
     return "Games";
   }
