@@ -7,18 +7,20 @@ export function isAmyRuntimeInspectorBuildEnabled(): boolean {
   return Boolean(import.meta.env?.DEV);
 }
 
-/** Query / localStorage opt-in while in DEV. */
+/**
+ * Explicit opt-in only while in DEV.
+ * Wave E: never auto-enable on parent paths (default OFF).
+ */
 export function isAmyRuntimeInspectorEnabled(): boolean {
   if (!isAmyRuntimeInspectorBuildEnabled()) return false;
-  if (typeof window === "undefined") return true;
+  if (typeof window === "undefined") return false;
   try {
     const params = new URLSearchParams(window.location.search);
     if (params.get("runtimeInspector") === "0") return false;
     if (params.get("runtimeInspector") === "1") return true;
-    if (params.get("debug") === "1" || params.get("dev") === "1") return true;
     return localStorage.getItem("__amynest_runtime_inspector") === "1";
   } catch {
-    return true;
+    return false;
   }
 }
 
