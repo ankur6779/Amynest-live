@@ -39,6 +39,22 @@ describe("V2 feature flags (S0-T01)", () => {
       "progressive_reveal",
       "premium_v2",
       "analytics_v2_core",
+      "amy_decision_engine_v2",
+      "amy_decision_stability_v2",
+      "amy_decision_history_v2",
+      "amy_decision_cooldown_v2",
+      "amy_attention_budget_v2",
+      "amy_registry_adapters_v2",
+      "amy_decision_bridge_v2",
+      "amy_brain_shadow_validation_v2",
+      "amy_today_brain_adapter_v2",
+      "amy_today_recommendation_adapter_v2",
+      "amy_today_recommendation_resolver_v2",
+      "amy_today_brain_hero_v2",
+      "amy_experience_resolver_v2",
+      "amy_speech_experience_pack_v2",
+      "amy_experience_template_engine_v2",
+      "amy_sleep_experience_pack_v2",
     ]);
   });
 

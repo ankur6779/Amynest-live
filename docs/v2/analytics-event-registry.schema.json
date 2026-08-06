@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://amynest.in/schemas/analytics-event-registry.json",
+  "title": "AmyNest V2 Analytics Event Registry",
+  "type": "object",
+  "required": ["version", "events"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "eventName",
+          "description",
+          "owner",
+          "layer",
+          "status",
+          "eventVersion",
+          "onceKeyTemplate",
+          "requiredPayloadKeys",
+          "firebase",
+          "googleAds",
+          "internal",
+          "canOptimize"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "eventName": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$"
+          },
+          "description": { "type": "string", "minLength": 1 },
+          "owner": { "type": "string", "minLength": 1 },
+          "layer": {
+            "type": "string",
+            "enum": ["product", "business", "commerce", "ads", "system"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "reserved", "deprecated", "forbidden"]
+          },
+          "eventVersion": { "type": "integer", "minimum": 1 },
+          "onceKeyTemplate": { "type": "string", "minLength": 1 },
+          "requiredPayloadKeys": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "firebase": { "type": "boolean" },
+          "googleAds": { "type": "boolean" },
+          "internal": { "type": "boolean" },
+          "canOptimize": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

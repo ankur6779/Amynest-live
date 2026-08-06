@@ -1,0 +1,42 @@
+---
+description: Amy OS v1.0 Founder Architecture Lock — extend via Experience Definitions or Surface Integrations only
+alwaysApply: true
+---
+
+# Amy OS v1.0 — Founder Architecture Lock
+
+Amy OS v1.0 is **complete**. Future work must **extend** the system. It must **not** redesign it.
+
+## Forbidden without explicit Founder Architecture Review
+
+Do **not** introduce:
+
+- New engines
+- New registries
+- New pipelines
+- New abstraction layers
+- New ownership models
+
+## Allowed extension paths only
+
+All future functionality must be implemented as one of:
+
+1. **Experience Definitions** — register definitions via the frozen Experience Template Engine (`src/v2/experience-template/`) and Experience Packs pattern (`src/v2/experience-packs/`). Prefer definitions over handwritten packs.
+2. **Surface Integrations** — bind frozen Brain / Experience outputs into Legacy surfaces (Today, Coach, Ask Amy, For Child) without changing ownership. Surfaces remain Legacy owners of UI unless a Founder Review says otherwise.
+
+## Frozen stack (do not replace)
+
+Treat as frozen infrastructure to **use**, not rewrite:
+
+- Amy Memory → Context → Decision → Stability → History → Cooldown → Attention Budget
+- Registry Adapters → Decision Bridge → Shadow Validation
+- Today Brain Adapter / Recommendation Adapter / Resolver / Hero Activation Gate
+- Experience Resolver → Experience Template Engine → Speech Experience Pack
+
+## Defaults
+
+- Feature flags for Amy OS V2 slices stay **OFF** until an explicit bind sprint.
+- No new Brain / Decision logic unless a Founder Architecture Review authorizes it.
+- No UI redesign disguised as “architecture cleanup.”
+
+Only an **explicit Founder Architecture Review** may modify this architecture.

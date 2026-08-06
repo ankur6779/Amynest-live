@@ -1,0 +1,20 @@
+/**
+ * freezeKnowledge — deep-freeze a KnowledgeDefinition (or any structured value).
+ * Pure utility. No ownership. No registry.
+ */
+
+export function freezeKnowledge<T>(value: T): T {
+  if (value === null || typeof value !== "object") return value;
+  if (Object.isFrozen(value)) return value;
+
+  if (Array.isArray(value)) {
+    for (const item of value) freezeKnowledge(item);
+    return Object.freeze(value) as T;
+  }
+
+  const obj = value as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    freezeKnowledge(obj[key]);
+  }
+  return Object.freeze(value);
+}

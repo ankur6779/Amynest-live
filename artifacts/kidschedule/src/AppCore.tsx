@@ -48,6 +48,7 @@ import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { SafeRoutePage } from "@/components/safe-route-page";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { AppSuspenseFallback } from "@/components/app-suspense-fallback";
 import { withLearningJourneyGate } from "@/components/learning-journey-gate";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
@@ -77,6 +78,14 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
 import { markAppCoreReady } from "@/lib/startup-orchestrator";
 import { shouldEnterFrontDoor } from "@/v2/entry/should-enter-front-door";
+import {
+  isGuestV2AskAmyAccessAllowed,
+  isGuestV2ForChildAccessAllowed,
+  isGuestV2PremiumAccessAllowed,
+  isGuestV2TodayAccessAllowed,
+  shouldLandGuestOnToday,
+  shouldShowGuestFrontDoor,
+} from "@/v2/entry/guest-access";
 import { shouldLandOnTodayHome } from "@/v2/entry/v2-shell-flags";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
 import { AnalyticsProvider } from "@/lib/analytics/analytics-provider";
@@ -150,8 +159,18 @@ const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const FrontDoorPage = lazyPage(() => import("@/v2/front-door/FrontDoorPage"));
 /** V2 shells — Sprint 2; self-redirect when their flags are off. */
 const TodayPage = lazyPage(() => import("@/v2/today/TodayPage"));
+const TodayMissionPlayPage = lazyPage(
+  () => import("@/v2/today/mission/MissionPlayPage"),
+);
+const CoachDiscoveryPage = lazyPage(
+  () => import("@/v2/coach-discovery/CoachDiscoveryPage"),
+);
 const AskAmyPage = lazyPage(() => import("@/v2/ask-amy/AskAmyPage"));
 const ForChildPage = lazyPage(() => import("@/v2/for-child/ForChildPage"));
+/** V2 Premium journey — Sprint 3B; self-redirects when premium_v2 is off. */
+const PremiumPaywallPage = lazyPage(
+  () => import("@/v2/premium/PremiumPaywallPage"),
+);
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
 const SubscriptionTrialEndedPage = lazyPage(
@@ -207,6 +226,15 @@ const AmyRuntimeInspectorHostLazy = import.meta.env.DEV
   ? lazy(() =>
       import("@/components/amy-runtime-inspector/runtime-inspector-host").then((m) => ({
         default: m.AmyRuntimeInspectorHost,
+      })),
+    )
+  : () => null;
+
+/** Founder Observation — DEV opt-in only; renders null; no parent UI. */
+const FounderObservationHostLazy = import.meta.env.DEV
+  ? lazy(() =>
+      import("@/v2/founder-observation").then((m) => ({
+        default: m.FounderObservationHost,
       })),
     )
   : () => null;
@@ -312,8 +340,11 @@ function HomeRedirect() {
 
   if (authLoading && !authLoadingTimedOut) return <RouteLoadingShell />;
   if (authLoading && authLoadingTimedOut && !isSignedIn) {
-    // V2 Front Door (flags OFF by default) — reversible; production path unchanged.
-    if (shouldEnterFrontDoor()) {
+    // Phase 4B: completed guest → Today; else Front Door; else classic.
+    if (shouldLandGuestOnToday()) {
+      return <Redirect to="/today" />;
+    }
+    if (shouldShowGuestFrontDoor()) {
       return <Redirect to="/front-door" />;
     }
     if (isCapacitorIosShell() || isNativeAmyNestShell()) {
@@ -323,7 +354,10 @@ function HomeRedirect() {
   }
 
   if (!isSignedIn) {
-    if (shouldEnterFrontDoor()) {
+    if (shouldLandGuestOnToday()) {
+      return <Redirect to="/today" />;
+    }
+    if (shouldShowGuestFrontDoor()) {
       return <Redirect to="/front-door" />;
     }
     if (isCapacitorIosShell() || isNativeAmyNestShell()) {
@@ -451,6 +485,10 @@ const CHILD_OPTIONAL_ROUTE_PREFIXES = [
   "/parent-profile",
   "/profile",
   "/pricing",
+  "/premium",
+  "/today",
+  "/ask-amy",
+  "/for-child",
   "/notification-settings",
   "/manage-devices",
   "/notification-diagnostics",
@@ -693,10 +731,97 @@ function makeProtectedRoute(Component: ComponentType, routeLabel?: string) {
   return ProtectedRoutePage;
 }
 
+/**
+ * Phase 4B — Guest-aware shell for Today / Mission / Premium.
+ * Unsigned guests skip onboarding, children, and device gates (no account APIs).
+ * Signed-in users use the normal ProtectedRoute path.
+ */
+function GuestAwareShellRoute({
+  component: Component,
+  routeLabel,
+  allowGuest,
+}: {
+  component: ComponentType;
+  routeLabel: string;
+  allowGuest: () => boolean;
+}) {
+  const { isSignedIn, isLoaded, authStatus } = useAuth();
+  const authLoading = !isLoaded || authStatus === "loading";
+  const authLoadingTimedOut = useFailOpenAfter(authLoading);
+
+  if (authLoading && !authLoadingTimedOut) return <RouteLoadingShell />;
+
+  if (!isSignedIn) {
+    if (allowGuest()) {
+      return (
+        <AppErrorBoundary label="Layout">
+          <Layout>
+            <SafeRoutePage component={Component} label={routeLabel} suspense />
+          </Layout>
+        </AppErrorBoundary>
+      );
+    }
+    if (shouldLandGuestOnToday()) {
+      return <Redirect to="/today" />;
+    }
+    if (shouldShowGuestFrontDoor() || shouldEnterFrontDoor()) {
+      return <Redirect to="/front-door" />;
+    }
+    return <Redirect to="/sign-in" />;
+  }
+
+  return <ProtectedRoute component={Component} routeLabel={routeLabel} />;
+}
+
+function makeGuestAwareRoute(
+  Component: ComponentType,
+  routeLabel: string,
+  allowGuest: () => boolean,
+) {
+  function GuestAwareRoutePage() {
+    return (
+      <GuestAwareShellRoute
+        component={Component}
+        routeLabel={routeLabel}
+        allowGuest={allowGuest}
+      />
+    );
+  }
+  GuestAwareRoutePage.displayName = `GuestAware(${routeLabel})`;
+  return GuestAwareRoutePage;
+}
+
 const DashboardRoute = makeProtectedRoute(Dashboard, "Dashboard");
-const TodayRoute = makeProtectedRoute(TodayPage, "Today");
-const AskAmyRoute = makeProtectedRoute(AskAmyPage, "AskAmy");
-const ForChildRoute = makeProtectedRoute(ForChildPage, "ForChild");
+const TodayRoute = makeGuestAwareRoute(
+  TodayPage,
+  "Today",
+  isGuestV2TodayAccessAllowed,
+);
+const TodayMissionRoute = makeGuestAwareRoute(
+  TodayMissionPlayPage,
+  "Today Mission",
+  isGuestV2TodayAccessAllowed,
+);
+const CoachDiscoveryRoute = makeGuestAwareRoute(
+  CoachDiscoveryPage,
+  "Coach Discovery",
+  isGuestV2TodayAccessAllowed,
+);
+const AskAmyRoute = makeGuestAwareRoute(
+  AskAmyPage,
+  "AskAmy",
+  isGuestV2AskAmyAccessAllowed,
+);
+const ForChildRoute = makeGuestAwareRoute(
+  ForChildPage,
+  "ForChild",
+  isGuestV2ForChildAccessAllowed,
+);
+const PremiumV2Route = makeGuestAwareRoute(
+  PremiumPaywallPage,
+  "Premium V2",
+  isGuestV2PremiumAccessAllowed,
+);
 const ChildrenListRoute = makeProtectedRoute(ChildrenList, "ChildrenList");
 const ChildFormRoute = makeProtectedRoute(ChildForm, "ChildForm");
 const RoutinesListRoute = makeProtectedRoute(RoutinesList, "RoutinesList");
@@ -1003,13 +1128,15 @@ function AppRoutes() {
             <IntentInterruptionBridge />
             <NavigationHistoryGuard />
             <PostDashboardPrefetch />
-            <Suspense fallback={<RouteLoadingShell />}>
+            <Suspense fallback={<AppSuspenseFallback />}>
             <RouteTransitionRoot>
             <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/index.html">
             <Redirect to="/" />
           </Route>
+          {/* Alias — /landing must never 404 into “Something went wrong”. */}
+          <Route path="/landing" component={HomeRedirect} />
           {/* V2 Front Door — flag-gated inside page; no effect when flags OFF */}
           <Route path="/front-door" component={FrontDoorPage} />
           <Route path="/privacy" component={PrivacyPolicyPage} />
@@ -1061,9 +1188,12 @@ function AppRoutes() {
           />
           <Route path="/dashboard" component={DashboardRoute} />
           {/* V2 shells — flag-gated inside pages; production nav unchanged when flags OFF */}
+          <Route path="/today/mission" component={TodayMissionRoute} />
+          <Route path="/today/coach-plan" component={CoachDiscoveryRoute} />
           <Route path="/today" component={TodayRoute} />
           <Route path="/ask-amy" component={AskAmyRoute} />
           <Route path="/for-child" component={ForChildRoute} />
+          <Route path="/premium" component={PremiumV2Route} />
           <Route path="/children" component={ChildrenListRoute} />
           <Route path="/children/new" component={ChildFormRoute} />
           <Route path="/children/:id" component={ChildFormRoute} />
@@ -1211,6 +1341,7 @@ function AppRoutes() {
             {import.meta.env.DEV ? (
               <Suspense fallback={null}>
                 <AmyRuntimeInspectorHostLazy />
+                <FounderObservationHostLazy />
               </Suspense>
             ) : null}
             <AudioHealthOverlay />

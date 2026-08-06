@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
 import { COACH_AUDIO_GOAL_STORAGE_KEY } from "@/lib/audio-lessons";
+import { consumeCoachDiscoverGoal } from "@/v2/coach-discovery";
 import { AGE_TILE_META } from "@/lib/audio-lessons-nav";
 import {
   type CoachAgeBand,
@@ -1265,6 +1266,16 @@ export default function AICoachPage() {
     }
     setPhase("questions");
   };
+
+  // Guest Coach discovery → after sign-up, open the prepared goal (not Today).
+  const discoverSeededRef = useRef(false);
+  useEffect(() => {
+    if (resumeSessionId || discoverSeededRef.current) return;
+    const seeded = consumeCoachDiscoverGoal();
+    if (!seeded) return;
+    discoverSeededRef.current = true;
+    handlePickGoal(seeded);
+  }, [resumeSessionId]);
 
   // ─── Question handlers
   // Topic-specific question list (when goalId maps to a topic in

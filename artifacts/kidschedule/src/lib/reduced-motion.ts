@@ -43,19 +43,27 @@ export function useReducedMotion(): boolean {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    let mq: MediaQueryList | null = null;
+    try {
+      mq = typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+    } catch {
+      mq = null;
+    }
 
     const recompute = () => {
       const override = readOverride();
       if (override === "on") return setReduced(true);
       if (override === "off") return setReduced(false);
-      setReduced(mq.matches);
+      setReduced(mq?.matches ?? false);
     };
 
-    mq.addEventListener?.("change", recompute);
+    mq?.addEventListener?.("change", recompute);
     window.addEventListener("amynest:reduced-motion-changed", recompute);
     return () => {
-      mq.removeEventListener?.("change", recompute);
+      mq?.removeEventListener?.("change", recompute);
       window.removeEventListener("amynest:reduced-motion-changed", recompute);
     };
   }, []);

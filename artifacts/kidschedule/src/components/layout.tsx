@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { invokePageBackHandler } from "@/lib/page-back-handler";
 import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import { ArrowLeft } from "lucide-react";
-import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
+import { useAuth, useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
 import { logNavEvent } from "@/lib/navigation-log";
 import { safePathStartsWith, safePathStartsWithSegment } from "@/lib/safe-route";
@@ -32,6 +32,10 @@ import {
   isV2ShellTabRoute,
   shouldUseV2Navigation,
 } from "@/v2/entry/v2-shell-flags";
+import {
+  GuestAccountRequiredSheetHost,
+  shouldUseGuestAccountSheet,
+} from "@/v2/guest";
 import { V2MobileTabBar } from "@/v2/navigation";
 
 export function Layout({
@@ -46,6 +50,7 @@ export function Layout({
   const {
     user
   } = useUser();
+  const { isSignedIn } = useAuth();
   const {
     t
   } = useTranslation();
@@ -74,9 +79,17 @@ export function Layout({
     shouldUseV2Navigation() && isV2ShellTabRoute(location);
   const showTabBarChrome = showLegacyDashboardChrome || showV2NavChrome;
   const isV2TodayHome = location === "/today";
+  /** Mission owns its single back — hide layout header back (Phase 4D). */
+  const isV2MissionRoute = safePathStartsWith(location, "/today/mission");
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
+  const isQuietGuestChrome =
+    showV2NavChrome &&
+    shouldUseGuestAccountSheet({ isSignedIn, user });
   const canShowBack =
-    !showLegacyDashboardChrome && !isV2TodayHome && location !== "/";
+    !showLegacyDashboardChrome &&
+    !isV2TodayHome &&
+    !isV2MissionRoute &&
+    location !== "/";
   const showMobileHeader = !isImmersiveRoute;
   const headerRef = useAppHeaderHeight(showMobileHeader);
 
@@ -120,18 +133,21 @@ export function Layout({
                   type="button"
                   onClick={handleBack}
                   aria-label="Back"
+                  data-testid="layout-header-back"
                   className="page-back-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
               ) : null}
               <BrandLogo size="sm" showTagline={false} />
-              <AmyMascotLogo size={26} />
+              {!isQuietGuestChrome ? <AmyMascotLogo size={26} /> : null}
             </div>
-            <div className="flex shrink-0 items-center">
-              <SubscriptionTrialChip />
-              <LayoutMobileMenu />
-            </div>
+            {!isQuietGuestChrome ? (
+              <div className="flex shrink-0 items-center">
+                <SubscriptionTrialChip />
+                <LayoutMobileMenu />
+              </div>
+            ) : null}
           </div>
         </header>
       ) : null}
@@ -187,6 +203,7 @@ export function Layout({
       {/* Production nav unchanged when new_navigation is OFF */}
       <MobileTabBar visible={showLegacyDashboardChrome && !shouldUseV2Navigation()} />
       <V2MobileTabBar visible={showV2NavChrome} />
+      <GuestAccountRequiredSheetHost />
 
       {!isImmersiveRoute &&
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (

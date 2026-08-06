@@ -3,10 +3,17 @@ import { getFirebaseAuth } from "@/lib/firebase";
 import { waitForIdToken } from "@/lib/auth-token";
 import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isSetupComplete, resolveSetupStatus } from "@/lib/setup-status";
+import { tryResolveV2PostAuthPath } from "@/v2/guest/soft-save";
 
 async function resolvePostAuthDestinationWithToken(
   getToken: () => Promise<string | null>,
 ): Promise<string> {
+  // Phase 4B soft-save / Premium return — before classic onboarding restart.
+  const v2Path = tryResolveV2PostAuthPath();
+  if (v2Path) {
+    return v2Path;
+  }
+
   if (await shouldShowPermissionsSetupPromptAsync()) {
     return "/notify-prompt?next=/";
   }

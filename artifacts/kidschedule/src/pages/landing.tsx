@@ -36,8 +36,54 @@ import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 import { trackMarketingEvent, type MarketingFunnelEvent } from "@/lib/marketing/ga4-analytics";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
+import { shouldEnterFrontDoor } from "@/v2/entry/should-enter-front-door";
+import {
+  V2_ATMOSPHERE,
+  V2_BLOOM_LIGHT,
+  V2_BORDER,
+  V2_CHIP,
+  V2_BUTTON,
+  V2_CTA,
+  V2_DURATION_MS,
+  V2_ELEVATION,
+  V2_FADE_RISE_PX,
+  V2_HERO_LIGHT,
+  V2_HIERARCHY_PEER,
+  V2_HIERARCHY_RECEDE,
+  V2_HIERARCHY_WHISPER,
+  V2_ICON,
+  V2_LAYOUT,
+  V2_MEASURE,
+  V2_ORB,
+  V2_ORB_EMIT,
+  V2_PRESS_GHOST,
+  V2_PRESS_PRIMARY,
+  V2_RADIUS,
+  V2_SOFT_PLATE,
+  V2_SPACE,
+  V2_SURFACE_FILL,
+  V2_TYPE,
+  v2LawRole,
+  v2LitProps,
+} from "@/v2/craft";
 
 const AGE_STORAGE_KEY = "amynest_home_age_band";
+
+/** Nest Bloom CTA — Constitution primary (V2 Landing path). */
+const NEST_BLOOM = `${V2_CTA} bg-primary text-primary-foreground hover:bg-primary/90 ${V2_BLOOM_LIGHT} ${V2_PRESS_PRIMARY} inline-flex items-center justify-center ${V2_SPACE[1]}`;
+
+/** Nest secondary — Soft Plate whisper, never peer Bloom. */
+const NEST_SECONDARY = [
+  "inline-flex items-center justify-center gap-2",
+  "px-6",
+  V2_RADIUS.button,
+  V2_TYPE.cta,
+  "text-muted-foreground hover:text-foreground",
+  V2_SURFACE_FILL.softPlate,
+  V2_BORDER.rim,
+  V2_BUTTON.height,
+  V2_HIERARCHY_PEER,
+].join(" ");
 
 type AgeBand = "newborn" | "0-2" | "2-5" | "5-8" | "8-10";
 
@@ -297,11 +343,23 @@ function SectionEyebrow({
   icon: Icon,
   label,
   accent,
+  nest = false,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
   accent?: string;
+  nest?: boolean;
 }) {
+  if (nest) {
+    return (
+      <div
+        className={`inline-flex items-center gap-2 mb-4 ${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER}`}
+      >
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span>{label}</span>
+      </div>
+    );
+  }
   return (
     <div
       className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white"
@@ -320,9 +378,11 @@ function SectionEyebrow({
 function StoreBadgeRow({
   location,
   compact = false,
+  nest = false,
 }: {
   location: string;
   compact?: boolean;
+  nest?: boolean;
 }) {
   const pad = compact ? "px-4 py-2.5" : "px-5 py-3";
   const onStore = (store: "ios" | "android") => {
@@ -332,6 +392,12 @@ function StoreBadgeRow({
     if (location.startsWith("mid")) trackHome("mid_cta", { store, location });
     if (location.startsWith("footer") || location.startsWith("final")) trackHome("footer_cta", { store, location });
   };
+  const focus = nest
+    ? "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40"
+    : "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+  const iosClass = nest
+    ? `flex flex-1 items-center gap-2.5 ${pad} ${V2_RADIUS.field} min-h-[48px] ${V2_SURFACE_FILL.softPlate} ${V2_BORDER.rim} text-foreground ${focus}`
+    : `flex flex-1 items-center gap-2.5 ${pad} rounded-xl min-h-[48px] ${focus}`;
   return (
     <div className={`flex flex-col sm:flex-row items-stretch gap-2 ${compact ? "" : "w-full max-w-md"}`}>
       <a
@@ -339,7 +405,7 @@ function StoreBadgeRow({
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => onStore("android")}
-        className={`flex flex-1 items-center gap-2.5 ${pad} rounded-xl bg-white text-slate-900 min-h-[48px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}
+        className={`flex flex-1 items-center gap-2.5 ${pad} ${nest ? V2_RADIUS.field : "rounded-xl"} bg-white text-slate-900 min-h-[48px] ${focus}`}
         style={{ textDecoration: "none" }}
         aria-label="Get it on Google Play"
       >
@@ -359,15 +425,25 @@ function StoreBadgeRow({
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => onStore("ios")}
-        className={`flex flex-1 items-center gap-2.5 ${pad} rounded-xl min-h-[48px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}
-        style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", textDecoration: "none" }}
+        className={iosClass}
+        style={
+          nest
+            ? { textDecoration: "none" }
+            : { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", textDecoration: "none" }
+        }
         aria-label="Download on the App Store"
       >
-        <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 fill-white" aria-hidden>
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-6 w-6 shrink-0 ${nest ? "fill-foreground" : "fill-white"}`}
+          aria-hidden
+        >
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
         </svg>
-        <span className="text-left leading-tight text-white">
-          <span className="block text-[10px] font-semibold text-white/55">Download on the</span>
+        <span className={`text-left leading-tight ${nest ? "text-foreground" : "text-white"}`}>
+          <span className={`block text-[10px] font-semibold ${nest ? "text-muted-foreground" : "text-white/55"}`}>
+            Download on the
+          </span>
           <span className="block text-sm font-bold">App Store</span>
         </span>
       </a>
@@ -375,7 +451,7 @@ function StoreBadgeRow({
   );
 }
 
-function DesktopQr({ location }: { location: string }) {
+function DesktopQr({ location, nest = false }: { location: string; nest?: boolean }) {
   return (
     <a
       href={PLAY_STORE_URL}
@@ -385,15 +461,21 @@ function DesktopQr({ location }: { location: string }) {
         trackHome("qr_scan", { store: "android", location });
         trackHome("store_redirect", { store: "android", location });
       }}
-      className="hidden lg:flex items-center gap-3 rounded-2xl px-3 py-3 amy-glass focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      className={
+        nest
+          ? `hidden lg:flex items-center gap-3 px-3 py-3 ${V2_SOFT_PLATE} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40`
+          : "hidden lg:flex items-center gap-3 rounded-2xl px-3 py-3 amy-glass focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      }
       aria-label="Scan QR to install AmyNest"
     >
       <div className="rounded-xl bg-white p-2 shrink-0" aria-hidden>
         <StoreQrCode value={PLAY_STORE_URL} size={72} bgColor="#FFFFFF" fgColor="#1a1a2e" />
       </div>
       <div className="text-left">
-        <p className="font-quicksand font-bold text-sm text-white">Scan to install</p>
-        <p className="text-xs text-white/55">Open camera → Google Play</p>
+        <p className={nest ? `${V2_TYPE.captionInk}` : "font-quicksand font-bold text-sm text-white"}>
+          Scan to install
+        </p>
+        <p className={nest ? V2_TYPE.caption : "text-xs text-white/55"}>Open camera → Google Play</p>
       </div>
     </a>
   );
@@ -425,6 +507,10 @@ export default function LandingPage() {
   const { t } = useTranslation();
   const [age, selectAge] = useAgeBand();
   const ageCopy = AGE_COPY[age];
+  /** Wave E: calm entry into Front Door when guest V2 path is on. */
+  const webStartHref = shouldEnterFrontDoor() ? "/front-door" : "/sign-up";
+  /** P0.6 — Law of Three when V2 Front Door is the web path. */
+  const v2LawOfThree = webStartHref === "/front-door";
   const spotlights = useMemo(() => {
     const ranked = [...SPOTLIGHTS].sort((a, b) => a.ages.indexOf(age) - b.ages.indexOf(age));
     const primary = ranked.filter((s) => !s.secondary).slice(0, 4);
@@ -444,23 +530,197 @@ export default function LandingPage() {
     trackHome("landing_page_view", {});
   }, []);
 
+  const nest = v2LawOfThree;
+
+  /**
+   * Phase 1 — Threshold Room (Nest / Front Door path only).
+   * Founder Rule: transform (recompose), do not optimize. Delete marketing UI.
+   * Keep functionality: Begin · Sign in · Get the app (whisper) · legal.
+   * Law of Three sealed above the fold. Legacy path when Front Door is off.
+   */
+  if (nest) {
+    return (
+      <div
+        {...v2LitProps(
+          `${V2_LAYOUT.viewport} flex flex-col overflow-x-hidden relative ${V2_ATMOSPHERE} text-foreground`,
+        )}
+        data-v2-room="threshold"
+      >
+        <style>{`
+          @keyframes amyFadeUp { from { opacity: 0; transform: translateY(${V2_FADE_RISE_PX}px) } to { opacity: 1; transform: translateY(0) } }
+          .amy-fade-up { animation: amyFadeUp ${V2_DURATION_MS.page}ms ease-out both }
+          .amy-fade-up-1 { animation: amyFadeUp ${V2_DURATION_MS.page}ms ease-out 40ms both }
+          .amy-fade-up-2 { animation: amyFadeUp ${V2_DURATION_MS.page}ms ease-out 80ms both }
+          @media (prefers-reduced-motion: reduce) {
+            .amy-fade-up, .amy-fade-up-1, .amy-fade-up-2 { animation: none !important; }
+          }
+        `}</style>
+
+        <header
+          className={`relative z-20 flex items-center justify-between ${V2_SPACE.edgeX} ${V2_SPACE.py2}`}
+        >
+          <Link href="/">
+            <div className={`flex items-center ${V2_SPACE[2]} cursor-pointer`}>
+              <AmyMascotLogo size={36} />
+              <span className={`${V2_TYPE.brandMark} ${V2_HIERARCHY_WHISPER}`}>
+                {t("pages.landing.amynest_ai")}
+              </span>
+            </div>
+          </Link>
+          <Link href="/sign-in">
+            <button
+              type="button"
+              className={`${V2_TYPE.caption} ${V2_PRESS_GHOST} ${V2_HIERARCHY_WHISPER}`}
+            >
+              {t("landing.nav_sign_in")}
+            </button>
+          </Link>
+        </header>
+
+        <section
+          className={`relative z-10 flex-1 ${V2_SPACE.edgeX} ${V2_SPACE.pt2} ${V2_SPACE.pb4} flex flex-col justify-center`}
+        >
+          <div
+            className={`${V2_MEASURE.sheet} mx-auto w-full flex flex-col items-center text-center ${V2_HERO_LIGHT}`}
+          >
+            <div
+              className={`amy-fade-up relative ${V2_SPACE.mb5} flex items-center justify-center ${V2_ORB_EMIT}`}
+              {...v2LawRole("hero")}
+            >
+              <div
+                className={`relative flex items-center justify-center ${V2_ORB.presence}`}
+              >
+                <AmyLandingAvatar
+                  size={120}
+                  className={`${V2_ORB.presence} object-contain`}
+                />
+              </div>
+            </div>
+
+            <h1
+              className={`amy-fade-up-1 ${V2_TYPE.hero} ${V2_SPACE.mb5} ${V2_MEASURE.support}`}
+            >
+              One parenting companion.
+              <br />
+              Grows with your child.
+            </h1>
+
+            <div
+              className={`amy-fade-up-2 ${V2_SPACE.actionPause} w-full flex flex-col items-center`}
+            >
+              <Link href={webStartHref} className={`w-full ${V2_MEASURE.support}`}>
+                <button
+                  type="button"
+                  className={`${NEST_BLOOM} w-full`}
+                  data-testid="button-hero-web-start"
+                  {...v2LawRole("primary")}
+                  onClick={() =>
+                    trackHome("hero_cta", {
+                      location: "hero_web_signup",
+                      age_band: age,
+                    })
+                  }
+                >
+                  Begin
+                  <ArrowRight className={V2_ICON.md} aria-hidden />
+                </button>
+              </Link>
+              <p
+                className={`${V2_TYPE.caption} ${V2_SPACE.mt3} ${V2_HIERARCHY_WHISPER}`}
+                {...v2LawRole("support")}
+              >
+                It&apos;s safe to begin.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <footer
+          className={`relative z-10 mt-auto ${V2_SPACE.edgeX} ${V2_SPACE.py4} ${V2_HIERARCHY_WHISPER}`}
+        >
+          <div
+            className={`${V2_MEASURE.sheet} mx-auto flex flex-col items-center ${V2_SPACE[2]} text-center`}
+          >
+            <nav
+              className={`flex flex-wrap items-center justify-center ${V2_SPACE[2]} ${V2_TYPE.caption}`}
+              aria-label="Care and legal"
+            >
+              <Link href="/get-app">
+                <span
+                  className="hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => trackHome("footer_cta", { location: "footer_link" })}
+                >
+                  Get the app
+                </span>
+              </Link>
+              <Link href="/privacy">
+                <span
+                  className="hover:text-foreground transition-colors cursor-pointer"
+                  data-testid="link-privacy"
+                >
+                  {t("pages.landing.privacy_policy")}
+                </span>
+              </Link>
+              <Link href="/terms">
+                <span
+                  className="hover:text-foreground transition-colors cursor-pointer"
+                  data-testid="link-terms"
+                >
+                  {t("pages.landing.terms_of_service")}
+                </span>
+              </Link>
+              <Link href="/support">
+                <span
+                  className="hover:text-foreground transition-colors cursor-pointer"
+                  data-testid="link-support"
+                >
+                  {t("pages.landing.support")}
+                </span>
+              </Link>
+            </nav>
+            <div className={`${V2_SPACE.stack1} ${V2_TYPE.caption}`}>
+              <p>AmyNest AI is a product of AmyWorld.</p>
+              <p>{t("pages.landing.2026_amynest_ai_all_rights_reserved")}</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  const nestShell = {
+    className:
+      "min-h-screen flex flex-col overflow-x-hidden text-white relative",
+    style: {
+      background:
+        "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)",
+    } as const,
+    "data-on-dark": true as const,
+  };
+  const nestSection = "px-5 py-12 md:py-16";
+  const nestH2 = "font-quicksand font-bold text-3xl md:text-4xl text-white mb-3";
+  const nestBody = "text-white/65 text-base leading-relaxed";
+  const nestPlate = "amy-glass-card rounded-3xl";
+  const nestPanel = "amy-glass rounded-3xl";
+  const nestBloomMid =
+    "amy-cta inline-flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-xl text-white";
+  const nestBloomLg =
+    "amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white min-h-[52px]";
+
   return (
-    <div
-      data-on-dark
-      className="min-h-screen flex flex-col overflow-x-hidden text-white relative"
-      style={{ background: "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)" }}
-    >
+    <div {...nestShell}>
       <style>{`
         @keyframes amyFloat { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
-        @keyframes amyFadeUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes amyFadeUp { from { opacity: 0; transform: translateY(${V2_FADE_RISE_PX}px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes amyFadeUpLegacy { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
         @keyframes amyShimmer { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
         @keyframes scrollX { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes amyGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.45) } 50% { box-shadow: 0 0 0 14px rgba(168,85,247,0) } }
         .amy-float { animation: amyFloat 5s ease-in-out infinite }
-        .amy-fade-up { animation: amyFadeUp 0.7s ease-out both }
-        .amy-fade-up-1 { animation: amyFadeUp 0.7s ease-out 0.08s both }
-        .amy-fade-up-2 { animation: amyFadeUp 0.7s ease-out 0.16s both }
-        .amy-fade-up-3 { animation: amyFadeUp 0.7s ease-out 0.24s both }
+        .amy-fade-up { animation: amyFadeUpLegacy 700ms ease-out both }
+        .amy-fade-up-1 { animation: amyFadeUpLegacy 700ms ease-out 0.08s both }
+        .amy-fade-up-2 { animation: amyFadeUpLegacy 700ms ease-out 0.16s both }
+        .amy-fade-up-3 { animation: amyFadeUpLegacy 700ms ease-out 0.24s both }
         .amy-gradient-text {
           background: linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)),hsl(var(--brand-purple-500)));
           background-size: 200% auto;
@@ -486,11 +746,14 @@ export default function LandingPage() {
         .amy-cta {
           background: linear-gradient(135deg,hsl(var(--brand-purple-500)) 0%,hsl(var(--brand-pink-500)) 100%);
           box-shadow: 0 10px 40px rgba(168,85,247,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset;
-          transition: transform .3s ease, box-shadow .3s ease;
+          transition: transform 75ms ease-out, box-shadow .3s ease;
         }
         .amy-cta:hover {
-          transform: scale(1.04);
-          box-shadow: 0 14px 50px rgba(236,72,153,0.55), 0 0 0 1px rgba(255,255,255,0.2) inset;
+          transform: scale(1.02);
+          box-shadow: 0 12px 44px rgba(236,72,153,0.45), 0 0 0 1px rgba(255,255,255,0.16) inset;
+        }
+        .amy-cta:active {
+          transform: scale(0.98);
         }
         .amy-avatar-ring { animation: amyGlow 3s ease-out infinite }
         .marquee-track { display: flex; gap: 12px; animation: scrollX 32s linear infinite; width: max-content }
@@ -507,6 +770,7 @@ export default function LandingPage() {
         }
         @media (prefers-reduced-motion: reduce) {
           .amy-float, .amy-fade-up, .amy-fade-up-1, .amy-fade-up-2, .amy-fade-up-3, .amy-gradient-text, .amy-avatar-ring, .marquee-track { animation: none !important; }
+          .amy-cta, .amy-cta:hover, .amy-cta:active, .amy-glass-card:hover { transform: none !important; }
         }
       `}</style>
 
@@ -517,7 +781,9 @@ export default function LandingPage() {
       </div>
 
       {/* NAV */}
-      <header className="relative z-20 flex items-center justify-between px-5 py-4">
+      <header
+        className="relative z-20 flex items-center justify-between px-5 py-4"
+      >
         <Link href="/">
           <div className="flex items-center gap-3 cursor-pointer">
             <AmyMascotLogo size={44} />
@@ -540,7 +806,9 @@ export default function LandingPage() {
         </Link>
         <div className="flex items-center gap-2">
           <Link href="/sign-in">
-            <button className="text-sm font-semibold text-white/70 hover:text-white transition-colors px-3 py-1.5 min-h-[40px]">
+            <button
+              className="text-sm font-semibold text-white/70 hover:text-white transition-colors px-3 py-1.5 min-h-[40px]"
+            >
               {t("landing.nav_sign_in")}
             </button>
           </Link>
@@ -555,109 +823,140 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="relative z-10 px-5 pt-4 pb-8 md:pb-12">
+      {/* HERO — legacy SaaS (Front Door off) */}
+      <section
+        className="relative z-10 px-5 pt-4 pb-8 md:pb-12"
+      >
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div className="text-center md:text-left">
-            <div className="amy-fade-up flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-              {HERO_BADGES.map(({ icon: Icon, key, color }) => (
-                <span
-                  key={key}
-                  className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full text-white/90"
-                  style={{ background: `${color}22`, border: `1px solid ${color}55` }}
-                >
-                  <Icon className="h-3 w-3" style={{ color }} />
-                  {t(key)}
-                </span>
-              ))}
-            </div>
+            <div className="text-center md:text-left">
+              <div className="amy-fade-up flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                {HERO_BADGES.map(({ icon: Icon, key, color }) => (
+                  <span
+                    key={key}
+                    className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full text-white/90"
+                    style={{ background: `${color}22`, border: `1px solid ${color}55` }}
+                  >
+                    <Icon className="h-3 w-3" style={{ color }} />
+                    {t(key)}
+                  </span>
+                ))}
+              </div>
 
-            <h1 className="amy-fade-up-1 font-quicksand font-black text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.08] tracking-tight mb-3">
-              <span className="amy-gradient-text">One parenting companion.</span>
-              <br />
-              <span className="text-white">Grows with your child.</span>
-            </h1>
+              <h1 className="amy-fade-up-1 font-quicksand font-black text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.08] tracking-tight mb-3">
+                <span className="amy-gradient-text">One parenting companion.</span>
+                <br />
+                <span className="text-white">Grows with your child.</span>
+              </h1>
 
-            <p className="amy-fade-up-2 text-white/75 text-base md:text-lg max-w-xl leading-relaxed mb-2 mx-auto md:mx-0">
-              Personalized daily plans for sleep, meals, learning, and emotions — from newborn to age 10.
-            </p>
-            <p className="amy-fade-up-2 text-white/55 text-sm mb-5 mx-auto md:mx-0" key={age}>
-              {ageCopy.line}
-            </p>
-
-            <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3 mb-3">
-              <Link href="/get-app">
-                <button
-                  className="amy-cta inline-flex items-center justify-center gap-2 text-base font-bold px-7 py-3.5 rounded-2xl text-white min-h-[52px] w-full sm:w-auto"
-                  data-testid="button-hero-cta"
-                  onClick={() => trackHome("hero_cta", { location: "hero_primary", age_band: age })}
-                >
-                  {ageCopy.cta}
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </Link>
-              <Link href="/sign-up">
-                <button
-                  className="amy-glass inline-flex items-center justify-center gap-2 text-sm font-semibold px-6 py-3.5 rounded-2xl text-white/85 hover:text-white transition-all min-h-[52px] w-full sm:w-auto"
-                  onClick={() => trackHome("hero_cta", { location: "hero_web_signup", age_band: age })}
-                >
-                  Try on Web
-                </button>
-              </Link>
-            </div>
-
-            <div className="amy-fade-up-3 mb-4">
-              <StoreBadgeRow location="hero_store" />
-            </div>
-
-            <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3">
-              <DesktopQr location="hero_qr" />
-              <p className="text-[11px] text-white/40 max-w-xs text-center md:text-left">
-                Free to start · No credit card · Child-safe · Privacy-first
+              <p className="amy-fade-up-2 text-white/75 text-base md:text-lg max-w-xl leading-relaxed mb-2 mx-auto md:mx-0">
+                Personalized daily plans for sleep, meals, learning, and emotions — from newborn to age 10.
               </p>
-            </div>
-          </div>
+              <p className="amy-fade-up-2 text-white/55 text-sm mb-5 mx-auto md:mx-0" key={age}>
+                {ageCopy.line}
+              </p>
 
-          <div className="amy-fade-up-2 flex flex-col items-center">
-            <div className="relative mb-4 flex items-center justify-center" style={{ width: 180, height: 180 }}>
-              <div
-                className="amy-avatar-ring pointer-events-none absolute rounded-full"
-                style={{
-                  inset: 0,
-                  border: "2px solid rgba(168,85,247,0.55)",
-                  boxShadow: "0 0 28px rgba(168,85,247,0.45), 0 0 56px rgba(168,85,247,0.2)",
-                }}
-              />
-              <div
-                className="amy-float relative flex items-center justify-center rounded-full p-4"
-                style={{
-                  width: 156,
-                  height: 156,
-                  background: "linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.15))",
-                  border: "1px solid rgba(168,85,247,0.35)",
-                }}
-              >
-                <AmyLandingAvatar size={120} className="w-[120px] h-[120px] object-contain" />
+              <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3 mb-3">
+                <Link href="/get-app">
+                  <button
+                    className="amy-cta inline-flex items-center justify-center gap-2 text-base font-bold px-7 py-3.5 rounded-2xl text-white min-h-[52px] w-full sm:w-auto"
+                    data-testid="button-hero-cta"
+                    onClick={() =>
+                      trackHome("hero_cta", {
+                        location: "hero_primary",
+                        age_band: age,
+                      })
+                    }
+                  >
+                    {ageCopy.cta}
+                    <ArrowRight className="h-5 w-5" />
+                  </button>
+                </Link>
+                <Link href={webStartHref}>
+                  <button
+                    className="amy-glass inline-flex items-center justify-center gap-2 text-sm font-semibold px-6 py-3.5 rounded-2xl text-white/85 hover:text-white transition-all min-h-[52px] w-full sm:w-auto"
+                    data-testid="button-hero-web-start"
+                    onClick={() =>
+                      trackHome("hero_cta", {
+                        location: "hero_web_signup",
+                        age_band: age,
+                      })
+                    }
+                  >
+                    Try on Web
+                  </button>
+                </Link>
+              </div>
+
+              <div className="amy-fade-up-3 mb-4">
+                <StoreBadgeRow location="hero_store" />
+              </div>
+
+              <div className="amy-fade-up-3 flex flex-col sm:flex-row items-center md:items-start gap-3">
+                <DesktopQr location="hero_qr" />
+                <p className="text-[11px] text-white/40 max-w-xs text-center md:text-left">
+                  Free to start · No credit card · Child-safe · Privacy-first
+                </p>
               </div>
             </div>
-            <div className="amy-glass rounded-2xl px-5 py-3.5 max-w-xs text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/45 mb-1">Meet AMY</p>
-              <p className="text-white/85 text-sm font-semibold leading-snug">
-                Your AI co-pilot for today&apos;s plan — not another tip dump.
-              </p>
+
+            <div className="amy-fade-up-2 flex flex-col items-center">
+              <div className="relative mb-4 flex items-center justify-center" style={{ width: 180, height: 180 }}>
+                <div
+                  className="amy-avatar-ring pointer-events-none absolute rounded-full"
+                  style={{
+                    inset: 0,
+                    border: "2px solid rgba(168,85,247,0.55)",
+                    boxShadow: "0 0 28px rgba(168,85,247,0.45), 0 0 56px rgba(168,85,247,0.2)",
+                  }}
+                />
+                <div
+                  className="amy-float relative flex items-center justify-center rounded-full p-4"
+                  style={{
+                    width: 156,
+                    height: 156,
+                    background: "linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.15))",
+                    border: "1px solid rgba(168,85,247,0.35)",
+                  }}
+                >
+                  <AmyLandingAvatar size={120} className="w-[120px] h-[120px] object-contain" />
+                </div>
+              </div>
+              <div className="amy-glass rounded-2xl px-5 py-3.5 max-w-xs text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-white/45 mb-1">Meet AMY</p>
+                <p className="text-white/85 text-sm font-semibold leading-snug">
+                  Your AI co-pilot for today&apos;s plan — not another tip dump.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* AGE PERSONALIZATION */}
-      <section className="relative z-10 px-5 pb-8 md:pb-10" aria-labelledby="home-age-heading">
-        <div className="max-w-4xl mx-auto amy-glass rounded-3xl px-5 py-6 md:px-8 md:py-7">
+      <section
+        className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-8 md:pb-10"}`}
+        aria-labelledby="home-age-heading"
+      >
+        <div
+          className={
+            nest
+              ? `max-w-4xl mx-auto ${V2_SOFT_PLATE} ${V2_SPACE.platePad} md:px-8 md:py-7`
+              : "max-w-4xl mx-auto amy-glass rounded-3xl px-5 py-6 md:px-8 md:py-7"
+          }
+        >
           <div className="text-center mb-4">
-            <h2 id="home-age-heading" className="font-quicksand font-black text-xl sm:text-2xl text-white">
+            <h2
+              id="home-age-heading"
+              className={
+                nest
+                  ? `${V2_TYPE.heroCompact}`
+                  : "font-quicksand font-black text-xl sm:text-2xl text-white"
+              }
+            >
               What is your child&apos;s age?
             </h2>
-            <p className="text-white/55 text-sm mt-1.5">We&apos;ll show the journey that fits your family.</p>
+            <p className={nest ? `${V2_TYPE.caption} mt-2` : "text-white/55 text-sm mt-1.5"}>
+              We&apos;ll show the journey that fits your family.
+            </p>
           </div>
           <div className="flex flex-wrap justify-center gap-2 mb-4" role="radiogroup" aria-label="Child age">
             {AGE_OPTIONS.map((opt) => {
@@ -669,9 +968,19 @@ export default function LandingPage() {
                   role="radio"
                   aria-checked={active}
                   onClick={() => selectAge(opt.id)}
-                  className={`min-h-[48px] px-4 py-2.5 rounded-full text-sm font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-                    active ? "bg-white text-slate-950" : "bg-white/8 text-white/85 border border-white/15 hover:bg-white/12"
-                  }`}
+                  className={
+                    nest
+                      ? `min-h-[48px] px-4 py-2.5 ${V2_RADIUS.pill} ${V2_TYPE.cta} transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40 ${
+                          active
+                            ? `${V2_SURFACE_FILL.softPlateSelected} text-foreground`
+                            : `${V2_SURFACE_FILL.softPlate} text-muted-foreground ${V2_BORDER.rim}`
+                        }`
+                      : `min-h-[48px] px-4 py-2.5 rounded-full text-sm font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                          active
+                            ? "bg-white text-slate-950"
+                            : "bg-white/8 text-white/85 border border-white/15 hover:bg-white/12"
+                        }`
+                  }
                 >
                   <span aria-hidden className="mr-1.5">{opt.emoji}</span>
                   {opt.label}
@@ -679,7 +988,10 @@ export default function LandingPage() {
               );
             })}
           </div>
-          <p className="text-center text-sm text-white/70" key={`journey-${age}`}>
+          <p
+            className={nest ? `text-center ${V2_TYPE.bodyMuted}` : "text-center text-sm text-white/70"}
+            key={`journey-${age}`}
+          >
             {ageCopy.journey}
           </p>
         </div>
@@ -687,15 +999,27 @@ export default function LandingPage() {
 
       {/* RESEARCH MARQUEE */}
       <div
-        className="relative z-10 overflow-hidden py-3 border-y"
-        style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.04)" }}
+        className={`relative z-10 overflow-hidden py-3 ${nest ? `${V2_HIERARCHY_WHISPER} border-y border-foreground/[0.06]` : "border-y"}`}
+        style={
+          nest
+            ? { background: "transparent" }
+            : { borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.04)" }
+        }
       >
         <div className="marquee-track">
           {[...SCIENCE_CITATIONS, ...SCIENCE_CITATIONS].map((cite, i) => (
             <span
               key={i}
-              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] text-white/55 font-medium whitespace-nowrap"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              className={
+                nest
+                  ? `shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 ${V2_CHIP} ${V2_TYPE.caption} whitespace-nowrap`
+                  : "shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] text-white/55 font-medium whitespace-nowrap"
+              }
+              style={
+                nest
+                  ? undefined
+                  : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }
+              }
             >
               {cite}
             </span>
@@ -704,34 +1028,44 @@ export default function LandingPage() {
       </div>
 
       {/* COMMAND CENTER — Today's Parenting Plan */}
-      <section className="relative z-10 px-5 py-12 md:py-16" aria-labelledby="command-heading">
+      <section className={`relative z-10 ${nestSection}`} aria-labelledby="command-heading">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <SectionEyebrow
               icon={Calendar}
               label="Today's Parenting Plan"
               accent="linear-gradient(135deg,rgba(168,85,247,0.25),rgba(99,102,241,0.18))"
+              nest={nest}
             />
-            <h2 id="command-heading" className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
+            <h2 id="command-heading" className={nestH2}>
               Not just advice. A plan for today.
             </h2>
-            <p className="text-white/65 text-base leading-relaxed mb-4">
+            <p className={`${nestBody} mb-4`}>
               AmyNest&apos;s Command Center brings routines, meals, learning, sleep, and reminders into one calm view.
             </p>
-            <p className="text-white/55 text-sm mb-6" key={`dash-${age}`}>
+            <p className={nest ? `${V2_TYPE.caption} mb-6` : "text-white/55 text-sm mb-6"} key={`dash-${age}`}>
               {ageCopy.dashboardHint}
             </p>
-            <ul className="space-y-2 mb-6">
+            <ul className={`${nest ? V2_SPACE.stack2 : "space-y-2"} mb-6`}>
               {["Today's routine", "Meals & nutrition", "Learning & activities", "Sleep & reminders"].map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-white/80">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                <li
+                  key={item}
+                  className={
+                    nest
+                      ? `flex items-center gap-2 ${V2_TYPE.bodyMuted}`
+                      : "flex items-center gap-2 text-sm text-white/80"
+                  }
+                >
+                  <CheckCircle2
+                    className={`h-4 w-4 shrink-0 ${nest ? "text-primary" : "text-emerald-400"}`}
+                  />
                   {item}
                 </li>
               ))}
             </ul>
             <Link href="/get-app">
               <button
-                className="amy-cta inline-flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-xl text-white"
+                className={nestBloomMid}
                 onClick={() => {
                   trackHome("dashboard_preview", { age_band: age });
                   trackHome("mid_cta", { location: "command_center" });
@@ -742,7 +1076,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <div
-            className="relative rounded-3xl overflow-hidden amy-glass"
+            className={`relative overflow-hidden ${nest ? V2_SOFT_PLATE : "rounded-3xl amy-glass"}`}
             style={{ aspectRatio: "4/5", maxHeight: 480 }}
           >
             <img
@@ -760,26 +1094,29 @@ export default function LandingPage() {
       </section>
 
       {/* PRODUCT SPOTLIGHTS — replaces feature chips */}
-      <section className="relative z-10 px-5 pb-12 md:pb-16" aria-labelledby="spotlights-heading">
+      <section
+        className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12 md:pb-16"}`}
+        aria-labelledby="spotlights-heading"
+      >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
-            <SectionEyebrow icon={Sparkles} label="Product experience" />
-            <h2 id="spotlights-heading" className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
+            <SectionEyebrow icon={Sparkles} label="Product experience" nest={nest} />
+            <h2 id="spotlights-heading" className={nestH2}>
               What parents actually open
             </h2>
-            <p className="text-white/60 text-base max-w-xl mx-auto">
+            <p className={`${nestBody} max-w-xl mx-auto`}>
               Real screens for {AGE_OPTIONS.find((o) => o.id === age)?.label} — not a feature dump.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5" key={age}>
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${nest ? V2_SPACE.listGap : "gap-4 md:gap-5"}`} key={age}>
             {spotlights.map((spot) => (
               <article
                 key={spot.id}
-                className={`amy-glass-card rounded-3xl overflow-hidden flex flex-col sm:flex-row ${
+                className={`${nestPlate} overflow-hidden flex flex-col sm:flex-row ${
                   spot.secondary ? "md:col-span-2 sm:max-w-2xl sm:mx-auto w-full" : ""
                 }`}
               >
-                <div className="relative sm:w-[42%] aspect-[9/12] sm:aspect-auto sm:min-h-[220px] bg-black/30">
+                <div className={`relative sm:w-[42%] aspect-[9/12] sm:aspect-auto sm:min-h-[220px] ${nest ? "bg-foreground/[0.04]" : "bg-black/30"}`}>
                   <img
                     src={spot.image}
                     alt={spot.title}
@@ -790,23 +1127,48 @@ export default function LandingPage() {
                     decoding="async"
                   />
                 </div>
-                <div className="p-5 sm:p-6 flex flex-col flex-1">
+                <div className={`${nest ? V2_SPACE.platePad : "p-5 sm:p-6"} flex flex-col flex-1`}>
                   {spot.id === "infant" ? (
-                    <span className="inline-flex items-center gap-1 self-start mb-2 text-[10px] font-bold uppercase tracking-wide text-emerald-200 px-2 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(52,211,153,0.35)" }}>
+                    <span
+                      className={
+                        nest
+                          ? `inline-flex items-center gap-1 self-start mb-2 ${V2_TYPE.caption} ${V2_CHIP}`
+                          : "inline-flex items-center gap-1 self-start mb-2 text-[10px] font-bold uppercase tracking-wide text-emerald-200 px-2 py-1 rounded-full"
+                      }
+                      style={
+                        nest
+                          ? undefined
+                          : { background: "rgba(16,185,129,0.15)", border: "1px solid rgba(52,211,153,0.35)" }
+                      }
+                    >
                       <Baby className="h-3 w-3" aria-hidden /> Free for infants
                     </span>
                   ) : null}
                   {spot.secondary ? (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1">Optional</span>
+                    <span className={nest ? `${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER} mb-1` : "text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1"}>
+                      Optional
+                    </span>
                   ) : null}
-                  <h3 className="font-quicksand font-bold text-xl text-white mb-2">{spot.title}</h3>
-                  <p className="text-white/65 text-sm leading-relaxed mb-3 flex-1">{spot.value}</p>
+                  <h3 className={nest ? `${V2_TYPE.body} font-medium mb-2` : "font-quicksand font-bold text-xl text-white mb-2"}>
+                    {spot.title}
+                  </h3>
+                  <p className={`${nest ? V2_TYPE.caption : "text-white/65 text-sm leading-relaxed"} mb-3 flex-1`}>
+                    {spot.value}
+                  </p>
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {spot.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[11px] font-medium text-white/70 px-2.5 py-1 rounded-full"
-                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                        className={
+                          nest
+                            ? `${V2_TYPE.caption} px-2.5 py-1 ${V2_CHIP}`
+                            : "text-[11px] font-medium text-white/70 px-2.5 py-1 rounded-full"
+                        }
+                        style={
+                          nest
+                            ? undefined
+                            : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }
+                        }
                       >
                         {tag}
                       </span>
@@ -815,7 +1177,11 @@ export default function LandingPage() {
                   <Link href="/get-app">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 text-sm font-bold text-purple-200 hover:text-white transition-colors"
+                      className={
+                        nest
+                          ? `inline-flex items-center gap-1.5 ${V2_TYPE.cta} text-foreground/80 hover:text-foreground transition-colors`
+                          : "inline-flex items-center gap-1.5 text-sm font-bold text-purple-200 hover:text-white transition-colors"
+                      }
                       onClick={() => trackHome("spotlight_opened", { spotlight: spot.id, age_band: age })}
                     >
                       Explore in app <ArrowRight className="h-4 w-4" />
@@ -831,7 +1197,7 @@ export default function LandingPage() {
       <InfantParentingSection page="landing" />
 
       {/* AMY AI MODES — keep */}
-      <section className="relative z-10 px-5 py-12 md:py-16">
+      <section className={`relative z-10 ${nestSection}`}>
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
             <div>
@@ -839,26 +1205,41 @@ export default function LandingPage() {
                 icon={Sparkles}
                 label={t("landing.amy_ai_eyebrow")}
                 accent="linear-gradient(135deg,rgba(236,72,153,0.22),rgba(168,85,247,0.18))"
+                nest={nest}
               />
-              <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
-                {t("landing.amy_ai_heading")}
-              </h2>
-              <p className="text-white/65 text-base max-w-xl leading-relaxed">{t("landing.amy_ai_sub")}</p>
+              <h2 className={nestH2}>{t("landing.amy_ai_heading")}</h2>
+              <p className={`${nestBody} max-w-xl`}>{t("landing.amy_ai_sub")}</p>
             </div>
-            <AmyLandingAvatar size={88} className="hidden md:block h-[88px] w-[88px] object-contain opacity-90" />
+            <AmyLandingAvatar
+              size={88}
+              className={`hidden md:block h-[88px] w-[88px] object-contain ${nest ? `${V2_ORB_EMIT} ${V2_HIERARCHY_PEER}` : "opacity-90"}`}
+            />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${nest ? V2_SPACE.listGap : "gap-4"}`}>
             {AMY_AI_MODES.map(({ icon: Icon, titleKey, descKey, gradient }) => (
-              <div key={titleKey} className="amy-glass-card rounded-3xl p-6 flex flex-col gap-4">
+              <div
+                key={titleKey}
+                className={`${nestPlate} ${nest ? V2_SPACE.platePad : "p-6"} flex flex-col gap-4`}
+              >
                 <div
-                  className="h-12 w-12 rounded-2xl flex items-center justify-center"
-                  style={{ background: gradient, boxShadow: "0 8px 24px rgba(168,85,247,0.3)" }}
+                  className={`h-12 w-12 ${nest ? V2_RADIUS.field : "rounded-2xl"} flex items-center justify-center ${
+                    nest ? `${V2_SURFACE_FILL.softPlateSelected}` : ""
+                  }`}
+                  style={
+                    nest
+                      ? undefined
+                      : { background: gradient, boxShadow: "0 8px 24px rgba(168,85,247,0.3)" }
+                  }
                 >
-                  <Icon className="h-6 w-6 text-white" />
+                  <Icon className={`h-6 w-6 ${nest ? "text-foreground" : "text-white"}`} />
                 </div>
                 <div>
-                  <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
-                  <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
+                  <h3 className={nest ? `${V2_TYPE.body} font-medium mb-2` : "font-quicksand font-bold text-lg text-white mb-2"}>
+                    {t(titleKey)}
+                  </h3>
+                  <p className={nest ? V2_TYPE.caption : "text-white/65 text-sm leading-relaxed"}>
+                    {t(descKey)}
+                  </p>
                 </div>
               </div>
             ))}
@@ -867,18 +1248,21 @@ export default function LandingPage() {
       </section>
 
       {/* ONE APP EVERY STAGE */}
-      <section className="relative z-10 px-5 pb-12 md:pb-16" aria-labelledby="stages-heading">
+      <section
+        className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12 md:pb-16"}`}
+        aria-labelledby="stages-heading"
+      >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
-            <SectionEyebrow icon={GraduationCap} label="One app. Every stage." />
-            <h2 id="stages-heading" className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
+            <SectionEyebrow icon={GraduationCap} label="One app. Every stage." nest={nest} />
+            <h2 id="stages-heading" className={nestH2}>
               From newborn to school age
             </h2>
-            <p className="text-white/60 text-base max-w-xl mx-auto">
+            <p className={`${nestBody} max-w-xl mx-auto`}>
               AmyNest grows with your child — so you don&apos;t need a new app every year.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 ${nest ? V2_SPACE.listGap : "gap-3"}`}>
             {STAGES.map((stage, index) => (
               <button
                 key={stage.id}
@@ -887,8 +1271,10 @@ export default function LandingPage() {
                   selectAge(stage.id);
                   trackHome("stage_selected", { stage: stage.id, index });
                 }}
-                className={`amy-glass-card rounded-2xl overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-                  age === stage.id ? "ring-2 ring-purple-400/70" : ""
+                className={`${nestPlate} overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                  nest
+                    ? `focus-visible:outline-foreground/40 ${age === stage.id ? V2_SURFACE_FILL.softPlateSelected : ""}`
+                    : `focus-visible:outline-white ${age === stage.id ? "ring-2 ring-purple-400/70" : ""}`
                 }`}
               >
                 <div className="relative aspect-[4/5] max-h-[160px]">
@@ -902,20 +1288,24 @@ export default function LandingPage() {
                     decoding="async"
                   />
                 </div>
-                <div className="p-3.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80 mb-0.5">
+                <div className={nest ? V2_SPACE.p2 : "p-3.5"}>
+                  <p className={nest ? `${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER} mb-1` : "text-[10px] font-bold uppercase tracking-wider text-purple-300/80 mb-0.5"}>
                     {index + 1}. {stage.label}
                   </p>
-                  <p className="text-white/75 text-xs leading-relaxed mb-2">{stage.sentence}</p>
-                  <span className="text-[11px] font-bold text-purple-200">View plan →</span>
+                  <p className={nest ? `${V2_TYPE.caption} mb-2` : "text-white/75 text-xs leading-relaxed mb-2"}>
+                    {stage.sentence}
+                  </p>
+                  <span className={nest ? V2_TYPE.cta : "text-[11px] font-bold text-purple-200"}>
+                    View plan →
+                  </span>
                 </div>
               </button>
             ))}
           </div>
-          <div className="text-center mt-8">
+          <div className={`text-center ${nest ? V2_SPACE.mt4 : "mt-8"}`}>
             <Link href="/get-app">
               <button
-                className="amy-cta inline-flex items-center gap-2 text-sm font-bold px-7 py-3.5 rounded-2xl text-white"
+                className={nestBloomMid}
                 onClick={() => trackHome("mid_cta", { location: "stages" })}
               >
                 {ageCopy.cta} <ArrowRight className="h-4 w-4" />
@@ -926,67 +1316,94 @@ export default function LandingPage() {
       </section>
 
       {/* MID STORE CTA */}
-      <section className="relative z-10 px-5 pb-12">
-        <div className="max-w-3xl mx-auto amy-glass rounded-3xl px-6 py-8 text-center">
-          <h2 className="font-quicksand font-bold text-2xl text-white mb-2">Install AmyNest for today&apos;s plan</h2>
-          <p className="text-white/60 text-sm mb-5">Free to start on Google Play and the App Store.</p>
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12"}`}>
+        <div className={`max-w-3xl mx-auto ${nestPanel} ${nest ? `${V2_SPACE.platePad} py-8` : "px-6 py-8"} text-center`}>
+          <h2 className={nest ? nestH2 : "font-quicksand font-bold text-2xl text-white mb-2"}>
+            Install AmyNest for today&apos;s plan
+          </h2>
+          <p className={nest ? `${V2_TYPE.caption} mb-5` : "text-white/60 text-sm mb-5"}>
+            Free to start on Google Play and the App Store.
+          </p>
           <div className="flex flex-col items-center gap-4">
-            <StoreBadgeRow location="mid_store" />
-            <DesktopQr location="mid_qr" />
+            <StoreBadgeRow location="mid_store" nest={nest} />
+            <DesktopQr location="mid_qr" nest={nest} />
           </div>
         </div>
       </section>
 
       {/* ROUTINE ENGINE — keep, patent secondary */}
-      <section className="relative z-10 px-5 pb-12 md:pb-16">
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12 md:pb-16"}`}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <SectionEyebrow
               icon={Zap}
               label={t("landing.tech_eyebrow")}
               accent="linear-gradient(135deg,rgba(168,85,247,0.25),rgba(99,102,241,0.18))"
+              nest={nest}
             />
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              {t("landing.tech_heading")}
-            </h2>
-            <p className="text-white/65 text-base max-w-2xl mx-auto leading-relaxed">
-              {t("landing.tech_sub")}
-            </p>
+            <h2 className={nestH2}>{t("landing.tech_heading")}</h2>
+            <p className={`${nestBody} max-w-2xl mx-auto`}>{t("landing.tech_sub")}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${nest ? V2_SPACE.listGap : "gap-4"} mb-5`}>
             {TECH_PILLARS.map(({ icon: Icon, titleKey, descKey }) => (
-              <div key={titleKey} className="amy-glass-card rounded-2xl p-5">
+              <div key={titleKey} className={`${nestPlate} ${nest ? V2_SPACE.platePad : "p-5"}`}>
                 <div
-                  className="h-11 w-11 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.35)" }}
+                  className={`h-11 w-11 ${nest ? V2_RADIUS.field : "rounded-xl"} flex items-center justify-center mb-4 ${
+                    nest ? V2_SURFACE_FILL.softPlateSelected : ""
+                  }`}
+                  style={
+                    nest
+                      ? undefined
+                      : { background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.35)" }
+                  }
                 >
                   <Icon className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <h3 className="font-quicksand font-bold text-lg text-white mb-2">{t(titleKey)}</h3>
-                <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
+                <h3 className={nest ? `${V2_TYPE.body} font-medium mb-2` : "font-quicksand font-bold text-lg text-white mb-2"}>
+                  {t(titleKey)}
+                </h3>
+                <p className={nest ? V2_TYPE.caption : "text-white/65 text-sm leading-relaxed"}>{t(descKey)}</p>
               </div>
             ))}
           </div>
           <div
-            className="amy-glass-card rounded-3xl p-5 md:p-7"
-            style={{
-              background: "linear-gradient(135deg,rgba(99,102,241,0.14) 0%,rgba(168,85,247,0.10) 100%)",
-              borderColor: "rgba(168,85,247,0.3)",
-            }}
+            className={`${nestPlate} ${nest ? V2_SPACE.platePad : "p-5 md:p-7"}`}
+            style={
+              nest
+                ? undefined
+                : {
+                    background: "linear-gradient(135deg,rgba(99,102,241,0.14) 0%,rgba(168,85,247,0.10) 100%)",
+                    borderColor: "rgba(168,85,247,0.3)",
+                  }
+            }
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${nest ? V2_SPACE.listGap : "gap-3"}`}>
               {ROUTINE_ENGINE_KEYS.map((key) => (
                 <div
                   key={key}
-                  className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  className={
+                    nest
+                      ? `flex items-start gap-2.5 ${V2_RADIUS.field} ${V2_SPACE.rowPad} ${V2_SURFACE_FILL.softPlate}`
+                      : "flex items-start gap-2.5 rounded-xl px-3.5 py-3"
+                  }
+                  style={
+                    nest
+                      ? undefined
+                      : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
+                  }
                 >
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <span className="text-white/85 text-sm">{t(key)}</span>
+                  <span className={nest ? V2_TYPE.captionInk : "text-white/85 text-sm"}>{t(key)}</span>
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-center text-[11px] font-bold uppercase tracking-widest text-white/35">
+            <p
+              className={
+                nest
+                  ? `mt-4 text-center ${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER}`
+                  : "mt-4 text-center text-[11px] font-bold uppercase tracking-widest text-white/35"
+              }
+            >
               {t("patent_pending.trust_line")}
             </p>
           </div>
@@ -994,51 +1411,76 @@ export default function LandingPage() {
       </section>
 
       {/* PROBLEMS + HOW IT WORKS — compacted */}
-      <section className="relative z-10 px-5 pb-12">
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12"}`}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-6">
-            <SectionEyebrow icon={Sparkles} label={t("landing.problems_eyebrow")} />
-            <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">{t("landing.problems_heading")}</h2>
+            <SectionEyebrow icon={Sparkles} label={t("landing.problems_eyebrow")} nest={nest} />
+            <h2 className={nestH2}>{t("landing.problems_heading")}</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mb-10">
+          <div className={`grid grid-cols-2 md:grid-cols-3 ${nest ? V2_SPACE.listGap : "gap-2.5"} mb-10`}>
             {PROBLEMS.map(({ icon: Icon, labelKey, color }) => (
-              <div key={labelKey} className="amy-glass-card rounded-2xl p-3.5 flex items-center gap-3">
+              <div
+                key={labelKey}
+                className={`${nestPlate} ${nest ? "p-4" : "p-3.5"} flex items-center gap-3`}
+              >
                 <div
-                  className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `${color}20`, border: `1px solid ${color}40` }}
+                  className={`h-9 w-9 ${nest ? V2_RADIUS.field : "rounded-xl"} flex items-center justify-center shrink-0 ${
+                    nest ? V2_SURFACE_FILL.softPlateSelected : ""
+                  }`}
+                  style={nest ? undefined : { background: `${color}20`, border: `1px solid ${color}40` }}
                 >
-                  <Icon className="h-4 w-4" style={{ color }} />
+                  <Icon className="h-4 w-4" style={nest ? undefined : { color }} />
                 </div>
-                <span className="text-white/90 text-sm font-semibold">{t(labelKey)}</span>
+                <span className={nest ? V2_TYPE.captionInk : "text-white/90 text-sm font-semibold"}>
+                  {t(labelKey)}
+                </span>
               </div>
             ))}
           </div>
           <div className="text-center mb-8">
-            <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">{t("landing.how_heading")}</h2>
-            <p className="text-white/60 text-sm max-w-lg mx-auto">{t("landing.how_sub")}</p>
+            <h2 className={nestH2}>{t("landing.how_heading")}</h2>
+            <p className={`${nest ? V2_TYPE.caption : "text-white/60 text-sm"} max-w-lg mx-auto`}>
+              {t("landing.how_sub")}
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${nest ? V2_SPACE.listGap : "gap-4"}`}>
             {STEPS.map(({ icon: Icon, titleKey, descKey }, idx) => (
-              <div key={titleKey} className="amy-glass-card rounded-3xl p-5 relative">
+              <div key={titleKey} className={`${nestPlate} ${nest ? V2_SPACE.platePad : "p-5"} relative`}>
                 <div
-                  className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand"
-                  style={{
-                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
-                    boxShadow: "0 6px 18px rgba(236,72,153,0.45)",
-                  }}
+                  className={`absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-sm ${
+                    nest
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "text-white font-bold font-quicksand"
+                  }`}
+                  style={
+                    nest
+                      ? undefined
+                      : {
+                          background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
+                          boxShadow: "0 6px 18px rgba(236,72,153,0.45)",
+                        }
+                  }
                 >
                   {idx + 1}
                 </div>
                 <div
-                  className="h-10 w-10 rounded-2xl flex items-center justify-center mb-3"
-                  style={{
-                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
-                  }}
+                  className={`h-10 w-10 ${nest ? V2_RADIUS.field : "rounded-2xl"} flex items-center justify-center mb-3 ${
+                    nest ? V2_SURFACE_FILL.softPlateSelected : ""
+                  }`}
+                  style={
+                    nest
+                      ? undefined
+                      : {
+                          background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
+                        }
+                  }
                 >
-                  <Icon className="h-5 w-5 text-white" />
+                  <Icon className={`h-5 w-5 ${nest ? "text-foreground" : "text-white"}`} />
                 </div>
-                <h3 className="font-quicksand font-bold text-base text-white mb-1.5">{t(titleKey)}</h3>
-                <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
+                <h3 className={nest ? `${V2_TYPE.body} font-medium mb-1.5` : "font-quicksand font-bold text-base text-white mb-1.5"}>
+                  {t(titleKey)}
+                </h3>
+                <p className={nest ? V2_TYPE.caption : "text-white/65 text-sm leading-relaxed"}>{t(descKey)}</p>
               </div>
             ))}
           </div>
@@ -1046,11 +1488,11 @@ export default function LandingPage() {
       </section>
 
       {/* TRUST — outcome-based, no fake ratings */}
-      <section className="relative z-10 px-5 pb-12">
-        <div className="max-w-5xl mx-auto amy-glass rounded-3xl p-6 md:p-9">
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12"}`}>
+        <div className={`max-w-5xl mx-auto ${nestPanel} ${nest ? V2_SPACE.platePad : "p-6 md:p-9"}`}>
           <div className="text-center mb-6">
-            <h2 className="font-quicksand font-bold text-2xl md:text-3xl text-white mb-2">Built for trust</h2>
-            <p className="text-white/60 text-sm max-w-xl mx-auto">
+            <h2 className={nestH2}>Built for trust</h2>
+            <p className={`${nest ? V2_TYPE.caption : "text-white/60 text-sm"} max-w-xl mx-auto`}>
               Designed for modern families with privacy-first, child-safe guidance.
             </p>
           </div>
@@ -1058,15 +1500,23 @@ export default function LandingPage() {
             {OUTCOME_TRUST.map(({ icon: Icon, label }) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white/75 px-3 py-2 rounded-full"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className={
+                  nest
+                    ? `inline-flex items-center gap-1.5 ${V2_TYPE.caption} px-3 py-2 ${V2_CHIP}`
+                    : "inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white/75 px-3 py-2 rounded-full"
+                }
+                style={
+                  nest
+                    ? undefined
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }
+                }
               >
-                <Icon className="h-3.5 w-3.5 text-emerald-300" aria-hidden />
+                <Icon className={`h-3.5 w-3.5 ${nest ? "text-primary" : "text-emerald-300"}`} aria-hidden />
                 {label}
               </span>
             ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${nest ? V2_SPACE.listGap : "gap-4"}`}>
             {[
               { titleKey: "landing.trust1_title", descKey: "landing.trust1_desc", icon: BookOpen },
               { titleKey: "landing.trust2_title", descKey: "landing.trust2_desc", icon: FlaskConical },
@@ -1074,12 +1524,18 @@ export default function LandingPage() {
             ].map(({ titleKey, descKey, icon: Icon }) => (
               <div
                 key={titleKey}
-                className="rounded-2xl p-5"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className={nest ? `${V2_SOFT_PLATE} ${V2_SPACE.platePad}` : "rounded-2xl p-5"}
+                style={
+                  nest
+                    ? undefined
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }
+                }
               >
                 <Icon className="h-5 w-5 text-muted-foreground mb-3" />
-                <h3 className="font-quicksand font-bold text-base text-white mb-1.5">{t(titleKey)}</h3>
-                <p className="text-white/60 text-xs leading-relaxed">{t(descKey)}</p>
+                <h3 className={nest ? `${V2_TYPE.body} font-medium mb-1.5` : "font-quicksand font-bold text-base text-white mb-1.5"}>
+                  {t(titleKey)}
+                </h3>
+                <p className={nest ? V2_TYPE.caption : "text-white/60 text-xs leading-relaxed"}>{t(descKey)}</p>
               </div>
             ))}
           </div>
@@ -1087,35 +1543,52 @@ export default function LandingPage() {
       </section>
 
       {/* TESTIMONIALS — keep stories, no fake aggregate rating */}
-      <section className="relative z-10 px-5 pb-12">
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-12"}`}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
-            <SectionEyebrow icon={Heart} label={t("pages.landing.parent_stories")} />
-            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-2">
-              {t("pages.landing.real_parents_real_results")}
-            </h2>
+            <SectionEyebrow icon={Heart} label={t("pages.landing.parent_stories")} nest={nest} />
+            <h2 className={nestH2}>{t("pages.landing.real_parents_real_results")}</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${nest ? V2_SPACE.listGap : "gap-5"}`}>
             {TESTIMONIALS.map(({ name, location, text, avatar, color, result }) => (
-              <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
+              <div
+                key={name}
+                className={
+                  nest
+                    ? `${V2_SOFT_PLATE} ${V2_SPACE.platePad} flex flex-col gap-4`
+                    : "amy-testimonial rounded-3xl p-6 flex flex-col gap-4"
+                }
+              >
                 <div
-                  className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
-                  style={{ background: `linear-gradient(135deg,${color}CC,${color}88)`, border: `1px solid ${color}44` }}
+                  className={
+                    nest
+                      ? `inline-flex items-center gap-1.5 self-start px-2.5 py-1 ${V2_CHIP} ${V2_TYPE.caption}`
+                      : "inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
+                  }
+                  style={
+                    nest
+                      ? undefined
+                      : { background: `linear-gradient(135deg,${color}CC,${color}88)`, border: `1px solid ${color}44` }
+                  }
                 >
                   <Star className="h-3 w-3" />
                   {result}
                 </div>
-                <p className="text-white/80 text-sm leading-relaxed flex-1">&ldquo;{text}&rdquo;</p>
+                <p className={nest ? `${V2_TYPE.bodyMuted} flex-1` : "text-white/80 text-sm leading-relaxed flex-1"}>
+                  &ldquo;{text}&rdquo;
+                </p>
                 <div className="flex items-center gap-3">
                   <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style={{ background: `linear-gradient(135deg,${color},${color}99)` }}
+                    className={`h-10 w-10 rounded-full flex items-center justify-center text-sm shrink-0 ${
+                      nest ? "bg-primary/15 text-foreground font-medium" : "text-white font-bold"
+                    }`}
+                    style={nest ? undefined : { background: `linear-gradient(135deg,${color},${color}99)` }}
                   >
                     {avatar}
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-sm">{name}</p>
-                    <p className="text-white/50 text-xs">{location}</p>
+                    <p className={nest ? V2_TYPE.captionInk : "text-white font-semibold text-sm"}>{name}</p>
+                    <p className={nest ? V2_TYPE.caption : "text-white/50 text-xs"}>{location}</p>
                   </div>
                 </div>
               </div>
@@ -1125,58 +1598,94 @@ export default function LandingPage() {
       </section>
 
       {/* FINAL CTA → get-app primary */}
-      <section className="relative z-10 px-5 pb-10">
-        <div className="max-w-3xl mx-auto text-center amy-glass rounded-3xl p-8 md:p-10">
-          <h2 className="font-quicksand font-black text-2xl md:text-3xl text-white mb-2">
-            Start today&apos;s parenting plan
-          </h2>
-          <p className="text-white/65 text-sm md:text-base mb-5">
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb5}` : "px-5 pb-10"}`}>
+        <div className={`max-w-3xl mx-auto text-center ${nestPanel} ${nest ? `${V2_SPACE.platePad} md:p-10` : "p-8 md:p-10"}`}>
+          <h2 className={nestH2}>Start today&apos;s parenting plan</h2>
+          <p className={nest ? `${V2_TYPE.bodyMuted} mb-5` : "text-white/65 text-sm md:text-base mb-5"}>
             One companion from birth to age 10. Free to start.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-5">
-            <Link href="/get-app">
-              <button
-                className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white min-h-[52px]"
-                onClick={() => trackHome("footer_cta", { location: "final_get_app" })}
-              >
-                {ageCopy.cta}
-                <ArrowRight className="h-5 w-5" />
-              </button>
-            </Link>
-            <Link href="/sign-up">
-              <button
-                className="amy-glass inline-flex items-center gap-2 text-sm font-semibold px-6 py-4 rounded-2xl text-white/85 min-h-[52px]"
-                onClick={() => trackHome("footer_cta", { location: "final_web" })}
-              >
-                Try on Web
-              </button>
-            </Link>
+          <div className={`flex flex-col sm:flex-row items-center justify-center ${nest ? V2_SPACE.ctaStack : "gap-3"} mb-5`}>
+            {nest ? (
+              <>
+                <Link href={webStartHref}>
+                  <button
+                    className={nestBloomLg}
+                    data-testid="button-final-web-start"
+                    onClick={() => trackHome("footer_cta", { location: "final_web" })}
+                  >
+                    Try on Web
+                    <ArrowRight className="h-5 w-5" />
+                  </button>
+                </Link>
+                <Link href="/get-app">
+                  <button
+                    className={NEST_SECONDARY}
+                    onClick={() => trackHome("footer_cta", { location: "final_get_app" })}
+                  >
+                    {ageCopy.cta}
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/get-app">
+                  <button
+                    className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white min-h-[52px]"
+                    onClick={() => trackHome("footer_cta", { location: "final_get_app" })}
+                  >
+                    {ageCopy.cta}
+                    <ArrowRight className="h-5 w-5" />
+                  </button>
+                </Link>
+                <Link href={webStartHref}>
+                  <button
+                    className="amy-glass inline-flex items-center gap-2 text-sm font-semibold px-6 py-4 rounded-2xl text-white/85 min-h-[52px]"
+                    data-testid="button-final-web-start"
+                    onClick={() => trackHome("footer_cta", { location: "final_web" })}
+                  >
+                    Try on Web
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
-          <StoreBadgeRow location="final_store" compact />
+          <StoreBadgeRow location="final_store" compact nest={nest} />
         </div>
       </section>
 
       {/* DOWNLOAD + QR */}
-      <section className="relative z-10 px-5 pb-20">
+      <section className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.pb4}` : "px-5 pb-20"}`}>
         <div className="max-w-5xl mx-auto">
           <div
-            className="amy-glass rounded-3xl overflow-hidden relative"
-            style={{
-              background: "linear-gradient(135deg,rgba(168,85,247,0.18) 0%,rgba(99,102,241,0.14) 60%,rgba(236,72,153,0.10) 100%)",
-              borderColor: "rgba(168,85,247,0.35)",
-            }}
+            className={`${nestPanel} overflow-hidden relative`}
+            style={
+              nest
+                ? undefined
+                : {
+                    background: "linear-gradient(135deg,rgba(168,85,247,0.18) 0%,rgba(99,102,241,0.14) 60%,rgba(236,72,153,0.10) 100%)",
+                    borderColor: "rgba(168,85,247,0.35)",
+                  }
+            }
           >
-            <div className="relative flex flex-col md:flex-row items-center gap-8 px-8 py-10 md:py-12">
+            <div className={`relative flex flex-col md:flex-row items-center gap-8 ${nest ? `${V2_SPACE.platePad} md:py-12` : "px-8 py-10 md:py-12"}`}>
               <div className="flex-1 text-center md:text-left z-10">
-                <SectionEyebrow icon={Smartphone} label={t("pages.landing.available_on_ios_android")} />
-                <h2 className="font-quicksand font-black text-2xl md:text-3xl text-white leading-tight mb-3">
+                <SectionEyebrow
+                  icon={Smartphone}
+                  label={t("pages.landing.available_on_ios_android")}
+                  nest={nest}
+                />
+                <h2 className={nest ? nestH2 : "font-quicksand font-black text-2xl md:text-3xl text-white leading-tight mb-3"}>
                   Take Amy with you{" "}
-                  <span className="amy-gradient-text">everywhere</span>
+                  {nest ? (
+                    "everywhere"
+                  ) : (
+                    <span className="amy-gradient-text">everywhere</span>
+                  )}
                 </h2>
-                <p className="text-white/65 text-base max-w-md leading-relaxed mb-6">
+                <p className={`${nestBody} max-w-md mb-6`}>
                   Personalized guidance and AI-built routines — on the phone you already use.
                 </p>
-                <StoreBadgeRow location="footer_store" />
+                <StoreBadgeRow location="footer_store" nest={nest} />
                 <div className="mt-6 flex flex-wrap items-start justify-center md:justify-start gap-6">
                   <a
                     href={APP_STORE_URL}
@@ -1186,10 +1695,12 @@ export default function LandingPage() {
                     aria-label={t("pages.landing.scan_for_app_store")}
                     onClick={() => trackHome("qr_scan", { store: "ios", location: "footer_qr" })}
                   >
-                    <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
+                    <div className={`rounded-2xl bg-white p-3 ${nest ? V2_ELEVATION.elevated : "shadow-lg"} transition-transform group-hover:scale-[1.02]`}>
                       <StoreQrCode value={APP_STORE_URL} size={88} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
-                    <p className="text-white/60 text-xs font-medium text-center">{t("pages.landing.scan_for_app_store")}</p>
+                    <p className={nest ? V2_TYPE.caption : "text-white/60 text-xs font-medium text-center"}>
+                      {t("pages.landing.scan_for_app_store")}
+                    </p>
                   </a>
                   <a
                     href={PLAY_STORE_URL}
@@ -1199,14 +1710,23 @@ export default function LandingPage() {
                     aria-label={t("pages.landing.scan_for_google_play")}
                     onClick={() => trackHome("qr_scan", { store: "android", location: "footer_qr" })}
                   >
-                    <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
+                    <div className={`rounded-2xl bg-white p-3 ${nest ? V2_ELEVATION.elevated : "shadow-lg"} transition-transform group-hover:scale-[1.02]`}>
                       <StoreQrCode value={PLAY_STORE_URL} size={88} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
-                    <p className="text-white/60 text-xs font-medium text-center">{t("pages.landing.scan_for_google_play")}</p>
+                    <p className={nest ? V2_TYPE.caption : "text-white/60 text-xs font-medium text-center"}>
+                      {t("pages.landing.scan_for_google_play")}
+                    </p>
                   </a>
                 </div>
               </div>
-              <div className="relative w-40 md:w-48 rounded-[2.2rem] overflow-hidden shrink-0" style={{ aspectRatio: "9/19", border: "2px solid rgba(255,255,255,0.12)", boxShadow: "0 30px 80px rgba(0,0,0,0.55)" }}>
+              <div
+                className={`relative w-40 md:w-48 overflow-hidden shrink-0 ${nest ? V2_RADIUS.plate : "rounded-[2.2rem]"}`}
+                style={{
+                  aspectRatio: "9/19",
+                  border: nest ? undefined : "2px solid rgba(255,255,255,0.12)",
+                  boxShadow: nest ? undefined : "0 30px 80px rgba(0,0,0,0.55)",
+                }}
+              >
                 <img
                   src="/landing/screenshots/meet-amy-800.webp"
                   alt="AmyNest app"
@@ -1223,36 +1743,55 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 px-5 py-8 border-t border-white/10">
+      <footer
+        className={`relative z-10 ${nest ? `${V2_SPACE.edgeX} ${V2_SPACE.py4} border-t border-foreground/[0.06]` : "px-5 py-8 border-t border-white/10"}`}
+      >
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <AmyIcon size={38} ring />
+            <AmyIcon size={38} ring={!nest} />
             <div className="flex flex-col leading-tight">
-              <span
-                className="font-quicksand font-black text-lg"
-                style={{
-                  background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {t("pages.landing.amynest_ai_4")}
-              </span>
-              <span className="text-[10px] text-white/40 font-medium tracking-wide">{t("patent_pending.footer_label")}</span>
+              {nest ? (
+                <>
+                  <span className={V2_TYPE.brandMark}>{t("pages.landing.amynest_ai_4")}</span>
+                  <span className={`${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER}`}>
+                    {t("patent_pending.footer_label")}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span
+                    className="font-quicksand font-black text-lg"
+                    style={{
+                      background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                    }}
+                  >
+                    {t("pages.landing.amynest_ai_4")}
+                  </span>
+                  <span className="text-[10px] text-white/40 font-medium tracking-wide">
+                    {t("patent_pending.footer_label")}
+                  </span>
+                </>
+              )}
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-white/40">
-            <Link href="/get-app"><span className="hover:text-white/70 transition-colors cursor-pointer" onClick={() => trackHome("footer_cta", { location: "footer_link" })}>Get the app</span></Link>
-            <Link href="/guides"><span className="hover:text-white/70 transition-colors cursor-pointer">Guides</span></Link>
-            <Link href="/features/daily-routines"><span className="hover:text-white/70 transition-colors cursor-pointer">Daily routines</span></Link>
-            <Link href="/about"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-about">About</span></Link>
-            <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_up")}</span></Link>
-            <Link href="/sign-in"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_in")}</span></Link>
-            <Link href="/privacy"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-privacy">{t("pages.landing.privacy_policy")}</span></Link>
-            <Link href="/terms"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-terms">{t("pages.landing.terms_of_service")}</span></Link>
-            <Link href="/support"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-support">{t("pages.landing.support")}</span></Link>
+          <div
+            className={`flex flex-wrap items-center justify-center gap-5 ${
+              nest ? `${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER}` : "text-xs text-white/40"
+            }`}
+          >
+            <Link href="/get-app"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"} onClick={() => trackHome("footer_cta", { location: "footer_link" })}>Get the app</span></Link>
+            <Link href="/guides"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"}>Guides</span></Link>
+            <Link href="/features/daily-routines"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"}>Daily routines</span></Link>
+            <Link href="/about"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"} data-testid="link-about">About</span></Link>
+            <Link href="/sign-up"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"}>{t("pages.landing.sign_up")}</span></Link>
+            <Link href="/sign-in"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"}>{t("pages.landing.sign_in")}</span></Link>
+            <Link href="/privacy"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"} data-testid="link-privacy">{t("pages.landing.privacy_policy")}</span></Link>
+            <Link href="/terms"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"} data-testid="link-terms">{t("pages.landing.terms_of_service")}</span></Link>
+            <Link href="/support"><span className={nest ? "hover:text-foreground transition-colors cursor-pointer" : "hover:text-white/70 transition-colors cursor-pointer"} data-testid="link-support">{t("pages.landing.support")}</span></Link>
           </div>
-          <div className="space-y-1 text-center text-xs text-white/30">
+          <div className={`space-y-1 text-center ${nest ? V2_TYPE.caption : "text-xs text-white/30"}`}>
             <p>AmyNest AI is a product of AmyWorld.</p>
             <p>Developed and operated by AmyWorld.</p>
             <p>{t("pages.landing.2026_amynest_ai_all_rights_reserved")}</p>

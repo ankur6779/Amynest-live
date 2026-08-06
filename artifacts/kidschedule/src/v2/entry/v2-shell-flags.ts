@@ -36,6 +36,7 @@ export function isV2ShellTabRoute(pathname: string): boolean {
   const path = pathname.split("?")[0] ?? pathname;
   return (
     path === "/today" ||
+    path.startsWith("/today/") ||
     path === "/ask-amy" ||
     path === "/for-child" ||
     path.startsWith("/ask-amy/") ||

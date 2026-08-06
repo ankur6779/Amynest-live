@@ -1,0 +1,321 @@
+/**
+ * Nest Presence — ONE production Design System (Phase 1).
+ * Authority: docs/v2/DESIGN_CONSTITUTION.md
+ *
+ * Screens must not invent magic values.
+ * Craft tokens (constitution.ts) consume these variables.
+ * Lighting presets (v2-lighting.css) extend hour-specific illumination only.
+ */
+
+:root {
+  /* ── Typography (optical px) ── */
+  --v2-type-hero: 36px;
+  --v2-type-hero-leading: 1.15;
+  --v2-type-hero-tracking: -0.02em;
+  --v2-type-body: 17px;
+  --v2-type-body-leading: 1.55;
+  --v2-type-caption: 13px;
+  --v2-type-caption-leading: 1.4;
+  --v2-type-caption-tracking: 0.01em;
+  --v2-type-cta: 16px;
+  --v2-type-cta-leading: 1.2;
+
+  /* ── Spacing ladder 8→64 ── */
+  --v2-space-1: 8px;
+  --v2-space-2: 16px;
+  --v2-space-3: 24px;
+  --v2-space-4: 32px;
+  --v2-space-5: 40px;
+  --v2-space-6: 48px;
+  --v2-space-7: 56px;
+  --v2-space-8: 64px;
+
+  /* ── Radius ── */
+  --v2-radius-button: 26px;
+  --v2-radius-pill: 26px;
+  --v2-radius-plate: 28px;
+  --v2-radius-field: 20px;
+  --v2-radius-nav-active: 20px;
+
+  /* ── Button anatomy ── */
+  --v2-button-height: 52px;
+  --v2-button-pad-x: 24px;
+  --v2-press-scale: 0.97;
+
+  /* ── Blur (Sheet Glass family 20–24) ── */
+  --v2-blur-sheet: 24px;
+  --v2-blur-nav: 24px;
+
+  /* ── Surface fills ── */
+  --v2-fill-soft-plate: color-mix(in srgb, var(--foreground, currentColor) 8%, transparent);
+  --v2-fill-soft-plate-selected: color-mix(
+    in srgb,
+    var(--foreground, currentColor) 12%,
+    transparent
+  );
+  --v2-fill-sheet: color-mix(in srgb, var(--background, #0a0a0a) 85%, transparent);
+  --v2-rim: color-mix(in srgb, var(--foreground, currentColor) 6%, transparent);
+  --v2-scrim: color-mix(in srgb, var(--foreground, currentColor) 30%, transparent);
+
+  /* ── Elevation (one language) ── */
+  --v2-elevation-none: none;
+  --v2-elevation-elevated: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --v2-elevation-bloom: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* ── Motion ── */
+  --v2-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --v2-duration-micro: 120ms;
+  --v2-duration-ui: 220ms;
+  --v2-duration-page: 320ms;
+  --v2-duration-ritual: 480ms;
+  --v2-fade-rise: 8px;
+
+  /* ── Icons / nav / Orb ── */
+  --v2-icon-nav: 22px;
+  --v2-icon-ui: 20px;
+  --v2-nav-height: 56px;
+  --v2-orb-md: 3.5rem; /* 56 */
+  --v2-orb-lg: 4rem; /* 64 */
+  --v2-orb-presence: 7.5rem; /* Threshold presence */
+
+  /* ── Shell / measure ── */
+  --v2-shell-max: 32rem; /* max-w-lg */
+  --v2-measure-support: 24rem; /* max-w-sm — body / support line */
+  --v2-sheet-max: 28rem; /* max-w-md — Sheet Glass width */
+
+  /* Hover fills — Soft Plate denser settle */
+  --v2-fill-hover-soft: color-mix(in srgb, var(--foreground, currentColor) 10%, transparent);
+  --v2-fill-hover-mist: color-mix(in srgb, var(--foreground, currentColor) 6%, transparent);
+}
+
+/**
+ * Utility classes bound to the system — optional escape hatch
+ * when Tailwind arbitrary vars are awkward. Prefer constitution.ts.
+ */
+.v2-type-hero {
+  font-size: var(--v2-type-hero);
+  font-weight: 400;
+  line-height: var(--v2-type-hero-leading);
+  letter-spacing: var(--v2-type-hero-tracking);
+}
+
+.v2-type-body {
+  font-size: var(--v2-type-body);
+  font-weight: 400;
+  line-height: var(--v2-type-body-leading);
+}
+
+.v2-type-caption {
+  font-size: var(--v2-type-caption);
+  font-weight: 400;
+  line-height: var(--v2-type-caption-leading);
+  letter-spacing: var(--v2-type-caption-tracking);
+}
+
+.v2-type-cta {
+  font-size: var(--v2-type-cta);
+  font-weight: 500;
+  line-height: var(--v2-type-cta-leading);
+}
+
+.v2-bloom-cta {
+  height: var(--v2-button-height);
+  padding-inline: var(--v2-button-pad-x);
+  border-radius: var(--v2-radius-button);
+}
+
+.v2-soft-plate {
+  border-radius: var(--v2-radius-plate);
+  background: var(--v2-fill-soft-plate);
+  border: 1px solid var(--v2-rim);
+  box-shadow: var(--v2-elevation-none);
+}
+
+.v2-sheet-glass {
+  border-radius: var(--v2-radius-plate);
+  background: var(--v2-fill-sheet);
+  border: 1px solid var(--v2-rim);
+  box-shadow: var(--v2-elevation-elevated);
+  backdrop-filter: blur(var(--v2-blur-sheet));
+  -webkit-backdrop-filter: blur(var(--v2-blur-sheet));
+}
+
+.v2-prepare-skeleton {
+  border-radius: var(--v2-radius-plate);
+  background: var(--v2-fill-soft-plate);
+  animation: v2-prepare-pulse var(--v2-duration-page) var(--v2-ease) infinite;
+}
+
+@keyframes v2-prepare-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-prepare-skeleton {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/**
+ * Hearing Room — maximize Nest Presence inside Assistant black-box limits.
+ * Presentation only. Does not rewrite ChatPlatform / Assistant logic.
+ * Framework limits: keyboard contract, mode IA, inline textarea height, spinner.
+ */
+[data-v2-room="hearing"] .v2-hearing-engine {
+  --radius: var(--v2-radius-plate);
+  font-size: var(--v2-type-body);
+  line-height: var(--v2-type-body-leading);
+  font-weight: 400;
+}
+
+/* Duplicate Assistant chrome — Nest Hearing already owns hero / orb */
+[data-v2-room="hearing"] .v2-hearing-engine .assistant-chat-header {
+  display: none !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine .assistant-chat-page,
+[data-v2-room="hearing"] .v2-hearing-engine .chat-thread-page,
+[data-v2-room="hearing"] .v2-hearing-engine [class*="max-w-3xl"] {
+  max-width: var(--v2-shell-max) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [class*="rounded-xl"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="rounded-2xl"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="rounded-lg"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="rounded-3xl"] {
+  border-radius: var(--v2-radius-plate) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [class*="rounded-full"] {
+  border-radius: var(--v2-radius-pill) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [class*="shadow-lg"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="shadow-md"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="shadow-sm"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="shadow-xl"] {
+  box-shadow: var(--v2-elevation-none) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [class*="border-border"],
+[data-v2-room="hearing"] .v2-hearing-engine .chat-thread-input,
+[data-v2-room="hearing"] .v2-hearing-engine footer {
+  border-color: var(--v2-rim) !important;
+}
+
+/* Soft Plate fills — kill kit card / muted plates */
+[data-v2-room="hearing"] .v2-hearing-engine [class*="bg-card"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="bg-muted"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="bg-primary/5"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="bg-primary/10"] {
+  background: var(--v2-fill-soft-plate) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine .chat-amy-bubble > div,
+[data-v2-room="hearing"] .v2-hearing-engine .chat-user-bubble > div,
+[data-v2-room="hearing"] .v2-hearing-engine .chat-typing-bubble {
+  border-radius: var(--v2-radius-plate) !important;
+  border: 1px solid var(--v2-rim) !important;
+  box-shadow: var(--v2-elevation-none) !important;
+  font-size: var(--v2-type-body) !important;
+  line-height: var(--v2-type-body-leading) !important;
+  font-weight: 400 !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [data-chat-answer="true"] {
+  border-radius: var(--v2-radius-field) !important;
+  background: var(--v2-fill-soft-plate) !important;
+  border: 1px solid var(--v2-rim) !important;
+  box-shadow: var(--v2-elevation-none) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [data-testid="chat-thread-input"],
+[data-v2-room="hearing"] .v2-hearing-engine textarea {
+  font-size: var(--v2-type-body) !important;
+  line-height: var(--v2-type-body-leading) !important;
+  font-weight: 400 !important;
+  border-radius: var(--v2-radius-field) !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine [data-testid="chat-thread-send"] {
+  height: var(--v2-button-height) !important;
+  min-height: var(--v2-button-height) !important;
+  border-radius: var(--v2-radius-button) !important;
+  font-size: var(--v2-type-cta) !important;
+  font-weight: 500 !important;
+}
+
+/* Type remaps — kit text-* → Constitution */
+[data-v2-room="hearing"] .v2-hearing-engine .text-lg,
+[data-v2-room="hearing"] .v2-hearing-engine [class*="text-lg"] {
+  font-size: var(--v2-type-hero) !important;
+  line-height: var(--v2-type-hero-leading) !important;
+  letter-spacing: var(--v2-type-hero-tracking) !important;
+  font-weight: 400 !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine .text-sm,
+[data-v2-room="hearing"] .v2-hearing-engine [class*="text-sm"],
+[data-v2-room="hearing"] .v2-hearing-engine .text-xs,
+[data-v2-room="hearing"] .v2-hearing-engine [class*="text-xs"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="text-[11px]"] {
+  font-size: var(--v2-type-caption) !important;
+  line-height: var(--v2-type-caption-leading) !important;
+  letter-spacing: var(--v2-type-caption-tracking) !important;
+  font-weight: 400 !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine .font-semibold,
+[data-v2-room="hearing"] .v2-hearing-engine .font-bold,
+[data-v2-room="hearing"] .v2-hearing-engine [class*="font-semibold"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="font-bold"],
+[data-v2-room="hearing"] .v2-hearing-engine [class*="font-quicksand"] {
+  font-weight: 400 !important;
+  font-family: inherit !important;
+}
+
+[data-v2-room="hearing"] .v2-hearing-engine .assistant-chat-tabs button {
+  border-radius: var(--v2-radius-pill) !important;
+  border-color: var(--v2-rim) !important;
+  background: var(--v2-fill-soft-plate) !important;
+  font-size: var(--v2-type-caption) !important;
+  font-weight: 400 !important;
+  box-shadow: none !important;
+}
+
+/* Motion — Nest ease · fade rise, not chat-pop bounce */
+[data-v2-room="hearing"] .v2-hearing-engine .chat-amy-bubble,
+[data-v2-room="hearing"] .v2-hearing-engine .chat-user-bubble {
+  animation: v2-hearing-enter var(--v2-duration-ui) var(--v2-ease) both;
+}
+
+@keyframes v2-hearing-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--v2-fade-rise));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-v2-room="hearing"] .v2-hearing-engine .chat-amy-bubble,
+  [data-v2-room="hearing"] .v2-hearing-engine .chat-user-bubble {
+    animation: none;
+  }
+}
+
+/* Keep — password trailing affordance on space ladder */
+[data-v2-room="keep"] #keep-password,
+[data-v2-room="keep"] input[type="password"] {
+  padding-inline-end: var(--v2-space-8);
+}

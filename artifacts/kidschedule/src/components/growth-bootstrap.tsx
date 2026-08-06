@@ -18,6 +18,11 @@ export function GrowthBootstrap() {
     installLearningEventBus();
     installKnowledgeGraphDiscoveryBridge();
     installLearningRuntimeBridge();
+    // V2 product analytics — D1 North Star on app open (flag-gated inside).
+    void import("@/lib/analytics/v2-product").then((m) => {
+      m.ensureProductAnalyticsReady();
+      m.emitV2D1ReturnedIfEligible();
+    });
     // Silent production collectors — no UI.
     void import("@/lib/learning-telemetry-host").then((m) => {
       m.installLearningTelemetry();

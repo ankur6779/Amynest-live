@@ -1,12 +1,24 @@
 /**
- * Front Door V2 — Sprint 1 foundation only.
- * State machine: BREATH → AGE → NAME → WORRY → COMPLETE
- * No Speech try, Today, soft-save, or premium (later sprints).
+ * Vestibule — Front Door (P0.2).
+ * Question ONLY: Am I welcome here?
+ *
+ * Welcome law: never software / onboarding.
+ * Conversation law: questions invisible · understanding visible.
+ * Pace law: never "how many steps left?" · only "what is Amy understanding?"
+ * Progress is Amy's — never expose process. Expose understanding.
+ *
+ * State machine · guest memory · routing frozen — presentation only.
  */
 
 import { useEffect, useId, useState } from "react";
-import { Redirect } from "wouter";
+import { Link, Redirect } from "wouter";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { AmyMascotLogo } from "@/components/amy-mascot-logo";
+import {
+  ensureProductAnalyticsReady,
+  markFrontDoorStarted,
+} from "@/lib/analytics/v2-product";
 import {
   advanceFrontDoorFromBreath,
   ensureGuestSession,
@@ -15,21 +27,62 @@ import {
   setGuestWorry,
   type V2GuestSession,
 } from "@/v2/guest";
+import { shouldLandGuestOnToday } from "@/v2/entry/guest-access";
+import { isTodayV2Enabled } from "@/v2/entry/v2-shell-flags";
 import { shouldEnterFrontDoor } from "@/v2/entry/should-enter-front-door";
+import {
+  fadeIn,
+  useReducedMotion,
+  v2HapticLight,
+  v2LitProps,
+  V2_ATMOSPHERE,
+  V2_BLOOM_LIGHT,
+  V2_CTA,
+  V2_FIELD,
+  V2_HERO_LIGHT,
+  V2_HIERARCHY_WHISPER,
+  V2_INPUT,
+  V2_LAYOUT,
+  V2_MEASURE,
+  V2_ORB_EMIT,
+  V2_PRESS_PRIMARY,
+  V2_SCROLL,
+  V2_SCROLL_PAD,
+  V2_SHELL,
+  V2_SPACE,
+  V2_TRANSITION,
+  V2_TYPE,
+  v2LawRole,
+} from "@/v2/craft";
 import { FRONT_DOOR_AGE_OPTIONS } from "./age-options";
 import {
-  FRONT_DOOR_STATE_ORDER,
   FrontDoorState,
-  frontDoorStateIndex,
   resumeFrontDoorState,
   type FrontDoorStateId,
 } from "./state-machine";
 import type { FrontDoorAgeBand, FrontDoorWorryId } from "./types";
 import { FRONT_DOOR_WORRY_OPTIONS } from "./worry-options";
 
+const WELCOME_BLOOM = `${V2_CTA} ${V2_BLOOM_LIGHT} bg-primary text-primary-foreground hover:bg-primary/90 ${V2_PRESS_PRIMARY} ${V2_TYPE.cta}`;
+
+/** Quiet reply — never Soft Plate survey rows. */
+const CONVERSATION_REPLY = `${V2_TYPE.bodyMuted} w-full ${V2_SPACE.py2} text-left transition-colors hover:text-foreground bg-transparent border-0 cursor-pointer ${V2_HIERARCHY_WHISPER}`;
+
+/** What Amy understands now — never step/process language. */
+const UNDERSTANDING: Record<FrontDoorStateId, string> = {
+  [FrontDoorState.BREATH]: "Amy is with you.",
+  [FrontDoorState.AGE]: "Amy is beginning to picture your child.",
+  [FrontDoorState.NAME]: "Amy is learning who they are.",
+  [FrontDoorState.WORRY]: "Amy is slowly understanding.",
+  [FrontDoorState.COMPLETE]: "Amy already understands.",
+};
+
 export default function FrontDoorPage() {
   if (!shouldEnterFrontDoor()) {
     return <Redirect to="/" />;
+  }
+  if (shouldLandGuestOnToday()) {
+    return <Redirect to="/today" />;
   }
 
   return <FrontDoorFlow />;
@@ -40,6 +93,7 @@ function FrontDoorFlow() {
   const [state, setState] = useState<FrontDoorStateId>(FrontDoorState.BREATH);
   const [nameDraft, setNameDraft] = useState("");
   const titleId = useId();
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     const ensured = ensureGuestSession();
@@ -52,88 +106,104 @@ function FrontDoorFlow() {
       }),
     );
     setNameDraft(ensured?.name ?? "");
+    ensureProductAnalyticsReady({ guestId: ensured?.guestId ?? null });
+    markFrontDoorStarted();
   }, []);
 
-  const stepIndex = frontDoorStateIndex(state);
+  const lit = v2LitProps(
+    `${V2_SHELL} ${V2_SCROLL} ${V2_SCROLL_PAD} ${V2_ATMOSPHERE} text-foreground ${V2_LAYOUT.viewport}`,
+  );
 
   return (
     <main
-      className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-amber-50 via-stone-50 to-sky-50 text-stone-900"
+      {...lit}
       aria-labelledby={titleId}
       data-front-door-state={state}
+      data-v2-room="vestibule"
+      data-testid="v2-vestibule-shell"
     >
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <p className="text-sm font-medium tracking-wide text-stone-500">AmyNest</p>
-        <div
-          className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-200"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={FRONT_DOOR_STATE_ORDER.length - 1}
-          aria-valuenow={Math.max(0, stepIndex)}
-          aria-label="Front Door progress"
-        >
-          <div
-            className="h-full rounded-full bg-teal-700 transition-[width] duration-300"
-            style={{
-              width: `${((Math.max(0, stepIndex) + 1) / FRONT_DOOR_STATE_ORDER.length) * 100}%`,
-            }}
-          />
-        </div>
+      <p
+        className={`${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER}`}
+        data-testid="v2-vestibule-understanding"
+        aria-live="polite"
+      >
+        {UNDERSTANDING[state]}
+      </p>
 
-        <div className="mt-8 flex flex-1 flex-col">
-          {state === FrontDoorState.BREATH && (
-            <BreathStep
-              titleId={titleId}
-              onContinue={() => {
-                const next = advanceFrontDoorFromBreath();
-                setSession(next);
-                setState(next?.state ?? FrontDoorState.AGE);
-              }}
-            />
-          )}
-          {state === FrontDoorState.AGE && (
-            <AgeStep
-              titleId={titleId}
-              selected={session?.ageBand ?? null}
-              onSelect={(ageBand) => {
-                const next = setGuestAgeBand(ageBand);
-                setSession(next);
-                setState(next?.state ?? FrontDoorState.NAME);
-              }}
-            />
-          )}
-          {state === FrontDoorState.NAME && (
-            <NameStep
-              titleId={titleId}
-              value={nameDraft}
-              onChange={setNameDraft}
-              onSkip={() => {
-                const next = setGuestChildName(null);
-                setSession(next);
-                setState(next?.state ?? FrontDoorState.WORRY);
-              }}
-              onContinue={() => {
-                const next = setGuestChildName(nameDraft);
-                setSession(next);
-                setState(next?.state ?? FrontDoorState.WORRY);
-              }}
-            />
-          )}
-          {state === FrontDoorState.WORRY && (
-            <WorryStep
-              titleId={titleId}
-              childName={session?.name}
-              onSelect={(worryId) => {
-                const next = setGuestWorry(worryId);
-                setSession(next);
-                setState(next?.state ?? FrontDoorState.COMPLETE);
-              }}
-            />
-          )}
-          {state === FrontDoorState.COMPLETE && (
-            <FoundationCompleteStep titleId={titleId} session={session} />
-          )}
-        </div>
+      <div className={`${V2_SPACE.mt3} flex flex-1 flex-col`}>
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={state}
+            className="flex flex-1 flex-col"
+            variants={fadeIn}
+            initial={reduced ? false : "initial"}
+            animate="animate"
+            exit={reduced ? undefined : "exit"}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : V2_TRANSITION.card
+            }
+          >
+            {state === FrontDoorState.BREATH && (
+              <BreathStep
+                titleId={titleId}
+                onContinue={() => {
+                  v2HapticLight(reduced);
+                  const next = advanceFrontDoorFromBreath();
+                  setSession(next);
+                  setState(next?.state ?? FrontDoorState.AGE);
+                }}
+              />
+            )}
+            {state === FrontDoorState.AGE && (
+              <AgeStep
+                titleId={titleId}
+                selected={session?.ageBand ?? null}
+                onSelect={(ageBand) => {
+                  v2HapticLight(reduced);
+                  const next = setGuestAgeBand(ageBand);
+                  setSession(next);
+                  setState(next?.state ?? FrontDoorState.NAME);
+                }}
+              />
+            )}
+            {state === FrontDoorState.NAME && (
+              <NameStep
+                titleId={titleId}
+                value={nameDraft}
+                onChange={setNameDraft}
+                onSkip={() => {
+                  v2HapticLight(reduced);
+                  const next = setGuestChildName(null);
+                  setSession(next);
+                  setState(next?.state ?? FrontDoorState.WORRY);
+                }}
+                onContinue={() => {
+                  v2HapticLight(reduced);
+                  const next = setGuestChildName(nameDraft);
+                  setSession(next);
+                  setState(next?.state ?? FrontDoorState.WORRY);
+                }}
+              />
+            )}
+            {state === FrontDoorState.WORRY && (
+              <WorryStep
+                titleId={titleId}
+                childName={session?.name}
+                onSelect={(worryId) => {
+                  v2HapticLight(reduced);
+                  const next = setGuestWorry(worryId);
+                  setSession(next);
+                  setState(next?.state ?? FrontDoorState.COMPLETE);
+                }}
+              />
+            )}
+            {state === FrontDoorState.COMPLETE && (
+              <FoundationCompleteStep titleId={titleId} session={session} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </main>
   );
@@ -147,22 +217,35 @@ function BreathStep({
   onContinue: () => void;
 }) {
   return (
-    <section className="flex flex-1 flex-col justify-between gap-8">
-      <div className="space-y-4">
-        <h1 id={titleId} className="text-3xl font-semibold tracking-tight text-stone-900">
-          Take a breath.
+    <section className={`flex flex-1 flex-col ${V2_SPACE[4]}`}>
+      <div className={`${V2_SPACE.heroStack} ${V2_HERO_LIGHT}`}>
+        <div
+          className={`mx-auto flex items-center justify-center ${V2_ORB_EMIT}`}
+          aria-hidden
+        >
+          <AmyMascotLogo size={56} />
+        </div>
+        <h1
+          id={titleId}
+          className={`${V2_TYPE.heroCompact} text-foreground`}
+          {...v2LawRole("hero")}
+        >
+          You&apos;re welcome here.
         </h1>
-        <p className="text-lg leading-relaxed text-stone-600">
-          Amy is here with you — no forms, no rush. Just a quiet start for your child.
+        <p
+          className={`${V2_TYPE.bodyMuted} ${V2_MEASURE.support}`}
+          {...v2LawRole("support")}
+        >
+          Amy is making a little room for you — no rush.
         </p>
       </div>
       <Button
         type="button"
-        size="lg"
-        className="h-12 w-full rounded-xl bg-teal-800 text-base text-white hover:bg-teal-900"
+        className={WELCOME_BLOOM}
         onClick={onContinue}
+        {...v2LawRole("primary")}
       >
-        I&apos;m ready
+        I&apos;m here
       </Button>
     </section>
   );
@@ -178,14 +261,14 @@ function AgeStep({
   onSelect: (id: FrontDoorAgeBand) => void;
 }) {
   return (
-    <section className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <h1 id={titleId} className="text-3xl font-semibold tracking-tight">
-          How old is your child?
+    <section className={`flex flex-1 flex-col ${V2_SPACE[4]}`}>
+      <div className={`${V2_SPACE.heroStack} ${V2_HERO_LIGHT}`}>
+        <h1 id={titleId} className={V2_TYPE.heroCompact}>
+          Amy is beginning to picture your child.
         </h1>
-        <p className="text-stone-600">Point at the age that feels right — like choosing a photo.</p>
+        <p className={V2_TYPE.bodyMuted}>Something like this…</p>
       </div>
-      <ul className="flex flex-col gap-2" role="list">
+      <ul className={`flex flex-col ${V2_SPACE.stack1}`} role="list">
         {FRONT_DOOR_AGE_OPTIONS.map((option) => {
           const isSelected = selected === option.id;
           return (
@@ -193,15 +276,13 @@ function AgeStep({
               <button
                 type="button"
                 aria-pressed={isSelected}
-                className={`w-full rounded-xl border px-4 py-3 text-left transition ${
-                  isSelected
-                    ? "border-teal-800 bg-teal-50"
-                    : "border-stone-200 bg-white hover:border-stone-300"
+                aria-label={`${option.hint}. ${option.label}`}
+                className={`${CONVERSATION_REPLY} ${
+                  isSelected ? "text-foreground" : ""
                 }`}
                 onClick={() => onSelect(option.id)}
               >
-                <span className="block text-base font-medium text-stone-900">{option.label}</span>
-                <span className="block text-sm text-stone-500">{option.hint}</span>
+                {option.hint}
               </button>
             </li>
           );
@@ -226,12 +307,14 @@ function NameStep({
 }) {
   const inputId = useId();
   return (
-    <section className="flex flex-1 flex-col justify-between gap-8">
-      <div className="space-y-4">
-        <h1 id={titleId} className="text-3xl font-semibold tracking-tight">
-          What do you call them?
+    <section className={`flex flex-1 flex-col ${V2_SPACE[4]}`}>
+      <div className={`${V2_SPACE.heroStack} ${V2_HERO_LIGHT}`}>
+        <h1 id={titleId} className={V2_TYPE.heroCompact}>
+          Amy is learning who they are.
         </h1>
-        <p className="text-stone-600">Optional — a name is a gift if you want to share it.</p>
+        <p className={V2_TYPE.bodyMuted}>
+          A name, if it wants to be spoken — quiet is welcome too.
+        </p>
         <label htmlFor={inputId} className="sr-only">
           Child&apos;s name
         </label>
@@ -242,27 +325,26 @@ function NameStep({
           maxLength={40}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Child's name"
-          className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-base text-stone-900 outline-none ring-teal-800 focus:ring-2"
+          placeholder="Their name"
+          className={`w-full ${V2_FIELD} ${V2_SPACE.rowPad} ${V2_TYPE.body} text-foreground ${V2_INPUT}`}
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className={`flex flex-col ${V2_SPACE.ctaStack}`}>
         <Button
           type="button"
-          size="lg"
-          className="h-12 w-full rounded-xl bg-teal-800 text-base text-white hover:bg-teal-900"
+          className={WELCOME_BLOOM}
           onClick={onContinue}
+          {...v2LawRole("primary")}
         >
-          Continue
+          Stay with this
         </Button>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          className="h-11 w-full text-stone-600"
+          className={`${V2_TYPE.caption} ${V2_HIERARCHY_WHISPER} text-muted-foreground hover:text-foreground self-start`}
           onClick={onSkip}
         >
-          Skip for now
-        </Button>
+          Prefer not to say
+        </button>
       </div>
     </section>
   );
@@ -279,19 +361,19 @@ function WorryStep({
 }) {
   const who = childName?.trim() ? childName.trim() : "your child";
   return (
-    <section className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <h1 id={titleId} className="text-3xl font-semibold tracking-tight">
-          What&apos;s on your mind for {who}?
+    <section className={`flex flex-1 flex-col ${V2_SPACE[4]}`}>
+      <div className={`${V2_SPACE.heroStack} ${V2_HERO_LIGHT}`}>
+        <h1 id={titleId} className={V2_TYPE.heroCompact}>
+          Amy is slowly understanding {who}.
         </h1>
-        <p className="text-stone-600">Choose one true worry — just a chip of truth.</p>
+        <p className={V2_TYPE.bodyMuted}>If this feels close…</p>
       </div>
-      <ul className="flex flex-col gap-2" role="list">
+      <ul className={`flex flex-col ${V2_SPACE.stack1}`} role="list">
         {FRONT_DOOR_WORRY_OPTIONS.map((option) => (
           <li key={option.id}>
             <button
               type="button"
-              className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-left text-base font-medium text-stone-900 hover:border-stone-300"
+              className={CONVERSATION_REPLY}
               onClick={() => onSelect(option.id)}
             >
               {option.label}
@@ -311,20 +393,43 @@ function FoundationCompleteStep({
   session: V2GuestSession | null;
 }) {
   const who = session?.name?.trim() || "your child";
+  const worryLabel =
+    FRONT_DOOR_WORRY_OPTIONS.find((o) => o.id === session?.worry)?.label ??
+    null;
+  const todayOn = isTodayV2Enabled();
   return (
-    <section className="flex flex-1 flex-col justify-between gap-8">
-      <div className="space-y-4">
-        <h1 id={titleId} className="text-3xl font-semibold tracking-tight">
-          Amy heard you.
+    <section className={`flex flex-1 flex-col ${V2_SPACE[4]}`}>
+      <div className={`${V2_SPACE.heroStack} ${V2_HERO_LIGHT}`}>
+        <div
+          className={`mx-auto flex items-center justify-center ${V2_ORB_EMIT}`}
+          aria-hidden
+        >
+          <AmyMascotLogo size={48} />
+        </div>
+        <h1 id={titleId} className={V2_TYPE.heroCompact}>
+          Amy already understands.
         </h1>
-        <p className="text-lg leading-relaxed text-stone-600">
-          You shared what matters for {who}. The next moment — Amy&apos;s first truth and a gentle try —
-          arrives in a later release. Nothing here changed your existing AmyNest account or premium.
-        </p>
-        <p className="text-sm text-stone-500">
-          Sprint 1 foundation complete. Turn flags off anytime to return to the classic entry.
+        <p className={`${V2_TYPE.bodyMuted} ${V2_MEASURE.support}`}>
+          {worryLabel
+            ? `About ${worryLabel} for ${who} — you're not alone in this.`
+            : `What you shared for ${who} stays held.`}
         </p>
       </div>
+      {todayOn ? (
+        <Button
+          asChild
+          className={WELCOME_BLOOM}
+          {...v2LawRole("primary")}
+        >
+          <Link href="/today" data-testid="v2-front-door-continue-today">
+            Come into Today
+          </Link>
+        </Button>
+      ) : (
+        <p className={`${V2_TYPE.caption} text-muted-foreground`}>
+          Today will open when it is enabled for your build.
+        </p>
+      )}
     </section>
   );
 }

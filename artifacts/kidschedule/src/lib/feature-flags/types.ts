@@ -20,6 +20,38 @@ export const V2_BOOLEAN_FLAG_KEYS = [
   "progressive_reveal",
   "premium_v2",
   "analytics_v2_core",
+  /** Amy Decision Engine — OFF until shell bind sprint. Pure engine may still be unit-tested. */
+  "amy_decision_engine_v2",
+  /** Decision Stability Engine — OFF until shell bind. Pure engine may still be unit-tested. */
+  "amy_decision_stability_v2",
+  /** Decision History Engine — OFF until shell bind. Pure engine may still be unit-tested. */
+  "amy_decision_history_v2",
+  /** Decision Cooldown Engine — OFF until shell bind. Pure engine may still be unit-tested. */
+  "amy_decision_cooldown_v2",
+  /** Attention Budget Engine — OFF until shell bind. Pure engine may still be unit-tested. */
+  "amy_attention_budget_v2",
+  /** Registry Adapter Layer — OFF until Brain bind. Pure adapters may still be unit-tested. */
+  "amy_registry_adapters_v2",
+  /** Decision Bridge — OFF until shell bind. Pure resolver may still be unit-tested. */
+  "amy_decision_bridge_v2",
+  /** Amy Brain Shadow Validation — OFF until shell bind. Pure compare may still be unit-tested. */
+  "amy_brain_shadow_validation_v2",
+  /** Today Brain Adapter (shadow read) — OFF until bind. Pure observer may still be unit-tested. */
+  "amy_today_brain_adapter_v2",
+  /** Today Recommendation Adapter — OFF until bind. Pure normalize may still be unit-tested. */
+  "amy_today_recommendation_adapter_v2",
+  /** Today Recommendation Resolver — OFF until bind. Pure ID map may still be unit-tested. */
+  "amy_today_recommendation_resolver_v2",
+  /** Today Brain Hero Activation (Mission only) — OFF until bind. Pure gate may still be unit-tested. */
+  "amy_today_brain_hero_v2",
+  /** Shared Experience Resolver — OFF until surface bind. Pure resolve may still be unit-tested. */
+  "amy_experience_resolver_v2",
+  /** Speech Experience Pack — OFF until surface bind. Pure pack may still be unit-tested. */
+  "amy_speech_experience_pack_v2",
+  /** Experience Template Engine — OFF until surface bind. Pure factory may still be unit-tested. */
+  "amy_experience_template_engine_v2",
+  /** Sleep Experience Pack — OFF until surface bind. Pure definition may still be unit-tested. */
+  "amy_sleep_experience_pack_v2",
 ] as const;
 
 export type V2BooleanFlagKey = (typeof V2_BOOLEAN_FLAG_KEYS)[number];
