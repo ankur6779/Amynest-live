@@ -430,6 +430,9 @@ export default function SignUpPage() {
     }
   };
   const canSubmit = email.trim() && password.length >= 6;
+  const fromFirstExperience =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("from") === "first-experience";
   return <AuthShell>
       <h1 style={{
       margin: "0 0 4px",
@@ -438,14 +441,18 @@ export default function SignUpPage() {
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
     }}>
-        {t("screens.sign_up.title")}
+        {fromFirstExperience
+          ? "Keep today’s progress"
+          : t("screens.sign_up.title")}
       </h1>
       <p style={{
       margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
       color: "rgba(200,180,255,0.65)"
     }}>
-        {t("screens.sign_up.subtitle")}
+        {fromFirstExperience
+          ? "Signing in keeps today’s progress, tomorrow’s plan, and your child’s growing understanding."
+          : t("screens.sign_up.subtitle")}
       </p>
 
       <div className="su-oauth-stack">

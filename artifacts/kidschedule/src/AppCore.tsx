@@ -23,6 +23,7 @@ import { Layout } from "@/components/layout";
 // iOS Jetsam mid-mount on iPhones opened from in-app browsers.
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
+import FirstExperiencePage from "@/pages/first-experience";
 import SocialLandingPage from "@/pages/social-landing";
 import StoreTapPage from "@/pages/store-tap";
 import { Ga4Bootstrap } from "@/components/marketing/ga4-bootstrap";
@@ -271,7 +272,7 @@ function HomeRedirect() {
   devLog("HOME RENDER", { isSignedIn, authStatus, isLoaded });
 
   // Wait for auth to resolve before deciding signed-in vs not. Without this,
-  // an authenticated user momentarily sees <LandingPage /> while Firebase is
+  // an authenticated user momentarily sees first-experience redirect while Firebase is
   // still loading, which can kick off duplicate /api/onboarding fetches once
   // auth resolves on the next render.
   const authLoading = !isLoaded || authStatus === "loading";
@@ -304,17 +305,13 @@ function HomeRedirect() {
 
   if (authLoading && !authLoadingTimedOut) return <RouteLoadingShell />;
   if (authLoading && authLoadingTimedOut && !isSignedIn) {
-    if (isCapacitorIosShell() || isNativeAmyNestShell()) {
-      return <Redirect to="/sign-in" />;
-    }
-    return <LandingPage />;
+    // First-time experience before identity (web + native).
+    return <Redirect to="/begin" />;
   }
 
   if (!isSignedIn) {
-    if (isCapacitorIosShell() || isNativeAmyNestShell()) {
-      return <Redirect to="/sign-in" />;
-    }
-    return <LandingPage />;
+    // Value-before-identity: unsigned users enter the first-time experience.
+    return <Redirect to="/begin" />;
   }
 
   if (isError && !authBlocked) {
@@ -1011,6 +1008,8 @@ function AppRoutes() {
           <Route path="/login">
             <Redirect to="/sign-in" />
           </Route>
+          <Route path="/begin" component={FirstExperiencePage} />
+          <Route path="/welcome" component={LandingPage} />
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />
