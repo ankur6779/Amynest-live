@@ -26,7 +26,7 @@ describe("decideFirstExperienceNextThing", () => {
     expect(next.title.toLowerCase()).toContain("your child");
   });
 
-  it("buildWorkingSignals stays factual", () => {
+  it("buildWorkingSignals stays factual observations — never engineering status", () => {
     const lines = buildWorkingSignals({
       childName: "Aria",
       ageBand: "2-4",
@@ -36,5 +36,7 @@ describe("decideFirstExperienceNextThing", () => {
     expect(lines.length).toBeGreaterThanOrEqual(4);
     expect(lines.join(" ")).toMatch(/Aria/);
     expect(lines.join(" ")).not.toMatch(/I understand/i);
+    expect(lines.join(" ")).not.toMatch(/\bUsing\b/i);
+    expect(lines.some((l) => /comes into focus/i.test(l))).toBe(true);
   });
 });

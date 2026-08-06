@@ -45,29 +45,42 @@ type FeRoom =
   | "memory"
   | "keep";
 
-const MEMORY: Record<
+type FeShot = "establish" | "observe" | "approach" | "environment" | "observation";
+
+/** Continuous home sequence — each shot answers why it follows the last. */
+const SHOTS: Record<
   "welcome" | "discovery-name" | "discovery-age" | "discovery-today" | "working",
-  { src: string; alt: string }
+  { src: string; alt: string; shot: FeShot; whyNext: string }
 > = {
   welcome: {
-    src: "/experience/r1/opening.png",
-    alt: "Warm living light presence in a quiet night room",
+    shot: "establish",
+    src: "/experience/r1/shot-01-establish.png",
+    alt: "Wide quiet hallway — the home before anything is asked",
+    whyNext: "Establish the house. Distance. Air. Arrival.",
   },
   "discovery-name": {
-    src: "/experience/r1/discovery-name.png",
-    alt: "Adult hand holding a child’s hand in soft morning light",
+    shot: "observe",
+    src: "/experience/r1/shot-02-observe.png",
+    alt: "Intimate close-up of adult and child hands",
+    whyNext: "Cut closer. We are no longer in the hallway — we are with this child.",
   },
   "discovery-age": {
-    src: "/experience/r1/discovery-age.png",
-    alt: "Child’s shoe beside an adult shoe in quiet morning light",
+    shot: "approach",
+    src: "/experience/r1/shot-03-approach.png",
+    alt: "Symbolic detail — child shoe beside adult shoe",
+    whyNext: "Approach a detail that holds age without asking the face.",
   },
   "discovery-today": {
-    src: "/experience/r1/discovery-today.png",
-    alt: "Soft daylight threshold suggesting the kind of day ahead",
+    shot: "environment",
+    src: "/experience/r1/shot-04-environment.png",
+    alt: "Daylight through a doorway — the kind of day ahead",
+    whyNext: "Pull back to environment. The day itself enters the frame.",
   },
   working: {
-    src: "/experience/r1/working.png",
-    alt: "Quiet room light as today’s decision begins to assemble",
+    shot: "observation",
+    src: "/experience/r1/shot-05-observation.png",
+    alt: "Quiet room details noticed before the next right thing",
+    whyNext: "Hold still and notice. Observation, not loading.",
   },
 };
 
@@ -81,13 +94,14 @@ function Shell({
   children: ReactNode;
   room: FeRoom;
   answered?: boolean;
-  memory?: { src: string; alt: string };
+  memory?: { src: string; alt: string; shot: FeShot };
   openingBeat?: boolean;
 }) {
   return (
     <div
       data-testid="first-experience-root"
       data-fe-room={room}
+      data-fe-shot={memory?.shot ?? "none"}
       data-fe-answered={answered ? "true" : "false"}
       data-fe-opening={openingBeat ? "true" : "false"}
       className="fe-shell min-h-[100dvh] flex flex-col relative overflow-hidden"
@@ -103,7 +117,7 @@ function Shell({
       <div className="fe-stage">
         <div className="fe-column">
           {memory ? (
-            <div className="fe-memory-mount" data-testid="fe-visual-memory">
+            <div className="fe-memory-mount" data-testid="fe-visual-memory" data-fe-shot={memory.shot}>
               <div className="fe-memory-spill" aria-hidden="true" />
               <div className="fe-memory">
                 <img src={memory.src} alt={memory.alt} draggable={false} />
@@ -176,7 +190,7 @@ export default function FirstExperiencePage() {
 
   if (state.step === "welcome") {
     return (
-      <Shell room="welcome" memory={MEMORY.welcome} openingBeat>
+      <Shell room="welcome" memory={SHOTS.welcome} openingBeat>
         <div className="fe-copy">
           <p className="fe-kicker">AmyNest</p>
           <h1 className="fe-title">Begin with today</h1>
@@ -200,7 +214,7 @@ export default function FirstExperiencePage() {
 
   if (state.step === "discovery-name") {
     return (
-      <Shell room="discovery-name" answered={Boolean(nameDraft.trim())} memory={MEMORY["discovery-name"]}>
+      <Shell room="discovery-name" answered={Boolean(nameDraft.trim())} memory={SHOTS["discovery-name"]}>
         <div className="fe-copy fe-in">
           <p className="fe-kicker">1 of 3</p>
           <h1 className="fe-title fe-title-section">Child’s first name</h1>
@@ -234,7 +248,7 @@ export default function FirstExperiencePage() {
 
   if (state.step === "discovery-age") {
     return (
-      <Shell room="discovery-age" answered={Boolean(state.ageBand)} memory={MEMORY["discovery-age"]}>
+      <Shell room="discovery-age" answered={Boolean(state.ageBand)} memory={SHOTS["discovery-age"]}>
         <div className="fe-copy fe-in">
           <p className="fe-kicker">2 of 3</p>
           <h1 className="fe-title fe-title-section">
@@ -275,7 +289,7 @@ export default function FirstExperiencePage() {
 
   if (state.step === "discovery-today") {
     return (
-      <Shell room="discovery-today" answered={Boolean(state.todayContext)} memory={MEMORY["discovery-today"]}>
+      <Shell room="discovery-today" answered={Boolean(state.todayContext)} memory={SHOTS["discovery-today"]}>
         <div className="fe-copy fe-in">
           <p className="fe-kicker">3 of 3</p>
           <h1 className="fe-title fe-title-section">What kind of day is today?</h1>
@@ -317,9 +331,9 @@ export default function FirstExperiencePage() {
 
   if (state.step === "working") {
     return (
-      <Shell room="working" memory={MEMORY.working}>
+      <Shell room="working" memory={SHOTS.working}>
         <div className="fe-copy fe-in">
-          <p className="fe-kicker">Working</p>
+          <p className="fe-kicker">Noticing</p>
           <h1 className="fe-title fe-title-section">Forming today’s next right thing</h1>
           <ul className="fe-signal-list">
             {workingSignals.map((line, idx) => {

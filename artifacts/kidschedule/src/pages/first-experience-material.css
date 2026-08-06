@@ -170,14 +170,126 @@
 .fe-shell[data-fe-opening="true"] .fe-memory-mount {
   margin-top: var(--space-4);
 }
-.fe-shell[data-fe-opening="true"] .fe-memory {
+
+/* Shot grammar — never the same framing twice */
+.fe-shell[data-fe-shot="establish"] .fe-memory {
   aspect-ratio: 3 / 4;
   max-height: min(52dvh, 440px);
 }
-.fe-shell[data-fe-room="working"] .fe-memory {
+.fe-shell[data-fe-shot="establish"] .fe-memory img {
+  object-position: center 46%;
+  transform: scale(1.01);
+}
+.fe-shell[data-fe-shot="observe"] .fe-memory {
+  aspect-ratio: 5 / 4;
+  max-height: min(36dvh, 300px);
+}
+.fe-shell[data-fe-shot="observe"] .fe-memory img {
+  object-position: center 38%;
+  transform: scale(1.08);
+}
+.fe-shell[data-fe-shot="approach"] .fe-memory {
+  aspect-ratio: 16 / 11;
+  max-height: min(34dvh, 280px);
+}
+.fe-shell[data-fe-shot="approach"] .fe-memory img {
+  object-position: center 62%;
+  transform: scale(1.06);
+}
+.fe-shell[data-fe-shot="environment"] .fe-memory {
+  aspect-ratio: 16 / 10;
+  max-height: min(32dvh, 260px);
+}
+.fe-shell[data-fe-shot="environment"] .fe-memory img {
+  object-position: center 40%;
+  transform: scale(1.02);
+}
+.fe-shell[data-fe-shot="observation"] .fe-memory {
   aspect-ratio: 16 / 10;
   max-height: min(30dvh, 240px);
 }
+.fe-shell[data-fe-shot="observation"] .fe-memory img {
+  object-position: center 48%;
+  transform: scale(1.04);
+}
+
+/* Edit cuts — soft dissolve into the next shot, not page navigation */
+.fe-shell[data-fe-shot="establish"] .fe-memory-mount {
+  animation-name: feCutEstablish;
+}
+.fe-shell[data-fe-shot="observe"] .fe-memory-mount {
+  animation-name: feCutObserve;
+}
+.fe-shell[data-fe-shot="approach"] .fe-memory-mount {
+  animation-name: feCutApproach;
+}
+.fe-shell[data-fe-shot="environment"] .fe-memory-mount {
+  animation-name: feCutEnvironment;
+}
+.fe-shell[data-fe-shot="observation"] .fe-memory-mount {
+  animation-name: feCutObservation;
+}
+@keyframes feCutEstablish {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+@keyframes feCutObserve {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translate3d(0, 10px, 0) scale(1.06);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes feCutApproach {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translate3d(0, 14px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes feCutEnvironment {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+@keyframes feCutObservation {
+  from {
+    opacity: 0;
+    filter: blur(7px);
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .fe-memory img {
   width: 100%;
   height: 100%;

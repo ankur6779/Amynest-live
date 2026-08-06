@@ -145,15 +145,18 @@ function labelToday(ctx: FirstExperienceTodayContext): string {
   return "not sure yet";
 }
 
-/** Visible reasoning lines used in the "Amy works" step — only real signals. */
+/**
+ * Discovered observations while noticing the room — only real signals.
+ * Not engineering status. Not "Using…".
+ */
 export function buildWorkingSignals(input: DecideNextInput): string[] {
   const now = input.now ?? new Date();
   const name = input.childName.trim() || "your child";
   return [
-    `Using local time ${clockLabel(now)}`,
-    `Using ${weekdayLabel(now)}`,
-    `Using age band ${input.ageBand} for ${name}`,
-    `Using today's context: ${labelToday(input.todayContext)}`,
-    "Selecting one next right thing from these signals only",
+    `The clock reads ${clockLabel(now)}`,
+    `Today is ${weekdayLabel(now)}`,
+    `${name} is ${input.ageBand}`,
+    `This is a ${labelToday(input.todayContext)}`,
+    "One next right thing comes into focus",
   ];
 }
