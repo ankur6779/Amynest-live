@@ -168,7 +168,7 @@ export function buildWorkingSignals(input: DecideNextInput): string[] {
   const name = input.childName.trim() || "your child";
   return [
     timeObservation(now),
-    weekdayLabel(now),
+    `It’s ${weekdayLabel(now)}.`,
     `${name} is in the ${input.ageBand} stage.`,
     todayObservation(input.todayContext),
     "One next right thing comes into focus.",
