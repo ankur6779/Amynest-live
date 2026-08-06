@@ -13,7 +13,7 @@ const EVERGREEN = [
   "parenting tips",
   "Study Zone",
   "YouTube Shorts",
-  "Indian parents",
+  "global parenting",
   "child development",
 ];
 

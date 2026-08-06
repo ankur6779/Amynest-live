@@ -10,8 +10,8 @@ Support: support@amynest.in
 Website: https://www.amynest.in
 Last update: 2026-07-25
 Standards: HTML5, Schema.org JSON-LD, Open Graph, Twitter Cards
-Languages: English (en-IN), Hindi framework (hi-IN hreflang prepared)
-Location: India
+Languages: English (en), Hindi framework (hi hreflang prepared)
+Location: Worldwide
 
 /* THANKS */
 Parents and beta families who shaped AmyNest routines and guides.

@@ -8,7 +8,7 @@ import type {
 export const DEFAULT_GENERATION_SETTINGS: ContentGenerationSettings = {
   scriptProvider: "mock",
   fallbackProvider: "mock",
-  defaultLanguage: "en-IN",
+  defaultLanguage: "en",
   fallbackLanguage: "en",
   maxRetries: 2,
   cacheTTL: 86_400,

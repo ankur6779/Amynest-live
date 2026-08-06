@@ -7,7 +7,7 @@ describe("SEO scoring", () => {
     const score = calculateSeoScore({
       title: "Gentle Discipline Tips for Parents | AmyNest AI",
       description:
-        "Practical parenting guidance for Indian families. Download AmyNest AI on Google Play: https://play.google.com/store/apps/details?id=com.amynest.app Website: https://www.amynest.in Disclaimer: Not medical advice.",
+        "Practical parenting guidance for families worldwide. Download AmyNest AI on Google Play: https://play.google.com/store/apps/details?id=com.amynest.app Website: https://www.amynest.in Disclaimer: Not medical advice.",
       keywords: ["gentle discipline", "parenting", "amynest", "kids routine"],
       hashtags: [
         "AmyNest",
@@ -17,7 +17,7 @@ describe("SEO scoring", () => {
         "MomLife",
         "DadLife",
         "GentleParenting",
-        "IndianParents",
+        "GlobalParenting",
         "Shorts",
         "ChildDevelopment",
         "AmyAstro",

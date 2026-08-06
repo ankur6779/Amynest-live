@@ -218,9 +218,9 @@ export const FEATURE_PAGES: FeaturePageConfig[] = [
     slug: "nutrition-hub",
     title: "Kids Nutrition Hub — Meal Plans & Recipes | AmyNest AI",
     metaDescription:
-      "Age-appropriate meal ideas, Indian family-friendly recipes, and picky-eater strategies in AmyNest Nutrition Hub. Plan better meals with less daily stress.",
+      "Age-appropriate meal ideas, multi-cuisine family-friendly recipes, and picky-eater strategies in AmyNest Nutrition Hub. Plan better meals with less daily stress.",
     keywords:
-      "kids meal planner, toddler meal ideas, picky eater app, child nutrition app, family meal planning, Indian kids recipes",
+      "kids meal planner, toddler meal ideas, picky eater app, child nutrition app, family meal planning, multi cuisine kids recipes",
     headline: "Better Meals, Less",
     headlineAccent: "Daily Guesswork",
     subheadline:
@@ -234,7 +234,7 @@ export const FEATURE_PAGES: FeaturePageConfig[] = [
       },
       {
         title: "Family-friendly recipes",
-        body: "Practical dishes parents actually cook — including options common in Indian households.",
+        body: "Practical dishes parents actually cook — matched to your cuisine preferences, from global to regional kitchens.",
       },
       {
         title: "Picky-eater strategies",

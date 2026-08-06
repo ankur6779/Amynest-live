@@ -38,7 +38,7 @@ export function buildOrganizationSchema() {
       "https://twitter.com/AmyNestAI",
       "https://www.linkedin.com/company/amynest",
     ],
-    areaServed: { "@type": "Country", name: "India" },
+    areaServed: { "@type": "Place", name: "Worldwide" },
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
@@ -57,7 +57,7 @@ export function buildWebApplicationSchema() {
     alternateName: "AmyNest",
     url: SEO_ORIGIN,
     description:
-      "AI-powered parenting coach with adaptive scheduling technology. Personalized daily routines, meal plans, speech coaching, and child-development intelligence for parents in India.",
+      "Global AI-powered parenting coach with adaptive scheduling technology. Personalized daily routines, multi-cuisine meal plans, speech coaching, and child-development intelligence for families worldwide.",
     applicationCategory: "LifestyleApplication",
     applicationSubCategory: "Parenting",
     operatingSystem: "Web, Android, iOS",
@@ -66,7 +66,7 @@ export function buildWebApplicationSchema() {
     offers: {
       "@type": "Offer",
       price: "0",
-      priceCurrency: "INR",
+      priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       description: "Free with optional premium subscription",
     },
@@ -127,7 +127,7 @@ export function buildFeaturePageSchema(page: FeaturePageConfig) {
       description: page.metaDescription,
       url: buildCanonicalUrl(path),
       image: buildCanonicalUrl(page.heroImage),
-      offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     },
     buildFaqSchema(page.faqs),
     buildBreadcrumbSchema([
@@ -157,7 +157,7 @@ export function buildAsOLandingPageSchema(input: {
       description: input.metaDescription,
       url: buildCanonicalUrl(input.path),
       image: buildCanonicalUrl(input.heroImage),
-      offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     },
     buildFaqSchema(input.faqs),
     buildBreadcrumbSchema([

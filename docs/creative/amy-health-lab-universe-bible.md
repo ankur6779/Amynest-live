@@ -95,7 +95,7 @@ The child is Amy’s **Field Partner**. They do not “complete exercises.” Th
 
 - Gentle absurdity: “That balloon just yawned!”  
 - Never sarcasm, never irony that excludes young kids  
-- Occasional Hinglish warmth OK for India families (product already multilingual)  
+- Occasional Hinglish warmth OK where it fits (product already multilingual)  
 
 ### Phrase bank (examples — rotate, never spam)
 
@@ -619,7 +619,7 @@ Example — Balloon Valley:
 
 ---
 
-## 9. Localization & Cultural Notes (India-first families)
+## 9. Localization & Cultural Notes (global-first families)
 
 - Wonder over Western holiday clutter  
 - Humor works in English, Hindi, Hinglish—keep sentences short  

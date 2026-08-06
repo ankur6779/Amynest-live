@@ -46,10 +46,10 @@ function guidanceFor(
 ): string {
   const langLine =
     language === "hi"
-      ? "Narrate in clear, warm Hindi suitable for Indian parents."
+      ? "Narrate in clear, warm Hindi suitable for parents."
       : language === "hinglish"
         ? "Narrate in natural Hinglish — simple Hindi + familiar English parenting words."
-        : "Narrate in clear, warm Indian/global English for parents.";
+        : "Narrate in clear, warm global English for parents.";
 
   return [
     langLine,

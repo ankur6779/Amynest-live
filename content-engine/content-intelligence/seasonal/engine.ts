@@ -10,7 +10,7 @@ import {
 import type { SeasonalEvent } from "../../types/campaign-plan.js";
 import type { Topic, TopicCategory } from "../../types/index.js";
 
-/** Extra AmyNest editorial seasons on top of brain's India-first calendar. */
+/** Extra AmyNest editorial seasons on top of brain's seasonal calendar. */
 export function listIntelligenceSeasonalEvents(year: number): SeasonalEvent[] {
   const base = listSeasonalEvents("IN", year);
   const extra: SeasonalEvent[] = [

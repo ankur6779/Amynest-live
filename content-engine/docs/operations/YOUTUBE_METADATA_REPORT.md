@@ -69,7 +69,7 @@ Count: 20
 - parenting tips
 - Study Zone
 - YouTube Shorts
-- Indian parents
+- Global parenting
 - child development
 - Learning
 - Study Zone daily lesson
@@ -113,4 +113,4 @@ YOUTUBE_AI_DISCLOSURE env drives this flag (default enabled for AmyNest AI Short
 - Visibility: unlisted
 - Category: 22
 - License: youtube
-- Language: en-IN
+- Language: en

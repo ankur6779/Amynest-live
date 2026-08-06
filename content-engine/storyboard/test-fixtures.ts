@@ -83,7 +83,7 @@ export function makeContentPackage(
       "MomLife",
       "DadLife",
       "GentleParenting",
-      "IndianParents",
+      "GlobalParenting",
       "Shorts",
       "ChildDevelopment",
       "AmyAstro",

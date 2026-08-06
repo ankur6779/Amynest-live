@@ -42,7 +42,7 @@ export function planExperiments(input: {
     ]),
     makeExperiment("hashtags", now, [
       { id: "a", label: "broad", value: "Parenting,Kids,Shorts" },
-      { id: "b", label: "niche", value: "GentleParenting,AmyNest,IndianParents" },
+      { id: "b", label: "niche", value: "GentleParenting,AmyNest,GlobalParenting" },
     ]),
     makeExperiment("description", now, [
       { id: "a", label: "seo-first", value: "SEO-led description with keywords first" },

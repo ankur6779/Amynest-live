@@ -26,8 +26,8 @@
     "astroSlot": true,
     "appFeatureSlot": true
   },
-  "language": "en-IN",
-  "timezone": "Asia/Kolkata",
+  "language": "en",
+  "timezone": "UTC",
   "uploadTime": "09:00",
   "music": {
     "enabled": true,
@@ -45,13 +45,14 @@
       "Kids",
       "AmyAstro",
       "ParentingTips",
-      "Shorts"
+      "Shorts",
+      "GlobalParenting"
     ]
   },
   "rotationWindowDays": 45,
   "scriptProvider": "mock",
   "fallbackProvider": "mock",
-  "defaultLanguage": "en-IN",
+  "defaultLanguage": "en",
   "fallbackLanguage": "en",
   "maxRetries": 2,
   "cacheTTL": 86400,

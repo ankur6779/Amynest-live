@@ -134,17 +134,17 @@ const OUTCOME_TRUST = [
 const TESTIMONIALS = [
   {
     name: "Priya M.",
-    location: "Mumbai, India",
+    location: "Singapore",
     text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
     avatar: "P",
     color: "hsl(var(--brand-purple-500))",
     result: "Clearer evenings with fewer meltdowns",
   },
   {
-    name: "Rahul & Kavya",
-    location: "Bangalore, India",
+    name: "Emma & James",
+    location: "London, UK",
     text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
-    avatar: "R",
+    avatar: "E",
     color: "hsl(var(--brand-cyan-500))",
     result: "Spotted a bedtime pattern early",
   },
@@ -439,7 +439,7 @@ export default function LandingPage() {
       description:
         "One AI parenting companion from newborn to age 10. Personalized daily plans, Infant Hub, learning, health, and routines — free to start on web and mobile.",
       keywords:
-        "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting India, AmyNest",
+        "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, global parenting app, AmyNest",
     });
     trackHome("landing_page_view", {});
   }, []);

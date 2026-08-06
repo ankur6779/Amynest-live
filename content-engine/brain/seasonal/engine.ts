@@ -4,7 +4,7 @@ import type {
 } from "../../types/campaign-plan.js";
 import type { TopicCategory } from "../../types/index.js";
 
-/** Built-in India-first seasonal calendar with parenting-aware events. */
+/** Built-in seasonal calendar with parenting-aware events (global + regional). */
 export function listSeasonalEvents(
   calendar: string,
   year: number,

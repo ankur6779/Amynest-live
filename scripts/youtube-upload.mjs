@@ -36,11 +36,11 @@ function parseArgs(argv) {
   /** @type {{ file: string, title: string, description: string, privacy: string, tags: string[], thumbnail: boolean, cover: boolean, headline: string }} */
   const out = {
     file: "",
-    title: "AmyNest AI — Smart Parenting for Indian Families",
+    title: "AmyNest AI — Smart Parenting for Modern Families",
     description:
-      "AmyNest AI helps parents with daily routines, Amy Astro Intelligence, speech coaching & more.\n\nDownload free: https://play.google.com/store/apps/details?id=com.amynest.app\nhttps://www.amynest.in",
+      "AmyNest AI helps parents worldwide with daily routines, Amy Astro Intelligence, speech coaching & more.\n\nDownload free: https://play.google.com/store/apps/details?id=com.amynest.app\nhttps://www.amynest.in",
     privacy: process.env.YOUTUBE_DEFAULT_PRIVACY?.trim() || "unlisted",
-    tags: ["AmyNest", "parenting", "AI", "kids", "India", "Shorts"],
+    tags: ["AmyNest", "parenting", "AI", "kids", "global parenting", "Shorts"],
     thumbnail: process.env.AMYNEST_THUMBNAIL_ENGINE !== "0",
     cover: true,
     headline: "",

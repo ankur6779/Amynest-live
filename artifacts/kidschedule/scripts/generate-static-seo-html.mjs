@@ -45,8 +45,8 @@ function serializeSeoHead(input) {
     input.keywords ? `<meta name="keywords" content="${escapeAttr(input.keywords)}" />` : "",
     `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />`,
     `<link rel="canonical" href="${canonical}" />`,
-    `<link rel="alternate" hreflang="en-IN" href="${canonical}" />`,
-    `<link rel="alternate" hreflang="hi-IN" href="${buildCanonicalUrl(hiPath)}" />`,
+    `<link rel="alternate" hreflang="en" href="${canonical}" />`,
+    `<link rel="alternate" hreflang="hi" href="${buildCanonicalUrl(hiPath)}" />`,
     `<link rel="alternate" hreflang="x-default" href="${canonical}" />`,
     `<meta property="og:title" content="${escapeAttr(input.title)}" />`,
     `<meta property="og:description" content="${escapeAttr(input.description)}" />`,
@@ -56,7 +56,7 @@ function serializeSeoHead(input) {
     `<meta property="og:type" content="${input.ogType ?? "website"}" />`,
     `<meta property="og:url" content="${canonical}" />`,
     `<meta property="og:site_name" content="AmyNest AI" />`,
-    `<meta property="og:locale" content="en_IN" />`,
+    `<meta property="og:locale" content="en_US" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:site" content="@AmyNestAI" />`,
     `<meta name="twitter:creator" content="@AmyNestAI" />`,
@@ -127,7 +127,7 @@ function buildRoutineMeta(age) {
     description: `A practical daily routine template for ${age}-year-olds — wake windows (${wakeWindow}), meals, play, learning blocks, and bedtime targets parents can actually follow.`,
     keywords: `${age} year old daily routine, toddler schedule, child routine template, parenting routine planner`,
     h1: `Daily Routine Template for a ${age}-Year-Old`,
-    subheadline: "Age-appropriate wake windows, meal timing, and calm transitions — built for real Indian households.",
+    subheadline: "Age-appropriate wake windows, meal timing, and calm transitions — built for real households worldwide.",
   };
 }
 
@@ -142,8 +142,8 @@ function buildFeedingMeta(months) {
   return {
     path: `/feeding-plan/${slug}`,
     title: `Feeding Plan for ${months}-Month-Old Baby | AmyNest AI`,
-    description: `Sample feeding plan for ${months}-month-olds — meal frequency, texture (${texture}), iron-rich foods, and hydration cues for Indian families.`,
-    keywords: `${months} month baby feeding schedule, infant meal plan India, baby food by age, complementary feeding`,
+    description: `Sample feeding plan for ${months}-month-olds — meal frequency, texture (${texture}), iron-rich foods, and hydration cues for families worldwide.`,
+    keywords: `${months} month baby feeding schedule, infant meal plan, baby food by age, complementary feeding`,
     h1: `Feeding Plan for ${months}-Month-Olds`,
     subheadline:
       "Practical meal timing and food ideas — not medical prescriptions. Confirm allergies and portions with your pediatrician.",
@@ -155,9 +155,9 @@ const STATIC_PAGES = [
     path: "/",
     title: "AmyNest AI — Where Smart Parenting Begins",
     description:
-      "AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child.",
+      "Global AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, multi-cuisine meal plans, and child-development intelligence for families worldwide.",
     keywords:
-      "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting India",
+      "parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, global parenting app",
     h1: "AmyNest AI — Where Smart Parenting Begins",
     subheadline: "Personalized routines, meal plans, and parenting intelligence for your child.",
   },
@@ -166,7 +166,7 @@ const STATIC_PAGES = [
     title: "Turn Parenting Chaos Into Calm Daily Wins — AmyNest",
     description:
       "AmyNest helps you turn chaotic days into calm wins. Meet AMY for routines, infant care, nutrition, speech and learning from birth through age 10+. Free on Android & iOS.",
-    keywords: "AmyNest app download, parenting app Android iOS, AI parenting coach India",
+    keywords: "AmyNest app download, parenting app Android iOS, AI parenting coach, global parenting app",
     h1: "Turn Parenting Chaos Into Calm Daily Wins",
     subheadline: "Meet AMY — free on Google Play and the App Store.",
   },
@@ -221,7 +221,7 @@ const STATIC_PAGES = [
   {
     path: "/terms",
     title: "Terms of Service | AmyNest AI",
-    description: "Terms of service for AmyNest AI — the AI-powered parenting app for Indian families.",
+    description: "Terms of service for AmyNest AI — the global AI-powered parenting app for modern families.",
     keywords: "AmyNest terms of service, parenting app terms",
     h1: "Terms of Service",
     subheadline:
@@ -263,7 +263,7 @@ function buildJsonLd(page) {
       name: page.title,
       description: page.description,
       isPartOf: { "@id": `${ORIGIN}/#webapp` },
-      inLanguage: "en-IN",
+      inLanguage: "en",
     },
     {
       "@type": "BreadcrumbList",
@@ -288,7 +288,7 @@ function buildJsonLd(page) {
         brand: { "@type": "Brand", name: "AmyNest AI" },
       },
       mainEntityOfPage: { "@id": `${canonical}#webpage` },
-      inLanguage: "en-IN",
+      inLanguage: "en",
     });
   }
 

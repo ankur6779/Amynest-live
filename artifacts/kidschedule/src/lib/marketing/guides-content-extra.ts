@@ -99,8 +99,8 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
     slug: "bedtime-routine-for-toddlers",
     title: "Bedtime Routine for Toddlers: A Calm 30-Minute Script",
     metaDescription:
-      "Build a toddler bedtime routine that reduces battles — bath, book, bed sequence with timing tips for Indian households.",
-    keywords: "toddler bedtime routine, bedtime battles, sleep routine kids India",
+      "Build a toddler bedtime routine that reduces battles — bath, book, bed sequence with practical timing tips for busy families.",
+    keywords: "toddler bedtime routine, bedtime battles, sleep routine kids",
     publishedAt: "2026-06-15",
     readMinutes: 5,
     excerpt: "Predictable steps beat perfect timing every time.",
@@ -121,10 +121,10 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
   }),
   guide({
     slug: "baby-led-weaning-starter-guide",
-    title: "Baby-Led Weaning Starter Guide for Indian Families",
+    title: "Baby-Led Weaning Starter Guide for Modern Families",
     metaDescription:
-      "Safe baby-led weaning with Indian foods — gagging vs choking, first finger foods, and family meal integration.",
-    keywords: "baby led weaning India, BLW starter foods, infant finger foods, complementary feeding",
+      "Safe baby-led weaning with everyday family foods — gagging vs choking, first finger foods, and mealtime integration.",
+    keywords: "baby led weaning, BLW starter foods, infant finger foods, complementary feeding",
     publishedAt: "2026-06-15",
     readMinutes: 8,
     excerpt: "BLW works when safety rules and family meals align.",
@@ -144,10 +144,10 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
   }),
   guide({
     slug: "iron-rich-foods-for-toddlers",
-    title: "Iron-Rich Foods for Toddlers: Practical Indian Meal Ideas",
+    title: "Iron-Rich Foods for Toddlers: Practical Meal Ideas",
     metaDescription:
-      "Prevent iron gaps with dal, egg, ragi, and leafy greens — portion ideas and pairing with vitamin C foods.",
-    keywords: "iron rich foods toddlers, anemia prevention kids, toddler nutrition India",
+      "Prevent iron gaps with lentils, egg, fortified cereal, and leafy greens — portion ideas and pairing with vitamin C foods.",
+    keywords: "iron rich foods toddlers, anemia prevention kids, toddler nutrition",
     publishedAt: "2026-06-15",
     readMinutes: 6,
     excerpt: "Iron needs rise fast between 6–24 months — food first, supplements only with your doctor.",
@@ -169,7 +169,7 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
     title: "Healthy Snacks for Preschoolers Without the Sugar Spike",
     metaDescription:
       "Low-prep snack ideas for 3–5 year olds — protein + fiber combos that hold energy until the next meal.",
-    keywords: "healthy snacks preschoolers, toddler snack ideas India, low sugar kids snacks",
+    keywords: "healthy snacks preschoolers, toddler snack ideas, low sugar kids snacks",
     publishedAt: "2026-06-15",
     readMinutes: 5,
     excerpt: "Snacks should bridge meals, not replace them.",
@@ -216,7 +216,7 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
     title: "Phonics at Home for Beginners: A 10-Minute Daily Plan",
     metaDescription:
       "Simple phonics routine for 4–6 year olds — letter sounds, blending, and multisensory play without worksheets overload.",
-    keywords: "phonics at home, letter sounds practice, early reading India, preschool phonics",
+    keywords: "phonics at home, letter sounds practice, early reading, preschool phonics",
     publishedAt: "2026-06-15",
     readMinutes: 6,
     excerpt: "Short, daily beats long weekend cram sessions.",
@@ -237,8 +237,8 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
     slug: "bilingual-speech-development",
     title: "Bilingual Speech Development: Hindi, English, and Hinglish at Home",
     metaDescription:
-      "Myths vs facts about raising bilingual kids in India — consistency models and when mixing languages is fine.",
-    keywords: "bilingual speech development, Hindi English kids, raising bilingual child India",
+      "Myths vs facts about raising bilingual kids — consistency models and when mixing languages is fine.",
+    keywords: "bilingual speech development, Hindi English kids, raising bilingual child",
     publishedAt: "2026-06-15",
     readMinutes: 7,
     excerpt: "Bilingualism does not cause speech delay — but inconsistent exposure can slow vocabulary in each language.",
@@ -255,8 +255,8 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
     slug: "kindergarten-readiness-checklist",
     title: "Kindergarten Readiness Checklist: Skills Beyond ABCs",
     metaDescription:
-      "Social, motor, and self-care readiness for school entry — a practical checklist for Indian parents.",
-    keywords: "kindergarten readiness checklist, school readiness India, preschool skills",
+      "Social, motor, and self-care readiness for school entry — a practical checklist for parents worldwide.",
+    keywords: "kindergarten readiness checklist, school readiness, preschool skills",
     publishedAt: "2026-06-15",
     readMinutes: 6,
     excerpt: "Teachers value self-help and emotional regulation as much as academics.",
@@ -340,7 +340,7 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
     slug: "screen-free-morning-routine",
     title: "Screen-Free Morning Routine for School-Age Kids",
     metaDescription:
-      "Reduce morning chaos without screens — checklist, outfit prep, and breakfast timing for busy Indian school days.",
+      "Reduce morning chaos without screens — checklist, outfit prep, and breakfast timing for busy school days.",
     keywords: "screen free morning routine, school morning without screens, kids morning checklist",
     publishedAt: "2026-06-15",
     readMinutes: 5,
@@ -492,10 +492,10 @@ export const EXTRA_GUIDE_ARTICLES: GuideArticle[] = [
   }),
   guide({
     slug: "co-sleeping-vs-crib-sleep-safety",
-    title: "Co-Sleeping vs Crib Sleep: Safety-First Guidance for Indian Families",
+    title: "Co-Sleeping vs Crib Sleep: Safety-First Guidance for Families",
     metaDescription:
       "Room-sharing vs bed-sharing risks, safe sleep surfaces, and cultural realities — practical safety framing.",
-    keywords: "co sleeping safety India, crib sleep newborn, safe sleep baby",
+    keywords: "co sleeping safety, crib sleep newborn, safe sleep baby",
     publishedAt: "2026-06-15",
     readMinutes: 7,
     excerpt: "Safety principles matter more than ideology — discuss your setup with your pediatrician.",

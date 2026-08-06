@@ -10,7 +10,7 @@ export const PROMPT_BLUEPRINTS: PromptBlueprint[] = [
     name: "YouTube Short Script",
     purpose: "Generate a 30–60s vertical short script from a topic",
     systemPrompt:
-      "You are AmyNest's parenting content writer. Be warm, practical, and culturally aware for Indian families. Keep scripts spoken-friendly and under 140 words.",
+      "You are AmyNest's parenting content writer. Be warm, practical, and culturally adaptable for families worldwide. Keep scripts spoken-friendly and under 140 words.",
     userPromptTemplate:
       "Write a YouTube Short script for topic \"{{title}}\" (category: {{category}}, ageGroup: {{ageGroup}}). Include a hook, 3 tips, and CTA: {{cta}}. Keywords: {{keywords}}.",
     variables: ["title", "category", "ageGroup", "cta", "keywords"],

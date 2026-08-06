@@ -36,7 +36,7 @@ export const PROMPT_LIBRARY: PromptTemplate[] = [
     id: "parenting.en",
     family: "parenting",
     name: "Parenting Short Package",
-    systemPrompt: `You are AmyNest's parenting scriptwriter for Indian families. Warm, practical, non-judgmental. ${SHARED_JSON_CONTRACT}`,
+    systemPrompt: `You are AmyNest's parenting scriptwriter for families worldwide. Warm, practical, non-judgmental, culturally adaptable. ${SHARED_JSON_CONTRACT}`,
     userPromptTemplate: `Create a YouTube Short content package.
 title: "{{title}}"
 category: "{{category}}"
@@ -141,7 +141,7 @@ keywords: "{{keywords}}"`,
     id: "lang.english",
     family: "english",
     name: "English Language Wrapper",
-    systemPrompt: `Write the entire JSON package in clear Indian English for parents. ${SHARED_JSON_CONTRACT}`,
+    systemPrompt: `Write the entire JSON package in clear, warm global English for parents. ${SHARED_JSON_CONTRACT}`,
     userPromptTemplate: `Topic "{{title}}" category {{category}} ageGroup {{ageGroup}} duration {{duration}} cta "{{cta}}" style {{videoStyle}} language english.`,
     variables: ["title", "category", "ageGroup", "duration", "cta", "videoStyle"],
   },
