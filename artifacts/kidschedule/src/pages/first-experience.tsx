@@ -68,52 +68,52 @@ const SHOTS: Record<
   welcome: {
     shot: "arrival",
     src: "/experience/r1/shot-01-arrival.png",
-    alt: "Wide hallway in soft morning light — arrival",
+    alt: "Hallway — arrive into one soft morning home",
     focalLength: "35mm",
     eyeLevel: "standing",
-    light: "soft morning — daylight at the far end of the hall",
+    light: "soft morning — light at the far living-room doorway",
     changes: "distance",
-    whyNext: "We arrive into the house. Wide. Quiet. Nothing asked yet.",
+    whyNext: "Arrive in the hallway. Same house begins.",
   },
   "discovery-name": {
     shot: "relationship",
     src: "/experience/r1/shot-02-relationship.png",
-    alt: "Shoulders and backs in soft morning light — connection",
+    alt: "Living room — move closer to parent and child, never faces",
     focalLength: "85mm",
     eyeLevel: "shoulder",
-    light: "same soft morning — inherited from the hall",
+    light: "soft morning — same window light from the living room",
     changes: "distance",
-    whyNext: "Cut closer. Same morning. We are with them — never faces.",
+    whyNext: "Walk forward into the living room. Closer. Connection.",
   },
   "discovery-age": {
     shot: "growing",
     src: "/experience/r1/shot-03-detail.png",
-    alt: "Child shoe beside adult shoe — growth as memory",
+    alt: "Child corner — look down at shoes on the same oak floor",
     focalLength: "100mm",
     eyeLevel: "floor",
-    light: "same soft morning — floor shadows from the same window family",
+    light: "soft morning — same oak floor, same window family",
     changes: "height",
-    whyNext: "Drop to the floor. Growth lives in objects, not portraits.",
+    whyNext: "Look down in the child corner. Growth as objects.",
   },
   "discovery-today": {
     shot: "transition",
     src: "/experience/r1/shot-04-transition.png",
-    alt: "Doorway and morning light — today’s context",
+    alt: "Doorway — turn toward the day’s light",
     focalLength: "50mm",
     eyeLevel: "doorway",
-    light: "same soft morning — brighter as we face the source",
+    light: "soft morning — facing the same bright window source",
     changes: "direction",
-    whyNext: "Turn toward the day. The threshold holds today’s context.",
+    whyNext: "Stand and turn toward the day through the doorway.",
   },
   working: {
     shot: "reflection",
     src: "/experience/r1/shot-05-reflection.png",
-    alt: "Water, book, quiet table in soft morning light — reflection",
+    alt: "Reading table — sit and notice water, book, morning light",
     focalLength: "70mm",
     eyeLevel: "seated",
-    light: "same soft morning — quieter still life near the window",
+    light: "soft morning — same window light, quieter still life",
     changes: "emotion",
-    whyNext: "Sit. Soften. Notice. Observation before the next right thing.",
+    whyNext: "Sit at the reading table. Notice. Then the next right thing.",
   },
 };
 
@@ -234,7 +234,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="welcome" memory={SHOTS.welcome} openingBeat>
         <div className="fe-copy">
-          <p className="fe-kicker">AmyNest</p>
+          <p className="fe-kicker fe-kicker-whisper">Begin</p>
           <h1 className="fe-title">Begin with today</h1>
           <p className="fe-body">
             We’ll use only what you share — and your local time — to form one next right thing for your child.
@@ -258,7 +258,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="discovery-name" answered={Boolean(nameDraft.trim())} memory={SHOTS["discovery-name"]}>
         <div className="fe-copy fe-in">
-          <p className="fe-kicker">1 of 3</p>
+          <p className="fe-kicker fe-kicker-whisper">·</p>
           <h1 className="fe-title fe-title-section">Child’s first name</h1>
           <p className="fe-body fe-body-sm">
             Used only to personalize today’s next step. Nothing else is assumed.
@@ -292,7 +292,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="discovery-age" answered={Boolean(state.ageBand)} memory={SHOTS["discovery-age"]}>
         <div className="fe-copy fe-in">
-          <p className="fe-kicker">2 of 3</p>
+          <p className="fe-kicker fe-kicker-whisper">· ·</p>
           <h1 className="fe-title fe-title-section">
             How old is {state.childName || "your child"}?
           </h1>
@@ -333,7 +333,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="discovery-today" answered={Boolean(state.todayContext)} memory={SHOTS["discovery-today"]}>
         <div className="fe-copy fe-in">
-          <p className="fe-kicker">3 of 3</p>
+          <p className="fe-kicker fe-kicker-whisper">· · ·</p>
           <h1 className="fe-title fe-title-section">What kind of day is today?</h1>
           <p className="fe-body fe-body-sm">
             Only this — so today’s step fits the day you actually have.
@@ -375,7 +375,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="working" memory={SHOTS.working}>
         <div className="fe-copy fe-in">
-          <p className="fe-kicker">Noticing</p>
+          <p className="fe-kicker fe-kicker-whisper">·</p>
           <h1 className="fe-title fe-title-section">Forming today’s next right thing</h1>
           <ul className="fe-signal-list">
             {workingSignals.map((line, idx) => {
@@ -400,14 +400,14 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="reveal">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-          <p className="fe-kicker">Today’s next right thing</p>
+          <p className="fe-kicker fe-kicker-whisper">Today</p>
           <h1 className="fe-title fe-reveal">{state.nextThing.title}</h1>
           <p className="fe-body fe-reveal-delay">{state.nextThing.detail}</p>
           <p className="fe-body fe-body-sm" style={{ marginBottom: "var(--space-8)" }}>
             About {state.nextThing.minutes} minutes
           </p>
           <div className="fe-panel" style={{ marginBottom: "var(--space-8)" }}>
-            <p className="fe-kicker" style={{ marginBottom: "var(--space-2)" }}>Based only on</p>
+            <p className="fe-kicker fe-kicker-whisper" style={{ marginBottom: "var(--space-2)" }}>From what you shared</p>
             <ul style={{ display: "grid", gap: "var(--space-2)", fontSize: "var(--type-body-sm)", color: "rgba(244,238,230,0.55)" }}>
               {state.nextThing.basedOn.map((b) => (
                 <li key={b}>{b}</li>
@@ -433,7 +433,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="doing">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-          <p className="fe-kicker">In progress</p>
+          <p className="fe-kicker fe-kicker-whisper">Now</p>
           <h1 className="fe-title fe-title-section">{state.nextThing.title}</h1>
           <p className="fe-body">{state.nextThing.detail}</p>
           <div className="fe-actions">
@@ -484,7 +484,7 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="memory">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-          <p className="fe-kicker">Memory</p>
+          <p className="fe-kicker fe-kicker-whisper">After</p>
           <h1 className="fe-title fe-title-section">Tomorrow can start from here</h1>
           <p className="fe-body">
             AmyNest can remember today’s progress for {state.childName || "your child"} — so the next
@@ -508,7 +508,7 @@ export default function FirstExperiencePage() {
   return (
     <Shell room="keep">
       <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-        <p className="fe-kicker">Keep</p>
+        <p className="fe-kicker fe-kicker-whisper">Keep</p>
         <h1 className="fe-title fe-title-section">Keep today’s progress</h1>
         <p className="fe-body">
           Create an account to keep today’s progress, tomorrow’s plan, and{" "}

@@ -32,6 +32,9 @@ function AmyRuntimeInspectorHostInner() {
       return false;
     }
   });
+  const [path, setPath] = useState(() =>
+    typeof window !== "undefined" ? window.location.pathname : "",
+  );
 
   useEffect(() => {
     if (!isAmyRuntimeInspectorEnabled()) return;
@@ -43,6 +46,30 @@ function AmyRuntimeInspectorHostInner() {
     setAmyRuntimeInspectorPreferred(true);
     installAmyRuntimeInspector();
   }, [open]);
+
+  useEffect(() => {
+    const sync = () => setPath(window.location.pathname);
+    sync();
+    window.addEventListener("popstate", sync);
+    const prevPush = history.pushState.bind(history);
+    const prevReplace = history.replaceState.bind(history);
+    history.pushState = (...args) => {
+      prevPush(...args);
+      sync();
+    };
+    history.replaceState = (...args) => {
+      prevReplace(...args);
+      sync();
+    };
+    return () => {
+      window.removeEventListener("popstate", sync);
+      history.pushState = prevPush;
+      history.replaceState = prevReplace;
+    };
+  }, []);
+
+  // First-experience film: no competing chrome. Photography owns attention.
+  if (path === "/begin" && !open) return null;
 
   return (
     <>

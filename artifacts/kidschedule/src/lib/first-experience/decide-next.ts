@@ -145,14 +145,6 @@ function labelToday(ctx: FirstExperienceTodayContext): string {
   return "not sure yet";
 }
 
-function timeObservation(now: Date): string {
-  const bucket = timeBucket(now);
-  if (bucket === "morning") return "It’s morning.";
-  if (bucket === "afternoon") return "It’s afternoon.";
-  if (bucket === "evening") return "It’s early evening.";
-  return "It’s late.";
-}
-
 function todayObservation(ctx: FirstExperienceTodayContext): string {
   if (ctx === "school") return "Today has somewhere to be.";
   if (ctx === "home") return "Today looks unhurried.";
@@ -161,13 +153,15 @@ function todayObservation(ctx: FirstExperienceTodayContext): string {
 
 /**
  * Contemplative observations — human, minimal, calm.
- * Only real signals. Never engineering status.
+ * First-experience film is locked to soft morning light —
+ * time language must never contradict the photographs.
+ * Weekday / age / today context remain real signals.
  */
 export function buildWorkingSignals(input: DecideNextInput): string[] {
   const now = input.now ?? new Date();
   const name = input.childName.trim() || "your child";
   return [
-    timeObservation(now),
+    "The morning is still quiet.",
     `It’s ${weekdayLabel(now)}.`,
     `${name} is in the ${input.ageBand} stage.`,
     todayObservation(input.todayContext),
