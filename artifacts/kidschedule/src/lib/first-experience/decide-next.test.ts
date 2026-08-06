@@ -35,8 +35,12 @@ describe("decideFirstExperienceNextThing", () => {
     });
     expect(lines.length).toBeGreaterThanOrEqual(4);
     expect(lines.join(" ")).toMatch(/Aria/);
+    expect(lines.join(" ")).toMatch(/2-4 stage/);
+    expect(lines.join(" ")).toMatch(/afternoon/i);
+    expect(lines.join(" ")).toMatch(/still open/i);
     expect(lines.join(" ")).not.toMatch(/I understand/i);
     expect(lines.join(" ")).not.toMatch(/\bUsing\b/i);
+    expect(lines.join(" ")).not.toMatch(/The clock reads/i);
     expect(lines.some((l) => /comes into focus/i.test(l))).toBe(true);
   });
 });

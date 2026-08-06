@@ -45,12 +45,12 @@ type FeRoom =
   | "memory"
   | "keep";
 
-type FeShot = "arrival" | "relationship" | "detail" | "transition" | "reflection";
+type FeShot = "arrival" | "relationship" | "growing" | "transition" | "reflection";
 
 /**
- * Continuous home sequence.
- * Rules: never repeat focal length; never repeat eye level;
- * inherit light; change one axis; answer why this is next.
+ * One soft-morning home. One continuous day.
+ * Never repeat focal length. Never repeat eye level.
+ * One visual variable changes per cut.
  */
 const SHOTS: Record<
   "welcome" | "discovery-name" | "discovery-age" | "discovery-today" | "working",
@@ -68,52 +68,52 @@ const SHOTS: Record<
   welcome: {
     shot: "arrival",
     src: "/experience/r1/shot-01-arrival.png",
-    alt: "Wide hallway — arrival into the home",
-    focalLength: "wide-24",
+    alt: "Wide hallway in soft morning light — arrival",
+    focalLength: "35mm",
     eyeLevel: "standing",
-    light: "warm ivory from the far room",
+    light: "soft morning — daylight at the far end of the hall",
     changes: "distance",
-    whyNext: "We arrive. Wide. Empty. The house before anything is asked.",
+    whyNext: "We arrive into the house. Wide. Quiet. Nothing asked yet.",
   },
   "discovery-name": {
     shot: "relationship",
     src: "/experience/r1/shot-02-relationship.png",
-    alt: "Shoulders and backs — adult and child together, never faces",
-    focalLength: "tight-85",
+    alt: "Shoulders and backs in soft morning light — connection",
+    focalLength: "85mm",
     eyeLevel: "shoulder",
-    light: "same warm ivory, now side-lit on bodies",
+    light: "same soft morning — inherited from the hall",
     changes: "distance",
-    whyNext: "Cut closer. Same light. We are with them — not looking at faces.",
+    whyNext: "Cut closer. Same morning. We are with them — never faces.",
   },
   "discovery-age": {
-    shot: "detail",
+    shot: "growing",
     src: "/experience/r1/shot-03-detail.png",
-    alt: "Child shoe beside adult shoe — objects carrying memory",
-    focalLength: "close-50",
+    alt: "Child shoe beside adult shoe — growth as memory",
+    focalLength: "100mm",
     eyeLevel: "floor",
-    light: "same morning warmth, longer floor shadows",
+    light: "same soft morning — floor shadows from the same window family",
     changes: "height",
-    whyNext: "Drop to the floor. Age lives in objects, not portraits.",
+    whyNext: "Drop to the floor. Growth lives in objects, not portraits.",
   },
   "discovery-today": {
     shot: "transition",
     src: "/experience/r1/shot-04-transition.png",
-    alt: "Doorway light — transition into the day",
-    focalLength: "mid-35",
+    alt: "Doorway and morning light — today’s context",
+    focalLength: "50mm",
     eyeLevel: "doorway",
-    light: "inherited warmth brightening as we approach the source",
+    light: "same soft morning — brighter as we face the source",
     changes: "direction",
-    whyNext: "Turn toward the light. The day enters through the threshold.",
+    whyNext: "Turn toward the day. The threshold holds today’s context.",
   },
   working: {
     shot: "reflection",
     src: "/experience/r1/shot-05-reflection.png",
-    alt: "Lamp, water, book, empty chair — noticing the room",
-    focalLength: "medium-50",
+    alt: "Water, book, quiet table in soft morning light — reflection",
+    focalLength: "70mm",
     eyeLevel: "seated",
-    light: "same ivory-amber family, softened into lamp and water",
+    light: "same soft morning — quieter still life near the window",
     changes: "emotion",
-    whyNext: "Sit. Soften. Notice the room before the next right thing appears.",
+    whyNext: "Sit. Soften. Notice. Observation before the next right thing.",
   },
 };
 

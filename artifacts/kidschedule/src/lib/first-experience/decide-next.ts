@@ -145,18 +145,32 @@ function labelToday(ctx: FirstExperienceTodayContext): string {
   return "not sure yet";
 }
 
+function timeObservation(now: Date): string {
+  const bucket = timeBucket(now);
+  if (bucket === "morning") return "It’s morning.";
+  if (bucket === "afternoon") return "It’s afternoon.";
+  if (bucket === "evening") return "It’s early evening.";
+  return "It’s late.";
+}
+
+function todayObservation(ctx: FirstExperienceTodayContext): string {
+  if (ctx === "school") return "Today has somewhere to be.";
+  if (ctx === "home") return "Today looks unhurried.";
+  return "Today is still open.";
+}
+
 /**
- * Discovered observations while noticing the room — only real signals.
- * Not engineering status. Not "Using…".
+ * Contemplative observations — human, minimal, calm.
+ * Only real signals. Never engineering status.
  */
 export function buildWorkingSignals(input: DecideNextInput): string[] {
   const now = input.now ?? new Date();
   const name = input.childName.trim() || "your child";
   return [
-    `The clock reads ${clockLabel(now)}`,
-    `Today is ${weekdayLabel(now)}`,
-    `${name} is ${input.ageBand}`,
-    `This is a ${labelToday(input.todayContext)}`,
-    "One next right thing comes into focus",
+    timeObservation(now),
+    weekdayLabel(now),
+    `${name} is in the ${input.ageBand} stage.`,
+    todayObservation(input.todayContext),
+    "One next right thing comes into focus.",
   ];
 }
