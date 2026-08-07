@@ -281,19 +281,19 @@ function buildCandidatePool(ctx: HeroGreetingContext, now: Date): GreetingCandid
 
   const streak = Math.max(ctx.journeyStreak ?? 0, ctx.routineStreak ?? 0);
   if (streak > 7) {
-    push("progress:streak7", "🏆 Incredible momentum", "🚀 Your consistency is paying off", "progress");
-    push("progress:streak7b", "✨ Amy is noticing your progress", "Small habits create big results", "progress");
+    push("progress:streak7", "A steady week of showing up", "Your presence is what they feel most.", "progress");
+    push("progress:streak7b", "Amy notices your quiet consistency", "Small returns become care over time.", "progress");
   } else if (streak > 3) {
-    push("progress:streak3", "🔥 You're building amazing consistency", "🌟 Four days stronger already", "progress");
-    push("progress:streak3b", "💜 Small habits create big results", "Keep showing up — it adds up", "progress");
+    push("progress:streak3", "A few steady days already", "Small returns count as care.", "progress");
+    push("progress:streak3b", "Rhythm is forming gently", "Showing up — even imperfectly — matters.", "progress");
   }
 
   if (ctx.behaviorLoggedToday === true) {
-    push("progress:behavior-yes", "🎉 Great job capturing today's moments", "💜 Every note tells an important story", "progress");
-    push("progress:behavior-yes2", "📝 Patterns are becoming clearer", "Your notes help Amy support you better", "progress");
+    push("progress:behavior-yes", "Today’s note is held", "What you shared helps Amy support you.", "progress");
+    push("progress:behavior-yes2", "A quiet pattern is taking shape", "Your observations guide the next step.", "progress");
   } else if (ctx.behaviorLoggedToday === false) {
-    push("progress:behavior-no", "📝 A quick note today can unlock new insights", "✨ Tracking patterns helps Amy help you better", "progress");
-    push("progress:behavior-no2", "💡 One small log can reveal a big pattern", "Your observations matter more than you think", "progress");
+    push("progress:behavior-no", "One small note is enough today", "Only if you want — Amy will remember what you share.", "progress");
+    push("progress:behavior-no2", "A gentle observation can help later", "No pressure — share only what feels true.", "progress");
   }
 
   const inspirationalTitles = [

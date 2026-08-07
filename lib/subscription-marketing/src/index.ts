@@ -227,14 +227,14 @@ export const PAYWALL_AI = {
   title: "You've used today's free Amy guidance",
   subtitle:
     "Premium unlocks unlimited personalized answers for meltdowns, homework, bedtime, and the moments in between—so you always have a calm next step.",
-  cta: "Unlock Unlimited Guidance",
+  cta: "Continue with Amy's guidance",
 } as const;
 
 export const PAYWALL_INFANT_AI = {
   title: "You've used today's free baby questions",
   subtitle:
     "Premium unlocks unlimited Baby Expert answers about sleep, feeding, and development—matched to your baby's age, not generic advice.",
-  cta: "Unlock Unlimited Guidance",
+  cta: "Continue with Amy's guidance",
 } as const;
 
 export const PAYWALL_SPEECH_COACH = {
@@ -248,7 +248,7 @@ export const PAYWALL_LEARNING = {
   title: "Continue today's learning journey",
   subtitle:
     "Keep phonics, study, math, olympiad, and spelling progressing every day—so momentum never pauses between school terms.",
-  cta: "Unlock All Learning",
+  cta: "Continue learning together",
 } as const;
 
 export const PAYWALL_HUB = {
@@ -269,20 +269,20 @@ export const PAYWALL_INFANT_SLEEP = {
   title: "Ready for a sleep plan built from your baby's patterns",
   subtitle:
     "AI Sleep Coach uses nap history and wake windows to recommend bedtime tweaks and a weekly focus—not generic sleep tips.",
-  cta: "Unlock Sleep Guidance",
+  cta: "Continue with sleep support",
 } as const;
 
 export const PAYWALL_INFANT_FEEDING = {
   title: "Create meal plans for every stage of growth",
   subtitle:
     "A 7-day solids roadmap with allergy-safe intro order and portions from your baby's age and feeding logs.",
-  cta: "Unlock Feeding Plans",
+  cta: "Continue with feeding plans",
 } as const;
 
 export const PAYWALL_BIRTH_SKY = {
   title: "Your child's story has only begun",
   subtitle:
-    "Unlock unlimited AI insights and keepsake stories that grow with your child.",
+    "Continue with AI insights and keepsake stories that grow with your child.",
   cta: "Continue Exploring Birth Sky",
 } as const;
 
@@ -290,18 +290,18 @@ export const PAYWALL_HEALTH_LAB = {
   title: "Build a lifelong wellness record",
   subtitle:
     "Health Lab turns daily care into clear trends—so you spot patterns early and celebrate real progress.",
-  cta: "Unlock Health Lab",
+  cta: "Continue with Health Lab",
 } as const;
 
 export const PAYWALL_GAMES = {
-  title: "Unlock every educational game",
+  title: "Every educational game, whenever you're ready",
   subtitle:
     "Open the full play library and future releases—brain, memory, math, focus, and more beyond the two free starters.",
-  cta: "Unlock All Games",
+  cta: "Continue with all games",
 } as const;
 
 export const CANCELLATION_RETENTION = {
-  title: "Pausing slows what took weeks to build",
+  title: "Your progress stays saved if you pause",
   body:
     "Your routines, Speech Coach sessions, learning streaks, and Coach plans stay active until this billing period ends. After that, the system rests—progress is safe, daily support is not. Many families switch to Growth Year instead of pausing mid-year.",
   bodyPeriodEnd:
@@ -314,7 +314,7 @@ export const CANCELLATION_RETENTION = {
 export const WIN_BACK = {
   headline: "Their routines and progress are still here",
   subheadline:
-    "You already built momentum—Speech practice, learning paths, and calmer days. Reactivate and avoid starting over when your child is ready to continue.",
+    "You already built Speech practice, learning paths, and calmer days. They're still here whenever your child is ready to continue.",
   cta: "Reactivate Growth Year",
   secondaryCta: "See all plans",
 } as const;
@@ -380,7 +380,7 @@ export const AI_PAYWALL_CONCEPTS = [
 ] as const;
 
 export const CANCELLATION_SAVE_CONCEPTS = [
-  "Pausing slows what took weeks to build",
+  "Your progress stays saved if you pause",
   "Their Speech Coach streak is worth keeping",
   "Annual saves ~33%—switch instead of stopping?",
   "Progress is saved. Daily support isn't.",
@@ -401,7 +401,7 @@ export const WIN_BACK_CONCEPTS = [
   "30 seconds to restore their learning path",
   "The system you configured is waiting",
   "Continue Growth Year—lowest cost to return",
-  "Miss calmer mornings? They're one tap away",
+  "Calmer mornings are still here when you return",
   "Your child's hub progress didn't disappear",
 ] as const;
 
@@ -459,19 +459,19 @@ export const PAYWALL_REASON_COPY: Record<
     title: "A plan for this exact parenting moment",
     subtitle:
       "Amy Coach turns tantrums, defiance, screens, and sleep struggles into 10–12 clear steps—for your child's age, not generic advice.",
-    cta: "Unlock Personalized Coaching",
+    cta: "Continue with personalized coaching",
   },
   personalized_coaching: {
     title: "A plan for this exact parenting moment",
     subtitle:
       "Amy Coach turns tantrums, defiance, screens, and sleep struggles into 10–12 clear steps—for your child's age, not generic advice.",
-    cta: "Unlock Personalized Coaching",
+    cta: "Continue with personalized coaching",
   },
   premium_insight: {
     title: "See the complete picture of your child's growth",
     subtitle:
-      "Unlock weekly reports and deeper insights across wins, hard days, and milestones.",
-    cta: "Unlock Weekly Reports",
+      "See weekly reports and deeper insights across wins, hard days, and milestones.",
+    cta: "See deeper weekly reports",
   },
   child_limit: {
     title: "Every child deserves their own growth plan",
@@ -489,31 +489,31 @@ export const PAYWALL_REASON_COPY: Record<
     title: "Wind-down that still teaches",
     subtitle:
       "Calm audio stories and focus tracks—ready when you need five peaceful minutes that count.",
-    cta: "Unlock Audio Lessons",
+    cta: "Continue with audio lessons",
   },
   behavior_locked: {
     title: "Log once. Parent smarter after.",
     subtitle:
       "Behavior tracking fuels insights—so the next meltdown has context, not confusion.",
-    cta: "Unlock Behavior Insights",
+    cta: "Continue with behavior insights",
   },
   phonics_workbook: {
     title: "Reading confidence starts at your table",
     subtitle:
       "Printable phonics workbooks for ages 3–7—practice together with structured worksheets.",
-    cta: "Unlock Phonics Workbooks",
+    cta: "Continue with phonics workbooks",
   },
   hub_nutrition: {
     title: "Create meal plans for every stage of growth",
     subtitle:
       "Allergy-aware, routine-friendly nutrition help—less dinner stress, better energy for learning.",
-    cta: "Unlock Meal Plans",
+    cta: "Continue with meal plans",
   },
   nutrition_library: {
     title: "Download expert nutrition guides",
     subtitle:
-      "Unlock the full Nutrition Library for printable guides matched to your family's stage.",
-    cta: "Unlock Nutrition Library",
+      "The full Nutrition Library has printable guides matched to your family's stage.",
+    cta: "Continue with Nutrition Library",
   },
   feature: UPGRADE_MODAL,
 };

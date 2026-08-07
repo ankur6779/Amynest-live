@@ -13,19 +13,19 @@ type Props = {
 const COPY: Record<number, { title: string; body: string }> = {
   1: {
     title: "We saved your spot",
-    body: "A gentle reminder — today's routine is waiting when you're ready.",
+    body: "Today’s next step is here whenever you’re ready.",
   },
   3: {
-    title: "Pick up where you left off",
-    body: "Your unfinished activity is still here. No pressure — just one small step.",
+    title: "Life can continue from here",
+    body: "Your unfinished step is still here — one small return is enough.",
   },
   7: {
-    title: "Welcome back bonus",
-    body: "Open today for bonus stars. We're glad you're here.",
+    title: "Glad you’re here again",
+    body: "Whenever you’re ready, we can pick up one quiet step together.",
   },
   14: {
-    title: "We've missed you",
-    body: "Amy prepared a fresh start — your child's journey continues anytime.",
+    title: "Welcome whenever you’re ready",
+    body: "A fresh, gentle start is here — your child’s journey continues anytime.",
   },
 };
 

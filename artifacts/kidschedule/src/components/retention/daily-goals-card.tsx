@@ -47,7 +47,7 @@ export function DailyGoalsCard({ goals, goalsComplete = 0 }: Props) {
         {allDone ? (
           <p className="text-xs font-semibold text-emerald-300 flex items-center gap-1">
             <span aria-hidden>🎉</span>
-            {t("retention.all_goals_done", "All goals complete — bonus stars earned!")}
+            {t("retention.all_goals_done", "Today’s intentions are complete — rest easy.")}
           </p>
         ) : null}
       </div>

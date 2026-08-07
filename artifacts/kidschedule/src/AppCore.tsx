@@ -476,7 +476,7 @@ const PREMIUM_ROUTE_METADATA: PremiumRouteMeta[] = [
       "Full nutrition library downloads",
     ],
     source: "route_nutrition",
-    cta: "Unlock Meal Plans",
+    cta: "Continue with meal plans",
     reason: "hub_nutrition",
   },
   {
@@ -506,7 +506,7 @@ const PREMIUM_ROUTE_METADATA: PremiumRouteMeta[] = [
       "Personalized health guidance",
     ],
     source: "route_health_lab",
-    cta: "Unlock Health Lab",
+    cta: "Continue with Health Lab",
     reason: "feature",
   },
 ];
@@ -522,7 +522,7 @@ function PremiumRoutePreview({ meta }: { meta: PremiumRouteMeta }) {
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-6 py-10 text-center">
       <div className="rounded-[28px] border border-violet-500/20 bg-white/[0.04] p-6">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-300">
-          What you unlock
+          What Premium includes
         </p>
         <h1 className="mt-3 text-2xl font-black text-foreground">{meta.title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{meta.preview}</p>

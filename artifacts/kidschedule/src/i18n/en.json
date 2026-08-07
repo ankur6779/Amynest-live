@@ -284,7 +284,7 @@
     "timeline_next_up": "Next: {{task}}",
     "streak_start_today": "Start today!",
     "streak_on_roll": "You're on a roll!",
-    "streak_keep_going": "Keep going!",
+    "streak_keep_going": "A steady rhythm is enough.",
     "streak_epic": "Epic",
     "streak_hot": "Hot",
     "streak_active": "Active",
@@ -2907,7 +2907,7 @@
       "free_ended": "Free journey complete",
       "continue_journey_header": "Continue {{name}}'s Journey",
       "day_of": "{{name}}'s Journey · Day {{current}} of {{total}}",
-      "unlock_to_continue": "Unlock to continue tomorrow's Path and keep progress growing.",
+      "unlock_to_continue": "Tomorrow's Path will be here when you return.",
       "unlock_to_continue_soft": "Pick up where you left off — your progress is saved.",
       "complete_path_hint": "Complete Today's Path to advance your free journey.",
       "day_streak": "day streak",
@@ -3089,7 +3089,7 @@
       }
     },
     "predictor": {
-      "loading": "Amy is thinking about tomorrow…",
+      "loading": "Amy is noticing tomorrow…",
       "title": "Amy AI · Tomorrow's Forecast",
       "family_forecast": "Family forecast",
       "for_child": "For {{name}}",
@@ -3295,8 +3295,8 @@
       "Family mode"
     ],
     "locked": {
-      "label": "Unlock to continue",
-      "cta": "Unlock Premium"
+      "label": "Continue when you're ready",
+      "cta": "Continue with Premium"
     },
     "emotional_cards": {
       "overwhelmed": {
@@ -4999,7 +4999,7 @@
       "amy_subtraction_intro": "Pick {{pick}} flowers from {{total}}!",
       "amy_daily_intro": "Daily Challenge — let's go!",
       "amy_daily_done": "You did it! Amazing!",
-      "amy_keep_going": "Keep going!",
+      "amy_keep_going": "One gentle step is enough.",
       "badge_first_count": "First Counter",
       "badge_addition_star": "Addition Star",
       "badge_daily_hero": "Daily Hero",
@@ -6033,7 +6033,7 @@
       "streak_start": "Start your streak! Generate a routine today.",
       "streak_day_one": "Streak started! Keep it going tomorrow.",
       "streak_building": "{{count}}-day streak! You're building momentum.",
-      "streak_legend": "🏆 {{count}}-day streak! Incredible consistency!",
+      "streak_legend": "{{count}} quiet days of showing up — that presence matters.",
       "insights_generate": "Generate",
       "insights_view": "View",
       "insights_load_error": "Couldn't generate insights. Please try again."

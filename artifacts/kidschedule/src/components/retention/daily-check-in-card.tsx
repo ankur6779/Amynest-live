@@ -186,36 +186,36 @@ export function DailyCheckInCard({
                 {personalized
                   ? t(
                       "retention.welcome_back_personalized",
-                      "Welcome back! Amy prepared today's plan specially for you.",
+                      "Welcome back — a quiet plan is here whenever you’re ready.",
                     )
                   : data.checkedInToday
-                    ? t("retention.checked_in_today", "You're checked in for today")
-                    : t("retention.checking_in", "Checking you in…")}
+                    ? t("retention.checked_in_today", "Today is already held")
+                    : t("retention.checking_in", "Noticing you’re here…")}
               </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0 rounded-full bg-orange-500/20 px-3 py-1.5 border border-orange-400/30">
               <Flame className="h-4 w-4 text-orange-300" aria-hidden />
               <span className="font-black text-white text-sm">{streak}</span>
               <span className="text-[10px] text-white/60 uppercase">
-                {t("dashboard.day_streak", "day streak")}
+                {t("dashboard.day_streak", "quiet days")}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl bg-white/8 border border-white/10 py-2 px-1">
-              <p className="text-[10px] text-white/55 uppercase">{t("retention.parent_score", "Parent Score")}</p>
+              <p className="text-[10px] text-white/55 uppercase">{t("retention.parent_score", "Care rhythm")}</p>
               <p className="text-lg font-bold text-amber-300">{score}</p>
             </div>
             <div className="rounded-xl bg-white/8 border border-white/10 py-2 px-1">
               <p className="text-[10px] text-white/55 uppercase flex items-center justify-center gap-0.5">
-                <Star className="h-3 w-3" aria-hidden /> {t("retention.stars", "Stars")}
+                <Star className="h-3 w-3" aria-hidden /> {t("retention.stars", "Quiet wins")}
               </p>
               <p className="text-lg font-bold text-white">{stars}</p>
             </div>
             <div className="rounded-xl bg-white/8 border border-white/10 py-2 px-1">
               <p className="text-[10px] text-white/55 uppercase flex items-center justify-center gap-0.5">
-                <Coins className="h-3 w-3" aria-hidden /> {t("retention.coins", "Coins")}
+                <Coins className="h-3 w-3" aria-hidden /> {t("retention.coins", "Thanks")}
               </p>
               <p className="text-lg font-bold text-white">{coins}</p>
             </div>
@@ -229,7 +229,7 @@ export function DailyCheckInCard({
               data-testid="retention-generate-routine"
             >
               <Sparkles className="h-4 w-4" />
-              {t("retention.todays_routine", "Generate today's AI routine")}
+              {t("retention.todays_routine", "See today’s plan")}
             </button>
           ) : (
             <p className="text-xs text-emerald-300 font-medium flex items-center gap-1.5">
@@ -285,7 +285,7 @@ export function DailyCheckInCard({
           {data.shieldAvailable && streak > 0 && nextMilestone ? (
             <p className="text-[10px] text-white/45 flex items-center gap-1">
               <Shield className="h-3 w-3" aria-hidden />
-              {t("retention.shield_hint", "{{n}} more days to reach {{m}}-day streak · 1 shield/month", {
+              {t("retention.shield_hint", "{{n}} more quiet days toward {{m}} — a gentle hold is available this month", {
                 n: nextMilestone - streak,
                 m: nextMilestone,
               })}

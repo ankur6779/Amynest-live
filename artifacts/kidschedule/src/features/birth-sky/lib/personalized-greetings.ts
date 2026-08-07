@@ -49,7 +49,7 @@ function continuityHellos(
 
   if (facts.familiarity !== "new") {
     lines.push(withParent("I'm glad you're back."));
-    lines.push(withParent(`I've been thinking about ${child} since our last journey.`));
+    lines.push(withParent(`Welcome back — ${child}'s sky is still here for you.`));
   }
   if (facts.daysSinceLastVisit != null && facts.daysSinceLastVisit >= 1) {
     lines.push(withParent("Our stars have changed a little today."));

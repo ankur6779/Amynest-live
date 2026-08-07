@@ -208,22 +208,22 @@ async function buildRetentionWinback(
   const copy: Record<number, { title: string; body: string; deepLink: string }> = {
     1: {
       title: "A gentle reminder",
-      body: `Today's routine for ${childName} is ready when you are.`,
+      body: `Today's next step for ${childName} is ready when you are.`,
       deepLink: "/dashboard",
     },
     3: {
-      title: "Pick up where you left off",
-      body: `Your unfinished activity is still here — one small step for ${childName}.`,
+      title: "Life can continue from here",
+      body: `Your unfinished step for ${childName} is still here — one small return is enough.`,
       deepLink: resumeHref,
     },
     7: {
-      title: "Welcome back bonus",
-      body: `Open AmyNest today for bonus stars — ${childName}'s journey continues.`,
+      title: "Glad you're here again",
+      body: `Whenever you're ready, a quiet step for ${childName} is waiting.`,
       deepLink: "/dashboard",
     },
     14: {
-      title: "We've missed you",
-      body: `Amy prepared a fresh start for ${childName}. No pressure — just drop in.`,
+      title: "Welcome whenever you're ready",
+      body: `A fresh, gentle start for ${childName} is here — no pressure.`,
       deepLink: "/dashboard",
     },
   };
@@ -260,38 +260,38 @@ export async function buildEngagement(
       { title: string; body: string; deepLink: string }
     > = {
       1: {
-        title: "Day 1: Create today's routine ✨",
-        body: `Kick off ${child.name}'s 7-day journey — generate a routine in one tap.`,
+        title: "Day 1: Today's plan is ready",
+        body: `A gentle first step for ${child.name} — see today's plan when you like.`,
         deepLink: "/routines/generate",
       },
       2: {
-        title: "Day 2: Mark a task done ✅",
-        body: `Complete one item on ${child.name}'s routine to keep your streak going.`,
+        title: "Day 2: One small done is enough",
+        body: `Complete one item on ${child.name}'s routine if it feels right.`,
         deepLink: "/routines",
       },
       3: {
-        title: "Day 3: Explore Parent Hub 🧭",
-        body: "Discover activities, tips, and learning tools built for your family.",
+        title: "Day 3: A quiet look at Parent Hub",
+        body: "Activities and tips are here for your family — whenever you're ready.",
         deepLink: "/parenting-hub",
       },
       4: {
-        title: "Day 4: Log a win 📝",
-        body: `Note one thing about ${child.name} today — it helps Amy learn your patterns.`,
+        title: "Day 4: One note if you want",
+        body: `Share one thing about ${child.name} today — only what you choose to remember.`,
         deepLink: "/behavior",
       },
       5: {
-        title: "Day 5: Fun learning time 🎮",
-        body: `Try a puzzle or game with ${child.name} — small wins build big habits.`,
+        title: "Day 5: A light learning moment",
+        body: `A puzzle or game with ${child.name} can be a small kindness today.`,
         deepLink: "/games",
       },
       6: {
-        title: "Amy has a quick thought for you",
-        body: "Small progress matters — ready for a quick coaching check-in?",
+        title: "Amy has a quiet thought",
+        body: "A short coaching check-in is here if it would feel lighter.",
         deepLink: "/amy-coach",
       },
       7: {
-        title: "Day 7: See your progress 📊",
-        body: "You've come far — review your weekly insights and celebrate!",
+        title: "Day 7: Look back gently",
+        body: "Your week is here to review — no score, just noticing.",
         deepLink: "/insights",
       },
     };
@@ -321,17 +321,17 @@ export async function buildEngagement(
   const inactive = !lastActiveAt || lastActiveAt < threeDaysAgo;
 
   const motivations = [
-    `You're doing an amazing job, ${child.name} is lucky to have you 💜`,
-    `Small consistent actions make the biggest difference for ${child.name}.`,
-    `Every routine you build now shapes ${child.name}'s future habits.`,
-    `Keep going — parenting gets easier with every step forward 🌟`,
+    `You're enough for ${child.name} today — even on the hard days.`,
+    `Small consistent care makes a quiet difference for ${child.name}.`,
+    `The routines you keep help ${child.name} feel steady.`,
+    `One gentle step is enough — parenting softens with time.`,
   ];
   const motivationPick = motivations[Math.floor(Date.now() / 86400000) % motivations.length];
 
   if (inactive) {
     return {
-      title: `${child.name} misses you 💜`,
-      body: "Check in with a quick note about today — it only takes a moment.",
+      title: `A quiet check-in for ${child.name}`,
+      body: "A note about today is here if you want — only when it feels light.",
       deepLink: "/hub",
       dedupKey: contentFingerprint(child.id, "engagement", "inactive", date),
       data: { childId: child.id, reason: "inactive" },
@@ -354,8 +354,8 @@ export async function buildEngagement(
   );
   if (distinctDays.size >= 7) {
     return {
-      title: "7-day streak! 🔥",
-      body: `You've shown up for ${child.name} every day this week. Amazing.`,
+      title: "A steady week of showing up",
+      body: `You've been present for ${child.name} this week — that presence matters.`,
       deepLink: "/hub",
       dedupKey: contentFingerprint(child.id, "engagement", "streak7", date),
       data: { childId: child.id, reason: "streak" },
@@ -364,8 +364,8 @@ export async function buildEngagement(
 
   if (distinctDays.size > 0 && distinctDays.size < 3) {
     return {
-      title: "Small wins add up ✨",
-      body: `Log just one thing about ${child.name} today to keep the rhythm going.`,
+      title: "One small note is enough",
+      body: `Share one thing about ${child.name} today only if it feels light.`,
       deepLink: "/hub",
       dedupKey: contentFingerprint(child.id, "engagement", "nudge", date),
       data: { childId: child.id, reason: "low_engagement" },
@@ -377,8 +377,8 @@ export async function buildEngagement(
   if (adaptive) return adaptive;
 
   return {
-    title: "You've got this 💪",
-    body: motivationPick ?? `Keep going — parenting gets easier with every step forward 🌟`,
+    title: "You're enough today",
+    body: motivationPick ?? `One gentle step is enough — parenting softens with time.`,
     deepLink: "/hub",
     dedupKey: contentFingerprint(child.id, "engagement", "motivation", date),
     data: { childId: child.id, reason: "motivation" },

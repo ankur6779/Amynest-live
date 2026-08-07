@@ -5,35 +5,39 @@ export type PreSignupMessage = {
   body: string;
 };
 
-/** Full notification set — rotated per send. */
+/**
+ * Pre-signup local notifications — Notice / Guide / Remember / Support only.
+ * Never FOMO, urgency, guilt, or “unlock” pressure.
+ * Litmus: would this make a tired parent feel lighter?
+ */
 export const PRE_SIGNUP_MESSAGES: PreSignupMessage[] = [
   {
-    title: "🎯 Something is waiting for you",
-    body: "Complete signup and unlock your personalized experience.",
+    title: "Something calm is ready",
+    body: "Finish signup when you like — what you’ve started can stay with you.",
   },
   {
-    title: "🚀 You are just one step away",
-    body: "Create your account and access all app features.",
+    title: "Your setup can wait with you",
+    body: "Create an account so AmyNest can remember your family — no hurry.",
   },
   {
-    title: "⏳ Your setup is not complete",
-    body: "Finish signup and start using everything the app offers.",
+    title: "Whenever you want to continue",
+    body: "Signup keeps today’s preferences safe for the next quiet moment.",
   },
   {
-    title: "⭐ Join thousands of users",
-    body: "Create your free account and get started today.",
+    title: "A gentle place for your family",
+    body: "An account helps tomorrow continue from where today left off.",
   },
   {
-    title: "🎁 Your welcome experience is ready",
-    body: "Sign up now and unlock personalized recommendations.",
+    title: "Your welcome path is ready",
+    body: "Sign in when it suits you — recommendations will wait.",
   },
   {
-    title: "🤖 Your AI assistant is waiting",
-    body: "Create your account and start your personalized journey.",
+    title: "Amy is ready when you are",
+    body: "Create an account to keep the next right thing close — whenever you’re ready.",
   },
 ];
 
-/** A = value, B = FOMO, C = AI assistant — message indices into PRE_SIGNUP_MESSAGES. */
+/** A = value, B = continue gently, C = companion — indices into PRE_SIGNUP_MESSAGES. */
 export const VARIANT_MESSAGE_POOL: Record<AbVariant, number[]> = {
   A: [0, 3, 4],
   B: [1, 2],

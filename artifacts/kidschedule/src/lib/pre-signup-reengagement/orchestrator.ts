@@ -126,7 +126,7 @@ export async function syncPreSignupCampaign(
     return;
   }
 
-  // Trust precedes requests — never schedule FOMO before first value.
+  // Trust precedes requests — never schedule re-engagement before first value.
   try {
     const [{ hasFirstExperienceValue }, { hasDurableFirstExperienceMemory }] = await Promise.all([
       import("@/lib/first-experience/storage"),

@@ -112,31 +112,31 @@ export function buildContinuityAmyOpener(
     pool.push(milestoneCelebrationCopy(facts.pendingMilestone, child));
   }
   if (facts.portraitSaved) {
-    pool.push(`I kept the portrait we saved for ${child} close — it still glows.`);
+    pool.push(`The portrait you saved for ${child} is still here.`);
   }
   if (facts.lastChapterLabel) {
     pool.push(
-      `I've been thinking about ${child} since we opened “${facts.lastChapterLabel}.”`,
+      `I remember ${child} from “${facts.lastChapterLabel}” — we can continue gently.`,
     );
   }
   if (facts.lastPlanet === "moon") {
-    pool.push(`Since we lingered with the Moon, I've held ${child}'s soft sky in mind.`);
+    pool.push(`Last time we lingered with the Moon for ${child} — that soft sky is still here.`);
   } else if (facts.lastPlanet === "sun") {
-    pool.push(`I've been thinking about ${child}'s daylight since we stood with the Sun.`);
+    pool.push(`We stood in daylight with ${child} last time — that warmth is still here.`);
   } else if (facts.lastPlanet === "rising") {
-    pool.push(`That Rising doorway we explored for ${child} still feels open.`);
+    pool.push(`That Rising doorway you opened for ${child} still feels open.`);
   }
   if (facts.aiOpened > 0) {
-    pool.push(`I'm glad you're back — our last conversation about ${child} stayed with me.`);
+    pool.push(`I'm glad you're back — we can continue from where we left ${child}.`);
   }
   if (facts.daysSinceLastVisit != null && facts.daysSinceLastVisit >= 2) {
-    pool.push(`Our stars have changed a little since we last met about ${child}.`);
+    pool.push(`Welcome back — ${child}'s sky is ready whenever you are.`);
   }
   if (facts.familiarity === "dear") {
-    pool.push(`I found something beautiful waiting for us in ${child}'s sky.`);
+    pool.push(`${child}'s sky still holds what you chose to keep.`);
   }
   if (facts.familiarity === "returning" || facts.familiarity === "familiar") {
-    pool.push(`I'm glad you're back into ${child}'s universe.`);
+    pool.push(`Welcome back into ${child}'s universe — no hurry.`);
   }
 
   if (!pool.length) return null;
@@ -168,31 +168,31 @@ export function buildReturnContinuityLine(
     return milestoneCelebrationCopy(facts.pendingMilestone, child);
   }
   if (facts.portraitSaved && facts.lastChapterLabel) {
-    return `I kept ${child}'s portrait close — and “${facts.lastChapterLabel}” still glows from last time.`;
+    return `You saved ${child}'s portrait — and “${facts.lastChapterLabel}” is still here from last time.`;
   }
   if (facts.portraitSaved) {
-    return `The portrait we saved for ${child} is still waiting warmly.`;
+    return `The portrait you saved for ${child} is still here when you want it.`;
   }
   if (facts.lastChapterLabel) {
-    return `Last time we opened “${facts.lastChapterLabel}.” Today another lantern is ready when you are.`;
+    return `Last time you opened “${facts.lastChapterLabel}.” Another lantern is ready when you are.`;
   }
   if (facts.lastPlanet === "moon") {
-    return `Last time we lingered with the Moon. The Sun would love a quiet visit when you're ready.`;
+    return `Last time you lingered with the Moon. The Sun is here for a quiet visit when you're ready.`;
   }
   if (facts.lastPlanet === "sun") {
-    return `We stood in daylight last time. The Moon still holds a soft story for ${child}.`;
+    return `You stood in daylight last time. The Moon still holds a soft story for ${child}.`;
   }
   if (facts.lastPlanet === "rising") {
-    return `That Rising doorway we explored for ${child} still feels open.`;
+    return `That Rising doorway you opened for ${child} still feels open.`;
   }
   if (facts.aiOpened > 0) {
-    return `I'm glad you're back — our last conversation about ${child} stayed with me.`;
+    return `I'm glad you're back — we can continue from where we left ${child}.`;
   }
   if (facts.daysSinceLastVisit != null && facts.daysSinceLastVisit >= 1) {
-    return `Our stars have changed a little since we last met about ${child}.`;
+    return `Welcome back — ${child}'s sky continues whenever you are ready.`;
   }
   if (facts.familiarity === "dear" || facts.familiarity === "familiar") {
-    return `Welcome back into ${child}'s universe — something new waits without hurry.`;
+    return `Welcome back into ${child}'s universe — something quiet waits without hurry.`;
   }
   return null;
 }

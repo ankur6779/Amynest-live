@@ -117,7 +117,7 @@ function headlineForVariant(
 
 function ctaForVariant(variant: ValueSheetCtaVariant): string {
   return variant === "unlock_unlimited"
-    ? "Unlock Unlimited Guidance"
+    ? "Continue with Amy's guidance"
     : "Continue My Child's Journey";
 }
 

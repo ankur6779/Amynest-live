@@ -154,10 +154,10 @@ export function PaywallModal() {
   const copy =
     reason === "phonics_workbook"
       ? {
-          title: "Unlock 15 Complete Phonics Workbook Sets",
+          title: "15 Complete Phonics Workbook Sets with Premium",
           subtitle:
             "Get 150+ paid-subscriber worksheets for ages 3-7 covering vowels, blends, digraphs, sight words, and early reading confidence.",
-          cta: "Unlock Phonics Workbooks",
+          cta: "Continue with phonics workbooks",
         }
       : resolvePaywallCopy(reason, childName, state.module, state.source);
   const HeroIcon = REASON_ICONS[reason] ?? Sparkles;

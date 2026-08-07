@@ -65,7 +65,7 @@ describe("personalized greetings", () => {
         familiarity: "familiar",
       },
     });
-    expect(g.hello).toMatch(/glad you're back|thinking about John|stars have changed|portrait|Inner Weather/i);
+    expect(g.hello).toMatch(/glad you're back|welcome back|still here|portrait|Inner Weather|John/i);
     expect(g.skyLine).toMatch(/Moon|Inner Weather|portrait|chapter/i);
   });
 });

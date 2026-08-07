@@ -31,12 +31,12 @@ export function StreakShieldDialog({
           <Shield className="h-7 w-7 text-violet-200" aria-hidden />
         </div>
         <h2 id="streak-shield-title" className="text-xl font-black text-white text-center font-quicksand">
-          {t("retention.shield_title", "Protect your {{n}}-day streak?", { n: streak })}
+          {t("retention.shield_title", "Want to carry your {{n}}-day rhythm into today?", { n: streak })}
         </h2>
         <p className="mt-2 text-sm text-white/65 text-center leading-relaxed">
           {t(
             "retention.shield_body",
-            "You missed yesterday. Use your monthly Streak Shield to keep going — or start a new streak today.",
+            "Yesterday was quiet — that’s okay. Hold the rhythm gently, or begin again without pressure.",
           )}
         </p>
         <div className="mt-5 flex flex-col gap-2">
@@ -47,7 +47,7 @@ export function StreakShieldDialog({
             className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 py-3 text-sm font-bold text-white disabled:opacity-60"
             data-testid="streak-shield-use"
           >
-            {t("retention.shield_use", "Use Streak Shield")}
+            {t("retention.shield_use", "Hold today’s rhythm")}
           </button>
           <button
             type="button"
@@ -56,11 +56,11 @@ export function StreakShieldDialog({
             className="w-full rounded-xl border border-white/15 py-3 text-sm font-semibold text-white/75 hover:bg-white/5 disabled:opacity-60"
             data-testid="streak-shield-fresh"
           >
-            {t("retention.shield_fresh", "Start fresh today")}
+            {t("retention.shield_fresh", "Begin gently today")}
           </button>
         </div>
         <p className="mt-3 text-[10px] text-center text-white/40">
-          {t("retention.shield_monthly", "1 shield available per month")}
+          {t("retention.shield_monthly", "One gentle hold available each month")}
         </p>
       </div>
     </motion.div>

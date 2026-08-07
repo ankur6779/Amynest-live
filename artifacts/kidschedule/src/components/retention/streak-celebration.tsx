@@ -40,10 +40,10 @@ export function StreakCelebration({ milestone, onDone }: Props) {
           <Flame className="h-9 w-9 text-white" aria-hidden />
         </motion.div>
         <h2 id="streak-celebration-title" className="text-2xl font-black text-white font-quicksand">
-          {t("retention.streak_milestone", "{{n}}-day streak!", { n: milestone })}
+          {t("retention.streak_milestone", "{{n}} quiet days of showing up", { n: milestone })}
         </h2>
         <p className="mt-2 text-sm text-white/90">
-          {t("retention.streak_keep_going", "You're building a real habit. Keep going!")}
+          {t("retention.streak_keep_going", "A steady rhythm is forming — no rush to do more.")}
         </p>
         {[...Array(12)].map((_, i) => (
           <motion.span

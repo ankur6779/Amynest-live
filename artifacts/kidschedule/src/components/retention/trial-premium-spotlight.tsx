@@ -58,7 +58,7 @@ export function TrialPremiumSpotlight({ featureId }: Props) {
   const { t } = useTranslation();
   const copy = FEATURE_COPY[featureId] ?? {
     title: t("retention.premium_feature", "Premium feature"),
-    body: t("retention.premium_try", "Try something special in your trial."),
+    body: t("retention.premium_try", "We can support you further whenever you’re ready."),
     href: "/parenting-hub",
   };
 
@@ -66,7 +66,7 @@ export function TrialPremiumSpotlight({ featureId }: Props) {
     <DashboardGlassCard tintRgb={DASHBOARD_TINTS.amy}>
       <Link href={copy.href} className="block p-4 group">
         <p className="text-[10px] uppercase tracking-wide text-violet-200/80 font-semibold">
-          {t("retention.todays_premium", "Today's premium pick")}
+          {t("retention.todays_premium", "A gentle Premium suggestion")}
         </p>
         <div className="flex items-start gap-3 mt-1">
           <div className="rounded-xl bg-violet-500/20 p-2 border border-violet-400/25">

@@ -19,19 +19,19 @@ const PERSONALIZED_TEMPLATES: Partial<
     title: `Amy is already helping you with ${name}`,
     subtitle:
       "Continue with unlimited personalized guidance every day—for meltdowns, homework, and bedtime.",
-    cta: "Unlock Unlimited Guidance",
+    cta: "Continue with Amy's guidance",
   }),
   infant_ai_quota: (name) => ({
     title: `Amy is already helping you with ${name}`,
     subtitle:
       "Continue with unlimited Baby Expert answers about sleep, feeding, and development.",
-    cta: "Unlock Unlimited Guidance",
+    cta: "Continue with Amy's guidance",
   }),
   learning_locked: (name) => ({
     title: `Continue today's learning journey for ${name}`,
     subtitle:
       "Keep phonics, study, math, and spelling progressing every day—so momentum never pauses.",
-    cta: "Unlock All Learning",
+    cta: "Continue learning together",
   }),
   hub_locked: (name) => ({
     title: `Continue exploring the Hub for ${name}`,
@@ -58,37 +58,37 @@ const PERSONALIZED_TEMPLATES: Partial<
     title: `A plan for ${name}'s exact moment`,
     subtitle:
       "Amy Coach turns real struggles into 10–12 clear steps—for your child's age, not generic advice.",
-    cta: "Unlock Personalized Coaching",
+    cta: "Continue with personalized coaching",
   }),
   infant_sleep_coach: (name) => ({
     title: `Better nights for ${name}`,
     subtitle:
       "AI Sleep Coach uses your nap logs and wake windows to recommend bedtime tweaks—not generic sleep charts.",
-    cta: "Unlock Sleep Guidance",
+    cta: "Continue with sleep support",
   }),
   infant_feeding_plan: (name) => ({
     title: `Meal plans for ${name}'s next stage`,
     subtitle:
       "Create meal plans for every stage of growth with allergy-safe guidance.",
-    cta: "Unlock Feeding Plans",
+    cta: "Continue with feeding plans",
   }),
   premium_insight: (name) => ({
     title: `See the complete picture of ${name}'s growth`,
     subtitle:
-      "Unlock weekly reports and deeper insights across wins, hard days, and milestones.",
-    cta: "Unlock Weekly Reports",
+      "See weekly reports and deeper insights across wins, hard days, and milestones.",
+    cta: "See deeper weekly reports",
   }),
   hub_nutrition: (name) => ({
     title: `Create meal plans for ${name}'s stage of growth`,
     subtitle:
       "Allergy-aware, routine-friendly nutrition help—less dinner stress, better energy for learning.",
-    cta: "Unlock Meal Plans",
+    cta: "Continue with meal plans",
   }),
   phonics_workbook: (name) => ({
     title: `Reading confidence for ${name} starts at your table`,
     subtitle:
       "Printable phonics workbooks for ages 3–7—practice together with structured worksheets.",
-    cta: "Unlock Phonics Workbooks",
+    cta: "Continue with phonics workbooks",
   }),
 };
 
@@ -105,8 +105,8 @@ const CONTEXT_FALLBACKS: Partial<Record<PaywallReason, CopyBlock>> = {
   },
   learning_locked: {
     title: "Continue today's learning journey",
-    subtitle: "Unlock complete learning journeys across phonics, study, and more.",
-    cta: "Unlock All Learning",
+    subtitle: "Continue complete learning journeys across phonics, study, and more.",
+    cta: "Continue learning together",
   },
   hub_journey: {
     title: "Continue today's learning journey",
@@ -115,13 +115,13 @@ const CONTEXT_FALLBACKS: Partial<Record<PaywallReason, CopyBlock>> = {
   },
   premium_insight: {
     title: "See the complete picture of your child's growth",
-    subtitle: "Unlock weekly reports and deeper family insights.",
-    cta: "Unlock Weekly Reports",
+    subtitle: "See weekly reports and deeper family insights whenever you're ready.",
+    cta: "See deeper weekly reports",
   },
   hub_nutrition: {
     title: "Create meal plans for every stage of growth",
-    subtitle: "Unlock AI meal plans matched to your family's reality.",
-    cta: "Unlock Meal Plans",
+    subtitle: "Meal plans matched to your family's reality — whenever you're ready.",
+    cta: "Continue with meal plans",
   },
 };
 
@@ -138,14 +138,14 @@ export function resolvePaywallCopy(
       return {
         title: `${personalize}'s story has only begun`,
         subtitle:
-          "Unlock unlimited AI insights and keepsake stories that grow with your child.",
+          "Continue with AI insights and keepsake stories that grow with your child.",
         cta: PAYWALL_BIRTH_SKY.cta,
       };
     }
     return {
       title: "Your child's story has only begun",
       subtitle:
-        "Unlock unlimited AI insights and keepsake stories that grow with your child.",
+        "Continue with AI insights and keepsake stories that grow with your child.",
       cta: PAYWALL_BIRTH_SKY.cta,
     };
   }
@@ -170,8 +170,8 @@ export function resolvePaywallCopy(
     return {
       title: "Keep every keepsake and printable",
       subtitle:
-        "Unlock downloads for worksheets, stories, and family records—ready when you need them.",
-      cta: "Unlock Downloads",
+        "Keep downloads for worksheets, stories, and family records—ready when you need them.",
+      cta: "Keep downloads with Premium",
     };
   }
 
@@ -180,7 +180,7 @@ export function resolvePaywallCopy(
       title: personalize
         ? `Keep growing with ${personalize}`
         : "Keep growing with your child",
-      subtitle: "Premium unlocks unlimited AI, learning, Health Lab, and weekly reports.",
+      subtitle: "Premium can support unlimited AI, learning, Health Lab, and weekly reports whenever you're ready.",
       cta: "Continue with Premium",
     };
   }
@@ -190,7 +190,7 @@ export function resolvePaywallCopy(
       title: personalize
         ? `Continue ${personalize}'s Premium journey`
         : "Continue your Premium journey",
-      subtitle: "Your progress is saved. Unlock unlimited guidance whenever you're ready.",
+      subtitle: "Your progress is saved. We can support you with unlimited guidance whenever you're ready.",
       cta: "Continue with Premium",
     };
   }
