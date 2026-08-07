@@ -1,9 +1,17 @@
 import { navigateAfterAuth } from "@/lib/auth-navigation";
 import { spaNavigateAfterSignIn } from "@/lib/auth-native-navigation";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { isTodayHomeV1Enabled } from "@/lib/today-home/feature-flags";
 
-/** Primary activation destination after onboarding — highest ROI for D1 retention. */
-export const POST_ONBOARDING_ACTIVATION_PATH = "/routines/generate" as const;
+/**
+ * Post-onboarding destination.
+ * Today Home V1: land on Home Hero first (Begin → routine). Emotional film continuity.
+ * Kill switch VITE_FF_TODAY_HOME_V1=0: legacy direct /routines/generate.
+ * Routine generate remains available via Home Begin + ACTIVATION_ROUTINE_GENERATE_HREF.
+ */
+export const POST_ONBOARDING_ACTIVATION_PATH = (
+  isTodayHomeV1Enabled() ? "/dashboard" : "/routines/generate"
+) as "/dashboard" | "/routines/generate";
 
 /** Avoid full document reload on native WebView — prevents onboarding loop after finish. */
 export function navigateAfterOnboardingComplete(path: string): void {

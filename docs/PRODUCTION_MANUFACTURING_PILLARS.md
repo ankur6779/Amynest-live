@@ -142,7 +142,7 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Signup Keep (R6) | Permanently frozen |
 | Child Discovery Day-0 questions | Permanently frozen |
 | Child Discovery Phase 3 craft | Permanently frozen — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
-| Today Home | Phase 2 Home Hero manufacturing — `docs/v2/TODAY_HOME_PHASE2_FOUNDER_REVIEW.md` — kill switch `VITE_FF_TODAY_HOME_V1=0` |
+| Today Home | Final polish complete — `docs/v2/TODAY_HOME_FINAL_POLISH.md` · Apple HIG `docs/v2/TODAY_HOME_APPLE_HIG_AUDIT.md` — await Founder before Parent Hub |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Today Home Law | Absolute — product decides next; parent never chooses among options |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |

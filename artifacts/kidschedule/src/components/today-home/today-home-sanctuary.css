@@ -1,0 +1,121 @@
+/**
+ * Today Home sanctuary deltas — seats Home inside Welcome FE materials.
+ * FE CSS remains frozen; this file only scopes Home seating.
+ */
+
+.th-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 14rem;
+  /* Contain FE full-viewport shell tokens to the Home hero region */
+  min-height: unset;
+  height: auto;
+}
+
+.th-shell.fe-shell {
+  min-height: 0;
+}
+
+.th-shell .fe-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.th-shell .fe-ambient img {
+  object-position: center 35%;
+  opacity: 0.55;
+}
+
+.th-shell-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 0.85rem 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .th-shell-content {
+    padding: 1.1rem 1.1rem 1.35rem;
+  }
+}
+
+.th-shell .th-memory-mount {
+  margin: 0 0 0.15rem;
+  max-width: 100%;
+}
+
+.th-shell .th-memory-mount .fe-memory {
+  max-height: 9.5rem;
+}
+
+.th-shell .th-memory-mount .fe-memory img {
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+/* Quiet progress — secondary to NRT hero */
+.th-progress {
+  margin-top: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.th-progress-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.th-progress-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(244, 238, 230, 0.62);
+}
+
+.th-progress-pct {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(232, 212, 184, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.th-progress-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(244, 238, 230, 0.08);
+  overflow: hidden;
+}
+
+.th-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 212, 184, 0.55) 0%,
+    rgba(251, 191, 36, 0.7) 100%
+  );
+  transition: width 0.35s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .th-shell .fe-ambient img,
+  .th-shell .fe-ambient-wash,
+  .th-shell .fe-breath-a,
+  .th-shell .fe-breath-b,
+  .th-shell .fe-living-shade {
+    animation: none !important;
+  }
+
+  .th-progress-fill {
+    transition: none;
+  }
+}

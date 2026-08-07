@@ -97,6 +97,8 @@ import {
   DASHBOARD_TINTS,
 } from "@/lib/dashboard-premium";
 import { TodayHomeHero } from "@/components/today-home/today-home-hero";
+import { TodayHomeShell } from "@/components/today-home/today-home-shell";
+import { TodayProgressStrip } from "@/components/today-home/today-progress-strip";
 import { isTodayHomeV1Enabled } from "@/lib/today-home/feature-flags";
 import { resolveTodayNrt } from "@/lib/today-home/resolve-today-nrt";
 import {
@@ -1473,13 +1475,17 @@ export default function Dashboard() {
           />
           <ContentReveal.Hero>
             {TODAY_HOME_V1 && todayNrtDecision ? (
-              <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+              <TodayHomeShell>
                 <TodayHomeHero
                   decision={todayNrtDecision}
                   insight={todaySupportingInsight}
                   onBegin={handleTodayHomeBegin}
                 />
-              </div>
+                <TodayProgressStrip
+                  done={todayProgress.done}
+                  total={todayProgress.total}
+                />
+              </TodayHomeShell>
             ) : (
               <SmartHeroSection
                 displayName={displayName}

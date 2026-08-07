@@ -26,7 +26,7 @@ export function TodayHomeHero({ decision, insight, onBegin }: Props) {
       <DashboardGlassCard
         tintRgb={DASHBOARD_TINTS.timeline}
         rounded="3xl"
-        className="border-amber-400/35 bg-gradient-to-br from-amber-500/12 via-violet-500/5 to-transparent"
+        className="th-hero-card border-[rgba(232,212,184,0.22)] bg-gradient-to-br from-[rgba(244,238,230,0.08)] via-amber-500/10 to-transparent"
       >
         <div className="flex flex-col gap-4 p-5 sm:p-6">
           <div className="min-w-0">
