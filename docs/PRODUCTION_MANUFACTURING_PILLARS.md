@@ -143,11 +143,11 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Child Discovery Day-0 questions | Permanently frozen |
 | Child Discovery Phase 3 craft | Permanently frozen — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
 | Today Home | Apple final 1% craft complete — `docs/v2/TODAY_HOME_APPLE_FINAL_1PCT.md` — frozen |
-| Parent Hub | Constitution `docs/v2/PARENT_HUB_CONSTITUTION.md` — **blueprint only after Founder approval** |
+| Parent Hub | Constitution `docs/v2/PARENT_HUB_CONSTITUTION.md` · Visual study `docs/v2/PARENT_HUB_VISUAL_MANUFACTURING_STUDY.md` — **blueprint only after Founder approval** |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Today Home Law | Absolute — product decides next; parent never chooses among options |
 | Home ↔ Hub Boundary | Absolute — action today → Home; changes thinking → Hub |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 | Reuse Before Rewrite | Absolute — discover → reuse/refactor → new only if architecture cannot support |
 
-See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` · `docs/v2/TODAY_HOME_BLUEPRINT.md`
+See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` · `docs/v2/TODAY_HOME_BLUEPRINT.md` · `docs/v2/PARENT_HUB_CONSTITUTION.md` · `docs/v2/PARENT_HUB_VISUAL_MANUFACTURING_STUDY.md`
