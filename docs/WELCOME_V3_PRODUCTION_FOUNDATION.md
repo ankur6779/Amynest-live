@@ -1,0 +1,39 @@
+# AmyNest Welcome V3 — Production Foundation
+
+**Status:** APPROVED for production  
+**Freeze date:** 2026-08-07  
+**Branch:** `cursor/product-execution-model-v2`  
+**Suggested tag:** `welcome-v3-production-foundation`
+
+## Scope frozen
+
+This release freezes the Production Welcome Foundation before Experience V3 redesign phases begin.
+
+Includes:
+
+- Identity System (R1)
+- Recognition System (R2)
+- Living Experience (R3)
+- Outcomes Manufacturing (R3.6)
+- Philosophy Unification
+- First Experience continuity
+- Premium visual manufacturing
+- Value-before-identity journey
+- Calm companion language
+
+## Permanently locked
+
+- Photography assets and cinematography
+- Typography, materials, and motion language
+- One-house soft-morning identity
+- AmyNest philosophy DNA (`docs/AMYNEST_PHILOSOPHY.md`)
+
+## Not in this freeze
+
+Subsequent Experience V3 redesign phases (await Founder instructions):
+
+Signup → Child Discovery → Today → Parent Hub → Child Hub → Ask Amy → Premium
+
+## Entry route
+
+`/begin` — First Experience (`artifacts/kidschedule/src/pages/first-experience.tsx`)
