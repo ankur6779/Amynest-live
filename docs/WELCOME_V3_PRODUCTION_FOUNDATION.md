@@ -32,10 +32,11 @@ Includes:
 
 Subsequent Experience V3 redesign phases:
 
-**Signup (R6 Keep)** → Child Discovery → Today → Parent Hub → Child Hub → Ask Amy → Premium
+**Signup (R6 Keep)** → Child Discovery → Today Home → Parent Hub → Child Hub → Ask Amy → Premium
 
 - Signup Keep: permanently frozen — `docs/SIGNUP_V3_KEEP_EXPERIENCE.md`  
-- Child Discovery: Phase 1 study — `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`  
+- Child Discovery: permanently frozen — `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`  
+- Today Home: Phase 1 study — `docs/v2/TODAY_HOME_BLUEPRINT.md` (await Founder approval before code)  
 - Welcome remains frozen.
 
 ## Entry route
