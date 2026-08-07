@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Speech Coach Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(stamped after commit)_
+**Commit SHA:**  ()
 
 **STOP after this module.** Next destination only after Founder acceptance.
 
