@@ -7,6 +7,7 @@ import {
   PREMIUM_VOICE,
   QUESTION_TAX_LAW,
   REUSE_BEFORE_REWRITE_LAW,
+  TODAY_HOME_HUB_BOUNDARY_LAW,
   TODAY_HOME_LAW,
   answerLeftParentSmarter,
   isManufacturingComplete,
@@ -14,6 +15,7 @@ import {
   mayCreateNewImplementation,
   notificationFeelsLighter,
   passesTodayHomeLaw,
+  resolveHomeHubBoundary,
   violatesAmyNestVoice,
 } from "./amynest-philosophy";
 import { PRE_SIGNUP_MESSAGES } from "./pre-signup-reengagement/content";
@@ -133,6 +135,39 @@ describe("AmyNest philosophy", () => {
       passed: true,
       reason: "If Today Home has to decide what to do next, AmyNest has succeeded.",
     });
+  });
+
+  it("locks Home↔Hub boundary — action today vs change in thinking", () => {
+    expect(TODAY_HOME_HUB_BOUNDARY_LAW.id).toBe("today-home-hub-boundary");
+    expect(TODAY_HOME_HUB_BOUNDARY_LAW.axioms).toEqual([
+      "If the answer can be completed today, it belongs to Today Home.",
+      "If the answer changes how the parent thinks, it belongs to Parent Hub.",
+      "Never confuse action with understanding.",
+    ]);
+    expect(
+      resolveHomeHubBoundary({
+        answerCanBeCompletedToday: true,
+        answerChangesHowParentThinks: false,
+      }).surface,
+    ).toBe("today-home");
+    expect(
+      resolveHomeHubBoundary({
+        answerCanBeCompletedToday: false,
+        answerChangesHowParentThinks: true,
+      }).surface,
+    ).toBe("parent-hub");
+    expect(
+      resolveHomeHubBoundary({
+        answerCanBeCompletedToday: true,
+        answerChangesHowParentThinks: true,
+      }).surface,
+    ).toBe("ambiguous");
+    expect(
+      resolveHomeHubBoundary({
+        answerCanBeCompletedToday: false,
+        answerChangesHowParentThinks: false,
+      }).surface,
+    ).toBe("neither");
   });
 
   it("never asks when inference is safe", () => {

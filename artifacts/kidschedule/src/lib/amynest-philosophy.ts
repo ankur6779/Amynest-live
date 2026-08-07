@@ -29,6 +29,11 @@
  * Today Home Law (Founder absolute):
  *   If the parent has to decide what to do next, Today Home has failed.
  *   If Today Home has to decide what to do next, AmyNest has succeeded.
+ *
+ * Today Home ↔ Parent Hub Boundary (Founder absolute):
+ *   If the answer can be completed today, it belongs to Today Home.
+ *   If the answer changes how the parent thinks, it belongs to Parent Hub.
+ *   Never confuse action with understanding.
  */
 
 /** The Five Immutable Principles of AmyNest */
@@ -301,6 +306,63 @@ export function passesTodayHomeLaw(input: TodayHomeLawInput): TodayHomeLawResult
   return {
     passed: true,
     reason: "If Today Home has to decide what to do next, AmyNest has succeeded.",
+  };
+}
+
+/**
+ * Today Home ↔ Parent Hub Boundary — Founder absolute.
+ * Action completes today → Home. Understanding changes thinking → Hub.
+ */
+export const TODAY_HOME_HUB_BOUNDARY_LAW = {
+  id: "today-home-hub-boundary",
+  axioms: [
+    "If the answer can be completed today, it belongs to Today Home.",
+    "If the answer changes how the parent thinks, it belongs to Parent Hub.",
+    "Never confuse action with understanding.",
+  ],
+} as const;
+
+export type HomeHubBoundaryInput = {
+  /** True when the parent can finish the answer as an action today. */
+  answerCanBeCompletedToday: boolean;
+  /** True when the value is a change in how the parent thinks / sees the child. */
+  answerChangesHowParentThinks: boolean;
+};
+
+export type HomeHubBoundaryResult = {
+  surface: "today-home" | "parent-hub" | "ambiguous" | "neither";
+  reason: string;
+};
+
+/**
+ * Gate before placing a capability on Home or Hub.
+ * Action ≠ understanding. Dual claims without split = ambiguous FAIL.
+ */
+export function resolveHomeHubBoundary(
+  input: HomeHubBoundaryInput,
+): HomeHubBoundaryResult {
+  if (input.answerCanBeCompletedToday && input.answerChangesHowParentThinks) {
+    return {
+      surface: "ambiguous",
+      reason:
+        "Never confuse action with understanding — split action onto Today Home and understanding onto Parent Hub.",
+    };
+  }
+  if (input.answerCanBeCompletedToday) {
+    return {
+      surface: "today-home",
+      reason: "If the answer can be completed today, it belongs to Today Home.",
+    };
+  }
+  if (input.answerChangesHowParentThinks) {
+    return {
+      surface: "parent-hub",
+      reason: "If the answer changes how the parent thinks, it belongs to Parent Hub.",
+    };
+  }
+  return {
+    surface: "neither",
+    reason: "Neither completable today nor a change in thinking — do not force onto Home or Hub.",
   };
 }
 

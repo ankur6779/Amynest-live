@@ -88,6 +88,24 @@ If Today Home has to decide what to do next, AmyNest has succeeded.
 - Gate in code: `passesTodayHomeLaw()` · `TODAY_HOME_LAW`  
 - Blueprint: `docs/v2/TODAY_HOME_BLUEPRINT.md`
 
+## Today Home ↔ Parent Hub Boundary (Founder — Absolute)
+
+If the answer can be completed today, it belongs to Today Home.
+
+If the answer changes how the parent thinks, it belongs to Parent Hub.
+
+Never confuse action with understanding.
+
+### Manufacturing consequences
+
+- **Action** (doable today) → Today Home  
+- **Understanding** (changes thinking) → Parent Hub (Help · Understand · Care · Moments)  
+- A feature that claims both without a split → FAIL — split action onto Home, understanding onto Hub  
+- Generate / Begin / next incomplete step → Home  
+- Guidance, Birth Sky, meaning, skill insight → Hub  
+- Gate in code: `resolveHomeHubBoundary()` · `TODAY_HOME_HUB_BOUNDARY_LAW`  
+- Journey map: `docs/v2/PARENT_HUB_JOURNEY_MAP.md`
+
 ## Premium Voice
 
 Never: Buy · Unlock · Limited · Ending soon  

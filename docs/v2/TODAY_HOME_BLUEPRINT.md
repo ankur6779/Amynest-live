@@ -27,6 +27,12 @@ It answers **one question only**:
 > If the parent has to decide what to do next, Today Home has failed.  
 > If Today Home has to decide what to do next, AmyNest has succeeded.
 
+### Today Home ↔ Parent Hub Boundary (Founder — Absolute)
+
+> If the answer can be completed today, it belongs to Today Home.  
+> If the answer changes how the parent thinks, it belongs to Parent Hub.  
+> Never confuse action with understanding.
+
 | FAIL | SUCCEED |
 |---|---|
 | Parent scans options and chooses | Product names one next right thing |

@@ -22,6 +22,19 @@ Think:
 
 Never dead ends. Never module hunting.
 
+### Today Home ↔ Parent Hub Boundary (Founder — Absolute)
+
+> If the answer can be completed today, it belongs to Today Home.  
+> If the answer changes how the parent thinks, it belongs to Parent Hub.  
+> Never confuse action with understanding.
+
+| Surface | Owns |
+|---|---|
+| **Today Home** | Action — completable today |
+| **Parent Hub** | Understanding — changes how the parent thinks |
+
+Code DNA: `TODAY_HOME_HUB_BOUNDARY_LAW` · `resolveHomeHubBoundary()`
+
 ---
 
 ## 1. Real-life triggers

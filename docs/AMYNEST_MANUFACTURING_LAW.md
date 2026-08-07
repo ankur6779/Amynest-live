@@ -41,6 +41,7 @@ Partial credit does not ship.
 | Four Pillars | What every screen must satisfy while manufacturing |
 | Question Tax Law | How questions and taps are judged |
 | Today Home Law | Home fails if the parent must decide next; succeeds when the product decides |
+| Home ↔ Hub Boundary | Completable today → Home; changes thinking → Hub; never confuse action with understanding |
 | Reuse Before Rewrite | Discover existing capability first; new code only when architecture cannot support the use case |
 | Six Reviews | Whether the finished feature may be called **COMPLETE** |
 

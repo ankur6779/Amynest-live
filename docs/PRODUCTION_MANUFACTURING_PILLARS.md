@@ -146,6 +146,7 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Parent Hub | Rooms approved · journey map `docs/v2/PARENT_HUB_JOURNEY_MAP.md` — **no code until Founder** |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Today Home Law | Absolute — product decides next; parent never chooses among options |
+| Home ↔ Hub Boundary | Absolute — action today → Home; changes thinking → Hub |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 | Reuse Before Rewrite | Absolute — discover → reuse/refactor → new only if architecture cannot support |
 
