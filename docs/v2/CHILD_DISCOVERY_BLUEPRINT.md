@@ -32,10 +32,12 @@ Every answer must make AmyNest **visibly** smarter.
 
 1. **Four Pillars** — Premium · Product · Production Safety · Conversion  
 2. **Question Tax Law** — every additional question is a tax; every tap must earn existence; infer safely → never ask; if must ask → immediately prove why it mattered; parents leave smarter, never more tired  
-3. **Philosophy DNA** — Notice · Guide · Remember · Support  
-4. **Database first** — reuse existing schema; no duplicate tables; migrate only when genuinely required  
+3. **Six Reviews Manufacturing Law** — Founder · Parent · Apple Craft · Engineering · Database · Growth — all must PASS or the feature is not COMPLETE  
+4. **Philosophy DNA** — Notice · Guide · Remember · Support  
+5. **Database first** — reuse existing schema; no duplicate tables; migrate only when genuinely required  
 
-Code gate (already shipped): `mayAskParentQuestion()` in `artifacts/kidschedule/src/lib/amynest-philosophy.ts`.
+Code gates: `mayAskParentQuestion()` · `MANUFACTURING_SIX_REVIEWS` · `isManufacturingComplete()` in `artifacts/kidschedule/src/lib/amynest-philosophy.ts`.  
+Full Six Reviews law: `docs/AMYNEST_MANUFACTURING_LAW.md`.
 
 ---
 

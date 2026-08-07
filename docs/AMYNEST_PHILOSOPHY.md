@@ -43,6 +43,28 @@ Parents should feel smarter after every answer, never more tired.
 - After every required ask: show the value of the answer in the same beat  
 - Child Discovery (when unlocked) must obey this law first  
 
+## Manufacturing Law — Six Reviews (Founder — Absolute)
+
+Every feature must pass **ALL six** reviews:
+
+1. Founder Review  
+2. Parent Review  
+3. Apple Craft Review  
+4. Engineering Review  
+5. Database Review  
+6. Growth Review  
+
+A feature is **COMPLETE** only if all six pass.
+
+Automatic FAIL:
+
+- Beautiful but unstable  
+- Technically perfect but emotionally weak  
+- Good UX but poor conversion  
+- Good conversion but broken trust  
+
+Full law: `docs/AMYNEST_MANUFACTURING_LAW.md`
+
 ## Premium Voice
 
 Never: Buy · Unlock · Limited · Ending soon  

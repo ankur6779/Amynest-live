@@ -93,26 +93,35 @@ Before implementation:
 
 ---
 
-## Final Quality Gate
+## Final Quality Gate — Six Reviews (absolute)
 
-Before Founder Review, verify:
+A feature is **COMPLETE** only if **all six** pass:
+
+1. Founder Review  
+2. Parent Review  
+3. Apple Craft Review  
+4. Engineering Review  
+5. Database Review  
+6. Growth Review  
+
+**Automatic FAIL:** beautiful but unstable · technically perfect but emotionally weak · good UX but poor conversion · good conversion but broken trust  
+
+Engineering sub-gate (necessary, not sufficient):
 
 - [ ] Build passes  
 - [ ] Tests pass  
-- [ ] OAuth works  
-- [ ] Google Login works  
-- [ ] Apple Login works  
-- [ ] Facebook Login works  
-- [ ] Email Login works  
+- [ ] OAuth / Google / Apple / Facebook / Email work  
 - [ ] Analytics fire  
 - [ ] No console errors  
-- [ ] Mobile responsive  
+- [ ] Mobile + desktop verified  
 - [ ] Accessibility preserved  
 - [ ] Existing users unaffected  
+- [ ] Database impact reviewed  
+- [ ] Growth / conversion impact reviewed  
 
-Only then present for Founder Review.
+Full law: `docs/AMYNEST_MANUFACTURING_LAW.md`
 
-Beauty and engineering must improve together.
+Beauty, emotion, trust, conversion, and engineering must pass together.
 
 ---
 
@@ -124,5 +133,6 @@ Beauty and engineering must improve together.
 | Signup Keep (R6) | Permanently frozen |
 | Child Discovery | OPEN — Phase 1 blueprint only (`docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`) |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
+| Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 
-See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`
+See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`

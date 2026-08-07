@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   AMYNEST_PRINCIPLES,
   FORBIDDEN_VOICE_PATTERNS,
+  MANUFACTURING_AUTO_FAIL,
+  MANUFACTURING_SIX_REVIEWS,
   PREMIUM_VOICE,
   QUESTION_TAX_LAW,
   answerLeftParentSmarter,
+  isManufacturingComplete,
   mayAskParentQuestion,
   notificationFeelsLighter,
   violatesAmyNestVoice,
@@ -21,6 +24,44 @@ describe("AmyNest philosophy", () => {
       "life-continues",
       "calm-companionship",
     ]);
+  });
+
+  it("locks the Six Reviews Manufacturing Law", () => {
+    expect(MANUFACTURING_SIX_REVIEWS).toHaveLength(6);
+    expect(MANUFACTURING_SIX_REVIEWS.map((r) => r.id)).toEqual([
+      "founder",
+      "parent",
+      "apple-craft",
+      "engineering",
+      "database",
+      "growth",
+    ]);
+    expect(MANUFACTURING_AUTO_FAIL).toEqual([
+      "Beautiful but unstable",
+      "Technically perfect but emotionally weak",
+      "Good UX but poor conversion",
+      "Good conversion but broken trust",
+    ]);
+    expect(
+      isManufacturingComplete({
+        founder: true,
+        parent: true,
+        "apple-craft": true,
+        engineering: true,
+        database: true,
+        growth: true,
+      }),
+    ).toBe(true);
+    expect(
+      isManufacturingComplete({
+        founder: true,
+        parent: true,
+        "apple-craft": true,
+        engineering: true,
+        database: true,
+        growth: false,
+      }),
+    ).toBe(false);
   });
 
   it("locks the Question Tax Law axioms", () => {

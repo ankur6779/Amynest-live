@@ -17,6 +17,10 @@
  *   Infer safely → never ask.
  *   If must ask → immediately show why the answer mattered.
  *   Parents leave smarter after every answer — never more tired.
+ *
+ * Manufacturing Law — Six Reviews (Founder absolute):
+ *   Founder · Parent · Apple Craft · Engineering · Database · Growth
+ *   All six must PASS or the feature is not COMPLETE.
  */
 
 /** The Five Immutable Principles of AmyNest */
@@ -138,6 +142,59 @@ export function answerLeftParentSmarter(opts: {
 }): boolean {
   if (opts.addedCognitiveLoadWithoutValue) return false;
   return opts.demonstratedWhy;
+}
+
+/**
+ * Manufacturing Law — Six Reviews.
+ * A feature is COMPLETE only if every review passes.
+ */
+export const MANUFACTURING_SIX_REVIEWS = [
+  {
+    id: "founder",
+    name: "Founder Review",
+    proves: "Mission fit, emotional truth, AmyNest-only craft, freeze obedience.",
+  },
+  {
+    id: "parent",
+    name: "Parent Review",
+    proves: "Tired parent feels lighter, smarter, more confident — never more tired.",
+  },
+  {
+    id: "apple-craft",
+    name: "Apple Craft Review",
+    proves: "Proportion, restraint, materials, motion, photography — no SaaS/HTML feeling.",
+  },
+  {
+    id: "engineering",
+    name: "Engineering Review",
+    proves: "Build/tests, no regressions, flags, accessibility, offline, deep links.",
+  },
+  {
+    id: "database",
+    name: "Database Review",
+    proves: "Schema reuse, justified migrations, ownership/FKs/indexes, existing users safe.",
+  },
+  {
+    id: "growth",
+    name: "Growth Review",
+    proves: "Conversion/activation/retention/trust hold or improve — analytics intact.",
+  },
+] as const;
+
+export type ManufacturingReviewId = (typeof MANUFACTURING_SIX_REVIEWS)[number]["id"];
+
+export const MANUFACTURING_AUTO_FAIL = [
+  "Beautiful but unstable",
+  "Technically perfect but emotionally weak",
+  "Good UX but poor conversion",
+  "Good conversion but broken trust",
+] as const;
+
+export type ManufacturingReviewVerdict = Record<ManufacturingReviewId, boolean>;
+
+/** COMPLETE only when all six reviews are true. Partial credit does not ship. */
+export function isManufacturingComplete(verdicts: ManufacturingReviewVerdict): boolean {
+  return MANUFACTURING_SIX_REVIEWS.every((review) => verdicts[review.id] === true);
 }
 
 /** Notification litmus — every push must make a tired parent feel lighter. */
