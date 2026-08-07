@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Grow Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** *(filled at commit)*
+**Commit SHA:** `3dc47079` (`3dc47079469dfa56049332583e18845649d1c8b8`)
 
 **STOP after this module.** Next destination only after Founder acceptance.
 
