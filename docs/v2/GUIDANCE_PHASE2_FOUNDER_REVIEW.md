@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Guidance Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** *(filled at commit)*
+**Commit SHA:** `7c735dca` (`7c735dcac6f45aee1b615f4bc1e3c74418a758fe`)
 
 **STOP after this module.** Next destination only after Founder acceptance.
 
