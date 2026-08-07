@@ -1,7 +1,8 @@
 /**
- * Child Discovery Film — Phase 2
- * Scene 2 of the Welcome film. Not a wizard.
+ * Child Discovery Film — Phase 3 Production Manufacturing
+ * Day-0 questions FROZEN. Craft inherits Welcome FE materials.
  * Reuses finish transaction + analytics step ids. Zero new tables.
+ * Does not touch NRT engine (decide-next) or Welcome/Signup surfaces.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -54,6 +55,7 @@ import {
 import { waitForIdToken } from "@/lib/auth-token";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { DiscoveryNrtPreviewCard } from "@/components/child-discovery/nrt-preview-card";
+import { DiscoveryFilmShell } from "@/components/child-discovery/discovery-film-shell";
 import {
   AGE_OPTIONS,
   FOCUS_OPTIONS,
@@ -77,47 +79,6 @@ const PLACE_OPTIONS = [
   { code: "AU", name: "Australia" },
   { code: "CA", name: "Canada" },
 ];
-
-const shellStyle: React.CSSProperties = {
-  minHeight: "100dvh",
-  display: "flex",
-  flexDirection: "column",
-  background: [
-    "radial-gradient(ellipse 70% 45% at 50% 12%, rgba(212,175,120,0.12) 0%, transparent 55%)",
-    "linear-gradient(175deg, #0c0a08 0%, #14110d 52%, #070605 100%)",
-  ].join(", "),
-  color: "rgba(244,238,230,0.96)",
-  padding: "28px 20px 40px",
-};
-
-const primaryBtn: React.CSSProperties = {
-  width: "100%",
-  height: 52,
-  borderRadius: 999,
-  border: "none",
-  background: "linear-gradient(90deg, #c4a574 0%, #e8d4b0 100%)",
-  color: "#1a140c",
-  fontSize: 16,
-  fontWeight: 700,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "0 0 28px rgba(212,175,120,0.32), 0 4px 18px rgba(0,0,0,0.28)",
-};
-
-const chipBtn = (active = false): React.CSSProperties => ({
-  padding: "12px 16px",
-  borderRadius: 14,
-  border: active
-    ? "1px solid rgba(232,212,176,0.55)"
-    : "1px solid rgba(212,175,120,0.22)",
-  background: active ? "rgba(212,175,120,0.16)" : "rgba(255,255,255,0.04)",
-  color: "rgba(244,238,230,0.92)",
-  fontSize: 15,
-  fontWeight: 560,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "left" as const,
-});
 
 function trackBeat(
   event: "step_viewed" | "step_completed" | "step_skipped",
@@ -433,54 +394,53 @@ export default function ChildDiscoveryFilm() {
     }
   };
 
-  return (
-    <div className="amynest-discovery-film" style={shellStyle} data-testid="child-discovery-film">
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 440,
-          margin: "0 auto",
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <p
-          style={{
-            margin: "0 0 18px",
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "rgba(232,212,176,0.45)",
-          }}
-        >
-          Understanding
-        </p>
+  /** Product pillar — every screen must answer why Amy asks now. */
+  const whyNowForBeat = (): string => {
+    switch (beat) {
+      case "arrival":
+        return "Why now: continue what already began — before any ask.";
+      case "place":
+        return "Why now: country shapes today’s education defaults.";
+      case "child-name":
+        return "Why now: today’s recommendation must name this child.";
+      case "child-age":
+        return "Why now: age chooses which next right thing is safe today.";
+      case "today-world":
+        return "Why now: school days and home days need different next steps.";
+      case "infant-feeding":
+        return "Why now: feeding rhythm changes today’s care step.";
+      case "infant-sleep":
+        return "Why now: sleep pattern reshapes today’s calm cue.";
+      case "rhythm":
+        return "Why now: wake and sleep frame today’s timeline.";
+      case "focus":
+        return "Why now: one focus softens today’s priority — skip if unsure.";
+      case "earned":
+      case "done":
+        return "Why now: AmyNest has earned today’s recommendation.";
+      default:
+        return "";
+    }
+  };
 
+  const answered =
+    Boolean(adaptationNote) ||
+    beat === "earned" ||
+    beat === "done" ||
+    beat === "saving";
+
+  return (
+    <DiscoveryFilmShell beat={beat} answered={answered}>
+      <div className="fe-copy cd-copy fe-in">
+        <p className="fe-kicker fe-kicker-whisper">Understanding</p>
         <h1
+          className={beat === "earned" || beat === "done" ? "fe-title" : "fe-title fe-title-section"}
           data-testid="discovery-title"
-          style={{
-            margin: "0 0 10px",
-            fontSize: beat === "earned" || beat === "done" ? 26 : 24,
-            fontWeight: 700,
-            letterSpacing: "-0.4px",
-            lineHeight: 1.25,
-            color: "#fff",
-          }}
         >
           {titleForBeat()}
         </h1>
-        <p
-          style={{
-            margin: "0 0 8px",
-            fontSize: 14,
-            lineHeight: 1.5,
-            color: "rgba(244,238,230,0.58)",
-          }}
-        >
-          {subtitleForBeat()}
-        </p>
+        <p className="fe-body">{subtitleForBeat()}</p>
+        <p className="cd-why-now">{whyNowForBeat()}</p>
 
         {beat !== "arrival" && beat !== "saving" ? (
           <DiscoveryNrtPreviewCard
@@ -490,9 +450,9 @@ export default function ChildDiscoveryFilm() {
           />
         ) : null}
 
-        <div style={{ flex: 1, marginTop: 22 }}>
+        <div className="fe-actions" style={{ marginTop: "var(--space-4)" }}>
           {beat === "arrival" ? (
-            <div>
+            <>
               {continuity?.nextThing ? (
                 <DiscoveryNrtPreviewCard
                   nrt={continuity.nextThing}
@@ -505,7 +465,7 @@ export default function ChildDiscoveryFilm() {
               <button
                 type="button"
                 data-testid="discovery-arrival-continue"
-                style={{ ...primaryBtn, marginTop: 24 }}
+                className="fe-btn fe-btn-primary"
                 onClick={() => {
                   trackBeat("step_completed", "arrival");
                   if (!ipInferred) {
@@ -518,16 +478,17 @@ export default function ChildDiscoveryFilm() {
               >
                 Continue
               </button>
-            </div>
+            </>
           ) : null}
 
           {beat === "place" ? (
-            <div style={{ display: "grid", gap: 10 }}>
+            <div className="fe-choice-stack">
               {PLACE_OPTIONS.map((c) => (
                 <button
                   key={c.code}
                   type="button"
-                  style={chipBtn(countryCode === c.code)}
+                  className="fe-choice"
+                  data-active={countryCode === c.code ? "true" : "false"}
                   onClick={() => {
                     setCountryCode(c.code);
                     setLocationSource("manual");
@@ -553,39 +514,34 @@ export default function ChildDiscoveryFilm() {
                 trackBeat("step_completed", "child-name");
                 setBeat("child-age");
               }}
-              style={{ display: "grid", gap: 14 }}
+              style={{ display: "grid", gap: "var(--space-3)", width: "100%" }}
             >
               <input
                 data-testid="discovery-name-input"
+                className="fe-surface"
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value)}
                 placeholder="Child’s name"
                 autoFocus
-                style={{
-                  width: "100%",
-                  height: 52,
-                  borderRadius: 14,
-                  border: "1px solid rgba(212,175,120,0.28)",
-                  background: "rgba(0,0,0,0.25)",
-                  color: "#fff",
-                  padding: "0 16px",
-                  fontSize: 16,
-                  fontFamily: "inherit",
-                }}
               />
-              <button type="submit" style={primaryBtn} disabled={!nameDraft.trim()}>
+              <button
+                type="submit"
+                className="fe-btn fe-btn-primary"
+                disabled={!nameDraft.trim()}
+              >
                 Continue
               </button>
             </form>
           ) : null}
 
           {beat === "child-age" ? (
-            <div style={{ display: "grid", gap: 10 }}>
+            <>
               {seed?.age != null && seed.age >= 0 ? (
                 <button
                   type="button"
                   data-testid="discovery-age-confirm"
-                  style={chipBtn(true)}
+                  className="fe-choice"
+                  data-active="true"
                   onClick={() => {
                     const y = seed.age;
                     const m = seed.ageMonths ?? 0;
@@ -601,18 +557,15 @@ export default function ChildDiscoveryFilm() {
                   Yes — about {seed.age === 0 ? "under 1" : `${seed.age}`}
                 </button>
               ) : null}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 8,
-                }}
-              >
+              <div className="fe-choice-grid">
                 {AGE_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
-                    style={chipBtn(years === opt.years && months === opt.months)}
+                    className="fe-choice"
+                    data-active={
+                      years === opt.years && months === opt.months ? "true" : "false"
+                    }
                     onClick={() => {
                       setYears(opt.years);
                       setMonths(opt.months);
@@ -625,11 +578,11 @@ export default function ChildDiscoveryFilm() {
                   </button>
                 ))}
               </div>
-            </div>
+            </>
           ) : null}
 
           {beat === "today-world" ? (
-            <div style={{ display: "grid", gap: 10 }}>
+            <div className="fe-choice-stack">
               {(
                 [
                   { id: "school" as const, label: "A school / daycare day" },
@@ -639,7 +592,8 @@ export default function ChildDiscoveryFilm() {
                 <button
                   key={opt.id}
                   type="button"
-                  style={chipBtn(todayContext === opt.id)}
+                  className="fe-choice"
+                  data-active={todayContext === opt.id ? "true" : "false"}
                   onClick={() => {
                     setTodayContext(opt.id);
                     setAdaptationNote(
@@ -660,7 +614,7 @@ export default function ChildDiscoveryFilm() {
           ) : null}
 
           {beat === "infant-feeding" ? (
-            <div style={{ display: "grid", gap: 10 }}>
+            <div className="fe-choice-stack">
               {[
                 { id: "breastfeeding", label: "Breastfeeding" },
                 { id: "formula", label: "Formula" },
@@ -669,7 +623,8 @@ export default function ChildDiscoveryFilm() {
                 <button
                   key={opt.id}
                   type="button"
-                  style={chipBtn(feedingType === opt.id)}
+                  className="fe-choice"
+                  data-active={feedingType === opt.id ? "true" : "false"}
                   onClick={() => {
                     setFeedingType(opt.id);
                     setAdaptationNote("Care step updates with feeding rhythm.");
@@ -684,7 +639,7 @@ export default function ChildDiscoveryFilm() {
           ) : null}
 
           {beat === "infant-sleep" ? (
-            <div style={{ display: "grid", gap: 10 }}>
+            <div className="fe-choice-stack">
               {[
                 { id: "flexible", label: "Flexible" },
                 { id: "irregular", label: "Still finding a pattern" },
@@ -693,7 +648,8 @@ export default function ChildDiscoveryFilm() {
                 <button
                   key={opt.id}
                   type="button"
-                  style={chipBtn(sleepPattern === opt.id)}
+                  className="fe-choice"
+                  data-active={sleepPattern === opt.id ? "true" : "false"}
                   onClick={() => {
                     setSleepPattern(opt.id);
                     setAdaptationNote("Sleep pattern reshapes today’s calm cue.");
@@ -708,11 +664,11 @@ export default function ChildDiscoveryFilm() {
           ) : null}
 
           {beat === "rhythm" ? (
-            <div style={{ display: "grid", gap: 12 }}>
+            <>
               <button
                 type="button"
                 data-testid="discovery-rhythm-confirm"
-                style={primaryBtn}
+                className="fe-btn fe-btn-primary"
                 onClick={() => {
                   setAdaptationNote("Daily rhythm held — today’s timeline settles.");
                   trackBeat("step_completed", "rhythm", { inferred: true });
@@ -721,45 +677,35 @@ export default function ChildDiscoveryFilm() {
               >
                 Yes — this feels right
               </button>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 12,
-                  color: "rgba(244,238,230,0.4)",
-                  textAlign: "center",
-                }}
-              >
+              <p className="fe-body-sm" style={{ textAlign: "center" }}>
                 You can refine wake and sleep anytime later.
               </p>
-            </div>
+            </>
           ) : null}
 
           {beat === "focus" ? (
-            <div style={{ display: "grid", gap: 10 }}>
-              {FOCUS_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  style={chipBtn(focusGoal === opt.id)}
-                  onClick={() => {
-                    setFocusGoal(opt.id);
-                    setAdaptationNote(`Focus held: ${opt.label.toLowerCase()}.`);
-                    trackBeat("step_completed", "focus", { goal: opt.id });
-                    setBeat("earned");
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <>
+              <div className="fe-choice-stack">
+                {FOCUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className="fe-choice"
+                    data-active={focusGoal === opt.id ? "true" : "false"}
+                    onClick={() => {
+                      setFocusGoal(opt.id);
+                      setAdaptationNote(`Focus held: ${opt.label.toLowerCase()}.`);
+                      trackBeat("step_completed", "focus", { goal: opt.id });
+                      setBeat("earned");
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
-                style={{
-                  ...chipBtn(false),
-                  border: "none",
-                  background: "transparent",
-                  color: "rgba(244,238,230,0.5)",
-                  textAlign: "center",
-                }}
+                className="fe-btn fe-btn-quiet"
                 onClick={() => {
                   setFocusGoal(null);
                   setAdaptationNote("No extra focus — Amy keeps today simple.");
@@ -769,40 +715,36 @@ export default function ChildDiscoveryFilm() {
               >
                 Skip for now
               </button>
-            </div>
+            </>
           ) : null}
 
           {beat === "earned" ? (
-            <div style={{ display: "grid", gap: 14, marginTop: 8 }}>
+            <>
               {finishError ? (
-                <p style={{ margin: 0, color: "rgba(244,220,190,0.9)", fontSize: 13 }}>
+                <p className="fe-body-sm" role="alert">
                   {finishError}
                 </p>
               ) : null}
               <button
                 type="button"
                 data-testid="discovery-begin-today"
-                style={primaryBtn}
+                className="fe-btn fe-btn-primary"
                 disabled={busy || !profile}
                 onClick={() => void finishDiscovery()}
               >
                 Begin with this today
               </button>
-            </div>
+            </>
           ) : null}
 
           {beat === "saving" ? (
-            <p
-              role="status"
-              aria-live="polite"
-              style={{ marginTop: 24, color: "rgba(232,212,176,0.7)" }}
-            >
+            <p className="fe-body" role="status" aria-live="polite">
               Keeping this understanding safely…
             </p>
           ) : null}
 
           {beat === "done" ? (
-            <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
+            <>
               <DiscoveryNrtPreviewCard
                 nrt={nrt}
                 childName={name}
@@ -811,22 +753,22 @@ export default function ChildDiscoveryFilm() {
               <button
                 type="button"
                 data-testid="discovery-go-activate"
-                style={primaryBtn}
+                className="fe-btn fe-btn-primary"
                 disabled={navigating}
                 onClick={() => void goNext()}
               >
                 Continue
               </button>
-            </div>
+            </>
           ) : null}
         </div>
 
         {!authLoaded ? (
-          <p style={{ marginTop: 16, fontSize: 11, color: "rgba(244,238,230,0.3)" }}>
+          <p className="fe-body-sm" style={{ marginTop: "var(--space-3)" }}>
             Preparing session…
           </p>
         ) : null}
       </div>
-    </div>
+    </DiscoveryFilmShell>
   );
 }

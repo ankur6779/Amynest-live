@@ -131,7 +131,8 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 |---|---|
 | Welcome (R1–R3.6 + Philosophy) | Permanently frozen |
 | Signup Keep (R6) | Permanently frozen |
-| Child Discovery | Phase 2 film shipped — Founder Review (`docs/v2/CHILD_DISCOVERY_PHASE2_FOUNDER_REVIEW.md`) |
+| Child Discovery Day-0 questions | Permanently frozen |
+| Child Discovery Phase 3 craft | Production manufacturing — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 
