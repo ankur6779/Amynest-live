@@ -1,0 +1,249 @@
+/**
+ * Parent Hub Pack 2 — living room sanctuary deltas.
+ * Imports Welcome FE materials elsewhere; this file only scopes Hub seating.
+ * Does NOT edit Welcome / Discovery / Today Home CSS files.
+ */
+
+.ph-living-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  min-height: 0;
+}
+
+.ph-living-shell.fe-shell {
+  min-height: 0;
+}
+
+.ph-living-shell .fe-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ph-living-shell .fe-ambient img {
+  object-position: center 34%;
+  opacity: 0.55;
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.ph-living-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.85rem 0.75rem 1rem;
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+
+.ph-room-doors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ph-room-door {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.85rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.14);
+  background: rgba(8, 6, 12, 0.42);
+  backdrop-filter: blur(10px);
+  padding: 0.55rem 0.75rem 0.55rem 0.55rem;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.ph-room-door:hover,
+.ph-room-door:focus-visible {
+  border-color: rgba(232, 212, 184, 0.32);
+  background: rgba(12, 9, 16, 0.55);
+  outline: none;
+}
+
+.ph-room-door--emphasis {
+  border-color: rgba(232, 212, 184, 0.28);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.12);
+}
+
+.ph-room-door-thumb {
+  position: relative;
+  height: 4.25rem;
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.ph-room-door-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 36%;
+}
+
+.ph-room-door-thumb-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 6, 12, 0.05) 0%,
+    rgba(8, 6, 12, 0.35) 100%
+  );
+  pointer-events: none;
+}
+
+.ph-room-door-copy {
+  min-width: 0;
+  padding-right: 0.25rem;
+}
+
+.ph-room-door-title {
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(244, 238, 230, 0.96);
+  letter-spacing: 0.01em;
+}
+
+.ph-room-door-feeling {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.72);
+}
+
+/* Entered room — cinematic hero */
+.ph-room-hero-mount {
+  margin: 0;
+  max-width: 100%;
+}
+
+.ph-room-hero-mount .fe-memory {
+  max-height: min(48vw, 15.5rem);
+  min-height: 11rem;
+}
+
+.ph-room-hero-mount .fe-memory img {
+  object-fit: cover;
+  object-position: center 36%;
+}
+
+.ph-room-feeling {
+  margin: 0.15rem 0 0.1rem;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: rgba(244, 238, 230, 0.94);
+  text-wrap: balance;
+}
+
+.ph-room-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.45);
+}
+
+.ph-back-rooms {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(232, 212, 184, 0.7);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+.ph-back-rooms:hover,
+.ph-back-rooms:focus-visible {
+  color: rgba(244, 238, 230, 0.92);
+  outline: none;
+}
+
+/* Quiet destination list — not marketing tiles */
+.ph-dest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.ph-dest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(232, 212, 184, 0.1);
+  background: rgba(8, 6, 12, 0.38);
+  padding: 0.8rem 0.95rem;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.ph-dest-row:hover,
+.ph-dest-row:focus-visible {
+  border-color: rgba(232, 212, 184, 0.28);
+  background: rgba(12, 9, 16, 0.5);
+  outline: none;
+}
+
+.ph-dest-row--active {
+  border-color: rgba(232, 212, 184, 0.34);
+  background: rgba(16, 12, 20, 0.58);
+}
+
+.ph-dest-row-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(244, 238, 230, 0.9);
+}
+
+.ph-dest-row-hint {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.48);
+}
+
+.ph-dest-row-chevron {
+  flex-shrink: 0;
+  color: rgba(232, 212, 184, 0.4);
+}
+
+.ph-module-quiet {
+  margin-top: 0.35rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(232, 212, 184, 0.1);
+  background: rgba(8, 6, 12, 0.28);
+  padding: 0.55rem;
+}
+
+/* Soften marketing card energy inside the quiet slot — no module rewrite */
+.ph-module-quiet > * {
+  transform: none !important;
+}
+
+.ph-module-quiet [class*="hover:-translate"],
+.ph-module-quiet .hover\:-translate-y-0\.5:hover {
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ph-room-door,
+  .ph-dest-row {
+    transition: none;
+  }
+}

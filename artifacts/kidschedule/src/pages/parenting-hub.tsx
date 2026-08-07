@@ -1013,25 +1013,27 @@ function ParentingHubPage() {
       return next;
     });
   };
-  const toggleRoom = (roomId: ParentHubRoomId) => {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(roomId)) next.delete(roomId);
-      else next.add(roomId);
-      return next;
-    });
+  /** Pack 2 living-room entry — null = photographic doors overview */
+  const [activeRoom, setActiveRoom] = useState<ParentHubRoomId | null>(null);
+  const [focusTileId, setFocusTileId] = useState<string | null>(null);
+
+  const enterRoom = (roomId: ParentHubRoomId) => {
+    setFocusTileId(null);
+    setActiveRoom(roomId);
   };
+  const exitRoom = () => {
+    setFocusTileId(null);
+    setActiveRoom(null);
+  };
+
   const navigateHub = (group: string, tileId?: string, sectionId?: string) => {
     if (roomsV1) {
       // Removed Hub chrome: soft no-op (never 404).
       if (tileId && isHubTileRemovedFromRooms(tileId)) return;
       const room =
         roomForTile(tileId) ?? roomForLegacyGroup(group) ?? ("help" as ParentHubRoomId);
-      setExpandedGroups((prev) => {
-        const next = new Set(prev);
-        next.add(room);
-        return next;
-      });
+      setActiveRoom(room);
+      setFocusTileId(tileId ?? null);
       requestAnimationFrame(() => {
         if (tileId) {
           document
@@ -1079,15 +1081,10 @@ function ParentingHubPage() {
     });
   };
 
-  // Age gravity: 0–24m opens into Care (Pack 1).
+  // Age gravity: 0–24m enters Care living room (Pack 1/2).
   useEffect(() => {
     if (!roomsV1 || !effectiveChild?.id || !isInfant) return;
-    setExpandedGroups((prev) => {
-      if (prev.has("care")) return prev;
-      const next = new Set(prev);
-      next.add("care");
-      return next;
-    });
+    setActiveRoom((prev) => prev ?? "care");
   }, [roomsV1, effectiveChild?.id, isInfant]);
 
   // Deep-link / restore: open Learning and scroll to Smart Maths when requested.
@@ -1107,7 +1104,7 @@ function ParentingHubPage() {
   }, [effectiveChild?.id]);
 
   const learningTabOpen =
-    expandedGroups.has("learning") || (roomsV1 && expandedGroups.has("understand"));
+    expandedGroups.has("learning") || (roomsV1 && activeRoom === "understand");
   useEffect(() => {
     if (!learningTabOpen || !effectiveChild) return;
     void import("@/lib/learning-zone-tab-audio-warmup").then((mod) => {
@@ -2152,8 +2149,10 @@ function ParentingHubPage() {
             <ParentHubRoomsShell
               childName={effectiveChild.name}
               isInfant={isInfant}
-              expandedRooms={expandedGroups}
-              onToggleRoom={toggleRoom}
+              activeRoom={activeRoom}
+              onEnterRoom={enterRoom}
+              onExitRoom={exitRoom}
+              focusTileId={focusTileId}
               visibleTileIds={[
                 ...forYouStandaloneFeatured.map((s) => s.id),
                 ...todayTiles.map((s) => s.id),

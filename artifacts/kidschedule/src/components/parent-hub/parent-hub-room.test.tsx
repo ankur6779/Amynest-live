@@ -1,45 +1,89 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { ParentHubRoom } from "./parent-hub-room";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { ParentHubRoomsShell } from "./parent-hub-rooms-shell";
+import { ParentHubDestinationRow } from "./parent-hub-destination-row";
 
-describe("ParentHubRoom Pack 1 shell", () => {
-  it("renders title, subtitle, and architecture containers when open", () => {
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: { defaultValue?: string; name?: string }) => {
+      if (opts?.defaultValue && opts.name) {
+        return opts.defaultValue.replace("{{name}}", opts.name).replace("${name}", opts.name);
+      }
+      if (key === "parent_hub.rooms.header" && opts?.name) {
+        return `What do you need for ${opts.name}?`;
+      }
+      return opts?.defaultValue ?? key;
+    },
+  }),
+}));
+
+describe("Parent Hub Pack 2 living rooms", () => {
+  it("shows photographic room doors — not accordion menus", () => {
     render(
-      <ParentHubRoom
-        roomId="help"
-        title="Help"
-        subtitle="When something feels hard right now."
-        open
-        onToggle={vi.fn()}
-        destinations={<div data-testid="dest-ask-amy">Ask Amy</div>}
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom={null}
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai", "nutrition"]}
+        renderDestination={() => null}
       />,
     );
 
-    expect(screen.getByTestId("hub-room-help")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Help" })).toBeTruthy();
-    expect(screen.getByText("When something feels hard right now.")).toBeTruthy();
-    expect(screen.getByTestId("hub-room-hero-help")).toHaveAttribute(
-      "data-pack",
-      "hero-placeholder",
+    expect(screen.getByTestId("parent-hub-rooms-shell")).toHaveAttribute(
+      "data-ph-mode",
+      "doors",
     );
-    expect(screen.getByTestId("hub-room-destinations-help")).toBeTruthy();
-    expect(screen.getByTestId("hub-room-deeplink-help")).toBeTruthy();
-    expect(screen.getByTestId("dest-ask-amy")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-door-help")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-door-understand")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-door-care")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-door-moments")).toBeTruthy();
+    expect(screen.queryByText(/Room hero · Pack 2/i)).toBeNull();
   });
 
-  it("does not mount destinations when collapsed (lazy room body)", () => {
+  it("entered room shows cinematic hero + quiet destination rows", () => {
     render(
-      <ParentHubRoom
-        roomId="moments"
-        title="Moments"
-        subtitle="Share one human presence together."
-        open={false}
-        onToggle={vi.fn()}
-        destinations={<div data-testid="dest-story">Story</div>}
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="help"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai", "emotional", "speech-coach"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
       />,
     );
 
-    expect(screen.queryByTestId("hub-room-body-moments")).toBeNull();
-    expect(screen.queryByTestId("dest-story")).toBeNull();
+    expect(screen.getByTestId("parent-hub-rooms-shell")).toHaveAttribute(
+      "data-ph-mode",
+      "entered",
+    );
+    expect(screen.getByTestId("hub-room-hero-help")).toHaveAttribute(
+      "data-pack",
+      "cinematic-hero",
+    );
+    expect(screen.getByTestId("hub-room-feeling-help")).toHaveTextContent(
+      "You are not alone.",
+    );
+    expect(screen.getByTestId("hub-dest-row-amy-ai")).toBeTruthy();
+    expect(screen.queryByTestId("mod-amy-ai")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("hub-dest-row-amy-ai"));
+    expect(screen.getByTestId("mod-amy-ai")).toBeTruthy();
+  });
+
+  it("destination row is a quiet path control", () => {
+    const onSelect = vi.fn();
+    render(
+      <ParentHubDestinationRow
+        tileId="story-hub"
+        title="Story"
+        hint="One quiet story"
+        onSelect={onSelect}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("hub-dest-row-story-hub"));
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 });

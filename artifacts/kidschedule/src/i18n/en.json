@@ -3708,22 +3708,29 @@
     "rooms": {
       "header": "What do you need for {{name}}?",
       "header_subtitle": "Four rooms. One intention at a time.",
+      "header_subtitle_v2": "Enter one calm room.",
       "back_home": "Back to Today Home",
+      "back_rooms": "All rooms",
+      "paths_label": "Quiet paths",
       "help": {
         "title": "Help",
-        "subtitle": "When something feels hard right now."
+        "subtitle": "When something feels hard right now.",
+        "feeling": "You are not alone."
       },
       "understand": {
         "title": "Understand",
-        "subtitle": "See your child more clearly."
+        "subtitle": "See your child more clearly.",
+        "feeling": "See your child more clearly."
       },
       "care": {
         "title": "Care",
-        "subtitle": "Tend body, rhythm, feeding, and health."
+        "subtitle": "Tend body, rhythm, feeding, and health.",
+        "feeling": "Take care of today."
       },
       "moments": {
         "title": "Moments",
-        "subtitle": "Share one human presence together."
+        "subtitle": "Share one human presence together.",
+        "feeling": "Spend one meaningful moment."
       }
     },
     "section_groups": {
