@@ -1,16 +1,16 @@
 # Today Home V1 (R8) — Blueprint · Phase 1 Study Only
 
-**Status:** AWAITING FOUNDER APPROVAL — **NO IMPLEMENTATION**  
+**Status:** FOUNDER APPROVED — Phase 2 Home Hero implemented (see `TODAY_HOME_PHASE2_FOUNDER_REVIEW.md`)  
 **Date:** 2026-08-07  
 **Branch:** `cursor/product-execution-model-v2`  
-**Authority:** Founder Order — Today Home OPEN for study  
+**Authority:** Founder Order — Today Home Phase 2  
 
 | Surface | Status |
 |---|---|
 | Welcome V3 (`/begin`) | Permanently frozen |
 | Signup Keep Experience | Permanently frozen |
 | Child Discovery | Permanently frozen |
-| Today Home | OPEN — Phase 1 blueprint only |
+| Today Home | Phase 2 Hero shipped behind `VITE_FF_TODAY_HOME_V1` |
 
 ---
 

@@ -52,6 +52,20 @@ export const FIRST_VALUE_EVENT_PROP_SCHEMAS = {
     source: z.string().max(64).optional(),
     minutes_since_signup: z.number().nonnegative().optional(),
   }),
+  /** Today Home V1 — product-decided NRT impression (additive). */
+  today_nrt_shown: z.object({
+    nrt_source: z.string().max(48).optional(),
+    child_id: z.number().int().optional(),
+    has_cta: z.boolean().optional(),
+    screen: z.string().max(128).optional(),
+  }),
+  /** Today Home V1 — Begin / rest CTA (additive; pairs with routine_cta_clicked). */
+  today_nrt_cta: z.object({
+    nrt_source: z.string().max(48).optional(),
+    child_id: z.number().int().optional(),
+    cta_kind: z.string().max(48).optional(),
+    screen: z.string().max(128).optional(),
+  }),
 } as const;
 
 export const FIRST_VALUE_EVENT_CATEGORY = {
@@ -62,6 +76,8 @@ export const FIRST_VALUE_EVENT_CATEGORY = {
   routine_saved: "routine",
   routine_shared: "routine",
   first_value_achieved: "growth",
+  today_nrt_shown: "growth",
+  today_nrt_cta: "growth",
 } as const satisfies Record<keyof typeof FIRST_VALUE_EVENT_PROP_SCHEMAS, string>;
 
 export type FirstValueEventName = keyof typeof FIRST_VALUE_EVENT_PROP_SCHEMAS;

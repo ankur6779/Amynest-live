@@ -96,6 +96,18 @@ import {
   DASHBOARD_CHIP_SELECTED,
   DASHBOARD_TINTS,
 } from "@/lib/dashboard-premium";
+import { TodayHomeHero } from "@/components/today-home/today-home-hero";
+import { isTodayHomeV1Enabled } from "@/lib/today-home/feature-flags";
+import { resolveTodayNrt } from "@/lib/today-home/resolve-today-nrt";
+import {
+  buildWeatherInsightLine,
+  resolveSupportingInsight,
+  weatherChangesRecommendation,
+} from "@/lib/today-home/supporting-insight";
+import {
+  trackTodayNrtCta,
+  trackTodayNrtShown,
+} from "@/lib/today-home/telemetry";
 
 const HeroWeatherAmbient = lazyPage(() =>
   import("@/components/HeroWeatherAmbient").then((m) => ({
@@ -143,7 +155,10 @@ type ChildRow = {
   age: number;
   ageMonths?: number;
   dobIsEstimated?: boolean;
+  educationStage?: string | null;
 };
+
+const TODAY_HOME_V1 = isTodayHomeV1Enabled();
 
 function filterRoutinesByChild(routines: Routine[], childId: number | null): Routine[] {
   if (childId == null) return routines;
@@ -1175,9 +1190,112 @@ export default function Dashboard() {
   );
   const timelineOrderClass = timelineFlexOrderClass(dashboardPriorityEnabled);
   const showFirstValueHero =
+    !TODAY_HOME_V1 &&
     FF_FIRST_VALUE_HERO &&
     dashboardUserState === "no_routine" &&
     !journeyHandlesGenerate;
+
+  const todayNrtItems = useMemo(() => {
+    const todayList = filteredRoutines.filter((r) => routineDateKey(r) === todayKey);
+    return todayList.flatMap((r) =>
+      routineItems<RoutineItem>(r).map((item) => ({
+        time: item.time,
+        activity: item.activity,
+        duration: item.duration,
+        status: item.status,
+        routineId: r.id,
+      })),
+    );
+  }, [filteredRoutines, todayKey]);
+
+  const todayNrtDecision = useMemo(() => {
+    if (!TODAY_HOME_V1) return null;
+    const continuity = loadFirstExperienceContinuity();
+    return resolveTodayNrt({
+      child: selectedChild
+        ? {
+            id: selectedChild.id,
+            name: selectedChild.name,
+            age: selectedChild.age,
+            ageMonths: selectedChild.ageMonths ?? 0,
+            educationStage: selectedChild.educationStage,
+          }
+        : null,
+      todayRoutineItems: todayNrtItems,
+      continuity,
+    });
+  }, [selectedChild, todayNrtItems]);
+
+  const todayIntelligenceHeadline = useMemo(() => {
+    if (!TODAY_HOME_V1) return null;
+    const todayList = filteredRoutines.filter((r) => routineDateKey(r) === todayKey);
+    if (todayList.length === 0) return null;
+    const pick = pickRoutineForIntelligence(todayList, todayKey);
+    const surface = resolveFamilyIntelligenceSurface({
+      routines: todayList,
+      adaptations: pick?.adaptations,
+    });
+    return surface?.headline ?? null;
+  }, [filteredRoutines, todayKey]);
+
+  const { data: todayHomeEnv } = useQuery({
+    queryKey: ["today-home-env-ctx"],
+    queryFn: async () => {
+      const res = await authFetch("/api/environment/context");
+      if (!res.ok) throw new Error("env");
+      return parseApiJson(res) as Promise<{ context: any }>;
+    },
+    enabled: TODAY_HOME_V1 && shellReady && !!isSignedIn,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+
+  const todaySupportingInsight = useMemo(() => {
+    if (!TODAY_HOME_V1 || !todayNrtDecision) return null;
+    const ctx = todayHomeEnv?.context;
+    const outdoor = ctx?.outdoorSuitability ?? null;
+    const aqi = ctx?.aqiBucket ?? null;
+    const temp = ctx?.snapshot?.temperatureC ?? null;
+    const weatherSignal =
+      ctx &&
+      weatherChangesRecommendation({
+        outdoorSuitability: outdoor,
+        aqiBucket: aqi,
+        temperatureC: temp,
+      })
+        ? {
+            outdoorSuitability: outdoor,
+            aqiBucket: aqi,
+            temperatureC: temp,
+            line:
+              buildWeatherInsightLine({
+                outdoorSuitability: outdoor,
+                aqiBucket: aqi,
+                temperatureC: temp,
+              }) ?? "",
+          }
+        : null;
+    const ageMonths =
+      selectedChild != null
+        ? selectedChild.age * 12 + (selectedChild.ageMonths ?? 0)
+        : null;
+    const infantLine =
+      selectedChild && ageMonths != null && ageMonths < 24
+        ? `${selectedChild.name} is still little — keep today’s step close and calm.`
+        : null;
+    return resolveSupportingInsight({
+      weather: weatherSignal,
+      familyHeadline: todayIntelligenceHeadline,
+      infantLine,
+      continuityEmotional: loadFirstExperienceContinuity()?.emotionalContext,
+      heroWhy: todayNrtDecision.why,
+    });
+  }, [
+    todayNrtDecision,
+    todayHomeEnv,
+    todayIntelligenceHeadline,
+    selectedChild,
+  ]);
 
   useEffect(() => {
     if (!shellReady || !isSignedIn) return;
@@ -1195,6 +1313,15 @@ export default function Dashboard() {
     allRoutinesSafe.length,
     childrenSafe.length,
   ]);
+
+  useEffect(() => {
+    if (!TODAY_HOME_V1 || !shellReady || !isSignedIn || !todayNrtDecision) return;
+    trackTodayNrtShown({
+      source: todayNrtDecision.source,
+      childId: todayNrtDecision.childId,
+      hasCta: true,
+    });
+  }, [shellReady, isSignedIn, todayNrtDecision?.source, todayNrtDecision?.childId]);
 
   useEffect(() => {
     // Single-flight ref lock — once the parent-profile fetch has been
@@ -1288,6 +1415,37 @@ export default function Dashboard() {
       setLocation(`/routines/generate${childQuery}`);
     }
   }
+
+  function handleTodayHomeBegin() {
+    if (!todayNrtDecision) return;
+    trackTodayNrtCta({
+      source: todayNrtDecision.source,
+      childId: todayNrtDecision.childId,
+      ctaKind: todayNrtDecision.cta.kind,
+      userState: dashboardUserState,
+    });
+    if (todayNrtDecision.cta.kind === "begin_routine" && todayNrtDecision.cta.routineId != null) {
+      setLocation(`/routines/${todayNrtDecision.cta.routineId}`);
+      return;
+    }
+    if (todayNrtDecision.cta.kind === "generate") {
+      // trackTodayNrtCta already emitted routine_cta_clicked — navigate only.
+      if (
+        generateRoutineLocked &&
+        !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
+      ) {
+        openPaywall("routines_limit");
+      } else {
+        const source = "today_nrt_hero";
+        const childQuery =
+          selectedChildId != null
+            ? `?childId=${selectedChildId}&source=${source}`
+            : `?source=${source}`;
+        setLocation(`/routines/generate${childQuery}`);
+      }
+    }
+    // rest — no pressure, no navigation
+  }
   const summaryFallback = (summary as CachedDashboardSummary | undefined)?.fallback === true;
   const noChildren =
     !fetchingSummary &&
@@ -1314,18 +1472,28 @@ export default function Dashboard() {
             isRefreshing={isDashboardRefreshing}
           />
           <ContentReveal.Hero>
-            <SmartHeroSection
-              displayName={displayName}
-              hasChildren={childrenSafe.length > 0}
-              childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
-              journeyStreak={journeyStatus?.completedDays?.length ?? 0}
-              routineStreak={streak}
-              behaviorLoggedToday={
-                summary && (summary as CachedDashboardSummary).fallback !== true
-                  ? (summary.positiveBehaviorsToday ?? 0) + (summary.negativeBehaviorsToday ?? 0) > 0
-                  : undefined
-              }
-            />
+            {TODAY_HOME_V1 && todayNrtDecision ? (
+              <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+                <TodayHomeHero
+                  decision={todayNrtDecision}
+                  insight={todaySupportingInsight}
+                  onBegin={handleTodayHomeBegin}
+                />
+              </div>
+            ) : (
+              <SmartHeroSection
+                displayName={displayName}
+                hasChildren={childrenSafe.length > 0}
+                childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
+                journeyStreak={journeyStatus?.completedDays?.length ?? 0}
+                routineStreak={streak}
+                behaviorLoggedToday={
+                  summary && (summary as CachedDashboardSummary).fallback !== true
+                    ? (summary.positiveBehaviorsToday ?? 0) + (summary.negativeBehaviorsToday ?? 0) > 0
+                    : undefined
+                }
+              />
+            )}
           </ContentReveal.Hero>
 
           <div
@@ -1350,23 +1518,29 @@ export default function Dashboard() {
               ) : null}
             </ContentReveal.Item>
 
-            <ContentReveal.Item>
-              {showActivationResume ? <ActivationResumeBanner /> : null}
-            </ContentReveal.Item>
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                {showActivationResume ? <ActivationResumeBanner /> : null}
+              </ContentReveal.Item>
+            ) : null}
 
-            <ContentReveal.Item>
-              <RetentionHubSection
-                childName={selectedChild?.name ?? null}
-                routineCompletionPct={routineCompletionPct}
-                hasTodayRoutine={hasTodayRoutine}
-                onGenerateRoutine={() => handleGenerateRoutine("retention_checkin")}
-                learningHref="/parenting-hub"
-              />
-            </ContentReveal.Item>
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                <RetentionHubSection
+                  childName={selectedChild?.name ?? null}
+                  routineCompletionPct={routineCompletionPct}
+                  hasTodayRoutine={hasTodayRoutine}
+                  onGenerateRoutine={() => handleGenerateRoutine("retention_checkin")}
+                  learningHref="/parenting-hub"
+                />
+              </ContentReveal.Item>
+            ) : null}
 
-            <ContentReveal.Item>
-              <SevenDayJourneyCard />
-            </ContentReveal.Item>
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                <SevenDayJourneyCard />
+              </ContentReveal.Item>
+            ) : null}
 
             <ContentReveal.Item className={timelineOrderClass}>
               <NowNextTimeline
@@ -1385,7 +1559,10 @@ export default function Dashboard() {
               />
             </ContentReveal.Item>
 
-            {FF_INFANT_V2 && selectedChild && selectedChild.age * 12 + (selectedChild.ageMonths ?? 0) < 24 && (
+            {FF_INFANT_V2 &&
+              selectedChild &&
+              selectedChild.age * 12 + (selectedChild.ageMonths ?? 0) < 24 &&
+              !(TODAY_HOME_V1 && todaySupportingInsight?.kind === "infant") && (
               <ContentReveal.Item>
                 <InfantDashboardShortcut
                   childId={selectedChild.id}
@@ -1395,35 +1572,41 @@ export default function Dashboard() {
               </ContentReveal.Item>
             )}
 
-            <ContentReveal.Item>
-              {loadingSummary ? (
-                <Skeleton className="h-12 rounded-xl" />
-              ) : (
-                <DashboardCompactStatsRow
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                {loadingSummary ? (
+                  <Skeleton className="h-12 rounded-xl" />
+                ) : (
+                  <DashboardCompactStatsRow
+                    streak={streak}
+                    routines={allRoutinesSafe}
+                    summary={summary}
+                    todayDone={todayProgress.done}
+                    todayTotal={todayProgress.total}
+                  />
+                )}
+              </ContentReveal.Item>
+            ) : null}
+
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                <AmyCoachCheckInCard />
+              </ContentReveal.Item>
+            ) : null}
+
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                <DashboardCoachingCard
+                  routines={filteredRoutines}
                   streak={streak}
-                  routines={allRoutinesSafe}
-                  summary={summary}
-                  todayDone={todayProgress.done}
-                  todayTotal={todayProgress.total}
+                  onGenerate={handleGenerateRoutine}
+                  suppressGenerate={suppressAmyGenerate}
+                  generatePrimarySource={generatePrimarySource}
                 />
-              )}
-            </ContentReveal.Item>
+              </ContentReveal.Item>
+            ) : null}
 
-            <ContentReveal.Item>
-              <AmyCoachCheckInCard />
-            </ContentReveal.Item>
-
-            <ContentReveal.Item>
-              <DashboardCoachingCard
-                routines={filteredRoutines}
-                streak={streak}
-                onGenerate={handleGenerateRoutine}
-                suppressGenerate={suppressAmyGenerate}
-                generatePrimarySource={generatePrimarySource}
-              />
-            </ContentReveal.Item>
-
-            {showFeatureDiscovery ? (
+            {!TODAY_HOME_V1 && showFeatureDiscovery ? (
             <ContentReveal.Item>
               <FeatureDiscoveryStrip
                 childAgeYears={selectedChild?.age}
@@ -1432,22 +1615,24 @@ export default function Dashboard() {
             </ContentReveal.Item>
             ) : null}
 
-            <ContentReveal.Item>
-              <DashboardMoreInsightsSection
-                allRoutines={allRoutinesSafe}
-                streak={streak}
-                selectedChildId={selectedChildId}
-                filteredBehaviorStats={filteredBehaviorStats}
-                loadingStats={loadingStats}
-                filteredRecentRoutines={filteredRecentRoutines}
-                loadingRoutines={loadingRoutines}
-                selectedChildName={selectedChild?.name ?? null}
-                gamingLocked={hubUsage.isFeatureLocked("hub_gaming_rewards")}
-                onGamingOpen={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
-                gamingLabel={t("pages.dashboard.gaming_reward")}
-                gamingSub={t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
-              />
-            </ContentReveal.Item>
+            {!TODAY_HOME_V1 ? (
+              <ContentReveal.Item>
+                <DashboardMoreInsightsSection
+                  allRoutines={allRoutinesSafe}
+                  streak={streak}
+                  selectedChildId={selectedChildId}
+                  filteredBehaviorStats={filteredBehaviorStats}
+                  loadingStats={loadingStats}
+                  filteredRecentRoutines={filteredRecentRoutines}
+                  loadingRoutines={loadingRoutines}
+                  selectedChildName={selectedChild?.name ?? null}
+                  gamingLocked={hubUsage.isFeatureLocked("hub_gaming_rewards")}
+                  onGamingOpen={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
+                  gamingLabel={t("pages.dashboard.gaming_reward")}
+                  gamingSub={t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
+                />
+              </ContentReveal.Item>
+            ) : null}
             </ContentReveal.Stagger>
           </div>
       </div>
