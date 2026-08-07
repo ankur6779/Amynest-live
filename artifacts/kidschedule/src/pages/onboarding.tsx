@@ -85,9 +85,11 @@ import {
   persistOnboardingBootSeed,
 } from "@/lib/onboarding-session-flush";
 import {
+  isChildDiscoveryFilmEnabled,
   isOnboardingShortChildBranchActive,
   resolveOnboardingShortBranchVariant,
 } from "@/lib/onboarding-conversion-flags";
+import ChildDiscoveryFilm from "@/pages/child-discovery-film";
 import { buildShortBranchChildDraft } from "@/lib/onboarding-short-branch";
 import {
   hasActiveOnboardingChatSession,
@@ -577,6 +579,15 @@ function AmyAvatar({ size = 8 }: { size?: number }) {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function OnboardingPage() {
+  // Child Discovery Film — Scene 2. Legacy chat preserved behind kill switch.
+  if (isChildDiscoveryFilmEnabled()) {
+    return <ChildDiscoveryFilm />;
+  }
+
+  return <LegacyOnboardingChatPage />;
+}
+
+function LegacyOnboardingChatPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useUser();

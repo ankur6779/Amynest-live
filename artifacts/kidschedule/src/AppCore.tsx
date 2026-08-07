@@ -145,6 +145,7 @@ const AnswerToKidsHowPage = lazyPage(() => import("@/pages/answer-to-kids-how"))
 const AnswerToKidsHowReaderPage = lazyPage(() => import("@/pages/answer-to-kids-how-reader"));
 const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-live"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
+const ChildDiscoveryFilmPage = lazyPage(() => import("@/pages/child-discovery-film"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
 const SubscriptionTrialEndedPage = lazyPage(
@@ -1025,6 +1026,8 @@ function AppRoutes() {
               <Route path="/amy-avatar-qa" component={AmyAvatarQaPage} />
               <Route path="/openai-realtime-test" component={OpenAiRealtimeTestPage} />
               <Route path="/openai-realtime-minimal-test" component={OpenAiRealtimeMinimalTestPage} />
+              {/* DEV-only: Founder Review screenshots without auth session */}
+              <Route path="/dev/child-discovery-film" component={ChildDiscoveryFilmPage} />
             </>
           )}
           <Route path="/onboarding" component={OnboardingRouteGuard} />

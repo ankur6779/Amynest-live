@@ -21,6 +21,16 @@ export function isOnboardingShortChildBranchExperimentEnabled(): boolean {
   return envFlag("VITE_FF_ONBOARDING_SHORT_CHILD_BRANCH", false);
 }
 
+/**
+ * Child Discovery Film (Phase 2).
+ * Default ON — Scene 2 manufacturing. Set VITE_FF_CHILD_DISCOVERY_FILM=0 to rollback to legacy chat.
+ */
+export function isChildDiscoveryFilmEnabled(): boolean {
+  const raw = import.meta.env.VITE_FF_CHILD_DISCOVERY_FILM;
+  if (raw === undefined || raw === "") return true;
+  return raw === "true" || raw === "1";
+}
+
 export type OnboardingShortBranchVariant = "control" | "short";
 
 function readStoredVariant(): OnboardingShortBranchVariant | null {

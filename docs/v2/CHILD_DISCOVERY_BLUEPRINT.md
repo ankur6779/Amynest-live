@@ -1,15 +1,16 @@
 # Child Discovery Blueprint — Phase 1 (Study Only)
 
-**Status:** AWAITING FOUNDER APPROVAL — **NO IMPLEMENTATION**  
+**Status:** FOUNDER APPROVED — Phase 2 implemented (see `CHILD_DISCOVERY_PHASE2_FOUNDER_REVIEW.md`)  
 **Date:** 2026-08-07  
 **Branch:** `cursor/product-execution-model-v2`  
-**Authority:** Founder Order — Child Discovery OPEN for study  
+**Authority:** Founder Order — Child Discovery Phase 2  
 
 | Surface | Status |
 |---|---|
 | Welcome V3 (`/begin`) | Permanently frozen |
 | Signup Keep Experience | Permanently frozen |
-| Child Discovery | OPEN — Phase 1 study only |
+| Child Discovery | Phase 2 film on `/onboarding` (kill switch `VITE_FF_CHILD_DISCOVERY_FILM=0`) |
+| Today Home | NOT STARTED — STOP |
 
 ---
 

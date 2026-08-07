@@ -27,4 +27,15 @@ describe("onboarding conversion flags", () => {
     const mod = await import("./onboarding-conversion-flags");
     expect(mod.isOnboardingStrictCompleteGateEnabled()).toBe(true);
   });
+
+  it("Child Discovery Film defaults ON and can kill-switch off", async () => {
+    vi.stubEnv("VITE_FF_CHILD_DISCOVERY_FILM", "");
+    let mod = await import("./onboarding-conversion-flags");
+    expect(mod.isChildDiscoveryFilmEnabled()).toBe(true);
+
+    vi.resetModules();
+    vi.stubEnv("VITE_FF_CHILD_DISCOVERY_FILM", "0");
+    mod = await import("./onboarding-conversion-flags");
+    expect(mod.isChildDiscoveryFilmEnabled()).toBe(false);
+  });
 });
