@@ -150,4 +150,4 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 | Reuse Before Rewrite | Absolute — discover → reuse/refactor → new only if architecture cannot support |
 
-See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` · `docs/v2/TODAY_HOME_BLUEPRINT.md` · `docs/v2/PARENT_HUB_CONSTITUTION.md` · `docs/v2/PARENT_HUB_VISUAL_MANUFACTURING_STUDY.md`
+See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` · `docs/v2/TODAY_HOME_BLUEPRINT.md` · `docs/v2/PARENT_HUB_CONSTITUTION.md` · `docs/v2/PARENT_HUB_VISUAL_MANUFACTURING_STUDY.md` · `docs/v2/PARENT_HUB_MANUFACTURING_PLAN.md`
