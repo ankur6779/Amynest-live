@@ -23,6 +23,26 @@ Forbidden: score, judge, push, artificial celebrate, FOMO, urgency, guilt.
 4. **Life continues** — Returns continue life. Never restart, interrupt, or demand attention.  
 5. **Calm companionship** — AmyNest supports exhausted parents with relief and restraint — never pressure.
 
+## The Question Tax Law (Founder — Absolute)
+
+Every additional question is a tax.
+
+Every tap must earn its existence.
+
+If the product can infer safely, never ask.
+
+If the product must ask, immediately demonstrate why the answer mattered.
+
+Parents should feel smarter after every answer, never more tired.
+
+### Manufacturing consequences
+
+- Prefer inference from continuity, age, context, and prior answers  
+- Delete questions that do not change the next right thing  
+- Never stack forms for completeness  
+- After every required ask: show the value of the answer in the same beat  
+- Child Discovery (when unlocked) must obey this law first  
+
 ## Premium Voice
 
 Never: Buy · Unlock · Limited · Ending soon  

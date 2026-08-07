@@ -33,6 +33,16 @@ Every interaction must reduce parent anxiety.
 - No feature competition  
 - No emotional pressure  
 
+### Question Tax Law (absolute)
+
+- Every additional question is a tax  
+- Every tap must earn its existence  
+- If the product can infer safely, never ask  
+- If the product must ask, immediately demonstrate why the answer mattered  
+- Parents feel smarter after every answer — never more tired  
+
+See: `docs/AMYNEST_PHILOSOPHY.md` · `mayAskParentQuestion()` in `amynest-philosophy.ts`  
+
 ---
 
 ## Pillar 3 — Production Safety

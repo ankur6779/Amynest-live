@@ -10,6 +10,13 @@
  *
  * Forbidden product emotions:
  *   score · judge · push · artificial celebrate · FOMO · urgency · guilt
+ *
+ * Question Tax Law (Founder absolute):
+ *   Every additional question is a tax.
+ *   Every tap must earn its existence.
+ *   Infer safely → never ask.
+ *   If must ask → immediately show why the answer mattered.
+ *   Parents leave smarter after every answer — never more tired.
  */
 
 /** The Five Immutable Principles of AmyNest */
@@ -70,6 +77,68 @@ export const PREMIUM_VOICE = {
   continueCta: "Continue with AmyNest",
   includesLabel: "What Premium includes",
 } as const;
+
+/**
+ * The Question Tax Law — Founder absolute.
+ * Governs every form, discovery beat, preference, and onboarding ask.
+ */
+export const QUESTION_TAX_LAW = {
+  id: "question-tax",
+  axioms: [
+    "Every additional question is a tax.",
+    "Every tap must earn its existence.",
+    "If the product can infer safely, never ask.",
+    "If the product must ask, immediately demonstrate why the answer mattered.",
+    "Parents should feel smarter after every answer, never more tired.",
+  ],
+} as const;
+
+export type QuestionTaxGateInput = {
+  /** True when age, context, continuity, or prior answers already suffice. */
+  canInferSafely: boolean;
+  /** True when this tap produces visible value — not paperwork. */
+  tapEarnsExistence: boolean;
+  /** True when the UI will instantly show why the answer mattered. */
+  willDemonstrateWhyImmediately: boolean;
+};
+
+export type QuestionTaxGateResult = {
+  allowed: boolean;
+  reason: string;
+};
+
+/**
+ * Gate for any new parent question.
+ * If inference is safe → refuse to ask.
+ * If asking → the tap must earn existence AND prove value immediately.
+ */
+export function mayAskParentQuestion(input: QuestionTaxGateInput): QuestionTaxGateResult {
+  if (input.canInferSafely) {
+    return { allowed: false, reason: "Infer safely — never ask." };
+  }
+  if (!input.tapEarnsExistence) {
+    return { allowed: false, reason: "Tap does not earn its existence." };
+  }
+  if (!input.willDemonstrateWhyImmediately) {
+    return {
+      allowed: false,
+      reason: "Must immediately demonstrate why the answer mattered.",
+    };
+  }
+  return {
+    allowed: true,
+    reason: "Ask once — then prove the answer mattered.",
+  };
+}
+
+/** After an answer: did the parent leave smarter, not more tired? */
+export function answerLeftParentSmarter(opts: {
+  demonstratedWhy: boolean;
+  addedCognitiveLoadWithoutValue: boolean;
+}): boolean {
+  if (opts.addedCognitiveLoadWithoutValue) return false;
+  return opts.demonstratedWhy;
+}
 
 /** Notification litmus — every push must make a tired parent feel lighter. */
 export function notificationFeelsLighter(body: string): boolean {
