@@ -7,6 +7,8 @@ import {
   requestIosMicrophoneAccess,
 } from "@/lib/mic-permission-capacitor";
 import { syncCapacitorPushRegistrationWithOs } from "@/lib/native-push-bridge";
+import { hasDurableFirstExperienceMemory } from "@/lib/first-experience/continuity";
+import { hasFirstExperienceValue } from "@/lib/first-experience/storage";
 
 const SESSION_SKIP_KEY = "amynest_native_perm_gate_skip_v1";
 const PROMPTED_ONCE_KEY = "amynest_native_perm_prompted_v1";
@@ -19,9 +21,23 @@ function isCapacitorNative(): boolean {
   }
 }
 
+function trustHasPrecededPermissionAsk(): boolean {
+  try {
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    // Never ask during first experience — value and trust come first.
+    if (path === "/begin" || path.startsWith("/begin/")) return false;
+    if (path === "/sign-up" || path === "/sign-in" || path === "/welcome") return false;
+    // Only after the parent has received first value (this session or durable memory).
+    return hasFirstExperienceValue() || hasDurableFirstExperienceMemory();
+  } catch {
+    return false;
+  }
+}
+
 /**
- * On Capacitor iOS/Android, triggers OS permission dialogs for microphone and
- * notifications. Location is requested intentionally during onboarding.
+ * On Capacitor iOS/Android, may request microphone and notifications —
+ * only after trust/value, never on first-experience entry.
+ * Location is requested intentionally during onboarding.
  */
 export function NativeStartupPermissionsGate() {
   const isCap = useMemo(
@@ -53,6 +69,13 @@ export function NativeStartupPermissionsGate() {
 
   useEffect(() => {
     if (!isCap || finished || startedRef.current) return;
+
+    // Trust precedes requests — defer entirely until value has been earned.
+    if (!trustHasPrecededPermissionAsk()) {
+      setFinished(true);
+      return;
+    }
+
     startedRef.current = true;
 
     let cancelled = false;

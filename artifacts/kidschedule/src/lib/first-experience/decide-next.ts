@@ -24,10 +24,6 @@ function weekdayLabel(now: Date): string {
   return now.toLocaleDateString(undefined, { weekday: "long" });
 }
 
-function clockLabel(now: Date): string {
-  return now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
 /**
  * Deterministic next-right-thing from ONLY signals the parent gave
  * plus genuine device clock/calendar. Never invents household facts.
@@ -36,11 +32,12 @@ export function decideFirstExperienceNextThing(input: DecideNextInput): FirstExp
   const now = input.now ?? new Date();
   const name = input.childName.trim() || "your child";
   const bucket = timeBucket(now);
+  // Quiet noticing — never software reporting.
   const basedOn = [
-    `Local time: ${clockLabel(now)}`,
-    `Day: ${weekdayLabel(now)}`,
-    `Age band you shared: ${input.ageBand}`,
-    `Today you shared: ${labelToday(input.todayContext)}`,
+    `It’s ${weekdayLabel(now)}.`,
+    `${name} is in the ${input.ageBand} stage.`,
+    todayObservation(input.todayContext),
+    "The next step becomes clear.",
   ];
 
   if (input.ageBand === "0-2") {
@@ -139,17 +136,13 @@ export function decideFirstExperienceNextThing(input: DecideNextInput): FirstExp
   };
 }
 
-function labelToday(ctx: FirstExperienceTodayContext): string {
-  if (ctx === "school") return "school / care day";
-  if (ctx === "home") return "home day";
-  return "not sure yet";
-}
-
 function todayObservation(ctx: FirstExperienceTodayContext): string {
   if (ctx === "school") return "Today already has a direction.";
   if (ctx === "home") return "Today feels unhurried.";
   return "Today is still open.";
 }
+
+export { todayObservation };
 
 /**
  * Contemplative observations — human, minimal, calm.

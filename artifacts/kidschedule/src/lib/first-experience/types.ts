@@ -22,6 +22,8 @@ export type FirstExperienceNextThing = {
   basedOn: string[];
 };
 
+export type FirstExperienceCompletionKind = "done" | "similar" | "later";
+
 export type FirstExperienceState = {
   version: 1;
   step: FirstExperienceStep;
@@ -31,5 +33,7 @@ export type FirstExperienceState = {
   nextThing: FirstExperienceNextThing | null;
   completedAt: string | null;
   valueEarned: boolean;
+  /** How the parent closed the first success — never forced. */
+  completionKind?: FirstExperienceCompletionKind | null;
   startedAt: string;
 };

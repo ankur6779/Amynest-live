@@ -5,6 +5,10 @@ import {
   decideFirstExperienceNextThing,
 } from "@/lib/first-experience/decide-next";
 import {
+  buildContinuityFromState,
+  saveFirstExperienceContinuity,
+} from "@/lib/first-experience/continuity";
+import {
   loadFirstExperienceState,
   saveFirstExperienceState,
 } from "@/lib/first-experience/storage";
@@ -210,6 +214,10 @@ export default function FirstExperiencePage() {
 
   useEffect(() => {
     saveFirstExperienceState(state);
+    if (state.valueEarned && state.nextThing) {
+      const continuity = buildContinuityFromState(state);
+      if (continuity) saveFirstExperienceContinuity(continuity);
+    }
   }, [state]);
 
   useEffect(() => {
@@ -260,9 +268,9 @@ export default function FirstExperiencePage() {
         });
         window.setTimeout(() => {
           patch({ step: "next-thing", nextThing });
-        }, 1100);
+        }, 380);
       }
-    }, 1420);
+    }, 720);
 
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -285,6 +293,15 @@ export default function FirstExperiencePage() {
               onClick={() => patch({ step: "discovery-name" })}
             >
               Continue
+            </button>
+            <button
+              type="button"
+              className="fe-btn fe-btn-quiet"
+              style={{ marginTop: "var(--space-3)" }}
+              data-testid="fe-welcome-later"
+              onClick={() => setLocation("/welcome")}
+            >
+              Not now
             </button>
           </div>
         </div>
@@ -414,7 +431,7 @@ export default function FirstExperiencePage() {
               data-testid="fe-today-continue"
               onClick={() => patch({ step: "working" })}
             >
-              Form today’s next step
+              See today’s next step
             </button>
           </div>
         </div>
@@ -429,7 +446,7 @@ export default function FirstExperiencePage() {
           <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
             ·
           </p>
-          <h1 className="fe-title fe-title-section">Forming today’s next right thing</h1>
+          <h1 className="fe-title fe-title-section">Noticing today’s next right thing</h1>
           <ul className="fe-signal-list">
             {workingSignals.map((line, idx) => {
               if (idx >= workingIndex) return null;
@@ -480,6 +497,22 @@ export default function FirstExperiencePage() {
             >
               Do this now
             </button>
+            <button
+              type="button"
+              className="fe-btn fe-btn-quiet"
+              style={{ marginTop: "var(--space-3)" }}
+              data-testid="fe-reveal-later"
+              onClick={() =>
+                patch({
+                  step: "memory",
+                  valueEarned: true,
+                  completionKind: "later",
+                  completedAt: null,
+                })
+              }
+            >
+              Later
+            </button>
           </div>
         </div>
       </Shell>
@@ -505,10 +538,43 @@ export default function FirstExperiencePage() {
                   step: "done",
                   completedAt: new Date().toISOString(),
                   valueEarned: true,
+                  completionKind: "done",
                 })
               }
             >
               Mark as done
+            </button>
+            <button
+              type="button"
+              className="fe-btn fe-btn-quiet"
+              style={{ marginTop: "var(--space-3)" }}
+              data-testid="fe-did-similar"
+              onClick={() =>
+                patch({
+                  step: "done",
+                  completedAt: new Date().toISOString(),
+                  valueEarned: true,
+                  completionKind: "similar",
+                })
+              }
+            >
+              I already did something similar
+            </button>
+            <button
+              type="button"
+              className="fe-btn fe-btn-quiet"
+              style={{ marginTop: "var(--space-3)" }}
+              data-testid="fe-doing-later"
+              onClick={() =>
+                patch({
+                  step: "memory",
+                  valueEarned: true,
+                  completionKind: "later",
+                  completedAt: null,
+                })
+              }
+            >
+              Not now
             </button>
           </div>
         </div>
@@ -517,13 +583,15 @@ export default function FirstExperiencePage() {
   }
 
   if (state.step === "done") {
+    const doneBody =
+      state.completionKind === "similar"
+        ? `That counts. AmyNest will remember this moment for ${state.childName || "your child"}.`
+        : `You completed today’s next right thing for ${state.childName || "your child"}.`;
     return (
       <Shell room="done">
         <div className="fe-copy fe-exhale" style={{ justifyContent: "center", textAlign: "center" }}>
           <h1 className="fe-title fe-title-section">Done for this moment</h1>
-          <p className="fe-body">
-            You completed today’s next right thing for {state.childName || "your child"}.
-          </p>
+          <p className="fe-body">{doneBody}</p>
           <div className="fe-actions">
             <button
               type="button"
@@ -548,8 +616,8 @@ export default function FirstExperiencePage() {
           </p>
           <h1 className="fe-title fe-title-section">Tomorrow can start from here</h1>
           <p className="fe-body">
-            AmyNest can remember today’s progress for {state.childName || "your child"} — so the next
-            right thing gets sharper over time. Nothing is saved to an account until you choose to keep it.
+            Today stays with {state.childName || "your child"} on this device. An account keeps the story
+            with you — so tomorrow continues naturally, never restarts.
           </p>
           <div className="fe-actions">
             <button
@@ -610,7 +678,15 @@ export default function FirstExperiencePage() {
               style={{ marginTop: "var(--space-4)", textAlign: "center", color: "rgba(244,238,230,0.5)" }}
               data-testid="fe-kept-local"
             >
-              Today’s progress stays on this device for this session. Account keeps it beyond that.
+              Today stays on this device.{" "}
+              <Link
+                href="/welcome"
+                className="underline-offset-2 hover:underline"
+                style={{ color: "rgba(244,238,230,0.7)" }}
+                data-testid="fe-keep-leave"
+              >
+                Continue without an account
+              </Link>
             </p>
           ) : null}
           <p

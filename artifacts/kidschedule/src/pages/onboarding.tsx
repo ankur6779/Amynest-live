@@ -71,6 +71,10 @@ import {
   type LoadingStatusPhase,
 } from "@/lib/onboarding-first-question";
 import {
+  peekFirstExperienceOnboardingSeed,
+  shouldDeferMonetizationForFirstExperience,
+} from "@/lib/first-experience/continuity";
+import {
   claimOnboardingEventOnce,
   getOrCreateOnboardingAnalyticsRunKey,
   resetOnboardingAnalyticsOnceFlags,
@@ -686,9 +690,15 @@ export default function OnboardingPage() {
   const [children, setChildren] = useState<ChildData[]>(
     () => (restoredData?.children as ChildData[] | undefined) ?? [],
   );
-  const [curr, setCurr] = useState<Partial<ChildData>>(
-    () => (restoredData?.curr as Partial<ChildData> | undefined) ?? {},
-  );
+  const [childNameEditing, setChildNameEditing] = useState(false);
+  const [curr, setCurr] = useState<Partial<ChildData>>(() => {
+    const restored = (restoredData?.curr as Partial<ChildData> | undefined) ?? {};
+    if (restored.name?.trim()) return restored;
+    // Continuity: inherit first-experience story — never restart after trust.
+    const seed = peekFirstExperienceOnboardingSeed();
+    if (!seed) return restored;
+    return { ...restored, ...seed };
+  });
   const [parent, setParent] = useState<Partial<ParentData>>(
     () => (restoredData?.parent as Partial<ParentData> | undefined) ?? {},
   );
@@ -1474,6 +1484,7 @@ export default function OnboardingPage() {
         featureEnabled: FF_POST_ONBOARDING_TRIAL,
         alreadySeen: wasOnboardingTrialSeen(),
         isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
+        deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
       });
       const trialPath = offerFreeTrial
         ? "/subscription-trial"
@@ -1532,6 +1543,7 @@ export default function OnboardingPage() {
       featureEnabled: FF_POST_ONBOARDING_TRIAL,
       alreadySeen: wasOnboardingTrialSeen(),
       isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
+      deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
     });
     const trialPath = offerFreeTrial
       ? "/subscription-trial"
@@ -1730,6 +1742,8 @@ export default function OnboardingPage() {
         childAgeMonths: curr.ageMonths ?? 0,
         suggestedParentName: parent.name || readOAuthParentNameHint(),
         parentNameEditing,
+        suggestedChildName: curr.name,
+        childNameEditing,
         schoolScheduleCustom,
         birthdayInitialIso: curr.dob,
         handlers: {
@@ -1767,8 +1781,10 @@ export default function OnboardingPage() {
       detectedCoords,
       curr.age,
       curr.ageMonths,
+      curr.name,
       parent.name,
       parentNameEditing,
+      childNameEditing,
       schoolScheduleCustom,
       curr.dob,
     ],
@@ -1854,6 +1870,20 @@ export default function OnboardingPage() {
 
   function advanceAfterChildName(name: string) {
     setCurr((c) => ({ ...c, name }));
+    setChildNameEditing(false);
+    // Continuity: age already earned in first experience — continue, don't restart.
+    const seededAge =
+      typeof curr.age === "number" && Number.isFinite(curr.age) ? curr.age : null;
+    const seededBand =
+      typeof curr.selectedAgeBand === "string" ? curr.selectedAgeBand : undefined;
+    if (seededAge != null && seededAge >= 0) {
+      if (!childNameGreetedRef.current) {
+        childNameGreetedRef.current = true;
+      }
+      // Inherit age quietly — no age chips, no second interrogation.
+      advanceAfterChildAge(name, seededAge, curr.ageMonths ?? 0, seededBand);
+      return;
+    }
     const amyMsgs: string[] = [];
     if (!childNameGreetedRef.current) {
       childNameGreetedRef.current = true;
@@ -1933,11 +1963,19 @@ export default function OnboardingPage() {
 
     if (event.type === "name-confirm") {
       if (event.actionId === "edit") {
+        if (step === "child-name") {
+          setChildNameEditing(true);
+          return;
+        }
         setParentNameEditing(true);
         return;
       }
       if (event.actionId === "confirm" && event.nameValue?.trim()) {
         const name = event.nameValue.trim();
+        if (step === "child-name") {
+          advanceAfterChildName(name);
+          return;
+        }
         setParent((p) => ({ ...p, name }));
         advanceAfterParentName(name);
       }

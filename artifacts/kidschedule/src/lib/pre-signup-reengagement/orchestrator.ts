@@ -126,6 +126,21 @@ export async function syncPreSignupCampaign(
     return;
   }
 
+  // Trust precedes requests — never schedule FOMO before first value.
+  try {
+    const [{ hasFirstExperienceValue }, { hasDurableFirstExperienceMemory }] = await Promise.all([
+      import("@/lib/first-experience/storage"),
+      import("@/lib/first-experience/continuity"),
+    ]);
+    if (!hasFirstExperienceValue() && !hasDurableFirstExperienceMemory()) {
+      trackPreSignupCampaignBlocked("awaiting_first_value");
+      return;
+    }
+  } catch {
+    trackPreSignupCampaignBlocked("awaiting_first_value");
+    return;
+  }
+
   if (shouldExitPreSignupSegment(audience)) {
     if (audience.isAuthenticated) trackPreSignupCampaignBlocked("authenticated");
     if (audience.signupCompleted) trackPreSignupCampaignBlocked("signup_completed");

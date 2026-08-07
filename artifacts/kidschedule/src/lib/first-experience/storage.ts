@@ -12,6 +12,7 @@ export function createEmptyFirstExperienceState(): FirstExperienceState {
     nextThing: null,
     completedAt: null,
     valueEarned: false,
+    completionKind: null,
     startedAt: new Date().toISOString(),
   };
 }

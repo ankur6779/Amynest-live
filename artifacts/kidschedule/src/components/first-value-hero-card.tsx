@@ -5,16 +5,23 @@ import { DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 type Props = {
   childName?: string | null;
   onGenerate: () => void;
+  /** Inherited first-experience success — continue the story, never restart. */
+  continuityLine?: string | null;
 };
 
 /**
  * Primary first-value CTA — shown when parent has no routine for today.
  * Production evidence: only 18% of dashboard users reached /routines/generate.
  */
-export function FirstValueHeroCard({ childName, onGenerate }: Props) {
-  const label = childName
-    ? `Generate today's routine for ${childName}`
-    : "Generate today's routine";
+export function FirstValueHeroCard({ childName, onGenerate, continuityLine }: Props) {
+  const continuing = Boolean(continuityLine?.trim());
+  const label = continuing
+    ? childName
+      ? `Continue with ${childName} today`
+      : "Continue with today"
+    : childName
+      ? `See today’s plan for ${childName}`
+      : "See today’s plan";
 
   return (
     <DashboardGlassCard
@@ -32,14 +39,15 @@ export function FirstValueHeroCard({ childName, onGenerate }: Props) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/80">
-              Your first step
+              {continuing ? "Still with you" : "Your next step"}
             </p>
             <h2 className="font-quicksand text-lg font-bold leading-snug text-white sm:text-xl">
               {label}
             </h2>
             <p className="mt-1 text-sm text-white/70">
-              Amy builds a personalized schedule in about 2 minutes — meals, naps,
-              play, and bedtime tailored to your child.
+              {continuing
+                ? continuityLine
+                : "A clear day for meals, rest, play, and bedtime — shaped around your child."}
             </p>
           </div>
         </div>
@@ -51,13 +59,15 @@ export function FirstValueHeroCard({ childName, onGenerate }: Props) {
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3.5 text-base font-bold text-[#0a1024] shadow-lg shadow-amber-500/25 transition hover:bg-amber-400 active:scale-[0.98]"
         >
           <Sparkles className="h-5 w-5" aria-hidden />
-          Generate routine now
+          {continuing ? "Continue today’s plan" : "See today’s plan"}
           <ArrowRight className="h-5 w-5" aria-hidden />
         </button>
 
         <p className="flex items-center justify-center gap-1.5 text-xs text-white/50">
           <Clock className="h-3.5 w-3.5" aria-hidden />
-          Most parents finish in under 10 minutes
+          {continuing
+            ? "Yesterday mattered. Today continues when you are ready."
+            : "Most parents finish in under 10 minutes"}
         </p>
       </div>
     </DashboardGlassCard>

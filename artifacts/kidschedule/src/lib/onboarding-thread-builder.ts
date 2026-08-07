@@ -64,6 +64,9 @@ export interface OnboardingThreadContext {
   childAgeMonths: number;
   suggestedParentName?: string;
   parentNameEditing?: boolean;
+  /** First-experience continuity — confirm instead of restarting the name ask. */
+  suggestedChildName?: string;
+  childNameEditing?: boolean;
   schoolScheduleCustom?: boolean;
   birthdayInitialIso?: string;
   handlers: {
@@ -158,11 +161,21 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
         locationRequesting,
       };
     }
-    case "child-name":
+    case "child-name": {
+      const suggestedChild = ctx.suggestedChildName?.trim();
+      if (suggestedChild && !ctx.childNameEditing) {
+        return {
+          type: "name-confirm",
+          suggestedName: suggestedChild,
+          confirmLabel: t("screens.onboarding.parent_name_confirm_yes"),
+          editLabel: t("screens.onboarding.parent_name_confirm_edit"),
+        };
+      }
       return {
         type: "name-suggestions",
         suggestions: getChildNameSuggestions(ctx.countryCodeForRegion),
       };
+    }
     case "child-dob":
       return {
         type: "age-select",

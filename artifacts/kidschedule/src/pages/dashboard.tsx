@@ -46,6 +46,10 @@ import {
   heroGreetingRefreshKey,
   type HeroGreeting,
 } from "@/lib/generate-hero-greeting";
+import {
+  consumeHomeContinuityGreeting,
+  loadFirstExperienceContinuity,
+} from "@/lib/first-experience/continuity";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -428,18 +432,24 @@ function SmartHeroSection({
   })();
 
   const greetingRefreshKey = heroGreetingRefreshKey({ weatherCondition });
-  const [heroGreeting, setHeroGreeting] = useState<HeroGreeting>(() =>
-    generateHeroGreeting({
+  const [heroGreeting, setHeroGreeting] = useState<HeroGreeting>(() => {
+    const continuity = consumeHomeContinuityGreeting();
+    if (continuity) {
+      return { id: "fe-continuity", title: continuity.title, subtitle: continuity.subtitle };
+    }
+    return generateHeroGreeting({
       displayName: displayName || undefined,
       weatherCondition,
       isDay,
       journeyStreak,
       routineStreak,
       behaviorLoggedToday,
-    }),
-  );
+    });
+  });
 
   useEffect(() => {
+    // Never overwrite the inherited first-experience greeting this session.
+    if (heroGreeting.id === "fe-continuity") return;
     setHeroGreeting(
       generateHeroGreeting({
         displayName: displayName || undefined,
@@ -451,6 +461,7 @@ function SmartHeroSection({
       }),
     );
     // Refresh only when the day or weather classification changes (not mid-read).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [greetingRefreshKey, displayName]);
 
   return (
@@ -1327,6 +1338,13 @@ export default function Dashboard() {
               {showFirstValueHero ? (
                 <FirstValueHeroCard
                   childName={selectedChild?.name ?? childrenSafe[0]?.name}
+                  continuityLine={(() => {
+                    const c = loadFirstExperienceContinuity();
+                    if (!c?.nextThing) return null;
+                    return c.emotionalContext
+                      ? `${c.emotionalContext} ${c.nextThing.title}`
+                      : c.nextThing.title;
+                  })()}
                   onGenerate={() => handleGenerateRoutine("first_value_hero")}
                 />
               ) : null}

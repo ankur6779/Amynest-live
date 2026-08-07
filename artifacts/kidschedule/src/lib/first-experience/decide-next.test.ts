@@ -11,8 +11,9 @@ describe("decideFirstExperienceNextThing", () => {
       now,
     });
     expect(next.title.toLowerCase()).toContain("noah");
-    expect(next.basedOn.some((b) => b.includes("5-7"))).toBe(true);
-    expect(next.basedOn.some((b) => /school/i.test(b))).toBe(true);
+    expect(next.basedOn.some((b) => /5-7 stage/i.test(b))).toBe(true);
+    expect(next.basedOn.some((b) => /direction/i.test(b))).toBe(true);
+    expect(next.basedOn.join(" ")).not.toMatch(/Local time|Age band you shared|Based on|Generated/i);
     expect(next.id).toBe("school-morning-launch");
   });
 

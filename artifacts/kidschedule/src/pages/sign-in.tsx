@@ -429,6 +429,9 @@ export default function SignInPage() {
     isSignedIn
   } = useAuth();
   const [mode, setMode] = useState<ViewMode>("signin");
+  const fromFirstExperience =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("from") === "first-experience";
   const demoLoginEmail =
     import.meta.env.VITE_AMYNEST_ENV !== "production"
       ? (import.meta.env.VITE_DEMO_LOGIN_EMAIL as string | undefined)?.trim() ?? ""
@@ -454,6 +457,11 @@ export default function SignInPage() {
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     let cancelled = false;
+    // From first experience: continue the story — never interrupt with notify before home.
+    if (fromFirstExperience) {
+      setLocation("/");
+      return;
+    }
     void shouldShowPermissionsSetupPromptAsync().then((show) => {
       if (cancelled) return;
       setLocation(show ? "/notify-prompt?next=/" : "/");
@@ -461,7 +469,7 @@ export default function SignInPage() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, setLocation]);
+  }, [isLoaded, isSignedIn, setLocation, fromFirstExperience]);
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -501,7 +509,9 @@ export default function SignInPage() {
       void import("@/lib/meta-attribution").then(({ trackMetaLogin }) => {
         trackMetaLogin("email");
       });
-      const showPerms = await shouldShowPermissionsSetupPromptAsync();
+      // Trust precedes requests — first-experience return continues into the account story.
+      const showPerms =
+        fromFirstExperience ? false : await shouldShowPermissionsSetupPromptAsync();
       let dest = showPerms ? "/notify-prompt?next=/" : "/";
       if (!showPerms) {
         try {
@@ -691,14 +701,16 @@ export default function SignInPage() {
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
     }}>
-        {t("screens.sign_in.title")}
+        {fromFirstExperience ? "Continue today’s story" : t("screens.sign_in.title")}
       </h1>
       <p style={{
       margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
       color: "rgba(200,180,255,0.65)"
     }}>
-        {t("screens.sign_in.subtitle")}
+        {fromFirstExperience
+          ? "Signing in keeps today’s progress with you — tomorrow continues naturally."
+          : t("screens.sign_in.subtitle")}
       </p>
 
       {showGuestTryFirst ? (

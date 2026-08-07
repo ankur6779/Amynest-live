@@ -33,6 +33,7 @@ export type PreSignupBlockReason =
   | "not_wrapper"
   | "authenticated"
   | "signup_completed"
+  | "awaiting_first_value"
   | "permission_denied"
   | "permission_default"
   | "segment_ineligible"
