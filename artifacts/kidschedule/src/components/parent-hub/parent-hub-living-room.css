@@ -223,6 +223,35 @@
   color: rgba(232, 212, 184, 0.4);
 }
 
+.ph-room-intention {
+  margin: 0.35rem 0 0.15rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.78);
+  text-wrap: balance;
+}
+
+.ph-dest-nested {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.15rem 0 0.35rem 0.65rem;
+  padding-left: 0.65rem;
+  border-left: 1px solid rgba(232, 212, 184, 0.12);
+}
+
+.ph-dest-row--nested {
+  padding: 0.65rem 0.8rem;
+  background: rgba(8, 6, 12, 0.28);
+  border-color: rgba(232, 212, 184, 0.08);
+}
+
+.ph-dest-row--nested .ph-dest-row-title {
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
 .ph-module-quiet {
   margin-top: 0.35rem;
   border-radius: 1rem;

@@ -1,6 +1,6 @@
 /**
  * Parent Hub four-room architecture (Constitution + Production Audit).
- * Pack 1: room membership only — no merges UI, no hero photography.
+ * Pack 1–3: room membership. Merged destination doors live in destinations.ts.
  */
 
 export const PARENT_HUB_ROOM_IDS = ["help", "understand", "care", "moments"] as const;

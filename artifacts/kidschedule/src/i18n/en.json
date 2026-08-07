@@ -3715,23 +3715,47 @@
       "help": {
         "title": "Help",
         "subtitle": "When something feels hard right now.",
-        "feeling": "You are not alone."
+        "feeling": "You are not alone.",
+        "intention": "What can help me right now?"
       },
       "understand": {
         "title": "Understand",
         "subtitle": "See your child more clearly.",
-        "feeling": "See your child more clearly."
+        "feeling": "See your child more clearly.",
+        "intention": "What can help me understand my child?"
       },
       "care": {
         "title": "Care",
         "subtitle": "Tend body, rhythm, feeding, and health.",
-        "feeling": "Take care of today."
+        "feeling": "Take care of today.",
+        "intention": "What should I care for today?"
       },
       "moments": {
         "title": "Moments",
         "subtitle": "Share one human presence together.",
-        "feeling": "Spend one meaningful moment."
+        "feeling": "Spend one meaningful moment.",
+        "intention": "What beautiful moment can we share?"
       }
+    },
+    "destinations": {
+      "ask_amy": { "title": "Ask Amy", "purpose": "Ask one calm question now" },
+      "emotional": { "title": "Emotional Support", "purpose": "When feelings are heavy" },
+      "speech": { "title": "Speech Coach", "purpose": "Practice without pressure" },
+      "ptm": { "title": "PTM Prep", "purpose": "Walk into the meeting prepared" },
+      "life_skills": { "title": "Life Skills", "purpose": "Help me teach this today" },
+      "guidance": { "title": "Guidance", "purpose": "One clearer sentence about your child" },
+      "birth_sky": { "title": "Birth Sky", "purpose": "Meaning and soft identity" },
+      "curiosity": { "title": "Curiosity", "purpose": "How your child thinks" },
+      "grow": { "title": "Grow", "purpose": "Skills growing quietly" },
+      "infant_care": { "title": "Infant Care", "purpose": "Sleep, feed, cry, growth — today" },
+      "nutrition": { "title": "Nutrition", "purpose": "Meals for this body today" },
+      "health_lab": { "title": "Health Lab", "purpose": "Wellness to tend today" },
+      "presence": { "title": "Presence", "purpose": "Ten minutes together" },
+      "story": { "title": "Story", "purpose": "One shared story" },
+      "make": { "title": "Make", "purpose": "Make something side by side" },
+      "talking_amy": { "title": "Talking Amy", "purpose": "A gentle voice together" },
+      "discovery": { "title": "Discovery Worlds", "purpose": "Explore one world together" },
+      "event_prep": { "title": "Event Prep", "purpose": "Prepare a shared occasion" }
     },
     "section_groups": {
       "today": "Today For You",

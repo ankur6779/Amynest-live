@@ -143,7 +143,7 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Child Discovery Day-0 questions | Permanently frozen |
 | Child Discovery Phase 3 craft | Permanently frozen — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
 | Today Home | Apple final 1% craft complete — `docs/v2/TODAY_HOME_APPLE_FINAL_1PCT.md` — frozen |
-| Parent Hub | Pack 2 Living Rooms shipped behind `VITE_FF_PARENT_HUB_ROOMS_V1` — review `docs/v2/PARENT_HUB_PACK2_FOUNDER_REVIEW.md` — **Pack 3 only after Founder approval** |
+| Parent Hub | Pack 3 Destinations shipped behind `VITE_FF_PARENT_HUB_ROOMS_V1` — review `docs/v2/PARENT_HUB_PACK3_FOUNDER_REVIEW.md` — **Pack 4 only after Founder approval** |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Today Home Law | Absolute — product decides next; parent never chooses among options |
 | Home ↔ Hub Boundary | Absolute — action today → Home; changes thinking → Hub |

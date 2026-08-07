@@ -6,18 +6,20 @@ export type ParentHubDestinationRowProps = {
   title: string;
   hint?: string;
   active?: boolean;
+  nested?: boolean;
   onSelect: () => void;
 };
 
 /**
- * Pack 2 — quiet path into a destination.
- * Not a hero card. Not a marketing tile.
+ * Pack 2/3 — quiet path into a destination.
+ * Not a hero card. Not a marketing tile. Apple Settings weight.
  */
 export function ParentHubDestinationRow({
   tileId,
   title,
   hint,
   active = false,
+  nested = false,
   onSelect,
 }: ParentHubDestinationRowProps) {
   return (
@@ -27,7 +29,11 @@ export function ParentHubDestinationRow({
       data-room-tile={tileId}
       aria-pressed={active}
       onClick={onSelect}
-      className={cn("ph-dest-row", active && "ph-dest-row--active")}
+      className={cn(
+        "ph-dest-row",
+        nested && "ph-dest-row--nested",
+        active && "ph-dest-row--active",
+      )}
     >
       <span className="min-w-0">
         <span className="ph-dest-row-title block truncate">{title}</span>
