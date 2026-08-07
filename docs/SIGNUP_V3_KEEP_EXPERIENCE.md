@@ -1,27 +1,56 @@
 # AmyNest Signup V3 — Keep Experience (R6)
 
-**Status:** In progress after Welcome V3 production foundation  
-**Authority:** `docs/v2/EXPERIENCE_MANUFACTURING_PLAN.md` R6 · Board 6 · Moment 6  
-**Frozen:** Welcome / `/begin` film, photography, typography, cinematography
+**Status:** Signup manufacturing shipped — awaiting Founder approval  
+**Authority:** Four Pillars · Welcome V3 freeze · Founder keep ritual brief  
+**Frozen:** Welcome / `/begin` · Child Discovery LOCKED
 
 ## Emotional goal
 
-“I want to keep this.”  
-Signup = preservation, never registration wall.
+“I don’t want to lose what just happened.”  
+That feeling arrives **before** the first form field.
 
-## What shipped in this phase
+Signup = preservation ritual. Authentication is secondary.
 
-- Keep copy inherits First Experience continuity (child name, next thing, emotional context)
-- `from=first-experience` preserved across Sign up ↔ Sign in
-- Sanctuary keep-mode shell (warm gold-ivory) when value was lived
-- Fatigue exit: Not now — keep on this device → `/welcome`
-- Guest try hidden on keep beat (value already earned)
-- Guest checkout / tagline pressure language softened
+## Hierarchy (required)
+
+1. **Keep** — sanctuary shell, no neon portal  
+2. **What is being protected** — Keepsake card (show, don’t describe)  
+3. **Quiet invitation** — one soft line  
+4. **Identity** — OAuth / email as ways to protect the same keepsake  
+
+## What shipped
+
+| Surface | Keep behavior |
+|---|---|
+| Sign up | Keepsake hero → invitation → Apple/Google primary · Facebook/Phone secondary · email as quiet path |
+| Sign in | Same hierarchy with return tone · guest try hidden on keep beat |
+| Forgot password | “Find your way back” — never support-portal language |
+| Verify email | “It’s safely held” — confirmation the keepsake is stored |
+| Errors | Calmed — no blame, no Firebase codes in keep mode |
+
+### Keepsake shows
+
+- Child’s name  
+- Today’s next right thing  
+- What was completed  
+- What remains safe  
+
+### Production safety (preserved)
+
+No rewrites of Google / Apple / Facebook / Phone / Email signup-login / Forgot / Verify / Firebase session / analytics / RevenueCat / feature flags.  
+Copy + visual hierarchy only. Handlers untouched.
 
 ## Entry
 
-`/sign-up?from=first-experience` · `/sign-in?from=first-experience`
+`/sign-up?from=first-experience` · `/sign-in?from=first-experience`  
+Continuity key: `amynest_first_experience_continuity_v1`
 
-## Next (await Founder)
+## Modules
 
-Deeper sanctuary manufacturing (heirloom keep visual) · verify-email keep voice · `/welcome` landing alignment
+- `artifacts/kidschedule/src/lib/first-experience/signup-keep.ts`  
+- `artifacts/kidschedule/src/components/keep-keepsake-card.tsx`  
+
+## STOP
+
+**Child Discovery remains LOCKED.**  
+Wait for Founder approval before any next surface.

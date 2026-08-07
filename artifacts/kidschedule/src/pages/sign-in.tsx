@@ -50,7 +50,13 @@ import {
   authInputGlowBlur,
   authInputGlowFocus,
 } from "@/lib/auth-screen-layout";
-import { buildSignInKeepCopy } from "@/lib/first-experience/signup-keep";
+import {
+  buildForgotKeepCopy,
+  buildKeepKeepsake,
+  buildSignInKeepCopy,
+  calmKeepAuthError,
+} from "@/lib/first-experience/signup-keep";
+import { KeepKeepsakeCard } from "@/components/keep-keepsake-card";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -103,6 +109,21 @@ const SIGN_IN_CSS = `
   .si-submit-btn:hover:not(:disabled) {
     transform: scale(1.025) !important;
     box-shadow: 0 0 42px rgba(236,72,153,0.65), 0 6px 22px rgba(0,0,0,0.38) !important;
+  }
+  .amynest-auth-page--keep .si-oauth-primary button,
+  .amynest-auth-page--keep .si-oauth-primary .si-google-btn,
+  .amynest-auth-page--keep .si-oauth-primary .si-apple-btn {
+    border-color: rgba(212,175,120,0.28) !important;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.2) !important;
+  }
+  .amynest-auth-page--keep .si-oauth-secondary {
+    opacity: 0.82;
+  }
+  .amynest-auth-page--keep .si-oauth-secondary button {
+    border-color: rgba(212,175,120,0.16) !important;
+    background: rgba(255,255,255,0.06) !important;
+    color: rgba(244,238,230,0.85) !important;
+    box-shadow: none !important;
   }
 `;
 
@@ -396,32 +417,45 @@ function AuthShell({
       zIndex: 1
     }}>
 
-        {/* Neon ring hero — hidden on native while keyboard is open */}
-        <div className={`amynest-auth-hero${nativeShell ? "" : " amynest-auth-hero--web"}`}>
-        <NeonRingHero />
-        <div style={{
-        width: AUTH_SPACING.heroGlowWidth,
-        height: AUTH_SPACING.heroGlowHeight,
-        margin: "-2px auto 0",
-        background: heroGlow,
-        filter: "blur(12px)",
-        pointerEvents: "none"
-      }} />
-        </div>
+        {!keepMode ? (
+          <div className={`amynest-auth-hero${nativeShell ? "" : " amynest-auth-hero--web"}`}>
+            <NeonRingHero />
+            <div style={{
+              width: AUTH_SPACING.heroGlowWidth,
+              height: AUTH_SPACING.heroGlowHeight,
+              margin: "-2px auto 0",
+              background: heroGlow,
+              filter: "blur(12px)",
+              pointerEvents: "none"
+            }} />
+          </div>
+        ) : (
+          <div
+            aria-hidden="true"
+            style={{
+              height: 28,
+              marginBottom: 8,
+              background: heroGlow,
+              filter: "blur(18px)",
+              opacity: 0.55,
+            }}
+          />
+        )}
 
         {/* Card */}
         <div className="amynest-auth-card" style={{
         ...authCardStyle(),
-        marginTop: AUTH_SPACING.cardMarginTop,
+        marginTop: keepMode ? 0 : AUTH_SPACING.cardMarginTop,
         ...(keepMode
           ? {
               border: "1px solid rgba(212,175,120,0.22)",
               boxShadow: "0 18px 48px rgba(0,0,0,0.45), 0 0 40px rgba(212,175,120,0.08)",
+              background: "rgba(14,11,8,0.72)",
             }
           : {}),
       }}>
           <div style={{
-          padding: AUTH_SPACING.cardPadding
+          padding: keepMode ? "28px 24px 24px" : AUTH_SPACING.cardPadding
         }}>
             {children}
           </div>
@@ -553,7 +587,8 @@ export default function SignInPage() {
       }
       setLocation(dest);
     } catch (err: any) {
-      setError(prettyAuthError(err));
+      const msg = prettyAuthError(err);
+      setError(fromFirstExperience ? calmKeepAuthError(msg) : msg);
     } finally {
       setBusy(false);
     }
@@ -573,7 +608,8 @@ export default function SignInPage() {
         // Never dead-end: remove the inactive CTA instead of showing an error.
         setGuestTryHidden(true);
       } else {
-        setError(prettyAuthError(err));
+        const msg = prettyAuthError(err);
+        setError(fromFirstExperience ? calmKeepAuthError(msg) : msg);
       }
     } finally {
       setGuestBusy(false);
@@ -591,76 +627,86 @@ export default function SignInPage() {
       });
       const checkData = (await parseApiJson<{ exists?: boolean }>(checkRes));
       if (!checkData.exists) {
-        setResetError(t("screens.sign_in.reset_not_found"));
+        setResetError(
+          fromFirstExperience
+            ? "We couldn’t find that journey yet — you can keep a new one anytime."
+            : t("screens.sign_in.reset_not_found"),
+        );
         return;
       }
       await sendUserPasswordResetEmail(resetEmail.trim());
       setMode("reset-sent");
     } catch (err: any) {
-      setResetError(prettyAuthError(err));
+      const msg = prettyAuthError(err);
+      setResetError(fromFirstExperience ? calmKeepAuthError(msg) : msg);
     } finally {
       setResetBusy(false);
     }
   };
 
+  const forgot = buildForgotKeepCopy();
+  const forgotKeep = forgot.keepMode;
+  const forgotCta = forgotKeep
+    ? "linear-gradient(90deg, #c4a574 0%, #e8d4b0 100%)"
+    : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)";
+
   // ── Reset-sent confirmation ──────────────────────────────────────────────
   if (mode === "reset-sent") {
-    return <AuthShell>
-        <div style={{
-        fontSize: "40px",
-        marginBottom: "12px"
-      }}>📬</div>
+    return <AuthShell keepMode={forgotKeep} tagline={keep.tagline}>
         <h1 style={{
         margin: "0 0 8px",
         fontSize: "22px",
-        fontWeight: 800,
+        fontWeight: forgotKeep ? 700 : 800,
         color: "#FFFFFF"
       }}>
-          {t("screens.sign_in.inbox_title")}
+          {forgotKeep ? forgot.inboxTitle : t("screens.sign_in.inbox_title")}
         </h1>
         <p style={{
         margin: "0 0 24px",
         fontSize: "14px",
-        color: "rgba(200,180,255,0.70)",
+        color: forgotKeep ? "rgba(244,238,230,0.62)" : "rgba(200,180,255,0.70)",
         lineHeight: 1.5
       }}>
-          {t("screens.sign_in.inbox_body_before")}{" "}
+          {forgotKeep ? forgot.inboxBody : t("screens.sign_in.inbox_body_before")}{" "}
           <span style={{
-          color: "hsl(var(--brand-purple-400))",
+          color: forgotKeep ? "#e8d4b0" : "hsl(var(--brand-purple-400))",
           fontWeight: 600
         }}>{resetEmail}</span>
-          {t("screens.sign_in.inbox_body_after")}
+          {forgotKeep ? "" : t("screens.sign_in.inbox_body_after")}
         </p>
         <button type="button" onClick={() => setMode("signin")} className="si-submit-btn" style={{
         ...AUTH_SUBMIT_BTN_STYLE,
-        background: "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
+        background: forgotCta,
         border: "none",
-        color: "#FFFFFF",
+        color: forgotKeep ? "#1a140c" : "#FFFFFF",
         cursor: "pointer",
-        boxShadow: "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
+        boxShadow: forgotKeep
+          ? "0 0 28px rgba(212,175,120,0.35), 0 4px 18px rgba(0,0,0,0.30)"
+          : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
       }}>
-          {t("screens.sign_in.back_to_sign_in_button")}
+          {forgotKeep ? forgot.back.replace(/^←\s*/, "") : t("screens.sign_in.back_to_sign_in_button")}
         </button>
       </AuthShell>;
   }
 
   // ── Forgot-password form ─────────────────────────────────────────────────
   if (mode === "reset") {
-    return <AuthShell>
+    return <AuthShell keepMode={forgotKeep} tagline={keep.tagline}>
         <h1 style={{
         margin: "0 0 6px",
         fontSize: "24px",
-        fontWeight: 800,
+        fontWeight: forgotKeep ? 700 : 800,
         color: "#FFFFFF"
       }}>
-          {t("screens.sign_in.reset_title")}
+          {forgotKeep ? forgot.title : t("screens.sign_in.reset_title")}
         </h1>
         <p style={{
         margin: "0 0 24px",
         fontSize: "14px",
-        color: "rgba(200,180,255,0.65)"
+        color: forgotKeep ? "rgba(244,238,230,0.62)" : "rgba(200,180,255,0.65)",
+        lineHeight: 1.5,
       }}>
-          {t("screens.sign_in.reset_subtitle")}
+          {forgotKeep ? forgot.subtitle : t("screens.sign_in.reset_subtitle")}
         </p>
 
         <form onSubmit={onSendReset} style={{
@@ -674,28 +720,32 @@ export default function SignInPage() {
             display: "block",
             fontSize: "12px",
             fontWeight: 600,
-            color: "rgba(200,180,255,0.80)",
+            color: forgotKeep ? "rgba(232,212,176,0.72)" : "rgba(200,180,255,0.80)",
             marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
           }}>
               {t("screens.sign_in.email_label")}
             </label>
             <input type="email" required className={AUTH_INPUT_CLASS} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder={t("screens.sign_in.email_placeholder")} style={{
             ...INPUT_STYLE
-          }} onFocus={glowFocus} onBlur={glowBlur} autoFocus />
+          }} onFocus={glowFocus} onBlur={glowBlur} autoFocus autoComplete="email" />
           </div>
 
-          {resetError && <ErrorBanner>{resetError}</ErrorBanner>}
+          {resetError && <ErrorBanner keepMode={forgotKeep}>{resetError}</ErrorBanner>}
 
           <button type="submit" disabled={resetBusy} className="si-submit-btn" style={{
           ...AUTH_SUBMIT_BTN_STYLE,
-          background: resetBusy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
+          background: resetBusy ? "rgba(75,65,110,0.7)" : forgotCta,
           border: "none",
-          color: "#FFFFFF",
+          color: forgotKeep && !resetBusy ? "#1a140c" : "#FFFFFF",
           cursor: resetBusy ? "not-allowed" : "pointer",
-          boxShadow: resetBusy ? "none" : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
+          boxShadow: resetBusy
+            ? "none"
+            : forgotKeep
+              ? "0 0 28px rgba(212,175,120,0.35), 0 4px 18px rgba(0,0,0,0.30)"
+              : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
           marginTop: "2px"
         }}>
-            {resetBusy ? t("screens.sign_in.sending") : t("screens.sign_in.send_reset")}
+            {resetBusy ? t("screens.sign_in.sending") : (forgotKeep ? forgot.sendCta : t("screens.sign_in.send_reset"))}
           </button>
         </form>
 
@@ -703,13 +753,13 @@ export default function SignInPage() {
         marginTop: "16px",
         background: "none",
         border: "none",
-        color: "rgba(200,180,255,0.50)",
+        color: forgotKeep ? "rgba(244,238,230,0.5)" : "rgba(200,180,255,0.50)",
         fontSize: "14px",
         cursor: "pointer",
         fontFamily: "inherit",
         width: "100%"
       }}>
-          {t("screens.sign_in.back_to_sign_in_link")}
+          {forgotKeep ? forgot.back : t("screens.sign_in.back_to_sign_in_link")}
         </button>
       </AuthShell>;
   }
@@ -724,23 +774,45 @@ export default function SignInPage() {
     : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)";
   // Value already lived — guest try belongs before first value, not after keep.
   const showGuestOnThisBeat = showGuestTryFirst && !fromFirstExperience;
+  const keepsake = fromFirstExperience ? buildKeepKeepsake() : null;
+  const labelColor = fromFirstExperience ? "rgba(232,212,176,0.72)" : "rgba(200,180,255,0.80)";
+  const dividerColor = fromFirstExperience ? "rgba(212,175,120,0.18)" : "rgba(168,85,247,0.15)";
+  const onOauthError = (msg: string) =>
+    setError(fromFirstExperience ? calmKeepAuthError(msg) : msg);
   return <AuthShell keepMode={fromFirstExperience} tagline={keep.tagline}>
+      {keepsake ? <KeepKeepsakeCard keepsake={keepsake} tone="return" /> : null}
+
       <h1 style={{
-      margin: "0 0 4px",
-      fontSize: `${AUTH_SPACING.titleSize}px`,
-      fontWeight: 800,
+      margin: "0 0 6px",
+      fontSize: fromFirstExperience ? 24 : AUTH_SPACING.titleSize,
+      fontWeight: fromFirstExperience ? 700 : 800,
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
     }} data-testid="sign-in-title">
         {fromFirstExperience ? keep.title : t("screens.sign_in.title")}
       </h1>
       <p style={{
-      margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
+      margin: `0 0 ${fromFirstExperience ? 18 : AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
-      color: subtitleColor
+      color: subtitleColor,
+      lineHeight: 1.5,
     }} data-testid="sign-in-subtitle">
         {fromFirstExperience ? keep.subtitle : t("screens.sign_in.subtitle")}
       </p>
+
+      {fromFirstExperience ? (
+        <p
+          style={{
+            margin: "0 0 12px",
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: "0.04em",
+            color: "rgba(232,212,176,0.5)",
+          }}
+        >
+          {keep.invitation}
+        </p>
+      ) : null}
 
       {showGuestOnThisBeat ? (
         <button
@@ -772,17 +844,17 @@ export default function SignInPage() {
         </button>
       ) : null}
 
+      <div className={`si-oauth-stack${fromFirstExperience ? " si-oauth-primary" : ""}`}>
       {shouldShowAppleSignIn() ? (
         <div
           data-testid="native-apple-sign-in-slot"
           style={{ marginBottom: 10, width: "100%", flexShrink: 0 }}
         >
-          <SignInAppleButton onError={msg => setError(msg)} />
+          <SignInAppleButton onError={onOauthError} />
         </div>
       ) : null}
 
       <div
-        className="si-oauth-stack"
         style={
           isCapacitorIosShell()
             ? {
@@ -794,20 +866,27 @@ export default function SignInPage() {
         }
       >
         {shouldShowGoogleSignIn() ? (
-          <GoogleSignInButton onError={msg => setError(msg)} />
-        ) : null}
-
-        {shouldShowFacebookSignIn() ? (
-          <FacebookSignInButton onError={msg => setError(msg)} />
-        ) : null}
-
-        {shouldShowPhoneOtp() ? (
-          <div className="si-phone-wrapper">
-            <PhoneRecaptchaPreload />
-            <PhoneAuthFlow onError={msg => setError(msg)} />
-          </div>
+          <GoogleSignInButton onError={onOauthError} />
         ) : null}
       </div>
+      </div>
+
+      {(shouldShowFacebookSignIn() || shouldShowPhoneOtp()) ? (
+        <div
+          className={`si-oauth-stack${fromFirstExperience ? " si-oauth-secondary" : ""}`}
+          style={{ marginTop: 8 }}
+        >
+          {shouldShowFacebookSignIn() ? (
+            <FacebookSignInButton onError={onOauthError} />
+          ) : null}
+          {shouldShowPhoneOtp() ? (
+            <div className="si-phone-wrapper">
+              <PhoneRecaptchaPreload />
+              <PhoneAuthFlow onError={onOauthError} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || shouldShowAppleSignIn() || shouldShowPhoneOtp()) && (
       <div style={{
@@ -819,16 +898,16 @@ export default function SignInPage() {
         <div style={{
         flex: 1,
         height: "1px",
-        background: "rgba(168,85,247,0.15)"
+        background: dividerColor
       }} />
         <span style={{
         fontSize: "12px",
-        color: "rgba(255,255,255,0.30)"
-      }}>{t("screens.sign_in.divider_or")}</span>
+        color: fromFirstExperience ? "rgba(232,212,176,0.4)" : "rgba(255,255,255,0.30)"
+      }}>{fromFirstExperience ? keep.emailPathLabel : t("screens.sign_in.divider_or")}</span>
         <div style={{
         flex: 1,
         height: "1px",
-        background: "rgba(168,85,247,0.15)"
+        background: dividerColor
       }} />
       </div>
       )}
@@ -846,14 +925,14 @@ export default function SignInPage() {
           display: "block",
           fontSize: "12px",
           fontWeight: 600,
-          color: "rgba(200,180,255,0.80)",
+          color: labelColor,
           marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_in.email_label")}
           </label>
           <input type="email" required className={AUTH_INPUT_CLASS} value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_in.email_placeholder")} style={{
           ...INPUT_STYLE
-        }} onFocus={glowFocus} onBlur={glowBlur} />
+        }} onFocus={glowFocus} onBlur={glowBlur} autoComplete="email" />
         </div>
 
         <div>
@@ -866,19 +945,19 @@ export default function SignInPage() {
             <label style={{
             fontSize: "12px",
             fontWeight: 600,
-            color: "rgba(200,180,255,0.80)"
+            color: labelColor
           }}>{t("screens.sign_in.password_label")}</label>
             <button type="button" onClick={onForgotOpen} style={{
             background: "none",
             border: "none",
             padding: 0,
             fontSize: "12px",
-            color: "hsl(var(--brand-purple-500))",
+            color: fromFirstExperience ? "#e8d4b0" : "hsl(var(--brand-purple-500))",
             fontWeight: 600,
             cursor: "pointer",
             fontFamily: "inherit"
           }}>
-              {t("screens.sign_in.forgot")}
+              {fromFirstExperience ? "Find your way back" : t("screens.sign_in.forgot")}
             </button>
           </div>
           <div style={{
@@ -905,7 +984,7 @@ export default function SignInPage() {
           </div>
         </div>
 
-        {error && <ErrorBanner>{error}</ErrorBanner>}
+        {error && <ErrorBanner keepMode={fromFirstExperience}>{error}</ErrorBanner>}
 
         <button type="submit" disabled={busy} className="si-submit-btn" style={{
         ...AUTH_SUBMIT_BTN_STYLE,
@@ -917,7 +996,7 @@ export default function SignInPage() {
         marginTop: "2px"
       }}>
           {busy
-            ? t("screens.sign_in.signing_in")
+            ? (fromFirstExperience ? "Continuing…" : t("screens.sign_in.signing_in"))
             : fromFirstExperience
               ? keep.cta
               : t("screens.sign_in.sign_in_button")}
@@ -969,15 +1048,19 @@ export default function SignInPage() {
 
 // ── Shared error banner ────────────────────────────────────────────────────────
 function ErrorBanner({
-  children
+  children,
+  keepMode = false,
 }: {
   children: React.ReactNode;
+  keepMode?: boolean;
 }) {
-  return <div style={{
+  return <div
+    role="alert"
+    style={{
     fontSize: "13px",
-    color: "hsl(var(--brand-red-400))",
-    background: "rgba(255,60,60,0.10)",
-    border: "1px solid rgba(255,60,60,0.22)",
+    color: keepMode ? "rgba(244,220,190,0.92)" : "hsl(var(--brand-red-400))",
+    background: keepMode ? "rgba(212,175,120,0.10)" : "rgba(255,60,60,0.10)",
+    border: keepMode ? "1px solid rgba(212,175,120,0.28)" : "1px solid rgba(255,60,60,0.22)",
     borderRadius: "10px",
     padding: "8px 12px"
   }}>

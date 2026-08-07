@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
@@ -40,7 +40,12 @@ import {
   authInputGlowBlur,
   authInputGlowFocus,
 } from "@/lib/auth-screen-layout";
-import { buildSignupKeepCopy } from "@/lib/first-experience/signup-keep";
+import {
+  buildKeepKeepsake,
+  buildSignupKeepCopy,
+  calmKeepAuthError,
+} from "@/lib/first-experience/signup-keep";
+import { KeepKeepsakeCard } from "@/components/keep-keepsake-card";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -90,6 +95,21 @@ const SIGN_UP_CSS = `
   .su-submit-btn:hover:not(:disabled) {
     transform: scale(1.025) !important;
     box-shadow: 0 0 42px rgba(236,72,153,0.65), 0 6px 22px rgba(0,0,0,0.38) !important;
+  }
+  .amynest-auth-page--keep .su-oauth-primary button,
+  .amynest-auth-page--keep .su-oauth-primary .si-google-btn,
+  .amynest-auth-page--keep .su-oauth-primary .si-apple-btn {
+    border-color: rgba(212,175,120,0.28) !important;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.2) !important;
+  }
+  .amynest-auth-page--keep .su-oauth-secondary {
+    opacity: 0.82;
+  }
+  .amynest-auth-page--keep .su-oauth-secondary button {
+    border-color: rgba(212,175,120,0.16) !important;
+    background: rgba(255,255,255,0.06) !important;
+    color: rgba(244,238,230,0.85) !important;
+    box-shadow: none !important;
   }
 `;
 
@@ -309,30 +329,44 @@ function AuthShell({
       zIndex: 1
     }}>
 
-        <div className="amynest-auth-hero">
-        <NeonRingHero />
-        <div style={{
-        width: AUTH_SPACING.heroGlowWidth,
-        height: AUTH_SPACING.heroGlowHeight,
-        margin: "-2px auto 0",
-        background: heroGlow,
-        filter: "blur(10px)",
-        pointerEvents: "none"
-      }} />
-        </div>
+        {!keepMode ? (
+          <div className="amynest-auth-hero">
+            <NeonRingHero />
+            <div style={{
+              width: AUTH_SPACING.heroGlowWidth,
+              height: AUTH_SPACING.heroGlowHeight,
+              margin: "-2px auto 0",
+              background: heroGlow,
+              filter: "blur(10px)",
+              pointerEvents: "none"
+            }} />
+          </div>
+        ) : (
+          <div
+            aria-hidden="true"
+            style={{
+              height: 28,
+              marginBottom: 8,
+              background: heroGlow,
+              filter: "blur(18px)",
+              opacity: 0.55,
+            }}
+          />
+        )}
 
         <div className="amynest-auth-card" style={{
         ...authCardStyle(),
-        marginTop: AUTH_SPACING.cardMarginTop,
+        marginTop: keepMode ? 0 : AUTH_SPACING.cardMarginTop,
         ...(keepMode
           ? {
               border: "1px solid rgba(212,175,120,0.22)",
               boxShadow: "0 18px 48px rgba(0,0,0,0.45), 0 0 40px rgba(212,175,120,0.08)",
+              background: "rgba(14,11,8,0.72)",
             }
           : {}),
       }}>
           <div style={{
-          padding: AUTH_SPACING.cardPadding
+          padding: keepMode ? "28px 24px 24px" : AUTH_SPACING.cardPadding
         }}>
             {children}
           </div>
@@ -353,15 +387,19 @@ function AuthShell({
 
 // ── Error banner ──────────────────────────────────────────────────────────────
 function ErrorBanner({
-  children
+  children,
+  keepMode = false,
 }: {
   children: React.ReactNode;
+  keepMode?: boolean;
 }) {
-  return <div style={{
+  return <div
+    role="alert"
+    style={{
     fontSize: "13px",
-    color: "hsl(var(--brand-red-400))",
-    background: "rgba(255,60,60,0.10)",
-    border: "1px solid rgba(255,60,60,0.22)",
+    color: keepMode ? "rgba(244,220,190,0.92)" : "hsl(var(--brand-red-400))",
+    background: keepMode ? "rgba(212,175,120,0.10)" : "rgba(255,60,60,0.10)",
+    border: keepMode ? "1px solid rgba(212,175,120,0.28)" : "1px solid rgba(255,60,60,0.22)",
     borderRadius: "10px",
     padding: "8px 12px"
   }}>
@@ -385,6 +423,7 @@ export default function SignUpPage() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const keepModeRef = useRef(false);
   useEffect(() => {
     if (isLoaded && isSignedIn) setLocation("/");
   }, [isLoaded, isSignedIn, setLocation]);
@@ -448,59 +487,89 @@ export default function SignUpPage() {
       else q.set("sent", "1");
       setLocation(`/verify-email?${q.toString()}`);
     } catch (err: any) {
-      setError(prettyAuthError(err));
+      const msg = prettyAuthError(err);
+      setError(keepModeRef.current ? calmKeepAuthError(msg) : msg);
     } finally {
       setBusy(false);
     }
   };
   const canSubmit = email.trim() && password.length >= 6;
   const keep = buildSignupKeepCopy();
+  const keepsake = keep.keepMode ? buildKeepKeepsake() : null;
   const keepMode = keep.keepMode;
-  const subtitleColor = keepMode ? "rgba(244,238,230,0.62)" : "rgba(200,180,255,0.65)";
+  keepModeRef.current = keepMode;
+  const labelColor = keepMode ? "rgba(232,212,176,0.72)" : "rgba(200,180,255,0.80)";
+  const subtitleColor = keepMode ? "rgba(244,238,230,0.58)" : "rgba(200,180,255,0.65)";
   const ctaGradient = keepMode
     ? "linear-gradient(90deg, #c4a574 0%, #e8d4b0 100%)"
     : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)";
   const ctaShadow = keepMode
     ? "0 0 28px rgba(212,175,120,0.35), 0 4px 18px rgba(0,0,0,0.30)"
     : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)";
+  const dividerColor = keepMode ? "rgba(212,175,120,0.18)" : "rgba(168,85,247,0.15)";
+  const onOauthError = (msg: string) =>
+    setError(keepMode ? calmKeepAuthError(msg) : msg);
+
   return <AuthShell keepMode={keepMode} tagline={keep.tagline}>
+      {keepsake ? <KeepKeepsakeCard keepsake={keepsake} tone="protect" /> : null}
+
       <h1 style={{
-      margin: "0 0 4px",
-      fontSize: `${AUTH_SPACING.titleSize}px`,
-      fontWeight: 800,
+      margin: "0 0 6px",
+      fontSize: keepMode ? 24 : AUTH_SPACING.titleSize,
+      fontWeight: keepMode ? 700 : 800,
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
     }} data-testid="sign-up-title">
         {keepMode ? keep.title : t("screens.sign_up.title")}
       </h1>
       <p style={{
-      margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
+      margin: `0 0 ${keepMode ? 18 : AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
-      color: subtitleColor
+      color: subtitleColor,
+      lineHeight: 1.5,
     }} data-testid="sign-up-subtitle">
         {keepMode ? keep.subtitle : t("screens.sign_up.subtitle")}
       </p>
 
-      <div className="su-oauth-stack">
+      {keepMode ? (
+        <p
+          data-testid="sign-up-invitation"
+          style={{
+            margin: "0 0 12px",
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: "0.04em",
+            color: "rgba(232,212,176,0.5)",
+          }}
+        >
+          {keep.invitation}
+        </p>
+      ) : null}
+
+      {/* Primary keep paths — same handlers, quieter hierarchy */}
+      <div className={`su-oauth-stack${keepMode ? " su-oauth-primary" : ""}`}>
       {shouldShowAppleSignIn() ? (
-        <AppleSignInButton onError={msg => setError(msg)} />
+        <AppleSignInButton onError={onOauthError} />
       ) : null}
 
       {shouldShowGoogleSignIn() ? (
-        <GoogleSignInButton onError={msg => setError(msg)} />
-      ) : null}
-
-      {shouldShowFacebookSignIn() ? (
-        <FacebookSignInButton onError={msg => setError(msg)} />
-      ) : null}
-
-      {shouldShowPhoneOtp() ? (
-        <div className="su-phone-wrapper">
-          <PhoneRecaptchaPreload />
-          <PhoneAuthFlow onError={msg => setError(msg)} />
-        </div>
+        <GoogleSignInButton onError={onOauthError} />
       ) : null}
       </div>
+
+      {(shouldShowFacebookSignIn() || shouldShowPhoneOtp()) ? (
+        <div className={`su-oauth-stack${keepMode ? " su-oauth-secondary" : ""}`} style={{ marginTop: 8 }}>
+          {shouldShowFacebookSignIn() ? (
+            <FacebookSignInButton onError={onOauthError} />
+          ) : null}
+          {shouldShowPhoneOtp() ? (
+            <div className="su-phone-wrapper">
+              <PhoneRecaptchaPreload />
+              <PhoneAuthFlow onError={onOauthError} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || shouldShowAppleSignIn() || shouldShowPhoneOtp()) && (
       <div style={{
@@ -512,16 +581,16 @@ export default function SignUpPage() {
         <div style={{
         flex: 1,
         height: "1px",
-        background: "rgba(168,85,247,0.15)"
+        background: dividerColor
       }} />
         <span style={{
         fontSize: "12px",
-        color: "rgba(255,255,255,0.30)"
-      }}>{t("screens.sign_up.divider_or")}</span>
+        color: keepMode ? "rgba(232,212,176,0.4)" : "rgba(255,255,255,0.30)"
+      }}>{keepMode ? keep.emailPathLabel : t("screens.sign_up.divider_or")}</span>
         <div style={{
         flex: 1,
         height: "1px",
-        background: "rgba(168,85,247,0.15)"
+        background: dividerColor
       }} />
       </div>
       )}
@@ -532,30 +601,33 @@ export default function SignUpPage() {
       gap: `${AUTH_SPACING.formGap}px`,
       textAlign: "left"
     }}>
+        {/* Parent name is optional — omit on keep beat to reduce friction */}
+        {!keepMode ? (
         <div>
           <label style={{
           display: "block",
           fontSize: "12px",
           fontWeight: 600,
-          color: "rgba(200,180,255,0.80)",
+          color: labelColor,
           marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_up.name_label")}
           </label>
           <input type="text" className={AUTH_INPUT_CLASS} value={name} onChange={e => setName(e.target.value)} placeholder={t("screens.sign_up.name_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} />
         </div>
+        ) : null}
 
         <div>
           <label style={{
           display: "block",
           fontSize: "12px",
           fontWeight: 600,
-          color: "rgba(200,180,255,0.80)",
+          color: labelColor,
           marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_up.email_label")}
           </label>
-          <input type="email" required className={AUTH_INPUT_CLASS} value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_up.email_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} />
+          <input type="email" required className={AUTH_INPUT_CLASS} value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_up.email_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} autoComplete="email" />
         </div>
 
         <div>
@@ -563,7 +635,7 @@ export default function SignUpPage() {
           display: "block",
           fontSize: "12px",
           fontWeight: 600,
-          color: "rgba(200,180,255,0.80)",
+          color: labelColor,
           marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_up.password_label")}
@@ -571,10 +643,10 @@ export default function SignUpPage() {
           <div style={{
           position: "relative"
         }}>
-            <input type={showPass ? "text" : "password"} required className={AUTH_INPUT_CLASS} minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder={t("screens.sign_up.password_placeholder")} style={{
+            <input type={showPass ? "text" : "password"} required className={AUTH_INPUT_CLASS} minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder={keepMode ? "Choose a quiet password" : t("screens.sign_up.password_placeholder")} style={{
             ...INPUT_STYLE,
             paddingRight: "44px"
-          }} onFocus={glowFocus} onBlur={glowBlur} />
+          }} onFocus={glowFocus} onBlur={glowBlur} autoComplete="new-password" />
             <button type="button" onClick={() => setShowPass(s => !s)} style={{
             position: "absolute",
             right: "12px",
@@ -583,7 +655,7 @@ export default function SignUpPage() {
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "rgba(200,180,255,0.50)",
+            color: keepMode ? "rgba(232,212,176,0.45)" : "rgba(200,180,255,0.50)",
             fontSize: "13px",
             padding: 0
           }}>
@@ -592,7 +664,7 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        {error && <ErrorBanner>{error}</ErrorBanner>}
+        {error && <ErrorBanner keepMode={keepMode}>{error}</ErrorBanner>}
 
         <button type="submit" disabled={busy || !canSubmit} className="su-submit-btn" style={{
         ...AUTH_SUBMIT_BTN_STYLE,
@@ -606,7 +678,7 @@ export default function SignUpPage() {
         marginTop: "2px"
       }}>
           {busy
-            ? t("screens.sign_up.creating")
+            ? (keepMode ? "Keeping this safely…" : t("screens.sign_up.creating"))
             : keepMode
               ? keep.cta
               : t("screens.sign_up.create_button")}
@@ -643,13 +715,13 @@ export default function SignUpPage() {
       color: keepMode ? "rgba(244,238,230,0.45)" : "rgba(200,180,255,0.50)",
       textAlign: "center"
     }}>
-        {t("screens.sign_up.have_account")}{" "}
+        {keepMode ? "Already protecting a journey?" : t("screens.sign_up.have_account")}{" "}
         <Link href={keep.signInHref} style={{
         color: keepMode ? "#e8d4b0" : "hsl(var(--brand-purple-500))",
         fontWeight: 600,
         textDecoration: "none"
       }}>
-          {t("screens.sign_up.sign_in_link")}
+          {keepMode ? "Continue" : t("screens.sign_up.sign_in_link")}
         </Link>
       </p>
       <AuthLegalFooter />

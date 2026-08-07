@@ -20,6 +20,12 @@ import {
   parseFirebaseActionParams,
 } from "@/lib/firebase-action-params";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
+import {
+  buildKeepKeepsake,
+  buildVerifyKeepCopy,
+  calmKeepAuthError,
+} from "@/lib/first-experience/signup-keep";
+import { KeepKeepsakeCard } from "@/components/keep-keepsake-card";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -108,12 +114,20 @@ function VerifyEmailInboxPage() {
   const email = decodeURIComponent(params.get("email") ?? "");
   const sentOnArrival = params.get("sent") === "1";
   const sendFailedFromPrev = params.get("sendFailed") === "1";
+  const verifyKeep = buildVerifyKeepCopy();
+  const keepMode = verifyKeep.keepMode;
+  const keepsake = keepMode ? buildKeepKeepsake() : null;
 
   const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
+
+  const softenError = useCallback(
+    (raw: string) => (keepMode ? calmKeepAuthError(raw) : raw),
+    [keepMode],
+  );
 
   const goHomeIfVerified = useCallback(async () => {
     const user = firebaseAuth.currentUser;
@@ -167,7 +181,9 @@ function VerifyEmailInboxPage() {
         console.warn("[verify-email] No Firebase session after redirect");
         if (sendFailedFromPrev || !sentOnArrival) {
           setError(
-            "You are not signed in. Go back to Sign in and try again. (app/no-auth-session)",
+            softenError(
+              "You are not signed in. Go back to Sign in and try again. (app/no-auth-session)",
+            ),
           );
         }
       }
@@ -175,7 +191,7 @@ function VerifyEmailInboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [sendFailedFromPrev, sentOnArrival]);
+  }, [sendFailedFromPrev, sentOnArrival, softenError]);
 
   // After sign-in/sign-up we already sent once — show success + UX cooldown only (no API call).
   useEffect(() => {
@@ -185,7 +201,11 @@ function VerifyEmailInboxPage() {
     if (isEmailVerificationBypassEmail(user.email ?? email)) return;
 
     if (sentOnArrival) {
-      setMessage(t("screens.verify_email.resent"));
+      setMessage(
+        keepMode
+          ? "Confirmation sent — the keepsake stays protected."
+          : t("screens.verify_email.resent"),
+      );
       const { uxCooldownSeconds } = getVerificationRateStatus(user.uid);
       setCooldown(Math.max(uxCooldownSeconds, RESEND_COOLDOWN_SEC));
       return;
@@ -194,13 +214,15 @@ function VerifyEmailInboxPage() {
     if (sendFailedFromPrev) {
       const stashed = consumeVerificationSendError();
       if (stashed) {
-        setError(formatAuthErrorForUi(stashed));
+        setError(softenError(formatAuthErrorForUi(stashed)));
         console.error("[verify-email] Previous send failed:", stashed);
       } else {
-        setError(t("screens.verify_email.resend_error"));
+        setError(
+          softenError(t("screens.verify_email.resend_error")),
+        );
       }
     }
-  }, [authReady, sentOnArrival, sendFailedFromPrev, t]);
+  }, [authReady, sentOnArrival, sendFailedFromPrev, t, softenError, keepMode]);
 
   async function onResend() {
     setError(null);
@@ -211,7 +233,9 @@ function VerifyEmailInboxPage() {
     }
     if (!fbUser) {
       setError(
-        "You are not signed in. Go back to Sign in and try again. (app/no-auth-session)",
+        softenError(
+          "You are not signed in. Go back to Sign in and try again. (app/no-auth-session)",
+        ),
       );
       return;
     }
@@ -219,14 +243,18 @@ function VerifyEmailInboxPage() {
     if (!rate.canSend && rate.blockedUntil) {
       const seconds = Math.max(1, Math.ceil((rate.blockedUntil - Date.now()) / 1000));
       setCooldown(seconds);
-      setError(prettyAuthError({ code: "auth/too-many-requests" }));
+      setError(softenError(prettyAuthError({ code: "auth/too-many-requests" })));
       return;
     }
 
     setBusy(true);
     try {
       await sendUserEmailVerification(fbUser);
-      setMessage(t("screens.verify_email.resent"));
+      setMessage(
+        keepMode
+          ? "Confirmation sent — the keepsake stays protected."
+          : t("screens.verify_email.resent"),
+      );
       const after = getVerificationRateStatus(fbUser.uid);
       setCooldown(Math.max(after.uxCooldownSeconds, RESEND_COOLDOWN_SEC));
     } catch (err: unknown) {
@@ -241,7 +269,7 @@ function VerifyEmailInboxPage() {
         }
       }
       const msg = formatAuthErrorForUi(err);
-      setError(msg || t("screens.verify_email.resend_error"));
+      setError(softenError(msg || t("screens.verify_email.resend_error")));
     } finally {
       setBusy(false);
     }
@@ -253,107 +281,172 @@ function VerifyEmailInboxPage() {
     } catch {
       /* best-effort */
     }
-    setLocation("/sign-in");
+    setLocation(keepMode ? "/sign-in?from=first-experience" : "/sign-in");
   }
 
-  return (
-    <div style={{
-      minHeight: "100dvh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "40px 16px",
-      background: [
+  const shellBackground = keepMode
+    ? [
+        "radial-gradient(ellipse 70% 50% at 50% 18%, rgba(212,175,120,0.10) 0%, transparent 55%)",
+        "linear-gradient(175deg, #0c0a08 0%, #14110d 52%, #070605 100%)",
+      ].join(", ")
+    : [
         "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
         "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
-      ].join(", "),
-      position: "relative",
-      overflow: "hidden",
-    }}>
+      ].join(", ");
+
+  const waveShadow = keepMode
+    ? [
+        "0 0 0  80px rgba(212,175,120,0.03)",
+        "0 0 0 170px rgba(212,175,120,0.02)",
+        "0 0 0 290px rgba(180,140,80,0.015)",
+        "0 0 0 440px rgba(120,90,40,0.01)",
+      ].join(", ")
+    : [
+        "0 0 0  80px rgba(168,85,247,0.04)",
+        "0 0 0 170px rgba(168,85,247,0.03)",
+        "0 0 0 290px rgba(100,50,200,0.02)",
+        "0 0 0 440px rgba(80,30,160,0.015)",
+      ].join(", ");
+
+  const cardStyle = keepMode
+    ? {
+        background: "rgba(20,16,12,0.78)",
+        border: "1px solid rgba(212,175,120,0.22)",
+        borderRadius: "20px",
+        padding: "28px 24px",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.40), inset 0 1px 0 rgba(244,238,230,0.06)",
+      }
+    : {
+        background: "rgba(18,10,40,0.75)",
+        border: "1px solid rgba(168,85,247,0.18)",
+        borderRadius: "20px",
+        padding: "32px 28px",
+        backdropFilter: "blur(16px)",
+        boxShadow: "0 8px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(168,85,247,0.12)",
+      };
+
+  const resendReady = !(busy || cooldown > 0);
+  const resendBackground = !resendReady
+    ? "rgba(75,65,110,0.5)"
+    : keepMode
+      ? "linear-gradient(90deg, #c4a574 0%, #e8d4b0 100%)"
+      : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)";
+
+  return (
+    <div
+      className={keepMode ? "amynest-auth-page amynest-auth-page--keep" : "amynest-auth-page"}
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 16px",
+        background: shellBackground,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
       <style>{CSS}</style>
 
       <div style={{
         position: "absolute", top: "50%", left: "50%", width: 0, height: 0,
         borderRadius: "50%",
-        boxShadow: [
-          "0 0 0  80px rgba(168,85,247,0.04)",
-          "0 0 0 170px rgba(168,85,247,0.03)",
-          "0 0 0 290px rgba(100,50,200,0.02)",
-          "0 0 0 440px rgba(80,30,160,0.015)",
-        ].join(", "),
+        boxShadow: waveShadow,
         animation: "veWavePulse 8s ease-in-out infinite",
         pointerEvents: "none",
       }} />
 
       <div style={{ width: "100%", maxWidth: "420px", position: "relative", zIndex: 1 }}>
-        <NeonRingHero />
+        {!keepMode ? (
+          <>
+            <NeonRingHero />
+            <div
+              style={{
+                width: 110,
+                height: 18,
+                margin: "-4px auto 28px",
+                background:
+                  "radial-gradient(ellipse at center, rgba(168,85,247,0.50) 0%, rgba(236,72,153,0.28) 45%, transparent 70%)",
+                filter: "blur(6px)",
+              }}
+            />
+          </>
+        ) : null}
 
-        <div
-          style={{
-            width: 110,
-            height: 18,
-            margin: "-4px auto 28px",
-            background:
-              "radial-gradient(ellipse at center, rgba(168,85,247,0.50) 0%, rgba(236,72,153,0.28) 45%, transparent 70%)",
-            filter: "blur(6px)",
-          }}
-        />
+        <div style={cardStyle}>
+          {keepsake ? <KeepKeepsakeCard keepsake={keepsake} tone="protect" /> : null}
 
-        <div style={{
-          background: "rgba(18,10,40,0.75)",
-          border: "1px solid rgba(168,85,247,0.18)",
-          borderRadius: "20px",
-          padding: "32px 28px",
-          backdropFilter: "blur(16px)",
-          boxShadow: "0 8px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(168,85,247,0.12)",
-        }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px",
-            background: "linear-gradient(135deg, rgba(168,85,247,0.25), rgba(236,72,153,0.18))",
-            border: "1px solid rgba(168,85,247,0.30)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28,
-          }}>
-            📧
-          </div>
+          {!keepMode ? (
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px",
+              background: "linear-gradient(135deg, rgba(168,85,247,0.25), rgba(236,72,153,0.18))",
+              border: "1px solid rgba(168,85,247,0.30)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28,
+            }}>
+              📧
+            </div>
+          ) : null}
 
-          <h1 style={{
-            margin: "0 0 8px", fontSize: "22px", fontWeight: 800,
-            color: "#FFFFFF", textAlign: "center", letterSpacing: "-0.3px",
-          }}>
-            {t("screens.verify_email.title")}
+          <h1
+            data-testid="verify-email-title"
+            style={{
+              margin: "0 0 8px",
+              fontSize: keepMode ? "22px" : "22px",
+              fontWeight: keepMode ? 700 : 800,
+              color: "#FFFFFF",
+              textAlign: "center",
+              letterSpacing: "-0.3px",
+            }}
+          >
+            {keepMode ? verifyKeep.title : t("screens.verify_email.title")}
           </h1>
 
           <p style={{
-            margin: "0 0 6px", fontSize: "14px",
-            color: "rgba(200,180,255,0.65)", textAlign: "center", lineHeight: 1.5,
+            margin: "0 0 6px",
+            fontSize: "14px",
+            color: keepMode ? "rgba(244,238,230,0.62)" : "rgba(200,180,255,0.65)",
+            textAlign: "center",
+            lineHeight: 1.5,
           }}>
-            {t("screens.verify_email.subtitle")}
+            {keepMode ? verifyKeep.subtitle : t("screens.verify_email.subtitle")}
           </p>
 
           {email && (
             <p style={{
-              margin: "0 0 20px", fontSize: "14px",
-              color: "rgba(236,72,153,0.85)", fontWeight: 600,
-              textAlign: "center", wordBreak: "break-all",
+              margin: "0 0 20px",
+              fontSize: "14px",
+              color: keepMode ? "#e8d4b0" : "rgba(236,72,153,0.85)",
+              fontWeight: 600,
+              textAlign: "center",
+              wordBreak: "break-all",
             }}>
               {email}
             </p>
           )}
 
           <p style={{
-            margin: "0 0 24px", fontSize: "13px",
-            color: "rgba(200,180,255,0.50)", textAlign: "center",
+            margin: "0 0 24px",
+            fontSize: "13px",
+            color: keepMode ? "rgba(244,238,230,0.48)" : "rgba(200,180,255,0.50)",
+            textAlign: "center",
           }}>
-            {t("screens.verify_email.spam_note")}
+            {keepMode ? verifyKeep.spamNote : t("screens.verify_email.spam_note")}
           </p>
 
           {message && (
             <div style={{
-              background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)",
-              borderRadius: "10px", padding: "10px 14px", marginBottom: "16px",
-              color: "rgba(134,239,172,0.90)", fontSize: "13px", textAlign: "center",
+              background: keepMode ? "rgba(212,175,120,0.10)" : "rgba(34,197,94,0.12)",
+              border: keepMode
+                ? "1px solid rgba(212,175,120,0.28)"
+                : "1px solid rgba(34,197,94,0.25)",
+              borderRadius: "10px",
+              padding: "10px 14px",
+              marginBottom: "16px",
+              color: keepMode ? "rgba(232,212,176,0.90)" : "rgba(134,239,172,0.90)",
+              fontSize: "13px",
+              textAlign: "center",
             }}>
               {message}
             </div>
@@ -361,9 +454,16 @@ function VerifyEmailInboxPage() {
 
           {error && (
             <div style={{
-              background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)",
-              borderRadius: "10px", padding: "10px 14px", marginBottom: "16px",
-              color: "rgba(252,165,165,0.90)", fontSize: "13px", textAlign: "center",
+              background: keepMode ? "rgba(212,175,120,0.10)" : "rgba(239,68,68,0.12)",
+              border: keepMode
+                ? "1px solid rgba(212,175,120,0.28)"
+                : "1px solid rgba(239,68,68,0.25)",
+              borderRadius: "10px",
+              padding: "10px 14px",
+              marginBottom: "16px",
+              color: keepMode ? "rgba(244,220,190,0.92)" : "rgba(252,165,165,0.90)",
+              fontSize: "13px",
+              textAlign: "center",
             }}>
               {error}
             </div>
@@ -375,41 +475,56 @@ function VerifyEmailInboxPage() {
             disabled={busy || cooldown > 0}
             style={{
               width: "100%", height: "48px", borderRadius: "999px",
-              background: busy || cooldown > 0
-                ? "rgba(75,65,110,0.5)"
-                : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
-              border: "none", color: "#FFFFFF", fontSize: "15px", fontWeight: 700,
+              background: resendBackground,
+              border: "none",
+              color: keepMode && resendReady ? "#1a140c" : "#FFFFFF",
+              fontSize: "15px",
+              fontWeight: 700,
               cursor: busy || cooldown > 0 ? "not-allowed" : "pointer",
-              boxShadow: busy || cooldown > 0 ? "none" : "0 0 24px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.28)",
-              fontFamily: "inherit", marginBottom: "12px", transition: "all 0.2s",
+              boxShadow: !resendReady
+                ? "none"
+                : keepMode
+                  ? "0 0 24px rgba(212,175,120,0.35), 0 4px 14px rgba(0,0,0,0.28)"
+                  : "0 0 24px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.28)",
+              fontFamily: "inherit",
+              marginBottom: "12px",
+              transition: "all 0.2s",
             }}
           >
             {busy
-              ? t("screens.verify_email.sending")
+              ? (keepMode ? "Sending confirmation…" : t("screens.verify_email.sending"))
               : cooldown > 0
                 ? t("screens.verify_email.resend_wait", { seconds: cooldown })
-                : t("screens.verify_email.resend")}
+                : keepMode
+                  ? verifyKeep.resend
+                  : t("screens.verify_email.resend")}
           </button>
 
           <button
             type="button"
             onClick={() => void onBackToSignIn()}
             style={{
-              background: "none", border: "none",
-              color: "rgba(200,180,255,0.50)", fontSize: "14px",
-              cursor: "pointer", fontFamily: "inherit", width: "100%",
+              background: "none",
+              border: "none",
+              color: keepMode ? "rgba(244,238,230,0.5)" : "rgba(200,180,255,0.50)",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              width: "100%",
               padding: "4px 0",
             }}
           >
-            {t("screens.verify_email.back_to_sign_in")}
+            {keepMode ? verifyKeep.back : t("screens.verify_email.back_to_sign_in")}
           </button>
         </div>
 
         <p style={{
-          marginTop: "28px", fontSize: "11px", color: "rgba(255,255,255,0.18)",
+          marginTop: "28px",
+          fontSize: "11px",
+          color: keepMode ? "rgba(244,238,230,0.28)" : "rgba(255,255,255,0.18)",
           textAlign: "center",
         }}>
-          {t("screens.sign_in.tagline")}
+          {keepMode ? "You’re still in the same story." : t("screens.sign_in.tagline")}
         </p>
       </div>
     </div>
