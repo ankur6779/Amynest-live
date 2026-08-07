@@ -375,7 +375,7 @@ Not yet “experience complete.” Hierarchy and Moments density are the cheapes
 
 ## Commit SHA
 
-Study lands on branch tip after this commit (see git).  
+`0830fb2ea42d820cf4ac9e5a7ed992c90708d785`  
 Pack 3 feature baseline: `b801b396`.
 
 ---
