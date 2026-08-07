@@ -1,0 +1,429 @@
+/**
+ * Health Lab Phase 2 — living room sanctuary materials.
+ * Same house as Welcome / Care room. Does NOT edit FE source CSS.
+ */
+
+.health-lab-living.fe-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  height: auto;
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+  color: rgba(255, 252, 248, 0.96);
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-bottom: 1.25rem;
+}
+
+.health-lab-living .fe-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.health-lab-living .fe-ambient img {
+  object-position: center 34%;
+  opacity: 0.55;
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.hl-living-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.65rem 0.15rem 0.5rem;
+}
+
+.hl-back {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(232, 212, 184, 0.78);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0.2rem 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.hl-back:hover,
+.hl-back:focus-visible {
+  color: rgba(255, 252, 248, 0.96);
+  outline: none;
+}
+
+.hl-child-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.hl-child-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(232, 212, 184, 0.14);
+  background: rgba(8, 6, 12, 0.35);
+  color: rgba(232, 212, 184, 0.78);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.hl-child-chip[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.34);
+  background: rgba(232, 212, 184, 0.12);
+  color: rgba(255, 252, 248, 0.96);
+}
+
+/* One continuous surface */
+.hl-living-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(232, 212, 184, 0.18);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.1) 0%, transparent 55%),
+    rgba(8, 6, 12, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.hl-today-hero {
+  position: relative;
+  padding: 0;
+}
+
+.hl-today-hero .hl-today-memory.fe-memory-mount {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.hl-today-hero .hl-today-memory .fe-memory {
+  aspect-ratio: 16 / 11;
+  max-height: min(48vw, 15.5rem);
+  min-height: 11rem;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.hl-today-hero .hl-today-memory .fe-memory img {
+  object-fit: cover;
+  object-position: center 38%;
+  filter: saturate(1.08) contrast(1.1) brightness(1.02);
+  transform: scale(1.04) translateZ(0);
+}
+
+.hl-today-readability {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 6, 12, 0.12) 0%,
+    rgba(8, 6, 12, 0.06) 30%,
+    rgba(8, 6, 12, 0.38) 60%,
+    rgba(8, 6, 12, 0.78) 100%
+  );
+}
+
+.hl-today-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 1.15rem 0.95rem 1rem;
+}
+
+.hl-today-eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.hl-today-title {
+  margin: 0.35rem 0 0;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.25rem, 4.6vw, 1.45rem);
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: rgba(255, 252, 248, 0.98);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.65),
+    0 2px 12px rgba(0, 0, 0, 0.45);
+  text-wrap: balance;
+}
+
+.hl-today-purpose {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: rgba(255, 252, 248, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hl-recommend-btn {
+  position: relative;
+  z-index: 4;
+  display: block;
+  margin: -0.55rem 0.75rem 0.75rem;
+  width: calc(100% - 1.5rem);
+  text-align: left;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.28);
+  background: rgba(8, 6, 12, 0.72);
+  backdrop-filter: blur(14px) saturate(1.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.1),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(251, 191, 36, 0.12),
+    0 8px 22px rgba(0, 0, 0, 0.32);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hl-recommend-btn:hover,
+.hl-recommend-btn:focus-visible {
+  border-color: rgba(232, 212, 184, 0.42);
+  background: rgba(12, 9, 16, 0.82);
+  outline: none;
+}
+
+.hl-recommend-cue {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.95);
+  margin-bottom: 0.22rem;
+}
+
+.hl-recommend-title {
+  display: block;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.98);
+}
+
+.hl-recommend-purpose {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: rgba(244, 238, 230, 0.86);
+}
+
+.hl-quiet-band {
+  padding: 0 0.75rem 0.85rem;
+  border-top: 1px solid rgba(232, 212, 184, 0.1);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 6, 12, 0.15) 0%,
+    rgba(8, 6, 12, 0.35) 100%
+  );
+}
+
+.hl-quiet-label {
+  margin: 0.65rem 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.78);
+}
+
+.hl-quiet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.hl-quiet-path {
+  width: 100%;
+  text-align: left;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background: rgba(8, 6, 12, 0.55);
+  backdrop-filter: blur(10px);
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+  color: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.08),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.14),
+    0 6px 18px rgba(0, 0, 0, 0.24);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.hl-quiet-path:hover,
+.hl-quiet-path:focus-visible {
+  border-color: rgba(232, 212, 184, 0.3);
+  background: rgba(12, 9, 16, 0.68);
+  outline: none;
+}
+
+.hl-quiet-path-title {
+  display: block;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.hl-quiet-path-purpose {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(244, 238, 230, 0.78);
+}
+
+.hl-more-toggle {
+  width: 100%;
+  text-align: left;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.14);
+  background: rgba(8, 6, 12, 0.42);
+  backdrop-filter: blur(10px);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(244, 238, 230, 0.88);
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.05),
+    0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.hl-more-toggle:hover,
+.hl-more-toggle:focus-visible {
+  border-color: rgba(232, 212, 184, 0.28);
+  color: rgba(255, 252, 248, 0.96);
+  outline: none;
+}
+
+.hl-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+}
+
+.hl-support-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.78);
+  padding: 0 0.2rem;
+}
+
+.hl-exit-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background: rgba(8, 6, 12, 0.35);
+  color: rgba(244, 238, 230, 0.9);
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.7rem 0.9rem;
+  text-decoration: none;
+}
+
+.hl-exit-home:hover,
+.hl-exit-home:focus-visible {
+  border-color: rgba(232, 212, 184, 0.3);
+  color: rgba(255, 252, 248, 0.98);
+  outline: none;
+}
+
+/* Soften sticky tab chrome — sanctuary, not SaaS pill mall */
+.health-lab-living [data-testid="health-lab-home"] > div {
+  border-color: rgba(232, 212, 184, 0.16) !important;
+  background: rgba(8, 6, 12, 0.62) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 8px 22px rgba(0, 0, 0, 0.24) !important;
+}
+
+.health-lab-living .hl-living-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Soften gated catalogue cards inside living room */
+.health-lab-living .hl-living-panel .rounded-3xl,
+.health-lab-living .hl-living-panel .rounded-xl,
+.health-lab-living .hl-more-body .rounded-3xl {
+  border-color: rgba(232, 212, 184, 0.14) !important;
+  background: rgba(8, 6, 12, 0.55) !important;
+  color: rgba(255, 252, 248, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.health-lab-living .hl-living-sections .text-foreground,
+.health-lab-living .hl-more-body .text-foreground {
+  color: rgba(255, 252, 248, 0.96) !important;
+}
+
+.health-lab-living .hl-living-sections .text-muted-foreground,
+.health-lab-living .hl-more-body .text-muted-foreground {
+  color: rgba(244, 238, 230, 0.72) !important;
+}
+
+.health-lab-living .hl-loading,
+.health-lab-living .hl-empty {
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background: rgba(8, 6, 12, 0.5);
+  padding: 1rem 1.05rem;
+  color: rgba(244, 238, 230, 0.86);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-recommend-btn,
+  .hl-quiet-path {
+    transition: none;
+  }
+
+  .hl-today-hero .hl-today-memory .fe-memory img {
+    transform: none;
+  }
+}

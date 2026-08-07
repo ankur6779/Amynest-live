@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { HEALTH_LAB_SHELL } from "../theme";
 import { HealthLabParticles } from "./health-lab-particles";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 import { cn } from "@/lib/utils";
 
 export function HealthLabShell({
@@ -14,12 +15,22 @@ export function HealthLabShell({
   showParticles?: boolean;
 }) {
   const [visible, setVisible] = useState(true);
+  const living = isHealthLabLivingV1Enabled();
 
   useEffect(() => {
     const onVis = () => setVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
+
+  /** Living manufacturing — Care sanctuary opening; no violet galaxy wash on the house seat. */
+  if (living) {
+    return (
+      <div className={cn("relative w-full min-w-0 bg-transparent", className)} data-hl-shell="living">
+        <div className="relative z-10">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(HEALTH_LAB_SHELL, className)}>

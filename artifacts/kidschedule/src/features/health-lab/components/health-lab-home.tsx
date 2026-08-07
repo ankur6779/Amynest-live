@@ -1,4 +1,13 @@
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
+import { HealthLabLivingOpening } from "@/features/health-lab/components/health-lab-living-opening";
+import { AppLink } from "@/components/app-link";
+import { buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
+import "@/pages/first-experience-material.css";
+import "@/components/health-lab/health-lab-living-room.css";
 import {
   GAMES,
   getLevelForXp,
@@ -43,6 +52,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Gift,
   ShoppingBag,
   Star,
@@ -79,9 +89,14 @@ export function HealthLabHome({
   onSelectGame,
 }: Props) {
   const { t } = useHealthLabI18n();
+  const { t: tRoot } = useTranslation();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
   const [showGoals, setShowGoals] = useState(false);
   const [showGrownUps, setShowGrownUps] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const careHref = buildParentingHubDeepLink("health-lab");
+  const careMemory = ROOM_HEROES.care;
 
   const level = getLevelForXp(state.totalXp, state.prestige);
   const nextLevel = getNextLevel(level.id);
@@ -116,6 +131,178 @@ export function HealthLabHome({
     todayScore > 0 ? String(todayScore) : t("today_empty", "Let's begin!");
 
   const playLabel = t("play_now", "Play");
+
+  if (living) {
+    return (
+      <div
+        className="fe-shell health-lab-living"
+        data-testid="health-lab-living"
+        data-ph-pack="health-lab-2"
+        data-fe-shot={careMemory.shot}
+        data-fe-room="reveal"
+        data-fe-presence="settle"
+      >
+        <div className="fe-ambient" aria-hidden="true">
+          <img
+            src={careMemory.src}
+            alt=""
+            decoding="async"
+            loading="lazy"
+            fetchPriority="low"
+          />
+          <div className="fe-ambient-wash" />
+        </div>
+        <div className="fe-breath fe-breath-a" aria-hidden="true" />
+        <div className="fe-breath fe-breath-b" aria-hidden="true" />
+        <div className="fe-living-shade" aria-hidden="true" />
+
+        <div className="hl-living-content">
+          <AppLink href={careHref} replace source="health-lab-back-care">
+            <button type="button" className="hl-back" data-testid="health-lab-back-care">
+              <ChevronLeft className="h-4 w-4" />
+              {tRoot("parent_hub.rooms.care.title", { defaultValue: "Care" })}
+            </button>
+          </AppLink>
+
+          <HealthLabLivingOpening
+            childName={childName}
+            recommendedGameId={recommendedId}
+            onRecommend={onStartQuest}
+            onSelectGame={onSelectGame}
+          />
+
+          <div>
+            <button
+              type="button"
+              className="hl-more-toggle"
+              data-testid="health-lab-more-toggle"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              {moreOpen
+                ? tRoot("health_lab.living.more_hide", {
+                    defaultValue: "Hide more wellness",
+                  })
+                : tRoot("health_lab.living.more_show", {
+                    defaultValue: "More wellness",
+                  })}
+            </button>
+            {moreOpen ? (
+              <div
+                className="hl-more-body health-lab-home-scroll space-y-4"
+                data-testid="health-lab-more-body"
+              >
+                {/* Subordinated game chrome — XP / shop / map / quests */}
+                <div
+                  className="flex min-w-0 flex-wrap gap-2 sm:flex-nowrap"
+                  role="group"
+                  aria-label={t("rewards_section", "Rewards")}
+                >
+                  {canSurprise && (
+                    <button
+                      type="button"
+                      onClick={onClaimSurprise}
+                      className="health-lab-pressable flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-400/25 px-3 font-bold text-amber-50"
+                    >
+                      <Gift className="h-5 w-5" aria-hidden />
+                      <span className="text-sm">{t("daily_surprise")}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onOpenShop}
+                    className="health-lab-pressable flex min-h-[56px] items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.08] px-3"
+                    aria-label={`${t("open_shop", "Open shop")}, ${state.coins} ${t("coins_label", "coins")}`}
+                  >
+                    <ShoppingBag className="h-5 w-5 text-violet-200" />
+                    <span className="text-sm font-black text-amber-200">{state.coins}</span>
+                  </button>
+                </div>
+
+                <HealthLabWorldMap
+                  state={state}
+                  recommendedId={recommendedId}
+                  playLabel={playLabel}
+                  title={tRoot("health_lab.living.worlds", {
+                    defaultValue: "Wellness worlds",
+                  })}
+                  hint={tRoot("health_lab.living.worlds_hint", {
+                    defaultValue: "Choose a gentle practice",
+                  })}
+                  onSelectGame={onSelectGame}
+                />
+
+                <section className="overflow-hidden rounded-2xl border border-white/12 bg-white/[0.07]">
+                  <button
+                    type="button"
+                    onClick={() => setShowGrownUps((v) => !v)}
+                    className="health-lab-pressable flex w-full min-h-[52px] items-center gap-3 px-4 py-3 text-left"
+                    aria-expanded={showGrownUps}
+                  >
+                    <Trophy className="h-5 w-5 shrink-0 text-amber-300" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-white">
+                        {t("grown_ups_section", "For grown-ups")}
+                      </p>
+                      <p className="text-xs text-violet-200/70">
+                        {t("grown_ups_hint", "Progress, passport & parent insights")}
+                      </p>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 text-violet-200/70 transition-transform duration-200",
+                        showGrownUps && "rotate-180",
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                  {showGrownUps ? (
+                    <div className="space-y-3 border-t border-white/10 px-4 pb-4 pt-3">
+                      <p className="rounded-xl bg-amber-400/10 px-3 py-2.5 text-sm leading-relaxed text-amber-50/95">
+                        {parentLine}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={onViewProgress}
+                        className={cn(
+                          "health-lab-pressable w-full min-h-[48px] rounded-xl px-3 py-2 text-sm",
+                          HEALTH_LAB_THEME.ctaSecondary,
+                        )}
+                      >
+                        {t("progress")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onOpenDashboard}
+                        className="health-lab-pressable flex w-full min-h-[48px] items-center gap-3 rounded-xl bg-white/[0.05] p-3 text-left"
+                      >
+                        <Trophy className="h-7 w-7 text-amber-400" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-white">{t("dashboard", "Parent Insights")}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-violet-300/50" />
+                      </button>
+                    </div>
+                  ) : null}
+                </section>
+
+                <HealthLabDisclaimer compact />
+              </div>
+            ) : null}
+          </div>
+
+          <p className="hl-support-note">{PREMIUM_VOICE.invitation}</p>
+          <AppLink href="/dashboard" source="health-lab-exit-home">
+            <span className="hl-exit-home" data-testid="health-lab-exit-home">
+              {tRoot("health_lab.living.exit_home", {
+                defaultValue: "Back to Today Home",
+              })}
+            </span>
+          </AppLink>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
