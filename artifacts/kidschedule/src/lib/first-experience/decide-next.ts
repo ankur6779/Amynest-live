@@ -146,8 +146,8 @@ function labelToday(ctx: FirstExperienceTodayContext): string {
 }
 
 function todayObservation(ctx: FirstExperienceTodayContext): string {
-  if (ctx === "school") return "Today has somewhere to be.";
-  if (ctx === "home") return "Today looks unhurried.";
+  if (ctx === "school") return "Today already has a direction.";
+  if (ctx === "home") return "Today feels unhurried.";
   return "Today is still open.";
 }
 
@@ -156,12 +156,13 @@ function todayObservation(ctx: FirstExperienceTodayContext): string {
  * First-experience film is locked to soft morning light —
  * time language must never contradict the photographs.
  * Weekday / age / today context remain real signals.
+ * Notice. Never report.
  */
 export function buildWorkingSignals(input: DecideNextInput): string[] {
   const now = input.now ?? new Date();
   const name = input.childName.trim() || "your child";
   return [
-    "The morning is still quiet.",
+    "Morning has settled into the house.",
     `It’s ${weekdayLabel(now)}.`,
     `${name} is in the ${input.ageBand} stage.`,
     todayObservation(input.todayContext),

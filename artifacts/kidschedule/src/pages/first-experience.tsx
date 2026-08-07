@@ -222,9 +222,9 @@ export default function FirstExperiencePage() {
         });
         window.setTimeout(() => {
           patch({ step: "next-thing", nextThing });
-        }, 620);
+        }, 900);
       }
-    }, 980);
+    }, 1280);
 
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -234,7 +234,9 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="welcome" memory={SHOTS.welcome} openingBeat>
         <div className="fe-copy">
-          <p className="fe-kicker fe-kicker-whisper">Begin</p>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
+          </p>
           <h1 className="fe-title">Begin with today</h1>
           <p className="fe-body">
             We’ll use only what you share — and your local time — to form one next right thing for your child.
@@ -309,7 +311,7 @@ export default function FirstExperiencePage() {
                 data-testid={`fe-age-${opt.id}`}
                 onClick={() => patch({ ageBand: opt.id })}
               >
-                <span style={{ fontWeight: 600, fontSize: "var(--type-body)" }}>{opt.label}</span>
+                <span style={{ fontWeight: 500, fontSize: "var(--type-body)" }}>{opt.label}</span>
               </button>
             ))}
           </div>
@@ -348,8 +350,8 @@ export default function FirstExperiencePage() {
                 data-testid={`fe-today-${opt.id}`}
                 onClick={() => patch({ todayContext: opt.id })}
               >
-                <div style={{ fontWeight: 600 }}>{opt.label}</div>
-                <div style={{ fontSize: "var(--type-body-sm)", color: "rgba(244,238,230,0.5)", marginTop: 2 }}>
+                <div style={{ fontWeight: 500 }}>{opt.label}</div>
+                <div style={{ fontSize: "var(--type-body-sm)", color: "rgba(244,238,230,0.38)", marginTop: 4 }}>
                   {opt.hint}
                 </div>
               </button>
@@ -379,14 +381,14 @@ export default function FirstExperiencePage() {
           <h1 className="fe-title fe-title-section">Forming today’s next right thing</h1>
           <ul className="fe-signal-list">
             {workingSignals.map((line, idx) => {
-              const visible = idx < workingIndex;
+              if (idx >= workingIndex) return null;
               return (
                 <li
                   key={line}
-                  className={visible ? "fe-signal" : "fe-signal-slot"}
-                  style={{ animationDelay: visible ? `${idx * 40}ms` : undefined }}
+                  className="fe-signal"
+                  style={{ animationDelay: `${Math.min(idx, 2) * 60}ms` }}
                 >
-                  {visible ? line : "•"}
+                  {line}
                 </li>
               );
             })}
@@ -400,14 +402,18 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="reveal">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-          <p className="fe-kicker fe-kicker-whisper">Today</p>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
+          </p>
           <h1 className="fe-title fe-reveal">{state.nextThing.title}</h1>
           <p className="fe-body fe-reveal-delay">{state.nextThing.detail}</p>
           <p className="fe-body fe-body-sm" style={{ marginBottom: "var(--space-8)" }}>
             About {state.nextThing.minutes} minutes
           </p>
           <div className="fe-panel" style={{ marginBottom: "var(--space-8)" }}>
-            <p className="fe-kicker fe-kicker-whisper" style={{ marginBottom: "var(--space-2)" }}>From what you shared</p>
+            <p className="fe-kicker fe-kicker-whisper" style={{ marginBottom: "var(--space-2)" }} aria-hidden="true">
+              ·
+            </p>
             <ul style={{ display: "grid", gap: "var(--space-2)", fontSize: "var(--type-body-sm)", color: "rgba(244,238,230,0.55)" }}>
               {state.nextThing.basedOn.map((b) => (
                 <li key={b}>{b}</li>
@@ -433,7 +439,9 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="doing">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-          <p className="fe-kicker fe-kicker-whisper">Now</p>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
+          </p>
           <h1 className="fe-title fe-title-section">{state.nextThing.title}</h1>
           <p className="fe-body">{state.nextThing.detail}</p>
           <div className="fe-actions">
@@ -484,7 +492,9 @@ export default function FirstExperiencePage() {
     return (
       <Shell room="memory">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-          <p className="fe-kicker fe-kicker-whisper">After</p>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
+          </p>
           <h1 className="fe-title fe-title-section">Tomorrow can start from here</h1>
           <p className="fe-body">
             AmyNest can remember today’s progress for {state.childName || "your child"} — so the next
@@ -508,7 +518,9 @@ export default function FirstExperiencePage() {
   return (
     <Shell room="keep">
       <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
-        <p className="fe-kicker fe-kicker-whisper">Keep</p>
+        <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+          ·
+        </p>
         <h1 className="fe-title fe-title-section">Keep today’s progress</h1>
         <p className="fe-body">
           Create an account to keep today’s progress, tomorrow’s plan, and{" "}

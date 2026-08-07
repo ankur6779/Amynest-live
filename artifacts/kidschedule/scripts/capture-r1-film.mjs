@@ -47,10 +47,10 @@ await page.getByTestId("fe-today-home").click();
 await page.waitForTimeout(350);
 await shot(page, "04b-discovery-today-answered");
 await page.getByTestId("fe-today-continue").click();
-await page.waitForSelector(".fe-signal", { timeout: 10000 });
-await page.waitForTimeout(500);
+await page.waitForSelector(".fe-signal", { timeout: 12000 });
+await page.waitForTimeout(700);
 await shot(page, "05-working-assembling");
-await page.waitForTimeout(1200);
+await page.waitForTimeout(2400);
 await shot(page, "05b-working-more");
 
 // desktop opening

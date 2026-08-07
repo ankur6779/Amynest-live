@@ -36,7 +36,7 @@ describe("decideFirstExperienceNextThing", () => {
     expect(lines.length).toBeGreaterThanOrEqual(4);
     expect(lines.join(" ")).toMatch(/Aria/);
     expect(lines.join(" ")).toMatch(/2-4 stage/);
-    expect(lines.join(" ")).toMatch(/morning is still quiet/i);
+    expect(lines.join(" ")).toMatch(/Morning has settled into the house/i);
     expect(lines.join(" ")).toMatch(/still open/i);
     expect(lines.join(" ")).not.toMatch(/I understand/i);
     expect(lines.join(" ")).not.toMatch(/\bUsing\b/i);

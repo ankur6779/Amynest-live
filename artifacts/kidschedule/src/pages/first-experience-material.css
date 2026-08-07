@@ -1,9 +1,12 @@
 /**
  * First-experience materiality — objects in a photographed room.
  * Light spills from the hero into every surface.
+ * One material family. Photography remains the hero.
  */
 
 .fe-shell {
+  --fe-radius: var(--radius-2xl);
+  --fe-blur: 14px;
   --fe-spill: rgba(232, 212, 184, 0.22);
   --fe-spill-deep: rgba(196, 138, 90, 0.12);
   color: var(--atmosphere-night-ink);
@@ -78,11 +81,11 @@
 }
 .fe-breath-a {
   background: radial-gradient(ellipse 52% 42% at 50% 28%, var(--fe-spill) 0%, transparent 64%);
-  animation: feBreatheA 14s ease-in-out infinite;
+  animation: feBreatheA 18s ease-in-out infinite;
 }
 .fe-breath-b {
   background: radial-gradient(ellipse 72% 50% at 50% 82%, rgba(0, 0, 0, 0.55) 0%, transparent 70%);
-  animation: feBreatheB 18s ease-in-out infinite;
+  animation: feBreatheB 22s ease-in-out infinite;
 }
 @keyframes feBreatheA {
   0%,
@@ -143,29 +146,25 @@
 .fe-memory-mount {
   position: relative;
   flex: 0 0 auto;
-  padding: 3px;
-  border-radius: var(--radius-3xl);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0.32)),
-    linear-gradient(180deg, rgba(40, 34, 48, 0.88), rgba(12, 10, 18, 0.94));
+  padding: 2px;
+  border-radius: var(--fe-radius);
+  background: linear-gradient(180deg, rgba(40, 34, 48, 0.55), rgba(12, 10, 18, 0.7));
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.14) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.4) inset,
-    0 24px 52px rgba(0, 0, 0, 0.48),
-    0 8px 16px rgba(0, 0, 0, 0.3),
-    0 0 72px var(--fe-spill);
-  animation: feMemoryIn 0.7s var(--ease-settle) both;
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 18px 40px rgba(0, 0, 0, 0.4),
+    0 0 64px var(--fe-spill);
+  animation: feMemoryIn 0.9s var(--ease-settle) both;
 }
 .fe-memory {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 11;
   max-height: min(34dvh, 280px);
-  border-radius: calc(var(--radius-3xl) - 3px);
+  border-radius: calc(var(--fe-radius) - 2px);
   overflow: hidden;
   isolation: isolate;
   background: #0a0810;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5) inset, 0 12px 28px rgba(0, 0, 0, 0.32) inset;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28) inset;
 }
 .fe-shell[data-fe-opening="true"] .fe-memory-mount {
   margin-top: var(--space-4);
@@ -203,12 +202,29 @@
   transform: scale(1.06);
 }
 .fe-shell[data-fe-shot="transition"] .fe-memory {
-  aspect-ratio: 4 / 3;
-  max-height: min(34dvh, 280px);
+  aspect-ratio: 16 / 11;
+  max-height: min(28dvh, 230px);
 }
 .fe-shell[data-fe-shot="transition"] .fe-memory img {
   object-position: center 45%;
   transform: scale(1.02);
+}
+.fe-shell[data-fe-shot="transition"] .fe-copy {
+  padding-top: var(--space-5);
+}
+.fe-shell[data-fe-shot="transition"] .fe-choice-stack {
+  margin-bottom: var(--space-6);
+}
+.fe-shell[data-fe-shot="transition"] .fe-body-sm {
+  margin-bottom: var(--space-5);
+}
+.fe-shell[data-fe-shot="growing"] .fe-choice-grid,
+.fe-shell[data-fe-shot="detail"] .fe-choice-grid {
+  margin-bottom: var(--space-6);
+}
+.fe-shell[data-fe-shot="growing"] .fe-body-sm,
+.fe-shell[data-fe-shot="detail"] .fe-body-sm {
+  margin-bottom: var(--space-5);
 }
 .fe-shell[data-fe-shot="reflection"] .fe-memory {
   aspect-ratio: 4 / 3;
@@ -344,16 +360,14 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(125deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 26%, transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 38%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 -16px 36px rgba(0, 0, 0, 0.14) inset;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 36%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 -14px 28px rgba(0, 0, 0, 0.12) inset;
 }
 .fe-memory-grain {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.045;
+  opacity: 0.03;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
@@ -453,7 +467,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding-top: var(--space-6);
+  padding-top: var(--space-8);
 }
 .fe-copy::before {
   content: "";
@@ -495,66 +509,67 @@
   margin: 0 0 var(--space-5);
   font-size: 10px;
   font-weight: var(--font-regular);
-  letter-spacing: 0.28em;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(244, 238, 230, 0.22);
-  animation: feSoftIn 0.38s 0.04s var(--ease-settle) both;
+  color: rgba(244, 238, 230, 0.16);
+  animation: feSoftIn 0.5s 0.06s var(--ease-settle) both;
 }
 .fe-kicker-whisper {
-  letter-spacing: 0.42em;
-  color: rgba(244, 238, 230, 0.14);
+  letter-spacing: 0.48em;
+  color: rgba(244, 238, 230, 0.1);
   font-weight: var(--font-regular);
   margin-bottom: var(--space-6);
+  min-height: 1em;
 }
 .fe-title {
   margin: 0 0 var(--space-5);
-  font-size: clamp(1.28rem, 3.8vw, 1.48rem);
+  font-size: clamp(1.16rem, 3.4vw, 1.34rem);
   font-weight: var(--font-medium);
-  line-height: 1.34;
-  letter-spacing: -0.014em;
-  color: rgba(244, 238, 230, 0.9);
-  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
-  animation: feSettle var(--dur-title) var(--ease-settle) both;
+  line-height: 1.4;
+  letter-spacing: -0.016em;
+  color: rgba(244, 238, 230, 0.82);
+  text-shadow: none;
+  animation: feSettle 0.56s var(--ease-settle) both;
 }
 .fe-title-section {
-  font-size: clamp(1.14rem, 3.2vw, 1.32rem);
-  letter-spacing: -0.012em;
-  line-height: 1.36;
+  font-size: clamp(1.05rem, 3vw, 1.22rem);
+  letter-spacing: -0.014em;
+  line-height: 1.42;
   font-weight: var(--font-medium);
-  color: rgba(244, 238, 230, 0.88);
+  color: rgba(244, 238, 230, 0.78);
 }
 .fe-body {
-  margin: 0 0 var(--space-8);
-  font-size: 15px;
+  margin: 0 0 var(--space-10);
+  font-size: 14px;
   font-weight: var(--font-regular);
-  line-height: 1.65;
-  letter-spacing: 0.005em;
-  max-width: 32ch;
-  color: rgba(244, 238, 230, 0.52);
-  animation: feSoftIn var(--dur-body) 0.08s var(--ease-settle) both;
+  line-height: 1.72;
+  letter-spacing: 0.01em;
+  max-width: 30ch;
+  color: rgba(244, 238, 230, 0.44);
+  animation: feSoftIn 0.56s 0.1s var(--ease-settle) both;
 }
 .fe-shell[data-fe-opening="true"] .fe-body {
-  max-width: 34ch;
+  max-width: 32ch;
   margin-left: auto;
   margin-right: auto;
 }
 .fe-body-sm {
   font-size: 13px;
-  line-height: 1.6;
-  letter-spacing: 0.01em;
-  color: rgba(244, 238, 230, 0.42);
-  max-width: 36ch;
-  margin-bottom: var(--space-6);
+  line-height: 1.7;
+  letter-spacing: 0.012em;
+  color: rgba(244, 238, 230, 0.36);
+  max-width: 34ch;
+  margin-bottom: var(--space-8);
 }
 .fe-actions {
   margin-top: auto;
-  padding-top: var(--space-6);
+  padding-top: var(--space-8);
 }
 .fe-signal-list {
   display: flex;
   flex-direction: column;
-  margin-top: var(--space-2);
-  gap: var(--space-4);
+  margin-top: var(--space-4);
+  gap: var(--space-3);
 }
 
 .fe-reveal {
@@ -572,116 +587,102 @@
 
 /* One material language — carved soft glass wells */
 .fe-signal {
-  animation: feSignalAssemble 0.55s var(--ease-settle) both;
+  animation: feSignalAssemble 0.72s var(--ease-settle) both;
   position: relative;
-  backdrop-filter: blur(16px) saturate(1.05);
-  -webkit-backdrop-filter: blur(16px) saturate(1.05);
+  backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
+  -webkit-backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--fe-spill) 22%, rgba(255, 255, 255, 0.07)) 0%,
-    rgba(255, 255, 255, 0.025) 100%
+    color-mix(in srgb, var(--fe-spill) 18%, rgba(255, 255, 255, 0.05)) 0%,
+    rgba(255, 255, 255, 0.02) 100%
   );
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--fe-radius);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 2px 8px rgba(0, 0, 0, 0.28) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  color: rgba(244, 238, 230, 0.82);
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 2px 8px rgba(0, 0, 0, 0.22) inset;
+  color: rgba(244, 238, 230, 0.72);
   font-size: 14px;
-  letter-spacing: 0.01em;
-  padding: 14px 18px;
-}
-.fe-signal-slot {
-  border-radius: var(--radius-xl);
-  border: none;
-  padding: 14px 18px;
-  font-size: 14px;
-  color: transparent;
-  min-height: 44px;
-  opacity: 0.35;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) inset;
-  background: rgba(255, 255, 255, 0.02);
+  letter-spacing: 0.012em;
+  line-height: 1.45;
+  padding: 15px 18px;
 }
 
 /* Carved input — same radius / shadow language as wells */
 .fe-surface {
   width: 100%;
   border: none;
-  border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(18, 14, 24, 0.52) 100%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--fe-radius);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0%, rgba(18, 14, 24, 0.48) 100%);
+  backdrop-filter: blur(var(--fe-blur));
+  -webkit-backdrop-filter: blur(var(--fe-blur));
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.5) inset,
-    0 10px 22px rgba(0, 0, 0, 0.22) inset,
-    0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 2px 4px rgba(0, 0, 0, 0.45) inset,
+    0 10px 22px rgba(0, 0, 0, 0.2) inset,
+    0 1px 0 rgba(255, 255, 255, 0.06);
   color: var(--atmosphere-night-ink);
   font-size: 16px;
   padding: 16px 18px;
   outline: none;
-  transition: box-shadow 0.35s ease, background 0.35s ease;
+  transition: box-shadow 0.4s ease, background 0.4s ease;
 }
 .fe-surface::placeholder {
-  color: rgba(244, 238, 230, 0.3);
+  color: rgba(244, 238, 230, 0.26);
 }
 .fe-surface:focus {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0%, rgba(28, 22, 38, 0.5) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34) 0%, rgba(28, 22, 38, 0.46) 100%);
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.5) inset,
-    0 10px 22px rgba(0, 0, 0, 0.22) inset,
-    0 1px 0 rgba(255, 255, 255, 0.14),
-    0 0 0 1px color-mix(in srgb, var(--fe-spill) 55%, rgba(255, 255, 255, 0.2)),
-    0 0 36px color-mix(in srgb, var(--fe-spill) 35%, transparent);
+    0 2px 4px rgba(0, 0, 0, 0.45) inset,
+    0 10px 22px rgba(0, 0, 0, 0.2) inset,
+    0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 28px color-mix(in srgb, var(--fe-spill) 28%, transparent);
 }
 
 /* Machined ceramic button — same radius family */
 .fe-btn {
-  min-height: 52px;
+  min-height: 50px;
   width: 100%;
   border: none;
-  border-radius: var(--radius-xl);
-  font-weight: var(--font-semibold);
+  border-radius: var(--fe-radius);
+  font-weight: var(--font-medium);
   font-size: 15px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.012em;
   position: relative;
   isolation: isolate;
-  transition: transform 0.16s var(--ease-settle), box-shadow 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.2s var(--ease-settle), box-shadow 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
 }
 .fe-btn::before {
   content: "";
   position: absolute;
   inset: 1px 2px auto 2px;
-  height: 46%;
-  border-radius: 16px 18px 40% 40%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  height: 42%;
+  border-radius: calc(var(--fe-radius) - 4px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
   pointer-events: none;
   z-index: 1;
-  opacity: 0.55;
+  opacity: 0.35;
 }
 .fe-btn:active:not(:disabled) {
   transform: translateY(1px) scale(0.985);
 }
 .fe-btn-primary {
-  background: linear-gradient(180deg, #fffdf9 0%, #f4eee6 42%, #e7dccb 100%);
+  background: linear-gradient(180deg, #f7f1e8 0%, #ebe2d4 48%, #ddd1bf 100%);
   color: var(--color-primary-ink);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 -2px 3px rgba(120, 90, 60, 0.18) inset,
-    0 1px 0 rgba(255, 255, 255, 0.25),
-    0 10px 18px rgba(0, 0, 0, 0.28),
-    0 22px 40px rgba(0, 0, 0, 0.28),
-    0 0 40px color-mix(in srgb, var(--fe-spill) 30%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 -1px 2px rgba(120, 90, 60, 0.14) inset,
+    0 8px 16px rgba(0, 0, 0, 0.24),
+    0 16px 32px rgba(0, 0, 0, 0.22),
+    0 0 28px color-mix(in srgb, var(--fe-spill) 22%, transparent);
 }
 .fe-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.03);
+  filter: brightness(1.02);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 3px rgba(120, 90, 60, 0.16) inset,
-    0 12px 22px rgba(0, 0, 0, 0.3),
-    0 26px 48px rgba(0, 0, 0, 0.3),
-    0 0 48px color-mix(in srgb, var(--fe-spill) 38%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 -1px 2px rgba(120, 90, 60, 0.12) inset,
+    0 10px 18px rgba(0, 0, 0, 0.26),
+    0 20px 36px rgba(0, 0, 0, 0.24),
+    0 0 34px color-mix(in srgb, var(--fe-spill) 28%, transparent);
 }
 .fe-btn-primary:active:not(:disabled) {
   filter: brightness(0.98);
@@ -699,22 +700,20 @@
 .fe-btn-quiet {
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--fe-spill) 18%, rgba(255, 255, 255, 0.08)),
-    rgba(255, 255, 255, 0.03)
+    color-mix(in srgb, var(--fe-spill) 14%, rgba(255, 255, 255, 0.06)),
+    rgba(255, 255, 255, 0.02)
   );
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.14) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.35) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 10px 24px rgba(0, 0, 0, 0.22);
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 8px 18px rgba(0, 0, 0, 0.18);
 }
 .fe-btn-quiet:hover {
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.2) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 14px 28px rgba(0, 0, 0, 0.26),
-    0 0 28px color-mix(in srgb, var(--fe-spill) 22%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.14) inset,
+    0 12px 22px rgba(0, 0, 0, 0.22),
+    0 0 22px color-mix(in srgb, var(--fe-spill) 18%, transparent);
 }
 .fe-btn-quiet:active {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) inset, 0 4px 12px rgba(0, 0, 0, 0.22);
@@ -728,32 +727,30 @@
   text-align: left;
   width: 100%;
   border: none;
-  border-radius: var(--radius-xl);
-  padding: 15px 18px;
+  border-radius: var(--fe-radius);
+  padding: 16px 18px;
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--fe-spill) 16%, rgba(255, 255, 255, 0.05)) 0%,
-    rgba(255, 255, 255, 0.02) 48%,
-    rgba(0, 0, 0, 0.18) 100%
+    color-mix(in srgb, var(--fe-spill) 12%, rgba(255, 255, 255, 0.04)) 0%,
+    rgba(255, 255, 255, 0.015) 48%,
+    rgba(0, 0, 0, 0.16) 100%
   );
   color: var(--atmosphere-night-ink);
   min-height: 56px;
-  backdrop-filter: blur(14px) saturate(1.05);
-  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
+  -webkit-backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 2px 8px rgba(0, 0, 0, 0.28) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  transition: transform 0.18s var(--ease-settle), box-shadow 0.3s ease, background 0.3s ease, filter 0.3s ease;
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 2px 8px rgba(0, 0, 0, 0.22) inset;
+  transition: transform 0.22s var(--ease-settle), box-shadow 0.35s ease, background 0.35s ease, filter 0.35s ease;
 }
 .fe-choice:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.18) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.35) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 16px 30px rgba(0, 0, 0, 0.26),
-    0 0 28px color-mix(in srgb, var(--fe-spill) 22%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.28) inset,
+    0 14px 26px rgba(0, 0, 0, 0.22),
+    0 0 22px color-mix(in srgb, var(--fe-spill) 16%, transparent);
 }
 .fe-choice:active {
   transform: scale(0.985) translateY(0);
@@ -761,46 +758,44 @@
 .fe-choice[data-active="true"] {
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--fe-spill) 42%, rgba(255, 255, 255, 0.14)) 0%,
-    rgba(255, 255, 255, 0.06) 55%,
-    rgba(0, 0, 0, 0.12) 100%
+    color-mix(in srgb, var(--fe-spill) 34%, rgba(255, 255, 255, 0.1)) 0%,
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(0, 0, 0, 0.1) 100%
   );
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.28) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
-    0 0 0 1px color-mix(in srgb, var(--fe-spill) 50%, rgba(255, 255, 255, 0.25)),
-    0 16px 34px rgba(0, 0, 0, 0.3),
-    0 0 42px color-mix(in srgb, var(--fe-spill) 40%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.24) inset,
+    0 14px 28px rgba(0, 0, 0, 0.26),
+    0 0 32px color-mix(in srgb, var(--fe-spill) 30%, transparent);
 }
 
 .fe-panel {
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--fe-radius);
   padding: var(--space-4) 18px;
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--fe-spill) 18%, rgba(255, 255, 255, 0.05)),
-    rgba(255, 255, 255, 0.02)
+    color-mix(in srgb, var(--fe-spill) 14%, rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.015)
   );
-  backdrop-filter: blur(16px) saturate(1.05);
-  -webkit-backdrop-filter: blur(16px) saturate(1.05);
+  backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
+  -webkit-backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 2px 8px rgba(0, 0, 0, 0.28) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 2px 8px rgba(0, 0, 0, 0.22) inset;
 }
 
 .fe-choice-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-10);
 }
 .fe-choice-stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-10);
 }
 @media (prefers-reduced-motion: reduce) {
   .fe-breath-a,
