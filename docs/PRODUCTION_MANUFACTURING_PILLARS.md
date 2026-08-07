@@ -121,7 +121,8 @@ Beauty and engineering must improve together.
 | Layer | Status |
 |---|---|
 | Welcome (R1–R3.6 + Philosophy) | Permanently frozen |
-| Signup Keep (R6) | Manufacturing — must pass all four pillars |
-| Child Discovery | Not allowed until Founder opens it |
+| Signup Keep (R6) | Permanently frozen |
+| Child Discovery | OPEN — Phase 1 blueprint only (`docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`) |
+| Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 
-See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md`
+See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`

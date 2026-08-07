@@ -34,7 +34,9 @@ Subsequent Experience V3 redesign phases:
 
 **Signup (R6 Keep)** → Child Discovery → Today → Parent Hub → Child Hub → Ask Amy → Premium
 
-See `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` for the Signup Keep phase (Welcome remains frozen).
+- Signup Keep: permanently frozen — `docs/SIGNUP_V3_KEEP_EXPERIENCE.md`  
+- Child Discovery: Phase 1 study — `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`  
+- Welcome remains frozen.
 
 ## Entry route
 

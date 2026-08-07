@@ -1,8 +1,9 @@
 # AmyNest Signup V3 — Keep Experience (R6)
 
-**Status:** Signup manufacturing shipped — awaiting Founder approval  
+**Status:** PERMANENTLY FROZEN — Founder approved  
 **Authority:** Four Pillars · Welcome V3 freeze · Founder keep ritual brief  
-**Frozen:** Welcome / `/begin` · Child Discovery LOCKED
+**Frozen:** Welcome / `/begin` · Signup Keep Experience  
+**Next:** Child Discovery — see `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` (Phase 1 study)
 
 ## Emotional goal
 
@@ -52,5 +53,5 @@ Continuity key: `amynest_first_experience_continuity_v1`
 
 ## STOP
 
-**Child Discovery remains LOCKED.**  
-Wait for Founder approval before any next surface.
+Signup Keep Experience is permanently frozen.  
+Do not edit keep ritual screens, copy modules, or OAuth hierarchy.
