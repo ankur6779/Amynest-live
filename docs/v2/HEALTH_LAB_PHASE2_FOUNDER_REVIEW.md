@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Health Lab Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(stamped after commit)_
+**Commit SHA:** `3b433240` (`3b433240c42f9963d900312008228f2976e6adcf`)
 
 **STOP after this module.** Next destination only after Founder acceptance.
 
