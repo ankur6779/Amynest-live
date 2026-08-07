@@ -61,10 +61,13 @@ function bumpAICount() {
 }
 export function DailyTips({
   ageGroup,
-  childName
+  childName,
+  presentation = "cards",
 }: {
   ageGroup: AgeGroup;
   childName: string;
+  /** Guidance living stream — calm list, not tip-card mall */
+  presentation?: "cards" | "stream";
 }) {
   const {
     t
@@ -154,6 +157,58 @@ export function DailyTips({
     personalize: "Personalize",
     aiLeft: (n: number) => `Amy AI left: ${n}`,
   };
+
+  if (presentation === "stream") {
+    return (
+      <section className="gd-daily-stream" data-testid="daily-tips-stream">
+        <div className="gd-daily-stream-list">
+          {CATEGORIES.map((cat) => {
+            const meta = CATEGORY_META[cat];
+            const tip = tips[cat];
+            const cacheKey = `${tip.id}_${lang}`;
+            const text = aiCache[cacheKey] ?? tip.en;
+            const isPersonalized = Boolean(aiCache[cacheKey]);
+            const liked = Boolean(helpful[tip.id]);
+            const isBusy = busyId === tip.id;
+            const canPersonalize =
+              !isPersonalized && aiUsed < AI_DAILY_LIMIT && !isBusy;
+            return (
+              <SubItemGate key={cat} sectionId="hub_tips" subItemId={cat}>
+                <div className="gd-daily-stream-card" data-tip-category={cat}>
+                  <p className="gd-daily-stream-label">
+                    {meta.label[lang]}
+                    {isPersonalized ? ` · ${t("components.daily_tips.amy_ai")}` : ""}
+                  </p>
+                  <p className="gd-daily-stream-text">{text}</p>
+                  <div className="gd-daily-stream-actions">
+                    <button
+                      type="button"
+                      onClick={() => handleHelpful(tip.id)}
+                      aria-pressed={liked}
+                    >
+                      {liked ? `${ui.helpful} ✓` : ui.helpful}
+                    </button>
+                    {canPersonalize ? (
+                      <button type="button" onClick={() => handlePersonalize(cat)}>
+                        {ui.personalize}
+                      </button>
+                    ) : null}
+                    <button type="button" onClick={() => handleNext(cat)}>
+                      {ui.next}
+                    </button>
+                  </div>
+                </div>
+              </SubItemGate>
+            );
+          })}
+        </div>
+        <div className="gd-daily-stream-meta">
+          {ui.aiLeft(Math.max(0, AI_DAILY_LIMIT - aiUsed))}
+        </div>
+      </section>
+    );
+  }
+
   return <section className="space-y-3">
       {/* Header */}
       <div className="flex items-end justify-between gap-2 px-1">

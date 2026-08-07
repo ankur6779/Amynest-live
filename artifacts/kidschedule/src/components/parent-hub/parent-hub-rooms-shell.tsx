@@ -18,6 +18,10 @@ import { ParentHubDestinationRow } from "@/components/parent-hub/parent-hub-dest
 import { ParentHubExitPanel } from "@/components/parent-hub/parent-hub-exit-panel";
 import { AppLink } from "@/components/app-link";
 import { ParentHubQuietModuleProvider } from "@/lib/parent-hub/quiet-module-context";
+import {
+  GUIDANCE_STREAM_TILE_ID,
+  isGuidanceLivingV1Enabled,
+} from "@/lib/guidance/living-room";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
@@ -33,6 +37,11 @@ export type ParentHubRoomsShellProps = {
   visibleTileIds: string[];
   /** Existing module render — shown quietly after a path is chosen */
   renderDestination: (tileId: string) => ReactNode;
+  /**
+   * Guidance Phase 2 — one calm stream instead of nested tip/article catalogue.
+   * When provided + living flag ON, Guidance merge skips nested tiles.
+   */
+  renderGuidanceStream?: () => ReactNode;
   homeHref?: string;
 };
 
@@ -63,6 +72,7 @@ export function ParentHubRoomsShell({
   focusTileId = null,
   visibleTileIds,
   renderDestination,
+  renderGuidanceStream,
   homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
@@ -70,6 +80,8 @@ export function ParentHubRoomsShell({
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   /** Exit Law — show return-to-life after a destination has been opened */
   const [pathCompleted, setPathCompleted] = useState(false);
+  const guidanceLiving =
+    Boolean(renderGuidanceStream) && isGuidanceLivingV1Enabled();
 
   const recommendation = useMemo(
     () => (activeRoom ? recommendForRoom(activeRoom, { isInfant }) : null),
@@ -97,9 +109,13 @@ export function ParentHubRoomsShell({
     }
     const destId = destinationIdForTile(focusTileId);
     setOpenDestinationId(destId);
-    setSelectedTileId(focusTileId);
+    if (destId === "guidance" && guidanceLiving) {
+      setSelectedTileId(GUIDANCE_STREAM_TILE_ID);
+    } else {
+      setSelectedTileId(focusTileId);
+    }
     setPathCompleted(true);
-  }, [activeRoom, focusTileId]);
+  }, [activeRoom, focusTileId, guidanceLiving]);
 
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
@@ -108,6 +124,16 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : tileId);
       if (!closing && tileId) setPathCompleted(true);
+      return;
+    }
+    // Guidance living — open one stream; no nested catalogue.
+    if (dest.id === "guidance" && guidanceLiving) {
+      const closing =
+        openDestinationId === dest.id &&
+        selectedTileId === GUIDANCE_STREAM_TILE_ID;
+      setOpenDestinationId(closing ? null : dest.id);
+      setSelectedTileId(closing ? null : GUIDANCE_STREAM_TILE_ID);
+      if (!closing) setPathCompleted(true);
       return;
     }
     setOpenDestinationId((prev) => (prev === dest.id ? null : dest.id));
@@ -211,7 +237,9 @@ export function ParentHubRoomsShell({
                       onSelect={() => selectDestination(dest)}
                     />
 
-                    {dest.kind === "merge" && isOpen ? (
+                    {dest.kind === "merge" &&
+                    isOpen &&
+                    !(dest.id === "guidance" && guidanceLiving) ? (
                       <div
                         className="ph-dest-nested"
                         data-testid={`hub-dest-nested-${dest.id}`}
@@ -233,7 +261,21 @@ export function ParentHubRoomsShell({
               })}
             </div>
 
-            {selectedTileId ? (
+            {selectedTileId === GUIDANCE_STREAM_TILE_ID &&
+            guidanceLiving &&
+            renderGuidanceStream ? (
+              <div
+                className="ph-module-quiet"
+                data-testid="hub-room-module-guidance"
+                data-section-id="guidance"
+                data-ph-pack="5"
+              >
+                <ParentHubQuietModuleProvider>
+                  {renderGuidanceStream()}
+                </ParentHubQuietModuleProvider>
+              </div>
+            ) : selectedTileId &&
+              selectedTileId !== GUIDANCE_STREAM_TILE_ID ? (
               <div
                 className="ph-module-quiet"
                 data-testid={`hub-room-module-${selectedTileId}`}

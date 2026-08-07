@@ -53,13 +53,38 @@ describe("Parent Hub Pack 4 living flow", () => {
         onExitRoom={vi.fn()}
         visibleTileIds={["daily-tips", "articles"]}
         renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderGuidanceStream={() => (
+          <div data-testid="guidance-living-stream">stream</div>
+        )}
       />,
     );
 
     fireEvent.click(screen.getByTestId("hub-dest-row-guidance"));
-    fireEvent.click(screen.getByTestId("hub-dest-row-daily-tips"));
+    // Guidance living — one stream, no nested tip/article catalogue
+    expect(screen.queryByTestId("hub-dest-nested-guidance")).toBeNull();
+    expect(screen.getByTestId("guidance-living-stream")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-module-guidance")).toBeTruthy();
     expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
     expect(screen.getByTestId("parent-hub-exit-home")).toBeTruthy();
+  });
+
+  it("Guidance kill-switch keeps nested catalogue when stream not provided", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="understand"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["daily-tips", "articles"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("hub-dest-row-guidance"));
+    expect(screen.getByTestId("hub-dest-nested-guidance")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("hub-dest-row-daily-tips"));
+    expect(screen.getByTestId("mod-daily-tips")).toBeTruthy();
   });
 
   it("Pack 5 — destination module mounts under quiet continuity slot", () => {

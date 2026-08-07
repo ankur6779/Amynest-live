@@ -146,8 +146,10 @@ import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
 import { ParentHubRoomsShell } from "@/components/parent-hub/parent-hub-rooms-shell";
+import { GuidanceLivingStream } from "@/components/guidance/guidance-living-stream";
 import "@/components/parent-hub/parent-hub-living-room.css";
 import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
+import { isGuidanceLivingV1Enabled } from "@/lib/guidance/living-room";
 import { roomsV1AllowsQuietChildIdentity } from "@/lib/parent-hub/legacy-chrome";
 import {
   isHubTileRemovedFromRooms,
@@ -2221,6 +2223,52 @@ function ParentingHubPage() {
                 if (!section) return null;
                 return renderHubSection(section);
               }}
+              renderGuidanceStream={
+                isGuidanceLivingV1Enabled() && ageGroup
+                  ? () => {
+                      const showNewParent =
+                        isInfant || hubSurface.current === "previous";
+                      return (
+                        <GuidanceLivingStream
+                          childName={effectiveChild.name}
+                          ageGroup={ageGroup}
+                          childAgeMonths={totalAgeMonths}
+                          isInfant={isInfant}
+                          showNewParent={showNewParent}
+                          wrapLane={(laneId, node) => {
+                            if (laneId === "daily-tips") {
+                              return (
+                                <FeatureGate
+                                  reason="hub_locked"
+                                  locked={isHubLocked("hub_tips")}
+                                  journeySoft={journeySoftLock}
+                                  childName={effectiveChild.name}
+                                  isInfant={isInfant}
+                                >
+                                  {node}
+                                </FeatureGate>
+                              );
+                            }
+                            if (laneId === "articles") {
+                              return (
+                                <FeatureGate
+                                  reason="hub_locked"
+                                  locked={isHubLocked("hub_articles")}
+                                  journeySoft={journeySoftLock}
+                                  childName={effectiveChild.name}
+                                  isInfant={isInfant}
+                                >
+                                  {node}
+                                </FeatureGate>
+                              );
+                            }
+                            return node;
+                          }}
+                        />
+                      );
+                    }
+                  : undefined
+              }
             />
           ) : (
           <>
