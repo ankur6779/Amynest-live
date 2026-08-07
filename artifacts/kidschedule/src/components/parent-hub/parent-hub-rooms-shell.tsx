@@ -9,8 +9,14 @@ import {
   destinationsForRoom,
   type ResolvedDestination,
 } from "@/lib/parent-hub/destinations";
+import {
+  orderDestinationsForFlow,
+  recommendForRoom,
+} from "@/lib/parent-hub/flow";
 import { ParentHubRoomHero } from "@/components/parent-hub/parent-hub-room-hero";
 import { ParentHubDestinationRow } from "@/components/parent-hub/parent-hub-destination-row";
+import { ParentHubExitPanel } from "@/components/parent-hub/parent-hub-exit-panel";
+import { AppLink } from "@/components/app-link";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
@@ -26,6 +32,7 @@ export type ParentHubRoomsShellProps = {
   visibleTileIds: string[];
   /** Existing module render — shown quietly after a path is chosen */
   renderDestination: (tileId: string) => ReactNode;
+  homeHref?: string;
 };
 
 function memberTitle(
@@ -43,8 +50,8 @@ function memberTitle(
 }
 
 /**
- * Pack 2 living rooms + Pack 3 destination merges.
- * Room stays the emotional hero. Destinations are quiet, merged paths.
+ * Pack 2–4 — living rooms + destinations + living flow.
+ * Enter → hero → one recommendation → quiet paths → complete → Home / life.
  */
 export function ParentHubRoomsShell({
   childName,
@@ -55,62 +62,85 @@ export function ParentHubRoomsShell({
   focusTileId = null,
   visibleTileIds,
   renderDestination,
+  homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
   const [openDestinationId, setOpenDestinationId] = useState<string | null>(null);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
+  /** Exit Law — show return-to-life after a destination has been opened */
+  const [pathCompleted, setPathCompleted] = useState(false);
 
-  const resolvedDestinations = useMemo(
-    () => (activeRoom ? destinationsForRoom(activeRoom, visibleTileIds) : []),
-    [activeRoom, visibleTileIds],
+  const recommendation = useMemo(
+    () => (activeRoom ? recommendForRoom(activeRoom, { isInfant }) : null),
+    [activeRoom, isInfant],
   );
+
+  const resolvedDestinations = useMemo(() => {
+    if (!activeRoom || !recommendation) return [];
+    const raw = destinationsForRoom(activeRoom, visibleTileIds);
+    return orderDestinationsForFlow(raw, recommendation.destinationId);
+  }, [activeRoom, visibleTileIds, recommendation]);
 
   useEffect(() => {
     if (!activeRoom) {
       setOpenDestinationId(null);
       setSelectedTileId(null);
+      setPathCompleted(false);
       return;
     }
     if (!focusTileId) {
       setOpenDestinationId(null);
       setSelectedTileId(null);
+      setPathCompleted(false);
       return;
     }
     const destId = destinationIdForTile(focusTileId);
     setOpenDestinationId(destId);
     setSelectedTileId(focusTileId);
+    setPathCompleted(true);
   }, [activeRoom, focusTileId]);
 
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
       const tileId = dest.visibleTileIds[0] ?? null;
-      setOpenDestinationId((prev) => (prev === dest.id && selectedTileId === tileId ? null : dest.id));
-      setSelectedTileId((prev) => (prev === tileId ? null : tileId));
+      const closing = openDestinationId === dest.id && selectedTileId === tileId;
+      setOpenDestinationId(closing ? null : dest.id);
+      setSelectedTileId(closing ? null : tileId);
+      if (!closing && tileId) setPathCompleted(true);
       return;
     }
-    // Merge door — toggle nested quiet paths; clear module until a member is chosen
     setOpenDestinationId((prev) => (prev === dest.id ? null : dest.id));
     setSelectedTileId(null);
   };
 
   const selectMember = (tileId: string, destId: string) => {
+    const closing = selectedTileId === tileId;
     setOpenDestinationId(destId);
-    setSelectedTileId((prev) => (prev === tileId ? null : tileId));
+    setSelectedTileId(closing ? null : tileId);
+    if (!closing) setPathCompleted(true);
   };
 
-  if (activeRoom) {
+  const clearDestination = () => {
+    setSelectedTileId(null);
+    setOpenDestinationId(null);
+  };
+
+  if (activeRoom && recommendation) {
     const hero = heroForRoom(activeRoom);
     const feeling = t(hero.feelingKey, { defaultValue: hero.feelingFallback });
     const title = t(hero.titleKey, { defaultValue: hero.titleFallback });
     const intention = ROOM_INTENTION[activeRoom];
     const intentionText = t(intention.key, { defaultValue: intention.fallback });
+    const recommendLabel = t(recommendation.labelKey, {
+      defaultValue: recommendation.labelFallback,
+    });
 
     return (
       <div
         className="fe-shell ph-living-shell"
         data-testid="parent-hub-rooms-shell"
         data-ph-mode="entered"
-        data-ph-pack="3"
+        data-ph-pack="4"
         data-hub-room={activeRoom}
         data-fe-shot={hero.shot}
         data-fe-room="reveal"
@@ -152,7 +182,7 @@ export function ParentHubRoomsShell({
 
             <div
               data-testid={`hub-room-destinations-${activeRoom}`}
-              data-pack="secondary-destinations"
+              data-pack="living-flow"
               className="ph-dest-list mt-3"
             >
               <p className="ph-room-eyebrow mb-1">
@@ -163,6 +193,7 @@ export function ParentHubRoomsShell({
 
               {resolvedDestinations.map((dest) => {
                 const isOpen = openDestinationId === dest.id;
+                const isRecommended = dest.id === recommendation.destinationId;
                 const titleText = t(dest.titleKey, { defaultValue: dest.titleFallback });
                 const purposeText = t(dest.purposeKey, {
                   defaultValue: dest.purposeFallback,
@@ -175,6 +206,7 @@ export function ParentHubRoomsShell({
                       title={titleText}
                       hint={purposeText}
                       active={isOpen}
+                      recommendLabel={isRecommended ? recommendLabel : undefined}
                       onSelect={() => selectDestination(dest)}
                     />
 
@@ -210,6 +242,14 @@ export function ParentHubRoomsShell({
               </div>
             ) : null}
 
+            {pathCompleted ? (
+              <ParentHubExitPanel
+                homeHref={homeHref}
+                onContinueInRoom={clearDestination}
+                onAnotherRoom={onExitRoom}
+              />
+            ) : null}
+
             <div
               id={`hub-room-deeplink-${activeRoom}`}
               data-testid={`hub-room-deeplink-${activeRoom}`}
@@ -229,7 +269,7 @@ export function ParentHubRoomsShell({
       className="fe-shell ph-living-shell"
       data-testid="parent-hub-rooms-shell"
       data-ph-mode="doors"
-      data-ph-pack="3"
+      data-ph-pack="4"
       data-fe-shot="reflection"
       data-fe-room="reveal"
       data-fe-presence="settle"
@@ -296,6 +336,20 @@ export function ParentHubRoomsShell({
               </button>
             );
           })}
+        </div>
+
+        <div className="pt-2 text-center">
+          <AppLink href={homeHref} source="parent-hub-doors-home">
+            <button
+              type="button"
+              className="ph-exit-tertiary"
+              data-testid="parent-hub-doors-home-link"
+            >
+              {t("parent_hub.rooms.back_home", {
+                defaultValue: "Back to Today Home",
+              })}
+            </button>
+          </AppLink>
         </div>
       </div>
     </div>

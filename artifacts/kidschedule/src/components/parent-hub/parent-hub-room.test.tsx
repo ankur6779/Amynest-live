@@ -15,8 +15,35 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-describe("Parent Hub Pack 3 destinations", () => {
-  it("entered Help shows intention + merged quiet names (not tip/learning mall)", () => {
+vi.mock("@/components/app-link", () => ({
+  AppLink: ({ children, href }: { children: React.ReactNode; href: string }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
+
+describe("Parent Hub Pack 4 living flow", () => {
+  it("highlights exactly one recommended path first", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="help"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai", "emotional", "speech-coach"]}
+        renderDestination={() => null}
+      />,
+    );
+
+    expect(screen.getByTestId("hub-dest-recommend-ask-amy")).toHaveTextContent(
+      "Start here",
+    );
+    expect(screen.queryByTestId("hub-dest-recommend-emotional")).toBeNull();
+    const rows = screen.getAllByTestId(/hub-dest-row-/);
+    expect(rows[0]).toHaveAttribute("data-testid", "hub-dest-row-ask-amy");
+  });
+
+  it("shows exit panel after opening a destination — Back to Home primary", () => {
     render(
       <ParentHubRoomsShell
         childName="Emma"
@@ -24,31 +51,18 @@ describe("Parent Hub Pack 3 destinations", () => {
         activeRoom="understand"
         onEnterRoom={vi.fn()}
         onExitRoom={vi.fn()}
-        visibleTileIds={[
-          "daily-tips",
-          "articles",
-          "new-parent-tips",
-          "birth-sky",
-          "answer-to-kids-how",
-          "smart-math-tricks",
-          "phonics",
-          "olympiad",
-        ]}
+        visibleTileIds={["daily-tips", "articles"]}
         renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
       />,
     );
 
-    expect(screen.getByTestId("hub-room-intention-understand")).toHaveTextContent(
-      "What can help me understand my child?",
-    );
-    expect(screen.getByTestId("hub-dest-row-guidance")).toBeTruthy();
-    expect(screen.getByTestId("hub-dest-row-grow")).toBeTruthy();
-    expect(screen.getByTestId("hub-dest-row-birth-sky")).toBeTruthy();
-    expect(screen.queryByTestId("hub-dest-row-daily-tips")).toBeNull();
-    expect(screen.queryByTestId("hub-dest-row-phonics")).toBeNull();
+    fireEvent.click(screen.getByTestId("hub-dest-row-guidance"));
+    fireEvent.click(screen.getByTestId("hub-dest-row-daily-tips"));
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-exit-home")).toBeTruthy();
   });
 
-  it("merge door reveals nested quiet members then opens existing module", () => {
+  it("Moments root stays ≤3 with Presence recommended", () => {
     render(
       <ParentHubRoomsShell
         childName="Emma"
@@ -56,34 +70,41 @@ describe("Parent Hub Pack 3 destinations", () => {
         activeRoom="moments"
         onEnterRoom={vi.fn()}
         onExitRoom={vi.fn()}
-        visibleTileIds={["activities", "origami-studio", "art-craft", "story-hub"]}
-        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        visibleTileIds={[
+          "activities",
+          "story-hub",
+          "worksheets",
+          "talking-amy",
+          "discovery-worlds",
+        ]}
+        renderDestination={() => null}
       />,
     );
 
-    fireEvent.click(screen.getByTestId("hub-dest-row-presence"));
-    expect(screen.getByTestId("hub-dest-nested-presence")).toBeTruthy();
-    expect(screen.getByTestId("hub-dest-row-activities")).toBeTruthy();
-
-    fireEvent.click(screen.getByTestId("hub-dest-row-activities"));
-    expect(screen.getByTestId("mod-activities")).toBeTruthy();
+    expect(screen.getByTestId("hub-dest-recommend-presence")).toHaveTextContent(
+      "Try this together",
+    );
+    expect(screen.getByTestId("hub-dest-row-presence")).toBeTruthy();
+    expect(screen.getByTestId("hub-dest-row-story")).toBeTruthy();
+    expect(screen.getByTestId("hub-dest-row-make")).toBeTruthy();
+    expect(screen.queryByTestId("hub-dest-row-talking-amy")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-discovery-worlds")).toBeNull();
   });
 
-  it("deep-link focus opens merge door and member module", () => {
+  it("Care recommends Infant Care for infants", () => {
     render(
       <ParentHubRoomsShell
         childName="Emma"
-        isInfant={false}
-        activeRoom="understand"
+        isInfant
+        activeRoom="care"
         onEnterRoom={vi.fn()}
         onExitRoom={vi.fn()}
-        focusTileId="phonics"
-        visibleTileIds={["phonics", "smart-math-tricks", "daily-tips"]}
-        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        visibleTileIds={["infant-hub", "nutrition"]}
+        renderDestination={() => null}
       />,
     );
-
-    expect(screen.getByTestId("hub-dest-nested-grow")).toBeTruthy();
-    expect(screen.getByTestId("mod-phonics")).toBeTruthy();
+    expect(screen.getByTestId("hub-dest-recommend-infant-care")).toHaveTextContent(
+      "Today's care",
+    );
   });
 });

@@ -33,8 +33,16 @@ describe("Pack 3 destinations", () => {
     );
 
     const moments = ROOM_DESTINATIONS.moments;
+    expect(moments.map((d) => d.id)).toEqual(["presence", "story", "make"]);
     expect(moments.find((d) => d.id === "presence")?.tileIds).toEqual(
-      expect.arrayContaining(["activities", "origami-studio", "art-craft"]),
+      expect.arrayContaining([
+        "activities",
+        "origami-studio",
+        "art-craft",
+        "talking-amy",
+        "discovery-worlds",
+        "event-prep",
+      ]),
     );
     expect(moments.find((d) => d.id === "make")?.tileIds).toEqual(
       expect.arrayContaining(["worksheets", "coloring-books", "fun-sheets"]),
@@ -58,6 +66,7 @@ describe("Pack 3 destinations", () => {
     expect(destinationIdForTile("phonics")).toBe("grow");
     expect(destinationIdForTile("worksheets")).toBe("make");
     expect(destinationIdForTile("activities")).toBe("presence");
+    expect(destinationIdForTile("talking-amy")).toBe("presence");
     expect(destinationIdForTile("amy-ai")).toBe("ask-amy");
   });
 
@@ -79,5 +88,8 @@ describe("Pack 3 destinations", () => {
     // No product-mall residue as primary names
     expect(names).not.toContain("Smart Math Tricks");
     expect(names).not.toContain("Daily Tips");
+    // Pack 4 — Moments root ceiling
+    expect(ROOM_DESTINATIONS.moments).toHaveLength(3);
+    expect(names).not.toContain("Discovery Worlds");
   });
 });

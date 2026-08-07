@@ -260,6 +260,76 @@
   padding: 0.55rem;
 }
 
+/* Pack 4 — one recommendation, quiet exit */
+.ph-dest-row--recommended {
+  border-color: rgba(232, 212, 184, 0.28);
+  background: rgba(16, 12, 20, 0.55);
+}
+
+.ph-dest-recommend {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.72);
+}
+
+.ph-exit-panel {
+  margin-top: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(232, 212, 184, 0.14);
+  background: rgba(8, 6, 12, 0.42);
+}
+
+.ph-exit-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(244, 238, 230, 0.88);
+}
+
+.ph-exit-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ph-exit-primary,
+.ph-exit-secondary,
+.ph-exit-tertiary {
+  width: 100%;
+  text-align: center;
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ph-exit-primary {
+  border: 1px solid rgba(232, 212, 184, 0.28);
+  background: rgba(232, 212, 184, 0.14);
+  color: rgba(244, 238, 230, 0.95);
+}
+
+.ph-exit-secondary {
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: transparent;
+  color: rgba(232, 212, 184, 0.82);
+}
+
+.ph-exit-tertiary {
+  border: none;
+  background: transparent;
+  color: rgba(232, 212, 184, 0.55);
+  font-weight: 500;
+  font-size: 0.78rem;
+  padding: 0.35rem;
+}
+
 /* Soften marketing card energy inside the quiet slot — no module rewrite */
 .ph-module-quiet > * {
   transform: none !important;

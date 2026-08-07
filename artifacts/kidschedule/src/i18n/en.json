@@ -3737,6 +3737,20 @@
         "intention": "What beautiful moment can we share?"
       }
     },
+    "flow": {
+      "recommend": {
+        "help": "Start here",
+        "understand": "Today's guidance",
+        "care": "Today's care",
+        "moments": "Try this together"
+      },
+      "exit": {
+        "title": "Ready to continue?",
+        "home": "Back to Home",
+        "continue": "Continue today",
+        "another_room": "Another room"
+      }
+    },
     "destinations": {
       "ask_amy": { "title": "Ask Amy", "purpose": "Ask one calm question now" },
       "emotional": { "title": "Emotional Support", "purpose": "When feelings are heavy" },
