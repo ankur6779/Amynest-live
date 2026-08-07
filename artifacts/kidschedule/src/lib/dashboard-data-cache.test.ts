@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EMPTY_DASHBOARD_SUMMARY,
   fetchDashboardSummaryResilient,
+  fetchSubscriptionResilient,
   formatDashboardSyncLabel,
   hasDashboardStaleCache,
   persistDashboardSummary,
@@ -9,6 +10,7 @@ import {
   readCachedDashboardSummary,
   readCachedSubscription,
   readDashboardSyncTimestamp,
+  readPersistedSubscription,
   touchDashboardSyncTimestamp,
 } from "@/lib/dashboard-data-cache";
 import type { SubscriptionResponse } from "@/hooks/use-subscription";
@@ -87,5 +89,29 @@ describe("dashboard-data-cache", () => {
     expect(cached?.entitlements.isPremium).toBe(false);
     expect(cached?.entitlements.plan).toBe("free");
     expect(cached?.entitlements.provider).toBe("none");
+    // Raw persist keeps premium for offline resilient fallback.
+    expect(readPersistedSubscription("user_a")?.entitlements.isPremium).toBe(true);
+  });
+
+  it("fetchSubscriptionResilient preserves last-known premium on fetch failure", async () => {
+    const premium: SubscriptionResponse = {
+      ...EMPTY_SUBSCRIPTION_RESPONSE,
+      entitlements: {
+        ...EMPTY_SUBSCRIPTION_RESPONSE.entitlements,
+        plan: "yearly",
+        status: "active",
+        isPremium: true,
+        isPremiumSubscriber: true,
+        currentPeriodEnd: "2099-01-01T00:00:00.000Z",
+        provider: "revenuecat",
+      },
+    };
+    persistSubscription(premium, "user_premium");
+
+    const authFetch = vi.fn().mockRejectedValue(new Error("offline"));
+    const result = await fetchSubscriptionResilient(authFetch, "user_premium");
+    expect(result.entitlements.isPremium).toBe(true);
+    expect(result.entitlements.plan).toBe("yearly");
+    expect(result.entitlements.provider).toBe("revenuecat");
   });
 });
