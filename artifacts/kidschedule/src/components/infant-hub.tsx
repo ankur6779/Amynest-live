@@ -47,7 +47,12 @@ import {
   isInfantCareLivingV1Enabled,
   recommendInfantCareAction,
 } from "@/lib/infant-care/living-room";
+import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
+import "@/pages/first-experience-material.css";
 import "@/components/infant/infant-care-living-room.css";
+
+/** Same Care FE photograph as Parent Hub Care room — continuity, not a new language. */
+const INFANT_CARE_MEMORY = ROOM_HEROES.care;
 
 interface InfantHubProps {
   childId: number;
@@ -910,55 +915,87 @@ export function InfantHub({
         className="infant-care-living"
         data-section-id="infant-hub"
         data-ph-pack="infant-2"
+        data-ph-visual="regression-fix"
+        data-fe-shot={INFANT_CARE_MEMORY.shot}
         data-testid="infant-care-living"
       >
-        <header className="ic-today-hero" data-testid="infant-care-today-hero">
-          <p className="ic-today-eyebrow">
-            {t("infant_care.living.eyebrow", "Today's Care")}
-          </p>
-          <h2 className="ic-today-title">
-            {t("infant_care.living.title", {
-              name: childName,
-              defaultValue: `What should I care for with ${childName}?`,
-            })}
-          </h2>
-          <p className="ic-today-purpose">
-            {t("infant_care.living.purpose", {
-              age: ageLabel,
-              defaultValue: "One calm next step — sleep, feed, comfort, growth.",
-            })}
-          </p>
-          <button
-            type="button"
-            className="ic-recommend-btn"
-            data-testid="infant-care-recommend"
-            onClick={() => scrollToSection(careRecommend.sectionId)}
-          >
-            <span className="ic-recommend-cue">{careRecommend.label}</span>
-            <span className="ic-recommend-title">{careRecommend.title}</span>
-            <span className="ic-recommend-purpose">{careRecommend.purpose}</span>
-          </button>
-        </header>
+        <div className="ic-living-surface" data-testid="infant-care-living-surface">
+          <header className="ic-today-hero" data-testid="infant-care-today-hero">
+            <div
+              className="fe-memory-mount ic-today-memory"
+              data-testid="infant-care-visual-memory"
+              data-fe-shot={INFANT_CARE_MEMORY.shot}
+            >
+              <div className="fe-memory-spill" aria-hidden="true" />
+              <div className="fe-memory">
+                <img
+                  src={INFANT_CARE_MEMORY.src}
+                  alt={INFANT_CARE_MEMORY.alt}
+                  draggable={false}
+                  decoding="async"
+                  fetchPriority="high"
+                />
+                <div className="fe-memory-veil" aria-hidden="true" />
+                <div className="fe-memory-glass" aria-hidden="true" />
+                <div className="fe-memory-grain" aria-hidden="true" />
+                <div className="ic-today-readability" aria-hidden="true" />
+                <div className="ic-today-copy">
+                  <p className="ic-today-eyebrow">
+                    {t("infant_care.living.eyebrow", "Today's Care")}
+                  </p>
+                  <h2 className="ic-today-title">
+                    {t("infant_care.living.title", {
+                      name: childName,
+                      defaultValue: `What should I care for with ${childName}?`,
+                    })}
+                  </h2>
+                  <p className="ic-today-purpose">
+                    {t("infant_care.living.purpose", {
+                      age: ageLabel,
+                      defaultValue: "One calm next step — sleep, feed, comfort, growth.",
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="ic-recommend-btn"
+              data-testid="infant-care-recommend"
+              onClick={() => scrollToSection(careRecommend.sectionId)}
+            >
+              <span className="ic-recommend-cue">{careRecommend.label}</span>
+              <span className="ic-recommend-title">{careRecommend.title}</span>
+              <span className="ic-recommend-purpose">{careRecommend.purpose}</span>
+            </button>
+          </header>
 
-        {activationLoading ? (
-          <InfantActivationFlowSkeleton />
-        ) : showActivationUi && activation ? (
-          <InfantActivationFlow
-            childId={childId}
-            childName={childName}
-            ageMonths={ageMonths}
-            activation={activation}
-            onNavigate={scrollToSection}
-          />
-        ) : null}
+          {activationLoading ? (
+            <div className="px-3 pb-2">
+              <InfantActivationFlowSkeleton />
+            </div>
+          ) : showActivationUi && activation ? (
+            <div className="px-3 pb-2">
+              <InfantActivationFlow
+                childId={childId}
+                childName={childName}
+                ageMonths={ageMonths}
+                activation={activation}
+                onNavigate={scrollToSection}
+              />
+            </div>
+          ) : null}
 
-        <p className="ic-quiet-label">
-          {t("infant_care.living.quiet_paths", "Quiet care paths")}
-        </p>
-        <div className="ic-quiet-list" data-testid="infant-care-quiet-paths">
-          {quietOrder.map((id) => (
-            <div key={id}>{quietPrimary[id]}</div>
-          ))}
+          <div className="ic-quiet-band">
+            <p className="ic-quiet-label">
+              {t("infant_care.living.quiet_paths", "Quiet care paths")}
+            </p>
+            <div className="ic-quiet-list" data-testid="infant-care-quiet-paths">
+              {quietOrder.map((id) => (
+                <div key={id}>{quietPrimary[id]}</div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div>
