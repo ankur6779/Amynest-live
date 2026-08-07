@@ -147,7 +147,7 @@ No DB reverse. Destination deep-link URLs unchanged.
 
 ## Commit SHA
 
-_Pending — filled at commit time as `PACK1_COMMIT_SHA`._
+`6e33e43462a42a601e1b63efd77f92c2767cef88`
 
 ---
 
