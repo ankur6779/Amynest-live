@@ -1,10 +1,10 @@
 # Child Discovery Phase 2 — Founder Review Pack
 
-**Status:** Implemented — awaiting Six Reviews verdict  
+**Status:** PERMANENTLY FROZEN with Discovery surface (Founder Order — Today Home V1 R8)  
 **Commit surface:** Child Discovery Film on `/onboarding`  
 **Kill switch:** `VITE_FF_CHILD_DISCOVERY_FILM=0` → legacy chat  
 
-Welcome V3 frozen. Signup Keep frozen. **Today Home not started.**
+Welcome V3 frozen. Signup Keep frozen. Child Discovery frozen. **Today Home open — Phase 1 only** → `docs/v2/TODAY_HOME_BLUEPRINT.md`.
 
 ---
 

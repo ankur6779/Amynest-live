@@ -1,16 +1,16 @@
 # Child Discovery Blueprint — Phase 1 (Study Only)
 
-**Status:** FOUNDER APPROVED — Phase 2 implemented (see `CHILD_DISCOVERY_PHASE2_FOUNDER_REVIEW.md`)  
+**Status:** PERMANENTLY FROZEN (Founder Order — Today Home V1 R8)  
 **Date:** 2026-08-07  
 **Branch:** `cursor/product-execution-model-v2`  
-**Authority:** Founder Order — Child Discovery Phase 2  
+**Authority:** Founder Order — Child Discovery Phase 2 → freeze before Today Home  
 
 | Surface | Status |
 |---|---|
 | Welcome V3 (`/begin`) | Permanently frozen |
 | Signup Keep Experience | Permanently frozen |
-| Child Discovery | Phase 2 film on `/onboarding` (kill switch `VITE_FF_CHILD_DISCOVERY_FILM=0`) |
-| Today Home | NOT STARTED — STOP |
+| Child Discovery | Permanently frozen (film + Phase 3 craft; kill switch retained) |
+| Today Home | OPEN — Phase 1 study — `docs/v2/TODAY_HOME_BLUEPRINT.md` |
 
 ---
 

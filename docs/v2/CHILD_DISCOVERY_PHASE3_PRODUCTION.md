@@ -1,8 +1,9 @@
 # Child Discovery Phase 3 — Production Manufacturing
 
-**Status:** Implemented — awaiting Founder Six Reviews / Ship decision  
-**Frozen:** Welcome V3 · Signup Keep · Day-0 Discovery questions  
-**Not started:** Today Home  
+**Status:** PERMANENTLY FROZEN (Founder Order — Today Home V1 R8)  
+**Frozen:** Welcome V3 · Signup Keep · Child Discovery (questions + Phase 3 craft)  
+**Open next:** Today Home — Phase 1 blueprint only — `docs/v2/TODAY_HOME_BLUEPRINT.md`  
+
 
 ---
 
@@ -196,6 +197,6 @@ Expected: modest lift on Discovery completion vs Phase 2 flat shell; measure wit
 
 **Founder Score: 91 / 100** (self)  
 
-**Ship recommendation:** **SHIP Phase 3 craft** with kill switch live — **STOP before Today Home.**  
+**Ship recommendation:** **SHIP Phase 3 craft** — surface now **PERMANENTLY FROZEN**.  
 
-Await Founder approval.
+Today Home Phase 1 delivered: `docs/v2/TODAY_HOME_BLUEPRINT.md` — **await Founder approval before Home code.**

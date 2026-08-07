@@ -141,9 +141,10 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Welcome (R1–R3.6 + Philosophy) | Permanently frozen |
 | Signup Keep (R6) | Permanently frozen |
 | Child Discovery Day-0 questions | Permanently frozen |
-| Child Discovery Phase 3 craft | Production manufacturing — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
+| Child Discovery Phase 3 craft | Permanently frozen — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
+| Today Home | OPEN — Phase 1 study complete — `docs/v2/TODAY_HOME_BLUEPRINT.md` — **await Founder approval before code** |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 | Reuse Before Rewrite | Absolute — discover → reuse/refactor → new only if architecture cannot support |
 
-See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`
+See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` · `docs/v2/TODAY_HOME_BLUEPRINT.md`

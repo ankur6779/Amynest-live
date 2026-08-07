@@ -3,7 +3,7 @@
 **Status:** PERMANENTLY FROZEN — Founder approved  
 **Authority:** Four Pillars · Welcome V3 freeze · Founder keep ritual brief  
 **Frozen:** Welcome / `/begin` · Signup Keep Experience  
-**Next:** Child Discovery — see `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md` (Phase 1 study)
+**Next (frozen chain):** Child Discovery permanently frozen · Today Home Phase 1 — `docs/v2/TODAY_HOME_BLUEPRINT.md`
 
 ## Emotional goal
 
