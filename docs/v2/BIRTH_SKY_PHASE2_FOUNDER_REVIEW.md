@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Birth Sky Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(stamped after commit)_
+**Commit SHA:** `9bfb2c65` (`9bfb2c65508fd628c014c5e2a72271e5395125d2`)
 
 **STOP after this module.** Next destination only after Founder acceptance.
 
