@@ -21,6 +21,10 @@
  * Manufacturing Law — Six Reviews (Founder absolute):
  *   Founder · Parent · Apple Craft · Engineering · Database · Growth
  *   All six must PASS or the feature is not COMPLETE.
+ *
+ * Reuse Before Rewrite (Founder absolute):
+ *   If it exists in the codebase — discover, reuse, or refactor.
+ *   New implementation only when architecture cannot support the use case.
  */
 
 /** The Five Immutable Principles of AmyNest */
@@ -195,6 +199,57 @@ export type ManufacturingReviewVerdict = Record<ManufacturingReviewId, boolean>;
 /** COMPLETE only when all six reviews are true. Partial credit does not ship. */
 export function isManufacturingComplete(verdicts: ManufacturingReviewVerdict): boolean {
   return MANUFACTURING_SIX_REVIEWS.every((review) => verdicts[review.id] === true);
+}
+
+/**
+ * Reuse Before Rewrite — Founder absolute.
+ * Discover existing capability first. Greenfield only when architecture cannot support the use case.
+ */
+export const REUSE_BEFORE_REWRITE_LAW = {
+  id: "reuse-before-rewrite",
+  axioms: [
+    "If functionality already exists in the codebase, discover it first.",
+    "Reuse or safely refactor what exists.",
+    "Create a new implementation only when existing architecture cannot support the use case.",
+  ],
+} as const;
+
+export type ReuseBeforeRewriteInput = {
+  /** True after searching the codebase for an existing capability. */
+  existingCapabilityDiscovered: boolean;
+  /** True when an existing module/API/schema/UI can be reused or safely extended. */
+  existingArchitectureSupportsUseCase: boolean;
+};
+
+export type ReuseBeforeRewriteResult = {
+  allowedNewImplementation: boolean;
+  action: "reuse-or-refactor" | "create-new" | "discover-first";
+  reason: string;
+};
+
+/** Gate before writing a parallel implementation. */
+export function mayCreateNewImplementation(
+  input: ReuseBeforeRewriteInput,
+): ReuseBeforeRewriteResult {
+  if (!input.existingCapabilityDiscovered) {
+    return {
+      allowedNewImplementation: false,
+      action: "discover-first",
+      reason: "Discover existing functionality in the codebase before building new.",
+    };
+  }
+  if (input.existingArchitectureSupportsUseCase) {
+    return {
+      allowedNewImplementation: false,
+      action: "reuse-or-refactor",
+      reason: "Reuse or safely refactor the existing implementation.",
+    };
+  }
+  return {
+    allowedNewImplementation: true,
+    action: "create-new",
+    reason: "Existing architecture cannot support the use case — new implementation justified.",
+  };
 }
 
 /** Notification litmus — every push must make a tired parent feel lighter. */

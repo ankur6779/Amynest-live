@@ -80,16 +80,25 @@ If it improves visuals but hurts conversion → **reject it.**
 
 ---
 
-## Engineering Rule
+## Engineering Rule — Reuse Before Rewrite (absolute)
+
+If functionality already exists in the codebase:
+
+1. **Discover** it first  
+2. **Reuse** or **safely refactor** it  
+3. Build a **new** implementation only when existing architecture cannot support the use case  
 
 Before implementation:
 
-1. Study existing production code  
-2. Understand dependencies  
-3. Identify risks  
+1. Search for existing modules, APIs, schema, UI primitives, and helpers  
+2. Study production dependencies and callers  
+3. Prefer extend/adapt over duplicate  
 4. Preserve every business rule  
 5. Refactor only when safe  
 6. Never rewrite stable systems unnecessarily  
+7. Document why a greenfield path was required (if ever)
+
+**FAIL:** parallel implementations of the same capability without justification.  
 
 ---
 
@@ -135,5 +144,6 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Child Discovery Phase 3 craft | Production manufacturing — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
+| Reuse Before Rewrite | Absolute — discover → reuse/refactor → new only if architecture cannot support |
 
 See also: `docs/WELCOME_V3_PRODUCTION_FOUNDATION.md` · `docs/AMYNEST_PHILOSOPHY.md` · `docs/AMYNEST_MANUFACTURING_LAW.md` · `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` · `docs/v2/CHILD_DISCOVERY_BLUEPRINT.md`

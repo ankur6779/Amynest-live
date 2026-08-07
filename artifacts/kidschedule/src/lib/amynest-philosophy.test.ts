@@ -6,9 +6,11 @@ import {
   MANUFACTURING_SIX_REVIEWS,
   PREMIUM_VOICE,
   QUESTION_TAX_LAW,
+  REUSE_BEFORE_REWRITE_LAW,
   answerLeftParentSmarter,
   isManufacturingComplete,
   mayAskParentQuestion,
+  mayCreateNewImplementation,
   notificationFeelsLighter,
   violatesAmyNestVoice,
 } from "./amynest-philosophy";
@@ -62,6 +64,33 @@ describe("AmyNest philosophy", () => {
         growth: false,
       }),
     ).toBe(false);
+  });
+
+  it("locks Reuse Before Rewrite and blocks unjustified greenfield", () => {
+    expect(REUSE_BEFORE_REWRITE_LAW.id).toBe("reuse-before-rewrite");
+    expect(REUSE_BEFORE_REWRITE_LAW.axioms).toHaveLength(3);
+    expect(
+      mayCreateNewImplementation({
+        existingCapabilityDiscovered: false,
+        existingArchitectureSupportsUseCase: false,
+      }).action,
+    ).toBe("discover-first");
+    expect(
+      mayCreateNewImplementation({
+        existingCapabilityDiscovered: true,
+        existingArchitectureSupportsUseCase: true,
+      }),
+    ).toEqual({
+      allowedNewImplementation: false,
+      action: "reuse-or-refactor",
+      reason: "Reuse or safely refactor the existing implementation.",
+    });
+    expect(
+      mayCreateNewImplementation({
+        existingCapabilityDiscovered: true,
+        existingArchitectureSupportsUseCase: false,
+      }).allowedNewImplementation,
+    ).toBe(true);
   });
 
   it("locks the Question Tax Law axioms", () => {

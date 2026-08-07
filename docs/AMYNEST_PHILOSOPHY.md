@@ -65,6 +65,14 @@ Automatic FAIL:
 
 Full law: `docs/AMYNEST_MANUFACTURING_LAW.md`
 
+## Reuse Before Rewrite (Founder — Absolute)
+
+If functionality already exists in the codebase, discover it first and reuse or refactor it.
+
+Create a new implementation only when the existing architecture cannot support the use case.
+
+Never invent a parallel system out of convenience.
+
 ## Premium Voice
 
 Never: Buy · Unlock · Limited · Ending soon  
