@@ -146,7 +146,9 @@ import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
 import { ParentHubRoomsShell } from "@/components/parent-hub/parent-hub-rooms-shell";
+import "@/components/parent-hub/parent-hub-living-room.css";
 import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
+import { roomsV1AllowsQuietChildIdentity } from "@/lib/parent-hub/legacy-chrome";
 import {
   isHubTileRemovedFromRooms,
   roomForLegacyGroup,
@@ -791,7 +793,7 @@ function ChildSelectorPanel({
     </div>;
 }
 
-// ─── Infant 3-day trial intro banner ─────────────────────────────────────────
+// ─── Infant 3-day trial intro banner (legacy mall only — Pack 4.9 removes on Rooms V1)
 function InfantTrialBanner({ childName }: { childName: string }) {
   const { t } = useTranslation();
   return (
@@ -819,6 +821,43 @@ function InfantTrialBanner({ childName }: { childName: string }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Pack 4.9 — multi-child only; never a marketing panel; never above rooms for single child. */
+function QuietChildIdentity({
+  childList,
+  effectiveChild,
+  onSelect,
+}: {
+  childList: any[];
+  effectiveChild: any;
+  onSelect: (id: number) => void;
+}) {
+  if (!roomsV1AllowsQuietChildIdentity(childList.length)) return null;
+  return (
+    <div
+      className="ph-quiet-child-identity"
+      data-testid="parent-hub-quiet-child-identity"
+      role="list"
+      aria-label="Children"
+    >
+      {childList.map((child: any) => {
+        const active = effectiveChild?.id === child?.id;
+        return (
+          <button
+            key={child?.id}
+            type="button"
+            role="listitem"
+            data-active={active ? "true" : "false"}
+            className="ph-quiet-child-chip"
+            onClick={() => onSelect(child.id)}
+          >
+            {child?.name ?? "Child"}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1168,8 +1207,15 @@ function ParentingHubPage() {
 
   // ── No children ───────────────────────────────────────────────────────────
   if (childList.length === 0) {
-    return <div className="max-w-2xl mx-auto space-y-6">{/* keep narrow for empty state */}
-        <PageHeader />
+    return (
+      <div
+        className={cn(
+          roomsV1 ? "parent-hub-sanctuary" : undefined,
+          "max-w-2xl mx-auto space-y-6",
+        )}
+      >
+        {/* Pack 4.9 — no science/patent header on Rooms V1 empty state */}
+        {!roomsV1 ? <PageHeader /> : null}
         <Card className="rounded-3xl border-2 border-dashed">
           <CardContent className="p-10 text-center space-y-4">
             <AmyIcon size={56} bounce />
@@ -1184,7 +1230,8 @@ function ParentingHubPage() {
             </AddChildLink>
           </CardContent>
         </Card>
-      </div>;
+      </div>
+    );
   }
 
   // ── Two-section layout: For You (current band) + Explore What's Next (2+ preview) ──
@@ -2019,130 +2066,141 @@ function ParentingHubPage() {
     <HubSectionPointsContext.Provider value={awardHubSectionPoints}>
     <div
       className={cn(
-        PARENT_HUB_PAGE,
+        roomsV1 ? "parent-hub-sanctuary" : PARENT_HUB_PAGE,
         "mx-auto w-full max-w-full space-y-4 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] md:max-w-6xl",
       )}
+      data-ph-pack={roomsV1 ? "4.9" : undefined}
+      data-testid={roomsV1 ? "parent-hub-sanctuary-page" : "parent-hub-legacy-page"}
     >
-      <PageHeader />
-
-      {/* ── Child Selector Panel ────────────────────────────────────────── */}
-      <ChildSelectorPanel childList={childList} effectiveChild={effectiveChild} onSelect={handleChildSelect} />
-
-      {effectiveChild && isInfant && !hubUsage.isPremium && hubJourney.isFreeJourneyPeriod && (
-        <InfantTrialBanner childName={effectiveChild.name} />
-      )}
-
-      {effectiveChild && (
+      {/* Pack 4.9 Rooms V1: first frame is the room — no science/patent/pulse/unlock theatre */}
+      {!roomsV1 ? (
         <>
-          <HubJourneyPulse
-            childName={effectiveChild.name}
-            bandLabel={currentBand ? bandLabel(currentBand) : undefined}
-            isInfant={isInfant}
-            isPremium={hubUsage.isPremium}
-            access={hubJourney.access}
-            journeyProgress={hubJourney.progress}
-            pathSteps={hubJourney.status?.pathSteps}
-            pathCompleted={hubJourney.status?.pathCompleted}
-            isJourneyLocked={hubJourney.isJourneyLocked}
-            learningProfile={learningProgress.profile}
-            wallet={learningProgress.phase3?.wallet ?? null}
-            onOpenLearning={roomsV1 ? () => undefined : openLearningPanel}
+          <PageHeader />
+          <ChildSelectorPanel
+            childList={childList}
+            effectiveChild={effectiveChild}
+            onSelect={handleChildSelect}
           />
-
-          {roomsV1 ? (
-            hubJourney.status ? (
-              <div data-testid="parent-hub-quiet-path" className="opacity-95">
-                <TodaysPathFromStatus
-                  status={hubJourney.status}
-                  isPremium={hubUsage.isPremium}
-                  isJourneyLocked={hubJourney.isJourneyLocked}
-                  onComplete={hubJourney.completePath}
-                  onPeekAhead={hubJourney.peekAheadUnlock}
-                  isCompleting={hubJourney.isCompleting}
-                />
-              </div>
-            ) : null
-          ) : (
-          <HubTodayLearningPanel
-            childName={effectiveChild.name}
-            open={learningPanelOpen}
-            onOpenChange={setLearningPanelOpen}
-            panelRef={learningPanelRef}
-            weeklyReport={hubUsage.isPremium ? learningProgress.weeklyReport ?? null : null}
-            showGrowthLink={hubUsage.isPremium && !!learningProgress.phase3}
-            growthLinkLabel={t("parent_hub.today_summary.growth_link")}
-          >
-            {hubJourney.status ? (
-              <TodaysPathFromStatus
-                status={hubJourney.status}
+          {effectiveChild &&
+            isInfant &&
+            !hubUsage.isPremium &&
+            hubJourney.isFreeJourneyPeriod && (
+              <InfantTrialBanner childName={effectiveChild.name} />
+            )}
+          {effectiveChild ? (
+            <>
+              <HubJourneyPulse
+                childName={effectiveChild.name}
+                bandLabel={currentBand ? bandLabel(currentBand) : undefined}
+                isInfant={isInfant}
                 isPremium={hubUsage.isPremium}
+                access={hubJourney.access}
+                journeyProgress={hubJourney.progress}
+                pathSteps={hubJourney.status?.pathSteps}
+                pathCompleted={hubJourney.status?.pathCompleted}
                 isJourneyLocked={hubJourney.isJourneyLocked}
-                onComplete={hubJourney.completePath}
-                onPeekAhead={hubJourney.peekAheadUnlock}
-                isCompleting={hubJourney.isCompleting}
+                learningProfile={learningProgress.profile}
+                wallet={learningProgress.phase3?.wallet ?? null}
+                onOpenLearning={openLearningPanel}
               />
-            ) : null}
-            {learningProgress.phase3?.comeback ? (
-              <ComebackMissionCard mission={learningProgress.phase3.comeback} />
-            ) : null}
-            {learningProgress.phase3 && !showSessionComplete ? (
-              <DailyLearningSessionCard
-                session={learningProgress.phase3.dailySession}
-                childId={effectiveChild.id}
+              <HubTodayLearningPanel
                 childName={effectiveChild.name}
-                onStepComplete={handleSessionStep}
-                completing={learningProgress.isCompleting}
-                parentHub
-              />
-            ) : null}
-            {showSessionComplete && learningProgress.phase3 && learningProgress.unlocks ? (
-              <SessionCompleteScreen
-                xpEarned={
-                  rewardCelebrations.events.reduce((sum, e) => sum + (e.amount ?? 0), 0) ||
-                  25
+                open={learningPanelOpen}
+                onOpenChange={setLearningPanelOpen}
+                panelRef={learningPanelRef}
+                weeklyReport={
+                  hubUsage.isPremium ? learningProgress.weeklyReport ?? null : null
                 }
-                rewardEvents={rewardCelebrations.events.length > 0 ? rewardCelebrations.events : []}
-                tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
-                childName={effectiveChild.name}
-                activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
-                activitiesTotal={learningProgress.phase3.dailySession.totalCount}
-                streakDays={learningProgress.phase3.wallet.streakDays}
-                skillHighlight={runtimeHubRecommendations[0]?.title ?? null}
-                onClose={() => setShowSessionComplete(false)}
-              />
-            ) : null}
-            {runtimeHubRecommendations.length > 0 ? (
-              <AdaptiveRecommendationsChips
-                items={runtimeHubRecommendations}
-                parentHub
-              />
-            ) : null}
-            {learningProgress.unlocks ? (
-              <div className={HUB_GRID_CONTAINER}>
-                <div className={HUB_TODAY_LEARNING_GRID}>
-                <DailyFreshnessCard
-                  items={learningProgress.unlocks.todaysUnlocks}
-                  isRevisionDay={learningProgress.unlocks.isRevisionDay}
-                  parentHub
-                />
-                <NextSessionUnlocks
-                  items={learningProgress.unlocks.nextSessionUnlocks}
-                  childName={effectiveChild.name}
-                  onVisible={trackNextSessionOpened}
-                />
-                </div>
-              </div>
-            ) : null}
-          </HubTodayLearningPanel>
-          )}
+                showGrowthLink={hubUsage.isPremium && !!learningProgress.phase3}
+                growthLinkLabel={t("parent_hub.today_summary.growth_link")}
+              >
+                {hubJourney.status ? (
+                  <TodaysPathFromStatus
+                    status={hubJourney.status}
+                    isPremium={hubUsage.isPremium}
+                    isJourneyLocked={hubJourney.isJourneyLocked}
+                    onComplete={hubJourney.completePath}
+                    onPeekAhead={hubJourney.peekAheadUnlock}
+                    isCompleting={hubJourney.isCompleting}
+                  />
+                ) : null}
+                {learningProgress.phase3?.comeback ? (
+                  <ComebackMissionCard mission={learningProgress.phase3.comeback} />
+                ) : null}
+                {learningProgress.phase3 && !showSessionComplete ? (
+                  <DailyLearningSessionCard
+                    session={learningProgress.phase3.dailySession}
+                    childId={effectiveChild.id}
+                    childName={effectiveChild.name}
+                    onStepComplete={handleSessionStep}
+                    completing={learningProgress.isCompleting}
+                    parentHub
+                  />
+                ) : null}
+                {showSessionComplete &&
+                learningProgress.phase3 &&
+                learningProgress.unlocks ? (
+                  <SessionCompleteScreen
+                    xpEarned={
+                      rewardCelebrations.events.reduce(
+                        (sum, e) => sum + (e.amount ?? 0),
+                        0,
+                      ) || 25
+                    }
+                    rewardEvents={
+                      rewardCelebrations.events.length > 0
+                        ? rewardCelebrations.events
+                        : []
+                    }
+                    tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
+                    childName={effectiveChild.name}
+                    activitiesCompleted={
+                      learningProgress.phase3.dailySession.completedCount
+                    }
+                    activitiesTotal={learningProgress.phase3.dailySession.totalCount}
+                    streakDays={learningProgress.phase3.wallet.streakDays}
+                    skillHighlight={runtimeHubRecommendations[0]?.title ?? null}
+                    onClose={() => setShowSessionComplete(false)}
+                  />
+                ) : null}
+                {runtimeHubRecommendations.length > 0 ? (
+                  <AdaptiveRecommendationsChips
+                    items={runtimeHubRecommendations}
+                    parentHub
+                  />
+                ) : null}
+                {learningProgress.unlocks ? (
+                  <div className={HUB_GRID_CONTAINER}>
+                    <div className={HUB_TODAY_LEARNING_GRID}>
+                      <DailyFreshnessCard
+                        items={learningProgress.unlocks.todaysUnlocks}
+                        isRevisionDay={learningProgress.unlocks.isRevisionDay}
+                        parentHub
+                      />
+                      <NextSessionUnlocks
+                        items={learningProgress.unlocks.nextSessionUnlocks}
+                        childName={effectiveChild.name}
+                        onVisible={trackNextSessionOpened}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </HubTodayLearningPanel>
+            </>
+          ) : null}
+          <RewardCelebrationModal
+            events={rewardCelebrations.events}
+            open={rewardCelebrations.open}
+            onClose={rewardCelebrations.close}
+          />
         </>
+      ) : (
+        <QuietChildIdentity
+          childList={childList}
+          effectiveChild={effectiveChild}
+          onSelect={handleChildSelect}
+        />
       )}
-
-      <RewardCelebrationModal
-        events={rewardCelebrations.events}
-        open={rewardCelebrations.open}
-        onClose={rewardCelebrations.close}
-      />
 
       {effectiveChild && currentBand && <>
           {roomsV1 ? (

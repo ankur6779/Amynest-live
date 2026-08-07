@@ -1,8 +1,57 @@
 /**
  * Parent Hub Pack 2 — living room sanctuary deltas.
+ * Pack 4.9 — page shell joins the same FE emotional universe (no purple mall wash).
  * Imports Welcome FE materials elsewhere; this file only scopes Hub seating.
  * Does NOT edit Welcome / Discovery / Today Home CSS files.
  */
+
+/* Pack 4.9 — Rooms V1 page inherits Welcome / Discovery / Today Home night light */
+.parent-hub-sanctuary {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  color: rgba(244, 238, 230, 0.94);
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 8%, rgba(232, 212, 184, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, #100d16 0%, #0a0810 42%, #030208 100%);
+}
+
+@media (min-width: 768px) {
+  .parent-hub-sanctuary {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Quiet multi-child identity — never a marketing panel */
+.ph-quiet-child-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.15rem 0.1rem 0.35rem;
+}
+
+.ph-quiet-child-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(232, 212, 184, 0.14);
+  background: rgba(8, 6, 12, 0.35);
+  color: rgba(232, 212, 184, 0.72);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.ph-quiet-child-chip[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.34);
+  background: rgba(232, 212, 184, 0.12);
+  color: rgba(244, 238, 230, 0.95);
+}
 
 .ph-living-shell {
   position: relative;
