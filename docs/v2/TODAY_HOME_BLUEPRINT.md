@@ -22,6 +22,19 @@ It answers **one question only**:
 
 > What is the next right thing for this child, today?
 
+### Today Home Law (Founder — Absolute)
+
+> If the parent has to decide what to do next, Today Home has failed.  
+> If Today Home has to decide what to do next, AmyNest has succeeded.
+
+| FAIL | SUCCEED |
+|---|---|
+| Parent scans options and chooses | Product names one next right thing |
+| Equal modules compete | Hierarchy is absolute |
+| Home is a menu | Home is a decision already made |
+
+Code DNA: `TODAY_HOME_LAW` · `passesTodayHomeLaw()` in `amynest-philosophy.ts`
+
 Within **three seconds** the parent must know:
 
 1. What matters today  
@@ -45,10 +58,11 @@ Never invert this hierarchy.
 ### Governing laws
 
 1. Four Pillars — Premium · Product · Production Safety · Conversion  
-2. Question Tax Law  
-3. Reuse Before Rewrite — discover existing capability first  
-4. Six Reviews — COMPLETE only if all six pass  
-5. Database first — reuse schema; no unnecessary migrations  
+2. **Today Home Law** — product decides next; parent never chooses among options  
+3. Question Tax Law  
+4. Reuse Before Rewrite — discover existing capability first  
+5. Six Reviews — COMPLETE only if all six pass  
+6. Database first — reuse schema; no unnecessary migrations  
 
 ---
 
@@ -348,6 +362,7 @@ If a widget does not move one of these → **do not ship it on Home**.
 
 ### Recommend REJECT
 
+- Any composition where the parent must decide what to do next (**Today Home Law FAIL**)  
 - New “Home 2” parallel route without kill switch  
 - New recommendation microservice for V1  
 - Dashboard of equal modules  

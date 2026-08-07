@@ -73,6 +73,21 @@ Create a new implementation only when the existing architecture cannot support t
 
 Never invent a parallel system out of convenience.
 
+## Today Home Law (Founder — Absolute)
+
+If the parent has to decide what to do next, Today Home has failed.
+
+If Today Home has to decide what to do next, AmyNest has succeeded.
+
+### Manufacturing consequences
+
+- Home must name **one** next right thing for this child today  
+- Competing modules, equal heroes, and feature malls are automatic FAIL  
+- The parent’s job is to act — never to choose among product options  
+- Within three seconds: what matters, why, what to do next  
+- Gate in code: `passesTodayHomeLaw()` · `TODAY_HOME_LAW`  
+- Blueprint: `docs/v2/TODAY_HOME_BLUEPRINT.md`
+
 ## Premium Voice
 
 Never: Buy · Unlock · Limited · Ending soon  

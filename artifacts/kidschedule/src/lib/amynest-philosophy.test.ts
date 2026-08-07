@@ -7,11 +7,13 @@ import {
   PREMIUM_VOICE,
   QUESTION_TAX_LAW,
   REUSE_BEFORE_REWRITE_LAW,
+  TODAY_HOME_LAW,
   answerLeftParentSmarter,
   isManufacturingComplete,
   mayAskParentQuestion,
   mayCreateNewImplementation,
   notificationFeelsLighter,
+  passesTodayHomeLaw,
   violatesAmyNestVoice,
 } from "./amynest-philosophy";
 import { PRE_SIGNUP_MESSAGES } from "./pre-signup-reengagement/content";
@@ -102,6 +104,35 @@ describe("AmyNest philosophy", () => {
       "If the product must ask, immediately demonstrate why the answer mattered.",
       "Parents should feel smarter after every answer, never more tired.",
     ]);
+  });
+
+  it("locks the Today Home Law — product decides next, parent never chooses among options", () => {
+    expect(TODAY_HOME_LAW.id).toBe("today-home");
+    expect(TODAY_HOME_LAW.axioms).toEqual([
+      "If the parent has to decide what to do next, Today Home has failed.",
+      "If Today Home has to decide what to do next, AmyNest has succeeded.",
+    ]);
+    expect(
+      passesTodayHomeLaw({
+        parentMustDecideWhatToDoNext: true,
+        productDecidesWhatToDoNext: true,
+      }).passed,
+    ).toBe(false);
+    expect(
+      passesTodayHomeLaw({
+        parentMustDecideWhatToDoNext: false,
+        productDecidesWhatToDoNext: false,
+      }).passed,
+    ).toBe(false);
+    expect(
+      passesTodayHomeLaw({
+        parentMustDecideWhatToDoNext: false,
+        productDecidesWhatToDoNext: true,
+      }),
+    ).toEqual({
+      passed: true,
+      reason: "If Today Home has to decide what to do next, AmyNest has succeeded.",
+    });
   });
 
   it("never asks when inference is safe", () => {

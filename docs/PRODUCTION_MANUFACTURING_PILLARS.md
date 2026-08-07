@@ -144,6 +144,7 @@ Beauty, emotion, trust, conversion, and engineering must pass together.
 | Child Discovery Phase 3 craft | Permanently frozen — `docs/v2/CHILD_DISCOVERY_PHASE3_PRODUCTION.md` |
 | Today Home | OPEN — Phase 1 study complete — `docs/v2/TODAY_HOME_BLUEPRINT.md` — **await Founder approval before code** |
 | Question Tax Law | Absolute — see `docs/AMYNEST_PHILOSOPHY.md` |
+| Today Home Law | Absolute — product decides next; parent never chooses among options |
 | Six Reviews Manufacturing Law | Absolute — see `docs/AMYNEST_MANUFACTURING_LAW.md` |
 | Reuse Before Rewrite | Absolute — discover → reuse/refactor → new only if architecture cannot support |
 

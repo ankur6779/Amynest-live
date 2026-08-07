@@ -25,6 +25,10 @@
  * Reuse Before Rewrite (Founder absolute):
  *   If it exists in the codebase — discover, reuse, or refactor.
  *   New implementation only when architecture cannot support the use case.
+ *
+ * Today Home Law (Founder absolute):
+ *   If the parent has to decide what to do next, Today Home has failed.
+ *   If Today Home has to decide what to do next, AmyNest has succeeded.
  */
 
 /** The Five Immutable Principles of AmyNest */
@@ -249,6 +253,54 @@ export function mayCreateNewImplementation(
     allowedNewImplementation: true,
     action: "create-new",
     reason: "Existing architecture cannot support the use case — new implementation justified.",
+  };
+}
+
+/**
+ * Today Home Law — Founder absolute.
+ * Home succeeds only when the product decides the next right thing.
+ */
+export const TODAY_HOME_LAW = {
+  id: "today-home",
+  axioms: [
+    "If the parent has to decide what to do next, Today Home has failed.",
+    "If Today Home has to decide what to do next, AmyNest has succeeded.",
+  ],
+} as const;
+
+export type TodayHomeLawInput = {
+  /** True when the parent must choose among competing next actions. */
+  parentMustDecideWhatToDoNext: boolean;
+  /** True when Home names one clear next right thing for this child today. */
+  productDecidesWhatToDoNext: boolean;
+};
+
+export type TodayHomeLawResult = {
+  passed: boolean;
+  reason: string;
+};
+
+/**
+ * Gate for Today Home composition.
+ * Competing choices for the parent = FAIL.
+ * One product-decided next right thing = PASS.
+ */
+export function passesTodayHomeLaw(input: TodayHomeLawInput): TodayHomeLawResult {
+  if (input.parentMustDecideWhatToDoNext) {
+    return {
+      passed: false,
+      reason: "If the parent has to decide what to do next, Today Home has failed.",
+    };
+  }
+  if (!input.productDecidesWhatToDoNext) {
+    return {
+      passed: false,
+      reason: "Today Home must decide the next right thing — silence is failure.",
+    };
+  }
+  return {
+    passed: true,
+    reason: "If Today Home has to decide what to do next, AmyNest has succeeded.",
   };
 }
 
