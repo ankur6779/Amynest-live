@@ -6,7 +6,7 @@
 **Blueprint:** `docs/v2/INFANT_CARE_PRODUCTION_BLUEPRINT.md` (APPROVED)  
 **Framework:** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(filled at push)_  
+**Commit SHA:** `41433545` (`4143354517ec577437722f5f2d6ea34e4628c3b7`)  
 
 **STOP after this module.** Speech Coach not started.
 
