@@ -163,7 +163,7 @@ Legacy mall restored. No DB reverse.
 
 ## Commit SHA
 
-_Pending — filled at commit time._
+`579b351c81ad2e61ad40401c06f4e820df472bbd`
 
 ---
 
