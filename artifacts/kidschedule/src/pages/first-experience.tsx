@@ -23,11 +23,13 @@ const AGE_OPTIONS: { id: FirstExperienceAgeBand; label: string }[] = [
   { id: "8-10", label: "8–10+" },
 ];
 
-const TODAY_OPTIONS: { id: FirstExperienceTodayContext; label: string; hint: string }[] = [
-  { id: "school", label: "School / care", hint: "They have somewhere to be" },
-  { id: "home", label: "Home day", hint: "Mostly at home today" },
-  { id: "unsure", label: "Not sure", hint: "Keep it flexible" },
+const TODAY_OPTIONS: { id: FirstExperienceTodayContext; label: string }[] = [
+  { id: "school", label: "School / care" },
+  { id: "home", label: "Home day" },
+  { id: "unsure", label: "Not sure" },
 ];
+
+type FePresence = "idle" | "acknowledge" | "grow" | "settle" | "exhale";
 
 function trackFtue(step: string, meta: Record<string, string | number | boolean | undefined> = {}) {
   trackMarketingEvent("first_experience_step" as never, { page: "first_experience", step, ...meta });
@@ -123,6 +125,8 @@ function Shell({
   answered,
   memory,
   openingBeat,
+  presence = "idle",
+  rhythm,
 }: {
   children: ReactNode;
   room: FeRoom;
@@ -136,6 +140,9 @@ function Shell({
     light?: string;
   };
   openingBeat?: boolean;
+  /** Emotional micro-moment — room acknowledges without celebration */
+  presence?: FePresence;
+  rhythm?: FirstExperienceTodayContext;
 }) {
   return (
     <div
@@ -146,6 +153,8 @@ function Shell({
       data-fe-eye={memory?.eyeLevel ?? ""}
       data-fe-answered={answered ? "true" : "false"}
       data-fe-opening={openingBeat ? "true" : "false"}
+      data-fe-presence={presence}
+      data-fe-rhythm={rhythm ?? ""}
       className="fe-shell min-h-[100dvh] flex flex-col relative overflow-hidden"
     >
       {memory ? (
@@ -156,6 +165,7 @@ function Shell({
       ) : null}
       <div className="fe-breath fe-breath-a" aria-hidden="true" />
       <div className="fe-breath fe-breath-b" aria-hidden="true" />
+      <div className="fe-living-shade" aria-hidden="true" />
       <div className="fe-stage">
         <div className="fe-column">
           {memory ? (
@@ -222,9 +232,9 @@ export default function FirstExperiencePage() {
         });
         window.setTimeout(() => {
           patch({ step: "next-thing", nextThing });
-        }, 900);
+        }, 1100);
       }
-    }, 1280);
+    }, 1420);
 
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -232,15 +242,13 @@ export default function FirstExperiencePage() {
 
   if (state.step === "welcome") {
     return (
-      <Shell room="welcome" memory={SHOTS.welcome} openingBeat>
+      <Shell room="welcome" memory={SHOTS.welcome} openingBeat presence="idle">
         <div className="fe-copy">
           <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
             ·
           </p>
           <h1 className="fe-title">Begin with today</h1>
-          <p className="fe-body">
-            We’ll use only what you share — and your local time — to form one next right thing for your child.
-          </p>
+          <p className="fe-body">One next right thing — formed only from what you share.</p>
           <div className="fe-actions">
             <button
               type="button"
@@ -258,13 +266,17 @@ export default function FirstExperiencePage() {
 
   if (state.step === "discovery-name") {
     return (
-      <Shell room="discovery-name" answered={Boolean(nameDraft.trim())} memory={SHOTS["discovery-name"]}>
+      <Shell
+        room="discovery-name"
+        answered={Boolean(nameDraft.trim())}
+        memory={SHOTS["discovery-name"]}
+        presence={nameDraft.trim() ? "acknowledge" : "idle"}
+      >
         <div className="fe-copy fe-in">
-          <p className="fe-kicker fe-kicker-whisper">·</p>
-          <h1 className="fe-title fe-title-section">Child’s first name</h1>
-          <p className="fe-body fe-body-sm">
-            Used only to personalize today’s next step. Nothing else is assumed.
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
           </p>
+          <h1 className="fe-title fe-title-section">Child’s first name</h1>
           <input
             value={nameDraft}
             onChange={(e) => setNameDraft(e.target.value)}
@@ -272,7 +284,7 @@ export default function FirstExperiencePage() {
             autoFocus
             data-testid="fe-child-name"
             className="fe-surface"
-            style={{ marginBottom: "var(--space-6)" }}
+            style={{ marginTop: "var(--space-2)", marginBottom: "var(--space-8)" }}
           />
           <div className="fe-actions">
             <button
@@ -292,16 +304,20 @@ export default function FirstExperiencePage() {
 
   if (state.step === "discovery-age") {
     return (
-      <Shell room="discovery-age" answered={Boolean(state.ageBand)} memory={SHOTS["discovery-age"]}>
+      <Shell
+        room="discovery-age"
+        answered={Boolean(state.ageBand)}
+        memory={SHOTS["discovery-age"]}
+        presence={state.ageBand ? "grow" : "idle"}
+      >
         <div className="fe-copy fe-in">
-          <p className="fe-kicker fe-kicker-whisper">· ·</p>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            · ·
+          </p>
           <h1 className="fe-title fe-title-section">
             How old is {state.childName || "your child"}?
           </h1>
-          <p className="fe-body fe-body-sm">
-            Age changes what “next right thing” can mean today.
-          </p>
-          <div className="fe-choice-grid">
+          <div className="fe-choice-grid" style={{ marginTop: "var(--space-2)" }}>
             {AGE_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
@@ -333,14 +349,19 @@ export default function FirstExperiencePage() {
 
   if (state.step === "discovery-today") {
     return (
-      <Shell room="discovery-today" answered={Boolean(state.todayContext)} memory={SHOTS["discovery-today"]}>
+      <Shell
+        room="discovery-today"
+        answered={Boolean(state.todayContext)}
+        memory={SHOTS["discovery-today"]}
+        presence={state.todayContext ? "settle" : "idle"}
+        rhythm={state.todayContext ?? undefined}
+      >
         <div className="fe-copy fe-in">
-          <p className="fe-kicker fe-kicker-whisper">· · ·</p>
-          <h1 className="fe-title fe-title-section">What kind of day is today?</h1>
-          <p className="fe-body fe-body-sm">
-            Only this — so today’s step fits the day you actually have.
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            · · ·
           </p>
-          <div className="fe-choice-stack">
+          <h1 className="fe-title fe-title-section">What kind of day is today?</h1>
+          <div className="fe-choice-stack" style={{ marginTop: "var(--space-2)" }}>
             {TODAY_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
@@ -351,9 +372,6 @@ export default function FirstExperiencePage() {
                 onClick={() => patch({ todayContext: opt.id })}
               >
                 <div style={{ fontWeight: 500 }}>{opt.label}</div>
-                <div style={{ fontSize: "var(--type-body-sm)", color: "rgba(244,238,230,0.38)", marginTop: 4 }}>
-                  {opt.hint}
-                </div>
               </button>
             ))}
           </div>
@@ -375,9 +393,11 @@ export default function FirstExperiencePage() {
 
   if (state.step === "working") {
     return (
-      <Shell room="working" memory={SHOTS.working}>
+      <Shell room="working" memory={SHOTS.working} presence="exhale">
         <div className="fe-copy fe-in">
-          <p className="fe-kicker fe-kicker-whisper">·</p>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
+          </p>
           <h1 className="fe-title fe-title-section">Forming today’s next right thing</h1>
           <ul className="fe-signal-list">
             {workingSignals.map((line, idx) => {
