@@ -3705,6 +3705,27 @@
       "no_routine": "No routine for today yet",
       "no_routine_help": "Generate one to unlock the timeline + smart suggestions."
     },
+    "rooms": {
+      "header": "What do you need for {{name}}?",
+      "header_subtitle": "Four rooms. One intention at a time.",
+      "back_home": "Back to Today Home",
+      "help": {
+        "title": "Help",
+        "subtitle": "When something feels hard right now."
+      },
+      "understand": {
+        "title": "Understand",
+        "subtitle": "See your child more clearly."
+      },
+      "care": {
+        "title": "Care",
+        "subtitle": "Tend body, rhythm, feeding, and health."
+      },
+      "moments": {
+        "title": "Moments",
+        "subtitle": "Share one human presence together."
+      }
+    },
     "section_groups": {
       "today": "Today For You",
       "parent": "Gaming Hub",

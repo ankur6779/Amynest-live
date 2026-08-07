@@ -145,6 +145,14 @@ import { cn } from "@/lib/utils";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
+import { ParentHubRoomsShell } from "@/components/parent-hub/parent-hub-rooms-shell";
+import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
+import {
+  isHubTileRemovedFromRooms,
+  roomForLegacyGroup,
+  roomForTile,
+  type ParentHubRoomId,
+} from "@/lib/parent-hub/rooms";
 
 const DailyKidsActivity = lazy(() =>
   import("@/components/daily-kids-activity").then((module) => ({
@@ -909,8 +917,12 @@ function ParentingHubPage() {
   // section. Deduped in-memory + server-side via a per-section/day idempotency
   // key so reopening (or reloads) can't farm points. Fire-and-forget.
   const awardedSectionsRef = useRef<Set<string>>(new Set());
+  const roomsV1 = isParentHubRoomsV1Enabled();
+
   const awardHubSectionPoints = useCallback(
     (sectionId: string) => {
+      // Gamification permanently forbidden on Parent Hub Rooms V1.
+      if (isParentHubRoomsV1Enabled()) return;
       if (!isSignedIn || !sectionId) return;
       const day = new Date().toISOString().slice(0, 10);
       const key = `hub-section-${sectionId}-${day}`;
@@ -984,7 +996,7 @@ function ParentingHubPage() {
     [hubUsage, hubJourney],
   );
 
-  // Section-group expand/collapse — all groups collapsed by default; session-only (reset on refresh).
+  // Section-group / room expand-collapse — session-only (reset on refresh).
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
@@ -1001,7 +1013,48 @@ function ParentingHubPage() {
       return next;
     });
   };
+  const toggleRoom = (roomId: ParentHubRoomId) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return next;
+    });
+  };
   const navigateHub = (group: string, tileId?: string, sectionId?: string) => {
+    if (roomsV1) {
+      // Removed Hub chrome: soft no-op (never 404).
+      if (tileId && isHubTileRemovedFromRooms(tileId)) return;
+      const room =
+        roomForTile(tileId) ?? roomForLegacyGroup(group) ?? ("help" as ParentHubRoomId);
+      setExpandedGroups((prev) => {
+        const next = new Set(prev);
+        next.add(room);
+        return next;
+      });
+      requestAnimationFrame(() => {
+        if (tileId) {
+          document
+            .querySelector(`[data-section-id="${tileId}"]`)
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          document
+            .getElementById(`hub-room-${room}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        if (sectionId?.startsWith("infant-")) {
+          const openSection = (attempt = 0) => {
+            dispatchInfantHubOpenSection(sectionId);
+            if (attempt < 4 && !document.getElementById(sectionId)) {
+              window.setTimeout(() => openSection(attempt + 1), 120);
+            }
+          };
+          window.setTimeout(() => openSection(), 150);
+        }
+      });
+      return;
+    }
+
     setExpandedGroups(prev => {
       const next = new Set(prev);
       next.add(group);
@@ -1026,6 +1079,17 @@ function ParentingHubPage() {
     });
   };
 
+  // Age gravity: 0–24m opens into Care (Pack 1).
+  useEffect(() => {
+    if (!roomsV1 || !effectiveChild?.id || !isInfant) return;
+    setExpandedGroups((prev) => {
+      if (prev.has("care")) return prev;
+      const next = new Set(prev);
+      next.add("care");
+      return next;
+    });
+  }, [roomsV1, effectiveChild?.id, isInfant]);
+
   // Deep-link / restore: open Learning and scroll to Smart Maths when requested.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1034,7 +1098,7 @@ function ParentingHubPage() {
     const tile = params.get("tile") || params.get("open") || hash;
     if (tile === "smart-math-tricks" || tile === "hub-group-learning" || tile === "learning") {
       navigateHub(
-        "learning",
+        roomsV1 ? "understand" : "learning",
         tile === "smart-math-tricks" || tile === "learning" ? "smart-math-tricks" : undefined,
       );
     }
@@ -1042,7 +1106,8 @@ function ParentingHubPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount/hash restore
   }, [effectiveChild?.id]);
 
-  const learningTabOpen = expandedGroups.has("learning");
+  const learningTabOpen =
+    expandedGroups.has("learning") || (roomsV1 && expandedGroups.has("understand"));
   useEffect(() => {
     if (!learningTabOpen || !effectiveChild) return;
     void import("@/lib/learning-zone-tab-audio-warmup").then((mod) => {
@@ -1984,9 +2049,23 @@ function ParentingHubPage() {
             isJourneyLocked={hubJourney.isJourneyLocked}
             learningProfile={learningProgress.profile}
             wallet={learningProgress.phase3?.wallet ?? null}
-            onOpenLearning={openLearningPanel}
+            onOpenLearning={roomsV1 ? () => undefined : openLearningPanel}
           />
 
+          {roomsV1 ? (
+            hubJourney.status ? (
+              <div data-testid="parent-hub-quiet-path" className="opacity-95">
+                <TodaysPathFromStatus
+                  status={hubJourney.status}
+                  isPremium={hubUsage.isPremium}
+                  isJourneyLocked={hubJourney.isJourneyLocked}
+                  onComplete={hubJourney.completePath}
+                  onPeekAhead={hubJourney.peekAheadUnlock}
+                  isCompleting={hubJourney.isCompleting}
+                />
+              </div>
+            ) : null
+          ) : (
           <HubTodayLearningPanel
             childName={effectiveChild.name}
             open={learningPanelOpen}
@@ -2058,6 +2137,7 @@ function ParentingHubPage() {
               </div>
             ) : null}
           </HubTodayLearningPanel>
+          )}
         </>
       )}
 
@@ -2068,6 +2148,25 @@ function ParentingHubPage() {
       />
 
       {effectiveChild && currentBand && <>
+          {roomsV1 ? (
+            <ParentHubRoomsShell
+              childName={effectiveChild.name}
+              isInfant={isInfant}
+              expandedRooms={expandedGroups}
+              onToggleRoom={toggleRoom}
+              visibleTileIds={[
+                ...forYouStandaloneFeatured.map((s) => s.id),
+                ...todayTiles.map((s) => s.id),
+                ...forYouGrid.map((s) => s.id),
+              ]}
+              renderDestination={(tileId) => {
+                const section = sectionById.get(tileId);
+                if (!section) return null;
+                return renderHubSection(section);
+              }}
+            />
+          ) : (
+          <>
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
           <ForYouHeader childName={effectiveChild.name} band={currentBand} ageGroup={ageGroup} />
 
@@ -2354,9 +2453,12 @@ function ParentingHubPage() {
               })}
             </HubExploreAgesSection>
           )}
+          </>
+          )}
         </>}
 
-      {/* Bottom CTA */}
+      {/* Bottom CTA — Home owns Begin; omit from Rooms V1 Hub */}
+      {!roomsV1 ? (
       <div className="text-center pt-2">
         <AppLink href="/routines/generate">
           <button type="button" className={HUB_BOTTOM_CTA}>
@@ -2365,6 +2467,19 @@ function ParentingHubPage() {
           </button>
         </AppLink>
       </div>
+      ) : (
+        <div className="pt-2 text-center">
+          <AppLink href="/dashboard" source="parent-hub-rooms-home">
+            <button
+              type="button"
+              className="text-xs font-semibold text-primary/80 underline-offset-4 hover:underline"
+              data-testid="parent-hub-quiet-home-link"
+            >
+              {t("parent_hub.rooms.back_home", { defaultValue: "Back to Today Home" })}
+            </button>
+          </AppLink>
+        </div>
+      )}
     </div>
     </HubSectionPointsContext.Provider>
   );

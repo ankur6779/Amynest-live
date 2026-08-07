@@ -1,5 +1,6 @@
 import { ShimmerBlock } from "@/components/route-skeletons/shimmer-block";
 
+/** Pack 1 — skeleton mirrors four room doors (not the legacy chip mall). */
 export function ParentingHubSkeleton() {
   return (
     <div
@@ -16,24 +17,16 @@ export function ParentingHubSkeleton() {
         <ShimmerBlock className="h-12 w-28 shrink-0 rounded-2xl" />
       </div>
 
-      <div className="flex gap-2 overflow-hidden">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <ShimmerBlock key={i} className="h-9 w-24 shrink-0 rounded-full" />
-        ))}
-      </div>
+      <ShimmerBlock className="h-24 w-full rounded-2xl" />
 
-      <ShimmerBlock className="h-36 w-full rounded-2xl" />
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <ShimmerBlock key={i} className="h-28 rounded-2xl" />
-        ))}
+      <div className="space-y-2">
+        <ShimmerBlock className="h-6 w-64 rounded-lg" />
+        <ShimmerBlock className="h-4 w-48 rounded-lg" />
       </div>
 
       <div className="space-y-3">
-        <ShimmerBlock className="h-5 w-40 rounded-lg" />
-        {Array.from({ length: 3 }).map((_, i) => (
-          <ShimmerBlock key={i} className="h-20 w-full rounded-2xl" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ShimmerBlock key={i} className="h-16 w-full rounded-2xl" />
         ))}
       </div>
     </div>
