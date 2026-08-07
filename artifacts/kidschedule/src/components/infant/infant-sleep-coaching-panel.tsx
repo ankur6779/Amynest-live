@@ -8,6 +8,7 @@ import {
   trackInfantSleepCoachUpgradePromptShown,
 } from "@/lib/infant-hub-analytics";
 import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 
 type Props = {
   childId: number;
@@ -89,7 +90,7 @@ export function InfantSleepCoachingPanel({ childId, childName, ageMonths }: Prop
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow hover:brightness-110 transition"
         >
           {locked ? <Lock className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-          {locked ? "Unlock Sleep Coach" : "Generate sleep plan"}
+          {locked ? PREMIUM_VOICE.continueCta : "Generate sleep plan"}
         </button>
       )}
 
@@ -152,7 +153,11 @@ export function InfantSleepCoachingPanel({ childId, childName, ageMonths }: Prop
             className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border text-[11px] font-bold text-muted-foreground hover:text-foreground transition"
           >
             <RefreshCw className="h-3 w-3" />
-            {isPremium ? "Refresh plan" : locked ? "Upgrade to refresh" : "Regenerate"}
+            {isPremium
+              ? "Refresh plan"
+              : locked
+                ? PREMIUM_VOICE.continueCta
+                : "Regenerate"}
           </button>
         </div>
       )}

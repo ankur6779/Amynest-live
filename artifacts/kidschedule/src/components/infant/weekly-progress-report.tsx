@@ -111,7 +111,10 @@ export function WeeklyProgressReport({
               <Lock className="h-4 w-4 text-amber-500" />
             </div>
             <p className="text-sm font-semibold text-foreground/90">
-              {t("components.weekly_report.premium_title", "Unlock weekly sleep and growth reports")}
+              {t(
+                "components.weekly_report.premium_title",
+                "We can support you further with weekly sleep and growth reports whenever you're ready.",
+              )}
             </p>
             <p className="text-[12px] text-muted-foreground leading-snug">
               {t(
@@ -124,7 +127,7 @@ export function WeeklyProgressReport({
               className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-bold text-white"
               onClick={() => openSubscriptionGate({ reason: "premium_insight", source: "infant_weekly_report" })}
             >
-              {t("components.weekly_report.unlock_cta", "Upgrade for weekly report")}
+              {t("components.weekly_report.unlock_cta", "Continue with AmyNest")}
             </button>
           </div>
         ) : showPreview ? (

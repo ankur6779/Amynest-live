@@ -1,7 +1,12 @@
 import { parseApiJson } from "@/lib/safe-json-response";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@/components/ui/card";
 import { Brain, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, Activity, Star, AlertTriangle, Flame, MessageCircle, BedDouble, ListChecks, Music2, X, Loader2, Sparkles, TrendingUp, Heart, FileDown, Users } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
@@ -38,6 +43,12 @@ import type { InfantHubCardId } from "@/lib/infant-hub-card-config";
 import { InfantAskAmyCta } from "@/components/infant/infant-ask-amy-cta";
 import { InfantSleepCoachingPanel } from "@/components/infant/infant-sleep-coaching-panel";
 import { InfantFeedingPlanPanel } from "@/components/infant/infant-feeding-plan-panel";
+import {
+  isInfantCareLivingV1Enabled,
+  recommendInfantCareAction,
+} from "@/lib/infant-care/living-room";
+import "@/components/infant/infant-care-living-room.css";
+
 interface InfantHubProps {
   childId: number;
   childName: string;
@@ -500,9 +511,6 @@ export function InfantHub({
     i18n
   } = useTranslation();
   const lang = langOf(i18n.language);
-  const {
-    toast
-  } = useToast();
   const [active, setActive] = useState<InfantCategory>("sleep");
   const [tipIndex, setTipIndex] = useState(0);
   const tips = useMemo(() => getTipsForAge(ageMonths, active), [ageMonths, active]);
@@ -521,6 +529,7 @@ export function InfantHub({
   const [openSections, setOpenSections] = useState<Set<string>>(
     () => new Set(INFANT_HUB_DEFAULT_OPEN),
   );
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const setSectionOpen = useCallback((sectionId: string, isOpen: boolean) => {
     setOpenSections((prev) => {
@@ -531,14 +540,42 @@ export function InfantHub({
     });
   }, []);
 
+  const MORE_SECTION_IDS = useMemo(
+    () =>
+      new Set([
+        "infant-wellbeing",
+        "infant-doctor",
+        "infant-coparent",
+        "infant-sounds",
+        "infant-weekly-focus",
+        "infant-amy-suggests",
+        "infant-coaching",
+        "infant-activities",
+      ]),
+    [],
+  );
+
   const scrollToSection = useCallback(
     (sectionId: string) => {
+      if (isInfantCareLivingV1Enabled() && MORE_SECTION_IDS.has(sectionId)) {
+        setMoreOpen(true);
+      }
+      // Cry may live under More when not the recommended primary.
+      if (
+        isInfantCareLivingV1Enabled() &&
+        sectionId === "infant-cry" &&
+        recommendInfantCareAction(ageMonths).sectionId !== "infant-cry"
+      ) {
+        setMoreOpen(true);
+      }
       setSectionOpen(sectionId, true);
       requestAnimationFrame(() => {
-        document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document
+          .getElementById(sectionId)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     },
-    [setSectionOpen],
+    [MORE_SECTION_IDS, ageMonths, setSectionOpen],
   );
 
   useEffect(() => {
@@ -571,13 +608,403 @@ export function InfantHub({
     };
   }, [ageMonths, childId, scrollToSection]);
 
+  const living = isInfantCareLivingV1Enabled();
+  const careRecommend = useMemo(
+    () => recommendInfantCareAction(ageMonths),
+    [ageMonths],
+  );
+
   if (ageMonths < 0 || ageMonths >= 24) return null;
 
+  const crySection = (
+    <IHSection
+      sectionId="infant-cry"
+      icon={<MessageCircle className="h-4 w-4" />}
+      title={t("components.infant_hub.cry_insight")}
+      badge={living ? undefined : t("components.infant_hub.badge_smart")}
+      open={openSections.has("infant-cry")}
+      onOpenChange={(v) => setSectionOpen("infant-cry", v)}
+    >
+      <div className="rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-400/25 px-3 py-2.5 mb-3 flex items-start gap-2">
+        <Sparkles className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+        <p className="text-[12px] text-foreground/90 leading-snug">
+          {t(
+            "components.infant_hub.cry_insight_hero",
+            "Not sure why baby is crying? Record 10 seconds and Amy will help identify likely causes.",
+          )}
+        </p>
+      </div>
+      <DiaperBurpLogger childId={childId} ageMonths={ageMonths} compact />
+      <div className="mt-3">
+        <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
+      </div>
+    </IHSection>
+  );
+
+  const sleepSection = (
+    <IHSection
+      sectionId="infant-sleep"
+      icon={<BedDouble className="h-4 w-4" />}
+      title={t("components.infant_hub.sleep_system")}
+      badge={living ? undefined : "Live"}
+      open={openSections.has("infant-sleep")}
+      onOpenChange={(v) => setSectionOpen("infant-sleep", v)}
+    >
+      <div className="space-y-5">
+        <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
+        <WakeWindowSystem childId={childId} childName={childName} ageMonths={ageMonths} />
+        <SleepIssueDetector childId={childId} childName={childName} ageMonths={ageMonths} />
+        <RoutineBuilder childName={childName} ageMonths={ageMonths} />
+        <SleepWeeklyInsights childId={childId} childName={childName} ageMonths={ageMonths} />
+        <InfantSleepCoachingPanel childId={childId} childName={childName} ageMonths={ageMonths} />
+        <InfantWeeklySleepReport childId={childId} childName={childName} ageMonths={ageMonths} />
+        <InfantAskAmyCta
+          childName={childName}
+          ageMonths={ageMonths}
+          question={`My ${ageMonths}-month-old baby ${childName} is having sleep trouble. Based on typical wake windows at this age, what should I try tonight?`}
+          label={t(
+            "components.infant_hub.ask_amy_sleep",
+            "Ask Amy for tailored sleep guidance",
+          )}
+          testId="infant-ask-amy-sleep"
+        />
+      </div>
+    </IHSection>
+  );
+
+  const feedingSection = (
+    <IHSection
+      sectionId="infant-feeding"
+      icon={<Flame className="h-4 w-4" />}
+      title={t("components.infant_hub.feeding_tracker")}
+      open={openSections.has("infant-feeding")}
+      onOpenChange={(v) => setSectionOpen("infant-feeding", v)}
+    >
+      <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
+      <InfantFeedingPlanPanel childId={childId} childName={childName} ageMonths={ageMonths} />
+      <div className="mt-4 pt-4 border-t border-border/40">
+        <DiaperBurpLogger childId={childId} ageMonths={ageMonths} />
+      </div>
+      <InfantAskAmyCta
+        childName={childName}
+        ageMonths={ageMonths}
+        question={
+          ageMonths >= 6
+            ? `My ${ageMonths}-month-old baby ${childName} is starting solids. What foods and schedule should I try this week?`
+            : `My ${ageMonths}-month-old baby ${childName} — how often should I feed and what signs mean they're getting enough milk?`
+        }
+        label={t(
+          "components.infant_hub.ask_amy_feeding",
+          "Ask Amy for feeding guidance",
+        )}
+        testId="infant-ask-amy-feeding"
+      />
+    </IHSection>
+  );
+
+  const growthSection = (
+    <IHSection
+      sectionId="infant-growth"
+      icon={<TrendingUp className="h-4 w-4" />}
+      title={t("components.infant_hub.growth", "Growth tracking")}
+      open={openSections.has("infant-growth")}
+      onOpenChange={(v) => setSectionOpen("infant-growth", v)}
+    >
+      <GrowthTracker childId={childId} ageMonths={ageMonths} activation={activation} />
+    </IHSection>
+  );
+
+  const healthSection = (
+    <IHSection
+      sectionId="infant-health"
+      icon={<Syringe className="h-4 w-4" />}
+      title={t("components.infant_hub.health_care")}
+      open={openSections.has("infant-health")}
+      onOpenChange={(v) => setSectionOpen("infant-health", v)}
+    >
+      <HealthCare childId={childId} ageMonths={ageMonths} />
+    </IHSection>
+  );
+
+  const milestonesSection = (
+    <IHSection
+      sectionId="infant-milestones"
+      icon={<Activity className="h-4 w-4" />}
+      title={t("components.infant_hub.milestone_buddy")}
+      badge={living ? undefined : t("components.infant_hub.badge_track")}
+      open={openSections.has("infant-milestones")}
+      onOpenChange={(v) => setSectionOpen("infant-milestones", v)}
+    >
+      <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
+    </IHSection>
+  );
+
+  const moreSections = (
+    <>
+      {careRecommend.sectionId !== "infant-cry" ? crySection : null}
+      <IHSection
+        sectionId="infant-wellbeing"
+        icon={<Heart className="h-4 w-4" />}
+        title={t("components.infant_hub.wellbeing", "Parent wellbeing")}
+        open={openSections.has("infant-wellbeing")}
+        onOpenChange={(v) => setSectionOpen("infant-wellbeing", v)}
+      >
+        <ParentWellbeing childId={childId} ageMonths={ageMonths} />
+      </IHSection>
+      <IHSection
+        sectionId="infant-doctor"
+        icon={<FileDown className="h-4 w-4" />}
+        title={t("components.infant_hub.doctor_report", "Doctor visit")}
+        open={openSections.has("infant-doctor")}
+        onOpenChange={(v) => setSectionOpen("infant-doctor", v)}
+      >
+        <DoctorVisitReport
+          childId={childId}
+          childName={childName}
+          ageMonths={ageMonths}
+        />
+      </IHSection>
+      {FF_CO_PARENT ? (
+        <IHSection
+          sectionId="infant-coparent"
+          icon={<Users className="h-4 w-4" />}
+          title={t("components.infant_hub.coparent", "Co-parent")}
+          open={openSections.has("infant-coparent")}
+          onOpenChange={(v) => setSectionOpen("infant-coparent", v)}
+        >
+          <CoParentPanel childId={childId} ageMonths={ageMonths} />
+        </IHSection>
+      ) : null}
+      <InfantNotificationPrefs childId={childId} ageMonths={ageMonths} />
+      <IHSection
+        sectionId="infant-sounds"
+        cardId="sounds"
+        icon={<Music2 className="h-4 w-4" />}
+        title={t("components.infant_hub.white_noise_lullabies")}
+        open={openSections.has("infant-sounds")}
+        onOpenChange={(v) => setSectionOpen("infant-sounds", v)}
+      >
+        <WhiteNoiseLullaby ageMonths={ageMonths} childId={String(childId)} />
+      </IHSection>
+      <IHSection
+        sectionId="infant-weekly-focus"
+        cardId="weekly-focus"
+        icon={<Star className="h-4 w-4" />}
+        title={t("components.infant_hub.weekly_focus")}
+        open={openSections.has("infant-weekly-focus")}
+        onOpenChange={(v) => setSectionOpen("infant-weekly-focus", v)}
+      >
+        <WeeklyFocus childId={childId} childName={childName} ageMonths={ageMonths} />
+      </IHSection>
+      <IHSection
+        sectionId="infant-amy-suggests"
+        cardId="amy-suggests"
+        icon={<Brain className="h-4 w-4" />}
+        title={t("infant_hub.amy_suggests")}
+        open={openSections.has("infant-amy-suggests")}
+        onOpenChange={(v) => setSectionOpen("infant-amy-suggests", v)}
+      >
+        <div className="space-y-3">
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {INFANT_CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => {
+                  setActive(cat.key);
+                  setTipIndex(0);
+                }}
+                className={[
+                  "shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border",
+                  active === cat.key
+                    ? "bg-primary text-white border-primary"
+                    : "border-border text-muted-foreground",
+                ].join(" ")}
+              >
+                {cat.emoji} {t(`infant_hub.tabs.${cat.key}`)}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm">
+            <span className="mr-1">{insight.emoji}</span>
+            {pickLang(insight, lang)}
+          </p>
+          {currentTip ? (
+            <p className="text-sm text-muted-foreground">{pickLang(currentTip.body, lang)}</p>
+          ) : null}
+        </div>
+      </IHSection>
+      <IHSection
+        sectionId="infant-coaching"
+        cardId="coaching"
+        icon={<ListChecks className="h-4 w-4" />}
+        title={t("components.infant_hub.parent_coaching")}
+        open={openSections.has("infant-coaching")}
+        onOpenChange={(v) => setSectionOpen("infant-coaching", v)}
+      >
+        <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
+        <div className="mt-4">
+          <CommunicationCoaching ageMonths={ageMonths} />
+        </div>
+      </IHSection>
+      {(INFANT_ACTIVITIES[getInfantAgeBand(ageMonths)] ?? []).length > 0 ? (
+        <IHSection
+          sectionId="infant-activities"
+          cardId="activities"
+          icon={<Zap className="h-4 w-4" />}
+          title={t("components.infant_hub.today_s_activities")}
+          open={openSections.has("infant-activities")}
+          onOpenChange={(v) => setSectionOpen("infant-activities", v)}
+        >
+          <DailyActivities ageMonths={ageMonths} />
+        </IHSection>
+      ) : null}
+      {/* Progress supports — never leads Today's Care */}
+      {!showActivationUi ? (
+        <BabyTodayCard
+          childId={childId}
+          childName={childName}
+          activation={activation}
+          onViewFullPlan={() => scrollToSection("infant-sleep")}
+        />
+      ) : null}
+      <WeeklyProgressReport
+        childId={childId}
+        childName={childName}
+        ageMonths={ageMonths}
+        activation={activation}
+      />
+    </>
+  );
+
+  if (living) {
+    const quietPrimary: Record<string, ReactNode> = {
+      "infant-sleep": sleepSection,
+      "infant-feeding": feedingSection,
+      "infant-growth": growthSection,
+      "infant-health": healthSection,
+      "infant-milestones": milestonesSection,
+    };
+    if (careRecommend.sectionId === "infant-cry") {
+      quietPrimary["infant-cry"] = crySection;
+    }
+    const quietOrder =
+      careRecommend.sectionId === "infant-cry"
+        ? [
+            "infant-cry",
+            "infant-sleep",
+            "infant-feeding",
+            "infant-growth",
+            "infant-health",
+            "infant-milestones",
+          ]
+        : [
+            careRecommend.sectionId,
+            ...["infant-sleep", "infant-feeding", "infant-growth", "infant-health", "infant-milestones"].filter(
+              (id) => id !== careRecommend.sectionId,
+            ),
+          ];
+
+    return (
+      <div
+        className="infant-care-living"
+        data-section-id="infant-hub"
+        data-ph-pack="infant-2"
+        data-testid="infant-care-living"
+      >
+        <header className="ic-today-hero" data-testid="infant-care-today-hero">
+          <p className="ic-today-eyebrow">
+            {t("infant_care.living.eyebrow", "Today's Care")}
+          </p>
+          <h2 className="ic-today-title">
+            {t("infant_care.living.title", {
+              name: childName,
+              defaultValue: `What should I care for with ${childName}?`,
+            })}
+          </h2>
+          <p className="ic-today-purpose">
+            {t("infant_care.living.purpose", {
+              age: ageLabel,
+              defaultValue: "One calm next step — sleep, feed, comfort, growth.",
+            })}
+          </p>
+          <button
+            type="button"
+            className="ic-recommend-btn"
+            data-testid="infant-care-recommend"
+            onClick={() => scrollToSection(careRecommend.sectionId)}
+          >
+            <span className="ic-recommend-cue">{careRecommend.label}</span>
+            <span className="ic-recommend-title">{careRecommend.title}</span>
+            <span className="ic-recommend-purpose">{careRecommend.purpose}</span>
+          </button>
+        </header>
+
+        {activationLoading ? (
+          <InfantActivationFlowSkeleton />
+        ) : showActivationUi && activation ? (
+          <InfantActivationFlow
+            childId={childId}
+            childName={childName}
+            ageMonths={ageMonths}
+            activation={activation}
+            onNavigate={scrollToSection}
+          />
+        ) : null}
+
+        <p className="ic-quiet-label">
+          {t("infant_care.living.quiet_paths", "Quiet care paths")}
+        </p>
+        <div className="ic-quiet-list" data-testid="infant-care-quiet-paths">
+          {quietOrder.map((id) => (
+            <div key={id}>{quietPrimary[id]}</div>
+          ))}
+        </div>
+
+        <div>
+          <button
+            type="button"
+            className="ic-more-toggle"
+            data-testid="infant-care-more-toggle"
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen((v) => !v)}
+          >
+            {moreOpen
+              ? t("infant_care.living.more_hide", "Hide more care")
+              : t("infant_care.living.more_show", "More care")}
+          </button>
+          {moreOpen ? (
+            <div className="ic-more-body" data-testid="infant-care-more-body">
+              {moreSections}
+            </div>
+          ) : null}
+        </div>
+
+        <p className="ic-support-note">
+          {t(
+            "infant_care.living.continuity",
+            "We'll continue helping as your child grows.",
+          )}
+        </p>
+
+        <div className="flex items-start gap-2 text-[11px] text-muted-foreground px-1">
+          <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+          <p>{t("infant_hub.safe_disclaimer")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Legacy catalogue layout (VITE_FF_INFANT_CARE_LIVING_V1=0)
   return (
     <div className="space-y-4" data-section-id="infant-hub">
       <div className="px-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">👶 {t("infant_hub.title")}</p>
-        <p className="text-xs text-muted-foreground">{t("infant_hub.subtitle", { name: childName, age: ageLabel })}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+          👶 {t("infant_hub.title")}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {t("infant_hub.subtitle", { name: childName, age: ageLabel })}
+        </p>
       </div>
 
       {activationLoading ? (
@@ -605,99 +1032,11 @@ export function InfantHub({
         activation={activation}
       />
 
-      <IHSection
-        sectionId="infant-cry"
-        icon={<MessageCircle className="h-4 w-4" />}
-        title={t("components.infant_hub.cry_insight")}
-        badge={t("components.infant_hub.badge_smart")}
-        open={openSections.has("infant-cry")}
-        onOpenChange={(v) => setSectionOpen("infant-cry", v)}
-      >
-          <div className="rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-400/25 px-3 py-2.5 mb-3 flex items-start gap-2">
-            <Sparkles className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
-            <p className="text-[12px] text-foreground/90 leading-snug">
-              {t("components.infant_hub.cry_insight_hero", "Not sure why baby is crying? Record 10 seconds and Amy will help identify likely causes.")}
-            </p>
-          </div>
-          <DiaperBurpLogger childId={childId} ageMonths={ageMonths} compact />
-          <div className="mt-3"><CryInsight childId={childId} childName={childName} ageMonths={ageMonths} /></div>
-      </IHSection>
-
-      <IHSection
-        sectionId="infant-sleep"
-        icon={<BedDouble className="h-4 w-4" />}
-        title={t("components.infant_hub.sleep_system")}
-        badge="Live"
-        open={openSections.has("infant-sleep")}
-        onOpenChange={(v) => setSectionOpen("infant-sleep", v)}
-      >
-          <div className="space-y-5">
-            <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
-            <WakeWindowSystem childId={childId} childName={childName} ageMonths={ageMonths} />
-            <SleepIssueDetector childId={childId} childName={childName} ageMonths={ageMonths} />
-            <RoutineBuilder childName={childName} ageMonths={ageMonths} />
-            <SleepWeeklyInsights childId={childId} childName={childName} ageMonths={ageMonths} />
-            <InfantSleepCoachingPanel childId={childId} childName={childName} ageMonths={ageMonths} />
-            <InfantWeeklySleepReport childId={childId} childName={childName} ageMonths={ageMonths} />
-            <InfantAskAmyCta
-              childName={childName}
-              ageMonths={ageMonths}
-              question={`My ${ageMonths}-month-old baby ${childName} is having sleep trouble. Based on typical wake windows at this age, what should I try tonight?`}
-              label={t("components.infant_hub.ask_amy_sleep", "Ask Amy for tailored sleep guidance")}
-              testId="infant-ask-amy-sleep"
-            />
-          </div>
-      </IHSection>
-
-      <IHSection
-        sectionId="infant-milestones"
-        icon={<Activity className="h-4 w-4" />}
-        title={t("components.infant_hub.milestone_buddy")}
-        badge={t("components.infant_hub.badge_track")}
-        open={openSections.has("infant-milestones")}
-        onOpenChange={(v) => setSectionOpen("infant-milestones", v)}
-      >
-          <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
-      </IHSection>
-
-      <IHSection
-        sectionId="infant-feeding"
-        icon={<Flame className="h-4 w-4" />}
-        title={t("components.infant_hub.feeding_tracker")}
-        open={openSections.has("infant-feeding")}
-        onOpenChange={(v) => setSectionOpen("infant-feeding", v)}
-      >
-          <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
-          <InfantFeedingPlanPanel childId={childId} childName={childName} ageMonths={ageMonths} />
-          <div className="mt-4 pt-4 border-t border-border/40"><DiaperBurpLogger childId={childId} ageMonths={ageMonths} /></div>
-          {ageMonths >= 6 ? (
-            <InfantAskAmyCta
-              childName={childName}
-              ageMonths={ageMonths}
-              question={`My ${ageMonths}-month-old baby ${childName} is starting solids. What foods and schedule should I try this week?`}
-              label={t("components.infant_hub.ask_amy_feeding", "Ask Amy for feeding guidance")}
-              testId="infant-ask-amy-feeding"
-            />
-          ) : (
-            <InfantAskAmyCta
-              childName={childName}
-              ageMonths={ageMonths}
-              question={`My ${ageMonths}-month-old baby ${childName} — how often should I feed and what signs mean they're getting enough milk?`}
-              label={t("components.infant_hub.ask_amy_feeding", "Ask Amy for feeding guidance")}
-              testId="infant-ask-amy-feeding"
-            />
-          )}
-      </IHSection>
-
-      <IHSection
-        sectionId="infant-growth"
-        icon={<TrendingUp className="h-4 w-4" />}
-        title={t("components.infant_hub.growth", "Growth tracking")}
-        open={openSections.has("infant-growth")}
-        onOpenChange={(v) => setSectionOpen("infant-growth", v)}
-      >
-        <GrowthTracker childId={childId} ageMonths={ageMonths} activation={activation} />
-      </IHSection>
+      {crySection}
+      {sleepSection}
+      {milestonesSection}
+      {feedingSection}
+      {growthSection}
 
       <IHSection
         sectionId="infant-wellbeing"
@@ -709,15 +1048,7 @@ export function InfantHub({
         <ParentWellbeing childId={childId} ageMonths={ageMonths} />
       </IHSection>
 
-      <IHSection
-        sectionId="infant-health"
-        icon={<Syringe className="h-4 w-4" />}
-        title={t("components.infant_hub.health_care")}
-        open={openSections.has("infant-health")}
-        onOpenChange={(v) => setSectionOpen("infant-health", v)}
-      >
-        <HealthCare childId={childId} ageMonths={ageMonths} />
-      </IHSection>
+      {healthSection}
 
       <IHSection
         sectionId="infant-doctor"
@@ -726,20 +1057,24 @@ export function InfantHub({
         open={openSections.has("infant-doctor")}
         onOpenChange={(v) => setSectionOpen("infant-doctor", v)}
       >
-        <DoctorVisitReport childId={childId} childName={childName} ageMonths={ageMonths} />
+        <DoctorVisitReport
+          childId={childId}
+          childName={childName}
+          ageMonths={ageMonths}
+        />
       </IHSection>
 
-      {FF_CO_PARENT && (
-      <IHSection
-        sectionId="infant-coparent"
-        icon={<Users className="h-4 w-4" />}
-        title={t("components.infant_hub.coparent", "Co-parent")}
-        open={openSections.has("infant-coparent")}
-        onOpenChange={(v) => setSectionOpen("infant-coparent", v)}
-      >
-        <CoParentPanel childId={childId} ageMonths={ageMonths} />
-      </IHSection>
-      )}
+      {FF_CO_PARENT ? (
+        <IHSection
+          sectionId="infant-coparent"
+          icon={<Users className="h-4 w-4" />}
+          title={t("components.infant_hub.coparent", "Co-parent")}
+          open={openSections.has("infant-coparent")}
+          onOpenChange={(v) => setSectionOpen("infant-coparent", v)}
+        >
+          <CoParentPanel childId={childId} ageMonths={ageMonths} />
+        </IHSection>
+      ) : null}
 
       <InfantNotificationPrefs childId={childId} ageMonths={ageMonths} />
 
@@ -776,13 +1111,31 @@ export function InfantHub({
         <div className="space-y-3">
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {INFANT_CATEGORIES.map((cat) => (
-              <button key={cat.key} type="button" onClick={() => { setActive(cat.key); setTipIndex(0); }} className={["shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border", active === cat.key ? "bg-primary text-white border-primary" : "border-border text-muted-foreground"].join(" ")}>
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => {
+                  setActive(cat.key);
+                  setTipIndex(0);
+                }}
+                className={[
+                  "shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border",
+                  active === cat.key
+                    ? "bg-primary text-white border-primary"
+                    : "border-border text-muted-foreground",
+                ].join(" ")}
+              >
                 {cat.emoji} {t(`infant_hub.tabs.${cat.key}`)}
               </button>
             ))}
           </div>
-          <p className="text-sm"><span className="mr-1">{insight.emoji}</span>{pickLang(insight, lang)}</p>
-          {currentTip && <p className="text-sm text-muted-foreground">{pickLang(currentTip.body, lang)}</p>}
+          <p className="text-sm">
+            <span className="mr-1">{insight.emoji}</span>
+            {pickLang(insight, lang)}
+          </p>
+          {currentTip ? (
+            <p className="text-sm text-muted-foreground">{pickLang(currentTip.body, lang)}</p>
+          ) : null}
         </div>
       </IHSection>
 
@@ -795,10 +1148,12 @@ export function InfantHub({
         onOpenChange={(v) => setSectionOpen("infant-coaching", v)}
       >
         <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
-        <div className="mt-4"><CommunicationCoaching ageMonths={ageMonths} /></div>
+        <div className="mt-4">
+          <CommunicationCoaching ageMonths={ageMonths} />
+        </div>
       </IHSection>
 
-      {(INFANT_ACTIVITIES[getInfantAgeBand(ageMonths)] ?? []).length > 0 && (
+      {(INFANT_ACTIVITIES[getInfantAgeBand(ageMonths)] ?? []).length > 0 ? (
         <IHSection
           sectionId="infant-activities"
           cardId="activities"
@@ -809,7 +1164,7 @@ export function InfantHub({
         >
           <DailyActivities ageMonths={ageMonths} />
         </IHSection>
-      )}
+      ) : null}
 
       <div className="flex items-start gap-2 text-[11px] text-muted-foreground px-1">
         <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />

@@ -1,0 +1,158 @@
+/**
+ * Infant Care Phase 2 — living room sanctuary deltas.
+ * Does NOT edit Welcome / Discovery / Today Home / Parent Hub FE sources.
+ */
+
+.infant-care-living {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: rgba(244, 238, 230, 0.94);
+}
+
+.ic-today-hero {
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background:
+    radial-gradient(ellipse 80% 70% at 20% 0%, rgba(232, 212, 184, 0.14), transparent 55%),
+    rgba(8, 6, 12, 0.42);
+  backdrop-filter: blur(10px);
+  padding: 0.9rem 0.95rem 1rem;
+}
+
+.ic-today-eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.55);
+}
+
+.ic-today-title {
+  margin: 0.35rem 0 0;
+  font-family: Quicksand, system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: rgba(244, 238, 230, 0.96);
+}
+
+.ic-today-purpose {
+  margin: 0.35rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.72);
+}
+
+.ic-recommend-btn {
+  margin-top: 0.85rem;
+  width: 100%;
+  text-align: left;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(232, 212, 184, 0.28);
+  background: rgba(232, 212, 184, 0.12);
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.ic-recommend-btn:hover,
+.ic-recommend-btn:focus-visible {
+  border-color: rgba(232, 212, 184, 0.42);
+  background: rgba(232, 212, 184, 0.18);
+  outline: none;
+}
+
+.ic-recommend-cue {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.72);
+  margin-bottom: 0.2rem;
+}
+
+.ic-recommend-title {
+  display: block;
+  font-family: Quicksand, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(244, 238, 230, 0.95);
+}
+
+.ic-recommend-purpose {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: rgba(232, 212, 184, 0.65);
+}
+
+.ic-quiet-label {
+  margin: 0.35rem 0 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.45);
+}
+
+.ic-quiet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* Soften emoji-OS chrome inside living room */
+.infant-care-living .hub-section-watermark {
+  opacity: 0.12;
+  filter: grayscale(0.4);
+}
+
+.infant-care-living .hub-section-open-pill--highlight {
+  background: rgba(232, 212, 184, 0.14) !important;
+  color: rgba(244, 238, 230, 0.88) !important;
+}
+
+.infant-care-living .hub-section-shell {
+  border-color: rgba(232, 212, 184, 0.14);
+}
+
+.infant-care-living .hub-section-ambient {
+  opacity: 0.45;
+}
+
+.ic-more-toggle {
+  width: 100%;
+  text-align: left;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.28);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(232, 212, 184, 0.78);
+  cursor: pointer;
+}
+
+.ic-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.45rem;
+}
+
+.ic-support-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.55);
+  padding: 0 0.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ic-recommend-btn {
+    transition: none;
+  }
+}
