@@ -147,9 +147,11 @@ import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
 import { ParentHubRoomsShell } from "@/components/parent-hub/parent-hub-rooms-shell";
 import { GuidanceLivingStream } from "@/components/guidance/guidance-living-stream";
+import { MomentsLivingStream } from "@/components/moments/moments-living-stream";
 import "@/components/parent-hub/parent-hub-living-room.css";
 import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
 import { isGuidanceLivingV1Enabled } from "@/lib/guidance/living-room";
+import { isMomentsLivingV1Enabled } from "@/lib/moments/living-room";
 import { roomsV1AllowsQuietChildIdentity } from "@/lib/parent-hub/legacy-chrome";
 import {
   isHubTileRemovedFromRooms,
@@ -2267,6 +2269,17 @@ function ParentingHubPage() {
                         />
                       );
                     }
+                  : undefined
+              }
+              renderMomentsStream={
+                isMomentsLivingV1Enabled()
+                  ? ({ activeTileId, onSelectTile }) => (
+                      <MomentsLivingStream
+                        childName={effectiveChild.name}
+                        activeTileId={activeTileId}
+                        onSelectTile={onSelectTile}
+                      />
+                    )
                   : undefined
               }
             />

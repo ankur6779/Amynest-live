@@ -1,0 +1,279 @@
+/**
+ * Moments Phase 2 — living room sanctuary materials.
+ * Same house as Welcome / Moments room. Does NOT edit FE source CSS.
+ */
+
+.mo-living-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(232, 212, 184, 0.18);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.1) 0%, transparent 55%),
+    rgba(8, 6, 12, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.18);
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.mo-today-hero {
+  position: relative;
+  padding: 0;
+}
+
+.mo-today-hero .mo-today-memory.fe-memory-mount {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.mo-today-hero .mo-today-memory .fe-memory {
+  aspect-ratio: 16 / 11;
+  max-height: min(48vw, 15.5rem);
+  min-height: 11rem;
+  border-radius: 0;
+}
+
+.mo-today-hero .mo-today-memory .fe-memory img {
+  object-position: center 36%;
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.mo-today-readability {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(6, 4, 10, 0.16) 0%,
+      rgba(6, 4, 10, 0.34) 42%,
+      rgba(6, 4, 10, 0.78) 100%
+    );
+  pointer-events: none;
+}
+
+.mo-today-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 1.1rem 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.mo-today-eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.78);
+}
+
+.mo-today-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.2vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgba(255, 252, 248, 0.98);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+
+.mo-today-purpose {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.88);
+}
+
+.mo-recommend-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.9rem 0.75rem 0.35rem;
+  padding: 0.95rem 1.05rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(232, 212, 184, 0.28);
+  background:
+    radial-gradient(ellipse 80% 70% at 20% 0%, rgba(232, 212, 184, 0.14) 0%, transparent 55%),
+    rgba(255, 252, 248, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 252, 248, 0.07);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mo-recommend-btn:hover,
+.mo-recommend-btn:focus-visible {
+  border-color: rgba(232, 212, 184, 0.42);
+  outline: none;
+}
+
+.mo-recommend-btn[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.48);
+  background:
+    radial-gradient(ellipse 80% 70% at 20% 0%, rgba(232, 212, 184, 0.18) 0%, transparent 55%),
+    rgba(255, 252, 248, 0.08);
+}
+
+.mo-recommend-cue {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.72);
+}
+
+.mo-recommend-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.mo-recommend-purpose {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.78);
+}
+
+.mo-quiet-band {
+  padding: 0.55rem 0.75rem 0.85rem;
+}
+
+.mo-quiet-label {
+  margin: 0 0.25rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.55);
+}
+
+.mo-quiet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.mo-quiet-path {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.28);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mo-quiet-path:hover,
+.mo-quiet-path:focus-visible {
+  border-color: rgba(232, 212, 184, 0.3);
+  outline: none;
+}
+
+.mo-quiet-path[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.38);
+  background: rgba(232, 212, 184, 0.1);
+}
+
+.mo-quiet-path[data-demoted="true"] {
+  opacity: 0.88;
+}
+
+.mo-quiet-path-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.94);
+}
+
+.mo-quiet-path-purpose {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.7);
+}
+
+.mo-soft-band {
+  margin: 0.15rem 0.75rem 0.65rem;
+  padding: 0.65rem 0.75rem 0.7rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(232, 212, 184, 0.1);
+  background: rgba(8, 6, 12, 0.22);
+}
+
+.mo-soft-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.5);
+}
+
+.mo-soft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mo-soft-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mo-soft-link:hover,
+.mo-soft-link:focus-visible {
+  border-color: rgba(232, 212, 184, 0.18);
+  background: rgba(255, 252, 248, 0.03);
+  outline: none;
+}
+
+.mo-soft-link[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.28);
+  background: rgba(232, 212, 184, 0.08);
+}
+
+.mo-soft-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 252, 248, 0.9);
+}
+
+.mo-soft-purpose {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.62);
+}
+
+.mo-support-note {
+  margin: 0.35rem 1rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.55);
+}

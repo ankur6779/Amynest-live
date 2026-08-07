@@ -134,6 +134,60 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.queryByTestId("hub-dest-row-discovery-worlds")).toBeNull();
   });
 
+  it("Moments living — one emotional room, never four product doors", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="moments"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={[
+          "activities",
+          "story-hub",
+          "worksheets",
+          "talking-amy",
+          "discovery-worlds",
+        ]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderMomentsStream={({ activeTileId, onSelectTile }) => (
+          <div data-testid="moments-living-stream">
+            <button
+              type="button"
+              data-testid="moments-recommend"
+              onClick={() => onSelectTile("activities")}
+            >
+              Ten minutes
+            </button>
+            <button
+              type="button"
+              data-testid="moments-quiet-story"
+              onClick={() => onSelectTile("story-hub")}
+            >
+              Story
+            </button>
+            <span data-active={activeTileId ?? ""} />
+          </div>
+        )}
+      />,
+    );
+
+    expect(screen.getByTestId("moments-living-stream")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-rooms-shell")).toHaveAttribute(
+      "data-mo-living",
+      "1",
+    );
+    // Peer product catalogue removed
+    expect(screen.queryByTestId("hub-dest-row-presence")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-story")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-make")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-talking-amy")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("moments-recommend"));
+    expect(screen.getByTestId("mod-activities")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+  });
+
   it("Care recommends Infant Care for infants", () => {
     render(
       <ParentHubRoomsShell

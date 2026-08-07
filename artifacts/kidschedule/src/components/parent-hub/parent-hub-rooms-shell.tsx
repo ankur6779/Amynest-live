@@ -22,8 +22,18 @@ import {
   GUIDANCE_STREAM_TILE_ID,
   isGuidanceLivingV1Enabled,
 } from "@/lib/guidance/living-room";
+import {
+  MOMENTS_STREAM_TILE_ID,
+  isMomentsLivingV1Enabled,
+  momentsPathForTile,
+} from "@/lib/moments/living-room";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
+
+export type MomentsStreamRenderApi = {
+  activeTileId: string | null;
+  onSelectTile: (tileId: string) => void;
+};
 
 export type ParentHubRoomsShellProps = {
   childName: string;
@@ -42,6 +52,11 @@ export type ParentHubRoomsShellProps = {
    * When provided + living flag ON, Guidance merge skips nested tiles.
    */
   renderGuidanceStream?: () => ReactNode;
+  /**
+   * Moments Phase 2 — one emotional room instead of peer product doors.
+   * When provided + living flag ON, Moments skips Presence/Story/Make catalogue.
+   */
+  renderMomentsStream?: (api: MomentsStreamRenderApi) => ReactNode;
   homeHref?: string;
 };
 
@@ -73,6 +88,7 @@ export function ParentHubRoomsShell({
   visibleTileIds,
   renderDestination,
   renderGuidanceStream,
+  renderMomentsStream,
   homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
@@ -82,6 +98,8 @@ export function ParentHubRoomsShell({
   const [pathCompleted, setPathCompleted] = useState(false);
   const guidanceLiving =
     Boolean(renderGuidanceStream) && isGuidanceLivingV1Enabled();
+  const momentsLiving =
+    Boolean(renderMomentsStream) && isMomentsLivingV1Enabled();
 
   const recommendation = useMemo(
     () => (activeRoom ? recommendForRoom(activeRoom, { isInfant }) : null),
@@ -111,11 +129,15 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(destId);
     if (destId === "guidance" && guidanceLiving) {
       setSelectedTileId(GUIDANCE_STREAM_TILE_ID);
+    } else if (activeRoom === "moments" && momentsLiving) {
+      // Deep-link into Moments room — preserve legacy tile deepen
+      setSelectedTileId(focusTileId);
+      setOpenDestinationId(destId ?? "presence");
     } else {
       setSelectedTileId(focusTileId);
     }
     setPathCompleted(true);
-  }, [activeRoom, focusTileId, guidanceLiving]);
+  }, [activeRoom, focusTileId, guidanceLiving, momentsLiving]);
 
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
@@ -147,10 +169,126 @@ export function ParentHubRoomsShell({
     if (!closing) setPathCompleted(true);
   };
 
+  const selectMomentsTile = (tileId: string) => {
+    const closing = selectedTileId === tileId;
+    const path = momentsPathForTile(tileId);
+    const destId =
+      path === "story"
+        ? "story"
+        : path === "make"
+          ? "make"
+          : path === "talking-amy"
+            ? "presence"
+            : "presence";
+    setOpenDestinationId(closing ? null : destId);
+    setSelectedTileId(closing ? null : tileId);
+    if (!closing) setPathCompleted(true);
+  };
+
   const clearDestination = () => {
     setSelectedTileId(null);
     setOpenDestinationId(null);
   };
+
+  // Moments Phase 2 — one emotional room (skip peer product doors).
+  if (
+    activeRoom === "moments" &&
+    momentsLiving &&
+    renderMomentsStream &&
+    recommendation
+  ) {
+    const hero = heroForRoom(activeRoom);
+    const title = t(hero.titleKey, { defaultValue: hero.titleFallback });
+    const deepenTile =
+      selectedTileId &&
+      selectedTileId !== MOMENTS_STREAM_TILE_ID &&
+      selectedTileId !== GUIDANCE_STREAM_TILE_ID
+        ? selectedTileId
+        : null;
+
+    return (
+      <div
+        className="fe-shell ph-living-shell"
+        data-testid="parent-hub-rooms-shell"
+        data-ph-mode="entered"
+        data-ph-pack="4"
+        data-hub-room="moments"
+        data-mo-living="1"
+        data-fe-shot={hero.shot}
+        data-fe-room="reveal"
+        data-fe-presence="settle"
+      >
+        <div className="fe-ambient" aria-hidden="true">
+          <img src={hero.src} alt="" decoding="async" loading="lazy" fetchPriority="low" />
+          <div className="fe-ambient-wash" />
+        </div>
+        <div className="fe-breath fe-breath-a" aria-hidden="true" />
+        <div className="fe-breath fe-breath-b" aria-hidden="true" />
+        <div className="fe-living-shade" aria-hidden="true" />
+
+        <div className="ph-living-content">
+          <button
+            type="button"
+            className="ph-back-rooms"
+            data-testid="parent-hub-exit-room"
+            onClick={onExitRoom}
+          >
+            {t("parent_hub.rooms.back_rooms", {
+              defaultValue: "All rooms",
+            })}
+          </button>
+
+          <p className="ph-room-eyebrow" data-testid="hub-room-title-moments">
+            {title}
+          </p>
+
+          <section id="hub-room-moments" data-testid="hub-room-moments">
+            <div
+              data-testid="hub-room-destinations-moments"
+              data-pack="living-flow"
+              data-mo-mode="one-room"
+            >
+              <ParentHubQuietModuleProvider>
+                {renderMomentsStream({
+                  activeTileId: deepenTile,
+                  onSelectTile: selectMomentsTile,
+                })}
+              </ParentHubQuietModuleProvider>
+            </div>
+
+            {deepenTile ? (
+              <div
+                className="ph-module-quiet"
+                data-testid={`hub-room-module-${deepenTile}`}
+                data-section-id={deepenTile}
+                data-ph-pack="5"
+              >
+                <ParentHubQuietModuleProvider>
+                  {renderDestination(deepenTile)}
+                </ParentHubQuietModuleProvider>
+              </div>
+            ) : null}
+
+            {pathCompleted ? (
+              <ParentHubExitPanel
+                homeHref={homeHref}
+                onContinueInRoom={clearDestination}
+                onAnotherRoom={onExitRoom}
+              />
+            ) : null}
+
+            <div
+              id="hub-room-deeplink-moments"
+              data-testid="hub-room-deeplink-moments"
+              data-pack="deep-link"
+              className="sr-only"
+              aria-hidden
+            />
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   if (activeRoom && recommendation) {
     const hero = heroForRoom(activeRoom);
