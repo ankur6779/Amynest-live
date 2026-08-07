@@ -23,6 +23,7 @@ import {
 import type { DayPlan, WeatherType } from "@/features/nutrition/types/nutrition-hub.types";
 import { NUTRITION_WEEK_PLAN_FEATURE } from "@/features/nutrition/lib/constants";
 import { MEAL_TIME_KEYS } from "@/features/nutrition/lib/meal-slots";
+import { isNutritionLivingV1Enabled } from "@/lib/nutrition/living-room";
 import { MealCard } from "@/features/nutrition/components/plan/meal-card";
 import { MealPlanDaySelector } from "@/features/nutrition/components/plan/meal-plan-day-selector";
 import { NutritionPill } from "@/features/nutrition/components/plan/nutrition-pill";
@@ -122,7 +123,7 @@ export function AIMealPlanSection() {
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Globe className="w-5 h-5 text-primary" />
               {t("nutrition_hub.ai_plan.title")}
-              {mealTryFree && <TryFreeBadge />}
+              {mealTryFree && !isNutritionLivingV1Enabled() ? <TryFreeBadge /> : null}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">{t("nutrition_hub.ai_plan.subtitle")}</p>
           </div>

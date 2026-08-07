@@ -15,6 +15,7 @@ import { loadMealMemoryEntries } from "@/features/nutrition/lib/nutrition-memory
 import { dateKeyLocal } from "@/features/nutrition/lib/nutrition-score-storage";
 import { useParentNutritionProfile } from "@/features/nutrition/hooks/use-parent-nutrition-profile";
 import { trackPremiumPreviewViewed } from "@/features/nutrition/lib/nutrition-hub-analytics";
+import { isNutritionLivingV1Enabled } from "@/lib/nutrition/living-room";
 
 function childAgeMonths(c: { age: number; ageMonths?: number | null }): number {
   return c.age * 12 + (c.ageMonths ?? 0);
@@ -29,6 +30,7 @@ export function NutritionPremiumPreview() {
   const { isPremium } = useSubscription();
   const { openPaywall } = usePaywall();
   const todayKey = dateKeyLocal();
+  const living = isNutritionLivingV1Enabled();
 
   const preview = useMemo(() => {
     const householdRows = children.map((c) =>
@@ -53,12 +55,14 @@ export function NutritionPremiumPreview() {
   }, [children, todayKey, ageGroupId, foodStyle, entries, classicPlanIsVeg, countryProfile]);
 
   useEffect(() => {
+    if (living) return;
     if (!isPremium && preview.hasData && childId) {
       trackPremiumPreviewViewed(childId, "nutrition_hub");
     }
-  }, [isPremium, preview.hasData, childId]);
+  }, [living, isPremium, preview.hasData, childId]);
 
-  if (isPremium || !preview.hasData) return null;
+  /** Living manufacturing — no Crown / blur shelf on Care opening */
+  if (living || isPremium || !preview.hasData) return null;
 
   return (
     <div className="relative rounded-xl border border-amber-500/30 bg-amber-500/5 overflow-hidden">

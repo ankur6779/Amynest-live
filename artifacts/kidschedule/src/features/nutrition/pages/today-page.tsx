@@ -10,8 +10,32 @@ import {
 } from "@/features/nutrition/components/today/today-cards";
 import { HouseholdNutritionBoard } from "@/features/nutrition/components/household/household-nutrition-board";
 import { NutritionPremiumPreview } from "@/features/nutrition/components/premium/nutrition-premium-preview";
+import { isNutritionLivingV1Enabled } from "@/lib/nutrition/living-room";
 
 export function TodayPage() {
+  const living = isNutritionLivingV1Enabled();
+
+  if (living) {
+    return (
+      <div
+        className="space-y-3 sm:space-y-4 hub-page-enter hub-today-stack"
+        data-testid="nutrition-today-living"
+      >
+        <ChildContextChip />
+        {/* Meal first — Care act before score / premium theatre */}
+        <TonightMealHero />
+        <FocusNutrientCard />
+        <FamilyMealShortcut />
+        <NutritionInsightCard />
+        <AgeInfoCard />
+        <HouseholdNutritionBoard />
+        {/* Dashboard / story subordinated — never first impression */}
+        <TodayScoreSummary />
+        <WeeklyNutritionStory compact />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 sm:space-y-4 hub-page-enter hub-today-stack">
       <ChildContextChip />

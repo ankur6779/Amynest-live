@@ -13,6 +13,7 @@ import type { FamilyPortionResult } from "@/features/nutrition/types/nutrition-h
 import { NUTRITION_FAMILY_AI_FEATURE } from "@/features/nutrition/lib/constants";
 import { PortionScale } from "@/features/nutrition/components/family/portion-scale";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
+import { isNutritionLivingV1Enabled } from "@/lib/nutrition/living-room";
 
 export function FamilyModeSection() {
   const { t } = useTranslation();
@@ -85,7 +86,7 @@ export function FamilyModeSection() {
           <div>
             <p className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
               {t("nutrition_hub.family.section_title")}
-              {familyTryFree && <TryFreeBadge />}
+              {familyTryFree && !isNutritionLivingV1Enabled() ? <TryFreeBadge /> : null}
             </p>
             <p className="text-sm text-foreground">{t("nutrition_hub.family.section_desc")}</p>
           </div>

@@ -1,32 +1,30 @@
 import { ShimmerBlock } from "@/components/route-skeletons/shimmer-block";
 
+/**
+ * Nutrition living skeleton — Care sanctuary continuity (not marketplace chrome).
+ */
 export function NutritionHubSkeleton() {
   return (
     <div
-      className="flex w-full min-w-0 max-w-full flex-col gap-5"
+      className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-3 p-4"
       role="status"
-      aria-label="Loading nutrition hub"
+      aria-label="Preparing calm nutrition care"
       aria-busy="true"
+      data-testid="nutrition-hub-skeleton"
     >
-      <div className="space-y-2">
-        <ShimmerBlock className="h-8 w-52 rounded-xl" />
-        <ShimmerBlock className="h-4 w-full max-w-lg rounded-lg" />
+      <ShimmerBlock className="h-4 w-16 rounded-lg bg-white/10" />
+      <div className="overflow-hidden rounded-[1.25rem] border border-[rgba(232,212,184,0.16)] bg-[rgba(8,6,12,0.55)]">
+        <ShimmerBlock className="h-44 w-full rounded-none bg-white/5" />
+        <div className="space-y-2 p-4">
+          <ShimmerBlock className="mx-auto h-16 w-[92%] rounded-[1.05rem] bg-white/8" />
+          <ShimmerBlock className="mt-3 h-3 w-28 rounded bg-white/10" />
+          <ShimmerBlock className="h-14 w-full rounded-[1.05rem] bg-white/8" />
+          <ShimmerBlock className="h-14 w-full rounded-[1.05rem] bg-white/8" />
+          <ShimmerBlock className="h-14 w-full rounded-[1.05rem] bg-white/8" />
+        </div>
       </div>
-
-      <div className="flex gap-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <ShimmerBlock key={i} className="h-9 w-20 shrink-0 rounded-full" />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <ShimmerBlock key={i} className="h-28 rounded-2xl" />
-        ))}
-      </div>
-
-      <ShimmerBlock className="h-44 w-full rounded-2xl" />
-      <ShimmerBlock className="h-32 w-full rounded-2xl" />
+      <ShimmerBlock className="h-10 w-full rounded-full bg-white/8" />
+      <ShimmerBlock className="h-28 w-full rounded-[1.05rem] bg-white/8" />
     </div>
   );
 }
