@@ -158,7 +158,7 @@ Restores legacy eight-group mall. No DB reverse.
 
 ## Commit SHA
 
-_Pending — filled at commit time._
+`c93bc6c75876ecae2cc9c5ae083d9dedfcb0a4b8`
 
 ---
 
