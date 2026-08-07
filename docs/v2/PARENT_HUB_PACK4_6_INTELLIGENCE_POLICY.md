@@ -289,7 +289,7 @@ All three are **forbidden** here.
 
 ## Commit SHA
 
-_Pending — filled at commit time._
+`f7ea3438c354b224046310e636970641115edd8e`
 
 ---
 
