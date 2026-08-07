@@ -62,6 +62,24 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.getByTestId("parent-hub-exit-home")).toBeTruthy();
   });
 
+  it("Pack 5 — destination module mounts under quiet continuity slot", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="help"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("hub-dest-row-ask-amy"));
+    const slot = screen.getByTestId("hub-room-module-amy-ai");
+    expect(slot).toHaveAttribute("data-ph-pack", "5");
+    expect(screen.getByTestId("mod-amy-ai")).toBeTruthy();
+  });
+
   it("Moments root stays ≤3 with Presence recommended", () => {
     render(
       <ParentHubRoomsShell

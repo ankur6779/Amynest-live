@@ -17,6 +17,7 @@ import { ParentHubRoomHero } from "@/components/parent-hub/parent-hub-room-hero"
 import { ParentHubDestinationRow } from "@/components/parent-hub/parent-hub-destination-row";
 import { ParentHubExitPanel } from "@/components/parent-hub/parent-hub-exit-panel";
 import { AppLink } from "@/components/app-link";
+import { ParentHubQuietModuleProvider } from "@/lib/parent-hub/quiet-module-context";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
@@ -237,8 +238,11 @@ export function ParentHubRoomsShell({
                 className="ph-module-quiet"
                 data-testid={`hub-room-module-${selectedTileId}`}
                 data-section-id={selectedTileId}
+                data-ph-pack="5"
               >
-                {renderDestination(selectedTileId)}
+                <ParentHubQuietModuleProvider>
+                  {renderDestination(selectedTileId)}
+                </ParentHubQuietModuleProvider>
               </div>
             ) : null}
 

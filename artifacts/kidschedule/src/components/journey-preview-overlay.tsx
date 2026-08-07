@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 
 /** CTA banner shown inside soft-locked hub tiles. */
 export function JourneyUnlockCta({
@@ -12,8 +14,36 @@ export function JourneyUnlockCta({
   isInfant?: boolean;
 }) {
   const { t } = useTranslation();
+  const quietRoom = useParentHubQuietModule();
   const jk = (base: string) =>
     isInfant ? `parent_hub.journey.infant.${base}` : `parent_hub.journey.${base}`;
+
+  // Pack 5 — room destinations invite continuity, never "unlock journey" theatre.
+  if (quietRoom) {
+    return (
+      <div
+        className="ph-continuity-invite mt-3 rounded-xl border border-[rgba(232,212,184,0.22)] bg-[rgba(8,6,12,0.42)] p-4 text-center space-y-2"
+        data-testid="journey-unlock-cta"
+        data-ph-continuity="true"
+      >
+        <p className="text-sm font-semibold text-[rgba(244,238,230,0.92)] leading-snug">
+          {PREMIUM_VOICE.invitation}
+        </p>
+        <Button
+          size="sm"
+          className="rounded-full gap-1.5 bg-[rgba(232,212,184,0.16)] text-[rgba(244,238,230,0.95)] border border-[rgba(232,212,184,0.28)] hover:bg-[rgba(232,212,184,0.24)]"
+          onClick={() =>
+            openSubscriptionGate({
+              reason: "hub_journey",
+              source: "journey_continuity_quiet_room",
+            })
+          }
+        >
+          {PREMIUM_VOICE.continueCta}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div

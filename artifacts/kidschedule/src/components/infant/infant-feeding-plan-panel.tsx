@@ -7,6 +7,7 @@ import {
   trackInfantFeedingPlanGenerated,
   trackInfantFeedingPlanUpgradePromptShown,
 } from "@/lib/infant-hub-analytics";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 
 type Props = {
   childId: number;
@@ -15,6 +16,8 @@ type Props = {
 };
 
 function TryFreeBadge() {
+  const quietRoom = useParentHubQuietModule();
+  if (quietRoom) return null;
   return (
     <span className="text-[10px] font-bold uppercase tracking-wide bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200 px-2 py-0.5 rounded-full">
       1 free plan

@@ -2,6 +2,7 @@ import { AppLink } from "@/components/app-link";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 import { cn } from "@/lib/utils";
 import {
   getHubFeatureTileAccent,
@@ -44,9 +45,11 @@ export function HubLaunchCard({
   onPointerDown?: () => void;
 }) {
   const discoveryPreview = useInfantDiscoveryPreview();
+  const quietRoom = useParentHubQuietModule();
   const awardSectionPoints = useHubSectionPoints();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
   const theme = getHubFeatureTileAccent(tileId);
+  const hideShelfBadges = discoveryPreview || quietRoom;
 
   return (
     <AppLink
@@ -78,12 +81,12 @@ export function HubLaunchCard({
             <div className={HUB_FEATURE_TILE_TEXT}>
               <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                 <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
-                {previewBadge && !discoveryPreview ? (
+                {previewBadge && !hideShelfBadges ? (
                   <span className="shrink-0 rounded-full bg-card/85 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-foreground shadow-sm">
                     {previewBadge}
                   </span>
                 ) : null}
-                {tryFree && !discoveryPreview ? <TryFreeBadge /> : null}
+                {tryFree && !hideShelfBadges ? <TryFreeBadge /> : null}
               </div>
               <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
             </div>

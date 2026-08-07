@@ -11,6 +11,7 @@ import {
 } from "@/lib/hub-section-header-theme";
 import { HUB_FEATURE_BADGE } from "@/lib/parent-hub-premium";
 import type { HubGroupKey } from "@/lib/parent-hub-premium";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 import { cn } from "@/lib/utils";
 
 type HubPremiumFeatureCardProps = {
@@ -192,8 +193,13 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
   footer,
 }: HubPremiumFeatureCardProps) {
   const { t } = useTranslation();
+  const quietRoom = useParentHubQuietModule();
   const cleanTitle = stripHubTileEmoji(title);
   const isSection = variant === "section";
+  // Pack 5 — inside rooms: no marketing badges / feature chips shelf.
+  const effectivePreviewBadge = quietRoom ? undefined : previewBadge;
+  const effectiveShowTryFree = quietRoom ? false : showTryFreeBadge;
+  const effectiveShowChips = quietRoom ? false : showChips;
   const visibleChips = visual.chips.slice(0, MAX_VISIBLE_CHIPS);
 
   if (isSection) {
@@ -248,19 +254,25 @@ export const HubPremiumFeatureCard = memo(function HubPremiumFeatureCard({
           style={{ background: CHILD_SHELL_BG }}
         />
 
-        <div className="hub-feature-tile__grid">
+        <div
+          className={cn(
+            "hub-feature-tile__grid",
+            quietRoom && "ph-quiet-feature-grid",
+          )}
+          data-ph-continuity={quietRoom ? "true" : undefined}
+        >
           <div className="hub-feature-tile__text">
             <p className="hub-feature-tile__title">{cleanTitle}</p>
-            {(previewBadge || (tryFree && showTryFreeBadge)) ? (
+            {(effectivePreviewBadge || (tryFree && effectiveShowTryFree)) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                {previewBadge ? (
-                  <span className={HUB_FEATURE_BADGE}>{previewBadge}</span>
+                {effectivePreviewBadge ? (
+                  <span className={HUB_FEATURE_BADGE}>{effectivePreviewBadge}</span>
                 ) : null}
-                {tryFree && showTryFreeBadge ? <TryFreeBadge /> : null}
+                {tryFree && effectiveShowTryFree ? <TryFreeBadge /> : null}
               </div>
             ) : null}
             {description ? <p className="hub-feature-tile__desc">{description}</p> : null}
-            {showChips && visibleChips.length > 0 ? (
+            {effectiveShowChips && visibleChips.length > 0 ? (
               <div className="hub-feature-tile__chips">
                 {visibleChips.map((chip) => (
                   <GlassChip

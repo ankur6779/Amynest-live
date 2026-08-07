@@ -1,14 +1,18 @@
 import { Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { HUB_FEATURE_BADGE } from "@/lib/parent-hub-premium";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 import { cn } from "@/lib/utils";
 
 /**
  * Small "Try Free" pill shown on Parent Hub features that still have
  * lifetime free opens remaining (and the user isn't premium).
+ * Pack 5: hidden inside quiet room destinations (trial-first shelf energy).
  */
 export function TryFreeBadge({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
+  const quietRoom = useParentHubQuietModule();
+  if (quietRoom) return null;
   return (
     <span
       className={cn(

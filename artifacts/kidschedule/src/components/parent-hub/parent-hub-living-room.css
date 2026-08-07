@@ -379,7 +379,15 @@
   padding: 0.35rem;
 }
 
-/* Soften marketing card energy inside the quiet slot — no module rewrite */
+/* Soften marketing card energy inside the quiet slot — Pack 5 continuity */
+.ph-module-quiet {
+  margin-top: 0.65rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(232, 212, 184, 0.1);
+  background: rgba(8, 6, 12, 0.28);
+  padding: 0.55rem;
+}
+
 .ph-module-quiet > * {
   transform: none !important;
 }
@@ -387,6 +395,32 @@
 .ph-module-quiet [class*="hover:-translate"],
 .ph-module-quiet .hover\:-translate-y-0\.5:hover {
   transform: none !important;
+}
+
+/* Safety net: hide residual shelf badges if a card bypasses quiet hooks */
+.ph-module-quiet [data-testid="try-free-badge"],
+.ph-module-quiet .hub-feature-badge {
+  display: none !important;
+}
+
+/* Tone down SaaS hero glow — keep illustration, lose storefront wattage */
+.ph-module-quiet .lz-ambient-glow,
+.ph-module-quiet .hub-feature-tile__media-glow {
+  opacity: 0.35;
+}
+
+.ph-module-quiet .lz-premium-card,
+.ph-module-quiet .lz-glass-panel {
+  border-color: rgba(232, 212, 184, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.ph-module-quiet .hub-feature-tile__chips {
+  display: none !important;
+}
+
+.ph-continuity-invite {
+  font-family: Quicksand, system-ui, sans-serif;
 }
 
 @media (prefers-reduced-motion: reduce) {

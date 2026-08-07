@@ -1467,7 +1467,7 @@ function ParentingHubPage() {
             preview={
               nutritionRouteOpen
                 ? t("parent_hub.web_tiles.nutrition.preview")
-                : "Premium — unlock AI meal plans and nutrition tools"
+                : "We can support you further with meal plans whenever you're ready."
             }
             onOpen={() => markHubUsed("hub_nutrition")}
           >

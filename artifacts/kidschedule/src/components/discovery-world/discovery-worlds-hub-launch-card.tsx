@@ -12,6 +12,7 @@ import {
   HUB_FEATURE_TILE_TEXT,
   HUB_FEATURE_TILE_TITLE,
 } from "@/lib/parent-hub-premium";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 import { cn } from "@/lib/utils";
 import { Compass, Star, Sticker, Trophy } from "lucide-react";
 
@@ -29,6 +30,7 @@ export function DiscoveryWorldsHubLaunchCard({
   tryFree,
 }: DiscoveryWorldsHubLaunchCardProps) {
   const stats = buildDiscoveryHubTileStats(childId);
+  const quietRoom = useParentHubQuietModule();
   const theme = getHubFeatureTileAccent("discovery-worlds");
   const accentClass = "bg-gradient-to-br from-teal-400 via-cyan-500 to-emerald-500";
   const cardClass =
@@ -55,15 +57,18 @@ export function DiscoveryWorldsHubLaunchCard({
             <div className={cn(HUB_FEATURE_TILE_TEXT, "min-w-0 flex-1")}>
               <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                 <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
-                {tryFree ? <TryFreeBadge /> : null}
+                {tryFree && !quietRoom ? <TryFreeBadge /> : null}
               </div>
               <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
             </div>
-            <span className="inline-flex h-7 shrink-0 items-center self-start rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(20,184,166,0.35)] transition-transform group-active:scale-95">
-              Open
-            </span>
+            {!quietRoom ? (
+              <span className="inline-flex h-7 shrink-0 items-center self-start rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(20,184,166,0.35)] transition-transform group-active:scale-95">
+                Open
+              </span>
+            ) : null}
           </div>
 
+          {!quietRoom ? (
           <div className="w-full space-y-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
             <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
               <span>Discovery progress</span>
@@ -95,6 +100,7 @@ export function DiscoveryWorldsHubLaunchCard({
               </p>
             )}
           </div>
+          ) : null}
         </div>
       </HubShadedCardBody>
     </AppLink>
