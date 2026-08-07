@@ -6,7 +6,7 @@
 **Blueprint:** `docs/v2/PARENT_HUB_PACK4_9_LEGACY_REMOVAL.md` (APPROVED)  
 **Upstream gate:** Apple Final Audit — NO (approved as judgment)
 
-**Commit SHA:** _(filled at push — see git)_  
+**Commit SHA:** `bbfde4eb` (`bbfde4eb4bdc8b402ac651781cdc9f936fc256ac`)  
 
 ---
 
