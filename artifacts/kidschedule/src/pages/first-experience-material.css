@@ -5,18 +5,23 @@
  */
 
 .fe-shell {
+  /* One material language — carved from a single family */
   --fe-radius: var(--radius-2xl);
   --fe-blur: 14px;
+  --fe-edge: rgba(255, 255, 255, 0.08);
+  --fe-inset-hi: inset 0 1px 0 var(--fe-edge);
+  --fe-inset-depth: inset 0 2px 8px rgba(0, 0, 0, 0.22);
+  --fe-elev: 0 16px 32px rgba(0, 0, 0, 0.28);
+  --fe-glow: 0 0 56px color-mix(in srgb, var(--fe-spill) 55%, transparent);
   --fe-spill: rgba(232, 212, 184, 0.22);
   --fe-spill-deep: rgba(196, 138, 90, 0.12);
   color: var(--atmosphere-night-ink);
   background:
     radial-gradient(ellipse 80% 55% at 50% 8%, var(--fe-spill) 0%, transparent 55%),
     linear-gradient(180deg, #100d16 0%, var(--atmosphere-night-bg) 42%, #030208 100%);
-  transition:
-    background 1.4s var(--ease-settle),
-    --fe-spill 1.2s var(--ease-settle),
-    --fe-spill-deep 1.2s var(--ease-settle);
+  transition: background 1.6s var(--ease-settle);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 .fe-shell[data-fe-room="welcome"] {
   --fe-spill: rgba(232, 212, 184, 0.28);
@@ -45,7 +50,7 @@
   --fe-spill: rgba(184, 166, 212, 0.08);
 }
 
-/* Hero light becomes the room */
+/* Hero light becomes the room — opacity/transform only (60fps craft) */
 .fe-ambient {
   position: absolute;
   inset: -8% -20% auto -20%;
@@ -54,7 +59,8 @@
   pointer-events: none;
   overflow: hidden;
   opacity: 0.55;
-  transition: opacity 1.3s var(--ease-settle);
+  transition: opacity 1.6s var(--ease-settle);
+  contain: paint;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 92%);
   -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 92%);
 }
@@ -63,9 +69,10 @@
   height: 100%;
   object-fit: cover;
   object-position: center 40%;
-  filter: blur(48px) saturate(1.15) brightness(0.85);
-  transform: scale(1.18);
-  animation: feAmbientLive 34s ease-in-out infinite;
+  filter: blur(48px) saturate(1.12) brightness(0.86);
+  transform: scale(1.18) translateZ(0);
+  will-change: transform, opacity;
+  animation: feAmbientLive 48s ease-in-out infinite;
 }
 .fe-ambient-wash {
   position: absolute;
@@ -74,8 +81,9 @@
     radial-gradient(ellipse 60% 45% at 50% 28%, var(--fe-spill) 0%, transparent 70%),
     radial-gradient(ellipse 80% 50% at 50% 70%, var(--fe-spill-deep) 0%, transparent 75%);
   mix-blend-mode: screen;
-  opacity: 0.65;
-  animation: feWashLive 28s ease-in-out infinite;
+  opacity: 0.62;
+  transform: translateZ(0);
+  animation: feWashLive 42s ease-in-out infinite;
 }
 
 .fe-breath {
@@ -83,81 +91,84 @@
   inset: -18%;
   pointer-events: none;
   z-index: 0;
-  transition: opacity 1.4s ease, background 1.4s ease, filter 1.4s ease;
+  transition: opacity 1.6s ease, background 1.6s ease;
+  contain: paint;
 }
 .fe-breath-a {
   background: radial-gradient(ellipse 52% 42% at 50% 28%, var(--fe-spill) 0%, transparent 64%);
-  animation: feBreatheA 20s ease-in-out infinite;
+  animation: feBreatheA 32s ease-in-out infinite;
 }
 .fe-breath-b {
   background: radial-gradient(ellipse 72% 50% at 50% 82%, rgba(0, 0, 0, 0.55) 0%, transparent 70%);
-  animation: feBreatheB 26s ease-in-out infinite;
+  animation: feBreatheB 40s ease-in-out infinite;
 }
-/* Slow shade drift — furniture shadows, almost invisible */
+/* Shadow migration — furniture shade, below perception */
 .fe-living-shade {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 40% 30% at 72% 18%, rgba(0, 0, 0, 0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 35% 28% at 22% 62%, rgba(0, 0, 0, 0.14) 0%, transparent 72%);
-  animation: feShadeLive 36s ease-in-out infinite;
-  opacity: 0.55;
+    radial-gradient(ellipse 40% 30% at 72% 18%, rgba(0, 0, 0, 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 28% at 22% 62%, rgba(0, 0, 0, 0.12) 0%, transparent 72%);
+  animation: feShadeLive 52s ease-in-out infinite;
+  opacity: 0.5;
+  contain: paint;
 }
+/* Micro light — deltas so small they register as life, not motion */
 @keyframes feBreatheA {
   0%,
   100% {
-    opacity: 0.42;
-    transform: scale(1);
+    opacity: 0.48;
+    transform: scale(1) translateZ(0);
   }
   50% {
-    opacity: 0.7;
-    transform: scale(1.025) translate3d(0, -0.6%, 0);
+    opacity: 0.58;
+    transform: scale(1.012) translate3d(0, -0.25%, 0);
   }
 }
 @keyframes feBreatheB {
   0%,
   100% {
-    opacity: 0.52;
-    transform: scale(1.015);
+    opacity: 0.54;
+    transform: scale(1.008) translateZ(0);
   }
   50% {
-    opacity: 0.66;
-    transform: scale(1);
+    opacity: 0.6;
+    transform: scale(1) translateZ(0);
   }
 }
 @keyframes feAmbientLive {
   0%,
   100% {
     transform: scale(1.18) translate3d(0, 0, 0);
-    filter: blur(48px) saturate(1.15) brightness(0.85);
+    opacity: 1;
   }
   50% {
-    transform: scale(1.205) translate3d(0.45%, -0.3%, 0);
-    filter: blur(50px) saturate(1.2) brightness(0.91);
+    transform: scale(1.19) translate3d(0.2%, -0.15%, 0);
+    opacity: 0.96;
   }
 }
 @keyframes feWashLive {
   0%,
   100% {
-    opacity: 0.55;
-    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.58;
+    transform: translate3d(0, 0, 0);
   }
   50% {
-    opacity: 0.74;
-    transform: translate3d(0, -0.8%, 0) scale(1.025);
+    opacity: 0.66;
+    transform: translate3d(0, -0.35%, 0);
   }
 }
 @keyframes feShadeLive {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.46;
     transform: translate3d(0, 0, 0);
   }
   50% {
-    opacity: 0.62;
-    transform: translate3d(-0.8%, 0.5%, 0);
+    opacity: 0.54;
+    transform: translate3d(-0.35%, 0.2%, 0);
   }
 }
 
@@ -173,10 +184,7 @@
   opacity: 0.66;
 }
 .fe-shell[data-fe-presence="acknowledge"] .fe-memory-mount {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.1) inset,
-    0 18px 40px rgba(0, 0, 0, 0.38),
-    0 0 78px color-mix(in srgb, var(--fe-spill) 70%, transparent);
+  box-shadow: var(--fe-inset-hi), var(--fe-elev), var(--fe-glow);
 }
 .fe-shell[data-fe-presence="grow"] {
   --fe-spill: rgba(228, 204, 176, 0.3);
@@ -184,9 +192,6 @@
 }
 .fe-shell[data-fe-presence="grow"] .fe-ambient {
   opacity: 0.6;
-}
-.fe-shell[data-fe-presence="grow"] .fe-memory img {
-  filter: saturate(1.05) contrast(1.03) brightness(1.03);
 }
 .fe-shell[data-fe-presence="settle"] {
   --fe-spill: rgba(238, 228, 210, 0.32);
@@ -262,12 +267,9 @@
   padding: 2px;
   border-radius: var(--fe-radius);
   background: linear-gradient(180deg, rgba(40, 34, 48, 0.55), rgba(12, 10, 18, 0.7));
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 18px 40px rgba(0, 0, 0, 0.4),
-    0 0 64px var(--fe-spill);
+  box-shadow: var(--fe-inset-hi), var(--fe-elev), var(--fe-glow);
   animation: feMemoryIn 1.05s var(--ease-settle) both;
-  transition: box-shadow 1.2s var(--ease-settle);
+  transition: box-shadow 1.4s var(--ease-settle);
 }
 .fe-memory {
   position: relative;
@@ -386,63 +388,54 @@
 .fe-shell[data-fe-shot="reflection"] .fe-memory-mount {
   animation-name: feCutReflection;
 }
+/* Cuts — opacity + tiny transform only. No filter blur (GPU craft). */
 @keyframes feCutArrival {
   from {
     opacity: 0;
-    filter: blur(10px);
-    transform: scale(1.04);
+    transform: scale(1.02);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: scale(1);
   }
 }
 @keyframes feCutRelationship {
   from {
     opacity: 0;
-    filter: blur(8px);
-    transform: translate3d(0, 10px, 0) scale(1.06);
+    transform: translate3d(0, 6px, 0) scale(1.02);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0) scale(1);
   }
 }
 @keyframes feCutDetail {
   from {
     opacity: 0;
-    filter: blur(6px);
-    transform: translate3d(0, 16px, 0) scale(0.98);
+    transform: translate3d(0, 8px, 0);
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes feCutTransition {
   from {
     opacity: 0;
-    filter: blur(8px);
-    transform: scale(1.05);
+    transform: scale(1.015);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: scale(1);
   }
 }
 @keyframes feCutReflection {
   from {
     opacity: 0;
-    filter: blur(7px);
-    transform: translate3d(0, 6px, 0);
+    transform: translate3d(0, 4px, 0);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0);
   }
 }
@@ -453,10 +446,8 @@
   object-fit: cover;
   object-position: center 42%;
   display: block;
-  transform: scale(1.03);
+  transform: scale(1.03) translateZ(0);
   filter: saturate(1.02) contrast(1.04);
-  animation: fePhotoLive 42s ease-in-out infinite;
-  transition: filter 1.1s var(--ease-settle);
 }
 .fe-memory-veil {
   position: absolute;
@@ -471,7 +462,7 @@
       rgba(5, 4, 12, 0.62) 100%
     ),
     radial-gradient(ellipse 90% 70% at 50% 30%, transparent 35%, rgba(5, 4, 12, 0.22) 100%);
-  animation: feVeilLive 30s ease-in-out infinite;
+  animation: feVeilLive 44s ease-in-out infinite;
 }
 .fe-memory-glass {
   position: absolute;
@@ -480,14 +471,14 @@
   background:
     linear-gradient(125deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 30%, transparent 48%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 36%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 -14px 28px rgba(0, 0, 0, 0.12) inset;
-  animation: feGlassLive 22s ease-in-out infinite;
+  box-shadow: var(--fe-inset-hi), inset 0 -14px 28px rgba(0, 0, 0, 0.12);
+  animation: feGlassLive 36s ease-in-out infinite;
 }
 .fe-memory-grain {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.03;
+  opacity: 0.025;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
@@ -501,18 +492,9 @@
   z-index: 0;
   background: radial-gradient(ellipse 70% 100% at 50% 0%, var(--fe-spill) 0%, transparent 72%);
   filter: blur(10px);
-  opacity: 0.85;
-  animation: feSpillLive 24s ease-in-out infinite;
-  transition: opacity 1.1s var(--ease-settle);
-}
-@keyframes fePhotoLive {
-  0%,
-  100% {
-    filter: saturate(1.02) contrast(1.04) brightness(1);
-  }
-  50% {
-    filter: saturate(1.07) contrast(1.03) brightness(1.035);
-  }
+  opacity: 0.82;
+  animation: feSpillLive 40s ease-in-out infinite;
+  transition: opacity 1.4s var(--ease-settle);
 }
 @keyframes feVeilLive {
   0%,
@@ -520,13 +502,13 @@
     opacity: 1;
   }
   50% {
-    opacity: 0.88;
+    opacity: 0.94;
   }
 }
 @keyframes feGlassLive {
   0%,
   100% {
-    opacity: 0.82;
+    opacity: 0.88;
   }
   50% {
     opacity: 1;
@@ -535,43 +517,39 @@
 @keyframes feSpillLive {
   0%,
   100% {
-    opacity: 0.72;
+    opacity: 0.76;
     transform: scaleX(1);
   }
   50% {
-    opacity: 0.95;
-    transform: scaleX(1.035);
+    opacity: 0.88;
+    transform: scaleX(1.015);
   }
 }
 
 @keyframes feMemoryIn {
   from {
     opacity: 0;
-    filter: blur(8px);
-    transform: translate3d(0, 12px, 0) scale(0.985);
+    transform: translate3d(0, 8px, 0);
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes feSettle {
   from {
     opacity: 0;
-    filter: blur(6px);
-    transform: translate3d(0, 10px, 0);
+    transform: translate3d(0, 6px, 0);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0);
   }
 }
 @keyframes feSoftIn {
   from {
     opacity: 0;
-    transform: translate3d(0, 6px, 0);
+    transform: translate3d(0, 4px, 0);
   }
   to {
     opacity: 1;
@@ -581,41 +559,30 @@
 @keyframes feSignalAssemble {
   from {
     opacity: 0;
-    filter: blur(4px);
-    transform: translate3d(0, 8px, 0) scale(0.985);
+    transform: translate3d(0, 5px, 0);
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes feRevealEarned {
   0% {
     opacity: 0;
-    filter: blur(8px);
-    transform: translate3d(0, 14px, 0) scale(0.98);
-  }
-  55% {
-    opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1.004);
+    transform: translate3d(0, 8px, 0);
   }
   100% {
     opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes feExhale {
   from {
     opacity: 0;
-    filter: blur(4px);
-    transform: translate3d(0, 6px, 0);
+    transform: translate3d(0, 4px, 0);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0);
   }
 }
@@ -694,30 +661,30 @@
 }
 .fe-title {
   margin: 0 0 var(--space-5);
-  font-size: clamp(1.16rem, 3.4vw, 1.34rem);
+  font-size: clamp(1.12rem, 3.2vw, 1.28rem);
   font-weight: var(--font-medium);
-  line-height: 1.4;
-  letter-spacing: -0.016em;
-  color: rgba(244, 238, 230, 0.82);
+  line-height: 1.42;
+  letter-spacing: -0.018em;
+  color: rgba(244, 238, 230, 0.78);
   text-shadow: none;
-  animation: feSettle 0.56s var(--ease-settle) both;
+  animation: feSettle 0.64s var(--ease-settle) both;
 }
 .fe-title-section {
-  font-size: clamp(1.05rem, 3vw, 1.22rem);
-  letter-spacing: -0.014em;
-  line-height: 1.42;
+  font-size: clamp(1.02rem, 2.9vw, 1.18rem);
+  letter-spacing: -0.016em;
+  line-height: 1.44;
   font-weight: var(--font-medium);
-  color: rgba(244, 238, 230, 0.78);
+  color: rgba(244, 238, 230, 0.74);
 }
 .fe-body {
   margin: 0 0 var(--space-10);
   font-size: 14px;
   font-weight: var(--font-regular);
-  line-height: 1.72;
-  letter-spacing: 0.01em;
+  line-height: 1.74;
+  letter-spacing: 0.012em;
   max-width: 30ch;
-  color: rgba(244, 238, 230, 0.44);
-  animation: feSoftIn 0.56s 0.1s var(--ease-settle) both;
+  color: rgba(244, 238, 230, 0.4);
+  animation: feSoftIn 0.64s 0.12s var(--ease-settle) both;
 }
 .fe-shell[data-fe-opening="true"] .fe-body {
   max-width: 32ch;
@@ -758,7 +725,7 @@
 
 /* One material language — carved soft glass wells */
 .fe-signal {
-  animation: feSignalAssemble 0.85s var(--ease-settle) both;
+  animation: feSignalAssemble 0.9s var(--ease-settle) both;
   position: relative;
   backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   -webkit-backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
@@ -769,15 +736,13 @@
   );
   border: none;
   border-radius: var(--fe-radius);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 2px 8px rgba(0, 0, 0, 0.22) inset;
-  color: rgba(244, 238, 230, 0.72);
+  box-shadow: var(--fe-inset-hi), var(--fe-inset-depth);
+  color: rgba(244, 238, 230, 0.7);
   font-size: 14px;
   letter-spacing: 0.012em;
-  line-height: 1.45;
+  line-height: 1.48;
   padding: 15px 18px;
-  transition: background 1s var(--ease-settle), box-shadow 1s var(--ease-settle);
+  transition: background 1.2s var(--ease-settle), box-shadow 1.2s var(--ease-settle);
 }
 
 /* Carved input — same radius / shadow language as wells */
@@ -788,36 +753,24 @@
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0%, rgba(18, 14, 24, 0.48) 100%);
   backdrop-filter: blur(var(--fe-blur));
   -webkit-backdrop-filter: blur(var(--fe-blur));
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.45) inset,
-    0 10px 22px rgba(0, 0, 0, 0.2) inset,
-    0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: var(--fe-inset-depth), inset 0 10px 22px rgba(0, 0, 0, 0.18), var(--fe-inset-hi);
   color: var(--atmosphere-night-ink);
   font-size: 16px;
   padding: 16px 18px;
   outline: none;
   transition:
     box-shadow 0.55s var(--ease-settle),
-    background 0.55s var(--ease-settle),
-    transform 0.35s var(--ease-settle);
+    background 0.55s var(--ease-settle);
 }
 .fe-surface::placeholder {
   color: rgba(244, 238, 230, 0.26);
 }
 .fe-surface:focus {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.34) 0%, rgba(28, 22, 38, 0.46) 100%);
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.45) inset,
-    0 10px 22px rgba(0, 0, 0, 0.2) inset,
-    0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 32px color-mix(in srgb, var(--fe-spill) 34%, transparent);
+  box-shadow: var(--fe-inset-depth), inset 0 10px 22px rgba(0, 0, 0, 0.18), var(--fe-inset-hi), var(--fe-glow);
 }
 .fe-shell[data-fe-presence="acknowledge"] .fe-surface {
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.42) inset,
-    0 10px 22px rgba(0, 0, 0, 0.18) inset,
-    0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 36px color-mix(in srgb, var(--fe-spill) 40%, transparent);
+  box-shadow: var(--fe-inset-depth), inset 0 10px 22px rgba(0, 0, 0, 0.16), var(--fe-inset-hi), var(--fe-glow);
 }
 
 /* Machined ceramic button — same radius family */
@@ -833,10 +786,9 @@
   isolation: isolate;
   -webkit-tap-highlight-color: transparent;
   transition:
-    transform 0.32s var(--ease-settle),
-    box-shadow 0.32s var(--ease-settle),
-    filter 0.32s ease,
-    opacity 0.32s ease;
+    transform 0.36s var(--ease-settle),
+    box-shadow 0.36s var(--ease-settle),
+    opacity 0.36s ease;
 }
 .fe-btn::before {
   content: "";
@@ -844,47 +796,45 @@
   inset: 1px 2px auto 2px;
   height: 42%;
   border-radius: calc(var(--fe-radius) - 4px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
   pointer-events: none;
   z-index: 1;
-  opacity: 0.35;
-  transition: opacity 0.32s ease;
+  opacity: 0.32;
+  transition: opacity 0.36s ease;
 }
 .fe-btn:active:not(:disabled) {
   transform: translateY(1.5px) scale(0.978);
-  transition-duration: 0.07s;
+  transition-duration: 0.06s;
 }
 .fe-btn-primary {
   background: linear-gradient(180deg, #f7f1e8 0%, #ebe2d4 48%, #ddd1bf 100%);
   color: var(--color-primary-ink);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 -1px 2px rgba(120, 90, 60, 0.14) inset,
-    0 8px 16px rgba(0, 0, 0, 0.24),
-    0 16px 32px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 2px rgba(120, 90, 60, 0.14),
+    var(--fe-elev),
     0 0 28px color-mix(in srgb, var(--fe-spill) 22%, transparent);
 }
-.fe-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.02);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 -1px 2px rgba(120, 90, 60, 0.12) inset,
-    0 10px 18px rgba(0, 0, 0, 0.26),
-    0 20px 36px rgba(0, 0, 0, 0.24),
-    0 0 34px color-mix(in srgb, var(--fe-spill) 28%, transparent);
+@media (hover: hover) {
+  .fe-btn-primary:hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -1px 2px rgba(120, 90, 60, 0.12),
+      0 18px 36px rgba(0, 0, 0, 0.3),
+      0 0 34px color-mix(in srgb, var(--fe-spill) 28%, transparent);
+  }
 }
 .fe-btn-primary:active:not(:disabled) {
-  filter: brightness(0.98);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.45) inset,
-    0 3px 8px rgba(0, 0, 0, 0.35) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 3px 8px rgba(0, 0, 0, 0.35),
     0 4px 12px rgba(0, 0, 0, 0.28);
+  transition-duration: 0.06s;
 }
 .fe-btn-primary:disabled {
   opacity: 0.4;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 4px 12px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 12px rgba(0, 0, 0, 0.18);
   transform: none;
-  filter: grayscale(0.15);
 }
 .fe-btn-quiet {
   background: linear-gradient(
@@ -929,42 +879,39 @@
   backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   -webkit-backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   -webkit-tap-highlight-color: transparent;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 2px 8px rgba(0, 0, 0, 0.22) inset;
+  box-shadow: var(--fe-inset-hi), var(--fe-inset-depth);
   transition:
-    transform 0.34s var(--ease-settle),
-    box-shadow 0.45s var(--ease-settle),
-    background 0.45s var(--ease-settle),
-    filter 0.45s ease;
+    transform 0.36s var(--ease-settle),
+    box-shadow 0.55s var(--ease-settle),
+    background 0.55s var(--ease-settle);
 }
 @media (hover: hover) {
   .fe-choice:hover {
     transform: translateY(-1px);
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.12) inset,
-      0 -1px 0 rgba(0, 0, 0, 0.28) inset,
-      0 14px 26px rgba(0, 0, 0, 0.22),
-      0 0 22px color-mix(in srgb, var(--fe-spill) 16%, transparent);
+    box-shadow: var(--fe-inset-hi), var(--fe-inset-depth), var(--fe-elev);
   }
 }
 .fe-choice:active {
   transform: scale(0.98) translateY(0.5px);
-  transition-duration: 0.08s;
+  transition-duration: 0.06s;
 }
 .fe-choice[data-active="true"] {
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--fe-spill) 40%, rgba(255, 255, 255, 0.12)) 0%,
-    rgba(255, 255, 255, 0.05) 55%,
+    color-mix(in srgb, var(--fe-spill) 38%, rgba(255, 255, 255, 0.1)) 0%,
+    rgba(255, 255, 255, 0.045) 55%,
     rgba(0, 0, 0, 0.1) 100%
   );
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.22) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.24) inset,
-    0 0 0 1px color-mix(in srgb, var(--fe-spill) 35%, rgba(255, 255, 255, 0.12)),
-    0 14px 28px rgba(0, 0, 0, 0.26),
-    0 0 34px color-mix(in srgb, var(--fe-spill) 32%, transparent);
+    var(--fe-inset-hi),
+    var(--fe-inset-depth),
+    0 0 0 1px color-mix(in srgb, var(--fe-spill) 30%, var(--fe-edge)),
+    var(--fe-elev),
+    var(--fe-glow);
+  transition:
+    transform 0.36s var(--ease-settle),
+    box-shadow 0.7s var(--ease-settle),
+    background 0.7s var(--ease-settle);
 }
 
 .fe-panel {
@@ -978,9 +925,7 @@
   );
   backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
   -webkit-backdrop-filter: blur(var(--fe-blur)) saturate(1.04);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 2px 8px rgba(0, 0, 0, 0.22) inset;
+  box-shadow: var(--fe-inset-hi), var(--fe-inset-depth);
 }
 
 .fe-choice-grid {
@@ -1007,12 +952,27 @@
   .fe-living-shade,
   .fe-ambient img,
   .fe-ambient-wash,
-  .fe-memory img,
   .fe-memory-veil,
   .fe-memory-glass,
   .fe-memory-spill,
   .fe-copy::before {
     animation: none !important;
+    will-change: auto !important;
+  }
+  .fe-ambient {
+    opacity: 0.58;
+  }
+  .fe-ambient-wash {
+    opacity: 0.62;
+  }
+  .fe-breath-a {
+    opacity: 0.52;
+  }
+  .fe-breath-b {
+    opacity: 0.56;
+  }
+  .fe-living-shade {
+    opacity: 0.48;
   }
   .fe-memory-mount,
   .fe-kicker,
@@ -1026,7 +986,6 @@
   .fe-actions {
     animation: none !important;
     opacity: 1 !important;
-    filter: none !important;
     transform: none !important;
   }
   .fe-btn:active:not(:disabled),

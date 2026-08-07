@@ -119,6 +119,15 @@ const SHOTS: Record<
   },
 };
 
+const SHOT_FLOW = ["welcome", "discovery-name", "discovery-age", "discovery-today", "working"] as const;
+
+function preloadShotSrc(src: string) {
+  if (typeof window === "undefined") return;
+  const img = new Image();
+  img.decoding = "async";
+  img.src = src;
+}
+
 function Shell({
   children,
   room,
@@ -159,7 +168,7 @@ function Shell({
     >
       {memory ? (
         <div className="fe-ambient" aria-hidden="true">
-          <img src={memory.src} alt="" />
+          <img src={memory.src} alt="" decoding="async" fetchPriority="low" />
           <div className="fe-ambient-wash" />
         </div>
       ) : null}
@@ -172,7 +181,13 @@ function Shell({
             <div className="fe-memory-mount" data-testid="fe-visual-memory" data-fe-shot={memory.shot}>
               <div className="fe-memory-spill" aria-hidden="true" />
               <div className="fe-memory">
-                <img src={memory.src} alt={memory.alt} draggable={false} />
+                <img
+                  src={memory.src}
+                  alt={memory.alt}
+                  draggable={false}
+                  decoding="async"
+                  fetchPriority="high"
+                />
                 <div className="fe-memory-veil" aria-hidden="true" />
                 <div className="fe-memory-glass" aria-hidden="true" />
                 <div className="fe-memory-grain" aria-hidden="true" />
@@ -199,6 +214,19 @@ export default function FirstExperiencePage() {
 
   useEffect(() => {
     trackFtue(state.step);
+  }, [state.step]);
+
+  /* Invisible engineering — decode ahead so cuts never wait */
+  useEffect(() => {
+    const idx = SHOT_FLOW.indexOf(state.step as (typeof SHOT_FLOW)[number]);
+    const keys =
+      idx < 0
+        ? SHOT_FLOW
+        : SHOT_FLOW.slice(Math.max(0, idx), Math.min(SHOT_FLOW.length, idx + 3));
+    keys.forEach((key) => preloadShotSrc(SHOTS[key].src));
+    if (state.step === "welcome") {
+      SHOT_FLOW.forEach((key) => preloadShotSrc(SHOTS[key].src));
+    }
   }, [state.step]);
 
   const patch = (partial: Partial<FirstExperienceState>) =>
@@ -282,6 +310,9 @@ export default function FirstExperiencePage() {
             onChange={(e) => setNameDraft(e.target.value)}
             placeholder="e.g. Aria"
             autoFocus
+            autoComplete="given-name"
+            enterKeyHint="done"
+            aria-label="Child’s first name"
             data-testid="fe-child-name"
             className="fe-surface"
             style={{ marginTop: "var(--space-2)", marginBottom: "var(--space-8)" }}
