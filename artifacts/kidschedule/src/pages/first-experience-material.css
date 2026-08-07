@@ -758,15 +758,16 @@
 .fe-choice[data-active="true"] {
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--fe-spill) 34%, rgba(255, 255, 255, 0.1)) 0%,
-    rgba(255, 255, 255, 0.04) 55%,
+    color-mix(in srgb, var(--fe-spill) 40%, rgba(255, 255, 255, 0.12)) 0%,
+    rgba(255, 255, 255, 0.05) 55%,
     rgba(0, 0, 0, 0.1) 100%
   );
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
     0 -1px 0 rgba(0, 0, 0, 0.24) inset,
+    0 0 0 1px color-mix(in srgb, var(--fe-spill) 35%, rgba(255, 255, 255, 0.12)),
     0 14px 28px rgba(0, 0, 0, 0.26),
-    0 0 32px color-mix(in srgb, var(--fe-spill) 30%, transparent);
+    0 0 34px color-mix(in srgb, var(--fe-spill) 32%, transparent);
 }
 
 .fe-panel {
