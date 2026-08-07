@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Implement Pack 5 (Destination Experience Unification)  
 **Upstream:** Pack 4.9 APPROVED · Apple re-audit after 4.9 · Pack 5 Premium Continuity study  
 
-**Commit SHA:** _(filled at push)_  
+**Commit SHA:** `526a5296` (`526a5296ffcf045b11803c90fb464260e0350751`)  
 
 **Explicit non-actions:** No Pack 6 · No RevenueCat redesign · No module product redesign · No pricing · No DB/API/auth/Firebase/routing/analytics rewrites  
 
