@@ -37,6 +37,7 @@ import { BirthSkyRevealPage } from "./reveal-page";
 import { BirthSkyDashboardPage } from "./dashboard/dashboard-page";
 import { BirthSkySettingsPage } from "./settings/settings-page";
 import { AmyAstroEmblem } from "../components/amy-astro-emblem";
+import { isBirthSkyLivingV1Enabled } from "@/lib/birth-sky/living-room";
 import "../design/amy-astro.css";
 import {
   clearSetupDraft,
@@ -580,28 +581,57 @@ function BirthSkyAppInner() {
   }
 
   if (resolved.land === "redirect" || profileLoading) {
+    const livingLoad = isBirthSkyLivingV1Enabled();
     return (
       <div
-        className="amy-astro-root relative flex min-h-[100dvh] flex-col items-center justify-center px-6"
+        className={
+          livingLoad
+            ? "relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-[rgba(255,252,248,0.96)]"
+            : "amy-astro-root relative flex min-h-[100dvh] flex-col items-center justify-center px-6"
+        }
         data-testid="amy-astro-loading"
         role="status"
         aria-live="polite"
         aria-busy="true"
+        style={
+          livingLoad
+            ? {
+                background:
+                  "linear-gradient(180deg, #100d16 0%, #0a0810 42%, #030208 100%)",
+              }
+            : undefined
+        }
       >
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 40% at 50% 30%, hsl(275 50% 30% / 0.35), transparent 60%), hsl(228 48% 5%)",
-          }}
-          aria-hidden
-        />
-        <AmyAstroEmblem size={88} interactive={false} />
-        <p className="amy-astro-display relative mt-5 text-lg text-[hsl(42_70%_78%)]">
-          Reading the stars…
+        {!livingLoad ? (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 60% 40% at 50% 30%, hsl(275 50% 30% / 0.35), transparent 60%), hsl(228 48% 5%)",
+            }}
+            aria-hidden
+          />
+        ) : null}
+        {!livingLoad ? <AmyAstroEmblem size={88} interactive={false} /> : null}
+        <p
+          className={
+            livingLoad
+              ? "relative mt-2 text-lg font-semibold text-[rgba(255,252,248,0.96)]"
+              : "amy-astro-display relative mt-5 text-lg text-[hsl(42_70%_78%)]"
+          }
+        >
+          {livingLoad ? "Preparing a quiet understanding…" : "Reading the stars…"}
         </p>
-        <p className="relative mt-2 text-center text-sm text-[hsl(40_20%_96%/0.55)]">
-          Amy Astro Intelligence is preparing a quiet welcome.
+        <p
+          className={
+            livingLoad
+              ? "relative mt-2 text-center text-sm text-[rgba(232,212,184,0.78)]"
+              : "relative mt-2 text-center text-sm text-[hsl(40_20%_96%/0.55)]"
+          }
+        >
+          {livingLoad
+            ? "One calm moment — soft identity, never fate."
+            : "Amy Astro Intelligence is preparing a quiet welcome."}
         </p>
       </div>
     );
