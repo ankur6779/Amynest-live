@@ -2,6 +2,7 @@ import { AppLink } from "@/components/app-link";
 import { LearningZonePremiumCard } from "@/components/learning-zone-premium-card";
 import { hubTileAriaLabel } from "@/components/hub-tile-button";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
+import { useParentHubQuietModule } from "@/lib/parent-hub/quiet-module-context";
 import type { LearningZoneCardId } from "@/lib/learning-zone-card-config";
 import { HUB_TILE_TRIGGER } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,16 @@ type LearningZoneLaunchCardProps = {
   onNavigate?: () => void;
 };
 
+/** Calm title when Grow living deepen — strip PRO / Zone / Mastery SKU language. */
+function calmLearningTitle(title: string): string {
+  return title
+    .replace(/\bPRO\b/gi, "")
+    .replace(/\bZone\b/gi, "")
+    .replace(/\bMastery\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /** Premium Learning Zone launch tile — entire card navigates. */
 export function LearningZoneLaunchCard({
   cardId,
@@ -32,8 +43,13 @@ export function LearningZoneLaunchCard({
   onNavigate,
 }: LearningZoneLaunchCardProps) {
   const discoveryPreview = useInfantDiscoveryPreview();
+  const quietRoom = useParentHubQuietModule();
   const awardSectionPoints = useHubSectionPoints();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
+  const displayTitle = quietRoom ? calmLearningTitle(title) : title;
+  // Pack 5 / Grow living — no unlock theatre on quiet deepen.
+  const effectiveBadge = quietRoom ? undefined : previewBadge;
+  const effectiveTryFree = quietRoom ? false : !!tryFree && previewBadge !== "Premium";
 
   const warmOnIntent = () => {
     recordTtsUserGesture();
@@ -52,18 +68,23 @@ export function LearningZoneLaunchCard({
           onNavigate?.();
         }}
         className={cn(HUB_TILE_TRIGGER, "block h-full overflow-visible p-0 rounded-[30px]")}
-        aria-label={hubTileAriaLabel(title, description)}
+        aria-label={hubTileAriaLabel(displayTitle, description)}
         data-testid={testId}
         data-section-id={sectionId}
         source="hub-launch-card"
       >
         <LearningZonePremiumCard
           cardId={cardId}
-          title={title}
+          title={displayTitle}
           description={description}
-          previewBadge={previewBadge}
-          tryFree={!!tryFree && previewBadge !== "Premium"}
-          showTryFreeBadge={!discoveryPreview && previewBadge !== "Premium" && !!tryFree}
+          previewBadge={effectiveBadge}
+          tryFree={effectiveTryFree}
+          showTryFreeBadge={
+            !quietRoom &&
+            !discoveryPreview &&
+            previewBadge !== "Premium" &&
+            !!tryFree
+          }
         />
       </AppLink>
     </div>

@@ -134,6 +134,48 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.queryByTestId("hub-dest-row-discovery-worlds")).toBeNull();
   });
 
+  it("Grow living — one educational room, no six-SKU nest", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="understand"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={[
+          "daily-tips",
+          "smart-math-tricks",
+          "abacus",
+          "phonics",
+          "spelling-mastery",
+          "smart-study",
+          "olympiad",
+        ]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderGrowStream={({ activeTileId, onSelectTile }) => (
+          <div data-testid="grow-living-stream">
+            <button
+              type="button"
+              data-testid="grow-recommend"
+              onClick={() => onSelectTile("phonics")}
+            >
+              Practice
+            </button>
+            <span data-active={activeTileId ?? ""} />
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("hub-dest-row-grow"));
+    expect(screen.queryByTestId("hub-dest-nested-grow")).toBeNull();
+    expect(screen.getByTestId("grow-living-stream")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-module-grow")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("grow-recommend"));
+    expect(screen.getByTestId("mod-phonics")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+  });
+
   it("Moments living — one emotional room, never four product doors", () => {
     render(
       <ParentHubRoomsShell

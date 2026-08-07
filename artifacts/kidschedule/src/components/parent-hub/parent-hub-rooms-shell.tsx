@@ -27,10 +27,20 @@ import {
   isMomentsLivingV1Enabled,
   momentsPathForTile,
 } from "@/lib/moments/living-room";
+import {
+  GROW_STREAM_TILE_ID,
+  isGrowLivingV1Enabled,
+  isGrowTileId,
+} from "@/lib/grow/living-room";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
 export type MomentsStreamRenderApi = {
+  activeTileId: string | null;
+  onSelectTile: (tileId: string) => void;
+};
+
+export type GrowStreamRenderApi = {
   activeTileId: string | null;
   onSelectTile: (tileId: string) => void;
 };
@@ -57,6 +67,11 @@ export type ParentHubRoomsShellProps = {
    * When provided + living flag ON, Moments skips Presence/Story/Make catalogue.
    */
   renderMomentsStream?: (api: MomentsStreamRenderApi) => ReactNode;
+  /**
+   * Grow Phase 2 — one calm educational room instead of six-SKU nest.
+   * When provided + living flag ON, Grow merge skips nested catalogue.
+   */
+  renderGrowStream?: (api: GrowStreamRenderApi) => ReactNode;
   homeHref?: string;
 };
 
@@ -89,17 +104,21 @@ export function ParentHubRoomsShell({
   renderDestination,
   renderGuidanceStream,
   renderMomentsStream,
+  renderGrowStream,
   homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
   const [openDestinationId, setOpenDestinationId] = useState<string | null>(null);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
+  /** Grow living — deepened learning tile under the educational room */
+  const [growDeepenTileId, setGrowDeepenTileId] = useState<string | null>(null);
   /** Exit Law — show return-to-life after a destination has been opened */
   const [pathCompleted, setPathCompleted] = useState(false);
   const guidanceLiving =
     Boolean(renderGuidanceStream) && isGuidanceLivingV1Enabled();
   const momentsLiving =
     Boolean(renderMomentsStream) && isMomentsLivingV1Enabled();
+  const growLiving = Boolean(renderGrowStream) && isGrowLivingV1Enabled();
 
   const recommendation = useMemo(
     () => (activeRoom ? recommendForRoom(activeRoom, { isInfant }) : null),
@@ -116,12 +135,14 @@ export function ParentHubRoomsShell({
     if (!activeRoom) {
       setOpenDestinationId(null);
       setSelectedTileId(null);
+      setGrowDeepenTileId(null);
       setPathCompleted(false);
       return;
     }
     if (!focusTileId) {
       setOpenDestinationId(null);
       setSelectedTileId(null);
+      setGrowDeepenTileId(null);
       setPathCompleted(false);
       return;
     }
@@ -129,15 +150,21 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(destId);
     if (destId === "guidance" && guidanceLiving) {
       setSelectedTileId(GUIDANCE_STREAM_TILE_ID);
+      setGrowDeepenTileId(null);
+    } else if (destId === "grow" && growLiving) {
+      setSelectedTileId(GROW_STREAM_TILE_ID);
+      setGrowDeepenTileId(isGrowTileId(focusTileId) ? focusTileId : null);
     } else if (activeRoom === "moments" && momentsLiving) {
       // Deep-link into Moments room — preserve legacy tile deepen
       setSelectedTileId(focusTileId);
       setOpenDestinationId(destId ?? "presence");
+      setGrowDeepenTileId(null);
     } else {
       setSelectedTileId(focusTileId);
+      setGrowDeepenTileId(null);
     }
     setPathCompleted(true);
-  }, [activeRoom, focusTileId, guidanceLiving, momentsLiving]);
+  }, [activeRoom, focusTileId, guidanceLiving, momentsLiving, growLiving]);
 
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
@@ -145,6 +172,7 @@ export function ParentHubRoomsShell({
       const closing = openDestinationId === dest.id && selectedTileId === tileId;
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : tileId);
+      setGrowDeepenTileId(null);
       if (!closing && tileId) setPathCompleted(true);
       return;
     }
@@ -155,17 +183,31 @@ export function ParentHubRoomsShell({
         selectedTileId === GUIDANCE_STREAM_TILE_ID;
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : GUIDANCE_STREAM_TILE_ID);
+      setGrowDeepenTileId(null);
+      if (!closing) setPathCompleted(true);
+      return;
+    }
+    // Grow living — one educational room; no six-SKU nest.
+    if (dest.id === "grow" && growLiving) {
+      const closing =
+        openDestinationId === dest.id &&
+        selectedTileId === GROW_STREAM_TILE_ID;
+      setOpenDestinationId(closing ? null : dest.id);
+      setSelectedTileId(closing ? null : GROW_STREAM_TILE_ID);
+      setGrowDeepenTileId(null);
       if (!closing) setPathCompleted(true);
       return;
     }
     setOpenDestinationId((prev) => (prev === dest.id ? null : dest.id));
     setSelectedTileId(null);
+    setGrowDeepenTileId(null);
   };
 
   const selectMember = (tileId: string, destId: string) => {
     const closing = selectedTileId === tileId;
     setOpenDestinationId(destId);
     setSelectedTileId(closing ? null : tileId);
+    setGrowDeepenTileId(null);
     if (!closing) setPathCompleted(true);
   };
 
@@ -185,9 +227,18 @@ export function ParentHubRoomsShell({
     if (!closing) setPathCompleted(true);
   };
 
+  const selectGrowTile = (tileId: string) => {
+    const closing = growDeepenTileId === tileId;
+    setOpenDestinationId("grow");
+    setSelectedTileId(GROW_STREAM_TILE_ID);
+    setGrowDeepenTileId(closing ? null : tileId);
+    if (!closing) setPathCompleted(true);
+  };
+
   const clearDestination = () => {
     setSelectedTileId(null);
     setOpenDestinationId(null);
+    setGrowDeepenTileId(null);
   };
 
   // Moments Phase 2 — one emotional room (skip peer product doors).
@@ -377,7 +428,8 @@ export function ParentHubRoomsShell({
 
                     {dest.kind === "merge" &&
                     isOpen &&
-                    !(dest.id === "guidance" && guidanceLiving) ? (
+                    !(dest.id === "guidance" && guidanceLiving) &&
+                    !(dest.id === "grow" && growLiving) ? (
                       <div
                         className="ph-dest-nested"
                         data-testid={`hub-dest-nested-${dest.id}`}
@@ -412,8 +464,40 @@ export function ParentHubRoomsShell({
                   {renderGuidanceStream()}
                 </ParentHubQuietModuleProvider>
               </div>
+            ) : selectedTileId === GROW_STREAM_TILE_ID &&
+              growLiving &&
+              renderGrowStream ? (
+              <>
+                <div
+                  className="ph-module-quiet"
+                  data-testid="hub-room-module-grow"
+                  data-section-id="grow"
+                  data-ph-pack="5"
+                  data-gw-living="1"
+                >
+                  <ParentHubQuietModuleProvider>
+                    {renderGrowStream({
+                      activeTileId: growDeepenTileId,
+                      onSelectTile: selectGrowTile,
+                    })}
+                  </ParentHubQuietModuleProvider>
+                </div>
+                {growDeepenTileId ? (
+                  <div
+                    className="ph-module-quiet"
+                    data-testid={`hub-room-module-${growDeepenTileId}`}
+                    data-section-id={growDeepenTileId}
+                    data-ph-pack="5"
+                  >
+                    <ParentHubQuietModuleProvider>
+                      {renderDestination(growDeepenTileId)}
+                    </ParentHubQuietModuleProvider>
+                  </div>
+                ) : null}
+              </>
             ) : selectedTileId &&
-              selectedTileId !== GUIDANCE_STREAM_TILE_ID ? (
+              selectedTileId !== GUIDANCE_STREAM_TILE_ID &&
+              selectedTileId !== GROW_STREAM_TILE_ID ? (
               <div
                 className="ph-module-quiet"
                 data-testid={`hub-room-module-${selectedTileId}`}
